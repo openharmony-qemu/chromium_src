@@ -4,6 +4,7 @@
 
 #include "services/network/public/cpp/url_loader_completion_status.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/trace_event/trace_event.h"
 #include "net/base/net_errors.h"
 
@@ -44,10 +45,12 @@ bool URLLoaderCompletionStatus::operator==(
          private_network_access_preflight_result ==
              rhs.private_network_access_preflight_result &&
          blocked_by_response_reason == rhs.blocked_by_response_reason &&
-         should_report_corb_blocking == rhs.should_report_corb_blocking &&
-         proxy_server == rhs.proxy_server &&
-         should_collapse_initiator == rhs.should_collapse_initiator &&
-         pervasive_payload_requested == rhs.pervasive_payload_requested;
+         should_report_orb_blocking == rhs.should_report_orb_blocking &&
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+         abort_due_to_cef_browser_destroyed ==
+             rhs.abort_due_to_cef_browser_destroyed &&
+#endif  //  ARKWEB_EX_DOWNLOAD
+         should_collapse_initiator == rhs.should_collapse_initiator;
 }
 
 void URLLoaderCompletionStatus::WriteIntoTrace(

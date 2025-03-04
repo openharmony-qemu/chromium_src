@@ -19,9 +19,10 @@
 #include "base/values.h"
 #include "base/version.h"
 #include "content/public/common/cdm_info.h"
+#include "media/base/cdm_capability.h"
 #include "media/cdm/api/content_decryption_module.h"
-#include "media/cdm/cdm_capability.h"
 #include "media/cdm/supported_cdm_versions.h"
+#include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 using media::CdmCapability;
@@ -187,12 +188,22 @@ TEST(CdmManifestTest, ValidManifest) {
                    {media::VideoCodec::kVP8, media::VideoCodec::kVP9,
                     media::VideoCodec::kAV1});
   CheckAudioCodecs(capability.audio_codecs, {
-    media::AudioCodec::kOpus, media::AudioCodec::kVorbis,
-        media::AudioCodec::kFLAC,
+                                                media::AudioCodec::kOpus,
+                                                media::AudioCodec::kVorbis,
+                                                media::AudioCodec::kFLAC,
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
-        media::AudioCodec::kAAC,
+                                                media::AudioCodec::kAAC,
+#if BUILDFLAG(ENABLE_PLATFORM_DTS_AUDIO)
+                                                media::AudioCodec::kDTS,
+                                                media::AudioCodec::kDTSE,
+                                                media::AudioCodec::kDTSXP2,
+#endif  // BUILDFLAG(ENABLE_PLATFORM_DTS_AUDIO)
+#if BUILDFLAG(ENABLE_PLATFORM_AC3_EAC3_AUDIO)
+                                                media::AudioCodec::kAC3,
+                                                media::AudioCodec::kEAC3,
+#endif  // BUILDFLAG(ENABLE_PLATFORM_AC3_EAC3_AUDIO)
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
-  });
+                                            });
   CheckEncryptionSchemes(
       capability.encryption_schemes,
       {media::EncryptionScheme::kCenc, media::EncryptionScheme::kCbcs});
@@ -207,12 +218,22 @@ TEST(CdmManifestTest, EmptyManifest) {
   EXPECT_TRUE(ParseCdmManifest(manifest, &capability));
   CheckVideoCodecs(capability.video_codecs, {});
   CheckAudioCodecs(capability.audio_codecs, {
-    media::AudioCodec::kOpus, media::AudioCodec::kVorbis,
-        media::AudioCodec::kFLAC,
+                                                media::AudioCodec::kOpus,
+                                                media::AudioCodec::kVorbis,
+                                                media::AudioCodec::kFLAC,
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
-        media::AudioCodec::kAAC,
+                                                media::AudioCodec::kAAC,
+#if BUILDFLAG(ENABLE_PLATFORM_DTS_AUDIO)
+                                                media::AudioCodec::kDTS,
+                                                media::AudioCodec::kDTSE,
+                                                media::AudioCodec::kDTSXP2,
+#endif  // BUILDFLAG(ENABLE_PLATFORM_DTS_AUDIO)
+#if BUILDFLAG(ENABLE_PLATFORM_AC3_EAC3_AUDIO)
+                                                media::AudioCodec::kAC3,
+                                                media::AudioCodec::kEAC3,
+#endif  // BUILDFLAG(ENABLE_PLATFORM_AC3_EAC3_AUDIO)
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
-  });
+                                            });
   CheckEncryptionSchemes(capability.encryption_schemes,
                          {media::EncryptionScheme::kCenc});
   CheckSessionTypes(capability.session_types,

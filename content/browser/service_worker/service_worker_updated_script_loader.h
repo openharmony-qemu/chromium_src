@@ -91,7 +91,7 @@ class CONTENT_EXPORT ServiceWorkerUpdatedScriptLoader final
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override;
+      const std::optional<GURL>& new_url) override;
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
   void PauseReadingBodyFromNet() override;
@@ -102,9 +102,10 @@ class CONTENT_EXPORT ServiceWorkerUpdatedScriptLoader final
   void OnReceiveResponse(
       network::mojom::URLResponseHeadPtr response_head,
       mojo::ScopedDataPipeConsumerHandle body,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override;
-#if BUILDFLAG(IS_OHOS)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+      std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override {}
 #endif
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
@@ -123,7 +124,7 @@ class CONTENT_EXPORT ServiceWorkerUpdatedScriptLoader final
                     base::OnceCallback<void(net::Error)> callback) override;
 
   // Buffer size for reading script data from network.
-  const static uint32_t kReadBufferSize;
+  const static size_t kReadBufferSize;
 
  private:
   class WrappedIOBuffer;
@@ -143,7 +144,7 @@ class CONTENT_EXPORT ServiceWorkerUpdatedScriptLoader final
                  uint32_t bytes_available);
   void OnWriteDataComplete(
       scoped_refptr<network::MojoToNetPendingBuffer> pending_buffer,
-      uint32_t bytes_written,
+      size_t bytes_written,
       net::Error error);
 
   // This is the last method that is called on this class. Notifies the final
@@ -221,7 +222,7 @@ class CONTENT_EXPORT ServiceWorkerUpdatedScriptLoader final
   WriterState body_writer_state_ = WriterState::kNotStarted;
 
   mojo::SimpleWatcher client_producer_watcher_;
-  const base::TimeTicks request_start_;
+  const base::TimeTicks request_start_time_;
   mojo::PendingReceiver<network::mojom::URLLoaderClient>
       pending_network_client_receiver_;
 

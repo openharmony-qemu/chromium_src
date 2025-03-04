@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/shared_buffer_dispatcher.h"
 
 #include <stddef.h>
@@ -165,7 +170,7 @@ scoped_refptr<SharedBufferDispatcher> SharedBufferDispatcher::Deserialize(
 #endif
   handles[0] = std::move(platform_handles[0]);
 
-  absl::optional<base::UnguessableToken> guid =
+  std::optional<base::UnguessableToken> guid =
       base::UnguessableToken::Deserialize(serialized_state->guid_high,
                                           serialized_state->guid_low);
   if (!guid.has_value()) {
@@ -357,7 +362,6 @@ bool SharedBufferDispatcher::EndSerialize(void* destination,
       break;
     default:
       NOTREACHED();
-      return false;
   }
 
   const base::UnguessableToken& guid = region_.GetGUID();

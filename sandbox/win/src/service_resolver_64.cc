@@ -4,13 +4,15 @@
 
 #include "sandbox/win/src/service_resolver.h"
 
+#include <windows.h>
+
 #include <ntstatus.h>
 #include <stddef.h>
+#include <winternl.h>
 
 #include <memory>
 
-#include "sandbox/win/src/sandbox_nt_util.h"
-#include "sandbox/win/src/win_utils.h"
+#include "base/containers/heap_array.h"
 
 namespace {
 #if defined(_M_X64)
@@ -188,9 +190,9 @@ NTSTATUS ServiceResolverThunk::Setup(const void* target_module,
     return ret;
 
   size_t thunk_bytes = GetThunkSize();
-  std::unique_ptr<char[]> thunk_buffer(new char[thunk_bytes]);
+  auto thunk_buffer = base::HeapArray<char>::Uninit(thunk_bytes);
   ServiceFullThunk* thunk =
-      reinterpret_cast<ServiceFullThunk*>(thunk_buffer.get());
+      reinterpret_cast<ServiceFullThunk*>(thunk_buffer.data());
 
   if (!IsFunctionAService(&thunk->original))
     return STATUS_OBJECT_NAME_COLLISION;
@@ -254,7 +256,6 @@ NTSTATUS ServiceResolverThunk::PerformPatch(void* local_thunk,
                                             void* remote_thunk) {
   // Patch the original code.
   ServiceEntry local_service;
-  DCHECK_NT(GetInternalThunkSize() <= sizeof(local_service));
   if (!SetInternalThunk(&local_service, sizeof(local_service), nullptr,
                         interceptor_))
     return STATUS_UNSUCCESSFUL;

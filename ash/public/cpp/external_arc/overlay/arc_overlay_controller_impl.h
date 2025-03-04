@@ -49,6 +49,10 @@ class ASH_PUBLIC_EXPORT ArcOverlayControllerImpl : public ArcOverlayController,
   // views::ViewObserver:
   void OnViewIsDeleting(views::View* observed_view) override;
 
+  views::NativeViewHost* overlay_container_for_test() {
+    return overlay_container_;
+  }
+
  private:
   void UpdateHostBounds();
   void ConvertPointFromWindow(aura::Window* window, gfx::Point* point);
@@ -57,15 +61,15 @@ class ASH_PUBLIC_EXPORT ArcOverlayControllerImpl : public ArcOverlayController,
   void ResetFocusBehavior();
   void RestoreHostCanConsumeSystemKeys();
 
-  raw_ptr<aura::Window, ExperimentalAsh> host_window_ = nullptr;
+  raw_ptr<aura::Window> host_window_ = nullptr;
   base::ScopedObservation<aura::Window, aura::WindowObserver>
       host_window_observer_{this};
 
-  raw_ptr<aura::Window, ExperimentalAsh> overlay_window_ = nullptr;
+  raw_ptr<aura::Window> overlay_window_ = nullptr;
   base::ScopedObservation<aura::Window, aura::WindowObserver>
       overlay_window_observer_{this};
 
-  raw_ptr<views::NativeViewHost, ExperimentalAsh> overlay_container_ = nullptr;
+  raw_ptr<views::NativeViewHost> overlay_container_ = nullptr;
   base::ScopedObservation<views::View, views::ViewObserver>
       overlay_container_observer_{this};
 

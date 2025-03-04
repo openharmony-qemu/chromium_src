@@ -14,11 +14,12 @@
 #include "android_webview/browser/find_helper.h"
 #include "android_webview/browser/permission/media_access_permission_request.h"
 #include "android_webview/browser/permission/permission_request_handler.h"
-#include "android_webview/browser_jni_headers/AwWebContentsDelegate_jni.h"
 #include "android_webview/common/aw_features.h"
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
+#include "base/check.h"
+#include "base/feature_list.h"
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
@@ -39,6 +40,9 @@
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "android_webview/browser_jni_headers/AwWebContentsDelegate_jni.h"
+
 using base::android::AttachCurrentThread;
 using base::android::ConvertUTF16ToJavaString;
 using base::android::ConvertUTF8ToJavaString;
@@ -51,7 +55,9 @@ using content::WebContents;
 
 namespace android_webview {
 
-AwWebContentsDelegate::AwWebContentsDelegate(JNIEnv* env, jobject obj)
+AwWebContentsDelegate::AwWebContentsDelegate(
+    JNIEnv* env,
+    const jni_zero::JavaRef<jobject>& obj)
     : WebContentsDelegateAndroid(env, obj), is_fullscreen_(false) {}
 
 AwWebContentsDelegate::~AwWebContentsDelegate() = default;
@@ -60,11 +66,10 @@ void AwWebContentsDelegate::RendererUnresponsive(
     content::WebContents* source,
     content::RenderWidgetHost* render_widget_host,
     base::RepeatingClosure hang_monitor_restarter
-#if defined(OHOS_RENDERER_ANR_DUMP)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
     ,
-    content::RenderProcessNotRespondingReason reason
+    content::RendererIsUnresponsiveReason reason
 #endif
-
 ) {
   AwContents* aw_contents = AwContents::FromWebContents(source);
   if (!aw_contents)
@@ -124,24 +129,22 @@ void AwWebContentsDelegate::RunFileChooser(
     return;
   }
 
-  int mode_flags = 0;
-  if (params.mode == FileChooserParams::Mode::kUploadFolder ||
-      params.mode == FileChooserParams::Mode::kOpenMultiple) {
-    // Folder implies multiple in Chrome.
-    mode_flags = static_cast<int>(FileChooserParams::Mode::kOpenMultiple);
-  } else if (params.mode == FileChooserParams::Mode::kSave) {
-    // Save not supported, so cancel it.
+  // Only allow Open, OpenMultiple and UploadFolder for pre-FSA code.
+  // TODO(b/364980165): Add check for
+  // base::android::BuildInfo::GetInstance()->target_sdk_version()
+  if (!base::FeatureList::IsEnabled(features::kWebViewFileSystemAccess) &&
+      params.mode != FileChooserParams::Mode::kOpen &&
+      params.mode != FileChooserParams::Mode::kOpenMultiple &&
+      params.mode != FileChooserParams::Mode::kUploadFolder) {
     listener->FileSelectionCanceled();
     return;
-  } else {
-    DCHECK_EQ(FileChooserParams::Mode::kOpen, params.mode);
   }
   DCHECK(!file_select_listener_)
       << "Multiple concurrent FileChooser requests are not supported.";
   file_select_listener_ = std::move(listener);
   Java_AwWebContentsDelegate_runFileChooser(
       env, java_delegate, render_frame_host->GetProcess()->GetID(),
-      render_frame_host->GetRoutingID(), mode_flags,
+      render_frame_host->GetRoutingID(), params.mode,
       ConvertUTF16ToJavaString(env,
                                base::JoinString(params.accept_types, u",")),
       params.title.empty() ? nullptr
@@ -152,7 +155,11 @@ void AwWebContentsDelegate::RunFileChooser(
       params.use_media_capture);
 }
 
-void AwWebContentsDelegate::AddNewContents(
+bool AwWebContentsDelegate::UseFileChooserForFileSystemAccess() const {
+  return true;
+}
+
+WebContents* AwWebContentsDelegate::AddNewContents(
     WebContents* source,
     std::unique_ptr<WebContents> new_contents,
     const GURL& target_url,
@@ -198,6 +205,7 @@ void AwWebContentsDelegate::AddNewContents(
   if (was_blocked) {
     *was_blocked = !create_popup;
   }
+  return nullptr;
 }
 
 void AwWebContentsDelegate::NavigationStateChanged(
@@ -273,23 +281,29 @@ void AwWebContentsDelegate::RequestMediaAccessPermission(
         nullptr);
     return;
   }
+  AwSettings* aw_settings = AwSettings::FromWebContents(web_contents);
+  bool allow_file_access_from_file_urls =
+      aw_settings->GetAllowFileAccessFromFileURLs();
   aw_contents->GetPermissionRequestHandler()->SendRequest(
       std::make_unique<MediaAccessPermissionRequest>(
           request, std::move(callback),
           *AwBrowserContext::FromWebContents(web_contents)
-               ->GetPermissionControllerDelegate()));
+               ->GetPermissionControllerDelegate(),
+          allow_file_access_from_file_urls));
 }
 
 bool AwWebContentsDelegate::CheckMediaAccessPermission(
     content::RenderFrameHost* render_frame_host,
-    const GURL& security_origin,
+    const url::Origin& security_origin,
     blink::mojom::MediaStreamType type) {
-  if (!base::FeatureList::IsEnabled(features::kWebViewEnumerateDevicesCache)) {
-    return false;
-  }
   WebContents* web_contents =
       WebContents::FromRenderFrameHost(render_frame_host);
   if (!web_contents) {
+    return false;
+  }
+  AwSettings* aw_settings = AwSettings::FromWebContents(web_contents);
+  if (!aw_settings->GetAllowFileAccessFromFileURLs() &&
+      security_origin.scheme() == url::kFileScheme) {
     return false;
   }
   AwPermissionManager* pm = AwBrowserContext::FromWebContents(web_contents)
@@ -333,6 +347,47 @@ void AwWebContentsDelegate::UpdateUserGestureCarryoverInfo(
       navigation_interception::InterceptNavigationDelegate::Get(web_contents);
   if (intercept_navigation_delegate)
     intercept_navigation_delegate->OnResourceRequestWithGesture();
+}
+
+bool AwWebContentsDelegate::IsBackForwardCacheSupported(
+    content::WebContents& web_contents) {
+  AwSettings* aw_settings = AwSettings::FromWebContents(&web_contents);
+  return base::FeatureList::IsEnabled(features::kWebViewBackForwardCache) ||
+         aw_settings->IsBackForwardCacheEnabled();
+}
+
+content::PreloadingEligibility AwWebContentsDelegate::IsPrerender2Supported(
+    content::WebContents& web_contents) {
+  AwSettings* aw_settings = AwSettings::FromWebContents(&web_contents);
+  if (aw_settings->IsPrerender2Allowed()) {
+    return content::PreloadingEligibility::kEligible;
+  }
+
+  return content::PreloadingEligibility::kPreloadingUnsupportedByWebContents;
+}
+
+content::NavigationController::UserAgentOverrideOption
+AwWebContentsDelegate::ShouldOverrideUserAgentForPrerender2() {
+  // For WebView, always use the user agent override, which is set every time
+  // the user agent in AwSettings is modified.
+  return content::NavigationController::UA_OVERRIDE_TRUE;
+}
+
+bool AwWebContentsDelegate::ShouldAllowPartialParamMismatchOfPrerender2(
+    content::NavigationHandle& navigation_handle) {
+  // We relax initiator checks on WebView first, but continue to discuss.
+  //
+  // TODO(https://crbug.com/340416082): Relax initiator check for all platforms.
+
+  // `ui::PAGE_TRANSITION_FROM_API` bit distinguishes that the activation
+  // navigation is triggered by `WebView.loadUrl()`.
+  bool ret =
+      navigation_handle.GetPageTransition() & ui::PAGE_TRANSITION_FROM_API;
+  if (ret) {
+    CHECK(!navigation_handle.GetInitiatorFrameToken().has_value());
+    CHECK(!navigation_handle.GetInitiatorOrigin().has_value());
+  }
+  return ret;
 }
 
 scoped_refptr<content::FileSelectListener>

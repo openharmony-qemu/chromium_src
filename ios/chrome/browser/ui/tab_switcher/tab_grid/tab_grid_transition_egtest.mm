@@ -7,7 +7,11 @@
 
 #import "base/functional/bind.h"
 #import "base/strings/sys_string_conversions.h"
-#import "ios/chrome/browser/metrics/metrics_app_interface.h"
+#import "ios/chrome/browser/metrics/model/metrics_app_interface.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_constants.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_constants.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_grid_constants.h"
 #import "ios/chrome/browser/ui/tab_switcher/test/query_title_server_util.h"
 #import "ios/chrome/grit/ios_strings.h"
@@ -15,15 +19,14 @@
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
+#import "ios/testing/earl_grey/app_launch_configuration.h"
+#import "ios/testing/earl_grey/app_launch_manager.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
+#import "ios/testing/earl_grey/matchers.h"
 #import "net/test/embedded_test_server/http_request.h"
 #import "net/test/embedded_test_server/http_response.h"
 #import "net/test/embedded_test_server/request_handler_util.h"
 #import "ui/base/device_form_factor.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::CloseTabMenuButton;
 using chrome_test_util::TabGridDoneButton;
@@ -32,6 +35,10 @@ using chrome_test_util::TabGridNewIncognitoTabButton;
 using chrome_test_util::TabGridNewTabButton;
 using chrome_test_util::TabGridOpenTabsPanelButton;
 using chrome_test_util::TabGridOtherDevicesPanelButton;
+using chrome_test_util::TabGridSearchCancelButton;
+using chrome_test_util::TabGridSearchModeToolbar;
+using chrome_test_util::TabGridSearchTabsButton;
+using chrome_test_util::TabGridThirdPanelButton;
 
 namespace {
 
@@ -50,7 +57,8 @@ void SelectTab(NSString* title) {
                                               @"GridCell")),
                                           grey_accessibilityTrait(
                                               UIAccessibilityTraitStaticText),
-                                          nil)] performAction:grey_tap()];
+                                          grey_hidden(NO), nil)]
+      performAction:grey_tap()];
 }
 
 // Expects that the total number of samples in histogram `histogram` grew by
@@ -94,13 +102,13 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
 
 // Rotate the device back to portrait if needed, since some tests attempt to run
 // in landscape.
-- (void)tearDown {
+- (void)tearDownHelper {
   [EarlGrey rotateDeviceToOrientation:UIDeviceOrientationPortrait error:nil];
 
   // Release the histogram tester.
   GREYAssertNil([MetricsAppInterface releaseHistogramTester],
                 @"Cannot reset histogram tester.");
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 // Sets up the EmbeddedTestServer as needed for tests.
@@ -177,6 +185,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
   ShowTabViewController();
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -201,6 +210,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
   [[EarlGrey selectElementWithMatcher:matcher] performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -230,6 +240,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
   [[EarlGrey selectElementWithMatcher:matcher] performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(
@@ -275,6 +286,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -328,6 +340,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       waitForWebStateContainingText:base::SysNSStringToUTF8(tab3_title)];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 3);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -379,6 +392,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       waitForWebStateContainingText:base::SysNSStringToUTF8(tab3_title)];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
   ExpectIdleHistogramBucketCount(
       kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1, YES);
@@ -423,6 +437,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       waitForWebStateContainingText:base::SysNSStringToUTF8(incognito_title)];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -432,8 +447,8 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
 }
 
 // Tests exiting the tab switcher after switch back and forth between the normal
-// page and the recent tabs page.
-- (void)testLeaveSwitcherAfterVisitingRecentTabs {
+// page and the third page.
+- (void)testLeaveSwitcherAfterVisitingThirdPanel {
   [self setUpTestServer];
 
   NSString* tab1_title = @"NormalTab1";
@@ -443,34 +458,52 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
 
   [ChromeEarlGrey showTabSwitcher];
 
-  // Switch to the recent tabs panel.
-  [[EarlGrey selectElementWithMatcher:TabGridOtherDevicesPanelButton()]
+  // Switch to the third panel.
+  [[EarlGrey selectElementWithMatcher:TabGridThirdPanelButton()]
       performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
 
   // Switch back to the regular tabs panel and open the selected tab.
   [[EarlGrey selectElementWithMatcher:TabGridOpenTabsPanelButton()]
       performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
-  ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 1);
-  ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRecentTabsHistogram, 1,
-                                 YES);
+  if ([ChromeEarlGrey isTabGroupSyncEnabled]) {
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 1);
+    ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleTabGroupsHistogram, 1,
+                                   YES);
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  } else {
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 1);
+    ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRecentTabsHistogram, 1,
+                                   YES);
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
+  }
 
   SelectTab(tab1_title);
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
-  ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 1);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
                                  1, YES);
-  ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRecentTabsHistogram, 1,
-                                 YES);
+  if ([ChromeEarlGrey isTabGroupSyncEnabled]) {
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 1);
+    ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleTabGroupsHistogram, 1,
+                                   YES);
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  } else {
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 1);
+    ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRecentTabsHistogram, 1,
+                                   YES);
+    ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
+  }
 }
 
 // Tests deleting a tab and exiting the tab switcher after switch back and forth
@@ -506,6 +539,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
   SelectTab(tab2_title);
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -544,7 +578,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
 
   [ChromeEarlGrey showTabSwitcher];
 
-  // Close a tab an open the current selected tab.
+  // Close tab #3 and open the current selected tab.
   [[EarlGrey selectElementWithMatcher:chrome_test_util::
                                           TabGridCloseButtonForCellAtIndex(1)]
       performAction:grey_tap()];
@@ -553,6 +587,7 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       waitForWebStateContainingText:base::SysNSStringToUTF8(tab1_title)];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 2);
   ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
@@ -586,10 +621,104 @@ void ExpectIdleHistogramBucketCount(const char* histogram,
       performAction:grey_tap()];
 
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
   ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1);
   ExpectIdleHistogramBucketCount(
       kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 1, NO);
+}
+
+// Tests leaving tab grid after entering and exit the tab grid search mode.
+- (void)testLeaveSwitcherAfterEnteringAndExittingSearch {
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+
+  [ChromeEarlGrey showTabSwitcher];
+  // Enter search mode and verify active.
+  [[EarlGrey selectElementWithMatcher:TabGridSearchTabsButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:TabGridSearchModeToolbar()]
+      assertWithMatcher:grey_notNil()];
+  // Exit search mode.
+  [[EarlGrey selectElementWithMatcher:TabGridSearchCancelButton()]
+      performAction:grey_tap()];
+  // Leave switcher by tap "Done" button.
+  ShowTabViewController();
+
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
+  ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
+                                 1, NO);
+}
+
+// Tests leaving tab grid after long press on a tab.
+- (void)testLeaveSwitcherAfterLongPressOnTab {
+  NSString* title = @"NormalTabLongerStringForTest1";
+  [self setUpTestServer];
+  [ChromeEarlGrey loadURL:[self makeURLForTitle:title]];
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+
+  [ChromeEarlGrey showTabSwitcher];
+  // Long press on the tab and dismiss context menu.
+  [[[EarlGrey
+      selectElementWithMatcher:grey_allOf(grey_accessibilityLabel(title),
+                                          grey_sufficientlyVisible(), nil)]
+      atIndex:0] performAction:grey_longPress()];
+  // Tap somewhere else to dismiss and leave switcher by tap "Done" button.
+  [[EarlGrey selectElementWithMatcher:grey_keyWindow()]
+      performAction:grey_tap()];
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:TabGridDoneButton()];
+  ShowTabViewController();
+
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
+  ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
+                                 1, NO);
+}
+
+// Tests leaving tab grid after entering and exit inactive tabs grid.
+- (void)testLeaveSwitcherAfterEnteringAndExittingInactiveTabs {
+  // Mark the User Education screen as already-seen by default.
+  [ChromeEarlGrey setUserDefaultsObject:@YES
+                                 forKey:kInactiveTabsUserEducationShownOnceKey];
+  NSString* title = @"NormalTabLongerStringForTest1";
+  [self setUpTestServer];
+  [ChromeEarlGrey loadURL:[self makeURLForTitle:title]];
+
+  // Relaunch with inactive tabs enabled.
+  AppLaunchConfiguration config;
+  config.relaunch_policy = ForceRelaunchByCleanShutdown;
+  config.features_enabled.push_back(kInactiveTabsIPadFeature);
+  config.additional_args.push_back("-InactiveTabsTestMode");
+  config.additional_args.push_back("true");
+  [[AppLaunchManager sharedManager] ensureAppLaunchedWithConfiguration:config];
+
+  GREYAssertNil([MetricsAppInterface setupHistogramTester],
+                @"Cannot setup histogram tester.");
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+
+  [ChromeEarlGrey showTabSwitcher];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kInactiveTabsButtonAccessibilityIdentifier)]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:testing::NavigationBarBackButton()]
+      performAction:grey_tap()];
+  ShowTabViewController();
+
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRecentTabsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleTabGroupsHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleIncognitoTabGridPageHistogram, 0);
+  ExpectIdleHistogramCount(kUMATabSwitcherIdleRegularTabGridPageHistogram, 1);
+  ExpectIdleHistogramBucketCount(kUMATabSwitcherIdleRegularTabGridPageHistogram,
+                                 1, NO);
 }
 
 // Tests switching back and forth between the normal and incognito BVCs.

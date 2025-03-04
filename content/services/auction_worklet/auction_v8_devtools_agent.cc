@@ -3,14 +3,16 @@
 // found in the LICENSE file.
 
 #include "content/services/auction_worklet/auction_v8_devtools_agent.h"
-#include "content/services/auction_worklet/auction_v8_devtools_session.h"
 
 #include <stdint.h>
 
 #include "base/memory/ptr_util.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/task/sequenced_task_runner.h"
+#include "content/services/auction_worklet/auction_v8_devtools_session.h"
 #include "content/services/auction_worklet/auction_v8_helper.h"
 #include "content/services/auction_worklet/debug_command_queue.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
@@ -22,11 +24,11 @@ AuctionV8DevToolsAgent::ContextGroupInfo::~ContextGroupInfo() = default;
 
 AuctionV8DevToolsAgent::AuctionV8DevToolsAgent(
     AuctionV8Helper* v8_helper,
-    DebugCommandQueue* debug_command_queue,
+    scoped_refptr<DebugCommandQueue> debug_command_queue,
     scoped_refptr<base::SequencedTaskRunner> io_session_receiver_sequence)
     : v8_helper_(v8_helper),
       io_session_receiver_sequence_(std::move(io_session_receiver_sequence)),
-      debug_command_queue_(debug_command_queue) {}
+      debug_command_queue_(debug_command_queue.get()) {}
 
 AuctionV8DevToolsAgent::~AuctionV8DevToolsAgent() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(v8_sequence_checker_);
@@ -81,10 +83,11 @@ void AuctionV8DevToolsAgent::AttachDevToolsSession(
           // `sessions_` guarantees `session_impl` won't outlast `this`.
           base::Unretained(this));
   auto session_impl = std::make_unique<AuctionV8DevToolsSession>(
-      v8_helper_, debug_command_queue_, context_group_id, session_id,
-      client_expects_binary_responses, session_waits_for_debugger,
-      std::move(host), io_session_receiver_sequence_,
-      std::move(io_session_receiver), std::move(session_destroyed));
+      v8_helper_, scoped_refptr<DebugCommandQueue>(debug_command_queue_),
+      context_group_id, session_id, client_expects_binary_responses,
+      session_waits_for_debugger, std::move(host),
+      io_session_receiver_sequence_, std::move(io_session_receiver),
+      std::move(session_destroyed));
   context_group_info.sessions.insert(session_impl.get());
   sessions_.Add(std::move(session_impl), std::move(session_receiver));
 }
@@ -107,7 +110,7 @@ void AuctionV8DevToolsAgent::runMessageLoopOnPause(int context_group_id) {
   DCHECK(!paused_);
 
   auto it = context_groups_.find(context_group_id);
-  DCHECK(it != context_groups_.end());
+  CHECK(it != context_groups_.end(), base::NotFatalUntil::M130);
   DCHECK(!it->second.sessions.empty());
   AuctionV8DevToolsSession* session = *it->second.sessions.begin();
 
@@ -136,7 +139,7 @@ void AuctionV8DevToolsAgent::SessionDestroyed(
     AuctionV8DevToolsSession* session) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(v8_sequence_checker_);
   auto it = context_groups_.find(session->context_group_id());
-  DCHECK(it != context_groups_.end());
+  CHECK(it != context_groups_.end(), base::NotFatalUntil::M130);
   it->second.sessions.erase(session);
   if (it->second.sessions.empty())
     context_groups_.erase(it);

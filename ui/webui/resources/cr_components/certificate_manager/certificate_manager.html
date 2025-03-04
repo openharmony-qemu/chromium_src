@@ -30,7 +30,7 @@
     </template>
 
     <cr-tabs selected="{{selected}}" tab-names="[[tabNames_]]"></cr-tabs>
-    <iron-pages selected="[[selected]]">
+    <cr-page-selector selected="[[selected]]">
       <div>
         <certificate-list id="personalCerts"
             certificates="[[personalCerts]]"
@@ -41,6 +41,18 @@
         <certificate-provisioning-list></certificate-provisioning-list>
 </if>
       </div>
+<if expr="is_ohos">
+      <div>
+        <template is="dom-if" if="[[isTabSelected_(selected, 1)]]">
+          <certificate-list id="caCerts"
+              certificates="[[caCerts]]"
+              certificate-type="[[certificateTypeEnum_.CA]]"
+              import-allowed="[[caImportAllowed]]">
+          </certificate-list>
+        </template>
+      </div>
+</if>
+<if expr="not is_ohos">
       <div>
         <template is="dom-if" if="[[isTabSelected_(selected, 1)]]">
           <certificate-list id="serverCerts"
@@ -68,4 +80,5 @@
           </certificate-list>
         </template>
       </div>
-    </iron-pages>
+</if>
+    </cr-page-selector>

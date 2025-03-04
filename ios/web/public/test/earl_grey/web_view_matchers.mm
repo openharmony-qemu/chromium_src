@@ -13,13 +13,9 @@
 #import "ios/testing/earl_grey/earl_grey_app.h"
 #import "ios/web/public/test/web_view_interaction_test_util.h"
 #import "ios/web/public/web_state.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-// TODO(crbug.com/757982): Remove this class, after LoadImage() is removed.
+// TODO(crbug.com/41340619): Remove this class, after LoadImage() is removed.
 // A helper delegate class that allows downloading responses with invalid
 // SSL certs.
 @interface TestURLSessionDelegateDeprecated : NSObject<NSURLSessionDelegate>

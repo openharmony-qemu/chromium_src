@@ -4,15 +4,19 @@
 
 #include "quiche/quic/core/quic_stream.h"
 
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/base/macros.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "quiche/quic/core/crypto/null_encrypter.h"
+#include "quiche/quic/core/frames/quic_connection_close_frame.h"
+#include "quiche/quic/core/frames/quic_reset_stream_at_frame.h"
 #include "quiche/quic/core/frames/quic_rst_stream_frame.h"
 #include "quiche/quic/core/quic_connection.h"
 #include "quiche/quic/core/quic_constants.h"
@@ -78,6 +82,15 @@ class TestStream : public QuicStream {
   using QuicStream::WriteMemSlices;
   using QuicStream::WriteOrBufferData;
 
+  void ConsumeData(size_t num_bytes) {
+    char buffer[1024];
+    ASSERT_GT(ABSL_ARRAYSIZE(buffer), num_bytes);
+    struct iovec iov;
+    iov.iov_base = buffer;
+    iov.iov_len = num_bytes;
+    ASSERT_EQ(num_bytes, QuicStreamPeer::sequencer(this)->Readv(&iov, 1));
+  }
+
  private:
   std::string data_;
 };
@@ -137,7 +150,7 @@ class QuicStreamTest : public QuicTestWithParam<ParsedQuicVersion> {
   QuicConsumedData CloseStreamOnWriteError(
       QuicStreamId id, QuicByteCount /*write_length*/,
       QuicStreamOffset /*offset*/, StreamSendingState /*state*/,
-      TransmissionType /*type*/, absl::optional<EncryptionLevel> /*level*/) {
+      TransmissionType /*type*/, std::optional<EncryptionLevel> /*level*/) {
     session_->ResetStream(id, QUIC_STREAM_CANCELLED);
     return QuicConsumedData(1, false);
   }
@@ -342,6 +355,34 @@ TEST_P(PendingStreamTest, FromPendingStreamThenData) {
             session_->flow_controller()->highest_received_byte_offset());
 }
 
+TEST_P(PendingStreamTest, ResetStreamAt) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+
+  PendingStream pending(kTestPendingStreamId, session_.get());
+
+  QuicResetStreamAtFrame rst(0, kTestPendingStreamId, QUIC_STREAM_CANCELLED,
+                             100, 3);
+  pending.OnResetStreamAtFrame(rst);
+  QuicStreamFrame frame(kTestPendingStreamId, false, 2, ".");
+  pending.OnStreamFrame(frame);
+
+  auto stream = new TestStream(&pending, session_.get(), false);
+  session_->ActivateStream(absl::WrapUnique(stream));
+
+  EXPECT_FALSE(stream->rst_received());
+  EXPECT_FALSE(stream->read_side_closed());
+  EXPECT_CALL(*stream, OnDataAvailable()).WillOnce([&]() {
+    stream->ConsumeData(3);
+  });
+  QuicStreamFrame frame2(kTestPendingStreamId, false, 0, "..");
+  stream->OnStreamFrame(frame2);
+  EXPECT_TRUE(stream->read_side_closed());
+  EXPECT_TRUE(stream->rst_received());
+}
+
 TEST_P(QuicStreamTest, WriteAllData) {
   Initialize();
 
@@ -378,7 +419,7 @@ TEST_P(QuicStreamTest, BlockIfOnlySomeDataConsumed) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 1u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 2), false, nullptr);
   EXPECT_TRUE(session_->HasUnackedStreamData());
@@ -396,7 +437,7 @@ TEST_P(QuicStreamTest, BlockIfFinNotConsumedWithData) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 2u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 2), true, nullptr);
   EXPECT_TRUE(session_->HasUnackedStreamData());
@@ -442,7 +483,7 @@ TEST_P(QuicStreamTest, WriteOrBufferData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), kDataLen - 1, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(kData1, false, nullptr);
 
@@ -458,7 +499,7 @@ TEST_P(QuicStreamTest, WriteOrBufferData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), kDataLen - 1, kDataLen - 1,
-                                     NO_FIN, NOT_RETRANSMISSION, absl::nullopt);
+                                     NO_FIN, NOT_RETRANSMISSION, std::nullopt);
       }));
   EXPECT_CALL(*stream_, OnCanWriteNewData());
   stream_->OnCanWrite();
@@ -468,7 +509,7 @@ TEST_P(QuicStreamTest, WriteOrBufferData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 2u, 2 * kDataLen - 2,
-                                     NO_FIN, NOT_RETRANSMISSION, absl::nullopt);
+                                     NO_FIN, NOT_RETRANSMISSION, std::nullopt);
       }));
   EXPECT_CALL(*stream_, OnCanWriteNewData());
   stream_->OnCanWrite();
@@ -508,8 +549,9 @@ TEST_P(QuicStreamTest, ConnectionCloseAfterStreamClose) {
   }
   EXPECT_THAT(stream_->stream_error(), IsStreamError(QUIC_STREAM_CANCELLED));
   EXPECT_THAT(stream_->connection_error(), IsQuicNoError());
-  stream_->OnConnectionClosed(QUIC_INTERNAL_ERROR,
-                              ConnectionCloseSource::FROM_SELF);
+  QuicConnectionCloseFrame frame;
+  frame.quic_error_code = QUIC_INTERNAL_ERROR;
+  stream_->OnConnectionClosed(frame, ConnectionCloseSource::FROM_SELF);
   EXPECT_THAT(stream_->stream_error(), IsStreamError(QUIC_STREAM_CANCELLED));
   EXPECT_THAT(stream_->connection_error(), IsQuicNoError());
 }
@@ -527,7 +569,7 @@ TEST_P(QuicStreamTest, RstAlwaysSentIfNoFinSent) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 1u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 1), false, nullptr);
   EXPECT_TRUE(session_->HasUnackedStreamData());
@@ -564,7 +606,7 @@ TEST_P(QuicStreamTest, RstNotSentIfFinSent) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 1u, 0u, FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 1), true, nullptr);
   EXPECT_TRUE(fin_sent());
@@ -827,7 +869,7 @@ TEST_P(QuicStreamTest, SetDrainingIncomingOutgoing) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 2u, 0u, FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 2), true, nullptr);
   EXPECT_TRUE(stream_->write_side_closed());
@@ -844,7 +886,7 @@ TEST_P(QuicStreamTest, SetDrainingOutgoingIncoming) {
   EXPECT_CALL(*session_, WritevData(kTestStreamId, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 2u, 0u, FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(absl::string_view(kData1, 2), true, nullptr);
   EXPECT_TRUE(stream_->write_side_closed());
@@ -1103,8 +1145,9 @@ TEST_P(QuicStreamTest, ConnectionClosed) {
           stream_->id(),
           QuicResetStreamError::FromInternal(QUIC_RST_ACKNOWLEDGEMENT), 9));
   QuicConnectionPeer::SetConnectionClose(connection_);
-  stream_->OnConnectionClosed(QUIC_INTERNAL_ERROR,
-                              ConnectionCloseSource::FROM_SELF);
+  QuicConnectionCloseFrame frame;
+  frame.quic_error_code = QUIC_INTERNAL_ERROR;
+  stream_->OnConnectionClosed(frame, ConnectionCloseSource::FROM_SELF);
   EXPECT_EQ(1u, QuicStreamPeer::SendBuffer(stream_).size());
   // Stream stops waiting for acks as connection is going to close.
   EXPECT_FALSE(stream_->IsWaitingForAcks());
@@ -1130,7 +1173,7 @@ TEST_P(QuicStreamTest, WriteBufferedData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 100u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->WriteOrBufferData(data, false, nullptr);
   stream_->WriteOrBufferData(data, false, nullptr);
@@ -1143,7 +1186,7 @@ TEST_P(QuicStreamTest, WriteBufferedData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 100, 100u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   // Buffered data size > threshold, do not ask upper layer for more data.
   EXPECT_CALL(*stream_, OnCanWriteNewData()).Times(0);
@@ -1157,7 +1200,7 @@ TEST_P(QuicStreamTest, WriteBufferedData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this, data_to_write]() {
         return session_->ConsumeData(stream_->id(), data_to_write, 200u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   // Buffered data size < threshold, ask upper layer for more data.
   EXPECT_CALL(*stream_, OnCanWriteNewData()).Times(1);
@@ -1206,7 +1249,7 @@ TEST_P(QuicStreamTest, WriteBufferedData) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this, data_to_write]() {
         return session_->ConsumeData(stream_->id(), data_to_write, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
 
   EXPECT_CALL(*stream_, OnCanWriteNewData()).Times(1);
@@ -1279,7 +1322,7 @@ TEST_P(QuicStreamTest, WriteMemSlices) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 100u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   // There is no buffered data before, all data should be consumed.
   QuicConsumedData consumed = stream_->WriteMemSlices(span1, false);
@@ -1301,7 +1344,7 @@ TEST_P(QuicStreamTest, WriteMemSlices) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this, data_to_write]() {
         return session_->ConsumeData(stream_->id(), data_to_write, 100u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   EXPECT_CALL(*stream_, OnCanWriteNewData()).Times(1);
   stream_->OnCanWrite();
@@ -1334,7 +1377,7 @@ TEST_P(QuicStreamTest, WriteMemSlicesReachStreamLimit) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 5u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   // There is no buffered data before, all data should be consumed.
   QuicConsumedData consumed = stream_->WriteMemSlice(std::move(slice1), false);
@@ -1474,7 +1517,7 @@ TEST_P(QuicStreamTest, OnStreamFrameLost) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 9u, 18u, FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   stream_->OnCanWrite();
   EXPECT_FALSE(stream_->HasPendingRetransmission());
@@ -1504,7 +1547,7 @@ TEST_P(QuicStreamTest, CannotBundleLostFin) {
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 9u, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _))
       .WillOnce(Return(QuicConsumedData(0, true)));
@@ -1591,7 +1634,7 @@ TEST_P(QuicStreamTest, RetransmitStreamData) {
   EXPECT_CALL(*session_, WritevData(stream_->id(), 10, 0, NO_FIN, _, _))
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_->ConsumeData(stream_->id(), 8, 0u, NO_FIN,
-                                     NOT_RETRANSMISSION, absl::nullopt);
+                                     NOT_RETRANSMISSION, std::nullopt);
       }));
   EXPECT_FALSE(stream_->RetransmitStreamData(0, 18, true, PTO_RETRANSMISSION));
 
@@ -1745,6 +1788,158 @@ TEST_P(QuicStreamTest, SendRstWithCustomIetfCode) {
       .Times(1);
   stream_->ResetWithError(error);
   EXPECT_TRUE(rst_sent());
+}
+
+TEST_P(QuicStreamTest, ResetWhenOffsetReached) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 400, 100);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+
+  // Send data to reach reliable_offset.
+  char data[100];
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(99);
+  });
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), false, 0, absl::string_view(data, 99)));
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_FALSE(stream_->read_side_closed());
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(1);
+  });
+  stream_->OnStreamFrame(QuicStreamFrame(stream_->id(), false, 99,
+                                         absl::string_view(data + 99, 1)));
+  EXPECT_TRUE(stream_->rst_received());
+  EXPECT_TRUE(stream_->read_side_closed());
+}
+
+TEST_P(QuicStreamTest, ResetWhenOffsetReachedOutOfOrder) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 400, 100);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+
+  // Send data to reach reliable_offset.
+  char data[100];
+  stream_->OnStreamFrame(QuicStreamFrame(stream_->id(), false, 99,
+                                         absl::string_view(data + 99, 1)));
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_FALSE(stream_->read_side_closed());
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(100);
+  });
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), false, 0, absl::string_view(data, 99)));
+  EXPECT_TRUE(stream_->rst_received());
+  EXPECT_TRUE(stream_->read_side_closed());
+}
+
+TEST_P(QuicStreamTest, HigherReliableSizeIgnored) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 400, 100);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+  QuicResetStreamAtFrame rst2(0, stream_->id(), QUIC_STREAM_CANCELLED, 400,
+                              200);
+  stream_->OnResetStreamAtFrame(rst2);  // Ignored.
+
+  // Send data to reach reliable_offset.
+  char data[100];
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(99);
+  });
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), false, 0, absl::string_view(data, 99)));
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_FALSE(stream_->read_side_closed());
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(1);
+  });
+  stream_->OnStreamFrame(QuicStreamFrame(stream_->id(), false, 99,
+                                         absl::string_view(data + 99, 1)));
+  EXPECT_TRUE(stream_->rst_received());
+  EXPECT_TRUE(stream_->read_side_closed());
+}
+
+TEST_P(QuicStreamTest, InstantReset) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  char data[100];
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(100);
+  });
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), false, 0, absl::string_view(data, 100)));
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 400, 100);
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_FALSE(stream_->read_side_closed());
+  stream_->OnResetStreamAtFrame(rst);
+  EXPECT_TRUE(stream_->rst_received());
+  EXPECT_TRUE(stream_->read_side_closed());
+}
+
+TEST_P(QuicStreamTest, ResetIgnoredDueToFin) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  char data[100];
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(98);
+  });
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), false, 0, absl::string_view(data, 98)));
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 100, 99);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+  // There is no call to OnFinRead() because the stream is responsible for
+  // doing that.
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_FALSE(stream_->read_side_closed());
+  EXPECT_CALL(*stream_, OnDataAvailable()).WillOnce([this]() {
+    stream_->ConsumeData(2);
+    stream_->OnFinRead();
+  });
+  stream_->OnStreamFrame(QuicStreamFrame(stream_->id(), true, 98,
+                                         absl::string_view(data + 98, 2)));
+  EXPECT_FALSE(stream_->rst_received());
+  EXPECT_TRUE(stream_->read_side_closed());
+}
+
+TEST_P(QuicStreamTest, ReliableOffsetBeyondFin) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  char data[100];
+  stream_->OnStreamFrame(QuicStreamFrame(stream_->id(), true, 98,
+                                         absl::string_view(data + 98, 2)));
+  EXPECT_CALL(*connection_, CloseConnection(QUIC_STREAM_MULTIPLE_OFFSET, _, _))
+      .Times(1);
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 101, 101);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+}
+
+TEST_P(QuicStreamTest, FinBeforeReliableOffset) {
+  Initialize();
+  if (!VersionHasIetfQuicFrames(session_->transport_version())) {
+    return;
+  }
+  QuicResetStreamAtFrame rst(0, stream_->id(), QUIC_STREAM_CANCELLED, 101, 101);
+  stream_->OnResetStreamAtFrame(rst);  // Nothing happens.
+  char data[100];
+  EXPECT_CALL(*connection_, CloseConnection(QUIC_STREAM_MULTIPLE_OFFSET, _, _))
+      .Times(1);
+  stream_->OnStreamFrame(
+      QuicStreamFrame(stream_->id(), true, 0, absl::string_view(data, 100)));
 }
 
 }  // namespace

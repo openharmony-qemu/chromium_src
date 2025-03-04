@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "components/performance_manager/public/execution_context/execution_context_registry.h"
+#include "components/performance_manager/public/graph/graph.h"
 #include "url/gurl.h"
 
 namespace performance_manager {
@@ -26,15 +27,20 @@ const execution_context::ExecutionContext* GetExecutionContext(
 // static
 const char AdFrameVoter::kAdFrameReason[] = "Ad frame.";
 
-AdFrameVoter::AdFrameVoter() = default;
+AdFrameVoter::AdFrameVoter(VotingChannel voting_channel)
+    : voting_channel_(std::move(voting_channel)) {}
 
 AdFrameVoter::~AdFrameVoter() = default;
 
-void AdFrameVoter::SetVotingChannel(VotingChannel voting_channel) {
-  voting_channel_ = std::move(voting_channel);
+void AdFrameVoter::InitializeOnGraph(Graph* graph) {
+  graph->AddInitializingFrameNodeObserver(this);
 }
 
-void AdFrameVoter::OnFrameNodeAdded(const FrameNode* frame_node) {
+void AdFrameVoter::TearDownOnGraph(Graph* graph) {
+  graph->RemoveInitializingFrameNodeObserver(this);
+}
+
+void AdFrameVoter::OnFrameNodeInitializing(const FrameNode* frame_node) {
   if (!frame_node->IsAdFrame())
     return;
 
@@ -42,7 +48,7 @@ void AdFrameVoter::OnFrameNodeAdded(const FrameNode* frame_node) {
   voting_channel_.SubmitVote(GetExecutionContext(frame_node), vote);
 }
 
-void AdFrameVoter::OnBeforeFrameNodeRemoved(const FrameNode* frame_node) {
+void AdFrameVoter::OnFrameNodeTearingDown(const FrameNode* frame_node) {
   if (!frame_node->IsAdFrame())
     return;
 

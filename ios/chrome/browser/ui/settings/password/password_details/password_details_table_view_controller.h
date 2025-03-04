@@ -7,6 +7,7 @@
 
 #import "ios/chrome/browser/ui/settings/autofill/autofill_edit_table_view_controller.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_consumer.h"
+#import "ios/chrome/browser/ui/settings/settings_controller_protocol.h"
 
 @protocol ApplicationCommands;
 @protocol PasswordDetailsHandler;
@@ -16,17 +17,19 @@
 
 // Screen which shows password details and allows to edit it.
 @interface PasswordDetailsTableViewController
-    : AutofillEditTableViewController <PasswordDetailsConsumer>
+    : AutofillEditTableViewController <PasswordDetailsConsumer,
+                                       SettingsControllerProtocol,
+                                       UIEditMenuInteractionDelegate>
 
 // The designated initializer.
 - (instancetype)init;
 
 - (instancetype)initWithStyle:(UITableViewStyle)style NS_UNAVAILABLE;
 
-// Handler for PasswordDetails related actions.
+// Handler for CredentialDetails related actions.
 @property(nonatomic, weak) id<PasswordDetailsHandler> handler;
 
-// Delegate for PasswordDetails related actions e.g. Password editing.
+// Delegate for CredentialDetails related actions e.g. Password editing.
 @property(nonatomic, weak) id<PasswordDetailsTableViewControllerDelegate>
     delegate;
 
@@ -46,8 +49,12 @@
 // Shows the password details in edit mode without requiring any authentication.
 - (void)showEditViewWithoutAuthentication;
 
-// Setup the cancel button on the navigation's left bar button.
-- (void)setupLeftCancelButton;
+// Brings back share button replaced with a spinner for the time when the
+// necessary sharing info was being fetched.
+- (void)showShareButton;
+
+// Displays spinner next to the Edit/Done button.
+- (void)showSpinnerOnRightNavigationBar;
 
 @end
 

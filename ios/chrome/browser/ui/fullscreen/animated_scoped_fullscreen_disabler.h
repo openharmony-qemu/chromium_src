@@ -5,14 +5,11 @@
 #ifndef IOS_CHROME_BROWSER_UI_FULLSCREEN_ANIMATED_SCOPED_FULLSCREEN_DISABLER_H_
 #define IOS_CHROME_BROWSER_UI_FULLSCREEN_ANIMATED_SCOPED_FULLSCREEN_DISABLER_H_
 
+#import "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
-#include "base/observer_list.h"
-#include "ios/chrome/browser/ui/fullscreen/fullscreen_controller.h"
 #include "ios/chrome/browser/ui/fullscreen/fullscreen_controller_observer.h"
 
 class FullscreenController;
-class AnimatedScopedFullscreenDisablerObserver;
-@class AnimatedScopedFullscreenDisablerObserverListContainer;
 
 // A helper object that increments FullscrenController's disabled counter for
 // its entire lifetime after calling StartAnimation().  Any UI updates resulting
@@ -21,10 +18,6 @@ class AnimatedScopedFullscreenDisabler : public FullscreenControllerObserver {
  public:
   explicit AnimatedScopedFullscreenDisabler(FullscreenController* controller);
   ~AnimatedScopedFullscreenDisabler() override;
-
-  // Adds and removes AnimatedScopedFullscreenDisablerObservers.
-  void AddObserver(AnimatedScopedFullscreenDisablerObserver* observer);
-  void RemoveObserver(AnimatedScopedFullscreenDisablerObserver* observer);
 
   // Starts the disabling the FullscreenController, animating any resulting UI
   // changes.  The FullscreenController will then remain disabled until this
@@ -36,40 +29,16 @@ class AnimatedScopedFullscreenDisabler : public FullscreenControllerObserver {
       FullscreenController* controller) override;
 
  private:
-  // Helper methods used to implement the animations.
+  // Helper method used to implement the animations.
   void OnAnimationStart();
-  void OnAnimationCompletion();
 
   // The FullscreenController being disabled by this object.
-  FullscreenController* controller_ = nullptr;
-  // A container object for the list of observers.
-  __strong AnimatedScopedFullscreenDisablerObserverListContainer*
-      observer_list_container_ = nil;
+  raw_ptr<FullscreenController> controller_ = nullptr;
+
   // Whether this disabler is contributing to `controller_`'s disabled counter.
   bool disabling_ = false;
   // Used to implement animation blocks safely.
   base::WeakPtrFactory<AnimatedScopedFullscreenDisabler> weak_factory_{this};
-};
-
-// Obsever class for listening to animated fullscreen disabling events.
-class AnimatedScopedFullscreenDisablerObserver {
- public:
-  explicit AnimatedScopedFullscreenDisablerObserver() = default;
-  virtual ~AnimatedScopedFullscreenDisablerObserver() = default;
-
-  // Called when the fullscreen disabling animation begins and ends.  If
-  // AnimatedScopedFullscreenDisabler::StartAnimation() is called and for a
-  // FullscreenController that is already disabled, these callbacks will not be
-  // sent.  If the disabler is destroyed before the animation can finish,
-  // FullscreenDisablingAnimationDidFinish() will not be received.
-  virtual void FullscreenDisablingAnimationDidStart(
-      AnimatedScopedFullscreenDisabler* disabler) {}
-  virtual void FullscreenDisablingAnimationDidFinish(
-      AnimatedScopedFullscreenDisabler* disabler) {}
-
-  // Called before the disabler is destructed.
-  virtual void AnimatedFullscreenDisablerDestroyed(
-      AnimatedScopedFullscreenDisabler* disabler) {}
 };
 
 #endif  // IOS_CHROME_BROWSER_UI_FULLSCREEN_ANIMATED_SCOPED_FULLSCREEN_DISABLER_H_

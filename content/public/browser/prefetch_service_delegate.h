@@ -63,9 +63,16 @@ class CONTENT_EXPORT PrefetchServiceDelegate {
   // Get the state of the user's preloading settings.
   virtual PreloadingEligibility IsSomePreloadingEnabled() = 0;
   virtual bool IsExtendedPreloadingEnabled() = 0;
+  virtual bool IsPreloadingPrefEnabled() = 0;
+  virtual bool IsDataSaverEnabled() = 0;
+  virtual bool IsBatterySaverEnabled() = 0;
 
   // Checks if the referring page is in the allow list to make prefetches.
   virtual bool IsDomainInPrefetchAllowList(const GURL& referring_url) = 0;
+
+  // Determines whether a referring URL is reasonably trusted to proceed without
+  // delay when processing cross-site prefetches.
+  virtual bool IsContaminationExempt(const GURL& referring_url) = 0;
 
   virtual void OnPrefetchLikely(WebContents* web_contents) = 0;
 };

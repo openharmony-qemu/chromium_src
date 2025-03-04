@@ -7,10 +7,15 @@
 
 #include "ash/public/cpp/ash_public_export.h"
 #include "base/observer_list_types.h"
+#include "chromeos/ash/services/nearby/public/mojom/nearby_share_settings.mojom.h"
 
 namespace base {
 class TimeTicks;
 }  // namespace base
+
+namespace gfx {
+struct VectorIcon;
+}  // namespace gfx
 
 namespace ash {
 
@@ -49,6 +54,23 @@ class ASH_PUBLIC_EXPORT NearbyShareDelegate {
   // Open the settings page for Nearby Share, Used when the user clicks on the
   // label under the pod button.
   virtual void ShowNearbyShareSettings() const = 0;
+
+  // Returns the icon for Nearby Share. Used by the pod button to
+  // display the icon, where `on_icon`=false will return the alternative icon
+  // for when the feature is off. Caller should check if the icon is_empty
+  // before using.
+  virtual const gfx::VectorIcon& GetIcon(bool on_icon) const = 0;
+
+  // Returns the feature name which will be used in feature name placeholder
+  // strings, or the empty string if on a non-chrome branded build or the
+  // feature flag is disabled.
+  virtual std::u16string GetPlaceholderFeatureName() const = 0;
+
+  // Returns the device's current Visibility.
+  virtual ::nearby_share::mojom::Visibility GetVisibility() const = 0;
+
+  // Sets the device's Visibility.
+  virtual void SetVisibility(::nearby_share::mojom::Visibility visibility) = 0;
 };
 
 }  // namespace ash

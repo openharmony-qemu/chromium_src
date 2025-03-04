@@ -13,6 +13,40 @@
 
 namespace mojo {
 
+network::mojom::CookieSourceType
+EnumTraits<network::mojom::CookieSourceType, net::CookieSourceType>::ToMojom(
+    net::CookieSourceType input) {
+  switch (input) {
+    case net::CookieSourceType::kUnknown:
+      return network::mojom::CookieSourceType::kUnknown;
+    case net::CookieSourceType::kHTTP:
+      return network::mojom::CookieSourceType::kHTTP;
+    case net::CookieSourceType::kScript:
+      return network::mojom::CookieSourceType::kScript;
+    case net::CookieSourceType::kOther:
+      return network::mojom::CookieSourceType::kOther;
+  }
+}
+
+bool EnumTraits<network::mojom::CookieSourceType, net::CookieSourceType>::
+    FromMojom(network::mojom::CookieSourceType input,
+              net::CookieSourceType* output) {
+  switch (input) {
+    case network::mojom::CookieSourceType::kUnknown:
+      *output = net::CookieSourceType::kUnknown;
+      return true;
+    case network::mojom::CookieSourceType::kHTTP:
+      *output = net::CookieSourceType::kHTTP;
+      return true;
+    case network::mojom::CookieSourceType::kScript:
+      *output = net::CookieSourceType::kScript;
+      return true;
+    case network::mojom::CookieSourceType::kOther:
+      *output = net::CookieSourceType::kOther;
+      return true;
+  }
+}
+
 network::mojom::CookiePriority
 EnumTraits<network::mojom::CookiePriority, net::CookiePriority>::ToMojom(
     net::CookiePriority input) {
@@ -25,7 +59,6 @@ EnumTraits<network::mojom::CookiePriority, net::CookiePriority>::ToMojom(
       return network::mojom::CookiePriority::HIGH;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookiePriority>(input);
 }
 
 bool EnumTraits<network::mojom::CookiePriority, net::CookiePriority>::FromMojom(
@@ -61,7 +94,6 @@ EnumTraits<network::mojom::CookieSameSite, net::CookieSameSite>::ToMojom(
       break;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookieSameSite>(input);
 }
 
 bool EnumTraits<network::mojom::CookieSameSite, net::CookieSameSite>::FromMojom(
@@ -104,7 +136,6 @@ network::mojom::CookieEffectiveSameSite EnumTraits<
       break;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookieEffectiveSameSite>(input);
 }
 
 bool EnumTraits<network::mojom::CookieEffectiveSameSite,
@@ -145,7 +176,6 @@ EnumTraits<network::mojom::CookieSourceScheme,
       return network::mojom::CookieSourceScheme::kSecure;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookieSourceScheme>(input);
 }
 
 bool EnumTraits<network::mojom::CookieSourceScheme, net::CookieSourceScheme>::
@@ -179,7 +209,6 @@ network::mojom::CookieAccessSemantics EnumTraits<
       break;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookieAccessSemantics>(input);
 }
 
 bool EnumTraits<network::mojom::CookieAccessSemantics,
@@ -219,7 +248,6 @@ EnumTraits<network::mojom::ContextType,
       return network::mojom::ContextType::CROSS_SITE;
     default:
       NOTREACHED();
-      return network::mojom::ContextType::CROSS_SITE;
   }
 }
 
@@ -485,7 +513,6 @@ EnumTraits<network::mojom::CookieChangeCause, net::CookieChangeCause>::ToMojom(
       break;
   }
   NOTREACHED();
-  return static_cast<network::mojom::CookieChangeCause>(input);
 }
 
 bool EnumTraits<network::mojom::CookieChangeCause, net::CookieChangeCause>::
@@ -586,24 +613,37 @@ bool StructTraits<network::mojom::CookieOptionsDataView, net::CookieOptions>::
   else
     cookie_options->unset_return_excluded_cookies();
 
-  net::SamePartyContext same_party_context;
-  if (!mojo_options.ReadSamePartyContext(&same_party_context))
-    return false;
-  cookie_options->set_same_party_context(same_party_context);
-
-  cookie_options->set_full_party_context_size(
-      mojo_options.full_party_context_size());
-
-  cookie_options->set_is_in_nontrivial_first_party_set(
-      mojo_options.is_in_nontrivial_first_party_set());
-
   return true;
+}
+
+bool EnumTraits<network::mojom::AncestorChainBit,
+                net::CookiePartitionKey::AncestorChainBit>::
+    FromMojom(network::mojom::AncestorChainBit input) {
+  switch (input) {
+    case network::mojom::AncestorChainBit::kSameSite:
+      return false;
+    case network::mojom::AncestorChainBit::kCrossSite:
+      return true;
+  }
+  NOTREACHED();
+}
+
+network::mojom::AncestorChainBit EnumTraits<
+    network::mojom::AncestorChainBit,
+    net::CookiePartitionKey::AncestorChainBit>::ToMojom(bool cross_site) {
+  return cross_site ? network::mojom::AncestorChainBit::kCrossSite
+                    : network::mojom::AncestorChainBit::kSameSite;
 }
 
 bool StructTraits<network::mojom::CookiePartitionKeyDataView,
                   net::CookiePartitionKey>::
     Read(network::mojom::CookiePartitionKeyDataView partition_key,
          net::CookiePartitionKey* out) {
+  bool has_cross_site_ancestor =
+      EnumTraits<network::mojom::AncestorChainBit,
+                 net::CookiePartitionKey::AncestorChainBit>::
+          FromMojom(partition_key.ancestor_chain_bit());
+
   if (partition_key.from_script()) {
     *out = net::CookiePartitionKey::FromScript().value();
     return true;
@@ -612,10 +652,14 @@ bool StructTraits<network::mojom::CookiePartitionKeyDataView,
   if (!partition_key.ReadSite(&site))
     return false;
 
-  absl::optional<base::UnguessableToken> nonce;
+  std::optional<base::UnguessableToken> nonce;
   if (!partition_key.ReadNonce(&nonce))
     return false;
-  *out = net::CookiePartitionKey::FromWire(site, nonce);
+
+  *out = net::CookiePartitionKey::FromWire(
+      site,
+      net::CookiePartitionKey::BoolToAncestorChainBit(has_cross_site_ancestor),
+      nonce);
   return true;
 }
 
@@ -691,7 +735,7 @@ bool StructTraits<
   if (!cookie.ReadPriority(&priority))
     return false;
 
-  absl::optional<net::CookiePartitionKey> partition_key;
+  std::optional<net::CookiePartitionKey> partition_key;
   if (!cookie.ReadPartitionKey(&partition_key))
     return false;
 
@@ -699,12 +743,17 @@ bool StructTraits<
   if (!cookie.ReadSourceScheme(&source_scheme))
     return false;
 
+  net::CookieSourceType source_type;
+  if (!cookie.ReadSourceType(&source_type)) {
+    return false;
+  }
+
   auto cc = net::CanonicalCookie::FromStorage(
       std::move(name), std::move(value), std::move(domain), std::move(path),
       std::move(creation_time), std::move(expiry_time),
       std::move(last_access_time), std::move(last_update_time), cookie.secure(),
-      cookie.httponly(), site_restrictions, priority, cookie.same_party(),
-      partition_key, source_scheme, cookie.source_port());
+      cookie.httponly(), site_restrictions, priority, partition_key,
+      source_scheme, cookie.source_port(), source_type);
   if (!cc)
     return false;
   *out = *cc;
@@ -715,7 +764,7 @@ bool StructTraits<network::mojom::CookieAndLineWithAccessResultDataView,
                   net::CookieAndLineWithAccessResult>::
     Read(network::mojom::CookieAndLineWithAccessResultDataView c,
          net::CookieAndLineWithAccessResult* out) {
-  absl::optional<net::CanonicalCookie> cookie;
+  std::optional<net::CanonicalCookie> cookie;
   std::string cookie_string;
   net::CookieAccessResult access_result;
   if (!c.ReadCookie(&cookie))

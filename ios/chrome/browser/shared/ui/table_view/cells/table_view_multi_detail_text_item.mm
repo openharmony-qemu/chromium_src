@@ -9,10 +9,6 @@
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 const CGFloat kDetailTextWidthMultiplier = 0.5;
 const CGFloat kCompressionResistanceAdditionalPriority = 1;
@@ -155,13 +151,19 @@ const CGFloat kCompressionResistanceAdditionalPriority = 1;
 #pragma mark - NSObject(Accessibility)
 
 - (NSString*)accessibilityLabel {
+  NSString* accessibilityText = self.textLabel.text;
+  if (self.leadingDetailTextLabel.text) {
+    accessibilityText =
+        [NSString stringWithFormat:@"%@, %@", accessibilityText,
+                                   self.leadingDetailTextLabel.text];
+  }
+
   if (self.trailingDetailTextLabel.text) {
-    return [NSString stringWithFormat:@"%@, %@, %@", self.textLabel.text,
-                                      self.leadingDetailTextLabel.text,
+    return [NSString stringWithFormat:@"%@, %@", accessibilityText,
                                       self.trailingDetailTextLabel.text];
   }
-  return [NSString stringWithFormat:@"%@, %@", self.textLabel.text,
-                                    self.leadingDetailTextLabel.text];
+
+  return accessibilityText;
 }
 
 @end

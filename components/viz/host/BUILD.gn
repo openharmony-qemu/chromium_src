@@ -2,9 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//components/viz/viz.gni")
-import("//testing/libfuzzer/fuzzer_test.gni")
 
 viz_component("host") {
   defines = [ "VIZ_HOST_IMPLEMENTATION" ]
@@ -19,9 +19,6 @@ viz_component("host") {
     "gpu_client_delegate.h",
     "gpu_host_impl.cc",
     "gpu_host_impl.h",
-    "hit_test/hit_test_query.cc",
-    "hit_test/hit_test_query.h",
-    "hit_test/hit_test_region_observer.h",
     "host_display_client.cc",
     "host_display_client.h",
     "host_frame_sink_client.h",
@@ -47,7 +44,10 @@ viz_component("host") {
     "//gpu/ipc/client",
     "//gpu/ipc/common",
     "//services/viz/privileged/mojom",
+    "//services/webnn/public/mojom",
+    "//services/viz/privileged/mojom/compositing",
     "//ui/base",
+    "//ui/base:ozone_buildflags",
     "//ui/gfx",
   ]
 
@@ -55,7 +55,6 @@ viz_component("host") {
     "//components/viz/common",
     "//gpu/command_buffer/client",
     "//gpu/ipc/host",
-    "//services/viz/privileged/mojom/compositing",
     "//services/viz/public/mojom",
     "//ui/gfx/geometry",
   ]
@@ -67,13 +66,16 @@ viz_component("host") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
 }
 
 viz_source_set("unit_tests") {
   testonly = true
 
   sources = [
-    "hit_test/hit_test_query_unittest.cc",
     "host_frame_sink_manager_unittest.cc",
     "host_gpu_memory_buffer_manager_unittest.cc",
   ]
@@ -97,17 +99,4 @@ viz_source_set("unit_tests") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
-}
-
-fuzzer_test("hit_test_query_fuzzer") {
-  sources = [ "hit_test/hit_test_query_fuzzer.cc" ]
-
-  libfuzzer_options = [ "max_len=4096" ]
-
-  deps = [
-    ":host",
-    "//base/test:test_support",
-    "//components/viz/test:test_support",
-    "//ui/gfx:test_support",
-  ]
 }

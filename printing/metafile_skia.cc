@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "printing/metafile_skia.h"
 
 #include <algorithm>
@@ -16,6 +21,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
+#include "base/not_fatal_until.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/time/time.h"
 #include "base/unguessable_token.h"
@@ -29,9 +35,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkStream.h"
-// Note that headers in third_party/skia/src are fragile.  This is
-// an experimental, fragile, and diagnostic-only document type.
-#include "third_party/skia/src/utils/SkMultiPictureDocument.h"
+#include "third_party/skia/include/docs/SkMultiPictureDocument.h"
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 
@@ -53,9 +57,9 @@ namespace {
 // which would then operate upon that.
 constexpr bool kInitFromDataCopyData = true;
 
-#if defined(OHOS_PRINT)
+#if BUILDFLAG(ARKWEB_PRINT)
 constexpr int kCheckCancelCount = 5;
-#endif // defined(OHOS_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 bool WriteAssetToBuffer(const SkStreamAsset* asset, void* buffer, size_t size) {
   // Calling duplicate() keeps original asset state unchanged.
@@ -190,7 +194,7 @@ bool MetafileSkia::FinishPage() {
     canvas->drawPicture(std::move(pic));
     pic = recorder.finishRecordingAsPicture();
   }
-  data_->pages.emplace_back(data_->size, std::move(pic));
+  AppendPage(data_->size, std::move(pic));
   return true;
 }
 
@@ -204,15 +208,21 @@ bool MetafileSkia::FinishDocument() {
 
   SkDynamicMemoryWStream stream;
   sk_sp<SkDocument> doc;
-  cc::PlaybackParams::CustomDataRasterCallback custom_callback;
+  cc::PlaybackCallbacks::CustomDataRasterCallback custom_callback;
   switch (data_->type) {
     case mojom::SkiaDocumentType::kPDF:
-      doc = MakePdfDocument(printing::GetAgent(), accessibility_tree_, &stream);
+      doc = MakePdfDocument(printing::GetAgent(), title_, accessibility_tree_,
+                            generate_document_outline_, &stream);
       break;
+#if BUILDFLAG(IS_WIN)
+    case mojom::SkiaDocumentType::kXPS:
+      doc = MakeXpsDocument(&stream);
+      break;
+#endif
     case mojom::SkiaDocumentType::kMSKP:
       SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
                                                data_->typeface_content_info);
-      doc = SkMakeMultiPictureDocument(&stream, &procs);
+      doc = SkMultiPictureDocument::Make(&stream, &procs);
       // It is safe to use base::Unretained(this) because the callback
       // is only used by `canvas` in the following loop which has shorter
       // lifetime than `this`.
@@ -241,11 +251,11 @@ void MetafileSkia::FinishFrameContent() {
   DCHECK_EQ(data_->type, mojom::SkiaDocumentType::kMSKP);
   DCHECK(!data_->data_stream);
 
-  cc::PlaybackParams::CustomDataRasterCallback custom_callback =
-      base::BindRepeating(&MetafileSkia::CustomDataToSkPictureCallback,
-                          base::Unretained(this));
+  cc::PlaybackCallbacks callbacks;
+  callbacks.custom_callback = base::BindRepeating(
+      &MetafileSkia::CustomDataToSkPictureCallback, base::Unretained(this));
   sk_sp<SkPicture> pic = data_->pages[0].content.ToSkPicture(
-      SkRect::MakeSize(data_->pages[0].size), nullptr, custom_callback);
+      SkRect::MakeSize(data_->pages[0].size), nullptr, callbacks);
   SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
                                            data_->typeface_content_info);
   SkDynamicMemoryWStream stream;
@@ -276,8 +286,8 @@ mojom::MetafileDataType MetafileSkia::GetDataType() const {
 }
 
 gfx::Rect MetafileSkia::GetPageBounds(unsigned int page_number) const {
-  if (page_number < data_->pages.size()) {
-    SkSize size = data_->pages[page_number].size;
+  if (page_number > 0 && page_number - 1 < data_->pages.size()) {
+    SkSize size = data_->pages[page_number - 1].size;
     return gfx::Rect(base::ClampRound(size.width()),
                      base::ClampRound(size.height()));
   }
@@ -290,19 +300,16 @@ unsigned int MetafileSkia::GetPageCount() const {
 
 printing::NativeDrawingContext MetafileSkia::context() const {
   NOTREACHED();
-  return nullptr;
 }
 
 #if BUILDFLAG(IS_WIN)
 bool MetafileSkia::Playback(printing::NativeDrawingContext hdc,
                             const RECT* rect) const {
   NOTREACHED();
-  return false;
 }
 
 bool MetafileSkia::SafePlayback(printing::NativeDrawingContext hdc) const {
   NOTREACHED();
-  return false;
 }
 
 #elif BUILDFLAG(IS_APPLE)
@@ -344,13 +351,18 @@ bool MetafileSkia::SaveToFileDescriptor(int fd) const {
   std::vector<uint8_t> buffer(std::min(kMaximumBufferSize, asset->getLength()));
   do {
     size_t read_size = asset->read(&buffer[0], buffer.size());
-    if (read_size == 0u)
+    bool is_at_end = read_size < buffer.size();
+    if (read_size == 0u) {
       break;
+    }
     DCHECK_GE(buffer.size(), read_size);
     buffer.resize(read_size);
-    if (!base::WriteFileDescriptor(fd, buffer))
+    if (!base::WriteFileDescriptor(fd, buffer)) {
       return false;
-  } while (!asset->isAtEnd());
+    } else if (is_at_end) {
+      break;
+    }
+  } while (true);
 
   return true;
 }
@@ -366,14 +378,18 @@ bool MetafileSkia::SaveTo(base::File* file) const {
   std::vector<uint8_t> buffer(std::min(kMaximumBufferSize, asset->getLength()));
   do {
     size_t read_size = asset->read(&buffer[0], buffer.size());
-    if (read_size == 0)
+    bool is_at_end = read_size < buffer.size();
+    if (read_size == 0) {
       break;
+    }
     DCHECK_GE(buffer.size(), read_size);
     if (!file->WriteAtCurrentPosAndCheck(
             base::make_span(&buffer[0], read_size))) {
       return false;
+    } else if (is_at_end) {
+      break;
     }
-  } while (!asset->isAtEnd());
+  } while (true);
 
   return true;
 }
@@ -408,13 +424,11 @@ uint32_t MetafileSkia::CreateContentForRemoteFrame(
   sk_sp<SkPicture> pic = SkPicture::MakePlaceholder(
       SkRect::MakeXYWH(rect.x(), rect.y(), rect.width(), rect.height()));
 
-  // Store the map between content id and the proxy id.
-  uint32_t content_id = pic->uniqueID();
+  // Store the map between content id and the proxy id and store the picture
+  // content.
+  const uint32_t content_id = pic->uniqueID();
   DCHECK(!base::Contains(data_->subframe_content_info, content_id));
-  data_->subframe_content_info[content_id] = render_proxy_token;
-
-  // Store the picture content.
-  data_->subframe_pics[content_id] = pic;
+  AppendSubframeInfo(content_id, render_proxy_token, std::move(pic));
   return content_id;
 }
 
@@ -448,7 +462,7 @@ void MetafileSkia::CustomDataToSkPictureCallback(SkCanvas* canvas,
     return;
 
   auto it = data_->subframe_pics.find(content_id);
-  DCHECK(it != data_->subframe_pics.end());
+  CHECK(it != data_->subframe_pics.end(), base::NotFatalUntil::M130);
 
   // Found the picture, draw it on canvas.
   sk_sp<SkPicture> pic = it->second;
@@ -457,53 +471,57 @@ void MetafileSkia::CustomDataToSkPictureCallback(SkCanvas* canvas,
   canvas->drawPicture(it->second, &matrix, nullptr);
 }
 
-#if defined(OHOS_PRINT)
-  bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
-    // If we've already set the data in InitFromData, leave it be.
-    if (data_->data_stream)
-      return false;
- 
-    if (data_->recorder.getRecordingCanvas())
-      FinishPage();
- 
-    SkDynamicMemoryWStream stream;
-    sk_sp<SkDocument> doc;
-    cc::PlaybackParams::CustomDataRasterCallback custom_callback;
-    switch (data_->type) {
-      case mojom::SkiaDocumentType::kPDF:
-        doc = MakePdfDocument(printing::GetAgent(), accessibility_tree_, &stream);
-        break;
-      case mojom::SkiaDocumentType::kMSKP:
-        SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
-                                                data_->typeface_content_info);
-        doc = SkMakeMultiPictureDocument(&stream, &procs);
-        // It is safe to use base::Unretained(this) because the callback
-        // is only used by `canvas` in the following loop which has shorter
-        // lifetime than `this`.
-        custom_callback = base::BindRepeating(
-            &MetafileSkia::CustomDataToSkPictureCallback, base::Unretained(this));
-        break;
-    }
- 
-    int idex = 0;
-    for (const Page& page : data_->pages) {
-      LOG(ERROR) << "OhosPrintManager page " << idex;
-      idex++;
-      if (idex % kCheckCancelCount == 0 && checkCancel()) {
-        doc->close();
-        data_->data_stream = stream.detachAsStream();
-        return false;
-      }
-      cc::SkiaPaintCanvas canvas(
-          doc->beginPage(page.size.width(), page.size.height()));
-      canvas.drawPicture(page.content, custom_callback);
-      doc->endPage();
-    }
-    doc->close();
- 
-    data_->data_stream = stream.detachAsStream();
-    return true;
+#if BUILDFLAG(ARKWEB_PRINT)
+bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
+  // If we've already set the data in InitFromData, leave it be.
+  if (data_->data_stream) {
+    return false;
   }
-#endif // defined(OHOS_PRINT)
+
+  if (data_->recorder.getRecordingCanvas()) {
+    FinishPage();
+  }
+
+  SkDynamicMemoryWStream stream;
+  sk_sp<SkDocument> doc;
+  cc::PlaybackCallbacks::CustomDataRasterCallback custom_callback;
+  switch (data_->type) {
+    case mojom::SkiaDocumentType::kPDF:
+      doc = MakePdfDocument(printing::GetAgent(), title_, accessibility_tree_,
+                            generate_document_outline_, &stream);
+      break;
+    case mojom::SkiaDocumentType::kMSKP:
+      SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
+                                               data_->typeface_content_info);
+      doc = SkMultiPictureDocument::Make(&stream, &procs);
+      // It is safe to use base::Unretained(this) because the callback
+      // is only used by `canvas` in the following loop which has shorter
+      // lifetime than `this`.
+      custom_callback = base::BindRepeating(
+          &MetafileSkia::CustomDataToSkPictureCallback, base::Unretained(this));
+      break;
+  }
+
+  int idex = 0;
+  for (const Page& page : data_->pages) {
+    LOG(ERROR) << "OhosPrintManager page " << idex;
+    idex++;
+    if (idex % kCheckCancelCount == 0 && checkCancel()) {
+      doc->close();
+      data_->data_stream = stream.detachAsStream();
+      return false;
+    }
+    cc::SkiaPaintCanvas canvas(
+        doc->beginPage(page.size.width(), page.size.height()));
+    canvas.drawPicture(page.content, custom_callback);
+    doc->endPage();
+  }
+  doc->close();
+
+  data_->data_stream = stream.detachAsStream();
+  return true;
+}
+
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 }  // namespace printing

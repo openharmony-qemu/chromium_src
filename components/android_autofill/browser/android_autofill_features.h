@@ -9,7 +9,11 @@
 
 namespace autofill::features {
 
-BASE_DECLARE_FEATURE(kAndroidAutofillViewStructureWithFormHierarchyLayer);
+BASE_DECLARE_FEATURE(kAndroidAutofillBottomSheetWorkaround);
+
+BASE_DECLARE_FEATURE(kAndroidAutofillDeprecateAccessibilityApi);
+
+BASE_DECLARE_FEATURE(kAndroidAutofillPrefillRequestsForChangePassword);
 
 }  // namespace autofill::features
 

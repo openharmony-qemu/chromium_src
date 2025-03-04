@@ -4,10 +4,10 @@
 
 #import "ios/chrome/browser/ui/popup_menu/popup_menu_mediator.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/check_op.h"
 #import "base/feature_list.h"
 #import "base/ios/ios_util.h"
-#import "base/mac/foundation_util.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/metrics/user_metrics.h"
@@ -24,26 +24,29 @@
 #import "components/prefs/pref_change_registrar.h"
 #import "components/prefs/pref_service.h"
 #import "components/profile_metrics/browser_profile_type.h"
+#import "components/reading_list/core/reading_list_model.h"
 #import "components/translate/core/browser/translate_manager.h"
 #import "components/translate/core/browser/translate_prefs.h"
-#import "ios/chrome/browser/bookmarks/bookmark_model_bridge_observer.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/commerce/push_notification/push_notification_feature.h"
-#import "ios/chrome/browser/find_in_page/abstract_find_tab_helper.h"
-#import "ios/chrome/browser/follow/follow_browser_agent.h"
-#import "ios/chrome/browser/follow/follow_menu_updater.h"
-#import "ios/chrome/browser/follow/follow_tab_helper.h"
-#import "ios/chrome/browser/follow/follow_util.h"
-#import "ios/chrome/browser/ntp/features.h"
-#import "ios/chrome/browser/overlays/public/overlay_presenter.h"
-#import "ios/chrome/browser/overlays/public/overlay_presenter_observer_bridge.h"
-#import "ios/chrome/browser/overlays/public/overlay_request.h"
-#import "ios/chrome/browser/overlays/public/overlay_request_queue.h"
-#import "ios/chrome/browser/overlays/public/web_content_area/http_auth_overlay.h"
-#import "ios/chrome/browser/policy/browser_policy_connector_ios.h"
-#import "ios/chrome/browser/policy/policy_util.h"
-#import "ios/chrome/browser/search_engines/search_engines_util.h"
-#import "ios/chrome/browser/search_engines/template_url_service_factory.h"
+#import "ios/chrome/browser/bookmarks/model/bookmark_model_bridge_observer.h"
+#import "ios/chrome/browser/commerce/model/push_notification/push_notification_feature.h"
+#import "ios/chrome/browser/find_in_page/model/abstract_find_tab_helper.h"
+#import "ios/chrome/browser/follow/model/follow_browser_agent.h"
+#import "ios/chrome/browser/follow/model/follow_menu_updater.h"
+#import "ios/chrome/browser/follow/model/follow_tab_helper.h"
+#import "ios/chrome/browser/follow/model/follow_util.h"
+#import "ios/chrome/browser/overlays/model/public/overlay_presenter.h"
+#import "ios/chrome/browser/overlays/model/public/overlay_presenter_observer_bridge.h"
+#import "ios/chrome/browser/overlays/model/public/overlay_request.h"
+#import "ios/chrome/browser/overlays/model/public/overlay_request_queue.h"
+#import "ios/chrome/browser/overlays/model/public/web_content_area/http_auth_overlay.h"
+#import "ios/chrome/browser/policy/model/browser_policy_connector_ios.h"
+#import "ios/chrome/browser/policy/model/policy_util.h"
+#import "ios/chrome/browser/search_engines/model/search_engines_util.h"
+#import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list_observer_bridge.h"
 #import "ios/chrome/browser/shared/public/commands/lens_commands.h"
 #import "ios/chrome/browser/shared/public/commands/reading_list_add_command.h"
 #import "ios/chrome/browser/shared/public/commands/search_image_with_lens_command.h"
@@ -51,7 +54,7 @@
 #import "ios/chrome/browser/shared/ui/list_model/list_model.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/translate/chrome_ios_translate_client.h"
+#import "ios/chrome/browser/translate/model/chrome_ios_translate_client.h"
 #import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_tile_constants.h"
 #import "ios/chrome/browser/ui/lens/lens_entrypoint.h"
 #import "ios/chrome/browser/ui/popup_menu/cells/popup_menu_text_item.h"
@@ -62,13 +65,10 @@
 #import "ios/chrome/browser/ui/reading_list/reading_list_menu_notification_delegate.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_menu_notifier.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_utils.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
-#import "ios/chrome/browser/url_loading/image_search_param_generator.h"
-#import "ios/chrome/browser/url_loading/url_loading_browser_agent.h"
-#import "ios/chrome/browser/url_loading/url_loading_params.h"
-#import "ios/chrome/browser/web/font_size/font_size_tab_helper.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_list_observer_bridge.h"
+#import "ios/chrome/browser/url_loading/model/image_search_param_generator.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_browser_agent.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_params.h"
+#import "ios/chrome/browser/web/model/font_size/font_size_tab_helper.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/components/webui/web_ui_url_constants.h"
@@ -85,10 +85,6 @@
 #import "ios/web/public/web_state_observer_bridge.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/gfx/image/image.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::RecordAction;
 using base::UserMetricsAction;
@@ -178,10 +174,6 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
 
 // Items notifying this items of changes happening to the ReadingList model.
 @property(nonatomic, strong) ReadingListMenuNotifier* readingListMenuNotifier;
-
-// Whether the hint for the "New Incognito Tab" item should be triggered.
-@property(nonatomic, assign) BOOL triggerNewIncognitoTabTip;
-
 // The current browser policy connector.
 @property(nonatomic, assign) BrowserPolicyConnectorIOS* browserPolicyConnector;
 
@@ -197,6 +189,9 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
 
 // YES if the current website has been followed.
 @property(nonatomic, assign) BOOL followed;
+
+// State of reading list model loading.
+@property(nonatomic, assign) BOOL readingListModelLoaded;
 
 #pragma mark*** Specific Items ***
 
@@ -225,7 +220,6 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
 
 - (instancetype)initWithIsIncognito:(BOOL)isIncognito
                    readingListModel:(ReadingListModel*)readingListModel
-          triggerNewIncognitoTabTip:(BOOL)triggerNewIncognitoTabTip
              browserPolicyConnector:
                  (BrowserPolicyConnectorIOS*)browserPolicyConnector {
   self = [super init];
@@ -233,11 +227,11 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
     _isIncognito = isIncognito;
     _readingListMenuNotifier =
         [[ReadingListMenuNotifier alloc] initWithReadingList:readingListModel];
+    _readingListModelLoaded = readingListModel->loaded();
     _webStateObserver = std::make_unique<web::WebStateObserverBridge>(self);
     _webStateListObserver = std::make_unique<WebStateListObserverBridge>(self);
     _overlayPresenterObserver =
         std::make_unique<OverlayPresenterObserverBridge>(self);
-    _triggerNewIncognitoTabTip = triggerNewIncognitoTabTip;
     _browserPolicyConnector = browserPolicyConnector;
   }
   return self;
@@ -343,50 +337,46 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
   self.webState = nullptr;
 }
 
-#pragma mark - WebStateListObserver
+#pragma mark - WebStateListObserving
 
-- (void)webStateList:(WebStateList*)webStateList
-    didChangeActiveWebState:(web::WebState*)newWebState
-                oldWebState:(web::WebState*)oldWebState
-                    atIndex:(int)atIndex
-                     reason:(ActiveWebStateChangeReason)reason {
+- (void)didChangeWebStateList:(WebStateList*)webStateList
+                       change:(const WebStateListChange&)change
+                       status:(const WebStateListStatus&)status {
   DCHECK_EQ(_webStateList, webStateList);
-  self.webState = newWebState;
+  if (status.active_web_state_change()) {
+    self.webState = status.new_active_web_state;
+  }
 }
 
 #pragma mark - BookmarkModelBridgeObserver
 
 // If an added or removed bookmark is the same as the current url, update the
 // toolbar so the star highlight is kept in sync.
-- (void)bookmarkModel:(bookmarks::BookmarkModel*)model
-    didChangeChildrenForNode:(const bookmarks::BookmarkNode*)bookmarkNode {
+- (void)didChangeChildrenForNode:(const bookmarks::BookmarkNode*)bookmarkNode {
   [self updateBookmarkItem];
 }
 
 // If all bookmarks are removed, update the toolbar so the star highlight is
 // kept in sync.
-- (void)bookmarkModelRemovedAllNodes:(bookmarks::BookmarkModel*)model {
+- (void)bookmarkModelRemovedAllNodes {
   [self updateBookmarkItem];
 }
 
 // In case we are on a bookmarked page before the model is loaded.
-- (void)bookmarkModelLoaded:(bookmarks::BookmarkModel*)model {
+- (void)bookmarkModelLoaded {
   [self updateBookmarkItem];
 }
 
-- (void)bookmarkModel:(bookmarks::BookmarkModel*)model
-        didChangeNode:(const bookmarks::BookmarkNode*)bookmarkNode {
+- (void)didChangeNode:(const bookmarks::BookmarkNode*)bookmarkNode {
   [self updateBookmarkItem];
 }
 
-- (void)bookmarkModel:(bookmarks::BookmarkModel*)model
-          didMoveNode:(const bookmarks::BookmarkNode*)bookmarkNode
-           fromParent:(const bookmarks::BookmarkNode*)oldParent
-             toParent:(const bookmarks::BookmarkNode*)newParent {
+- (void)didMoveNode:(const bookmarks::BookmarkNode*)bookmarkNode
+         fromParent:(const bookmarks::BookmarkNode*)oldParent
+           toParent:(const bookmarks::BookmarkNode*)newParent {
   // No-op -- required by BookmarkModelBridgeObserver but not used.
 }
-- (void)bookmarkModel:(bookmarks::BookmarkModel*)model
-        didDeleteNode:(const bookmarks::BookmarkNode*)node
+- (void)didDeleteNode:(const bookmarks::BookmarkNode*)node
            fromFolder:(const bookmarks::BookmarkNode*)folder {
   [self updateBookmarkItem];
 }
@@ -402,6 +392,10 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
 - (void)overlayPresenter:(OverlayPresenter*)presenter
     didHideOverlayForRequest:(OverlayRequest*)request {
   self.webContentAreaShowingOverlay = NO;
+}
+
+- (void)overlayPresenterDestroyed:(OverlayPresenter*)presenter {
+  self.webContentAreaOverlayPresenter = nullptr;
 }
 
 #pragma mark - PrefObserverDelegate
@@ -472,10 +466,6 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
   _popupMenu = popupMenu;
 
   [_popupMenu setPopupMenuItems:self.items];
-  if (self.triggerNewIncognitoTabTip) {
-    _popupMenu.itemToHighlight = self.openNewIncognitoTabItem;
-    self.triggerNewIncognitoTabTip = NO;
-  }
   if (self.webState) {
     [self updatePopupMenu];
   }
@@ -603,7 +593,7 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
   ClipboardRecentContent* clipboardRecentContent =
       ClipboardRecentContent::GetInstance();
   clipboardRecentContent->GetRecentImageFromClipboard(
-      base::BindOnce(^(absl::optional<gfx::Image> optionalImage) {
+      base::BindOnce(^(std::optional<gfx::Image> optionalImage) {
         [weakSelf searchCopiedImage:optionalImage usingLens:NO];
       }));
 }
@@ -613,7 +603,7 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
   ClipboardRecentContent* clipboardRecentContent =
       ClipboardRecentContent::GetInstance();
   clipboardRecentContent->GetRecentImageFromClipboard(
-      base::BindOnce(^(absl::optional<gfx::Image> optionalImage) {
+      base::BindOnce(^(std::optional<gfx::Image> optionalImage) {
         [weakSelf searchCopiedImage:optionalImage usingLens:YES];
       }));
 }
@@ -955,9 +945,8 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
       IDS_IOS_PRICE_NOTIFICATIONS_PRICE_TRACK_TITLE,
       PopupMenuActionPriceNotifications, @"popup_menu_price_notifications",
       kToolsMenuPriceNotifications);
-  if (self.webState &&
-      IsPriceTrackingEnabled(ChromeBrowserState::FromBrowserState(
-          self.webState->GetBrowserState()))) {
+  if (self.webState && IsPriceTrackingEnabled(ProfileIOS::FromBrowserState(
+                           self.webState->GetBrowserState()))) {
     [actionsArray addObject:self.priceNotificationsItem];
   }
 
@@ -1056,21 +1045,23 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
       @"popup_menu_bookmarks", kToolsMenuBookmarksId);
 
   // Reading List.
-  self.readingListItem = CreateTableViewItem(
-      IDS_IOS_TOOLS_MENU_READING_LIST, PopupMenuActionReadingList,
-      @"popup_menu_reading_list", kToolsMenuReadingListId);
-  NSInteger numberOfUnreadArticles =
-      [self.readingListMenuNotifier readingListUnreadCount];
-  self.readingListItem.badgeNumber = numberOfUnreadArticles;
-  if (numberOfUnreadArticles) {
-    self.readingListItem.additionalAccessibilityLabel =
-        AccessibilityLabelForReadingListCellWithCount(numberOfUnreadArticles);
-  }
-  if (self.engagementTracker &&
-      self.engagementTracker->ShouldTriggerHelpUI(
-          feature_engagement::kIPHBadgedReadingListFeature)) {
-    self.readingListItem.badgeText = l10n_util::GetNSStringWithFixup(
-        IDS_IOS_TOOLS_MENU_CELL_NEW_FEATURE_BADGE);
+  if (self.readingListModelLoaded) {
+    self.readingListItem = CreateTableViewItem(
+        IDS_IOS_TOOLS_MENU_READING_LIST, PopupMenuActionReadingList,
+        @"popup_menu_reading_list", kToolsMenuReadingListId);
+    NSInteger numberOfUnreadArticles =
+        [self.readingListMenuNotifier readingListUnreadCount];
+    self.readingListItem.badgeNumber = numberOfUnreadArticles;
+    if (numberOfUnreadArticles) {
+      self.readingListItem.additionalAccessibilityLabel =
+          AccessibilityLabelForReadingListCellWithCount(numberOfUnreadArticles);
+    }
+    if (self.engagementTracker &&
+        self.engagementTracker->ShouldTriggerHelpUI(
+            feature_engagement::kIPHBadgedReadingListFeature)) {
+      self.readingListItem.badgeText = l10n_util::GetNSStringWithFixup(
+          IDS_IOS_TOOLS_MENU_CELL_NEW_FEATURE_BADGE);
+    }
   }
 
   // Recent Tabs.
@@ -1095,14 +1086,18 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
       CreateTableViewItem(IDS_IOS_TOOLS_MENU_SETTINGS, PopupMenuActionSettings,
                           @"popup_menu_settings", kToolsMenuSettingsActionId);
 
-  if (self.isIncognito) {
-    return @[ bookmarks, self.readingListItem, downloadsFolder, settings ];
+  NSMutableArray* items = [[NSMutableArray alloc] init];
+  [items addObject:bookmarks];
+  if (self.readingListItem) {
+    [items addObject:self.readingListItem];
   }
-
-  return @[
-    bookmarks, self.readingListItem, recentTabs, history, downloadsFolder,
-    settings
-  ];
+  if (!self.isIncognito) {
+    [items addObject:recentTabs];
+    [items addObject:history];
+  }
+  [items addObject:downloadsFolder];
+  [items addObject:settings];
+  return items;
 }
 
 // Creates the section for enterprise info.
@@ -1143,7 +1138,7 @@ PopupMenuTextItem* CreateEnterpriseInfoItem(NSString* imageName,
 
 // Searches the copied image. If `usingLens` is set, then the search will be
 // performed with Lens.
-- (void)searchCopiedImage:(absl::optional<gfx::Image>)optionalImage
+- (void)searchCopiedImage:(std::optional<gfx::Image>)optionalImage
                 usingLens:(BOOL)usingLens {
   if (!optionalImage)
     return;

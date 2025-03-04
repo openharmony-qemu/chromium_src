@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ash/login/ui/login_pin_view.h"
 
 #include <memory>
@@ -13,24 +18,31 @@
 #include "ash/style/ash_color_id.h"
 #include "ash/style/ash_color_provider.h"
 #include "ash/style/color_util.h"
+#include "ash/system/holding_space/holding_space_util.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/timer/timer.h"
 #include "ui/accessibility/ax_action_data.h"
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/accessibility/ax_node_data.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/base/metadata/metadata_header_macros.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/base/models/image_model.h"
+#include "ui/chromeos/styles/cros_tokens_color_mappings.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/keycodes/dom/dom_code.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/animation/flood_fill_ink_drop_ripple.h"
 #include "ui/views/animation/ink_drop.h"
 #include "ui/views/animation/ink_drop_highlight.h"
 #include "ui/views/animation/ink_drop_impl.h"
 #include "ui/views/animation/ink_drop_state.h"
+#include "ui/views/background.h"
 #include "ui/views/controls/button/label_button.h"
 #include "ui/views/controls/focus_ring.h"
 #include "ui/views/layout/box_layout.h"
@@ -65,13 +77,14 @@ constexpr int kInitialBackspaceDelayMs = 500;
 constexpr int kRepeatingBackspaceDelayMs = 150;
 
 // Button sizes.
-constexpr int kButtonHeightDp = 56;
-constexpr int kButtonWidthDp = 72;
+constexpr int kButtonHeightDp = 60;
+constexpr int kButtonWidthDp = 64;
+constexpr int kButtonBackgroundDiameter = 48;
 constexpr gfx::Size kButtonSize = gfx::Size(kButtonWidthDp, kButtonHeightDp);
 
 std::u16string GetButtonLabelForNumber(int value) {
   DCHECK(value >= 0 && value < int{std::size(kPinLabels)});
-  return base::ASCIIToUTF16(std::to_string(value));
+  return base::NumberToString16(value);
 }
 
 std::u16string GetButtonSubLabelForNumber(int value) {
@@ -88,14 +101,19 @@ int GetViewIdForPinNumber(int number) {
 
 // A base class for pin button in the pin keyboard.
 class BasePinButton : public views::View {
+  METADATA_HEADER(BasePinButton, views::View)
+
  public:
   BasePinButton(const gfx::Size& size,
                 const std::u16string& accessible_name,
                 const base::RepeatingClosure& on_press)
       : on_press_(on_press) {
-    SetAccessibleName(accessible_name);
+    GetViewAccessibility().SetRole(ax::mojom::Role::kButton);
+    GetViewAccessibility().SetName(accessible_name);
     SetFocusBehavior(FocusBehavior::ACCESSIBLE_ONLY);
     SetPreferredSize(size);
+    SetBackground(holding_space_util::CreateCircleBackground(
+        cros_tokens::kCrosSysSystemBaseElevated, kButtonBackgroundDiameter));
 
     auto layout = std::make_unique<views::BoxLayout>(
         views::BoxLayout::Orientation::kVertical);
@@ -109,18 +127,22 @@ class BasePinButton : public views::View {
     layer()->SetFillsBoundsOpaquely(false);
 
     views::InkDrop::Install(this, std::make_unique<views::InkDropHost>(this));
-    views::InkDrop::Get(this)->SetMode(
+    views::InkDropHost* const ink_drop_host = views::InkDrop::Get(this);
+    ink_drop_host->SetMode(
         views::InkDropHost::InkDropMode::ON_NO_GESTURE_HANDLER);
-    views::InkDrop::Get(this)->SetCreateHighlightCallback(base::BindRepeating(
+    ink_drop_host->SetBaseColorId(kColorAshInkDrop);
+
+    ink_drop_host->SetCreateHighlightCallback(base::BindRepeating(
         [](BasePinButton* host) {
           auto highlight = std::make_unique<views::InkDropHighlight>(
               gfx::SizeF(host->size()),
-              host->GetColorProvider()->GetColor(kColorAshInkDrop));
+              views::InkDrop::Get(host)->GetBaseColor());
           highlight->set_visible_opacity(1.0f);
           return highlight;
         },
         this));
-    views::InkDrop::Get(this)->SetCreateRippleCallback(base::BindRepeating(
+
+    ink_drop_host->SetCreateRippleCallback(base::BindRepeating(
         [](BasePinButton* host) -> std::unique_ptr<views::InkDropRipple> {
           const gfx::Point center = host->GetLocalBounds().CenterPoint();
           const gfx::Rect bounds(center.x() - kInkDropCornerRadiusDp,
@@ -132,7 +154,7 @@ class BasePinButton : public views::View {
               views::InkDrop::Get(host), host->size(),
               host->GetLocalBounds().InsetsFrom(bounds),
               views::InkDrop::Get(host)->GetInkDropCenterBasedOnLastEvent(),
-              host->GetColorProvider()->GetColor(kColorAshInkDrop),
+              views::InkDrop::Get(host)->GetBaseColor(),
               /*visible_opacity=*/1.f);
         },
         this));
@@ -160,11 +182,11 @@ class BasePinButton : public views::View {
   }
 
   void OnEvent(ui::Event* event) override {
-    bool is_key_press = event->type() == ui::ET_KEY_PRESSED &&
+    bool is_key_press = event->type() == ui::EventType::kKeyPressed &&
                         (event->AsKeyEvent()->code() == ui::DomCode::ENTER ||
                          event->AsKeyEvent()->code() == ui::DomCode::SPACE);
-    bool is_mouse_press = event->type() == ui::ET_MOUSE_PRESSED;
-    bool is_gesture_tap = event->type() == ui::ET_GESTURE_TAP_DOWN;
+    bool is_mouse_press = event->type() == ui::EventType::kMousePressed;
+    bool is_gesture_tap = event->type() == ui::EventType::kGestureTapDown;
 
     if (is_key_press || is_mouse_press || is_gesture_tap) {
       DispatchPress(event);
@@ -172,11 +194,6 @@ class BasePinButton : public views::View {
     }
 
     views::View::OnEvent(event);
-  }
-
-  void GetAccessibleNodeData(ui::AXNodeData* node_data) override {
-    node_data->role = ax::mojom::Role::kButton;
-    node_data->SetName(GetAccessibleName());
   }
 
  protected:
@@ -201,10 +218,15 @@ class BasePinButton : public views::View {
   base::RepeatingClosure on_press_;
 };
 
+BEGIN_METADATA(BasePinButton)
+END_METADATA
+
 }  // namespace
 
 // A PIN button that displays a digit number and corresponding letter mapping.
 class LoginPinView::DigitPinButton : public BasePinButton {
+  METADATA_HEADER(DigitPinButton, BasePinButton)
+
  public:
   DigitPinButton(int value,
                  bool show_sub_label,
@@ -244,12 +266,17 @@ class LoginPinView::DigitPinButton : public BasePinButton {
   ~DigitPinButton() override = default;
 
  private:
-  raw_ptr<views::Label, ExperimentalAsh> label_ = nullptr;
-  raw_ptr<views::Label, ExperimentalAsh> sub_label_ = nullptr;
+  raw_ptr<views::Label> label_ = nullptr;
+  raw_ptr<views::Label> sub_label_ = nullptr;
 };
+
+BEGIN_METADATA(LoginPinView, DigitPinButton)
+END_METADATA
 
 // A PIN button that displays backspace icon.
 class LoginPinView::BackspacePinButton : public BasePinButton {
+  METADATA_HEADER(BackspacePinButton, BasePinButton)
+
  public:
   BackspacePinButton(const gfx::Size& size,
                      const base::RepeatingClosure& on_press)
@@ -277,7 +304,7 @@ class LoginPinView::BackspacePinButton : public BasePinButton {
   }
 
   std::u16string GetTooltipText(const gfx::Point& p) const override {
-    return GetAccessibleName();
+    return GetViewAccessibility().GetCachedName();
   }
 
   void OnEnabledChanged() {
@@ -296,9 +323,9 @@ class LoginPinView::BackspacePinButton : public BasePinButton {
       return;
     }
     // If this is a button release style event cancel any repeat.
-    if (event->type() == ui::ET_GESTURE_TAP_CANCEL ||
-        event->type() == ui::ET_GESTURE_END ||
-        event->type() == ui::ET_MOUSE_RELEASED) {
+    if (event->type() == ui::EventType::kGestureTapCancel ||
+        event->type() == ui::EventType::kGestureEnd ||
+        event->type() == ui::EventType::kMouseReleased) {
       CancelRepeat();
     }
   }
@@ -382,15 +409,20 @@ class LoginPinView::BackspacePinButton : public BasePinButton {
   std::unique_ptr<base::RepeatingTimer> repeat_timer_ =
       std::make_unique<base::RepeatingTimer>();
 
-  raw_ptr<views::ImageView, ExperimentalAsh> image_ = nullptr;
+  raw_ptr<views::ImageView> image_ = nullptr;
   base::CallbackListSubscription enabled_changed_subscription_ =
       AddEnabledChangedCallback(base::BindRepeating(
           &LoginPinView::BackspacePinButton::OnEnabledChanged,
           base::Unretained(this)));
 };
 
+BEGIN_METADATA(LoginPinView, BackspacePinButton)
+END_METADATA
+
 // A PIN button to press to submit the PIN / password.
 class LoginPinView::SubmitPinButton : public BasePinButton {
+  METADATA_HEADER(SubmitPinButton, BasePinButton)
+
  public:
   SubmitPinButton(const gfx::Size& size, const base::RepeatingClosure& on_press)
       : BasePinButton(size,
@@ -413,12 +445,15 @@ class LoginPinView::SubmitPinButton : public BasePinButton {
         ui::ImageModel::FromVectorIcon(kLockScreenArrowIcon, color_id));
   }
 
-  raw_ptr<views::ImageView, ExperimentalAsh> image_ = nullptr;
+  raw_ptr<views::ImageView> image_ = nullptr;
   base::CallbackListSubscription enabled_changed_subscription_ =
       AddEnabledChangedCallback(
           base::BindRepeating(&LoginPinView::SubmitPinButton::UpdateImage,
                               base::Unretained(this)));
 };
+
+BEGIN_METADATA(LoginPinView, SubmitPinButton)
+END_METADATA
 
 // static
 gfx::Size LoginPinView::TestApi::GetButtonSize(Style style) {
@@ -449,7 +484,7 @@ void LoginPinView::TestApi::SetBackspaceTimers(
 }
 
 void LoginPinView::TestApi::ClickOnDigit(int number) const {
-  ui::MouseEvent event(ui::ET_MOUSE_PRESSED, gfx::Point(), gfx::Point(),
+  ui::MouseEvent event(ui::EventType::kMousePressed, gfx::Point(), gfx::Point(),
                        ui::EventTimeForNow(), 0, 0);
   GetButton(number)->OnEvent(&event);
 }
@@ -532,5 +567,8 @@ NonAccessibleView* LoginPinView::BuildAndAddRow() {
   rows_.push_back(row);
   return row;
 }
+
+BEGIN_METADATA(LoginPinView)
+END_METADATA
 
 }  // namespace ash

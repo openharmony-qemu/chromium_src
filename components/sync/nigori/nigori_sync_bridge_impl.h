@@ -7,6 +7,7 @@
 
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -21,11 +22,10 @@
 #include "components/sync/nigori/nigori_local_change_processor.h"
 #include "components/sync/nigori/nigori_state.h"
 #include "components/sync/nigori/nigori_sync_bridge.h"
-#include "components/sync/protocol/nigori_specifics.pb.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace sync_pb {
 class NigoriLocalData;
+class NigoriSpecifics;
 }  // namespace sync_pb
 
 namespace syncer {
@@ -58,7 +58,7 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
   void AddObserver(Observer* observer) override;
   void RemoveObserver(Observer* observer) override;
   void NotifyInitialStateToObservers() override;
-  ModelTypeSet GetEncryptedTypes() override;
+  DataTypeSet GetEncryptedTypes() override;
   Cryptographer* GetCryptographer() override;
   PassphraseType GetPassphraseType() override;
   void SetEncryptionPassphrase(
@@ -69,7 +69,7 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
       const std::vector<std::vector<uint8_t>>& keys) override;
   base::Time GetKeystoreMigrationTime() override;
   KeystoreKeysHandler* GetKeystoreKeysHandler() override;
-  const sync_pb::NigoriSpecifics::TrustedVaultDebugInfo&
+  const sync_pb::NigoriSpecifics_TrustedVaultDebugInfo&
   GetTrustedVaultDebugInfo() override;
 
   // KeystoreKeysHandler implementation.
@@ -77,11 +77,12 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
   bool SetKeystoreKeys(const std::vector<std::vector<uint8_t>>& keys) override;
 
   // NigoriSyncBridge implementation.
-  absl::optional<ModelError> MergeFullSyncData(
-      absl::optional<EntityData> data) override;
-  absl::optional<ModelError> ApplyIncrementalSyncChanges(
-      absl::optional<EntityData> data) override;
-  std::unique_ptr<EntityData> GetData() override;
+  std::optional<ModelError> MergeFullSyncData(
+      std::optional<EntityData> data) override;
+  std::optional<ModelError> ApplyIncrementalSyncChanges(
+      std::optional<EntityData> data) override;
+  std::unique_ptr<EntityData> GetDataForCommit() override;
+  std::unique_ptr<EntityData> GetDataForDebugging() override;
   void ApplyDisableSyncChanges() override;
 
   const CryptographerImpl& GetCryptographerImplForTesting() const;
@@ -89,7 +90,7 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
   KeyDerivationParams GetCustomPassphraseKeyDerivationParamsForTesting() const;
 
  private:
-  absl::optional<ModelError> UpdateLocalState(
+  std::optional<ModelError> UpdateLocalState(
       const sync_pb::NigoriSpecifics& specifics);
 
   // Builds NigoriKeyBag, which contains keys acceptable for decryption of
@@ -108,10 +109,10 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
   //
   // If |key_bag| is not capable of decrypting pending keys,
   // |state_.pending_keys| stays set. Such outcome is not itself considered
-  // and error and returns absl::nullopt.
+  // and error and returns std::nullopt.
   //
   // Errors may be returned, in rare cases, for fatal protocol violations.
-  absl::optional<ModelError> TryDecryptPendingKeysWith(
+  std::optional<ModelError> TryDecryptPendingKeysWith(
       const NigoriKeyBag& key_bag);
 
   base::Time GetExplicitPassphraseTime() const;
@@ -147,6 +148,8 @@ class NigoriSyncBridgeImpl : public KeystoreKeysHandler,
   // them already and |passphrase_type| isn't KEYSTORE_PASSPHRASE. This
   // function only updates local state and doesn't trigger a commit.
   void MaybePopulateKeystoreKeysIntoCryptographer();
+
+  std::unique_ptr<EntityData> GetDataImpl();
 
   const std::unique_ptr<NigoriLocalChangeProcessor> processor_;
   const std::unique_ptr<NigoriStorage> storage_;

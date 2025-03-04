@@ -25,6 +25,10 @@
 #include "net/socket/transport_connect_job.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 CommonConnectJobParams::CommonConnectJobParams(
@@ -34,28 +38,38 @@ CommonConnectJobParams::CommonConnectJobParams(
     HttpAuthHandlerFactory* http_auth_handler_factory,
     SpdySessionPool* spdy_session_pool,
     const quic::ParsedQuicVersionVector* quic_supported_versions,
-    QuicStreamFactory* quic_stream_factory,
+    QuicSessionPool* quic_session_pool,
     ProxyDelegate* proxy_delegate,
     const HttpUserAgentSettings* http_user_agent_settings,
     SSLClientContext* ssl_client_context,
     SocketPerformanceWatcherFactory* socket_performance_watcher_factory,
     NetworkQualityEstimator* network_quality_estimator,
     NetLog* net_log,
-    WebSocketEndpointLockManager* websocket_endpoint_lock_manager)
+    WebSocketEndpointLockManager* websocket_endpoint_lock_manager,
+    HttpServerProperties* http_server_properties,
+    const NextProtoVector* alpn_protos,
+    const SSLConfig::ApplicationSettings* application_settings,
+    const bool* ignore_certificate_errors,
+    const bool* enable_early_data)
     : client_socket_factory(client_socket_factory),
       host_resolver(host_resolver),
       http_auth_cache(http_auth_cache),
       http_auth_handler_factory(http_auth_handler_factory),
       spdy_session_pool(spdy_session_pool),
       quic_supported_versions(quic_supported_versions),
-      quic_stream_factory(quic_stream_factory),
+      quic_session_pool(quic_session_pool),
       proxy_delegate(proxy_delegate),
       http_user_agent_settings(http_user_agent_settings),
       ssl_client_context(ssl_client_context),
       socket_performance_watcher_factory(socket_performance_watcher_factory),
       network_quality_estimator(network_quality_estimator),
       net_log(net_log),
-      websocket_endpoint_lock_manager(websocket_endpoint_lock_manager) {}
+      websocket_endpoint_lock_manager(websocket_endpoint_lock_manager),
+      http_server_properties(http_server_properties),
+      alpn_protos(alpn_protos),
+      application_settings(application_settings),
+      ignore_certificate_errors(ignore_certificate_errors),
+      enable_early_data(enable_early_data) {}
 
 CommonConnectJobParams::CommonConnectJobParams(
     const CommonConnectJobParams& other) = default;
@@ -85,17 +99,20 @@ ConnectJob::ConnectJob(RequestPriority priority,
                                             net_log_source_type)),
       net_log_connect_event_type_(net_log_connect_event_type) {
   DCHECK(delegate);
-  if (top_level_job_)
+  if (top_level_job_) {
     net_log_.BeginEvent(NetLogEventType::CONNECT_JOB);
+  }
 }
 
 ConnectJob::~ConnectJob() {
   // Log end of Connect event if ConnectJob was still in-progress when
   // destroyed.
-  if (delegate_)
+  if (delegate_) {
     LogConnectCompletion(ERR_ABORTED);
-  if (top_level_job_)
+  }
+  if (top_level_job_) {
     net_log().EndEvent(NetLogEventType::CONNECT_JOB);
+  }
 }
 
 std::unique_ptr<StreamSocket> ConnectJob::PassSocket() {
@@ -108,7 +125,7 @@ void ConnectJob::ChangePriority(RequestPriority priority) {
 }
 
 int ConnectJob::Connect() {
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   if (!timeout_override_.is_zero()) {
     timer_.Start(FROM_HERE, timeout_override_, this, &ConnectJob::OnTimeout);
   } else
@@ -145,25 +162,21 @@ void ConnectJob::set_done_closure(base::OnceClosure done_closure) {
   done_closure_ = base::ScopedClosureRunner(std::move(done_closure));
 }
 
-absl::optional<HostResolverEndpointResult>
+std::optional<HostResolverEndpointResult>
 ConnectJob::GetHostResolverEndpointResult() const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void ConnectJob::SetSocket(std::unique_ptr<StreamSocket> socket,
-                           absl::optional<std::set<std::string>> dns_aliases) {
+                           std::optional<std::set<std::string>> dns_aliases) {
   if (socket) {
     net_log().AddEventReferencingSource(NetLogEventType::CONNECT_JOB_SET_SOCKET,
                                         socket->NetLog().source());
-    if (dns_aliases)
+    if (dns_aliases) {
       socket->SetDnsAliases(std::move(dns_aliases.value()));
+    }
   }
   socket_ = std::move(socket);
-#if BUILDFLAG(IS_OHOS)
-  if (IsFromPreload() && socket_ != nullptr) {
-    socket_->SetFromPreload(IsFromPreload());
-  }
-#endif
 }
 
 void ConnectJob::NotifyDelegateOfCompletion(int rv) {
@@ -186,8 +199,9 @@ void ConnectJob::NotifyDelegateOfProxyAuth(
 
 void ConnectJob::ResetTimer(base::TimeDelta remaining_time) {
   timer_.Stop();
-  if (!remaining_time.is_zero())
+  if (!remaining_time.is_zero()) {
     timer_.Start(FROM_HERE, remaining_time, this, &ConnectJob::OnTimeout);
+  }
 }
 
 bool ConnectJob::TimerIsRunning() const {
@@ -201,16 +215,16 @@ void ConnectJob::LogConnectStart() {
 
 void ConnectJob::LogConnectCompletion(int net_error) {
   connect_timing_.connect_end = base::TimeTicks::Now();
-#if BUILDFLAG(IS_OHOS)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
-               "connectEnd", connect_timing_.connect_end);
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "connectEnd",
+               connect_timing_.connect_end);
 #endif
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }
 
 void ConnectJob::OnTimeout() {
   // Make sure the socket is NULL before calling into |delegate|.
-  SetSocket(nullptr, absl::nullopt /* dns_aliases */);
+  SetSocket(nullptr, std::nullopt /* dns_aliases */);
 
   OnTimedOutInternal();
 

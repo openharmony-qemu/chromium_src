@@ -9,18 +9,19 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
 #include "cc/cc_export.h"
 #include "cc/metrics/event_metrics.h"
+#include "cc/metrics/submit_info.h"
 #include "cc/scheduler/begin_frame_tracker.h"
 #include "cc/scheduler/draw_result.h"
 #include "cc/scheduler/scheduler_settings.h"
 #include "cc/scheduler/scheduler_state_machine.h"
 #include "cc/tiles/tile_priority.h"
-#include "components/power_scheduler/power_mode_voter.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
@@ -28,7 +29,7 @@
 namespace perfetto {
 namespace protos {
 namespace pbzero {
-class ChromeCompositorSchedulerState;
+class ChromeCompositorSchedulerStateV2;
 }
 }  // namespace protos
 }  // namespace perfetto
@@ -60,6 +61,7 @@ class SchedulerClient {
       const viz::BeginFrameArgs& args) = 0;
   virtual DrawResult ScheduledActionDrawIfPossible() = 0;
   virtual DrawResult ScheduledActionDrawForced() = 0;
+  virtual void ScheduledActionUpdateDisplayTree() = 0;
 
   // The Commit step occurs when the client received the BeginFrame from the
   // source and we perform at most one commit per BeginFrame. In this step the
@@ -89,12 +91,10 @@ class SchedulerClient {
       base::TimeTicks time) = 0;
   virtual void FrameIntervalUpdated(base::TimeDelta interval) = 0;
   virtual void OnBeginImplFrameDeadline() = 0;
-
-  // Functions used for reporting animation targeting UMA, crbug.com/758439.
-  virtual bool HasInvalidationAnimation() const = 0;
-#if BUILDFLAG(IS_OHOS)
-  virtual void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}
-#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  protected:
   virtual ~SchedulerClient() {}
@@ -102,14 +102,13 @@ class SchedulerClient {
 
 class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
  public:
-  Scheduler(
-      SchedulerClient* client,
-      const SchedulerSettings& scheduler_settings,
-      int layer_tree_host_id,
-      base::SingleThreadTaskRunner* task_runner,
-      std::unique_ptr<CompositorTimingHistory> compositor_timing_history,
-      CompositorFrameReportingController* compositor_frame_reporting_controller,
-      power_scheduler::PowerModeArbiter* power_mode_arbiter);
+  Scheduler(SchedulerClient* client,
+            const SchedulerSettings& scheduler_settings,
+            int layer_tree_host_id,
+            base::SingleThreadTaskRunner* task_runner,
+            std::unique_ptr<CompositorTimingHistory> compositor_timing_history,
+            CompositorFrameReportingController*
+                compositor_frame_reporting_controller);
   Scheduler(const Scheduler&) = delete;
   ~Scheduler() override;
 
@@ -130,6 +129,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
 
   void SetVisible(bool visible);
   bool visible() { return state_machine_.visible(); }
+  void SetShouldWarmUp();
   void SetCanDraw(bool can_draw);
 
   // We have 2 copies of the layer trees on the compositor thread: pending_tree
@@ -167,6 +167,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   void SetNeedsOneBeginImplFrame();
 
   void SetNeedsRedraw();
+  void SetNeedsUpdateDisplayTree();
 
   void SetNeedsPrepareTiles();
 
@@ -188,10 +189,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
 
   // Drawing should result in submitting a CompositorFrame to the
   // LayerTreeFrameSink and then calling this.
-  void DidSubmitCompositorFrame(uint32_t frame_token,
-                                base::TimeTicks submit_time,
-                                EventMetricsSet events_metrics,
-                                bool has_missing_content);
+  void DidSubmitCompositorFrame(SubmitInfo& submit_info);
   // The LayerTreeFrameSink acks when it is ready for a new frame which
   // should result in this getting called to unblock the next draw.
   void DidReceiveCompositorFrameAck();
@@ -209,11 +207,6 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // In the PrepareTiles step, compositor thread divides the layers into tiles
   // to reduce cost of raster large layers. Then, each tile is rastered by a
   // dedicated thread.
-  // |WillPrepareTiles| is called before PrepareTiles step to have the scheduler
-  // track when PrepareTiles starts.
-  void WillPrepareTiles();
-  // |DidPrepareTiles| is called after PrepareTiles step to have the scheduler
-  // track how long PrepareTiles takes.
   void DidPrepareTiles();
 
   // |DidPresentCompositorFrame| is called when the renderer receives
@@ -252,8 +245,10 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // updates of new layer tree state.
   void SetDeferBeginMainFrame(bool defer_begin_main_frame);
 
+#if BUILDFLAG(ARKWEB_WEBGL)
   void SetDeferInvalidationForFastMainFrame(
-           bool defer_invalidation_for_fast_main_frame);
+      bool defer_invalidation_for_fast_main_frame);
+#endif
 
   // Pausing rendering prevents new main frames and impl-side invalidations from
   // being triggered. Impl frames are drawn until any in-flight updates from the
@@ -266,7 +261,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
 
   void AsProtozeroInto(
       perfetto::EventContext& ctx,
-      perfetto::protos::pbzero::ChromeCompositorSchedulerState* state) const;
+      perfetto::protos::pbzero::ChromeCompositorSchedulerStateV2* state) const;
 
   void SetVideoNeedsBeginFrames(bool video_needs_begin_frames);
 
@@ -298,9 +293,6 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
 
   size_t CommitDurationSampleCountForTesting() const;
 
-  std::string GetHungCommitDebugInfo() const;
-  void TraceHungCommitDebugInfo() const;
-
  protected:
   // Virtual for testing.
   virtual base::TimeTicks Now() const;
@@ -319,7 +311,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
 
   // Owned by LayerTreeHostImpl and is destroyed when LayerTreeHostImpl is
   // destroyed.
-  raw_ptr<CompositorFrameReportingController, DanglingUntriaged>
+  raw_ptr<CompositorFrameReportingController, AcrossTasksDanglingUntriaged>
       compositor_frame_reporting_controller_;
 
   // What the latest deadline was, and when it was scheduled.
@@ -372,10 +364,6 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   // arrive so that |client_| can be informed about changes.
   base::TimeDelta last_frame_interval_;
 
-  std::unique_ptr<power_scheduler::PowerModeVoter> power_mode_voter_;
-  power_scheduler::PowerMode last_power_mode_vote_ =
-      power_scheduler::PowerMode::kIdle;
-
  private:
   // Posts the deadline task if needed by checking
   // SchedulerStateMachine::CurrentBeginImplFrameDeadlineMode(). This only
@@ -405,6 +393,7 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   void BeginMainFrameNotExpectedSoon();
   void DrawIfPossible();
   void DrawForced();
+  void UpdateDisplayTree();
   void ProcessScheduledActions();
   void UpdateCompositorTimingHistoryRecordingEnabled();
   void AdvanceCommitStateIfPossible();
@@ -423,16 +412,6 @@ class CC_EXPORT Scheduler : public viz::BeginFrameObserverBase {
   bool IsInsideAction(SchedulerStateMachine::Action action) {
     return inside_action_ == action;
   }
-
-  void UpdatePowerModeVote();
-
-  // Used only for UMa metric calculations.
-  base::TimeDelta cc_frame_time_available_;
-  base::TimeTicks cc_frame_start_;  // Begin impl frame time.
-
-  // Temporary for production debugging of renderer hang (crbug.com/1159366).
-  std::vector<SchedulerStateMachine::Action> commit_debug_action_sequence_;
-  bool trace_actions_ = false;
 };
 
 }  // namespace cc

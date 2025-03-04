@@ -5,9 +5,11 @@
 #ifndef SERVICES_NETWORK_PUBLIC_CPP_URL_REQUEST_MOJOM_TRAITS_H_
 #define SERVICES_NETWORK_PUBLIC_CPP_URL_REQUEST_MOJOM_TRAITS_H_
 
+#include <optional>
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/scoped_refptr.h"
 #include "mojo/public/cpp/base/big_buffer_mojom_traits.h"
@@ -19,6 +21,7 @@
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "mojo/public/cpp/bindings/union_traits.h"
 #include "net/base/request_priority.h"
+#include "net/storage_access_api/status.h"
 #include "net/url_request/referrer_policy.h"
 #include "services/network/public/cpp/cookie_manager_shared_mojom_traits.h"
 #include "services/network/public/cpp/data_element.h"
@@ -38,7 +41,6 @@
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom-forward.h"
 #include "services/network/public/mojom/url_request.mojom-forward.h"
 #include "services/network/public/mojom/web_bundle_handle.mojom-forward.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/mojom/url_gurl_mojom_traits.h"
 
 namespace mojo {
@@ -70,6 +72,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool allow_cookies_from_browser(
       const network::ResourceRequest::TrustedParams& trusted_params) {
     return trusted_params.allow_cookies_from_browser;
+  }
+  static bool include_request_cookies_with_response(
+      const network::ResourceRequest::TrustedParams& trusted_params) {
+    return trusted_params.include_request_cookies_with_response;
   }
   static mojo::PendingRemote<network::mojom::CookieAccessObserver>
   cookie_observer(
@@ -125,6 +131,16 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
         const_cast<network::ResourceRequest::TrustedParams&>(trusted_params)
             .accept_ch_frame_observer);
   }
+  static mojo::PendingRemote<network::mojom::SharedDictionaryAccessObserver>
+  shared_dictionary_observer(
+      const network::ResourceRequest::TrustedParams& trusted_params) {
+    if (!trusted_params.shared_dictionary_observer) {
+      return mojo::NullRemote();
+    }
+    return std::move(
+        const_cast<network::ResourceRequest::TrustedParams&>(trusted_params)
+            .shared_dictionary_observer);
+  }
 
   static bool Read(network::mojom::TrustedUrlRequestParamsDataView data,
                    network::ResourceRequest::TrustedParams* out);
@@ -162,23 +178,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
 template <>
 struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
-    StructTraits<network::mojom::NetLogSourceDataView, net::NetLogSource> {
-  static uint32_t source_id(const net::NetLogSource& params) {
-    return params.id;
-  }
-  static uint32_t source_type(const net::NetLogSource& params) {
-    return static_cast<uint32_t>(params.type);
-  }
-  static base::TimeTicks start_time(const net::NetLogSource& params) {
-    return params.start_time;
-  }
-
-  static bool Read(network::mojom::NetLogSourceDataView data,
-                   net::NetLogSource* out);
-};
-
-template <>
-struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
     StructTraits<network::mojom::URLRequestDataView, network::ResourceRequest> {
   static const std::string& method(const network::ResourceRequest& request) {
     return request.method;
@@ -194,7 +193,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.update_first_party_url_on_redirect;
   }
-  static const absl::optional<url::Origin>& request_initiator(
+  static const std::optional<url::Origin>& request_initiator(
       const network::ResourceRequest& request) {
     return request.request_initiator;
   }
@@ -202,7 +201,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.navigation_redirect_chain;
   }
-  static const absl::optional<url::Origin>& isolated_world_origin(
+  static const std::optional<url::Origin>& isolated_world_origin(
       const network::ResourceRequest& request) {
     return request.isolated_world_origin;
   }
@@ -245,9 +244,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool skip_service_worker(const network::ResourceRequest& request) {
     return request.skip_service_worker;
   }
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
   static bool corb_detachable(const network::ResourceRequest& request) {
     return request.corb_detachable;
   }
+#endif
   static network::mojom::RequestMode mode(
       const network::ResourceRequest& request) {
     return request.mode;
@@ -278,6 +279,13 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool browsing_topics(const network::ResourceRequest& request) {
     return request.browsing_topics;
   }
+  static bool ad_auction_headers(const network::ResourceRequest& request) {
+    return request.ad_auction_headers;
+  }
+  static bool shared_storage_writable_eligible(
+      const network::ResourceRequest& request) {
+    return request.shared_storage_writable_eligible;
+  }
   static bool has_user_gesture(const network::ResourceRequest& request) {
     return request.has_user_gesture;
   }
@@ -305,7 +313,7 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool is_revalidating(const network::ResourceRequest& request) {
     return request.is_revalidating;
   }
-  static const absl::optional<base::UnguessableToken>& throttling_profile_id(
+  static const std::optional<base::UnguessableToken>& throttling_profile_id(
       const network::ResourceRequest& request) {
     return request.throttling_profile_id;
   }
@@ -317,20 +325,23 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.custom_proxy_post_cache_headers;
   }
-  static const absl::optional<base::UnguessableToken>& fetch_window_id(
+  static const std::optional<base::UnguessableToken>& fetch_window_id(
       const network::ResourceRequest& request) {
     return request.fetch_window_id;
   }
-  static const absl::optional<std::string>& devtools_request_id(
+  static const std::optional<std::string>& devtools_request_id(
       const network::ResourceRequest& request) {
     return request.devtools_request_id;
   }
-  static const absl::optional<std::string>& devtools_stack_id(
+  static const std::optional<std::string>& devtools_stack_id(
       const network::ResourceRequest& request) {
     return request.devtools_stack_id;
   }
   static bool is_fetch_like_api(const network::ResourceRequest& request) {
     return request.is_fetch_like_api;
+  }
+  static bool is_fetch_later_api(const network::ResourceRequest& request) {
+    return request.is_fetch_later_api;
   }
   static bool is_favicon(const network::ResourceRequest& request) {
     return request.is_favicon;
@@ -339,15 +350,15 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.original_destination;
   }
-  static const absl::optional<std::vector<net::SourceStream::SourceType>>&
+  static const std::optional<std::vector<net::SourceStream::SourceType>>&
   devtools_accepted_stream_types(const network::ResourceRequest& request) {
     return request.devtools_accepted_stream_types;
   }
-  static const absl::optional<network::ResourceRequest::TrustedParams>&
+  static const std::optional<network::ResourceRequest::TrustedParams>&
   trusted_params(const network::ResourceRequest& request) {
     return request.trusted_params;
   }
-  static const absl::optional<base::UnguessableToken>& recursive_prefetch_token(
+  static const std::optional<base::UnguessableToken>& recursive_prefetch_token(
       const network::ResourceRequest& request) {
     return request.recursive_prefetch_token;
   }
@@ -355,15 +366,15 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.trust_token_params.as_ptr();
   }
-  static const absl::optional<network::ResourceRequest::WebBundleTokenParams>&
+  static const std::optional<network::ResourceRequest::WebBundleTokenParams>&
   web_bundle_token_params(const network::ResourceRequest& request) {
     return request.web_bundle_token_params;
   }
-  static const absl::optional<net::NetLogSource>& net_log_create_info(
+  static const std::optional<net::NetLogSource>& net_log_create_info(
       const network::ResourceRequest& request) {
     return request.net_log_create_info;
   }
-  static const absl::optional<net::NetLogSource>& net_log_reference_info(
+  static const std::optional<net::NetLogSource>& net_log_reference_info(
       const network::ResourceRequest& request) {
     return request.net_log_reference_info;
   }
@@ -371,8 +382,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::ResourceRequest& request) {
     return request.target_ip_address_space;
   }
-  static bool has_storage_access(const network::ResourceRequest& request) {
-    return request.has_storage_access;
+  static net::StorageAccessApiStatus storage_access_api_status(
+      const network::ResourceRequest& request) {
+    return request.storage_access_api_status;
   }
   static network::mojom::AttributionSupport attribution_reporting_support(
       const network::ResourceRequest& request) {
@@ -382,22 +394,42 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
   attribution_reporting_eligibility(const network::ResourceRequest& request) {
     return request.attribution_reporting_eligibility;
   }
-#if BUILDFLAG(IS_OHOS)
+  static const std::optional<base::UnguessableToken>&
+  attribution_reporting_src_token(const network::ResourceRequest& request) {
+    return request.attribution_reporting_src_token;
+  }
+  static bool is_ad_tagged(const network::ResourceRequest& request) {
+    return request.is_ad_tagged;
+  }
+  static bool shared_dictionary_writer_enabled(
+      const network::ResourceRequest& request) {
+    return request.shared_dictionary_writer_enabled;
+  }
+  static network::mojom::IPAddressSpace required_ip_address_space(
+      const network::ResourceRequest& request) {
+    return request.required_ip_address_space;
+  }
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   static bool allow_preload_record(const network::ResourceRequest& request) {
     return request.allow_preload_record;
   }
-  static const GURL& main_page(const network::ResourceRequest& request) {
-    return request.main_page;
+  static const GURL& main_url(const network::ResourceRequest& request) {
+    return request.main_url;
   }
-  static bool is_sync_mode(const network::ResourceRequest& request) {
-    return request.is_sync_mode;
+  static bool is_preflight(const network::ResourceRequest& request) {
+    return request.is_preflight;
   }
-#endif  //  IS_OHOS
-#if defined(OHOS_EX_DOWNLOAD)
+#endif  //  ARKWEB_PRP_PRELOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   static bool is_download_request(const network::ResourceRequest& request) {
     return request.is_download_request;
   }
-#endif  //  OHOS_EX_DOWNLOAD
+#endif  //  ARKWEB_EX_DOWNLOAD
+  static const net::SocketTag& socket_tag(
+      const network::ResourceRequest& request) {
+    return request.socket_tag;
+  }
+
   static bool Read(network::mojom::URLRequestDataView data,
                    network::ResourceRequest* out);
 };
@@ -529,6 +561,18 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
 
   static bool Read(network::mojom::DataElementDataView data,
                    network::DataElement* out);
+};
+
+template <>
+struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
+    StructTraits<network::mojom::SocketTagDataView, net::SocketTag> {
+#if BUILDFLAG(IS_ANDROID)
+  static int32_t tag(const net::SocketTag& params) {
+    return params.traffic_stats_tag();
+  }
+  static uid_t uid(const net::SocketTag& params) { return params.uid(); }
+#endif  // BUILDFLAG(IS_ANDROID)
+  static bool Read(network::mojom::SocketTagDataView data, net::SocketTag* out);
 };
 
 }  // namespace mojo

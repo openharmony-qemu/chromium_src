@@ -4,6 +4,8 @@
 
 #include "ui/base/ime/text_input_client.h"
 
+#include <string_view>
+
 namespace ui {
 
 TextInputClient::~TextInputClient() {
@@ -14,9 +16,18 @@ bool TextInputClient::CanInsertImage() {
 }
 
 #if BUILDFLAG(IS_CHROMEOS)
-absl::optional<GrammarFragment> TextInputClient::GetGrammarFragmentAtCursor()
+void TextInputClient::ExtendSelectionAndReplace(
+    size_t length_before_selection,
+    size_t length_after_selection,
+    const std::u16string_view replacement_string) {
+  ExtendSelectionAndDelete(length_before_selection, length_after_selection);
+  InsertText(std::u16string(replacement_string),
+             InsertTextCursorBehavior::kMoveCursorAfterText);
+}
+
+std::optional<GrammarFragment> TextInputClient::GetGrammarFragmentAtCursor()
     const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool TextInputClient::ClearGrammarFragments(const gfx::Range& range) {
@@ -27,9 +38,13 @@ bool TextInputClient::AddGrammarFragments(
     const std::vector<GrammarFragment>& fragments) {
   return false;
 }
+
+bool TextInputClient::SupportsAlwaysConfirmComposition() {
+  return true;
+}
 #endif
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
 ui::TextInputClient::EditingContext TextInputClient::GetTextEditingContext() {
   return {};
 }

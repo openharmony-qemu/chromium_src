@@ -4,10 +4,6 @@
 
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_metrics_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 #pragma mark - Actions
 
 const char kShowBookmarksAction[] = "MobileNTPShowBookmarks";
@@ -21,7 +17,38 @@ const char kMostVisitedUrlBlacklistedAction[] = "MostVisited_UrlBlacklisted";
 const char kShowReturnToRecentTabTileAction[] =
     "IOS.StartSurface.ShowReturnToRecentTabTile";
 const char kOpenMostRecentTabAction[] = "IOS.StartSurface.OpenMostRecentTab";
+const char kContentNotificationSnackbarAction[] =
+    "ContentNotifications.Promo.Snackbar.ActionButtonTapped";
 
 #pragma mark - Histograms
 
 const char kTrendingQueriesHistogram[] = "IOS.TrendingQueries";
+const char kMagicStackModuleEngagementHistogram[] =
+    "IOS.MagicStack.Module.Click";
+const char kMagicStackModuleEngagementMostVisitedIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.MostVisited";
+const char kMagicStackModuleEngagementShortcutsIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.Shortcuts";
+const char kMagicStackModuleEngagementSetUpListIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.SetUpList";
+const char kMagicStackModuleEngagementTabResumptionIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.TabResumption";
+const char kMagicStackModuleEngagementSafetyCheckIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.SafetyCheck";
+const char kMagicStackModuleEngagementParcelTrackingIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.ParcelTracking";
+const char kMagicStackModuleEngagementPriceTrackingPromoIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.PriceTrackingPromo";
+const char kMagicStackModuleEngagementTipsIndexHistogram[] =
+    "IOS.MagicStack.Module.Click.Tips";
+const char kMagicStackModuleDisabledHistogram[] =
+    "IOS.MagicStack.Module.Disabled";
+const char kContentNotificationSnackbarEventHistogram[] =
+    "ContentNotifications.Promo.Snackbar.Event";
+const char kIOSSafetyCheckMagicStackHiddenReason[] =
+    "IOS.SafetyCheck.MagicStack.HiddenReason";
+
+const char kMagicStackStartSegmentationRankingFetchTimeHistogram[] =
+    "IOS.MagicStack.Start.SegmentationRankingFetchTime";
+const char kMagicStackNTPSegmentationRankingFetchTimeHistogram[] =
+    "IOS.MagicStack.NTP.SegmentationRankingFetchTime";

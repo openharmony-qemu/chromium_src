@@ -18,8 +18,11 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/resource/data_pack.h"
 #include "ui/base/resource/resource_bundle.h"
-#include "ui/base/ui_base_jni_headers/ResourceBundle_jni.h"
+#include "ui/base/resource/resource_scale_factor.h"
 #include "ui/base/ui_base_paths.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "ui/base/ui_base_jni_headers/ResourceBundle_jni.h"
 
 namespace ui {
 
@@ -56,6 +59,7 @@ bool LoadFromApkOrFile(const char* apk_path,
   bool success = *out_fd >= 0;
   if (!success) {
     LOG(ERROR) << "Failed to open pak file: " << apk_path;
+    base::android::DumpLastOpenApkAssetFailure();
   }
   return success;
 }
@@ -76,11 +80,8 @@ std::unique_ptr<DataPack> LoadDataPackFromLocalePak(
     int locale_pack_fd,
     const base::MemoryMappedFile::Region& region) {
   auto data_pack = std::make_unique<DataPack>(k100Percent);
-  if (!data_pack->LoadFromFileRegion(base::File(locale_pack_fd), region)) {
-    LOG(WARNING) << "failed to load locale.pak";
-    NOTREACHED();
-    return nullptr;
-  }
+  CHECK(data_pack->LoadFromFileRegion(base::File(locale_pack_fd), region))
+      << "failed to load locale.pak";
   return data_pack;
 }
 

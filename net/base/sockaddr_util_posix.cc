@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "net/base/sockaddr_util_posix.h"
 
 #include <stddef.h>
@@ -13,8 +18,6 @@
 
 #include "build/build_config.h"
 #include "net/base/sockaddr_storage.h"
-
-#include "base/logging.h"
 
 namespace net {
 
@@ -30,10 +33,6 @@ bool FillUnixAddress(const std::string& socket_path,
   // namespace pathname must start with '\0'. So, the size is always greater
   // than socket_path size by 1.
   size_t path_size = socket_path.size() + 1;
-#if BUILDFLAG(IS_OHOS)
-  LOG(INFO) << "Unix Domain Client Socket Fill Address: path_size = "
-            << path_size << " path_max = " << path_max;
-#endif
   if (path_size > path_max)
     return false;
 
@@ -61,4 +60,4 @@ bool FillUnixAddress(const std::string& socket_path,
 #endif
 }
 
-}  // namespace 
+}  // namespace net

@@ -53,8 +53,11 @@ class GeolocationPermissionContextAndroid
 
   static void RegisterProfilePrefs(PrefRegistrySimple* registry);
 
-  GeolocationPermissionContextAndroid(content::BrowserContext* browser_context,
-                                      std::unique_ptr<Delegate> delegate);
+  GeolocationPermissionContextAndroid(
+      content::BrowserContext* browser_context,
+      std::unique_ptr<Delegate> delegate,
+      bool is_regular_profile,
+      std::unique_ptr<LocationSettings> settings_override_for_test = nullptr);
 
   GeolocationPermissionContextAndroid(
       const GeolocationPermissionContextAndroid&) = delete;
@@ -72,9 +75,7 @@ class GeolocationPermissionContextAndroid
 
  private:
   // GeolocationPermissionContext:
-  void RequestPermission(const PermissionRequestID& id,
-                         const GURL& requesting_frame_origin,
-                         bool user_gesture,
+  void RequestPermission(PermissionRequestData request_data,
                          BrowserPermissionCallback callback) override;
   void UserMadePermissionDecision(const PermissionRequestID& id,
                                   const GURL& requesting_origin,
@@ -88,10 +89,11 @@ class GeolocationPermissionContextAndroid
                            ContentSetting content_setting,
                            bool is_one_time,
                            bool is_final_decision) override;
-  PermissionResult UpdatePermissionStatusWithDeviceStatus(
-      PermissionResult result,
+  content::PermissionResult UpdatePermissionStatusWithDeviceStatus(
+      content::PermissionResult result,
       const GURL& requesting_origin,
-      const GURL& embedding_origin) const override;
+      const GURL& embedding_origin) override;
+  bool AlwaysIncludeDeviceStatus() const override;
 
   // Functions to handle back off for showing the Location Settings Dialog.
   std::string GetLocationSettingsBackOffLevelPref(bool is_default_search) const;
@@ -130,6 +132,7 @@ class GeolocationPermissionContextAndroid
       const GURL& embedding_origin,
       bool persist,
       ContentSetting content_setting,
+      bool is_one_time,
       LocationSettingsDialogOutcome prompt_outcome);
 
   void FinishNotifyPermissionSet(const PermissionRequestID& id,
@@ -137,7 +140,8 @@ class GeolocationPermissionContextAndroid
                                  const GURL& embedding_origin,
                                  BrowserPermissionCallback callback,
                                  bool persist,
-                                 ContentSetting content_setting);
+                                 ContentSetting content_setting,
+                                 bool is_one_time);
 
   std::unique_ptr<LocationSettings> location_settings_;
 

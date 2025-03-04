@@ -30,34 +30,34 @@ class MojoRendererWrapper : public Renderer {
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
                   PipelineStatusCallback init_cb) override;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void Initialize(CreateTextureCB create_texture_cb,
                   DestroyTextureCB destroy_texture_cb) override {}
 #endif
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
-  void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
+  void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
   void StartPlayingFrom(base::TimeDelta time) override;
   void SetPlaybackRate(double playback_rate) override;
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
   void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
   void SetMediaSourceList(
       const std::vector<MediaSourceInfo>& source_infos) override;
   void SetMediaControls(bool show_media_controls,
-      const std::vector<std::string>& controls_list) override;
+                        const std::vector<std::string>& controls_list) override;
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       base::flat_map<std::string, std::string> attributes) override;
   void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
   void SetPlaybackRateWithReason(double playback_rate,
-      ActionReason reason) override;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+                                 ActionReason reason) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   std::unique_ptr<MojoRenderer> mojo_renderer_;

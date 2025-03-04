@@ -8,8 +8,6 @@ import android.view.View;
 import android.view.ViewStructure;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import androidx.annotation.VisibleForTesting;
-
 import org.chromium.content.browser.accessibility.WebContentsAccessibilityImpl;
 
 /**
@@ -32,12 +30,6 @@ public interface WebContentsAccessibility {
      *  @return {@code true} if the framework has been initialized.
      */
     boolean isNativeInitialized();
-
-    /**
-     *  Enables a11y for testing.
-     */
-    @VisibleForTesting
-    void setAccessibilityEnabledForTesting();
 
     /**
      * If native accessibility is enabled and no other views are temporarily
@@ -94,19 +86,21 @@ public interface WebContentsAccessibility {
     void setIsImageDescriptionsCandidate(boolean isImageDescriptionsCandidate);
 
     /**
+     * Sets whether or not this instance is a candidate for the auto-disable accessibility feature,
+     * if it is enabled. This feature is dependent on embedder behavior and accessibility state.
+     */
+    void setIsAutoDisableAccessibilityCandidate(boolean isAutoDisableAccessibilityCandidate);
+
+    /**
      * Called when autofill popup is displayed. Used to upport navigation through the view.
      * @param autofillPopupView The displayed autofill popup view.
      */
     void onAutofillPopupDisplayed(View autofillPopupView);
 
-    /**
-     * Called when autofill popup is dismissed.
-     */
+    /** Called when autofill popup is dismissed. */
     void onAutofillPopupDismissed();
 
-    /**
-     * Called when the a11y focus gets cleared on the autofill popup.
-     */
+    /** Called when the a11y focus gets cleared on the autofill popup. */
     void onAutofillPopupAccessibilityFocusCleared();
 
     /**
@@ -115,9 +109,7 @@ public interface WebContentsAccessibility {
      */
     boolean onHoverEventNoRenderer(MotionEvent event);
 
-    /**
-     * Called to reset focus state to nothing.
-     */
+    /** Called to reset focus state to nothing. */
     void resetFocus();
 
     /**

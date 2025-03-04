@@ -14,10 +14,11 @@
 #import "base/strings/utf_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/values.h"
-#import "ios/chrome/app/main_controller.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/main/browser_provider.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider_interface.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/test/app/chrome_test_util.h"
 #import "ios/chrome/test/app/settings_test_util.h"
 #import "ios/chrome/test/app/tab_test_util.h"
@@ -28,12 +29,6 @@
 #import "ios/web/public/test/navigation_test_util.h"
 #import "ios/web/public/ui/crw_web_view_proxy.h"
 #import "ios/web/public/web_state.h"
-#import "ui/gfx/geometry/rect_f.h"
-#import "ui/gfx/image/image.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::test::ios::WaitUntilConditionOrTimeout;
 
@@ -44,7 +39,7 @@ NSString* GetIdForWebState(web::WebState* web_state) {
 }
 
 WebStateList* GetCurrentWebStateList() {
-  return chrome_test_util::GetMainController()
+  return chrome_test_util::GetForegroundActiveScene()
       .browserProviderInterface.currentBrowserProvider.browser
       ->GetWebStateList();
 }
@@ -195,7 +190,7 @@ void DispatchSyncOnMainThread(void (^block)(void)) {
                                       inTab:(NSString*)tabID
                                     timeout:(base::TimeDelta)timeout {
   __block BOOL webStateFound = NO;
-  __block absl::optional<base::Value> messageValue;
+  __block std::optional<base::Value> messageValue;
   DispatchSyncOnMainThread(^{
     web::WebState* webState = GetWebStateWithId(tabID);
     if (!webState)
@@ -269,9 +264,9 @@ void DispatchSyncOnMainThread(void (^block)(void)) {
     UIEdgeInsets insets = webState->GetWebViewProxy().contentInset;
     CGRect adjustedBounds = UIEdgeInsetsInsetRect(bounds, insets);
 
-    webState->TakeSnapshot(gfx::RectF(adjustedBounds),
-                           base::BindRepeating(^(const gfx::Image& image) {
-                             snapshot = image.ToUIImage();
+    webState->TakeSnapshot(adjustedBounds,
+                           base::BindRepeating(^(UIImage* image) {
+                             snapshot = image;
                            }));
   });
 

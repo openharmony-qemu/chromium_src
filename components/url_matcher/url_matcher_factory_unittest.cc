@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/url_matcher/url_matcher_factory.h"
 
 #include <stddef.h>
@@ -181,7 +186,7 @@ class UrlConditionCaseTest {
                                                        lower_case_enforced)),
         url_(url) {}
 
-  ~UrlConditionCaseTest() {}
+  ~UrlConditionCaseTest() = default;
 
   // Match the condition against |url_|. Checks via EXPECT_* macros that
   // |expected_value_| matches always, and that |incorrect_case_value_| matches

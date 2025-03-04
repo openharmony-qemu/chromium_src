@@ -4,22 +4,23 @@
 
 #include "ui/base/ime/ash/fake_ime_keyboard.h"
 
+#include "base/functional/callback.h"
+
 namespace ash {
 namespace input_method {
 
 FakeImeKeyboard::FakeImeKeyboard()
     : set_current_keyboard_layout_by_name_count_(0),
-      auto_repeat_is_enabled_(false) {
-}
+      auto_repeat_is_enabled_(false) {}
 
 FakeImeKeyboard::~FakeImeKeyboard() = default;
 
-bool FakeImeKeyboard::SetCurrentKeyboardLayoutByName(
-    const std::string& layout_name) {
-  ImeKeyboard::SetCurrentKeyboardLayoutByName(layout_name);
+void FakeImeKeyboard::SetCurrentKeyboardLayoutByName(
+    const std::string& layout_name,
+    base::OnceCallback<void(bool)> callback) {
   ++set_current_keyboard_layout_by_name_count_;
-  last_layout_ = layout_name;
-  return true;
+  std::move(callback).Run(
+      ImeKeyboard::SetCurrentKeyboardLayoutByNameImpl(layout_name));
 }
 
 bool FakeImeKeyboard::SetAutoRepeatRate(const AutoRepeatRate& rate) {
@@ -27,31 +28,12 @@ bool FakeImeKeyboard::SetAutoRepeatRate(const AutoRepeatRate& rate) {
   return true;
 }
 
-bool FakeImeKeyboard::SetAutoRepeatEnabled(bool enabled) {
+void FakeImeKeyboard::SetAutoRepeatEnabled(bool enabled) {
   auto_repeat_is_enabled_ = enabled;
-  return true;
 }
 
 bool FakeImeKeyboard::GetAutoRepeatEnabled() {
   return auto_repeat_is_enabled_;
-}
-
-bool FakeImeKeyboard::ReapplyCurrentKeyboardLayout() {
-  return true;
-}
-
-void FakeImeKeyboard::ReapplyCurrentModifierLockStatus() {
-}
-
-void FakeImeKeyboard::DisableNumLock() {
-}
-
-bool FakeImeKeyboard::IsISOLevel5ShiftAvailable() const {
-  return false;
-}
-
-bool FakeImeKeyboard::IsAltGrAvailable() const {
-  return false;
 }
 
 }  // namespace input_method

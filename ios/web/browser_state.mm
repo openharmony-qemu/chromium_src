@@ -8,7 +8,6 @@
 
 #import "base/functional/bind.h"
 #import "base/functional/callback_helpers.h"
-#import "base/guid.h"
 #import "base/location.h"
 #import "base/memory/ref_counted.h"
 #import "base/metrics/histogram_functions.h"
@@ -27,10 +26,6 @@
 #import "net/url_request/url_request_context_getter_observer.h"
 #import "services/network/network_context.h"
 #import "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace web {
 namespace {
@@ -99,7 +94,7 @@ BrowserState::~BrowserState() {
   // they're going to have a bad time anyway.
   if (url_data_manager_ios_backend_) {
     bool posted = web::GetIOThreadTaskRunner({})->DeleteSoon(
-        FROM_HERE, url_data_manager_ios_backend_);
+        FROM_HERE, url_data_manager_ios_backend_.get());
     if (!posted)
       delete url_data_manager_ios_backend_;
   }
@@ -111,7 +106,7 @@ network::mojom::URLLoaderFactory* BrowserState::GetURLLoaderFactory() {
     auto url_loader_factory_params =
         network::mojom::URLLoaderFactoryParams::New();
     url_loader_factory_params->process_id = network::mojom::kBrowserProcessId;
-    url_loader_factory_params->is_corb_enabled = false;
+    url_loader_factory_params->is_orb_enabled = false;
     url_loader_factory_params->is_trusted = true;
     network_context_->CreateURLLoaderFactory(
         url_loader_factory_.BindNewPipeAndPassReceiver(),
@@ -128,6 +123,11 @@ network::mojom::CookieManager* BrowserState::GetCookieManager() {
         cookie_manager_.BindNewPipeAndPassReceiver());
   }
   return cookie_manager_.get();
+}
+
+network::mojom::NetworkContext* BrowserState::GetNetworkContext() {
+  CreateNetworkContextIfNecessary();
+  return network_context_.get();
 }
 
 leveldb_proto::ProtoDatabaseProvider* BrowserState::GetProtoDatabaseProvider() {
@@ -149,6 +149,10 @@ void BrowserState::GetProxyResolvingSocketFactory(
 scoped_refptr<network::SharedURLLoaderFactory>
 BrowserState::GetSharedURLLoaderFactory() {
   return shared_url_loader_factory_;
+}
+
+const std::string& BrowserState::GetWebKitStorageID() const {
+  return base::EmptyString();
 }
 
 URLDataManagerIOSBackend*

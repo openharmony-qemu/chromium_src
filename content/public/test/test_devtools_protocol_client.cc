@@ -5,6 +5,7 @@
 #include "content/public/test/test_devtools_protocol_client.h"
 
 #include <memory>
+#include <string_view>
 
 #include "base/auto_reset.h"
 #include "base/json/json_reader.h"
@@ -79,9 +80,18 @@ void TestDevToolsProtocolClient::AttachToBrowserTarget() {
 
 bool TestDevToolsProtocolClient::HasExistingNotification(
     const std::string& search) const {
+  return HasExistingNotificationMatching(
+      [&search](const base::Value::Dict& notification) {
+        return *notification.FindString(kMethodParam) == search;
+      });
+}
+
+bool TestDevToolsProtocolClient::HasExistingNotificationMatching(
+    base::FunctionRef<bool(const base::Value::Dict&)> pred) const {
   for (const auto& notification : notifications_) {
-    if (*notification.FindString(kMethodParam) == search)
+    if (pred(notification)) {
       return true;
+    }
   }
   return false;
 }
@@ -143,10 +153,10 @@ void TestDevToolsProtocolClient::RunLoopUpdatingQuitClosure() {
 void TestDevToolsProtocolClient::DispatchProtocolMessage(
     DevToolsAgentHost* agent_host,
     base::span<const uint8_t> message) {
-  base::StringPiece message_str(reinterpret_cast<const char*>(message.data()),
-                                message.size());
+  std::string_view message_str(reinterpret_cast<const char*>(message.data()),
+                               message.size());
   base::Value parsed = *base::JSONReader::Read(message_str);
-  if (absl::optional<int> id = parsed.GetDict().FindInt("id")) {
+  if (std::optional<int> id = parsed.GetDict().FindInt("id")) {
     received_responses_count_++;
     response_ = std::move(parsed).TakeDict();
     in_dispatch_ = false;
@@ -172,8 +182,9 @@ void TestDevToolsProtocolClient::DispatchProtocolMessage(
 
 void TestDevToolsProtocolClient::AgentHostClosed(
     DevToolsAgentHost* agent_host) {
-  if (!agent_host_can_close_)
+  if (!agent_host_can_close_) {
     NOTREACHED();
+  }
 }
 
 bool TestDevToolsProtocolClient::AllowUnsafeOperations() {
@@ -188,7 +199,16 @@ bool TestDevToolsProtocolClient::MayReadLocalFiles() {
   return may_read_local_files_;
 }
 
-absl::optional<url::Origin>
+bool TestDevToolsProtocolClient::MayWriteLocalFiles() {
+  return may_write_local_files_;
+}
+
+bool TestDevToolsProtocolClient::MayAttachToURL(const GURL& url,
+                                                bool is_webui) {
+  return not_attachable_hosts_.find(url.host()) == not_attachable_hosts_.end();
+}
+
+std::optional<url::Origin>
 TestDevToolsProtocolClient::GetNavigationInitiatorOrigin() {
   return navigation_initiator_origin_;
 }

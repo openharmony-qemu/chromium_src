@@ -42,9 +42,12 @@ class MockArcNotificationItem : public ArcNotificationItem {
   // Overriding methods for returning dummy data or doing nothing.
   void OnClosedFromAndroid() override {}
   void Click() override {}
+  void ClickButton(const int button_index, const std::string& input) override {}
   void ToggleExpansion() override {}
+  void SetExpandState(bool expanded) override {}
   void OnWindowActivated(bool activated) override {}
   void OpenSettings() override {}
+  void DisableNotification() override {}
   void OpenSnooze() override {}
   void IncrementWindowRefCount() override {}
   void DecrementWindowRefCount() override {}

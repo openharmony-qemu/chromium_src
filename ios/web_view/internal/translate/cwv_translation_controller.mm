@@ -23,10 +23,6 @@
 #import "ios/web_view/public/cwv_translation_policy.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 NSErrorDomain const CWVTranslationErrorDomain =
     @"org.chromium.chromewebview.TranslationErrorDomain";
 
@@ -58,7 +54,6 @@ CWVTranslationError CWVConvertTranslateError(translate::TranslateErrors type) {
       return CWVTranslationErrorScriptLoadError;
     case translate::TranslateErrors::TRANSLATE_ERROR_MAX:
       NOTREACHED();
-      return CWVTranslationErrorNone;
   }
 }
 }  // namespace
@@ -201,8 +196,7 @@ CWVTranslationError CWVConvertTranslateError(translate::TranslateErrors type) {
   switch (policy.type) {
     case CWVTranslationPolicyAsk: {
       _translatePrefs->UnblockLanguage(languageCode);
-      _translatePrefs->RemoveLanguagePairFromAlwaysTranslateList(languageCode,
-                                                                 std::string());
+      _translatePrefs->RemoveLanguagePairFromAlwaysTranslateList(languageCode);
       break;
     }
     case CWVTranslationPolicyNever: {
@@ -254,15 +248,15 @@ CWVTranslationError CWVConvertTranslateError(translate::TranslateErrors type) {
       break;
     }
     case CWVTranslationPolicyAuto: {
-      // TODO(crbug.com/706289): Support auto translation policies for websites.
+      // TODO(crbug.com/41310094): Support auto translation policies for
+      // websites.
       NOTREACHED();
-      break;
     }
   }
 }
 
 - (CWVTranslationPolicy*)translationPolicyForPageHost:(NSString*)pageHost {
-  // TODO(crbug.com/706289): Return translationPolicyAuto when implemented.
+  // TODO(crbug.com/41310094): Return translationPolicyAuto when implemented.
   bool isSiteOnNeverPromptList = _translatePrefs->IsSiteOnNeverPromptList(
       base::SysNSStringToUTF8(pageHost));
   if (isSiteOnNeverPromptList) {

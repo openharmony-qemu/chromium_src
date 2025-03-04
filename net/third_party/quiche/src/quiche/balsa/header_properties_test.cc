@@ -25,15 +25,39 @@ TEST(HeaderPropertiesTest, IsInvalidHeaderKeyChar) {
   EXPECT_TRUE(IsInvalidHeaderKeyChar(0x1F));
   EXPECT_TRUE(IsInvalidHeaderKeyChar(0x7F));
   EXPECT_TRUE(IsInvalidHeaderKeyChar(' '));
+  EXPECT_TRUE(IsInvalidHeaderKeyChar('"'));
   EXPECT_TRUE(IsInvalidHeaderKeyChar('\t'));
   EXPECT_TRUE(IsInvalidHeaderKeyChar('\r'));
   EXPECT_TRUE(IsInvalidHeaderKeyChar('\n'));
+  EXPECT_TRUE(IsInvalidHeaderKeyChar('}'));
 
   EXPECT_FALSE(IsInvalidHeaderKeyChar('a'));
   EXPECT_FALSE(IsInvalidHeaderKeyChar('B'));
   EXPECT_FALSE(IsInvalidHeaderKeyChar('7'));
   EXPECT_FALSE(IsInvalidHeaderKeyChar(0x42));
-  EXPECT_FALSE(IsInvalidHeaderChar(0x7D));
+  EXPECT_FALSE(IsInvalidHeaderKeyChar(0x7C));
+  EXPECT_FALSE(IsInvalidHeaderKeyChar(0x7E));
+}
+
+TEST(HeaderPropertiesTest, IsInvalidHeaderKeyCharAllowDoubleQuote) {
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x00));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x06));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x09));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x1F));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x7F));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote(' '));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote('\t'));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote('\r'));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote('\n'));
+  EXPECT_TRUE(IsInvalidHeaderKeyCharAllowDoubleQuote('}'));
+
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote('"'));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote('a'));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote('B'));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote('7'));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x42));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x7C));
+  EXPECT_FALSE(IsInvalidHeaderKeyCharAllowDoubleQuote(0x7E));
 }
 
 TEST(HeaderPropertiesTest, IsInvalidHeaderChar) {
@@ -74,6 +98,25 @@ TEST(HeaderPropertiesTest, HasInvalidHeaderChars) {
   EXPECT_FALSE(HasInvalidHeaderChars("Al\right"));
   EXPECT_FALSE(HasInvalidHeaderChars("\new day"));
   EXPECT_FALSE(HasInvalidHeaderChars("\x42 is a nice character"));
+}
+
+TEST(HeaderPropertiesTest, HasInvalidPathChar) {
+  EXPECT_FALSE(HasInvalidPathChar(""));
+  EXPECT_FALSE(HasInvalidPathChar("/"));
+  EXPECT_FALSE(HasInvalidPathChar("invalid_path/but/valid/chars"));
+  EXPECT_FALSE(HasInvalidPathChar("/path/with?query;fragment"));
+  EXPECT_FALSE(HasInvalidPathChar("/path2.fun/my_site-root/!&$=,+*()/wow"));
+  // Surprise! []{}^| are seen in requests on the internet.
+  EXPECT_FALSE(HasInvalidPathChar("/square[brackets]surprisingly/allowed"));
+  EXPECT_FALSE(HasInvalidPathChar("/curly{braces}surprisingly/allowed"));
+  EXPECT_FALSE(HasInvalidPathChar("/caret^pipe|surprisingly/allowed"));
+  // Surprise! Chrome sends backslash in query params, sometimes.
+  EXPECT_FALSE(HasInvalidPathChar("/path/with?backslash\\hooray"));
+
+  EXPECT_TRUE(HasInvalidPathChar("/path with spaces"));
+  EXPECT_TRUE(HasInvalidPathChar("/path\rwith\tother\nwhitespace"));
+  EXPECT_TRUE(HasInvalidPathChar("/backtick`"));
+  EXPECT_TRUE(HasInvalidPathChar("/angle<brackets>also/bad"));
 }
 
 }  // namespace

@@ -4,16 +4,13 @@
 
 #import "ios/web/test/fakes/fake_web_frame_impl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 #import <string>
 #import <utility>
 
 #import "base/functional/bind.h"
 #import "base/functional/callback.h"
 #import "base/json/json_writer.h"
+#import "base/strings/string_util.h"
 #import "base/strings/utf_string_conversions.h"
 #import "base/values.h"
 #import "ios/web/public/thread/web_task_traits.h"
@@ -52,7 +49,7 @@ std::unique_ptr<FakeWebFrame> FakeWebFrame::CreateChildWebFrame(
 FakeWebFrameImpl::FakeWebFrameImpl(const std::string& frame_id,
                                    bool is_main_frame,
                                    GURL security_origin)
-    : frame_id_(frame_id),
+    : frame_id_(base::ToLowerASCII(frame_id)),
       is_main_frame_(is_main_frame),
       security_origin_(security_origin) {}
 
@@ -83,7 +80,7 @@ void FakeWebFrameImpl::set_call_java_script_function_callback(
 
 bool FakeWebFrameImpl::CallJavaScriptFunction(
     const std::string& name,
-    const std::vector<base::Value>& parameters) {
+    const base::Value::List& parameters) {
   if (call_java_script_function_callback_) {
     call_java_script_function_callback_.Run();
   }
@@ -107,7 +104,7 @@ bool FakeWebFrameImpl::CallJavaScriptFunction(
 
 bool FakeWebFrameImpl::CallJavaScriptFunction(
     const std::string& name,
-    const std::vector<base::Value>& parameters,
+    const base::Value::List& parameters,
     base::OnceCallback<void(const base::Value*)> callback,
     base::TimeDelta timeout) {
   bool success = CallJavaScriptFunction(name, parameters);
@@ -127,19 +124,17 @@ bool FakeWebFrameImpl::CallJavaScriptFunction(
 
 bool FakeWebFrameImpl::CallJavaScriptFunctionInContentWorld(
     const std::string& name,
-    const std::vector<base::Value>& parameters,
+    const base::Value::List& parameters,
     JavaScriptContentWorld* content_world) {
-  last_received_content_world_ = content_world;
   return CallJavaScriptFunction(name, parameters);
 }
 
 bool FakeWebFrameImpl::CallJavaScriptFunctionInContentWorld(
     const std::string& name,
-    const std::vector<base::Value>& parameters,
+    const base::Value::List& parameters,
     JavaScriptContentWorld* content_world,
     base::OnceCallback<void(const base::Value*)> callback,
     base::TimeDelta timeout) {
-  last_received_content_world_ = content_world;
   return CallJavaScriptFunction(name, parameters, std::move(callback), timeout);
 }
 
@@ -182,6 +177,17 @@ bool FakeWebFrameImpl::ExecuteJavaScript(
   return !error;
 }
 
+base::WeakPtr<WebFrame> FakeWebFrameImpl::AsWeakPtr() {
+  return weak_ptr_factory_.GetWeakPtr();
+}
+
+bool FakeWebFrameImpl::ExecuteJavaScriptInContentWorld(
+    const std::u16string& script,
+    JavaScriptContentWorld* content_world,
+    ExecuteJavaScriptCallbackWithError callback) {
+  return ExecuteJavaScript(script, std::move(callback));
+}
+
 void FakeWebFrameImpl::AddJsResultForFunctionCall(
     base::Value* js_result,
     const std::string& function_name) {
@@ -192,10 +198,6 @@ void FakeWebFrameImpl::AddResultForExecutedJs(
     base::Value* js_result,
     const std::u16string& executed_js) {
   executed_js_result_map_[executed_js] = js_result;
-}
-
-JavaScriptContentWorld* FakeWebFrameImpl::last_received_content_world() {
-  return last_received_content_world_;
 }
 
 std::u16string FakeWebFrameImpl::GetLastJavaScriptCall() const {

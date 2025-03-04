@@ -22,7 +22,7 @@ class VIEWS_EXPORT WidgetObserver : public base::CheckedObserver {
   // The closing notification is sent immediately in response to (i.e. in the
   // same call stack as) a request to close the Widget (via Close() or
   // CloseNow()).
-  // TODO(crbug.com/1240365): Remove this, this API is too scary. Users of this
+  // TODO(crbug.com/40194222): Remove this, this API is too scary. Users of this
   // API can expect it to always be called, but it's only called on the same
   // stack as a close request. If the Widget closes due to OS native-widget
   // destruction this is never called. Replace existing uses with
@@ -50,10 +50,30 @@ class VIEWS_EXPORT WidgetObserver : public base::CheckedObserver {
 
   virtual void OnWidgetActivationChanged(Widget* widget, bool active) {}
 
+  // Invoked when any widget within the tree, rooted at `root_widget`, becomes
+  // active. A widget tree is considered active if any widget in the tree is
+  // active. `active_widget` is the widget that has just become active.
+  virtual void OnWidgetTreeActivated(Widget* root_widget,
+                                     Widget* active_widget) {}
+
   virtual void OnWidgetBoundsChanged(Widget* widget,
                                      const gfx::Rect& new_bounds) {}
 
   virtual void OnWidgetThemeChanged(Widget* widget) {}
+
+  virtual void OnWidgetSizeConstraintsChanged(Widget* widget) {}
+
+  // Invoked when a display-state affecting change happens. This can happen when
+  // either `ui::mojom::WindowShowState` or `ui::PlatformWindowState` changes
+  // depending on the platform in question.
+  virtual void OnWidgetShowStateChanged(Widget* widget) {}
+
+  // Called when `widget` becomes parent of `child`.
+  virtual void OnWidgetChildAdded(Widget* widget, Widget* child) {}
+
+  // Called when `widget` stopes being the parent of `child`, including when
+  // `child` is destroying.
+  virtual void OnWidgetChildRemoved(Widget* widget, Widget* child) {}
 
  protected:
   ~WidgetObserver() override = default;

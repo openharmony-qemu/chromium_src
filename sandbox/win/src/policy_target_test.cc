@@ -4,10 +4,13 @@
 
 #include <ntstatus.h>
 
+#include <string_view>
+
+#include "base/environment.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/writable_shared_memory_region.h"
+#include "base/scoped_environment_variable_override.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_util.h"
 #include "base/win/scoped_process_information.h"
 #include "base/win/win_util.h"
@@ -171,6 +174,20 @@ SBOX_TESTS_COMMAND int PolicyTargetTest_process(int argc, wchar_t** argv) {
     return SBOX_TEST_SUCCEEDED;
   base::win::ScopedProcessInformation process_info(temp_process_info);
   return SBOX_TEST_FAILED;
+}
+
+// Tests that environment is filtered correctly.
+SBOX_TESTS_COMMAND int PolicyTargetTest_filterEnvironment(int argc,
+                                                          wchar_t** argv) {
+  auto env = base::Environment::Create();
+  // "TMP" should never be filtered. See `TargetProcess::Create`.
+  if (!env->HasVar("TMP")) {
+    return SBOX_TEST_FIRST_ERROR;
+  }
+  if (env->HasVar("SBOX_TEST_ENV")) {
+    return SBOX_TEST_SECOND_ERROR;
+  }
+  return SBOX_TEST_SUCCEEDED;
 }
 
 TEST(PolicyTargetTest, SetInformationThread) {
@@ -465,7 +482,7 @@ TEST(PolicyTargetTest, ShareHandleTest) {
   BrokerServices* broker = GetBroker();
   ASSERT_TRUE(broker);
 
-  base::StringPiece contents = "Hello World";
+  std::string_view contents = "Hello World";
   base::WritableSharedMemoryRegion writable_region =
       base::WritableSharedMemoryRegion::Create(contents.size());
   ASSERT_TRUE(writable_region.IsValid());
@@ -556,6 +573,23 @@ TEST(SharedTargetConfig, BrokerConfigManagement) {
   // But should be the second time.
   policy_two = broker->CreatePolicy("key-two");
   EXPECT_TRUE(policy_two->GetConfig()->IsConfigured());
+}
+
+// Test that environment for a sandboxed process is filtered correctly.
+TEST(PolicyTargetTest, FilterEnvironment) {
+  base::ScopedEnvironmentVariableOverride scoped_env("SBOX_TEST_ENV", "FOO");
+  {
+    TestRunner runner;
+    runner.GetPolicy()->GetConfig()->SetFilterEnvironment(/*filter=*/true);
+    EXPECT_EQ(SBOX_TEST_SUCCEEDED,
+              runner.RunTest(L"PolicyTargetTest_filterEnvironment"));
+  }
+  {
+    TestRunner runner;
+    runner.GetPolicy()->GetConfig()->SetFilterEnvironment(/*filter=*/false);
+    EXPECT_EQ(SBOX_TEST_SECOND_ERROR,
+              runner.RunTest(L"PolicyTargetTest_filterEnvironment"));
+  }
 }
 
 }  // namespace sandbox

@@ -4,11 +4,13 @@
 
 package org.chromium.device.bluetooth;
 
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.base.Log;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNIAdditionalImport;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
+import org.chromium.device.bluetooth.wrapper.BluetoothGattCharacteristicWrapper;
+import org.chromium.device.bluetooth.wrapper.BluetoothGattDescriptorWrapper;
 
 import java.util.List;
 
@@ -20,18 +22,18 @@ import java.util.List;
  * device::BluetoothRemoteGattCharacteristicAndroid.
  */
 @JNINamespace("device")
-@JNIAdditionalImport(Wrappers.class)
 final class ChromeBluetoothRemoteGattCharacteristic {
     private static final String TAG = "Bluetooth";
 
     private long mNativeBluetoothRemoteGattCharacteristicAndroid;
-    final Wrappers.BluetoothGattCharacteristicWrapper mCharacteristic;
+    final BluetoothGattCharacteristicWrapper mCharacteristic;
     final String mInstanceId;
     final ChromeBluetoothDevice mChromeDevice;
 
     private ChromeBluetoothRemoteGattCharacteristic(
             long nativeBluetoothRemoteGattCharacteristicAndroid,
-            Wrappers.BluetoothGattCharacteristicWrapper characteristicWrapper, String instanceId,
+            BluetoothGattCharacteristicWrapper characteristicWrapper,
+            String instanceId,
             ChromeBluetoothDevice chromeDevice) {
         mNativeBluetoothRemoteGattCharacteristicAndroid =
                 nativeBluetoothRemoteGattCharacteristicAndroid;
@@ -44,9 +46,7 @@ final class ChromeBluetoothRemoteGattCharacteristic {
         Log.v(TAG, "ChromeBluetoothRemoteGattCharacteristic created.");
     }
 
-    /**
-     * Handles C++ object being destroyed.
-     */
+    /** Handles C++ object being destroyed. */
     @CalledByNative
     private void onBluetoothRemoteGattCharacteristicAndroidDestruction() {
         Log.v(TAG, "ChromeBluetoothRemoteGattCharacteristic Destroyed.");
@@ -60,30 +60,42 @@ final class ChromeBluetoothRemoteGattCharacteristic {
     void onCharacteristicChanged(byte[] value) {
         Log.i(TAG, "onCharacteristicChanged");
         if (mNativeBluetoothRemoteGattCharacteristicAndroid != 0) {
-            ChromeBluetoothRemoteGattCharacteristicJni.get().onChanged(
-                    mNativeBluetoothRemoteGattCharacteristicAndroid,
-                    ChromeBluetoothRemoteGattCharacteristic.this, value);
+            ChromeBluetoothRemoteGattCharacteristicJni.get()
+                    .onChanged(
+                            mNativeBluetoothRemoteGattCharacteristicAndroid,
+                            ChromeBluetoothRemoteGattCharacteristic.this,
+                            value);
         }
     }
 
     void onCharacteristicRead(int status) {
-        Log.i(TAG, "onCharacteristicRead status:%d==%s", status,
+        Log.i(
+                TAG,
+                "onCharacteristicRead status:%d==%s",
+                status,
                 status == android.bluetooth.BluetoothGatt.GATT_SUCCESS ? "OK" : "Error");
         if (mNativeBluetoothRemoteGattCharacteristicAndroid != 0) {
-            ChromeBluetoothRemoteGattCharacteristicJni.get().onRead(
-                    mNativeBluetoothRemoteGattCharacteristicAndroid,
-                    ChromeBluetoothRemoteGattCharacteristic.this, status,
-                    mCharacteristic.getValue());
+            ChromeBluetoothRemoteGattCharacteristicJni.get()
+                    .onRead(
+                            mNativeBluetoothRemoteGattCharacteristicAndroid,
+                            ChromeBluetoothRemoteGattCharacteristic.this,
+                            status,
+                            mCharacteristic.getValue());
         }
     }
 
     void onCharacteristicWrite(int status) {
-        Log.i(TAG, "onCharacteristicWrite status:%d==%s", status,
+        Log.i(
+                TAG,
+                "onCharacteristicWrite status:%d==%s",
+                status,
                 status == android.bluetooth.BluetoothGatt.GATT_SUCCESS ? "OK" : "Error");
         if (mNativeBluetoothRemoteGattCharacteristicAndroid != 0) {
-            ChromeBluetoothRemoteGattCharacteristicJni.get().onWrite(
-                    mNativeBluetoothRemoteGattCharacteristicAndroid,
-                    ChromeBluetoothRemoteGattCharacteristic.this, status);
+            ChromeBluetoothRemoteGattCharacteristicJni.get()
+                    .onWrite(
+                            mNativeBluetoothRemoteGattCharacteristicAndroid,
+                            ChromeBluetoothRemoteGattCharacteristic.this,
+                            status);
         }
     }
 
@@ -94,10 +106,13 @@ final class ChromeBluetoothRemoteGattCharacteristic {
     @CalledByNative
     private static ChromeBluetoothRemoteGattCharacteristic create(
             long nativeBluetoothRemoteGattCharacteristicAndroid,
-            Wrappers.BluetoothGattCharacteristicWrapper characteristicWrapper, String instanceId,
+            BluetoothGattCharacteristicWrapper characteristicWrapper,
+            String instanceId,
             ChromeBluetoothDevice chromeDevice) {
         return new ChromeBluetoothRemoteGattCharacteristic(
-                nativeBluetoothRemoteGattCharacteristicAndroid, characteristicWrapper, instanceId,
+                nativeBluetoothRemoteGattCharacteristicAndroid,
+                characteristicWrapper,
+                instanceId,
                 chromeDevice);
     }
 
@@ -151,42 +166,54 @@ final class ChromeBluetoothRemoteGattCharacteristic {
     // BluetoothRemoteGattCharacteristicAndroid::EnsureDescriptorsCreated.
     @CalledByNative
     private void createDescriptors() {
-        List<Wrappers.BluetoothGattDescriptorWrapper> descriptors =
+        List<BluetoothGattDescriptorWrapper> descriptors =
                 mCharacteristic.getDescriptors();
         // descriptorInstanceId ensures duplicate UUIDs have unique instance
         // IDs. BluetoothGattDescriptor does not offer getInstanceId the way
         // BluetoothGattCharacteristic does.
         //
-        // TODO(crbug.com/576906) Do not reuse IDs upon onServicesDiscovered.
+        // TODO(crbug.com/40452041) Do not reuse IDs upon onServicesDiscovered.
         int instanceIdCounter = 0;
-        for (Wrappers.BluetoothGattDescriptorWrapper descriptor : descriptors) {
+        for (BluetoothGattDescriptorWrapper descriptor : descriptors) {
             String descriptorInstanceId =
                     mInstanceId + "/" + descriptor.getUuid().toString() + ";" + instanceIdCounter++;
-            ChromeBluetoothRemoteGattCharacteristicJni.get().createGattRemoteDescriptor(
-                    mNativeBluetoothRemoteGattCharacteristicAndroid,
-                    ChromeBluetoothRemoteGattCharacteristic.this, descriptorInstanceId, descriptor,
-                    mChromeDevice);
+            ChromeBluetoothRemoteGattCharacteristicJni.get()
+                    .createGattRemoteDescriptor(
+                            mNativeBluetoothRemoteGattCharacteristicAndroid,
+                            ChromeBluetoothRemoteGattCharacteristic.this,
+                            descriptorInstanceId,
+                            descriptor,
+                            mChromeDevice);
         }
     }
 
     @NativeMethods
     interface Natives {
         // Binds to BluetoothRemoteGattCharacteristicAndroid::OnChanged.
-        void onChanged(long nativeBluetoothRemoteGattCharacteristicAndroid,
-                ChromeBluetoothRemoteGattCharacteristic caller, byte[] value);
+        void onChanged(
+                long nativeBluetoothRemoteGattCharacteristicAndroid,
+                ChromeBluetoothRemoteGattCharacteristic caller,
+                byte[] value);
 
         // Binds to BluetoothRemoteGattCharacteristicAndroid::OnRead.
-        void onRead(long nativeBluetoothRemoteGattCharacteristicAndroid,
-                ChromeBluetoothRemoteGattCharacteristic caller, int status, byte[] value);
+        void onRead(
+                long nativeBluetoothRemoteGattCharacteristicAndroid,
+                ChromeBluetoothRemoteGattCharacteristic caller,
+                int status,
+                byte[] value);
 
         // Binds to BluetoothRemoteGattCharacteristicAndroid::OnWrite.
-        void onWrite(long nativeBluetoothRemoteGattCharacteristicAndroid,
-                ChromeBluetoothRemoteGattCharacteristic caller, int status);
+        void onWrite(
+                long nativeBluetoothRemoteGattCharacteristicAndroid,
+                ChromeBluetoothRemoteGattCharacteristic caller,
+                int status);
 
         // Binds to BluetoothRemoteGattCharacteristicAndroid::CreateGattRemoteDescriptor.
-        void createGattRemoteDescriptor(long nativeBluetoothRemoteGattCharacteristicAndroid,
-                ChromeBluetoothRemoteGattCharacteristic caller, String instanceId,
-                Wrappers.BluetoothGattDescriptorWrapper descriptorWrapper,
+        void createGattRemoteDescriptor(
+                long nativeBluetoothRemoteGattCharacteristicAndroid,
+                ChromeBluetoothRemoteGattCharacteristic caller,
+                String instanceId,
+                BluetoothGattDescriptorWrapper descriptorWrapper,
                 ChromeBluetoothDevice chromeBluetoothDevice);
     }
 }

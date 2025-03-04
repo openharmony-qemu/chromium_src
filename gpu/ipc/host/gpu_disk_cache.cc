@@ -8,6 +8,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
+#include "base/not_fatal_until.h"
 #include "base/threading/thread_checker.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -41,9 +42,13 @@ class GpuDiskCacheEntry {
     OPEN_ENTRY,
     WRITE_DATA,
     CREATE_ENTRY,
+    REOPEN_ENTRY,
   };
 
+  int OpenEntry();
+
   int OpenCallback(int rv);
+  int ReopenCallback(int rv);
   int WriteCallback(int rv);
   int IOComplete(int rv);
 
@@ -53,7 +58,7 @@ class GpuDiskCacheEntry {
   OpType op_type_ = OPEN_ENTRY;
   std::string key_;
   std::string blob_;
-  raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
+  raw_ptr<disk_cache::Entry, AcrossTasksDanglingUntriaged> entry_;
   base::WeakPtr<GpuDiskCacheEntry> weak_ptr_;
   base::WeakPtrFactory<GpuDiskCacheEntry> weak_ptr_factory_{this};
 };
@@ -96,7 +101,7 @@ class GpuDiskCacheReadHelper {
   OpType op_type_ = OPEN_NEXT;
   std::unique_ptr<disk_cache::Backend::Iterator> iter_;
   scoped_refptr<net::IOBufferWithSize> buf_;
-  raw_ptr<disk_cache::Entry, DanglingUntriaged> entry_;
+  raw_ptr<disk_cache::Entry, AcrossTasksDanglingUntriaged> entry_;
   base::WeakPtrFactory<GpuDiskCacheReadHelper> weak_ptr_factory_{this};
 };
 
@@ -147,7 +152,7 @@ GpuDiskCacheEntry::~GpuDiskCacheEntry() {
     entry_->Close();
 }
 
-void GpuDiskCacheEntry::Cache() {
+int GpuDiskCacheEntry::OpenEntry() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   auto callback = base::BindOnce(&GpuDiskCacheEntry::OnEntryOpenComplete,
@@ -155,8 +160,15 @@ void GpuDiskCacheEntry::Cache() {
 
   disk_cache::EntryResult result =
       cache_->backend()->OpenEntry(key_, net::HIGHEST, std::move(callback));
-  if (result.net_error() != net::ERR_IO_PENDING)
+  int rv = result.net_error();
+  if (rv != net::ERR_IO_PENDING) {
     OnEntryOpenComplete(std::move(result));
+  }
+  return rv;
+}
+
+void GpuDiskCacheEntry::Cache() {
+  OpenEntry();
 }
 
 void GpuDiskCacheEntry::OnOpComplete(int rv) {
@@ -175,6 +187,9 @@ void GpuDiskCacheEntry::OnOpComplete(int rv) {
         break;
       case WRITE_DATA:
         rv = IOComplete(rv);
+        break;
+      case REOPEN_ENTRY:
+        rv = ReopenCallback(rv);
         break;
     }
   } while (rv != net::ERR_IO_PENDING && weak_ptr);
@@ -210,12 +225,30 @@ int GpuDiskCacheEntry::OpenCallback(int rv) {
   return rv;
 }
 
+int GpuDiskCacheEntry::ReopenCallback(int rv) {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+  if (rv == net::OK) {
+    cache_->backend()->OnExternalCacheHit(key_);
+  } else {
+    LOG(ERROR) << "Failed retry to open blob cache entry: " << rv;
+  }
+  cache_->EntryComplete(this);
+  return rv;
+}
+
 int GpuDiskCacheEntry::WriteCallback(int rv) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   if (rv != net::OK) {
-    LOG(ERROR) << "Failed to create blob cache entry: " << rv;
-    cache_->EntryComplete(this);
-    return rv;
+    // We might have failed to create the entry because another create on the
+    // same key happened before. To verify, try re-opening the entry.
+    if (rv == net::ERR_FAILED) {
+      op_type_ = REOPEN_ENTRY;
+      return OpenEntry();
+    } else {
+      LOG(ERROR) << "Failed to create blob cache entry: " << rv;
+      cache_->EntryComplete(this);
+      return rv;
+    }
   }
 
   op_type_ = WRITE_DATA;
@@ -439,6 +472,9 @@ GpuDiskCacheHandle GpuDiskCacheFactory::GetCacheHandle(
     case GpuDiskCacheType::kDawnWebGPU:
       handle = GpuDiskCacheDawnWebGPUHandle(raw_handle);
       break;
+    case GpuDiskCacheType::kDawnGraphite:
+      handle = GpuDiskCacheDawnGraphiteHandle(raw_handle);
+      break;
   }
   handle_to_path_map_[handle] = path;
   path_to_handle_map_[path] = handle;
@@ -450,7 +486,7 @@ GpuDiskCacheHandle GpuDiskCacheFactory::GetCacheHandle(
 void GpuDiskCacheFactory::ReleaseCacheHandle(GpuDiskCache* cache) {
   // Get the handle related to the cache via the path.
   auto it = path_to_handle_map_.find(cache->cache_path_);
-  DCHECK(it != path_to_handle_map_.end());
+  CHECK(it != path_to_handle_map_.end(), base::NotFatalUntil::M130);
   const base::FilePath& path = it->first;
   const GpuDiskCacheHandle& handle = it->second;
 
@@ -476,7 +512,7 @@ scoped_refptr<GpuDiskCache> GpuDiskCacheFactory::Get(
   if (handle_it != handle_to_path_map_.end()) {
     auto path_it = gpu_cache_map_.find(handle_it->second);
     if (path_it != gpu_cache_map_.end()) {
-      return path_it->second;
+      return path_it->second.get();
     }
   }
   return nullptr;
@@ -505,7 +541,7 @@ scoped_refptr<GpuDiskCache> GpuDiskCacheFactory::GetOrCreateByPath(
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   auto iter = gpu_cache_map_.find(path);
   if (iter != gpu_cache_map_.end())
-    return iter->second;
+    return iter->second.get();
 
   auto cache = base::WrapRefCounted(new GpuDiskCache(
       this, path, blob_loaded_cb, std::move(cache_destroyed_cb)));
@@ -564,11 +600,15 @@ void GpuDiskCacheFactory::ClearByPath(const base::FilePath& path,
     return;
   }
 
-  // We may end up creating the cache if the path that is specified isn't
-  // already an opened path. In this case, we don't need to set a blob loaded
-  // callback since the cache is being cleared anyways, hence the DoNothing
-  // callback.
-  ClearByCache(GetOrCreateByPath(path), delete_begin, delete_end,
+  // Don't need to do anything if there is no cache in the path. This happens
+  // when clearing an in-memory storage partition.
+  auto iter = gpu_cache_map_.find(path);
+  if (iter == gpu_cache_map_.end()) {
+    std::move(callback).Run();
+    return;
+  }
+
+  ClearByCache(iter->second.get(), delete_begin, delete_end,
                std::move(callback));
 }
 
@@ -615,7 +655,6 @@ GpuDiskCache::~GpuDiskCache() {
 void GpuDiskCache::Init() {
   if (is_initialized_) {
     NOTREACHED();  // can't initialize disk cache twice.
-    return;
   }
   is_initialized_ = true;
 
@@ -628,7 +667,6 @@ void GpuDiskCache::Init() {
 
   if (rv.net_error == net::OK) {
     NOTREACHED();  // This shouldn't actually happen with a non-memory backend.
-    backend_ = std::move(rv.backend);
   }
 }
 

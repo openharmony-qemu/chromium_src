@@ -9,12 +9,8 @@
 #import "ios/net/cookies/cookie_creation_time_manager.h"
 #import "ios/net/cookies/cookie_store_ios_client.h"
 #import "ios/net/cookies/system_cookie_util.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #include "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace net {
 
@@ -78,7 +74,8 @@ NSHTTPCookieAcceptPolicy NSHTTPSystemCookieStore::GetCookieAcceptPolicy() {
 #pragma mark private methods
 
 NSArray* NSHTTPSystemCookieStore::GetCookiesForURL(const GURL& url) {
-  NSArray* cookies = [cookie_store_ cookiesForURL:NSURLWithGURL(url)];
+  NSArray<NSHTTPCookie*>* cookies =
+      [cookie_store_ cookiesForURL:NSURLWithGURL(url)];
   // Sort cookies by decreasing path length, then creation time, as per
   // RFC6265.
   return [cookies sortedArrayUsingFunction:CompareCookies
@@ -86,7 +83,7 @@ NSArray* NSHTTPSystemCookieStore::GetCookiesForURL(const GURL& url) {
 }
 
 NSArray* NSHTTPSystemCookieStore::GetAllCookies() {
-  NSArray* cookies = cookie_store_.cookies;
+  NSArray<NSHTTPCookie*>* cookies = cookie_store_.cookies;
   return [cookies sortedArrayUsingFunction:CompareCookies
                                    context:creation_time_manager_.get()];
 }

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ash/assistant/ui/main_stage/assistant_onboarding_suggestion_view.h"
 
 #include "ash/assistant/ui/assistant_ui_constants.h"
@@ -15,6 +20,7 @@
 #include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/color/color_id.h"
 #include "ui/gfx/color_palette.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/animation/ink_drop.h"
 #include "ui/views/background.h"
 #include "ui/views/controls/focus_ring.h"
@@ -118,8 +124,11 @@ AssistantOnboardingSuggestionView::~AssistantOnboardingSuggestionView() {
   views::InkDrop::Remove(this);
 }
 
-int AssistantOnboardingSuggestionView::GetHeightForWidth(int width) const {
-  return kPreferredHeightDip;
+gfx::Size AssistantOnboardingSuggestionView::CalculatePreferredSize(
+    const views::SizeBounds& available_size) const {
+  const int preferred_width =
+      views::Button::CalculatePreferredSize(available_size).width();
+  return gfx::Size(preferred_width, kPreferredHeightDip);
 }
 
 void AssistantOnboardingSuggestionView::ChildPreferredSizeChanged(
@@ -171,7 +180,7 @@ const std::u16string& AssistantOnboardingSuggestionView::GetText() const {
 void AssistantOnboardingSuggestionView::InitLayout(
     const assistant::AssistantSuggestion& suggestion) {
   // A11y.
-  SetAccessibleName(base::UTF8ToUTF16(suggestion.text));
+  GetViewAccessibility().SetName(base::UTF8ToUTF16(suggestion.text));
 
   // Background.
   SetBackground(views::CreateRoundedRectBackground(GetBackgroundColor(index_),
@@ -199,22 +208,21 @@ void AssistantOnboardingSuggestionView::InitLayout(
       AddChildView(std::make_unique<views::InkDropContainerView>());
 
   // Layout.
-  auto& layout =
-      SetLayoutManager(std::make_unique<views::FlexLayout>())
-          ->SetCollapseMargins(true)
-          .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
-          .SetDefault(views::kFlexBehaviorKey, views::FlexSpecification())
-          .SetDefault(views::kMarginsKey, gfx::Insets::VH(0, 2 * kSpacingDip))
-          .SetInteriorMargin(gfx::Insets::VH(0, 2 * kMarginDip))
-          .SetOrientation(views::LayoutOrientation::kHorizontal);
+  SetLayoutManager(std::make_unique<views::FlexLayout>())
+      ->SetCollapseMargins(true)
+      .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
+      .SetDefault(views::kFlexBehaviorKey, views::FlexSpecification())
+      .SetDefault(views::kMarginsKey, gfx::Insets::VH(0, 2 * kSpacingDip))
+      .SetInteriorMargin(gfx::Insets::VH(0, 2 * kMarginDip))
+      .SetOrientation(views::LayoutOrientation::kHorizontal);
 
-  // NOTE: Our |layout| ignores the view for drawing focus as it is a special
-  // view which lays out itself. Removing this would cause it *not* to paint.
-  layout.SetChildViewIgnoredByLayout(views::FocusRing::Get(this), true);
+  // Ignore the focus ring, which lays out itself.
+  views::FocusRing::Get(this)->SetProperty(views::kViewIgnoredByLayoutKey,
+                                           true);
 
-  // NOTE: Our |ink_drop_container_| serves only to hold reference to ink drop
-  // layers for painting purposes. It can be completely ignored by our |layout|.
-  layout.SetChildViewIgnoredByLayout(ink_drop_container_, true);
+  // Ignore the `ink_drop_container_`, which serves only to hold reference to
+  // ink drop layers for painting purposes.
+  ink_drop_container_->SetProperty(views::kViewIgnoredByLayoutKey, true);
 
   // Icon.
   icon_ = AddChildView(std::make_unique<views::ImageView>());
@@ -262,7 +270,7 @@ void AssistantOnboardingSuggestionView::OnButtonPressed() {
   delegate_->OnSuggestionPressed(suggestion_id_);
 }
 
-BEGIN_METADATA(AssistantOnboardingSuggestionView, views::Button)
+BEGIN_METADATA(AssistantOnboardingSuggestionView)
 END_METADATA
 
 }  // namespace ash

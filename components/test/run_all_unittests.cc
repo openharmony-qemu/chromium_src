@@ -3,52 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/test/components_test_suite.h"
-#if !defined(OHOS_UNITTESTS)
 
 int main(int argc, char** argv) {
   return base::LaunchUnitTests(argc, argv, GetLaunchCallback(argc, argv));
 }
-
-#else
-#include "base/functional/bind.h"
-#include "base/test/launcher/unit_test_launcher.h"
-#include "base/test/test_discardable_memory_allocator.h"
-#include "base/test/test_suite.h"
-#include "build/build_config.h"
-#include "mojo/core/embedder/embedder.h"
-#include "ui/base/resource/resource_bundle.h"
-
-class TestSuiteNoAtExit : public base::TestSuite {
- public:
-  TestSuiteNoAtExit(int argc, char** argv) : TestSuite(argc, argv) {}
-  ~TestSuiteNoAtExit() override = default;
-
- protected:
-  void Initialize() override;
-
- private:
-  base::TestDiscardableMemoryAllocator discardable_memory_allocator_;
-};
-
-void TestSuiteNoAtExit::Initialize() {
-  // Run TestSuite::Initialize first so that logging is initialized.
-  base::TestSuite::Initialize();
-  ui::ResourceBundle::InitSharedInstanceWithLocale(
-      "en-US", NULL,
-      ui::ResourceBundle::DO_NOT_LOAD_COMMON_RESOURCES);
-
-  // Run this here instead of main() to ensure an AtExitManager is already
-  // present.
-
-  base::DiscardableMemoryAllocator::SetInstance(&discardable_memory_allocator_);
-}
-
-int main(int argc, char** argv) {
-  mojo::core::Init();
-  TestSuiteNoAtExit test_suite(argc, argv);
-
-  return base::LaunchUnitTests(
-      argc, argv,
-      base::BindOnce(&TestSuiteNoAtExit::Run, base::Unretained(&test_suite)));
-}
-#endif

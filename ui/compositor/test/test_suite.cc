@@ -39,7 +39,6 @@ CompositorTestSuite::~CompositorTestSuite() {}
 
 void CompositorTestSuite::Initialize() {
   base::TestSuite::Initialize();
-#if !defined(OHOS_UNITTESTS)
   gl::GLSurfaceTestSupport::InitializeOneOff();
 
 #if BUILDFLAG(IS_OZONE)
@@ -47,7 +46,6 @@ void CompositorTestSuite::Initialize() {
   params.single_process = true;
   OzonePlatform::InitializeForUI(params);
 #endif
-#endif  // !defined(OHOS_UNITTESTS)
 
 #if BUILDFLAG(IS_WIN)
   display::win::SetDefaultDeviceScaleFactor(1.0f);

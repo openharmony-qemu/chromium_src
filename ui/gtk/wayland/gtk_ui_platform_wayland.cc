@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/gtk/wayland/gtk_ui_platform_wayland.h"
 
 #include "base/command_line.h"
@@ -10,6 +15,7 @@
 #include "base/functional/callback.h"
 #include "base/logging.h"
 #include "ui/base/glib/glib_cast.h"
+#include "ui/base/ui_base_features.h"
 #include "ui/events/event_utils.h"
 #include "ui/gtk/gtk_compat.h"
 #include "ui/gtk/gtk_util.h"
@@ -118,7 +124,7 @@ void GtkUiPlatformWayland::ClearTransientFor(gfx::AcceleratedWidget parent) {
 }
 
 void GtkUiPlatformWayland::ShowGtkWindow(GtkWindow* window) {
-  // TODO(crbug.com/1008755): Check if gtk_window_present_with_time is needed
+  // TODO(crbug.com/40650162): Check if gtk_window_present_with_time is needed
   // here as well, similarly to what is done in X11 impl.
   gtk_window_present(window);
 }
@@ -155,6 +161,12 @@ GtkUiPlatformWayland::CreateInputMethodContext(
   if (!GtkCheckVersion(4))
     return nullptr;
   return std::make_unique<InputMethodContextImplGtk>(delegate);
+}
+
+bool GtkUiPlatformWayland::IncludeFontScaleInDeviceScale() const {
+  // Assume font scaling will be handled by Ozone/Wayland when WaylandUiScale
+  // feature is enabled.
+  return base::FeatureList::IsEnabled(features::kWaylandUiScale);
 }
 
 }  // namespace gtk

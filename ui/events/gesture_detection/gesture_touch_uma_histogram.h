@@ -7,7 +7,7 @@
 
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 #include "ui/events/gesture_detection/gesture_event_data.h"
-#include "ui/events/gesture_detection/motion_event.h"
+#include "ui/events/velocity_tracker/motion_event.h"
 
 namespace ui {
 
@@ -52,14 +52,15 @@ enum UMAEventType {
   UMA_ET_GESTURE_SWIPE_1 = 35,          // Swipe with 1 finger
   UMA_ET_GESTURE_TAP_UNCONFIRMED = 36,
   UMA_ET_GESTURE_SHORT_PRESS = 37,
-  // NOTE: Add new event types only immediately above this line. Make sure to
-  // update the UIEventType enum in tools/metrics/histograms/histograms.xml
-  // accordingly.
-
-  //#ifdef OHOS_DRAG_DROP
-  UMA_ET_GESTURE_DRAG_LONG_PRESS = 37,
+#if BUILDFLAG(ARKWEB_AI)
   UMA_ET_GESTURE_CREATE_OVERLAY = 38,
-  //#endif
+#endif
+// NOTE: Add new event types only immediately above this line. Make sure to
+// update the UIEventType enum in tools/metrics/histograms/histograms.xml
+// accordingly.
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  UMA_ET_GESTURE_DRAG_LONG_PRESS = 38,
+#endif
   UMA_ET_COUNT
 };
 

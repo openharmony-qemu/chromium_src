@@ -9,17 +9,16 @@ import android.os.Handler;
 import android.os.HandlerThread;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.chromium.base.Callback;
 import org.chromium.base.ThreadUtils;
 
 /**
- * This class manages platform-specific services. (i.e. Google Services) The platform
- * should extend this class and use this base class to fetch their specialized version.
+ * This class manages platform-specific services. (i.e. Google Services) The platform should extend
+ * this class and use this base class to fetch their specialized version.
  */
 public abstract class PlatformServiceBridge {
-    private static final String TAG = "PlatformServiceBrid-";
-
     private static PlatformServiceBridge sInstance;
     private static final Object sInstanceLock = new Object();
 
@@ -68,6 +67,12 @@ public abstract class PlatformServiceBridge {
         return false;
     }
 
+    // Returns the versionCode of GMS that the user is currently running.
+    // Will always return 0 if GMS is not installed.
+    public int getGmsVersionCode() {
+        return 0;
+    }
+
     // Overriding implementations may call "callback" asynchronously, on any thread.
     public void querySafeBrowsingUserConsent(@NonNull final Callback<Boolean> callback) {
         // User opt-in preference depends on a SafetyNet API. In purely upstream builds (which don't
@@ -75,12 +80,15 @@ public abstract class PlatformServiceBridge {
         callback.onResult(false);
     }
 
-    // Overriding implementations may call "callback" asynchronously. For simplicity (and not
-    // because of any technical limitation) we require that "queryMetricsSetting" and "callback"
-    // both get called on WebView's UI thread.
+    // Overriding implementations should not call "callback" synchronously, even if the result is
+    // already known. The callback should be posted to the UI thread to run at the next opportunity,
+    // to avoid blocking the critical path for startup.
     public void queryMetricsSetting(Callback<Boolean> callback) {
         ThreadUtils.assertOnUiThread();
-        callback.onResult(false);
+        ThreadUtils.postOnUiThread(
+                () -> {
+                    callback.onResult(false);
+                });
     }
 
     public void setSafeBrowsingHandler() {
@@ -92,15 +100,13 @@ public abstract class PlatformServiceBridge {
     }
 
     // Takes an uncompressed, serialized UMA proto and logs it via a platform-specific mechanism.
-    public void logMetrics(byte[] data, boolean useDefaultUploadQos) {}
+    public void logMetrics(byte[] data) {}
 
     /**
      * Similar to {@link logMetrics}, logs a serialized UMA proto via a platform-specific mechanism
      * but blocks until the operation finishes.
      *
      * @param data uncompressed, serialized UMA proto.
-     * @param useDefaultUploadQos whether to use an experimental change that increases upload
-     *         frequency
      * @return Status code of the logging operation. The status codes are:
      * - Success cache (went to the devices cache): -1
      * - Success: 0
@@ -110,9 +116,9 @@ public abstract class PlatformServiceBridge {
      * - Cancelled: 16
      * - API not connected (probably means the API is not available on device): 17
      */
-    public int logMetricsBlocking(byte[] data, boolean useDefaultUploadQos) {
-        // TODO(crbug.com/1248039): remove this once downstream implementation lands.
-        logMetrics(data, useDefaultUploadQos);
+    public int logMetricsBlocking(byte[] data) {
+        // TODO(crbug.com/40790308): remove this once downstream implementation lands.
+        logMetrics(data);
         return 0;
     }
 
@@ -122,4 +128,24 @@ public abstract class PlatformServiceBridge {
      * query SafeModeController to receive mitigation steps.
      */
     public void checkForAppRecovery() {}
+
+    public @Nullable AwSupervisedUserUrlClassifierDelegate getUrlClassifierDelegate() {
+        return null;
+    }
+
+    /**
+     * Asynchronously obtain a MediaIntegrityProvider implementation.
+     *
+     * @param cloudProjectNumber cloud project number passed by caller
+     * @param apiStatus Enablement status of the api for given origin
+     * @param callback Callback to call with the result containing either a non-null
+     *     MediaIntegrityProvider implementation or an appropriate exception.
+     */
+    public void getMediaIntegrityProvider2(
+            long cloudProjectNumber,
+            @MediaIntegrityApiStatus int apiStatus,
+            ValueOrErrorCallback<MediaIntegrityProvider, MediaIntegrityErrorWrapper> callback) {
+        callback.onError(
+                new MediaIntegrityErrorWrapper(MediaIntegrityErrorCode.NON_RECOVERABLE_ERROR));
+    }
 }

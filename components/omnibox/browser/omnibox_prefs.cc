@@ -4,6 +4,8 @@
 
 #include "components/omnibox/browser/omnibox_prefs.h"
 
+#include <optional>
+
 #include "base/check.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/string_number_conversions.h"
@@ -13,7 +15,6 @@
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/omnibox_proto/groups.pb.h"
 
 namespace omnibox {
@@ -43,55 +44,40 @@ constexpr UMAGroupId ToUMAGroupId(GroupId group_id) {
 
 }  // namespace
 
-const char kGroupIdToggledOffHistogram[] = "Omnibox.GroupId.ToggledOff";
-const char kGroupIdToggledOnHistogram[] = "Omnibox.GroupId.ToggledOn";
-
-// A client-side toggle for document (Drive) suggestions.
-// Also gated by a feature and server-side Admin Panel controls.
-const char kDocumentSuggestEnabled[] = "documentsuggest.enabled";
-
-// Enum specifying the active behavior for the intranet redirect detector.
-// The browser pref kDNSInterceptionChecksEnabled also impacts the redirector.
-// Values are defined in omnibox::IntranetRedirectorBehavior.
-const char kIntranetRedirectBehavior[] = "browser.intranet_redirect_behavior";
-
-// Boolean that controls whether scoped search mode can be triggered by <space>.
-const char kKeywordSpaceTriggeringEnabled[] =
-    "omnibox.keyword_space_triggering_enabled";
-
-// A dictionary of visibility preferences for suggestion groups. The key is the
-// suggestion group ID serialized as a string, and the value is
-// SuggestionGroupVisibility serialized as an integer.
-const char kSuggestionGroupVisibility[] = "omnibox.suggestionGroupVisibility";
-
-// Boolean that specifies whether to always show full URLs in the omnibox.
-const char kPreventUrlElisionsInOmnibox[] = "omnibox.prevent_url_elisions";
-
-// A cache of NTP zero suggest results using a JSON dictionary serialized into a
-// string.
-const char kZeroSuggestCachedResults[] = "zerosuggest.cachedresults";
-
-// A cache of SRP/Web zero suggest results using a JSON dictionary serialized
-// into a string keyed off the page URL.
-const char kZeroSuggestCachedResultsWithURL[] =
-    "zerosuggest.cachedresults_with_url";
-
 void RegisterProfilePrefs(PrefRegistrySimple* registry) {
   registry->RegisterDictionaryPref(kSuggestionGroupVisibility);
   registry->RegisterBooleanPref(
       kKeywordSpaceTriggeringEnabled, true,
       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+  registry->RegisterBooleanPref(
+      kShowGoogleLensShortcut, true,
+      user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+
+  registry->RegisterBooleanPref(omnibox::kDismissedGeminiIph, false);
+  registry->RegisterBooleanPref(
+      omnibox::kDismissedFeaturedEnterpriseSiteSearchIphPrefName, false);
+  registry->RegisterBooleanPref(
+      omnibox::kDismissedHistoryEmbeddingsSettingsPromo, false);
+  registry->RegisterBooleanPref(omnibox::kDismissedHistoryScopePromo, false);
+  registry->RegisterBooleanPref(omnibox::kDismissedHistoryEmbeddingsScopePromo,
+                                false);
+
+  registry->RegisterIntegerPref(kShownCountGeminiIph, 0);
+  registry->RegisterIntegerPref(kShownCountFeaturedEnterpriseSiteSearchIph, 0);
+  registry->RegisterIntegerPref(kShownCountHistoryEmbeddingsSettingsPromo, 0);
+  registry->RegisterIntegerPref(kShownCountHistoryScopePromo, 0);
+  registry->RegisterIntegerPref(kShownCountHistoryEmbeddingsScopePromo, 0);
 }
 
 SuggestionGroupVisibility GetUserPreferenceForSuggestionGroupVisibility(
-    PrefService* prefs,
+    const PrefService* prefs,
     int suggestion_group_id) {
   DCHECK(prefs);
 
   const base::Value::Dict& dictionary =
       prefs->GetDict(kSuggestionGroupVisibility);
 
-  absl::optional<int> value =
+  std::optional<int> value =
       dictionary.FindInt(base::NumberToString(suggestion_group_id));
 
   if (value == SuggestionGroupVisibility::HIDDEN ||

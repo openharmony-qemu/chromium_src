@@ -8,6 +8,7 @@
 #include <string>
 
 #include "base/component_export.h"
+#include "chromeos/ui/base/app_types.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/base/class_property.h"
 
@@ -24,6 +25,12 @@ enum class WindowPinType;
 
 // Alphabetical sort.
 
+// A property key to store the type of window that will be used to record
+// pointer metrics. See AppType in chromeos/ui/base/app_types.h for more
+// details.
+COMPONENT_EXPORT(CHROMEOS_UI_BASE)
+extern const ui::ClassProperty<AppType>* const kAppTypeKey;
+
 // Whether resizable windows equal to or larger than the screen should be
 // automatically maximized. Affects Exo's xdg-shell clients only.
 COMPONENT_EXPORT(CHROMEOS_UI_BASE)
@@ -37,6 +44,14 @@ extern const ui::ClassProperty<bool>* const kBlockedForAssistantSnapshotKey;
 // Whether holding esc should exit fullscreen. Used by Plugin VM.
 COMPONENT_EXPORT(CHROMEOS_UI_BASE)
 extern const ui::ClassProperty<bool>* const kEscHoldToExitFullscreen;
+
+// Do not exit fullscreen on a screen lock. Note that this property becomes
+// active only if `kUseOverviewToExitFullscreen` is true. Borealis apps set this
+// to avoid exiting fullscreen on a screen lock.
+// Do NOT use this property without consulting the security team for other use
+// cases.
+COMPONENT_EXPORT(CHROMEOS_UI_BASE)
+extern const ui::ClassProperty<bool>* const kNoExitFullscreenOnLock;
 
 // Whether to promote users to use Overview to exit fullscreen.
 // Borealis apps set this since they do not handle window size changes.
@@ -92,6 +107,10 @@ extern const ui::ClassProperty<bool>* const kImmersiveIsActive;
 COMPONENT_EXPORT(CHROMEOS_UI_BASE)
 extern const ui::ClassProperty<gfx::Rect*>* const
     kImmersiveTopContainerBoundsInScreen;
+
+// A property key to indicate if the window is a game.
+COMPONENT_EXPORT(CHROMEOS_UI_BASE)
+extern const ui::ClassProperty<bool>* const kIsGameKey;
 
 // If true, the window is currently showing in overview mode.
 COMPONENT_EXPORT(CHROMEOS_UI_BASE)

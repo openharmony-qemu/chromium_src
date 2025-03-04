@@ -150,7 +150,7 @@ class UnitTest(unittest.TestCase):
     configs = ast.literal_eval(mb_unittest.TEST_CONFIG)
     all_configs = validation.GetAllConfigs(configs['builder_groups'])
     self.assertEqual(all_configs['rel_bot'], 'fake_builder_group')
-    self.assertEqual(all_configs['debug_goma'], 'fake_builder_group')
+    self.assertEqual(all_configs['debug_remoteexec'], 'fake_builder_group')
 
   def test_CheckAllConfigsAndMixinsReferenced_ok(self):
     configs = ast.literal_eval(mb_unittest.TEST_CONFIG)
@@ -216,24 +216,6 @@ class UnitTest(unittest.TestCase):
     self.assertIn(
         'Unknown mixin "unknown_mixin" '
         'referenced by mixin "nested_mixin".', errs)
-
-  def test_EnsureNoProprietaryMixins(self):
-    bad_configs = ast.literal_eval(mb_unittest.TEST_BAD_CONFIG)
-    errs = []
-    builder_groups = bad_configs['builder_groups']
-    mixins = bad_configs['mixins']
-    config_configs = bad_configs['configs']
-
-    validation.EnsureNoProprietaryMixins(errs, builder_groups, config_configs,
-                                         mixins)
-
-    self.assertIn(
-        'Public artifact builder "a" '
-        'can not contain the "chrome_with_codecs" mixin.', errs)
-    self.assertIn(
-        'Public artifact builder "b" '
-        'can not contain the "chrome_with_codecs" mixin.', errs)
-    self.assertEqual(len(errs), 2)
 
   def test_CheckDuplicateConfigs_ok(self):
     configs = ast.literal_eval(mb_unittest.TEST_CONFIG)

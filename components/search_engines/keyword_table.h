@@ -74,19 +74,27 @@ class Statement;
 //                          in version 103.
 //   enforced_by_policy     See TemplateURLData::enforced_by_policy. This was
 //                          added in version 112.
+//   featured_by_policy     See TemplateURLData::featured_by_policy. This was
+//                          added in version 122.
 //
 // This class also manages some fields in the |meta| table:
 //
 // Default Search Provider ID        The id of the default search provider.
 // Builtin Keyword Version           The version of builtin keywords data.
 // Starter Pack Keyword Version      The version of starter pack data.
+// Builtin Keyword Country           The country associated with the builtin
+//                                   keywords data, stored as a country ID.
+// Builtin Keyword Milestone         The version number of Chrome milestone when
+//                                   the keyword data has been last merged into
+//                                   the database. Written between Chrome M122
+//                                   and M129.
 //
 class KeywordTable : public WebDatabaseTable {
  public:
   enum OperationType {
     ADD,
     REMOVE,
-    UPDATE,
+    UPDATE_OP,
   };
 
   typedef std::pair<OperationType, TemplateURLData> Operation;
@@ -126,9 +134,19 @@ class KeywordTable : public WebDatabaseTable {
   bool SetDefaultSearchProviderID(int64_t id);
   int64_t GetDefaultSearchProviderID();
 
-  // Version of the built-in keywords.
-  bool SetBuiltinKeywordVersion(int version);
-  int GetBuiltinKeywordVersion();
+  // Version of the built-in keyword data. It gets set from the
+  // `TemplateURLPrepopulateData::kCurrentDataVersion` when the data was
+  // last updated.
+  bool SetBuiltinKeywordDataVersion(int version);
+  int GetBuiltinKeywordDataVersion();
+
+  // Chrome milestone when the built-in keywords were last updated.
+  bool ClearBuiltinKeywordMilestone();
+
+  // Country associated with the built-in keywords, stored as a country ID,
+  // see `country_codes::CountryStringToCountryID()`.
+  bool SetBuiltinKeywordCountry(int country_id);
+  int GetBuiltinKeywordCountry();
 
   // Version of built-in starter pack keywords (@bookmarks, @settings, etc.).
   bool SetStarterPackKeywordVersion(int version);
@@ -149,6 +167,7 @@ class KeywordTable : public WebDatabaseTable {
   bool MigrateToVersion97AddIsActiveColumn();
   bool MigrateToVersion103AddStarterPackIdColumn();
   bool MigrateToVersion112AddEnforcedByPolicyColumn();
+  bool MigrateToVersion122AddSiteSearchPolicyColumns();
 
  private:
   friend class KeywordTableTest;

@@ -5,6 +5,8 @@
 #ifndef SERVICES_NETWORK_NETWORK_SERVICE_NETWORK_DELEGATE_H_
 #define SERVICES_NETWORK_NETWORK_SERVICE_NETWORK_DELEGATE_H_
 
+#include <optional>
+
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -14,12 +16,16 @@
 #include "net/cookies/cookie_setting_override.h"
 #include "net/first_party_sets/first_party_set_metadata.h"
 #include "net/first_party_sets/first_party_sets_cache_filter.h"
+#include "net/url_request/url_request.h"
 #include "services/network/cookie_settings.h"
 #include "services/network/network_context.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
-class SchemefulSite;
+class CookieInclusionStatus;
 }  // namespace net
 
 namespace network {
@@ -61,22 +67,37 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
       const net::HttpResponseHeaders* original_response_headers,
       scoped_refptr<net::HttpResponseHeaders>* override_response_headers,
       const net::IPEndPoint& endpoint,
-      absl::optional<GURL>* preserve_fragment_on_redirect_url) override;
+      std::optional<GURL>* preserve_fragment_on_redirect_url) override;
   void OnBeforeRedirect(net::URLRequest* request,
                         const GURL& new_location) override;
   void OnResponseStarted(net::URLRequest* request, int net_error) override;
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  net::AddressList ResolveFromCacheInternal(net::HostCache::Key& key);
+  void RecordErrorInfo(net::URLRequest* request, int net_error);
+  int32_t GetDownStreamThroughputKbps();
+#endif
+
   void OnCompleted(net::URLRequest* request,
                    bool started,
                    int net_error) override;
   void OnPACScriptError(int line_number, const std::u16string& error) override;
+  std::optional<net::cookie_util::StorageAccessStatus> OnGetStorageAccessStatus(
+      const net::URLRequest& request,
+      base::optional_ref<const net::RedirectInfo> redirect_info) const override;
+  bool OnIsStorageAccessHeaderEnabled(const url::Origin* top_frame_origin,
+                                      const GURL& url) const override;
   bool OnAnnotateAndMoveUserBlockedCookies(
       const net::URLRequest& request,
       const net::FirstPartySetMetadata& first_party_set_metadata,
       net::CookieAccessResultList& maybe_included_cookies,
       net::CookieAccessResultList& excluded_cookies) override;
-  bool OnCanSetCookie(const net::URLRequest& request,
-                      const net::CanonicalCookie& cookie,
-                      net::CookieOptions* options) override;
+  bool OnCanSetCookie(
+      const net::URLRequest& request,
+      const net::CanonicalCookie& cookie,
+      net::CookieOptions* options,
+      const net::FirstPartySetMetadata& first_party_set_metadata,
+      net::CookieInclusionStatus* inclusion_status) override;
   net::NetworkDelegate::PrivacySetting OnForcePrivacyMode(
       const net::URLRequest& request) const override;
   bool OnCancelURLRequestWithPolicyViolatingReferrerHeader(
@@ -91,11 +112,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkServiceNetworkDelegate
                                const GURL& endpoint) const override;
   bool OnCanUseReportingClient(const url::Origin& origin,
                                const GURL& endpoint) const override;
-  absl::optional<net::FirstPartySetsCacheFilter::MatchInfo>
-  OnGetFirstPartySetsCacheFilterMatchInfoMaybeAsync(
-      const net::SchemefulSite& request_site,
-      base::OnceCallback<void(net::FirstPartySetsCacheFilter::MatchInfo)>
-          callback) const override;
 
   int HandleClearSiteDataHeader(
       net::URLRequest* request,

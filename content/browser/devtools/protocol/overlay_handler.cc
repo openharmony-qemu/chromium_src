@@ -4,11 +4,12 @@
 
 #include "content/browser/devtools/protocol/overlay_handler.h"
 
-#include "content/browser/renderer_host/render_widget_host_input_event_router.h"
-#include "content/browser/web_contents/web_contents_impl.h"
-
 #include <stdint.h>
+
 #include <utility>
+
+#include "components/input/render_widget_host_input_event_router.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 
 namespace content {
 namespace protocol {
@@ -39,7 +40,7 @@ Response OverlayHandler::SetInspectMode(
 }
 
 Response OverlayHandler::SetPausedInDebuggerMessage(Maybe<String> message) {
-  paused_message_ = message.fromMaybe(std::string());
+  paused_message_ = message.value_or(std::string());
   UpdateCaptureInputEvents();
   return Response::FallThrough();
 }

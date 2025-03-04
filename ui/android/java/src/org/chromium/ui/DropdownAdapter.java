@@ -25,9 +25,7 @@ import androidx.core.view.ViewCompat;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Dropdown item adapter for DropdownPopupWindow.
- */
+/** Dropdown item adapter for DropdownPopupWindow. */
 public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
     private final Context mContext;
     private final Set<Integer> mSeparators;
@@ -68,7 +66,7 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
             LayoutInflater inflater =
                     (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             layout = inflater.inflate(R.layout.dropdown_item, null);
-            layout.setBackground(new DropdownDividerDrawable(/*backgroundColor=*/null));
+            layout.setBackground(new DropdownDividerDrawable(/* backgroundColor= */ null));
         }
         DropdownDividerDrawable divider = (DropdownDividerDrawable) layout.getBackground();
         int height = mContext.getResources().getDimensionPixelSize(R.dimen.dropdown_item_height);
@@ -76,8 +74,9 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
         if (position == 0) {
             divider.setDividerColor(Color.TRANSPARENT);
         } else {
-            int dividerHeight = mContext.getResources().getDimensionPixelSize(
-                    R.dimen.dropdown_item_divider_height);
+            int dividerHeight =
+                    mContext.getResources()
+                            .getDimensionPixelSize(R.dimen.dropdown_item_divider_height);
             height += dividerHeight;
             divider.setHeight(dividerHeight);
             int dividerColor;
@@ -110,8 +109,7 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
             // WRAP_CONTENT, defined above for multiline labels, leaves none.
             int existingStart = ViewCompat.getPaddingStart(labelView);
             int existingEnd = ViewCompat.getPaddingEnd(labelView);
-            ViewCompat.setPaddingRelative(
-                    labelView, existingStart, mLabelMargin, existingEnd, mLabelMargin);
+            labelView.setPaddingRelative(existingStart, mLabelMargin, existingEnd, mLabelMargin);
         }
 
         labelView.setEnabled(item.isEnabled());
@@ -122,7 +120,8 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
         }
 
         labelView.setTextColor(mContext.getColor(item.getLabelFontColorResId()));
-        labelView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+        labelView.setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
                 mContext.getResources().getDimension(R.dimen.text_size_large));
 
         // Layout of the sublabel view, which has a smaller font and usually sits below the main
@@ -133,7 +132,8 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
             sublabelView.setVisibility(View.GONE);
         } else {
             sublabelView.setText(sublabel);
-            sublabelView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+            sublabelView.setTextSize(
+                    TypedValue.COMPLEX_UNIT_PX,
                     mContext.getResources().getDimension(item.getSublabelFontSizeResId()));
             sublabelView.setVisibility(View.VISIBLE);
         }
@@ -151,9 +151,10 @@ public class DropdownAdapter extends ArrayAdapter<DropdownItem> {
             iconView.setVisibility(View.GONE);
         } else {
             int iconSizeResId = item.getIconSizeResId();
-            int iconSize = iconSizeResId == 0
-                    ? LayoutParams.WRAP_CONTENT
-                    : mContext.getResources().getDimensionPixelSize(iconSizeResId);
+            int iconSize =
+                    iconSizeResId == 0
+                            ? LayoutParams.WRAP_CONTENT
+                            : mContext.getResources().getDimensionPixelSize(iconSizeResId);
             ViewGroup.MarginLayoutParams iconLayoutParams =
                     (ViewGroup.MarginLayoutParams) iconView.getLayoutParams();
             iconLayoutParams.width = iconSize;

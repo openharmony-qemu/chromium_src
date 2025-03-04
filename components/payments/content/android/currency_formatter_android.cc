@@ -8,8 +8,10 @@
 #include <string>
 
 #include "base/android/jni_string.h"
-#include "components/payments/content/android/jni_headers/CurrencyFormatter_jni.h"
 #include "components/payments/core/currency_formatter.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "components/payments/content/android/jni_headers/CurrencyFormatter_jni.h"
 
 namespace payments {
 namespace {
@@ -29,7 +31,7 @@ CurrencyFormatterAndroid::CurrencyFormatterAndroid(
       ConvertJavaStringToUTF8(env, locale_name));
 }
 
-CurrencyFormatterAndroid::~CurrencyFormatterAndroid() {}
+CurrencyFormatterAndroid::~CurrencyFormatterAndroid() = default;
 
 void CurrencyFormatterAndroid::Destroy(JNIEnv* env,
                                        const JavaParamRef<jobject>& jcaller) {

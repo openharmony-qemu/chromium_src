@@ -8,18 +8,21 @@
 
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "base/base_paths.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
+#include "base/containers/contains.h"
+#include "base/containers/span.h"
 #include "base/debug/debugger.h"
 #include "base/environment.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/functional/callback_helpers.h"
+#include "base/i18n/icu_util.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/message_loop/message_pump_type.h"
@@ -29,8 +32,10 @@
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/single_thread_task_executor.h"
+#include "base/test/allow_check_is_test_for_testing.h"
 #include "base/test/gtest_xml_util.h"
 #include "base/test/launcher/test_launcher.h"
+#include "base/test/scoped_block_tests_writing_to_special_dirs.h"
 #include "base/test/test_suite.h"
 #include "base/test/test_support_ios.h"
 #include "base/test/test_switches.h"
@@ -67,7 +72,7 @@
 // To avoid conflicts with the macro from the Windows SDK...
 #undef GetCommandLine
 #elif BUILDFLAG(IS_MAC)
-#include "base/mac/scoped_nsautorelease_pool.h"
+#include "base/apple/scoped_nsautorelease_pool.h"
 #include "sandbox/mac/seatbelt_exec.h"
 #endif
 
@@ -227,7 +232,7 @@ base::CommandLine WrapperTestLauncherDelegate::GetCommandLine(
   new_cmd_line.AppendSwitchPath(switches::kTestLauncherOutput, *output_file);
 
   // Selecting sample tests to enable switches::kEnableTracing.
-  if (switches.find(switches::kEnableTracingFraction) != switches.end()) {
+  if (base::Contains(switches, switches::kEnableTracingFraction)) {
     double enable_tracing_fraction = 0;
     if (!base::StringToDouble(switches[switches::kEnableTracingFraction],
                               &enable_tracing_fraction) ||
@@ -370,6 +375,9 @@ int LaunchTestsInternal(TestLauncherDelegate* launcher_delegate,
   // java for child processes.
   if (command_line->HasSwitch(switches::kProcessType) ||
       command_line->HasSwitch(switches::kLaunchAsBrowser)) {
+#if BUILDFLAG(IS_IOS)
+    base::AtExitManager at_exit;
+#endif
     // The main test process has this initialized by the base::TestSuite. But
     // child processes don't have a TestSuite, and must initialize this
     // explicitly before ContentMain.
@@ -399,6 +407,11 @@ int LaunchTestsInternal(TestLauncherDelegate* launcher_delegate,
     }
 #endif
     return launcher_delegate->RunTestSuite(argc, argv);
+  }
+
+  // ICU must be initialized before any attempts to format times, e.g. for logs.
+  if (!base::i18n::InitializeICU()) {
+    return false;
   }
 
   base::AtExitManager at_exit;
@@ -444,9 +457,25 @@ int LaunchTests(TestLauncherDelegate* launcher_delegate,
                 size_t parallel_jobs,
                 int argc,
                 char** argv) {
+  base::test::AllowCheckIsTestForTesting();
+
   base::CommandLine::Init(argc, argv);
   AppendCommandLineSwitches();
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  base::ScopedBlockTestsWritingToSpecialDirs scoped_blocker(
+      {
+          base::DIR_SRC_TEST_DATA_ROOT,
+#if BUILDFLAG(IS_WIN)
+          base::DIR_USER_STARTUP,
+          base::DIR_START_MENU,
+#endif  // BUILDFLAG(IS_WIN)
+      },
+      ([](const base::FilePath& path) {
+        ADD_FAILURE()
+            << "Attempting to write file in dir " << path
+            << " Use ScopedPathOverride or other mechanism to not write to this"
+               " directory.";
+      }));
 
   // TODO(tluk) Remove deprecation warning after a few releases. Deprecation
   // warning issued version 79.

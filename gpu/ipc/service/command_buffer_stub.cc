@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "base/auto_reset.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/hash/hash.h"
@@ -20,12 +21,10 @@
 #include "base/values.h"
 #include "build/build_config.h"
 #include "gpu/command_buffer/common/constants.h"
-#include "gpu/command_buffer/common/gpu_memory_buffer_support.h"
 #include "gpu/command_buffer/common/sync_token.h"
 #include "gpu/command_buffer/service/decoder_context.h"
 #include "gpu/command_buffer/service/gpu_command_buffer_memory_tracker.h"
 #include "gpu/command_buffer/service/logger.h"
-#include "gpu/command_buffer/service/mailbox_manager.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
 #include "gpu/command_buffer/service/query_manager.h"
 #include "gpu/command_buffer/service/scheduler.h"
@@ -43,7 +42,6 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_switches.h"
-#include "ui/gl/gl_workarounds.h"
 #include "ui/gl/init/gl_factory.h"
 
 #if BUILDFLAG(IS_WIN)
@@ -116,7 +114,9 @@ CommandBufferStub::CommandBufferStub(
       context_type_(init_params.attribs.context_type),
       active_url_(init_params.active_url),
       initialized_(false),
-      surface_handle_(init_params.surface_handle),
+#if BUILDFLAG(IS_ANDROID)
+      offscreen_(init_params.surface_handle == kNullSurfaceHandle),
+#endif
       use_virtualized_gl_context_(false),
       command_buffer_id_(command_buffer_id),
       sequence_id_(sequence_id),
@@ -136,9 +136,15 @@ CommandBufferStub::~CommandBufferStub() {
 }
 
 void CommandBufferStub::ExecuteDeferredRequest(
-    mojom::DeferredCommandBufferRequestParams& params) {
+    mojom::DeferredCommandBufferRequestParams& params,
+    FenceSyncReleaseDelegate* release_delegate) {
   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("devtools.timeline"), "GPUTask",
                "data", DevToolsChannelData::CreateForChannel(channel()));
+
+  // Reentrant call is not supported.
+  CHECK(!release_delegate_);
+  base::AutoReset<raw_ptr<FenceSyncReleaseDelegate>> auto_reset(
+      &release_delegate_, release_delegate);
 
   // Ensure the appropriate GL context is current before handling any IPC
   // messages directed at the command buffer. This ensures that the message
@@ -158,16 +164,6 @@ void CommandBufferStub::ExecuteDeferredRequest(
     case mojom::DeferredCommandBufferRequestParams::Tag::kDestroyTransferBuffer:
       OnDestroyTransferBuffer(params.get_destroy_transfer_buffer());
       break;
-
-    case mojom::DeferredCommandBufferRequestParams::Tag::kTakeFrontBuffer:
-      OnTakeFrontBuffer(params.get_take_front_buffer());
-      break;
-
-    case mojom::DeferredCommandBufferRequestParams::Tag::kReturnFrontBuffer: {
-      OnReturnFrontBuffer(params.get_return_front_buffer()->mailbox,
-                          params.get_return_front_buffer()->is_lost);
-      break;
-    }
 
     case mojom::DeferredCommandBufferRequestParams::Tag::
         kSetDefaultFramebufferSharedImage: {
@@ -198,7 +194,7 @@ void CommandBufferStub::PerformWork() {
                                                                         : "0");
   if (decoder_context_.get() && !MakeCurrent())
     return;
-  absl::optional<gles2::ProgramCache::ScopedCacheUse> cache_use;
+  std::optional<gles2::ProgramCache::ScopedCacheUse> cache_use;
   CreateCacheUse(cache_use);
 
   if (decoder_context_) {
@@ -292,7 +288,7 @@ bool CommandBufferStub::MakeCurrent() {
 }
 
 void CommandBufferStub::CreateCacheUse(
-    absl::optional<gles2::ProgramCache::ScopedCacheUse>& cache_use) {
+    std::optional<gles2::ProgramCache::ScopedCacheUse>& cache_use) {
   cache_use.emplace(
       channel_->gpu_channel_manager()->program_cache(),
       base::BindRepeating(&DecoderClient::CacheBlob, base::Unretained(this),
@@ -310,10 +306,12 @@ void CommandBufferStub::Destroy() {
   }
   if (wait_for_get_offset_) {
     std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
-#if defined(OHOS_BUGFIX_CRASH)
-    TRACE_EVENT2("gpu", "CommandBufferStub::Destroy", "stop timer, wait_for_get_offset_->start",
-      wait_for_get_offset_->start, "wait_for_get_offset_->end", wait_for_get_offset_->end);
-      wait_for_get_offset_in_range_timer_.Stop();
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+    TRACE_EVENT2("gpu", "CommandBufferStub::Destroy",
+                 "stop timer, wait_for_get_offset_->start",
+                 wait_for_get_offset_->start, "wait_for_get_offset_->end",
+                 wait_for_get_offset_->end);
+    wait_for_get_offset_in_range_timer_.Stop();
 #endif
     wait_for_get_offset_.reset();
   }
@@ -324,28 +322,21 @@ void CommandBufferStub::Destroy() {
     // (exit_on_context_lost workaround), then don't tell the browser about
     // offscreen context destruction here since it's not client-invoked, and
     // might bypass the 3D API blocking logic.
-    if ((surface_handle_ == gpu::kNullSurfaceHandle) &&
-        !active_url_.is_empty() &&
+    if (offscreen() && !active_url_.is_empty() &&
         !gpu_channel_manager->delegate()->IsExiting()) {
       gpu_channel_manager->delegate()->DidDestroyOffscreenContext(
           active_url_.url());
     }
   }
 
-  if (sync_point_client_state_) {
-    sync_point_client_state_->Destroy();
-    sync_point_client_state_ = nullptr;
-  }
+  scoped_sync_point_client_state_.Reset();
 
-  bool have_context = false;
-  if (decoder_context_ && decoder_context_->GetGLContext()) {
-    // Try to make the context current regardless of whether it was lost, so we
-    // don't leak resources.
-    have_context =
-        decoder_context_->GetGLContext()->MakeCurrent(surface_.get());
-  }
+  // Try to make the context current regardless of whether it was lost, so we
+  // don't leak resources. Don't use GetGLContext()->MakeCurrent() since that
+  // will make |have_context| false when RasterDecoder doesn't use GL.
+  const bool have_context = decoder_context_ && decoder_context_->MakeCurrent();
 
-  absl::optional<gles2::ProgramCache::ScopedCacheUse> cache_use;
+  std::optional<gles2::ProgramCache::ScopedCacheUse> cache_use;
   if (have_context)
     CreateCacheUse(cache_use);
 
@@ -361,7 +352,7 @@ void CommandBufferStub::Destroy() {
 
   if (decoder_context_) {
     auto* gr_shader_cache = channel_->gpu_channel_manager()->gr_shader_cache();
-    absl::optional<raster::GrShaderCache::ScopedCacheUse> gr_cache_use;
+    std::optional<raster::GrShaderCache::ScopedCacheUse> gr_cache_use;
     if (gr_shader_cache)
       gr_cache_use.emplace(gr_shader_cache, channel_->client_id());
 
@@ -412,9 +403,8 @@ void CommandBufferStub::OnParseError() {
   // determine whether client APIs like WebGL need to be immediately
   // blocked from automatically running.
   GpuChannelManager* gpu_channel_manager = channel_->gpu_channel_manager();
-  gpu_channel_manager->delegate()->DidLoseContext(
-      (surface_handle_ == kNullSurfaceHandle), state.context_lost_reason,
-      active_url_.url());
+  gpu_channel_manager->delegate()->DidLoseContext(state.context_lost_reason,
+                                                  active_url_.url());
 
   CheckContextLost();
 }
@@ -430,10 +420,8 @@ void CommandBufferStub::WaitForTokenInRange(int32_t start,
   CheckContextLost();
   if (wait_for_token_)
     LOG(ERROR) << "Got WaitForToken command while currently waiting for token.";
-  // TODO(elgarawany): Replace with SetSequencePriority when Scheduler is
-  // replaced with SchedulerDfs.
-  channel_->scheduler()->RaisePriorityForClientWait(sequence_id_,
-                                                    command_buffer_id_);
+  channel_->scheduler()->SetSequencePriority(sequence_id_,
+                                             SchedulingPriority::kHigh);
   wait_for_token_ =
       std::make_unique<WaitForCommandState>(start, end, std::move(callback));
   CheckCompleteWaits();
@@ -452,34 +440,35 @@ void CommandBufferStub::WaitForGetOffsetInRange(uint32_t set_get_buffer_count,
   if (wait_for_get_offset_) {
     LOG(ERROR)
         << "Got WaitForGetOffset command while currently waiting for offset.";
-#if defined(OHOS_BUGFIX_CRASH)
-  wait_for_get_offset_in_range_timer_.Stop();
-    TRACE_EVENT0("gpu", "CommandBufferStub::WaitForGetOffsetInRange" \
-      " Got WaitForGetOffset command while currently waiting for offset, stop timer");
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+    wait_for_get_offset_in_range_timer_.Stop();
+    TRACE_EVENT0("gpu",
+                 "CommandBufferStub::WaitForGetOffsetInRange"
+                 " Got WaitForGetOffset command while currently waiting for "
+                 "offset, stop timer");
 #endif
   }
-  // TODO(elgarawany): Replace with SetSequencePriority when Scheduler is
-  // replaced with SchedulerDfs.
-  channel_->scheduler()->RaisePriorityForClientWait(sequence_id_,
-                                                    command_buffer_id_);
+  channel_->scheduler()->SetSequencePriority(sequence_id_,
+                                             SchedulingPriority::kHigh);
   wait_for_get_offset_ =
       std::make_unique<WaitForCommandState>(start, end, std::move(callback));
   wait_set_get_buffer_count_ = set_get_buffer_count;
-
-#if defined(OHOS_BUGFIX_CRASH)
-  wait_for_get_offset_in_range_timer_.Start(FROM_HERE, base::Milliseconds(3000),
-    base::BindOnce(&gpu::CommandBufferStub::WaitForGetOffsetInRangeTimeout, this->AsWeakPtr()));
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  wait_for_get_offset_in_range_timer_.Start(
+      FROM_HERE, base::Milliseconds(3000),
+      base::BindOnce(&gpu::CommandBufferStub::WaitForGetOffsetInRangeTimeout,
+                     this->AsWeakPtr()));
 #endif
-
   CheckCompleteWaits();
 }
 
-#if defined(OHOS_BUGFIX_CRASH)
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
 void CommandBufferStub::WaitForGetOffsetInRangeTimeout() {
-  TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRangeTimeout", "wait_for_get_offset_->start", wait_for_get_offset_->start,
-    "wait_for_get_offset_->end", wait_for_get_offset_->end);
-
-  LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRangeTimeout, need to wake up the client thread";
+  TRACE_EVENT2("gpu", "CommandBufferStub::WaitForGetOffsetInRangeTimeout",
+               "wait_for_get_offset_->start", wait_for_get_offset_->start,
+               "wait_for_get_offset_->end", wait_for_get_offset_->end);
+  LOG(ERROR) << "CommandBufferStub::WaitForGetOffsetInRangeTimeout, need to "
+                "wake up the client thread";
   std::move(wait_for_get_offset_->callback).Run(gpu::CommandBuffer::State());
   wait_for_get_offset_.reset();
 }
@@ -505,19 +494,21 @@ void CommandBufferStub::CheckCompleteWaits() {
          state.error != error::kNoError)) {
       ReportState();
       std::move(wait_for_get_offset_->callback).Run(state);
-#if defined(OHOS_BUGFIX_CRASH)
-    TRACE_EVENT2("gpu", "CommandBufferStub::CheckCompleteWaits successfully, stop timer", "wait_for_get_offset_->start",
-      wait_for_get_offset_->start, "wait_for_get_offset_->end", wait_for_get_offset_->end);
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+      TRACE_EVENT2(
+          "gpu",
+          "CommandBufferStub::CheckCompleteWaits successfully, stop timer",
+          "wait_for_get_offset_->start", wait_for_get_offset_->start,
+          "wait_for_get_offset_->end", wait_for_get_offset_->end);
       wait_for_get_offset_in_range_timer_.Stop();
 #endif
       wait_for_get_offset_.reset();
     }
   }
   if (has_wait && !(wait_for_token_ || wait_for_get_offset_)) {
-    // TODO(elgarawany): Replace with reset the sequence back to its default
-    // priority when Scheduler is replaced with SchedulerDfs.
-    channel_->scheduler()->ResetPriorityForClientWait(sequence_id_,
-                                                      command_buffer_id_);
+    channel_->scheduler()->SetSequencePriority(
+        sequence_id_,
+        channel_->scheduler()->GetSequenceDefaultPriority(sequence_id_));
   }
 }
 
@@ -532,11 +523,6 @@ void CommandBufferStub::OnAsyncFlush(
   // to catch regressions. Ignore the message.
   DVLOG_IF(0, flush_id - last_flush_id_ >= 0x8000000U)
       << "Received a Flush message out-of-order";
-  // Check if sync token waits are invalid or already complete. Do not use
-  // SyncPointManager::IsSyncTokenReleased() as it can't say if the wait is
-  // invalid.
-  for (const auto& sync_token : sync_token_fences)
-    DCHECK(!sync_point_client_state_->Wait(sync_token, base::DoNothing()));
 
   last_flush_id_ = flush_id;
   gpu::CommandBuffer::State pre_state = command_buffer_->GetState();
@@ -544,7 +530,7 @@ void CommandBufferStub::OnAsyncFlush(
 
   {
     auto* gr_shader_cache = channel_->gpu_channel_manager()->gr_shader_cache();
-    absl::optional<raster::GrShaderCache::ScopedCacheUse> cache_use;
+    std::optional<raster::GrShaderCache::ScopedCacheUse> cache_use;
     if (gr_shader_cache)
       cache_use.emplace(gr_shader_cache, channel_->client_id());
     command_buffer_->Flush(put_offset, decoder_context_.get());
@@ -609,12 +595,19 @@ void CommandBufferStub::ReportState() {
 void CommandBufferStub::SignalSyncToken(const SyncToken& sync_token,
                                         uint32_t id) {
   UpdateActiveUrl();
+
+  if (channel_->scheduler()
+          ->task_graph()
+          ->sync_point_manager()
+          ->IsSyncTokenReleased(sync_token)) {
+    OnSignalAck(id);
+    return;
+  }
+
   auto callback =
       base::BindOnce(&CommandBufferStub::OnSignalAck, this->AsWeakPtr(), id);
-  if (!sync_point_client_state_->WaitNonThreadSafe(
-          sync_token, channel_->task_runner(), std::move(callback))) {
-    OnSignalAck(id);
-  }
+  channel_->scheduler()->ScheduleTask(Scheduler::Task(
+      sequence_id_, std::move(callback), {sync_token}, SyncToken()));
 }
 
 void CommandBufferStub::OnSignalAck(uint32_t id) {
@@ -637,20 +630,13 @@ void CommandBufferStub::SignalQuery(uint32_t query_id, uint32_t id) {
   }
 }
 
-void CommandBufferStub::BindMediaReceiver(
-    mojo::GenericPendingAssociatedReceiver receiver,
-    BindMediaReceiverCallback callback) {
-  const auto& binder = channel_->command_buffer_media_binder();
-  if (binder)
-    binder.Run(this, std::move(receiver));
-  std::move(callback).Run();
-}
-
 void CommandBufferStub::OnFenceSyncRelease(uint64_t release) {
   SyncToken sync_token(CommandBufferNamespace::GPU_IO, command_buffer_id_,
                        release);
   command_buffer_->SetReleaseCount(release);
-  sync_point_client_state_->ReleaseFenceSync(release);
+
+  CHECK(release_delegate_);
+  release_delegate_->Release(release);
 }
 
 void CommandBufferStub::OnDescheduleUntilFinished() {
@@ -674,6 +660,10 @@ void CommandBufferStub::ScheduleGrContextCleanup() {
 
 void CommandBufferStub::HandleReturnData(base::span<const uint8_t> data) {
   client_->OnReturnData(std::vector<uint8_t>(data.begin(), data.end()));
+}
+
+bool CommandBufferStub::ShouldYield() {
+  return channel_->scheduler()->ShouldYield(sequence_id_);
 }
 
 void CommandBufferStub::OnConsoleMessage(int32_t id,
@@ -752,7 +742,8 @@ void CommandBufferStub::CheckContextLost() {
         decoder_context_ &&
         decoder_context_->WasContextLostByRobustnessExtension();
     channel_->gpu_channel_manager()->OnContextLost(/*context_lost_count=*/-1,
-                                                   !was_lost_by_robustness);
+                                                   !was_lost_by_robustness,
+                                                   state.context_lost_reason);
   }
 
   CheckCompleteWaits();
@@ -798,19 +789,20 @@ CommandBufferStub::SetOrGetMemoryTrackerFactory(MemoryTrackerFactory factory) {
 CommandBufferStub::ScopedContextOperation::ScopedContextOperation(
     CommandBufferStub& stub)
     : stub_(stub) {
-  stub_->UpdateActiveUrl();
-  if (stub_->decoder_context_ && stub_->MakeCurrent()) {
+  stub_.UpdateActiveUrl();
+  if (stub_.decoder_context_ && stub_.MakeCurrent()) {
     have_context_ = true;
-    stub_->CreateCacheUse(cache_use_);
+    stub_.CreateCacheUse(cache_use_);
   }
 }
 
 CommandBufferStub::ScopedContextOperation::~ScopedContextOperation() {
-  stub_->CheckCompleteWaits();
+  stub_.CheckCompleteWaits();
   if (have_context_) {
-    if (stub_->decoder_context_)
-      stub_->decoder_context_->ProcessPendingQueries(/*did_finish=*/false);
-    stub_->ScheduleDelayedWork(base::Milliseconds(kHandleMoreWorkPeriodMs));
+    if (stub_.decoder_context_) {
+      stub_.decoder_context_->ProcessPendingQueries(/*did_finish=*/false);
+    }
+    stub_.ScheduleDelayedWork(base::Milliseconds(kHandleMoreWorkPeriodMs));
   }
 }
 

@@ -25,24 +25,31 @@ class FakeLayerTreeHostImplClient : public LayerTreeHostImplClient {
   void NotifyReadyToDraw() override;
   void SetNeedsRedrawOnImplThread() override {}
   void SetNeedsOneBeginImplFrameOnImplThread() override {}
+  void SetNeedsUpdateDisplayTreeOnImplThread() override {}
   void SetNeedsCommitOnImplThread() override {}
   void SetNeedsPrepareTilesOnImplThread() override {}
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override {}
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
-  void SetDeferInvalidationForFastMainFrameFromImpl(bool defer_invalidation_for_fast_main_frame) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetDeferInvalidationForFastMainFrameFromImpl(
+      bool defer_invalidation_for_fast_main_frame) override {}
+#endif
   bool IsInsideDraw() override;
   void RenewTreePriority() override {}
   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
                                             base::TimeDelta delay) override {}
   void DidActivateSyncTree() override {}
-  void WillPrepareTiles() override {}
   void DidPrepareTiles() override {}
   void DidCompletePageScaleAnimationOnImplThread() override {}
   void OnDrawForLayerTreeFrameSink(bool resourceless_software_draw,
                                    bool skip_draw) override {}
-  void NeedsImplSideInvalidation(bool needs_first_draw_on_activation) override;
-  void NotifyImageDecodeRequestFinished() override {}
-  void NotifyTransitionRequestFinished(uint32_t sequence_id) override {}
+  void SetNeedsImplSideInvalidation(
+      bool needs_first_draw_on_activation) override;
+  void NotifyImageDecodeRequestFinished(int request_id,
+                                        bool decode_succeeded) override {}
+  void NotifyTransitionRequestFinished(
+      uint32_t sequence_id,
+      const viz::ViewTransitionElementResourceRects&) override {}
   void DidPresentCompositorFrameOnImplThread(
       uint32_t frame_token,
       PresentationTimeCallbackBuffer::PendingCallbacks activated,
@@ -54,6 +61,7 @@ class FakeLayerTreeHostImplClient : public LayerTreeHostImplClient {
       Scheduler::PaintWorkletState state) override {}
   void NotifyThroughputTrackerResults(CustomTrackerResults results) override {}
   void DidObserveFirstScrollDelay(
+      int source_frame_number,
       base::TimeDelta first_scroll_delay,
       base::TimeTicks first_scroll_timestamp) override {}
   bool IsInSynchronousComposite() const override;

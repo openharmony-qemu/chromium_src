@@ -5,13 +5,15 @@
 #include "google_apis/gaia/core_account_id.h"
 
 #include "base/check.h"
+#include "base/containers/contains.h"
+#include "base/containers/to_vector.h"
 #include "google_apis/gaia/gaia_auth_util.h"
 
 namespace {
 // Returns whether the string looks like an email (the test is
 // crude an only checks whether it includes an '@').
 bool IsEmailString(const std::string& string) {
-  return string.find('@') != std::string::npos;
+  return base::Contains(string, '@');
 }
 }  // anonymous namespace
 
@@ -95,8 +97,5 @@ std::ostream& operator<<(std::ostream& out, const CoreAccountId& a) {
 
 std::vector<std::string> ToStringList(
     const std::vector<CoreAccountId>& account_ids) {
-  std::vector<std::string> account_ids_string;
-  for (const auto& account_id : account_ids)
-    account_ids_string.push_back(account_id.ToString());
-  return account_ids_string;
+  return base::ToVector(account_ids, &CoreAccountId::ToString);
 }

@@ -15,24 +15,22 @@
 
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 
-#include "base/logging.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/string_util.h"
-#include "base/values.h"
-#include "net/base/registry_controlled_domains/registry_controlled_domain.h"
-
-#include "base/functional/bind.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
-#include "base/memory/singleton.h"
+#include "base/functional/bind.h"
 #include "base/lazy_instance.h"
+#include "base/logging.h"
+#include "base/memory/singleton.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/strings/string_util.h"
 #include "base/task/thread_pool.h"
 #include "base/values.h"
+#include "components/subresource_filter/core/browser/user_ruleset_version.h"
+#include "components/subresource_filter/core/common/constants.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "services/network/public/cpp/resource_request.h"
-#include "components/subresource_filter/content/browser/user_ruleset_version.h"
 
 namespace OHOS {
 namespace adblock {
@@ -84,7 +82,8 @@ void AdBlockConfig::SetAdsBlockRules(const std::string& rulesFiles,
     base::AutoLock lock(lock_);
     rules_files_ = rulesFiles;
     replace_ = replace;
-    subresource_filter::UserIndexedRulesetVersion info;
+    subresource_filter::UserIndexedRulesetVersion info(
+        subresource_filter::kSafeBrowsingUserRulesetConfig.filter_tag);
     if (!local_state_) {
       LOG(ERROR) << "[Adblock] web core has not been initialized";
       return;
@@ -114,7 +113,8 @@ void AdBlockConfig::ReadFromPrefService() {
     if (is_valid_) {
       return;
     }
-    subresource_filter::UserIndexedRulesetVersion info;
+    subresource_filter::UserIndexedRulesetVersion info(
+        subresource_filter::kSafeBrowsingUserRulesetConfig.filter_tag);
     if (!local_state_) {
       LOG(ERROR) << "[Adblock] web core has not been initialized";
       return;

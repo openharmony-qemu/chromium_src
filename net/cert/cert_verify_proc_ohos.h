@@ -14,12 +14,10 @@ class CertNetFetcher;
 
 class NET_EXPORT CertVerifyProcOHOS : public CertVerifyProc {
  public:
-  CertVerifyProcOHOS(const CertVerifyProcOHOS&) = delete;
-  CertVerifyProcOHOS& operator=(const CertVerifyProcOHOS&) = delete;
-
   explicit CertVerifyProcOHOS(scoped_refptr<CertNetFetcher> net_fetcher);
 
-  bool SupportsAdditionalTrustAnchors() const override;
+  CertVerifyProcOHOS(const CertVerifyProcOHOS&) = delete;
+  CertVerifyProcOHOS& operator=(const CertVerifyProcOHOS&) = delete;
 
  protected:
   ~CertVerifyProcOHOS() override;
@@ -30,7 +28,6 @@ class NET_EXPORT CertVerifyProcOHOS : public CertVerifyProc {
                      const std::string& ocsp_response,
                      const std::string& sct_list,
                      int flags,
-                     const CertificateList& additional_trust_anchors,
                      CertVerifyResult* verify_result,
                      const NetLogWithSource& net_log) override;
 

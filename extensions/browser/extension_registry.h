@@ -18,9 +18,8 @@
 #include "extensions/common/extension_id.h"
 #include "extensions/common/extension_set.h"
 
-#if !BUILDFLAG(ENABLE_EXTENSIONS)
-#error "Extensions must be enabled"
-#endif
+static_assert(BUILDFLAG(ENABLE_EXTENSIONS) ||
+              BUILDFLAG(ENABLE_DESKTOP_ANDROID_EXTENSIONS));
 
 namespace content {
 class BrowserContext;
@@ -213,7 +212,8 @@ class ExtensionRegistry : public KeyedService {
   // subset of |enabled_extensions_|.
   ExtensionSet ready_extensions_;
 
-  base::ObserverList<ExtensionRegistryObserver>::Unchecked observers_;
+  base::ObserverList<ExtensionRegistryObserver>::UncheckedAndDanglingUntriaged
+      observers_;
 
   const raw_ptr<content::BrowserContext> browser_context_;
 };

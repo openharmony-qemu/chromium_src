@@ -6,6 +6,7 @@
 
 #import "base/feature_list.h"
 #import "base/ios/ios_util.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/metrics/user_metrics.h"
@@ -18,42 +19,48 @@
 #import "components/omnibox/browser/autocomplete_controller.h"
 #import "components/omnibox/browser/autocomplete_input.h"
 #import "components/omnibox/browser/autocomplete_match.h"
+#import "components/omnibox/browser/autocomplete_match_classification.h"
 #import "components/omnibox/browser/autocomplete_result.h"
 #import "components/omnibox/browser/remote_suggestions_service.h"
 #import "components/omnibox/common/omnibox_features.h"
+#import "components/password_manager/core/browser/manage_passwords_referrer.h"
 #import "components/strings/grit/components_strings.h"
 #import "components/variations/variations_associated_data.h"
 #import "components/variations/variations_ids_provider.h"
-#import "ios/chrome/browser/default_browser/utils.h"
-#import "ios/chrome/browser/favicon/favicon_loader.h"
-#import "ios/chrome/browser/flags/system_flags.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/ntp/new_tab_page_util.h"
+#import "ios/chrome/browser/default_browser/model/default_browser_interest_signals.h"
+#import "ios/chrome/browser/download/model/external_app_util.h"
+#import "ios/chrome/browser/favicon/model/favicon_loader.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/ntp/model/new_tab_page_util.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_backed_boolean.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/open_new_tab_command.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/public/features/system_flags.h"
 #import "ios/chrome/browser/shared/ui/util/pasteboard_util.h"
-#import "ios/chrome/browser/ui/default_promo/default_browser_promo_non_modal_scheduler.h"
+#import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/menu/browser_action_factory.h"
 #import "ios/chrome/browser/ui/omnibox/popup/autocomplete_controller_observer_bridge.h"
 #import "ios/chrome/browser/ui/omnibox/popup/autocomplete_match_formatter.h"
 #import "ios/chrome/browser/ui/omnibox/popup/autocomplete_suggestion_group_impl.h"
-#import "ios/chrome/browser/ui/omnibox/popup/carousel_item.h"
-#import "ios/chrome/browser/ui/omnibox/popup/carousel_item_menu_provider.h"
+#import "ios/chrome/browser/ui/omnibox/popup/carousel/carousel_item.h"
+#import "ios/chrome/browser/ui/omnibox/popup/carousel/carousel_item_menu_provider.h"
 #import "ios/chrome/browser/ui/omnibox/popup/omnibox_pedal_annotator.h"
-#import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_mediator+private.h"
+#import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_mediator+Testing.h"
 #import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_presenter.h"
 #import "ios/chrome/browser/ui/omnibox/popup/pedal_section_extractor.h"
 #import "ios/chrome/browser/ui/omnibox/popup/pedal_suggestion_wrapper.h"
 #import "ios/chrome/browser/ui/omnibox/popup/popup_debug_info_consumer.h"
 #import "ios/chrome/browser/ui/omnibox/popup/popup_swift.h"
 #import "ios/chrome/browser/ui/omnibox/popup/remote_suggestions_service_observer_bridge.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/ui/omnibox/popup/row/actions/suggest_action.h"
+#import "ios/chrome/browser/ui/toolbar/public/toolbar_omnibox_consumer.h"
 #import "ios/chrome/common/ui/favicon/favicon_attributes.h"
+#import "net/base/apple/url_conversions.h"
+#import "third_party/omnibox_proto/groups.pb.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 const CGFloat kOmniboxIconSize = 16;
@@ -62,7 +69,8 @@ const CGFloat kOmniboxIconSize = 16;
 const NSUInteger kMaxSuggestTileTypePosition = 15;
 }  // namespace
 
-@interface OmniboxPopupMediator () <PedalSectionExtractorDelegate>
+@interface OmniboxPopupMediator () <BooleanObserver,
+                                    PedalSectionExtractorDelegate>
 
 // FET reference.
 @property(nonatomic, assign) feature_engagement::Tracker* tracker;
@@ -85,6 +93,9 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
 // debug mode.
 @property(nonatomic, assign) RemoteSuggestionsService* remoteSuggestionsService;
 
+// Whether the omnibox has a thumbnail.
+@property(nonatomic, assign) BOOL hasThumbnail;
+
 @end
 
 @implementation OmniboxPopupMediator {
@@ -96,7 +107,15 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   std::unique_ptr<RemoteSuggestionsServiceObserverBridge>
       _remoteSuggestionsServiceObserverBridge;
 
-  OmniboxPopupMediatorDelegate* _delegate;  // weak
+  raw_ptr<OmniboxPopupMediatorDelegate> _delegate;  // weak
+
+  /// Preferred omnibox position, logged in omnibox logs.
+  metrics::OmniboxEventProto::OmniboxPosition _preferredOmniboxPosition;
+  /// Pref tracking if bottom omnibox is enabled.
+  PrefBackedBoolean* _bottomOmniboxEnabled;
+  /// Holds cached images keyed by their URL. The cache is purged when the popup
+  /// is closed.
+  NSCache<NSString*, UIImage*>* _cachedImages;
 }
 @synthesize consumer = _consumer;
 @synthesize hasResults = _hasResults;
@@ -126,8 +145,29 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
     _autocompleteController = autocompleteController;
     _remoteSuggestionsService = remoteSuggestionsService;
     _tracker = tracker;
+    _cachedImages = [[NSCache alloc] init];
+    // This is logged only when `IsBottomOmniboxAvailable`.
+    _preferredOmniboxPosition = metrics::OmniboxEventProto::UNKNOWN_POSITION;
+
+    _bottomOmniboxEnabled = [[PrefBackedBoolean alloc]
+        initWithPrefService:GetApplicationContext()->GetLocalState()
+                   prefName:prefs::kBottomOmnibox];
+    [_bottomOmniboxEnabled setObserver:self];
+    // Initialize to the correct value.
+    [self booleanDidChange:_bottomOmniboxEnabled];
   }
   return self;
+}
+
+- (void)disconnect {
+  [_bottomOmniboxEnabled stop];
+  [_bottomOmniboxEnabled setObserver:nil];
+  _bottomOmniboxEnabled = nil;
+  if (_remoteSuggestionsServiceObserverBridge) {
+    self.remoteSuggestionsService->RemoveObserver(
+        _remoteSuggestionsServiceObserverBridge.get());
+    _remoteSuggestionsServiceObserverBridge.reset();
+  }
 }
 
 - (void)updateMatches:(const AutocompleteResult&)result {
@@ -135,14 +175,7 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   self.currentPedals = nil;
 
   self.hasResults = !self.autocompleteResult.empty();
-  if (base::FeatureList::IsEnabled(omnibox::kAdaptiveSuggestionsCount)) {
-    [self.consumer newResultsAvailable];
-  } else {
-    // Avoid calling consumer visible size and set all suggestions as visible to
-    // get only one grouping.
-    [self requestResultsWithVisibleSuggestionCount:self.autocompleteResult
-                                                       .size()];
-  }
+  [self.consumer newResultsAvailable];
 
   if (self.debugInfoConsumer) {
     DCHECK(experimental_flags::IsOmniboxDebuggingEnabled());
@@ -158,7 +191,11 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
 - (void)updateWithResults:(const AutocompleteResult&)result {
   [self updateMatches:result];
   self.open = !result.empty();
-  [self.presenter updatePopup];
+  metrics::OmniboxFocusType inputFocusType =
+      self.autocompleteController->input().focus_type();
+  BOOL isFocusing =
+      inputFocusType == metrics::OmniboxFocusType::INTERACTION_FOCUS;
+  [self.presenter updatePopupOnFocus:isFocusing];
 }
 
 - (void)setTextAlignment:(NSTextAlignment)alignment {
@@ -185,12 +222,21 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   if (self.remoteSuggestionsService) {
     _remoteSuggestionsServiceObserverBridge =
         std::make_unique<RemoteSuggestionsServiceObserverBridge>(
-            debugInfoConsumer);
+            debugInfoConsumer, self.remoteSuggestionsService);
     self.remoteSuggestionsService->AddObserver(
         _remoteSuggestionsServiceObserverBridge.get());
   }
 
   _debugInfoConsumer = debugInfoConsumer;
+}
+
+- (void)setOpen:(BOOL)open {
+  // When closing the popup.
+  if (_open && !open) {
+    [_cachedImages removeAllObjects];
+    [_debugInfoConsumer removeAllObjects];
+  }
+  _open = open;
 }
 
 #pragma mark - AutocompleteResultDataSource
@@ -230,6 +276,11 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
                              inRow:(NSUInteger)row {
   [self logPedalShownForCurrentResult];
 
+  // Log the suggest actions that were shown and not used.
+  if (suggestion.actionsInSuggest.count == 0) {
+    [self logActionsInSuggestShownForCurrentResult];
+  }
+
   if ([suggestion isKindOfClass:[PedalSuggestionWrapper class]]) {
     PedalSuggestionWrapper* pedalSuggestionWrapper =
         (PedalSuggestionWrapper*)suggestion;
@@ -238,6 +289,12 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
           "Omnibox.SuggestionUsed.Pedal",
           (OmniboxPedalId)pedalSuggestionWrapper.innerPedal.type,
           OmniboxPedalId::TOTAL_COUNT);
+      if ((OmniboxPedalId)pedalSuggestionWrapper.innerPedal.type ==
+          OmniboxPedalId::MANAGE_PASSWORDS) {
+        base::UmaHistogramEnumeration(
+            "PasswordManager.ManagePasswordsReferrer",
+            password_manager::ManagePasswordsReferrer::kOmniboxPedalSuggestion);
+      }
       pedalSuggestionWrapper.innerPedal.action();
     }
   } else if ([suggestion isKindOfClass:[AutocompleteMatchFormatter class]]) {
@@ -246,11 +303,16 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
     const AutocompleteMatch& match =
         autocompleteMatchFormatter.autocompleteMatch;
 
-    // Don't log pastes in incognito.
-    if (!self.incognito && match.type == AutocompleteMatchType::CLIPBOARD_URL) {
-      [self.promoScheduler logUserPastedInOmnibox];
-      LogToFETUserPastedURLIntoOmnibox(self.tracker);
+    // A search using clipboard link or text is activity that should indicate a
+    // user that would be interested in setting the browser as the default.
+    if (match.type == AutocompleteMatchType::CLIPBOARD_URL) {
+      default_browser::NotifyOmniboxURLCopyPasteAndNavigate(
+          self.incognito, self.tracker, self.sceneState);
     }
+    if (match.type == AutocompleteMatchType::CLIPBOARD_TEXT) {
+      default_browser::NotifyOmniboxTextCopyPasteAndNavigate(self.tracker);
+    }
+
     if (!self.incognito &&
         match.type == AutocompleteMatchType::TILE_NAVSUGGEST) {
       [self logSelectedAutocompleteTile:match];
@@ -258,8 +320,50 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
 
     _delegate->OnMatchSelected(match, row, WindowOpenDisposition::CURRENT_TAB);
   } else {
-    NOTREACHED() << "Suggestion type " << NSStringFromClass(suggestion.class)
-                 << " not handled for selection.";
+    DUMP_WILL_BE_NOTREACHED()
+        << "Suggestion type " << NSStringFromClass(suggestion.class)
+        << " not handled for selection.";
+  }
+}
+
+- (void)autocompleteResultConsumer:(id<AutocompleteResultConsumer>)sender
+         didSelectSuggestionAction:(SuggestAction*)action
+                        suggestion:(id<AutocompleteSuggestion>)suggestion
+                             inRow:(NSUInteger)row {
+  OmniboxActionInSuggest::RecordShownAndUsedMetrics(action.type,
+                                                    true /* used */);
+
+  switch (action.type) {
+    case omnibox::ActionInfo_ActionType_CALL: {
+      NSURL* URL = net::NSURLWithGURL(action.actionURI);
+      __weak __typeof__(self) weakSelf = self;
+      [[UIApplication sharedApplication] openURL:URL
+                                         options:@{}
+                               completionHandler:^(BOOL success) {
+                                 if (success) {
+                                   [weakSelf callActionTapped];
+                                 }
+                               }];
+      break;
+    }
+    case omnibox::ActionInfo_ActionType_DIRECTIONS: {
+      NSURL* URL = net::NSURLWithGURL(action.actionURI);
+
+      if (IsGoogleMapsAppInstalled() && !self.incognito) {
+        [[UIApplication sharedApplication] openURL:URL
+                                           options:@{}
+                                 completionHandler:nil];
+      } else {
+        [self openNewTabWithSuggestAction:action];
+      }
+      break;
+    }
+    case omnibox::ActionInfo_ActionType_REVIEWS: {
+      [self openNewTabWithSuggestAction:action];
+      break;
+    }
+    default:
+      break;
   }
 }
 
@@ -300,8 +404,9 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
         autocompleteMatchFormatter.autocompleteMatch;
     _delegate->OnMatchSelectedForDeletion(match);
   } else {
-    NOTREACHED() << "Suggestion type " << NSStringFromClass(suggestion.class)
-                 << " not handled for deletion.";
+    DUMP_WILL_BE_NOTREACHED()
+        << "Suggestion type " << NSStringFromClass(suggestion.class)
+        << " not handled for deletion.";
   }
 }
 
@@ -333,21 +438,43 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   }
 }
 
+#pragma mark - Boolean Observer
+
+- (void)booleanDidChange:(id<ObservableBoolean>)observableBoolean {
+  if (observableBoolean == _bottomOmniboxEnabled) {
+    _preferredOmniboxPosition =
+        _bottomOmniboxEnabled.value
+            ? metrics::OmniboxEventProto::BOTTOM_POSITION
+            : metrics::OmniboxEventProto::TOP_POSITION;
+    if (self.autocompleteController) {
+      self.autocompleteController->SetSteadyStateOmniboxPosition(
+          _preferredOmniboxPosition);
+    }
+  }
+}
+
 #pragma mark - ImageFetcher
 
 - (void)fetchImage:(GURL)imageURL completion:(void (^)(UIImage*))completion {
+  NSString* URL = base::SysUTF8ToNSString(imageURL.spec());
+  UIImage* cachedImage = [_cachedImages objectForKey:URL];
+  if (cachedImage) {
+    completion(cachedImage);
+    return;
+  }
+  __weak NSCache<NSString*, UIImage*>* weakCachedImages = _cachedImages;
   auto callback =
       base::BindOnce(^(const std::string& image_data,
                        const image_fetcher::RequestMetadata& metadata) {
         NSData* data = [NSData dataWithBytes:image_data.data()
                                       length:image_data.size()];
-        if (data) {
-          UIImage* image = [UIImage imageWithData:data
-                                            scale:[UIScreen mainScreen].scale];
-          completion(image);
-        } else {
-          completion(nil);
+
+        UIImage* image = [UIImage imageWithData:data
+                                          scale:[UIScreen mainScreen].scale];
+        if (image) {
+          [weakCachedImages setObject:image forKey:URL];
         }
+        completion(image);
       });
 
   _imageFetcher->FetchImageData(imageURL, std::move(callback),
@@ -392,6 +519,21 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   }
 }
 
+- (void)logActionsInSuggestShownForCurrentResult {
+  NSArray<id<AutocompleteSuggestion>>* allMatches =
+      [self extractMatches:self.autocompleteResult];
+
+  for (id<AutocompleteSuggestion> match in allMatches) {
+    if (match.actionsInSuggest.count == 0) {
+      continue;
+    }
+    for (SuggestAction* action in match.actionsInSuggest) {
+      OmniboxActionInSuggest::RecordShownAndUsedMetrics(action.type,
+                                                        false /* used */);
+    }
+  }
+}
+
 /// Wraps `match` with AutocompleteMatchFormatter.
 - (AutocompleteMatchFormatter*)wrapMatch:(const AutocompleteMatch&)match
                               fromResult:(const AutocompleteResult&)result {
@@ -400,8 +542,8 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   formatter.starred = _delegate->IsStarredMatch(match);
   formatter.incognito = _incognito;
   formatter.defaultSearchEngineIsGoogle = self.defaultSearchEngineIsGoogle;
-  formatter.pedalData = [self.pedalAnnotator pedalForMatch:match
-                                                 incognito:_incognito];
+  formatter.pedalData = [self.pedalAnnotator pedalForMatch:match];
+  formatter.isMultimodal = self.hasThumbnail;
 
   if (formatter.suggestionGroupId) {
     omnibox::GroupId groupId =
@@ -411,6 +553,30 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
     formatter.suggestionSectionId =
         [NSNumber numberWithInt:static_cast<int>(sectionId)];
   }
+
+  NSMutableArray* actions = [[NSMutableArray alloc] init];
+
+  for (auto& action : match.actions) {
+    SuggestAction* suggestAction =
+        [SuggestAction actionWithOmniboxAction:action.get()];
+
+    if (!suggestAction) {
+      continue;
+    }
+
+    if (suggestAction.type != omnibox::ActionInfo_ActionType_CALL) {
+      [actions addObject:suggestAction];
+      continue;
+    }
+
+    BOOL hasDialApp = [[UIApplication sharedApplication]
+        canOpenURL:net::NSURLWithGURL(suggestAction.actionURI)];
+    if (hasDialApp) {
+      [actions addObject:suggestAction];
+    }
+  }
+
+  formatter.actionsInSuggest = actions;
 
   return formatter;
 }
@@ -425,13 +591,17 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
         self.autocompleteResult.match_at((NSUInteger)i);
     if (match.type == AutocompleteMatchType::TILE_NAVSUGGEST) {
       DCHECK(match.type == AutocompleteMatchType::TILE_NAVSUGGEST);
-      DCHECK(base::FeatureList::IsEnabled(omnibox::kMostVisitedTiles));
       for (const AutocompleteMatch::SuggestTile& tile : match.suggest_tiles) {
         AutocompleteMatch tileMatch = AutocompleteMatch(match);
         // TODO(crbug.com/1363546): replace with a new wrapper.
         tileMatch.destination_url = tile.url;
         tileMatch.fill_into_edit = base::UTF8ToUTF16(tile.url.spec());
         tileMatch.description = tile.title;
+        tileMatch.description_class = ClassifyTermMatches(
+            {}, tileMatch.description.length(), 0, ACMatchClassification::NONE);
+#if DCHECK_IS_ON()
+        tileMatch.Validate();
+#endif  // DCHECK_IS_ON()
         AutocompleteMatchFormatter* formatter =
             [self wrapMatch:tileMatch fromResult:autocompleteResult];
         [wrappedMatches addObject:formatter];
@@ -478,13 +648,21 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
             : nil;
     SuggestionGroupDisplayStyle displayStyle =
         SuggestionGroupDisplayStyleDefault;
-    if (base::FeatureList::IsEnabled(omnibox::kMostVisitedTiles)) {
-      if (currentSectionId &&
-          static_cast<omnibox::GroupSection>(currentSectionId.intValue) ==
-              omnibox::SECTION_MOBILE_MOST_VISITED) {
-        displayStyle = SuggestionGroupDisplayStyleCarousel;
-      }
+
+    if (base::FeatureList::IsEnabled(
+            omnibox::kMostVisitedTilesHorizontalRenderGroup)) {
+      omnibox::GroupConfig_RenderType renderType =
+          headerMap.GetRenderTypeForSuggestionGroup(
+              static_cast<omnibox::GroupId>([currentGroupId intValue]));
+      displayStyle = (renderType == omnibox::GroupConfig_RenderType_HORIZONTAL)
+                         ? SuggestionGroupDisplayStyleCarousel
+                         : SuggestionGroupDisplayStyleDefault;
+    } else if (currentSectionId &&
+               static_cast<omnibox::GroupSection>(currentSectionId.intValue) ==
+                   omnibox::SECTION_MOBILE_MOST_VISITED) {
+      displayStyle = SuggestionGroupDisplayStyleCarousel;
     }
+
     [groups addObject:[AutocompleteSuggestionGroupImpl
                           groupWithTitle:groupTitle
                              suggestions:currentGroup
@@ -551,6 +729,10 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   self.autocompleteController->GroupSuggestionsBySearchVsURL(begin, end);
 }
 
+- (void)callActionTapped {
+  _delegate->OnCallActionTap();
+}
+
 #pragma mark - CarouselItemMenuProvider
 
 /// Context Menu for carousel `item` in `view`.
@@ -570,7 +752,7 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
             strongSelf.mostVisitedActionFactory;
 
         // Record that this context menu was shown to the user.
-        RecordMenuShown(MenuScenarioHistogram::kOmniboxMostVisitedEntry);
+        RecordMenuShown(kMenuScenarioHistogramOmniboxMostVisitedEntry);
 
         NSMutableArray<UIMenuElement*>* menuElements =
             [[NSMutableArray alloc] init];
@@ -599,7 +781,8 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
           [menuElements addObject:newWindowAction];
         }
 
-        [menuElements addObject:[actionFactory actionToCopyURL:copyURL]];
+        CrURL* URL = [[CrURL alloc] initWithGURL:copyURL];
+        [menuElements addObject:[actionFactory actionToCopyURL:URL]];
 
         [menuElements addObject:[actionFactory actionToShareWithBlock:^{
                         [weakSelf.sharingDelegate
@@ -748,6 +931,15 @@ const NSUInteger kMaxSuggestTileTypePosition = 15;
   OpenNewTabCommand* command =
       [OpenNewTabCommand commandWithURLFromChrome:carouselItem.URL.gurl
                                       inIncognito:incognito];
+  [self.applicationCommandsHandler openURLInNewTab:command];
+}
+
+/// Opens suggestAction in a new tab.
+- (void)openNewTabWithSuggestAction:(SuggestAction*)suggestAction {
+  DCHECK(self.applicationCommandsHandler);
+  OpenNewTabCommand* command =
+      [OpenNewTabCommand commandWithURLFromChrome:suggestAction.actionURI
+                                      inIncognito:NO];
   [self.applicationCommandsHandler openURLInNewTab:command];
 }
 

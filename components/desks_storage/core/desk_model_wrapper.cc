@@ -5,7 +5,7 @@
 #include "components/desks_storage/core/desk_model_wrapper.h"
 
 #include "ash/public/cpp/desk_template.h"
-#include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/uuid.h"
 #include "components/account_id/account_id.h"
 #include "components/desks_storage/core/desk_model.h"
@@ -35,10 +35,12 @@ DeskModel::GetAllEntriesResult DeskModelWrapper::GetAllEntries() {
     return save_and_recall_result;
   }
 
-  std::vector<const ash::DeskTemplate*>& all_entries = templates_result.entries;
+  std::vector<raw_ptr<const ash::DeskTemplate, VectorExperimental>>&
+      all_entries = templates_result.entries;
 
-  for (auto* const entry : save_and_recall_result.entries)
+  for (const ash::DeskTemplate* const entry : save_and_recall_result.entries) {
     all_entries.push_back(entry);
+  }
 
   for (const auto& it : policy_entries_)
     all_entries.push_back(it.get());
@@ -79,6 +81,7 @@ void DeskModelWrapper::AddOrUpdateEntry(
                                                      std::move(callback));
       return;
     // Return kInvalidArgument on an unknown desk type.
+    case ash::DeskTemplateType::kCoral:
     case ash::DeskTemplateType::kUnknown:
       std::move(callback).Run(AddOrUpdateEntryStatus::kInvalidArgument,
                               std::move(new_entry));
@@ -133,20 +136,20 @@ size_t DeskModelWrapper::GetMaxDeskTemplateEntryCount() const {
          policy_entries_.size();
 }
 
-std::vector<base::Uuid> DeskModelWrapper::GetAllEntryUuids() const {
-  std::vector<base::Uuid> keys;
+std::set<base::Uuid> DeskModelWrapper::GetAllEntryUuids() const {
+  std::set<base::Uuid> keys;
 
   for (const auto& it : policy_entries_)
-    keys.push_back(it.get()->uuid());
+    keys.emplace(it.get()->uuid());
 
   for (const auto& save_and_recall_uuid :
        save_and_recall_desks_model_->GetAllEntryUuids()) {
-    keys.emplace_back(save_and_recall_uuid);
+    keys.emplace(save_and_recall_uuid);
   }
 
   for (const auto& desk_template_uuid :
        GetDeskTemplateModel()->GetAllEntryUuids()) {
-    keys.emplace_back(desk_template_uuid);
+    keys.emplace(desk_template_uuid);
   }
   return keys;
 }
@@ -171,11 +174,15 @@ ash::DeskTemplate* DeskModelWrapper::FindOtherEntryWithName(
     case ash::DeskTemplateType::kSaveAndRecall:
       return save_and_recall_desks_model_->FindOtherEntryWithName(name, type,
                                                                   uuid);
+    case ash::DeskTemplateType::kCoral:
     case ash::DeskTemplateType::kUnknown:
       return nullptr;
   }
 }
 
+std::string DeskModelWrapper::GetCacheGuid() {
+  return GetDeskTemplateModel()->GetCacheGuid();
+}
 desks_storage::DeskSyncBridge* DeskModelWrapper::GetDeskTemplateModel() const {
   DCHECK(desk_template_model_);
   return desk_template_model_;

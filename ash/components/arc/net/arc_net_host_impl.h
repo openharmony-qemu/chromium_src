@@ -6,6 +6,7 @@
 #define ASH_COMPONENTS_ARC_NET_ARC_NET_HOST_IMPL_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -22,11 +23,11 @@
 #include "base/threading/thread_checker.h"
 #include "base/values.h"
 #include "chromeos/ash/components/dbus/patchpanel/patchpanel_client.h"
-#include "chromeos/ash/components/dbus/patchpanel/patchpanel_service.pb.h"
 #include "chromeos/ash/components/network/network_connection_observer.h"
 #include "chromeos/ash/components/network/network_profile_handler.h"
 #include "chromeos/ash/components/network/network_state_handler_observer.h"
 #include "components/keyed_service/core/keyed_service.h"
+#include "ui/aura/window.h"
 
 namespace content {
 class BrowserContext;
@@ -66,11 +67,22 @@ class ArcNetHostImpl : public KeyedService,
   void SetCertManager(std::unique_ptr<CertManager> cert_manager);
 
   // Overridden from mojom::NetHost.
+
+  // TODO(b/329552433): Delete get visible networks part in this method after
+  // pi-arc is removed.
+  // Deprecated for getting visible networks. ArcWifiHostImpl::GetScanResults()
+  // should be used.
   void GetNetworks(mojom::GetNetworksRequestType type,
                    GetNetworksCallback callback) override;
+  // TODO(b/329552433): Delete this method after pi-arc is removed.
+  // Deprecated. ArcWifiHostImpl::GetWifiEnabledState() should be used.
   void GetWifiEnabledState(GetWifiEnabledStateCallback callback) override;
+  // TODO(b/329552433): Delete this method after pi-arc is removed.
+  // Deprecated. ArcWifiHostImpl::SetWifiEnabledState() should be used.
   void SetWifiEnabledState(bool is_enabled,
                            SetWifiEnabledStateCallback callback) override;
+  // TODO(b/329552433): Delete this method after pi-arc is removed.
+  // Deprecated. ArcWifiHostImpl::StartScan() should be used.
   void StartScan() override;
   void CreateNetwork(mojom::WifiConfigurationPtr cfg,
                      CreateNetworkCallback callback) override;
@@ -84,7 +96,10 @@ class ArcNetHostImpl : public KeyedService,
   void StartDisconnect(const std::string& guid,
                        StartDisconnectCallback callback) override;
   void AndroidVpnConnected(mojom::AndroidVpnConfigurationPtr cfg) override;
-  void AndroidVpnStateChanged(mojom::ConnectionStateType state) override;
+  void AndroidVpnUpdated(mojom::AndroidVpnConfigurationPtr cfg) override;
+  void DEPRECATED_AndroidVpnStateChanged(
+      mojom::ConnectionStateType state) override;
+  void AndroidVpnDisconnected() override;
   void AddPasspointCredentials(
       mojom::PasspointCredentialsPtr credentials) override;
   void RemovePasspointCredentials(
@@ -99,12 +114,22 @@ class ArcNetHostImpl : public KeyedService,
   void RequestPasspointAppApproval(
       mojom::PasspointApprovalRequestPtr request,
       RequestPasspointAppApprovalCallback callback) override;
+  void NotifyAndroidWifiMulticastLockChange(bool is_held) override;
+  void NotifySocketConnectionEvent(
+      mojom::SocketConnectionEventPtr msg) override;
+  void NotifyARCVPNSocketConnectionEvent(
+      mojom::SocketConnectionEventPtr msg) override;
 
   // Overridden from ash::NetworkStateHandlerObserver.
+
+  // TODO(b/329552433): Delete this method after pi-arc is removed.
+  // Deprecated. ArcWifiHostImpl::ScanCompleted() should be used.
   void ScanCompleted(const ash::DeviceState* /*unused*/) override;
   void OnShuttingDown() override;
   void NetworkConnectionStateChanged(const ash::NetworkState* network) override;
   void NetworkListChanged() override;
+  // TODO(b/329552433): Delete this method after pi-arc is removed.
+  // Deprecated. ArcWifiHostImpl::DeviceListChanged() should be used.
   void DeviceListChanged() override;
   void NetworkPropertiesUpdated(const ash::NetworkState* network) override;
 
@@ -119,7 +144,7 @@ class ArcNetHostImpl : public KeyedService,
 
  private:
   const ash::NetworkState* GetDefaultNetworkFromChrome();
-  void UpdateActiveNetworks(
+  void UpdateHostNetworks(
       const std::vector<patchpanel::NetworkDevice>& devices);
 
   // Due to a race in Chrome, GetNetworkStateFromGuid() might not know about
@@ -180,8 +205,8 @@ class ArcNetHostImpl : public KeyedService,
   void TranslateEapCredentialsToShillDictWithCertID(
       mojom::EapCredentialsPtr cred,
       base::OnceCallback<void(base::Value::Dict)> callback,
-      const absl::optional<std::string>& cert_id,
-      const absl::optional<int>& slot_id);
+      const std::optional<std::string>& cert_id,
+      const std::optional<int>& slot_id);
 
   // Synchronously translate EAP credentials to base::Value dictionary in ONC
   // with empty or imported certificate and slot ID. |callback| is then run
@@ -190,8 +215,8 @@ class ArcNetHostImpl : public KeyedService,
   void TranslateEapCredentialsToOncDictWithCertID(
       const mojom::EapCredentialsPtr& eap,
       base::OnceCallback<void(base::Value::Dict)> callback,
-      const absl::optional<std::string>& cert_id,
-      const absl::optional<int>& slot_id);
+      const std::optional<std::string>& cert_id,
+      const std::optional<int>& slot_id);
 
   // Translate EAP credentials to base::Value dictionary. If it is
   // necessary to import certificates this method will asynchronously
@@ -225,7 +250,15 @@ class ArcNetHostImpl : public KeyedService,
   // the properties values translated taken from mojo.
   void AddPasspointCredentialsWithProperties(base::Value::Dict properties);
 
-  // Pass any Chrome flags into ARC.
+  // Get the app window with |package_name|. This is necessary to start the
+  // user approval Passpoint dialog above the app. The app window is fetched by
+  // doing BFS over the device's root windows and its children.
+  aura::Window* GetAppWindow(const std::string& package_name);
+
+  // Pass any Chrome flags into ARC. This function may be empty depending on the
+  // current state of flags, i.e. if all Chrome->ARC flags have been launched
+  // and cleaned up, this method may not do anything. But we keep this around to
+  // keep the mojo file stable and decrease churn.
   void SetUpFlags();
 
   void CreateNetworkSuccessCallback(
@@ -240,7 +273,7 @@ class ArcNetHostImpl : public KeyedService,
   // Callback for ash::NetworkHandler::GetShillProperties
   void ReceiveShillProperties(
       const std::string& service_path,
-      absl::optional<base::Value::Dict> shill_properties);
+      std::optional<base::Value::Dict> shill_properties);
 
   // PatchPanelClient::Observer implementation:
   void NetworkConfigurationChanged() override;
@@ -251,7 +284,7 @@ class ArcNetHostImpl : public KeyedService,
                                       CreateNetworkCallback callback,
                                       base::Value::Dict eap_dict);
 
-  const raw_ptr<ArcBridgeService, ExperimentalAsh>
+  const raw_ptr<ArcBridgeService>
       arc_bridge_service_;  // Owned by ArcServiceManager.
 
   // True if the chrome::NetworkStateHandler is currently being observed for
@@ -264,11 +297,16 @@ class ArcNetHostImpl : public KeyedService,
   std::string cached_guid_;
   std::string arc_vpn_service_path_;
   // Owned by the user profile whose context was used to initialize |this|.
-  raw_ptr<PrefService, ExperimentalAsh> pref_service_ = nullptr;
-  raw_ptr<ArcAppMetadataProvider, ExperimentalAsh> app_metadata_provider_ =
+  raw_ptr<PrefService> pref_service_ = nullptr;
+  raw_ptr<ArcAppMetadataProvider, DanglingUntriaged> app_metadata_provider_ =
       nullptr;
 
   std::unique_ptr<CertManager> cert_manager_;
+
+  // Cached NetworkConfigurations that were last sent to ARC. This is an
+  // already-filtered list of networks, e.g. non-ARC networks aren't included
+  // since we don't send them to ARC.
+  std::vector<arc::mojom::NetworkConfigurationPtr> cached_arc_networks_;
 
   THREAD_CHECKER(thread_checker_);
   base::WeakPtrFactory<ArcNetHostImpl> weak_factory_{this};

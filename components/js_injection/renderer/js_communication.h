@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/weak_ptr.h"
 #include "components/js_injection/common/interfaces.mojom.h"
 #include "content/public/renderer/render_frame_observer.h"
@@ -37,15 +38,24 @@ class JsCommunication
   ~JsCommunication() override;
 
   // mojom::JsCommunication implementation
-  void SetJsObjects(std::vector<mojom::JsObjectPtr> js_object_ptrs) override;
+  void SetJsObjects(
+      std::vector<mojom::JsObjectPtr> js_object_ptrs,
+      mojo::PendingAssociatedRemote<mojom::JsObjectsClient> client) override;
   void AddDocumentStartScript(
-      mojom::JavaScriptItemPtr script_ptr) override;
+      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void AddDocumentEndScript(
-      mojom::JavaScriptItemPtr script_ptr) override;
-
+      mojom::DocumentEndJavaScriptPtr script_ptr) override;
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void AddHeadReadyScript(
+      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+  void RemoveHeadReadyScript(int32_t script_id) override;
+#endif
   void RemoveDocumentStartScript(int32_t script_id) override;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void RemoveDocumentEndScript(int32_t script_id) override;
-
+#endif
   // RenderFrameObserver implementation
   void DidClearWindowObject() override;
   void WillReleaseScriptContext(v8::Local<v8::Context> context,
@@ -53,14 +63,19 @@ class JsCommunication
   void OnDestruct() override;
 
   void RunScriptsAtDocumentStart();
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void RunScriptsAtDocumentEnd();
-
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadReady();
+#endif
   mojom::JsToBrowserMessaging* GetJsToJavaMessage(
       const std::u16string& js_object_name);
 
  private:
-  struct JsObjectInfo;
-  struct DocumentInjectJavaScript;
+  class JsObjectInfo;
+  struct DocumentStartJavaScript;
+  struct DocumentEndJavaScript;
 
   void BindPendingReceiver(
       mojo::PendingAssociatedReceiver<mojom::JsCommunication> pending_receiver);
@@ -72,12 +87,19 @@ class JsCommunication
   // to prevent doing multiple injection in that case.
   bool inside_did_clear_window_object_ = false;
 
-  std::vector<std::unique_ptr<DocumentInjectJavaScript>> document_start_scripts_;
-  std::vector<std::unique_ptr<DocumentInjectJavaScript>> document_end_scripts_;
+  std::vector<std::unique_ptr<DocumentStartJavaScript>> scripts_;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  std::vector<std::unique_ptr<DocumentEndJavaScript>> document_end_scripts_;
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  std::vector<std::unique_ptr<DocumentStartJavaScript>> head_ready_scripts_;
+#endif
+
   std::vector<base::WeakPtr<JsBinding>> js_bindings_;
 
   // Associated with legacy IPC channel.
   mojo::AssociatedReceiver<mojom::JsCommunication> receiver_{this};
+  mojo::AssociatedRemote<mojom::JsObjectsClient> client_remote_;
 
   base::WeakPtrFactory<JsCommunication> weak_ptr_factory_for_bindings_{this};
 };

@@ -7,14 +7,17 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/shared/ui/elements/custom_highlight_button.h"
 #import "ios/chrome/browser/shared/ui/util/layout_guide_names.h"
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_component_options.h"
 
 @class LayoutGuideCenter;
 @class ToolbarConfiguration;
 
+using ToolbarButtonImageLoader = UIImage* (^)(void);
+
 // UIButton subclass used as a Toolbar component.
-@interface ToolbarButton : UIButton
+@interface ToolbarButton : CustomHighlightableButton
 
 // Configuration object used to get colors.
 @property(nonatomic, weak) ToolbarConfiguration* toolbarConfiguration;
@@ -38,14 +41,28 @@
 @property(nonatomic, assign) BOOL iphHighlighted;
 // View used to display the view used for the spotlight effect.
 @property(nonatomic, strong) UIView* spotlightView;
+// Whether this button has blue dot promo.
+@property(nonatomic, assign) BOOL hasBlueDot;
 
-// Returns a ToolbarButton with a type system, using the `image` as image for
-// normal state.
-+ (instancetype)toolbarButtonWithImage:(UIImage*)image;
+// Returns a ToolbarButton with a type system, using the `imageLoader` to load
+// the image for normal state. Can only be used when
+// `kEnableStartupImprovements` is enabled.
+- (instancetype)initWithImageLoader:(ToolbarButtonImageLoader)imageLoader;
+// Returns a ToolbarButton using the `imageLoader` to build image for normal
+// state and `IPHHighlightedImageLoader` to load image for IPHHighlightedImage
+// state. Can only be used when`kEnableStartupImprovements` is enabled.
+- (instancetype)initWithImageLoader:(ToolbarButtonImageLoader)imageLoader
+          IPHHighlightedImageLoader:
+              (ToolbarButtonImageLoader)IPHHighlightedImageLoader;
 
 // Checks if the ToolbarButton should be visible in the current SizeClass,
 // afterwards it calls setHiddenForCurrentStateAndSizeClass if needed.
 - (void)updateHiddenInCurrentSizeClass;
+
+// Sets a new image loader. If the image was previously loaded, it reloads it.
+// Otherwise, it stores the image loader block and wait for the image to be
+// lazily loaded.
+- (void)setImageLoader:(ToolbarButtonImageLoader)imageLoader;
 
 @end
 

@@ -8,7 +8,9 @@
 
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/test/scoped_feature_list.h"
 #include "build/build_config.h"
+#include "components/autofill/core/common/autofill_features.h"
 #include "components/pref_registry/pref_registry_syncable.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/pref_service_factory.h"
@@ -20,8 +22,8 @@ namespace prefs {
 
 class AutofillPrefsTest : public testing::Test {
  protected:
-  AutofillPrefsTest() {}
-  ~AutofillPrefsTest() override {}
+  AutofillPrefsTest() = default;
+  ~AutofillPrefsTest() override = default;
 
   void SetUp() override { pref_service_ = CreatePrefServiceAndRegisterPrefs(); }
 
@@ -108,7 +110,7 @@ TEST_F(AutofillPrefsTest, WalletSyncTransportPref_UsesHashAccountId) {
   // Make sure that the dictionary keys don't contain the account id.
   const auto& dictionary =
       pref_service()->GetDict(prefs::kAutofillSyncTransportOptIn);
-  EXPECT_EQ(absl::nullopt, dictionary.FindInt(account1.ToString()));
+  EXPECT_EQ(std::nullopt, dictionary.FindInt(account1.ToString()));
 }
 
 // Tests that clearing the AutofillSyncTransportOptIn works as expected.
@@ -153,6 +155,12 @@ TEST_F(AutofillPrefsTest, WalletSyncTransportPref_CanBeSetAndReadFromJSON) {
   ASSERT_TRUE(base::JSONWriter::Write(dictionary, &output_js));
   EXPECT_EQ(dictionary, *base::JSONReader::Read(output_js));
 }
+
+#if BUILDFLAG(IS_ANDROID)
+TEST_F(AutofillPrefsTest, FacilitatedPaymentsPixPref_DefaultValueSetToTrue) {
+  EXPECT_TRUE(pref_service()->GetBoolean(prefs::kFacilitatedPaymentsPix));
+}
+#endif  // BUILDFLAG(IS_ANDROID)
 
 }  // namespace prefs
 }  // namespace autofill

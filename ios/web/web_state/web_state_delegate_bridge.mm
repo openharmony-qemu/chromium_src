@@ -6,10 +6,6 @@
 
 #import "ios/web/public/ui/context_menu_params.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 WebStateDelegateBridge::WebStateDelegateBridge(id<CRWWebStateDelegate> delegate)
@@ -48,16 +44,17 @@ WebState* WebStateDelegateBridge::OpenURLFromWebState(
 
 void WebStateDelegateBridge::ShowRepostFormWarningDialog(
     WebState* source,
+    FormWarningType warning_type,
     base::OnceCallback<void(bool)> callback) {
   SEL selector = @selector(webState:runRepostFormDialogWithCompletionHandler:);
   if ([delegate_ respondsToSelector:selector]) {
-    __block base::OnceCallback<void(bool)> block_callback = std::move(callback);
     [delegate_ webState:source
-        runRepostFormDialogWithCompletionHandler:^(BOOL should_continue) {
-          std::move(block_callback).Run(should_continue);
-        }];
+        runRepostFormDialogWithCompletionHandler:base::CallbackToBlock(
+                                                     std::move(callback))];
   } else {
-    std::move(callback).Run(true);
+    bool default_response =
+        warning_type == FormWarningType::kRepost ? true : false;
+    std::move(callback).Run(default_response);
   }
 }
 
@@ -73,7 +70,7 @@ JavaScriptDialogPresenter* WebStateDelegateBridge::GetJavaScriptDialogPresenter(
 void WebStateDelegateBridge::HandlePermissionsDecisionRequest(
     WebState* source,
     NSArray<NSNumber*>* permissions,
-    WebStatePermissionDecisionHandler handler) API_AVAILABLE(ios(15.0)) {
+    WebStatePermissionDecisionHandler handler) {
   if ([delegate_ respondsToSelector:@selector(webState:
                                         handlePermissions:decisionHandler:)]) {
     [delegate_ webState:source
@@ -144,6 +141,12 @@ id<CRWResponderInputView> WebStateDelegateBridge::GetResponderInputView(
     return [delegate_ webStateInputViewProvider:source];
   }
   return nil;
+}
+
+void WebStateDelegateBridge::OnNewWebViewCreated(WebState* source) {
+  if ([delegate_ respondsToSelector:@selector(webStateDidCreateWebView:)]) {
+    [delegate_ webStateDidCreateWebView:source];
+  }
 }
 
 }  // web

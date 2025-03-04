@@ -9,8 +9,22 @@
 
 #import "ios/chrome/browser/ui/promos_manager/promos_manager_ui_handler.h"
 
+@protocol CredentialProviderPromoCommands;
+@protocol DockingPromoCommands;
+
 // Coordinator for displaying app-wide promos.
 @interface PromosManagerCoordinator : ChromeCoordinator <PromosManagerUIHandler>
+
+- (instancetype)initWithBaseViewController:(UIViewController*)viewController
+                                   browser:(Browser*)browser
+            credentialProviderPromoHandler:(id<CredentialProviderPromoCommands>)
+                                               credentialProviderPromoHandler
+                       dockingPromoHandler:
+                           (id<DockingPromoCommands>)dockingPromoHandler
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithBaseViewController:(UIViewController*)viewController
+                                   browser:(Browser*)browser NS_UNAVAILABLE;
 
 // Displays a promo if one is currently available based on impression history
 // and any other restrictions.

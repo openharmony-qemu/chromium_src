@@ -5,13 +5,17 @@
 import("//build/config/features.gni")
 import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 # See //content/BUILD.gn for how this works.
 group("renderer") {
   if (is_component_build) {
     public_deps = [ "//content" ]
   } else {
-    public_deps = [ ":renderer_sources" ]
+    public_deps = [
+      ":render_frame_media_playback_options",
+      ":renderer_sources",
+    ]
   }
 }
 
@@ -24,6 +28,13 @@ target(link_target_type, "renderer_sources") {
   # External code should depend on via ":renderer" above.
   visibility = [ "//content/*" ]
 
+  if (arkweb_unittests) {
+    visibility += [
+      "//media/cdm/library_cdm/clear_key_cdm:clear_key_cdm_bin",
+      "//media:media_unittests",
+    ]
+  }
+
   sources = [
     "chrome_object_extensions_utils.cc",
     "chrome_object_extensions_utils.h",
@@ -31,7 +42,6 @@ target(link_target_type, "renderer_sources") {
     "content_renderer_client.h",
     "render_accessibility.h",
     "render_frame.h",
-    "render_frame_media_playback_options.h",
     "render_frame_observer.cc",
     "render_frame_observer.h",
     "render_frame_observer_tracker.h",
@@ -48,6 +58,11 @@ target(link_target_type, "renderer_sources") {
 
   configs += [ "//content:content_implementation" ]
 
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
   public_deps = [
     "//build:chromecast_buildflags",
     "//media",
@@ -60,7 +75,6 @@ target(link_target_type, "renderer_sources") {
     "//content/renderer",
     "//gin",
     "//media/capture",
-    "//media/gpu/ipc/client",
     "//net",
     "//ppapi/buildflags",
     "//skia",
@@ -81,7 +95,7 @@ target(link_target_type, "renderer_sources") {
   ]
 
   if (enable_plugins) {
-    sources += [ "plugin_ax_tree_source.h" ]
+    sources += [ "plugin_ax_tree_action_target_adapter.h" ]
   }
 
   if (enable_ppapi) {
@@ -100,10 +114,29 @@ target(link_target_type, "renderer_sources") {
     deps += [ "//sandbox" ]
   }
 
-  if (enable_library_cdms || is_win || is_android || is_ohos) {
+  if (enable_library_cdms || is_win || is_android) {
     sources += [
       "key_system_support.cc",
       "key_system_support.h",
     ]
   }
+}
+
+source_set("render_frame_media_playback_options") {
+  # External code should depend on via ":renderer" above.
+  visibility = [ "//content/*" ]
+
+  sources = [
+    "render_frame_media_playback_options.cc",
+    "render_frame_media_playback_options.h",
+  ]
+
+  configs += [ "//content:content_implementation" ]
+
+  public_deps = [
+    "//content:export",
+    "//content/public/common:renderer_type",
+  ]
+
+  deps = [ "//build:android_buildflags" ]
 }

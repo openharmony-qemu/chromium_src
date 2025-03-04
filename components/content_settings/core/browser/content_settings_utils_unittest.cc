@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/content_settings/core/browser/content_settings_utils.h"
 
 #include <stddef.h>
@@ -167,6 +172,20 @@ TEST(ContentSettingsUtilsTest, CanBeAutoRevoked) {
 
   EXPECT_FALSE(CanBeAutoRevoked(ContentSettingsType::ADS,
                                 ContentSetting::CONTENT_SETTING_ALLOW));
+
+  // Chooser permissions that are allowlisted should be auto-revoked.
+  EXPECT_TRUE(
+      CanBeAutoRevoked(ContentSettingsType::FILE_SYSTEM_ACCESS_CHOOSER_DATA,
+                       base::Value("foo")));
+
+  // Chooser permissions that are allowlisted but without any value
+  // should not be auto-revoked.
+  EXPECT_FALSE(CanBeAutoRevoked(
+      ContentSettingsType::FILE_SYSTEM_ACCESS_CHOOSER_DATA, base::Value()));
+
+  // Chooser permissions that are not allowlisted should not be auto-revoked.
+  EXPECT_FALSE(CanBeAutoRevoked(ContentSettingsType::USB_CHOOSER_DATA,
+                                base::Value("foo")));
 }
 #endif  // !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID)
 

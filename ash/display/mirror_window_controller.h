@@ -94,10 +94,11 @@ class ASH_EXPORT MirrorWindowController : public aura::WindowTreeHostObserver,
   void CloseAndDeleteHost(MirroringHostInfo* host_info,
                           bool delay_host_deletion);
 
-  typedef std::map<int64_t, MirroringHostInfo*> MirroringHostInfoMap;
+  typedef std::map<int64_t, raw_ptr<MirroringHostInfo, CtnExperimental>>
+      MirroringHostInfoMap;
   MirroringHostInfoMap mirroring_host_info_map_;
 
-  raw_ptr<aura::WindowTreeHost, ExperimentalAsh>
+  raw_ptr<aura::WindowTreeHost, DanglingUntriaged>
       current_event_targeter_src_host_;
 
   display::DisplayManager::MultiDisplayMode multi_display_mode_;

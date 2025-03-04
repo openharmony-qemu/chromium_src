@@ -70,7 +70,6 @@ int GetIDSForDMStatus(DeviceManagementStatus status) {
       return IDS_POLICY_DM_STATUS_SERVICE_DOMAIN_MISMATCH;
   }
   NOTREACHED() << "Unhandled DM status " << status;
-  return IDS_POLICY_DM_STATUS_UNKNOWN_ERROR;
 }
 
 int GetIDSForValidationStatus(CloudPolicyValidatorBase::Status status) {
@@ -109,7 +108,6 @@ int GetIDSForValidationStatus(CloudPolicyValidatorBase::Status status) {
       NOTREACHED();
   }
   NOTREACHED() << "Unhandled validation status " << status;
-  return IDS_POLICY_VALIDATION_UNKNOWN_ERROR;
 }
 
 int GetIDSForStoreStatus(CloudPolicyStore::Status status) {
@@ -131,7 +129,6 @@ int GetIDSForStoreStatus(CloudPolicyStore::Status status) {
       return IDS_POLICY_STORE_STATUS_BAD_STATE;
   }
   NOTREACHED() << "Unhandled store status " << status;
-  return IDS_POLICY_STORE_STATUS_UNKNOWN_ERROR;
 }
 
 }  // namespace

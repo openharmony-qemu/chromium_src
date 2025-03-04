@@ -4,41 +4,39 @@
 
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_view_controller.h"
 
+#import "base/memory/raw_ptr.h"
 #import "base/test/bind.h"
 #import "base/test/scoped_feature_list.h"
+#import "components/affiliations/core/browser/fake_affiliation_service.h"
 #import "components/keyed_service/core/service_access_type.h"
-#import "components/password_manager/core/browser/affiliation/fake_affiliation_service.h"
 #import "components/password_manager/core/browser/password_form.h"
 #import "components/password_manager/core/browser/password_manager_test_utils.h"
-#import "components/password_manager/core/browser/test_password_store.h"
+#import "components/password_manager/core/browser/password_store/test_password_store.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
-#import "components/password_manager/core/common/password_manager_features.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/main/test_browser.h"
-#import "ios/chrome/browser/passwords/ios_chrome_affiliation_service_factory.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager_factory.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_store_factory.h"
-#import "ios/chrome/browser/passwords/password_checkup_utils.h"
+#import "ios/chrome/browser/affiliations/model/ios_chrome_affiliation_service_factory.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager_factory.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_profile_password_store_factory.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_utils.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_manager_ios.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_check_item.h"
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_commands.h"
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_constants.h"
-#import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_mediator+private.h"
+#import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_mediator+Testing.h"
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_mediator.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/grit/ios_strings.h"
+#import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/gtest_mac.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "third_party/ocmock/gtest_support.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using password_manager::CredentialUIEntry;
 using password_manager::InsecureType;
@@ -47,22 +45,16 @@ using password_manager::TestPasswordStore;
 using password_manager::WarningType;
 
 // Test fixture for testing PasswordCheckupViewController class.
-class PasswordCheckupViewControllerTest : public ChromeTableViewControllerTest {
+class PasswordCheckupViewControllerTest
+    : public LegacyChromeTableViewControllerTest {
  protected:
   PasswordCheckupViewControllerTest() = default;
 
   void SetUp() override {
-    // Enable Password Checkup and Password Grouping to get the affiliated
-    // groups.
-    feature_list.InitWithFeatures(
-        /*enabled_features=*/{password_manager::features::kIOSPasswordCheckup,
-                              password_manager::features::kPasswordsGrouping},
-        /*disabled_features=*/{});
-
-    ChromeTableViewControllerTest::SetUp();
-    TestChromeBrowserState::Builder builder;
+    LegacyChromeTableViewControllerTest::SetUp();
+    TestProfileIOS::Builder builder;
     builder.AddTestingFactory(
-        IOSChromePasswordStoreFactory::GetInstance(),
+        IOSChromeProfilePasswordStoreFactory::GetInstance(),
         base::BindRepeating(
             &password_manager::BuildPasswordStore<web::BrowserState,
                                                   TestPasswordStore>));
@@ -70,10 +62,10 @@ class PasswordCheckupViewControllerTest : public ChromeTableViewControllerTest {
         IOSChromeAffiliationServiceFactory::GetInstance(),
         base::BindRepeating(base::BindLambdaForTesting([](web::BrowserState*) {
           return std::unique_ptr<KeyedService>(
-              std::make_unique<password_manager::FakeAffiliationService>());
+              std::make_unique<affiliations::FakeAffiliationService>());
         })));
-    browser_state_ = builder.Build();
-    browser_ = std::make_unique<TestBrowser>(browser_state_.get());
+    profile_ = profile_manager_.AddProfileWithBuilder(std::move(builder));
+    browser_ = std::make_unique<TestBrowser>(profile_.get());
 
     CreateController();
 
@@ -82,8 +74,7 @@ class PasswordCheckupViewControllerTest : public ChromeTableViewControllerTest {
 
     mediator_ = [[PasswordCheckupMediator alloc]
         initWithPasswordCheckManager:IOSChromePasswordCheckManagerFactory::
-                                         GetForBrowserState(
-                                             browser_state_.get())];
+                                         GetForProfile(profile_.get())];
     view_controller.delegate = mediator_;
     mediator_.consumer = view_controller;
 
@@ -97,12 +88,12 @@ class PasswordCheckupViewControllerTest : public ChromeTableViewControllerTest {
 
   TestPasswordStore& GetTestStore() {
     return *static_cast<TestPasswordStore*>(
-        IOSChromePasswordStoreFactory::GetForBrowserState(
-            browser_->GetBrowserState(), ServiceAccessType::EXPLICIT_ACCESS)
+        IOSChromeProfilePasswordStoreFactory::GetForProfile(
+            browser_->GetProfile(), ServiceAccessType::EXPLICIT_ACCESS)
             .get());
   }
 
-  ChromeTableViewController* InstantiateController() override {
+  LegacyChromeTableViewController* InstantiateController() override {
     return [[PasswordCheckupViewController alloc]
         initWithStyle:ChromeTableViewStyle()];
   }
@@ -273,7 +264,9 @@ class PasswordCheckupViewControllerTest : public ChromeTableViewControllerTest {
   void RunUntilIdle() { task_environment_.RunUntilIdle(); }
 
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  IOSChromeScopedTestingLocalState scoped_testing_local_state_;
+  TestProfileManagerIOS profile_manager_;
+  raw_ptr<TestProfileIOS> profile_;
   std::unique_ptr<TestBrowser> browser_;
   PasswordCheckupMediator* mediator_;
   base::test::ScopedFeatureList feature_list;

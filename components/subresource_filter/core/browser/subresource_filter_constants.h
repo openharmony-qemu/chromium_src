@@ -5,16 +5,19 @@
 #ifndef COMPONENTS_SUBRESOURCE_FILTER_CORE_BROWSER_SUBRESOURCE_FILTER_CONSTANTS_H_
 #define COMPONENTS_SUBRESOURCE_FILTER_CORE_BROWSER_SUBRESOURCE_FILTER_CONSTANTS_H_
 
+#include <string_view>
+
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 
 namespace subresource_filter {
 
+// Paths under the top level directory
+// ------------------------------------
+
 // The name of the top-level directory under the user data directory that
 // contains all files and subdirectories related to the subresource filter.
 extern const base::FilePath::CharType kTopLevelDirectoryName[];
-
-// Paths under |kTopLevelDirectoryName|
-// ------------------------------------
 
 // The name of the subdirectory under the top-level directory that stores
 // versions of indexed rulesets. Files that belong to an IndexedRulesetVersion
@@ -47,7 +50,10 @@ extern const base::FilePath::CharType kUnindexedRulesetLicenseFileName[];
 // The name of the file that stores the unindexed filtering rules.
 extern const base::FilePath::CharType kUnindexedRulesetDataFileName[];
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+// The name of the filter. This is used for metrics logging.
+inline constexpr std::string_view kUmaFilterTag = "SubresourceFilter";
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 extern const base::FilePath::CharType kAdblockEasylistFileName[];
 #endif
 

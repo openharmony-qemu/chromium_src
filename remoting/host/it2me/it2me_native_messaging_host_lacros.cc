@@ -41,7 +41,7 @@ namespace {
 constexpr int kInvalidMessageId = -1;
 
 int GetMessageId(const base::Value::Dict& message) {
-  absl::optional<int> message_id = message.FindInt(kMessageId);
+  std::optional<int> message_id = message.FindInt(kMessageId);
   return message_id.value_or(kInvalidMessageId);
 }
 
@@ -89,7 +89,7 @@ class It2MeNativeMessagingHostLacros : public extensions::NativeMessageHost,
   void OnHostStateConnecting() override;
   void OnHostStateConnected(const std::string& remote_username) override;
   void OnHostStateDisconnected(
-      const absl::optional<std::string>& disconnect_reason) override;
+      const std::optional<std::string>& disconnect_reason) override;
   void OnNatPolicyChanged(mojom::NatPolicyStatePtr policy_state) override;
   void OnHostStateError(int64_t error_code) override;
   void OnPolicyError() override;
@@ -219,11 +219,11 @@ void It2MeNativeMessagingHostLacros::OnHostStateConnected(
 }
 
 void It2MeNativeMessagingHostLacros::OnHostStateDisconnected(
-    const absl::optional<std::string>& disconnect_reason) {
+    const std::optional<std::string>& disconnect_reason) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   base::Value::Dict message;
   if (disconnect_reason.has_value()) {
-    message.Set(kDisconnectReason, disconnect_reason.value());
+    message.Set(kDisconnectReason, *disconnect_reason);
   }
   HandleHostStateChange(It2MeHostState::kDisconnected, std::move(message));
 }
@@ -242,7 +242,8 @@ void It2MeNativeMessagingHostLacros::OnNatPolicyChanged(
 void It2MeNativeMessagingHostLacros::OnHostStateError(int64_t error_code) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK_GE(error_code, 0);
-  LOG_IF(WARNING, error_code >= protocol::ErrorCode::ERROR_CODE_MAX)
+  LOG_IF(WARNING, static_cast<int>(error_code) >=
+                      static_cast<int>(protocol::ErrorCode::ERROR_CODE_MAX))
       << "|error_code| is greater than the max known error_code.";
   SendErrorAndExit(static_cast<protocol::ErrorCode>(error_code));
 }
@@ -296,7 +297,6 @@ void It2MeNativeMessagingHostLacros::HandleHostStateChange(
 
     default:
       NOTREACHED();
-      break;
   }
 
   SendMessageToClient(std::move(message));
@@ -382,12 +382,31 @@ void It2MeNativeMessagingHostLacros::ProcessConnect(int message_id,
   }
   session_params->user_name = *user_name;
 
-  const std::string* access_token = message.FindString(kAuthServiceWithToken);
-  if (!access_token) {
+  // The code to extract and forward the access_token needs to handle a couple
+  // of conditions due to Lacros/Ash version skew. The M121 CRD host
+  // implementation can handle `oauth_access_token` values which are raw or
+  // prefixed by 'oauth2:' however Lacros can run on older versions of Ash which
+  // only handle the prefixed variant. This compat code can be removed in M124
+  // based on the current version skew policy.
+  // This code also handles the case where an older webclient does not send the
+  // kAccessToken field however that will resolve in a few weeks and the code
+  // can safely be removed in M122.
+  std::string access_token;
+  const std::string* access_token_ptr = message.FindString(kAccessToken);
+  const std::string* auth_service_with_token_ptr =
+      message.FindString(kAuthServiceWithToken);
+  if (access_token_ptr) {
+    // TODO(b/309958013): Remove the prefix shim.
+    access_token = "oauth2:" + *access_token_ptr;
+  } else if (auth_service_with_token_ptr) {
+    // kAuthServiceWithToken always starts with 'oauth2:'.
+    access_token = *auth_service_with_token_ptr;
+  }
+  if (access_token.empty()) {
     SendErrorAndExit(protocol::ErrorCode::INCOMPATIBLE_PROTOCOL, message_id);
     return;
   }
-  session_params->oauth_access_token = *access_token;
+  session_params->oauth_access_token = std::move(access_token);
 
   const std::string* authorized_helper = message.FindString(kAuthorizedHelper);
   if (authorized_helper) {
@@ -407,7 +426,7 @@ void It2MeNativeMessagingHostLacros::ProcessConnect(int message_id,
   lacros_service->GetRemote<crosapi::mojom::Remoting>()->StartSupportSession(
       std::move(session_params),
       base::BindOnce(&It2MeNativeMessagingHostLacros::OnSupportSessionStarted,
-                     base::Unretained(this)));
+                     weak_factory_.GetWeakPtr()));
 }
 
 void It2MeNativeMessagingHostLacros::ProcessDisconnect(int message_id) {

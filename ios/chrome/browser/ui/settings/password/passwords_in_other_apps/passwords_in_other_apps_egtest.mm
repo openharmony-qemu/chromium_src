@@ -4,42 +4,29 @@
 
 #import <UIKit/UIKit.h>
 
-#import "components/password_manager/core/common/password_manager_features.h"
-#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/ui/settings/password/password_manager_egtest_utils.h"
 #import "ios/chrome/browser/ui/settings/password/password_settings/password_settings_constants.h"
+#import "ios/chrome/browser/ui/settings/password/password_settings_app_interface.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_in_other_apps/constants.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_in_other_apps/passwords_in_other_apps_app_interface.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_table_view_constants.h"
 #import "ios/chrome/browser/ui/settings/settings_root_table_constants.h"
-#import "ios/chrome/grit/ios_google_chrome_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
 #import "ios/chrome/test/earl_grey/earl_grey_scoped_block_swizzler.h"
+#import "ios/testing/earl_grey/app_launch_manager.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/base/device_form_factor.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::SettingsDoneButton;
 using chrome_test_util::SettingsMenuBackButton;
 
 namespace {
-
-// Checks if the current device is running iOS 16 and above. This may seem
-// overly verbose, but the @available guard needs to be wrapped in an if() or
-// else the compiler complains.
-bool isIOS16AndAbove() {
-  if (@available(iOS 16, *)) {
-    return true;
-  }
-  return false;
-}
 
 // Matcher for view
 id<GREYMatcher> PasswordsInOtherAppsViewMatcher() {
@@ -71,10 +58,7 @@ id<GREYMatcher> PasswordsInOtherAppsListItemMatcher() {
 
 // Matcher for turn off instructions.
 id<GREYMatcher> PasswordsInOtherAppsTurnOffInstruction() {
-  return grey_text(
-      isIOS16AndAbove()
-          ? @"To turn off, open Settings and go to Password Options."
-          : @"To turn off, open Settings and go to AutoFill Passwords.");
+  return grey_text(@"To turn off, open Settings and go to Password Options.");
 }
 
 // Matcher for the Show password button in Password Details view.
@@ -114,21 +98,19 @@ void OpensPasswordsInOtherApps() {
           @"PasswordAutoFillStatusManager", @"sharedManager",
           [PasswordsInOtherAppsAppInterface
               swizzlePasswordAutoFillStatusManagerWithFake]);
+
+  // Mock successful reauth when opening the Password Manager.
+  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 }
 
-- (void)tearDown {
-  [super tearDown];
+- (void)tearDownHelper {
+  [super tearDownHelper];
   [PasswordsInOtherAppsAppInterface resetManager];
   _passwordAutoFillStatusSwizzler.reset();
-}
-
-- (AppLaunchConfiguration)appConfigurationForTestCase {
-  AppLaunchConfiguration config;
-
-  config.features_enabled.push_back(
-      password_manager::features::kIOSPasswordUISplit);
-
-  return config;
+  // Remove mock to keep the app in the same state as before running the test.
+  [PasswordSettingsAppInterface removeMockReauthenticationModule];
 }
 
 #pragma mark - helper functions
@@ -153,9 +135,7 @@ void OpensPasswordsInOtherApps() {
               IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_1_IPHONE),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_2),
     l10n_util::GetNSString(
-        isIOS16AndAbove()
-            ? IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16
-            : IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3),
+        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_4)
   ];
   for (NSString* step in steps) {
@@ -176,9 +156,7 @@ void OpensPasswordsInOtherApps() {
               IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_1_IPHONE),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_2),
     l10n_util::GetNSString(
-        isIOS16AndAbove()
-            ? IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16
-            : IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3),
+        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_4)
   ];
   for (NSString* step in steps) {
@@ -265,9 +243,7 @@ void OpensPasswordsInOtherApps() {
   // Check backup instructions are visible.
   NSArray<NSString*>* steps = @[
     l10n_util::GetNSString(
-        isIOS16AndAbove()
-            ? IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1_IOS16
-            : IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1),
+        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1_IOS16),
     l10n_util::GetNSString(
         IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_2)
   ];
@@ -344,6 +320,38 @@ void OpensPasswordsInOtherApps() {
   [EarlGrey rotateDeviceToOrientation:UIDeviceOrientationPortrait error:nil];
   [[EarlGrey selectElementWithMatcher:PasswordsInOtherAppsImageMatcher()]
       assertWithMatcher:grey_minimumVisiblePercent(0.2)];
+}
+
+// Tests that the Password Manager UI is dismissed after failed local
+// authentication while in Passwords In Other Apps.
+- (void)testTapPasswordsInOtherAppsWithFailedAuth {
+  OpensPasswordsInOtherApps();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kFailure];
+  [PasswordSettingsAppInterface mockReauthenticationModuleShouldSkipReAuth:NO];
+
+  [[AppLaunchManager sharedManager] backgroundAndForegroundApp];
+
+  // Passwords in Other Apps should be covered by Reauthentication UI.
+  [[EarlGrey selectElementWithMatcher:PasswordsInOtherAppsViewMatcher()]
+      assertWithMatcher:grey_notVisible()];
+  [[EarlGrey selectElementWithMatcher:password_manager_test_utils::
+                                          ReauthenticationController()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleReturnMockedResult];
+
+  // The Password Manager UI should have been dismissed leaving Settings
+  // visible.
+  [[EarlGrey
+      selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+  [[EarlGrey selectElementWithMatcher:PasswordsInOtherAppsViewMatcher()]
+      assertWithMatcher:grey_notVisible()];
+  [[EarlGrey selectElementWithMatcher:password_manager_test_utils::
+                                          ReauthenticationController()]
+      assertWithMatcher:grey_notVisible()];
 }
 
 @end

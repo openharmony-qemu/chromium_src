@@ -1,0 +1,26 @@
+arkweb_media_capture_video_ohos_sources = [
+    "//arkweb/chromium_ext/media/capture/video/ohos/ohos_capture_delegate.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/ohos_capture_delegate.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_common_ohos.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_common_ohos.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_device_factory_ohos.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_device_factory_ohos.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_device_ohos.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_device_ohos.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_params_adapter_impl.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_params_adapter_impl.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_status_callback_listener_ohos.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_status_callback_listener_ohos.h",
+
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_surface_buffer_listener_ohos.cc",
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_surface_buffer_listener_ohos.h",
+]
+
+arkweb_media_capture_video_ohos_unittests = [
+    "//arkweb/chromium_ext/media/capture/video/ohos/video_capture_common_ohos_unittest.cc",
+]

@@ -57,6 +57,7 @@ source_set("x11") {
     "//gpu/vulkan:buildflags",
     "//net",
     "//skia",
+    "//third_party/angle:includes",
     "//ui/base:base",
     "//ui/base:buildflags",
     "//ui/base:data_exchange",
@@ -70,7 +71,7 @@ source_set("x11") {
     "//ui/base/ime",
     "//ui/base/x",
     "//ui/base/x:gl",
-    "//ui/display/fake",
+    "//ui/display/types",
     "//ui/events",
     "//ui/events:dom_keycode_converter",
     "//ui/events/devices",
@@ -121,8 +122,6 @@ source_set("x11") {
     configs += [ "//ui/events/ozone/layout:xkbcommon" ]
   }
 
-  public_configs = [ "//third_party/khronos:khronos_headers" ]
-
   if (use_atk) {
     sources += [
       "atk_event_conversion.cc",
@@ -171,7 +170,7 @@ source_set("x11_unittests") {
     "//ui/ozone/common",
   ]
 
-  if (!is_chromeos && !is_chromeos) {
+  if (!is_chromeos) {
     sources += [ "test/os_exchange_data_provider_x11_unittest.cc" ]
     deps += [ "//ui/base/clipboard:clipboard_types" ]
 

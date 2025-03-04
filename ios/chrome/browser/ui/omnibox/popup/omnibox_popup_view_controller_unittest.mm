@@ -11,10 +11,6 @@
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "third_party/ocmock/gtest_support.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 class OmniboxPopupViewControllerTest : public PlatformTest {
@@ -45,8 +41,14 @@ class OmniboxPopupViewControllerTest : public PlatformTest {
     NSMutableArray* array =
         [[NSMutableArray alloc] initWithCapacity:nb_suggestions];
     for (NSUInteger i = 0; i < nb_suggestions; ++i) {
-      [array addObject:[OCMockObject
-                           mockForProtocol:@protocol(AutocompleteSuggestion)]];
+      id<AutocompleteSuggestion> mockSuggestion =
+          OCMProtocolMock(@protocol(AutocompleteSuggestion));
+      NSString* suggestionText =
+          [NSString stringWithFormat:@"Suggestion %ld", i];
+      OCMStub([mockSuggestion text])
+          .andReturn(
+              [[NSAttributedString alloc] initWithString:suggestionText]);
+      [array addObject:mockSuggestion];
     }
     return array;
   }
@@ -63,7 +65,9 @@ class OmniboxPopupViewControllerTest : public PlatformTest {
     popup_view_controller_.delegate = delegate_;
     popup_view_controller_.matchPreviewDelegate = preview_delegate_;
     popup_view_controller_.acceptReturnDelegate = return_delegate_;
-    [popup_view_controller_ loadView];
+    // Force view initialisation since this view controller is never added into
+    // the hierarchy in this unit test.
+    [popup_view_controller_ view];
 
     first_suggestion_group_ = [AutocompleteSuggestionGroupImpl
         groupWithTitle:@""

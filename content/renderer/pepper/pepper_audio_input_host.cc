@@ -119,7 +119,6 @@ void PepperAudioInputHost::OnOpenComplete(
 
   if (!open_context_.is_valid()) {
     NOTREACHED();
-    return;
   }
 
   ppapi::proxy::SerializedHandle serialized_socket_handle(

@@ -14,7 +14,7 @@
 
 namespace arc {
 
-FakeIntentHelperInstance::FakeIntentHelperInstance() {}
+FakeIntentHelperInstance::FakeIntentHelperInstance() = default;
 
 FakeIntentHelperInstance::Broadcast::Broadcast(const std::string& action,
                                                const std::string& package_name,
@@ -50,7 +50,7 @@ void FakeIntentHelperInstance::SetIntentHandlers(
   intent_handlers_[action] = std::move(handlers);
 }
 
-FakeIntentHelperInstance::~FakeIntentHelperInstance() {}
+FakeIntentHelperInstance::~FakeIntentHelperInstance() = default;
 
 void FakeIntentHelperInstance::AddPreferredPackage(
     const std::string& package_name) {}
@@ -150,5 +150,15 @@ FakeIntentHelperInstance::GetBroadcastsForAction(
 }
 
 void FakeIntentHelperInstance::RequestDomainVerificationStatusUpdate() {}
+
+void FakeIntentHelperInstance::SetCaptionStyle(
+    arc::mojom::CaptionStylePtr caption_style) {
+  caption_style_ = std::move(caption_style);
+}
+
+void FakeIntentHelperInstance::EnableAccessibilityFeatures(
+    arc::mojom::AccessibilityFeaturesPtr accessibility_features) {
+  accessibility_features_ = std::move(accessibility_features);
+}
 
 }  // namespace arc

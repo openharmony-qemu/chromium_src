@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/channel_linux.h"
 
 #include <fcntl.h>
@@ -27,7 +32,7 @@
 #include "base/logging.h"
 #include "base/memory/page_size.h"
 #include "base/memory/ptr_util.h"
-#include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/shared_memory_security_policy.h"
 #include "base/message_loop/message_pump_for_io.h"
@@ -38,7 +43,7 @@
 #include "base/task/task_runner.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "mojo/core/core.h"
+#include "mojo/buildflags.h"
 #include "mojo/core/embedder/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
@@ -62,10 +67,6 @@ void KernelVersionNumbers(int32_t* major_version,
   struct utsname info;
   if (uname(&info) < 0) {
     NOTREACHED();
-    *major_version = 0;
-    *minor_version = 0;
-    *bugfix_version = 0;
-    return;
   }
   int num_read = sscanf(info.release, "%d.%d.%d", major_version, minor_version,
                         bugfix_version);
@@ -369,7 +370,7 @@ class ChannelLinux::SharedBuffer {
     return base::WrapUnique<SharedBuffer>(new SharedBuffer(ptr, size));
   }
 
-  uint8_t* usable_region_ptr() const { return base_ptr_ + kReservedSpace; }
+  uint8_t* usable_region_ptr() { return base_ptr_ + kReservedSpace; }
   size_t usable_len() const { return len_ - kReservedSpace; }
   bool is_valid() const { return base_ptr_ != nullptr && len_ > 0; }
 
@@ -399,14 +400,10 @@ class ChannelLinux::SharedBuffer {
     DCHECK(len);
 
     if (len > usable_len()) {
-      UMA_HISTOGRAM_COUNTS_100000(
-          "Mojo.Channel.Linux.SharedMemWriteBytes_Fail_TooLarge", len);
       return Error::kGeneralError;
     }
 
     if (!TryLockForWriting()) {
-      UMA_HISTOGRAM_COUNTS_100000(
-          "Mojo.Channel.Linux.SharedMemWriteBytes_Fail_NoLock", len);
       return Error::kGeneralError;
     }
 
@@ -426,8 +423,6 @@ class ChannelLinux::SharedBuffer {
 
     if (space_available <= len) {
       UnlockForWriting();
-      UMA_HISTOGRAM_COUNTS_100000(
-          "Mojo.Channel.Linux.SharedMemWriteBytes_Fail_NoSpace", len);
 
       return Error::kGeneralError;
     }
@@ -587,27 +582,29 @@ class ChannelLinux::SharedBuffer {
 
   std::atomic_flag& write_flag() {
     DCHECK(is_valid());
-    return reinterpret_cast<ControlStructure*>(base_ptr_.get())->write_flag;
+    return reinterpret_cast<ControlStructure*>(base_ptr_)->write_flag;
   }
 
   std::atomic_flag& read_flag() {
     DCHECK(is_valid());
-    return reinterpret_cast<ControlStructure*>(base_ptr_.get())->read_flag;
+    return reinterpret_cast<ControlStructure*>(base_ptr_)->read_flag;
   }
 
   std::atomic_uint32_t& read_pos() {
     DCHECK(is_valid());
-    return reinterpret_cast<ControlStructure*>(base_ptr_.get())->read_pos;
+    return reinterpret_cast<ControlStructure*>(base_ptr_)->read_pos;
   }
 
   std::atomic_uint32_t& write_pos() {
     DCHECK(is_valid());
-    return reinterpret_cast<ControlStructure*>(base_ptr_.get())->write_pos;
+    return reinterpret_cast<ControlStructure*>(base_ptr_)->write_pos;
   }
 
   SharedBuffer(uint8_t* ptr, size_t len) : base_ptr_(ptr), len_(len) {}
 
-  raw_ptr<uint8_t, AllowPtrArithmetic> base_ptr_ = nullptr;
+  // RAW_PTR_EXCLUSION: Never allocated by PartitionAlloc (always mmap'ed), so
+  // there is no benefit to using a raw_ptr, only cost.
+  RAW_PTR_EXCLUSION uint8_t* base_ptr_ = nullptr;
   size_t len_ = 0;
 };
 

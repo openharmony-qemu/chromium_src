@@ -4,6 +4,8 @@
 
 #include "remoting/host/remoting_register_support_host_request.h"
 
+#include <optional>
+
 #include "base/memory/raw_ptr.h"
 #include "base/test/mock_callback.h"
 #include "base/test/task_environment.h"
@@ -17,7 +19,6 @@
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace remoting {
 
@@ -67,6 +68,8 @@ decltype(auto) DoValidateEnterpriseOptionsAndRespondOk(
     auto& options = request->chrome_os_enterprise_options();
     ASSERT_EQ(options.allow_troubleshooting_tools(),
               params.allow_troubleshooting_tools);
+    ASSERT_EQ(options.show_troubleshooting_tools(),
+              params.show_troubleshooting_tools);
     ASSERT_EQ(options.allow_reconnections(), params.allow_reconnections);
     ASSERT_EQ(options.allow_file_transfer(), params.allow_file_transfer);
     ValidateRegisterHost(*request);
@@ -92,8 +95,8 @@ class RemotingRegisterSupportHostTest : public testing::Test {
     register_host_request_ =
         std::make_unique<RemotingRegisterSupportHostRequest>(
             std::make_unique<FakeOAuthTokenGetter>(
-                OAuthTokenGetter::Status::SUCCESS, "fake_email",
-                "fake_access_token"),
+                OAuthTokenGetter::Status::SUCCESS,
+                OAuthTokenInfo("fake_access_token", "fake_email")),
             nullptr);
 
     auto register_host_client =
@@ -131,7 +134,8 @@ class RemotingRegisterSupportHostTest : public testing::Test {
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
 
   std::unique_ptr<RemotingRegisterSupportHostRequest> register_host_request_;
-  raw_ptr<MockRegisterSupportHostClient> register_host_client_ = nullptr;
+  raw_ptr<MockRegisterSupportHostClient, DanglingUntriaged>
+      register_host_client_ = nullptr;
 
   std::unique_ptr<SignalStrategy> signal_strategy_;
   scoped_refptr<RsaKeyPair> key_pair_;
@@ -150,7 +154,7 @@ TEST_F(RemotingRegisterSupportHostTest, RegisterFtl) {
       .Times(1);
 
   register_host_request_->StartRequest(signal_strategy_.get(), key_pair_,
-                                       authorized_helper_, absl::nullopt,
+                                       authorized_helper_, std::nullopt,
                                        register_callback.Get());
   signal_strategy_->Connect();
 }
@@ -208,7 +212,7 @@ TEST_F(RemotingRegisterSupportHostTest, RegisterWithAuthorizedHelper) {
   authorized_helper_ = kTestAuthorizedHelper;
 
   register_host_request_->StartRequest(signal_strategy_.get(), key_pair_,
-                                       authorized_helper_, absl::nullopt,
+                                       authorized_helper_, std::nullopt,
                                        register_callback.Get());
   signal_strategy_->Connect();
 }
@@ -233,7 +237,7 @@ TEST_F(RemotingRegisterSupportHostTest, FailedWithDeadlineExceeded) {
       .Times(1);
 
   register_host_request_->StartRequest(signal_strategy_.get(), key_pair_,
-                                       authorized_helper_, absl::nullopt,
+                                       authorized_helper_, std::nullopt,
                                        register_callback.Get());
   signal_strategy_->Connect();
 }
@@ -257,7 +261,7 @@ TEST_F(RemotingRegisterSupportHostTest,
       .Times(1);
 
   register_host_request_->StartRequest(signal_strategy_.get(), key_pair_,
-                                       authorized_helper_, absl::nullopt,
+                                       authorized_helper_, std::nullopt,
                                        register_callback.Get());
   signal_strategy_->Connect();
   signal_strategy_->Disconnect();

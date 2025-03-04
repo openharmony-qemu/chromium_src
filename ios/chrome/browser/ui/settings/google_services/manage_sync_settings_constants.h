@@ -19,25 +19,40 @@ extern NSString* const kManageSyncTableViewAccessibilityIdentifier;
 extern NSString* const kSyncEverythingItemAccessibilityIdentifier;
 extern NSString* const kSyncBookmarksIdentifier;
 extern NSString* const kSyncOmniboxHistoryIdentifier;
+extern NSString* const kSyncHistoryAndTabsIdentifier;
 extern NSString* const kSyncPasswordsIdentifier;
+extern NSString* const kSyncPaymentsIdentifier;
 extern NSString* const kSyncOpenTabsIdentifier;
 extern NSString* const kSyncAutofillIdentifier;
 extern NSString* const kSyncPreferencesIdentifier;
 extern NSString* const kSyncReadingListIdentifier;
+extern NSString* const kSyncErrorButtonIdentifier;
 
 // Accessibility identifier for Encryption item.
 extern NSString* const kEncryptionAccessibilityIdentifier;
+
+// Accessibility identifier for batch upload recommendation item.
+extern NSString* const kBatchUploadRecommendationItemAccessibilityIdentifier;
+// Accessibility identifier for batch upload item.
+extern NSString* const kBatchUploadAccessibilityIdentifier;
+
+// Accessibility identifier for the Personalize Google Services item.
+extern NSString* const kPersonalizeGoogleServicesIdentifier;
+// Accessibility identifier for the Personalize Google Services view.
+extern NSString* const kPersonalizeGoogleServicesViewIdentifier;
 
 // Sections used in Sync Settings page.
 typedef NS_ENUM(NSInteger, SyncSettingsSectionIdentifier) {
   // Section for all the sync settings.
   SyncDataTypeSectionIdentifier = kSectionIdentifierEnumZero,
-  // Sign out options.
-  SignOutSectionIdentifier,
+  // Manager and sign out options.
+  ManageAndSignOutSectionIdentifier,
   // Advanced settings.
   AdvancedSettingsSectionIdentifier,
   // Sync errors.
   SyncErrorsSectionIdentifier,
+  // Section to show the batch upload option.
+  BatchUploadSectionIdentifier,
 };
 
 // Item types used per Sync Setting section.
@@ -60,10 +75,21 @@ typedef NS_ENUM(NSInteger, SyncSettingsItemType) {
   ReadingListDataTypeItemType,
   // kSyncPreferences.
   SettingsDataTypeItemType,
-  // Item for kAutofillWalletImportEnabled.
-  AutocompleteWalletItemType,
-  // Sign out item,
+  // kPayments.
+  PaymentsDataTypeItemType,
+  // Item for the header and the footer of the types list.
+  TypesListHeaderOrFooterType,
+  // ManageAndSignOutSectionIdentifier section.
+  // Sign out and turn off sync item,
+  SignOutAndTurnOffSyncItemType,
+  // Sign out item.
   SignOutItemType,
+  // Sign out item footer.
+  SignOutItemFooterType,
+  // Manage Google Account item.
+  ManageGoogleAccountItemType,
+  // Manage accounts on this device item.
+  ManageAccountsItemType,
   // AdvancedSettingsSectionIdentifier section.
   // Encryption item.
   EncryptionItemType,
@@ -71,14 +97,36 @@ typedef NS_ENUM(NSInteger, SyncSettingsItemType) {
   GoogleActivityControlsItemType,
   // Data from Chrome sync.
   DataFromChromeSync,
+  // Personalize Google services item.
+  PersonalizeGoogleServicesItemType,
+  // SyncErrorsSectionIdentifier section.
   // Sync errors.
-  ReauthDialogAsSyncIsInAuthErrorItemType,
+  PrimaryAccountReauthErrorItemType,
   ShowPassphraseDialogErrorItemType,
   SyncNeedsTrustedVaultKeyErrorItemType,
   SyncTrustedVaultRecoverabilityDegradedErrorItemType,
   SyncDisabledByAdministratorErrorItemType,
-  // Sign out item footer.
-  SignOutItemFooterType,
+  // Indicates the errors related to the signed in not syncing account.
+  AccountErrorMessageItemType,
+  // BatchUploadSectionIdentifier section.
+  // Item for the batch upload button.
+  BatchUploadButtonItemType,
+  // Indicates the items to be uploaded to the account.
+  BatchUploadRecommendationItemType,
+};
+
+// States for Sync Settings page to be in.
+enum class SyncSettingsAccountState {
+  // The user is viewing sync settings page when Sync-the-feature is on.
+  // TODO(crbug.com/40066949): Remove usage of kSyncing after kSync users are
+  // migrated to kSignin in phase 3. See ConsentLevel::kSync documentation for
+  // details.
+  kSyncing,
+  // The user is viewing sync settings page when signed-in not syncing.
+  kSignedIn,
+  // The user signed out from the sync settings page, and the UI is being
+  // dismissed.
+  kSignedOut,
 };
 
 #endif  // IOS_CHROME_BROWSER_UI_SETTINGS_GOOGLE_SERVICES_MANAGE_SYNC_SETTINGS_CONSTANTS_H_

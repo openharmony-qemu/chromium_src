@@ -34,7 +34,15 @@ class SnapshotPlatform final : public blink::Platform {
 // % v8_context_snapshot_generator --output_file=<filename>
 int main(int argc, char** argv) {
   base::AtExitManager at_exit;
+
+  const bool kRemoveRecognizedFlags = true;
+  v8::V8::SetFlagsFromCommandLine(&argc, argv, kRemoveRecognizedFlags);
   base::CommandLine::Init(argc, argv);
+
+  // Initialize an empty feature list for gin startup.
+  auto early_access_feature_list = std::make_unique<base::FeatureList>();
+  // This should be called after CommandLine::Init().
+  base::FeatureList::SetInstance(std::move(early_access_feature_list));
 #ifdef V8_USE_EXTERNAL_STARTUP_DATA
   gin::V8Initializer::LoadV8Snapshot();
 #endif
@@ -51,7 +59,8 @@ int main(int argc, char** argv) {
   SnapshotPlatform platform;
   mojo::BinderMap binders;
   blink::CreateMainThreadAndInitialize(&platform, &binders);
-  v8::StartupData blob = blink::WebV8ContextSnapshot::TakeSnapshot();
+  auto* isolate = blink::CreateMainThreadIsolate();
+  v8::StartupData blob = blink::WebV8ContextSnapshot::TakeSnapshot(isolate);
 
   // Save the snapshot as a file. Filename is given in a command line option.
   base::FilePath file_path =

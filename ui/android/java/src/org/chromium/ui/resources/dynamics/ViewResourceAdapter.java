@@ -6,7 +6,6 @@ package org.chromium.ui.resources.dynamics;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
-import android.os.Build;
 import android.view.View;
 import android.view.View.OnLayoutChangeListener;
 import android.view.ViewGroup;
@@ -33,13 +32,16 @@ public class ViewResourceAdapter
     public interface CaptureMechanism {
         /** See {@link Resource#shouldRemoveResourceOnNullBitmap()}. */
         boolean shouldRemoveResourceOnNullBitmap();
+
         /** Called when the size of the view changes. */
         default void onViewSizeChange(View view, float scale) {}
+
         /** Called to drop any cached bitmaps to free up memory. */
         void dropCachedBitmap();
 
         /**
          * Called to trigger the actual bitmap capture.
+         *
          * @param view The view being captured.
          * @param dirtyRect The area that has changed since last capture.
          * @param scale Scalar to apply to width and height when capturing a bitmap.
@@ -47,7 +49,11 @@ public class ViewResourceAdapter
          * @param onBitmapCapture The callback to return the recorded image.
          * @return If the dirty rect can be cleared on a successful capture.
          */
-        boolean startBitmapCapture(View view, Rect dirtyRect, float scale, CaptureObserver observer,
+        boolean startBitmapCapture(
+                View view,
+                Rect dirtyRect,
+                float scale,
+                CaptureObserver observer,
                 Callback<Bitmap> onBitmapCapture);
     }
 
@@ -62,13 +68,11 @@ public class ViewResourceAdapter
 
     /**
      * Builds a {@link ViewResourceAdapter} instance around {@code view}.
-     * @param view The {@link View} to expose as a {@link Resource}.
      *
-     * @param useHardwareBitmapDraw controls if we should software draw bitmaps or use a
-     * RenderNode and hardware acceleration.
+     * @param view The {@link View} to expose as a {@link Resource}.
      */
     @SuppressWarnings("NewApi")
-    public ViewResourceAdapter(View view, boolean useHardwareBitmapDraw) {
+    public ViewResourceAdapter(View view) {
         mView = view;
 
         // It is possible the view has not had an layout pass yet, and these values are wrong. Even
@@ -78,33 +82,19 @@ public class ViewResourceAdapter
         mViewSize.set(0, 0, mView.getWidth(), mView.getHeight());
         mDirtyRect.set(mViewSize);
 
-        // Enforce hardware accelerated drawing on android Q+ where it's supported.
-        useHardwareBitmapDraw &= Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
-        if (useHardwareBitmapDraw) {
-            mCaptureMechanism = new HardwareDraw();
-        } else {
-            mCaptureMechanism = new SoftwareDraw();
-        }
+        mCaptureMechanism = new SoftwareDraw();
     }
 
     /**
-     * Builds a {@link ViewResourceAdapter} instance around {@code view}.
-     * @param view The {@link View} to expose as a {@link Resource}.
-     */
-    public ViewResourceAdapter(View view) {
-        this(view, false);
-    }
-
-    /**
-     * Triggers a bitmap capture ignoring whether the view is dirty. Depending on this mechanism,
-     * it may do some or all of the work, and may be sync or async.
+     * Triggers a bitmap capture ignoring whether the view is dirty. Depending on this mechanism, it
+     * may do some or all of the work, and may be sync or async.
      */
     @SuppressWarnings("NewApi")
     public void triggerBitmapCapture() {
         mThreadChecker.assertOnValidThread();
         try (TraceEvent e = TraceEvent.scoped("ViewResourceAdapter:getBitmap")) {
             if (mCaptureMechanism.startBitmapCapture(
-                        mView, new Rect(mDirtyRect), mScale, this, this::onCapture)) {
+                    mView, new Rect(mDirtyRect), mScale, this, this::onCapture)) {
                 mDirtyRect.setEmpty();
             }
         }
@@ -112,9 +102,12 @@ public class ViewResourceAdapter
 
     private void onCapture(Bitmap bitmap) {
         mThreadChecker.assertOnValidThread();
-        Resource resource = new DynamicResourceSnapshot(bitmap,
-                mCaptureMechanism.shouldRemoveResourceOnNullBitmap(), mViewSize,
-                createNativeResource());
+        Resource resource =
+                new DynamicResourceSnapshot(
+                        bitmap,
+                        mCaptureMechanism.shouldRemoveResourceOnNullBitmap(),
+                        mViewSize,
+                        createNativeResource());
         for (Callback<Resource> observer : mOnResourceReadyObservers) observer.onResult(resource);
     }
 
@@ -164,8 +157,16 @@ public class ViewResourceAdapter
     }
 
     @Override
-    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
-            int oldTop, int oldRight, int oldBottom) {
+    public void onLayoutChange(
+            View v,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            int oldLeft,
+            int oldTop,
+            int oldRight,
+            int oldBottom) {
         final int width = right - left;
         final int height = bottom - top;
         final int oldWidth = oldRight - oldLeft;

@@ -29,7 +29,7 @@ class Tracker;
 
 - (instancetype)initWithIncognito:(BOOL)isIncognito
                           tracker:(feature_engagement::Tracker*)tracker
-    NS_DESIGNATED_INITIALIZER;
+                    isLensOverlay:(BOOL)isLensOverlay NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
 // The templateURLService used by this mediator to extract whether the default
@@ -48,7 +48,8 @@ class Tracker;
 
 // The favicon loader.
 @property(nonatomic, assign) FaviconLoader* faviconLoader;
-// Scene state used by this mediator to log with DefaultBrowserSceneAgent.
+// Scene state used by this mediator to log with
+// NonModalDefaultBrowserPromoSchedulerSceneAgent.
 @property(nonatomic, weak) SceneState* sceneState;
 
 @end

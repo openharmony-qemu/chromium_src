@@ -108,7 +108,6 @@ void SyncSchedulerImpl::OnTimerFired() {
     sync_state_ = SyncState::SYNC_IN_PROGRESS;
   } else {
     NOTREACHED();
-    return;
   }
 
   delegate_->OnSyncRequested(

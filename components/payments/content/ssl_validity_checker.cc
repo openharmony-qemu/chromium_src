@@ -44,7 +44,6 @@ std::string SslValidityChecker::GetInvalidSslCertificateErrorMessage(
 
     case security_state::SECURITY_LEVEL_COUNT:
       NOTREACHED();
-      return errors::kInvalidSslCertificate;
   }
 
   std::string message;

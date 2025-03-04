@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-
-USE_PYTHON3 = True
 PRESUBMIT_VERSION = '2.0.0'
 
 def CheckForTranslations(input_api, output_api):
@@ -88,7 +86,6 @@ def CheckNoDisallowedJS(input_api, output_api):
   # Also exempt any externs or eslint files, which must be in JS.
   EXCLUDE_PATH_SUFFIXES = [
     '_externs.js',
-    '.eslintrc.js',
   ]
 
   def allow_js(f):

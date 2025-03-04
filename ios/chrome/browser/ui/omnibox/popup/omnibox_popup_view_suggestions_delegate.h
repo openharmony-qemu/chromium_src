@@ -6,7 +6,6 @@
 #define IOS_CHROME_BROWSER_UI_OMNIBOX_POPUP_OMNIBOX_POPUP_VIEW_SUGGESTIONS_DELEGATE_H_
 
 #include "components/omnibox/browser/suggestion_answer.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 struct AutocompleteMatch;
 class GURL;
@@ -25,6 +24,8 @@ class OmniboxPopupViewSuggestionsDelegate {
                                          const GURL& alternate_nav_url,
                                          const std::u16string& pasted_text,
                                          size_t index) = 0;
+  // Called when a call action was tapped.
+  virtual void OnCallActionTap() = 0;
 };
 
 #endif  // IOS_CHROME_BROWSER_UI_OMNIBOX_POPUP_OMNIBOX_POPUP_VIEW_SUGGESTIONS_DELEGATE_H_

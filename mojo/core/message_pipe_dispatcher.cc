@@ -159,7 +159,6 @@ MojoResult MessagePipeDispatcher::WriteMessage(
     }
 
     NOTREACHED();
-    return MOJO_RESULT_UNKNOWN;
   }
 
   // We may need to update anyone watching our signals in case we just exceeded
@@ -182,7 +181,6 @@ MojoResult MessagePipeDispatcher::ReadMessage(
       return MOJO_RESULT_INVALID_ARGUMENT;
 
     NOTREACHED();
-    return MOJO_RESULT_UNKNOWN;
   }
 
   if (!*message) {
@@ -202,7 +200,7 @@ MojoResult MessagePipeDispatcher::ReadMessage(
 }
 
 MojoResult MessagePipeDispatcher::SetQuota(MojoQuotaType type, uint64_t limit) {
-  absl::optional<uint64_t> new_ack_request_interval;
+  std::optional<uint64_t> new_ack_request_interval;
   {
     base::AutoLock lock(signal_lock_);
     switch (type) {

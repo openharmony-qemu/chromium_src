@@ -3,17 +3,15 @@
 // found in the LICENSE file.
 
 #import <UIKit/UIKit.h>
+
 #import <ostream>
 
 #import "base/functional/bind.h"
 #import "base/notreached.h"
 #import "ios/public/provider/chrome/browser/lens/lens_api.h"
 #import "ios/public/provider/chrome/browser/lens/lens_configuration.h"
+#import "ios/public/provider/chrome/browser/lens/lens_overlay_api.h"
 #import "ios/web/public/navigation/navigation_manager.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace ios {
 namespace provider {
@@ -38,6 +36,14 @@ id<ChromeLensController> NewChromeLensController(LensConfiguration* config) {
   return nil;
 }
 
+UIViewController<ChromeLensOverlay>* NewChromeLensOverlay(
+    UIImage* snapshot,
+    LensConfiguration* config,
+    NSArray<UIAction*>* additionalMenuItems) {
+  // Lens is not supported in Chromium.
+  return nil;
+}
+
 bool IsLensSupported() {
   // Lens is not supported in Chromium.
   return false;
@@ -48,8 +54,8 @@ bool IsLensWebResultsURL(const GURL& url) {
   return false;
 }
 
-absl::optional<LensEntrypoint> GetLensEntryPointFromURL(const GURL& url) {
-  return absl::nullopt;
+std::optional<LensEntrypoint> GetLensEntryPointFromURL(const GURL& url) {
+  return std::nullopt;
 }
 
 void GenerateLensLoadParamsAsync(LensQuery* query,

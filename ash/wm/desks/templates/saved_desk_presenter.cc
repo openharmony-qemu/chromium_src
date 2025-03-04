@@ -4,6 +4,8 @@
 
 #include "ash/wm/desks/templates/saved_desk_presenter.h"
 
+#include <vector>
+
 #include "ash/constants/notifier_catalogs.h"
 #include "ash/public/cpp/app_types_util.h"
 #include "ash/public/cpp/desk_template.h"
@@ -13,9 +15,10 @@
 #include "ash/shell.h"
 #include "ash/strings/grit/ash_strings.h"
 #include "ash/wm/desks/desk.h"
+#include "ash/wm/desks/desk_bar_view_base.h"
 #include "ash/wm/desks/desks_controller.h"
 #include "ash/wm/desks/desks_util.h"
-#include "ash/wm/desks/legacy_desk_bar_view.h"
+#include "ash/wm/desks/overview_desk_bar_view.h"
 #include "ash/wm/desks/templates/saved_desk_item_view.h"
 #include "ash/wm/desks/templates/saved_desk_library_view.h"
 #include "ash/wm/desks/templates/saved_desk_metrics_util.h"
@@ -24,7 +27,6 @@
 #include "ash/wm/overview/overview_controller.h"
 #include "ash/wm/overview/overview_grid.h"
 #include "ash/wm/overview/overview_session.h"
-#include "base/containers/cxx20_erase_vector.h"
 #include "base/functional/bind.h"
 #include "base/i18n/number_formatting.h"
 #include "base/memory/raw_ptr.h"
@@ -34,6 +36,7 @@
 #include "base/time/time.h"
 #include "third_party/re2/src/re2/re2.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/display/screen.h"
 #include "ui/wm/core/window_util.h"
 
 namespace ash {
@@ -81,7 +84,7 @@ void ShowLibrary(aura::Window* const root_window,
     DCHECK(overview_session);
   }
 
-  // Show the library, this should highlight the newly saved item.
+  // Show the library, this should focus the newly saved item.
   overview_session->ShowSavedDeskLibrary(uuid, saved_desk_name, root_window);
 
   // Remove the current desk, this will be done without animation.
@@ -128,10 +131,11 @@ WindowCloseObserver* g_window_close_observer = nullptr;
 
 class WindowCloseObserver : public aura::WindowObserver {
  public:
-  WindowCloseObserver(aura::Window* root_window,
-                      const base::Uuid& saved_desk_uuid,
-                      const std::u16string& saved_desk_name,
-                      const std::vector<aura::Window*>& windows)
+  WindowCloseObserver(
+      aura::Window* root_window,
+      const base::Uuid& saved_desk_uuid,
+      const std::u16string& saved_desk_name,
+      const std::vector<raw_ptr<aura::Window, VectorExperimental>>& windows)
       : root_window_(root_window),
         saved_desk_uuid_(saved_desk_uuid),
         saved_desk_name_(saved_desk_name) {
@@ -275,12 +279,12 @@ class WindowCloseObserver : public aura::WindowObserver {
 
   void Terminate() { delete this; }
 
-  raw_ptr<aura::Window, ExperimentalAsh> root_window_;
+  raw_ptr<aura::Window> root_window_;
 
-  raw_ptr<aura::Window, ExperimentalAsh> system_modal_container_ = nullptr;
+  raw_ptr<aura::Window> system_modal_container_ = nullptr;
 
   // Current desk container. Will be used when monitoring for new windows.
-  raw_ptr<aura::Window, ExperimentalAsh> desk_container_ = nullptr;
+  raw_ptr<aura::Window> desk_container_ = nullptr;
 
   // Tracks whether a modal "confirm close" dialog has been showed.
   bool modal_dialog_showed_ = false;
@@ -297,7 +301,7 @@ class WindowCloseObserver : public aura::WindowObserver {
 
   // The desk that the user has saved and that we will remove once windows have
   // been removed.
-  raw_ptr<const Desk, ExperimentalAsh> desk_to_remove_ = nullptr;
+  raw_ptr<const Desk, DanglingUntriaged> desk_to_remove_ = nullptr;
 
   // UUID and name of the saved desk.
   const base::Uuid saved_desk_uuid_;
@@ -320,11 +324,6 @@ SavedDeskPresenter::SavedDeskPresenter(OverviewSession* overview_session)
 
   auto* desk_model = GetDeskModel();
   desk_model_observation_.Observe(desk_model);
-
-  should_show_saved_desk_library_ =
-      !Shell::Get()->tablet_mode_controller()->InTabletMode() &&
-      (GetEntryCount(DeskTemplateType::kTemplate) +
-       GetEntryCount(DeskTemplateType::kSaveAndRecall)) > 0u;
 }
 
 SavedDeskPresenter::~SavedDeskPresenter() = default;
@@ -359,12 +358,7 @@ void SavedDeskPresenter::UpdateUIForSavedDeskLibrary() {
   // The library and the library button is always hidden if we enter tablet
   // mode. If not in tablet mode, the library button is visible if there are
   // saved desks in the model, *or* we are already showing the library.
-  const bool in_tablet_mode =
-      Shell::Get()->tablet_mode_controller()->InTabletMode();
-
-  const bool has_saved_desks =
-      (GetEntryCount(DeskTemplateType::kTemplate) +
-       GetEntryCount(DeskTemplateType::kSaveAndRecall)) > 0u;
+  const bool in_tablet_mode = display::Screen::GetScreen()->InTabletMode();
 
   for (auto& overview_grid : overview_session_->grid_list()) {
     const bool is_showing_library = overview_grid->IsShowingSavedDeskLibrary();
@@ -374,13 +368,13 @@ void SavedDeskPresenter::UpdateUIForSavedDeskLibrary() {
       overview_grid->HideSavedDeskLibrary(/*exit_overview=*/false);
     }
 
-    // The functions below reach into this class to determine whether the
-    // buttons should be shown or not. If we are already showing saved desk
-    // library, they should not go away (unless we're in tablet mode).
-    should_show_saved_desk_library_ =
-        !in_tablet_mode && (is_showing_library || has_saved_desks);
-
-    if (LegacyDeskBarView* desks_bar_view = overview_grid->desks_bar_view()) {
+    if (OverviewDeskBarView* desks_bar_view = overview_grid->desks_bar_view()) {
+      // Library UI needs an update. If it's currently in the library page, keep
+      // the UI visible.
+      desks_bar_view->set_library_ui_visibility(
+          (!in_tablet_mode && is_showing_library)
+              ? DeskBarViewBase::LibraryUiVisibility::kVisible
+              : DeskBarViewBase::LibraryUiVisibility::kToBeChecked);
       desks_bar_view->UpdateLibraryButtonVisibility();
       desks_bar_view->UpdateButtonsForSavedDeskGrid();
       overview_grid->UpdateSaveDeskButtons();
@@ -390,7 +384,7 @@ void SavedDeskPresenter::UpdateUIForSavedDeskLibrary() {
 
 void SavedDeskPresenter::DeleteEntry(
     const base::Uuid& uuid,
-    absl::optional<DeskTemplateType> record_for_type) {
+    std::optional<DeskTemplateType> record_for_type) {
   weak_ptr_factory_.InvalidateWeakPtrs();
   GetDeskModel()->DeleteEntry(
       uuid,
@@ -419,8 +413,13 @@ void SavedDeskPresenter::LaunchSavedDesk(
 
   // Copy fields we need from `desk_template` since we're about to move it.
   const auto saved_desk_type = saved_desk->type();
-  const Desk* new_desk = desks_controller->CreateNewDeskForSavedDesk(
+  Desk* new_desk = desks_controller->CreateNewDeskForSavedDesk(
       saved_desk_type, saved_desk->template_name());
+
+  // Set the lacros profile ID for the newly created desk. This is effectively a
+  // no-op if `lacros_profile_id` returns zero.
+  new_desk->SetLacrosProfileId(saved_desk->lacros_profile_id());
+
   LaunchSavedDeskIntoNewDesk(std::move(saved_desk), root_window, new_desk);
 
   // Note: `LaunchSavedDeskIntoNewDesk` *may* cause overview mode to exit. This
@@ -477,7 +476,8 @@ void SavedDeskPresenter::OnDeskModelDestroying() {
 }
 
 void SavedDeskPresenter::EntriesAddedOrUpdatedRemotely(
-    const std::vector<const DeskTemplate*>& new_entries) {
+    const std::vector<raw_ptr<const DeskTemplate, VectorExperimental>>&
+        new_entries) {
   AddOrUpdateUIEntries(new_entries);
 }
 
@@ -494,7 +494,7 @@ void SavedDeskPresenter::GetAllEntries(const base::Uuid& item_to_focus,
   if (result.status != desks_storage::DeskModel::GetAllEntriesStatus::kOk)
     return;
 
-  // This updates `should_show_saved_desk_library_`.
+  // This updates UI for saved desk library.
   UpdateUIForSavedDeskLibrary();
 
   for (auto& overview_grid : overview_session_->grid_list()) {
@@ -530,7 +530,7 @@ void SavedDeskPresenter::GetAllEntries(const base::Uuid& item_to_focus,
 
 void SavedDeskPresenter::OnDeleteEntry(
     const base::Uuid& uuid,
-    absl::optional<DeskTemplateType> record_for_type,
+    std::optional<DeskTemplateType> record_for_type,
     desks_storage::DeskModel::DeleteEntryStatus status) {
   if (status != desks_storage::DeskModel::DeleteEntryStatus::kOk)
     return;
@@ -558,26 +558,33 @@ void SavedDeskPresenter::LaunchSavedDeskIntoNewDesk(
   const base::Uuid uuid = saved_desk->uuid();
 
   auto* overview_controller = Shell::Get()->overview_controller();
-  if (saved_desk_type == DeskTemplateType::kSaveAndRecall) {
-    if (overview_controller->InOverviewSession()) {
+  if (overview_controller->InOverviewSession()) {
+    if (saved_desk_type == DeskTemplateType::kSaveAndRecall) {
       auto* overview_session = overview_controller->overview_session();
       OverviewGrid* overview_grid =
           overview_session->GetGridWithRootWindow(root_window);
 
-      const LegacyDeskBarView* desks_bar_view = overview_grid->desks_bar_view();
+      const OverviewDeskBarView* desks_bar_view =
+          overview_grid->desks_bar_view();
       DCHECK(desks_bar_view);
       DeskMiniView* mini_view = desks_bar_view->FindMiniViewForDesk(new_desk);
       DCHECK(mini_view);
 
       SavedDeskLibraryView* library = overview_grid->GetSavedDeskLibraryView();
       library->AnimateDeskLaunch(uuid, mini_view);
+    } else if (saved_desk_type == DeskTemplateType::kTemplate) {
+      // For a desk template launch, we will stay in overview mode and hide the
+      // library. The overview grid will show and get populated with launched
+      // apps.
+      for (auto& overview_grid : overview_session_->grid_list()) {
+        overview_grid->HideSavedDeskLibrary(/*exit_overview=*/false);
+      }
     }
   }
 
-  // Copy the index of the newly created desk to the saved desk. This ensures
+  // Copy the uuid of the newly created desk to the saved desk. This ensures
   // that apps appear on the right desk even if the user switches to another.
-  const int desk_index = DesksController::Get()->GetDeskIndex(new_desk);
-  saved_desk->SetDeskIndex(desk_index);
+  saved_desk->SetDeskUuid(new_desk->uuid());
 
   Shell::Get()->saved_desk_delegate()->LaunchAppsFromSavedDesk(
       std::move(saved_desk));
@@ -603,12 +610,12 @@ void SavedDeskPresenter::LaunchSavedDeskIntoNewDesk(
 
   overview_session_->GetGridWithRootWindow(root_window)
       ->desks_bar_view()
-      ->NudgeDeskName(desk_index);
+      ->NudgeDeskName(DesksController::Get()->GetDeskIndex(new_desk));
 
   if (saved_desk_type == DeskTemplateType::kSaveAndRecall) {
     // Passing nullopt as type since this indicates that we don't want to record
     // the `delete` metric for this operation.
-    DeleteEntry(uuid, /*record_for_type=*/absl::nullopt);
+    DeleteEntry(uuid, /*record_for_type=*/std::nullopt);
     RecordTimeBetweenSaveAndRecall(base::Time::Now() -
                                    saved_desk_creation_time);
   }
@@ -682,11 +689,11 @@ void SavedDeskPresenter::OnAddOrUpdateEntry(
                                       GetMaxEntryCount(saved_desk_type));
 
     if (saved_desk_type == DeskTemplateType::kSaveAndRecall) {
-      std::vector<aura::Window*> windows =
+      std::vector<raw_ptr<aura::Window, VectorExperimental>> windows =
           Shell::Get()->mru_window_tracker()->BuildMruWindowList(kActiveDesk);
 
       // Get rid of transient windows and all-desks windows.
-      base::EraseIf(windows, [](aura::Window* window) {
+      std::erase_if(windows, [](aura::Window* window) {
         return wm::GetTransientParent(window) != nullptr ||
                desks_util::IsWindowVisibleOnAllWorkspaces(window);
       });
@@ -722,11 +729,12 @@ void SavedDeskPresenter::OnAddOrUpdateEntry(
 }
 
 void SavedDeskPresenter::AddOrUpdateUIEntries(
-    const std::vector<const DeskTemplate*>& new_entries) {
+    const std::vector<raw_ptr<const DeskTemplate, VectorExperimental>>&
+        new_entries) {
   if (new_entries.empty())
     return;
 
-  // This updates `should_show_saved_desk_library_`.
+  // This updates UI for saved desk library.
   UpdateUIForSavedDeskLibrary();
 
   for (auto& overview_grid : overview_session_->grid_list()) {
@@ -744,7 +752,7 @@ void SavedDeskPresenter::RemoveUIEntries(const std::vector<base::Uuid>& uuids) {
   if (uuids.empty())
     return;
 
-  // This updates `should_show_saved_desk_library_`.
+  // This updates UI for saved desk library.
   UpdateUIForSavedDeskLibrary();
 
   for (auto& overview_grid : overview_session_->grid_list()) {

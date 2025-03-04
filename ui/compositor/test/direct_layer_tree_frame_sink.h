@@ -35,11 +35,12 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
       const viz::FrameSinkId& frame_sink_id,
       viz::FrameSinkManagerImpl* frame_sink_manager,
       viz::Display* display,
-      scoped_refptr<viz::ContextProvider> context_provider,
+      scoped_refptr<viz::RasterContextProvider> context_provider,
       scoped_refptr<cc::RasterContextProviderWrapper>
           worker_context_provider_wrapper,
       scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
-      gpu::GpuMemoryBufferManager* gpu_memory_buffer_manager);
+      gpu::GpuMemoryBufferManager* gpu_memory_buffer_manager,
+      gfx::AcceleratedWidget widget = gfx::kNullAcceleratedWidget);
 
   DirectLayerTreeFrameSink(const DirectLayerTreeFrameSink& other) = delete;
   DirectLayerTreeFrameSink& operator=(const DirectLayerTreeFrameSink& other) =
@@ -65,12 +66,8 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
       viz::AggregatedRenderPassList* render_passes) override;
   void DisplayDidDrawAndSwap() override {}
   void DisplayDidReceiveCALayerParams(
-      const gfx::CALayerParams& ca_layer_params) override {}
+      const gfx::CALayerParams& ca_layer_params) override;
   void DisplayDidCompleteSwapWithSize(const gfx::Size& pixel_size) override {}
-#if defined(OHOS_UNITTESTS)
-  void TriggerVsyncImplTask() override {}
-  void SetHandledTouchEvent(bool handledTouchEvent) override {}
-#endif
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}
   void SetWideColorEnabled(bool enabled) override {}
@@ -78,6 +75,9 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const viz::FrameSinkId& id,
       viz::mojom::CompositorFrameSinkType* type) override;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
  private:
   // viz::mojom::CompositorFrameSinkClient implementation:
@@ -91,6 +91,7 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   void OnBeginFramePausedChanged(bool paused) override;
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override {}
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override {}
 
   // viz::ExternalBeginFrameSourceClient implementation:
   void OnNeedsBeginFrames(bool needs_begin_frames) override;
@@ -108,6 +109,7 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   raw_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   viz::ParentLocalSurfaceIdAllocator parent_local_surface_id_allocator_;
   raw_ptr<viz::Display> display_;
+  gfx::AcceleratedWidget widget_;
   gfx::Size last_swap_frame_size_;
   float device_scale_factor_ = 1.f;
   bool is_lost_ = false;

@@ -14,6 +14,7 @@
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/no_destructor.h"
+#include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "base/scoped_multi_source_observation.h"
 #include "base/scoped_observation.h"
@@ -86,13 +87,13 @@ class ElementTrackerViews::ElementDataViews : public ViewObserver,
 
   TrackedElementViews* GetElementForView(View* view) {
     const auto it = view_data_lookup_.find(view);
-    DCHECK(it != view_data_lookup_.end());
+    CHECK(it != view_data_lookup_.end(), base::NotFatalUntil::M130);
     return it->second->element.get();
   }
 
   void NotifyViewActivated(View* view) {
     const auto it = view_data_lookup_.find(view);
-    DCHECK(it != view_data_lookup_.end());
+    CHECK(it != view_data_lookup_.end(), base::NotFatalUntil::M130);
     if (it->second->visible()) {
       ui::ElementTracker::GetFrameworkDelegate()->NotifyElementActivated(
           it->second->element.get());
@@ -190,7 +191,7 @@ class ElementTrackerViews::ElementDataViews : public ViewObserver,
   void UpdateVisible(View* view,
                      UpdateReason update_reason = UpdateReason::kGeneral) {
     const auto it = view_data_lookup_.find(view);
-    DCHECK(it != view_data_lookup_.end());
+    CHECK(it != view_data_lookup_.end(), base::NotFatalUntil::M130);
     ViewData& data = *it->second;
     const ui::ElementContext old_context = data.context;
     data.context = (update_reason == UpdateReason::kRemoveFromWidget)
@@ -278,14 +279,20 @@ class ElementTrackerViews::WidgetTracker : public WidgetObserver {
     tracker_->widget_trackers_.erase(widget_);
   }
 
-  const base::raw_ptr<ElementTrackerViews> tracker_;
-  const base::raw_ptr<Widget> widget_;
+  const raw_ptr<ElementTrackerViews> tracker_;
+  const raw_ptr<Widget> widget_;
   bool visible_ = false;
   base::ScopedObservation<Widget, WidgetObserver> observation_{this};
 };
 
 ElementTrackerViews::ElementTrackerViews() = default;
 ElementTrackerViews::~ElementTrackerViews() = default;
+
+// static
+void ElementTrackerViews::SetContextOverrideCallback(
+    ContextOverrideCallback callback) {
+  GetContextOverrideCallback() = callback;
+}
 
 // static
 ElementTrackerViews* ElementTrackerViews::GetInstance() {
@@ -301,7 +308,13 @@ ui::ElementContext ElementTrackerViews::GetContextForView(View* view) {
 
 // static
 ui::ElementContext ElementTrackerViews::GetContextForWidget(Widget* widget) {
-  return ui::ElementContext(widget->GetPrimaryWindowWidget());
+  auto* const primary = widget->GetPrimaryWindowWidget();
+  if (auto& callback = GetContextOverrideCallback()) {
+    if (ui::ElementContext context = callback.Run(primary)) {
+      return context;
+    }
+  }
+  return ui::ElementContext(primary);
 }
 
 TrackedElementViews* ElementTrackerViews::GetElementForView(
@@ -399,7 +412,7 @@ void ElementTrackerViews::UnregisterView(ui::ElementIdentifier element_id,
                                          View* view) {
   DCHECK(view);
   const auto it = element_data_.find(element_id);
-  DCHECK(it != element_data_.end());
+  CHECK(it != element_data_.end(), base::NotFatalUntil::M130);
   it->second.RemoveView(view);
 }
 
@@ -407,8 +420,15 @@ void ElementTrackerViews::NotifyViewActivated(ui::ElementIdentifier element_id,
                                               View* view) {
   DCHECK(view);
   const auto it = element_data_.find(element_id);
-  DCHECK(it != element_data_.end());
+  CHECK(it != element_data_.end(), base::NotFatalUntil::M130);
   it->second.NotifyViewActivated(view);
+}
+
+// static
+ElementTrackerViews::ContextOverrideCallback&
+ElementTrackerViews::GetContextOverrideCallback() {
+  static base::NoDestructor<ContextOverrideCallback> callback;
+  return *callback.get();
 }
 
 void ElementTrackerViews::MaybeTrackWidget(Widget* widget) {

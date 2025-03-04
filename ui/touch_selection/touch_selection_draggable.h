@@ -23,8 +23,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionDraggableClient {
                             const gfx::PointF& new_position) = 0;
   virtual void OnDragEnd(const TouchSelectionDraggable& draggable) = 0;
   virtual bool IsWithinTapSlop(const gfx::Vector2dF& delta) const = 0;
-#ifdef OHOS_CLIPBOARD
-  virtual void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) = 0;
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual void UpdateSelectionChanged(
+      const TouchSelectionDraggable& draggable) = 0;
 #endif
 };
 
@@ -44,10 +45,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionDraggable {
 
   // Offers a touch sequence to the draggable target. Returns true if the event
   // was consumed, in which case the caller should cease further handling.
-  virtual bool WillHandleTouchEvent(const ui::MotionEvent& event) = 0;
+  virtual bool WillHandleTouchEvent(const MotionEvent& event) = 0;
 
   // Whether a drag is active OR being detected for the current touch sequence.
   virtual bool IsActive() const = 0;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  virtual bool IsDragging() const { return false; }
+#endif
 };
 
 }  // namespace ui

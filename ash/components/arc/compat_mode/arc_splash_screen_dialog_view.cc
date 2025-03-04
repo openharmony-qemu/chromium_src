@@ -10,18 +10,28 @@
 #include "ash/components/arc/compat_mode/style/arc_color_provider.h"
 #include "ash/components/arc/vector_icons/vector_icons.h"
 #include "ash/frame/non_client_frame_view_ash.h"
+#include "ash/public/cpp/resources/grit/ash_public_unscaled_resources.h"
+#include "ash/style/pill_button.h"
+#include "ash/style/typography.h"
 #include "base/auto_reset.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/notreached.h"
 #include "base/scoped_multi_source_observation.h"
 #include "base/task/sequenced_task_runner.h"
+#include "chromeos/constants/chromeos_features.h"
+#include "chromeos/ui/frame/caption_buttons/frame_center_button.h"
 #include "chromeos/ui/frame/default_frame_header.h"
 #include "components/strings/grit/components_strings.h"
 #include "components/vector_icons/vector_icons.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/window.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/base/metadata/metadata_header_macros.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/dialog_button.mojom.h"
+#include "ui/base/mojom/window_show_state.mojom.h"
+#include "ui/base/resource/resource_bundle.h"
 #include "ui/color/color_id.h"
 #include "ui/color/color_provider.h"
 #include "ui/gfx/canvas.h"
@@ -56,6 +66,8 @@ namespace {
 // Draws the blue-ish highlight border to the parent view according to the
 // highlight path.
 class HighlightBorder : public views::View {
+  METADATA_HEADER(HighlightBorder, views::View)
+
  public:
   HighlightBorder() = default;
   HighlightBorder(const HighlightBorder&) = delete;
@@ -69,7 +81,7 @@ class HighlightBorder : public views::View {
     SchedulePaint();
   }
 
-  void Layout() override {
+  void Layout(PassKey) override {
     auto bounds = parent()->GetLocalBounds();
     bounds.Inset(gfx::Insets(views::FocusRing::kDefaultHaloInset));
     SetBoundsRect(bounds);
@@ -87,12 +99,15 @@ class HighlightBorder : public views::View {
     cc::PaintFlags flags;
     flags.setAntiAlias(true);
     flags.setColor(
-        GetColorProvider()->GetColor(ui::kColorFocusableBorderFocused));
+        GetColorProvider()->GetColor(cros_tokens::kCrosSysFocusRing));
     flags.setStyle(cc::PaintFlags::kStroke_Style);
     flags.setStrokeWidth(views::FocusRing::kDefaultHaloThickness);
     canvas->DrawRoundRect(rect, (*rrect).GetSimpleRadius(), flags);
   }
 };
+
+BEGIN_METADATA(HighlightBorder)
+END_METADATA
 
 }  // namespace
 
@@ -118,10 +133,10 @@ class ArcSplashScreenDialogView::ArcSplashScreenWindowObserver
     if (key != aura::client::kShowStateKey)
       return;
 
-    ui::WindowShowState state =
+    ui::mojom::WindowShowState state =
         window->GetProperty(aura::client::kShowStateKey);
-    if (state == ui::SHOW_STATE_FULLSCREEN ||
-        state == ui::SHOW_STATE_MAXIMIZED) {
+    if (state == ui::mojom::WindowShowState::kFullscreen ||
+        state == ui::mojom::WindowShowState::kMaximized) {
       // Run the callback when window is fullscreen or maximized.
       on_close_callback_.Run();
     }
@@ -141,10 +156,12 @@ ArcSplashScreenDialogView::ArcSplashScreenDialogView(
     aura::Window* parent,
     views::View* anchor,
     bool is_for_unresizable)
-    : anchor_(anchor), close_callback_(std::move(close_callback)) {
+    : anchor_(anchor),
+      close_callback_(std::move(close_callback)),
+      background_color_id_(cros_tokens::kCrosSysDialogContainer) {
   // Setup delegate.
   SetArrow(views::BubbleBorder::Arrow::BOTTOM_CENTER);
-  SetButtons(ui::DIALOG_BUTTON_NONE);
+  SetButtons(static_cast<int>(ui::mojom::DialogButton::kNone));
   set_parent_window(parent);
   set_title_margins(gfx::Insets());
   set_margins(gfx::Insets());
@@ -164,29 +181,37 @@ ArcSplashScreenDialogView::ArcSplashScreenDialogView(
       ->SetOrientation(views::LayoutOrientation::kVertical)
       .SetMainAxisAlignment(views::LayoutAlignment::kCenter)
       .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
-      .SetInteriorMargin(gfx::Insets::TLBR(20, 24, 24, 24))
+      .SetInteriorMargin(gfx::Insets::TLBR(32, 32, 32, 28))
       .SetDefault(
           views::kFlexBehaviorKey,
           views::FlexSpecification(views::MinimumFlexSizeRule::kPreferred,
                                    views::MaximumFlexSizeRule::kPreferred,
                                    /*adjust_height_for_width=*/true));
 
-  constexpr gfx::Size kLogoImageSize(152, 126);
-  AddChildView(views::Builder<views::ImageView>()  // Logo
-                   .SetImage(ui::ImageModel::FromVectorIcon(
-                       kCompatModeSplashscreenIcon, background_color_id_,
-                       kLogoImageSize.width()))
-                   .Build());
-  AddChildView(views::Builder<views::Label>()  // Header
-                   .SetText(l10n_util::GetStringUTF16(
-                       IDS_ARC_COMPAT_MODE_SPLASH_SCREEN_TITLE))
-                   .SetTextContext(views::style::CONTEXT_DIALOG_TITLE)
-                   .SetHorizontalAlignment(gfx::ALIGN_CENTER)
-                   .SetAllowCharacterBreak(true)
-                   .SetMultiLine(true)
-                   .SetProperty(views::kMarginsKey, gfx::Insets::VH(8, 0))
-                   .Build());
+  auto image =
+      ui::ResourceBundle::GetSharedInstance().GetThemedLottieImageNamed(
+          IDR_ARC_COMPAT_MODE_SPLASH_SCREEN_IMAGE);
   AddChildView(
+      views::Builder<views::ImageView>()  // Logo
+          .SetImage(image)
+          .SetProperty(views::kMarginsKey, gfx::Insets::TLBR(0, 0, 16, 0))
+          .Build());
+
+  const raw_ptr<views::Label> title_label =
+      AddChildView(views::Builder<views::Label>()  // Header
+                       .SetText(l10n_util::GetStringUTF16(
+                           IDS_ARC_COMPAT_MODE_SPLASH_SCREEN_TITLE))
+                       .SetTextContext(views::style::CONTEXT_DIALOG_TITLE)
+                       .SetHorizontalAlignment(gfx::ALIGN_CENTER)
+                       .SetAllowCharacterBreak(true)
+                       .SetMultiLine(true)
+                       .SetProperty(views::kMarginsKey, gfx::Insets::VH(16, 0))
+                       .Build());
+  ash::TypographyProvider::Get()->StyleLabel(
+      ash::TypographyToken::kCrosDisplay7, *title_label);
+  title_label->SetEnabledColorId(cros_tokens::kCrosSysOnSurface);
+
+  const raw_ptr<views::Label> body_label = AddChildView(
       views::Builder<views::Label>()  // Body
           .SetText(is_for_unresizable
                        ? l10n_util::GetStringUTF16(
@@ -199,18 +224,21 @@ ArcSplashScreenDialogView::ArcSplashScreenDialogView(
           .SetHorizontalAlignment(gfx::ALIGN_CENTER)
           .SetMultiLine(true)
           .Build());
+  ash::TypographyProvider::Get()->StyleLabel(ash::TypographyToken::kCrosBody1,
+                                             *body_label);
+  body_label->SetEnabledColorId(cros_tokens::kCrosSysOnSurfaceVariant);
+
   AddChildView(
-      views::Builder<views::MdTextButton>()  // Close button
+      views::Builder<ash::PillButton>()  // Close button
           .CopyAddressTo(&close_button_)
           .SetCallback(base::BindRepeating(
               &ArcSplashScreenDialogView::OnCloseButtonClicked,
               base::Unretained(this)))
           .SetText(l10n_util::GetStringUTF16(
               IDS_ARC_COMPAT_MODE_SPLASH_SCREEN_CLOSE))
-          .SetCornerRadius(16)
-          .SetProminent(true)
+          .SetPillButtonType(ash::PillButton::kPrimaryLargeWithoutIcon)
           .SetIsDefault(true)
-          .SetProperty(views::kMarginsKey, gfx::Insets::TLBR(20, 0, 0, 0))
+          .SetProperty(views::kMarginsKey, gfx::Insets::TLBR(32, 0, 0, 0))
           .Build());
 
   // Setup highlight border.
@@ -233,21 +261,30 @@ ArcSplashScreenDialogView::ArcSplashScreenDialogView(
 
 ArcSplashScreenDialogView::~ArcSplashScreenDialogView() = default;
 
-gfx::Size ArcSplashScreenDialogView::CalculatePreferredSize() const {
+gfx::Size ArcSplashScreenDialogView::CalculatePreferredSize(
+    const views::SizeBounds& available_size) const {
   auto width = views::LayoutProvider::Get()->GetDistanceMetric(
       views::DistanceMetric::DISTANCE_MODAL_DIALOG_PREFERRED_WIDTH);
   const auto* widget = GetWidget();
   if (widget && widget->parent()) {
-    constexpr int kHorizontalMarginDp = 32;
+    const int kHorizontalMarginDp = 36;
     width = std::min(widget->parent()->GetWindowBoundsInScreen().width() -
                          kHorizontalMarginDp * 2,
                      width);
   }
-  return gfx::Size(width, GetHeightForWidth(width));
+  return gfx::Size(width,
+                   GetLayoutManager()->GetPreferredHeightForWidth(this, width));
+}
+
+gfx::Rect ArcSplashScreenDialogView::GetBubbleBounds() {
+  gfx::Rect bubble_bounds = BubbleDialogDelegate::GetBubbleBounds();
+  constexpr int kMarginTopDp = 8;
+  bubble_bounds.Offset(0, kMarginTopDp);
+  return bubble_bounds;
 }
 
 void ArcSplashScreenDialogView::AddedToWidget() {
-  constexpr int kCornerRadius = 12;
+  const int kCornerRadius = 20;
   auto* const frame = GetBubbleFrameView();
   if (frame)
     frame->SetCornerRadius(kCornerRadius);
@@ -346,5 +383,8 @@ void ArcSplashScreenDialogView::Show(aura::Window* parent,
   }
   views::BubbleDialogDelegateView::CreateBubble(std::move(dialog_view))->Show();
 }
+
+BEGIN_METADATA(ArcSplashScreenDialogView)
+END_METADATA
 
 }  // namespace arc

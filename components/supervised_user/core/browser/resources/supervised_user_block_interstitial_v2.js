@@ -33,16 +33,20 @@ function sendCommand(cmd) {
       case 'requestUrlAccessLocal':
         supervisedUserErrorPageController.requestUrlAccessLocal();
         break;
-      case 'feedback':
-        supervisedUserErrorPageController.feedback();
-        break;
     }
     return;
   }
+  // <if expr="is_ios">
+  // Send commands for iOS committed interstitials.
+  /** @suppress {undefinedVars|missingProperties} */ (function() {
+    window.webkit.messageHandlers['SupervisedUserInterstitialMessage']
+        .postMessage({'command': cmd.toString()});
+  })();
+  // </if>
 }
 
 function makeImageSet(url1x, url2x) {
-  return '-webkit-image-set(url(' + url1x + ') 1x, url(' + url2x + ') 2x)';
+  return 'image-set(url(' + url1x + ') 1x, url(' + url2x + ') 2x)';
 }
 
 /** Perform all initialization that can be done at DOMContentLoaded time. */
@@ -53,8 +57,6 @@ function initialize() {
   const custodianName = loadTimeData.getString('custodianName');
   localWebApprovalsEnabled =
       loadTimeData.getBoolean('isLocalWebApprovalsEnabled');
-  const localWebApprovalsPreferred =
-      loadTimeData.getBoolean('isLocalWebApprovalsPreferred');
 
   if (custodianName && allowAccessRequests) {
     $('custodians-information').hidden = false;
@@ -80,25 +82,25 @@ function initialize() {
     }
   }
 
+
   const alreadyRequestedAccessRemote =
       loadTimeData.getBoolean('alreadySentRemoteRequest');
   if (alreadyRequestedAccessRemote) {
     const isMainFrame = loadTimeData.getBoolean('isMainFrame');
+    // Generates the `waiting for permission` page. Safe to exit here
+    // early and skip the rest of the IU setup for approval manipulations.
     requestCreated(true, isMainFrame);
     return;
   }
 
+  // The rest of the method sets up the functionality for
+  // approval manipulations.
   if (allowAccessRequests) {
     $('remote-approvals-button').hidden = false;
     if (localWebApprovalsEnabled) {
       $('local-approvals-button').hidden = false;
-      if (localWebApprovalsPreferred) {
-        $('local-approvals-button').classList.add('primary-button');
-        $('remote-approvals-button').classList.add('secondary-button');
-      } else {
-        $('remote-approvals-button').classList.add('primary-button');
-        $('local-approvals-button').classList.add('secondary-button');
-      }
+      $('local-approvals-button').classList.add('primary-button');
+      $('remote-approvals-button').classList.add('secondary-button');
     }
     $('remote-approvals-button').onclick = function(event) {
       $('remote-approvals-button').disabled = true;
@@ -111,7 +113,6 @@ function initialize() {
     $('remote-approvals-button').hidden = true;
   }
 
-  $('feedback').hidden = true;
   $('details-button-container').hidden = true;
 
   // Set up handlers for displaying/hiding the details.
@@ -153,7 +154,10 @@ function requestCreated(isSuccessful, isMainFrame) {
   $('block-page-header').hidden = true;
   $('block-page-message').hidden = true;
   $('hide-details-link').hidden = true;
+  // Hide block reason from the waiting screen.
   $('block-reason').style.display = 'none';
+  $('block-reason-show-details-link').style.display = 'none';
+  $('block-reason-hide-details-link').style.display = 'none';
   if (localWebApprovalsEnabled) {
     $('local-approvals-button').hidden = false;
   }
@@ -171,13 +175,11 @@ function requestCreated(isSuccessful, isMainFrame) {
           event) {
         sendCommand('requestUrlAccessLocal');
       };
-      $('local-approvals-remote-request-sent-button').focus();
     } else {
       $('back-button').hidden = !isMainFrame;
       $('back-button').onclick = function(event) {
         sendCommand('back');
       };
-      $('back-button').focus();
     }
     $('error-page-illustration').hidden = true;
     $('waiting-for-approval-illustration').hidden = false;
@@ -188,6 +190,8 @@ function requestCreated(isSuccessful, isMainFrame) {
     $('remote-approvals-button').disabled = false;
     $('show-details-link').hidden = false;
   }
+  // After updating the contents, focus the top-level div for screen readers.
+  $('frame-blocked').focus();
 }
 
 document.addEventListener('DOMContentLoaded', initialize);

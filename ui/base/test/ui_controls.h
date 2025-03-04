@@ -5,13 +5,16 @@
 #ifndef UI_BASE_TEST_UI_CONTROLS_H_
 #define UI_BASE_TEST_UI_CONTROLS_H_
 
+#include <cstdint>
+
 #include "base/functional/callback_forward.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ui/gfx/native_widget_types.h"
 
 namespace ui_controls {
+
+enum KeyEventType { kKeyPress = 1 << 0, kKeyRelease = 1 << 1 };
 
 // A set of utility functions to generate native events in platform
 // independent way. Note that since the implementations depend on a window being
@@ -62,15 +65,15 @@ bool SendKeyPress(gfx::NativeWindow window,
                   bool shift,
                   bool alt,
                   bool command);
-bool SendKeyPressNotifyWhenDone(gfx::NativeWindow window,
-                                ui::KeyboardCode key,
-                                bool control,
-                                bool shift,
-                                bool alt,
-                                bool command,
-                                base::OnceClosure task);
-
-enum KeyEventType { kKeyPress = 1 << 0, kKeyRelease = 1 << 1 };
+bool SendKeyPressNotifyWhenDone(
+    gfx::NativeWindow window,
+    ui::KeyboardCode key,
+    bool control,
+    bool shift,
+    bool alt,
+    bool command,
+    base::OnceClosure task,
+    KeyEventType wait_for = KeyEventType::kKeyRelease);
 
 // The keys that may be held down while generating a keyboard/mouse event.
 enum AcceleratorState {
@@ -82,7 +85,7 @@ enum AcceleratorState {
 };
 
 // Not supported on win.
-// TODO(crbug.com/1414800): Support this on win.
+// TODO(crbug.com/40256300): Support this on win.
 #if !BUILDFLAG(IS_WIN)
 // Sends a key press and/or release message with/without modifier keys.
 // `key_event_types` is a bitmask of KeyEventType constants that indicates what
@@ -100,7 +103,7 @@ bool SendKeyEventsNotifyWhenDone(gfx::NativeWindow window,
 
 // This value specifies that no window hint is given and an appropriate target
 // window should be deduced from the target or current mouse position.
-constexpr gfx::NativeWindow kNoWindowHint = gfx::kNullNativeWindow;
+constexpr gfx::NativeWindow kNoWindowHint = gfx::NativeWindow();
 
 // Simulate a mouse move.
 //
@@ -181,7 +184,16 @@ bool SendTouchEventsNotifyWhenDone(int action,
                                    base::OnceClosure task);
 #endif
 
-#if defined(USE_AURA)
+#if BUILDFLAG(IS_LINUX)
+// Forces the platform implementation to use screen coordinates, even if they're
+// not really available, the next time that ui_controls::SendMouseMove() or
+// ui_controls::SendMouseMoveNotifyWhenDone() is called, or some other method
+// using these methods internally, e.g. ui_test_utils::SendMouseMoveSync(). All
+// following calls will behave normally (unless this method is called again).
+void ForceUseScreenCoordinatesOnce();
+#endif
+
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
 class UIControlsAura;
 void InstallUIControlsAura(UIControlsAura* instance);
 #endif

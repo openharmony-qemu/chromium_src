@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 // This file contains the ContextState class.
 
 #ifndef GPU_COMMAND_BUFFER_SERVICE_CONTEXT_STATE_H_
@@ -95,7 +100,6 @@ struct GPU_GLES2_EXPORT TextureUnit {
         return bound_texture_2d_array.get();
       default:
         NOTREACHED();
-        return nullptr;
     }
   }
 
@@ -115,7 +119,6 @@ struct GPU_GLES2_EXPORT TextureUnit {
         return bound_texture_2d_array.get();
       default:
         NOTREACHED();
-        return nullptr;
     }
   }
 
@@ -276,7 +279,6 @@ struct GPU_GLES2_EXPORT ContextState {
       cached_stencil_back_writemask = mask;
     } else {
       NOTREACHED();
-      return;
     }
     api()->glStencilMaskSeparateFn(op, mask);
   }

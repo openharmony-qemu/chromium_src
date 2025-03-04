@@ -13,6 +13,7 @@
 #include "base/files/file_path.h"
 #include "base/format_macros.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/test/bind.h"
 #include "base/test/task_environment.h"
 #include "base/test/trace_test_utils.h"
 #include "base/trace_event/memory_dump_manager.h"
@@ -38,10 +39,20 @@ namespace {
 class TracingObserverProtoTest : public testing::Test {
  public:
   void SetUp() override {
-    memory_instrumentation::TracingObserverProto::RegisterForTesting();
+    base::trace_event::MemoryDumpManager::GetInstance()->Initialize(
+        base::BindLambdaForTesting(
+            [](base::trace_event::MemoryDumpType,
+               base::trace_event::MemoryDumpLevelOfDetail) {}),
+        false);
+    memory_instrumentation::TracingObserverProto::GetInstance()
+        ->ResetForTesting();
     tracing::PerfettoTracedProcess::SetSystemProducerEnabledForTesting(false);
     PerfettoTracedProcess::GetTaskRunner()->ResetTaskRunnerForTesting(
         base::SingleThreadTaskRunner::GetCurrentDefault());
+  }
+
+  void TearDown() override {
+    base::trace_event::MemoryDumpManager::GetInstance()->ResetForTesting();
   }
 
   static base::trace_event::TraceConfig GetTraceConfig() {
@@ -54,16 +65,17 @@ class TracingObserverProtoTest : public testing::Test {
   base::trace_event::MemoryDumpRequestArgs FillMemoryDumpRequestArgs() {
     base::trace_event::MemoryDumpRequestArgs args;
     args.dump_guid = 1;
-    args.dump_type = base::trace_event::MemoryDumpType::EXPLICITLY_TRIGGERED;
-    args.level_of_detail = base::trace_event::MemoryDumpLevelOfDetail::DETAILED;
-    args.determinism = base::trace_event::MemoryDumpDeterminism::FORCE_GC;
+    args.dump_type = base::trace_event::MemoryDumpType::kExplicitlyTriggered;
+    args.level_of_detail =
+        base::trace_event::MemoryDumpLevelOfDetail::kDetailed;
+    args.determinism = base::trace_event::MemoryDumpDeterminism::kForceGc;
 
     return args;
   }
 
   base::trace_event::ProcessMemoryDump FillSamplePmd() {
     base::trace_event::MemoryDumpArgs dump_args = {
-        base::trace_event::MemoryDumpLevelOfDetail::DETAILED};
+        base::trace_event::MemoryDumpLevelOfDetail::kDetailed};
     base::trace_event::ProcessMemoryDump pmd =
         base::trace_event::ProcessMemoryDump(dump_args);
     pmd.CreateAllocatorDump("mad1",
@@ -141,10 +153,9 @@ memory_instrumentation::mojom::OSMemDump GetFakeOSMemDump(
 #endif
 TEST_F(TracingObserverProtoTest,
        MAYBE_AddChromeDumpToTraceIfEnabled_When_TraceLog_Disabled) {
-  auto tracing_observer =
-      std::make_unique<memory_instrumentation::TracingObserverProto>(
-          base::trace_event::TraceLog::GetInstance(), nullptr);
-  tracing::DataSourceTester data_source_tester(tracing_observer.get());
+  auto* tracing_observer =
+      memory_instrumentation::TracingObserverProto::GetInstance();
+  tracing::DataSourceTester data_source_tester(tracing_observer);
 
   base::trace_event::MemoryDumpRequestArgs args = FillMemoryDumpRequestArgs();
 
@@ -163,10 +174,9 @@ TEST_F(TracingObserverProtoTest,
 
 TEST_F(TracingObserverProtoTest,
        AddOsDumpToTraceIfEnabled_When_TraceLog_Disabled) {
-  auto tracing_observer =
-      std::make_unique<memory_instrumentation::TracingObserverProto>(
-          base::trace_event::TraceLog::GetInstance(), nullptr);
-  tracing::DataSourceTester data_source_tester(tracing_observer.get());
+  auto* tracing_observer =
+      memory_instrumentation::TracingObserverProto::GetInstance();
+  tracing::DataSourceTester data_source_tester(tracing_observer);
 
   perfetto::DataSourceConfig config;
 
@@ -188,12 +198,10 @@ TEST_F(TracingObserverProtoTest,
 }
 
 TEST_F(TracingObserverProtoTest, AddChromeDumpToTraceIfEnabled) {
-  auto tracing_observer =
-      std::make_unique<memory_instrumentation::TracingObserverProto>(
-          base::trace_event::TraceLog::GetInstance(), nullptr);
-  tracing::DataSourceTester data_source_tester(tracing_observer.get());
+  auto* tracing_observer =
+      memory_instrumentation::TracingObserverProto::GetInstance();
+  tracing::DataSourceTester data_source_tester(tracing_observer);
   data_source_tester.BeginTrace(GetTraceConfig());
-
   base::trace_event::MemoryDumpRequestArgs args = FillMemoryDumpRequestArgs();
 
   base::trace_event::ProcessMemoryDump pmd = FillSamplePmd();
@@ -201,11 +209,6 @@ TEST_F(TracingObserverProtoTest, AddChromeDumpToTraceIfEnabled) {
   EXPECT_TRUE(tracing_observer->AddChromeDumpToTraceIfEnabled(
       args, kTestPid, &pmd, kTimestamp));
   data_source_tester.EndTracing();
-
-  // In SDK build we may see some metadata packets as well.
-#if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  ASSERT_EQ(1ul, data_source_tester.GetFinalizedPacketCount());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
   const perfetto::protos::TracePacket* packet = nullptr;
   for (size_t i = 0; i < data_source_tester.GetFinalizedPacketCount(); ++i) {
@@ -258,11 +261,16 @@ TEST_F(TracingObserverProtoTest, AddChromeDumpToTraceIfEnabled) {
   EXPECT_EQ(423ul, edge1.target_id());
 }
 
-TEST_F(TracingObserverProtoTest, AddOsDumpToTraceIfEnabled) {
-  auto tracing_observer =
-      std::make_unique<memory_instrumentation::TracingObserverProto>(
-          base::trace_event::TraceLog::GetInstance(), nullptr);
-  tracing::DataSourceTester data_source_tester(tracing_observer.get());
+// TODO(crbug.com/376824014): Re-enable this test.
+#if defined(THREAD_SANITIZER)
+#define MAYBE_AddOsDumpToTraceIfEnabled DISABLED_AddOsDumpToTraceIfEnabled
+#else
+#define MAYBE_AddOsDumpToTraceIfEnabled AddOsDumpToTraceIfEnabled
+#endif
+TEST_F(TracingObserverProtoTest, MAYBE_AddOsDumpToTraceIfEnabled) {
+  auto* tracing_observer =
+      memory_instrumentation::TracingObserverProto::GetInstance();
+  tracing::DataSourceTester data_source_tester(tracing_observer);
   data_source_tester.BeginTrace(GetTraceConfig());
 
   base::trace_event::MemoryDumpRequestArgs args = FillMemoryDumpRequestArgs();
@@ -275,11 +283,6 @@ TEST_F(TracingObserverProtoTest, AddOsDumpToTraceIfEnabled) {
   EXPECT_TRUE(tracing_observer->AddOsDumpToTraceIfEnabled(
       args, kTestPid, os_dump, memory_map, kTimestamp));
   data_source_tester.EndTracing();
-
-  // In SDK build we may see some metadata packets as well.
-#if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  EXPECT_EQ(2ul, data_source_tester.GetFinalizedPacketCount());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
   const perfetto::protos::TracePacket* process_stats_trace_packet = nullptr;
   const perfetto::protos::TracePacket* smaps_trace_packet = nullptr;
@@ -337,15 +340,20 @@ TEST_F(TracingObserverProtoTest, AddOsDumpToTraceIfEnabled) {
   }
 }
 
-TEST_F(TracingObserverProtoTest, AsProtoInto) {
-  auto tracing_observer =
-      std::make_unique<memory_instrumentation::TracingObserverProto>(
-          base::trace_event::TraceLog::GetInstance(), nullptr);
-  tracing::DataSourceTester data_source_tester(tracing_observer.get());
+// TODO(crbug.com/376596183): Re-enable this test.
+#if defined(THREAD_SANITIZER)
+#define MAYBE_AsProtoInto DISABLED_AsProtoInto
+#else
+#define MAYBE_AsProtoInto AsProtoInto
+#endif
+TEST_F(TracingObserverProtoTest, MAYBE_AsProtoInto) {
+  auto* tracing_observer =
+      memory_instrumentation::TracingObserverProto::GetInstance();
+  tracing::DataSourceTester data_source_tester(tracing_observer);
   data_source_tester.BeginTrace(GetTraceConfig());
 
   base::trace_event::MemoryDumpArgs dump_args = {
-      base::trace_event::MemoryDumpLevelOfDetail::DETAILED};
+      base::trace_event::MemoryDumpLevelOfDetail::kDetailed};
   base::trace_event::ProcessMemoryDump pmd =
       base::trace_event::ProcessMemoryDump(dump_args);
 
@@ -369,23 +377,10 @@ TEST_F(TracingObserverProtoTest, AsProtoInto) {
     handle->Finalize();
   };
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   base::TrackEvent::Trace([&](base::TrackEvent::TraceContext ctx) {
     write_dump(ctx.NewTracePacket());
   });
-#else   // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  perfetto::DataSourceConfig config;
-  std::unique_ptr<perfetto::TraceWriter> trace_writer =
-      data_source_tester.GetProducerClient()->CreateTraceWriter(
-          config.target_buffer());
-  write_dump(trace_writer->NewTracePacket());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   data_source_tester.EndTracing();
-
-  // In SDK build we may see some metadata packets as well.
-#if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  EXPECT_EQ(1ul, data_source_tester.GetFinalizedPacketCount());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
   const perfetto::protos::TracePacket* packet = nullptr;
   for (size_t i = 0; i < data_source_tester.GetFinalizedPacketCount(); ++i) {

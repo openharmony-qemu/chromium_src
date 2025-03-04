@@ -4,6 +4,7 @@
 
 #include "base/threading/simple_thread.h"
 
+#include <memory>
 #include <ostream>
 
 #include "base/check.h"
@@ -63,7 +64,7 @@ PlatformThreadId SimpleThread::tid() {
   return tid_;
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
 PlatformThreadId SimpleThread::RealTid() {
   DCHECK(HasBeenStarted());
   return realTid_;
@@ -76,7 +77,7 @@ bool SimpleThread::HasBeenStarted() {
 
 void SimpleThread::ThreadMain() {
   tid_ = PlatformThread::CurrentId();
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
   realTid_ = PlatformThread::CurrentRealId();
 #endif
   PlatformThread::SetName(name_);
@@ -131,9 +132,9 @@ void DelegateSimpleThreadPool::Start() {
     std::string name(name_prefix_);
     name.push_back('/');
     name.append(NumberToString(i));
-    DelegateSimpleThread* thread = new DelegateSimpleThread(this, name);
+    auto thread = std::make_unique<DelegateSimpleThread>(this, name);
     thread->Start();
-    threads_.push_back(thread);
+    threads_.push_back(std::move(thread));
   }
 }
 
@@ -146,7 +147,6 @@ void DelegateSimpleThreadPool::JoinAll() {
   // Join and destroy all the worker threads.
   for (size_t i = 0; i < num_threads_; ++i) {
     threads_[i]->Join();
-    delete threads_[i];
   }
   threads_.clear();
   DCHECK(delegates_.empty());

@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -16,28 +17,27 @@
 #include "build/build_config.h"
 #include "components/viz/service/frame_sinks/frame_sink_bundle_impl.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/gfx/overlay_transform.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
 #include "base/command_line.h"
 #include "base/system/sys_info.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
-#include "res_sched_client_adapter.h"
-#include "base/ohos/input_sync/input_vsync_sync_lock.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
 namespace viz {
 
 namespace {
-using base::ohos::InputSyncLock;
+
 // Helper class which implements the CompositorFrameSinkClient interface so it
 // can route CompositorFrameSinkSupport client messages to a local
 // FrameSinkBundleImpl for batching, rather than having them go directly to the
@@ -96,6 +96,8 @@ class BundleClientProxy : public mojom::CompositorFrameSinkClient {
     }
   }
 
+  void OnSurfaceEvicted(const LocalSurfaceId& local_surface_id) override {}
+
  private:
   FrameSinkBundleImpl* GetBundle() {
     return manager_->GetFrameSinkBundle(bundle_id_);
@@ -111,7 +113,7 @@ class BundleClientProxy : public mojom::CompositorFrameSinkClient {
 CompositorFrameSinkImpl::CompositorFrameSinkImpl(
     FrameSinkManagerImpl* frame_sink_manager,
     const FrameSinkId& frame_sink_id,
-    absl::optional<FrameSinkBundleId> bundle_id,
+    std::optional<FrameSinkBundleId> bundle_id,
     mojo::PendingReceiver<mojom::CompositorFrameSink> receiver,
     mojo::PendingRemote<mojom::CompositorFrameSinkClient> client)
     : compositor_frame_sink_client_(std::move(client)),
@@ -150,14 +152,19 @@ void CompositorFrameSinkImpl::SetWantsBeginFrameAcks() {
   support_->SetWantsBeginFrameAcks();
 }
 
+void CompositorFrameSinkImpl::SetAutoNeedsBeginFrame() {
+  support_->SetAutoNeedsBeginFrame();
+}
+
 void CompositorFrameSinkImpl::SubmitCompositorFrame(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,
-    absl::optional<HitTestRegionList> hit_test_region_list,
+    std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
-#if defined(REPORT_SYS_EVENT)
-  auto count = frame.metadata.dropped_frame_count;
-  auto duration = frame.metadata.dropped_frame_duration;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  uint32_t count = static_cast<uint32_t>(frame.metadata.dropped_frame_count);
+  uint64_t duration =
+      static_cast<uint64_t>(frame.metadata.dropped_frame_duration);
   if (!!count && !!duration) {
     ReportVideoFrameDropStats(count, duration);
   }
@@ -172,7 +179,7 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
 void CompositorFrameSinkImpl::SubmitCompositorFrameSync(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,
-    absl::optional<HitTestRegionList> hit_test_region_list,
+    std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time,
     SubmitCompositorFrameSyncCallback callback) {
   SubmitCompositorFrameInternal(local_surface_id, std::move(frame),
@@ -183,7 +190,7 @@ void CompositorFrameSinkImpl::SubmitCompositorFrameSync(
 void CompositorFrameSinkImpl::SubmitCompositorFrameInternal(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,
-    absl::optional<HitTestRegionList> hit_test_region_list,
+    std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time,
     mojom::CompositorFrameSink::SubmitCompositorFrameSyncCallback callback) {
   const auto result = support_->MaybeSubmitCompositorFrame(
@@ -198,7 +205,6 @@ void CompositorFrameSinkImpl::SubmitCompositorFrameInternal(
               << " because " << reason;
   compositor_frame_sink_receiver_.ResetWithReason(static_cast<uint32_t>(result),
                                                   reason);
-  OnClientConnectionLost();
 }
 
 void CompositorFrameSinkImpl::DidNotProduceFrame(
@@ -213,7 +219,6 @@ void CompositorFrameSinkImpl::DidAllocateSharedBitmap(
     DLOG(ERROR) << "DidAllocateSharedBitmap failed for duplicate "
                 << "SharedBitmapId";
     compositor_frame_sink_receiver_.reset();
-    OnClientConnectionLost();
   }
 }
 
@@ -232,14 +237,12 @@ void CompositorFrameSinkImpl::BindLayerContext(
 }
 
 #if BUILDFLAG(IS_ANDROID)
-void CompositorFrameSinkImpl::SetThreadIds(
-    const std::vector<int32_t>& thread_ids) {
-  support_->SetThreadIds(/*from_untrusted_client=*/true,
-                         base::MakeFlatSet<base::PlatformThreadId>(thread_ids));
+void CompositorFrameSinkImpl::SetThreads(const std::vector<Thread>& threads) {
+  support_->SetThreads(/*from_untrusted_client=*/true, threads);
 }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 void CompositorFrameSinkImpl::ReportKeyThreadIds(
     const std::vector<int32_t>& thread_ids,
     int32_t process_id,
@@ -248,45 +251,37 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
   ResSchedStatusAdapter status = is_created
                                      ? ResSchedStatusAdapter::THREAD_CREATED
                                      : ResSchedStatusAdapter::THREAD_DESTROYED;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
+      switches::kProcessType);
   if (type == switches::kGpuProcess) {
     for (auto thread_id : thread_ids) {
       NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        status, process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+          status, process_id, thread_id,
+          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     }
   } else {
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
     for (auto thread_id : thread_ids) {
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE,
           base::BindOnce(
-              base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread), status,
-              process_id, thread_id, ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+              base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
+              status, process_id, thread_id,
+              ResSchedRoleAdapter::IMPORTANT_DISPLAY));
     }
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   }
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 }
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
-void CompositorFrameSinkImpl::SetHandledTouchEvent(bool handledTouchEvent) {
-  if (!support_ || !support_->begin_frame_source()) {
-    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
-    return;
-  }
-  InputSyncLock::GetInstance().SetHandledTouchEvent(handledTouchEvent);
-}
-
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 int CompositorFrameSinkImpl::GetFrameRate() {
   if (support_) {
     return support_->GetFrameRate();
   }
   return 0;
-}
-
-void CompositorFrameSinkImpl::TriggerVsyncImplTask() {
-  if (!support_ || !support_->begin_frame_source()) {
-    DLOG(ERROR) << "Compositor frame support or begin frame souce is not exist";
-    return;
-  }
-  support_->begin_frame_source()->TriggerVsync();
 }
 #endif
 

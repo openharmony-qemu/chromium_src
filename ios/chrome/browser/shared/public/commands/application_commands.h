@@ -5,7 +5,7 @@
 #ifndef IOS_CHROME_BROWSER_SHARED_PUBLIC_COMMANDS_APPLICATION_COMMANDS_H_
 #define IOS_CHROME_BROWSER_SHARED_PUBLIC_COMMANDS_APPLICATION_COMMANDS_H_
 
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 #include "base/ios/block_types.h"
 #include "ios/public/provider/chrome/browser/user_feedback/user_feedback_sender.h"
@@ -13,129 +13,108 @@
 class GURL;
 @class OpenNewTabCommand;
 @class ShowSigninCommand;
-@class StartVoiceSearchCommand;
 @class UIViewController;
-enum class DefaultBrowserPromoSource;
+namespace password_manager {
+enum class PasswordCheckReferrer;
+enum class WarningType;
+}  // namespace password_manager
+namespace signin_metrics {
+enum class AccessPoint;
+}  // namespace signin_metrics
 namespace syncer {
 enum class TrustedVaultUserActionTriggerForUMA;
 }  // namespace syncer
-namespace password_manager {
-struct CredentialUIEntry;
-}  // namespace password_manager
+namespace trusted_vault {
+enum class SecurityDomainId;
+}  // namespace trusted_vault
 
-// This protocol groups commands that are part of ApplicationCommands, but
-// may also be forwarded directly to a settings navigation controller.
-@protocol ApplicationSettingsCommands
-
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
-// Shows the accounts settings UI, presenting from `baseViewController`. If
-// `baseViewController` is nil BVC will be used as presenterViewController.
-- (void)showAccountsSettingsFromViewController:
-    (UIViewController*)baseViewController;
-
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
-// Shows the Google services settings UI, presenting from `baseViewController`.
-// If `baseViewController` is nil BVC will be used as presenterViewController.
-- (void)showGoogleServicesSettingsFromViewController:
-    (UIViewController*)baseViewController;
-
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
-// Shows the Sync settings UI, presenting from `baseViewController`.
-// If `baseViewController` is nil BVC will be used as presenterViewController.
-- (void)showSyncSettingsFromViewController:
-    (UIViewController*)baseViewController;
-
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
-// Shows the sync encryption passphrase UI, presenting from
-// `baseViewController`.
-- (void)showSyncPassphraseSettingsFromViewController:
-    (UIViewController*)baseViewController;
-
-// TODO(crbug.com/1406871): Remove the `startPasswordCheck` parameter when
-// kIOSPasswordCheckup feature is enabled by default.
-// Shows the list of saved passwords in the settings. `showCancelButton`
-// indicates whether a cancel button should be added as the left navigation item
-// of the saved passwords view. `startPasswordCheck` indicates whether a
-// password check should be started when the saved passwords are shown.
-- (void)showSavedPasswordsSettingsFromViewController:
-            (UIViewController*)baseViewController
-                                    showCancelButton:(BOOL)showCancelButton
-                                  startPasswordCheck:(BOOL)startPasswordCheck;
-
-// Shows the password details page for a credential.
-// `showCancelButton` indicates whether a cancel button should be added as the
-// left navigation item of the password details view.
-- (void)showPasswordDetailsForCredential:
-            (password_manager::CredentialUIEntry)credential
-                        showCancelButton:(BOOL)showCancelButton;
-
-// Shows the list of profiles (addresess) in the settings.
-- (void)showProfileSettingsFromViewController:
-    (UIViewController*)baseViewController;
-
-// Shows the list of credit cards in the settings.
-- (void)showCreditCardSettings;
-
-// Shows the settings page informing the user how to set Chrome as the default
-// browser.
-- (void)showDefaultBrowserSettingsFromViewController:
-            (UIViewController*)baseViewController
-                                        sourceForUMA:
-                                            (DefaultBrowserPromoSource)source;
-
-// Shows the settings page allowing the user to clear their browsing data.
-- (void)showClearBrowsingDataSettings;
-
-// Shows the Safety Check page and start Safety Check.
-- (void)showSafetyCheckSettingsAndStartSafetyCheck;
-
-// Shows the Safe Browsing page.
-- (void)showSafeBrowsingSettings;
-
-@end
+// The mode in which the TabGrid should be opened.
+enum class TabGridOpeningMode {
+  // Don't force any mode, use the current one.
+  kDefault,
+  // Force to display the incognito mode.
+  kIncognito,
+  // Force to display the regular mode.
+  kRegular,
+};
 
 // Protocol for commands that will generally be handled by the application,
-// rather than a specific tab; in practice this means the MainController
+// rather than a specific tab; in practice this means the SceneController
 // instance.
-// This protocol includes all of the methods in ApplicationSettingsCommands; an
-// object that implements the methods in this protocol should be able to forward
-// ApplicationSettingsCommands to the settings view controller if necessary.
-
-@protocol ApplicationCommands <NSObject, ApplicationSettingsCommands>
-
-// Dismisses all modal dialogs.
-- (void)dismissModalDialogs;
+@protocol ApplicationCommands
 
 // Dismisses all modal dialogs with a completion block that is called when
 // modals are dismissed (animations done).
 - (void)dismissModalDialogsWithCompletion:(ProceduralBlock)completion;
 
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
+// Shows the Password Checkup page for `referrer`.
+- (void)showPasswordCheckupPageForReferrer:
+    (password_manager::PasswordCheckReferrer)referrer;
+
+// Opens the Password Issues list displaying compromised, weak or reused
+// credentials for `warningType` and `referrer`.
+- (void)
+    showPasswordIssuesWithWarningType:(password_manager::WarningType)warningType
+                             referrer:(password_manager::PasswordCheckReferrer)
+                                          referrer;
+
+// TODO(crbug.com/41352590) : Do not pass baseViewController through dispatcher.
 // Shows the Settings UI, presenting from `baseViewController`.
 - (void)showSettingsFromViewController:(UIViewController*)baseViewController;
 
+// TODO(crbug.com/41352590) : Do not pass baseViewController through dispatcher.
+// Shows the Settings UI, presenting from `baseViewController` and with blue dot
+// for default browser settings if specified.
+- (void)showSettingsFromViewController:(UIViewController*)baseViewController
+              hasDefaultBrowserBlueDot:(BOOL)hasDefaultBrowserBlueDot;
+
+// Shows the settings UI for price tracking notifications.
+- (void)showPriceTrackingNotificationsSettings;
+
 // Presents the Trusted Vault reauth dialog.
 // `baseViewController` presents the sign-in.
+// `securityDomainID` Identifies a particular security domain.
 // `trigger` UI elements where the trusted vault reauth has been triggered.
+// `accessPoint` Identifies where the dialog is initiated from.
 - (void)
     showTrustedVaultReauthForFetchKeysFromViewController:
         (UIViewController*)baseViewController
+                                        securityDomainID:
+                                            (trusted_vault::SecurityDomainId)
+                                                securityDomainID
                                                  trigger:
                                                      (syncer::
                                                           TrustedVaultUserActionTriggerForUMA)
-                                                         trigger;
+                                                         trigger
+                                             accessPoint:
+                                                 (signin_metrics::AccessPoint)
+                                                     accessPoint;
 
 // Presents the Trusted Vault degraded recoverability (to enroll additional
 // recovery factors).
 // `baseViewController` presents the sign-in.
+// `securityDomainID` Identifies a particular security domain.
 // `trigger` UI elements where the trusted vault reauth has been triggered.
+// `accessPoint` Identifies where the dialog is initiated from.
 - (void)
     showTrustedVaultReauthForDegradedRecoverabilityFromViewController:
         (UIViewController*)baseViewController
+                                                     securityDomainID:
+                                                         (trusted_vault::
+                                                              SecurityDomainId)
+                                                             securityDomainID
                                                               trigger:
                                                                   (syncer::
                                                                        TrustedVaultUserActionTriggerForUMA)
-                                                                      trigger;
+                                                                      trigger
+                                                          accessPoint:
+                                                              (signin_metrics::
+                                                                   AccessPoint)
+                                                                  accessPoint;
+
+// Shows the Safe Browsing settings page presenting from `baseViewController`.
+- (void)showSafeBrowsingSettingsFromViewController:
+    (UIViewController*)baseViewController;
 
 // Starts a voice search on the current BVC.
 - (void)startVoiceSearch;
@@ -143,26 +122,21 @@ struct CredentialUIEntry;
 // Shows the History UI.
 - (void)showHistory;
 
-// Closes the History UI and opens a URL.
-- (void)closeSettingsUIAndOpenURL:(OpenNewTabCommand*)command;
+// Closes presented views and opens a URL in a new tab.
+- (void)closePresentedViewsAndOpenURL:(OpenNewTabCommand*)command;
 
-// Closes the History UI.
-- (void)closeSettingsUI;
+// Closes presented views.
+- (void)closePresentedViews;
 
 // Prepare to show the TabSwitcher UI.
 - (void)prepareTabSwitcher;
 
-// Shows the TabSwitcher UI. When the thumb strip is enabled, shows the
-// TabSwitcher UI, specifically in its grid layout.
-- (void)displayTabSwitcherInGridLayout;
+// Shows the TabGrid, in the chosen `mode`.
+- (void)displayTabGridInMode:(TabGridOpeningMode)mode;
 
-// Same as displayTabSwitcherInGridLayout, but also force tab switcher to
-// regular tabs page.
-- (void)displayRegularTabSwitcherInGridLayout;
-
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
-// Shows the Autofill Settings UI, presenting from `baseViewController`.
-- (void)showAutofillSettingsFromViewController:
+// TODO(crbug.com/41352590) : Do not pass baseViewController through dispatcher.
+// Shows the settings Privacy UI.
+- (void)showPrivacySettingsFromViewController:
     (UIViewController*)baseViewController;
 
 // Shows the Report an Issue UI, presenting from `baseViewController`.
@@ -179,16 +153,21 @@ struct CredentialUIEntry;
                                             specificProductData;
 
 // Opens the `command` URL in a new tab.
-// TODO(crbug.com/907527): Check if it is possible to merge it with the
+// TODO(crbug.com/41427539): Check if it is possible to merge it with the
 // URLLoader methods.
 - (void)openURLInNewTab:(OpenNewTabCommand*)command;
 
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
+// TODO(crbug.com/41352590) : Do not pass baseViewController through dispatcher.
 // Shows the signin UI, presenting from `baseViewController`.
 - (void)showSignin:(ShowSigninCommand*)command
     baseViewController:(UIViewController*)baseViewController;
 
-// TODO(crbug.com/779791) : Do not pass baseViewController through dispatcher.
+// Shows the account menu. On scene with regular width, the account menu appears
+// as a popover near the anchor view.
+- (void)showAccountMenuWithAnchorView:(UIView*)anchorView
+                           completion:(void (^)())completion;
+
+// TODO(crbug.com/41352590) : Do not pass baseViewController through dispatcher.
 // Shows the consistency promo UI that allows users to sign in to Chrome using
 // the default accounts on the device.
 // Redirects to `url` when the sign-in flow is complete.
@@ -205,6 +184,13 @@ struct CredentialUIEntry;
 
 // Open a new window with `userActivity`
 - (void)openNewWindowWithActivity:(NSUserActivity*)userActivity;
+
+// Closes all open modals and ensures that a non-incognito NTP tab is open. If
+// incognito is forced, then it will ensure an incognito NTP tab is open.
+- (void)prepareToPresentModal:(ProceduralBlock)completion;
+
+// Opens a debug menu for AI prototyping.
+- (void)openAIMenu;
 
 @end
 

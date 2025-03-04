@@ -7,6 +7,7 @@
 
 #include "ash/ash_export.h"
 #include "base/memory/raw_ptr.h"
+#include "ui/base/metadata/metadata_header_macros.h"
 #include "ui/views/controls/button/button.h"
 #include "ui/views/view.h"
 #include "ui/views/view_observer.h"
@@ -20,6 +21,8 @@ class PrivacyScreenToastController;
 // The view shown inside the privacy screen toast bubble.
 class ASH_EXPORT PrivacyScreenToastView : public views::View,
                                           public views::ViewObserver {
+  METADATA_HEADER(PrivacyScreenToastView, views::View)
+
  public:
   PrivacyScreenToastView(PrivacyScreenToastController* controller,
                          views::Button::PressedCallback callback);
@@ -33,14 +36,20 @@ class ASH_EXPORT PrivacyScreenToastView : public views::View,
   // Returns true if the toggle button is focused.
   bool IsButtonFocused() const;
 
+  const std::u16string& accessible_name() const { return accessible_name_; }
+
  private:
   // views::ViewObserver:
   void OnViewFocused(views::View* observed_view) override;
   void OnViewBlurred(views::View* observed_view) override;
 
-  raw_ptr<PrivacyScreenToastController, ExperimentalAsh> controller_ = nullptr;
-  raw_ptr<FeaturePodIconButton, ExperimentalAsh> button_ = nullptr;
-  raw_ptr<PrivacyScreenToastLabelView, ExperimentalAsh> label_ = nullptr;
+  // TODO(crbug.com/325137417): Remove this member and update the accessible
+  // name directly in the cache of the RootView that needs it.
+  std::u16string accessible_name_;
+
+  raw_ptr<PrivacyScreenToastController> controller_ = nullptr;
+  raw_ptr<FeaturePodIconButton> button_ = nullptr;
+  raw_ptr<PrivacyScreenToastLabelView> label_ = nullptr;
   bool is_enabled_ = false;
   bool is_managed_ = false;
 };

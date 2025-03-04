@@ -20,8 +20,6 @@
 #if BUILDFLAG(IS_APPLE)
 #ifdef __OBJC__
 @class NSString;
-#else
-class NSString;
 #endif
 #endif  // BUILDFLAG(IS_APPLE)
 
@@ -58,15 +56,15 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
   static const ClipboardFormatType& SvgType();
   static const ClipboardFormatType& RtfType();
   static const ClipboardFormatType& PngType();
-  // TODO(crbug.com/1201018): Remove this type.
+  // TODO(crbug.com/40178509): Remove this type.
   static const ClipboardFormatType& BitmapType();
-  static const ClipboardFormatType& WebCustomDataType();
+  // Chromium-only type for custom formats copied via DataTransfer API.
+  // See https://w3c.github.io/clipboard-apis/#clipboard-events-and-interfaces.
+  static const ClipboardFormatType& DataTransferCustomType();
 
-#if BUILDFLAG(IS_CHROMEOS)
-  // ChromeOS custom type to sync clipboard source metadata between Ash and
-  // Lacros.
-  static const ClipboardFormatType& DataTransferEndpointDataType();
-#endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_OHOS)
+  static const ClipboardFormatType& BookMarkType();
+#endif
 
 #if BUILDFLAG(IS_WIN)
   // ANSI formats. Only Windows differentiates between ANSI and UNICODE formats
@@ -86,6 +84,14 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
   static const ClipboardFormatType& FilenameType();
   static const ClipboardFormatType& IDListType();
   static const ClipboardFormatType& MozUrlType();
+
+  // Type only used by Chromium to track the source URL of clipboard data.
+  static const ClipboardFormatType& InternalSourceUrlType();
+
+  // Prevents clipboard data from being included in the clipboard history.
+  static const ClipboardFormatType& ClipboardHistoryType();
+  // Prevents clipboard data from being included in the cloud clipboard.
+  static const ClipboardFormatType& UploadCloudClipboardType();
 #endif
 
   // For custom formats, individual types are added to the clipboard with a type
@@ -120,7 +126,9 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
 #if BUILDFLAG(IS_WIN)
   const FORMATETC& ToFormatEtc() const { return *ChromeToWindowsType(&data_); }
 #elif BUILDFLAG(IS_APPLE)
-  NSString* ToNSString() const { return uttype_; }
+#if __OBJC__
+  NSString* ToNSString() const;
+#endif  // __OBJC__
   // Custom copy and assignment constructor to handle NSString.
   ClipboardFormatType(const ClipboardFormatType& other);
   ClipboardFormatType& operator=(const ClipboardFormatType& other);
@@ -159,10 +167,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
   explicit ClipboardFormatType(const std::string& native_format);
   std::string data_;
 #elif BUILDFLAG(IS_APPLE)
+#if __OBJC__
   explicit ClipboardFormatType(NSString* uttype);
-  // A Uniform Type identifier string. TODO(macOS 11): Change to a UTType
-  // object.
-  NSString* uttype_;
+#endif  // __OBJC__
+  struct ObjCStorage;
+  std::unique_ptr<ObjCStorage> objc_storage_;
 #else
 #error No ClipboardFormatType definition.
 #endif

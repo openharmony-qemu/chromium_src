@@ -13,9 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * A MessageLoop class for use in {@link CronetHttpURLConnection}.
- */
+/** A MessageLoop class for use in {@link CronetHttpURLConnection}. */
 class MessageLoop implements Executor {
     private final BlockingQueue<Runnable> mQueue;
 
@@ -56,7 +54,6 @@ class MessageLoop implements Executor {
      * @param useTimeout whether to use a timeout.
      * @param timeoutNano Time to wait, in nanoseconds.
      * @return A non-{@code null} Runnable from the queue.
-     * @throws InterruptedIOException
      */
     private Runnable take(boolean useTimeout, long timeoutNano) throws InterruptedIOException {
         Runnable task = null;
@@ -80,21 +77,18 @@ class MessageLoop implements Executor {
     }
 
     /**
-     * Runs the message loop. Be sure to call {@link MessageLoop#quit()}
-     * to end the loop. If an interruptedException occurs, the loop cannot be
-     * started again (see {@link #mLoopFailed}).
-     * @throws IOException
+     * Runs the message loop. Be sure to call {@link MessageLoop#quit()} to end the loop. If an
+     * interruptedException occurs, the loop cannot be started again (see {@link #mLoopFailed}).
      */
     public void loop() throws IOException {
         loop(0);
     }
 
     /**
-     * Runs the message loop. Be sure to call {@link MessageLoop#quit()}
-     * to end the loop. If an interruptedException occurs, the loop cannot be
-     * started again (see {@link #mLoopFailed}).
+     * Runs the message loop. Be sure to call {@link MessageLoop#quit()} to end the loop. If an
+     * interruptedException occurs, the loop cannot be started again (see {@link #mLoopFailed}).
+     *
      * @param timeoutMilli Timeout, in milliseconds, or 0 for no timeout.
-     * @throws IOException
      */
     public void loop(int timeoutMilli) throws IOException {
         assert calledOnValidThread();
@@ -109,8 +103,7 @@ class MessageLoop implements Executor {
             }
         }
         if (mLoopRunning) {
-            throw new IllegalStateException(
-                    "Cannot run loop when it is already running.");
+            throw new IllegalStateException("Cannot run loop when it is already running.");
         }
         mLoopRunning = true;
         while (mLoopRunning) {
@@ -144,9 +137,7 @@ class MessageLoop implements Executor {
         mLoopRunning = false;
     }
 
-    /**
-     * Posts a task to the message loop.
-     */
+    /** Posts a task to the message loop. */
     @Override
     public void execute(Runnable task) throws RejectedExecutionException {
         if (task == null) {
@@ -161,16 +152,12 @@ class MessageLoop implements Executor {
         }
     }
 
-    /**
-     * Returns whether the loop is currently running. Used in testing.
-     */
+    /** Returns whether the loop is currently running. Used in testing. */
     public boolean isRunning() {
         return mLoopRunning;
     }
 
-    /**
-     * Returns whether an exception occurred in {#loop()}. Used in testing.
-     */
+    /** Returns whether an exception occurred in {#loop()}. Used in testing. */
     public boolean hasLoopFailed() {
         return mLoopFailed;
     }

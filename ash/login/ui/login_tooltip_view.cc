@@ -7,10 +7,14 @@
 #include "ash/login/ui/non_accessible_view.h"
 #include "ash/login/ui/views_utils.h"
 #include "ash/style/ash_color_id.h"
+#include "chromeos/constants/chromeos_features.h"
 #include "ui/accessibility/ax_enums.mojom.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/base/models/image_model.h"
+#include "ui/chromeos/styles/cros_tokens_color_mappings.h"
 #include "ui/display/display.h"
 #include "ui/display/screen.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/controls/image_view.h"
 #include "ui/views/controls/label.h"
 #include "ui/views/layout/box_layout.h"
@@ -29,18 +33,24 @@ LoginTooltipView::LoginTooltipView(const std::u16string& message,
                                    base::WeakPtr<views::View> anchor_view)
     : LoginBaseBubbleView(std::move(anchor_view)) {
   info_icon_ = AddChildView(std::make_unique<views::ImageView>());
-  info_icon_->SetPreferredSize(gfx::Size(kInfoIconSizeDp, kInfoIconSizeDp));
+  const bool is_jelly = chromeos::features::IsJellyrollEnabled();
   info_icon_->SetImage(ui::ImageModel::FromVectorIcon(
-      views::kInfoIcon, kColorAshIconColorPrimary));
+      views::kInfoIcon,
+      is_jelly ? static_cast<ui::ColorId>(cros_tokens::kCrosSysOnSurface)
+               : kColorAshIconColorPrimary,
+      kInfoIconSizeDp));
 
   label_ = AddChildView(login_views_utils::CreateBubbleLabel(message, this));
-  label_->SetEnabledColorId(kColorAshTextColorPrimary);
+  label_->SetEnabledColorId(
+      is_jelly ? static_cast<ui::ColorId>(cros_tokens::kCrosSysOnSurface)
+               : kColorAshTextColorPrimary);
+
+  GetViewAccessibility().SetRole(ax::mojom::Role::kTooltip);
 }
 
 LoginTooltipView::~LoginTooltipView() = default;
 
-void LoginTooltipView::GetAccessibleNodeData(ui::AXNodeData* node_data) {
-  node_data->role = ax::mojom::Role::kTooltip;
-}
+BEGIN_METADATA(LoginTooltipView)
+END_METADATA
 
 }  // namespace ash

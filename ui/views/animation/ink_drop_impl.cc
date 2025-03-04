@@ -528,7 +528,7 @@ InkDropImpl::HighlightStateFactory::CreateStartState() {
       return std::make_unique<ShowHighlightOnRippleHiddenState>(
           this, base::TimeDelta());
   }
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 std::unique_ptr<InkDropImpl::HighlightState>
@@ -546,7 +546,7 @@ InkDropImpl::HighlightStateFactory::CreateHiddenState(
           this, animation_duration);
   }
   // Required for some compilers.
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 std::unique_ptr<InkDropImpl::HighlightState>
@@ -564,7 +564,7 @@ InkDropImpl::HighlightStateFactory::CreateVisibleState(
           this, animation_duration);
   }
   // Required for some compilers.
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 InkDropImpl::InkDropImpl(InkDropHost* ink_drop_host,
@@ -596,27 +596,11 @@ void InkDropImpl::HostSizeChanged(const gfx::Size& new_size) {
   // mask layer is set.
   root_layer_->SetBounds(gfx::Rect(new_size) +
                          root_layer_->bounds().OffsetFromOrigin());
+  RecreateRippleAndHighlight();
+}
 
-  const bool create_ink_drop_ripple = !!ink_drop_ripple_;
-  InkDropState state = GetTargetInkDropState();
-  if (ShouldAnimateToHidden(state))
-    state = views::InkDropState::HIDDEN;
-  DestroyInkDropRipple();
-
-  if (highlight_) {
-    bool visible = highlight_->IsFadingInOrVisible();
-    DestroyInkDropHighlight();
-    // Both the ripple and the highlight must have been destroyed before
-    // recreating either of them otherwise the mask will not get recreated.
-    CreateInkDropHighlight();
-    if (visible)
-      highlight_->FadeIn(base::TimeDelta());
-  }
-
-  if (create_ink_drop_ripple) {
-    CreateInkDropRipple();
-    ink_drop_ripple_->SnapToState(state);
-  }
+void InkDropImpl::HostViewThemeChanged() {
+  RecreateRippleAndHighlight();
 }
 
 void InkDropImpl::HostTransformChanged(const gfx::Transform& new_transform) {
@@ -854,6 +838,31 @@ void InkDropImpl::ExitHighlightState() {
     highlight_state_->Exit();
   }
   highlight_state_ = nullptr;
+}
+
+void InkDropImpl::RecreateRippleAndHighlight() {
+  const bool create_ink_drop_ripple = !!ink_drop_ripple_;
+  InkDropState state = GetTargetInkDropState();
+  if (ShouldAnimateToHidden(state)) {
+    state = views::InkDropState::HIDDEN;
+  }
+  DestroyInkDropRipple();
+
+  if (highlight_) {
+    bool visible = highlight_->IsFadingInOrVisible();
+    DestroyInkDropHighlight();
+    // Both the ripple and the highlight must have been destroyed before
+    // recreating either of them otherwise the mask will not get recreated.
+    CreateInkDropHighlight();
+    if (visible) {
+      highlight_->FadeIn(base::TimeDelta());
+    }
+  }
+
+  if (create_ink_drop_ripple) {
+    CreateInkDropRipple();
+    ink_drop_ripple_->SnapToState(state);
+  }
 }
 
 }  // namespace views

@@ -2,13 +2,26 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+COMMON_PERF_DATA = [
+  "//third_party/crossbench/.vpython3",
+  "//third_party/crossbench/cb.py",
+  "//third_party/crossbench/crossbench/",
+  "//third_party/crossbench/config/",
+]
+
 if (!is_android) {
   group("perf") {
     testonly = true
-    data_deps = [ ":perf_without_chrome" ]
+    data = COMMON_PERF_DATA
+    data_deps = [
+      ":perf_without_chrome",
+    ]
     if (!use_musl) {
       data_deps +=
           [ "//tools/perf/chrome_telemetry_build:telemetry_chrome_test" ]
+    }
+    if (is_linux || is_mac || is_win) {
+      data_deps += [ "//chrome/test/chromedriver:chromedriver_server" ]
     }
   }
 } else {
@@ -16,9 +29,15 @@ if (!is_android) {
     forward_variables_from(invoker, [ "telemetry_target_suffix" ])
     group(target_name) {
       testonly = true
-      data_deps = [ ":perf_without_chrome" ]
+      data = COMMON_PERF_DATA
+      data_deps = [
+        ":perf_without_chrome",
+      ]
       if (!use_musl) {
-        data_deps += [ "//tools/perf/chrome_telemetry_build:telemetry_chrome_test${telemetry_target_suffix}" ]
+        data_deps += [
+          "//chrome/test/chromedriver:chromedriver_server($host_toolchain)",
+          "//tools/perf/chrome_telemetry_build:telemetry_chrome_test${telemetry_target_suffix}"
+        ]
       }
     }
   }
@@ -66,6 +85,9 @@ group("perf_without_chrome") {
 
     # For blink_perf benchmarks.
     "//third_party/blink/perf_tests/",
+
+    # For Speedometer benchmarks.
+    "//third_party/speedometer/v3.0",
 
     # For smoothness.tough_canvas_cases
     "//chrome/test/data/perf/",

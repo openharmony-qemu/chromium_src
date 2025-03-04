@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -23,9 +24,7 @@
 #include "content/test/test_render_widget_host.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
-#include "third_party/blink/public/mojom/bluetooth/web_bluetooth.mojom-forward.h"
 #include "third_party/blink/public/mojom/loader/transferrable_url_loader.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
 #include "third_party/blink/public/mojom/security_context/insecure_request_policy.mojom-forward.h"
@@ -35,10 +34,6 @@
 #if !BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/public/mojom/hid/hid.mojom-forward.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
-
-namespace net {
-class IPEndPoint;
-}
 
 namespace content {
 
@@ -87,7 +82,7 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
   TestPage& GetPage() override;
   MockRenderProcessHost* GetProcess() const override;
   MockAgentSchedulingGroupHost& GetAgentSchedulingGroup() override;
-  TestRenderWidgetHost* GetRenderWidgetHost() override;
+  TestRenderWidgetHost* GetRenderWidgetHost();
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
   void ReportInspectorIssue(blink::mojom::InspectorIssueInfoPtr issue) override;
@@ -113,11 +108,13 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
   void SimulateUnloadACK() override;
   void SimulateUserActivation() override;
   const std::vector<std::string>& GetConsoleMessages() override;
+  void ClearConsoleMessages() override;
   int GetHeavyAdIssueCount(HeavyAdIssueType type) override;
   void SimulateManifestURLUpdate(const GURL& manifest_url) override;
   TestRenderFrameHost* AppendFencedFrame() override;
   void CreateWebUsbServiceForTesting(
       mojo::PendingReceiver<blink::mojom::WebUsbService> receiver) override;
+  void ResetLocalFrame() override;
 
 #if !BUILDFLAG(IS_ANDROID)
   void CreateHidServiceForTesting(
@@ -156,16 +153,23 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
                                               bool has_user_gesture);
 
   void SimulateDidChangeOpener(
-      const absl::optional<blink::LocalFrameToken>& opener_frame_token);
+      const std::optional<blink::LocalFrameToken>& opener_frame_token);
 
   void DidEnforceInsecureRequestPolicy(
       blink::mojom::InsecureRequestPolicy policy);
 
   // Returns the number of FedCM issues of FederatedAuthRequestResult type
-  // `filter` sent to DevTools. If `filter` is absl::nullopt, returns the total
-  // number of FedCM issues of any type sent to DevTools.
+  // `status_type` sent to DevTools. If `status_type` is std::nullopt, returns
+  // the total number of FedCM issues of any type sent to DevTools.
   int GetFederatedAuthRequestIssueCount(
-      absl::optional<blink::mojom::FederatedAuthRequestResult> filter);
+      std::optional<blink::mojom::FederatedAuthRequestResult> status_type);
+
+  // Returns the number of FedCM issues of FederatedAuthUserInfoRequestResult
+  // type `status_type` sent to DevTools. If `status_type` is std::nullopt,
+  // returns the total number of FedCM issues of any type sent to DevTools.
+  int GetFederatedAuthUserInfoRequestIssueCount(
+      std::optional<blink::mojom::FederatedAuthUserInfoRequestResult>
+          status_type);
 
   // If set, navigations will appear to have cleared the history list in the
   // RenderFrame (DidCommitProvisionalLoadParams::history_list_was_cleared).
@@ -184,14 +188,8 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
   // TODO(clamy): Have NavigationSimulator make the relevant calls directly and
   // remove this function.
   void PrepareForCommitDeprecatedForNavigationSimulator(
-      const net::IPEndPoint& remote_endpoint,
-      bool was_fetched_via_cache,
-      bool is_signed_exchange_inner_response,
-      net::HttpResponseInfo::ConnectionInfo connection_info,
-      absl::optional<net::SSLInfo> ssl_info,
-      scoped_refptr<net::HttpResponseHeaders> response_headers,
-      mojo::ScopedDataPipeConsumerHandle response_body,
-      const std::vector<std::string>& dns_aliases);
+      network::mojom::URLResponseHeadPtr response,
+      mojo::ScopedDataPipeConsumerHandle response_body);
 
   // Used to simulate the commit of a navigation having been processed in the
   // renderer. If parameters required to commit are not provided, they will be
@@ -202,10 +200,6 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
       mojo::PendingReceiver<blink::mojom::BrowserInterfaceBroker>
           browser_interface_broker_receiver,
       bool same_document);
-
-  // Creates a WebBluetooth Service with a dummy InterfaceRequest.
-  WebBluetoothServiceImpl* CreateWebBluetoothServiceForTesting(
-      mojo::PendingReceiver<blink::mojom::WebBluetoothService> receiver);
 
   // Returns a pending Frame remote that represents a connection to a non-
   // existent renderer, where all messages will go into the void.
@@ -267,19 +261,18 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
       network::mojom::URLLoaderClientEndpointsPtr url_loader_client_endpoints,
       std::unique_ptr<blink::PendingURLLoaderFactoryBundle>
           subresource_loader_factories,
-      absl::optional<std::vector<blink::mojom::TransferrableURLLoaderPtr>>
+      std::optional<std::vector<blink::mojom::TransferrableURLLoaderPtr>>
           subresource_overrides,
       blink::mojom::ControllerServiceWorkerInfoPtr
           controller_service_worker_info,
       blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
       mojo::PendingRemote<network::mojom::URLLoaderFactory>
-          prefetch_loader_factory,
-      mojo::PendingRemote<network::mojom::URLLoaderFactory>
-          topics_loader_factory,
+          subresource_proxying_loader_factory,
       mojo::PendingRemote<network::mojom::URLLoaderFactory>
           keep_alive_loader_factory,
-      mojo::PendingRemote<blink::mojom::ResourceCache> resource_cache_remote,
-      const absl::optional<blink::ParsedPermissionsPolicy>& permissions_policy,
+      mojo::PendingAssociatedRemote<blink::mojom::FetchLaterLoaderFactory>
+          fetch_later_loader_factory,
+      const std::optional<blink::ParsedPermissionsPolicy>& permissions_policy,
       blink::mojom::PolicyContainerPtr policy_container,
       const blink::DocumentToken& document_token,
       const base::UnguessableToken& devtools_navigation_token) override;
@@ -291,7 +284,7 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
       bool has_stale_copy_in_cache,
       int32_t error_code,
       int32_t extended_error_code,
-      const absl::optional<std::string>& error_page_content,
+      const std::optional<std::string>& error_page_content,
       std::unique_ptr<blink::PendingURLLoaderFactoryBundle>
           subresource_loader_factories,
       const blink::DocumentToken& document_token,
@@ -305,14 +298,8 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
                                   int response_code);
 
   void PrepareForCommitInternal(
-      const net::IPEndPoint& remote_endpoint,
-      bool was_fetched_via_cache,
-      bool is_signed_exchange_inner_response,
-      net::HttpResponseInfo::ConnectionInfo connection_info,
-      absl::optional<net::SSLInfo> ssl_info,
-      scoped_refptr<net::HttpResponseHeaders> response_headers,
-      mojo::ScopedDataPipeConsumerHandle response_body,
-      const std::vector<std::string>& dns_aliases);
+      network::mojom::URLResponseHeadPtr response,
+      mojo::ScopedDataPipeConsumerHandle response_body);
 
   // Computes the page ID for a pending navigation in this RenderFrameHost;
   int32_t ComputeNextPageID();
@@ -339,6 +326,10 @@ class TestRenderFrameHost : public RenderFrameHostImpl,
   // ReportInspectorIssue.
   std::unordered_map<blink::mojom::FederatedAuthRequestResult, int>
       federated_auth_counts_;
+
+  // Keeps a count of getUserInfo() issues sent to ReportInspectorIssue.
+  std::unordered_map<blink::mojom::FederatedAuthUserInfoRequestResult, int>
+      federated_auth_user_info_counts_;
 
   TestRenderFrameHostCreationObserver child_creation_observer_;
 

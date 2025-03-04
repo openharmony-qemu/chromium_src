@@ -8,6 +8,7 @@
 #include "remoting/host/win/host_service.h"
 
 #include <windows.h>
+
 #include <sddl.h>
 #include <wtsapi32.h>
 
@@ -210,7 +211,6 @@ void HostService::CreateLauncher(
                                  base::MessagePumpType::IO);
   if (!io_task_runner.get()) {
     LOG(FATAL) << "Failed to start the I/O thread";
-    return;
   }
 
   daemon_process_ = DaemonProcess::Create(

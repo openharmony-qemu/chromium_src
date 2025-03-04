@@ -1,0 +1,13 @@
+arkweb_content_renderer_media_ohos_media_player_sources = [
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client.cc",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client.h",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client_factory.cc",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h",
+]
+
+arkweb_content_renderer_media_ohos_custom_media_player_sources = [
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_custom_media_player_renderer_client.cc",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_custom_media_player_renderer_client.h",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_custom_media_player_renderer_client_factory.cc",
+    "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_custom_media_player_renderer_client_factory.h",
+]

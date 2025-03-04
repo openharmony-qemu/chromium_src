@@ -7,20 +7,21 @@
 
 #include <stddef.h>
 
+#include <optional>
+
 #include "base/check_op.h"
 #include "base/gtest_prod_util.h"
 #include "base/lazy_instance.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
-#include "content/browser/coop_related_group.h"
 #include "content/browser/isolation_context.h"
+#include "content/browser/security/coop/coop_related_group.h"
 #include "content/browser/site_instance_group_manager.h"
 #include "content/browser/web_exposed_isolation_info.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/render_process_host_observer.h"
 #include "content/public/browser/storage_partition_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/origin.h"
 
 class GURL;
@@ -102,8 +103,12 @@ class CONTENT_EXPORT BrowsingInstance final
   //
   // `is_guest` specifies whether this BrowsingInstance will
   // be used in a <webview> guest; `is_fenced` specifies whether this
-  // BrowsingInstance is used inside a fenced frame. Note that both `is_guest`
-  // and `is_fenced` cannot change over the lifetime of the BrowsingInstance.
+  // BrowsingInstance is used inside a fenced frame.
+  // `is_fixed_storage_partition` indicates whether the current
+  // StoragePartition will apply to future navigations. It must be set to true
+  // if `is_guest` is true. Note that `is_guest`, `is_fenced`, and
+  // `is_fixed_storage_partition` cannot change over the lifetime of the
+  // BrowsingInstance.
   //
   // `coop_related_group` represents the CoopRelatedGroup to which this
   // BrowsingInstance belongs. Pages that live in BrowsingInstances in the same
@@ -118,8 +123,9 @@ class CONTENT_EXPORT BrowsingInstance final
       const WebExposedIsolationInfo& web_exposed_isolation_info,
       bool is_guest,
       bool is_fenced,
+      bool is_fixed_storage_partition,
       const scoped_refptr<CoopRelatedGroup>& coop_related_group,
-      absl::optional<url::Origin> common_coop_origin);
+      std::optional<url::Origin> common_coop_origin);
 
   ~BrowsingInstance();
 
@@ -130,6 +136,11 @@ class CONTENT_EXPORT BrowsingInstance final
   // be used to track this BrowsingInstance in other areas of the code, along
   // with any other state needed to make isolation decisions.
   const IsolationContext& isolation_context() { return isolation_context_; }
+
+  // Return true if the StoragePartition should be preserved across future
+  // navigations in the frames belonging to this BrowsingInstance. For <webview>
+  // tags, this always returns true.
+  bool is_fixed_storage_partition() { return is_fixed_storage_partition_; }
 
   // Get the SiteInstanceGroupManager that controls all of the SiteInstance
   // groups associated with this BrowsingInstance.
@@ -209,9 +220,16 @@ class CONTENT_EXPORT BrowsingInstance final
   // BrowsingInstance.
   void UnregisterSiteInstance(SiteInstanceImpl* site_instance);
 
-  // Returns the Id of the CoopRelatedGroup to which this BrowsingInstance
-  // belongs.
-  CoopRelatedGroupId GetCoopRelatedGroupId();
+  // Returns the token uniquely identifying the CoopRelatedGroup this
+  // BrowsingInstance belongs to. This might be used in the renderer, as opposed
+  // to IDs.
+  base::UnguessableToken coop_related_group_token() const {
+    return coop_related_group_->token();
+  }
+
+  // Returns the token uniquely identifying this BrowsingInstance. See member
+  // declaration for more context.
+  base::UnguessableToken token() const { return token_; }
 
   // Returns the total number of WebContents either living in this
   // BrowsingInstance or that can communicate with it via the CoopRelatedGroup.
@@ -243,7 +261,8 @@ class CONTENT_EXPORT BrowsingInstance final
   // Map of SiteInfo to SiteInstance, to ensure we only have one SiteInstance
   // per SiteInfo. See https://crbug.com/1085275#c2 for the rationale behind
   // why SiteInfo is the right class to key this on.
-  typedef std::map<SiteInfo, SiteInstanceImpl*> SiteInstanceMap;
+  typedef std::map<SiteInfo, raw_ptr<SiteInstanceImpl, CtnExperimental>>
+      SiteInstanceMap;
 
   // Returns the cross-origin isolation status of the BrowsingInstance.
   const WebExposedIsolationInfo& web_exposed_isolation_info() const {
@@ -252,7 +271,7 @@ class CONTENT_EXPORT BrowsingInstance final
 
   SiteInstanceImpl* default_site_instance() { return default_site_instance_; }
 
-  const absl::optional<url::Origin>& common_coop_origin() const {
+  const std::optional<url::Origin>& common_coop_origin() const {
     return common_coop_origin_;
   }
 
@@ -309,7 +328,7 @@ class CONTENT_EXPORT BrowsingInstance final
   //
   // See crbug.com/1212266 for more context on why we track the
   // StoragePartitionConfig here.
-  absl::optional<StoragePartitionConfig> storage_partition_config_;
+  std::optional<StoragePartitionConfig> storage_partition_config_;
 
   // The CoopRelatedGroup this BrowsingInstance belongs to. BrowsingInstances in
   // the same CoopRelatedGroup have limited window proxy access to each other.
@@ -334,10 +353,26 @@ class CONTENT_EXPORT BrowsingInstance final
   // given, of only being able to DOM script same-origin same-COOP documents,
   // and to have limited cross-origin communication with all other pages.
   //
-  // TODO(https://crbug.com/1385827): This assumes that popups opened from
+  // TODO(crbug.com/40879437): This assumes that popups opened from
   // cross-origin iframes are opened with no-opener. Once COOP inheritance for
   // those cases is figured out, change the mentions of origin to "COOP origin".
-  absl::optional<url::Origin> common_coop_origin_;
+  std::optional<url::Origin> common_coop_origin_;
+
+  // Set to true if the StoragePartition should be preserved across future
+  // navigations in the frames belonging to this BrowsingInstance. For <webview>
+  // tags, this is always true.
+  //
+  // TODO(crbug.com/40943418): We actually always want this behavior. Remove
+  // this bit when we are ready.
+  const bool is_fixed_storage_partition_;
+
+  // A token uniquely identifying this BrowsingInstance. This is used in case we
+  // need this information available in the renderer process, rather than
+  // sending an ID. Both IDs and Tokens are necessary, because some parts of the
+  // process model use the ordering of the IDs, that cannot be provided by
+  // tokens alone. Also note that IDs are defined in IsolationContext while
+  // tokens are more conveniently defined here.
+  const base::UnguessableToken token_ = base::UnguessableToken::Create();
 };
 
 }  // namespace content

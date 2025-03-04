@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base/check_op.h"
+#include "base/time/time.h"
 #include "chromeos/ash/components/cryptohome/common_types.h"
 #include "components/version_info/version_info.h"
 
@@ -34,7 +35,7 @@ bool AuthFactorRef::operator==(const AuthFactorRef& other) const {
 // =============== `AuthFactorCommonMetadata` ===============
 AuthFactorCommonMetadata::AuthFactorCommonMetadata()
     : chrome_version_last_updated_(
-          ComponentVersion(version_info::GetVersionNumber())) {}
+          ComponentVersion(std::string(version_info::GetVersionNumber()))) {}
 
 AuthFactorCommonMetadata::AuthFactorCommonMetadata(ComponentVersion chrome,
                                                    ComponentVersion chromeos)
@@ -59,6 +60,79 @@ bool AuthFactorCommonMetadata::operator==(
           other.chromeos_version_last_updated_);
 }
 
+// =============== `Factor-specific Status` ===============
+PinStatus::PinStatus() : available_at_(base::Time::Now()) {}
+
+PinStatus::PinStatus(base::TimeDelta available_in)
+    : available_at_(base::Time::Now() + available_in) {}
+
+PinStatus::PinStatus(PinStatus&&) noexcept = default;
+PinStatus& PinStatus::operator=(PinStatus&&) noexcept = default;
+PinStatus::PinStatus(const PinStatus&) = default;
+PinStatus& PinStatus::operator=(const PinStatus&) = default;
+PinStatus::~PinStatus() = default;
+
+bool PinStatus::IsLockedFactor() const {
+  return base::Time::Now() < available_at_;
+}
+
+base::Time PinStatus::AvailableAt() const {
+  return available_at_;
+}
+
+// =============== `Factor-specific Metadata` ===============
+
+PasswordMetadata PasswordMetadata::CreateWithoutSalt() {
+  return PasswordMetadata(std::nullopt);
+}
+
+PasswordMetadata PasswordMetadata::CreateForOnlinePassword(SystemSalt salt) {
+  return PasswordMetadata(KnowledgeFactorHashInfo{
+      .algorithm = KnowledgeFactorHashAlgorithmWrapper::kSha256TopHalf,
+      .salt = std::move(*salt),
+      .should_generate_key_store = false,
+  });
+}
+
+PasswordMetadata PasswordMetadata::CreateForLocalPassword(SystemSalt salt) {
+  return PasswordMetadata(KnowledgeFactorHashInfo{
+      .algorithm = KnowledgeFactorHashAlgorithmWrapper::kSha256TopHalf,
+      .salt = std::move(*salt),
+      .should_generate_key_store = true,
+  });
+}
+
+PasswordMetadata::PasswordMetadata(
+    std::optional<KnowledgeFactorHashInfo> hash_info)
+    : hash_info_(std::move(hash_info)) {}
+PasswordMetadata::PasswordMetadata(PasswordMetadata&&) noexcept = default;
+PasswordMetadata& PasswordMetadata::operator=(PasswordMetadata&&) noexcept =
+    default;
+PasswordMetadata::PasswordMetadata(const PasswordMetadata&) = default;
+PasswordMetadata& PasswordMetadata::operator=(const PasswordMetadata&) =
+    default;
+PasswordMetadata::~PasswordMetadata() = default;
+
+PinMetadata PinMetadata::CreateWithoutSalt() {
+  return PinMetadata(std::nullopt);
+}
+
+PinMetadata PinMetadata::Create(PinSalt salt) {
+  return PinMetadata(KnowledgeFactorHashInfo{
+      .algorithm = KnowledgeFactorHashAlgorithmWrapper::kPbkdf2Aes2561234,
+      .salt = std::move(*salt),
+      .should_generate_key_store = true,
+  });
+}
+
+PinMetadata::PinMetadata(std::optional<KnowledgeFactorHashInfo> hash_info)
+    : hash_info_(std::move(hash_info)) {}
+PinMetadata::PinMetadata(PinMetadata&&) noexcept = default;
+PinMetadata& PinMetadata::operator=(PinMetadata&&) noexcept = default;
+PinMetadata::PinMetadata(const PinMetadata&) = default;
+PinMetadata& PinMetadata::operator=(const PinMetadata&) = default;
+PinMetadata::~PinMetadata() = default;
+
 // =============== `AuthFactor` ===============
 
 AuthFactor::AuthFactor(AuthFactorRef ref, AuthFactorCommonMetadata metadata)
@@ -66,9 +140,11 @@ AuthFactor::AuthFactor(AuthFactorRef ref, AuthFactorCommonMetadata metadata)
 
 AuthFactor::AuthFactor(AuthFactorRef ref,
                        AuthFactorCommonMetadata metadata,
+                       PinMetadata pin_metadata,
                        PinStatus status)
     : ref_(std::move(ref)),
       common_metadata_(std::move(metadata)),
+      factor_metadata_(std::move(pin_metadata)),
       factor_status_(std::move(status)) {
   CHECK_EQ(ref_.type(), AuthFactorType::kPin);
 }
@@ -80,6 +156,42 @@ AuthFactor::AuthFactor(AuthFactorRef ref,
       common_metadata_(std::move(metadata)),
       factor_metadata_(std::move(factor_metadata)) {
   CHECK_EQ(ref_.type(), AuthFactorType::kSmartCard);
+}
+
+AuthFactor::AuthFactor(AuthFactorRef ref,
+                       AuthFactorCommonMetadata metadata,
+                       CryptohomeRecoveryMetadata factor_metadata)
+    : ref_(std::move(ref)),
+      common_metadata_(std::move(metadata)),
+      factor_metadata_(std::move(factor_metadata)) {
+  CHECK_EQ(ref_.type(), AuthFactorType::kRecovery);
+}
+
+AuthFactor::AuthFactor(AuthFactorRef ref,
+                       AuthFactorCommonMetadata metadata,
+                       PasswordMetadata factor_metadata)
+    : ref_(std::move(ref)),
+      common_metadata_(std::move(metadata)),
+      factor_metadata_(std::move(factor_metadata)) {
+  CHECK_EQ(ref_.type(), AuthFactorType::kPassword);
+}
+
+AuthFactor::AuthFactor(AuthFactorRef ref,
+                       AuthFactorCommonMetadata metadata,
+                       PinMetadata factor_metadata)
+    : ref_(std::move(ref)),
+      common_metadata_(std::move(metadata)),
+      factor_metadata_(std::move(factor_metadata)) {
+  CHECK_EQ(ref_.type(), AuthFactorType::kPin);
+}
+
+AuthFactor::AuthFactor(AuthFactorRef ref,
+                       AuthFactorCommonMetadata metadata,
+                       FingerprintMetadata fingerprint_metadata)
+    : ref_(std::move(ref)),
+      common_metadata_(std::move(metadata)),
+      factor_metadata_(std::move(fingerprint_metadata)) {
+  CHECK_EQ(ref_.type(), AuthFactorType::kFingerprint);
 }
 
 AuthFactor::AuthFactor(AuthFactor&&) noexcept = default;
@@ -107,6 +219,23 @@ const PinStatus& AuthFactor::GetPinStatus() const {
 
 const SmartCardMetadata& AuthFactor::GetSmartCardMetadata() const {
   return absl::get<SmartCardMetadata>(factor_metadata_);
+}
+
+const CryptohomeRecoveryMetadata& AuthFactor::GetCryptohomeRecoveryMetadata()
+    const {
+  return absl::get<CryptohomeRecoveryMetadata>(factor_metadata_);
+}
+
+const PasswordMetadata& AuthFactor::GetPasswordMetadata() const {
+  return absl::get<PasswordMetadata>(factor_metadata_);
+}
+
+const PinMetadata& AuthFactor::GetPinMetadata() const {
+  return absl::get<PinMetadata>(factor_metadata_);
+}
+
+const FingerprintMetadata& AuthFactor::GetFingerprintMetadata() const {
+  return absl::get<FingerprintMetadata>(factor_metadata_);
 }
 
 }  // namespace cryptohome

@@ -6,12 +6,13 @@
 
 #include <stddef.h>
 
+#include <string_view>
+
 #include "base/containers/contains.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/escape.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
 #include "components/google/core/common/google_util.h"
 #include "components/signin/core/browser/chrome_connected_header_helper.h"
@@ -39,30 +40,30 @@ ManageAccountsParams& ManageAccountsParams::operator=(
     const ManageAccountsParams&) = default;
 
 // Trivial constructors and destructors.
-DiceResponseParams::DiceResponseParams() {}
-DiceResponseParams::~DiceResponseParams() {}
+DiceResponseParams::DiceResponseParams() = default;
+DiceResponseParams::~DiceResponseParams() = default;
 DiceResponseParams::DiceResponseParams(DiceResponseParams&&) = default;
 DiceResponseParams& DiceResponseParams::operator=(DiceResponseParams&&) =
     default;
 
-DiceResponseParams::AccountInfo::AccountInfo() {}
+DiceResponseParams::AccountInfo::AccountInfo() = default;
 DiceResponseParams::AccountInfo::AccountInfo(const std::string& gaia_id,
                                              const std::string& email,
                                              int session_index)
     : gaia_id(gaia_id), email(email), session_index(session_index) {}
-DiceResponseParams::AccountInfo::~AccountInfo() {}
+DiceResponseParams::AccountInfo::~AccountInfo() = default;
 DiceResponseParams::AccountInfo::AccountInfo(const AccountInfo&) = default;
 
-DiceResponseParams::SigninInfo::SigninInfo() {}
-DiceResponseParams::SigninInfo::~SigninInfo() {}
+DiceResponseParams::SigninInfo::SigninInfo() = default;
+DiceResponseParams::SigninInfo::~SigninInfo() = default;
 DiceResponseParams::SigninInfo::SigninInfo(const SigninInfo&) = default;
 
-DiceResponseParams::SignoutInfo::SignoutInfo() {}
-DiceResponseParams::SignoutInfo::~SignoutInfo() {}
+DiceResponseParams::SignoutInfo::SignoutInfo() = default;
+DiceResponseParams::SignoutInfo::~SignoutInfo() = default;
 DiceResponseParams::SignoutInfo::SignoutInfo(const SignoutInfo&) = default;
 
-DiceResponseParams::EnableSyncInfo::EnableSyncInfo() {}
-DiceResponseParams::EnableSyncInfo::~EnableSyncInfo() {}
+DiceResponseParams::EnableSyncInfo::EnableSyncInfo() = default;
+DiceResponseParams::EnableSyncInfo::~EnableSyncInfo() = default;
 DiceResponseParams::EnableSyncInfo::EnableSyncInfo(const EnableSyncInfo&) =
     default;
 
@@ -144,7 +145,7 @@ SigninHeaderHelper::ResponseHeaderDictionary
 SigninHeaderHelper::ParseAccountConsistencyResponseHeader(
     const std::string& header_value) {
   ResponseHeaderDictionary dictionary;
-  for (const base::StringPiece& field :
+  for (std::string_view field :
        base::SplitStringPiece(header_value, ",", base::TRIM_WHITESPACE,
                               base::SPLIT_WANT_NONEMPTY)) {
     size_t delim = field.find_first_of('=');

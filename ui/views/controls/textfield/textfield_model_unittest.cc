@@ -12,7 +12,6 @@
 
 #include "base/auto_reset.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/clipboard/clipboard.h"
 #include "ui/base/clipboard/scoped_clipboard_writer.h"
@@ -1285,7 +1284,7 @@ TEST_F(TextfieldModelTest, CompositionTextTest) {
   model.SetCompositionText(composition);
   EXPECT_TRUE(model.HasCompositionText());
   EXPECT_TRUE(model.HasSelection());
-#if !BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_CHROMEOS)
   // |composition.selection| is ignored because SetCompositionText checks
   // if a thick underline exists first.
   EXPECT_EQ(gfx::Range(5, 7), model.render_text()->selection());
@@ -1326,7 +1325,7 @@ TEST_F(TextfieldModelTest, CompositionTextTest) {
   model.SetCompositionText(composition);
   EXPECT_EQ(u"1234567890678", model.text());
   EXPECT_TRUE(model.HasSelection());
-#if !BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_CHROMEOS)
   EXPECT_EQ(gfx::Range(10, 11), model.render_text()->selection());
   EXPECT_EQ(11U, model.render_text()->cursor_position());
 #else
@@ -2399,14 +2398,15 @@ TEST_F(TextfieldModelTest, Clipboard_WhiteSpaceStringTest) {
 }
 
 TEST_F(TextfieldModelTest, Transpose) {
-  const std::u16string ltr = u"12";
-  const std::u16string rtl = u"\x0634\x0632";
-  const std::u16string ltr_transposed = u"21";
-  const std::u16string rtl_transposed = u"\x0632\x0634";
+  constexpr std::u16string ltr = u"12";
+  constexpr std::u16string rtl = u"\x0634\x0632";
+  constexpr std::u16string ltr_transposed = u"21";
+  constexpr std::u16string rtl_transposed = u"\x0632\x0634";
 
   // This is a string with an 'a' between two emojis.
   const std::u16string surrogate_pairs({0xD83D, 0xDE07, 'a', 0xD83D, 0xDE0E});
-  const std::u16string test_strings[] = {ltr, rtl, surrogate_pairs};
+  const auto test_strings =
+      std::to_array<std::u16string>({ltr, rtl, surrogate_pairs});
 
   struct TestCase {
     gfx::Range range;

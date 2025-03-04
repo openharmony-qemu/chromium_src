@@ -50,7 +50,6 @@ std::string ReferrerHeaderValueForNavigation(const GURL& destination,
       return referrer.url.GetAsReferrer().spec();
   }
   NOTREACHED();
-  return std::string();
 }
 
 net::ReferrerPolicy PolicyForNavigation(const GURL& destination,
@@ -78,7 +77,6 @@ net::ReferrerPolicy PolicyForNavigation(const GURL& destination,
       return net::ReferrerPolicy::REDUCE_GRANULARITY_ON_TRANSITION_CROSS_ORIGIN;
   }
   NOTREACHED();
-  return net::ReferrerPolicy::CLEAR_ON_TRANSITION_FROM_SECURE_TO_INSECURE;
 }
 
 ReferrerPolicy ReferrerPolicyFromString(const std::string& policy) {

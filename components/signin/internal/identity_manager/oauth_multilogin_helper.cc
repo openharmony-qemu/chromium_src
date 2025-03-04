@@ -23,6 +23,10 @@
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
 
+#if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+#include "components/signin/public/base/bound_session_oauth_multilogin_delegate.h"
+#endif
+
 namespace signin {
 
 namespace {
@@ -30,12 +34,13 @@ namespace {
 constexpr int kMaxFetcherRetries = 3;
 
 std::string FindTokenForAccount(
-    const std::vector<GaiaAuthFetcher::MultiloginTokenIDPair>&
-        gaia_id_token_pairs,
+    const std::vector<GaiaAuthFetcher::MultiloginAccountAuthCredentials>&
+        multilogin_accounts,
     const std::string& gaia_id) {
-  for (const auto& gaia_id_token : gaia_id_token_pairs) {
-    if (gaia_id == gaia_id_token.gaia_id_)
-      return gaia_id_token.token_;
+  for (const auto& account : multilogin_accounts) {
+    if (gaia_id == account.gaia_id) {
+      return account.token;
+    }
   }
   return std::string();
 }
@@ -75,6 +80,11 @@ OAuthMultiloginHelper::OAuthMultiloginHelper(
   DCHECK(!accounts_.empty());
   DCHECK(callback_);
 
+#if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+  bound_session_delegate_ =
+      signin_client_->CreateBoundSessionOAuthMultiloginDelegate();
+#endif  // BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+
 #ifndef NDEBUG
   // Check that there is no duplicate accounts.
   std::set<AccountIdGaiaIdPair> accounts_no_duplicates(accounts_.begin(),
@@ -89,7 +99,7 @@ OAuthMultiloginHelper::~OAuthMultiloginHelper() = default;
 
 void OAuthMultiloginHelper::StartFetchingTokens() {
   DCHECK(!token_fetcher_);
-  DCHECK(gaia_id_token_pairs_.empty());
+  DCHECK(multilogin_accounts_.empty());
   std::vector<CoreAccountId> account_ids;
   for (const auto& account : accounts_)
     account_ids.push_back(account.first);
@@ -105,15 +115,18 @@ void OAuthMultiloginHelper::StartFetchingTokens() {
 void OAuthMultiloginHelper::OnAccessTokensSuccess(
     const std::vector<OAuthMultiloginTokenFetcher::AccountIdTokenPair>&
         account_token_pairs) {
-  DCHECK(gaia_id_token_pairs_.empty());
+  DCHECK(multilogin_accounts_.empty());
   for (size_t index = 0; index < accounts_.size(); index++) {
     // OAuthMultiloginTokenFetcher should return the tokens in the same order
     // as the account_ids that was passed to it.
     DCHECK_EQ(accounts_[index].first, account_token_pairs[index].account_id);
-    gaia_id_token_pairs_.emplace_back(accounts_[index].second,
-                                      account_token_pairs[index].token);
+    // TODO(crbug.com/372648645): attach `token_binding_assertion` for accounts
+    // authenticating with bound refresh tokens.
+    multilogin_accounts_.emplace_back(
+        accounts_[index].second, account_token_pairs[index].token,
+        /*token_binding_assertion=*/std::string());
   }
-  DCHECK_EQ(gaia_id_token_pairs_.size(), accounts_.size());
+  DCHECK_EQ(multilogin_accounts_.size(), accounts_.size());
   token_fetcher_.reset();
 
   signin_client_->DelayNetworkCall(
@@ -131,10 +144,10 @@ void OAuthMultiloginHelper::OnAccessTokensFailure(
 }
 
 void OAuthMultiloginHelper::StartFetchingMultiLogin() {
-  DCHECK_EQ(gaia_id_token_pairs_.size(), accounts_.size());
+  DCHECK_EQ(multilogin_accounts_.size(), accounts_.size());
   gaia_auth_fetcher_ = partition_delegate_->CreateGaiaAuthFetcherForPartition(
       this, gaia_source_);
-  gaia_auth_fetcher_->StartOAuthMultilogin(mode_, gaia_id_token_pairs_,
+  gaia_auth_fetcher_->StartOAuthMultilogin(mode_, multilogin_accounts_,
                                            external_cc_result_);
 }
 
@@ -148,6 +161,12 @@ void OAuthMultiloginHelper::OnOAuthMultiloginFinished(
       VLOG(1) << "Multilogin successful accounts="
               << base::JoinString(account_ids, " ");
     }
+#if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+    if (bound_session_delegate_) {
+      bound_session_delegate_->BeforeSetCookies(result);
+    }
+#endif
+
     StartSettingCookies(result);
     return;
   }
@@ -156,7 +175,7 @@ void OAuthMultiloginHelper::OnOAuthMultiloginFinished(
   if (result.status() == OAuthMultiloginResponseStatus::kInvalidTokens) {
     for (const std::string& failed_gaia_id : result.failed_gaia_ids()) {
       std::string failed_token =
-          FindTokenForAccount(gaia_id_token_pairs_, failed_gaia_id);
+          FindTokenForAccount(multilogin_accounts_, failed_gaia_id);
       if (failed_token.empty()) {
         LOG(ERROR)
             << "Unexpected failed token for account not present in request: "
@@ -173,7 +192,7 @@ void OAuthMultiloginHelper::OnOAuthMultiloginFinished(
       result.status() == OAuthMultiloginResponseStatus::kRetry;
 
   if (is_transient_error && ++fetcher_retries_ < kMaxFetcherRetries) {
-    gaia_id_token_pairs_.clear();
+    multilogin_accounts_.clear();
     StartFetchingTokens();
     return;
   }
@@ -229,8 +248,14 @@ void OAuthMultiloginHelper::OnCookieSet(const std::string& cookie_name,
                << " for domain=" << cookie_domain << ".";
   }
   UMA_HISTOGRAM_BOOLEAN("Signin.SetCookieSuccess", success);
-  if (cookies_to_set_.empty())
+  if (cookies_to_set_.empty()) {
+#if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+    if (bound_session_delegate_) {
+      bound_session_delegate_->OnCookiesSet();
+    }
+#endif
     std::move(callback_).Run(SetAccountsInCookieResult::kSuccess);
+  }
   // Do not add anything below this line, because this may be deleted.
 }
 

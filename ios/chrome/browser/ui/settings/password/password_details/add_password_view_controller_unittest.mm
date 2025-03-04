@@ -6,25 +6,22 @@
 
 #import <memory>
 
+#import "base/apple/foundation_util.h"
 #import "base/ios/ios_util.h"
-#import "base/mac/foundation_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
 #import "base/test/metrics/histogram_tester.h"
-#import "base/test/scoped_feature_list.h"
 #import "components/password_manager/core/browser/password_form.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
-#import "components/sync/base/features.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_edit_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_image_detail_text_item.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/add_password_view_controller_delegate.h"
-#import "ios/chrome/browser/ui/settings/password/password_details/password_details.h"
+#import "ios/chrome/browser/ui/settings/password/password_details/credential_details.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_consumer.h"
-#import "ios/chrome/common/ui/reauthentication/reauthentication_module.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/app/password_test_util.h"
 #import "ios/web/public/test/web_task_environment.h"
@@ -32,9 +29,6 @@
 #import "testing/gtest_mac.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 constexpr char kPassword[] = "test";
@@ -51,15 +45,18 @@ constexpr char kPassword[] = "test";
 @interface FakeAddPasswordDelegate
     : NSObject <AddPasswordViewControllerDelegate>
 
-@property(nonatomic, strong) PasswordDetails* password;
+@property(nonatomic, strong) CredentialDetails* credential;
+
+// Whether `showExistingCredential` was called.
+@property(nonatomic) BOOL showExistingCredentialCalled;
 
 @end
 
 @implementation FakeAddPasswordDelegate
 
 - (void)addPasswordViewController:(AddPasswordViewController*)viewController
-           didEditPasswordDetails:(PasswordDetails*)password {
-  self.password = password;
+         didEditCredentialDetails:(CredentialDetails*)credential {
+  self.credential = credential;
 }
 
 - (void)addPasswordViewController:(AddPasswordViewController*)viewController
@@ -72,6 +69,7 @@ constexpr char kPassword[] = "test";
 }
 
 - (void)showExistingCredential:(NSString*)username {
+  _showExistingCredentialCalled = YES;
 }
 
 - (void)didCancelAddPasswordDetails {
@@ -91,13 +89,14 @@ constexpr char kPassword[] = "test";
 @end
 
 // Unit tests for PasswordIssuesTableViewController.
-class AddPasswordViewControllerTest : public ChromeTableViewControllerTest {
+class AddPasswordViewControllerTest
+    : public LegacyChromeTableViewControllerTest {
  protected:
   AddPasswordViewControllerTest() {
     delegate_ = [[FakeAddPasswordDelegate alloc] init];
   }
 
-  ChromeTableViewController* InstantiateController() override {
+  LegacyChromeTableViewController* InstantiateController() override {
     AddPasswordViewController* controller =
         [[AddPasswordViewController alloc] init];
     controller.delegate = delegate_;
@@ -133,9 +132,6 @@ class AddPasswordViewControllerTest : public ChromeTableViewControllerTest {
                 cell.detailText);
   }
 
-  FakeAddPasswordDelegate* delegate() { return delegate_; }
-
- private:
   FakeAddPasswordDelegate* delegate_ = nil;
 };
 
@@ -147,7 +143,7 @@ TEST_F(AddPasswordViewControllerTest, TestShowHidePassword) {
   indexOfPassword = [NSIndexPath indexPathForRow:1 inSection:2];
 
   TableViewTextEditCell* textFieldCell =
-      base::mac::ObjCCastStrict<TableViewTextEditCell>([controller()
+      base::apple::ObjCCastStrict<TableViewTextEditCell>([controller()
                       tableView:controller().tableView
           cellForRowAtIndexPath:indexOfPassword]);
   EXPECT_TRUE(textFieldCell);
@@ -164,54 +160,6 @@ TEST_F(AddPasswordViewControllerTest, TestShowHidePassword) {
 
 // Tests the layout of the view controller when adding a new credential.
 TEST_F(AddPasswordViewControllerTest, TestSectionsInAdd) {
-  AddPasswordViewController* passwords_controller =
-      static_cast<AddPasswordViewController*>(controller());
-  [passwords_controller loadModel];
-
-  EXPECT_EQ(4, NumberOfSections());
-  EXPECT_EQ(1, NumberOfItemsInSection(0));
-  EXPECT_EQ(0, NumberOfItemsInSection(1));
-  EXPECT_EQ(2, NumberOfItemsInSection(2));
-
-  CheckSectionFooter(
-      [NSString stringWithFormat:@"%@\n\n%@",
-                                 l10n_util::GetNSString(
-                                     IDS_IOS_SETTINGS_ADD_PASSWORD_DESCRIPTION),
-                                 l10n_util::GetNSString(
-                                     IDS_IOS_SAVE_PASSWORD_FOOTER_NOT_SYNCING)],
-      3);
-}
-
-// Tests the layout of the view controller when adding a new credential with
-// notes features disabled.
-TEST_F(AddPasswordViewControllerTest, TestSectionsInAddWithNotesDisabled) {
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndDisableFeature(syncer::kPasswordNotesWithBackup);
-
-  AddPasswordViewController* passwords_controller =
-      static_cast<AddPasswordViewController*>(controller());
-  [passwords_controller loadModel];
-
-  EXPECT_EQ(4, NumberOfSections());
-  EXPECT_EQ(1, NumberOfItemsInSection(0));
-  EXPECT_EQ(0, NumberOfItemsInSection(1));
-  EXPECT_EQ(2, NumberOfItemsInSection(2));
-
-  CheckSectionFooter(
-      [NSString stringWithFormat:@"%@\n\n%@",
-                                 l10n_util::GetNSString(
-                                     IDS_IOS_SETTINGS_ADD_PASSWORD_DESCRIPTION),
-                                 l10n_util::GetNSString(
-                                     IDS_IOS_SAVE_PASSWORD_FOOTER_NOT_SYNCING)],
-      3);
-}
-
-// Tests the layout of the view controller when adding a new credential with
-// notes features enabled.
-TEST_F(AddPasswordViewControllerTest, TestSectionsInAddWithNotesEnabled) {
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(syncer::kPasswordNotesWithBackup);
-
   AddPasswordViewController* passwords_controller =
       static_cast<AddPasswordViewController*>(controller());
   [passwords_controller loadModel];
@@ -244,10 +192,10 @@ TEST_F(AddPasswordViewControllerTest, TestSectionsInAddDuplicated) {
 
   [passwords_controller onDuplicateCheckCompletion:YES];
 
-  EXPECT_EQ(5, NumberOfSections());
+  EXPECT_EQ(6, NumberOfSections());
   EXPECT_EQ(1, NumberOfItemsInSection(0));
   EXPECT_EQ(0, NumberOfItemsInSection(1));
-  EXPECT_EQ(2, NumberOfItemsInSection(2));
+  EXPECT_EQ(3, NumberOfItemsInSection(2));
   EXPECT_EQ(2, NumberOfItemsInSection(3));
 }
 
@@ -267,5 +215,30 @@ TEST_F(AddPasswordViewControllerTest, TestFooterTextWithEmail) {
                            l10n_util::GetNSStringF(
                                IDS_IOS_SETTINGS_ADD_PASSWORD_FOOTER_BRANDED,
                                u"example@gmail.com")],
-      3);
+      4);
+}
+
+// Tests tapping on the show duplicated credential button asks the delegate to
+// display the existing credential.
+TEST_F(AddPasswordViewControllerTest, TestShowDuplicatedCredential) {
+  SetPassword();
+
+  AddPasswordViewController* passwords_controller =
+      static_cast<AddPasswordViewController*>(controller());
+  [passwords_controller loadModel];
+
+  SetEditCellText(@"http://www.example.com/", 0, 0);
+  SetEditCellText(@"test@egmail.com", 2, 0);
+
+  // Simulate the credential was found to be duplicated.
+  // This adds the show existing credential button to the model
+  [passwords_controller onDuplicateCheckCompletion:YES];
+
+  EXPECT_FALSE(delegate_.showExistingCredentialCalled);
+  // Simulate tap on show existing credential button.
+  [passwords_controller tableView:passwords_controller.tableView
+          didSelectRowAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:3]];
+
+  // Validate the delegate was asked to show the existing credential.
+  EXPECT_TRUE(delegate_.showExistingCredentialCalled);
 }

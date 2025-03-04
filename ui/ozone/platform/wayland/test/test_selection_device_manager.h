@@ -79,8 +79,8 @@ class TestSelectionDeviceManager : public GlobalObject {
 
  private:
   const std::unique_ptr<Delegate> delegate_;
-  raw_ptr<TestSelectionDevice> device_ = nullptr;
-  raw_ptr<TestSelectionSource> source_ = nullptr;
+  raw_ptr<TestSelectionDevice, DanglingUntriaged> device_ = nullptr;
+  raw_ptr<TestSelectionSource, DanglingUntriaged> source_ = nullptr;
 };
 
 class TestSelectionOffer : public ServerObject {
@@ -121,6 +121,7 @@ class TestSelectionSource : public ServerObject {
     virtual void SendFinished() = 0;
     virtual void SendCancelled() = 0;
     virtual void SendDndAction(uint32_t action) = 0;
+    virtual void SendDndDropPerformed() = 0;
   };
 
   TestSelectionSource(wl_resource* resource,
@@ -133,6 +134,7 @@ class TestSelectionSource : public ServerObject {
   void OnFinished();
   void OnCancelled();
   void OnDndAction(uint32_t action);
+  void OnDndDropPerformed();
 
   const std::vector<std::string>& mime_types() const { return mime_types_; }
 

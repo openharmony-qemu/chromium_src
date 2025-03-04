@@ -42,7 +42,7 @@ void MojoRendererWrapper::SetCdm(CdmContext* cdm_context,
 }
 
 void MojoRendererWrapper::SetLatencyHint(
-    absl::optional<base::TimeDelta> latency_hint) {
+    std::optional<base::TimeDelta> latency_hint) {
   mojo_renderer_->SetLatencyHint(latency_hint);
 }
 
@@ -50,21 +50,23 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
   return mojo_renderer_->GetMediaTime();
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MojoRendererWrapper::SetMuted(bool muted) {
   mojo_renderer_->SetMuted(muted);
 }
 void MojoRendererWrapper::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
   mojo_renderer_->SetSurfaceId(surface_id, rect);
 }
-void MojoRendererWrapper::SetMediaPlayerState(bool is_suspend, int suspend_type) {
+void MojoRendererWrapper::SetMediaPlayerState(bool is_suspend,
+                                              int suspend_type) {
   mojo_renderer_->SetMediaPlayerState(is_suspend, suspend_type);
 }
 void MojoRendererWrapper::SetMediaSourceList(
     const std::vector<MediaSourceInfo>& source_infos) {
   mojo_renderer_->SetMediaSourceList(source_infos);
 }
-void MojoRendererWrapper::SetMediaControls(bool show_media_controls,
+void MojoRendererWrapper::SetMediaControls(
+    bool show_media_controls,
     const std::vector<std::string>& controls_list) {
   mojo_renderer_->SetMediaControls(show_media_controls, controls_list);
 }
@@ -82,9 +84,9 @@ void MojoRendererWrapper::SetIsAudio(bool is_audio) {
   mojo_renderer_->SetIsAudio(is_audio);
 }
 void MojoRendererWrapper::SetPlaybackRateWithReason(double playback_rate,
-    ActionReason reason) {
+                                                    ActionReason reason) {
   mojo_renderer_->SetPlaybackRateWithReason(playback_rate, reason);
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

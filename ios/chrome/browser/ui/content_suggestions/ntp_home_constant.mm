@@ -6,10 +6,6 @@
 
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace ntp_home {
 NSString* FakeOmniboxAccessibilityID() {
   return @"NTPHomeFakeOmniboxAccessibilityID";
@@ -28,8 +24,12 @@ const CGFloat kMostVisitedBottomMarginIPhone = 60;
 const CGFloat kSuggestionPeekingHeight = 60;
 
 const CGFloat kIdentityAvatarDimension = 32;
-const CGFloat kIdentityAvatarMargin = 16;
-const CGFloat kSignedOutIdentityIconDimension = 24;
+const CGFloat kHeaderIconMargin = 8;
+const CGFloat kIdentityAvatarPadding = 8;
+const CGFloat kSignedOutIdentityIconSize = 24;
+const CGFloat kCustomizationMenuIconSize = 16;
+const CGFloat kCustomizationMenuButtonDimension = 37;
+const CGFloat kCustomizationMenuButtonCornerRadius = 11;
 
 UIColor* NTPBackgroundColor() {
   return [UIColor colorNamed:kBackgroundColor];

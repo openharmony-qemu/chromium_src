@@ -7,16 +7,17 @@ import UIKit
 
 // A provider to provide the SwiftUI OverflowMenuView to Objective C. This is
 // necessary because Objective C can't see SwiftUI types.
-@available(iOS 15, *)
 @objcMembers public class OverflowMenuViewProvider: NSObject {
   public static func makeViewController(
     withModel model: OverflowMenuModel,
     uiConfiguration: OverflowMenuUIConfiguration,
-    metricsHandler: PopupMenuMetricsHandler
+    metricsHandler: PopupMenuMetricsHandler,
+    customizationEventHandler: MenuCustomizationEventHandler?
   ) -> UIViewController {
     return OverflowMenuHostingController(
-      rootView: OverflowMenuView(
-        model: model, uiConfiguration: uiConfiguration, metricsHandler: metricsHandler),
+      rootView: OverflowMenuContainerView(
+        model: model, uiConfiguration: uiConfiguration, metricsHandler: metricsHandler,
+        customizationEventHandler: customizationEventHandler),
       uiConfiguration: uiConfiguration)
   }
 }

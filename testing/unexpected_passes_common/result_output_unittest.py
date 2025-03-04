@@ -3,14 +3,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import print_function
-
-import collections
 import itertools
-import sys
 import tempfile
 from typing import Iterable, Set
 import unittest
+from unittest import mock
 
 import six
 
@@ -20,6 +17,10 @@ from unexpected_passes_common import data_types
 from unexpected_passes_common import result_output
 from unexpected_passes_common import unittest_utils as uu
 
+from blinkpy.w3c import buganizer
+
+# Protected access is allowed for unittests.
+# pylint: disable=protected-access
 
 def CreateTextOutputPermutations(text: str, inputs: Iterable[str]) -> Set[str]:
   """Creates permutations of |text| filled with the contents of |inputs|.
@@ -76,7 +77,7 @@ class ConvertUnmatchedResultsToStringDictUnittest(unittest.TestCase):
                               'build_id')
         ],
     }
-    # TODO(crbug.com/1198237): Hard-code the tag string once only Python 3 is
+    # TODO(crbug.com/40177248): Hard-code the tag string once only Python 3 is
     # supported.
     expected_output = {
         'foo': {
@@ -141,7 +142,7 @@ class ConvertTestExpectationMapToStringDictUnittest(unittest.TestCase):
             }),
         }),
     })
-    # TODO(crbug.com/1198237): Remove the Python 2 version once we are fully
+    # TODO(crbug.com/40177248): Remove the Python 2 version once we are fully
     # switched to Python 3.
     if six.PY2:
       expected_output = {
@@ -317,7 +318,7 @@ class HtmlToFileUnittest(fake_filesystem_unittest.TestCase):
     result_output._RecursiveHtmlToFile(expectation_map, self._file_handle)
     self._file_handle.close()
     # pylint: disable=line-too-long
-    # TODO(crbug.com/1198237): Remove the Python 2 version once we've fully
+    # TODO(crbug.com/40177248): Remove the Python 2 version once we've fully
     # switched to Python 3.
     if six.PY2:
       expected_output = """\
@@ -459,7 +460,7 @@ class PrintToFileUnittest(fake_filesystem_unittest.TestCase):
     result_output.RecursivePrintToFile(expectation_map, 0, self._file_handle)
     self._file_handle.close()
 
-    # TODO(crbug.com/1198237): Keep the Python 3 version once we are fully
+    # TODO(crbug.com/40177248): Keep the Python 3 version once we are fully
     # switched.
     if six.PY2:
       expected_output = """\
@@ -763,6 +764,139 @@ class OutputUrlsForClDescriptionUnittest(fake_filesystem_unittest.TestCase):
     with open(self._filepath) as f:
       self.assertEqual(f.read(), ('Affected bugs for CL description:\n'
                                   'Fixed: 1, 2\n'))
+
+  def testNoAutoCloseBugs(self):
+    """Tests behavior when not auto closing bugs."""
+    urls = [
+        'crbug.com/0',
+        'crbug.com/1',
+    ]
+    orphaned_urls = [
+        'crbug.com/0',
+    ]
+    mock_buganizer = MockBuganizerClient()
+    with mock.patch.object(result_output,
+                           '_GetBuganizerClient',
+                           return_value=mock_buganizer):
+      result_output._OutputUrlsForClDescription(urls,
+                                                orphaned_urls,
+                                                self._file_handle,
+                                                auto_close_bugs=False)
+    self._file_handle.close()
+    with open(self._filepath) as f:
+      self.assertEqual(f.read(), ('Affected bugs for CL description:\n'
+                                  'Bug: 1\n'
+                                  'Bug: 0\n'))
+    mock_buganizer.NewComment.assert_called_once_with(
+        'crbug.com/0', result_output.BUGANIZER_COMMENT)
+
+
+class MockBuganizerClient:
+
+  def __init__(self):
+    self.comment_list = []
+    self.NewComment = mock.Mock()
+
+  def GetIssueComments(self, _) -> list:
+    return self.comment_list
+
+
+class PostCommentsToOrphanedBugsUnittest(unittest.TestCase):
+
+  def setUp(self):
+    self._buganizer_client = MockBuganizerClient()
+    self._buganizer_patcher = mock.patch.object(
+        result_output,
+        '_GetBuganizerClient',
+        return_value=self._buganizer_client)
+    self._buganizer_patcher.start()
+    self.addCleanup(self._buganizer_patcher.stop)
+
+  def testBasic(self):
+    """Tests the basic/happy path scenario."""
+    self._buganizer_client.comment_list.append({'comment': 'Not matching'})
+    result_output._PostCommentsToOrphanedBugs(
+        ['crbug.com/0', 'crbug.com/angleproject/0'])
+    self.assertEqual(self._buganizer_client.NewComment.call_count, 2)
+    self._buganizer_client.NewComment.assert_any_call(
+        'crbug.com/0', result_output.BUGANIZER_COMMENT)
+    self._buganizer_client.NewComment.assert_any_call(
+        'crbug.com/angleproject/0', result_output.BUGANIZER_COMMENT)
+
+  def testNoDuplicateComments(self):
+    """Tests that duplicate comments are not posted on bugs."""
+    self._buganizer_client.comment_list.append(
+        {'comment': result_output.BUGANIZER_COMMENT})
+    result_output._PostCommentsToOrphanedBugs(
+        ['crbug.com/0', 'crbug.com/angleproject/0'])
+    self._buganizer_client.NewComment.assert_not_called()
+
+  def testInvalidBugUrl(self):
+    """Tests behavior when a non-crbug URL is provided."""
+    with mock.patch.object(self._buganizer_client,
+                           'GetIssueComments',
+                           side_effect=buganizer.BuganizerError):
+      with self.assertLogs(level='WARNING') as log_manager:
+        result_output._PostCommentsToOrphanedBugs(['somesite.com/0'])
+        for message in log_manager.output:
+          if 'Could not fetch or add comments for somesite.com/0' in message:
+            break
+        else:
+          self.fail('Did not find expected log message')
+    self._buganizer_client.NewComment.assert_not_called()
+
+  def testServiceDiscoveryError(self):
+    """Tests behavior when service discovery fails."""
+    with mock.patch.object(result_output,
+                           '_GetBuganizerClient',
+                           side_effect=buganizer.BuganizerError):
+      with self.assertLogs(level='ERROR') as log_manager:
+        result_output._PostCommentsToOrphanedBugs(['crbug.com/0'])
+        for message in log_manager.output:
+          if ('Encountered error when authenticating, cannot post '
+              'comments') in message:
+            break
+        else:
+          self.fail('Did not find expected log message')
+
+  def testGetIssueCommentsError(self):
+    """Tests behavior when GetIssueComments encounters an error."""
+    with mock.patch.object(self._buganizer_client,
+                           'GetIssueComments',
+                           side_effect=({
+                               'error': ':('
+                           }, [{
+                               'comment': 'Not matching'
+                           }])):
+      with self.assertLogs(level='ERROR') as log_manager:
+        result_output._PostCommentsToOrphanedBugs(
+            ['crbug.com/0', 'crbug.com/1'])
+        for message in log_manager.output:
+          if 'Failed to get comments from crbug.com/0: :(' in message:
+            break
+        else:
+          self.fail('Did not find expected log message')
+    self._buganizer_client.NewComment.assert_called_once_with(
+        'crbug.com/1', result_output.BUGANIZER_COMMENT)
+
+  def testGetIssueCommentsUnspecifiedError(self):
+    """Tests behavior when GetIssueComments encounters an unspecified error."""
+    with mock.patch.object(self._buganizer_client,
+                           'GetIssueComments',
+                           side_effect=({}, [{
+                               'comment': 'Not matching'
+                           }])):
+      with self.assertLogs(level='ERROR') as log_manager:
+        result_output._PostCommentsToOrphanedBugs(
+            ['crbug.com/0', 'crbug.com/1'])
+        for message in log_manager.output:
+          if ('Failed to get comments from crbug.com/0: error not provided'
+              in message):
+            break
+        else:
+          self.fail('Did not find expected log message')
+    self._buganizer_client.NewComment.assert_called_once_with(
+        'crbug.com/1', result_output.BUGANIZER_COMMENT)
 
 
 def _Dedent(s: str) -> str:

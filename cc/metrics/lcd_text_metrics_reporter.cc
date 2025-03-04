@@ -27,13 +27,9 @@ constexpr unsigned kMinimumFrameInterval = 500;
 // content/renderer/render_widget.cc.
 constexpr float kHighDPIDeviceScaleFactorThreshold = 1.5f;
 constexpr char kMetricNameLCDTextKPixelsHighDPI[] =
-    "Compositing.Renderer.LCDTextDisallowedReasonKPixels.HighDPI";
+    "Compositing.Renderer.LCDTextDisallowedReasonKPixels2.HighDPI";
 constexpr char kMetricNameLCDTextKPixelsLowDPI[] =
-    "Compositing.Renderer.LCDTextDisallowedReasonKPixels.LowDPI";
-constexpr char kMetricNameLCDTextLayersHighDPI[] =
-    "Compositing.Renderer.LCDTextDisallowedReasonLayers.HighDPI";
-constexpr char kMetricNameLCDTextLayersLowDPI[] =
-    "Compositing.Renderer.LCDTextDisallowedReasonLayers.LowDPI";
+    "Compositing.Renderer.LCDTextDisallowedReasonKPixels2.LowDPI";
 
 void Report(const LayerTreeImpl* layer_tree,
             base::FunctionRef<void(int64_t text_pixels,
@@ -42,7 +38,7 @@ void Report(const LayerTreeImpl* layer_tree,
     if (!layer->draws_content() || !layer->GetRasterSource()) {
       continue;
     }
-    const scoped_refptr<DisplayItemList>& display_item_list =
+    const scoped_refptr<const DisplayItemList>& display_item_list =
         layer->GetRasterSource()->GetDisplayItemList();
     if (!display_item_list) {
       continue;
@@ -120,11 +116,9 @@ void LCDTextMetricsReporter::NotifyPauseFrameProduction() {
            if (is_high_dpi) {
              UMA_HISTOGRAM_SCALED_ENUMERATION(kMetricNameLCDTextKPixelsHighDPI,
                                               reason, text_pixels, 1000);
-             UMA_HISTOGRAM_ENUMERATION(kMetricNameLCDTextLayersHighDPI, reason);
            } else {
              UMA_HISTOGRAM_SCALED_ENUMERATION(kMetricNameLCDTextKPixelsLowDPI,
                                               reason, text_pixels, 1000);
-             UMA_HISTOGRAM_ENUMERATION(kMetricNameLCDTextLayersLowDPI, reason);
            }
          });
 }

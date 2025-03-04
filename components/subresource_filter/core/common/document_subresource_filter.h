@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include <memory>
+#include <string_view>
 
 #include "base/memory/ref_counted.h"
 #include "components/subresource_filter/core/common/indexed_ruleset.h"
@@ -36,7 +37,8 @@ class DocumentSubresourceFilter {
   //  -- Hold a reference to and use |ruleset| for its entire lifetime.
   DocumentSubresourceFilter(url::Origin document_origin,
                             mojom::ActivationState activation_state,
-                            scoped_refptr<const MemoryMappedRuleset> ruleset);
+                            scoped_refptr<const MemoryMappedRuleset> ruleset,
+                            std::string_view uma_tag);
 
   DocumentSubresourceFilter(const DocumentSubresourceFilter&) = delete;
   DocumentSubresourceFilter& operator=(const DocumentSubresourceFilter&) =
@@ -60,7 +62,7 @@ class DocumentSubresourceFilter {
       const GURL& subresource_url,
       url_pattern_index::proto::ElementType subresource_type);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   void ClearStatistics();
 
   std::unique_ptr<std::string> GetSelectors(const GURL& url,
@@ -96,7 +98,7 @@ class DocumentSubresourceFilter {
   std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
       const GURL& document_url,
       bool disable_generic_rules) const;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // Returns the matching rule that determines whether the request url and type
   // should be allowed. If no rule matches, returns nullptr.
@@ -120,9 +122,10 @@ class DocumentSubresourceFilter {
 
   mojom::DocumentLoadStatistics statistics_;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   bool did_load_finished_ = false;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
+  std::string_view uma_tag_;
 };
 
 }  // namespace subresource_filter

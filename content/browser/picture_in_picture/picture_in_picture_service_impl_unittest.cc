@@ -92,6 +92,7 @@ class TestOverlayWindow : public VideoOverlayWindow {
   void SetHangUpButtonVisibility(bool is_visible) override {}
   void SetNextSlideButtonVisibility(bool is_visible) override {}
   void SetPreviousSlideButtonVisibility(bool is_visible) override {}
+  void SetMediaPosition(const media_session::MediaPosition&) override {}
   void SetSurfaceId(const viz::SurfaceId& surface_id) override {}
 
  private:
@@ -132,7 +133,6 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void RequestSeekBackward(base::TimeDelta seek_time) override {}
   void RequestSeekTo(base::TimeDelta seek_time) override {}
   void RequestEnterPictureInPicture() override {}
-  void RequestExitPictureInPicture() override {}
   void RequestMute(bool mute) override {}
   void SetVolumeMultiplier(double multiplier) override {}
   void SetPersistentState(bool persistent) override {}
@@ -140,6 +140,8 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void SetAudioSinkId(const std::string& sink_id) override {}
   void SuspendForFrameClosed() override {}
   void RequestMediaRemoting() override {}
+  void RequestVisibility(
+      RequestVisibilityCallback request_visibility_callback) override {}
 
  private:
   mojo::AssociatedReceiver<media::mojom::MediaPlayer> receiver_{this};
@@ -163,6 +165,7 @@ class PictureInPictureServiceImplTest : public RenderViewHostImplTestHarness {
   }
 
   void TearDown() override {
+    service_impl_ = nullptr;
     RenderViewHostImplTestHarness::TearDown();
   }
 

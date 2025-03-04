@@ -39,7 +39,7 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
   // 'vfs_file_name' is of the form <origin_identifier>/<db_name>#<suffix>.
   // <suffix> is optional.
   DCHECK(!vfs_file_name.empty());
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
   size_t first_slash_index = vfs_file_name.rfind('/');
   if (first_slash_index == std::u16string::npos) {
     LOG(ERROR) << "DatabaseUtil::CrackVfsFileName not find /";
@@ -72,12 +72,15 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
         << "DatabaseUtil::CrackVfsFileName IsValidOriginIdentifier failed";
     return false;
   }
-  if (sqlite_suffix)
+  if (sqlite_suffix) {
     *sqlite_suffix = suffix;
-  if (database_name)
+  }
+  if (database_name) {
     *database_name = name;
-  if (origin_identifier)
+  }
+  if (origin_identifier) {
     *origin_identifier = origin_id;
+  }
   return true;
 #else
   size_t first_slash_index = vfs_file_name.find('/');
@@ -112,7 +115,7 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
     *sqlite_suffix = suffix;
 
   return true;
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 }
 
 base::FilePath DatabaseUtil::GetFullFilePathForVfsFile(

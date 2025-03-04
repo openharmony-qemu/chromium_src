@@ -5,7 +5,6 @@
 #ifndef CONTENT_BROWSER_ANDROID_BATTERY_METRICS_H_
 #define CONTENT_BROWSER_ANDROID_BATTERY_METRICS_H_
 
-#include "base/android/radio_utils.h"
 #include "base/no_destructor.h"
 #include "base/power_monitor/power_observer.h"
 #include "base/sequence_checker.h"
@@ -39,7 +38,8 @@ class AndroidBatteryMetrics
   void OnVisibilityChanged(bool visible) override;
 
   // base::PowerStateObserver implementation:
-  void OnPowerStateChange(bool on_battery_power) override;
+  void OnBatteryPowerStatusChange(base::PowerStateObserver::BatteryPowerStatus
+                                      battery_power_status) override;
 
   // base::PowerThermalObserver implementation:
   void OnThermalStateChange(DeviceThermalState new_state) override;
@@ -47,8 +47,6 @@ class AndroidBatteryMetrics
 
   void UpdateMetricsEnabled();
   void CaptureAndReportMetrics(bool disabling);
-  void UpdateAndReportRadio();
-  void MonitorRadioState();
 
   // Whether or not we've seen at least two consecutive capacity drops while
   // the embedding app was visible. Battery drain reported prior to this could
@@ -59,21 +57,13 @@ class AndroidBatteryMetrics
   // the device is on battery power and the app is visible.
   static constexpr base::TimeDelta kMetricsInterval = base::Seconds(30);
 
-  // Radio state is polled with this interval to count radio wakeups.
-  static constexpr base::TimeDelta kRadioStateInterval = base::Seconds(1);
-
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
   bool app_visible_ = false;
-  bool on_battery_power_ = false;
+  PowerStateObserver::BatteryPowerStatus battery_power_status_ =
+      PowerStateObserver::BatteryPowerStatus::kUnknown;
   int last_remaining_capacity_uah_ = 0;
-  int64_t last_tx_bytes_ = -1;
-  int64_t last_rx_bytes_ = -1;
-  base::android::RadioDataActivity last_activity_ =
-      base::android::RadioDataActivity::kNone;
-  int radio_wakeups_ = 0;
   base::RepeatingTimer metrics_timer_;
-  base::RepeatingTimer radio_state_timer_;
   int skipped_timers_ = 0;
 
   // Number of consecutive charge drops seen while the app has been visible.

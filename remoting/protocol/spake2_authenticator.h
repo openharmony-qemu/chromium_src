@@ -46,6 +46,8 @@ class Spake2Authenticator : public Authenticator {
   ~Spake2Authenticator() override;
 
   // Authenticator interface.
+  CredentialsType credentials_type() const override;
+  const Authenticator& implementing_authenticator() const override;
   State state() const override;
   bool started() const override;
   RejectionReason rejection_reason() const override;
@@ -53,6 +55,7 @@ class Spake2Authenticator : public Authenticator {
                       base::OnceClosure resume_callback) override;
   std::unique_ptr<jingle_xmpp::XmlElement> GetNextMessage() override;
   const std::string& GetAuthKey() const override;
+  const SessionPolicies* GetSessionPolicies() const override;
   std::unique_ptr<ChannelAuthenticator> CreateChannelAuthenticator()
       const override;
 
@@ -84,7 +87,7 @@ class Spake2Authenticator : public Authenticator {
   std::string remote_cert_;
 
   // Used for both host and client authenticators.
-  raw_ptr<SPAKE2_CTX> spake2_context_;
+  raw_ptr<SPAKE2_CTX, DanglingUntriaged> spake2_context_;
   State state_;
   bool started_ = false;
   RejectionReason rejection_reason_ = RejectionReason::INVALID_CREDENTIALS;

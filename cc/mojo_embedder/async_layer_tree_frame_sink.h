@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/weak_ptr.h"
@@ -17,27 +18,31 @@
 #include "build/build_config.h"
 #include "cc/mojo_embedder/mojo_embedder_export.h"
 #include "cc/trees/layer_tree_frame_sink.h"
-#include "components/power_scheduler/power_mode_voter.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/common/frame_timing_details_map.h"
-#include "components/viz/common/gpu/context_provider.h"
+#include "components/viz/common/gpu/raster_context_provider.h"
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "components/viz/common/surfaces/surface_id.h"
+#include "gpu/ipc/client/client_shared_image_interface.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
+#include "mojo/public/cpp/bindings/direct_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
+#include "third_party/abseil-cpp/absl/types/variant.h"
 
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
-#include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
 #include "cc/mojo_embedder/software_compositor_registry_ohos.h"
+#include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
 #endif
 
 namespace cc {
 
+class LayerContext;
+class LayerTreeHostImpl;
 class RasterContextProviderWrapper;
 
 namespace mojo_embedder {
@@ -78,12 +83,42 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
     UnboundMessagePipes pipes;
     bool wants_animate_only_begin_frames = false;
     base::PlatformThreadId io_thread_id = base::kInvalidThreadId;
+    base::PlatformThreadId main_thread_id = base::kInvalidThreadId;
+
+    // If `true`, the CompositorFrameSinkClient receiver will receive IPC
+    // directly to the thread on which the AsyncLayerTreeFrameSink lives, rather
+    // than hopping through the I/O thread first. Only usable if the
+    // AsyncLayerTreeFrameSink lives on a thread which uses an IO message pump.
+    bool use_direct_client_receiver = false;
+
+    // If |true|, presentation feedback will be used on every begin frame to
+    // update the vsync parameters of the |synthetic_begin_frame_source|.
+    bool use_begin_frame_presentation_feedback = false;
+
+    // If `true`, SetNeedsBeginFrame(true) IPCs are omitted. Instead, the client
+    // relies on unsolicited compositor frame submission to notify the server
+    // side to start sending BeginFrame requests.
+    //
+    // Note: SetNeedsBeginFrame(false) IPCs are sent regardless what value
+    // `auto_needs_begin_frame` is.
+    bool auto_needs_begin_frame = false;
+
+    // Notifies the client wants to throttle sending
+    // `DidReceiveCompositorFrameAck` and `ReclaimResources`. Instead merging
+    // them into OnBeginFrame. This is set to `true` by default. Users of
+    // |this| can optionally opt out from this by setting this to `false`.
+    //
+    // Note: on the server side, this throttle is also controlled with the
+    // `features::kOnBeginFrameAcks` in addition to this control variable.
+    bool wants_begin_frame_acks = true;
   };
 
-  AsyncLayerTreeFrameSink(scoped_refptr<viz::ContextProvider> context_provider,
-                          scoped_refptr<RasterContextProviderWrapper>
-                              worker_context_provider_wrapper,
-                          InitParams* params);
+  AsyncLayerTreeFrameSink(
+      scoped_refptr<viz::RasterContextProvider> context_provider,
+      scoped_refptr<RasterContextProviderWrapper>
+          worker_context_provider_wrapper,
+      scoped_refptr<gpu::ClientSharedImageInterface> shared_image_interface,
+      InitParams* params);
   AsyncLayerTreeFrameSink(const AsyncLayerTreeFrameSink&) = delete;
   ~AsyncLayerTreeFrameSink() override;
 
@@ -92,6 +127,15 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   const viz::LocalSurfaceId& local_surface_id() const {
     return local_surface_id_;
   }
+  float last_submitted_device_scale_factor() const {
+    return last_submitted_device_scale_factor_;
+  }
+  const gfx::Size& last_submitted_size_in_pixels() const {
+    return last_submitted_size_in_pixels_;
+  }
+
+  bool auto_needs_begin_frame() const { return auto_needs_begin_frame_; }
+  bool needs_begin_frames() const { return needs_begin_frames_; }
 
   // LayerTreeFrameSink implementation.
   bool BindToClient(LayerTreeFrameSinkClient* client) override;
@@ -101,6 +145,8 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
                              bool hit_test_data_changed) override;
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason) override;
+  std::unique_ptr<LayerContext> CreateLayerContext(
+      LayerTreeHostImpl& host_impl) override;
   void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
                                const viz::SharedBitmapId& id) override;
   void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override;
@@ -109,13 +155,10 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
     return last_hit_test_data_;
   }
 
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   void InitSoftwareCompositorRender(SoftwareCompositorRegistryOhos* registry);
 #endif
-#if BUILDFLAG(IS_OHOS)
-  void TriggerVsyncImplTask() override;
-  void SetHandledTouchEvent(bool handledTouchEvent) override;
-#endif
+
  private:
   // mojom::CompositorFrameSinkClient implementation:
   void DidReceiveCompositorFrameAck(
@@ -128,14 +171,17 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   void ReclaimResources(std::vector<viz::ReturnedResource> resources) override;
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override;
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override;
 
   // ExternalBeginFrameSourceClient implementation.
   void OnNeedsBeginFrames(bool needs_begin_frames) override;
 
   void OnMojoConnectionError(uint32_t custom_reason,
                              const std::string& description);
-  void SetDrawRect(const gfx::Rect& new_rect);
 
+  void UpdateNeedsBeginFramesInternal(bool needs_begin_frames);
+
+  const bool use_direct_client_receiver_;
   bool begin_frames_paused_ = false;
   bool needs_begin_frames_ = false;
   viz::LocalSurfaceId local_surface_id_;
@@ -143,6 +189,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   std::unique_ptr<viz::SyntheticBeginFrameSource> synthetic_begin_frame_source_;
 #if BUILDFLAG(IS_ANDROID)
   base::PlatformThreadId io_thread_id_;
+  base::PlatformThreadId main_thread_id_;
 #endif
 
   // Message pipes that will be bound when BindToClient() is called.
@@ -156,26 +203,39 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   // point to message pipe we want to use. It must be declared last and cleared
   // first.
   raw_ptr<viz::mojom::CompositorFrameSink> compositor_frame_sink_ptr_ = nullptr;
-  mojo::Receiver<viz::mojom::CompositorFrameSinkClient> client_receiver_{this};
+
+  using ClientReceiver = mojo::Receiver<viz::mojom::CompositorFrameSinkClient>;
+  using DirectClientReceiver =
+      mojo::DirectReceiver<viz::mojom::CompositorFrameSinkClient>;
+  absl::variant<absl::monostate, ClientReceiver, DirectClientReceiver>
+      client_receiver_;
 
   THREAD_CHECKER(thread_checker_);
   const bool wants_animate_only_begin_frames_;
+
+  // Please see comment of `InitParams::auto_needs_begin_frame`.
+  const bool auto_needs_begin_frame_;
+  // Please see comment of `InitParams::wants_begin_frame_acks`.
+  const bool wants_begin_frame_acks_;
 
   viz::HitTestRegionList last_hit_test_data_;
 
   viz::LocalSurfaceId last_submitted_local_surface_id_;
   float last_submitted_device_scale_factor_ = 1.f;
   gfx::Size last_submitted_size_in_pixels_;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  gfx::Rect last_draw_rect_;
+#endif
 
-  power_scheduler::FrameProductionPowerModeVoter power_mode_voter_;
+  bool use_begin_frame_presentation_feedback_ = false;
 
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
 
-#if defined(OHOS_SOFTWARE_COMPOSITOR)
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   std::unique_ptr<SoftwareCompositorRendererOhos> software_renderer_ohos_;
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   bool is_first_submit_ = true;
 #endif
 };

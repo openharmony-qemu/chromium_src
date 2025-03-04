@@ -2,9 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/public/cpp/base/big_buffer.h"
 
+#include <utility>
+
 #include "base/check.h"
+#include "base/containers/heap_array.h"
 #include "base/notreached.h"
 #include "base/ranges/algorithm.h"
 
@@ -42,7 +50,7 @@ namespace {
 void TryCreateSharedMemory(
     size_t size,
     BigBuffer::StorageType* storage_type,
-    absl::optional<internal::BigBufferSharedMemoryRegion>* shared_memory) {
+    std::optional<internal::BigBufferSharedMemoryRegion>* shared_memory) {
   if (size > BigBuffer::kMaxInlineBytes) {
     auto buffer = mojo::SharedBufferHandle::Create(size);
     if (buffer.is_valid()) {
@@ -62,27 +70,11 @@ void TryCreateSharedMemory(
 
 }  // namespace
 
-// static
-constexpr size_t BigBuffer::kMaxInlineBytes;
-
-BigBuffer::BigBuffer() : storage_type_(StorageType::kBytes), bytes_size_(0) {}
-
-BigBuffer::BigBuffer(BigBuffer&& other)
-    : storage_type_(other.storage_type_),
-      bytes_(std::move(other.bytes_)),
-      bytes_size_(other.bytes_size_),
-      shared_memory_(std::move(other.shared_memory_)) {
-  // Make sure |other| looks empty.
-  other.storage_type_ = StorageType::kInvalidBuffer;
-  other.bytes_size_ = 0;
-}
+BigBuffer::BigBuffer() = default;
 
 BigBuffer::BigBuffer(base::span<const uint8_t> data) {
   *this = BigBufferView::ToBigBuffer(BigBufferView(data));
 }
-
-BigBuffer::BigBuffer(const std::vector<uint8_t>& data)
-    : BigBuffer(base::make_span(data)) {}
 
 BigBuffer::BigBuffer(internal::BigBufferSharedMemoryRegion shared_memory)
     : storage_type_(StorageType::kSharedMemory),
@@ -93,32 +85,36 @@ BigBuffer::BigBuffer(size_t size) {
   if (storage_type_ == BigBuffer::StorageType::kBytes) {
     // Either |size| is small enough or shared memory allocation failed, and
     // fallback to inline allocation is feasible.
-    bytes_ = std::make_unique<uint8_t[]>(size);
-    bytes_size_ = size;
+    bytes_ = base::HeapArray<uint8_t>::Uninit(size);
   }
+}
+
+BigBuffer::BigBuffer(BigBuffer&& other)
+    // Make sure |other| looks empty.
+    : storage_type_(
+          std::exchange(other.storage_type_, StorageType::kInvalidBuffer)),
+      bytes_(std::move(other.bytes_)),
+      shared_memory_(std::move(other.shared_memory_)) {}
+
+BigBuffer& BigBuffer::operator=(BigBuffer&& other) {
+  // Make sure |other| looks empty.
+  storage_type_ =
+      std::exchange(other.storage_type_, StorageType::kInvalidBuffer);
+  bytes_ = std::move(other.bytes_);
+  shared_memory_ = std::move(other.shared_memory_);
+  return *this;
 }
 
 BigBuffer::~BigBuffer() = default;
 
-BigBuffer& BigBuffer::operator=(BigBuffer&& other) {
-  storage_type_ = other.storage_type_;
-  bytes_ = std::move(other.bytes_);
-  bytes_size_ = other.bytes_size_;
-  shared_memory_ = std::move(other.shared_memory_);
-  // Make sure |other| looks empty.
-  other.storage_type_ = StorageType::kInvalidBuffer;
-  other.bytes_size_ = 0;
-  return *this;
-}
-
-uint8_t* BigBuffer::data() {
-  return const_cast<uint8_t*>(const_cast<const BigBuffer*>(this)->data());
+BigBuffer BigBuffer::Clone() const {
+  return BigBuffer(base::span(*this));
 }
 
 const uint8_t* BigBuffer::data() const {
   switch (storage_type_) {
     case StorageType::kBytes:
-      return bytes_.get();
+      return bytes_.data();
     case StorageType::kSharedMemory:
       DCHECK(shared_memory_->buffer_mapping_);
       return static_cast<const uint8_t*>(
@@ -129,21 +125,19 @@ const uint8_t* BigBuffer::data() const {
       return nullptr;
     default:
       NOTREACHED();
-      return nullptr;
   }
 }
 
 size_t BigBuffer::size() const {
   switch (storage_type_) {
     case StorageType::kBytes:
-      return bytes_size_;
+      return bytes_.size();
     case StorageType::kSharedMemory:
       return shared_memory_->size();
     case StorageType::kInvalidBuffer:
       return 0;
     default:
       NOTREACHED();
-      return 0;
   }
 }
 
@@ -202,9 +196,7 @@ BigBuffer BigBufferView::ToBigBuffer(BigBufferView view) {
   BigBuffer buffer;
   buffer.storage_type_ = view.storage_type_;
   if (view.storage_type_ == BigBuffer::StorageType::kBytes) {
-    buffer.bytes_ = std::make_unique<uint8_t[]>(view.bytes_.size());
-    buffer.bytes_size_ = view.bytes_.size();
-    base::ranges::copy(view.bytes_, buffer.bytes_.get());
+    buffer.bytes_ = base::HeapArray<uint8_t>::CopiedFrom(view.bytes_);
   } else if (view.storage_type_ == BigBuffer::StorageType::kSharedMemory) {
     buffer.shared_memory_ = std::move(*view.shared_memory_);
   }

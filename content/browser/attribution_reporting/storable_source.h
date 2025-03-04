@@ -15,10 +15,6 @@ namespace attribution_reporting {
 class SuitableOrigin;
 }  // namespace attribution_reporting
 
-namespace base {
-class Time;
-}  // namespace base
-
 namespace content {
 
 // Contains attributes specific to a source that hasn't been stored yet.
@@ -28,7 +24,6 @@ class CONTENT_EXPORT StorableSource {
 
   StorableSource(attribution_reporting::SuitableOrigin reporting_origin,
                  attribution_reporting::SourceRegistration,
-                 base::Time source_time,
                  attribution_reporting::SuitableOrigin source_origin,
                  attribution_reporting::mojom::SourceType,
                  bool is_within_fenced_frame);
@@ -53,6 +48,13 @@ class CONTENT_EXPORT StorableSource {
 
   bool is_within_fenced_frame() const { return is_within_fenced_frame_; }
 
+  void set_cookie_based_debug_allowed(bool value) {
+    common_info_.set_cookie_based_debug_allowed(value);
+  }
+
+  friend bool operator==(const StorableSource&,
+                         const StorableSource&) = default;
+
  private:
   attribution_reporting::SourceRegistration registration_;
 
@@ -60,9 +62,6 @@ class CONTENT_EXPORT StorableSource {
 
   // Whether the source is registered within a fenced frame tree.
   bool is_within_fenced_frame_;
-
-  // When adding new members, the corresponding `operator==()` definition in
-  // `attribution_test_utils.h` should also be updated.
 };
 
 }  // namespace content

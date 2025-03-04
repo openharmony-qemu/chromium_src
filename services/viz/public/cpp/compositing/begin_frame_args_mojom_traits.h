@@ -50,6 +50,14 @@ struct StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs> {
     return args.trace_id;
   }
 
+  static base::TimeTicks dispatch_time(const viz::BeginFrameArgs& args) {
+    return args.dispatch_time;
+  }
+
+  static base::TimeTicks client_arrival_time(const viz::BeginFrameArgs& args) {
+    return args.client_arrival_time;
+  }
+
   static viz::BeginFrameArgs::BeginFrameArgsType type(
       const viz::BeginFrameArgs& args) {
     return args.type;
@@ -63,17 +71,20 @@ struct StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs> {
     return args.animate_only;
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   static bool internal_frame(const viz::BeginFrameArgs& args) {
     return args.internal_frame;
   }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+  static bool Read(viz::mojom::BeginFrameArgsDataView data,
+                   viz::BeginFrameArgs* out);
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
   static gfx::Rect draw_rect(const viz::BeginFrameArgs& args) {
     return args.draw_rect;
   }
 #endif
-
-  static bool Read(viz::mojom::BeginFrameArgsDataView data,
-                   viz::BeginFrameArgs* out);
 };
 
 template <>
@@ -92,6 +103,13 @@ struct StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck> {
 
   static bool has_damage(const viz::BeginFrameAck& ack) {
     return ack.has_damage;
+  }
+
+  static std::optional<base::TimeDelta> preferred_frame_interval(
+      const viz::BeginFrameAck& ack) {
+    DCHECK(!ack.preferred_frame_interval ||
+           ack.preferred_frame_interval.value() >= base::TimeDelta());
+    return ack.preferred_frame_interval;
   }
 
   static bool Read(viz::mojom::BeginFrameAckDataView data,

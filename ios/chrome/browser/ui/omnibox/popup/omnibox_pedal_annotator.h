@@ -11,19 +11,26 @@
 struct AutocompleteMatch;
 @protocol OmniboxCommands;
 @class OmniboxPedalData;
+@protocol QuickDeleteCommands;
+@protocol SettingsCommands;
 
 /// A class to add pedal data to a given autocomplete match object
 @interface OmniboxPedalAnnotator : NSObject
 
-/// The endpoint that handles Actions and Pedals commands.
-@property(nonatomic, weak) id<ApplicationCommands> pedalsEndpoint;
+/// The endpoint that handles Actions and Pedals application commands.
+@property(nonatomic, weak) id<ApplicationCommands> applicationHandler;
+
+/// The endpoint that handles Actions and Pedals settings commands.
+@property(nonatomic, weak) id<SettingsCommands> settingsHandler;
 
 /// The endpoint that handles Omnibox commands.
-@property(nonatomic, weak) id<OmniboxCommands> omniboxCommandHandler;
+@property(nonatomic, weak) id<OmniboxCommands> omniboxHandler;
+
+/// The endpoint that handles QuickDelete commands.
+@property(nonatomic, weak) id<QuickDeleteCommands> quickDeleteHandler;
 
 /// Creates a new pedal for the provided match.
-- (OmniboxPedalData*)pedalForMatch:(const AutocompleteMatch&)match
-                         incognito:(BOOL)incognito;
+- (OmniboxPedalData*)pedalForMatch:(const AutocompleteMatch&)match;
 
 @end
 

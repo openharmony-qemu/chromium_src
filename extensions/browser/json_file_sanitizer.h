@@ -6,6 +6,7 @@
 #define EXTENSIONS_BROWSER_JSON_FILE_SANITIZER_H_
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
@@ -16,7 +17,6 @@
 #include "base/values.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/data_decoder/public/mojom/json_parser.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace data_decoder {
 class DataDecoder;
@@ -79,12 +79,10 @@ class JsonFileSanitizer {
                     std::tuple<std::string, bool, bool> read_and_delete_result);
 
   void JsonParsingDone(const base::FilePath& file_path,
-                       absl::optional<base::Value> json_value,
-                       const absl::optional<std::string>& error);
+                       std::optional<base::Value> json_value,
+                       const std::optional<std::string>& error);
 
-  void JsonFileWritten(const base::FilePath& file_path,
-                       int expected_size,
-                       int actual_size);
+  void JsonFileWritten(const base::FilePath& file_path, bool success);
 
   void ReportSuccess();
 

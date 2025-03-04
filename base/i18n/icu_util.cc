@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/alias.h"
 #include "base/environment.h"
 #include "base/files/file_path.h"
@@ -27,10 +28,9 @@
 #include "base/strings/string_util.h"
 #include "build/chromecast_buildflags.h"
 #include "third_party/icu/source/common/unicode/putil.h"
+#include "third_party/icu/source/common/unicode/uclean.h"
 #include "third_party/icu/source/common/unicode/udata.h"
 #include "third_party/icu/source/common/unicode/utrace.h"
-#include "third_party/icu/source/common/unicode/unistr.h"
-#include "third_party/icu/source/i18n/unicode/timezone.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
@@ -42,7 +42,7 @@
 #endif
 
 #if BUILDFLAG(IS_APPLE)
-#include "base/mac/foundation_util.h"
+#include "base/apple/foundation_util.h"
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)
@@ -54,14 +54,17 @@
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
+    BUILDFLAG(IS_CHROMEOS) ||                         \
+    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS) && !BUILDFLAG(IS_CASTOS))
 #include "third_party/icu/source/i18n/unicode/timezone.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_HAP_DECOMPRESSED)
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#include "ohos_adapter_helper.h"
+#if BUILDFLAG(IS_OHOS)
+#include "arkweb/build/features/features.h"
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 #endif
 
 namespace base::i18n {
@@ -105,21 +108,18 @@ const char kIcuDataFileName[] = "icudtl.dat";
 // See for details: http://userguide.icu-project.org/datetime/timezone
 const char kIcuTimeZoneEnvVariable[] = "ICU_TIMEZONE_FILES_DIR";
 
-// Up-to-date time zone data is expected to be provided by the system as a
+// Up-to-date time zone data MUST be provided by the system as a
 // directory offered to Chromium components at /config/tzdata.  Chromium
-// components should "use" the `tzdata` directory capability, specifying the
-// "/config/tzdata" path.  The capability's "availability" should be set to
-// "required" or "optional" as appropriate - if no data is provided then ICU
-// initialization will (in future silently) fall-back to the (potentially stale)
-// timezone data included in the package.
+// components "use" the `tzdata` directory capability, specifying the
+// "/config/tzdata" path. Chromium components will crash if this capability
+// is not available.
 //
 // TimeZoneDataTest.* tests verify that external timezone data is correctly
 // loaded from the system, to alert developers if the platform and Chromium
 // versions are no longer compatible versions.
+// LINT.IfChange(icu_time_zone_data_path)
 const char kIcuTimeZoneDataDir[] = "/config/tzdata/icu/44/le";
-
-// Path used to receive tzdata via the legacy config-data mechanism.
-const char kLegacyIcuTimeZoneDataDir[] = "/config/data/tzdata/icu/44/le";
+// LINT.ThenChange(//sandbox/policy.fuchsia/sandbox_policy_fuchsia.cc:icu_time_zone_data_path)
 #endif  // BUILDFLAG(IS_FUCHSIA)
 
 #if BUILDFLAG(IS_ANDROID)
@@ -130,7 +130,7 @@ const char kAndroidAssetsIcuDataFileName[] = "assets/icudtl.dat";
 // Windows implementation guards against two instances owning the same
 // PlatformFile (which we allow since we know it is never freed).
 PlatformFile g_icudtl_pf = kInvalidPlatformFile;
-IcuDataFile* g_icudtl_mapped_file = nullptr;
+MemoryMappedFile* g_icudtl_mapped_file = nullptr;
 MemoryMappedFile::Region g_icudtl_region;
 
 #if BUILDFLAG(IS_FUCHSIA)
@@ -175,7 +175,7 @@ void LazyInitIcuDataFile() {
 
 #else  // !BUILDFLAG(IS_APPLE)
   // Assume it is in the framework bundle's Resources directory.
-  FilePath data_path = mac::PathForFrameworkBundleResource(kIcuDataFileName);
+  FilePath data_path = apple::PathForFrameworkBundleResource(kIcuDataFileName);
 #if BUILDFLAG(IS_IOS)
   FilePath override_data_path = ios::FilePathOfEmbeddedICU();
   if (!override_data_path.empty()) {
@@ -188,7 +188,7 @@ void LazyInitIcuDataFile() {
   }
 #endif  // !BUILDFLAG(IS_APPLE)
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_HAP_DECOMPRESSED)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
   // If the hap package is not decompressed, the directory does not exist.
   if (data_path.empty() || !base::PathExists(data_path)) {
     LOG(ERROR) << data_path << " not exists.";
@@ -223,32 +223,17 @@ void InitializeExternalTimeZoneData() {
   // Set the environment variable to override the location used by ICU.
   // Loading can still fail if the directory is empty or its data is invalid.
   std::unique_ptr<base::Environment> env = base::Environment::Create();
-
-  // If the ICU tzdata path exists then do not fall-back to config-data.
-  // TODO(crbug.com/1360077): Remove fall-back once all components are migrated.
-  if (base::PathExists(base::FilePath(g_icu_time_zone_data_dir))) {
-    // If the tzdata directory does not exist then silently fallback to
-    // using the inbuilt (possibly stale) timezone data.
-    if (base::DirectoryExists(base::FilePath(g_icu_time_zone_data_dir))) {
-      env->SetVar(kIcuTimeZoneEnvVariable, g_icu_time_zone_data_dir);
-    }
-
-  } else if (g_icu_time_zone_data_dir == kIcuTimeZoneDataDir &&
-             base::DirectoryExists(
-                 base::FilePath((kLegacyIcuTimeZoneDataDir)))) {
-    // Only fall-back to attempting to load from the legacy config-data path
-    // if `g_icu_time_zone_data_dir` has not been changed by a test.
-    env->SetVar(kIcuTimeZoneEnvVariable, kLegacyIcuTimeZoneDataDir);
-  } else {
-    PLOG(WARNING) << "Could not locate tzdata in config-data. "
-                  << "Using built-in timezone database";
+  if (!base::DirectoryExists(base::FilePath(g_icu_time_zone_data_dir))) {
+    PLOG(FATAL) << "Could not open directory: '" << g_icu_time_zone_data_dir
+                << "'";
   }
+  env->SetVar(kIcuTimeZoneEnvVariable, g_icu_time_zone_data_dir);
 #endif  // BUILDFLAG(IS_FUCHSIA)
 }
 
 int LoadIcuData(PlatformFile data_fd,
                 const MemoryMappedFile::Region& data_region,
-                std::unique_ptr<IcuDataFile>* out_mapped_data_file,
+                std::unique_ptr<MemoryMappedFile>* out_mapped_data_file,
                 UErrorCode* out_error_code) {
   InitializeExternalTimeZoneData();
 
@@ -257,7 +242,7 @@ int LoadIcuData(PlatformFile data_fd,
     return 1;  // To debug http://crbug.com/445616.
   }
 
-  *out_mapped_data_file = std::make_unique<IcuDataFile>();
+  *out_mapped_data_file = std::make_unique<MemoryMappedFile>();
   if (!(*out_mapped_data_file)->Initialize(File(data_fd), data_region)) {
     LOG(ERROR) << "Couldn't mmap icu data file";
     return 2;  // To debug http://crbug.com/445616.
@@ -275,7 +260,8 @@ int LoadIcuData(PlatformFile data_fd,
   return 0;
 }
 
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
 const char kIcuDataFileNameHap[] = "resources/rawfile/icudtl.dat";
 int LoadIcuDataByHap(PlatformFile data_fd,
                      const MemoryMappedFile::Region& data_region,
@@ -283,8 +269,8 @@ int LoadIcuDataByHap(PlatformFile data_fd,
                      UErrorCode* out_error_code) {
   auto resourceInstance =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
-  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper = 
-        resourceInstance->GetRawFileMapper(kIcuDataFileNameHap, true);
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
+      resourceInstance->GetRawFileMapper(kIcuDataFileNameHap, true);
   if (!fileMapper) {
     LOG(ERROR) << "Couldn't mmap icu data file by hap: " << kIcuDataFileNameHap;
     return 1;
@@ -316,9 +302,10 @@ bool InitializeICUWithFileDescriptorInternal(
     return true;
   }
 
-  std::unique_ptr<IcuDataFile> mapped_file;
+  std::unique_ptr<MemoryMappedFile> mapped_file;
   UErrorCode err;
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
   if (data_fd == kInvalidPlatformFile) {
     g_debug_icu_load =
         LoadIcuDataByHap(data_fd, data_region, &mapped_file, &err);
@@ -351,11 +338,11 @@ bool InitializeICUFromDataFile() {
   bool result =
       InitializeICUWithFileDescriptorInternal(g_icudtl_pf, g_icudtl_region);
 
-#if BUILDFLAG(IS_WIN)
   int debug_icu_load = g_debug_icu_load;
   debug::Alias(&debug_icu_load);
   int debug_icu_last_error = g_debug_icu_last_error;
   debug::Alias(&debug_icu_last_error);
+#if BUILDFLAG(IS_WIN)
   int debug_icu_pf_last_error = g_debug_icu_pf_last_error;
   debug::Alias(&debug_icu_pf_last_error);
   int debug_icu_pf_error_details = g_debug_icu_pf_error_details;
@@ -363,8 +350,13 @@ bool InitializeICUFromDataFile() {
   wchar_t debug_icu_pf_filename[_MAX_PATH] = {0};
   wcscpy_s(debug_icu_pf_filename, g_debug_icu_pf_filename);
   debug::Alias(&debug_icu_pf_filename);
-  CHECK(result);  // TODO(brucedawson): http://crbug.com/445616
 #endif            // BUILDFLAG(IS_WIN)
+  // Excluding Chrome OS from this CHECK due to b/289684640.
+#if !BUILDFLAG(IS_CHROMEOS)
+  // https://crbug.com/445616
+  // https://crbug.com/1449816
+  CHECK(result);
+#endif
 
   return result;
 }
@@ -375,17 +367,25 @@ bool InitializeICUFromDataFile() {
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
 #if BUILDFLAG(IS_OHOS)
-  // On OHOS, we can't use the method of obtaining the timezone as Linux, because
-  // it detects from the system file which render process doesn't have enough
-  // permission. On OHOS, we can get from OH TimeService Subsystem.
-  LOG(DEBUG) << "InitializeIcuTimeZone in OHOS.";
-
-  auto tzid = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDateTimeFormatAdapter()->GetTimezone();
-
+#if BUILDFLAG(ARKWEB_TIME_ZONE)
+  // On OHOS, we can't use the method of obtaining the timezone as Linux,
+  // because it detects from the system file which render process doesn't have
+  // enough permission. On OHOS, we can get from OH TimeService Subsystem.
+  LOG(DEBUG) << "InitializeIcuTimeZone in OHOS ARKWEB.";
+  auto tzid = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                  .CreateDateTimeFormatAdapter()
+                  ->GetTimezone();
   icu::TimeZone::createDefault();
-  std::unique_ptr<icu::TimeZone> timezone(icu::TimeZone::createTimeZone(
-      icu::UnicodeString::fromUTF8(tzid)));
+  std::unique_ptr<icu::TimeZone> timezone(
+      icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(tzid)));
   icu::TimeZone::adoptDefault(timezone.release());
+#else
+  std::string zone_id = ::ohos::adapter::ohos_i18n::GetTimeZone();
+  if (!zone_id.empty()) {
+    icu::TimeZone::adoptDefault(
+        icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(zone_id)));
+  }
+#endif
 #elif BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone
   // because ICU's time zone detection does not work in many time zones (e.g.
@@ -471,8 +471,15 @@ PlatformFile GetIcuDataFileHandle(MemoryMappedFile::Region* out_region) {
 }
 
 void ResetGlobalsForTesting() {
+  // Reset ICU library internal state before tearing-down the mapped data
+  // file, or handle.
+  u_cleanup();
+
+  // `g_icudtl_pf` does not actually own the FD once ICU is initialized, so
+  // don't try to close it here.
   g_icudtl_pf = kInvalidPlatformFile;
-  g_icudtl_mapped_file = nullptr;
+  delete std::exchange(g_icudtl_mapped_file, nullptr);
+
 #if BUILDFLAG(IS_FUCHSIA)
   g_icu_time_zone_data_dir = kIcuTimeZoneDataDir;
 #endif  // BUILDFLAG(IS_FUCHSIA)

@@ -6,7 +6,8 @@
 
 #import <algorithm>
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
+#import "base/location.h"
 #import "base/memory/scoped_refptr.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/strings/sys_string_conversions.h"
@@ -14,9 +15,10 @@
 #import "components/reading_list/features/reading_list_switches.h"
 #import "components/reading_list/ios/reading_list_model_bridge_observer.h"
 #import "components/url_formatter/url_formatter.h"
-#import "ios/chrome/browser/favicon/favicon_loader.h"
-#import "ios/chrome/browser/favicon/ios_chrome_favicon_loader_factory.h"
+#import "ios/chrome/browser/favicon/model/favicon_loader.h"
+#import "ios/chrome/browser/favicon/model/ios_chrome_favicon_loader_factory.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
+#import "ios/chrome/browser/sync/model/sync_observer_bridge.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_data_sink.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_list_item.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_list_item_factory.h"
@@ -26,10 +28,6 @@
 #import "ios/chrome/common/ui/favicon/favicon_constants.h"
 #import "ios/chrome/common/ui/favicon/favicon_view.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 // Sorter function that orders ReadingListEntries by their update time.
 bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
@@ -38,10 +36,8 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
 }
 }  // namespace
 
-@interface ReadingListMediator ()<ReadingListModelBridgeObserver> {
-  std::unique_ptr<ReadingListModelBridge> _modelBridge;
-  std::unique_ptr<ReadingListModel::ScopedReadingListBatchUpdate> _batchToken;
-}
+@interface ReadingListMediator () <ReadingListModelBridgeObserver,
+                                   SyncObserverModelBridge>
 
 // The model passed on initialization.
 @property(nonatomic, assign) ReadingListModel* model;
@@ -57,13 +53,19 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
 
 @end
 
-@implementation ReadingListMediator
+@implementation ReadingListMediator {
+  std::unique_ptr<ReadingListModelBridge> _modelBridge;
+  std::unique_ptr<ReadingListModel::ScopedReadingListBatchUpdate> _batchToken;
+  // Observer to keep track of the syncing status.
+  std::unique_ptr<SyncObserverBridge> _syncObserver;
+}
 
 @synthesize dataSink = _dataSink;
 
 #pragma mark - Public
 
 - (instancetype)initWithModel:(ReadingListModel*)model
+                  syncService:(nonnull syncer::SyncService*)syncService
                 faviconLoader:(nonnull FaviconLoader*)faviconLoader
               listItemFactory:(ReadingListListItemFactory*)itemFactory {
   self = [super init];
@@ -72,6 +74,7 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
     _itemFactory = itemFactory;
     _shouldMonitorModel = YES;
     _faviconLoader = faviconLoader;
+    _syncObserver = std::make_unique<SyncObserverBridge>(self, syncService);
 
     // This triggers the callback method. Should be created last.
     _modelBridge.reset(new ReadingListModelBridge(self, model));
@@ -94,6 +97,11 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
   _itemFactory = nil;
   _faviconLoader = nullptr;
   _modelBridge.reset();
+  _syncObserver.reset();
+}
+
+- (void)dealloc {
+  DCHECK(!_model);
 }
 
 #pragma mark - ReadingListDataSource
@@ -125,7 +133,7 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
 
 - (void)removeEntryFromItem:(id<ReadingListListItem>)item {
   [self logDeletionOfItem:item];
-  self.model->RemoveEntryByURL(item.entryURL);
+  self.model->RemoveEntryByURL(item.entryURL, FROM_HERE);
 }
 
 - (void)fillReadItems:(NSMutableArray<id<ReadingListListItem>>*)readArray
@@ -249,6 +257,16 @@ bool EntrySorter(scoped_refptr<const ReadingListEntry> rhs,
 
   if ([self hasDataSourceChanged])
     [self.dataSink dataSourceChanged];
+}
+
+#pragma mark - SyncObserverModelBridge
+
+- (void)onSyncStateChanged {
+  // If the sync state, especially the account storage state changes, the UI
+  // including cloud icons on items needs to be updated.
+  if ([self hasDataSourceChanged]) {
+    [self.dataSink dataSourceChanged];
+  }
 }
 
 #pragma mark - Private

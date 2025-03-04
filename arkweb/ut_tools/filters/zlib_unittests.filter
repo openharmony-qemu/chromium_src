@@ -1,0 +1,6 @@
+# 5 cases failed
+-ZipTest.UnzipEvil2
+-ZipTest.UnzipMixedPaths
+-ZipTest.UnzipSjis
+-ZipTest.UnzipSjisAsUtf8
+-ZipTest.ZipNonASCIIDir

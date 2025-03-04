@@ -10,6 +10,8 @@
 #include <memory>
 
 #include "base/check_op.h"
+#include "base/containers/contains.h"
+#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/rand_util.h"
 #include "base/strings/string_number_conversions.h"
@@ -420,7 +422,7 @@ void IsolatedContext::RevokeFileSystemByPath(const base::FilePath& path_in) {
 
 void IsolatedContext::AddReference(const std::string& filesystem_id) {
   base::AutoLock locker(lock_);
-  DCHECK(instance_map_.find(filesystem_id) != instance_map_.end());
+  DCHECK(base::Contains(instance_map_, filesystem_id));
   instance_map_[filesystem_id]->AddRef();
 }
 
@@ -494,7 +496,7 @@ bool IsolatedContext::UnregisterFileSystem(const std::string& filesystem_id) {
   Instance* instance = found->second.get();
   if (instance->IsSinglePathInstance()) {
     auto ids_iter = path_to_id_map_.find(instance->file_info().path);
-    DCHECK(ids_iter != path_to_id_map_.end());
+    CHECK(ids_iter != path_to_id_map_.end(), base::NotFatalUntil::M130);
     ids_iter->second.erase(filesystem_id);
     if (ids_iter->second.empty())
       path_to_id_map_.erase(ids_iter);
@@ -506,12 +508,12 @@ bool IsolatedContext::UnregisterFileSystem(const std::string& filesystem_id) {
 std::string IsolatedContext::GetNewFileSystemId() const {
   // Returns an arbitrary random string which must be unique in the map.
   lock_.AssertAcquired();
-  uint32_t random_data[4];
+  uint8_t random_data[16];
   std::string id;
   do {
-    base::RandBytes(random_data, sizeof(random_data));
-    id = base::HexEncode(random_data, sizeof(random_data));
-  } while (instance_map_.find(id) != instance_map_.end());
+    base::RandBytes(random_data);
+    id = base::HexEncode(random_data);
+  } while (base::Contains(instance_map_, id));
   return id;
 }
 

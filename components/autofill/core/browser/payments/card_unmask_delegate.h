@@ -28,6 +28,9 @@ class CardUnmaskDelegate {
 
     // User is opting-in for FIDO Authentication for future card unmasking.
     bool enable_fido_auth = false;
+
+    // If the FIDO auth checkbox was visible to the user.
+    bool was_checkbox_visible = false;
   };
 
   // Called when the user has attempted a verification. Prompt is still
@@ -35,8 +38,10 @@ class CardUnmaskDelegate {
   virtual void OnUnmaskPromptAccepted(
       const UserProvidedUnmaskDetails& details) = 0;
 
-  // Called when the unmask prompt is closed (e.g., cancelled).
-  virtual void OnUnmaskPromptClosed() = 0;
+  // Called when the unmask prompt is cancelled. This specifically refers to the
+  // flow being aborted, and is not invoked when the prompt is closed after card
+  // unmask flow is finished successfully.
+  virtual void OnUnmaskPromptCancelled() = 0;
 
   // Returns whether or not the user, while on the CVC prompt, should be
   // offered to switch to FIDO authentication for card unmasking. This will

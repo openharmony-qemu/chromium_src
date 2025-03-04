@@ -13,7 +13,6 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
-#include "base/functional/callback_helpers.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/scoped_refptr.h"
@@ -26,15 +25,15 @@
 #include "net/base/test_completion_callback.h"
 #include "storage/browser/quota/quota_client_type.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
-#include "storage/browser/test/mock_special_storage_policy.h"
 #include "storage/common/database/database_identifier.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/sqlite/sqlite3.h"
 
 namespace storage {
 
 const char kOrigin1Url[] = "http://origin1";
-const char kOrigin2Url[] = "http://protected_origin2";
+const char kOrigin2Url[] = "http://origin2";
 
 class TestObserver : public DatabaseTracker::Observer {
  public:
@@ -108,7 +107,7 @@ class TestQuotaManagerProxy : public QuotaManagerProxy {
   void RegisterClient(
       mojo::PendingRemote<mojom::QuotaClient> client,
       QuotaClientType client_type,
-      const std::vector<blink::mojom::StorageType>& storage_types) override {
+      const base::flat_set<blink::mojom::StorageType>& storage_types) override {
     EXPECT_FALSE(registered_client_);
     registered_client_.Bind(std::move(client));
   }
@@ -122,14 +121,14 @@ class TestQuotaManagerProxy : public QuotaManagerProxy {
   void NotifyBucketModified(
       QuotaClientType client_id,
       const BucketLocator& bucket,
-      int64_t delta,
+      std::optional<int64_t> delta,
       base::Time modification_time,
       scoped_refptr<base::SequencedTaskRunner> callback_task_runner,
       base::OnceClosure callback) override {
     EXPECT_EQ(QuotaClientType::kDatabase, client_id);
     EXPECT_EQ(blink::mojom::StorageType::kTemporary, bucket.type);
     modifications_[bucket.storage_key].first += 1;
-    modifications_[bucket.storage_key].second += delta;
+    modifications_[bucket.storage_key].second += delta.value_or(0);
     if (callback)
       callback_task_runner->PostTask(FROM_HERE, std::move(callback));
   }
@@ -192,18 +191,13 @@ class DatabaseTracker_TestHelper_Test {
     base::test::TaskEnvironment task_environment;
     base::ScopedTempDir temp_dir;
     ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    auto special_storage_policy =
-        base::MakeRefCounted<MockSpecialStoragePolicy>();
-    special_storage_policy->AddProtected(GURL(kOrigin2Url));
     scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), incognito_mode, std::move(special_storage_policy),
-        /*quota_manager_proxy=*/nullptr);
+        temp_dir.GetPath(), incognito_mode, /*quota_manager_proxy=*/nullptr);
 
     base::RunLoop run_loop;
     tracker->task_runner()->PostTask(
         FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
+          absl::Cleanup quit_runner = [&] { run_loop.Quit(); };
 
           // Create and open three databases.
           int64_t database_size = 0;
@@ -220,17 +214,12 @@ class DatabaseTracker_TestHelper_Test {
           tracker->DatabaseOpened(kOrigin2, kDB2, kDescription, &database_size);
           tracker->DatabaseOpened(kOrigin2, kDB3, kDescription, &database_size);
 
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      base::FilePath db1_file =
-          tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
-#else
-      base::FilePath db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-          base::FilePath kOrigin1Dir = tracker->GetOriginDirectory(kOrigin1);
-          EXPECT_TRUE(base::CreateDirectory(kOrigin1Dir));
+          EXPECT_TRUE(
+              base::CreateDirectory(tracker->GetOriginDirectory(kOrigin1)));
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin2)));
-          EXPECT_TRUE(base::WriteFile(db1_file, "a"));
+          EXPECT_TRUE(
+              base::WriteFile(tracker->GetFullDBFilePath(kOrigin1, kDB1), "a"));
           EXPECT_TRUE(base::WriteFile(
               tracker->GetFullDBFilePath(kOrigin2, kDB2), "aa"));
           EXPECT_TRUE(base::WriteFile(
@@ -251,24 +240,21 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_EQ(kDB1, observer.GetNotificationDatabaseName());
           tracker->DatabaseClosed(kOrigin1, kDB1);
           EXPECT_EQ(net::OK, delete_database_callback.WaitForResult());
-          EXPECT_FALSE(base::PathExists(kOrigin1Dir));
+          EXPECT_FALSE(base::PathExists(tracker->GetOriginDirectory(kOrigin1)));
 
           // Recreate db1.
           tracker->DatabaseOpened(kOrigin1, kDB1, kDescription, &database_size);
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin1)));
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
-#else;
-      db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-          EXPECT_TRUE(base::WriteFile(db1_file, "a"));
+          EXPECT_TRUE(
+              base::WriteFile(tracker->GetFullDBFilePath(kOrigin1, kDB1), "a"));
           tracker->DatabaseModified(kOrigin1, kDB1);
 
           // Setup file modification times.  db1 and db2 are modified now, db3
           // three days ago.
           base::Time now = base::Time::Now();
-          EXPECT_TRUE(base::TouchFile(db1_file, now, now));
+          EXPECT_TRUE(base::TouchFile(
+              tracker->GetFullDBFilePath(kOrigin1, kDB1), now, now));
           EXPECT_TRUE(base::TouchFile(
               tracker->GetFullDBFilePath(kOrigin2, kDB2), now, now));
           base::Time three_days_ago = now - base::Days(3);
@@ -285,13 +271,12 @@ class DatabaseTracker_TestHelper_Test {
               yesterday, delete_data_modified_since_callback.callback());
           EXPECT_FALSE(delete_data_modified_since_callback.have_result());
           EXPECT_TRUE(observer.DidReceiveNewNotification());
-          kOrigin1Dir = tracker->GetOriginDirectory(kOrigin1);
           tracker->DatabaseClosed(kOrigin1, kDB1);
           tracker->DatabaseClosed(kOrigin2, kDB2);
           EXPECT_EQ(net::OK,
                     delete_data_modified_since_callback.WaitForResult());
-          EXPECT_FALSE(base::PathExists(kOrigin1Dir));
-          EXPECT_TRUE(
+          EXPECT_FALSE(base::PathExists(tracker->GetOriginDirectory(kOrigin1)));
+          EXPECT_FALSE(
               base::PathExists(tracker->GetFullDBFilePath(kOrigin2, kDB2)));
           EXPECT_TRUE(
               base::PathExists(tracker->GetFullDBFilePath(kOrigin2, kDB3)));
@@ -309,18 +294,13 @@ class DatabaseTracker_TestHelper_Test {
     base::test::TaskEnvironment task_environment;
     base::ScopedTempDir temp_dir;
     ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    auto special_storage_policy =
-        base::MakeRefCounted<MockSpecialStoragePolicy>();
-    special_storage_policy->AddProtected(GURL(kOrigin2Url));
     scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), incognito_mode, std::move(special_storage_policy),
-        /*quota_manager_proxy=*/nullptr);
+        temp_dir.GetPath(), incognito_mode, /*quota_manager_proxy=*/nullptr);
 
     base::RunLoop run_loop;
     tracker->task_runner()->PostTask(
         FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
+          absl::Cleanup quit_runner = [&] { run_loop.Quit(); };
 
           // Add two observers.
           TestObserver observer1;
@@ -356,25 +336,16 @@ class DatabaseTracker_TestHelper_Test {
 
           // Write some data to each file and check that the listeners are
           // called with the appropriate values.
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      base::FilePath db1_file =
-          tracker->GetFullDBFilePath(kOrigin1, kDB1, true);
-      base::FilePath db2_file =
-          tracker->GetFullDBFilePath(kOrigin2, kDB2, true);
-      base::FilePath db3_file =
-          tracker->GetFullDBFilePath(kOrigin1, kDB3, true);
-#else
-      base::FilePath db1_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-      base::FilePath db2_file = tracker->GetFullDBFilePath(kOrigin2, kDB2);
-      base::FilePath db3_file = tracker->GetFullDBFilePath(kOrigin1, kDB3);
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin1)));
           EXPECT_TRUE(
               base::CreateDirectory(tracker->GetOriginDirectory(kOrigin2)));
-          EXPECT_TRUE(base::WriteFile(db1_file, "a"));
-          EXPECT_TRUE(base::WriteFile(db2_file, "aa"));
-          EXPECT_TRUE(base::WriteFile(db3_file, "aaaa"));
+          EXPECT_TRUE(
+              base::WriteFile(tracker->GetFullDBFilePath(kOrigin1, kDB1), "a"));
+          EXPECT_TRUE(base::WriteFile(
+              tracker->GetFullDBFilePath(kOrigin2, kDB2), "aa"));
+          EXPECT_TRUE(base::WriteFile(
+              tracker->GetFullDBFilePath(kOrigin1, kDB3), "aaaa"));
           tracker->DatabaseModified(kOrigin1, kDB1);
           CheckNotificationReceived(&observer1, kOrigin1, kDB1, 1);
           CheckNotificationReceived(&observer2, kOrigin1, kDB1, 1);
@@ -418,14 +389,14 @@ class DatabaseTracker_TestHelper_Test {
           tracker->DatabaseClosed(kOrigin1, kDB3);
 
           // Delete a database and make sure the space used by that origin is
-          // updated
+          // updated.
           EXPECT_TRUE(tracker->DeleteClosedDatabase(kOrigin1, kDB3));
           origin1_info = tracker->GetCachedOriginInfo(kOrigin1);
           EXPECT_TRUE(origin1_info);
           EXPECT_EQ(1, origin1_info->GetDatabaseSize(kDB1));
           EXPECT_EQ(0, origin1_info->GetDatabaseSize(kDB3));
 
-          // Get all data for all origins
+          // Get all data for all origins.
           std::vector<OriginInfo> origins_info;
           EXPECT_TRUE(tracker->GetAllOriginsInfo(&origins_info));
           EXPECT_EQ(size_t(2), origins_info.size());
@@ -437,7 +408,7 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_EQ(kOrigin2, origins_info[1].GetOriginIdentifier());
           EXPECT_EQ(2, origins_info[1].TotalSize());
 
-          // Trying to delete an origin with databases in use should fail
+          // Trying to delete an origin with databases in use should fail.
           tracker->DatabaseOpened(kOrigin1, kDB1, kDescription, &database_size);
           EXPECT_FALSE(tracker->DeleteOrigin(kOrigin1, false));
           origin1_info = tracker->GetCachedOriginInfo(kOrigin1);
@@ -445,7 +416,7 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_EQ(1, origin1_info->GetDatabaseSize(kDB1));
           tracker->DatabaseClosed(kOrigin1, kDB1);
 
-          // Delete an origin that doesn't have any database in use
+          // Delete an origin that doesn't have any database in use.
           EXPECT_TRUE(tracker->DeleteOrigin(kOrigin1, false));
           origins_info.clear();
           EXPECT_TRUE(tracker->GetAllOriginsInfo(&origins_info));
@@ -475,13 +446,11 @@ class DatabaseTracker_TestHelper_Test {
     // Initialize the tracker with a QuotaManagerProxy
     auto test_quota_proxy = base::MakeRefCounted<TestQuotaManagerProxy>();
     scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), incognito_mode,
-        /*special_storage_policy=*/nullptr, test_quota_proxy);
+        temp_dir.GetPath(), incognito_mode, test_quota_proxy);
     base::RunLoop run_loop;
     tracker->task_runner()->PostTask(
         FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
+          absl::Cleanup quit_runner = [&] { run_loop.Quit(); };
 
           EXPECT_TRUE(test_quota_proxy->registered_client_);
 
@@ -494,12 +463,7 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
 
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      base::FilePath db_file =
-          tracker->GetFullDBFilePath(kOriginId, kName, true);
-#else
-      base::FilePath db_file(tracker->GetFullDBFilePath(kOriginId, kName));
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
+          base::FilePath db_file(tracker->GetFullDBFilePath(kOriginId, kName));
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
@@ -539,11 +503,7 @@ class DatabaseTracker_TestHelper_Test {
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
 
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      db_file = tracker->GetFullDBFilePath(kOriginId, kName, true);
-#else
-      db_file = tracker->GetFullDBFilePath(kOriginId, kName);
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
+          db_file = tracker->GetFullDBFilePath(kOriginId, kName);
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
@@ -581,11 +541,7 @@ class DatabaseTracker_TestHelper_Test {
                                   &database_size);
           EXPECT_TRUE(test_quota_proxy->WasAccessNotified(kStorageKey));
           test_quota_proxy->ResetRecordedTestState();
-#if defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
-      db_file = tracker->GetFullDBFilePath(kOriginId, kName, true);
-#else
-      db_file = tracker->GetFullDBFilePath(kOriginId, kName);
-#endif  // defined(OHOS_WEBSTORAGE) && defined(OHOS_UNITTESTS)
+          db_file = tracker->GetFullDBFilePath(kOriginId, kName);
           EXPECT_FALSE(
               base::PathExists(tracker->GetOriginDirectory(kOriginId)));
           EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
@@ -606,196 +562,6 @@ class DatabaseTracker_TestHelper_Test {
     run_loop.Run();
   }
 
-  static void DatabaseTrackerClearSessionOnlyDatabasesOnExit() {
-    int64_t database_size = 0;
-    const std::string kOrigin1 = GetIdentifierFromOrigin(GURL(kOrigin1Url));
-    const std::string kOrigin2 = GetIdentifierFromOrigin(GURL(kOrigin2Url));
-    const std::u16string kDB1 = u"db1";
-    const std::u16string kDB2 = u"db2";
-    const std::u16string kDescription = u"database_description";
-
-    // Initialize the tracker database.
-    base::test::TaskEnvironment task_environment;
-    base::ScopedTempDir temp_dir;
-    ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    base::FilePath origin1_db_dir;
-    base::FilePath origin2_db_dir;
-    {
-      auto special_storage_policy =
-          base::MakeRefCounted<MockSpecialStoragePolicy>();
-      special_storage_policy->AddSessionOnly(GURL(kOrigin2Url));
-      scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-          temp_dir.GetPath(), false, std::move(special_storage_policy),
-          /*quota_manager_proxy=*/nullptr);
-      base::RunLoop run_loop;
-      tracker->task_runner()->PostTask(
-          FROM_HERE, base::BindLambdaForTesting([&]() {
-            base::ScopedClosureRunner quit_runner(
-                base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
-
-            // Open two new databases.
-            tracker->DatabaseOpened(kOrigin1, kDB1, kDescription,
-                                    &database_size);
-            EXPECT_EQ(0, database_size);
-            tracker->DatabaseOpened(kOrigin2, kDB2, kDescription,
-                                    &database_size);
-            EXPECT_EQ(0, database_size);
-
-            // Write some data to each file.
-            base::FilePath db_file;
-            db_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-            EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
-            EXPECT_TRUE(EnsureFileOfSize(db_file, 1));
-
-            db_file = tracker->GetFullDBFilePath(kOrigin2, kDB2);
-            EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
-            EXPECT_TRUE(EnsureFileOfSize(db_file, 2));
-
-            // Store the origin database directories as long as they still
-            // exist.
-            origin1_db_dir =
-                tracker->GetFullDBFilePath(kOrigin1, kDB1).DirName();
-            origin2_db_dir =
-                tracker->GetFullDBFilePath(kOrigin2, kDB2).DirName();
-
-            tracker->DatabaseModified(kOrigin1, kDB1);
-            tracker->DatabaseModified(kOrigin2, kDB2);
-
-            // Close all databases.
-            tracker->DatabaseClosed(kOrigin1, kDB1);
-            tracker->DatabaseClosed(kOrigin2, kDB2);
-
-            tracker->Shutdown();
-          }));
-      run_loop.Run();
-    }
-
-    // At this point, the database tracker should be gone. Create a new one.
-    scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), /*is_incognito=*/false,
-        /*special_storage_policy=*/nullptr, /*quota_manager_proxy=*/nullptr);
-    base::RunLoop run_loop;
-    tracker->task_runner()->PostTask(
-        FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
-
-          // Get all data for all origins.
-          std::vector<OriginInfo> origins_info;
-          EXPECT_TRUE(tracker->GetAllOriginsInfo(&origins_info));
-          // kOrigin1 was not session-only, so it survived. kOrigin2 was
-          // session-only and it got deleted.
-          EXPECT_EQ(size_t(1), origins_info.size());
-          EXPECT_EQ(kOrigin1, origins_info[0].GetOriginIdentifier());
-          EXPECT_TRUE(
-              base::PathExists(tracker->GetFullDBFilePath(kOrigin1, kDB1)));
-          EXPECT_EQ(base::FilePath(),
-                    tracker->GetFullDBFilePath(kOrigin2, kDB2));
-
-          // The origin directory of kOrigin1 remains, but the origin directory
-          // of kOrigin2 is deleted.
-          EXPECT_TRUE(base::PathExists(origin1_db_dir));
-          EXPECT_FALSE(base::PathExists(origin2_db_dir));
-
-          tracker->Shutdown();
-        }));
-    run_loop.Run();
-  }
-
-  static void DatabaseTrackerSetForceKeepSessionState() {
-    int64_t database_size = 0;
-    const std::string kOrigin1 = GetIdentifierFromOrigin(GURL(kOrigin1Url));
-    const std::string kOrigin2 = GetIdentifierFromOrigin(GURL(kOrigin2Url));
-    const std::u16string kDB1 = u"db1";
-    const std::u16string kDB2 = u"db2";
-    const std::u16string kDescription = u"database_description";
-
-    // Initialize the tracker database.
-    base::test::TaskEnvironment task_environment;
-    base::ScopedTempDir temp_dir;
-    ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    base::FilePath origin1_db_dir;
-    base::FilePath origin2_db_dir;
-    {
-      auto special_storage_policy =
-          base::MakeRefCounted<MockSpecialStoragePolicy>();
-      special_storage_policy->AddSessionOnly(GURL(kOrigin2Url));
-      scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-          temp_dir.GetPath(), false, std::move(special_storage_policy),
-          /*quota_manager_proxy=*/nullptr);
-      base::RunLoop run_loop;
-      tracker->task_runner()->PostTask(
-          FROM_HERE, base::BindLambdaForTesting([&]() {
-            base::ScopedClosureRunner quit_runner(
-                base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
-
-            tracker->SetForceKeepSessionState();
-
-            // Open two new databases.
-            tracker->DatabaseOpened(kOrigin1, kDB1, kDescription,
-                                    &database_size);
-            EXPECT_EQ(0, database_size);
-            tracker->DatabaseOpened(kOrigin2, kDB2, kDescription,
-                                    &database_size);
-            EXPECT_EQ(0, database_size);
-
-            // Write some data to each file.
-            base::FilePath db_file;
-            db_file = tracker->GetFullDBFilePath(kOrigin1, kDB1);
-            EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
-            EXPECT_TRUE(EnsureFileOfSize(db_file, 1));
-
-            db_file = tracker->GetFullDBFilePath(kOrigin2, kDB2);
-            EXPECT_TRUE(base::CreateDirectory(db_file.DirName()));
-            EXPECT_TRUE(EnsureFileOfSize(db_file, 2));
-
-            // Store the origin database directories as long as they still
-            // exist.
-            origin1_db_dir =
-                tracker->GetFullDBFilePath(kOrigin1, kDB1).DirName();
-            origin2_db_dir =
-                tracker->GetFullDBFilePath(kOrigin2, kDB2).DirName();
-
-            tracker->DatabaseModified(kOrigin1, kDB1);
-            tracker->DatabaseModified(kOrigin2, kDB2);
-
-            // Close all databases.
-            tracker->DatabaseClosed(kOrigin1, kDB1);
-            tracker->DatabaseClosed(kOrigin2, kDB2);
-
-            tracker->Shutdown();
-          }));
-      run_loop.Run();
-    }
-
-    // At this point, the database tracker should be gone. Create a new one.
-    scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), false, /*special_storage_policy=*/nullptr,
-        /*quota_manager_proxy=*/nullptr);
-    base::RunLoop run_loop;
-    tracker->task_runner()->PostTask(
-        FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
-
-          // Get all data for all origins.
-          std::vector<OriginInfo> origins_info;
-          EXPECT_TRUE(tracker->GetAllOriginsInfo(&origins_info));
-          // No origins were deleted.
-          EXPECT_EQ(size_t(2), origins_info.size());
-          EXPECT_TRUE(
-              base::PathExists(tracker->GetFullDBFilePath(kOrigin1, kDB1)));
-          EXPECT_TRUE(
-              base::PathExists(tracker->GetFullDBFilePath(kOrigin2, kDB2)));
-
-          EXPECT_TRUE(base::PathExists(origin1_db_dir));
-          EXPECT_TRUE(base::PathExists(origin2_db_dir));
-
-          tracker->Shutdown();
-        }));
-    run_loop.Run();
-  }
-
   static void EmptyDatabaseNameIsValid() {
     const GURL kOrigin(kOrigin1Url);
     const std::string kOriginId = GetIdentifierFromOrigin(kOrigin);
@@ -808,14 +574,13 @@ class DatabaseTracker_TestHelper_Test {
     base::test::TaskEnvironment task_environment;
     base::ScopedTempDir temp_dir;
     ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), kUseInMemoryTrackerDatabase,
-        /*special_storage_policy=*/nullptr, /*quota_manager_proxy=*/nullptr);
+    scoped_refptr<DatabaseTracker> tracker =
+        DatabaseTracker::Create(temp_dir.GetPath(), kUseInMemoryTrackerDatabase,
+                                /*quota_manager_proxy=*/nullptr);
     base::RunLoop run_loop;
     tracker->task_runner()->PostTask(
         FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
+          absl::Cleanup quit_runner = [&] { run_loop.Quit(); };
 
           // Starts off with no databases.
           std::vector<OriginInfo> infos;
@@ -866,14 +631,13 @@ class DatabaseTracker_TestHelper_Test {
     base::test::TaskEnvironment task_environment;
     base::ScopedTempDir temp_dir;
     ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
-    scoped_refptr<DatabaseTracker> tracker = DatabaseTracker::Create(
-        temp_dir.GetPath(), kUseInMemoryTrackerDatabase,
-        /*special_storage_policy=*/nullptr, /*quota_manager_proxy=*/nullptr);
+    scoped_refptr<DatabaseTracker> tracker =
+        DatabaseTracker::Create(temp_dir.GetPath(), kUseInMemoryTrackerDatabase,
+                                /*quota_manager_proxy=*/nullptr);
     base::RunLoop run_loop;
     tracker->task_runner()->PostTask(
         FROM_HERE, base::BindLambdaForTesting([&]() {
-          base::ScopedClosureRunner quit_runner(
-              base::BindLambdaForTesting([&]() { run_loop.Quit(); }));
+          absl::Cleanup quit_runner = [&] { run_loop.Quit(); };
 
           // Setup to observe OnScheduledForDelete notifications.
           TestObserver observer(false, true);
@@ -968,17 +732,6 @@ TEST(DatabaseTrackerTest, DatabaseTrackerQuotaIntegration) {
 
 TEST(DatabaseTrackerTest, DatabaseTrackerQuotaIntegrationIncognitoMode) {
   DatabaseTracker_TestHelper_Test::DatabaseTrackerQuotaIntegration(true);
-}
-
-TEST(DatabaseTrackerTest, DatabaseTrackerClearSessionOnlyDatabasesOnExit) {
-  // Only works for regular mode.
-  DatabaseTracker_TestHelper_Test::
-      DatabaseTrackerClearSessionOnlyDatabasesOnExit();
-}
-
-TEST(DatabaseTrackerTest, DatabaseTrackerSetForceKeepSessionState) {
-  // Only works for regular mode.
-  DatabaseTracker_TestHelper_Test::DatabaseTrackerSetForceKeepSessionState();
 }
 
 TEST(DatabaseTrackerTest, EmptyDatabaseNameIsValid) {

@@ -16,7 +16,7 @@
 namespace ui {
 
 // Timer used for animating scrollbar effects.
-// TODO(https://crbug.com/961835): Change this to be driven by the client
+// TODO(crbug.com/40626921): Change this to be driven by the client
 // (Blink or Views) animation system.
 class NATIVE_THEME_EXPORT ScrollbarAnimationTimerMac {
  public:
@@ -128,4 +128,4 @@ class NATIVE_THEME_EXPORT OverlayScrollbarAnimatorMac {
 
 }  // namespace ui
 
-#endif  // UI_NATIVE_THEME_OVERLAY_SCROLLBAR_ANIMATOR_MAC_H_
+#endif  // UI_NATIVE_THEME_SCROLLBAR_ANIMATOR_MAC_H_

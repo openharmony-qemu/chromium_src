@@ -12,10 +12,6 @@
 #import "ios/web/public/web_state.h"
 #import "ios/web/public/web_state_user_data.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace security_interstitials {
 
 WEB_STATE_USER_DATA_KEY_IMPL(IOSBlockingPageTabHelper)
@@ -91,6 +87,14 @@ void IOSBlockingPageTabHelper::CommittedNavigationIDListener::
 
   // Interstitials may change the visibility of the URL or other security state.
   web_state->DidChangeVisibleSecurityState();
+
+  IOSSecurityInterstitialPage* page = tab_helper_->GetCurrentBlockingPage();
+  if (!page) {
+    // `page` will be null if a IOSSecurityInterstitialPage is not being
+    // displayed to the user.
+    return;
+  }
+  page->ShowInfobar();
 }
 
 void IOSBlockingPageTabHelper::CommittedNavigationIDListener::WebStateDestroyed(

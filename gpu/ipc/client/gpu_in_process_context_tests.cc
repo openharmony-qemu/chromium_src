@@ -11,9 +11,9 @@
 
 #include "base/memory/raw_ptr.h"
 #include "build/build_config.h"
-#include "components/viz/test/test_gpu_memory_buffer_manager.h"
 #include "gpu/command_buffer/client/gles2_implementation.h"
 #include "gpu/command_buffer/client/shared_memory_limits.h"
+#include "gpu/command_buffer/client/test_gpu_memory_buffer_manager.h"
 #include "gpu/ipc/common/surface_handle.h"
 #include "gpu/ipc/gl_in_process_context.h"
 #include "gpu/ipc/in_process_gpu_thread_holder.h"
@@ -25,14 +25,6 @@ class ContextTestBase : public testing::Test {
  public:
   std::unique_ptr<gpu::GLInProcessContext> CreateGLInProcessContext() {
     gpu::ContextCreationAttribs attributes;
-    attributes.alpha_size = 8;
-    attributes.depth_size = 24;
-    attributes.red_size = 8;
-    attributes.green_size = 8;
-    attributes.blue_size = 8;
-    attributes.stencil_size = 8;
-    attributes.samples = 4;
-    attributes.sample_buffers = 1;
     attributes.bind_generates_resource = false;
 
     auto context = std::make_unique<gpu::GLInProcessContext>();
@@ -48,7 +40,11 @@ class ContextTestBase : public testing::Test {
     context_support_ = context_->GetImplementation();
   }
 
-  void TearDown() override { context_.reset(); }
+  void TearDown() override {
+    gl_ = nullptr;
+    context_support_ = nullptr;
+    context_.reset();
+  }
 
  protected:
   raw_ptr<gpu::gles2::GLES2Interface> gl_;

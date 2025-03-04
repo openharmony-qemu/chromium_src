@@ -6,14 +6,16 @@ package org.chromium.components.browser_ui.site_settings;
 
 import java.io.Serializable;
 
-/**
- * Cookies information for a given origin.
- */
+/** Cookies information for a given origin. */
 public class CookiesInfo implements Serializable {
     private int mCookies;
 
     public CookiesInfo() {
         mCookies = 0;
+    }
+
+    public CookiesInfo(int cookies) {
+        mCookies = cookies;
     }
 
     public void increment() {

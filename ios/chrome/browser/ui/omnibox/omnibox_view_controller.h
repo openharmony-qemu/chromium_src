@@ -7,16 +7,18 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/orchestrator/ui_bundled/edit_view_animatee.h"
+#import "ios/chrome/browser/orchestrator/ui_bundled/location_bar_offset_provider.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_consumer.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_text_field_ios.h"
-#import "ios/chrome/browser/ui/orchestrator/edit_view_animatee.h"
-#import "ios/chrome/browser/ui/orchestrator/location_bar_offset_provider.h"
+#import "ios/chrome/browser/ui/omnibox/omnibox_view_consumer.h"
 
 @class LayoutGuideCenter;
 @protocol OmniboxKeyboardDelegate;
 @protocol OmniboxReturnDelegate;
 @class OmniboxViewController;
 class OmniboxTextChangeDelegate;
+@protocol TextFieldViewContaining;
 
 // Delegate for text input changes in OmniboxViewController.
 @protocol OmniboxViewControllerTextInputDelegate
@@ -46,10 +48,18 @@ class OmniboxTextChangeDelegate;
 
 @interface OmniboxViewController : UIViewController <EditViewAnimatee,
                                                      LocationBarOffsetProvider,
-                                                     OmniboxConsumer>
+                                                     OmniboxConsumer,
+                                                     OmniboxViewConsumer>
+
+/// Whether the UI is configured for search-only mode.
+@property(nonatomic, assign) BOOL isSearchOnlyUI;
 
 // The textfield used by this view controller.
 @property(nonatomic, readonly, strong) OmniboxTextFieldIOS* textField;
+
+// The view, which contains a text field view.
+@property(nonatomic, readonly)
+    UIView<TextFieldViewContaining>* viewContainingTextField;
 
 // The default leading image to be used on omnibox focus before this is updated
 // via OmniboxConsumer protocol.
@@ -73,8 +83,12 @@ class OmniboxTextChangeDelegate;
 // The layout guide center to use to refer to the omnibox leading image.
 @property(nonatomic, strong) LayoutGuideCenter* layoutGuideCenter;
 
-// Designated initializer.
-- (instancetype)initWithIncognito:(BOOL)isIncognito;
+- (instancetype)initWithIsLensOverlay:(BOOL)isLensOverlay
+    NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithNibName:(NSString*)nibNameOrNil
+                         bundle:(NSBundle*)nibBundleOrNil NS_UNAVAILABLE;
+- (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 
 - (void)setTextChangeDelegate:(OmniboxTextChangeDelegate*)textChangeDelegate;
 

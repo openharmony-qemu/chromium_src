@@ -5,6 +5,7 @@
 #ifndef CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_VIEW_DELEGATE_H_
 #define CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_VIEW_DELEGATE_H_
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 #if defined(__OBJC__)
@@ -13,9 +14,10 @@
 #endif
 #endif
 
+#include <optional>
+
 #include "base/functional/callback_forward.h"
 #include "content/common/content_export.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/native_widget_types.h"
 
 #if defined(__OBJC__)
@@ -35,11 +37,11 @@ struct DropData;
 // WebContentsView implementation.
 class CONTENT_EXPORT WebContentsViewDelegate {
  public:
-  // Callback used with OnPerformDrop() method that is called once
-  // OnPerformDrop() completes. Returns an updated DropData or nothing if the
-  // drop operation should be aborted.
+  // Callback used with OnPerformingDrop() method that is called once
+  // OnPerformingDrop() completes. Returns an updated DropData or nothing if
+  // the drop operation should be aborted.
   using DropCompletionCallback =
-      base::OnceCallback<void(absl::optional<DropData>)>;
+      base::OnceCallback<void(std::optional<DropData>)>;
 
   virtual ~WebContentsViewDelegate();
 
@@ -57,9 +59,11 @@ class CONTENT_EXPORT WebContentsViewDelegate {
   // see https://crbug.com/1257907#c14).
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params);
-#ifdef OHOS_DRAG_DROP
-  virtual void ClearContextMenu();
-#endif //OHOS_DRAG_DROP
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual void ClearContextMenu() {}
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+
   // Dismiss the context menu if one exists.
   virtual void DismissContextMenu();
 
@@ -99,8 +103,8 @@ class CONTENT_EXPORT WebContentsViewDelegate {
 
   // Performs the actions needed for a drop and then calls the completion
   // callback once done.
-  virtual void OnPerformDrop(const DropData& drop_data,
-                             DropCompletionCallback callback);
+  virtual void OnPerformingDrop(const DropData& drop_data,
+                                DropCompletionCallback callback);
 };
 
 }  // namespace content

@@ -38,8 +38,8 @@ CrashReporterClient* GetCrashReporterClient() {
   return g_client;
 }
 
-CrashReporterClient::CrashReporterClient() {}
-CrashReporterClient::~CrashReporterClient() {}
+CrashReporterClient::CrashReporterClient() = default;
+CrashReporterClient::~CrashReporterClient() = default;
 
 #if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_ANDROID)
 void CrashReporterClient::SetCrashReporterClientIdFromGUID(
@@ -47,11 +47,6 @@ void CrashReporterClient::SetCrashReporterClientIdFromGUID(
 #endif
 
 #if BUILDFLAG(IS_WIN)
-bool CrashReporterClient::ShouldCreatePipeName(
-    const std::wstring& process_type) {
-  return process_type == L"browser";
-}
-
 bool CrashReporterClient::GetAlternativeCrashDumpLocation(
     std::wstring* crash_dir) {
   return false;
@@ -62,24 +57,6 @@ void CrashReporterClient::GetProductNameAndVersion(const std::wstring& exe_path,
                                                    std::wstring* version,
                                                    std::wstring* special_build,
                                                    std::wstring* channel_name) {
-}
-
-bool CrashReporterClient::ShouldShowRestartDialog(std::wstring* title,
-                                                  std::wstring* message,
-                                                  bool* is_rtl_locale) {
-  return false;
-}
-
-bool CrashReporterClient::AboutToRestart() {
-  return false;
-}
-
-bool CrashReporterClient::GetIsPerUserInstall() {
-  return true;
-}
-
-int CrashReporterClient::GetResultCodeRespawnFailed() {
-  return 0;
 }
 
 std::wstring CrashReporterClient::GetWerRuntimeExceptionModule() {
@@ -153,8 +130,7 @@ bool CrashReporterClient::EnableBreakpadForProcess(
 }
 
 void CrashReporterClient::GetCrashOptionalArguments(
-    std::vector<std::string>* arguments) {
-}
+    std::vector<std::string>* arguments) {}
 
 #if BUILDFLAG(IS_WIN)
 std::wstring CrashReporterClient::GetCrashExternalHandler(
@@ -169,7 +145,7 @@ bool CrashReporterClient::EnableBrowserCrashForwarding() {
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 unsigned int CrashReporterClient::GetCrashDumpPercentage() {
   return 100;
 }
@@ -178,35 +154,14 @@ bool CrashReporterClient::GetBrowserProcessType(std::string* ptype) {
   return false;
 }
 
-int CrashReporterClient::GetAndroidMinidumpDescriptor() {
-  return 0;
-}
-
-int CrashReporterClient::GetAndroidCrashSignalFD() {
-  return -1;
-}
-
-bool CrashReporterClient::ShouldEnableBreakpadMicrodumps() {
-// Always enable microdumps on Android when stripping unwind tables. Rationale:
-// when unwind tables are stripped out (to save binary size) the stack traces
-// produced locally in the case of a crash / CHECK are meaningless. In order to
-// provide meaningful development diagnostics (and keep the binary size savings)
-// on Android we attach a secondary crash handler which serializes a reduced
-// form of logcat on the console.
-#if defined(NO_UNWIND_TABLES)
-  return true;
-#else
-  return false;
-#endif
-}
-
 bool CrashReporterClient::ShouldWriteMinidumpToLog() {
   return false;
 }
 
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ARKWEB)
 void CrashReporterClient::GetSanitizationInformation(
     const char* const** allowed_annotations,
     void** target_module,
@@ -219,8 +174,6 @@ void CrashReporterClient::GetSanitizationInformation(
 
 std::string CrashReporterClient::GetUploadUrl() {
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING) && defined(OFFICIAL_BUILD)
-  // Only allow the possibility of report upload in official builds. This
-  // crash server won't have symbols for any other build types.
   return kDefaultUploadURL;
 #else
   return std::string();

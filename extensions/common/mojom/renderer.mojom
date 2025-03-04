@@ -60,8 +60,15 @@ struct UserScriptWorldInfo {
   // The corresponding extension ID.
   string extension_id;
 
-  // A custom CSP for the user script world.
-  string csp;
+  // The ID of the world to configure. If omitted, configures the default
+  // user script world.
+  string? world_id;
+
+  // A custom CSP for the user script world, if any.
+  string? csp;
+
+  // Whether to enable messaging APIs in the isolated world.
+  bool enable_messaging;
 };
 
 // This should be used for implementing browser-to-renderer control messages
@@ -112,8 +119,13 @@ interface Renderer {
   // is only used for testing.
   SetScriptingAllowlist(array<string> extension_ids);
 
-  // Updates the user script world accordiging to `info`.
-  UpdateUserScriptWorld(UserScriptWorldInfo info);
+  // Updates the user script worlds accordiging to `infos`.
+  UpdateUserScriptWorlds(array<UserScriptWorldInfo> infos);
+
+  // Clears configurations associated with the given `extension_id` and
+  // `world_id`.
+  ClearUserScriptWorldConfig(string extension_id,
+                             string? world_id);
 
   // Asks the lazy background page if it is ready to be suspended and replies
   // back to the browser. This is sent when the page is considered idle.

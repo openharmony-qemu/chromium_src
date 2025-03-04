@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
@@ -14,13 +15,12 @@
 #include "mojo/public/cpp/base/file_path_mojom_traits.h"
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "mojo/public/cpp/base/unguessable_token_mojom_traits.h"
-#include "net/log/net_log_source.h"
-#include "net/log/net_log_source_type.h"
 #include "services/network/public/cpp/crash_keys.h"
 #include "services/network/public/cpp/http_request_headers_mojom_traits.h"
 #include "services/network/public/cpp/isolation_info_mojom_traits.h"
 #include "services/network/public/cpp/network_ipc_param_traits.h"
 #include "services/network/public/cpp/resource_request_body.h"
+#include "services/network/public/cpp/storage_access_api_mojom_traits.h"
 #include "services/network/public/cpp/url_request_param_mojom_traits.h"
 #include "services/network/public/mojom/cookie_access_observer.mojom.h"
 #include "services/network/public/mojom/data_pipe_getter.mojom.h"
@@ -46,13 +46,14 @@ EnumTraits<network::mojom::SourceType, net::SourceStream::SourceType>::ToMojom(
       return network::mojom::SourceType::kDeflate;
     case net::SourceStream::SourceType::TYPE_GZIP:
       return network::mojom::SourceType::kGzip;
+    case net::SourceStream::SourceType::TYPE_ZSTD:
+      return network::mojom::SourceType::kZstd;
     case net::SourceStream::SourceType::TYPE_NONE:
       return network::mojom::SourceType::kNone;
     case net::SourceStream::SourceType::TYPE_UNKNOWN:
       return network::mojom::SourceType::kUnknown;
   }
   NOTREACHED();
-  return static_cast<network::mojom::SourceType>(type);
 }
 
 bool EnumTraits<network::mojom::SourceType, net::SourceStream::SourceType>::
@@ -68,6 +69,9 @@ bool EnumTraits<network::mojom::SourceType, net::SourceStream::SourceType>::
     case network::mojom::SourceType::kGzip:
       *out = net::SourceStream::SourceType::TYPE_GZIP;
       return true;
+    case network::mojom::SourceType::kZstd:
+      *out = net::SourceStream::SourceType::TYPE_ZSTD;
+      return true;
     case network::mojom::SourceType::kNone:
       *out = net::SourceStream::SourceType::TYPE_NONE;
       return true;
@@ -77,7 +81,6 @@ bool EnumTraits<network::mojom::SourceType, net::SourceStream::SourceType>::
   }
 
   NOTREACHED();
-  return false;
 }
 
 bool StructTraits<network::mojom::TrustedUrlRequestParamsDataView,
@@ -90,6 +93,8 @@ bool StructTraits<network::mojom::TrustedUrlRequestParamsDataView,
   out->disable_secure_dns = data.disable_secure_dns();
   out->has_user_activation = data.has_user_activation();
   out->allow_cookies_from_browser = data.allow_cookies_from_browser();
+  out->include_request_cookies_with_response =
+      data.include_request_cookies_with_response();
   out->cookie_observer = data.TakeCookieObserver<
       mojo::PendingRemote<network::mojom::CookieAccessObserver>>();
   out->trust_token_observer = data.TakeTrustTokenObserver<
@@ -103,6 +108,8 @@ bool StructTraits<network::mojom::TrustedUrlRequestParamsDataView,
   }
   out->accept_ch_frame_observer = data.TakeAcceptChFrameObserver<
       mojo::PendingRemote<network::mojom::AcceptCHFrameObserver>>();
+  out->shared_dictionary_observer = data.TakeSharedDictionaryObserver<
+      mojo::PendingRemote<network::mojom::SharedDictionaryAccessObserver>>();
   return true;
 }
 
@@ -119,22 +126,6 @@ bool StructTraits<network::mojom::WebBundleTokenParamsDataView,
   out->handle = data.TakeWebBundleHandle<
       mojo::PendingRemote<network::mojom::WebBundleHandle>>();
   out->render_process_id = data.render_process_id();
-  return true;
-}
-
-bool StructTraits<network::mojom::NetLogSourceDataView, net::NetLogSource>::
-    Read(network::mojom::NetLogSourceDataView data, net::NetLogSource* out) {
-  if (data.source_type() >=
-      static_cast<uint32_t>(net::NetLogSourceType::COUNT)) {
-    return false;
-  }
-  base::TimeTicks start_time;
-  if (!data.ReadStartTime(&start_time)) {
-    return false;
-  }
-  *out =
-      net::NetLogSource(static_cast<net::NetLogSourceType>(data.source_type()),
-                        data.source_id(), start_time);
   return true;
 }
 
@@ -165,12 +156,12 @@ bool StructTraits<
     network::debug::SetDeserializationCrashKeyString("referrer");
     return false;
   }
-#if BUILDFLAG(IS_OHOS)
-  if (!data.ReadMainPage(&out->main_page)) {
-    network::debug::SetDeserializationCrashKeyString("main_page");
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!data.ReadMainUrl(&out->main_url)) {
+    network::debug::SetDeserializationCrashKeyString("main_url");
     return false;
   }
-#endif  //  IS_OHOS
+#endif  //  ARKWEB_PRP_PRELOAD
   if (!data.ReadReferrerPolicy(&out->referrer_policy) ||
       !data.ReadHeaders(&out->headers) ||
       !data.ReadCorsExemptHeaders(&out->cors_exempt_headers) ||
@@ -191,7 +182,11 @@ bool StructTraits<
           &out->devtools_accepted_stream_types) ||
       !data.ReadNetLogCreateInfo(&out->net_log_create_info) ||
       !data.ReadNetLogReferenceInfo(&out->net_log_reference_info) ||
-      !data.ReadNavigationRedirectChain(&out->navigation_redirect_chain)) {
+      !data.ReadNavigationRedirectChain(&out->navigation_redirect_chain) ||
+      !data.ReadAttributionReportingSrcToken(
+          &out->attribution_reporting_src_token) ||
+      !data.ReadStorageAccessApiStatus(&out->storage_access_api_status) ||
+      !data.ReadSocketTag(&out->socket_tag)) {
     // Note that data.ReadTrustTokenParams is temporarily handled below.
     return false;
   }
@@ -200,7 +195,7 @@ bool StructTraits<
   // help debug crbug.com/1062637.
   if (!data.ReadTrustTokenParams(&out->trust_token_params.as_ptr())) {
     // We don't return false here to avoid duplicate reports.
-    out->trust_token_params = absl::nullopt;
+    out->trust_token_params = std::nullopt;
     base::debug::DumpWithoutCrashing();
   }
 
@@ -211,10 +206,15 @@ bool StructTraits<
   out->priority_incremental = data.priority_incremental();
   out->originated_from_service_worker = data.originated_from_service_worker();
   out->skip_service_worker = data.skip_service_worker();
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
   out->corb_detachable = data.corb_detachable();
+#endif
   out->destination = data.destination();
   out->keepalive = data.keepalive();
   out->browsing_topics = data.browsing_topics();
+  out->ad_auction_headers = data.ad_auction_headers();
+  out->shared_storage_writable_eligible =
+      data.shared_storage_writable_eligible();
   out->has_user_gesture = data.has_user_gesture();
   out->enable_load_timing = data.enable_load_timing();
   out->enable_upload_progress = data.enable_upload_progress();
@@ -225,20 +225,24 @@ bool StructTraits<
   out->upgrade_if_insecure = data.upgrade_if_insecure();
   out->is_revalidating = data.is_revalidating();
   out->is_fetch_like_api = data.is_fetch_like_api();
+  out->is_fetch_later_api = data.is_fetch_later_api();
   out->is_favicon = data.is_favicon();
   out->original_destination = data.original_destination();
   out->target_ip_address_space = data.target_ip_address_space();
-  out->has_storage_access = data.has_storage_access();
   out->attribution_reporting_support = data.attribution_reporting_support();
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
-#if BUILDFLAG(IS_OHOS)
+  out->is_ad_tagged = data.is_ad_tagged();
+  out->shared_dictionary_writer_enabled =
+      data.shared_dictionary_writer_enabled();
+  out->required_ip_address_space = data.required_ip_address_space();
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   out->allow_preload_record = data.allow_preload_record();
-  out->is_sync_mode = data.is_sync_mode();
-#endif  //  IS_OHOS
-#if defined(OHOS_EX_DOWNLOAD)
+  out->is_preflight = data.is_preflight();
+#endif  //  ARKWEB_PRP_PRELOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   out->is_download_request = data.is_download_request();
-#endif  //  OHOS_EX_DOWNLOAD
+#endif  //  ARKWEB_EX_DOWNLOAD
   return true;
 }
 
@@ -349,6 +353,18 @@ bool UnionTraits<network::mojom::DataElementDataView, network::DataElement>::
     }
   }
   return false;
+}
+
+// static
+bool StructTraits<network::mojom::SocketTagDataView, net::SocketTag>::Read(
+    network::mojom::SocketTagDataView data,
+    net::SocketTag* out) {
+#if BUILDFLAG(IS_ANDROID)
+  *out = net::SocketTag(data.uid(), data.tag());
+#else
+  *out = net::SocketTag();
+#endif  // BUILDFLAG(IS_ANDROID)
+  return true;
 }
 
 }  // namespace mojo

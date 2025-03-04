@@ -40,13 +40,6 @@ component("init") {
     deps += [ "//third_party/angle:libEGL_static" ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "gl_factory_ohos.cc",
-      "gl_initializer_ohos.cc",
-    ]
-  }
-
   if (is_android) {
     sources += [
       "gl_factory_android.cc",
@@ -73,6 +66,8 @@ component("init") {
     sources += [
       "gl_display_egl_util_ozone.cc",
       "gl_display_egl_util_ozone.h",
+      #"gl_factory_ozone.cc",
+      #"gl_initializer_ozone.cc",
       "ozone_util.h",
     ]
 
@@ -82,5 +77,10 @@ component("init") {
       "gl_factory_ios.mm",
       "gl_initializer_ios.cc",
     ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/ui/gl/init/arkweb_ui_gl_init_ext.gni")
+    sources += arkweb_ui_gl_init_ext_sources
   }
 }

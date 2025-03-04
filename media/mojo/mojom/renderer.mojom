@@ -9,11 +9,12 @@ import "media/mojo/mojom/media_types.mojom";
 import "mojo/public/mojom/base/time.mojom";
 import "mojo/public/mojom/base/unguessable_token.mojom";
 import "services/network/public/mojom/site_for_cookies.mojom";
+import "services/network/public/mojom/storage_access_api.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 import "url/mojom/url.mojom";
 import "url/mojom/origin.mojom";
 
-[EnableIf=ohos_custom_video_player]
+[EnableIf=arkweb_custom_video_player]
 struct CustomMediaUrlParams {
   uint32 preload_type;
   uint32 media_source_type;
@@ -24,21 +25,22 @@ struct MediaUrlParams {
   url.mojom.Url media_url;
   network.mojom.SiteForCookies site_for_cookies;
   url.mojom.Origin top_frame_origin;
-  bool has_storage_access;
+  network.mojom.StorageAccessApiStatus storage_access_api_status;
   bool allow_credentials;
   bool is_hls;
+  map<string, string> headers;
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   CustomMediaUrlParams custom_media_url_params;
 };
 
-[EnableIf=ohos_custom_video_player]
+[EnableIf=arkweb_custom_video_player]
 struct MediaSourceInfo {
   string media_source;
   string media_format;
 };
 
-[EnableIf=ohos_custom_video_player]
+[EnableIf=arkweb_custom_video_player]
 enum ActionReason {
   kNormal,
   kCustomRenderer,
@@ -74,35 +76,42 @@ interface Renderer {
   // executing the callback with whether the CDM was successfully attached.
   SetCdm(mojo_base.mojom.UnguessableToken? cdm_id) => (bool success);
 
-  [EnableIf=ohos_custom_video_player]
+  // Sets the latency hint for the renderer, which affects the amount of
+  // decoded output buffering before playback.
+  // `latency_hint` should be non-negative, and nullopt values indicate the
+  // user is clearing their preference and the renderer should restore its
+  // default buffering thresholds.
+  SetLatencyHint(mojo_base.mojom.TimeDelta? latency_hint);
+
+  [EnableIf=arkweb_custom_video_player]
   SetMuted(bool muted);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetSurfaceId(int32 surface_id, gfx.mojom.Rect rect);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetMediaPlayerState(bool is_suspend, int32 suspend_type);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetMediaSourceList(array<MediaSourceInfo> source_infos);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetMediaControls(bool show_media_controls,
       array<string> controls_list);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetPoster(string poster_url);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetAttributes(map<string, string> attributes);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetReferrer(string referrer);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetIsAudio(bool is_audio);
 
-  [EnableIf=ohos_custom_video_player]
+  [EnableIf=arkweb_custom_video_player]
   SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
 };
 

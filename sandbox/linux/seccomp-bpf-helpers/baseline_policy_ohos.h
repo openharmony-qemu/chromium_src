@@ -1,3 +1,7 @@
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #ifndef SANDBOX_LINUX_SECCOMP_BPF_HELPERS_BASELINE_POLICY_OHOS_H_
 #define SANDBOX_LINUX_SECCOMP_BPF_HELPERS_BASELINE_POLICY_OHOS_H_
 
@@ -21,11 +25,7 @@ class SANDBOX_EXPORT BaselinePolicyOhos : public BaselinePolicy {
   // sandbox::BaselinePolicy:
   sandbox::bpf_dsl::ResultExpr EvaluateSyscall(
       int system_call_number) const override;
-
- private:
-
 };
 
 }  // namespace sandbox
-
 #endif  // SANDBOX_LINUX_SECCOMP_BPF_HELPERS_BASELINE_POLICY_OHOS_H_

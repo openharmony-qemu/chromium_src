@@ -6,10 +6,11 @@
 #define COMPONENTS_URL_PATTERN_INDEX_URL_PATTERN_H_
 
 #include <iosfwd>
+#include <optional>
+#include <string_view>
 
-#include "base/strings/string_piece.h"
+#include "arkweb/build/features/features.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/third_party/mozilla/url_parse.h"
 
 class GURL;
@@ -18,10 +19,9 @@ namespace url_pattern_index {
 
 namespace flat {
 struct UrlRule;  // The FlatBuffers version of UrlRule.
-
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 struct CssRule;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 }
 
 // The structure used to mirror a URL pattern regardless of the representation
@@ -44,18 +44,18 @@ class UrlPattern {
 
     ~UrlInfo();
 
-    base::StringPiece spec() const { return spec_; }
-    base::StringPiece GetLowerCaseSpec() const;
+    std::string_view spec() const { return spec_; }
+    std::string_view GetLowerCaseSpec() const;
     url::Component host() const { return host_; }
-    base::StringPiece GetStringHost() const;
+    std::string_view GetStringHost() const;
 
    private:
     // The url spec.
-    const base::StringPiece spec_;
+    const std::string_view spec_;
     // String to hold the lazily computed lower cased spec.
     mutable std::string lower_case_spec_owner_;
     // Reference to the lower case spec. Computed lazily.
-    mutable absl::optional<base::StringPiece> lower_case_spec_cached_;
+    mutable std::optional<std::string_view> lower_case_spec_cached_;
 
     // The url host component.
     const url::Component host_;
@@ -64,18 +64,18 @@ class UrlPattern {
   UrlPattern();
 
   // Creates a |url_pattern| of a certain |type| and case-sensitivity.
-  UrlPattern(base::StringPiece url_pattern,
+  UrlPattern(std::string_view url_pattern,
              proto::UrlPatternType type = proto::URL_PATTERN_TYPE_WILDCARDED,
              MatchCase match_case = MatchCase::kFalse);
 
   // Creates a WILDCARDED |url_pattern| with the specified anchors.
-  UrlPattern(base::StringPiece url_pattern,
+  UrlPattern(std::string_view url_pattern,
              proto::AnchorType anchor_left,
              proto::AnchorType anchor_right);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   UrlPattern(const flat::UrlRule& rule, MatchCase match_case);
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // The passed in |rule| must outlive the created instance.
   explicit UrlPattern(const flat::UrlRule& rule);
@@ -86,7 +86,7 @@ class UrlPattern {
   ~UrlPattern();
 
   proto::UrlPatternType type() const { return type_; }
-  base::StringPiece url_pattern() const { return url_pattern_; }
+  std::string_view url_pattern() const { return url_pattern_; }
   proto::AnchorType anchor_left() const { return anchor_left_; }
   proto::AnchorType anchor_right() const { return anchor_right_; }
   bool match_case() const { return match_case_ == MatchCase::kTrue; }
@@ -104,7 +104,7 @@ class UrlPattern {
   // TODO(pkalinnikov): Store flat:: types instead of proto::, in order to avoid
   // conversions in IndexedRuleset.
   proto::UrlPatternType type_ = proto::URL_PATTERN_TYPE_UNSPECIFIED;
-  base::StringPiece url_pattern_;
+  std::string_view url_pattern_;
 
   proto::AnchorType anchor_left_ = proto::ANCHOR_TYPE_NONE;
   proto::AnchorType anchor_right_ = proto::ANCHOR_TYPE_NONE;
@@ -112,7 +112,7 @@ class UrlPattern {
   MatchCase match_case_ = MatchCase::kTrue;
 };
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 class CssPattern {
  public:
   enum class MatchCase {
@@ -127,20 +127,20 @@ class CssPattern {
     UrlInfo(const GURL& url);
     ~UrlInfo();
 
-    base::StringPiece spec() const { return spec_; }
-    base::StringPiece GetLowerCaseSpec() const;
+    std::string_view spec() const { return spec_; }
+    std::string_view GetLowerCaseSpec() const;
 
     url::Component host() const { return host_; }
 
    private:
     // The url spec.
-    const base::StringPiece spec_;
+    const std::string_view spec_;
 
     // String to hold the lazily computed lower cased spec.
     mutable std::string lower_case_spec_owner_;
 
     // Reference to the lower case spec. Computed lazily.
-    mutable absl::optional<base::StringPiece> lower_case_spec_cached_;
+    mutable std::optional<std::string_view> lower_case_spec_cached_;
 
     // The url host component.
     const url::Component host_;
@@ -169,7 +169,7 @@ class CssPattern {
   // conversions in IndexedRuleset.
   MatchCase match_case_ = MatchCase::kTrue;
 };
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 // Allow pretty-printing URLPatterns when they are used in GTest assertions.
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern);

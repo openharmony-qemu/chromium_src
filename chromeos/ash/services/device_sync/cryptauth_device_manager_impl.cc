@@ -28,9 +28,7 @@
 #include "components/prefs/scoped_user_pref_update.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 
-namespace ash {
-
-namespace device_sync {
+namespace ash::device_sync {
 
 namespace {
 
@@ -85,22 +83,21 @@ base::Value::List BeaconSeedsToListValue(
       continue;
     }
 
-    base::Value::Dict beacon_seed_value;
-
     // Note that the |BeaconSeed|s' data is stored in Base64Url encoding because
     // dictionary values must be valid UTF8 strings.
     std::string seed_data_b64;
     base::Base64UrlEncode(seed.data(),
                           base::Base64UrlEncodePolicy::INCLUDE_PADDING,
                           &seed_data_b64);
-    beacon_seed_value.Set(kExternalDeviceKeyBeaconSeedData, seed_data_b64);
-
-    // Set the timestamps as string representations of their numeric value
-    // since there is no notion of a base::LongValue.
-    beacon_seed_value.Set(kExternalDeviceKeyBeaconSeedStartMs,
-                          std::to_string(seed.start_time_millis()));
-    beacon_seed_value.Set(kExternalDeviceKeyBeaconSeedEndMs,
-                          std::to_string(seed.end_time_millis()));
+    auto beacon_seed_value =
+        base::Value::Dict()
+            .Set(kExternalDeviceKeyBeaconSeedData, seed_data_b64)
+            // Set the timestamps as string representations of their numeric
+            // value since there is no notion of a base::LongValue.
+            .Set(kExternalDeviceKeyBeaconSeedStartMs,
+                 base::NumberToString(seed.start_time_millis()))
+            .Set(kExternalDeviceKeyBeaconSeedEndMs,
+                 base::NumberToString(seed.end_time_millis()));
 
     list.Append(std::move(beacon_seed_value));
   }
@@ -145,7 +142,7 @@ base::Value::Dict SupportedAndEnabledSoftwareFeaturesToDictionaryValue(
     cryptauth::SoftwareFeature software_feature =
         SoftwareFeatureStringToEnum(software_feature_key);
 
-    absl::optional<int> software_feature_state =
+    std::optional<int> software_feature_state =
         dictionary.FindInt(software_feature_key);
     bool software_feature_success_result = true;
     if (!software_feature_state ||
@@ -237,7 +234,7 @@ base::Value::Dict UnlockKeyToDictionary(
 
   if (device.has_last_update_time_millis()) {
     dictionary.Set(kExternalDeviceKeyLastUpdateTimeMillis,
-                   std::to_string(device.last_update_time_millis()));
+                   base::NumberToString(device.last_update_time_millis()));
   }
 
   if (device.has_device_type() &&
@@ -446,9 +443,9 @@ bool DictionaryToUnlockKey(const base::Value::Dict& dictionary,
     }
   }
 
-  // TODO(crbug.com/848477): Migrate |unlockable| into
+  // TODO(crbug.com/40578817): Migrate |unlockable| into
   // |supported_software_features|.
-  absl::optional<bool> unlockable =
+  std::optional<bool> unlockable =
       dictionary.FindBool(kExternalDeviceKeyUnlockable);
   if (unlockable.has_value())
     external_device->set_unlockable(unlockable.value());
@@ -466,7 +463,7 @@ bool DictionaryToUnlockKey(const base::Value::Dict& dictionary,
     }
   }
 
-  absl::optional<int> device_type =
+  std::optional<int> device_type =
       dictionary.FindInt(kExternalDeviceKeyDeviceType);
   if (device_type.has_value() &&
       cryptauth::DeviceType_IsValid(device_type.value())) {
@@ -479,12 +476,12 @@ bool DictionaryToUnlockKey(const base::Value::Dict& dictionary,
   if (beacon_seeds)
     AddBeaconSeedsToExternalDevice(*beacon_seeds, external_device);
 
-  absl::optional<bool> arc_plus_plus =
+  std::optional<bool> arc_plus_plus =
       dictionary.FindBool(kExternalDeviceKeyArcPlusPlus);
   if (arc_plus_plus.has_value())
     external_device->set_arc_plus_plus(arc_plus_plus.value());
 
-  absl::optional<bool> pixel_phone =
+  std::optional<bool> pixel_phone =
       dictionary.FindBool(kExternalDeviceKeyPixelPhone);
   if (pixel_phone.has_value())
     external_device->set_pixel_phone(pixel_phone.value());
@@ -500,9 +497,9 @@ bool DictionaryToUnlockKey(const base::Value::Dict& dictionary,
     }
   }
 
-  absl::optional<bool> unlock_key =
+  std::optional<bool> unlock_key =
       dictionary.FindBool(kExternalDeviceKeyUnlockKey);
-  absl::optional<bool> mobile_hotspot_supported =
+  std::optional<bool> mobile_hotspot_supported =
       dictionary.FindBool(kExternalDeviceKeyMobileHotspotSupported);
 
   const base::Value::Dict* software_features_dictionary =
@@ -603,7 +600,7 @@ void CryptAuthDeviceManagerImpl::ForceSyncNow(
 }
 
 base::Time CryptAuthDeviceManagerImpl::GetLastSyncTime() const {
-  return base::Time::FromDoubleT(
+  return base::Time::FromSecondsSinceUnixEpoch(
       pref_service_->GetDouble(prefs::kCryptAuthDeviceSyncLastSyncTimeSeconds));
 }
 
@@ -717,7 +714,7 @@ void CryptAuthDeviceManagerImpl::OnGetMyDevicesSuccess(
   pref_service_->SetBoolean(prefs::kCryptAuthDeviceSyncIsRecoveringFromFailure,
                             false);
   pref_service_->SetDouble(prefs::kCryptAuthDeviceSyncLastSyncTimeSeconds,
-                           clock_->Now().ToDoubleT());
+                           clock_->Now().InSecondsFSinceUnixEpoch());
   pref_service_->SetInteger(prefs::kCryptAuthDeviceSyncReason,
                             cryptauth::INVOCATION_REASON_UNKNOWN);
 
@@ -742,8 +739,8 @@ void CryptAuthDeviceManagerImpl::OnGetMyDevicesFailure(
 }
 
 void CryptAuthDeviceManagerImpl::OnResyncMessage(
-    const absl::optional<std::string>& session_id,
-    const absl::optional<CryptAuthFeatureType>& feature_type) {
+    const std::optional<std::string>& session_id,
+    const std::optional<CryptAuthFeatureType>& feature_type) {
   ForceSyncNow(cryptauth::INVOCATION_REASON_SERVER_INITIATED);
 }
 
@@ -843,6 +840,4 @@ void CryptAuthDeviceManagerImpl::OnSyncRequested(
       partial_traffic_annotation);
 }
 
-}  // namespace device_sync
-
-}  // namespace ash
+}  // namespace ash::device_sync

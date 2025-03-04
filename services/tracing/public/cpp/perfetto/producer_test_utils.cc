@@ -6,6 +6,7 @@
 
 #include <deque>
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "base/debug/leak_annotations.h"
@@ -15,7 +16,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "services/tracing/public/cpp/tracing_features.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/perfetto/include/perfetto/ext/base/utils.h"
 #include "third_party/perfetto/include/perfetto/ext/tracing/core/trace_writer.h"
 #include "third_party/perfetto/include/perfetto/protozero/root_message.h"
@@ -24,12 +24,14 @@ namespace tracing {
 
 namespace {
 
+constexpr size_t kChunkSize = 4096;
+
 // For sequences/threads other than our own, we just want to ignore
 // any events coming in.
 class DummyTraceWriter : public perfetto::TraceWriter {
  public:
   DummyTraceWriter()
-      : delegate_(perfetto::base::kPageSize), stream_(&delegate_) {}
+      : delegate_(kChunkSize), stream_(&delegate_) {}
 
   perfetto::TraceWriter::TracePacketHandle NewTracePacket() override {
     stream_.Reset(delegate_.GetNewBuffer());
@@ -60,7 +62,7 @@ TestProducerClient::TestProducerClient(
     std::unique_ptr<base::tracing::PerfettoTaskRunner> main_thread_task_runner,
     bool log_only_main_thread)
     : ProducerClient(main_thread_task_runner.get()),
-      delegate_(perfetto::base::kPageSize),
+      delegate_(kChunkSize),
       stream_(&delegate_),
       main_thread_task_runner_(std::move(main_thread_task_runner)),
       log_only_main_thread_(log_only_main_thread) {}
@@ -200,18 +202,8 @@ uint64_t TestTraceWriter::written() const {
 
 DataSourceTester::DataSourceTester(
     tracing::PerfettoTracedProcess::DataSourceBase* data_source)
-#if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-    : data_source_(data_source)
-#endif
 {
   features_.InitAndDisableFeature(features::kEnablePerfettoSystemTracing);
-#if !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  auto perfetto_wrapper = std::make_unique<base::tracing::PerfettoTaskRunner>(
-      base::SingleThreadTaskRunner::GetCurrentDefault());
-
-  producer_ = std::make_unique<tracing::TestProducerClient>(
-      std::move(perfetto_wrapper));
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 }
 
 DataSourceTester::~DataSourceTester() = default;
@@ -219,56 +211,38 @@ DataSourceTester::~DataSourceTester() = default;
 void DataSourceTester::BeginTrace(
     const base::trace_event::TraceConfig& trace_config) {
   auto* trace_log = base::trace_event::TraceLog::GetInstance();
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   perfetto::TraceConfig perfetto_config(
       tracing::GetDefaultPerfettoConfig(trace_config));
   trace_log->SetEnabled(trace_config, perfetto_config);
-#else   // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  trace_log->SetEnabled(trace_config,
-                        base::trace_event::TraceLog::RECORDING_MODE);
-  data_source_->StartTracing(
-      /*data_source_id=*/1, producer_.get(), perfetto::DataSourceConfig());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
+  base::RunLoop().RunUntilIdle();
 }
 
 void DataSourceTester::EndTracing() {
   auto* trace_log = base::trace_event::TraceLog::GetInstance();
   base::RunLoop wait_for_end;
   trace_log->SetDisabled();
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   trace_log->Flush(base::BindRepeating(&DataSourceTester::OnTraceData,
                                        base::Unretained(this),
                                        wait_for_end.QuitClosure()));
-#else   // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
-  data_source_->StopTracing(wait_for_end.QuitClosure());
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   wait_for_end.Run();
 }
 
 size_t DataSourceTester::GetFinalizedPacketCount() {
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   return finalized_packets_.size();
-#else
-  return producer_->GetFinalizedPacketCount();
-#endif
 }
 
 const perfetto::protos::TracePacket* DataSourceTester::GetFinalizedPacket(
     size_t packet_index) {
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   return finalized_packets_[packet_index].get();
-#else
-  return producer_->GetFinalizedPacket(packet_index);
-#endif
 }
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 void DataSourceTester::OnTraceData(
     base::RepeatingClosure quit_closure,
     const scoped_refptr<base::RefCountedString>& chunk,
     bool has_more_events) {
   perfetto::protos::Trace trace;
-  bool ok = trace.ParseFromArray(chunk->data().data(), chunk->data().size());
+  auto chunk_data = base::span(*chunk);
+  bool ok = trace.ParseFromArray(chunk_data.data(), chunk_data.size());
   DCHECK(ok);
   for (const auto& packet : trace.packet()) {
     // Filter out packets from the tracing service.
@@ -281,6 +255,5 @@ void DataSourceTester::OnTraceData(
   if (!has_more_events)
     std::move(quit_closure).Run();
 }
-#endif  // BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
 }  // namespace tracing

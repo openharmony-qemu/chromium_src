@@ -23,7 +23,7 @@ class MockFileSystemAccessPermissionContext
   MOCK_METHOD(scoped_refptr<FileSystemAccessPermissionGrant>,
               GetReadPermissionGrant,
               (const url::Origin& origin,
-               const base::FilePath& path,
+               const PathInfo& path_info,
                HandleType handle_type,
                FileSystemAccessPermissionContext::UserAction user_action),
               (override));
@@ -31,15 +31,14 @@ class MockFileSystemAccessPermissionContext
   MOCK_METHOD(scoped_refptr<FileSystemAccessPermissionGrant>,
               GetWritePermissionGrant,
               (const url::Origin& origin,
-               const base::FilePath& path,
+               const PathInfo& path_info,
                HandleType handle_type,
                FileSystemAccessPermissionContext::UserAction user_action),
               (override));
 
   void ConfirmSensitiveEntryAccess(
       const url::Origin& origin,
-      PathType path_type,
-      const base::FilePath& path,
+      const PathInfo& path_info,
       HandleType handle_type,
       UserAction user_action,
       GlobalRenderFrameHostId frame_id,
@@ -47,23 +46,32 @@ class MockFileSystemAccessPermissionContext
   MOCK_METHOD(void,
               ConfirmSensitiveEntryAccess_,
               (const url::Origin& origin,
-               PathType path_type,
-               const base::FilePath& path,
+               const PathInfo& path_info,
                HandleType handle_type,
                UserAction user_action,
                GlobalRenderFrameHostId frame_id,
                base::OnceCallback<void(SensitiveEntryResult)>& callback));
-#if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
+
   void PerformAfterWriteChecks(
       std::unique_ptr<FileSystemAccessWriteItem> item,
       GlobalRenderFrameHostId frame_id,
       base::OnceCallback<void(AfterWriteCheckResult)> callback) override;
-#endif
   MOCK_METHOD(void,
               PerformAfterWriteChecks_,
               (FileSystemAccessWriteItem * item,
                GlobalRenderFrameHostId frame_id,
                base::OnceCallback<void(AfterWriteCheckResult)>& callback));
+
+  bool IsFileTypeDangerous(const base::FilePath& path,
+                           const url::Origin& origin) override;
+  MOCK_METHOD(bool,
+              IsFileTypeDangerous_,
+              (const base::FilePath& path, const url::Origin& origin));
+
+  MOCK_METHOD((base::expected<void, std::string>),
+              CanShowFilePicker,
+              (RenderFrameHost*),
+              (override));
 
   MOCK_METHOD(bool,
               CanObtainReadPermission,
@@ -78,8 +86,7 @@ class MockFileSystemAccessPermissionContext
               SetLastPickedDirectory,
               (const url::Origin& origin,
                const std::string& id,
-               const base::FilePath& path,
-               const PathType type),
+               const PathInfo& path_info),
               (override));
   MOCK_METHOD(PathInfo,
               GetLastPickedDirectory,
@@ -100,8 +107,21 @@ class MockFileSystemAccessPermissionContext
   MOCK_METHOD(void,
               NotifyEntryMoved,
               (const url::Origin& origin,
-               const base::FilePath& old_path,
-               const base::FilePath& new_path),
+               const PathInfo& old_path,
+               const PathInfo& new_path),
+              (override));
+
+  MOCK_METHOD(void,
+              OnFileCreatedFromShowSaveFilePicker,
+              (const GURL& file_picker_binding_context,
+               const storage::FileSystemURL& url),
+              (override));
+
+  MOCK_METHOD(void,
+              CheckPathsAgainstEnterprisePolicy,
+              (std::vector<PathInfo> entries,
+               GlobalRenderFrameHostId frame_id,
+               EntriesAllowedByEnterprisePolicyCallback callback),
               (override));
 };
 

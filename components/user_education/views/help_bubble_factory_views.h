@@ -5,14 +5,15 @@
 #ifndef COMPONENTS_USER_EDUCATION_VIEWS_HELP_BUBBLE_FACTORY_VIEWS_H_
 #define COMPONENTS_USER_EDUCATION_VIEWS_HELP_BUBBLE_FACTORY_VIEWS_H_
 
+#include <memory>
+
 #include "base/callback_list.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/scoped_observation.h"
-#include "components/user_education/common/help_bubble.h"
-#include "components/user_education/common/help_bubble_factory.h"
-#include "components/user_education/common/help_bubble_params.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "components/user_education/common/help_bubble/help_bubble.h"
+#include "components/user_education/common/help_bubble/help_bubble_factory.h"
+#include "components/user_education/common/help_bubble/help_bubble_params.h"
 #include "ui/base/accelerators/accelerator.h"
 #include "ui/base/interaction/element_identifier.h"
 #include "ui/base/interaction/element_tracker.h"
@@ -25,6 +26,7 @@
 namespace user_education {
 
 class HelpBubbleDelegate;
+class HelpBubbleEventRelay;
 class HelpBubbleView;
 
 namespace internal {
@@ -84,7 +86,7 @@ class HelpBubbleViews : public HelpBubble,
       scoped_observation_{this};
 
   // Track the anchor element to determine if/when it goes away.
-  base::raw_ptr<const ui::TrackedElement, DanglingUntriaged> anchor_element_;
+  raw_ptr<const ui::TrackedElement> anchor_element_ = nullptr;
 
   // Listens so that the bubble can be closed if the anchor element disappears.
   // The specific anchor view is not tracked because in a few cases (e.g. Mac
@@ -118,10 +120,11 @@ class HelpBubbleFactoryViews : public HelpBubbleFactory {
   std::unique_ptr<HelpBubble> CreateBubbleImpl(
       ui::TrackedElement* element,
       const internal::HelpBubbleAnchorParams& anchor,
-      HelpBubbleParams params);
+      HelpBubbleParams params,
+      std::unique_ptr<HelpBubbleEventRelay> event_relay);
 
  private:
-  base::raw_ptr<const HelpBubbleDelegate> delegate_;
+  raw_ptr<const HelpBubbleDelegate> delegate_;
 };
 
 }  // namespace user_education

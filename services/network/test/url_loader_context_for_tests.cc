@@ -9,7 +9,7 @@ namespace network {
 URLLoaderContextForTests::URLLoaderContextForTests() = default;
 URLLoaderContextForTests::~URLLoaderContextForTests() = default;
 
-bool URLLoaderContextForTests::ShouldRequireNetworkIsolationKey() const {
+bool URLLoaderContextForTests::ShouldRequireIsolationInfo() const {
   return false;
 }
 
@@ -66,8 +66,8 @@ URLLoaderContextForTests::GetResourceSchedulerClient() const {
   return resource_scheduler_client_;
 }
 
-corb::PerFactoryState& URLLoaderContextForTests::GetMutableCorbState() {
-  return corb_state_;
+orb::PerFactoryState& URLLoaderContextForTests::GetMutableOrbState() {
+  return orb_state_;
 }
 
 bool URLLoaderContextForTests::DataUseUpdatesEnabled() {

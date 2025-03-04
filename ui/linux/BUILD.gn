@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/linux/gtk/gtk.gni")
+import("//printing/buildflags/buildflags.gni")
 import("//ui/qt/qt.gni")
 
 assert(is_linux || is_ohos)
@@ -31,7 +32,14 @@ component("linux_ui") {
   deps = [
     "//base",
     "//ui/base:types",
+    "//ui/display/types",
+    "//ui/gfx/geometry",
   ]
+
+  if (enable_printing) {
+    deps += [ "//printing/mojom" ]
+  }
+
   public_deps = [ "//printing/buildflags" ]
 }
 
@@ -51,7 +59,7 @@ component("linux_ui_factory") {
 
   deps = [
     "//base",
-    "//ui/base:buildflags",
+    "//ui/base",
     "//ui/base/ime/linux:linux",
     "//ui/events:dom_keyboard_layout",
     "//ui/gfx",
@@ -68,6 +76,20 @@ component("linux_ui_factory") {
   }
 }
 
+source_set("display_server_utils") {
+  sources = [
+    "display_server_utils.cc",
+    "display_server_utils.h",
+  ]
+  deps = [
+    "//base",
+    "//third_party/angle:angle_gpu_info_util",
+    "//ui/base:features",
+    "//ui/base:ozone_buildflags",
+    "//ui/ozone",
+  ]
+}
+
 source_set("test_support") {
   testonly = true
 
@@ -78,6 +100,7 @@ source_set("test_support") {
   deps = [
     "//base",
     "//skia",
+    "//ui/base/ime/linux",
     "//ui/gfx",
     "//ui/native_theme",
     "//ui/shell_dialogs",

@@ -46,10 +46,11 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
     // there will be no delay before tap events. Defaults to true.
     bool double_tap_support_for_platform_enabled;
 
-    // If |gesture_begin_end_types_enabled| is true, fire an ET_GESTURE_BEGIN
-    // event for every added touch point, and an ET_GESTURE_END event for every
-    // removed touch point. This requires one ACTION_CANCEL event to be sent per
-    // touch point, which only occurs on Aura. Defaults to false.
+    // If |gesture_begin_end_types_enabled| is true, fire an
+    // EventType::kGestureBegin event for every added touch point, and an
+    // EventType::kGestureEnd event for every removed touch point. This requires
+    // one ACTION_CANCEL event to be sent per touch point, which only occurs on
+    // Aura. Defaults to false.
     bool gesture_begin_end_types_enabled;
 
     // The min and max size (both length and width, in dips) of the generated
@@ -69,12 +70,8 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   // be handled.
   bool OnTouchEvent(const MotionEvent& event);
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void ResetDetection(bool is_lost_focus);
-#endif
-
-#ifdef OHOS_AI
-  void OnAITextSelected();
 #endif
 
   // Reset any active gesture detection, including detection of timeout-based
@@ -106,15 +103,15 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
 
   // Synthesizes and propagates gesture end events.
   void SendSynthesizedEndEvents();
-#if BUILDFLAG(IS_OHOS)
-  void SetNativeEmbedEnabled(bool enabled);
 
-  bool GetNativeEmbedEnabled();
-#endif
   // May be NULL if there is no currently active touch sequence.
   const ui::MotionEvent* current_down_event() const {
     return current_down_event_.get();
   }
+
+#if BUILDFLAG(ARKWEB_AI)
+  void OnAITextSelected();
+#endif
 
  private:
   bool CanHandle(const MotionEvent& event) const;
@@ -133,7 +130,6 @@ class GESTURE_DETECTION_EXPORT GestureProvider {
   // Whether double-tap gesture detection is currently supported.
   bool double_tap_support_for_page_;
   bool double_tap_support_for_platform_;
-  bool native_embed_enabled_ = false;
 
   const bool gesture_begin_end_types_enabled_;
 };

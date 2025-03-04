@@ -4,12 +4,18 @@
 
 #include "ui/ozone/platform/wayland/host/zwp_text_input_wrapper_v1.h"
 
+#include <sys/mman.h>
+
 #include <string>
+#include <string_view>
 #include <utility>
 
+#include "base/base64.h"
 #include "base/check.h"
+#include "base/files/file_util.h"
 #include "base/location.h"
-#include "base/strings/string_piece.h"
+#include "base/logging.h"
+#include "base/strings/strcat.h"
 #include "base/strings/string_split.h"
 #include "base/time/time.h"
 #include "ui/base/wayland/wayland_client_input_types.h"
@@ -92,10 +98,36 @@ uint32_t InputFlagsToContentHint(int input_flags) {
 // '\0' character.
 std::vector<std::string> ParseModifiersMap(wl_array* array) {
   return base::SplitString(
-      base::StringPiece(static_cast<char*>(array->data),
-                        array->size - 1),  // exclude trailing '\0'.
-      base::StringPiece("\0", 1),          // '\0' as a delimiter.
+      std::string_view(static_cast<char*>(array->data),
+                       array->size - 1),  // exclude trailing '\0'.
+      std::string_view("\0", 1),          // '\0' as a delimiter.
       base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
+}
+
+// Returns ImeTextSpan style to be assigned. Maybe nullopt if it is not
+// supported.
+std::optional<ZWPTextInputWrapperClient::SpanStyle::Style> ConvertStyle(
+    uint32_t style) {
+  switch (style) {
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_DEFAULT:
+      return {{ImeTextSpan::Type::kComposition, ImeTextSpan::Thickness::kNone}};
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_HIGHLIGHT:
+      return {
+          {ImeTextSpan::Type::kComposition, ImeTextSpan::Thickness::kThick}};
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_UNDERLINE:
+      return {{ImeTextSpan::Type::kComposition, ImeTextSpan::Thickness::kThin}};
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_SELECTION:
+      return {{ImeTextSpan::Type::kSuggestion, ImeTextSpan::Thickness::kNone}};
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_INCORRECT:
+      return {{ImeTextSpan::Type::kMisspellingSuggestion,
+               ImeTextSpan::Thickness::kNone}};
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_NONE:
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_ACTIVE:
+    case ZWP_TEXT_INPUT_V1_PREEDIT_STYLE_INACTIVE:
+    default:
+      VLOG(1) << "Unsupported style. Skipped: " << style;
+  }
+  return std::nullopt;
 }
 
 }  // namespace
@@ -106,43 +138,47 @@ ZWPTextInputWrapperV1::ZWPTextInputWrapperV1(
     zwp_text_input_manager_v1* text_input_manager,
     zcr_text_input_extension_v1* text_input_extension)
     : connection_(connection), client_(client) {
-  static constexpr zwp_text_input_v1_listener text_input_listener = {
-      &OnEnter,                  // text_input_enter,
-      &OnLeave,                  // text_input_leave,
-      &OnModifiersMap,           // text_input_modifiers_map,
-      &OnInputPanelState,        // text_input_input_panel_state,
-      &OnPreeditString,          // text_input_preedit_string,
-      &OnPreeditStyling,         // text_input_preedit_styling,
-      &OnPreeditCursor,          // text_input_preedit_cursor,
-      &OnCommitString,           // text_input_commit_string,
-      &OnCursorPosition,         // text_input_cursor_position,
-      &OnDeleteSurroundingText,  // text_input_delete_surrounding_text,
-      &OnKeysym,                 // text_input_keysym,
-      &OnLanguage,               // text_input_language,
-      &OnTextDirection,          // text_input_text_direction
+  static constexpr zwp_text_input_v1_listener kTextInputListener = {
+      .enter = &OnEnter,
+      .leave = &OnLeave,
+      .modifiers_map = &OnModifiersMap,
+      .input_panel_state = &OnInputPanelState,
+      .preedit_string = &OnPreeditString,
+      .preedit_styling = &OnPreeditStyling,
+      .preedit_cursor = &OnPreeditCursor,
+      .commit_string = &OnCommitString,
+      .cursor_position = &OnCursorPosition,
+      .delete_surrounding_text = &OnDeleteSurroundingText,
+      .keysym = &OnKeysym,
+      .language = &OnLanguage,
+      .text_direction = &OnTextDirection,
   };
 
   static constexpr zcr_extended_text_input_v1_listener
-      extended_text_input_listener = {
-          &OnSetPreeditRegion,       // extended_text_input_set_preedit_region,
-          &OnClearGrammarFragments,  // extended_text_input_clear_grammar_fragments,
-          &OnAddGrammarFragment,   // extended_text_input_add_grammar_fragment,
-          &OnSetAutocorrectRange,  // extended_text_input_set_autocorrect_range,
-          &OnSetVirtualKeyboardOccludedBounds,  // extended_text_input_set_virtual_keyboard_occluded_bounds,
+      kExtendedTextInputListener = {
+          .set_preedit_region = &OnSetPreeditRegion,
+          .clear_grammar_fragments = &OnClearGrammarFragments,
+          .add_grammar_fragment = &OnAddGrammarFragment,
+          .set_autocorrect_range = &OnSetAutocorrectRange,
+          .set_virtual_keyboard_occluded_bounds =
+              &OnSetVirtualKeyboardOccludedBounds,
+          .confirm_preedit = &OnConfirmPreedit,
+          .insert_image = &OnInsertImage,
+          .insert_image_with_large_url = &OnInsertImageWithLargeURL,
       };
 
   obj_ = wl::Object<zwp_text_input_v1>(
       zwp_text_input_manager_v1_create_text_input(text_input_manager));
   DCHECK(obj_.get());
-  zwp_text_input_v1_add_listener(obj_.get(), &text_input_listener, this);
+  zwp_text_input_v1_add_listener(obj_.get(), &kTextInputListener, this);
 
   if (text_input_extension) {
     extended_obj_ = wl::Object<zcr_extended_text_input_v1>(
         zcr_text_input_extension_v1_get_extended_text_input(
             text_input_extension, obj_.get()));
     DCHECK(extended_obj_.get());
-    zcr_extended_text_input_v1_add_listener(
-        extended_obj_.get(), &extended_text_input_listener, this);
+    zcr_extended_text_input_v1_add_listener(extended_obj_.get(),
+                                            &kExtendedTextInputListener, this);
   }
 }
 
@@ -159,7 +195,7 @@ void ZWPTextInputWrapperV1::Activate(WaylandWindow* window,
   if (extended_obj_.get() &&
       wl::get_version_of_object(extended_obj_.get()) >=
           ZCR_EXTENDED_TEXT_INPUT_V1_SET_FOCUS_REASON_SINCE_VERSION) {
-    absl::optional<uint32_t> wayland_focus_reason;
+    std::optional<uint32_t> wayland_focus_reason;
     switch (reason) {
       case ui::TextInputClient::FocusReason::FOCUS_REASON_NONE:
         wayland_focus_reason =
@@ -214,9 +250,43 @@ void ZWPTextInputWrapperV1::SetCursorRect(const gfx::Rect& rect) {
 
 void ZWPTextInputWrapperV1::SetSurroundingText(
     const std::string& text,
+    const gfx::Range& preedit_range,
     const gfx::Range& selection_range) {
-  zwp_text_input_v1_set_surrounding_text(
-      obj_.get(), text.c_str(), selection_range.start(), selection_range.end());
+  // Wayland packet has a limit of size due to its serialization format,
+  // so if it exceeds 16 bits, it may be broken.
+  static constexpr size_t kSizeLimit = 60000;
+  if (HasAdvancedSurroundingTextSupport() && text.length() > kSizeLimit) {
+    base::ScopedFD memfd(memfd_create("surrounding_text", MFD_CLOEXEC));
+    if (!memfd.get()) {
+      PLOG(ERROR) << "Failed to create memfd";
+      return;
+    }
+    if (!base::WriteFileDescriptor(memfd.get(), text)) {
+      LOG(ERROR) << "Failed to write into memfd";
+      return;
+    }
+    zcr_extended_text_input_v1_set_large_surrounding_text(
+        extended_obj_.get(), memfd.get(), text.length(),
+        selection_range.start(), selection_range.end());
+  } else {
+    zwp_text_input_v1_set_surrounding_text(obj_.get(), text.c_str(),
+                                           selection_range.start(),
+                                           selection_range.end());
+  }
+}
+
+bool ZWPTextInputWrapperV1::HasAdvancedSurroundingTextSupport() const {
+  return extended_obj_.get() &&
+         wl::get_version_of_object(extended_obj_.get()) >=
+             ZCR_EXTENDED_TEXT_INPUT_V1_SET_LARGE_SURROUNDING_TEXT_SINCE_VERSION;
+}
+
+void ZWPTextInputWrapperV1::SetSurroundingTextOffsetUtf16(
+    uint32_t offset_utf16) {
+  if (HasAdvancedSurroundingTextSupport()) {
+    zcr_extended_text_input_v1_set_surrounding_text_offset_utf16(
+        extended_obj_.get(), offset_utf16);
+  }
 }
 
 void ZWPTextInputWrapperV1::SetContentType(ui::TextInputType type,
@@ -244,7 +314,7 @@ void ZWPTextInputWrapperV1::SetContentType(ui::TextInputType type,
     }
     if (wl_server_version >=
         ZCR_EXTENDED_TEXT_INPUT_V1_DEPRECATED_SET_INPUT_TYPE_SINCE_VERSION) {
-      // TODO(crbug.com/1420448) This deprecated method is used here only to
+      // TODO(crbug.com/40258785) This deprecated method is used here only to
       // maintain backwards compatibility with an older version of Exo. Once
       // Exo has stabilized on the new set_input_type, remove this call.
       zcr_extended_text_input_v1_deprecated_set_input_type(
@@ -359,7 +429,10 @@ void ZWPTextInputWrapperV1::OnPreeditString(
   auto spans = std::move(self->spans_);
   int32_t preedit_cursor = self->preedit_cursor_;
   self->ResetInputEventState();
-  self->client_->OnPreeditString(text, spans, preedit_cursor);
+  self->client_->OnPreeditString(text, spans,
+                                 preedit_cursor < 0
+                                     ? gfx::Range::InvalidRange()
+                                     : gfx::Range(preedit_cursor));
 }
 
 // static
@@ -371,7 +444,7 @@ void ZWPTextInputWrapperV1::OnPreeditStyling(
     uint32_t style) {
   auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
   self->spans_.push_back(
-      ZWPTextInputWrapperClient::SpanStyle{index, length, style});
+      ZWPTextInputWrapperClient::SpanStyle{index, length, ConvertStyle(style)});
 }
 
 // static
@@ -422,7 +495,7 @@ void ZWPTextInputWrapperV1::OnKeysym(void* data,
                                      uint32_t state,
                                      uint32_t modifiers) {
   auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
-  self->client_->OnKeysym(key, state, modifiers);
+  self->client_->OnKeysym(key, state, modifiers, time);
 }
 
 // static
@@ -497,6 +570,68 @@ void ZWPTextInputWrapperV1::OnSetVirtualKeyboardOccludedBounds(
   auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
   gfx::Rect screen_bounds(x, y, width, height);
   self->client_->OnSetVirtualKeyboardOccludedBounds(screen_bounds);
+}
+
+// static
+void ZWPTextInputWrapperV1::OnConfirmPreedit(
+    void* data,
+    struct zcr_extended_text_input_v1* extended_text_input,
+    uint32_t selection_behavior) {
+  auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
+  switch (selection_behavior) {
+    case ZCR_EXTENDED_TEXT_INPUT_V1_CONFIRM_PREEDIT_SELECTION_BEHAVIOR_AFTER_PREEDIT:
+      self->client_->OnConfirmPreedit(/*keep_selection=*/false);
+      break;
+    case ZCR_EXTENDED_TEXT_INPUT_V1_CONFIRM_PREEDIT_SELECTION_BEHAVIOR_UNCHANGED:
+      self->client_->OnConfirmPreedit(/*keep_selection=*/true);
+      break;
+    default:
+      self->client_->OnConfirmPreedit(/*keep_selection=*/false);
+      break;
+  }
+}
+
+// static
+void ZWPTextInputWrapperV1::OnInsertImage(
+    void* data,
+    struct zcr_extended_text_input_v1* extended_text_input,
+    const char* src) {
+  auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
+  self->client_->OnInsertImage(GURL(src));
+}
+
+// static
+void ZWPTextInputWrapperV1::OnInsertImageWithLargeURL(
+    void* data,
+    struct zcr_extended_text_input_v1* extended_text_input,
+    const char* mime_type,
+    const char* charset,
+    const int32_t raw_fd,
+    const uint32_t size) {
+  // Read raw data from fd.
+  std::string raw_data;
+  raw_data.resize(size);
+  base::ScopedFD fd(raw_fd);
+  if (!base::ReadFromFD(fd.get(), raw_data)) {
+    LOG(ERROR) << "Failed to read file descriptor for image insertion";
+    return;
+  }
+
+  // Re-construct data url.
+  std::string src = "data:";
+  if (mime_type) {
+    base::StrAppend(&src, {mime_type});
+  }
+  if (charset && strlen(charset) > 0) {
+    base::StrAppend(&src, {";charset=", charset});
+  }
+  base::StrAppend(&src, {";base64,"});
+
+  base::Base64EncodeAppend(base::as_byte_span(raw_data), &src);
+
+  // Dispatch image insertion request.
+  auto* self = static_cast<ZWPTextInputWrapperV1*>(data);
+  self->client_->OnInsertImage(GURL(src));
 }
 
 }  // namespace ui

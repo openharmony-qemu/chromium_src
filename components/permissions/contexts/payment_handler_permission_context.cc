@@ -20,13 +20,10 @@ PaymentHandlerPermissionContext::PaymentHandlerPermissionContext(
                             blink::mojom::PermissionsPolicyFeature::kNotFound) {
 }
 
-PaymentHandlerPermissionContext::~PaymentHandlerPermissionContext() {}
+PaymentHandlerPermissionContext::~PaymentHandlerPermissionContext() = default;
 
 void PaymentHandlerPermissionContext::DecidePermission(
-    const permissions::PermissionRequestID& id,
-    const GURL& requesting_origin,
-    const GURL& embedding_origin,
-    bool user_gesture,
+    permissions::PermissionRequestData request_data,
     permissions::BrowserPermissionCallback callback) {
   // The user should never be prompted to authorize payment handler.
   NOTREACHED();

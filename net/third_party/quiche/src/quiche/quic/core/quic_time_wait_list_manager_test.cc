@@ -7,7 +7,9 @@
 #include <cerrno>
 #include <memory>
 #include <ostream>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "quiche/quic/core/crypto/crypto_protocol.h"
 #include "quiche/quic/core/crypto/null_encrypter.h"
@@ -49,14 +51,6 @@ class FramerVisitorCapturingPublicReset : public NoOpFramerVisitor {
       : connection_id_(connection_id) {}
   ~FramerVisitorCapturingPublicReset() override = default;
 
-  void OnPublicResetPacket(const QuicPublicResetPacket& public_reset) override {
-    public_reset_packet_ = public_reset;
-  }
-
-  const QuicPublicResetPacket public_reset_packet() {
-    return public_reset_packet_;
-  }
-
   bool IsValidStatelessResetToken(
       const StatelessResetToken& token) const override {
     return token == QuicUtils::GenerateStatelessResetToken(connection_id_);
@@ -72,7 +66,6 @@ class FramerVisitorCapturingPublicReset : public NoOpFramerVisitor {
   }
 
  private:
-  QuicPublicResetPacket public_reset_packet_;
   QuicIetfStatelessResetPacket stateless_reset_packet_;
   QuicConnectionId connection_id_;
 };
@@ -144,7 +137,7 @@ class QuicTimeWaitListManagerTest : public QuicTest {
 
   void AddConnectionId(QuicConnectionId connection_id,
                        QuicTimeWaitListManager::TimeWaitAction action) {
-    AddConnectionId(connection_id, QuicVersionMax(), action, nullptr);
+    AddConnectionId(connection_id, action, nullptr);
   }
 
   void AddStatelessConnectionId(QuicConnectionId connection_id) {
@@ -157,12 +150,12 @@ class QuicTimeWaitListManagerTest : public QuicTest {
   }
 
   void AddConnectionId(
-      QuicConnectionId connection_id, ParsedQuicVersion version,
+      QuicConnectionId connection_id,
       QuicTimeWaitListManager::TimeWaitAction action,
       std::vector<std::unique_ptr<QuicEncryptedPacket>>* packets) {
     time_wait_list_manager_.AddConnectionIdToTimeWait(
-        action, TimeWaitConnectionInfo(version.HasIetfInvariantHeader(),
-                                       packets, {connection_id}));
+        action,
+        TimeWaitConnectionInfo(/*ietf_quic=*/true, packets, {connection_id}));
   }
 
   bool IsConnectionIdInTimeWait(QuicConnectionId connection_id) {
@@ -204,11 +197,6 @@ bool ValidPublicResetPacketPredicate(
   QuicEncryptedPacket encrypted(std::get<0>(packet_buffer),
                                 std::get<1>(packet_buffer));
   framer.ProcessPacket(encrypted);
-  QuicPublicResetPacket packet = visitor.public_reset_packet();
-  bool public_reset_is_valid =
-      expected_connection_id == packet.connection_id &&
-      TestPeerIPAddress() == packet.client_address.host() &&
-      kTestPort == packet.client_address.port();
 
   QuicIetfStatelessResetPacket stateless_reset =
       visitor.stateless_reset_packet();
@@ -216,10 +204,8 @@ bool ValidPublicResetPacketPredicate(
   StatelessResetToken expected_stateless_reset_token =
       QuicUtils::GenerateStatelessResetToken(expected_connection_id);
 
-  bool stateless_reset_is_valid =
-      stateless_reset.stateless_reset_token == expected_stateless_reset_token;
-
-  return public_reset_is_valid || stateless_reset_is_valid;
+  return stateless_reset.stateless_reset_token ==
+         expected_stateless_reset_token;
 }
 
 Matcher<const std::tuple<const char*, int>> PublicResetPacketEq(
@@ -252,7 +238,7 @@ TEST_F(QuicTimeWaitListManagerTest, SendVersionNegotiationPacket) {
           connection_id_, EmptyQuicConnectionId(), /*ietf_quic=*/false,
           /*use_length_prefix=*/false, AllSupportedVersions()));
   EXPECT_CALL(writer_, WritePacket(_, packet->length(), self_address_.host(),
-                                   peer_address_, _))
+                                   peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   time_wait_list_manager_.SendVersionNegotiationPacket(
@@ -269,7 +255,7 @@ TEST_F(QuicTimeWaitListManagerTest,
           connection_id_, EmptyQuicConnectionId(), /*ietf_quic=*/true,
           /*use_length_prefix=*/false, AllSupportedVersions()));
   EXPECT_CALL(writer_, WritePacket(_, packet->length(), self_address_.host(),
-                                   peer_address_, _))
+                                   peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   time_wait_list_manager_.SendVersionNegotiationPacket(
@@ -285,7 +271,7 @@ TEST_F(QuicTimeWaitListManagerTest, SendIetfVersionNegotiationPacket) {
           connection_id_, EmptyQuicConnectionId(), /*ietf_quic=*/true,
           /*use_length_prefix=*/true, AllSupportedVersions()));
   EXPECT_CALL(writer_, WritePacket(_, packet->length(), self_address_.host(),
-                                   peer_address_, _))
+                                   peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   time_wait_list_manager_.SendVersionNegotiationPacket(
@@ -302,7 +288,7 @@ TEST_F(QuicTimeWaitListManagerTest,
           connection_id_, TestConnectionId(0x33), /*ietf_quic=*/true,
           /*use_length_prefix=*/true, AllSupportedVersions()));
   EXPECT_CALL(writer_, WritePacket(_, packet->length(), self_address_.host(),
-                                   peer_address_, _))
+                                   peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   time_wait_list_manager_.SendVersionNegotiationPacket(
@@ -319,11 +305,11 @@ TEST_F(QuicTimeWaitListManagerTest, SendConnectionClose) {
   termination_packets.push_back(
       std::unique_ptr<QuicEncryptedPacket>(new QuicEncryptedPacket(
           new char[kConnectionCloseLength], kConnectionCloseLength, true)));
-  AddConnectionId(connection_id_, QuicVersionMax(),
+  AddConnectionId(connection_id_,
                   QuicTimeWaitListManager::SEND_CONNECTION_CLOSE_PACKETS,
                   &termination_packets);
   EXPECT_CALL(writer_, WritePacket(_, kConnectionCloseLength,
-                                   self_address_.host(), peer_address_, _))
+                                   self_address_.host(), peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   ProcessPacket(connection_id_);
@@ -339,11 +325,11 @@ TEST_F(QuicTimeWaitListManagerTest, SendTwoConnectionCloses) {
   termination_packets.push_back(
       std::unique_ptr<QuicEncryptedPacket>(new QuicEncryptedPacket(
           new char[kConnectionCloseLength], kConnectionCloseLength, true)));
-  AddConnectionId(connection_id_, QuicVersionMax(),
+  AddConnectionId(connection_id_,
                   QuicTimeWaitListManager::SEND_CONNECTION_CLOSE_PACKETS,
                   &termination_packets);
   EXPECT_CALL(writer_, WritePacket(_, kConnectionCloseLength,
-                                   self_address_.host(), peer_address_, _))
+                                   self_address_.host(), peer_address_, _, _))
       .Times(2)
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
@@ -355,7 +341,7 @@ TEST_F(QuicTimeWaitListManagerTest, SendPublicReset) {
   AddConnectionId(connection_id_,
                   QuicTimeWaitListManager::SEND_STATELESS_RESET);
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(connection_id_)))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 0)));
 
@@ -369,7 +355,7 @@ TEST_F(QuicTimeWaitListManagerTest, SendPublicResetWithExponentialBackOff) {
   EXPECT_EQ(1u, time_wait_list_manager_.num_connections());
   for (int packet_number = 1; packet_number < 101; ++packet_number) {
     if ((packet_number & (packet_number - 1)) == 0) {
-      EXPECT_CALL(writer_, WritePacket(_, _, _, _, _))
+      EXPECT_CALL(writer_, WritePacket(_, _, _, _, _, _))
           .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
     }
     ProcessPacket(connection_id_);
@@ -389,7 +375,7 @@ TEST_F(QuicTimeWaitListManagerTest, NoPublicResetForStatelessConnections) {
   AddStatelessConnectionId(connection_id_);
 
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   ProcessPacket(connection_id_);
@@ -484,14 +470,14 @@ TEST_F(QuicTimeWaitListManagerTest, SendQueuedPackets) {
       connection_id, EmptyQuicConnectionId(), /*packet_number=*/234));
   // Let first write through.
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(connection_id)))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, packet->length())));
   ProcessPacket(connection_id);
 
   // write block for the next packet.
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(connection_id)))
       .WillOnce(DoAll(Assign(&writer_is_blocked_, true),
                       Return(WriteResult(WRITE_STATUS_BLOCKED, EAGAIN))));
@@ -508,7 +494,7 @@ TEST_F(QuicTimeWaitListManagerTest, SendQueuedPackets) {
                   QuicTimeWaitListManager::SEND_STATELESS_RESET);
   std::unique_ptr<QuicEncryptedPacket> other_packet(ConstructEncryptedPacket(
       other_connection_id, EmptyQuicConnectionId(), /*packet_number=*/23423));
-  EXPECT_CALL(writer_, WritePacket(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(writer_, WritePacket(_, _, _, _, _, _)).Times(0);
   EXPECT_CALL(visitor_, OnWriteBlocked(&time_wait_list_manager_));
   ProcessPacket(other_connection_id);
   EXPECT_EQ(2u, time_wait_list_manager_.num_connections());
@@ -516,11 +502,11 @@ TEST_F(QuicTimeWaitListManagerTest, SendQueuedPackets) {
   // Now expect all the write blocked public reset packets to be sent again.
   writer_is_blocked_ = false;
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(connection_id)))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, packet->length())));
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(other_connection_id)))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, packet->length())));
   time_wait_list_manager_.OnBlockedWriterCanWrite();
@@ -536,14 +522,14 @@ TEST_F(QuicTimeWaitListManagerTest, AddConnectionIdTwice) {
   termination_packets.push_back(
       std::unique_ptr<QuicEncryptedPacket>(new QuicEncryptedPacket(
           new char[kConnectionCloseLength], kConnectionCloseLength, true)));
-  AddConnectionId(connection_id_, QuicVersionMax(),
+  AddConnectionId(connection_id_,
                   QuicTimeWaitListManager::SEND_TERMINATION_PACKETS,
                   &termination_packets);
   EXPECT_TRUE(IsConnectionIdInTimeWait(connection_id_));
   EXPECT_EQ(1u, time_wait_list_manager_.num_connections());
 
   EXPECT_CALL(writer_, WritePacket(_, kConnectionCloseLength,
-                                   self_address_.host(), peer_address_, _))
+                                   self_address_.host(), peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   ProcessPacket(connection_id_);
@@ -669,7 +655,7 @@ TEST_F(QuicTimeWaitListManagerTest,
 
   // Termination packet is not encrypted, instead, send stateless reset.
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(connection_id_)))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 0)));
   // Processes IETF short header packet.
@@ -693,7 +679,7 @@ TEST_F(QuicTimeWaitListManagerTest,
       TimeWaitConnectionInfo(/*ietf_quic=*/true, &termination_packets,
                              {connection_id_}));
   EXPECT_CALL(writer_, WritePacket(_, kConnectionCloseLength,
-                                   self_address_.host(), peer_address_, _))
+                                   self_address_.host(), peer_address_, _, _))
       .WillOnce(Return(WriteResult(WRITE_STATUS_OK, 1)));
 
   // Processes IETF short header packet.
@@ -723,7 +709,7 @@ TEST_F(QuicTimeWaitListManagerTest,
                              active_connection_ids, QuicTime::Delta::Zero()));
 
   EXPECT_CALL(writer_, WritePacket(_, kConnectionCloseLength,
-                                   self_address_.host(), peer_address_, _))
+                                   self_address_.host(), peer_address_, _, _))
       .Times(2)
       .WillRepeatedly(Return(WriteResult(WRITE_STATUS_OK, 1)));
   // Processes IETF short header packet.
@@ -759,7 +745,7 @@ TEST_F(QuicTimeWaitListManagerTest, TooManyPendingPackets) {
       .Times(testing::AnyNumber());
   // Write block for the next packets.
   EXPECT_CALL(writer_,
-              WritePacket(_, _, self_address_.host(), peer_address_, _))
+              WritePacket(_, _, self_address_.host(), peer_address_, _, _))
       .With(Args<0, 1>(PublicResetPacketEq(TestConnectionId(1))))
       .WillOnce(DoAll(Assign(&writer_is_blocked_, true),
                       Return(WriteResult(WRITE_STATUS_BLOCKED, EAGAIN))));

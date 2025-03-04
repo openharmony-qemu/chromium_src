@@ -47,7 +47,6 @@
 #include "ui/ozone/platform/drm/mojom/drm_device.mojom.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/ozone_platform.h"
-#include "ui/ozone/public/ozone_switches.h"
 #include "ui/ozone/public/platform_screen.h"
 #include "ui/platform_window/platform_window_init_properties.h"
 
@@ -85,10 +84,7 @@ class OzonePlatformDrm : public OzonePlatform {
     return event_factory_ozone_->input_controller();
   }
 
-  std::unique_ptr<PlatformScreen> CreateScreen() override {
-    NOTREACHED();
-    return nullptr;
-  }
+  std::unique_ptr<PlatformScreen> CreateScreen() override { NOTREACHED(); }
   void InitScreen(PlatformScreen* screen) override { NOTREACHED(); }
 
   GpuPlatformSupportHost* GetGpuPlatformSupportHost() override {
@@ -188,6 +184,8 @@ class OzonePlatformDrm : public OzonePlatform {
                                                                    usage);
   }
 
+  bool IsWindowCompositingSupported() const override { return true; }
+
   bool InitializeUI(const InitParams& args) override {
     // Ozone drm can operate in two modes configured at runtime.
     //   1. single-process mode where host and viz components
@@ -233,12 +231,6 @@ class OzonePlatformDrm : public OzonePlatform {
   }
 
   void InitializeGPU(const InitParams& args) override {
-    // Check if buffer bandwidth compression is disabled
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kDisableBufferBWCompression)) {
-      setenv("MINIGBM_DEBUG", "nocompression", 1);
-    }
-
     gpu_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
 
     // NOTE: Can't start the thread here since this is called before sandbox
@@ -252,7 +244,7 @@ class OzonePlatformDrm : public OzonePlatform {
     host_properties_.supports_native_pixmaps = true;
 
     overlay_manager_ = std::make_unique<DrmOverlayManagerGpu>(
-        drm_thread_proxy_.get(),
+        drm_thread_proxy_.get(), args.handle_overlays_swap_failure,
         args.allow_sync_and_real_buffer_page_flip_testing);
 
     // If gpu is in a separate process, rest of the initialization happens after

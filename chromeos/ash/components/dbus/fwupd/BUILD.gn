@@ -13,7 +13,9 @@ component("fwupd") {
   deps = [
     "//ash/constants",
     "//base",
+    "//chromeos/ash/components/install_attributes",
     "//chromeos/dbus/common",
+    "//components/device_event_log",
     "//dbus",
     "//url",
   ]
@@ -26,8 +28,13 @@ component("fwupd") {
     "fwupd_client.h",
     "fwupd_device.cc",
     "fwupd_device.h",
-    "fwupd_properties.cc",
     "fwupd_properties.h",
+    "fwupd_properties_dbus.cc",
+    "fwupd_properties_dbus.h",
+    "fwupd_properties_fake.cc",
+    "fwupd_properties_fake.h",
+    "fwupd_request.cc",
+    "fwupd_request.h",
     "fwupd_update.cc",
     "fwupd_update.h",
   ]
@@ -40,6 +47,7 @@ source_set("test_support") {
     ":fwupd",
     "//ash/constants",
     "//base/test:test_support",
+    "//chromeos/ash/components/install_attributes:test_support",
     "//dbus:test_support",
     "//testing/gmock",
     "//testing/gtest",

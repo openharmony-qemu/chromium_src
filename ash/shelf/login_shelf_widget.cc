@@ -75,7 +75,7 @@ class LoginShelfWidget::LoginShelfWidgetDelegate
   }
 
  private:
-  const base::raw_ptr<Shelf> shelf_ = nullptr;
+  const raw_ptr<Shelf> shelf_ = nullptr;
 
   // When true, the default focus of the shelf is the last focusable child.
   bool default_last_focusable_child_ = false;
@@ -88,16 +88,15 @@ LoginShelfWidget::LoginShelfWidget(Shelf* shelf, aura::Window* container)
       delegate_(new LoginShelfWidgetDelegate(shelf)),
       scoped_session_observer_(this) {
   DCHECK(container);
-  login_shelf_view_ = delegate_->AddChildView(std::make_unique<LoginShelfView>(
-      RootWindowController::ForWindow(container)
-          ->lock_screen_action_background_controller()));
+  login_shelf_view_ =
+      delegate_->AddChildView(std::make_unique<LoginShelfView>());
 
   views::Widget::InitParams params(
+      views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET,
       views::Widget::InitParams::TYPE_WINDOW_FRAMELESS);
   params.name = "LoginShelfWidget";
   params.delegate = delegate_;
   params.opacity = views::Widget::InitParams::WindowOpacity::kTranslucent;
-  params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
   params.parent = container;
   Init(std::move(params));
   SetContentsView(delegate_);

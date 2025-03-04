@@ -2,13 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_INDEXED_RULESET_H_
 #define COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_INDEXED_RULESET_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
-#include "base/memory/raw_ptr_exclusion.h"
+#include "base/compiler_specific.h"
+#include "base/containers/span.h"
+#include "base/memory/raw_ptr.h"
 #include "base/numerics/safe_conversions.h"
 #include "components/subresource_filter/core/common/flat/indexed_ruleset_generated.h"
 #include "components/subresource_filter/core/common/load_policy.h"
@@ -24,9 +31,9 @@ class Origin;
 namespace url_pattern_index {
 namespace proto {
 class UrlRule;
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 class CssRule;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 }
 }
 
@@ -73,9 +80,9 @@ class RulesetIndexer {
   // Returns whether the |rule| has been serialized and added to the index.
   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // Finalizes construction of the data structures.
   void Finish();
@@ -85,10 +92,9 @@ class RulesetIndexer {
 
   // Returns a pointer to the buffer containing the serialized flat data
   // structures. Should only be called after Finish().
-  const uint8_t* data() const { return builder_.GetBufferPointer(); }
-
-  // Returns the size of the buffer.
-  size_t size() const { return base::strict_cast<size_t>(builder_.GetSize()); }
+  base::span<const uint8_t> data() const LIFETIME_BOUND {
+    return base::span(builder_.GetBufferPointer(), builder_.GetSize());
+  }
 
  private:
   flatbuffers::FlatBufferBuilder builder_;
@@ -97,10 +103,10 @@ class RulesetIndexer {
   url_pattern_index::UrlPatternIndexBuilder allowlist_;
   url_pattern_index::UrlPatternIndexBuilder deactivation_;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   url_pattern_index::CssPatternIndexBuilder css_blocklist_;
   url_pattern_index::CssPatternIndexBuilder css_allowlist_;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // Maintains a map of domain vectors to their existing offsets, to avoid
   // storing a particular vector more than once.
@@ -112,16 +118,13 @@ class IndexedRulesetMatcher {
  public:
   // Returns whether the |buffer| of the given |size| contains a valid
   // flat::IndexedRuleset FlatBuffer.
-  static bool Verify(const uint8_t* buffer, size_t size, int expected_checksum);
+  static bool Verify(base::span<const uint8_t> buffer,
+                     int expected_checksum,
+                     std::string_view uma_tag);
 
   // Creates an instance that matches URLs against the flat::IndexedRuleset
-  // provided as the root object of serialized data in the |buffer| of the given
-  // |size|.
-  IndexedRulesetMatcher(const uint8_t* buffer, size_t size);
-
-#ifdef OHOS_ARKWEB_ADBLOCK
-  ~IndexedRulesetMatcher();
-#endif // OHOS_ARKWEB_ADBLOCK
+  // provided as the root object of serialized data in the |buffer|.
+  explicit IndexedRulesetMatcher(base::span<const uint8_t> buffer);
 
   IndexedRulesetMatcher(const IndexedRulesetMatcher&) = delete;
   IndexedRulesetMatcher& operator=(const IndexedRulesetMatcher&) = delete;
@@ -155,7 +158,7 @@ class IndexedRulesetMatcher {
       url_pattern_index::proto::ElementType element_type,
       bool disable_generic_rules) const;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
   MatchedCssRule(const GURL& url, bool disable_generic_rules) const;
 
@@ -167,21 +170,19 @@ class IndexedRulesetMatcher {
 
   bool HasDocumentOption(const GURL& document_url,
                          const url::Origin& parent_document_origin) const;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
  private:
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #union
-  RAW_PTR_EXCLUSION const flat::IndexedRuleset* root_;
+  raw_ptr<const flat::IndexedRuleset> root_;
 
   url_pattern_index::UrlPatternIndexMatcher blocklist_;
   url_pattern_index::UrlPatternIndexMatcher allowlist_;
   url_pattern_index::UrlPatternIndexMatcher deactivation_;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   url_pattern_index::CssPatternIndexMatcher css_blocklist_;
   url_pattern_index::CssPatternIndexMatcher css_allowlist_;
-#endif // OHOS_ARKWEB_ADBLOCK
+#endif
 };
 
 }  // namespace subresource_filter

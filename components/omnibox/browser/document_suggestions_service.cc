@@ -20,6 +20,7 @@
 #include "components/signin/public/identity_manager/primary_account_access_token_fetcher.h"
 #include "components/signin/public/identity_manager/scope_set.h"
 #include "components/variations/net/variations_http_headers.h"
+#include "google_apis/gaia/gaia_constants.h"
 #include "net/base/load_flags.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "services/network/public/cpp/resource_request.h"
@@ -80,11 +81,12 @@ DocumentSuggestionsService::DocumentSuggestionsService(
   DCHECK(url_loader_factory);
 }
 
-DocumentSuggestionsService::~DocumentSuggestionsService() {}
+DocumentSuggestionsService::~DocumentSuggestionsService() = default;
 
 void DocumentSuggestionsService::CreateDocumentSuggestionsRequest(
     const std::u16string& query,
     bool is_incognito,
+    CreationCallback creation_callback,
     StartCallback start_callback,
     CompletionCallback completion_callback) {
   std::string endpoint = base::GetFieldTrialParamValueByFeature(
@@ -123,6 +125,8 @@ void DocumentSuggestionsService::CreateDocumentSuggestionsRequest(
   request->method = "POST";
   std::string request_body = BuildDocumentSuggestionRequest(query);
   request->load_flags = net::LOAD_DO_NOT_SAVE_COOKIES;
+  // Set the SiteForCookies to the request URL's site to avoid cookie blocking.
+  request->site_for_cookies = net::SiteForCookies::FromUrl(suggest_url);
   // It is expected that the user is signed in here. But we only care about
   // experiment IDs from the variations server, which do not require the
   // signed-in version of this method.
@@ -132,17 +136,19 @@ void DocumentSuggestionsService::CreateDocumentSuggestionsRequest(
                    : variations::InIncognito::kNo,
       request.get());
 
+  std::move(creation_callback).Run(request.get());
+
   // Create and fetch an OAuth2 token.
-  std::string scope = "https://www.googleapis.com/auth/cloud_search.query";
   signin::ScopeSet scopes;
-  scopes.insert(scope);
+  scopes.insert(GaiaConstants::kCloudSearchQueryOAuth2Scope);
   token_fetcher_ = std::make_unique<signin::PrimaryAccountAccessTokenFetcher>(
       "document_suggestions_service", identity_manager_, scopes,
       base::BindOnce(&DocumentSuggestionsService::AccessTokenAvailable,
                      base::Unretained(this), std::move(request),
                      std::move(request_body), traffic_annotation,
                      std::move(start_callback), std::move(completion_callback)),
-      signin::PrimaryAccountAccessTokenFetcher::Mode::kWaitUntilAvailable);
+      signin::PrimaryAccountAccessTokenFetcher::Mode::kWaitUntilAvailable,
+      signin::ConsentLevel::kSignin);
 }
 
 void DocumentSuggestionsService::StopCreatingDocumentSuggestionsRequest() {
@@ -190,5 +196,5 @@ void DocumentSuggestionsService::StartDownloadAndTransferLoader(
       url_loader_factory_.get(),
       base::BindOnce(std::move(completion_callback), loader.get()));
 
-  std::move(start_callback).Run(std::move(loader));
+  std::move(start_callback).Run(std::move(loader), request_body);
 }

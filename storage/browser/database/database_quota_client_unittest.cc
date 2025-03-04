@@ -23,6 +23,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/bind.h"
+#include "base/test/gmock_expected_support.h"
 #include "base/test/task_environment.h"
 #include "base/test/test_future.h"
 #include "components/services/storage/public/cpp/buckets/bucket_locator.h"
@@ -35,7 +36,6 @@
 #include "storage/browser/database/database_util.h"
 #include "storage/browser/quota/quota_manager.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
-#include "storage/browser/quota/special_storage_policy.h"
 #include "storage/browser/test/mock_special_storage_policy.h"
 #include "storage/common/database/database_identifier.h"
 #include "testing/gmock/include/gmock/gmock-matchers.h"
@@ -54,14 +54,11 @@ static const blink::mojom::StorageType kTemp =
 // Mocks DatabaseTracker methods used by DatabaseQuotaClient.
 class MockDatabaseTracker : public DatabaseTracker {
  public:
-  MockDatabaseTracker(
-      const base::FilePath& path,
-      bool is_incognito,
-      scoped_refptr<QuotaManagerProxy> quota_manager_proxy,
-      scoped_refptr<SpecialStoragePolicy> special_storage_policy)
+  MockDatabaseTracker(const base::FilePath& path,
+                      bool is_incognito,
+                      scoped_refptr<QuotaManagerProxy> quota_manager_proxy)
       : DatabaseTracker(path,
                         is_incognito,
-                        std::move(special_storage_policy),
                         std::move(quota_manager_proxy),
                         DatabaseTracker::CreatePassKey()) {}
 
@@ -150,9 +147,8 @@ class DatabaseQuotaClientTest : public testing::TestWithParam<bool> {
       : kStorageKeyA(
             blink::StorageKey::CreateFromStringForTesting("http://host")),
         kStorageKeyB(
-            blink::StorageKey::CreateFromStringForTesting("http://host:8000")),
-        special_storage_policy_(
-            base::MakeRefCounted<MockSpecialStoragePolicy>()) {}
+            blink::StorageKey::CreateFromStringForTesting("http://host:8000")) {
+  }
   ~DatabaseQuotaClientTest() override = default;
 
   DatabaseQuotaClientTest(const DatabaseQuotaClientTest&) = delete;
@@ -163,11 +159,9 @@ class DatabaseQuotaClientTest : public testing::TestWithParam<bool> {
     quota_manager_ = base::MakeRefCounted<QuotaManager>(
         /*is_incognito_=*/false, data_dir_.GetPath(),
         base::SingleThreadTaskRunner::GetCurrentDefault(),
-        /*quota_change_callback=*/base::DoNothing(), special_storage_policy_,
-        GetQuotaSettingsFunc());
+        special_storage_policy_, GetQuotaSettingsFunc());
     mock_tracker_ = base::MakeRefCounted<MockDatabaseTracker>(
-        data_dir_.GetPath(), is_incognito(), quota_manager_->proxy(),
-        special_storage_policy_);
+        data_dir_.GetPath(), is_incognito(), quota_manager_->proxy());
   }
 
   void TearDown() override {
@@ -236,19 +230,19 @@ class DatabaseQuotaClientTest : public testing::TestWithParam<bool> {
 
 TEST_P(DatabaseQuotaClientTest, GetBucketUsage) {
   DatabaseQuotaClient client(*mock_tracker_);
-  auto bucket_a =
-      CreateBucketForTesting(kStorageKeyA, kDefaultBucketName, kTemp);
-  ASSERT_TRUE(bucket_a.has_value());
-  auto bucket_b =
-      CreateBucketForTesting(kStorageKeyB, kDefaultBucketName, kTemp);
-  ASSERT_TRUE(bucket_b.has_value());
+  ASSERT_OK_AND_ASSIGN(
+      auto bucket_a,
+      CreateBucketForTesting(kStorageKeyA, kDefaultBucketName, kTemp));
+  ASSERT_OK_AND_ASSIGN(
+      auto bucket_b,
+      CreateBucketForTesting(kStorageKeyB, kDefaultBucketName, kTemp));
 
-  EXPECT_EQ(0, GetBucketUsage(client, *bucket_a));
+  EXPECT_EQ(0, GetBucketUsage(client, bucket_a));
 
   mock_tracker_->AddMockDatabase(kStorageKeyA.origin(), "fooDB", 1000);
-  EXPECT_EQ(1000, GetBucketUsage(client, *bucket_a));
+  EXPECT_EQ(1000, GetBucketUsage(client, bucket_a));
 
-  EXPECT_EQ(0, GetBucketUsage(client, *bucket_b));
+  EXPECT_EQ(0, GetBucketUsage(client, bucket_b));
 }
 
 TEST_P(DatabaseQuotaClientTest, GetStorageKeysForType) {
@@ -265,30 +259,30 @@ TEST_P(DatabaseQuotaClientTest, GetStorageKeysForType) {
 
 TEST_P(DatabaseQuotaClientTest, DeleteBucketData) {
   DatabaseQuotaClient client(*mock_tracker_);
-  auto bucket_a =
-      CreateBucketForTesting(kStorageKeyA, kDefaultBucketName, kTemp);
-  ASSERT_TRUE(bucket_a.has_value());
+  ASSERT_OK_AND_ASSIGN(
+      auto bucket_a,
+      CreateBucketForTesting(kStorageKeyA, kDefaultBucketName, kTemp));
 
   mock_tracker_->set_async_delete(false);
   EXPECT_EQ(blink::mojom::QuotaStatusCode::kOk,
-            DeleteBucketData(client, *bucket_a));
+            DeleteBucketData(client, bucket_a));
   EXPECT_EQ(1, mock_tracker_->delete_called_count());
 
   mock_tracker_->set_async_delete(true);
   EXPECT_EQ(blink::mojom::QuotaStatusCode::kOk,
-            DeleteBucketData(client, *bucket_a));
+            DeleteBucketData(client, bucket_a));
   EXPECT_EQ(2, mock_tracker_->delete_called_count());
 }
 
 TEST_P(DatabaseQuotaClientTest, NonDefaultBucket) {
   DatabaseQuotaClient client(*mock_tracker_);
-  auto bucket = CreateBucketForTesting(kStorageKeyA, "inbox_bucket", kTemp);
-  ASSERT_TRUE(bucket.has_value());
-  ASSERT_FALSE(bucket->is_default);
+  ASSERT_OK_AND_ASSIGN(
+      auto bucket, CreateBucketForTesting(kStorageKeyA, "inbox_bucket", kTemp));
+  ASSERT_FALSE(bucket.is_default);
 
-  EXPECT_EQ(0, GetBucketUsage(client, *bucket));
+  EXPECT_EQ(0, GetBucketUsage(client, bucket));
   EXPECT_EQ(blink::mojom::QuotaStatusCode::kOk,
-            DeleteBucketData(client, *bucket));
+            DeleteBucketData(client, bucket));
 }
 
 INSTANTIATE_TEST_SUITE_P(DatabaseQuotaClientTests,

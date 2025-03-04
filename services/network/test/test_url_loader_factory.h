@@ -7,8 +7,10 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "base/functional/callback.h"
 #include "base/memory/scoped_refptr.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -40,7 +42,7 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
       std::vector<std::string> removed_headers;
       net::HttpRequestHeaders modified_headers;
       net::HttpRequestHeaders modified_cors_exempt_headers;
-      absl::optional<GURL> new_url;
+      std::optional<GURL> new_url;
     };
 
     explicit TestURLLoader(
@@ -55,7 +57,7 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
         const std::vector<std::string>& removed_headers,
         const net::HttpRequestHeaders& modified_headers,
         const net::HttpRequestHeaders& modified_cors_exempt_headers,
-        const absl::optional<GURL>& new_url) override;
+        const std::optional<GURL>& new_url) override;
     void SetPriority(net::RequestPriority priority,
                      int32_t intra_priority_value) override {}
     void PauseReadingBodyFromNet() override {}
@@ -92,6 +94,7 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
                              // URL passed in to
                              // SimulateResponseForPendingRequest
     kMostRecentMatch = 0x2,  // Start with the most recent requests.
+    kWaitForRequest = 0x4,   // Wait for a matching request, if none is present.
   };
 
   // Flags used with |AddResponse| to control how it produces a response.
@@ -118,21 +121,23 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
   // then pending requests will be "woken up".
   void AddResponse(const GURL& url,
                    mojom::URLResponseHeadPtr head,
-                   const std::string& content,
+                   std::string_view content,
                    const URLLoaderCompletionStatus& status,
                    Redirects redirects = Redirects(),
                    ResponseProduceFlags rp_flags = kResponseDefault);
 
   // Simpler version of above for the common case of success or error page.
-  void AddResponse(const std::string& url,
-                   const std::string& content,
+  void AddResponse(std::string_view url,
+                   std::string_view content,
                    net::HttpStatusCode status = net::HTTP_OK);
+
+  void EraseResponse(const GURL& url) { responses_.erase(url); }
 
   // Returns true if there is a request for a given URL with a living client
   // that did not produce a response yet. If |request_out| is non-null,
   // it will give a const pointer to the request.
   // WARNING: This does RunUntilIdle() first.
-  bool IsPending(const std::string& url,
+  bool IsPending(std::string_view url,
                  const ResourceRequest** request_out = nullptr);
 
   // Returns the total # of pending requests.
@@ -161,17 +166,19 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
   //   starts with |url| (instead of being equal to |url|).
   // - if kMostRecentMatch is set, the most recent (instead of oldest) pending
   //   request matching is used.
+  // - if kWaitForRequest is set, and no matching request is pending, a nested
+  //   run loop will be run until that request arrives.
   bool SimulateResponseForPendingRequest(
       const GURL& url,
       const network::URLLoaderCompletionStatus& completion_status,
       mojom::URLResponseHeadPtr response_head,
-      const std::string& content,
+      std::string_view content,
       ResponseMatchFlags flags = kMatchDefault);
 
   // Simpler version of above for the common case of success or error page.
   bool SimulateResponseForPendingRequest(
-      const std::string& url,
-      const std::string& content,
+      std::string_view url,
+      std::string_view content,
       net::HttpStatusCode status = net::HTTP_OK,
       ResponseMatchFlags flags = kMatchDefault);
 
@@ -184,12 +191,12 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
   void SimulateResponseWithoutRemovingFromPendingList(
       PendingRequest* request,
       mojom::URLResponseHeadPtr head,
-      std::string content,
+      std::string_view content,
       const URLLoaderCompletionStatus& status);
 
   // Simpler version of the method above.
   void SimulateResponseWithoutRemovingFromPendingList(PendingRequest* request,
-                                                      std::string content);
+                                                      std::string_view content);
 
   // mojom::URLLoaderFactory implementation.
   void CreateLoaderAndStart(mojo::PendingReceiver<mojom::URLLoader> receiver,
@@ -222,10 +229,13 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
   bool CreateLoaderAndStartInternal(const GURL& url,
                                     mojom::URLLoaderClient* client);
 
+  std::optional<network::TestURLLoaderFactory::PendingRequest>
+  FindPendingRequest(const GURL& url, ResponseMatchFlags flags);
+
   static void SimulateResponse(mojom::URLLoaderClient* client,
                                Redirects redirects,
                                mojom::URLResponseHeadPtr head,
-                               std::string content,
+                               std::string_view content,
                                URLLoaderCompletionStatus status,
                                ResponseProduceFlags response_flags);
 
@@ -244,6 +254,9 @@ class TestURLLoaderFactory : public mojom::URLLoaderFactory {
   std::map<GURL, Response> responses_;
 
   std::vector<PendingRequest> pending_requests_;
+
+  // If set, this is called when a new pending request arrives.
+  base::OnceClosure on_new_pending_request_;
 
   scoped_refptr<network::WeakWrapperSharedURLLoaderFactory> weak_wrapper_;
 

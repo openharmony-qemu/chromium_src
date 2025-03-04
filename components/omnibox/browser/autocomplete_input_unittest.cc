@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/autocomplete_input.h"
 
 #include <stddef.h>
@@ -40,7 +45,7 @@ TEST(AutocompleteInputTest, InputType) {
     {u"foo.-com", metrics::OmniboxInputType::QUERY},
     {u"foo/", metrics::OmniboxInputType::URL},
     {u"foo/bar", metrics::OmniboxInputType::UNKNOWN},
-    {u"foo/bar%00", metrics::OmniboxInputType::QUERY},
+    {u"foo/bar%00", metrics::OmniboxInputType::UNKNOWN},
     {u"foo/bar/", metrics::OmniboxInputType::URL},
     {u"foo/bar baz\\", metrics::OmniboxInputType::URL},
     {u"foo.com/bar", metrics::OmniboxInputType::URL},
@@ -134,7 +139,7 @@ TEST(AutocompleteInputTest, InputType) {
     {u"http://foo.c", metrics::OmniboxInputType::URL},
     {u"http://foo.com", metrics::OmniboxInputType::URL},
     {u"http://foo_bar.com", metrics::OmniboxInputType::URL},
-    {u"http://foo/bar%00", metrics::OmniboxInputType::QUERY},
+    {u"http://foo/bar%00", metrics::OmniboxInputType::URL},
     {u"http://foo/bar baz", metrics::OmniboxInputType::URL},
     {u"http://-foo.com", metrics::OmniboxInputType::URL},
     {u"http://foo-.com", metrics::OmniboxInputType::URL},
@@ -182,7 +187,7 @@ TEST(AutocompleteInputTest, InputType) {
     {u"devtools:", metrics::OmniboxInputType::QUERY},
     {u"devtools://", metrics::OmniboxInputType::QUERY},
     {u"devtools://x", metrics::OmniboxInputType::URL},
-    {u"about://f;", metrics::OmniboxInputType::QUERY},
+    {u"about://f;", metrics::OmniboxInputType::URL},
     {u"://w", metrics::OmniboxInputType::UNKNOWN},
     {u":w", metrics::OmniboxInputType::UNKNOWN},
     {u".\u062A", metrics::OmniboxInputType::UNKNOWN},
@@ -472,4 +477,42 @@ TEST(AutocompleteInputTest, UpgradeTypedNavigationsToHttps) {
             fake_http_input.canonicalized_url());
   EXPECT_TRUE(fake_http_input.added_default_scheme_to_typed_url());
 #endif
+}
+
+TEST(AutocompleteInputTest, TypedURLHadHTTPSchemeTest) {
+  struct TestData {
+    const std::u16string input;
+    bool expected_typed_url_had_http_scheme;
+  };
+
+  const TestData test_cases[] = {
+      {u"example.com", false},
+      {u"example.com:80", false},
+      {u"example.com:8080", false},
+      {u"example query", false},
+      {u"http example query", false},
+      {u"127.0.0.1", false},
+      {u"127.0.0.1:80", false},
+      {u"127.0.0.1:8080", false},
+      {u"http://127.0.0.1:8080", true},
+      {u"https://127.0.0.1:8080", false},
+      {u"dotlesshostname/", false},
+      {u"http://dotlesshostname/", true},
+      {u"https://dotlesshostname/", false},
+      {u"http://example.com", true},
+      {u"HTTP://EXAMPLE.COM", true},
+      {u"http://example.com:80", true},
+      {u"HTTP://EXAMPLE.COM:80", true},
+      {u"http://example.com:8080", true},
+      {u"HTTP://EXAMPLE.COM:8080", true},
+      {u"HTTPS://EXAMPLE.COM", false},
+  };
+  for (const TestData& test_case : test_cases) {
+    AutocompleteInput input(test_case.input, std::u16string::npos,
+                            metrics::OmniboxEventProto::OTHER,
+                            TestSchemeClassifier(),
+                            /*should_use_https_as_default_scheme=*/true);
+    EXPECT_EQ(test_case.expected_typed_url_had_http_scheme,
+              input.typed_url_had_http_scheme());
+  }
 }

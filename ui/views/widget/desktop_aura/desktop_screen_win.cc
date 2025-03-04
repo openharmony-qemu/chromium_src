@@ -23,8 +23,9 @@ DesktopScreenWin::~DesktopScreenWin() {
 }
 
 HWND DesktopScreenWin::GetHWNDFromNativeWindow(gfx::NativeWindow window) const {
-  if (!window)
+  if (!window) {
     return nullptr;
+  }
   aura::WindowTreeHost* host = window->GetHost();
   return host ? host->GetAcceleratedWidget() : nullptr;
 }
@@ -32,7 +33,7 @@ HWND DesktopScreenWin::GetHWNDFromNativeWindow(gfx::NativeWindow window) const {
 gfx::NativeWindow DesktopScreenWin::GetNativeWindowFromHWND(HWND hwnd) const {
   return ::IsWindow(hwnd)
              ? DesktopWindowTreeHostWin::GetContentWindowForHWND(hwnd)
-             : gfx::kNullNativeWindow;
+             : gfx::NativeWindow();
 }
 
 bool DesktopScreenWin::IsNativeWindowOccluded(gfx::NativeWindow window) const {
@@ -40,7 +41,7 @@ bool DesktopScreenWin::IsNativeWindowOccluded(gfx::NativeWindow window) const {
          aura::Window::OcclusionState::OCCLUDED;
 }
 
-absl::optional<bool> DesktopScreenWin::IsWindowOnCurrentVirtualDesktop(
+std::optional<bool> DesktopScreenWin::IsWindowOnCurrentVirtualDesktop(
     gfx::NativeWindow window) const {
   DCHECK(window);
   return window->GetHost()->on_current_workspace();

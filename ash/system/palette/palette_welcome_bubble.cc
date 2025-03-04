@@ -8,17 +8,20 @@
 
 #include "ash/assistant/util/assistant_util.h"
 #include "ash/constants/ash_pref_names.h"
+#include "ash/constants/ash_switches.h"
 #include "ash/public/cpp/shell_window_ids.h"
 #include "ash/session/session_controller_impl.h"
 #include "ash/shell.h"
 #include "ash/strings/grit/ash_strings.h"
 #include "ash/system/palette/palette_tray.h"
+#include "base/command_line.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "ui/aura/window.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/metadata/metadata_header_macros.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/dialog_button.mojom.h"
 #include "ui/views/bubble/bubble_dialog_delegate_view.h"
 #include "ui/views/controls/label.h"
 #include "ui/views/layout/fill_layout.h"
@@ -35,15 +38,16 @@ constexpr int kBubbleContentLabelPreferredWidthDp = 380;
 // Controlled by PaletteWelcomeBubble and anchored to a PaletteTray.
 class PaletteWelcomeBubble::WelcomeBubbleView
     : public views::BubbleDialogDelegateView {
+  METADATA_HEADER(WelcomeBubbleView, views::BubbleDialogDelegateView)
+
  public:
-  METADATA_HEADER(WelcomeBubbleView);
   WelcomeBubbleView(views::View* anchor, views::BubbleBorder::Arrow arrow)
       : views::BubbleDialogDelegateView(anchor, arrow) {
     SetTitle(
         l10n_util::GetStringUTF16(IDS_ASH_STYLUS_WARM_WELCOME_BUBBLE_TITLE));
     SetShowTitle(true);
     SetShowCloseButton(true);
-    SetButtons(ui::DIALOG_BUTTON_NONE);
+    SetButtons(static_cast<int>(ui::mojom::DialogButton::kNone));
     set_close_on_deactivate(true);
     SetCanActivate(false);
     set_accept_events(true);
@@ -71,9 +75,7 @@ class PaletteWelcomeBubble::WelcomeBubbleView
   }
 };
 
-BEGIN_METADATA(PaletteWelcomeBubble,
-               WelcomeBubbleView,
-               views::BubbleDialogDelegateView)
+BEGIN_METADATA(PaletteWelcomeBubble, WelcomeBubbleView)
 END_METADATA
 
 PaletteWelcomeBubble::PaletteWelcomeBubble(PaletteTray* tray) : tray_(tray) {
@@ -105,15 +107,26 @@ void PaletteWelcomeBubble::ShowIfNeeded() {
   if (!active_user_pref_service_)
     return;
 
-  if (Shell::Get()->session_controller()->GetSessionState() !=
+  // The buble may interfere with some integration tests.
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kAshNoNudges)) {
+    return;
+  }
+
+  auto* session_controller = Shell::Get()->session_controller();
+  if (session_controller->GetSessionState() !=
       session_manager::SessionState::ACTIVE) {
     return;
   }
 
-  absl::optional<user_manager::UserType> user_type =
-      Shell::Get()->session_controller()->GetUserType();
-  if (user_type && (*user_type == user_manager::USER_TYPE_GUEST ||
-                    *user_type == user_manager::USER_TYPE_PUBLIC_ACCOUNT)) {
+  if (session_controller->IsRunningInAppMode()) {
+    return;
+  }
+
+  std::optional<user_manager::UserType> user_type =
+      session_controller->GetUserType();
+  if (user_type && (*user_type == user_manager::UserType::kGuest ||
+                    *user_type == user_manager::UserType::kPublicAccount)) {
     return;
   }
 
@@ -164,14 +177,14 @@ void PaletteWelcomeBubble::DisconnectObservers() {
 }
 
 void PaletteWelcomeBubble::OnMouseEvent(ui::MouseEvent* event) {
-  if (bubble_view_ && event->type() == ui::ET_MOUSE_PRESSED &&
+  if (bubble_view_ && event->type() == ui::EventType::kMousePressed &&
       event->target() != bubble_view_->GetWidget()->GetNativeView()) {
     bubble_view_->GetWidget()->Close();
   }
 }
 
 void PaletteWelcomeBubble::OnTouchEvent(ui::TouchEvent* event) {
-  if (bubble_view_ && event->type() == ui::ET_TOUCH_PRESSED &&
+  if (bubble_view_ && event->type() == ui::EventType::kTouchPressed &&
       event->target() != bubble_view_->GetWidget()->GetNativeView()) {
     bubble_view_->GetWidget()->Close();
   }

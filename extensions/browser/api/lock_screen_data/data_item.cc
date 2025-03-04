@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/browser/api/lock_screen_data/data_item.h"
 
 #include <utility>
@@ -16,11 +21,12 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/values.h"
 #include "components/value_store/value_store.h"
-#include "crypto/encryptor.h"
-#include "crypto/symmetric_key.h"
+#include "crypto/aes_cbc.h"
+#include "extensions/browser/api/lock_screen_data/crypto.h"
 #include "extensions/browser/api/lock_screen_data/operation_result.h"
 #include "extensions/browser/api/storage/local_value_store_cache.h"
 #include "extensions/browser/extension_registry.h"
+#include "extensions/common/extension_id.h"
 
 using value_store::ValueStore;
 
@@ -33,50 +39,10 @@ namespace {
 // for the extension.
 const char kStoreKeyRegisteredItems[] = "registered_items";
 
-constexpr int kAesInitializationVectorLength = 16;
-
-// Encrypts |data| with AES key |raw_key|. Returns whether the encryption was
-// successful, in which case |*result| will be set to the encrypted data.
-bool EncryptData(const std::vector<char> data,
-                 const std::string& raw_key,
-                 std::string* result) {
-  std::string initialization_vector(kAesInitializationVectorLength, ' ');
-  std::unique_ptr<crypto::SymmetricKey> key =
-      crypto::SymmetricKey::Import(crypto::SymmetricKey::AES, raw_key);
-  if (!key)
-    return false;
-
-  crypto::Encryptor encryptor;
-  if (!encryptor.Init(key.get(), crypto::Encryptor::CBC, initialization_vector))
-    return false;
-
-  return encryptor.Encrypt(std::string(data.data(), data.size()), result);
-}
-
-// Decrypts |data| content using AES key |raw_key|. Returns the operation result
-// code. On success, |*result| will be set to the clear-text data.
-OperationResult DecryptData(const std::string& data,
-                            const std::string& raw_key,
-                            std::vector<char>* result) {
-  std::string initialization_vector(kAesInitializationVectorLength, ' ');
-  std::unique_ptr<crypto::SymmetricKey> key =
-      crypto::SymmetricKey::Import(crypto::SymmetricKey::AES, raw_key);
-  if (!key)
-    return OperationResult::kInvalidKey;
-
-  crypto::Encryptor encryptor;
-  if (!encryptor.Init(key.get(), crypto::Encryptor::CBC, initialization_vector))
-    return OperationResult::kInvalidKey;
-
-  std::string decrypted;
-  if (!encryptor.Decrypt(data, &decrypted))
-    return OperationResult::kWrongKey;
-
-  *result =
-      std::vector<char>(decrypted.data(), decrypted.data() + decrypted.size());
-
-  return OperationResult::kSuccess;
-}
+constexpr std::array<uint8_t, crypto::aes_cbc::kBlockSize> kFixedIv{
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+    ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+};
 
 // Returns whether the value store |store| contains a registered item with ID
 // |item_id|.
@@ -109,7 +75,7 @@ void GetRegisteredItems(OperationResult* result,
   // Using remove to pass ownership of registered_item dict to
   // |registered_items| (and avoid doing a copy |read.settings()|
   // sub-dictionary).
-  absl::optional<base::Value> registered_items =
+  std::optional<base::Value> registered_items =
       read.settings().Extract(kStoreKeyRegisteredItems);
   if (!registered_items) {
     // If the registered items dictionary cannot be found, assume no items have
@@ -137,7 +103,7 @@ void RegisterItem(OperationResult* result,
     *result = OperationResult::kFailed;
     return;
   }
-  absl::optional<base::Value> registered_items =
+  std::optional<base::Value> registered_items =
       read.settings().Extract(kStoreKeyRegisteredItems);
   if (!registered_items)
     registered_items = base::Value(base::Value::Type::DICT);
@@ -168,28 +134,18 @@ void RegisterItem(OperationResult* result,
 void WriteImpl(OperationResult* result,
                const std::string item_id,
                const std::vector<char>& data,
-               const std::string& encryption_key,
+               base::span<const uint8_t> key,
                ValueStore* store) {
   if (!IsItemRegistered(store, item_id)) {
     *result = OperationResult::kNotFound;
     return;
   }
 
-  std::string encrypted;
-  if (!EncryptData(data, encryption_key, &encrypted)) {
-    *result = OperationResult::kInvalidKey;
-    return;
-  }
-  base::Base64Encode(encrypted, &encrypted);
-
-  UMA_HISTOGRAM_COUNTS_10M("Apps.LockScreen.DataItemStorage.ClearTextItemSize",
-                           data.size());
-
-  UMA_HISTOGRAM_COUNTS_10M("Apps.LockScreen.DataItemStorage.EncryptedItemSize",
-                           encrypted.size());
-
-  ValueStore::WriteResult write = store->Set(ValueStore::DEFAULTS, item_id,
-                                             base::Value(std::move(encrypted)));
+  auto ciphertext =
+      crypto::aes_cbc::Encrypt(key, kFixedIv, base::as_byte_span(data));
+  ValueStore::WriteResult write =
+      store->Set(ValueStore::DEFAULTS, item_id,
+                 base::Value(base::Base64Encode(ciphertext)));
 
   *result = write.status().ok() ? OperationResult::kSuccess
                                 : OperationResult::kFailed;
@@ -202,7 +158,7 @@ void WriteImpl(OperationResult* result,
 void ReadImpl(OperationResult* result,
               std::vector<char>* data,
               const std::string& item_id,
-              const std::string& decryption_key,
+              base::span<const uint8_t> key,
               ValueStore* store) {
   if (!IsItemRegistered(store, item_id)) {
     *result = OperationResult::kNotFound;
@@ -229,7 +185,14 @@ void ReadImpl(OperationResult* result,
     return;
   }
 
-  *result = DecryptData(read_data, decryption_key, data);
+  auto plaintext = crypto::aes_cbc::Decrypt(
+      key, kFixedIv, base::as_byte_span(read_data) /*XXX*/);
+  if (plaintext.has_value()) {
+    std::copy(plaintext->begin(), plaintext->end(), std::back_inserter(*data));
+    *result = OperationResult::kSuccess;
+  } else {
+    *result = OperationResult::kWrongKey;
+  }
 }
 
 // Unregisters and deletes the item with |item_id| from the |valus_store|.
@@ -276,11 +239,11 @@ void DataItem::GetRegisteredValuesForExtension(
     content::BrowserContext* context,
     ValueStoreCache* value_store_cache,
     base::SequencedTaskRunner* task_runner,
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     RegisteredValuesCallback callback) {
   scoped_refptr<const Extension> extension =
-      ExtensionRegistry::Get(context)->GetExtensionById(
-          extension_id, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context)->enabled_extensions().GetByID(
+          extension_id);
   if (!extension) {
     std::move(callback).Run(OperationResult::kUnknownExtension,
                             base::Value::Dict());
@@ -309,7 +272,7 @@ void DataItem::DeleteAllItemsForExtension(
     content::BrowserContext* context,
     ValueStoreCache* value_store_cache,
     base::SequencedTaskRunner* task_runner,
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     base::OnceClosure callback) {
   task_runner->PostTaskAndReply(
       FROM_HERE,
@@ -319,24 +282,25 @@ void DataItem::DeleteAllItemsForExtension(
 }
 
 DataItem::DataItem(const std::string& id,
-                   const std::string& extension_id,
+                   const ExtensionId& extension_id,
                    content::BrowserContext* context,
                    ValueStoreCache* value_store_cache,
                    base::SequencedTaskRunner* task_runner,
-                   const std::string& crypto_key)
+                   const std::string& key)
     : id_(id),
       extension_id_(extension_id),
       context_(context),
       value_store_cache_(value_store_cache),
-      task_runner_(task_runner),
-      crypto_key_(crypto_key) {}
+      task_runner_(task_runner) {
+  base::span(crypto_key_).copy_from(base::as_byte_span(key));
+}
 
 DataItem::~DataItem() = default;
 
 void DataItem::Register(WriteCallback callback) {
   scoped_refptr<const Extension> extension =
-      ExtensionRegistry::Get(context_)->GetExtensionById(
-          extension_id_, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context_)->enabled_extensions().GetByID(
+          extension_id_);
   if (!extension) {
     std::move(callback).Run(OperationResult::kUnknownExtension);
     return;
@@ -358,8 +322,8 @@ void DataItem::Register(WriteCallback callback) {
 
 void DataItem::Write(const std::vector<char>& data, WriteCallback callback) {
   scoped_refptr<const Extension> extension =
-      ExtensionRegistry::Get(context_)->GetExtensionById(
-          extension_id_, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context_)->enabled_extensions().GetByID(
+          extension_id_);
   if (!extension) {
     std::move(callback).Run(OperationResult::kUnknownExtension);
     return;
@@ -382,8 +346,8 @@ void DataItem::Write(const std::vector<char>& data, WriteCallback callback) {
 
 void DataItem::Read(ReadCallback callback) {
   scoped_refptr<const Extension> extension =
-      ExtensionRegistry::Get(context_)->GetExtensionById(
-          extension_id_, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context_)->enabled_extensions().GetByID(
+          extension_id_);
   if (!extension) {
     std::move(callback).Run(OperationResult::kUnknownExtension, nullptr);
     return;
@@ -410,8 +374,8 @@ void DataItem::Read(ReadCallback callback) {
 
 void DataItem::Delete(WriteCallback callback) {
   scoped_refptr<const Extension> extension =
-      ExtensionRegistry::Get(context_)->GetExtensionById(
-          extension_id_, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context_)->enabled_extensions().GetByID(
+          extension_id_);
   if (!extension) {
     std::move(callback).Run(OperationResult::kUnknownExtension);
     return;

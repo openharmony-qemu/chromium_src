@@ -86,8 +86,8 @@ class AwSSLHostStateDelegate : public content::SSLHostStateDelegate {
       const std::string& host,
       bool enforce,
       content::StoragePartition* storage_partition) override;
-  bool IsHttpsEnforcedForHost(
-      const std::string& host,
+  bool IsHttpsEnforcedForUrl(
+      const GURL& url,
       content::StoragePartition* storage_partition) override;
 
   // Revokes all SSL certificate error allow exceptions made by the user for
@@ -100,6 +100,11 @@ class AwSSLHostStateDelegate : public content::SSLHostStateDelegate {
   // error combination exception is allowed, use QueryPolicy().
   bool HasAllowException(const std::string& host,
                          content::StoragePartition* storage_partition) override;
+
+  // Returns whether the user has allowed any certificate error exception or
+  // HTTP exception for any host in |storage_partition|.
+  bool HasAllowExceptionForAnyHost(
+      content::StoragePartition* storage_partition) override;
 
  private:
   // Certificate policies for each host.

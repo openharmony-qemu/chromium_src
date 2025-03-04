@@ -107,8 +107,7 @@ std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateFlingingRenderer(
                                         std::move(renderer_remote));
 }
 #endif  // BUILDFLAG(IS_ANDROID)
-
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateMediaPlayerRenderer(
     mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
         renderer_extension_receiver,
@@ -128,10 +127,11 @@ std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateMediaPlayerRenderer(
                                         video_renderer_sink,
                                         std::move(renderer_remote));
 }
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateCustomMediaPlayerRenderer(
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<MojoRenderer>
+MojoRendererFactory::CreateCustomMediaPlayerRenderer(
     mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
         renderer_extension_receiver,
     mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
@@ -145,13 +145,12 @@ std::unique_ptr<MojoRenderer> MojoRendererFactory::CreateCustomMediaPlayerRender
   interface_factory_->CreateCustomMediaPlayerRenderer(
       std::move(client_extension_remote),
       renderer_remote.InitWithNewPipeAndPassReceiver(),
-      std::move(renderer_extension_receiver),
-      player_id);
+      std::move(renderer_extension_receiver), player_id);
 
   return std::make_unique<MojoRenderer>(media_task_runner, nullptr,
                                         video_renderer_sink,
                                         std::move(renderer_remote));
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

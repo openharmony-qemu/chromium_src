@@ -1,84 +1,65 @@
-# Stop Windows python license check presubmit errors by forcing LF checkout.
-*.py  text eol=lf
-# Force LF checkout of the pins files to avoid transport_security_state_generator errors.
-/net/http/*.pins  text eol=lf
-# Force LF checkout for all source files
-*.bin binary
-*.c text eol=lf
-*.cc text eol=lf
-*.cpp text eol=lf
-*.csv text eol=lf
-*.grd   text eol=lf
-*.grdp   text eol=lf
-*.gn text eol=lf
-*.gni text eol=lf
-*.h text eol=lf
-*.html   text eol=lf
-*.idl text eol=lf
-*.in   text eol=lf
-*.inc   text eol=lf
-*.java   text eol=lf
-*.js   text eol=lf
-*.json   text eol=lf
-*.json5 text eol=lf
-*.md text eol=lf
-*.mm text eol=lf
-*.mojom text eol=lf
-*.pdf -diff
-*.proto text eol=lf
-*.rs text eol=lf
-*.sh text eol=lf
-*.sql   text eol=lf
-*.toml  text eol=lf
-*.txt   text eol=lf
-*.xml   text eol=lf
-*.xslt   text eol=lf
-.clang-format   text eol=lf
-.eslintrc.js   text eol=lf
-.git-blame-ignore-revs   text eol=lf
-.gitattributes   text eol=lf
-.gitignore   text eol=lf
-.vpython   text eol=lf
-codereview.settings   text eol=lf
-DEPS   text eol=lf
-ATL_OWNERS   text eol=lf
-LICENSE text eol=lf
-LICENSE.* text eol=lf
-MAJOR_BRANCH_DATE   text eol=lf
-OWNERS   text eol=lf
-README   text eol=lf
-README.*   text eol=lf
-WATCHLISTS   text eol=lf
-VERSION   text eol=lf
-DIR_METADATA   text eol=lf
-# Skip Tricium by default on files in third_party.
-third_party/** -tricium
-ohos_nweb_hap/entry/build/default/intermediates/libs/default/arm64-v8a/libweb_engine.so filter=lfs diff=lfs merge=lfs -text
-ohos_ndk_aosp/toolchains/clang-r353983c/lib64/libclang.so.9svn filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/lib/libclang.so.10 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/lib/liblldb.so.10.0.1 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/lib/libclang-cpp.so.10 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/lib/libLLVM-10.so filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/lib/libLTO.so.10 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk_aosp/toolchains/clang-r353983c/bin/clang-9 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/toolchains/llvm/bin/clang-10 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk_aosp/toolchains/clang-r353983c/lib64/libclang_cxx.so.9svn filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/libLLVM-15.so filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/opt filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/libLTO.so.15 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/liblldb.so.15.0.4 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/LLVMgold.so filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/previewer/common/bin/libace_engine_linux.so filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/clang-check filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/llc filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/lld filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/clang-tidy filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/libclang-cpp.so.15 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/ets/build-tools/ets-loader/bin/ark/build/bin/ark_aot_compiler filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/clang-15 filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/bin/clangd filter=lfs diff=lfs merge=lfs -text
-ohos_sdk/10/native/llvm/lib/libclang.so.15.0.4 filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/libs_x86/ filter=lfs diff=lfs merge=lfs -text
-ohos_ndk/sysroot_x86/ filter=lfs diff=lfs merge=lfs -text
+net/http/transport_security_state_static.json filter=lfs diff=lfs merge=lfs -text
+content/test/data/gpu/lots-of-lines.svg filter=lfs diff=lfs merge=lfs -text
+base/tracing/test/data/scroll_m132_with_atrace.pftrace filter=lfs diff=lfs merge=lfs -text
+tools/skia_goldctl/linux/goldctl filter=lfs diff=lfs merge=lfs -text
+tools/luci-go/swarming filter=lfs diff=lfs merge=lfs -text
+tools/luci-go/isolate filter=lfs diff=lfs merge=lfs -text
+tools/resultdb/result_adapter filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/R/android-cts-x86-11_r15.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/U/android-cts-x86-14_r3.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/S/android-cts-x86-12_r11.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/O/android-cts-x86-8.0_r26.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/Q/android-cts-x86-10_r16.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/x86/T/android-cts-x86-13_r7.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/R/android-cts-arm64-11_r15.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/U/android-cts-arm64-14_r3.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/S/android-cts-arm64-12_r11.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/O/android-cts-arm64-8.0_r26.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/Q/android-cts-arm64-10_r16.zip filter=lfs diff=lfs merge=lfs -text
+android_webview/tools/cts_archive/cipd/arm64/T/android-cts-arm64-13_r7.zip filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/scandeps_server filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/bootstrap filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/logdump filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/reproxy filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/remotetool filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/dumpstats filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/reproxystatus filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/rpl2trace filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/scandeps_server.sym filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/rewrapper filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/rpl2cloudtrace filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/credshelper filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/metricsuploader filter=lfs diff=lfs merge=lfs -text
+buildtools/reclient/reclientreport filter=lfs diff=lfs merge=lfs -text
+build/pgo/ohos/arkweb.profdata filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libicudata.so.67 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libicudata.so.67.1 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/librsvg-2.so.2 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.so.59 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/librsvg-2.so.2.47.0 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.so filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libcodec2.so.0.9 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.so.58 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.a filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.so.58.91.100 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libavcodec.so.59.37.100 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/usr/lib/i386-linux-gnu/libcodec2.so.1.0 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_i386-sysroot/.b53933120bb08ffc38140a817e3f0f99782254a6bf9622271574fa004e8783a4 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libx265.so.199 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libicudata.so.67 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libicudata.so.67.1 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.so.59 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/mfx/libmfx_h264la_hw64.so filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libmfxhw64.so.1 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.so filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libmfxhw64.so.1.34 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libcodec2.so.0.9 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.so.58 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.a filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.so.58.91.100 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libavcodec.so.59.37.100 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libcodec2.so.1.0 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libx265.so.192 filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64-sysroot/.dec7a3a0fc5b83b909cba1b6d119077e0429a138eadef6bf5a0f2e03b1904631 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text

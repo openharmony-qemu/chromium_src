@@ -23,18 +23,23 @@ void DelegatedIdpNetworkRequestManager::FetchWellKnown(
 
 void DelegatedIdpNetworkRequestManager::FetchConfig(
     const GURL& provider,
+    blink::mojom::RpMode rp_mode,
     int idp_brand_icon_ideal_size,
     int idp_brand_icon_minimum_size,
     FetchConfigCallback callback) {
-  delegate_->FetchConfig(provider, idp_brand_icon_ideal_size,
+  delegate_->FetchConfig(provider, rp_mode, idp_brand_icon_ideal_size,
                          idp_brand_icon_minimum_size, std::move(callback));
 }
 
 void DelegatedIdpNetworkRequestManager::FetchClientMetadata(
     const GURL& endpoint,
     const std::string& client_id,
+    int rp_brand_icon_ideal_size,
+    int rp_brand_icon_minimum_size,
     FetchClientMetadataCallback callback) {
-  delegate_->FetchClientMetadata(endpoint, client_id, std::move(callback));
+  delegate_->FetchClientMetadata(endpoint, client_id, rp_brand_icon_ideal_size,
+                                 rp_brand_icon_minimum_size,
+                                 std::move(callback));
 }
 
 void DelegatedIdpNetworkRequestManager::SendAccountsRequest(
@@ -49,9 +54,11 @@ void DelegatedIdpNetworkRequestManager::SendTokenRequest(
     const std::string& account,
     const std::string& url_encoded_post_data,
     TokenRequestCallback callback,
-    ContinueOnCallback continue_on) {
+    ContinueOnCallback continue_on,
+    RecordErrorMetricsCallback record_error_metrics_callback) {
   delegate_->SendTokenRequest(token_url, account, url_encoded_post_data,
-                              std::move(callback), std::move(continue_on));
+                              std::move(callback), std::move(continue_on),
+                              std::move(record_error_metrics_callback));
 }
 
 void DelegatedIdpNetworkRequestManager::SendSuccessfulTokenRequestMetrics(
@@ -75,6 +82,21 @@ void DelegatedIdpNetworkRequestManager::SendFailedTokenRequestMetrics(
 void DelegatedIdpNetworkRequestManager::SendLogout(const GURL& logout_url,
                                                    LogoutCallback callback) {
   delegate_->SendLogout(logout_url, std::move(callback));
+}
+
+void DelegatedIdpNetworkRequestManager::SendDisconnectRequest(
+    const GURL& disconnect_url,
+    const std::string& account_hint,
+    const std::string& client_id,
+    DisconnectCallback callback) {
+  delegate_->SendDisconnectRequest(disconnect_url, account_hint, client_id,
+                                   std::move(callback));
+}
+
+void DelegatedIdpNetworkRequestManager::DownloadAndDecodeImage(
+    const GURL& url,
+    ImageCallback callback) {
+  delegate_->DownloadAndDecodeImage(url, std::move(callback));
 }
 
 }  // namespace content

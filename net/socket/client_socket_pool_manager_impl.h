@@ -18,16 +18,20 @@
 #include "net/socket/client_socket_pool_manager.h"
 #include "net/socket/connect_job.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
-class ProxyServer;
+class ProxyChain;
 class ClientSocketPool;
 
 class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
     : public ClientSocketPoolManager {
  public:
-  // |websocket_common_connect_job_params| is only used for direct WebSocket
-  // connections (No proxy in use). It's never used if |pool_type| is not
+  // `websocket_common_connect_job_params` is only used for direct WebSocket
+  // connections (No proxies in use). It's never used if `pool_type` is not
   // HttpNetworkSession::SocketPoolType::WEBSOCKET_SOCKET_POOL.
   ClientSocketPoolManagerImpl(
       const CommonConnectJobParams& common_connect_job_params,
@@ -45,18 +49,21 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
                                  const char* net_log_reason_utf8) override;
   void CloseIdleSockets(const char* net_log_reason_utf8) override;
 
-  ClientSocketPool* GetSocketPool(const ProxyServer& proxy_server) override;
+  ClientSocketPool* GetSocketPool(const ProxyChain& proxy_chain) override;
 
   // Creates a Value summary of the state of the socket pools.
   base::Value SocketPoolInfoToValue() const override;
 
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void SetConnectTimeout(int seconds) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) override;
+#endif
+
  private:
-  using SocketPoolMap =
-      std::map<ProxyServer, std::unique_ptr<ClientSocketPool>>;
+  using SocketPoolMap = std::map<ProxyChain, std::unique_ptr<ClientSocketPool>>;
 
   const CommonConnectJobParams common_connect_job_params_;
   // Used only for direct WebSocket connections (i.e., no proxy in use).
@@ -67,9 +74,13 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManagerImpl
   const bool cleanup_on_ip_address_change_;
 
   SocketPoolMap socket_pools_;
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   int timeout_override_{0};
 #endif
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int connect_job_with_secure_dns_timeout_{0};
+#endif
+
   THREAD_CHECKER(thread_checker_);
 };
 

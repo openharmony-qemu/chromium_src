@@ -6,9 +6,8 @@ import("//third_party/flatbuffers/flatbuffer.gni")
 
 flatbuffer("url_pattern_index") {
   sources = [ "url_pattern_index.fbs"
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
     , "css_pattern_index.fbs",
-#endif // OHOS_ARKWEB_ADBLOCK
-
+#endif
   ]
 }

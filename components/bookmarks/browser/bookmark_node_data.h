@@ -12,13 +12,14 @@
 #include <vector>
 
 #include "base/files/file_path.h"
+#include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "components/bookmarks/browser/bookmark_node.h"
 #include "ui/base/clipboard/clipboard_buffer.h"
 #include "url/gurl.h"
 
-#if defined(TOOLKIT_VIEWS) || BUILDFLAG(IS_OHOS)
+#if defined(TOOLKIT_VIEWS)
 #include "ui/base/clipboard/clipboard_format_type.h"
 #endif
 
@@ -27,7 +28,7 @@ class Pickle;
 class PickleIterator;
 }
 
-#if defined(TOOLKIT_VIEWS) || BUILDFLAG(IS_OHOS)
+#if defined(TOOLKIT_VIEWS)
 namespace ui {
 class OSExchangeData;
 }
@@ -110,30 +111,34 @@ struct BookmarkNodeData {
 
   // Created a BookmarkNodeData populated from the arguments.
   explicit BookmarkNodeData(const BookmarkNode* node);
-  explicit BookmarkNodeData(const std::vector<const BookmarkNode*>& nodes);
+  explicit BookmarkNodeData(
+      const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>&
+          nodes);
 
   ~BookmarkNodeData();
 
-#if defined(TOOLKIT_VIEWS) || BUILDFLAG(IS_OHOS)
+#if defined(TOOLKIT_VIEWS)
   static const ui::ClipboardFormatType& GetBookmarkFormatType();
 #endif
 
   static bool ClipboardContainsBookmarks();
 
   // Reads bookmarks from the given vector.
-  bool ReadFromVector(const std::vector<const BookmarkNode*>& nodes);
+  bool ReadFromVector(
+      const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>&
+          nodes);
 
   // Creates a single-bookmark DragData from url/title pair.
   bool ReadFromTuple(const GURL& url, const std::u16string& title);
 
   // Writes bookmarks to the specified clipboard.
-  void WriteToClipboard();
+  void WriteToClipboard(bool is_off_the_record);
 
   // Reads bookmarks from the specified clipboard. Prefers data written via
   // WriteToClipboard() but will also attempt to read a plain bookmark.
   bool ReadFromClipboard(ui::ClipboardBuffer buffer);
 
-#if defined(TOOLKIT_VIEWS) || BUILDFLAG(IS_OHOS)
+#if defined(TOOLKIT_VIEWS)
   // Writes elements to data. If there is only one element and it is a URL
   // the URL and title are written to the clipboard in a format other apps can
   // use.
@@ -159,7 +164,7 @@ struct BookmarkNodeData {
   // created from the same profile then the nodes from the model are returned.
   // If the nodes can't be found (may have been deleted), an empty vector is
   // returned.
-  std::vector<const BookmarkNode*> GetNodes(
+  std::vector<raw_ptr<const BookmarkNode, VectorExperimental>> GetNodes(
       BookmarkModel* model,
       const base::FilePath& profile_path) const;
 

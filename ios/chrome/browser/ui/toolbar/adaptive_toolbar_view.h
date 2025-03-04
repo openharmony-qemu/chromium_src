@@ -11,6 +11,7 @@
 @class ToolbarButton;
 @class ToolbarTabGridButton;
 @class ToolbarToolsMenuButton;
+enum class ToolbarTabGroupState;
 
 // Protocol defining the interface for interacting with a view of the adaptive
 // toolbar.
@@ -39,6 +40,20 @@
 @property(nonatomic, strong, readonly) ToolbarButton* openNewTabButton;
 // Separator between the toolbar and the content.
 @property(nonatomic, strong, readonly) UIView* separator;
+
+// Container for the location bar.
+@property(nonatomic, strong, readonly) UIView* locationBarContainer;
+// The height of `locationBarContainer`.
+@property(nonatomic, strong, readonly)
+    NSLayoutConstraint* locationBarContainerHeight;
+// Button taking the full size of the toolbar. Expands the toolbar when tapped.
+@property(nonatomic, strong, readonly) UIButton* collapsedToolbarButton;
+
+// Sets the location bar view containing the omnibox.
+- (void)setLocationBarView:(UIView*)locationBarView;
+
+// Updates the toolbar for the given TabGroup state.
+- (void)updateTabGroupState:(ToolbarTabGroupState)tabGroupState;
 
 @end
 

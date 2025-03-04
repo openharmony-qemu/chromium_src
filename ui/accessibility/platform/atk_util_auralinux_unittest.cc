@@ -8,6 +8,7 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/accessibility/platform/atk_util_auralinux.h"
+#include "ui/accessibility/platform/ax_platform_for_test.h"
 #include "ui/accessibility/platform/ax_platform_node_auralinux.h"
 #include "ui/accessibility/platform/ax_platform_node_unittest.h"
 #include "ui/accessibility/platform/test_ax_node_wrapper.h"
@@ -26,8 +27,9 @@ class AtkUtilAuraLinuxTest : public AXPlatformNodeTest {
 
     TestAXNodeWrapper* wrapper =
         TestAXNodeWrapper::GetOrCreate(GetTree(), GetRoot());
-    if (!wrapper)
+    if (!wrapper) {
       NOTREACHED();
+    }
     AXPlatformNodeAuraLinux::SetApplication(wrapper->ax_platform_node());
 
     AtkUtilAuraLinux::GetInstance()->InitializeForTesting();
@@ -41,8 +43,9 @@ class AtkUtilAuraLinuxTest : public AXPlatformNodeTest {
   void TearDown() override {
     TestAXNodeWrapper* wrapper =
         TestAXNodeWrapper::GetOrCreate(GetTree(), GetRoot());
-    if (!wrapper)
+    if (!wrapper) {
       NOTREACHED();
+    }
     g_object_unref(wrapper->ax_platform_node()->GetNativeViewAccessible());
 
     AXPlatformNodeTest::TearDown();
@@ -80,16 +83,13 @@ TEST_F(AtkUtilAuraLinuxTest, KeySnooping) {
   TestAXNodeWrapper* wrapper =
       TestAXNodeWrapper::GetOrCreate(GetTree(), GetRoot());
   DCHECK(wrapper);
-  AXMode prev_mode = wrapper->ax_platform_node()->ax_mode_;
-  // Disables AX mode.
-  wrapper->ax_platform_node()->ax_mode_ = 0;
-  keyval_seen = 0;
-  atk_util->HandleAtkKeyEvent(&atk_key_event);
-  // When AX mode is not enabled, Key snooping doesn't work.
-  EXPECT_EQ(keyval_seen, 0);
-
-  // Restores the previous AX mode.
-  wrapper->ax_platform_node()->ax_mode_ = prev_mode;
+  {
+    ScopedAXModeSetter disable_accessibility(AXMode::kNone);
+    keyval_seen = 0;
+    atk_util->HandleAtkKeyEvent(&atk_key_event);
+    // When AX mode is not enabled, Key snooping doesn't work.
+    EXPECT_EQ(keyval_seen, 0);
+  }  // Restores the previous AX mode.
   keyval_seen = 0;
   atk_util->HandleAtkKeyEvent(&atk_key_event);
   // AX mode is set again, Key snooping works.

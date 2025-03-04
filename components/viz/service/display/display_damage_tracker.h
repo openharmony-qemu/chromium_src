@@ -10,7 +10,6 @@
 
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ptr.h"
-#include "base/observer_list.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/common/surfaces/surface_id.h"
 #include "components/viz/service/surfaces/surface_observer.h"
@@ -19,7 +18,6 @@
 namespace viz {
 
 class SurfaceAggregator;
-class SurfaceInfo;
 class SurfaceManager;
 
 // DisplayDamageTracker is used to track Surfaces damage that belong to current
@@ -28,12 +26,17 @@ class SurfaceManager;
 // to Display damage. Used by DisplayScheduler to determine frame deadlines.
 class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
  public:
-  class VIZ_SERVICE_EXPORT Observer {
+  class VIZ_SERVICE_EXPORT Delegate {
    public:
-    virtual ~Observer() = default;
+    virtual ~Delegate() = default;
     virtual void OnDisplayDamaged(SurfaceId surface_id) = 0;
     virtual void OnRootFrameMissing(bool missing) = 0;
-    virtual bool OnPendingSurfacesChanged() = 0;
+    virtual void OnPendingSurfacesChanged() = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+    virtual void ReenableSwapCheck(const SurfaceId& surface_id,
+                                   int width,
+                                   int height) = 0;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   };
 
   DisplayDamageTracker(SurfaceManager* surface_manager,
@@ -43,8 +46,12 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
   DisplayDamageTracker(const DisplayDamageTracker&) = delete;
   DisplayDamageTracker& operator=(const DisplayDamageTracker&) = delete;
 
-  void AddObserver(Observer* observer);
-  void RemoveObserver(Observer* observer);
+  // Sets the source_id associated with this displays begin frame source.
+  // DisplayDamageTracker ignores expected damage from frame sinks that received
+  // a begin frame from a different begin frame source after this is set.
+  void SetDisplayBeginFrameSourceId(uint64_t begin_frame_source_id);
+
+  void SetDelegate(Delegate* delegate);
 
   // Notification that there was a resize and we should expect root surface
   // damage.
@@ -64,8 +71,15 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
   // replied with Ack yet.
   bool HasPendingSurfaces(const BeginFrameArgs& begin_frame_args);
 
-  // Returns true if any of the damage received was due to an ongoing scroll.
-  bool HasDamageDueToActiveScroller();
+  // Returns true if any of the damage received was due to an ongoing scroll or
+  // touch interaction.
+  bool HasDamageDueToInteraction();
+
+  // Called after a frame finishes (may or may not result in a draw).
+  void DidFinishFrame();
+
+  // Returns true if damage to this Surface could affect the display.
+  bool CheckForDisplayDamage(const SurfaceId& surface_id);
 
   bool root_frame_missing() const { return root_frame_missing_; }
   bool IsRootSurfaceValid() const;
@@ -79,45 +93,56 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
   }
 
   // SurfaceObserver implementation.
-  void OnFirstSurfaceActivation(const SurfaceInfo& surface_info) override {}
-  void OnSurfaceActivated(const SurfaceId& surface_id) override {}
   void OnSurfaceMarkedForDestruction(const SurfaceId& surface_id) override;
   bool OnSurfaceDamaged(const SurfaceId& surface_id,
                         const BeginFrameAck& ack,
-                        bool is_actively_scrolling) override;
-  bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
+                        HandleInteraction handle_interaction) override;
+  void OnSurfaceDamageExpected(const SurfaceId& surface_id,
                                const BeginFrameArgs& args) override;
-
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void ReenableSwapCheck(const SurfaceId& surface_id,
+                         int width,
+                         int height) override;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
  protected:
   struct SurfaceBeginFrameState {
     BeginFrameArgs last_args;
     BeginFrameAck last_ack;
-    bool last_is_actively_scrolling;
   };
 
-  friend class base::RefCounted<DisplayDamageTracker>;
   virtual bool SurfaceHasUnackedFrame(const SurfaceId& surface_id) const;
   virtual void UpdateRootFrameMissing();
   void SetRootFrameMissing(bool missing);
+
+  // Checks if the begin frame `source_id` is for this display. This will return
+  // true if:
+  // 1. `source_id` matches the display source id.
+  // 2. Display source id was never set.
+  // 3. `source_id` is a manual source id since that could be relevant for any
+  //    display.
+  bool CheckBeginFrameSourceId(uint64_t source_id);
 
   // Indicates that there was damage to one of the surfaces.
   void ProcessSurfaceDamage(const SurfaceId& surface_id,
                             const BeginFrameAck& ack,
                             bool display_damaged,
-                            bool is_actively_scrolling);
+                            HandleInteraction handle_interaction);
 
   // Used to send corresponding notifications to observers.
   void NotifyDisplayDamaged(SurfaceId surface_id);
   void NotifyRootFrameMissing(bool missing);
-  bool NotifyPendingSurfacesChanged();
+  void NotifyPendingSurfacesChanged();
 
-  base::ObserverList<Observer>::Unchecked observers_;
+  raw_ptr<Delegate> delegate_ = nullptr;
   const raw_ptr<SurfaceManager> surface_manager_;
   const raw_ptr<SurfaceAggregator> aggregator_;
 
+  std::optional<uint64_t> begin_frame_source_id_;
   bool root_frame_missing_ = true;
 
   bool expecting_root_surface_damage_because_of_resize_ = false;
+
+  bool has_surface_damage_due_to_interaction_ = false;
 
   base::flat_map<SurfaceId, SurfaceBeginFrameState> surface_states_;
   std::vector<SurfaceId> surfaces_to_ack_on_next_draw_;

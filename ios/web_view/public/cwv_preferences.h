@@ -38,8 +38,8 @@ CWV_EXPORT
 // |YES|. When it is NO, it doesn't ask if you want to save passwords but will
 // continue to fill passwords.
 //
-// TODO(crbug.com/905221): Preference should also control autofill behavior for
-// the passwords.
+// TODO(crbug.com/40602365): Preference should also control autofill behavior
+// for the passwords.
 @property(nonatomic, assign, getter=isPasswordAutofillEnabled)
     BOOL passwordAutofillEnabled;
 
@@ -63,6 +63,10 @@ CWV_EXPORT
 // incognito to non-incognito, this has no effect if this instance is from an
 // incognito CWVWebViewConfiguration.
 - (void)resetTranslationSettings;
+
+// Immediately writes any changes in memory to disk.
+// `completionHandler` callback when writes are committed.
+- (void)commitPendingWrite:(void (^)(void))completionHandler;
 
 @end
 

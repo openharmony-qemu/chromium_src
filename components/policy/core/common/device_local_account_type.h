@@ -6,8 +6,8 @@
 #define COMPONENTS_POLICY_CORE_COMMON_DEVICE_LOCAL_ACCOUNT_TYPE_H_
 
 #include <string>
+#include <string_view>
 
-#include "base/strings/string_piece.h"
 #include "base/types/expected.h"
 #include "components/policy/policy_export.h"
 
@@ -17,24 +17,31 @@ namespace policy {
 // chrome_device_policy.proto
 enum class DeviceLocalAccountType {
   // A login-less, policy-configured browsing session.
-  kPublicSession,
+  kPublicSession = 0,
 
-  // An account that serves as a container for a single full-screen app.
-  kKioskApp,
+  // An account that serves as a container for a single full-screen ChromeApp.
+  kKioskApp = 1,
 
-  // An account that serves as a container for a single full-screen
-  // Android app.
-  kArcKioskApp,
+  // An account that serves as a container for a single full-screen Android
+  // app.
+  // kArcKioskApp = 2, deprecated
 
   // SAML public session account
-  kSamlPublicSession,
+  kSamlPublicSession = 3,
 
   // An account that serves as a container for a single full-screen web app.
-  kWebKioskApp,
+  kWebKioskApp = 4,
+
+  // An account that serves as a container for a single full-screen
+  // Isolated Web App (IWA).
+  kKioskIsolatedWebApp = 5,
 };
 
+// Returns whether the given value is valid DeviceLocalAccountType.
+POLICY_EXPORT bool IsValidDeviceLocalAccountType(int value);
+
 POLICY_EXPORT std::string GenerateDeviceLocalAccountUserId(
-    base::StringPiece account_id,
+    std::string_view account_id,
     DeviceLocalAccountType type);
 
 enum class GetDeviceLocalAccountTypeError {
@@ -45,12 +52,12 @@ enum class GetDeviceLocalAccountTypeError {
 // Returns the type of device-local account.
 POLICY_EXPORT
 base::expected<DeviceLocalAccountType, GetDeviceLocalAccountTypeError>
-GetDeviceLocalAccountType(base::StringPiece user_id);
+GetDeviceLocalAccountType(std::string_view user_id);
 
 // Returns whether |user_id| belongs to a device-local account.
 // This is equivalent to that GetDeviceLocalAccountType does not return
 // kNoDeviceLocalAccountUser error.
-POLICY_EXPORT bool IsDeviceLocalAccountUser(base::StringPiece user_id);
+POLICY_EXPORT bool IsDeviceLocalAccountUser(std::string_view user_id);
 
 }  // namespace policy
 

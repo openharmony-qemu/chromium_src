@@ -6,7 +6,9 @@ template("generate_file_with_jinja2") {
 
   action(target_name) {
     script = "//build/ohos/generate_file_by_jinja2.py"
-    inputs = [ template_file ]
+    inputs = [
+      template_file,
+    ]
     sources = [ template_file ]
     outputs = [ output_file ]
     args = [

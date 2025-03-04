@@ -59,7 +59,7 @@ class TestRecorder : public ShellSurfacePresentationTimeRecorder {
   void WaitForFramePresented() {
     base::RunLoop run_loop;
 
-    base::AutoReset<base::RunLoop*> scoped(&run_loop_, &run_loop);
+    base::AutoReset<raw_ptr<base::RunLoop>> scoped(&run_loop_, &run_loop);
     run_loop.Run();
   }
 
@@ -73,7 +73,7 @@ class TestRecorder : public ShellSurfacePresentationTimeRecorder {
 
  private:
   gfx::PresentationFeedback fake_feedback_;
-  base::RunLoop* run_loop_ = nullptr;
+  raw_ptr<base::RunLoop> run_loop_ = nullptr;
   std::vector<uint32_t> presented_serials_;
 };
 
@@ -111,7 +111,9 @@ class ShellSurfacePresentationTimeRecorderTest : public test::ExoTestBase {
         /*flags=*/0);
     recorder_->set_fake_feedback(feedback);
 
-    // Fake damage to ensure that Commit() generates a compositor frame.
+    // Fake damage so that the committed frame will generate a presentation
+    // feedback when the next DrawAndSwap happens. Without damage the
+    // presentation feedback could be delayed till the next frame submission.
     root_surface()->Damage(gfx::Rect(0, 0, 32, 32));
     root_surface()->Commit();
     recorder_->WaitForFramePresented();
@@ -122,7 +124,7 @@ class ShellSurfacePresentationTimeRecorderTest : public test::ExoTestBase {
  protected:
   std::unique_ptr<ShellSurface> shell_surface_;
   std::unique_ptr<TestRecorder> recorder_;
-  raw_ptr<TestReporter, ExperimentalAsh> reporter_ = nullptr;
+  raw_ptr<TestReporter, DanglingUntriaged> reporter_ = nullptr;
 };
 
 TEST_F(ShellSurfacePresentationTimeRecorderTest, Request) {
@@ -180,6 +182,7 @@ TEST_F(ShellSurfacePresentationTimeRecorderTest,
 
   // Fake frame submission. No FakeFrameSubmitAndPresent() because it depends
   // on `recorder_`.
+  root_surface()->Damage(gfx::Rect(0, 0, 32, 32));
   root_surface()->Commit();
   test::WaitForLastFramePresentation(shell_surface_.get());
 }

@@ -20,8 +20,6 @@ std::string ReasonIdToString(
       return "FileChooser";
     case BackForwardCacheDisable::DisabledReasonId::kSerial:
       return "Serial";
-    case BackForwardCacheDisable::DisabledReasonId::kFileSystemAccess:
-      return "FileSystemAccess";
     case BackForwardCacheDisable::DisabledReasonId::kMediaDevicesDispatcherHost:
       return "MediaDevicesDispatcherHost";
     case BackForwardCacheDisable::DisabledReasonId::kWebBluetooth:
@@ -32,6 +30,8 @@ std::string ReasonIdToString(
       return "MediaSessionService";
     case BackForwardCacheDisable::DisabledReasonId::kScreenReader:
       return "ScreenReader";
+    case BackForwardCacheDisable::DisabledReasonId::kDiscarded:
+      return "Discarded";
   }
 }
 

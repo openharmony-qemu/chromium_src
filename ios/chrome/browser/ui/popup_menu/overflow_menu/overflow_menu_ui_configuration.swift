@@ -10,11 +10,17 @@ import SwiftUI
   @Published public var presentingViewControllerVerticalSizeClass: UserInterfaceSizeClass
 
   @Published public var highlightDestinationsRow = false
+  /// The integer value matches overflow_menu::Destination, setting it to -1 will not highlight any.
+  @Published public var highlightDestination: Int = -1
+
+  @Published public var scrollToAction: OverflowMenuAction? = nil
+
+  /// The highlighted destination's frame, in the coordinate system of the menu view.
+  public var highlightedDestinationFrame: CGRect = .zero
 
   /// The destination list's frame in screen coordinates.
   public var destinationListScreenFrame: CGRect = .zero
 
-  @available(iOS 15, *)
   static public func numDestinationsVisibleWithoutHorizontalScrolling(
     forScreenWidth width: CGFloat, forContentSizeCategory sizeCategory: UIContentSizeCategory
   ) -> CGFloat {
@@ -26,11 +32,13 @@ import SwiftUI
 
   public init(
     presentingViewControllerHorizontalSizeClass: UIUserInterfaceSizeClass,
-    presentingViewControllerVerticalSizeClass: UIUserInterfaceSizeClass
+    presentingViewControllerVerticalSizeClass: UIUserInterfaceSizeClass,
+    highlightDestination: Int
   ) {
     self.presentingViewControllerHorizontalSizeClass =
       UserInterfaceSizeClass(presentingViewControllerHorizontalSizeClass) ?? .compact
     self.presentingViewControllerVerticalSizeClass =
       UserInterfaceSizeClass(presentingViewControllerVerticalSizeClass) ?? .compact
+    self.highlightDestination = highlightDestination
   }
 }

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <optional>
+
 #include "base/command_line.h"
 #include "base/memory/raw_ptr.h"
 #include "base/strings/utf_string_conversions.h"
@@ -20,7 +22,6 @@
 #include "content/shell/browser/shell.h"
 #include "net/dns/mock_host_resolver.h"
 #include "services/media_session/public/cpp/features.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/mojom/picture_in_picture/picture_in_picture.mojom.h"
 
 namespace content {
@@ -71,9 +72,10 @@ class TestVideoOverlayWindow : public VideoOverlayWindow {
   void SetHangUpButtonVisibility(bool is_visible) override {}
   void SetNextSlideButtonVisibility(bool is_visible) override {}
   void SetPreviousSlideButtonVisibility(bool is_visible) override {}
+  void SetMediaPosition(const media_session::MediaPosition&) override {}
   void SetSurfaceId(const viz::SurfaceId& surface_id) override {}
 
-  const absl::optional<PlaybackState>& playback_state() const {
+  const std::optional<PlaybackState>& playback_state() const {
     return playback_state_;
   }
 
@@ -83,11 +85,11 @@ class TestVideoOverlayWindow : public VideoOverlayWindow {
     playback_state_changed_callback_ = std::move(callback);
   }
 
-  const absl::optional<bool>& play_pause_button_visible() const {
+  const std::optional<bool>& play_pause_button_visible() const {
     return play_pause_button_visible_;
   }
 
-  const absl::optional<bool>& next_track_button_visible() const {
+  const std::optional<bool>& next_track_button_visible() const {
     return next_track_button_visible_;
   }
 
@@ -98,13 +100,13 @@ class TestVideoOverlayWindow : public VideoOverlayWindow {
   bool visible_ = false;
 
   gfx::Size size_;
-  absl::optional<PlaybackState> playback_state_;
+  std::optional<PlaybackState> playback_state_;
 
-  absl::optional<PlaybackState> expected_playback_state_;
+  std::optional<PlaybackState> expected_playback_state_;
   base::OnceClosure playback_state_changed_callback_;
 
-  absl::optional<bool> play_pause_button_visible_;
-  absl::optional<bool> next_track_button_visible_;
+  std::optional<bool> play_pause_button_visible_;
+  std::optional<bool> next_track_button_visible_;
 };
 
 class TestContentBrowserClient : public ContentBrowserTestContentBrowserClient {
@@ -113,7 +115,6 @@ class TestContentBrowserClient : public ContentBrowserTestContentBrowserClient {
       VideoPictureInPictureWindowController* controller) override {
     return std::make_unique<TestVideoOverlayWindow>();
   }
-  bool CanEnterFullscreenWithoutUserActivation() override { return true; }
 };
 
 class TestWebContentsDelegate : public WebContentsDelegate {
@@ -463,8 +464,6 @@ class MediaSessionPictureInPictureContentBrowserTest
     : public VideoPictureInPictureContentBrowserTest {
  public:
   void SetUpCommandLine(base::CommandLine* command_line) override {
-    ContentBrowserTest::SetUpCommandLine(command_line);
-
     command_line->AppendSwitchASCII(switches::kEnableBlinkFeatures,
                                     "MediaSession");
     scoped_feature_list_.InitWithFeatures(
@@ -581,41 +580,6 @@ IN_PROC_BROWSER_TEST_F(MediaSessionPictureInPictureContentBrowserTest,
 
   ASSERT_EQ(true, EvalJs(shell(), "enterPictureInPicture();"));
 
-  window_controller()->NextTrack();
-  WaitForPlaybackState(VideoOverlayWindow::PlaybackState::kPlaying);
-}
-
-// When the player object associated with a video element is destroyed, any
-// Media Session actions that were set are no longer available.
-IN_PROC_BROWSER_TEST_F(MediaSessionPictureInPictureContentBrowserTest,
-                       ResettingPlayerDisablesActions) {
-  ASSERT_TRUE(NavigateToURL(
-      shell(), GetTestUrl("media/picture_in_picture", "one-video.html")));
-  ASSERT_EQ(true, EvalJs(shell(), "enterPictureInPicture();"));
-
-  ASSERT_TRUE(ExecJs(shell(), "setMediaSessionPlayActionHandler();"));
-  ASSERT_TRUE(ExecJs(shell(), "setMediaSessionPauseActionHandler();"));
-  ASSERT_TRUE(ExecJs(shell(), "setMediaSessionNextTrackActionHandler();"));
-
-  ASSERT_EQ(true, EvalJs(shell(), "resetVideo();"));
-
-  // Media Session actions are unavailable with the player removed.
-  EXPECT_EQ(overlay_window()->play_pause_button_visible().value_or(true),
-            false);
-  EXPECT_EQ(overlay_window()->next_track_button_visible().value_or(true),
-            false);
-
-  // Load new media on the video element. This creates a new player.
-  ASSERT_EQ(true, EvalJs(shell(), "updateVideoSrcAndPlay();"));
-
-  // The play/pause/replay and next buttons should be functional again.
-  EXPECT_EQ(overlay_window()->play_pause_button_visible().value_or(false),
-            true);
-  window_controller()->TogglePlayPause();
-  WaitForPlaybackState(VideoOverlayWindow::PlaybackState::kPaused);
-
-  EXPECT_EQ(overlay_window()->next_track_button_visible().value_or(false),
-            true);
   window_controller()->NextTrack();
   WaitForPlaybackState(VideoOverlayWindow::PlaybackState::kPlaying);
 }

@@ -4,16 +4,20 @@
 
 package org.chromium.android_webview;
 
+import static org.chromium.components.embedder_support.application.ClassLoaderContextWrapperFactory.getOriginalApplicationContext;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.net.Uri;
 import android.util.Log;
 import android.util.TypedValue;
 
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
+import org.chromium.android_webview.common.Lifetime;
 import org.chromium.base.ContextUtils;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
 import org.chromium.url.GURL;
 
 import java.io.IOException;
@@ -26,6 +30,7 @@ import java.util.zip.GZIPInputStream;
  * Implements the Java side of Android URL protocol jobs.
  * See android_protocol_handler.cc.
  */
+@Lifetime.Singleton
 @JNINamespace("android_webview")
 public class AndroidProtocolHandler {
     private static final String TAG = "AndroidProtocolHandler";
@@ -66,7 +71,7 @@ public class AndroidProtocolHandler {
                 if (path.startsWith(AndroidProtocolHandlerJni.get().getAndroidAssetPath())) {
                     return openAsset(uri);
                 } else if (path.startsWith(
-                                   AndroidProtocolHandlerJni.get().getAndroidResourcePath())) {
+                        AndroidProtocolHandlerJni.get().getAndroidResourcePath())) {
                     return openResource(uri);
                 }
             } else if (uri.getScheme().equals(CONTENT_SCHEME)) {
@@ -89,8 +94,9 @@ public class AndroidProtocolHandler {
 
     private static Class<?> getClazz(String packageName, String assetType)
             throws ClassNotFoundException {
-        return ContextUtils.getApplicationContext().getClassLoader().loadClass(
-                packageName + ".R$" + assetType);
+        return ContextUtils.getApplicationContext()
+                .getClassLoader()
+                .loadClass(packageName + ".R$" + assetType);
     }
 
     // file://android_res/ has no choice but to do name-based resource lookups
@@ -99,7 +105,10 @@ public class AndroidProtocolHandler {
             throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
         Context appContext = ContextUtils.getApplicationContext();
         String packageName = appContext.getPackageName();
-        int id = appContext.getResources().getIdentifier(assetName, assetType, packageName);
+        int id =
+                getOriginalApplicationContext(appContext)
+                        .getResources()
+                        .getIdentifier(assetName, assetType, packageName);
         if (id != 0) {
             return id;
         }
@@ -129,7 +138,9 @@ public class AndroidProtocolHandler {
 
     private static int getValueType(int fieldId) {
         TypedValue value = new TypedValue();
-        ContextUtils.getApplicationContext().getResources().getValue(fieldId, value, true);
+        getOriginalApplicationContext(ContextUtils.getApplicationContext())
+                .getResources()
+                .getValue(fieldId, value, true);
         return value.type;
     }
 
@@ -147,10 +158,12 @@ public class AndroidProtocolHandler {
         String assetType = pathSegments.get(1);
         String assetName = pathSegments.get(2);
         if (!("/" + assetPath + "/")
-                        .equals(AndroidProtocolHandlerJni.get().getAndroidResourcePath())) {
-            Log.e(TAG,
+                .equals(AndroidProtocolHandlerJni.get().getAndroidResourcePath())) {
+            Log.e(
+                    TAG,
                     "Resource path does not start with "
-                            + AndroidProtocolHandlerJni.get().getAndroidResourcePath() + ": "
+                            + AndroidProtocolHandlerJni.get().getAndroidResourcePath()
+                            + ": "
                             + uri);
             return null;
         }
@@ -160,7 +173,9 @@ public class AndroidProtocolHandler {
             int fieldId = getFieldId(assetType, assetName);
             int valueType = getValueType(fieldId);
             if (valueType == TypedValue.TYPE_STRING) {
-                return ContextUtils.getApplicationContext().getResources().openRawResource(fieldId);
+                return getOriginalApplicationContext(ContextUtils.getApplicationContext())
+                        .getResources()
+                        .openRawResource(fieldId);
             } else {
                 Log.e(TAG, "Asset not of type string: " + uri);
                 return null;
@@ -181,10 +196,12 @@ public class AndroidProtocolHandler {
         assert uri.getScheme().equals(FILE_SCHEME);
         assert uri.getPath() != null;
         assert uri.getPath().startsWith(AndroidProtocolHandlerJni.get().getAndroidAssetPath());
-        String path = uri.getPath().replaceFirst(
-                AndroidProtocolHandlerJni.get().getAndroidAssetPath(), "");
+        String path =
+                uri.getPath()
+                        .replaceFirst(AndroidProtocolHandlerJni.get().getAndroidAssetPath(), "");
         try {
-            AssetManager assets = ContextUtils.getApplicationContext().getAssets();
+            AssetManager assets =
+                    getOriginalApplicationContext(ContextUtils.getApplicationContext()).getAssets();
             return assets.open(path, AssetManager.ACCESS_STREAMING);
         } catch (IOException e) {
             Log.e(TAG, "Unable to open asset URL: " + uri);
@@ -224,6 +241,14 @@ public class AndroidProtocolHandler {
             } else if (uri.getScheme().equals(FILE_SCHEME)
                     && path.startsWith(AndroidProtocolHandlerJni.get().getAndroidAssetPath())) {
                 String mimeType = URLConnection.guessContentTypeFromName(path);
+
+                // If the OS didn't find anything we fall back to Chromium's implementation which
+                // should be far more reliable since we can control this.
+                // See crbug.com/1019528
+                if (mimeType == null) {
+                    mimeType = AndroidProtocolHandlerJni.get().getWellKnownMimeType(path);
+                }
+
                 if (mimeType != null) {
                     return mimeType;
                 }
@@ -248,8 +273,8 @@ public class AndroidProtocolHandler {
     private static Uri verifyUrl(GURL url) {
         if (url == null) return null;
         if (url.isEmpty()) return null;
-        Uri uri = Uri.parse(
-                url.getSpec()); // Never null. parse() doesn't actually parse or verify anything.
+        // Never null. parse() doesn't actually parse or verify anything.
+        Uri uri = Uri.parse(url.getSpec());
         String path = uri.getPath();
         if (path == null || path.isEmpty() || path.equals("/")) {
             Log.e(TAG, "URL does not have a path: " + url);
@@ -261,6 +286,9 @@ public class AndroidProtocolHandler {
     @NativeMethods
     interface Natives {
         String getAndroidAssetPath();
+
         String getAndroidResourcePath();
+
+        String getWellKnownMimeType(String path);
     }
 }

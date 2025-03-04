@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "services/tracing/public/cpp/perfetto/traced_value_proto_writer.h"
 
 #include <memory>
@@ -55,15 +60,9 @@ class ProtoInputStream : public google::protobuf::io::ZeroCopyInputStream {
     has_backed_up_ = true;
   }
 
-  bool Skip(int count) override {
-    NOTREACHED();
-    return false;
-  }
+  bool Skip(int count) override { NOTREACHED(); }
 
-  int64_t ByteCount() const override {
-    NOTREACHED();
-    return 0;
-  }
+  int64_t ByteCount() const override { NOTREACHED(); }
 
  private:
   raw_ptr<const protozero::ScatteredHeapBuffer> buffer_;
@@ -86,7 +85,6 @@ const NestedValue* FindDictEntry(const NestedValue* dict, const char* name) {
   }
 
   NOTREACHED();
-  return nullptr;
 }
 
 bool IsValue(const NestedValue* proto_value, bool value) {

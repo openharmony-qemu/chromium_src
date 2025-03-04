@@ -8,9 +8,9 @@
 #include <cmath>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/check.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/i18n/case_conversion.h"
@@ -40,6 +40,7 @@
 #include "components/search/search.h"
 #include "components/search_engines/template_url_service.h"
 #include "third_party/metrics_proto/omnibox_focus_type.pb.h"
+#include "third_party/omnibox_proto/navigational_intent.pb.h"
 #include "url/gurl.h"
 
 using metrics::OmniboxInputType;
@@ -79,8 +80,9 @@ bool AllowLocalHistoryZeroSuggestSuggestions(AutocompleteProviderClient* client,
   if (base::FeatureList::IsEnabled(
           omnibox::kLocalHistoryZeroSuggestBeyondNTP)) {
     // Allow local history zero-suggest where remote zero-suggest is eligible.
-    return ZeroSuggestProvider::ResultTypeToRun(input) !=
-           ZeroSuggestProvider::ResultType::kNone;
+    const auto [result_type, _] =
+        ZeroSuggestProvider::GetResultTypeAndEligibility(client, input);
+    return result_type != ZeroSuggestProvider::ResultType::kNone;
   }
 
   // Allow local history query suggestions only when the omnibox is empty and is
@@ -157,7 +159,7 @@ void LocalHistoryZeroSuggestProvider::DeleteMatch(
       &history_task_tracker_);
 
   // Immediately update the list of matches to reflect the match was deleted.
-  base::EraseIf(matches_, [&](const auto& item) {
+  std::erase_if(matches_, [&](const auto& item) {
     return match.contents == item.contents;
   });
 }
@@ -172,7 +174,7 @@ LocalHistoryZeroSuggestProvider::LocalHistoryZeroSuggestProvider(
   AddListener(listener);
 }
 
-LocalHistoryZeroSuggestProvider::~LocalHistoryZeroSuggestProvider() {}
+LocalHistoryZeroSuggestProvider::~LocalHistoryZeroSuggestProvider() = default;
 
 void LocalHistoryZeroSuggestProvider::QueryURLDatabase(
     const AutocompleteInput& input) {
@@ -215,7 +217,9 @@ void LocalHistoryZeroSuggestProvider::QueryURLDatabase(
     SearchSuggestionParser::SuggestResult suggestion(
         /*suggestion=*/result->normalized_term,
         AutocompleteMatchType::SEARCH_HISTORY,
-        /*subtypes=*/{}, /*from_keyword=*/false, relevance--,
+        /*suggest_type=*/omnibox::TYPE_NATIVE_CHROME,
+        /*subtypes=*/{}, /*from_keyword=*/false,
+        /*navigational_intent=*/omnibox::NAV_INTENT_NONE, relevance--,
         /*relevance_from_server=*/false,
         /*input_text=*/base::ASCIIToUTF16(std::string()));
 

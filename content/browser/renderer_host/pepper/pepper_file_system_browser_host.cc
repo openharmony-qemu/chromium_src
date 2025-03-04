@@ -127,12 +127,12 @@ void PepperFileSystemBrowserHost::IOThreadState::OpenFileSystem(
 
   SetFileSystemContext(file_system_context);
 
-  // TODO(https://crbug.com/1236243): figure out if StorageKey conversion
+  // TODO(crbug.com/40782681): figure out if StorageKey conversion
   // should replaced with a third-party value: is ppapi only limited to
   // first-party contexts? If so, the implementation below is correct.
   file_system_context_->OpenFileSystem(
       blink::StorageKey::CreateFirstParty(url::Origin::Create(origin)),
-      /*bucket=*/absl::nullopt, file_system_type,
+      /*bucket=*/std::nullopt, file_system_type,
       storage::OPEN_FILE_SYSTEM_CREATE_IF_NONEXISTENT,
       base::BindOnce(&IOThreadState::OpenFileSystemComplete, this,
                      reply_context));
@@ -165,8 +165,6 @@ void PepperFileSystemBrowserHost::IOThreadState::OpenIsolatedFileSystem(
       return;
     default:
       NOTREACHED();
-      SendReplyForIsolatedFileSystem(reply_context, fsid, PP_ERROR_BADARGUMENT);
-      return;
   }
 }
 
@@ -179,7 +177,7 @@ void PepperFileSystemBrowserHost::IOThreadState::OpenFileSystemComplete(
   int32_t pp_error = ppapi::FileErrorToPepperError(error);
   if (pp_error == PP_OK) {
     opened_ = true;
-    // TODO(crbug.com/1323925): Store and use FileSystemURL instead.
+    // TODO(crbug.com/40838958): Store and use FileSystemURL instead.
     root_url_ = root.ToGURL();
 
     ShouldCreateQuotaReservation(base::BindOnce(
@@ -407,7 +405,6 @@ void PepperFileSystemBrowserHost::OpenQuotaFile(
       files_.insert(std::make_pair(id, file_io_host));
   if (!insert_result.second) {
     NOTREACHED();
-    return;
   }
 
   io_thread_state_->file_system_context()
@@ -428,7 +425,6 @@ void PepperFileSystemBrowserHost::CloseQuotaFile(
     files_.erase(it);
   } else {
     NOTREACHED();
-    return;
   }
 
   io_thread_state_->file_system_context()->default_file_task_runner()->PostTask(

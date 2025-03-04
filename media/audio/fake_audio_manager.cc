@@ -61,24 +61,10 @@ AudioInputStream* FakeAudioManager::MakeLowLatencyInputStream(
   return FakeAudioInputStream::MakeFakeStream(this, params);
 }
 
-AudioParameters FakeAudioManager::GetPreferredInputStreamParameters(
-    const std::string& input_device_id) {
-  AudioParameters params =
-      AudioParameters(AudioParameters::AUDIO_PCM_LOW_LATENCY,
-                      ChannelLayoutConfig::Stereo(),
-                      48000,
-                      2048);
-  params.set_effects(AudioParameters::ECHO_CANCELLER |
-                     AudioParameters::NOISE_SUPPRESSION |
-                     AudioParameters::AUTOMATIC_GAIN_CONTROL);
-  return params;
-}
-
 AudioParameters FakeAudioManager::GetPreferredOutputStreamParameters(
     const std::string& output_device_id,
     const AudioParameters& input_params) {
   static const int kDefaultOutputBufferSize = 2048;
-  static const int kDefaultSampleRate = 48000;
   ChannelLayoutConfig channel_layout_config = ChannelLayoutConfig::Stereo();
   int sample_rate = kDefaultSampleRate;
   int buffer_size = kDefaultOutputBufferSize;

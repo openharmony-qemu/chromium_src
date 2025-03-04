@@ -9,16 +9,13 @@
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "build/build_config.h"
-#include "content/common/mojo_core_library_support.h"
 #include "content/public/common/content_switches.h"
 #include "mojo/core/embedder/configuration.h"
 #include "mojo/core/embedder/embedder.h"
-#include "mojo/core/embedder/features.h"
 #include "mojo/public/c/system/functions.h"
 #include "mojo/public/c/system/types.h"
 #include "mojo/public/cpp/base/shared_memory_utils.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
-#include "mojo/public/cpp/system/dynamic_library_support.h"
 #include "sandbox/policy/sandbox_type.h"
 
 namespace content {
@@ -56,25 +53,10 @@ void InitializeMojoCore() {
     // On Windows it's not necessary to broker shared memory allocation, as
     // even sandboxed processes can allocate their own without trouble.
     config.force_direct_shared_memory_allocation = true;
-#elif BUILDFLAG(IS_ANDROID)
-    // On Android we run a Finch experiment testing direct memory allocation.
-    config.force_direct_shared_memory_allocation = base::FeatureList::IsEnabled(
-        mojo::core::kMojoDirectSharedMemoryAndroid);
 #endif
   }
 
-  if (!IsMojoCoreSharedLibraryEnabled()) {
-    mojo::core::Init(config);
-  } else if (is_browser) {
-    MojoInitializeFlags flags = MOJO_INITIALIZE_FLAG_NONE;
-    if (config.is_broker_process)
-      flags |= MOJO_INITIALIZE_FLAG_AS_BROKER;
-    if (config.force_direct_shared_memory_allocation)
-      flags |= MOJO_INITIALIZE_FLAG_FORCE_DIRECT_SHARED_MEMORY_ALLOCATION;
-    MojoResult result = mojo::LoadAndInitializeCoreLibrary(
-        GetMojoCoreSharedLibraryPath(), flags);
-    CHECK_EQ(MOJO_RESULT_OK, result);
-  }
+  mojo::core::Init(config);
 
   // Note #1: the installed shared memory hooks require a live instance of
   // mojo::core::ScopedIPCSupport to function, which is instantiated below by
@@ -86,7 +68,8 @@ void InitializeMojoCore() {
   // Note #2: some platforms can directly allocated shared memory in a
   // sandboxed process. The defines below must be in sync with the
   // implementation of mojo::NodeController::CreateSharedBuffer().
-#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_FUCHSIA) && \
+    !BUILDFLAG(IS_ANDROID)
   if (sandbox::policy::IsUnsandboxedSandboxType(
           sandbox::policy::SandboxTypeFromCommandLine(
               *base::CommandLine::ForCurrentProcess()))) {

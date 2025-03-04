@@ -31,15 +31,13 @@ struct StartParams {
     M16G,
   };
 
-  enum class UsapProfile {
-    // Default USAP profile suitable for all devices.
-    DEFAULT = 0,
-    // USAP profile suitable for 4G devices.
-    M4G,
-    // USAP profile suitable for 8G devices.
-    M8G,
-    // USAP profile suitable for 16G devices.
-    M16G,
+  enum HostUreadaheadMode {
+    // By default, ureadahead is in readahead mode.
+    MODE_READAHEAD = 0,
+    // Ureadahead is in generate mode.
+    MODE_GENERATE = 1,
+    // Ureadahead is in disabled mode.
+    MODE_DISABLED = 2,
   };
 
   StartParams();
@@ -64,7 +62,7 @@ struct StartParams {
 
   DalvikMemoryProfile dalvik_memory_profile = DalvikMemoryProfile::DEFAULT;
 
-  UsapProfile usap_profile = UsapProfile::DEFAULT;
+  HostUreadaheadMode host_ureadahead_mode = HostUreadaheadMode::MODE_READAHEAD;
 
   // Experiment flag for ARC Custom Tabs.
   bool arc_custom_tabs_experiment = false;
@@ -77,27 +75,14 @@ struct StartParams {
   // flakiness in tests.
   bool disable_download_provider = false;
 
-  // Flag to disable ureadahead completely, including host and guest parts.
-  // TODO(b/264585671): Refactore this and |host_ureadahead_generation| to
-  // mode enum.
-  bool disable_ureadahead = false;
-
-  // Flag to indicate host ureadahead generation.
-  // TODO(b/264585671): Refactore this and |disable_ureadahead| to
-  // mode enum.
-  bool host_ureadahead_generation = false;
+  // Flag to indicate whether to use dev caches.
+  bool use_dev_caches = false;
 
   // The number of logical CPU cores that are currently disabled on the host.
   uint32_t num_cores_disabled = 0;
 
   // Enables developer options used to generate Play Auto Install rosters.
   bool arc_generate_play_auto_install = false;
-
-  // Flag to enable keyboard shortcut helper integration.
-  bool enable_keyboard_shortcut_helper_integration = false;
-
-  // Flag to enable notification refresh.
-  bool enable_notifications_refresh = false;
 
   // Flag to enable TTS caching.
   bool enable_tts_caching = false;
@@ -113,6 +98,13 @@ struct StartParams {
 
   // Flag to switch to KeyMint for T+.
   bool arc_switch_to_keymint = false;
+
+  // Flag that indicates whether ARC is already signed in.
+  bool arc_signed_in = false;
+
+  // Flag that would enable ARC Attestation, and would make ARC
+  // RemotelyProvisionedComponentDevice visible to Keystore.
+  bool enable_arc_attestation = false;
 };
 
 }  // namespace arc

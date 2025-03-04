@@ -7,9 +7,9 @@
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
 #include <glib-object.h>
+#include <linux/input.h>
 #include <poll.h>
 
-#include <libevdev/libevdev-uinput.h>
 #include <utility>
 
 #include "base/check.h"
@@ -17,23 +17,22 @@
 #include "base/sequence_checker.h"
 #include "base/time/time.h"
 #include "remoting/base/logging.h"
-#include "third_party/libei/include/libei.h"
-#include "third_party/webrtc/modules/desktop_capture/linux/wayland/portal_request_response.h"
-#include "third_party/webrtc/modules/desktop_capture/linux/wayland/scoped_glib.h"
-#include "third_party/webrtc/modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
+#include "third_party/libei/cipd/include/libei.h"
+#include "third_party/webrtc/modules/portal/portal_request_response.h"
+#include "third_party/webrtc/modules/portal/scoped_glib.h"
+#include "third_party/webrtc/modules/portal/xdg_desktop_portal_utils.h"
 
 namespace remoting::xdg_portal {
 
 using webrtc::Scoped;
 
 namespace {
-// TODO(crbug/1291247): See if these can be pulled from a common place.
+// TODO(crbug.com/40212673): See if these can be pulled from a common place.
 constexpr int BUTTON_LEFT_KEYCODE = 272;
 constexpr int BUTTON_RIGHT_KEYCODE = 273;
 constexpr int BUTTON_MIDDLE_KEYCODE = 274;
 constexpr int BUTTON_FORWARD_KEYCODE = 277;
 constexpr int BUTTON_BACK_KEYCODE = 278;
-constexpr int BTN_UNKNOWN = -1;
 
 // See:
 // https://libinput.pages.freedesktop.org/libei/api/group__libei.html#gaf2ec4b04f6b3c706bad0f1cae66bea34
@@ -53,7 +52,6 @@ int EvdevCodeToMouseButton(int code) {
       return BTN_FORWARD;
     default:
       NOTREACHED() << "Undefined code: " << code;
-      return BTN_UNKNOWN;
   }
 }
 
@@ -117,7 +115,7 @@ void RemoteDesktopPortalInjector::ValidateGDPBusProxyResult(
     if (g_error_matches(error.get(), G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
       return;
     }
-    LOG(ERROR) << "Error in input injection (without EI)";
+    LOG(ERROR) << "Error in input injection (without EI): " << error->message;
   }
 }
 

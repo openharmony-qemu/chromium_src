@@ -9,6 +9,7 @@
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "content/browser/service_worker/service_worker_consts.h"
 #include "content/browser/service_worker/service_worker_context_core.h"
 #include "content/browser/service_worker/service_worker_version.h"
@@ -32,11 +33,11 @@ int64_t ServiceWorkerScriptCacheMap::LookupResourceId(const GURL& url) {
   return found->second->resource_id;
 }
 
-absl::optional<std::string> ServiceWorkerScriptCacheMap::LookupSha256Checksum(
+std::optional<std::string> ServiceWorkerScriptCacheMap::LookupSha256Checksum(
     const GURL& url) {
   ResourceMap::const_iterator found = resource_map_.find(url);
   if (found == resource_map_.end()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return found->second->sha256_checksum;
 }
@@ -48,13 +49,12 @@ void ServiceWorkerScriptCacheMap::NotifyStartedCaching(const GURL& url,
   DCHECK(owner_->status() == ServiceWorkerVersion::NEW ||
          owner_->status() == ServiceWorkerVersion::INSTALLING)
       << owner_->status();
-  if (!context_)
+  if (!context_) {
     return;  // Our storage has been wiped via DeleteAndStartOver.
+  }
   resource_map_[url] = storage::mojom::ServiceWorkerResourceRecord::New(
       resource_id, url, -1, /*sha256_checksum=*/"");
-  context_->registry()->StoreUncommittedResourceId(
-      resource_id, blink::StorageKey::CreateFirstParty(
-                       url::Origin::Create(owner_->scope())));
+  context_->registry()->StoreUncommittedResourceId(resource_id, owner_->key());
 }
 
 void ServiceWorkerScriptCacheMap::NotifyFinishedCaching(
@@ -172,7 +172,7 @@ void ServiceWorkerScriptCacheMap::OnMetadataWritten(
 void ServiceWorkerScriptCacheMap::RunCallback(uint64_t callback_id,
                                               int result) {
   auto it = callbacks_.find(callback_id);
-  DCHECK(it != callbacks_.end());
+  CHECK(it != callbacks_.end(), base::NotFatalUntil::M130);
   std::move(it->second).Run(result);
   callbacks_.erase(it);
 }

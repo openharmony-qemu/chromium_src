@@ -69,7 +69,6 @@ struct UnionTraits<viz::mojom::VideoCaptureSubTargetDataView,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 

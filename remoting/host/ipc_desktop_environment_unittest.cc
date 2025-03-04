@@ -243,7 +243,8 @@ class IpcDesktopEnvironmentTest : public testing::Test {
   std::string client_jid_;
 
   // Clipboard stub that receives clipboard events from the desktop process.
-  raw_ptr<protocol::ClipboardStub> clipboard_stub_;
+  raw_ptr<protocol::ClipboardStub, AcrossTasksDanglingUntriaged>
+      clipboard_stub_;
 
   // The daemons's end of the daemon-to-desktop channel.
   std::unique_ptr<IPC::ChannelProxy> desktop_channel_;
@@ -269,7 +270,8 @@ class IpcDesktopEnvironmentTest : public testing::Test {
   std::unique_ptr<DesktopProcess> desktop_process_;
 
   // Input injector owned by |desktop_process_|.
-  raw_ptr<MockInputInjector> remote_input_injector_;
+  raw_ptr<MockInputInjector, AcrossTasksDanglingUntriaged>
+      remote_input_injector_;
 
   // Will be transferred to the caller of
   // MockDesktopEnvironment::CreateUrlForwarderConfigurator().
@@ -278,7 +280,8 @@ class IpcDesktopEnvironmentTest : public testing::Test {
   // used.
   std::unique_ptr<MockUrlForwarderConfigurator>
       owned_remote_url_forwarder_configurator_;
-  raw_ptr<MockUrlForwarderConfigurator> remote_url_forwarder_configurator_;
+  raw_ptr<MockUrlForwarderConfigurator, AcrossTasksDanglingUntriaged>
+      remote_url_forwarder_configurator_;
   std::unique_ptr<UrlForwarderConfigurator> url_forwarder_configurator_;
 
   // The last |terminal_id| passed to ConnectTermina();
@@ -374,7 +377,7 @@ void IpcDesktopEnvironmentTest::SetUp() {
   input_injector_ = desktop_environment_->CreateInputInjector();
 
   // Create the screen capturer.
-  video_capturer_ = desktop_environment_->CreateVideoCapturer();
+  video_capturer_ = desktop_environment_->CreateVideoCapturer(0);
 
   desktop_environment_->SetCapabilities(std::string());
 
@@ -413,7 +416,7 @@ IpcDesktopEnvironmentTest::CreateDesktopEnvironment() {
       .Times(AtMost(1))
       .WillOnce(Invoke(this, &IpcDesktopEnvironmentTest::CreateInputInjector));
   EXPECT_CALL(*desktop_environment, CreateScreenControls()).Times(AtMost(1));
-  EXPECT_CALL(*desktop_environment, CreateVideoCapturer())
+  EXPECT_CALL(*desktop_environment, CreateVideoCapturer(_))
       .Times(AtMost(1))
       .WillOnce(
           Return(ByMove(std::make_unique<protocol::FakeDesktopCapturer>())));
@@ -454,7 +457,12 @@ void IpcDesktopEnvironmentTest::DeleteDesktopEnvironment() {
   url_forwarder_configurator_.reset();
 
   // Trigger CloseDesktopSession().
-  desktop_environment_.reset();
+  // `desktop_environment_` should be torn down asynchronously. Many of these
+  // tests pass DeleteDesktopEnvironment() inside callbacks that are run by
+  // DesktopSessionProxy, and these should not synchronously delete
+  // DesktopSessionProxy.
+  task_environment_.GetMainThreadTaskRunner()->DeleteSoon(
+      FROM_HERE, desktop_environment_.release());
 }
 
 void IpcDesktopEnvironmentTest::ReflectClipboardEvent(
@@ -505,7 +513,7 @@ void IpcDesktopEnvironmentTest::ResetRemoteUrlForwarderConfigurator() {
   remote_url_forwarder_configurator_ =
       owned_remote_url_forwarder_configurator_.get();
   ON_CALL(*remote_url_forwarder_configurator_, IsUrlForwarderSetUp(_))
-      .WillByDefault(RunOnceCallback<0>(false));
+      .WillByDefault(base::test::RunOnceCallbackRepeatedly<0>(false));
 }
 
 void IpcDesktopEnvironmentTest::OnDisconnectCallback() {
@@ -560,7 +568,7 @@ TEST_F(IpcDesktopEnvironmentTest, TouchEventsCapabilities) {
       new protocol::MockClipboardStub());
   EXPECT_CALL(*clipboard_stub, InjectClipboardEvent(_)).Times(0);
 
-  std::string expected_capabilities = "rateLimitResizeRequests";
+  std::string expected_capabilities = "rateLimitResizeRequests multiStream";
   if (InputInjector::SupportsTouchEvents()) {
     expected_capabilities += " touchEvents";
   }
@@ -795,7 +803,7 @@ TEST_F(IpcDesktopEnvironmentTest, SetScreenResolution) {
   screen_controls_->SetScreenResolution(
       ScreenResolution(webrtc::DesktopSize(100, 100),
                        webrtc::DesktopVector(96, 96)),
-      absl::nullopt);
+      std::nullopt);
 }
 
 TEST_F(IpcDesktopEnvironmentTest, CheckUrlForwarderState) {

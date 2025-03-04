@@ -41,18 +41,11 @@ class CONTENT_EXPORT V8ValueConverter : public blink::WebV8ValueConverter {
     virtual bool FromV8Object(v8::Local<v8::Object> value,
                               std::unique_ptr<base::Value>* out,
                               v8::Isolate* isolate);
-
-#if BUILDFLAG(IS_OHOS)
-    // If false is returned, V8ValueConverter proceeds with the default
-    // behavior.
-    // Use |callback| to convert any child values, as this will retain
-    // the ValueConverter's internal checks for depth and cycles.
     virtual bool FromV8Object(v8::Local<v8::Object> value,
                               std::unique_ptr<base::Value>* out,
                               v8::Isolate* isolate,
                               bool is_function,
                               bool is_promise);
-#endif
 
     // If false is returned, V8ValueConverter proceeds with the default
     // behavior.
@@ -104,13 +97,11 @@ class CONTENT_EXPORT V8ValueConverter : public blink::WebV8ValueConverter {
   // Otherwise they are treated as unsupported, see FromV8Value.
   virtual void SetFunctionAllowed(bool val) = 0;
 
-#if BUILDFLAG(IS_OHOS)
   // If true, promise objects are converted into DictionaryValues with whatever
   // additional properties has been set on them.
   //
   // Otherwise they are treated as unsupported, see FromV8Value.
   virtual void SetPromiseAllowed(bool val) = 0;
-#endif
 
   // If true, null values are stripped from objects. This is often useful when
   // converting arguments to extension APIs.

@@ -10,13 +10,11 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
+        "name": "bar_test",
         "swarming": {
-          "can_use_on_swarming_builders": true,
-          "dimension_sets": [
-            {
-              "os": "Linux"
-            }
-          ]
+          "dimensions": {
+            "os": "Linux"
+          }
         },
         "test": "bar_test"
       },
@@ -27,13 +25,11 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
+        "name": "foo_test",
         "swarming": {
-          "can_use_on_swarming_builders": true,
-          "dimension_sets": [
-            {
-              "os": "Linux"
-            }
-          ]
+          "dimensions": {
+            "os": "Linux"
+          }
         },
         "test": "foo_test"
       }

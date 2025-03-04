@@ -19,6 +19,7 @@
 #include "base/functional/callback.h"
 #include "base/memory/ptr_util.h"
 #include "base/time/time.h"
+#include "base/values.h"
 #include "components/url_matcher/url_matcher.h"
 #include "extensions/common/api/events.h"
 #include "extensions/common/extension.h"
@@ -26,7 +27,6 @@
 
 namespace base {
 class Time;
-class Value;
 }
 
 namespace content {
@@ -59,7 +59,6 @@ namespace extensions {
 template<typename ConditionT>
 class DeclarativeConditionSet {
  public:
-  using Values = std::vector<base::Value>;
   using Conditions = std::vector<std::unique_ptr<const ConditionT>>;
   using const_iterator = typename Conditions::const_iterator;
 
@@ -72,7 +71,7 @@ class DeclarativeConditionSet {
   static std::unique_ptr<DeclarativeConditionSet> Create(
       const Extension* extension,
       url_matcher::URLMatcherConditionFactory* url_matcher_condition_factory,
-      const Values& condition_values,
+      const base::Value::List& condition_values,
       std::string* error);
 
   const Conditions& conditions() const {
@@ -124,12 +123,12 @@ class DeclarativeConditionSet {
 //       // Except this argument gets elements of the Values array.
 //       const base::Value::Dict& definition,
 //       std::string* error, bool* bad_message);
-//   void Apply(const std::string& extension_id,
+//   void Apply(const ExtensionId& extension_id,
 //              const base::Time& extension_install_time,
 //              // Contains action-type-specific in/out parameters.
 //              typename ActionT::ApplyInfo* apply_info) const;
 //   // Only needed if the RulesRegistry calls DeclarativeActionSet::Revert().
-//   void Revert(const std::string& extension_id,
+//   void Revert(const ExtensionId& extension_id,
 //               const base::Time& extension_install_time,
 //               // Contains action-type-specific in/out parameters.
 //               typename ActionT::ApplyInfo* apply_info) const;
@@ -143,7 +142,6 @@ class DeclarativeConditionSet {
 template<typename ActionT>
 class DeclarativeActionSet {
  public:
-  using Values = std::vector<base::Value>;
   using Actions = std::vector<scoped_refptr<const ActionT>>;
 
   explicit DeclarativeActionSet(const Actions& actions);
@@ -157,25 +155,25 @@ class DeclarativeActionSet {
   static std::unique_ptr<DeclarativeActionSet> Create(
       content::BrowserContext* browser_context,
       const Extension* extension,
-      const Values& action_values,
+      const base::Value::List& action_values,
       std::string* error,
       bool* bad_message);
 
   // Rules call this method when their conditions are fulfilled.
-  void Apply(const std::string& extension_id,
+  void Apply(const ExtensionId& extension_id,
              const base::Time& extension_install_time,
              typename ActionT::ApplyInfo* apply_info) const;
 
   // Rules call this method when their conditions are fulfilled, but Apply has
   // already been called.
-  void Reapply(const std::string& extension_id,
+  void Reapply(const ExtensionId& extension_id,
                const base::Time& extension_install_time,
                typename ActionT::ApplyInfo* apply_info) const;
 
   // Rules call this method when they have stateful conditions, and those
   // conditions stop being fulfilled.  Rules with event-based conditions (e.g. a
   // network request happened) will never Revert() an action.
-  void Revert(const std::string& extension_id,
+  void Revert(const ExtensionId& extension_id,
               const base::Time& extension_install_time,
               typename ActionT::ApplyInfo* apply_info) const;
 
@@ -243,7 +241,7 @@ class DeclarativeRule {
 
   const GlobalRuleId& id() const { return id_; }
   const Tags& tags() const { return tags_; }
-  const std::string& extension_id() const { return id_.first; }
+  const ExtensionId& extension_id() const { return id_.first; }
   const ConditionSet& conditions() const { return *conditions_; }
   const ActionSet& actions() const { return *actions_; }
   Priority priority() const { return priority_; }
@@ -307,7 +305,7 @@ std::unique_ptr<DeclarativeConditionSet<ConditionT>>
 DeclarativeConditionSet<ConditionT>::Create(
     const Extension* extension,
     url_matcher::URLMatcherConditionFactory* url_matcher_condition_factory,
-    const Values& condition_values,
+    const base::Value::List& condition_values,
     std::string* error) {
   Conditions result;
 
@@ -361,7 +359,7 @@ template <typename ActionT>
 std::unique_ptr<DeclarativeActionSet<ActionT>>
 DeclarativeActionSet<ActionT>::Create(content::BrowserContext* browser_context,
                                       const Extension* extension,
-                                      const Values& action_values,
+                                      const base::Value::List& action_values,
                                       std::string* error,
                                       bool* bad_message) {
   *error = "";
@@ -384,27 +382,27 @@ DeclarativeActionSet<ActionT>::Create(content::BrowserContext* browser_context,
   return std::make_unique<DeclarativeActionSet>(result);
 }
 
-template<typename ActionT>
+template <typename ActionT>
 void DeclarativeActionSet<ActionT>::Apply(
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     const base::Time& extension_install_time,
     typename ActionT::ApplyInfo* apply_info) const {
   for (const scoped_refptr<const ActionT>& action : actions_)
     action->Apply(extension_id, extension_install_time, apply_info);
 }
 
-template<typename ActionT>
+template <typename ActionT>
 void DeclarativeActionSet<ActionT>::Reapply(
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     const base::Time& extension_install_time,
     typename ActionT::ApplyInfo* apply_info) const {
   for (const scoped_refptr<const ActionT>& action : actions_)
     action->Reapply(extension_id, extension_install_time, apply_info);
 }
 
-template<typename ActionT>
+template <typename ActionT>
 void DeclarativeActionSet<ActionT>::Revert(
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     const base::Time& extension_install_time,
     typename ActionT::ApplyInfo* apply_info) const {
   for (const scoped_refptr<const ActionT>& action : actions_)

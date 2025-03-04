@@ -6,6 +6,7 @@
 
 #include <string.h>
 
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -16,7 +17,7 @@
 #include "base/task/thread_pool.h"
 #include "components/arc/common/intent_helper/adaptive_icon_delegate.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
-#include "ui/base/layout.h"
+#include "ui/base/resource/resource_scale_factor.h"
 #include "ui/gfx/codec/png_codec.h"
 #include "ui/gfx/image/image_skia_operations.h"
 #include "ui/gfx/image/image_skia_rep.h"
@@ -38,13 +39,6 @@ constexpr size_t kSmallIconSizeInDip = 16;
 constexpr size_t kLargeIconSizeInDip = 20;
 constexpr size_t kMaxIconSizeInPx = 200;
 constexpr char kPngDataUrlPrefix[] = "data:image/png;base64,";
-
-ui::ResourceScaleFactor GetSupportedResourceScaleFactor() {
-  std::vector<ui::ResourceScaleFactor> scale_factors =
-      ui::GetSupportedResourceScaleFactors();
-  DCHECK(!scale_factors.empty());
-  return scale_factors.back();
-}
 
 // Returns an instance for calling RequestActivityIcons().
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -78,8 +72,9 @@ GetInstanceForRequestActivityIcons() {
 
   auto* instance =
       ARC_GET_INSTANCE_FOR_METHOD(intent_helper_holder, RequestActivityIcons);
-  if (!instance)
+  if (!instance) {
     return ActivityIconLoader::GetResult::FAILED_ARC_NOT_SUPPORTED;
+  }
   return instance;
 }
 #else  // BUILDFLAG(IS_CHROMEOS_LACROS)
@@ -132,11 +127,11 @@ GetInstanceForRequestActivityIcons() {
     return ActivityIconLoader::GetResult::FAILED_ARC_NOT_SUPPORTED;
   }
 
-  if (service->GetInterfaceVersion(crosapi::mojom::Arc::Uuid_) <
+  if (service->GetInterfaceVersion<crosapi::mojom::Arc>() <
       int{crosapi::mojom::Arc::MethodMinVersions::
               kRequestActivityIconsMinVersion}) {
     VLOG(2) << "Ash Lacros-Arc version "
-            << service->GetInterfaceVersion(crosapi::mojom::Arc::Uuid_)
+            << service->GetInterfaceVersion<crosapi::mojom::Arc>()
             << " does not support RequestActivityIcons().";
     return ActivityIconLoader::GetResult::FAILED_ARC_NOT_SUPPORTED;
   }
@@ -161,14 +156,12 @@ scoped_refptr<base::RefCountedData<GURL>> GeneratePNGDataUrl(
     const gfx::ImageSkia& image,
     ui::ResourceScaleFactor scale_factor) {
   float scale = ui::GetScaleForResourceScaleFactor(scale_factor);
-  std::vector<unsigned char> output;
-  gfx::PNGCodec::EncodeBGRASkBitmap(image.GetRepresentation(scale).GetBitmap(),
-                                    false /* discard_transparency */, &output);
-  std::string encoded;
-  base::Base64Encode(
-      base::StringPiece(reinterpret_cast<const char*>(output.data()),
-                        output.size()),
-      &encoded);
+  std::optional<std::vector<uint8_t>> output =
+      gfx::PNGCodec::EncodeBGRASkBitmap(
+          image.GetRepresentation(scale).GetBitmap(),
+          /*discard_transparency=*/false);
+  const std::string encoded =
+      base::Base64Encode(output.value_or(std::vector<uint8_t>()));
   return base::WrapRefCounted(
       new base::RefCountedData<GURL>(GURL(kPngDataUrlPrefix + encoded)));
 }
@@ -208,8 +201,9 @@ std::unique_ptr<ActivityIconLoader::ActivityToIconsMap> ResizeAndEncodeIcons(
 
     SkBitmap bitmap;
     bitmap.allocPixels(SkImageInfo::MakeN32Premul(icon->width, icon->height));
-    if (!bitmap.getPixels())
+    if (!bitmap.getPixels()) {
       continue;
+    }
     DCHECK_GE(bitmap.computeByteSize(), icon->icon.size());
     memcpy(bitmap.getPixels(), &icon->icon.front(), icon->icon.size());
 
@@ -261,7 +255,7 @@ bool ActivityIconLoader::ActivityName::operator<(
 }
 
 ActivityIconLoader::ActivityIconLoader()
-    : scale_factor_(GetSupportedResourceScaleFactor()) {}
+    : scale_factor_(ui::GetMaxSupportedResourceScaleFactor()) {}
 
 ActivityIconLoader::~ActivityIconLoader() = default;
 
@@ -273,10 +267,11 @@ void ActivityIconLoader::SetAdaptiveIconDelegate(
 void ActivityIconLoader::InvalidateIcons(const std::string& package_name) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   for (auto it = cached_icons_.begin(); it != cached_icons_.end();) {
-    if (it->first.package_name == package_name)
+    if (it->first.package_name == package_name) {
       it = cached_icons_.erase(it);
-    else
+    } else {
       ++it;
+    }
   }
 }
 
@@ -372,9 +367,9 @@ void ActivityIconLoader::OnIconsReady(
     return;
   }
 
-  // TODO(crbug.com/1083331): Remove when the adaptive icon feature is enabled
+  // TODO(crbug.com/40131344): Remove when the adaptive icon feature is enabled
   // by default.
-  // TODO(crbug.com/1272349): Adaptive Icon is not supported in Lacros now. Do
+  // TODO(crbug.com/40806186): Adaptive Icon is not supported in Lacros now. Do
   // not remove this until it's supported.
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE,

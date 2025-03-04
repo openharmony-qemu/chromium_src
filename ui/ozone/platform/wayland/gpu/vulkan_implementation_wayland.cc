@@ -88,38 +88,17 @@ VulkanImplementationWayland::GetOptionalDeviceExtensions() {
 VkFence VulkanImplementationWayland::CreateVkFenceForGpuFence(
     VkDevice vk_device) {
   NOTREACHED();
-  return VK_NULL_HANDLE;
 }
 
 std::unique_ptr<gfx::GpuFence>
 VulkanImplementationWayland::ExportVkFenceToGpuFence(VkDevice vk_device,
                                                      VkFence vk_fence) {
   NOTREACHED();
-  return nullptr;
 }
 
-VkSemaphore VulkanImplementationWayland::CreateExternalSemaphore(
-    VkDevice vk_device) {
-  return gpu::CreateExternalVkSemaphore(
-      vk_device, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
-}
-
-VkSemaphore VulkanImplementationWayland::ImportSemaphoreHandle(
-    VkDevice vk_device,
-    gpu::SemaphoreHandle sync_handle) {
-  return gpu::ImportVkSemaphoreHandle(vk_device, std::move(sync_handle));
-}
-
-gpu::SemaphoreHandle VulkanImplementationWayland::GetSemaphoreHandle(
-    VkDevice vk_device,
-    VkSemaphore vk_semaphore) {
-  return gpu::GetVkSemaphoreHandle(
-      vk_device, vk_semaphore, VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT);
-}
-
-VkExternalMemoryHandleTypeFlagBits
-VulkanImplementationWayland::GetExternalImageHandleType() {
-  return VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
+VkExternalSemaphoreHandleTypeFlagBits
+VulkanImplementationWayland::GetExternalSemaphoreHandleType() {
+  return VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
 }
 
 bool VulkanImplementationWayland::CanImportGpuMemoryBuffer(

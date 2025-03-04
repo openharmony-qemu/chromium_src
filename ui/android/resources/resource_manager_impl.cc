@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/android/resources/resource_manager_impl.h"
 
 #include <inttypes.h>
@@ -25,11 +30,12 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "ui/android/resources/ui_resource_provider.h"
-#include "ui/android/ui_android_jni_headers/ResourceManager_jni.h"
 #include "ui/android/window_android.h"
-#include "ui/base/ui_base_features.h"
 #include "ui/gfx/android/java_bitmap.h"
 #include "ui/gfx/geometry/rect.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "ui/android/ui_android_jni_headers/ResourceManager_jni.h"
 
 using base::android::JavaArrayOfIntArrayToIntVector;
 using base::android::JavaParamRef;
@@ -119,10 +125,6 @@ Resource* ResourceManagerImpl::GetResource(AndroidResourceType res_type,
 }
 
 void ResourceManagerImpl::RemoveUnusedTints() {
-  if (base::FeatureList::IsEnabled(features::kKeepAndroidTintedResources)) {
-    return;
-  }
-
   // Iterate over the currently cached tints and remove ones that were not
   // used as defined in |used_tints|.
   for (auto it = tinted_resources_.cbegin(); it != tinted_resources_.cend();) {
@@ -132,10 +134,6 @@ void ResourceManagerImpl::RemoveUnusedTints() {
       ++it;
     }
   }
-}
-
-void ResourceManagerImpl::MarkTintNonDiscardable(SkColor tint_color) {
-  used_tints_.insert(tint_color);
 }
 
 void ResourceManagerImpl::OnFrameUpdatesFinished() {

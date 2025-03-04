@@ -12,6 +12,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "cc/base/switches.h"
 #include "components/viz/common/display/overlay_strategy.h"
 #include "components/viz/common/display/renderer_settings.h"
 #include "components/viz/common/features.h"
@@ -52,12 +53,6 @@ RendererSettings CreateRendererSettings() {
   renderer_settings.partial_swap_enabled =
       !command_line->HasSwitch(switches::kUIDisablePartialSwap);
 
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX)
-  // Simple frame rate throttling only works on macOS and Linux
-  renderer_settings.apply_simple_frame_rate_throttling =
-      features::IsSimpleFrameRateThrottlingEnabled();
-#endif
-
 #if BUILDFLAG(IS_APPLE)
   renderer_settings.release_overlay_resources_after_gpu_query = true;
   renderer_settings.auto_resize_output_surface = false;
@@ -74,6 +69,9 @@ RendererSettings CreateRendererSettings() {
                         kMinSlowDownScaleFactor, kMaxSlowDownScaleFactor,
                         &renderer_settings.slow_down_compositing_scale_factor);
   }
+
+  renderer_settings.occlusion_culler_settings.quad_split_limit =
+      features::DrawQuadSplitLimit();
 
 #if BUILDFLAG(IS_OZONE)
   if (command_line->HasSwitch(switches::kEnableHardwareOverlays)) {

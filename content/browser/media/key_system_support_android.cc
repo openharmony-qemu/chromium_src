@@ -10,6 +10,7 @@
 #include "base/android/build_info.h"
 #include "base/feature_list.h"
 #include "content/public/browser/android/android_overlay_provider.h"
+#include "content/public/browser/service_process_host.h"
 #include "media/audio/android/audio_manager_android.h"
 #include "media/base/android/media_codec_util.h"
 #include "media/base/android/media_drm_bridge.h"
@@ -20,6 +21,9 @@
 #include "media/base/media_switches.h"
 #include "media/base/media_util.h"
 #include "media/base/video_codecs.h"
+#include "media/media_buildflags.h"
+#include "media/mojo/mojom/mediadrm_support.mojom.h"
+#include "mojo/public/cpp/bindings/remote.h"
 
 using media::MediaCodecUtil;
 using media::MediaDrmBridge;
@@ -53,7 +57,7 @@ const media::VideoCodec kWebMVideoCodecsToQuery[] = {
 };
 
 const media::VideoCodec kMP4VideoCodecsToQuery[] = {
-    media::VideoCodec::kVP9,
+    media::VideoCodec::kVP9,         media::VideoCodec::kAV1,
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
     media::VideoCodec::kH264,
 #if BUILDFLAG(ENABLE_PLATFORM_HEVC)
@@ -71,37 +75,21 @@ static bool CanPassthrough(media::AudioCodec codec) {
           media::ConvertAudioCodecToBitstreamFormat(codec)) != 0;
 }
 
-}  // namespace
-
-void GetAndroidCdmCapability(const std::string& key_system,
-                             CdmInfo::Robustness robustness,
-                             media::CdmCapabilityCB cdm_capability_cb) {
-  const bool is_secure = robustness == CdmInfo::Robustness::kHardwareSecure;
-  if (!MediaDrmBridge::IsKeySystemSupported(key_system)) {
-    DVLOG(1) << "Key system " << key_system << " not supported.";
-    std::move(cdm_capability_cb).Run(absl::nullopt);
-    return;
-  }
-
-  if (is_secure) {
-    // Rendering of hardware secure codecs is only supported when
-    // AndroidOverlay is enabled.
-    // TODO(crbug.com/853336): Allow Cast override.
-    bool are_overlay_supported =
-        content::AndroidOverlayProvider::GetInstance()->AreOverlaysSupported();
-    bool overlay_fullscreen_video =
-        base::FeatureList::IsEnabled(media::kOverlayFullscreenVideo);
-    if (!are_overlay_supported || !overlay_fullscreen_video) {
-      DVLOG(1) << "Hardware secure codecs not supported for key system"
-               << key_system << ".";
-      std::move(cdm_capability_cb).Run(absl::nullopt);
-      return;
-    }
-  }
-
+// Determine the capabilities for `key_system` based on `webm_supported` and
+// `mp4_supported`, and call `cdm_capability_cb` with the resulting capability.
+// This class assumes that MediaDrm does support `key_system`.
+void DetermineKeySystemSupport(const std::string& key_system,
+                               bool is_secure,
+                               media::CdmCapabilityCB cdm_capability_cb,
+                               bool webm_supported,
+                               bool mp4_supported) {
   const std::vector<media::VideoCodecProfile> kAllProfiles = {};
   media::CdmCapability capability;
-  if (MediaDrmBridge::IsKeySystemSupportedWithType(key_system, "video/webm")) {
+
+  DVLOG(1) << __func__ << " mp4_supported: " << mp4_supported
+           << ", webm_supported: " << webm_supported;
+
+  if (webm_supported) {
     for (const auto& codec : kWebMAudioCodecsToQuery) {
       if (MediaCodecUtil::CanDecode(codec)) {
         capability.audio_codecs.insert(codec);
@@ -117,7 +105,7 @@ void GetAndroidCdmCapability(const std::string& key_system,
   // |audio_codecs| and |video_codecs| should not have multiple entries with
   // the same codec, so if the loop above added them, no need to test the same
   // codec again.
-  if (MediaDrmBridge::IsKeySystemSupportedWithType(key_system, "video/mp4")) {
+  if (mp4_supported) {
     // It is possible that a device that is not able to decode the audio stream
     // is connected to an audiosink device that can. In this case, CanDecode()
     // returns false but CanPassthrough() will return true. CanPassthrough()
@@ -151,7 +139,7 @@ void GetAndroidCdmCapability(const std::string& key_system,
     // once they exist.
     DVLOG(1) << "Key system " << key_system
              << " not supported as no hardware secure video codecs available.";
-    std::move(cdm_capability_cb).Run(absl::nullopt);
+    std::move(cdm_capability_cb).Run(std::nullopt);
     return;
   }
 
@@ -181,12 +169,8 @@ void GetAndroidCdmCapability(const std::string& key_system,
     }
   }
 
-  // 'cenc' is always supported. 'cbcs' may or may not be available.
   capability.encryption_schemes.insert(media::EncryptionScheme::kCenc);
-  if (MediaCodecUtil::PlatformSupportsCbcsEncryption(
-          base::android::BuildInfo::GetInstance()->sdk_int())) {
-    capability.encryption_schemes.insert(media::EncryptionScheme::kCbcs);
-  }
+  capability.encryption_schemes.insert(media::EncryptionScheme::kCbcs);
 
   capability.session_types.insert(media::CdmSessionType::kTemporary);
   if (MediaDrmBridge::IsPersistentLicenseTypeSupported(key_system)) {
@@ -194,6 +178,122 @@ void GetAndroidCdmCapability(const std::string& key_system,
   }
 
   std::move(cdm_capability_cb).Run(capability);
+}
+
+// Used to determine if `key_system` is supported, and if it is whether WebM and
+// MP4 mime types are also supported. Done via a separate process so that
+// crashes in MediaDrm do not crash the browser. This class destructs itself
+// when complete.
+class CheckCdmCompatibility {
+ public:
+  CheckCdmCompatibility(const std::string& key_system,
+                        bool is_secure,
+                        media::CdmCapabilityCB cdm_capability_cb)
+      : key_system_(key_system),
+        is_secure_(is_secure),
+        cdm_capability_cb_(std::move(cdm_capability_cb)) {}
+
+  ~CheckCdmCompatibility() = default;
+
+  // Creates the remote process and calls it.
+  void CheckKeySystemSupport() {
+    media_drm_service_ =
+        content::ServiceProcessHost::Launch<media::mojom::MediaDrmSupport>(
+            content::ServiceProcessHost::Options()
+                .WithDisplayName("MediaDrmSupport")
+                .Pass());
+
+    // As the calls to MediaDrm can crash and take out the utility process,
+    // set up a handler for when this happens.
+    media_drm_service_.set_disconnect_handler(base::BindOnce(
+        &CheckCdmCompatibility::OnServiceClosed, base::Unretained(this)));
+
+    DVLOG(1) << __func__ << " calling IsKeySystemSupported for " << key_system_;
+    media_drm_service_->IsKeySystemSupported(
+        key_system_,
+        base::BindOnce(&CheckCdmCompatibility::VerifyKeySystemSupport,
+                       base::Unretained(this)));
+  }
+
+  // Called when the remote process has determined if `key_system` and WebM/MP4
+  // are supported.
+  void VerifyKeySystemSupport(
+      media::mojom::MediaDrmSupportResultPtr key_system_support_result) {
+    if (key_system_support_result.is_null()) {
+      DVLOG(1) << "Key system " << key_system_ << " not supported.";
+      std::move(cdm_capability_cb_).Run(std::nullopt);
+      delete this;
+      return;
+    }
+
+    DetermineKeySystemSupport(
+        key_system_, is_secure_, std::move(cdm_capability_cb_),
+        key_system_support_result->key_system_supports_video_webm,
+        key_system_support_result->key_system_supports_video_mp4);
+    delete this;
+  }
+
+  // If the remote service fails, assume it has crashed and thus `key_system`
+  // is not supported.
+  void OnServiceClosed() {
+    DVLOG(1) << "IsKeySystemSupported failed for " << key_system_;
+    std::move(cdm_capability_cb_).Run(std::nullopt);
+    delete this;
+  }
+
+ private:
+  const std::string key_system_;
+  const bool is_secure_;
+  media::CdmCapabilityCB cdm_capability_cb_;
+  mojo::Remote<media::mojom::MediaDrmSupport> media_drm_service_;
+};
+
+}  // namespace
+
+void GetAndroidCdmCapability(const std::string& key_system,
+                             CdmInfo::Robustness robustness,
+                             media::CdmCapabilityCB cdm_capability_cb) {
+  // Rendering of hardware secure codecs is only supported when AndroidOverlay
+  // is enabled.
+  const bool is_secure = robustness == CdmInfo::Robustness::kHardwareSecure;
+  if (is_secure) {
+    bool are_overlay_supported =
+        content::AndroidOverlayProvider::GetInstance()->AreOverlaysSupported();
+    bool overlay_fullscreen_video =
+        base::FeatureList::IsEnabled(media::kOverlayFullscreenVideo);
+    if (!are_overlay_supported || !overlay_fullscreen_video) {
+      DVLOG(1) << "Hardware secure codecs not supported for key system"
+               << key_system << ".";
+      std::move(cdm_capability_cb).Run(std::nullopt);
+      return;
+    }
+  }
+
+  // Calls to MediaDrm.isCryptoSchemeSupported() are known to crash
+  // (see b/308692917), so calling them via a utility process to avoid
+  // crashing the browser if allowed.
+  if (base::FeatureList::IsEnabled(
+          media::kAllowMediaCodecCallsInSeparateProcess)) {
+    // The class CheckCdmCompatibility will manage it's own lifetime
+    // (destruct after calling `cdm_capability_cb`).
+    auto* check_cdm_compatibility = new CheckCdmCompatibility(
+        key_system, is_secure, std::move(cdm_capability_cb));
+    check_cdm_compatibility->CheckKeySystemSupport();
+    return;
+  }
+
+  // Multiple processes are not allowed, so call MediaDrmBridge directly.
+  if (!MediaDrmBridge::IsKeySystemSupported(key_system)) {
+    std::move(cdm_capability_cb).Run(std::nullopt);
+    return;
+  }
+
+  bool webm_supported =
+      MediaDrmBridge::IsKeySystemSupportedWithType(key_system, "video/webm");
+  bool mp4_supported =
+      MediaDrmBridge::IsKeySystemSupportedWithType(key_system, "video/mp4");
+  DetermineKeySystemSupport(key_system, is_secure, std::move(cdm_capability_cb),
+                            webm_supported, mp4_supported);
 }
 
 }  // namespace content

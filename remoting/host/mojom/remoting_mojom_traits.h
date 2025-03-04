@@ -2,11 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef REMOTING_HOST_MOJOM_REMOTING_MOJOM_TRAITS_H_
 #define REMOTING_HOST_MOJOM_REMOTING_MOJOM_TRAITS_H_
 
 #include <stddef.h>
+
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "base/containers/span.h"
@@ -35,7 +42,6 @@
 #include "remoting/protocol/file_transfer_helpers.h"
 #include "remoting/protocol/transport.h"
 #include "services/network/public/cpp/ip_endpoint_mojom_traits.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/webrtc/modules/desktop_capture/desktop_geometry.h"
 #include "third_party/webrtc/modules/desktop_capture/mouse_cursor.h"
 #include "ui/gfx/geometry/mojom/geometry_mojom_traits.h"
@@ -137,31 +143,9 @@ class StructTraits<remoting::mojom::DesktopEnvironmentOptionsDataView,
     return options.terminate_upon_input();
   }
 
-  static bool enable_file_transfer(
-      const ::remoting::DesktopEnvironmentOptions& options) {
-    return options.enable_file_transfer();
-  }
-
-  static bool enable_remote_open_url(
-      const ::remoting::DesktopEnvironmentOptions& options) {
-    return options.enable_remote_open_url();
-  }
-
   static bool enable_remote_webauthn(
       const ::remoting::DesktopEnvironmentOptions& options) {
     return options.enable_remote_webauthn();
-  }
-
-  static absl::optional<uint32_t> clipboard_size(
-      const ::remoting::DesktopEnvironmentOptions& options) {
-    if (!options.clipboard_size().has_value()) {
-      return absl::nullopt;
-    }
-
-    size_t clipboard_size = options.clipboard_size().value();
-    return base::IsValueInRangeForNumericType<int>(clipboard_size)
-               ? clipboard_size
-               : INT_MAX;
   }
 
   static const webrtc::DesktopCaptureOptions& desktop_capture_options(
@@ -188,7 +172,6 @@ struct EnumTraits<remoting::mojom::DesktopCaptureResult,
     }
 
     NOTREACHED();
-    return remoting::mojom::DesktopCaptureResult::kSuccess;
   }
 
   static bool FromMojom(remoting::mojom::DesktopCaptureResult input,
@@ -206,7 +189,6 @@ struct EnumTraits<remoting::mojom::DesktopCaptureResult,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -310,7 +292,6 @@ struct EnumTraits<remoting::mojom::MouseButton,
     }
 
     NOTREACHED();
-    return remoting::mojom::MouseButton::kUndefined;
   }
 
   static bool FromMojom(remoting::mojom::MouseButton input,
@@ -337,7 +318,6 @@ struct EnumTraits<remoting::mojom::MouseButton,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -354,7 +334,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_BytesPerSample,
     }
 
     NOTREACHED();
-    return remoting::mojom::AudioPacket_BytesPerSample::kInvalid;
   }
 
   static bool FromMojom(remoting::mojom::AudioPacket_BytesPerSample input,
@@ -369,7 +348,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_BytesPerSample,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -400,7 +378,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_Channels,
     }
 
     NOTREACHED();
-    return remoting::mojom::AudioPacket_Channels::kInvalid;
   }
 
   static bool FromMojom(remoting::mojom::AudioPacket_Channels input,
@@ -436,7 +413,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_Channels,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -455,7 +431,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_Encoding,
     }
 
     NOTREACHED();
-    return remoting::mojom::AudioPacket_Encoding::kInvalid;
   }
 
   static bool FromMojom(remoting::mojom::AudioPacket_Encoding input,
@@ -473,7 +448,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_Encoding,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -492,7 +466,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_SamplingRate,
     }
 
     NOTREACHED();
-    return remoting::mojom::AudioPacket_SamplingRate::kInvalid;
   }
 
   static bool FromMojom(remoting::mojom::AudioPacket_SamplingRate input,
@@ -510,7 +483,6 @@ struct EnumTraits<remoting::mojom::AudioPacket_SamplingRate,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -586,7 +558,6 @@ class UnionTraits<
       return remoting::mojom::ReadChunkResultDataView::Tag::kError;
 
     NOTREACHED();
-    return remoting::mojom::ReadChunkResultDataView::Tag::kError;
   }
 
   static const std::vector<uint8_t>& data(
@@ -618,12 +589,12 @@ class StructTraits<remoting::mojom::FileTransferErrorDataView,
     return error.type();
   }
 
-  static absl::optional<int32_t> api_error_code(
+  static std::optional<int32_t> api_error_code(
       const ::remoting::protocol::FileTransfer_Error& error) {
     if (error.has_api_error_code()) {
       return error.api_error_code();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   static const std::string& function(
@@ -670,7 +641,6 @@ struct EnumTraits<remoting::mojom::FileTransferError_Type,
     }
 
     NOTREACHED();
-    return remoting::mojom::FileTransferError_Type::kUnknown;
   }
 
   static bool FromMojom(remoting::mojom::FileTransferError_Type input,
@@ -703,7 +673,6 @@ struct EnumTraits<remoting::mojom::FileTransferError_Type,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -724,7 +693,6 @@ class UnionTraits<
       return remoting::mojom::FileChooserResultDataView::Tag::kError;
 
     NOTREACHED();
-    return remoting::mojom::FileChooserResultDataView::Tag::kError;
   }
 
   static const base::FilePath& filepath(
@@ -775,9 +743,6 @@ class UnionTraits<remoting::mojom::KeyActionDataView,
         return remoting::mojom::KeyActionDataView::Tag::kCharacter;
       case ::remoting::protocol::KeyboardLayout_KeyAction::ACTION_NOT_SET:
         NOTREACHED();
-        // Returning a value to make the compiler happy and ensure that any
-        // future enum values must be added to this switch.
-        return remoting::mojom::KeyActionDataView::Tag::kCharacter;
     }
   }
 
@@ -947,7 +912,6 @@ struct EnumTraits<remoting::mojom::LayoutKeyFunction,
     }
 
     NOTREACHED();
-    return remoting::mojom::LayoutKeyFunction::kUnknown;
   }
 
   static bool FromMojom(remoting::mojom::LayoutKeyFunction input,
@@ -1149,7 +1113,6 @@ struct EnumTraits<remoting::mojom::LayoutKeyFunction,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -1169,20 +1132,20 @@ class StructTraits<remoting::mojom::KeyEventDataView,
     return event.lock_states();
   }
 
-  static absl::optional<bool> caps_lock_state(
+  static std::optional<bool> caps_lock_state(
       const ::remoting::protocol::KeyEvent& event) {
     if (event.has_caps_lock_state()) {
       return event.caps_lock_state();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<bool> num_lock_state(
+  static std::optional<bool> num_lock_state(
       const ::remoting::protocol::KeyEvent& event) {
     if (event.has_num_lock_state()) {
       return event.num_lock_state();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   static bool Read(remoting::mojom::KeyEventDataView data_view,
@@ -1193,20 +1156,20 @@ template <>
 class StructTraits<remoting::mojom::MouseEventDataView,
                    ::remoting::protocol::MouseEvent> {
  public:
-  static absl::optional<int32_t> x(
+  static std::optional<int32_t> x(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_x()) {
       return event.x();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<int32_t> y(
+  static std::optional<int32_t> y(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_y()) {
       return event.y();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   static ::remoting::protocol::MouseEvent::MouseButton button(
@@ -1217,61 +1180,61 @@ class StructTraits<remoting::mojom::MouseEventDataView,
     return ::remoting::protocol::MouseEvent::BUTTON_UNDEFINED;
   }
 
-  static absl::optional<bool> button_down(
+  static std::optional<bool> button_down(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_button_down()) {
       DCHECK(event.has_button());
       return event.button_down();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<float> wheel_delta_x(
+  static std::optional<float> wheel_delta_x(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_wheel_delta_x()) {
       return event.wheel_delta_x();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<float> wheel_delta_y(
+  static std::optional<float> wheel_delta_y(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_wheel_delta_y()) {
       return event.wheel_delta_y();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<float> wheel_ticks_x(
+  static std::optional<float> wheel_ticks_x(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.wheel_ticks_x()) {
       return event.wheel_ticks_x();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<float> wheel_ticks_y(
+  static std::optional<float> wheel_ticks_y(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.wheel_ticks_y()) {
       return event.wheel_ticks_y();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<int32_t> delta_x(
+  static std::optional<int32_t> delta_x(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_delta_x()) {
       return event.delta_x();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  static absl::optional<int32_t> delta_y(
+  static std::optional<int32_t> delta_y(
       const ::remoting::protocol::MouseEvent& event) {
     if (event.has_delta_y()) {
       return event.delta_y();
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   static bool Read(remoting::mojom::MouseEventDataView data_view,
@@ -1357,7 +1320,6 @@ struct EnumTraits<remoting::mojom::TouchEventType,
     }
 
     NOTREACHED();
-    return remoting::mojom::TouchEventType::kUndefined;
   }
 
   static bool FromMojom(remoting::mojom::TouchEventType input,
@@ -1381,7 +1343,6 @@ struct EnumTraits<remoting::mojom::TouchEventType,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -1419,7 +1380,6 @@ struct EnumTraits<remoting::mojom::TransportRouteType,
     }
 
     NOTREACHED();
-    return remoting::mojom::TransportRouteType::kUndefined;
   }
 
   static bool FromMojom(remoting::mojom::TransportRouteType input,
@@ -1441,7 +1401,6 @@ struct EnumTraits<remoting::mojom::TransportRouteType,
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -1517,10 +1476,17 @@ struct EnumTraits<remoting::mojom::ProtocolErrorCode,
             kLocationAuthzPolicyCheckFailed;
       case ::remoting::protocol::ErrorCode::UNAUTHORIZED_ACCOUNT:
         return remoting::mojom::ProtocolErrorCode::kUnauthorizedAccount;
+      case ::remoting::protocol::ErrorCode::REAUTHZ_POLICY_CHECK_FAILED:
+        return remoting::mojom::ProtocolErrorCode::kReauthzPolicyCheckFailed;
+      case ::remoting::protocol::ErrorCode::NO_COMMON_AUTH_METHOD:
+        return remoting::mojom::ProtocolErrorCode::kNoCommonAuthMethod;
+      case ::remoting::protocol::ErrorCode::LOGIN_SCREEN_NOT_SUPPORTED:
+        return remoting::mojom::ProtocolErrorCode::kLoginScreenNotSupported;
+      case ::remoting::protocol::ErrorCode::SESSION_POLICIES_CHANGED:
+        return remoting::mojom::ProtocolErrorCode::kSessionPoliciesChanged;
     }
 
     NOTREACHED();
-    return remoting::mojom::ProtocolErrorCode::kUnknownError;
   }
 
   static bool FromMojom(remoting::mojom::ProtocolErrorCode input,
@@ -1590,10 +1556,21 @@ struct EnumTraits<remoting::mojom::ProtocolErrorCode,
       case remoting::mojom::ProtocolErrorCode::kUnauthorizedAccount:
         *out = ::remoting::protocol::ErrorCode::UNAUTHORIZED_ACCOUNT;
         return true;
+      case remoting::mojom::ProtocolErrorCode::kReauthzPolicyCheckFailed:
+        *out = ::remoting::protocol::ErrorCode::REAUTHZ_POLICY_CHECK_FAILED;
+        return true;
+      case remoting::mojom::ProtocolErrorCode::kNoCommonAuthMethod:
+        *out = ::remoting::protocol::ErrorCode::NO_COMMON_AUTH_METHOD;
+        return true;
+      case remoting::mojom::ProtocolErrorCode::kLoginScreenNotSupported:
+        *out = ::remoting::protocol::ErrorCode::LOGIN_SCREEN_NOT_SUPPORTED;
+        return true;
+      case remoting::mojom::ProtocolErrorCode::kSessionPoliciesChanged:
+        *out = ::remoting::protocol::ErrorCode::SESSION_POLICIES_CHANGED;
+        return true;
     }
 
     NOTREACHED();
-    return false;
   }
 };
 
@@ -1610,6 +1587,11 @@ class StructTraits<remoting::mojom::VideoLayoutDataView,
   static bool supports_full_desktop_capture(
       const ::remoting::protocol::VideoLayout& layout) {
     return layout.supports_full_desktop_capture();
+  }
+
+  static int64_t primary_screen_id(
+      const ::remoting::protocol::VideoLayout& layout) {
+    return layout.primary_screen_id();
   }
 
   static bool Read(remoting::mojom::VideoLayoutDataView data_view,

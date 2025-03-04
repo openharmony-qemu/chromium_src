@@ -8,10 +8,13 @@
 #include "extensions/browser/api/device_permissions_prompt.h"
 #include "extensions/browser/api/system_display/display_info_provider.h"
 #include "extensions/browser/api/virtual_keyboard_private/virtual_keyboard_delegate.h"
+#include "extensions/browser/supervised_user_extensions_delegate.h"
+
+#if BUILDFLAG(ENABLE_GUEST_VIEW)
 #include "extensions/browser/guest_view/extensions_guest_view_manager_delegate.h"
 #include "extensions/browser/guest_view/mime_handler_view/mime_handler_view_guest_delegate.h"
 #include "extensions/browser/guest_view/web_view/web_view_permission_helper_delegate.h"
-#include "extensions/browser/supervised_user_extensions_delegate.h"
+#endif
 
 namespace extensions {
 class AppViewGuestDelegate;
@@ -33,7 +36,8 @@ void ExtensionsAPIClient::AddAdditionalValueStoreCaches(
     content::BrowserContext* context,
     const scoped_refptr<value_store::ValueStoreFactory>& factory,
     SettingsChangedCallback observer,
-    std::map<settings_namespace::Namespace, ValueStoreCache*>* caches) {}
+    std::map<settings_namespace::Namespace,
+             raw_ptr<ValueStoreCache, CtnExperimental>>* caches) {}
 
 void ExtensionsAPIClient::AttachWebContentsHelpers(
     content::WebContents* web_contents) const {
@@ -65,6 +69,11 @@ void ExtensionsAPIClient::UpdateActionCount(content::BrowserContext* context,
 void ExtensionsAPIClient::ClearActionCount(content::BrowserContext* context,
                                            const Extension& extension) {}
 
+void ExtensionsAPIClient::OpenFileUrl(
+    const GURL& file_url,
+    content::BrowserContext* browser_context) {}
+
+#if BUILDFLAG(ENABLE_GUEST_VIEW)
 AppViewGuestDelegate* ExtensionsAPIClient::CreateAppViewGuestDelegate() const {
   return nullptr;
 }
@@ -76,9 +85,8 @@ ExtensionsAPIClient::CreateExtensionOptionsGuestDelegate(
 }
 
 std::unique_ptr<guest_view::GuestViewManagerDelegate>
-ExtensionsAPIClient::CreateGuestViewManagerDelegate(
-    content::BrowserContext* context) const {
-  return std::make_unique<ExtensionsGuestViewManagerDelegate>(context);
+ExtensionsAPIClient::CreateGuestViewManagerDelegate() const {
+  return std::make_unique<ExtensionsGuestViewManagerDelegate>();
 }
 
 std::unique_ptr<MimeHandlerViewGuestDelegate>
@@ -97,6 +105,7 @@ WebViewPermissionHelperDelegate* ExtensionsAPIClient::
         WebViewPermissionHelper* web_view_permission_helper) const {
   return new WebViewPermissionHelperDelegate(web_view_permission_helper);
 }
+#endif
 
 #if BUILDFLAG(IS_CHROMEOS)
 std::unique_ptr<ConsentProvider> ExtensionsAPIClient::CreateConsentProvider(
@@ -162,7 +171,7 @@ FeedbackPrivateDelegate* ExtensionsAPIClient::GetFeedbackPrivateDelegate() {
   return nullptr;
 }
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 NonNativeFileSystemDelegate*
 ExtensionsAPIClient::GetNonNativeFileSystemDelegate() {
   return nullptr;
@@ -172,9 +181,7 @@ MediaPerceptionAPIDelegate*
 ExtensionsAPIClient::GetMediaPerceptionAPIDelegate() {
   return nullptr;
 }
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(IS_CHROMEOS)
 void ExtensionsAPIClient::SaveImageDataToClipboard(
     std::vector<uint8_t> image_data,
     api::clipboard::ImageType type,

@@ -12,8 +12,10 @@
 #include "components/content_settings/core/browser/cookie_settings.h"
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/test/content_settings_mock_provider.h"
+#include "components/privacy_sandbox/privacy_sandbox_attestations/privacy_sandbox_attestations.h"
 #include "components/privacy_sandbox/privacy_sandbox_prefs.h"
 #include "components/privacy_sandbox/privacy_sandbox_settings.h"
+#include "components/privacy_sandbox/tpcd_experiment_eligibility.h"
 #include "content/public/test/browser_task_environment.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "url/origin.h"
@@ -37,8 +39,8 @@ class PrivacySandboxServiceTestInterface {
   virtual base::Time TopicsConsentLastUpdateTime() const = 0;
   virtual std::string TopicsConsentLastUpdateText() const = 0;
   virtual void ForceChromeBuildForTests(bool force_chrome_build) const = 0;
-  virtual int GetRequiredPromptType() const = 0;
-  virtual void PromptActionOccurred(int action) const = 0;
+  virtual int GetRequiredPromptType(int surface_type) const = 0;
+  virtual void PromptActionOccurred(int action, int surface_type) const = 0;
 };
 
 class MockPrivacySandboxObserver
@@ -47,7 +49,7 @@ class MockPrivacySandboxObserver
   MockPrivacySandboxObserver();
   ~MockPrivacySandboxObserver();
   MOCK_METHOD(void, OnTopicsDataAccessibleSinceUpdated, (), (override));
-  MOCK_METHOD1(OnFirstPartySetsEnabledChanged, void(bool));
+  MOCK_METHOD1(OnRelatedWebsiteSetsEnabledChanged, void(bool));
 };
 
 class MockPrivacySandboxSettingsDelegate
@@ -58,6 +60,12 @@ class MockPrivacySandboxSettingsDelegate
   void SetUpIsPrivacySandboxRestrictedResponse(bool restricted) {
     ON_CALL(*this, IsPrivacySandboxRestricted).WillByDefault([=]() {
       return restricted;
+    });
+  }
+
+  void SetUpIsPrivacySandboxCurrentlyUnrestrictedResponse(bool unrestricted) {
+    ON_CALL(*this, IsPrivacySandboxCurrentlyUnrestricted).WillByDefault([=]() {
+      return unrestricted;
     });
   }
 
@@ -73,10 +81,62 @@ class MockPrivacySandboxSettingsDelegate
     });
   }
 
+  void SetUpIsSubjectToM1NoticeRestrictedResponse(
+      bool is_subject_to_restricted_notice) {
+    ON_CALL(*this, IsSubjectToM1NoticeRestricted).WillByDefault([=]() {
+      return is_subject_to_restricted_notice;
+    });
+  }
+
+  void SetUpIsCookieDeprecationExperimentEligibleResponse(bool eligible) {
+    ON_CALL(*this, IsCookieDeprecationExperimentEligible).WillByDefault([=]() {
+      return eligible;
+    });
+  }
+
+  void SetUpGetCookieDeprecationExperimentCurrentEligibility(
+      privacy_sandbox::TpcdExperimentEligibility::Reason eligibility_reason) {
+    ON_CALL(*this, GetCookieDeprecationExperimentCurrentEligibility)
+        .WillByDefault([=]() {
+          return privacy_sandbox::TpcdExperimentEligibility(eligibility_reason);
+        });
+  }
+
+  void SetUpIsCookieDeprecationLabelAllowedResponse(bool allowed) {
+    ON_CALL(*this, IsCookieDeprecationLabelAllowed).WillByDefault([=]() {
+      return allowed;
+    });
+  }
+
+  void SetUpAreThirdPartyCookiesBlockedByCookieDeprecationExperimentResponse(
+      bool result) {
+    ON_CALL(*this, AreThirdPartyCookiesBlockedByCookieDeprecationExperiment)
+        .WillByDefault([=]() { return result; });
+  }
+
   MOCK_METHOD(bool, IsPrivacySandboxRestricted, (), (const, override));
+  MOCK_METHOD(bool,
+              IsPrivacySandboxCurrentlyUnrestricted,
+              (),
+              (const, override));
+
   MOCK_METHOD(bool, IsIncognitoProfile, (), (const, override));
   MOCK_METHOD(bool, HasAppropriateTopicsConsent, (), (const, override));
   MOCK_METHOD(bool, IsSubjectToM1NoticeRestricted, (), (const, override));
+  MOCK_METHOD(bool, IsRestrictedNoticeEnabled, (), (const, override));
+  MOCK_METHOD(bool,
+              IsCookieDeprecationExperimentEligible,
+              (),
+              (const, override));
+  MOCK_METHOD(privacy_sandbox::TpcdExperimentEligibility,
+              GetCookieDeprecationExperimentCurrentEligibility,
+              (),
+              (const, override));
+  MOCK_METHOD(bool, IsCookieDeprecationLabelAllowed, (), (const, override));
+  MOCK_METHOD(bool,
+              AreThirdPartyCookiesBlockedByCookieDeprecationExperiment,
+              (),
+              (const, override));
 };
 
 // A declarative test case is a collection of key value pairs, which each define
@@ -96,18 +156,22 @@ enum class StateKey {
   kHasBlockedTopics = 10,
   kAdvanceClockBy = 11,
   kActiveTopicsConsent = 12,
-  kApisEnabledV2 = 13,
   kTrialsConsentDecisionMade = 14,
   kTrialsNoticeDisplayed = 15,
-  kM1ConsentDecisionMade = 16,
-  kM1EEANoticeAcknowledged = 17,
-  kM1RowNoticeAcknowledged = 18,
-  kM1PromptSuppressedReason = 19,
+  kM1ConsentDecisionPreviouslyMade = 16,
+  kM1EEANoticePreviouslyAcknowledged = 17,
+  kM1RowNoticePreviouslyAcknowledged = 18,
+  kM1PromptPreviouslySuppressedReason = 19,
   kM1PromptDisabledByPolicy = 20,
   kM1TopicsDisabledByPolicy = 21,
   kM1FledgeDisabledByPolicy = 22,
   kM1AdMesaurementDisabledByPolicy = 23,
   kHasAppropriateTopicsConsent = 24,
+  kM1RestrictedNoticePreviouslyAcknowledged = 25,
+  kAttestationsMap = 26,
+  kBlockFledgeJoiningForEtldplus1 = 27,
+  kBlockAll3pcToggleEnabledUserPrefValue = 28,
+  kTrackingProtection3pcdEnabledUserPrefValue = 29,
 };
 
 // Defines the input to the functions under test.
@@ -122,6 +186,12 @@ enum class InputKey {
   kTopicsToggleNewValue = 8,
   kForceChromeBuild = 9,
   kPromptAction = 10,
+  kEventReportingDestinationOrigin = 11,
+  kOutSharedStorageDebugMessage = 12,
+  kOutSharedStorageSelectURLDebugMessage = 13,
+  kOutSharedStorageBlockIsSiteSettingSpecific = 14,
+  kOutSharedStorageSelectURLBlockIsSiteSettingSpecific = 15,
+  kOutPrivateAggregationBlockIsSiteSettingSpecific = 16,
 };
 
 // Defines the expected output of the functions under test, when the profile is
@@ -129,7 +199,6 @@ enum class InputKey {
 enum class OutputKey {
   kIsTopicsAllowed = 1,
   kIsTopicsAllowedForContext = 2,
-  kIsFledgeAllowed = 3,
   kIsAttributionReportingAllowed = 4,
   kMaySendAttributionReport = 5,
   kIsSharedStorageAllowed = 6,
@@ -137,7 +206,6 @@ enum class OutputKey {
   kIsPrivateAggregationAllowed = 8,
   kIsTopicsAllowedMetric = 9,
   kIsTopicsAllowedForContextMetric = 10,
-  kIsFledgeAllowedMetric = 11,
   kIsAttributionReportingAllowedMetric = 12,
   kMaySendAttributionReportMetric = 13,
   kIsSharedStorageAllowedMetric = 14,
@@ -157,6 +225,30 @@ enum class OutputKey {
   kM1AdMeasurementEnabled = 28,
   kIsAttributionReportingEverAllowed = 29,
   kIsAttributionReportingEverAllowedMetric = 30,
+  kM1RestrictedNoticeAcknowledged = 31,
+  kIsEventReportingDestinationAttestedForFledge = 32,
+  kIsEventReportingDestinationAttestedForSharedStorage = 33,
+  kIsEventReportingDestinationAttestedForFledgeMetric = 34,
+  kIsEventReportingDestinationAttestedForSharedStorageMetric = 35,
+  kIsFledgeJoinAllowed = 36,
+  kIsFledgeLeaveAllowed = 37,
+  kIsFledgeUpdateAllowed = 38,
+  kIsFledgeSellAllowed = 39,
+  kIsFledgeBuyAllowed = 40,
+  kIsFledgeJoinAllowedMetric = 41,
+  kIsFledgeLeaveAllowedMetric = 42,
+  kIsFledgeUpdateAllowedMetric = 43,
+  kIsFledgeSellAllowedMetric = 44,
+  kIsFledgeBuyAllowedMetric = 45,
+  kIsCookieDeprecationLabelAllowedForContext = 46,
+  kIsPrivateAggregationDebugModeAllowed = 47,
+  kIsSharedStorageAllowedDebugMessage = 48,
+  kIsSharedStorageSelectURLAllowedDebugMessage = 49,
+  kIsSharedStorageBlockSiteSettingSpecific = 50,
+  kIsSharedStorageSelectURLBlockSiteSettingSpecific = 51,
+  kIsPrivateAggregationBlockSiteSettingSpecific = 52,
+  kIsFencedStorageReadAllowed = 53,
+  kIsFencedStorageReadAllowedMetric = 54,
 };
 
 // To allow multiple input keys to map to the same value, without having to
@@ -180,19 +272,22 @@ using SiteDataExceptions = std::vector<SiteDataException>;
 // key types, the set of value types associated with those keys is shared, and
 // represented by this variant. When accessing keys, the test util will expect
 // a particular value type, and will error otherwise.
-using TestCaseItemValue =
-    absl::variant<bool,
-                  std::string,
-                  url::Origin,
-                  GURL,
-                  content_settings::CookieControlsMode,
-                  SiteDataExceptions,
-                  ContentSetting,
-                  int,
-                  base::Time,
-                  base::TimeDelta,
-                  privacy_sandbox::TopicsConsentUpdateSource,
-                  std::vector<int>>;
+using TestCaseItemValue = absl::variant<
+    bool,
+    bool*,
+    std::string,
+    std::string*,
+    url::Origin,
+    GURL,
+    content_settings::CookieControlsMode,
+    SiteDataExceptions,
+    ContentSetting,
+    int,
+    base::Time,
+    base::TimeDelta,
+    privacy_sandbox::TopicsConsentUpdateSource,
+    std::vector<int>,
+    std::optional<privacy_sandbox::PrivacySandboxAttestationsMap>>;
 
 using TestState = std::map<TestKey<StateKey>, TestCaseItemValue>;
 using TestInput = std::map<TestKey<InputKey>, TestCaseItemValue>;
@@ -209,18 +304,6 @@ struct CookieContentSettingException {
   std::string secondary_pattern;
   ContentSetting content_setting;
 };
-
-// Sets up preferences and content settings based on provided parameters.
-void SetupTestState(
-    sync_preferences::TestingPrefServiceSyncable* testing_pref_service,
-    HostContentSettingsMap* map,
-    bool privacy_sandbox_enabled,
-    bool block_third_party_cookies,
-    ContentSetting default_cookie_setting,
-    const std::vector<CookieContentSettingException>& user_cookie_exceptions,
-    ContentSetting managed_cookie_setting,
-    const std::vector<CookieContentSettingException>&
-        managed_cookie_exceptions);
 
 // Setup and run the provided test case.
 void RunTestCase(
@@ -247,6 +330,7 @@ void ApplyTestState(
     MockPrivacySandboxSettingsDelegate* mock_delegate,
     PrivacySandboxServiceTestInterface* privacy_sandbox_service,
     browsing_topics::MockBrowsingTopicsService* mock_browsing_topics_service,
+    privacy_sandbox::PrivacySandboxSettings* privacy_sandbox_settings,
     content_settings::MockProvider* user_content_setting_provider,
     content_settings::MockProvider* managed_content_setting_provider);
 

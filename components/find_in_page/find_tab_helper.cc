@@ -47,7 +47,7 @@ void FindTabHelper::StartFinding(std::u16string search_string,
                                  bool case_sensitive,
                                  bool find_match,
                                  bool run_synchronously_for_testing
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
                                  ,
                                  bool new_session
 #endif
@@ -66,7 +66,8 @@ void FindTabHelper::StartFinding(std::u16string search_string,
       observer.OnFindEmptyText(&GetWebContents());
     return;
   }
-#if BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
   new_session = find_text_ != search_string ||
                 (last_search_case_sensitive_ != case_sensitive) ||
                 find_op_aborted_ || new_session;
@@ -98,7 +99,7 @@ void FindTabHelper::StartFinding(std::u16string search_string,
   options->find_match = find_match;
   options->run_synchronously_for_testing = run_synchronously_for_testing;
   GetWebContents().Find(current_find_request_id_, find_text_,
-                        std::move(options));
+                        std::move(options), /*skip_delay=*/false);
 }
 
 void FindTabHelper::StopFinding(SelectionAction selection_action) {
@@ -130,7 +131,7 @@ void FindTabHelper::StopFinding(SelectionAction selection_action) {
       action = content::STOP_FIND_ACTION_ACTIVATE_SELECTION;
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       action = content::STOP_FIND_ACTION_KEEP_SELECTION;
   }
   GetWebContents().StopFinding(action);

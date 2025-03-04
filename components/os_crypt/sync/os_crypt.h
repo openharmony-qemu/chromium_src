@@ -13,17 +13,19 @@
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
+#include "components/os_crypt/sync/key_storage_config_linux.h"
+#include "crypto/symmetric_key.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 class KeyStorageLinux;
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_WIN)
 class PrefRegistrySimple;
 class PrefService;
-#endif
+#endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
 namespace crypto {
 class SymmetricKey;
 }
@@ -36,7 +38,7 @@ struct Config;
 // Temporary interface due to OSCrypt refactor. See OSCryptImpl for descriptions
 // of what each function does.
 namespace OSCrypt {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 COMPONENT_EXPORT(OS_CRYPT)
 void SetConfig(std::unique_ptr<os_crypt::Config> config);
 #endif  // BUILDFLAG(IS_LINUX)
@@ -108,12 +110,12 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // Returns singleton instance of OSCryptImpl.
   static OSCryptImpl* GetInstance();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   // Set the configuration of OSCryptImpl.
   // This method, or SetRawEncryptionKey(), must be called before using
   // EncryptString() and DecryptString().
   void SetConfig(std::unique_ptr<os_crypt::Config> config);
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 
   // On Linux returns true iff the real secret key (not hardcoded one) is
   // available. On MacOS returns true if Keychain is available (for mock
@@ -216,6 +218,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 
   // Sets the password with which the encryption key is derived, e.g. "peanuts".
   void SetEncryptionPasswordForTesting(const std::string& password);
+
 #endif  // (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
  private:
 #if BUILDFLAG(IS_APPLE)
@@ -225,23 +228,20 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   crypto::SymmetricKey* GetEncryptionKey();
 #endif  // BUILDFLAG(IS_APPLE)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
   // This lock is used to make the GetEncryptionKey and
   // GetRawEncryptionKey methods thread-safe.
   static base::Lock& GetLock();
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
-  // Create the KeyStorage. Will be null if no service is found. A Config must
-  // be set before every call to this method.
-  std::unique_ptr<KeyStorageLinux> CreateKeyStorage();
-
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   // Returns a cached string of "peanuts". Is thread-safe.
   crypto::SymmetricKey* GetPasswordV10();
 
   // Caches and returns the password from the KeyStorage or null if there is no
-  // service. Is thread-safe.
-  crypto::SymmetricKey* GetPasswordV11();
+  // service. Is thread-safe. Set `probe` to true if caller wishes to get
+  // nullptr back rather than crashing due to no config being set.
+  crypto::SymmetricKey* GetPasswordV11(bool probe);
 
   // For password_v10, nullptr means uninitialised.
   std::unique_ptr<crypto::SymmetricKey> password_v10_cache_;
@@ -249,14 +249,20 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // For password_v11, nullptr means no backend.
   std::unique_ptr<crypto::SymmetricKey> password_v11_cache_;
 
+  // For ota password loss, nullptr means to backend.
+  std::unique_ptr<crypto::SymmetricKey> password_ota_cache_;
+
   bool is_password_v11_cached_ = false;
+
+  // Returns a cached. Is thread-safe for ota password loss.
+  crypto::SymmetricKey* GetPasswordForOtaFail();
 
   // |config_| is used to initialise |password_v11_cache_| and then cleared.
   std::unique_ptr<os_crypt::Config> config_;
 
   base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
-      storage_provider_factory_;
-#endif  // BUILDFLAG(IS_LINUX)
+      storage_provider_factory_for_testing_;
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_WIN)
   // Use mock key instead of a real encryption key. Used for testing.

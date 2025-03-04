@@ -10,6 +10,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "device/vr/android/mailbox_to_surface_bridge.h"
+#include "gpu/command_buffer/common/shared_image_usage.h"
 #include "gpu/command_buffer/common/sync_token.h"
 #include "gpu/ipc/common/surface_handle.h"
 #include "ui/gfx/buffer_format_util.h"
@@ -57,8 +58,6 @@ class MailboxToSurfaceBridgeImpl : public device::MailboxToSurfaceBridge {
 
   void ResizeSurface(int width, int height) override;
 
-  bool CopyMailboxToSurfaceAndSwap(const gpu::MailboxHolder& mailbox) override;
-
   bool CopyMailboxToSurfaceAndSwap(const gpu::MailboxHolder& mailbox,
                                    const gfx::Transform& uv_transform) override;
 
@@ -72,12 +71,17 @@ class MailboxToSurfaceBridgeImpl : public device::MailboxToSurfaceBridge {
                       base::OnceCallback<void(std::unique_ptr<gfx::GpuFence>)>
                           callback) override;
 
-  gpu::MailboxHolder CreateSharedImage(
-      gpu::GpuMemoryBufferImplAndroidHardwareBuffer* buffer,
+  scoped_refptr<gpu::ClientSharedImage> CreateSharedImage(
+      gfx::GpuMemoryBufferHandle buffer_handle,
+      gfx::BufferFormat buffer_format,
+      const gfx::Size& size,
       const gfx::ColorSpace& color_space,
-      uint32_t usage) override;
+      gpu::SharedImageUsageSet usage,
+      gpu::SyncToken& sync_token) override;
 
-  void DestroySharedImage(const gpu::MailboxHolder& mailbox_holder) override;
+  void DestroySharedImage(
+      const gpu::SyncToken& sync_token,
+      scoped_refptr<gpu::ClientSharedImage> shared_image) override;
 
  private:
   void BindContextProviderToCurrentThread();
@@ -91,10 +95,11 @@ class MailboxToSurfaceBridgeImpl : public device::MailboxToSurfaceBridge {
   raw_ptr<gpu::gles2::GLES2Interface> gl_ = nullptr;
   raw_ptr<gpu::ContextSupport> context_support_ = nullptr;
   int surface_handle_ = gpu::kNullSurfaceHandle;
-  // TODO(https://crbug.com/836524): shouldn't have both of these closures
+  // TODO(crbug.com/41385307): shouldn't have both of these closures
   // in the same class like this.
   base::OnceClosure on_context_bound_;
 
+  // Only initialized if we have Surface (i.e surface_handle_ is not null).
   int surface_width_ = 0;
   int surface_height_ = 0;
 

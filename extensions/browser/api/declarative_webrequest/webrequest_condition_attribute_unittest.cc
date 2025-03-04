@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/browser/api/declarative_webrequest/webrequest_condition_attribute.h"
 
 #include <stddef.h>
@@ -252,7 +257,7 @@ base::Value::Dict GetDictFromArray(
     const std::string* name = array[i];
     const std::string* value = array[i+1];
     if (base::Value* entry = dict.Find(*name)) {
-      absl::optional<base::Value> entry_owned;
+      std::optional<base::Value> entry_owned;
       switch (entry->type()) {
         case base::Value::Type::STRING: {
           // Replace the present string with a list.
@@ -269,7 +274,6 @@ base::Value::Dict GetDictFromArray(
           break;
         default:
           NOTREACHED();  // We never put other Values here.
-          return base::Value::Dict();
       }
     } else {
       dict.Set(*name, *value);

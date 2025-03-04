@@ -6,50 +6,49 @@
 
 #import "base/notreached.h"
 #import "components/omnibox/browser/autocomplete_match.h"
-#import "ios/chrome/browser/net/crurl.h"
+#import "components/omnibox/browser/omnibox_feature_configs.h"
+#import "ios/chrome/browser/net/model/crurl.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_util.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
-OmniboxSuggestionIconType IconTypeFromMatchAndAnswerType(
-    AutocompleteMatchType::Type type,
-    absl::optional<int> answerType) {
+OmniboxSuggestionIconType IconTypeFromMatch(const AutocompleteMatch& match) {
   // Some suggestions have custom icons. Others fallback to the icon from the
   // overall match type.
-  if (answerType) {
-    switch (answerType.value()) {
-      case SuggestionAnswer::ANSWER_TYPE_DICTIONARY:
+  omnibox::AnswerType answer_type = match.answer_type;
+  if (answer_type != omnibox::ANSWER_TYPE_UNSPECIFIED) {
+    switch (answer_type) {
+      case omnibox::ANSWER_TYPE_DICTIONARY:
         return OmniboxSuggestionIconType::kDictionary;
-      case SuggestionAnswer::ANSWER_TYPE_FINANCE:
+      case omnibox::ANSWER_TYPE_FINANCE:
         return OmniboxSuggestionIconType::kStock;
-      case SuggestionAnswer::ANSWER_TYPE_TRANSLATION:
+      case omnibox::ANSWER_TYPE_TRANSLATION:
         return OmniboxSuggestionIconType::kTranslation;
-      case SuggestionAnswer::ANSWER_TYPE_WHEN_IS:
+      case omnibox::ANSWER_TYPE_WHEN_IS:
         return OmniboxSuggestionIconType::kWhenIs;
-      case SuggestionAnswer::ANSWER_TYPE_CURRENCY:
+      case omnibox::ANSWER_TYPE_CURRENCY:
         return OmniboxSuggestionIconType::kConversion;
-      case SuggestionAnswer::ANSWER_TYPE_SUNRISE:
+      case omnibox::ANSWER_TYPE_SUNRISE_SUNSET:
         return OmniboxSuggestionIconType::kSunrise;
-      case SuggestionAnswer::ANSWER_TYPE_KNOWLEDGE_GRAPH:
-      case SuggestionAnswer::ANSWER_TYPE_LOCAL:
-      case SuggestionAnswer::ANSWER_TYPE_LOCAL_TIME:
-      case SuggestionAnswer::ANSWER_TYPE_PLAY_INSTALL:
-      case SuggestionAnswer::ANSWER_TYPE_SPORTS:
-      case SuggestionAnswer::ANSWER_TYPE_WEATHER:
+      case omnibox::ANSWER_TYPE_GENERIC_ANSWER:
+      case omnibox::ANSWER_TYPE_LOCAL_TIME:
+      case omnibox::ANSWER_TYPE_PLAY_INSTALL:
+      case omnibox::ANSWER_TYPE_SPORTS:
+      case omnibox::ANSWER_TYPE_WEATHER:
+      case omnibox::ANSWER_TYPE_WEB_ANSWER:
         return OmniboxSuggestionIconType::kFallbackAnswer;
-      case SuggestionAnswer::ANSWER_TYPE_INVALID:
-      case SuggestionAnswer::ANSWER_TYPE_TOTAL_COUNT:
+      case omnibox::ANSWER_TYPE_UNSPECIFIED:
         NOTREACHED();
-        break;
     }
   }
-  return GetOmniboxSuggestionIconTypeForAutocompleteMatchType(type);
+
+  if (match.IsTrendSuggestion()) {
+    return OmniboxSuggestionIconType::kSearchTrend;
+  }
+
+  return GetOmniboxSuggestionIconTypeForAutocompleteMatchType(match.type);
 }
 
 }  // namespace
@@ -57,12 +56,13 @@ OmniboxSuggestionIconType IconTypeFromMatchAndAnswerType(
 @implementation OmniboxIconFormatter
 
 - (instancetype)initWithMatch:(const AutocompleteMatch&)match {
-  BOOL isAnswer = match.answer.has_value();
+  BOOL isAnswer = match.answer_template.has_value();
   OmniboxIconType iconType = OmniboxIconTypeSuggestionIcon;
   GURL imageURL = GURL();
-  if (isAnswer && match.answer->second_line().image_url().is_valid()) {
+  if (isAnswer &&
+      GURL(match.answer_template->answers(0).image().url()).is_valid()) {
+    imageURL = GURL(match.answer_template->answers(0).image().url());
     iconType = OmniboxIconTypeImage;
-    imageURL = match.answer->second_line().image_url();
   } else if (!match.image_url.is_empty()) {
     iconType = OmniboxIconTypeImage;
     imageURL = GURL(match.image_url);
@@ -75,10 +75,8 @@ OmniboxSuggestionIconType IconTypeFromMatchAndAnswerType(
     imageURL = GURL();
   }
 
-  auto answerType =
-      isAnswer ? absl::make_optional<int>(match.answer->type()) : absl::nullopt;
-  OmniboxSuggestionIconType suggestionIconType =
-      IconTypeFromMatchAndAnswerType(match.type, answerType);
+  OmniboxSuggestionIconType suggestionIconType = IconTypeFromMatch(match);
+
   return [self initWithIconType:iconType
              suggestionIconType:suggestionIconType
                        isAnswer:isAnswer

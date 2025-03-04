@@ -19,7 +19,7 @@ namespace flags_ui {
 PrefServiceFlagsStorage::PrefServiceFlagsStorage(PrefService* prefs)
     : prefs_(prefs) {}
 
-PrefServiceFlagsStorage::~PrefServiceFlagsStorage() {}
+PrefServiceFlagsStorage::~PrefServiceFlagsStorage() = default;
 
 std::set<std::string> PrefServiceFlagsStorage::GetFlags() const {
   const base::Value::List& enabled_experiments =
@@ -58,6 +58,17 @@ void PrefServiceFlagsStorage::SetOriginListFlag(
     const std::string& origin_list_value) {
   ScopedDictPrefUpdate update(prefs_, prefs::kAboutFlagsOriginLists);
   update->SetByDottedPath(internal_entry_name, origin_list_value);
+}
+
+std::string PrefServiceFlagsStorage::GetStringFlag(
+    const std::string& internal_entry_name) const {
+  return GetOriginListFlag(internal_entry_name);
+}
+
+void PrefServiceFlagsStorage::SetStringFlag(
+    const std::string& internal_entry_name,
+    const std::string& string_value) {
+  SetOriginListFlag(internal_entry_name, string_value);
 }
 
 void PrefServiceFlagsStorage::CommitPendingWrites() {

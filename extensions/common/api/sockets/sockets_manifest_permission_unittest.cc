@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/common/api/sockets/sockets_manifest_permission.h"
 
 #include <set>
@@ -41,7 +46,7 @@ static void AssertEmptyPermission(const SocketsManifestPermission* permission) {
 }
 
 static base::Value ParsePermissionJSON(const std::string& json) {
-  absl::optional<base::Value> result = base::JSONReader::Read(json);
+  std::optional<base::Value> result = base::JSONReader::Read(json);
   EXPECT_TRUE(result) << "Invalid JSON string: " << json;
   return std::move(result.value());
 }

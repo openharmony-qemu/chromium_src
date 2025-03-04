@@ -16,15 +16,12 @@ class MockAutocompleteHistoryManager : public AutocompleteHistoryManager {
   MockAutocompleteHistoryManager();
   ~MockAutocompleteHistoryManager() override;
 
-  MOCK_METHOD(
-      bool,
-      OnGetSingleFieldSuggestions,
-      (AutoselectFirstSuggestion autoselect_first_suggestion,
-       const FormFieldData& field,
-       const AutofillClient& client,
-       base::WeakPtr<AutocompleteHistoryManager::SuggestionsHandler> handler,
-       const SuggestionsContext& context),
-      (override));
+  MOCK_METHOD(bool,
+              OnGetSingleFieldSuggestions,
+              (const FormFieldData& field,
+               const AutofillClient& client,
+               SingleFieldFillRouter::OnSuggestionsReturnedCallback& callback),
+              (override));
   MOCK_METHOD(void,
               OnWillSubmitFormWithFields,
               (const std::vector<FormFieldData>& fields,
@@ -34,17 +31,14 @@ class MockAutocompleteHistoryManager : public AutocompleteHistoryManager {
               OnWebDataServiceRequestDone,
               (WebDataServiceBase::Handle, std::unique_ptr<WDTypedResult>),
               (override));
-  MOCK_METHOD(void,
-              CancelPendingQueries,
-              (const AutocompleteHistoryManager::SuggestionsHandler*),
-              (override));
+  MOCK_METHOD(void, CancelPendingQueries, (), (override));
   MOCK_METHOD(void,
               OnRemoveCurrentSingleFieldSuggestion,
-              (const std::u16string&, const std::u16string&, int),
+              (const std::u16string&, const std::u16string&, SuggestionType),
               (override));
   MOCK_METHOD(void,
               OnSingleFieldSuggestionSelected,
-              (const std::u16string&, int),
+              (const Suggestion& suggestion),
               (override));
 };
 

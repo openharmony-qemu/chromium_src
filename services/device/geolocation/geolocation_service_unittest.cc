@@ -16,16 +16,15 @@
 #include "net/base/network_change_notifier.h"
 #include "services/device/device_service_test_base.h"
 #include "services/device/geolocation/geolocation_provider_impl.h"
+#include "services/device/geolocation/mock_wifi_data_provider.h"
 #include "services/device/geolocation/network_location_request.h"
+#include "services/device/geolocation/wifi_data_provider_handle.h"
 #include "services/device/public/cpp/device_features.h"
 #include "services/device/public/mojom/geolocation.mojom.h"
+#include "services/device/public/mojom/geolocation_client_id.mojom.h"
 #include "services/device/public/mojom/geolocation_config.mojom.h"
 #include "services/device/public/mojom/geolocation_context.mojom.h"
 #include "services/device/public/mojom/geolocation_control.mojom.h"
-
-#if BUILDFLAG(IS_MAC)
-#include "services/device/public/cpp/test/fake_geolocation_manager.h"
-#endif
 
 namespace device {
 
@@ -59,6 +58,10 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
     // the device service.
     DeviceServiceTestBase::SetUp();
 
+    wifi_data_provider_ = MockWifiDataProvider::CreateInstance();
+    WifiDataProviderHandle::SetFactoryForTesting(
+        MockWifiDataProvider::GetInstance);
+
     device_service()->BindGeolocationControl(
         geolocation_control_.BindNewPipeAndPassReceiver());
     geolocation_control_->UserDidOptIntoLocationServices();
@@ -66,10 +69,13 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
     device_service()->BindGeolocationContext(
         geolocation_context_.BindNewPipeAndPassReceiver());
     geolocation_context_->BindGeolocation(
-        geolocation_.BindNewPipeAndPassReceiver(), GURL::EmptyGURL());
+        geolocation_.BindNewPipeAndPassReceiver(), GURL(),
+        mojom::GeolocationClientId::kForTesting);
   }
 
   void TearDown() override {
+    WifiDataProviderHandle::ResetFactoryForTesting();
+
     DeviceServiceTestBase::TearDown();
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -91,6 +97,7 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
         geolocation_config_.BindNewPipeAndPassReceiver());
   }
 
+  scoped_refptr<MockWifiDataProvider> wifi_data_provider_;
   std::unique_ptr<net::NetworkChangeNotifier> network_change_notifier_;
   mojo::Remote<mojom::GeolocationControl> geolocation_control_;
   mojo::Remote<mojom::GeolocationContext> geolocation_context_;
@@ -104,9 +111,10 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
 #else
 TEST_F(GeolocationServiceUnitTest, UrlWithApiKey) {
 // To align with user expectation we do not make Network Location Requests
-// on macOS unless the browser has Location Permission from the OS.
-#if BUILDFLAG(IS_MAC)
-  fake_geolocation_manager_->SetSystemPermission(
+// unless the browser has location system permission from the supported
+// operating systems.
+#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_CHROMEOS)
+  fake_geolocation_system_permission_manager_->SetSystemPermission(
       LocationSystemPermissionStatus::kAllowed);
 #endif
 
@@ -130,8 +138,8 @@ TEST_F(GeolocationServiceUnitTest, UrlWithApiKey) {
 }
 #endif
 
-// TODO(https://crbug.com/912057): Flaky on Chrome OS / Fails often on *San.
-// TODO(https://crbug.com/999409): Also flaky on other platforms.
+// TODO(crbug.com/41430104): Flaky on Chrome OS / Fails often on *San.
+// TODO(crbug.com/41479143): Also flaky on other platforms.
 TEST_F(GeolocationServiceUnitTest, DISABLED_GeolocationConfig) {
   BindGeolocationConfig();
   {

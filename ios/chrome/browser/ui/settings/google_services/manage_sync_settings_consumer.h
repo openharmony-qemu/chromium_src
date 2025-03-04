@@ -9,6 +9,8 @@
 
 #import "ios/chrome/browser/shared/ui/table_view/table_view_model.h"
 
+struct ManagementState;
+
 // Consumer protocol for manage sync settings.
 @protocol ManageSyncSettingsConsumer <NSObject>
 
@@ -18,11 +20,11 @@
 
 // Inserts sections at `sections` indexes. Does nothing if the model is not
 // loaded yet.
-- (void)insertSections:(NSIndexSet*)sections;
+- (void)insertSections:(NSIndexSet*)sections rowAnimation:(BOOL)rowAnimation;
 
 // Deletes sections at `sections` indexes. Does nothing if the model is not
 // loaded yet.
-- (void)deleteSections:(NSIndexSet*)sections;
+- (void)deleteSections:(NSIndexSet*)section rowAnimation:(BOOL)rowAnimation;
 
 // Reloads only a specific `item`. Does nothing if the model is not loaded
 // yet.
@@ -30,6 +32,13 @@
 
 // Reloads `sections`. Does nothing if the model is not loaded yet.
 - (void)reloadSections:(NSIndexSet*)sections;
+
+// Updates the primary account details. `name` can be nil, `avatarImage` and
+// `email` can’t.
+- (void)updatePrimaryAccountWithAvatarImage:(UIImage*)avatarImage
+                                       name:(NSString*)name
+                                      email:(NSString*)email
+                            managementState:(ManagementState)managementState;
 
 @end
 

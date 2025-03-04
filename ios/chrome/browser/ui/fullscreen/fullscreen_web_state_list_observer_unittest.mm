@@ -6,13 +6,13 @@
 
 #import <memory>
 
+#import "ios/chrome/browser/shared/model/web_state_list/test/fake_web_state_list_delegate.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_opener.h"
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_model.h"
 #import "ios/chrome/browser/ui/fullscreen/test/fullscreen_model_test_util.h"
 #import "ios/chrome/browser/ui/fullscreen/test/test_fullscreen_controller.h"
 #import "ios/chrome/browser/ui/fullscreen/test/test_fullscreen_mediator.h"
-#import "ios/chrome/browser/web_state_list/fake_web_state_list_delegate.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_opener.h"
 #import "ios/web/public/navigation/navigation_item.h"
 #import "ios/web/public/security/ssl_status.h"
 #import "ios/web/public/test/fakes/fake_navigation_context.h"
@@ -22,10 +22,6 @@
 #import "ios/web/public/ui/crw_web_view_scroll_view_proxy.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 // A FakeWebState subclass that returns mock objects for the view proxies.
@@ -86,9 +82,9 @@ TEST_F(FullscreenWebStateListObserverTest, ObserveActiveWebState) {
   web::FakeNavigationManager* navigation_manager =
       passed_navigation_manager.get();
   web_state->SetNavigationManager(std::move(passed_navigation_manager));
-  web_state_list().InsertWebState(0, std::move(inserted_web_state),
-                                  WebStateList::INSERT_ACTIVATE,
-                                  WebStateOpener());
+  web_state_list().InsertWebState(
+      std::move(inserted_web_state),
+      WebStateList::InsertionParams::Automatic().Activate());
   // Simulate a scroll to 0.5 progress.
   SetUpFullscreenModelForTesting(&model(), 100.0);
   SimulateFullscreenUserScrollForProgress(&model(), 0.5);

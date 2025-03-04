@@ -10,8 +10,8 @@ grit("strings") {
   source = "../fido_strings.grd"
   outputs = [ "grit/fido_strings.h" ]
 
-  #ifdef ohos_i18n
-  if (is_ohos && ohos_i18n) {
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
     all_chrome_locales += extra_locales
   }
 

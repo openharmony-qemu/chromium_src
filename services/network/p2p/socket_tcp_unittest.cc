@@ -2,17 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "services/network/p2p/socket_tcp.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
+#include <string_view>
 
+#include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
+#include "base/numerics/byte_conversions.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/run_loop.h"
 #include "base/strings/stringprintf.h"
-#include "base/sys_byteorder.h"
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
@@ -99,17 +107,14 @@ class P2PSocketTcpTestBase : public testing::Test {
   }
 
   std::string IntToSize(int size) {
-    std::string result;
-    uint16_t size16 = base::HostToNet16(size);
-    result.resize(sizeof(size16));
-    memcpy(&result[0], &size16, sizeof(size16));
-    return result;
+    return std::string(base::as_string_view(
+        base::U16ToBigEndian(base::checked_cast<uint16_t>(size))));
   }
 
   base::test::TaskEnvironment task_environment_;
   std::string sent_data_;
-  raw_ptr<FakeSocket> socket_;  // Owned by |socket_impl_|.
   std::unique_ptr<P2PSocketTcpBase> socket_impl_;
+  raw_ptr<FakeSocket> socket_;  // Owned by |socket_impl_|.
   FakeP2PSocketDelegate socket_delegate_;
   std::unique_ptr<FakeSocketClient> fake_client_;
 
@@ -211,6 +216,7 @@ TEST_F(P2PSocketTcpTest, SendDataNoAuth) {
   std::vector<uint8_t> packet;
   CreateRandomPacket(&packet);
 
+  socket_ = nullptr;  // Since about to give up ownership of `socket_impl_`.
   auto* socket_impl_ptr = socket_impl_.get();
   socket_delegate_.ExpectDestruction(std::move(socket_impl_));
   socket_impl_ptr->Send(packet, P2PPacketInfo(dest_.ip_address, options, 0));
@@ -329,7 +335,8 @@ TEST_F(P2PSocketTcpTest, SendDataWithPacketOptions) {
   std::vector<uint8_t> packet;
   CreateRandomPacket(&packet);
   // Make it a RTP packet.
-  *reinterpret_cast<uint16_t*>(&*packet.begin()) = base::HostToNet16(0x8000);
+  base::span(packet).first<2>().copy_from(
+      base::U16ToBigEndian(uint16_t{0x8000}));
   socket_impl_->Send(packet, P2PPacketInfo(dest_.ip_address, options, 0));
 
   std::string expected_data;
@@ -437,6 +444,7 @@ TEST_F(P2PSocketStunTcpTest, SendDataNoAuth) {
   std::vector<uint8_t> packet;
   CreateRandomPacket(&packet);
 
+  socket_ = nullptr;  // Since about to give up ownership of `socket_impl_`.
   auto* socket_impl_ptr = socket_impl_.get();
   socket_delegate_.ExpectDestruction(std::move(socket_impl_));
   socket_impl_ptr->Send(packet, P2PPacketInfo(dest_.ip_address, options, 0));
@@ -493,9 +501,9 @@ TEST(P2PSocketTcpWithPseudoTlsTest, Basic) {
   auto context = context_builder->Build();
   ProxyResolvingClientSocketFactory factory(context.get());
 
-  base::StringPiece ssl_client_hello =
+  std::string_view ssl_client_hello =
       webrtc::FakeSSLClientSocket::GetSslClientHello();
-  base::StringPiece ssl_server_hello =
+  std::string_view ssl_server_hello =
       webrtc::FakeSSLClientSocket::GetSslServerHello();
   net::MockRead reads[] = {
       net::MockRead(net::ASYNC, ssl_server_hello.data(),
@@ -528,7 +536,7 @@ TEST(P2PSocketTcpWithPseudoTlsTest, Basic) {
 TEST(P2PSocketTcpWithPseudoTlsTest, Hostname) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitAndEnableFeature(
-      net::features::kSplitHostCacheByNetworkIsolationKey);
+      net::features::kPartitionConnectionsByNetworkIsolationKey);
 
   const char kHostname[] = "foo.test";
   base::test::TaskEnvironment task_environment(
@@ -551,9 +559,9 @@ TEST(P2PSocketTcpWithPseudoTlsTest, Hostname) {
   auto context = context_builder->Build();
   ProxyResolvingClientSocketFactory factory(context.get());
 
-  base::StringPiece ssl_client_hello =
+  std::string_view ssl_client_hello =
       webrtc::FakeSSLClientSocket::GetSslClientHello();
-  base::StringPiece ssl_server_hello =
+  std::string_view ssl_server_hello =
       webrtc::FakeSSLClientSocket::GetSslServerHello();
   net::MockRead reads[] = {
       net::MockRead(net::ASYNC, ssl_server_hello.data(),

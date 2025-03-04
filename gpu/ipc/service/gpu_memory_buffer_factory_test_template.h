@@ -43,12 +43,8 @@ class GpuMemoryBufferFactoryTest : public testing::Test {
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OZONE)
 
  protected:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
-#endif
 
   GpuMemoryBufferFactoryType factory_;
   raw_ptr<gl::GLDisplay> display_ = nullptr;
@@ -61,7 +57,6 @@ TYPED_TEST_P(GpuMemoryBufferFactoryTest, CreateGpuMemoryBuffer) {
   const int kClientId = 1;
 
   gfx::Size buffer_size(2, 2);
-  GpuMemoryBufferSupport support;
 
   for (auto format : gfx::GetBufferFormatsForTesting()) {
     gfx::BufferUsage usages[] = {
@@ -71,6 +66,7 @@ TYPED_TEST_P(GpuMemoryBufferFactoryTest, CreateGpuMemoryBuffer) {
         gfx::BufferUsage::CAMERA_AND_CPU_READ_WRITE,
         gfx::BufferUsage::SCANOUT_CPU_READ_WRITE,
         gfx::BufferUsage::SCANOUT_VDA_WRITE,
+        gfx::BufferUsage::PROTECTED_SCANOUT,
         gfx::BufferUsage::PROTECTED_SCANOUT_VDA_WRITE,
         gfx::BufferUsage::GPU_READ_CPU_READ_WRITE,
         gfx::BufferUsage::SCANOUT_VEA_CPU_READ,
@@ -78,8 +74,10 @@ TYPED_TEST_P(GpuMemoryBufferFactoryTest, CreateGpuMemoryBuffer) {
         gfx::BufferUsage::SCANOUT_FRONT_RENDERING,
     };
     for (auto usage : usages) {
-      if (!support.IsNativeGpuMemoryBufferConfigurationSupported(format, usage))
+      if (!gpu::GpuMemoryBufferSupport::
+              IsNativeGpuMemoryBufferConfigurationSupported(format, usage)) {
         continue;
+      }
 
       gfx::GpuMemoryBufferHandle handle =
           TestFixture::factory_.CreateGpuMemoryBuffer(

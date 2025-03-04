@@ -4,16 +4,14 @@
 
 #import "ios/chrome/browser/ui/sharing/activity_services/activities/copy_activity.h"
 
+#import "base/functional/bind.h"
+#import "base/functional/callback_helpers.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/pasteboard_util.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_to_data.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -67,16 +65,20 @@ NSString* const kCopyActivityType = @"com.google.chrome.copyActivity";
 }
 
 - (void)performActivity {
-  [self activityDidFinish:YES];
+  __weak __typeof(self) weakSelf = self;
   if (self.dataItems.count == 1 && self.dataItems.firstObject.additionalText) {
     StoreInPasteboard(self.dataItems.firstObject.additionalText,
-                      self.dataItems.firstObject.shareURL);
+                      self.dataItems.firstObject.shareURL, base::BindOnce(^{
+                        [weakSelf activityDidFinish:YES];
+                      }));
   } else {
-    std::vector<const GURL> urls;
+    std::vector<GURL> urls;
     for (ShareToData* shareToData in self.dataItems) {
       urls.push_back(shareToData.shareURL);
     }
-    StoreURLsInPasteboard(urls);
+    StoreURLsInPasteboard(urls, base::BindOnce(^{
+                            [weakSelf activityDidFinish:YES];
+                          }));
   }
 }
 

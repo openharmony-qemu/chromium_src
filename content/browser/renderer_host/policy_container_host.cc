@@ -4,42 +4,17 @@
 
 #include "content/browser/renderer_host/policy_container_host.h"
 
-#include "base/lazy_instance.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/ranges/algorithm.h"
 #include "content/browser/renderer_host/frame_navigation_entry.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
-#include "content/browser/renderer_host/local_network_access_util.h"
+#include "content/browser/renderer_host/private_network_access_util.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/browser_thread.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
 #include "services/network/public/mojom/content_security_policy.mojom.h"
 
 namespace content {
-
-namespace {
-
-// KeepAliveHandle is simply a class referencing a PolicyContainerHost through a
-// scoped_refptr, hence maintaining it alive.
-class KeepAliveHandle
-    : public scoped_refptr<PolicyContainerHost>,
-      public blink::mojom::PolicyContainerHostKeepAliveHandle {
- public:
-  explicit KeepAliveHandle(PolicyContainerHost* policy_container_host) {
-    wrapped_pointer = policy_container_host;
-  }
-
- private:
-  scoped_refptr<PolicyContainerHost> wrapped_pointer;
-};
-
-using TokenPolicyContainerMap =
-    std::unordered_map<blink::LocalFrameToken,
-                       PolicyContainerHost*,
-                       blink::LocalFrameToken::Hasher>;
-base::LazyInstance<TokenPolicyContainerMap>::Leaky
-    g_token_policy_container_map = LAZY_INSTANCE_INITIALIZER;
-
-}  // namespace
 
 bool operator==(const PolicyContainerPolicies& lhs,
                 const PolicyContainerPolicies& rhs) {
@@ -50,10 +25,12 @@ bool operator==(const PolicyContainerPolicies& lhs,
                              rhs.content_security_policies) &&
          lhs.cross_origin_opener_policy == rhs.cross_origin_opener_policy &&
          lhs.cross_origin_embedder_policy == rhs.cross_origin_embedder_policy &&
+         lhs.document_isolation_policy == rhs.document_isolation_policy &&
          lhs.sandbox_flags == rhs.sandbox_flags &&
          lhs.is_credentialless == rhs.is_credentialless &&
          lhs.can_navigate_top_without_user_gesture ==
-             rhs.can_navigate_top_without_user_gesture;
+             rhs.can_navigate_top_without_user_gesture &&
+         lhs.allow_cross_origin_isolation == rhs.allow_cross_origin_isolation;
 }
 
 bool operator!=(const PolicyContainerPolicies& lhs,
@@ -80,7 +57,11 @@ std::ostream& operator<<(std::ostream& out,
   }
 
   out << ", cross_origin_opener_policy: "
-      << "{ value: " << policies.cross_origin_opener_policy.value
+      << "{ origin: "
+      << (policies.cross_origin_opener_policy.origin.has_value()
+              ? policies.cross_origin_opener_policy.origin->GetDebugString()
+              : "<null>")
+      << ", value: " << policies.cross_origin_opener_policy.value
       << ", reporting_endpoint: "
       << policies.cross_origin_opener_policy.reporting_endpoint.value_or(
              "<null>")
@@ -104,10 +85,23 @@ std::ostream& operator<<(std::ostream& out,
              .value_or("<null>")
       << " }";
 
+  out << ", document_isolation_policy: " << "{ value: "
+      << policies.document_isolation_policy.value << ", reporting_endpoint: "
+      << policies.document_isolation_policy.reporting_endpoint.value_or(
+             "<null>")
+      << ", report_only_value: "
+      << policies.document_isolation_policy.report_only_value
+      << ", report_only_reporting_endpoint: "
+      << policies.document_isolation_policy.report_only_reporting_endpoint
+             .value_or("<null>")
+      << " }";
+
   out << ", sandbox_flags: " << policies.sandbox_flags;
   out << ", is_credentialless: " << policies.is_credentialless;
   out << ", can_navigate_top_without_user_gesture: "
       << policies.can_navigate_top_without_user_gesture;
+  out << ", allow_cross_origin_isolation: "
+      << policies.allow_cross_origin_isolation;
 
   return out << " }";
 }
@@ -122,19 +116,23 @@ PolicyContainerPolicies::PolicyContainerPolicies(
         content_security_policies,
     const network::CrossOriginOpenerPolicy& cross_origin_opener_policy,
     const network::CrossOriginEmbedderPolicy& cross_origin_embedder_policy,
+    const network::DocumentIsolationPolicy& document_isolation_policy,
     network::mojom::WebSandboxFlags sandbox_flags,
     bool is_credentialless,
-    bool can_navigate_top_without_user_gesture)
+    bool can_navigate_top_without_user_gesture,
+    bool allow_cross_origin_isolation)
     : referrer_policy(referrer_policy),
       ip_address_space(ip_address_space),
       is_web_secure_context(is_web_secure_context),
       content_security_policies(std::move(content_security_policies)),
       cross_origin_opener_policy(cross_origin_opener_policy),
       cross_origin_embedder_policy(cross_origin_embedder_policy),
+      document_isolation_policy(document_isolation_policy),
       sandbox_flags(sandbox_flags),
       is_credentialless(is_credentialless),
       can_navigate_top_without_user_gesture(
-          can_navigate_top_without_user_gesture) {}
+          can_navigate_top_without_user_gesture),
+      allow_cross_origin_isolation(allow_cross_origin_isolation) {}
 
 PolicyContainerPolicies::PolicyContainerPolicies(
     const blink::mojom::PolicyContainerPolicies& policies)
@@ -146,7 +144,8 @@ PolicyContainerPolicies::PolicyContainerPolicies(
       sandbox_flags(policies.sandbox_flags),
       is_credentialless(policies.is_credentialless),
       can_navigate_top_without_user_gesture(
-          policies.can_navigate_top_without_user_gesture) {}
+          policies.can_navigate_top_without_user_gesture),
+      allow_cross_origin_isolation(policies.allow_cross_origin_isolation) {}
 
 PolicyContainerPolicies::PolicyContainerPolicies(
     const GURL& url,
@@ -159,9 +158,12 @@ PolicyContainerPolicies::PolicyContainerPolicies(
           mojo::Clone(response_head->parsed_headers->content_security_policy),
           response_head->parsed_headers->cross_origin_opener_policy,
           response_head->parsed_headers->cross_origin_embedder_policy,
+          response_head->parsed_headers->document_isolation_policy,
           network::mojom::WebSandboxFlags::kNone,
           /*is_credentialless=*/false,
-          /*can_navigate_top_without_user_gesture=*/true) {
+          /*can_navigate_top_without_user_gesture=*/true,
+          /*allow_cross_origin_isolation=*/
+          false) {
   for (auto& content_security_policy :
        response_head->parsed_headers->content_security_policy) {
     sandbox_flags |= content_security_policy->sandbox;
@@ -180,8 +182,9 @@ PolicyContainerPolicies PolicyContainerPolicies::Clone() const {
   return PolicyContainerPolicies(
       referrer_policy, ip_address_space, is_web_secure_context,
       mojo::Clone(content_security_policies), cross_origin_opener_policy,
-      cross_origin_embedder_policy, sandbox_flags, is_credentialless,
-      can_navigate_top_without_user_gesture);
+      cross_origin_embedder_policy, mojo::Clone(document_isolation_policy),
+      sandbox_flags, is_credentialless, can_navigate_top_without_user_gesture,
+      allow_cross_origin_isolation);
 }
 
 std::unique_ptr<PolicyContainerPolicies> PolicyContainerPolicies::ClonePtr()
@@ -201,7 +204,8 @@ PolicyContainerPolicies::ToMojoPolicyContainerPolicies() const {
   return blink::mojom::PolicyContainerPolicies::New(
       cross_origin_embedder_policy, referrer_policy,
       mojo::Clone(content_security_policies), is_credentialless, sandbox_flags,
-      ip_address_space, can_navigate_top_without_user_gesture);
+      ip_address_space, can_navigate_top_without_user_gesture,
+      allow_cross_origin_isolation);
 }
 
 PolicyContainerHost::PolicyContainerHost() = default;
@@ -209,31 +213,14 @@ PolicyContainerHost::PolicyContainerHost() = default;
 PolicyContainerHost::PolicyContainerHost(PolicyContainerPolicies policies)
     : policies_(std::move(policies)) {}
 
-PolicyContainerHost::~PolicyContainerHost() {
-  // The PolicyContainerHost associated with |frame_token_| might have
-  // changed. In that case, we must not remove the map entry.
-  if (frame_token_ && FromFrameToken(frame_token_.value()) == this)
-    g_token_policy_container_map.Get().erase(frame_token_.value());
-}
+PolicyContainerHost::~PolicyContainerHost() = default;
 
 void PolicyContainerHost::AssociateWithFrameToken(
     const blink::LocalFrameToken& frame_token,
     int process_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  DCHECK(!frame_token_);
   frame_token_ = frame_token;
   process_id_ = process_id;
-  g_token_policy_container_map.Get().erase(frame_token);
-  g_token_policy_container_map.Get().emplace(frame_token, this);
-}
-
-PolicyContainerHost* PolicyContainerHost::FromFrameToken(
-    const blink::LocalFrameToken& frame_token) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  auto it = g_token_policy_container_map.Get().find(frame_token);
-  if (it == g_token_policy_container_map.Get().end())
-    return nullptr;
-  return it->second;
 }
 
 void PolicyContainerHost::SetReferrerPolicy(
@@ -284,13 +271,6 @@ void PolicyContainerHost::Bind(
   scoped_refptr<PolicyContainerHost> copy = this;
   policy_container_host_receiver_.set_disconnect_handler(base::BindOnce(
       [](scoped_refptr<PolicyContainerHost>) {}, std::move(copy)));
-}
-
-void PolicyContainerHost::IssueKeepAliveHandle(
-    mojo::PendingReceiver<blink::mojom::PolicyContainerHostKeepAliveHandle>
-        receiver) {
-  keep_alive_handles_receiver_set_.Add(std::make_unique<KeepAliveHandle>(this),
-                                       std::move(receiver));
 }
 
 }  // namespace content

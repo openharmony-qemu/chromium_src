@@ -56,7 +56,7 @@ DropData::DropData() = default;
 DropData::DropData(const DropData& other) = default;
 DropData::~DropData() = default;
 
-absl::optional<base::FilePath> DropData::GetSafeFilenameForImageFileContents()
+std::optional<base::FilePath> DropData::GetSafeFilenameForImageFileContents()
     const {
   base::FilePath file_name = net::GenerateFileName(
       file_contents_source_url, file_contents_content_disposition,
@@ -71,14 +71,16 @@ absl::optional<base::FilePath> DropData::GetSafeFilenameForImageFileContents()
                        base::CompareCase::INSENSITIVE_ASCII)) {
     return file_name.ReplaceExtension(file_contents_filename_extension);
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 bool DropData::IsImageFileContents() const {
   std::string mime_type;
-  if (net::GetWellKnownMimeTypeFromExtension(file_contents_filename_extension, &mime_type) &&
-      base::StartsWith(mime_type, "image/", base::CompareCase::INSENSITIVE_ASCII)) {
+  if (net::GetWellKnownMimeTypeFromExtension(file_contents_filename_extension,
+                                             &mime_type) &&
+      base::StartsWith(mime_type, "image/",
+                       base::CompareCase::INSENSITIVE_ASCII)) {
     return true;
   }
   return false;

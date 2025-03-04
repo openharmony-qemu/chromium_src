@@ -14,9 +14,9 @@ FakeMaskLayerImpl::FakeMaskLayerImpl(LayerTreeImpl* tree_impl,
                                      int id,
                                      scoped_refptr<RasterSource> raster_source)
     : PictureLayerImpl(tree_impl, id) {
-  SetBounds(raster_source->GetSize());
+  SetBounds(raster_source->size());
   Region region;
-  UpdateRasterSource(raster_source, &region, nullptr, nullptr);
+  UpdateRasterSource(raster_source, &region);
 }
 
 std::unique_ptr<FakeMaskLayerImpl> FakeMaskLayerImpl::Create(

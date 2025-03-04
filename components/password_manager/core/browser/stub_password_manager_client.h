@@ -5,17 +5,14 @@
 #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_STUB_PASSWORD_MANAGER_CLIENT_H_
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_STUB_PASSWORD_MANAGER_CLIENT_H_
 
+#include <optional>
+
 #include "components/autofill/core/browser/logging/stub_log_manager.h"
-#include "components/password_manager/core/browser/mock_password_change_success_tracker.h"
 #include "components/password_manager/core/browser/mock_password_feature_manager.h"
 #include "components/password_manager/core/browser/password_manager_client.h"
 #include "components/password_manager/core/browser/password_manager_metrics_recorder.h"
-#include "components/password_manager/core/browser/password_manager_metrics_util.h"
-#include "components/password_manager/core/browser/password_reuse_detector.h"
 #include "components/password_manager/core/browser/stub_credentials_filter.h"
-#include "components/sync/driver/sync_service.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "components/sync/service/sync_service.h"
 
 namespace password_manager {
 
@@ -58,15 +55,18 @@ class StubPasswordManagerClient : public PasswordManagerClient {
   void NotifySuccessfulLoginWithExistingPassword(
       std::unique_ptr<PasswordFormManagerForUI> submitted_manager) override;
   void NotifyStorePasswordCalled() override;
+  void NotifyKeychainError() override;
   void AutomaticPasswordSave(
-      std::unique_ptr<PasswordFormManagerForUI> saved_manager) override;
+      std::unique_ptr<PasswordFormManagerForUI> saved_manager,
+      bool is_update_confirmation) override;
   PrefService* GetPrefs() const override;
   PrefService* GetLocalStatePrefs() const override;
   const syncer::SyncService* GetSyncService() const override;
+  affiliations::AffiliationService* GetAffiliationService() override;
   PasswordStoreInterface* GetProfilePasswordStore() const override;
   PasswordStoreInterface* GetAccountPasswordStore() const override;
   PasswordReuseManager* GetPasswordReuseManager() const override;
-  MockPasswordChangeSuccessTracker* GetPasswordChangeSuccessTracker() override;
+  const PasswordManagerInterface* GetPasswordManager() const override;
   const GURL& GetLastCommittedURL() const override;
   url::Origin GetLastCommittedOrigin() const override;
   const CredentialsFilter* GetStoreResultFilter() const override;
@@ -74,32 +74,48 @@ class StubPasswordManagerClient : public PasswordManagerClient {
   const MockPasswordFeatureManager* GetPasswordFeatureManager() const override;
   MockPasswordFeatureManager* GetPasswordFeatureManager();
   version_info::Channel GetChannel() const override;
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+  void OpenPasswordDetailsBubble(
+      const password_manager::PasswordForm& form) override;
+  std::unique_ptr<
+      password_manager::PasswordCrossDomainConfirmationPopupController>
+  ShowCrossDomainConfirmationPopup(
+      const gfx::RectF& element_bounds,
+      base::i18n::TextDirection text_direction,
+      const GURL& domain,
+      const std::u16string& password_origin,
+      base::OnceClosure confirmation_callback) override;
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
   safe_browsing::PasswordProtectionService* GetPasswordProtectionService()
       const override;
 
-#if defined(ON_FOCUS_PING_ENABLED) && BUILDFLAG(FULL_SAFE_BROWSING)
+#if defined(ON_FOCUS_PING_ENABLED)
   void CheckSafeBrowsingReputation(const GURL& form_action,
                                    const GURL& frame_url) override;
 #endif
 
   ukm::SourceId GetUkmSourceId() override;
   PasswordManagerMetricsRecorder* GetMetricsRecorder() override;
+#if BUILDFLAG(IS_ANDROID)
+  FirstCctPageLoadPasswordsUkmRecorder* GetFirstCctPageLoadUkmRecorder()
+      override;
+  void PotentialSaveFormSubmitted() override;
+#endif
   signin::IdentityManager* GetIdentityManager() override;
   scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory() override;
   network::mojom::NetworkContext* GetNetworkContext() const override;
   bool IsIsolationForPasswordSitesEnabled() const override;
   bool IsNewTabPage() const override;
-  FieldInfoManager* GetFieldInfoManager() const override;
 
  private:
   const StubCredentialsFilter credentials_filter_;
   testing::NiceMock<MockPasswordFeatureManager> password_feature_manager_;
   autofill::StubLogManager log_manager_;
   ukm::SourceId ukm_source_id_;
-  absl::optional<PasswordManagerMetricsRecorder> metrics_recorder_;
-  testing::NiceMock<MockPasswordChangeSuccessTracker>
-      password_change_success_tracker_;
+  std::optional<PasswordManagerMetricsRecorder> metrics_recorder_;
 };
 
 }  // namespace password_manager

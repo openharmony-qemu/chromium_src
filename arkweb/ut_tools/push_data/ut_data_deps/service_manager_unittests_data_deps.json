@@ -1,0 +1,28 @@
+[
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": [
+            "background_service_manager_test_service.service",
+            "service_process_launcher_test_service.service",
+            "connect_test_app.service",
+            "connect_test_class_app.service",
+            "connect_test_exe",
+            "connect_test_package.service",
+            "connect_test_singleton_app.service",
+            "lifecycle_unittest_app.service",
+            "lifecycle_unittest_package.service",
+            "lifecycle_unittest_parent.service",
+            "service_manager_unittest_embedder.service",
+            "service_manager_unittest_target",
+            "shutdown_client.service",
+            "shutdown_service.service"    
+        ],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    }
+]

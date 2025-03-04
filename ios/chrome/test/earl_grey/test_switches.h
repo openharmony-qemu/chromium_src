@@ -25,6 +25,18 @@ extern const char kAddFakeIdentitiesAtStartup[];
 // Ignored if kForceRealSystemIdentityManager is used.
 extern const char kSignInAtStartup[];
 
+// Switch used to enable FakeTabGroupSyncService for testing. The feature
+// kTabGroupSync should be enabled as well.
+extern const char kEnableFakeTabGroupSyncService[];
+
+// Switch used to force the status of fetching the Google Family for the user in
+// Earl Grey tests. If not specified, unknown status is retuned for all tests.
+extern const char kFamilyStatus[];
+
+// Switch used to enable a certain IPH for testing. The value should be the IPH
+// feature to enable. Leave blank/empty value to enable all IPH in testing.
+extern const char kEnableIPH[];
+
 }  // namespace test_switches
 
 #endif  // IOS_CHROME_TEST_EARL_GREY_TEST_SWITCHES_H_

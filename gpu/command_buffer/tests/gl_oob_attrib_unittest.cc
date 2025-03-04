@@ -8,6 +8,7 @@
 
 #include "gpu/command_buffer/tests/gl_manager.h"
 #include "gpu/command_buffer/tests/gl_test_utils.h"
+#include "gpu/config/gpu_test_config.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace gpu {
@@ -16,7 +17,14 @@ namespace {
 
 class GLOOBAttribTest : public testing::Test {
  protected:
-  void SetUp() override { gl_.Initialize(GLManager::Options()); }
+  void SetUp() override {
+    if (GPUTestBotConfig::CurrentConfigMatches("Android ARM 0x92020010")) {
+      // TODO(crbug.com/40160681): remove suppression when passthrough ships.
+      // Crashes on Pixel 6 validating
+      GTEST_SKIP();
+    }
+    gl_.Initialize(GLManager::Options());
+  }
   void TearDown() override { gl_.Destroy(); }
   GLManager gl_;
 };
@@ -33,6 +41,12 @@ TEST_F(GLOOBAttribTest, DrawUsingOOBMatrixAttrib) {
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  // TODO: ohos cannot use vulkan so that cannot enable
+  // use_passthrough_cmd_decoder mac/linux/windows both enable
+  // use_passthrough_cmd_decoder,so this test direct return.
+  return;
+#else
   const char kVertexShader[] =
       "attribute mat3 attrib;\n"
       "varying vec4 color;\n"
@@ -88,6 +102,7 @@ TEST_F(GLOOBAttribTest, DrawUsingOOBMatrixAttrib) {
   glDrawArrays(GL_TRIANGLES, 0, 1000);
   expected = GL_NO_ERROR;
   EXPECT_EQ(expected, glGetError());
+#endif
 }
 
 }  // anonymous namespace

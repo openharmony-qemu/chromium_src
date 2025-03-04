@@ -8,14 +8,19 @@
 #include <memory>
 #include <string>
 
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/scoped_observation.h"
+#include "base/types/optional_ref.h"
 #include "components/services/storage/shared_storage/shared_storage_manager.h"
+#include "content/browser/attribution_reporting/attribution_observer.h"
 #include "content/browser/devtools/protocol/devtools_domain_handler.h"
 #include "content/browser/devtools/protocol/storage.h"
+#include "content/browser/interest_group/devtools_enums.h"
 #include "content/browser/interest_group/interest_group_manager_impl.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
-#include "content/browser/shared_storage/shared_storage_worklet_host_manager.h"
+#include "content/browser/shared_storage/shared_storage_runtime_manager.h"
 #include "storage/browser/quota/quota_manager.h"
 
 namespace storage {
@@ -23,6 +28,7 @@ class QuotaOverrideHandle;
 }
 
 namespace content {
+class AttributionManager;
 class StoragePartition;
 
 namespace protocol {
@@ -30,20 +36,27 @@ namespace protocol {
 class StorageHandler
     : public DevToolsDomainHandler,
       public Storage::Backend,
-      private content::InterestGroupManagerImpl::InterestGroupObserver {
+      public content::InterestGroupManagerImpl::InterestGroupObserver,
+      public AttributionObserver {
  public:
-  explicit StorageHandler(bool client_is_trusted);
+  explicit StorageHandler(DevToolsAgentHostClient* client);
 
   StorageHandler(const StorageHandler&) = delete;
   StorageHandler& operator=(const StorageHandler&) = delete;
 
   ~StorageHandler() override;
 
+  static std::vector<StorageHandler*> ForAgentHost(DevToolsAgentHostImpl* host);
+
   // content::protocol::DevToolsDomainHandler
   void Wire(UberDispatcher* dispatcher) override;
   void SetRenderer(int process_host_id,
                    RenderFrameHostImpl* frame_host) override;
   Response Disable() override;
+
+  bool interest_group_auction_tracking_enabled() const {
+    return interest_group_auction_tracking_enabled_;
+  }
 
   // content::protocol::storage::Backend
   Response GetStorageKeyForFrame(const std::string& frame_id,
@@ -105,6 +118,7 @@ class StorageHandler
       const std::string& name,
       std::unique_ptr<GetInterestGroupDetailsCallback> callback) override;
   Response SetInterestGroupTracking(bool enable) override;
+  Response SetInterestGroupAuctionTracking(bool enable) override;
 
   void GetSharedStorageMetadata(
       const std::string& owner_origin_string,
@@ -135,8 +149,27 @@ class StorageHandler
       bool enable) override;
 
   DispatchResponse DeleteStorageBucket(
-      const std::string& serialized_storage_key,
-      const std::string& bucket_name) override;
+      std::unique_ptr<protocol::Storage::StorageBucket> bucket) override;
+
+  void SetAttributionReportingLocalTestingMode(
+      bool enabled,
+      std::unique_ptr<SetAttributionReportingLocalTestingModeCallback>)
+      override;
+  Response SetAttributionReportingTracking(bool enable) override;
+  void SendPendingAttributionReports(
+      std::unique_ptr<SendPendingAttributionReportsCallback>) override;
+
+  void NotifyInterestGroupAuctionEventOccurred(
+      base::Time event_time,
+      content::InterestGroupAuctionEventType type,
+      const std::string& unique_auction_id,
+      base::optional_ref<const std::string> parent_auction_id,
+      const base::Value::Dict& auction_config);
+
+  void NotifyInterestGroupAuctionNetworkRequestCreated(
+      content::InterestGroupAuctionFetchType type,
+      const std::string& request_id,
+      const std::vector<std::string>& devtools_auction_ids);
 
  private:
   // See definition for lifetime information.
@@ -150,33 +183,47 @@ class StorageHandler
   CacheStorageObserver* GetCacheStorageObserver();
   IndexedDBObserver* GetIndexedDBObserver();
 
-  SharedStorageWorkletHostManager* GetSharedStorageWorkletHostManager();
+  SharedStorageRuntimeManager* GetSharedStorageRuntimeManager();
   absl::variant<protocol::Response, storage::SharedStorageManager*>
   GetSharedStorageManager();
   storage::QuotaManagerProxy* GetQuotaManagerProxy();
+  AttributionManager* GetAttributionManager();
 
   // content::InterestGroupManagerImpl::InterestGroupObserver
   void OnInterestGroupAccessed(
-      const base::Time& accessTime,
+      base::optional_ref<const std::string> auction_id,
+      base::Time access_time,
       InterestGroupManagerImpl::InterestGroupObserver::AccessType type,
       const url::Origin& owner_origin,
-      const std::string& name) override;
+      const std::string& name,
+      base::optional_ref<const url::Origin> component_seller_origin,
+      std::optional<double> bid,
+      base::optional_ref<const std::string> bid_currency) override;
+
+  // AttributionObserver
+  void OnSourceHandled(
+      const StorableSource&,
+      base::Time source_time,
+      std::optional<uint64_t> cleared_debug_key,
+      attribution_reporting::mojom::StoreSourceResult) override;
+  void OnTriggerHandled(std::optional<uint64_t> cleared_debug_key,
+                        const CreateReportResult&) override;
 
   void NotifySharedStorageAccessed(
       const base::Time& access_time,
-      SharedStorageWorkletHostManager::SharedStorageObserverInterface::
-          AccessType type,
-      const std::string& main_frame_id,
+      SharedStorageRuntimeManager::SharedStorageObserverInterface::AccessType
+          type,
+      FrameTreeNodeId main_frame_id,
       const std::string& owner_origin,
       const SharedStorageEventParams& params);
 
-  void NotifyCacheStorageListChanged(const blink::StorageKey& storage_key);
-  void NotifyCacheStorageContentChanged(const blink::StorageKey& storage_key,
-                                        const std::string& name);
-  void NotifyIndexedDBListChanged(const std::string& origin,
-                                  const std::string& storage_key);
-  void NotifyIndexedDBContentChanged(const std::string& origin,
-                                     const std::string& storage_key,
+  void NotifyCacheStorageListChanged(
+      const storage::BucketLocator& bucket_locator);
+  void NotifyCacheStorageContentChanged(
+      const storage::BucketLocator& bucket_locator,
+      const std::string& name);
+  void NotifyIndexedDBListChanged(storage::BucketLocator bucket_locator);
+  void NotifyIndexedDBContentChanged(storage::BucketLocator bucket_locator,
                                      const std::u16string& database_name,
                                      const std::u16string& object_store_name);
   void NotifyCreateOrUpdateBucket(const storage::BucketInfo& bucket_info);
@@ -185,9 +232,19 @@ class StorageHandler
   Response FindStoragePartition(const Maybe<std::string>& browser_context_id,
                                 StoragePartition** storage_partition);
 
+  void ResetAttributionReporting();
+
+  // This doesn't update `interest_group_auction_tracking_enabled_` and does not
+  // have to work on `storage_partition_`, unlike the public version.
+  Response SetInterestGroupTrackingInternal(StoragePartition* storage_partition,
+                                            bool enable);
+  void GotAllCookies(
+      std::unique_ptr<Storage::Backend::GetCookiesCallback> callback,
+      const std::vector<net::CanonicalCookie>& cookies);
+
   std::unique_ptr<Storage::Frontend> frontend_;
-  StoragePartition* storage_partition_{nullptr};
-  RenderFrameHostImpl* frame_host_ = nullptr;
+  raw_ptr<StoragePartition> storage_partition_{nullptr};
+  raw_ptr<RenderFrameHostImpl> frame_host_ = nullptr;
   std::unique_ptr<CacheStorageObserver> cache_storage_observer_;
   std::unique_ptr<IndexedDBObserver> indexed_db_observer_;
   std::unique_ptr<SharedStorageObserver> shared_storage_observer_;
@@ -195,7 +252,13 @@ class StorageHandler
 
   // Exposes the API for managing storage quota overrides.
   std::unique_ptr<storage::QuotaOverrideHandle> quota_override_handle_;
-  bool client_is_trusted_;
+  raw_ptr<DevToolsAgentHostClient> client_;
+
+  bool interest_group_tracking_enabled_ = false;
+  bool interest_group_auction_tracking_enabled_ = false;
+
+  base::ScopedObservation<AttributionManager, AttributionObserver>
+      attribution_observation_{this};
 
   base::WeakPtrFactory<StorageHandler> weak_ptr_factory_{this};
 };

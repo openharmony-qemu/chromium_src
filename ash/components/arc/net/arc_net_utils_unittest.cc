@@ -4,8 +4,11 @@
 
 #include "ash/components/arc/net/arc_net_utils.h"
 
+#include <memory>
 #include <string>
 
+#include "ash/components/arc/mojom/arc_wifi.mojom.h"
+#include "base/strings/stringprintf.h"
 #include "base/test/task_environment.h"
 #include "chromeos/ash/components/network/device_state.h"
 #include "chromeos/ash/components/network/network_state_test_helper.h"
@@ -18,24 +21,40 @@ namespace {
 
 constexpr char kNetworkStatePath[] = "test_path";
 
-constexpr char kTestCellularDevicePath[] = "cellular_path";
-constexpr char kTestCellularDeviceName[] = "cellular_name";
-constexpr char kTestCellularDeviceInterface[] = "cellular_interface";
-constexpr char kTestCellularDeviceGuestInterface[] = "guest_interface";
+constexpr char kTestEthDeviceInterface[] = "eth0";
+constexpr char kTestEthDeviceGuestInterface[] = "eth0";
+constexpr char kTestWiFiDevicePath[] = "wifi_path";
+constexpr char kTestWiFiDeviceName[] = "wifi_name";
+constexpr char kTestWiFiDeviceInterface[] = "wlan0";
+constexpr char kTestWiFiDeviceGuestInterface[] = "wlan0";
 
 constexpr char kGuid[] = "guid";
 constexpr char kBssid[] = "bssid";
 constexpr char kHexSsid[] = "123456";
-constexpr char kAddress[] = "8.8.8.8";
-constexpr char kGateway[] = "8.8.8.4";
+constexpr char kTestWiFiAddress[] = "192.168.2.1";
+constexpr char kDestinationAddress[] = "192.168.1.1";
+constexpr char kIPv4Address[] = "192.168.0.2";
+constexpr int kIPv4PrefixLen = 16;
+constexpr char kIPv4Gateway[] = "192.168.0.1";
+constexpr char kIPv6Address[] = "fd00::1";
+constexpr int kIPv6PrefixLen = 64;
+constexpr char kIPv6Gateway[] = "fd00::2";
 constexpr char kNameServer1[] = "1.1.1.1";
 constexpr char kNameServer2[] = "2.2.2.2";
-constexpr char kNameServerIpv6[] = "2001:4860:4860::8888";
-constexpr int kPrefixLen = 16;
+constexpr char kNameServerIPv6[] = "2001:4860:4860::8888";
+constexpr char kDomainName[] = "domain";
+constexpr char kIncludedRoute[] = "1.2.3.4/24";
+constexpr char kExcludedRoute[] = "4.3.2.1/24";
+constexpr char kFqdn[] = "www.example.com";
 constexpr int kHostMtu = 32;
 constexpr int kFrequency = 100;
 constexpr int kSignalStrength = 80;
 constexpr int kRssi = 50;
+constexpr int kPort1 = 20000;
+constexpr int kPort2 = 30000;
+// kTestWiFiAddress and kDestinationAddress in network byte order.
+constexpr uint32_t kTestWiFiAddressNBO = 0x102A8C0u;
+constexpr uint32_t kDestinationAddressNBO = 0x101A8C0u;
 
 class ArcNetUtilsTest : public testing::Test {
  public:
@@ -60,7 +79,7 @@ class ArcNetUtilsTest : public testing::Test {
 
   std::unique_ptr<base::Value> dict;
 
-  struct in_addr StringToIPv4Address(const std::string& buf) {
+  static struct in_addr StringToIPv4Address(const std::string& buf) {
     struct in_addr addr = {};
     if (!inet_pton(AF_INET, buf.c_str(), &addr)) {
       memset(&addr, 0, sizeof(addr));
@@ -68,7 +87,7 @@ class ArcNetUtilsTest : public testing::Test {
     return addr;
   }
 
-  struct in6_addr StringToIPv6Address(const std::string& buf) {
+  static struct in6_addr StringToIPv6Address(const std::string& buf) {
     struct in6_addr addr = {};
     if (!inet_pton(AF_INET6, buf.c_str(), &addr)) {
       memset(&addr, 0, sizeof(addr));
@@ -76,39 +95,58 @@ class ArcNetUtilsTest : public testing::Test {
     return addr;
   }
 
+  static patchpanel::NetworkDevice GetDevice(
+      const std::string& phys_ifname,
+      const std::string& guest_ifname,
+      std::optional<patchpanel::NetworkDevice::TechnologyType>
+          technology_type) {
+    patchpanel::NetworkDevice device;
+    // Set up test network device.
+    device.set_guest_type(patchpanel::NetworkDevice::ARC);
+    device.set_phys_ifname(phys_ifname);
+    device.set_guest_ifname(guest_ifname);
+    if (technology_type.has_value()) {
+      device.set_technology_type(technology_type.value());
+    }
+    return device;
+  }
+
   base::Value::Dict GetShillDict() {
-    base::Value::Dict static_ip_config;
-    base::Value::List name_servers;
     base::Value::Dict shill_dict;
-
-    name_servers.Append(kNameServer1);
-    name_servers.Append(kNameServer2);
-    name_servers.Append("0.0.0.0");
-
-    static_ip_config.Set(shill::kAddressProperty, kAddress);
-    static_ip_config.Set(shill::kGatewayProperty, kGateway);
-    static_ip_config.Set(shill::kPrefixlenProperty, kPrefixLen);
-    static_ip_config.Set(shill::kNameServersProperty, std::move(name_servers));
-    static_ip_config.Set(shill::kMtuProperty, kHostMtu);
-
     shill_dict.Set(shill::kMeteredProperty, true);
-    shill_dict.Set(shill::kStaticIPConfigProperty, std::move(static_ip_config));
     return shill_dict;
+  }
+
+  mojom::SocketConnectionEventPtr GetMojomSocketConnectionEvent() {
+    mojom::SocketConnectionEventPtr mojom =
+        arc::mojom::SocketConnectionEvent::New();
+    mojom->src_addr = net::IPAddress::FromIPLiteral(kTestWiFiAddress).value();
+    mojom->dst_addr =
+        net::IPAddress::FromIPLiteral(kDestinationAddress).value();
+    mojom->src_port = kPort1;
+    mojom->dst_port = kPort2;
+    mojom->proto = arc::mojom::IpProtocol::kTcp;
+    mojom->event = arc::mojom::SocketEvent::kOpen;
+    mojom->qos_category = arc::mojom::QosCategory::kRealtimeInteractive;
+    return mojom;
   }
 
  private:
   void AddWifiDevice() {
-    helper_.device_test()->AddDevice(kTestCellularDevicePath, shill::kTypeWifi,
-                                     kTestCellularDeviceName);
+    helper_.device_test()->AddDevice(kTestWiFiDevicePath, shill::kTypeWifi,
+                                     kTestWiFiDeviceName);
     helper_.device_test()->SetDeviceProperty(
-        kTestCellularDevicePath, shill::kInterfaceProperty,
-        base::Value(kTestCellularDeviceInterface),
+        kTestWiFiDevicePath, shill::kInterfaceProperty,
+        base::Value(kTestWiFiDeviceInterface),
         /*notify_changed=*/false);
   }
 
   void SetUpNetworkState() {
+    network_state_->PropertyChanged(shill::kVisibleProperty, base::Value(true));
+    network_state_->PropertyChanged(shill::kStateProperty,
+                                    base::Value(shill::kStateOnline));
     network_state_->PropertyChanged(shill::kDeviceProperty,
-                                    base::Value(kTestCellularDevicePath));
+                                    base::Value(kTestWiFiDevicePath));
     network_state_->PropertyChanged(shill::kGuidProperty, base::Value(kGuid));
     network_state_->PropertyChanged(shill::kTypeProperty,
                                     base::Value(shill::kTypeWifi));
@@ -122,6 +160,35 @@ class ArcNetUtilsTest : public testing::Test {
                                     base::Value(kSignalStrength));
     network_state_->PropertyChanged(shill::kWifiSignalStrengthRssiProperty,
                                     base::Value(kRssi));
+    network_state_->PropertyChanged(shill::kMeteredProperty, base::Value(true));
+    network_state_->PropertyChanged(shill::kPasspointFQDNProperty,
+                                    base::Value(kFqdn));
+    network_state_->PropertyChanged(shill::kWifiHiddenSsid, base::Value(true));
+
+    // Set up NetworkConfig.
+    base::Value::Dict properties;
+    properties.Set(shill::kNetworkConfigIPv4AddressProperty,
+                   base::StringPrintf("%s/%d", kIPv4Address, kIPv4PrefixLen));
+    properties.Set(shill::kNetworkConfigIPv4GatewayProperty, kIPv4Gateway);
+    properties.Set(shill::kNetworkConfigIPv6AddressesProperty,
+                   base::Value::List().Append(base::StringPrintf(
+                       "%s/%d", kIPv6Address, kIPv6PrefixLen)));
+    properties.Set(shill::kNetworkConfigIPv6GatewayProperty, kIPv6Gateway);
+    properties.Set(shill::kNetworkConfigNameServersProperty,
+                   base::Value::List()
+                       .Append(kNameServer1)
+                       .Append(kNameServer2)
+                       .Append(kNameServerIPv6));
+    properties.Set(shill::kNetworkConfigSearchDomainsProperty,
+                   base::Value::List().Append(kDomainName));
+    properties.Set(shill::kNetworkConfigMTUProperty, kHostMtu);
+    properties.Set(shill::kNetworkConfigIncludedRoutesProperty,
+                   base::Value::List().Append(kIncludedRoute));
+    properties.Set(shill::kNetworkConfigExcludedRoutesProperty,
+                   base::Value::List().Append(kExcludedRoute));
+
+    network_state_->PropertyChanged(shill::kNetworkConfigProperty,
+                                    base::Value(std::move(properties)));
   }
 
   std::unique_ptr<ash::NetworkState> network_state_;
@@ -309,7 +376,7 @@ TEST_F(ArcNetUtilsTest, TranslateConnectionState) {
   EXPECT_EQ(arc::mojom::ConnectionStateType::NOT_CONNECTED,
             net_utils::TranslateConnectionState(shill::kStateFailure));
   EXPECT_EQ(arc::mojom::ConnectionStateType::NOT_CONNECTED,
-            net_utils::TranslateConnectionState(shill::kStateDisconnect));
+            net_utils::TranslateConnectionState(shill::kStateDisconnecting));
   EXPECT_EQ(arc::mojom::ConnectionStateType::NOT_CONNECTED,
             net_utils::TranslateConnectionState(""));
   EXPECT_EQ(arc::mojom::ConnectionStateType::ONLINE,
@@ -327,10 +394,11 @@ TEST_F(ArcNetUtilsTest, TranslateNetworkType) {
             net_utils::TranslateNetworkType(shill::kTypeCellular));
 }
 
-TEST_F(ArcNetUtilsTest, TranslateNetworkProperties) {
+TEST_F(ArcNetUtilsTest, FillConfigurationsFromState) {
   base::Value::Dict shill_dict = GetShillDict();
-  const arc::mojom::NetworkConfigurationPtr mojo =
-      net_utils::TranslateNetworkProperties(GetNetworkState(), &shill_dict);
+  auto mojo = arc::mojom::NetworkConfiguration::New();
+  net_utils::FillConfigurationsFromState(GetNetworkState(), &shill_dict,
+                                         mojo.get());
   base::RunLoop().RunUntilIdle();
 
   EXPECT_FALSE(mojo.is_null());
@@ -338,15 +406,22 @@ TEST_F(ArcNetUtilsTest, TranslateNetworkProperties) {
   EXPECT_EQ(kGuid, mojo->guid);
   EXPECT_EQ(arc::mojom::NetworkType::WIFI, mojo->type);
   EXPECT_EQ(true, mojo->is_metered);
-  EXPECT_EQ(kTestCellularDeviceInterface, mojo->network_interface);
+  EXPECT_EQ(kTestWiFiDeviceInterface, mojo->network_interface);
 
-  EXPECT_EQ(16u, mojo->host_ipv4_prefix_length);
-  EXPECT_EQ(kAddress, mojo->host_ipv4_address);
-  EXPECT_EQ(kGateway, mojo->host_ipv4_gateway);
-  EXPECT_EQ(2u, mojo->host_dns_addresses.value().size());
-  EXPECT_EQ(kNameServer1, mojo->host_dns_addresses.value()[0]);
-  EXPECT_EQ(kNameServer2, mojo->host_dns_addresses.value()[1]);
-  EXPECT_EQ(32u, mojo->host_mtu);
+  EXPECT_EQ(kIPv4Address, mojo->host_ipv4_address);
+  EXPECT_EQ(uint32_t{kIPv4PrefixLen}, mojo->host_ipv4_prefix_length);
+  EXPECT_EQ(kIPv4Gateway, mojo->host_ipv4_gateway);
+  EXPECT_EQ(std::vector<std::string>({kIPv6Address}),
+            mojo->host_ipv6_global_addresses);
+  EXPECT_EQ(uint32_t{kIPv6PrefixLen}, mojo->host_ipv6_prefix_length);
+  EXPECT_EQ(kIPv6Gateway, mojo->host_ipv6_gateway);
+  EXPECT_EQ(
+      std::vector<std::string>({kNameServer1, kNameServer2, kNameServerIPv6}),
+      mojo->host_dns_addresses);
+  EXPECT_EQ(std::vector<std::string>({kDomainName}), mojo->host_search_domains);
+  EXPECT_EQ(uint32_t{kHostMtu}, mojo->host_mtu);
+  EXPECT_EQ(std::vector<std::string>({kIncludedRoute}), mojo->include_routes);
+  EXPECT_EQ(std::vector<std::string>({kExcludedRoute}), mojo->exclude_routes);
 
   EXPECT_FALSE(mojo->wifi.is_null());
   EXPECT_EQ(kBssid, mojo->wifi->bssid);
@@ -356,25 +431,41 @@ TEST_F(ArcNetUtilsTest, TranslateNetworkProperties) {
   EXPECT_EQ(kSignalStrength, mojo->wifi->signal_strength);
 }
 
-TEST_F(ArcNetUtilsTest, TranslateNetworkStates) {
-  std::vector<patchpanel::NetworkDevice> network_devices;
-  patchpanel::NetworkDevice device;
-
-  // Set up test network device.
-  device.set_guest_type(patchpanel::NetworkDevice::ARC);
-  device.set_phys_ifname(kTestCellularDeviceInterface);
-  device.set_guest_ifname(kTestCellularDeviceGuestInterface);
-  // Set binary form of IP address.
-  device.set_ipv4_addr(StringToIPv4Address(kAddress).s_addr);
-  device.set_host_ipv4_addr(StringToIPv4Address(kGateway).s_addr);
-  device.mutable_ipv4_subnet()->set_prefix_len(kPrefixLen);
+TEST_F(ArcNetUtilsTest, FillConfigurationsFromDevice) {
+  auto mojo = arc::mojom::NetworkConfiguration::New();
+  auto device =
+      GetDevice(kTestWiFiDeviceInterface, kTestWiFiDeviceGuestInterface,
+                patchpanel::NetworkDevice::WIFI);
+  // set IP config of device.
+  device.set_ipv4_addr(StringToIPv4Address(kTestWiFiAddress).s_addr);
+  device.set_host_ipv4_addr(StringToIPv4Address(kIPv4Gateway).s_addr);
+  device.mutable_ipv4_subnet()->set_prefix_len(kIPv4PrefixLen);
   auto ipv4_addr = StringToIPv4Address(kNameServer1);
   device.set_dns_proxy_ipv4_addr(reinterpret_cast<const char*>(&ipv4_addr),
                                  sizeof(ipv4_addr));
-  auto ipv6_addr = StringToIPv6Address(kNameServerIpv6);
+  auto ipv6_addr = StringToIPv6Address(kNameServerIPv6);
   device.set_dns_proxy_ipv6_addr(reinterpret_cast<const char*>(&ipv6_addr),
                                  sizeof(ipv6_addr));
-  network_devices.push_back(device);
+  net_utils::FillConfigurationsFromDevice(device, mojo.get());
+  base::RunLoop().RunUntilIdle();
+
+  EXPECT_EQ(kTestWiFiDeviceGuestInterface, mojo->arc_network_interface);
+  EXPECT_EQ(kTestWiFiAddress, mojo->arc_ipv4_address);
+  EXPECT_EQ(kIPv4Gateway, mojo->arc_ipv4_gateway);
+  EXPECT_EQ((uint32_t)kIPv4PrefixLen, mojo->arc_ipv4_prefix_length);
+  EXPECT_EQ(kNameServer1, mojo->dns_proxy_addresses.value()[0]);
+  EXPECT_EQ(kNameServerIPv6, mojo->dns_proxy_addresses.value()[1]);
+}
+
+TEST_F(ArcNetUtilsTest, TranslateNetworkDevices) {
+  std::vector<patchpanel::NetworkDevice> network_devices;
+
+  network_devices.emplace_back(GetDevice(kTestEthDeviceInterface,
+                                         kTestEthDeviceGuestInterface,
+                                         patchpanel::NetworkDevice::ETHERNET));
+  network_devices.emplace_back(GetDevice(kTestWiFiDeviceInterface,
+                                         kTestWiFiDeviceGuestInterface,
+                                         patchpanel::NetworkDevice::WIFI));
 
   std::map<std::string, base::Value::Dict> shill_network_properties;
   shill_network_properties[kNetworkStatePath] = GetShillDict();
@@ -382,19 +473,45 @@ TEST_F(ArcNetUtilsTest, TranslateNetworkStates) {
   ash::NetworkStateHandler::NetworkStateList network_states;
   network_states.push_back(GetNetworkState());
   std::vector<arc::mojom::NetworkConfigurationPtr> res =
+      net_utils::TranslateNetworkDevices(network_devices, /*arc_vpn_path=*/"",
+                                         network_states,
+                                         shill_network_properties);
+  base::RunLoop().RunUntilIdle();
+
+  // In TranslateNetworkDevices, A network devices without associated state is
+  // reported, so both the ethernet device and the wifi device are available.
+
+  EXPECT_EQ(2u, res.size());
+  for (const arc::mojom::NetworkConfigurationPtr& mojo : res) {
+    if (mojo->network_interface.value() == kTestWiFiDeviceInterface) {
+      EXPECT_EQ(kTestWiFiDeviceGuestInterface, mojo->arc_network_interface);
+      EXPECT_EQ(mojom::NetworkType::WIFI, mojo->type);
+      EXPECT_EQ(kGuid, mojo->guid);
+    } else if (mojo->network_interface.value() == kTestEthDeviceInterface) {
+      EXPECT_EQ(kTestEthDeviceGuestInterface, mojo->arc_network_interface);
+      EXPECT_EQ(mojom::NetworkType::ETHERNET, mojo->type);
+      EXPECT_EQ(0u, mojo->guid.length());
+    } else {
+      GTEST_FAIL() << "Unknown network interface "
+                   << mojo->network_interface.value_or("(no ifname)");
+    }
+  }
+}
+
+TEST_F(ArcNetUtilsTest, TranslateNetworkStates) {
+  std::map<std::string, base::Value::Dict> shill_network_properties;
+  shill_network_properties[kNetworkStatePath] = GetShillDict();
+
+  ash::NetworkStateHandler::NetworkStateList network_states;
+  network_states.push_back(GetNetworkState());
+  std::vector<arc::mojom::NetworkConfigurationPtr> res =
       net_utils::TranslateNetworkStates(/*arc_vpn_path=*/"", network_states,
-                                        shill_network_properties,
-                                        network_devices);
+                                        shill_network_properties);
   base::RunLoop().RunUntilIdle();
 
   EXPECT_EQ(1u, network_states.size());
+  EXPECT_EQ(1u, res.size());
   EXPECT_EQ(kNetworkStatePath, res[0]->service_name);
-  EXPECT_EQ(kTestCellularDeviceGuestInterface, res[0]->arc_network_interface);
-  EXPECT_EQ(kAddress, res[0]->arc_ipv4_address);
-  EXPECT_EQ(kGateway, res[0]->arc_ipv4_gateway);
-  EXPECT_EQ(16u, res[0]->arc_ipv4_prefix_length);
-  EXPECT_EQ(kNameServer1, res[0]->dns_proxy_addresses.value()[0]);
-  EXPECT_EQ(kNameServerIpv6, res[0]->dns_proxy_addresses.value()[1]);
 }
 
 TEST_F(ArcNetUtilsTest, TranslateSubjectNameMatchListToValue) {
@@ -423,5 +540,257 @@ TEST_F(ArcNetUtilsTest, TranslateSubjectNameMatchListToValue) {
             "example@domain.com");
 }
 
+TEST_F(ArcNetUtilsTest, TranslateSocketConnectionEvent) {
+  mojom::SocketConnectionEventPtr mojom = GetMojomSocketConnectionEvent();
+  const auto msg = net_utils::TranslateSocketConnectionEvent(mojom);
+  EXPECT_NE(msg, nullptr);
+  struct in_addr addr = {};
+  addr.s_addr = kTestWiFiAddressNBO;
+  EXPECT_EQ(0,
+            memcmp((void*)&addr, (void*)msg->saddr().c_str(), sizeof(in_addr)));
+  addr.s_addr = kDestinationAddressNBO;
+  EXPECT_EQ(0,
+            memcmp((void*)&addr, (void*)msg->daddr().c_str(), sizeof(in_addr)));
+  EXPECT_EQ(kPort1, msg->sport());
+  EXPECT_EQ(kPort2, msg->dport());
+  EXPECT_EQ(patchpanel::SocketConnectionEvent::QosCategory::
+                SocketConnectionEvent_QosCategory_REALTIME_INTERACTIVE,
+            msg->category());
+  EXPECT_EQ(patchpanel::SocketConnectionEvent::SocketEvent::
+                SocketConnectionEvent_SocketEvent_OPEN,
+            msg->event());
+  EXPECT_EQ(patchpanel::SocketConnectionEvent::IpProtocol::
+                SocketConnectionEvent_IpProtocol_TCP,
+            msg->proto());
+}
+
+TEST_F(ArcNetUtilsTest, TranslateScanResults) {
+  ash::NetworkStateHandler::NetworkStateList network_states;
+  network_states.push_back(GetNetworkState());
+  std::vector<arc::mojom::WifiScanResultPtr> res =
+      net_utils::TranslateScanResults(network_states);
+  base::RunLoop().RunUntilIdle();
+
+  EXPECT_EQ(1u, res.size());
+  EXPECT_EQ(kBssid, res[0]->bssid);
+  EXPECT_EQ(kHexSsid, res[0]->hex_ssid);
+  EXPECT_EQ(arc::mojom::SecurityType::WPA_PSK, res[0]->security);
+  EXPECT_EQ(kFrequency, res[0]->frequency);
+  EXPECT_EQ(kRssi, res[0]->rssi);
+}
+
+TEST_F(ArcNetUtilsTest, AreConfigurationsEquivalent) {
+  std::vector<arc::mojom::NetworkConfigurationPtr> networks1;
+  std::vector<arc::mojom::NetworkConfigurationPtr> networks2;
+
+  auto network = arc::mojom::NetworkConfiguration::New();
+  network->arc_network_interface = "arc0";
+  network->guid = kGuid;
+  network->connection_state = arc::mojom::ConnectionStateType::CONNECTED;
+  network->is_default_network = true;
+  network->type = arc::mojom::NetworkType::WIFI;
+  network->is_metered = false;
+  network->network_interface = kTestWiFiDeviceInterface;
+  network->host_mtu = kHostMtu;
+  network->host_search_domains = std::vector<std::string>();
+  network->host_search_domains->push_back("search.domain");
+  network->host_ipv4_address = kTestWiFiAddress;
+  network->host_ipv6_global_addresses = std::vector<std::string>();
+  network->host_ipv6_global_addresses->push_back(kNameServerIPv6);
+  network->host_dns_addresses = std::vector<std::string>();
+  network->host_search_domains->push_back(kNameServer1);
+  network->dns_proxy_addresses = std::vector<std::string>();
+  network->dns_proxy_addresses->push_back("100.115.92.134");
+
+  // Empty vectors should be equivalent
+  networks1.clear();
+  networks2.clear();
+  EXPECT_TRUE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // Compare one NetworkConfiguration
+  networks1.clear();
+  networks2.clear();
+  networks1.push_back(network->Clone());
+  networks2.push_back(network->Clone());
+  EXPECT_TRUE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // Missing element from one of the vectors
+  networks1.clear();
+  networks2.clear();
+  networks1.push_back(network->Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+  networks1.clear();
+  networks2.push_back(network->Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // Different order of NetworkConfigurations should be fine
+  networks1.clear();
+  networks2.clear();
+  auto network1 = network.Clone();
+  auto network2 = network.Clone();
+  network1->arc_network_interface = "arc0";
+  network2->arc_network_interface = "arc1";
+  networks1.push_back(network1->Clone());
+  networks1.push_back(network2->Clone());
+  networks2.push_back(network2->Clone());
+  networks2.push_back(network1->Clone());
+  EXPECT_TRUE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // arc_network_interface
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->arc_network_interface = "arc0";
+  network2->arc_network_interface = "arc1";
+  networks1.push_back(network1->Clone());
+  networks2.push_back(network2->Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // guid
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->guid = "guid1";
+  network2->guid = "guid2";
+  networks1.push_back(network1->Clone());
+  networks2.push_back(network2->Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // connection_state
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->connection_state = arc::mojom::ConnectionStateType::CONNECTED;
+  network2->connection_state = arc::mojom::ConnectionStateType::NOT_CONNECTED;
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // is_default_network
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->is_default_network = true;
+  network2->is_default_network = false;
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // type
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->type = arc::mojom::NetworkType::WIFI;
+  network2->type = arc::mojom::NetworkType::CELLULAR;
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // is_metered
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->is_metered = true;
+  network2->is_metered = false;
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // network_interface
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->network_interface = "eth0";
+  network2->network_interface = "wlan0";
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // host_mtu
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_mtu = 32;
+  network2->host_mtu = 64;
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // host_dns_addresses
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_dns_addresses->push_back("1.1.1.1");
+  network2->host_dns_addresses->push_back("8.8.8.8");
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // Mismatching order of same host_dns_addresses is still not equivalent
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_dns_addresses->push_back("1.1.1.1");
+  network1->host_dns_addresses->push_back("8.8.8.8");
+  network2->host_dns_addresses->push_back("8.8.8.8");
+  network2->host_dns_addresses->push_back("1.1.1.1");
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // dns_proxy_addresses
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->dns_proxy_addresses->push_back("100.115.92.0");
+  network2->dns_proxy_addresses->push_back("100.115.92.1");
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // host_search_domains
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_search_domains->push_back("search.domain.1");
+  network2->host_search_domains->push_back("search.domain.2");
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // host_ipv4_address
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_ipv4_address = "127.0.0.1";
+  network1->host_ipv4_address = "0.0.0.0";
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+
+  // host_ipv6_global_addresses
+  networks1.clear();
+  networks2.clear();
+  network1 = network.Clone();
+  network2 = network.Clone();
+  network1->host_ipv6_global_addresses->push_back("2001:db8::");
+  network2->host_ipv6_global_addresses->push_back("::1234:5678");
+  networks1.push_back(network1.Clone());
+  networks2.push_back(network2.Clone());
+  EXPECT_FALSE(net_utils::AreConfigurationsEquivalent(networks1, networks2));
+}
 }  // namespace
 }  // namespace arc

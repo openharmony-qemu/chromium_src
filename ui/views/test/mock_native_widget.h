@@ -11,6 +11,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "testing/gmock/include/gmock/gmock.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
+#include "ui/base/mojom/window_show_state.mojom-forward.h"
 #include "ui/views/widget/native_widget_private.h"
 
 namespace views {
@@ -22,6 +24,8 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
 
   MOCK_METHOD(void, InitNativeWidget, (Widget::InitParams), (override));
   MOCK_METHOD(void, OnWidgetInitDone, (), (override));
+
+  MOCK_METHOD(void, ReparentNativeViewImpl, (gfx::NativeView), (override));
 
   MOCK_METHOD(std::unique_ptr<NonClientFrameView>,
               CreateNonClientFrameView,
@@ -56,7 +60,7 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
   MOCK_METHOD(void, CenterWindow, (const gfx::Size& size), (override));
   MOCK_METHOD(void,
               GetWindowPlacement,
-              (gfx::Rect * bounds, ui::WindowShowState* show_state),
+              (gfx::Rect * bounds, ui::mojom::WindowShowState* show_state),
               (const override));
   MOCK_METHOD(bool, SetWindowTitle, (const std::u16string& title), (override));
   MOCK_METHOD(void,
@@ -64,9 +68,10 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
               (const gfx::ImageSkia& window_icon,
                const gfx::ImageSkia& app_icon),
               (override));
-  MOCK_METHOD(const gfx::ImageSkia*, GetWindowIcon, (), (override));
-  MOCK_METHOD(const gfx::ImageSkia*, GetWindowAppIcon, (), (override));
-  MOCK_METHOD(void, InitModalType, (ui::ModalType modal_type), (override));
+  MOCK_METHOD(void,
+              InitModalType,
+              (ui::mojom::ModalType modal_type),
+              (override));
   MOCK_METHOD(gfx::Rect, GetWindowBoundsInScreen, (), (const override));
   MOCK_METHOD(gfx::Rect, GetClientAreaBoundsInScreen, (), (const override));
   MOCK_METHOD(gfx::Rect, GetRestoredBounds, (), (const override));
@@ -88,7 +93,8 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
   MOCK_METHOD(void, CloseNow, (), (override));
   MOCK_METHOD(void,
               Show,
-              (ui::WindowShowState show_state, const gfx::Rect& restore_bounds),
+              (ui::mojom::WindowShowState show_state,
+               const gfx::Rect& restore_bounds),
               (override));
   MOCK_METHOD(void, Hide, (), (override));
   MOCK_METHOD(bool, IsVisible, (), (const override));
@@ -125,12 +131,12 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
   MOCK_METHOD(void, FlashFrame, (bool flash), (override));
   MOCK_METHOD(void,
               RunShellDrag,
-              (View * view,
-               std::unique_ptr<ui::OSExchangeData> data,
+              (std::unique_ptr<ui::OSExchangeData> data,
                const gfx::Point& location,
                int operation,
                ui::mojom::DragEventSource source),
               (override));
+  MOCK_METHOD(void, CancelShellDrag, (View * view), (override));
   MOCK_METHOD(void, SchedulePaintInRect, (const gfx::Rect& rect), (override));
   MOCK_METHOD(void, ScheduleLayout, (), (override));
   MOCK_METHOD(void, SetCursor, (const ui::Cursor& cursor), (override));
@@ -159,12 +165,13 @@ class MockNativeWidget : public internal::NativeWidgetPrivate {
               SetVisibilityAnimationTransition,
               (Widget::VisibilityTransition transition),
               (override));
-  MOCK_METHOD(bool, IsTranslucentWindowOpacitySupported, (), (const override));
   MOCK_METHOD(ui::GestureRecognizer*, GetGestureRecognizer, (), (override));
   MOCK_METHOD(ui::GestureConsumer*, GetGestureConsumer, (), (override));
   MOCK_METHOD(void, OnSizeConstraintsChanged, (), (override));
   MOCK_METHOD(void, OnNativeViewHierarchyWillChange, (), (override));
   MOCK_METHOD(void, OnNativeViewHierarchyChanged, (), (override));
+  MOCK_METHOD(bool, SetAllowScreenshots, (bool allow), (override));
+  MOCK_METHOD(bool, AreScreenshotsAllowed, (), (override));
   MOCK_METHOD(std::string, GetName, (), (const override));
 
   base::WeakPtr<NativeWidgetPrivate> GetWeakPtr() override;

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "skia/ext/skcolorspace_primaries.h"
 
 #include <iomanip>
@@ -36,7 +41,7 @@ std::string SkColorSpacePrimariesToString(
     ss << "name:'rec2020', ";
   ss << "r:[" << primaries.fRX << ", " << primaries.fRY << "], ";
   ss << "g:[" << primaries.fGX << ", " << primaries.fGY << "], ";
-  ss << "b:[" << primaries.fBX << ", " << primaries.fRY << "], ";
+  ss << "b:[" << primaries.fBX << ", " << primaries.fBY << "], ";
   ss << "w:[" << primaries.fWX << ", " << primaries.fWY << "]";
   ss << "}";
   return ss.str();

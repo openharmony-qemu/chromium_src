@@ -9,10 +9,6 @@
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // Value of the constant used to provide an alignment on the X center of the
@@ -184,6 +180,10 @@ const CGFloat kImageXCenterAlignmentOffset = 14;
   return self.imageView.image;
 }
 
+- (void)setImageViewAlpha:(CGFloat)alpha {
+  _imageView.alpha = alpha;
+}
+
 - (void)setImageViewTintColor:(UIColor*)color {
   _imageView.tintColor = color;
 }
@@ -200,6 +200,7 @@ const CGFloat kImageXCenterAlignmentOffset = 14;
 - (void)prepareForReuse {
   [super prepareForReuse];
   [self alignImageWithFirstLineOfText:NO];
+  _imageView.alpha = 1.0f;
 }
 
 #pragma mark - UIAccessibility
@@ -215,6 +216,14 @@ const CGFloat kImageXCenterAlignmentOffset = 14;
   }
 
   return self.textLabel.text;
+}
+
+- (NSArray<NSString*>*)accessibilityUserInputLabels {
+  // The name for Voice Control includes only `self.textLabel.text`.
+  if (!self.textLabel.text) {
+    return @[];
+  }
+  return @[ self.textLabel.text ];
 }
 
 @end

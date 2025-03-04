@@ -9,6 +9,9 @@
 
 #include "base/notreached.h"
 
+// common class properties.
+DEFINE_EXPORTED_UI_CLASS_PROPERTY_TYPE(COMPONENT_EXPORT(UI_BASE), bool)
+
 namespace ui {
 
 PropertyHandler::PropertyHandler() = default;
@@ -20,8 +23,9 @@ PropertyHandler::~PropertyHandler() {
 }
 
 void PropertyHandler::AcquireAllPropertiesFrom(PropertyHandler&& other) {
-  for (auto& prop_pair : other.prop_map_)
-    prop_map_[std::move(prop_pair.first)] = std::move(prop_pair.second);
+  for (auto& prop_pair : other.prop_map_) {
+    prop_map_[prop_pair.first] = std::move(prop_pair.second);
+  }
   other.prop_map_.clear();
 }
 
@@ -61,7 +65,6 @@ PropertyHandler* PropertyHandler::GetParentHandler() const {
   // scenarios where there isn't a notion of a parent, just override this method
   // and return null.
   NOTREACHED();
-  return nullptr;
 }
 
 int64_t PropertyHandler::GetPropertyInternal(const void* key,

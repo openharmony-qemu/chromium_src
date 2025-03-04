@@ -4,6 +4,7 @@
 
 #include "content/test/test_aggregation_service_impl.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -16,9 +17,9 @@
 #include "base/task/thread_pool.h"
 #include "base/time/clock.h"
 #include "base/time/time.h"
+#include "base/types/expected_macros.h"
 #include "base/uuid.h"
 #include "base/values.h"
-#include "components/aggregation_service/aggregation_service.mojom.h"
 #include "content/browser/aggregation_service/aggregatable_report.h"
 #include "content/browser/aggregation_service/aggregatable_report_assembler.h"
 #include "content/browser/aggregation_service/aggregatable_report_sender.h"
@@ -27,8 +28,7 @@
 #include "content/browser/aggregation_service/aggregation_service_test_utils.h"
 #include "content/browser/aggregation_service/public_key.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#include "third_party/blink/public/mojom/private_aggregation/aggregatable_report.mojom.h"
+#include "third_party/blink/public/mojom/aggregation_service/aggregatable_report.mojom.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
@@ -57,7 +57,7 @@ blink::mojom::AggregationServiceMode ConvertToAggregationMode(
 void HandleAggregatableReportCallback(
     base::OnceCallback<void(base::Value::Dict)> callback,
     AggregatableReportRequest,
-    absl::optional<AggregatableReport> report,
+    std::optional<AggregatableReport> report,
     AggregatableReportAssembler::AssemblyStatus status) {
   if (!report.has_value()) {
     LOG(ERROR) << "Failed to assemble the report, status: "
@@ -107,18 +107,16 @@ void TestAggregationServiceImpl::SetPublicKeys(
     const GURL& url,
     const base::FilePath& json_file,
     base::OnceCallback<void(bool)> callback) {
-  std::string error_msg;
-  absl::optional<PublicKeyset> keyset =
-      aggregation_service::ReadAndParsePublicKeys(json_file, clock_->Now(),
-                                                  &error_msg);
-  if (!keyset) {
-    LOG(ERROR) << error_msg;
-    std::move(callback).Run(false);
-    return;
-  }
+  ASSIGN_OR_RETURN(
+      PublicKeyset keyset,
+      aggregation_service::ReadAndParsePublicKeys(json_file, clock_->Now()),
+      [&](std::string error) {
+        LOG(ERROR) << error;
+        std::move(callback).Run(false);
+      });
 
   storage_.AsyncCall(&AggregationServiceStorage::SetPublicKeys)
-      .WithArgs(url, std::move(*keyset))
+      .WithArgs(url, std::move(keyset))
       .Then(base::BindOnce(std::move(callback), true));
 }
 
@@ -128,9 +126,13 @@ void TestAggregationServiceImpl::AssembleReport(
   AggregationServicePayloadContents payload_contents(
       ConvertToOperation(request.operation),
       {blink::mojom::AggregatableReportHistogramContribution(
-          /*bucket=*/request.bucket, /*value=*/request.value)},
+          /*bucket=*/request.bucket, /*value=*/request.value,
+          /*filtering_id=*/std::nullopt)},
       ConvertToAggregationMode(request.aggregation_mode),
-      ::aggregation_service::mojom::AggregationCoordinator::kDefault);
+      /*aggregation_coordinator_origin=*/std::nullopt,
+      /*max_contributions_allowed=*/20u,
+      // TODO(crbug.com/330744610): Allow setting.
+      /*filtering_id_max_bytes=*/std::nullopt);
 
   AggregatableReportSharedInfo shared_info(
       /*scheduled_report_time=*/base::Time::Now() + base::Seconds(30),
@@ -142,7 +144,7 @@ void TestAggregationServiceImpl::AssembleReport(
       std::move(request.additional_fields), std::move(request.api_version),
       std::move(request.api_identifier));
 
-  absl::optional<AggregatableReportRequest> report_request =
+  std::optional<AggregatableReportRequest> report_request =
       AggregatableReportRequest::CreateForTesting(
           std::move(request.processing_urls), std::move(payload_contents),
           std::move(shared_info));
@@ -161,7 +163,7 @@ void TestAggregationServiceImpl::SendReport(
     const base::Value& contents,
     base::OnceCallback<void(bool)> callback) {
   sender_->SendReport(
-      url, contents,
+      url, contents, AggregatableReportRequest::DelayType::Unscheduled,
       base::BindOnce(
           [&](base::OnceCallback<void(bool)> callback,
               AggregatableReportSender::RequestStatus status) {

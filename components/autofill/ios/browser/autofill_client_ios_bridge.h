@@ -7,11 +7,12 @@
 
 #include <vector>
 
-#include "base/memory/weak_ptr.h"
-#include "components/autofill/core/common/unique_ids.h"
+#import "base/functional/callback_forward.h"
+#import "base/memory/weak_ptr.h"
+#import "components/autofill/core/common/unique_ids.h"
 
 namespace autofill {
-class AutofillPopupDelegate;
+class AutofillSuggestionDelegate;
 struct Suggestion;
 }
 
@@ -19,13 +20,18 @@ struct Suggestion;
 @protocol AutofillClientIOSBridge
 
 - (void)showAutofillPopup:(const std::vector<autofill::Suggestion>&)suggestions
-            popupDelegate:
-                (const base::WeakPtr<autofill::AutofillPopupDelegate>&)delegate;
+       suggestionDelegate:
+           (const base::WeakPtr<autofill::AutofillSuggestionDelegate>&)delegate;
 
 - (void)hideAutofillPopup;
 
 // Checks whether the qurrent query is the most recent one.
 - (bool)isLastQueriedField:(autofill::FieldGlobalId)fieldId;
+
+// Shows a snackbar that offers a user to undo filling a plus address as part of
+// address form filling.
+- (void)showPlusAddressEmailOverrideNotification:
+    (base::OnceClosure)emailOverrideUndoCallback;
 
 @end
 

@@ -7,14 +7,13 @@
 
 #import "ios/chrome/browser/ui/settings/settings_root_table_view_controller.h"
 
-class ChromeBrowserState;
+class ProfileIOS;
 
 // Controller for the UI that allows the user to block popups.
 @interface BlockPopupsTableViewController : SettingsRootTableViewController
 
-// The designated initializer. `browserState` must not be nil.
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState
-    NS_DESIGNATED_INITIALIZER;
+// The designated initializer. `profile` must not be nil.
+- (instancetype)initWithProfile:(ProfileIOS*)profile NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithStyle:(UITableViewStyle)style NS_UNAVAILABLE;
 

@@ -18,15 +18,15 @@ namespace views {
 // `dark_image` must be of the same size. The `light_image` is set by default
 // upon construction.
 class VIEWS_EXPORT ThemeTrackingImageView : public ImageView {
- public:
-  METADATA_HEADER(ThemeTrackingImageView);
+  METADATA_HEADER(ThemeTrackingImageView, ImageView)
 
+ public:
   ThemeTrackingImageView(
       const ui::ImageModel& light_image_model,
       const ui::ImageModel& dark_image_model,
       const base::RepeatingCallback<SkColor()>& get_background_color_callback);
 
-  // TODO(crbug.com/1366871): Remove this constructor and migrate existing
+  // TODO(crbug.com/40239900): Remove this constructor and migrate existing
   // callers to `ImageModel`.
   ThemeTrackingImageView(
       const gfx::ImageSkia& light_image,

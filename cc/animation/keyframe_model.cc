@@ -93,7 +93,9 @@ std::unique_ptr<KeyframeModel> KeyframeModel::CreateImplInstance(
   to_return->ForceRunState(initial_run_state);
   to_return->set_iterations(iterations());
   to_return->set_iteration_start(iteration_start());
-  to_return->set_start_time(start_time());
+  if (has_set_start_time()) {
+    to_return->set_start_time(start_time());
+  }
   to_return->set_pause_time(pause_time());
   to_return->set_total_paused_duration(total_paused_duration());
   to_return->set_time_offset(time_offset());
@@ -126,6 +128,7 @@ KeyframeModel::KeyframeModel(std::unique_ptr<gfx::AnimationCurve> curve,
       is_impl_only_(false),
       affects_active_elements_(true),
       affects_pending_elements_(true) {
+  CHECK_NE(group_, kInvalidGroup);
 }
 
 KeyframeModel::~KeyframeModel() = default;

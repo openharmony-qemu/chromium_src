@@ -2,11 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "device/gamepad/dualshock4_controller.h"
 
 #include <algorithm>
 #include <array>
 
+#include "base/compiler_specific.h"
+#include "base/containers/span.h"
 #include "base/metrics/crc32.h"
 #include "base/numerics/safe_conversions.h"
 #include "device/gamepad/gamepad_data_fetcher.h"
@@ -35,7 +42,7 @@ const float kDpadMax = 7.0f;
 constexpr uint16_t kTouchDimensionX = 1920;
 constexpr uint16_t kTouchDimensionY = 942;
 
-struct ControllerData {
+struct PACKED_OBJ ControllerData {
   uint8_t axis_left_x;
   uint8_t axis_left_y;
   uint8_t axis_right_x;
@@ -70,7 +77,7 @@ struct ControllerData {
   uint8_t battery_info : 5;
   uint8_t padding2 : 2;
   bool extension_detection : 1;
-} ABSL_ATTRIBUTE_PACKED;
+};
 
 static_assert(sizeof(ControllerData) == 30,
               "ControllerData has incorrect size");
@@ -101,7 +108,7 @@ struct Dualshock4InputReportUsb {
 static_assert(sizeof(Dualshock4InputReportUsb) == 64,
               "Dualshock4InputReportUsb has incorrect size");
 
-struct Dualshock4InputReportBluetooth {
+struct PACKED_OBJ Dualshock4InputReportBluetooth {
   uint8_t padding1[2];
   ControllerData controller_data;
   uint8_t padding2[2];
@@ -109,7 +116,7 @@ struct Dualshock4InputReportBluetooth {
   TouchPadData touches[4];
   uint8_t padding3[2];
   uint32_t crc32;
-} ABSL_ATTRIBUTE_PACKED;
+};
 
 static_assert(sizeof(Dualshock4InputReportBluetooth) == 77,
               "Dualshock4InputReportBluetooth has incorrect size");
@@ -121,9 +128,9 @@ uint32_t ComputeDualshock4Checksum(base::span<const uint8_t> report_data) {
   // The Bluetooth report checksum includes a constant header byte not contained
   // in the report data.
   constexpr uint8_t bt_header = 0xa2;
-  uint32_t crc = base::Crc32(0xffffffff, &bt_header, 1);
+  uint32_t crc = base::Crc32(0xffffffff, base::span_from_ref(bt_header));
   // Extend the checksum with the contents of the report.
-  return ~base::Crc32(crc, report_data.data(), report_data.size_bytes());
+  return ~base::Crc32(crc, report_data);
 }
 
 // Scales |value| with range [0,255] to a float within [-1.0,+1.0].
@@ -166,11 +173,11 @@ void ReadTouchCoordinates(base::span<const uint8_t> ds4_touch_data_span,
 
 // Reads the touchpad information given by `touchpad_data` and `touches_count`
 // into `pad`.
-// TODO(crbug.com/1143942): Make a member of Dualshock4Controller
+// TODO(crbug.com/40155307): Make a member of Dualshock4Controller
 template <typename Transform>
 void ProcessTouchData(base::span<const TouchPadData> touchpad_data,
                       Transform& id_transform,
-                      absl::optional<uint32_t>& initial_touch_id,
+                      std::optional<uint32_t>& initial_touch_id,
                       Gamepad* pad) {
   pad->touch_events_length = 0;
   GamepadTouch* touches = pad->touch_events;
@@ -389,7 +396,7 @@ void Dualshock4Controller::SetVibrationBluetooth(double strong_magnitude,
   // The last four bytes of the report hold a CRC32 checksum. Compute the
   // checksum and store it in little-endian byte order.
   uint32_t crc = ComputeDualshock4Checksum(
-      base::make_span(control_report.data(), control_report.size() - 4));
+      base::span(control_report).first(control_report.size() - 4));
   control_report[control_report.size() - 4] = crc & 0xff;
   control_report[control_report.size() - 3] = (crc >> 8) & 0xff;
   control_report[control_report.size() - 2] = (crc >> 16) & 0xff;

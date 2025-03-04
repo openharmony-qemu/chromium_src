@@ -1,153 +1,139 @@
-// Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "services/device/battery/battery_status_manager.h"
+#include "services/device/battery/battery_status_manager_ohos.h"
 
 #include <memory>
+#include <string>
 
-#include "base/memory/ref_counted.h"
-#include "ohos_adapter_helper.h"
+#include "base/logging.h"
+#include "ohos/adapter/battery/battery_adapter.h"
 
-using namespace OHOS::NWeb;
+using namespace ohos::adapter::battery;
 namespace device {
-namespace {
 
-class BatteryManagerListener;
-
-class BatteryEventCallback : public OHOS::NWeb::WebBatteryEventCallback {
-public:
-  BatteryEventCallback(BatteryManagerListener* lis) : listener_(lis) {}
-  
-  void BatteryInfoChanged(std::shared_ptr<WebBatteryInfo> info) override;
-      
-private:
-  BatteryManagerListener* listener_;
-}; 
-
-class BatteryManagerListener : public base::RefCountedThreadSafe<BatteryManagerListener> {
+class BatteryUpdateCallbackImpl : public BatteryUpdateCallback {
  public:
-  BatteryManagerListener(const BatteryManagerListener&) = delete;
-  BatteryManagerListener& operator=(const BatteryManagerListener&) = delete;
+  explicit BatteryUpdateCallbackImpl(
+      BatteryStatusObserver* battery_status_observer_ohos)
+      : observer_ohos_(battery_status_observer_ohos) {}
+  virtual ~BatteryUpdateCallbackImpl() = default;
+  void OnBatteryStatusChanged(const BatteryInfo& battery_info) override;
 
-  explicit BatteryManagerListener(
-      const BatteryStatusService::BatteryUpdateCallback& callback) : callback_(callback), isListen(false) {
-        batteryClient = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateBatteryClientAdapter();
-        if (batteryClient == nullptr) {
-            return;
-        }
-        
-        event_callback_ = std::make_shared<BatteryEventCallback>(this);
-        batteryClient->RegBatteryEvent(event_callback_);
-      }
+ private:
+  BatteryStatusObserver* observer_ohos_ = nullptr;
+};
 
-  bool StartListen() {
-    LOG(INFO) << "start listen";
-    if (isListen) {
-        return true;
-    }
-    if (batteryClient == nullptr) {
-        return false;
-    }
-    if (!batteryClient->StartListen()) {
-        LOG(ERROR) << "start listen fail";
-        return false;
-    }
-    LOG(INFO) << "fisrt request battery info";
-    std::shared_ptr<WebBatteryInfo> batteryInfo = batteryClient->RequestBatteryInfo();
-    if (batteryInfo != nullptr) {
-        mojom::BatteryStatus status;
-        status.level = batteryInfo->GetLevel();
-        status.charging = batteryInfo->IsCharging();
-        status.charging_time = std::numeric_limits<double>::infinity();
-        if(status.charging) {
-            status.discharging_time = std::numeric_limits<double>::infinity();
-        } else {
-            status.discharging_time = 0.0;
-        }
-        callback_.Run(status);
+void BatteryUpdateCallbackImpl::OnBatteryStatusChanged(
+    const BatteryInfo& battery_info) {
+  if (observer_ohos_) {
+    observer_ohos_->BatteryChanged(battery_info);
+  }
+}
+
+mojom::BatteryStatus ComputeWebBatteryStatus(const BatteryInfo& battery_info) {
+  mojom::BatteryStatus status;
+  double full_battery_soc = 100.f;
+  int max_battery_level = 1;
+  if (battery_info.battery_soc != INVALID_BATT_INT_VALUE) {
+    status.level = battery_info.battery_soc / full_battery_soc;
+  }
+
+  if (battery_info.charging_status != BatteryChargeState::CHARGE_STATE_ENABLE &&
+      battery_info.charging_status != BatteryChargeState::CHARGE_STATE_BUTT) {
+    status.charging = false;
+  }
+
+  if (status.charging) {
+    bool is_charge_full = (status.level >= max_battery_level);
+    bool is_charge_time_valid = (battery_info.estimated_remaining_charge_time !=
+                                 INVALID_BATT_INT_VALUE);
+    status.charging_time =
+        (is_charge_full ? 0
+                        : (is_charge_time_valid
+                               ? battery_info.estimated_remaining_charge_time
+                               : std::numeric_limits<double>::infinity()));
+  } else {
+    if (battery_info.now_current != INVALID_BATT_INT_VALUE &&
+        battery_info.remaining_energy != INVALID_BATT_INT_VALUE) {
+      status.discharging_time =
+          static_cast<double>(battery_info.remaining_energy) /
+          battery_info.now_current;
     } else {
-        callback_.Run(mojom::BatteryStatus());
+      status.discharging_time = std::numeric_limits<double>::infinity();
     }
-    isListen = true;
+    status.charging_time = std::numeric_limits<double>::infinity();
+  }
+
+  return status;
+}
+
+BatteryStatusObserver::BatteryStatusObserver(const BatteryCallback& callback)
+    : callback_(callback) {}
+
+BatteryStatusObserver::~BatteryStatusObserver() {
+  if (battery_update_callback_ != nullptr) {
+    battery_update_callback_.reset();
+  }
+}
+
+void BatteryStatusObserver::Start() {
+  BatteryInfo battery_info;
+  if (BatteryAdapter::GetInstance().GetBatteryInfo(battery_info)) {
+    callback_.Run(ComputeWebBatteryStatus(battery_info));
+  } else {
+    callback_.Run(mojom::BatteryStatus());
+  }
+
+  battery_update_callback_ = std::make_shared<BatteryUpdateCallbackImpl>(this);
+  if (!battery_update_callback_) {
+    LOG(WARNING) << "create battery update callback failed";
+    return;
+  }
+  if (!BatteryAdapter::GetInstance().RegisterBatteryUpdateCallback(
+          battery_update_callback_)) {
+    LOG(WARNING) << "register battery update callback failed";
+  }
+}
+
+void BatteryStatusObserver::Stop() {
+  BatteryAdapter::GetInstance().UnregisterBatteryUpdateCallback();
+}
+
+void BatteryStatusObserver::BatteryChanged(const BatteryInfo& battery_info) {
+  callback_.Run(ComputeWebBatteryStatus(battery_info));
+}
+
+BatteryStatusManagerOhos::BatteryStatusManagerOhos(
+    const BatteryCallback& callback)
+    : battery_observer_(std::make_unique<BatteryStatusObserver>(callback)) {}
+
+BatteryStatusManagerOhos::~BatteryStatusManagerOhos() {
+  if (battery_observer_ != nullptr) {
+    battery_observer_->Stop();
+    battery_observer_.reset();
+  }
+}
+
+bool BatteryStatusManagerOhos::StartListeningBatteryChange() {
+  if (battery_observer_ != nullptr) {
+    battery_observer_->Start();
     return true;
   }
+  return false;
+}
 
-  void StopListen() {
-    if (!isListen) {
-       return;
-    }
-    LOG(INFO) << "stop Listen";
-    if (batteryClient == nullptr) {
-        return;
-    }
-    batteryClient->StopListen();
-    isListen = false;
-  }
-
- private:
-  friend class BatteryEventCallback;
-
-  void BatteryChanged(std::shared_ptr<WebBatteryInfo>& info) {
-    mojom::BatteryStatus status;
-    status.level = info->GetLevel();
-    status.charging = info->IsCharging();
-    status.charging_time = std::numeric_limits<double>::infinity();
-    if(status.charging) {
-        status.discharging_time = std::numeric_limits<double>::infinity();
-    } else {
-        status.discharging_time = 0.0;
-    }
-    LOG(INFO) << "recive battery changed" << status.level << status.charging;
-    callback_.Run(status);
-  }
-
-  std::shared_ptr<WebBatteryEventCallback> event_callback_;
-
-  BatteryStatusService::BatteryUpdateCallback callback_;
-  bool isListen;
-  std::unique_ptr<BatteryMgrClientAdapter> batteryClient = nullptr;
-};
-
-void BatteryEventCallback::BatteryInfoChanged(std::shared_ptr<WebBatteryInfo> info) {
-  if (listener_) {
-    listener_->BatteryChanged(info);
+void BatteryStatusManagerOhos::StopListeningBatteryChange() {
+  if (battery_observer_ != nullptr) {
+    battery_observer_->Stop();
   }
 }
 
-class BatteryStatusManagerOhos: public BatteryStatusManager {
- public:
-  BatteryStatusManagerOhos(const BatteryStatusManagerOhos&) = delete;
-  BatteryStatusManagerOhos& operator=(const BatteryStatusManagerOhos&) = delete;
-
-  explicit BatteryStatusManagerOhos(
-      const BatteryStatusService::BatteryUpdateCallback& callback)
-      : observer_(base::MakeRefCounted<BatteryManagerListener>(callback)) {}
-
-  ~BatteryStatusManagerOhos() override {
-    LOG(INFO) << "battery release";
-    observer_->StopListen();
-  }
-
- private:
-  bool StartListeningBatteryChange() override {
-    LOG(INFO) << "start listening battery change";
-    return observer_->StartListen();
-  }
-
-  void StopListeningBatteryChange() override {
-    LOG(INFO) << "stop listen battery change";
-    observer_->StopListen();
-  }
-
-  scoped_refptr<BatteryManagerListener> observer_;
-};
-
-}
-
+// static
 std::unique_ptr<BatteryStatusManager> BatteryStatusManager::Create(
     const BatteryStatusService::BatteryUpdateCallback& callback) {
   return std::make_unique<BatteryStatusManagerOhos>(callback);
 }
 
-}
+}  // namespace device

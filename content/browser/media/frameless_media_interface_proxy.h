@@ -54,6 +54,11 @@ class FramelessMediaInterfaceProxy final
       mojo::PendingReceiver<media::mojom::VideoDecoder> receiver,
       mojo::PendingRemote<media::stable::mojom::StableVideoDecoder>
           dst_video_decoder) final;
+#if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+  void CreateStableVideoDecoder(
+      mojo::PendingReceiver<media::stable::mojom::StableVideoDecoder>
+          video_decoder) final;
+#endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
   void CreateAudioEncoder(
       mojo::PendingReceiver<media::mojom::AudioEncoder> receiver) final;
   void CreateDefaultRenderer(
@@ -64,23 +69,24 @@ class FramelessMediaInterfaceProxy final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<media::mojom::Renderer> receiver) final;
 #endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
   void CreateMediaPlayerRenderer(
       mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
           client_extension_remote,
       mojo::PendingReceiver<media::mojom::Renderer> receiver,
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver) final;
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#endif  //  BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
-      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+      mojo::PendingRemote<
+          media::mojom::CustomMediaPlayerRendererClientExtension>
           client_extension_remote,
       mojo::PendingReceiver<media::mojom::Renderer> receiver,
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
       int player_id) final;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

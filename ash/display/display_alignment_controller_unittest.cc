@@ -6,6 +6,7 @@
 
 #include "ash/constants/ash_features.h"
 #include "ash/display/display_alignment_indicator.h"
+#include "ash/display/window_tree_host_manager.h"
 #include "ash/shell.h"
 #include "ash/test/ash_test_base.h"
 #include "base/memory/raw_ptr.h"
@@ -149,7 +150,7 @@ class DisplayAlignmentControllerTest : public AshTestBase {
     EXPECT_TRUE(indicator_widget.IsVisible());
   }
 
-  raw_ptr<base::MockOneShotTimer, ExperimentalAsh> mock_timer_ptr_ = nullptr;
+  raw_ptr<base::MockOneShotTimer, DanglingUntriaged> mock_timer_ptr_ = nullptr;
 
  private:
   base::test::ScopedFeatureList scoped_feature_list_;

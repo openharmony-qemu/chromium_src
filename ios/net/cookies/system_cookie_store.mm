@@ -10,10 +10,6 @@
 #import "ios/net/cookies/cookie_creation_time_manager.h"
 #include "ios/net/ios_net_buildflags.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace net {
 
 SystemCookieStore::~SystemCookieStore() = default;
@@ -37,10 +33,10 @@ base::WeakPtr<SystemCookieStore> SystemCookieStore::GetWeakPtr() {
 }
 
 // protected static
-NSInteger SystemCookieStore::CompareCookies(id a, id b, void* context) {
+NSInteger SystemCookieStore::CompareCookies(NSHTTPCookie* cookie_a,
+                                            NSHTTPCookie* cookie_b,
+                                            void* context) {
   DCHECK(context);
-  NSHTTPCookie* cookie_a = static_cast<NSHTTPCookie*>(a);
-  NSHTTPCookie* cookie_b = static_cast<NSHTTPCookie*>(b);
   // Compare path lengths first.
   NSUInteger path_length_a = cookie_a.path.length;
   NSUInteger path_length_b = cookie_b.path.length;

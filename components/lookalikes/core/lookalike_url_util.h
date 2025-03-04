@@ -19,8 +19,10 @@
 
 namespace lookalikes {
 
-// Name of the histogram recorded by the interstitial for lookalike match types.
+// Name of the histograms recorded by the interstitial for lookalike match
+// types.
 extern const char kInterstitialHistogramName[];
+extern const char kIncognitoInterstitialHistogramName[];
 
 // Register applicable preferences with the provided registry.
 void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry);
@@ -122,9 +124,10 @@ enum class NavigationSuggestionEvent {
   kMaxValue = kComboSquattingSiteEngagement,
 };
 
-struct Top500DomainsParams {
-  // Skeletons of top 500 domains. There can be fewer than 500 skeletons in
-  // this array.
+struct TopBucketDomainsParams {
+  // Skeletons of top bucket domains. This is the top 500 or 1000 most popular
+  // domains (though, there can be fewer than 500 or 1000 skeletons in this
+  // array).
   // This field is not a raw_ptr<> because it was filtered by the rewriter for:
   // #global-scope
   RAW_PTR_EXCLUSION const char* const* edit_distance_skeletons;
@@ -220,7 +223,8 @@ bool IsTopDomain(const DomainInfo& domain_info);
 std::string GetETLDPlusOne(const std::string& hostname);
 
 // Records an interstitial histogram entry for the given match type.
-void RecordUMAFromMatchType(LookalikeUrlMatchType match_type);
+void RecordUMAFromMatchType(LookalikeUrlMatchType match_type,
+                            bool is_incognito);
 
 using LookalikeTargetAllowlistChecker =
     base::RepeatingCallback<bool(const std::string&)>;
@@ -278,10 +282,10 @@ void SetEnterpriseAllowlistForTesting(PrefService* pref_service,
 bool HasOneCharacterSwap(const std::u16string& str1,
                          const std::u16string& str2);
 
-// Sets information about top 500 domains for testing.
-void SetTop500DomainsParamsForTesting(const Top500DomainsParams& params);
-// Resets information about top 500 domains for testing.
-void ResetTop500DomainsParamsForTesting();
+// Sets information about top bucket domains for testing.
+void SetTopBucketDomainsParamsForTesting(const TopBucketDomainsParams& params);
+// Resets information about top bucket domains for testing.
+void ResetTopBucketDomainsParamsForTesting();
 
 // Returns true if the launch configuration provided by the component updater
 // enables `heuristic` for the given `etld_plus_one`.

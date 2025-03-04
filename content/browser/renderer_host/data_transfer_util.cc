@@ -39,18 +39,17 @@ namespace {
 // the correct file system backend. This method checks if this is the case, and
 // updates `entry_path` to the path that should be used by the File System
 // Access implementation.
-content::FileSystemAccessEntryFactory::PathType MaybeRemapPath(
-    base::FilePath* entry_path) {
+content::PathType MaybeRemapPath(base::FilePath* entry_path) {
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   base::FilePath virtual_path;
   auto* external_mount_points =
       storage::ExternalMountPoints::GetSystemInstance();
   if (external_mount_points->GetVirtualPath(*entry_path, &virtual_path)) {
     *entry_path = std::move(virtual_path);
-    return content::FileSystemAccessEntryFactory::PathType::kExternal;
+    return content::PathType::kExternal;
   }
 #endif
-  return content::FileSystemAccessEntryFactory::PathType::kLocal;
+  return content::PathType::kLocal;
 }
 
 }  // namespace
@@ -68,11 +67,13 @@ std::vector<blink::mojom::DataTransferFilePtr> FileInfosToDataTransferFiles(
     mojo::PendingRemote<blink::mojom::FileSystemAccessDataTransferToken>
         pending_token;
     base::FilePath entry_path = file_info.path;
-    FileSystemAccessManagerImpl::PathType path_type =
-        MaybeRemapPath(&entry_path);
+    content::PathType path_type = MaybeRemapPath(&entry_path);
+    base::FilePath display_name = !file_info.display_name.empty()
+                                      ? file_info.display_name
+                                      : entry_path.BaseName();
     file_system_access_manager->CreateFileSystemAccessDataTransferToken(
-        path_type, entry_path, child_id,
-        pending_token.InitWithNewPipeAndPassReceiver());
+        content::PathInfo(path_type, entry_path, display_name.AsUTF8Unsafe()),
+        child_id, pending_token.InitWithNewPipeAndPassReceiver());
     file->file_system_access_token = std::move(pending_token);
     result.push_back(std::move(file));
   }
@@ -106,7 +107,7 @@ FileSystemFileInfosToDragItemFileSystemFilePtr(
     base::FilePath::StringType extension = file_system_url.path().Extension();
     if (!extension.empty()) {
       std::string mime_type;
-      // TODO(https://crbug.com/155455): Historically for blobs created from
+      // TODO(crbug.com/40291155): Historically for blobs created from
       // file system URLs we've only considered well known content types to
       // avoid leaking the presence of locally installed applications when
       // creating blobs from files in the sandboxed file system. However, since
@@ -119,7 +120,7 @@ FileSystemFileInfosToDragItemFileSystemFilePtr(
                                                  &mime_type))
         content_type = std::move(mime_type);
     }
-    // TODO(https://crbug.com/962306): Consider some kind of fallback type when
+    // TODO(crbug.com/41458368): Consider some kind of fallback type when
     // the above mime type detection fails.
 
     mojo::PendingRemote<blink::mojom::Blob> blob_remote;
@@ -214,9 +215,10 @@ blink::mojom::DragDataPtr DropDataToDragData(
       // browser messages, in which case the field is unused and this will hit
       // a DCHECK.
       drop_data.filesystem_id.empty()
-          ? absl::nullopt
-          : absl::optional<std::string>(
+          ? std::nullopt
+          : std::optional<std::string>(
                 base::UTF16ToUTF8(drop_data.filesystem_id)),
+      /*force_default_action=*/!drop_data.document_is_handling_drag,
       drop_data.referrer_policy);
 }
 
@@ -270,7 +272,8 @@ blink::mojom::DragDataPtr DropMetaDataToDragData(
       continue;
     }
   }
-  return blink::mojom::DragData::New(std::move(items), absl::nullopt,
+  return blink::mojom::DragData::New(std::move(items), std::nullopt,
+                                     /*force_default_action=*/false,
                                      network::mojom::ReferrerPolicy::kDefault);
 }
 

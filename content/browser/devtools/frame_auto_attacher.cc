@@ -4,11 +4,13 @@
 
 #include "content/browser/devtools/frame_auto_attacher.h"
 
+#include "base/containers/contains.h"
 #include "base/time/time.h"
 #include "content/browser/devtools/auction_worklet_devtools_agent_host.h"
 #include "content/browser/devtools/devtools_renderer_channel.h"
 #include "content/browser/devtools/render_frame_devtools_agent_host.h"
 #include "content/browser/devtools/service_worker_devtools_agent_host.h"
+#include "content/browser/devtools/shared_storage_worklet_devtools_agent_host.h"
 #include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/navigation_request.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -28,9 +30,10 @@ void GetMatchingHostsByScopeMap(
   for (const GURL& url : urls)
     host_name_set.insert(url.DeprecatedGetOriginAsURL());
   for (const auto& host : agent_hosts) {
-    if (host_name_set.find(host->scope().DeprecatedGetOriginAsURL()) ==
-        host_name_set.end())
+    if (!base::Contains(host_name_set,
+                        host->scope().DeprecatedGetOriginAsURL())) {
       continue;
+    }
     const auto& it = scope_agents_map->find(host->scope());
     if (it == scope_agents_map->end()) {
       std::unique_ptr<ServiceWorkerDevToolsAgentHost::List> new_list(
@@ -128,7 +131,6 @@ void FrameAutoAttacher::SetRenderFrameHost(
   if (!auto_attach())
     return;
   UpdateFrames();
-  UpdatePages();
   ReattachServiceWorkers();
 }
 
@@ -165,36 +167,6 @@ void FrameAutoAttacher::DidFinishNavigation(
     DispatchAutoAttach(agent_host.get(), wait_for_debugger_on_start);
 }
 
-void FrameAutoAttacher::UpdatePages() {
-  if (!auto_attach())
-    return;
-
-  Hosts new_hosts;
-  if (render_frame_host_) {
-    render_frame_host_->ForEachRenderFrameHostWithAction(
-        [root = render_frame_host_, &new_hosts](RenderFrameHostImpl* rfh) {
-          if (rfh == root)
-            return RenderFrameHost::FrameIterationAction::kContinue;
-
-          FrameTreeNode* frame_tree_node = rfh->frame_tree_node();
-          if (frame_tree_node->IsMainFrame() &&
-              WebContentsImpl::FromFrameTreeNode(frame_tree_node)->IsPortal()) {
-            scoped_refptr<DevToolsAgentHost> new_host =
-                RenderFrameDevToolsAgentHost::GetOrCreateFor(frame_tree_node);
-            new_hosts.insert(new_host);
-            return RenderFrameHost::FrameIterationAction::kSkipChildren;
-          }
-
-          if (rfh->is_local_root())
-            return RenderFrameHost::FrameIterationAction::kSkipChildren;
-
-          return RenderFrameHost::FrameIterationAction::kContinue;
-        });
-  }
-
-  DispatchSetAttachedTargetsOfType(new_hosts, DevToolsAgentHost::kTypePage);
-}
-
 void FrameAutoAttacher::AutoAttachToPage(FrameTree* frame_tree,
                                          bool wait_for_debugger_on_start) {
   if (!auto_attach())
@@ -207,7 +179,6 @@ void FrameAutoAttacher::AutoAttachToPage(FrameTree* frame_tree,
 void FrameAutoAttacher::UpdateAutoAttach(base::OnceClosure callback) {
   if (auto_attach()) {
     UpdateFrames();
-    UpdatePages();
     if (render_frame_host_ && !render_frame_host_->GetParent() &&
         !observing_service_workers_) {
       observing_service_workers_ = true;
@@ -223,6 +194,10 @@ void FrameAutoAttacher::UpdateAutoAttach(base::OnceClosure callback) {
       observing_auction_worklets_ = true;
       DebuggableAuctionWorkletTracker::GetInstance()->AddObserver(this);
     }
+    if (render_frame_host_ && !observing_shared_storage_worklets_) {
+      observing_shared_storage_worklets_ = true;
+      SharedStorageWorkletDevToolsManager::GetInstance()->AddObserver(this);
+    }
   } else {
     if (observing_service_workers_) {
       ServiceWorkerDevToolsManager::GetInstance()->RemoveObserver(this);
@@ -231,6 +206,10 @@ void FrameAutoAttacher::UpdateAutoAttach(base::OnceClosure callback) {
     if (observing_auction_worklets_) {
       DebuggableAuctionWorkletTracker::GetInstance()->RemoveObserver(this);
       observing_auction_worklets_ = false;
+    }
+    if (observing_shared_storage_worklets_) {
+      SharedStorageWorkletDevToolsManager::GetInstance()->RemoveObserver(this);
+      observing_shared_storage_worklets_ = false;
     }
   }
   RendererAutoAttacherBase::UpdateAutoAttach(std::move(callback));
@@ -244,8 +223,9 @@ void FrameAutoAttacher::WorkerCreated(ServiceWorkerDevToolsAgentHost* host,
       render_frame_host_->GetProcess()->GetBrowserContext();
   auto hosts = GetMatchingServiceWorkers(browser_context,
                                          GetFrameUrls(render_frame_host_));
-  if (hosts.find(host->GetId()) == hosts.end())
+  if (!base::Contains(hosts, host->GetId())) {
     return;
+  }
 
   *should_pause_on_start = wait_for_debugger_on_start();
   DispatchAutoAttach(host, *should_pause_on_start);
@@ -270,6 +250,30 @@ void FrameAutoAttacher::AuctionWorkletCreated(DebuggableAuctionWorklet* worklet,
                      should_pause_on_start);
 }
 
+void FrameAutoAttacher::SharedStorageWorkletCreated(
+    SharedStorageWorkletDevToolsAgentHost* host,
+    bool& should_pause_on_start) {
+  if (!render_frame_host_) {
+    return;
+  }
+
+  if (!host->IsRelevantTo(render_frame_host_)) {
+    return;
+  }
+
+  should_pause_on_start = wait_for_debugger_on_start();
+  DispatchAutoAttach(host, should_pause_on_start);
+}
+
+void FrameAutoAttacher::SharedStorageWorkletDestroyed(
+    SharedStorageWorkletDevToolsAgentHost* host) {
+  if (!render_frame_host_) {
+    return;
+  }
+
+  DispatchAutoDetach(host);
+}
+
 void FrameAutoAttacher::ReattachServiceWorkers() {
   if (!observing_service_workers_ || !render_frame_host_)
     return;
@@ -288,7 +292,8 @@ void FrameAutoAttacher::UpdateFrames() {
   DCHECK(auto_attach());
 
   Hosts new_hosts;
-  DevToolsAgentHost::List new_worklet_hosts;
+  DevToolsAgentHost::List new_auction_worklet_hosts;
+  DevToolsAgentHost::List new_shared_storage_worklet_hosts;
   if (render_frame_host_) {
     render_frame_host_->ForEachRenderFrameHostWithAction(
         [root = render_frame_host_, &new_hosts](RenderFrameHostImpl* rfh) {
@@ -313,14 +318,21 @@ void FrameAutoAttacher::UpdateFrames() {
         });
 
     AuctionWorkletDevToolsAgentHostManager::GetInstance().GetAllForFrame(
-        render_frame_host_, &new_worklet_hosts);
+        render_frame_host_, &new_auction_worklet_hosts);
+
+    SharedStorageWorkletDevToolsManager::GetInstance()->GetAllForFrame(
+        render_frame_host_, &new_shared_storage_worklet_hosts);
   }
 
   DispatchSetAttachedTargetsOfType(new_hosts, DevToolsAgentHost::kTypeFrame);
   DispatchSetAttachedTargetsOfType(
-      TargetAutoAttacher::Hosts(new_worklet_hosts.begin(),
-                                new_worklet_hosts.end()),
+      TargetAutoAttacher::Hosts(new_auction_worklet_hosts.begin(),
+                                new_auction_worklet_hosts.end()),
       DevToolsAgentHost::kTypeAuctionWorklet);
+  DispatchSetAttachedTargetsOfType(
+      TargetAutoAttacher::Hosts(new_shared_storage_worklet_hosts.begin(),
+                                new_shared_storage_worklet_hosts.end()),
+      DevToolsAgentHost::kTypeSharedStorageWorklet);
 }
 
 }  // namespace content

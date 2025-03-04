@@ -17,6 +17,7 @@
 #include "base/feature_list.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/raw_span.h"
 #include "base/values.h"
 
 namespace flags_ui {
@@ -30,7 +31,6 @@ extern const char kTrialGroupAboutFlags[];
 
 struct FeatureEntry;
 class FlagsStorage;
-struct SwitchEntry;
 
 // Enumeration of flag filters. These values don't persist and can be
 // renumbered.
@@ -45,7 +45,6 @@ enum {
   kOsFuchsia = 1 << 7,
   kOsWebView = 1 << 8,
   kOsLacros = 1 << 9,
-
   kOsOhOS = 1 << 10,
 
   kDeprecated = 1 << 11,
@@ -137,6 +136,12 @@ class FlagsState {
   void SetOriginListFlag(const std::string& internal_name,
                          const std::string& value,
                          FlagsStorage* flags_storage);
+
+  // Sets |value| as the parameter for the feature given by |internal_name|.
+  // |value| contains an arbitrary string.
+  void SetStringFlag(const std::string& internal_name,
+                     const std::string& value,
+                     FlagsStorage* flags_storage);
 
   // This method removes command line switches that were set by flags state.
   // |switch_list| is an input and an output.
@@ -271,7 +276,7 @@ class FlagsState {
                           const std::string& name,
                           int platform_mask) const;
 
-  const base::span<const FeatureEntry> feature_entries_;
+  const base::raw_span<const FeatureEntry> feature_entries_;
 
   bool needs_restart_;
   std::map<std::string, std::string> flags_switches_;

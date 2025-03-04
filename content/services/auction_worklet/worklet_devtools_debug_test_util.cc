@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/341324165): Fix and remove.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/services/auction_worklet/worklet_devtools_debug_test_util.h"
 
 #include <string>
@@ -160,7 +165,7 @@ void TestDevToolsAgentClient::LogEvent(
 
   // Now make it into a base::Value, to make it easy to look stuff up in it,
   // and queue it.
-  absl::optional<base::Value> val = base::JSONReader::Read(payload_json);
+  std::optional<base::Value> val = base::JSONReader::Read(payload_json);
   CHECK(val.has_value());
   Event event;
   event.type = type;

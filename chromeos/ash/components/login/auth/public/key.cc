@@ -64,7 +64,6 @@ void Key::ClearSecret() {
 void Key::Transform(KeyType target_key_type, const std::string& salt) {
   if (key_type_ != KEY_TYPE_PASSWORD_PLAIN) {
     NOTREACHED();
-    return;
   }
 
   switch (target_key_type) {
@@ -86,11 +85,11 @@ void Key::Transform(KeyType target_key_type, const std::string& salt) {
           crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
               crypto::SymmetricKey::AES, secret_, salt, kNumIterations,
               kKeySizeInBits));
-      base::Base64Encode(key->key(), &secret_);
+      secret_ = base::Base64Encode(key->key());
       break;
     }
     case KEY_TYPE_SALTED_SHA256:
-      base::Base64Encode(crypto::SHA256HashString(salt + secret_), &secret_);
+      secret_ = base::Base64Encode(crypto::SHA256HashString(salt + secret_));
       break;
 
     default:

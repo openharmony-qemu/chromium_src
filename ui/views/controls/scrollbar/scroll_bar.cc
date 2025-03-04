@@ -20,10 +20,12 @@
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/menu_source_type.mojom-forward.h"
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ui/gfx/canvas.h"
 #include "ui/strings/grit/ui_strings.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/controls/menu/menu_item_view.h"
 #include "ui/views/controls/menu/menu_runner.h"
 #include "ui/views/controls/scroll_view.h"
@@ -34,8 +36,8 @@ namespace views {
 
 ScrollBar::~ScrollBar() = default;
 
-bool ScrollBar::IsHorizontal() const {
-  return is_horiz_;
+ScrollBar::Orientation ScrollBar::GetOrientation() const {
+  return orientation_;
 }
 
 void ScrollBar::SetThumb(BaseScrollBarThumb* thumb) {
@@ -116,25 +118,25 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
   // event (except for the GESTURE_END event that is generated at the end of the
   // fling).
   if (scroll_animator_ && scroll_animator_->is_scrolling() &&
-      (event->type() != ui::ET_GESTURE_END ||
+      (event->type() != ui::EventType::kGestureEnd ||
        event->details().touch_points() > 1)) {
     scroll_animator_->Stop();
   }
 
-  if (event->type() == ui::ET_GESTURE_TAP_DOWN) {
+  if (event->type() == ui::EventType::kGestureTapDown) {
     ProcessPressEvent(*event);
     event->SetHandled();
     return;
   }
 
-  if (event->type() == ui::ET_GESTURE_LONG_PRESS) {
+  if (event->type() == ui::EventType::kGestureLongPress) {
     // For a long-press, the repeater started in tap-down should continue. So
     // return early.
     return;
   }
 
-#ifdef OHOS_DRAG_DROP
-  if (event->type() == ui::ET_GESTURE_DRAG_LONG_PRESS) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (event->type() == ui::EventType::kGestureDragLongPress) {
     // For a long-press, the repeater started in tap-down should continue. So
     // return early.
     return;
@@ -142,20 +144,20 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
 #endif
   repeater_.Stop();
 
-  if (event->type() == ui::ET_GESTURE_TAP) {
+  if (event->type() == ui::EventType::kGestureTap) {
     // TAP_DOWN would have already scrolled some amount. So scrolling again on
     // TAP is not necessary.
     event->SetHandled();
     return;
   }
 
-  if (event->type() == ui::ET_GESTURE_SCROLL_BEGIN) {
+  if (event->type() == ui::EventType::kGestureScrollBegin) {
     scroll_status_ = ScrollStatus::kScrollStarted;
     event->SetHandled();
     return;
   }
 
-  if (event->type() == ui::ET_GESTURE_SCROLL_END) {
+  if (event->type() == ui::EventType::kGestureScrollEnd) {
     scroll_status_ = ScrollStatus::kScrollEnded;
     controller()->OnScrollEnded();
     event->SetHandled();
@@ -164,20 +166,20 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
 
   // Update the |scroll_status_| to |kScrollEnded| in case the gesture sequence
   // ends incorrectly.
-  if (event->type() == ui::ET_GESTURE_END &&
+  if (event->type() == ui::EventType::kGestureEnd &&
       scroll_status_ != ScrollStatus::kScrollInEnding &&
       scroll_status_ != ScrollStatus::kScrollEnded) {
     scroll_status_ = ScrollStatus::kScrollEnded;
     controller()->OnScrollEnded();
   }
 
-  if (event->type() == ui::ET_GESTURE_SCROLL_UPDATE) {
+  if (event->type() == ui::EventType::kGestureScrollUpdate) {
     if (scroll_status_ == ScrollStatus::kScrollStarted)
       scroll_status_ = ScrollStatus::kScrollInProgress;
 
     float scroll_amount_f;
     int scroll_amount;
-    if (IsHorizontal()) {
+    if (GetOrientation() == Orientation::kHorizontal) {
       scroll_amount_f = event->details().scroll_x() - roundoff_error_.x();
       scroll_amount = base::ClampRound(scroll_amount_f);
       roundoff_error_.set_x(scroll_amount - scroll_amount_f);
@@ -191,11 +193,15 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
     return;
   }
 
-  if (event->type() == ui::ET_SCROLL_FLING_START) {
+  if (event->type() == ui::EventType::kScrollFlingStart) {
     scroll_status_ = ScrollStatus::kScrollInEnding;
     GetOrCreateScrollAnimator()->Start(
-        IsHorizontal() ? event->details().velocity_x() : 0.f,
-        IsHorizontal() ? 0.f : event->details().velocity_y());
+        GetOrientation() == Orientation::kHorizontal
+            ? event->details().velocity_x()
+            : 0.f,
+        GetOrientation() == Orientation::kHorizontal
+            ? 0.f
+            : event->details().velocity_y());
     event->SetHandled();
   }
 }
@@ -204,8 +210,8 @@ void ScrollBar::OnGestureEvent(ui::GestureEvent* event) {
 // ScrollBar, ScrollDelegate implementation:
 
 bool ScrollBar::OnScroll(float dx, float dy) {
-  return IsHorizontal() ? ScrollByContentsOffset(dx)
-                        : ScrollByContentsOffset(dy);
+  return ScrollByContentsOffset(
+      GetOrientation() == Orientation::kHorizontal ? dx : dy);
 }
 
 void ScrollBar::OnFlingScrollEnded() {
@@ -226,14 +232,16 @@ enum ScrollBarContextMenuCommands {
   ScrollBarContextMenuCommand_ScrollNext
 };
 
-void ScrollBar::ShowContextMenuForViewImpl(View* source,
-                                           const gfx::Point& p,
-                                           ui::MenuSourceType source_type) {
+void ScrollBar::ShowContextMenuForViewImpl(
+    View* source,
+    const gfx::Point& p,
+    ui::mojom::MenuSourceType source_type) {
   Widget* widget = GetWidget();
   gfx::Rect widget_bounds = widget->GetWindowBoundsInScreen();
   gfx::Point temp_pt(p.x() - widget_bounds.x(), p.y() - widget_bounds.y());
   View::ConvertPointFromWidget(this, &temp_pt);
-  context_menu_mouse_position_ = IsHorizontal() ? temp_pt.x() : temp_pt.y();
+  context_menu_mouse_position_ =
+      GetOrientation() == Orientation::kHorizontal ? temp_pt.x() : temp_pt.y();
 
   if (!menu_model_) {
     menu_model_ = std::make_unique<ui::SimpleMenuModel>(this);
@@ -242,26 +250,30 @@ void ScrollBar::ShowContextMenuForViewImpl(View* source,
     menu_model_->AddSeparator(ui::NORMAL_SEPARATOR);
     menu_model_->AddItemWithStringId(
         ScrollBarContextMenuCommand_ScrollStart,
-        IsHorizontal() ? IDS_APP_SCROLLBAR_CXMENU_SCROLLLEFTEDGE
-                       : IDS_APP_SCROLLBAR_CXMENU_SCROLLHOME);
+        GetOrientation() == Orientation::kHorizontal
+            ? IDS_APP_SCROLLBAR_CXMENU_SCROLLLEFTEDGE
+            : IDS_APP_SCROLLBAR_CXMENU_SCROLLHOME);
     menu_model_->AddItemWithStringId(
         ScrollBarContextMenuCommand_ScrollEnd,
-        IsHorizontal() ? IDS_APP_SCROLLBAR_CXMENU_SCROLLRIGHTEDGE
-                       : IDS_APP_SCROLLBAR_CXMENU_SCROLLEND);
+        GetOrientation() == Orientation::kHorizontal
+            ? IDS_APP_SCROLLBAR_CXMENU_SCROLLRIGHTEDGE
+            : IDS_APP_SCROLLBAR_CXMENU_SCROLLEND);
     menu_model_->AddSeparator(ui::NORMAL_SEPARATOR);
     menu_model_->AddItemWithStringId(ScrollBarContextMenuCommand_ScrollPageUp,
                                      IDS_APP_SCROLLBAR_CXMENU_SCROLLPAGEUP);
     menu_model_->AddItemWithStringId(ScrollBarContextMenuCommand_ScrollPageDown,
                                      IDS_APP_SCROLLBAR_CXMENU_SCROLLPAGEDOWN);
     menu_model_->AddSeparator(ui::NORMAL_SEPARATOR);
-    menu_model_->AddItemWithStringId(ScrollBarContextMenuCommand_ScrollPrev,
-                                     IsHorizontal()
-                                         ? IDS_APP_SCROLLBAR_CXMENU_SCROLLLEFT
-                                         : IDS_APP_SCROLLBAR_CXMENU_SCROLLUP);
-    menu_model_->AddItemWithStringId(ScrollBarContextMenuCommand_ScrollNext,
-                                     IsHorizontal()
-                                         ? IDS_APP_SCROLLBAR_CXMENU_SCROLLRIGHT
-                                         : IDS_APP_SCROLLBAR_CXMENU_SCROLLDOWN);
+    menu_model_->AddItemWithStringId(
+        ScrollBarContextMenuCommand_ScrollPrev,
+        GetOrientation() == Orientation::kHorizontal
+            ? IDS_APP_SCROLLBAR_CXMENU_SCROLLLEFT
+            : IDS_APP_SCROLLBAR_CXMENU_SCROLLUP);
+    menu_model_->AddItemWithStringId(
+        ScrollBarContextMenuCommand_ScrollNext,
+        GetOrientation() == Orientation::kHorizontal
+            ? IDS_APP_SCROLLBAR_CXMENU_SCROLLRIGHT
+            : IDS_APP_SCROLLBAR_CXMENU_SCROLLDOWN);
   }
   menu_runner_ = std::make_unique<MenuRunner>(
       menu_model_.get(),
@@ -277,7 +289,7 @@ bool ScrollBar::IsCommandIdEnabled(int id) const {
   switch (id) {
     case ScrollBarContextMenuCommand_ScrollPageUp:
     case ScrollBarContextMenuCommand_ScrollPageDown:
-      return !IsHorizontal();
+      return GetOrientation() == Orientation::kVertical;
   }
   return true;
 }
@@ -358,18 +370,18 @@ int ScrollBar::GetScrollIncrement(bool is_page, bool is_positive) {
 
 void ScrollBar::ObserveScrollEvent(const ui::ScrollEvent& event) {
   switch (event.type()) {
-    case ui::ET_SCROLL_FLING_CANCEL:
+    case ui::EventType::kScrollFlingCancel:
       scroll_status_ = ScrollStatus::kScrollStarted;
       break;
-    case ui::ET_SCROLL:
+    case ui::EventType::kScroll:
       if (scroll_status_ == ScrollStatus::kScrollStarted)
         scroll_status_ = ScrollStatus::kScrollInProgress;
       break;
-    case ui::ET_SCROLL_FLING_START:
+    case ui::EventType::kScrollFlingStart:
       scroll_status_ = ScrollStatus::kScrollEnded;
       controller()->OnScrollEnded();
       break;
-    case ui::ET_GESTURE_END:
+    case ui::EventType::kGestureEnd:
       if (scroll_status_ != ScrollStatus::kScrollEnded) {
         scroll_status_ = ScrollStatus::kScrollEnded;
         controller()->OnScrollEnded();
@@ -397,12 +409,12 @@ void ScrollBar::SetFlingMultiplier(float fling_multiplier) {
   GetOrCreateScrollAnimator()->set_velocity_multiplier(fling_multiplier_);
 }
 
-ScrollBar::ScrollBar(bool is_horiz)
-    : is_horiz_(is_horiz),
+ScrollBar::ScrollBar(Orientation orientation)
+    : orientation_(orientation),
       repeater_(base::BindRepeating(&ScrollBar::TrackClicked,
                                     base::Unretained(this))) {
   set_context_menu_controller(this);
-  SetAccessibilityProperties(ax::mojom::Role::kScrollBar);
+  GetViewAccessibility().SetRole(ax::mojom::Role::kScrollBar);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -422,7 +434,7 @@ int ScrollBar::GetThumbLengthForTesting() {
 
 void ScrollBar::ProcessPressEvent(const ui::LocatedEvent& event) {
   gfx::Rect thumb_bounds = thumb_->bounds();
-  if (IsHorizontal()) {
+  if (GetOrientation() == Orientation::kHorizontal) {
     if (GetMirroredXInView(event.x()) < thumb_bounds.x()) {
       last_scroll_amount_ = ScrollAmount::kPrevPage;
     } else if (GetMirroredXInView(event.x()) > thumb_bounds.right()) {
@@ -450,7 +462,8 @@ void ScrollBar::ScrollContentsToOffset() {
 
 int ScrollBar::GetTrackSize() const {
   gfx::Rect track_bounds = GetTrackBounds();
-  return IsHorizontal() ? track_bounds.width() : track_bounds.height();
+  return GetOrientation() == Orientation::kHorizontal ? track_bounds.width()
+                                                      : track_bounds.height();
 }
 
 int ScrollBar::CalculateThumbPosition(int contents_scroll_offset) const {
@@ -458,8 +471,14 @@ int ScrollBar::CalculateThumbPosition(int contents_scroll_offset) const {
   // simple division can be rounded and there could be 1 pixel gap even when the
   // contents scroll down to the bottom. See crbug.com/244671.
   int thumb_max = GetTrackSize() - thumb_->GetLength();
-  if (contents_scroll_offset + viewport_size_ == contents_size_)
+  if (contents_scroll_offset + viewport_size_ == contents_size_) {
     return thumb_max;
+  }
+  // Avoid dividing by zero if contents and viewport are the same size. See
+  // crbug.com/1447967.
+  if (viewport_size_ == contents_size_) {
+    return 0;
+  }
   return (contents_scroll_offset * thumb_max) /
          (contents_size_ - viewport_size_);
 }
@@ -485,9 +504,11 @@ void ScrollBar::SetContentsScrollOffset(int contents_scroll_offset) {
 ScrollBar::ScrollAmount ScrollBar::DetermineScrollAmountByKeyCode(
     const ui::KeyboardCode& keycode) const {
   // Reject arrows that don't match the scrollbar orientation.
-  if (IsHorizontal() ? (keycode == ui::VKEY_UP || keycode == ui::VKEY_DOWN)
-                     : (keycode == ui::VKEY_LEFT || keycode == ui::VKEY_RIGHT))
+  if (GetOrientation() == Orientation::kHorizontal
+          ? (keycode == ui::VKEY_UP || keycode == ui::VKEY_DOWN)
+          : (keycode == ui::VKEY_LEFT || keycode == ui::VKEY_RIGHT)) {
     return ScrollAmount::kNone;
+  }
 
   static const base::NoDestructor<
       base::flat_map<ui::KeyboardCode, ScrollAmount>>
@@ -506,7 +527,7 @@ ScrollBar::ScrollAmount ScrollBar::DetermineScrollAmountByKeyCode(
   return (i == kMap->end()) ? ScrollAmount::kNone : i->second;
 }
 
-absl::optional<int> ScrollBar::GetDesiredScrollOffset(ScrollAmount amount) {
+std::optional<int> ScrollBar::GetDesiredScrollOffset(ScrollAmount amount) {
   switch (amount) {
     case ScrollAmount::kStart:
       return GetMinPosition();
@@ -521,11 +542,11 @@ absl::optional<int> ScrollBar::GetDesiredScrollOffset(ScrollAmount amount) {
     case ScrollAmount::kNextPage:
       return contents_scroll_offset_ + GetScrollIncrement(true, true);
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
-BEGIN_METADATA(ScrollBar, View)
+BEGIN_METADATA(ScrollBar)
 ADD_READONLY_PROPERTY_METADATA(int, MaxPosition)
 ADD_READONLY_PROPERTY_METADATA(int, MinPosition)
 ADD_READONLY_PROPERTY_METADATA(int, Position)

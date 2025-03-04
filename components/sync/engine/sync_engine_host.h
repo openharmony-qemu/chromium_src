@@ -5,9 +5,9 @@
 #ifndef COMPONENTS_SYNC_ENGINE_SYNC_ENGINE_HOST_H_
 #define COMPONENTS_SYNC_ENGINE_SYNC_ENGINE_HOST_H_
 
-#include "components/sync/base/model_type.h"
+#include "components/sync/base/data_type.h"
 #include "components/sync/engine/sync_manager.h"
-#include "components/sync/protocol/sync_protocol_error.h"
+#include "components/sync/engine/sync_protocol_error.h"
 
 namespace syncer {
 
@@ -45,7 +45,7 @@ class SyncEngineHost {
   virtual void OnConnectionStatusChange(ConnectionStatus status) = 0;
 
   // Called to perform migration of |types|.
-  virtual void OnMigrationNeededForTypes(ModelTypeSet types) = 0;
+  virtual void OnMigrationNeededForTypes(DataTypeSet types) = 0;
 
   // Called when the sync cycle returns there is an user actionable error.
   virtual void OnActionableProtocolError(const SyncProtocolError& error) = 0;
@@ -55,6 +55,9 @@ class SyncEngineHost {
 
   // Called when invalidations are enabled or disabled.
   virtual void OnInvalidationStatusChanged() = 0;
+
+  // Called when there are new data types with pending invalidations.
+  virtual void OnNewInvalidatedDataTypes() = 0;
 };
 
 }  // namespace syncer

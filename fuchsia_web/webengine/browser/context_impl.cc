@@ -7,6 +7,7 @@
 #include <lib/fpromise/result.h>
 #include <lib/zx/channel.h>
 #include <lib/zx/handle.h>
+
 #include <memory>
 #include <utility>
 
@@ -14,6 +15,7 @@
 #include "base/fuchsia/koid.h"
 #include "base/fuchsia/mem_buffer_util.h"
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/strings/stringprintf.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/typed_macros.h"
@@ -56,7 +58,7 @@ ContextImpl::~ContextImpl() {
 
 void ContextImpl::DestroyFrame(FrameImpl* frame) {
   auto iter = frames_.find(frame);
-  DCHECK(iter != frames_.end());
+  CHECK(iter != frames_.end(), base::NotFatalUntil::M130);
   frames_.erase(iter);
 }
 
@@ -130,7 +132,7 @@ FrameImpl* ContextImpl::CreateFrameForWebContents(
 
   // Verify the explicit sites filter error page content. If the parameter is
   // present, it will be provided to the FrameImpl after it is created below.
-  absl::optional<std::string> explicit_sites_filter_error_page;
+  std::optional<std::string> explicit_sites_filter_error_page;
   if (params.has_explicit_sites_filter_error_page()) {
     explicit_sites_filter_error_page =
         base::StringFromMemData(params.explicit_sites_filter_error_page());

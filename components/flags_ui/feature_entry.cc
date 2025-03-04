@@ -36,6 +36,7 @@ bool FeatureEntry::InternalNameMatches(const std::string& name) const {
     case FeatureEntry::SINGLE_VALUE:
     case FeatureEntry::SINGLE_DISABLE_VALUE:
     case FeatureEntry::ORIGIN_LIST_VALUE:
+    case FeatureEntry::STRING_VALUE:
       return name.size() == internal_name_length;
 
     case FeatureEntry::MULTI_VALUE:
@@ -112,11 +113,9 @@ std::u16string FeatureEntry::DescriptionForOption(int index) const {
       || type == FeatureEntry::PLATFORM_FEATURE_NAME_VALUE
 #endif
   ) {
-    const char* const kEnableDisableDescriptions[] = {
-        kGenericExperimentChoiceDefault,
-        kGenericExperimentChoiceEnabled,
-        kGenericExperimentChoiceDisabled,
-    };
+    const auto kEnableDisableDescriptions = std::to_array<const char*>(
+        {kGenericExperimentChoiceDefault, kGenericExperimentChoiceEnabled,
+         kGenericExperimentChoiceDisabled});
     description = kEnableDisableDescriptions[index];
   } else if (type == FeatureEntry::FEATURE_WITH_PARAMS_VALUE
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -199,6 +198,7 @@ bool FeatureEntry::IsValid() const {
     case FeatureEntry::SINGLE_VALUE:
     case FeatureEntry::SINGLE_DISABLE_VALUE:
     case FeatureEntry::ORIGIN_LIST_VALUE:
+    case FeatureEntry::STRING_VALUE:
       return true;
     case FeatureEntry::MULTI_VALUE:
       if (choices.size() == 0) {
@@ -291,7 +291,7 @@ bool FeatureEntry::IsValid() const {
       return true;
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return false;
 }
 
@@ -305,7 +305,7 @@ FeatureEntry::GetVariations() const {
     return platform_feature_name.feature_variations;
   }
 #endif
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return base::span<const FeatureEntry::FeatureVariation>();
 }
 

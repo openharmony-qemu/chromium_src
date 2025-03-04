@@ -4,34 +4,31 @@
 
 #import "ios/chrome/browser/ui/settings/bandwidth/bandwidth_management_table_view_controller.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "components/prefs/ios/pref_observer_bridge.h"
 #import "components/prefs/pref_change_registrar.h"
 #import "components/prefs/pref_service.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_icon_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/settings/bandwidth/dataplan_usage_table_view_controller.h"
 #import "ios/chrome/browser/ui/settings/settings_table_view_controller_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -47,7 +44,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 }  // namespace
 
 @interface BandwidthManagementTableViewController () <PrefObserverDelegate> {
-  ChromeBrowserState* _browserState;  // weak
+  raw_ptr<ProfileIOS> _profile;  // weak
 
   // Pref observer to track changes to prefs.
   std::unique_ptr<PrefObserverBridge> _prefObserverBridge;
@@ -62,13 +59,13 @@ typedef NS_ENUM(NSInteger, ItemType) {
 
 @implementation BandwidthManagementTableViewController
 
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState {
+- (instancetype)initWithProfile:(ProfileIOS*)profile {
   self = [super initWithStyle:ChromeTableViewStyle()];
   if (self) {
     self.title = l10n_util::GetNSString(IDS_IOS_BANDWIDTH_MANAGEMENT_SETTINGS);
-    _browserState = browserState;
+    _profile = profile;
 
-    _prefChangeRegistrarApplicationContext.Init(_browserState->GetPrefs());
+    _prefChangeRegistrarApplicationContext.Init(_profile->GetPrefs());
     _prefObserverBridge.reset(new PrefObserverBridge(self));
     // Register to observe any changes on Perf backed values displayed by the
     // screen.
@@ -91,7 +88,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [self loadModel];
 }
 
-#pragma mark - ChromeTableViewController
+#pragma mark - LegacyChromeTableViewController
 
 - (void)loadModel {
   [super loadModel];
@@ -124,7 +121,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   if (SectionIdentifierActions ==
       [self.tableViewModel sectionIdentifierForSectionIndex:section]) {
     TableViewLinkHeaderFooterView* footer =
-        base::mac::ObjCCastStrict<TableViewLinkHeaderFooterView>(footerView);
+        base::apple::ObjCCastStrict<TableViewLinkHeaderFooterView>(footerView);
     footer.delegate = self;
   }
   return footerView;
@@ -137,7 +134,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     NSString* preloadTitle =
         l10n_util::GetNSString(IDS_IOS_OPTIONS_PRELOAD_WEBPAGES);
     UIViewController* controller = [[DataplanUsageTableViewController alloc]
-        initWithPrefs:_browserState->GetPrefs()
+        initWithPrefs:_profile->GetPrefs()
           settingPref:prefs::kNetworkPredictionSetting
                 title:preloadTitle];
     [self.navigationController pushViewController:controller animated:YES];
@@ -149,7 +146,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 - (void)onPreferenceChanged:(const std::string&)preferenceName {
   if (preferenceName == prefs::kNetworkPredictionSetting) {
     NSString* detailText = [DataplanUsageTableViewController
-        currentLabelForPreference:_browserState->GetPrefs()
+        currentLabelForPreference:_profile->GetPrefs()
                       settingPref:prefs::kNetworkPredictionSetting];
 
     _preloadWebpagesDetailItem.detailText = detailText;
@@ -164,7 +161,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 // menu.
 - (TableViewDetailIconItem*)preloadWebpagesItem {
   NSString* detailText = [DataplanUsageTableViewController
-      currentLabelForPreference:_browserState->GetPrefs()
+      currentLabelForPreference:_profile->GetPrefs()
                     settingPref:prefs::kNetworkPredictionSetting];
   _preloadWebpagesDetailItem =
       [[TableViewDetailIconItem alloc] initWithType:ItemTypePreload];

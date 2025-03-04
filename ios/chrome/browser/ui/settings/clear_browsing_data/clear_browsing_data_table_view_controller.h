@@ -8,7 +8,6 @@
 #import "ios/chrome/browser/ui/settings/settings_root_table_view_controller.h"
 
 @protocol ApplicationCommands;
-@protocol BrowsingDataCommands;
 class Browser;
 @protocol ClearBrowsingDataUIDelegate;
 
@@ -21,6 +20,9 @@ class Browser;
 - (instancetype)initWithBrowser:(Browser*)browser NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithStyle:(UITableViewStyle)style NS_UNAVAILABLE;
 
+// Must be call before the view is deallocated.
+- (void)stop;
+
 // Prepares view controller so that -dismissViewControllerAnimated dismisses it.
 // Call this method before dismissing view controller.
 - (void)prepareForDismissal;
@@ -29,8 +31,7 @@ class Browser;
 @property(nonatomic, weak) id<ClearBrowsingDataUIDelegate> delegate;
 
 // The dispatcher used by this ViewController.
-@property(nonatomic, weak) id<ApplicationCommands, BrowsingDataCommands>
-    dispatcher;
+@property(nonatomic, weak) id<ApplicationCommands> dispatcher;
 
 @end
 

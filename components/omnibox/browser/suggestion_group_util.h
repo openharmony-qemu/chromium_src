@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_OMNIBOX_BROWSER_SUGGESTION_GROUP_UTIL_H_
 #define COMPONENTS_OMNIBOX_BROWSER_SUGGESTION_GROUP_UTIL_H_
 
+#include "components/omnibox/browser/autocomplete_input.h"
 #include "third_party/omnibox_proto/groups.pb.h"
 
 namespace omnibox {
@@ -12,11 +13,15 @@ namespace omnibox {
 using GroupConfigMap = std::unordered_map<GroupId, GroupConfig>;
 
 // Builds the pre-defined static groups that are useful for sorting suggestions.
-const omnibox::GroupConfigMap& BuildDefaultGroups();
+const omnibox::GroupConfigMap& BuildDefaultGroupsForInput(
+    const AutocompleteInput& input);
 
 // Returns the omnibox::GroupId enum object corresponding to |value|, or
 // omnibox::GROUP_INVALID when there is no corresponding enum object.
 GroupId GroupIdForNumber(int value);
+
+// Releases all previously created group definitions for testing purposes.
+void ResetDefaultGroupsForTest();
 
 }  // namespace omnibox
 

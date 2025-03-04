@@ -78,12 +78,13 @@ class PrivacySandboxAdsPageLoadMetricsObserverTest
     static const base::flat_map<PrivacySandboxAdsApi, std::vector<WebFeature>>
         kFeaturesMap = {
             {PrivacySandboxAdsApi::kAttributionReporting,
-             {WebFeature::kConversionAPIAll}},
+             {WebFeature::kAttributionReportingAPIAll}},
             {PrivacySandboxAdsApi::kFencedFrames,
              {WebFeature::kHTMLFencedFrameElement}},
-            {PrivacySandboxAdsApi::kFledge,
-             {WebFeature::kV8Navigator_RunAdAuction_Method,
-              WebFeature::kV8Navigator_JoinAdInterestGroup_Method}},
+            {PrivacySandboxAdsApi::kProtectedAudienceRunAdAuction,
+             {WebFeature::kV8Navigator_RunAdAuction_Method}},
+            {PrivacySandboxAdsApi::kProtectedAudienceJoinAdInterestGroup,
+             {WebFeature::kV8Navigator_JoinAdInterestGroup_Method}},
             {PrivacySandboxAdsApi::kPrivateAggregation,
              {WebFeature::kPrivateAggregationApiAll}},
             {PrivacySandboxAdsApi::kSharedStorage,
@@ -145,7 +146,7 @@ class PrivacySandboxAdsPageLoadMetricsObserverTest
     timing.paint_timing->first_image_paint = base::Milliseconds(80);
     timing.paint_timing->first_contentful_paint = base::Milliseconds(100);
 
-    auto largest_contentful_paint = mojom::LargestContentfulPaintTiming::New();
+    auto largest_contentful_paint = CreateLargestContentfulPaintTiming();
     largest_contentful_paint->largest_image_paint = base::Milliseconds(100);
     largest_contentful_paint->largest_image_paint_size = 100;
     timing.paint_timing->largest_contentful_paint =
@@ -170,7 +171,7 @@ INSTANTIATE_TEST_SUITE_P(
         TestCase{
             .name = "all",
             .web_features =
-                {WebFeature::kConversionAPIAll,
+                {WebFeature::kAttributionReportingAPIAll,
                  WebFeature::kHTMLFencedFrameElement,
                  WebFeature::kV8Navigator_RunAdAuction_Method,
                  WebFeature::kV8Navigator_JoinAdInterestGroup_Method,

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/domain_reliability/util.h"
 
 #include <stddef.h>
@@ -83,10 +88,11 @@ bool GetDomainReliabilityBeaconStatus(
     int http_response_code,
     std::string* beacon_status_out) {
   if (net_error == net::OK) {
-    if (http_response_code >= 400 && http_response_code < 600)
+    if (http_response_code >= 400 && http_response_code < 600) {
       *beacon_status_out = "http.error";
-    else
+    } else {
       *beacon_status_out = "ok";
+    }
     return true;
   }
 
@@ -103,19 +109,19 @@ bool GetDomainReliabilityBeaconStatus(
 // TODO(juliatuttle): Consider using ALPN instead, if there's a good way to
 //                    differentiate HTTP and HTTPS.
 std::string GetDomainReliabilityProtocol(
-    net::HttpResponseInfo::ConnectionInfo connection_info,
+    net::HttpConnectionInfo connection_info,
     bool ssl_info_populated) {
-  switch (net::HttpResponseInfo::ConnectionInfoToCoarse(connection_info)) {
-    case net::HttpResponseInfo::CONNECTION_INFO_COARSE_HTTP1:
+  switch (net::HttpConnectionInfoToCoarse(connection_info)) {
+    case net::HttpConnectionInfoCoarse::kHTTP1:
       return ssl_info_populated ? "HTTPS" : "HTTP";
-    case net::HttpResponseInfo::CONNECTION_INFO_COARSE_HTTP2:
+    case net::HttpConnectionInfoCoarse::kHTTP2:
       return "SPDY";
-    case net::HttpResponseInfo::CONNECTION_INFO_COARSE_QUIC:
+    case net::HttpConnectionInfoCoarse::kQUIC:
       return "QUIC";
-    case net::HttpResponseInfo::CONNECTION_INFO_COARSE_OTHER:
+    case net::HttpConnectionInfoCoarse::kOTHER:
       return "";
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return "";
 }
 
@@ -173,8 +179,8 @@ namespace {
 
 class ActualTimer : public MockableTime::Timer {
  public:
-  ActualTimer() {}
-  ~ActualTimer() override {}
+  ActualTimer() = default;
+  ~ActualTimer() override = default;
 
   // MockableTime::Timer implementation:
   void Start(const base::Location& posted_from,
@@ -193,14 +199,14 @@ class ActualTimer : public MockableTime::Timer {
 
 }  // namespace
 
-MockableTime::Timer::~Timer() {}
-MockableTime::Timer::Timer() {}
+MockableTime::Timer::~Timer() = default;
+MockableTime::Timer::Timer() = default;
 
-MockableTime::~MockableTime() {}
-MockableTime::MockableTime() {}
+MockableTime::~MockableTime() = default;
+MockableTime::MockableTime() = default;
 
-ActualTime::ActualTime() {}
-ActualTime::~ActualTime() {}
+ActualTime::ActualTime() = default;
+ActualTime::~ActualTime() = default;
 
 base::Time ActualTime::Now() const {
   return base::Time::Now();

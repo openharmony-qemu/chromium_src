@@ -26,14 +26,15 @@
 
 namespace app_restore {
 struct AppLaunchInfo;
+struct AppRestoreData;
 class RestoreData;
 struct WindowInfo;
 }  // namespace app_restore
 
 namespace ash {
+class AppLaunchInfoSaveWaiter;
 namespace full_restore {
-class FullRestoreAppLaunchHandlerBrowserTest;
-class FullRestoreAppLaunchHandlerSystemWebAppsBrowserTest;
+class FullRestoreAppLaunchHandlerTestBase;
 class FullRestoreServiceTestHavingFullRestoreFile;
 }  // namespace full_restore
 }  // namespace ash
@@ -171,9 +172,8 @@ class COMPONENT_EXPORT(APP_RESTORE) FullRestoreReadHandler
   void AddChromeBrowserLaunchInfoForTesting(const base::FilePath& profile_path);
 
  private:
-  friend class ash::full_restore::FullRestoreAppLaunchHandlerBrowserTest;
-  friend class ash::full_restore::
-      FullRestoreAppLaunchHandlerSystemWebAppsBrowserTest;
+  friend class ash::AppLaunchInfoSaveWaiter;
+  friend class ash::full_restore::FullRestoreAppLaunchHandlerTestBase;
   friend class ash::full_restore::FullRestoreServiceTestHavingFullRestoreFile;
   friend class FullRestoreReadHandlerTestApi;
 

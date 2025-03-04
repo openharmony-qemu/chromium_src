@@ -3,10 +3,9 @@
 # found in the LICENSE file.
 
 source_set("sync_internals") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   sources = [
-    "sync_internals_message_handler.h",
-    "sync_internals_message_handler.mm",
+    "ios_sync_internals_message_handler.h",
+    "ios_sync_internals_message_handler.mm",
     "sync_internals_ui.h",
     "sync_internals_ui.mm",
   ]
@@ -15,8 +14,8 @@ source_set("sync_internals") {
     "//components/browser_sync",
     "//components/resources",
     "//components/sync",
-    "//components/sync/driver/resources",
     "//components/sync/invalidations",
+    "//components/sync/service/resources",
     "//components/version_info:version_info",
     "//ios/components/webui:provider",
     "//ios/components/webui:url_constants",

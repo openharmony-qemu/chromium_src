@@ -5,15 +5,9 @@
 #ifndef GPU_CONFIG_GPU_SWITCHES_H_
 #define GPU_CONFIG_GPU_SWITCHES_H_
 
-#include "build/build_config.h"
 #include "gpu/gpu_export.h"
 
 namespace switches {
-
-#if BUILDFLAG(IS_OHOS)
-GPU_EXPORT extern const char kDisableCanvasOopRasterization[];
-GPU_EXPORT extern const char kEnableCanvasOopRasterization[];
-#endif
 
 GPU_EXPORT extern const char kDisableGpuRasterization[];
 GPU_EXPORT extern const char kDisableMipmapGeneration[];
@@ -29,9 +23,10 @@ GPU_EXPORT extern const char kEnableWebGPUDeveloperFeatures[];
 GPU_EXPORT extern const char kEnableDawnBackendValidation[];
 GPU_EXPORT extern const char kUseWebGPUAdapter[];
 GPU_EXPORT extern const char kUseWebGPUPowerPreference[];
+GPU_EXPORT extern const char kForceWebGPUCompat[];
 GPU_EXPORT extern const char kEnableDawnFeatures[];
 GPU_EXPORT extern const char kDisableDawnFeatures[];
-GPU_EXPORT extern const char kUseHighGPUThreadPriorityForPerfTests[];
+GPU_EXPORT extern const char kCollectDawnInfoEagerly[];
 GPU_EXPORT extern const char kNoDelayForDX12VulkanInfoCollection[];
 GPU_EXPORT extern const char kEnableGpuBlockedTime[];
 GPU_EXPORT extern const char kGpuVendorId[];
@@ -49,7 +44,19 @@ GPU_EXPORT extern const char kGpuWatchdogTimeoutSeconds[];
 GPU_EXPORT extern const char kForceSeparateEGLDisplayForWebGLTesting[];
 GPU_EXPORT extern const char kSkiaGraphiteBackend[];
 GPU_EXPORT extern const char kSkiaGraphiteBackendDawn[];
+GPU_EXPORT extern const char kSkiaGraphiteBackendDawnD3D11[];
+GPU_EXPORT extern const char kSkiaGraphiteBackendDawnD3D12[];
+GPU_EXPORT extern const char kSkiaGraphiteBackendDawnMetal[];
+GPU_EXPORT extern const char kSkiaGraphiteBackendDawnSwiftshader[];
+GPU_EXPORT extern const char kSkiaGraphiteBackendDawnVulkan[];
 GPU_EXPORT extern const char kSkiaGraphiteBackendMetal[];
+GPU_EXPORT extern const char kShaderCachePath[];
+GPU_EXPORT extern const char kDisableSkiaGraphite[];
+GPU_EXPORT extern const char kEnableSkiaGraphite[];
+GPU_EXPORT extern const char kDisableSkiaGraphitePrecompilation[];
+GPU_EXPORT extern const char kEnableSkiaGraphitePrecompilation[];
+GPU_EXPORT extern const char kUseRedistributableDirectML[];
+GPU_EXPORT extern const char kEnableGpuMainTimeKeeperMetrics[];
 
 }  // namespace switches
 

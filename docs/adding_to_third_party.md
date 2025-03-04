@@ -12,8 +12,27 @@ covered by other licenses.
 
 ## Put the code in //third_party
 
-By default, all code should be checked into [//third_party](../third_party/),
-for the reasons given above. Other locations are only appropriate in a few
+By default, all third party code should be checked into
+[//third_party](../third_party/), for the reasons given above.
+
+There is one primary exception to this, which is that if a third_party
+dependency has its own dependencies *and* it can be built on its own (without
+Chromium), you can check its dependencies into its third_party. For example,
+Dawn is a project that is developed independently of Chromium, and
+it has a dependency on GLFW (which Chromium does not have). Dawn
+can check that dependency into its `//third_party/glfw`, and in a Chromium
+checkout, that will show up at `//third_party/dawn/third_party/glfw`.
+That is okay, but it'd be better if we could add GLFW to a Chromium
+checkout (in chromium/src's `third_party/glfw`) and configure Dawn
+to use that location when it is being built as part of Chromium.
+
+However, if that dependency is also needed by Chromium or another
+of Chromium's dependencies, then it must be checked out into Chromium's
+//third_party (i.e., now you have to use `//third_party/glfw`). This
+prevents us from possibly needing to use two different versions of a
+dependency.
+
+Apart from that, other locations are only appropriate in a few
 situations and need explicit approval; don't assume that because there's some
 other directory with third_party in the name it's okay to put new things
 there.
@@ -30,10 +49,12 @@ email to chrome-atls-discuss@google.com:
    * If the increase is significant (e.g., 20+ MB), can we consider limiting the
    files to be checked in?
 * Build time increase
+   * This refers to building `chrome` or test targets in the critical
+     development path.
    * If the increase is significant (e.g., 30+ seconds), can we consider making
    this an optional build target?
 * Binary size increase on Android ([official](https://www.chromium.org/developers/gn-build-configuration) builds)
-   * Any 16 KB increase on Android is flagged on the build bots and
+   * Any increase of 16 KB or more on Android is flagged on the build bots and
    justification is needed.
 * Binary size increase on Windows
 * Is this library maintained on all platforms that we will use it on?
@@ -87,6 +108,30 @@ limits on their size due to allocation size of the system partition. For more de
 guidelines on size increases see
 [//docs/speed/binary_size/binary_size_explainer.md](speed/binary_size/binary_size_explainer.md) and Googlers can
 additionally check [go/chrome-binary-size](https://goto.google.com/chrome-binary-size)
+
+### Binaries, obfuscated or minified code
+
+The addition of third-party dependencies that contain binaries, obfuscated
+code, or minified code is strongly discouraged. Code review is an important
+part of reducing risk to Chromium and a reviewer asked to approve a change
+that contains any of these has no way to determine the legitimacy of what
+they are approving. Minification for performance optimization is
+[usually not necessary](speed/binary_size/optimization_advice.md), and the
+trade-off in terms of understandability and security is rarely worth
+it.
+
+Where your dependency will form part of a release binary where size is a concern,
+there are existing tools which handle [compression for distribution](speed/binary_size/optimization_advice.md).
+
+You should not check in any pre-built binaries where there is an alternate,
+supported solution for getting them. If you need to compile from source,
+consider using [CIPD](cipd_and_3pp.md) instead.
+
+This is accessible to Googlers only. Non-Googlers can email one of the people
+in third_party/OWNERS for help.
+
+See [Chrome Code Policy](https://goto.google.com/chrome-code-policy)
+
 
 ## Get the code
 
@@ -161,8 +206,8 @@ and do not need to modify `//third_party/.gitignore`.
 
 ### Checking in large files
 
-_Accessible to Googlers only. Non-Googlers can email one of the people in
-third_party/OWNERS for help.
+This is accessible to Googlers only. Non-Googlers can email one of the people
+in third_party/OWNERS for help.
 
 See [Moving large files to Google Storage](https://goto.google.com/checking-in-large-files)
 
@@ -170,12 +215,12 @@ See [Moving large files to Google Storage](https://goto.google.com/checking-in-l
 
 ### Add OWNERS
 
-Your OWNERS file must either list two Chromium developer accounts as the first
-two lines or include a `file:` directive to an OWNERS file within the
-`third_party` directory that itself conforms to this criterion. This will ensure
-accountability for maintenance of the code over time. While there isn't always
-an ideal or obvious set of people that should go in OWNERS, this is critical for
-first-line triage of any issues that crop up in the code.
+Your OWNERS file must either list the email addresses of two Chromium
+committers on the first two lines or include a `file:` directive to an OWNERS
+file within the `third_party` directory that itself conforms to this criterion.
+This will ensure accountability for maintenance of the code over time. While
+there isn't always an ideal or obvious set of people that should go in OWNERS,
+this is critical for first-line triage of any issues that crop up in the code.
 
 As an OWNER, you're expected to:
 
@@ -203,6 +248,7 @@ into the product and does any of the following:
 * Collects new data
 * Influences or sets security-related policy (including the user experience)
 
+**CPE Prefix**
 One of the fields is CPEPrefix. This is used by Chromium and Google systems to
 spot known upstream security vulnerabilities, and ensure we merge the fixes
 into our third-party copy. These systems are not foolproof, so as the OWNER,
@@ -211,30 +257,61 @@ automated systems. But, adding CPEs decreases the chances of us missing
 vulnerabilities, so they should always be added if possible.
 
 The CPE is a common format shared across the industry; you can look up the CPE
-for your package [here](https://nvd.nist.gov/products/cpe/search). Please use
-CPE format 2.2. When searching for a CPE, you may find that there is not yet
-a CPE for the specific upstream version you're using. This is normal, as CPEs
-are typically allocated only when a vulnerability is found. You should follow
-the version number convention such that, when that does occur in future, we'll
-be notified. If no CPE is available, please specify "unknown".
+for your package [here](https://nvd.nist.gov/products/cpe/search).
+* Use CPE format 2.3 (preferred) or CPE format 2.2 (supported).
+* If the CPE uses the 2.3 URI binding or 2.2 format (i.e. starts with "cpe:/"),
+and no version is explicitly specified within the `CPEPrefix`, the `Version`
+in the `README.chromium` file will be appended to the `CPEPrefix`, if available.
+  * Note: if the `Version` field is set to a git hash value, version matching
+  for vulnerabilities will fail.
+
+When searching for a CPE, you may find that there is not yet a CPE for the
+specific upstream version you're using. This is normal, as CPEs are typically
+allocated only when a vulnerability is found. You should follow the version
+number convention such that, when that does occur in future, we'll be notified.
+If no CPE is available, please specify "unknown".
 
 If you're using a patched or modified version which is halfway between two
 public versions, please "round downwards" to the lower of the public versions
 (it's better for us to be notified of false-positive vulnerabilities than
 false-negatives).
 
+
+**Shipped**
+Your README.chromium should also specify whether your third party dependency
+will be shipped as part of a final binary. The "Shipped" field replaces the now
+deprecated special value of "NOT_SHIPPED" which was previously allowed in the
+"License File" field. This use is no longer supported and all third party
+dependencies must include a valid license regardless of whether it is shipped
+or not.
+
+
+**Multiple packages**
+Each package should have its own README.chromium. However, if this is not
+possible and the information for multiple packages must be placed in a single
+README.chromium, use the below line to separate the data for each package:
+```
+-------------------- DEPENDENCY DIVIDER --------------------
+```
+
+
 ### Add a LICENSE file and run related checks
 
 You need a LICENSE file. Example:
-[//third_party/libjpeg/LICENSE](../third_party/libjpeg/LICENSE).
+[//third_party/libjpeg/LICENSE](../third_party/libjpeg/LICENSE). Dependencies
+should not be added without a license file and license type, even if they are
+not shipped in a final product. Existing dependencies without a license file or
+license type are currently being cleaned up as part of the metadata uplift
+effort. If you are an OWNER of a dependency missing license fields, there will
+soon be a bug filed to fix it.
 
 Run `//tools/licenses/licenses.py scan`; this will complain about incomplete or missing
 data for third_party checkins. We use `licenses.py credits` to generate the
 about:credits page in Google Chrome builds.
 
 If the library will never be shipped as a part of Chrome (e.g. build-time tools,
-testing tools), make sure to set "License File" as "NOT_SHIPPED" so that the
-license is not included in about:credits page ([more on this below](#credits)).
+testing tools), make sure to set the "Shipped" field to "no" so that the license
+is not included in about:credits page ([more on this below](#credits)).
 
 ## Get a review
 
@@ -283,6 +360,7 @@ That page displays a resource embedded in the browser as part of the
 GRIT file; the actual HTML text is generated in the
 [//components/resources:about_credits](../components/resources/BUILD.gn)
 build target using a template from the output of the
-[//tools/licenses/licenses.py](../tools/licenses/licenses.py) script. Assuming you've followed
-the rules above to ensure that you have the proper LICENSE file and it passes
-the checks, it'll be included automatically.
+[//tools/licenses/licenses.py](../tools/licenses/licenses.py) script. Assuming
+you‘ve followed the rules above to ensure that you have the proper path to the
+LICENSE file and set the Shipped value, if it passes the checks, it’ll be
+included automatically.

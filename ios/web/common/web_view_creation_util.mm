@@ -9,10 +9,6 @@
 #import "ios/web/web_state/ui/wk_web_view_configuration_provider.h"
 #import "ios/web/web_state/web_view_internal_creation_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 WKWebView* BuildWKWebView(CGRect frame, BrowserState* browser_state) {
@@ -21,7 +17,7 @@ WKWebView* BuildWKWebView(CGRect frame, BrowserState* browser_state) {
   WKWebViewConfigurationProvider& config_provider =
       WKWebViewConfigurationProvider::FromBrowserState(browser_state);
   return BuildWKWebView(frame, config_provider.GetWebViewConfiguration(),
-                        browser_state, UserAgentType::MOBILE, nil);
+                        browser_state, UserAgentType::MOBILE, nil, nil);
 }
 
 WKWebView* BuildWKWebViewForQueries(BrowserState* browser_state) {

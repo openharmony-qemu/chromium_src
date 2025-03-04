@@ -18,8 +18,7 @@
 #include "base/functional/bind.h"
 #include "base/metrics/field_trial_params.h"
 #include "services/device/public/cpp/device_features.h"
-
-#include "ohos_adapter_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace device {
 
@@ -27,24 +26,26 @@ constexpr double SECONDS_IN_NANOSECOND = 0.000000001;
 constexpr double NANOSECONDS_IN_SECOND = 1000000000.0;
 
 OHOSSensorCallback::OHOSSensorCallback(
-  const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-  base::WeakPtr<PlatformSensorOHOS> platform_sensor_ohos)
-  : platform_sensor_ohos_(platform_sensor_ohos), task_runner_(task_runner) {
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    base::WeakPtr<PlatformSensorOHOS> platform_sensor_ohos)
+    : platform_sensor_ohos_(platform_sensor_ohos), task_runner_(task_runner) {
   DCHECK(task_runner_.get());
   DCHECK(platform_sensor_ohos_);
 }
 
-OHOSSensorCallback::~OHOSSensorCallback() {
-}
+OHOSSensorCallback::~OHOSSensorCallback() {}
 
 void OHOSSensorCallback::UpdateOhosSensorData(double timestamp,
-    double value1, double value2, double value3, double value4) {
+                                              double value1,
+                                              double value2,
+                                              double value3,
+                                              double value4) {
   if (task_runner_) {
     task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(
-        &PlatformSensorOHOS::UpdatePlatformSensorReading,
-        platform_sensor_ohos_, 
-        timestamp, value1, value2, value3, value4));
+        FROM_HERE,
+        base::BindOnce(&PlatformSensorOHOS::UpdatePlatformSensorReading,
+                       platform_sensor_ohos_, timestamp, value1, value2, value3,
+                       value4));
   }
 }
 
@@ -52,23 +53,22 @@ void OHOSSensorCallback::UpdateOhosSensorData(double timestamp,
 scoped_refptr<PlatformSensorOHOS> PlatformSensorOHOS::Create(
     mojom::SensorType type,
     SensorReadingSharedBuffer* reading_buffer,
-    PlatformSensorProvider* provider) {
-  auto sensor = base::MakeRefCounted<PlatformSensorOHOS>(
-      type, reading_buffer, provider);
+    base::WeakPtr<PlatformSensorProvider> provider) {
+  auto sensor =
+      base::MakeRefCounted<PlatformSensorOHOS>(type, reading_buffer, provider);
   if (!sensor->IsSupported()) {
     return nullptr;
   }
   return sensor;
 }
 
-// static 
-bool PlatformSensorOHOS::IsSupported(
-      mojom::SensorType type) {
+// static
+bool PlatformSensorOHOS::IsSupported(mojom::SensorType type) {
   std::unique_ptr<OHOS::NWeb::SensorAdapter> sensor_adapter =
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSensorAdapter();
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSensorAdapter();
   if (sensor_adapter) {
     int32_t ret =
-      sensor_adapter->IsOhosSensorSupported(static_cast<int32_t>(type));
+        sensor_adapter->IsOhosSensorSupported(static_cast<int32_t>(type));
     if (ret == OHOS::NWeb::SENSOR_SUCCESS) {
       return true;
     }
@@ -79,14 +79,14 @@ bool PlatformSensorOHOS::IsSupported(
 PlatformSensorOHOS::PlatformSensorOHOS(
     mojom::SensorType type,
     SensorReadingSharedBuffer* reading_buffer,
-    PlatformSensorProvider* provider)
-    : PlatformSensor(type, reading_buffer, provider) {
+    base::WeakPtr<PlatformSensorProvider> provider)
+    : PlatformSensor(type, reading_buffer, std::move(provider)) {
   LOG(INFO) << "PlatformSensorOHOS. Type: " << GetType();
   sensor_adapter_ =
-    OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSensorAdapter();
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSensorAdapter();
   if (sensor_adapter_) {
     int32_t ret =
-      sensor_adapter_->IsOhosSensorSupported(static_cast<int32_t>(type));
+        sensor_adapter_->IsOhosSensorSupported(static_cast<int32_t>(type));
     if (ret == OHOS::NWeb::SENSOR_SUCCESS) {
       is_supported_ = true;
     }
@@ -95,19 +95,18 @@ PlatformSensorOHOS::PlatformSensorOHOS(
   }
 }
 
-PlatformSensorOHOS::~PlatformSensorOHOS() {
-}
+PlatformSensorOHOS::~PlatformSensorOHOS() {}
 
 mojom::ReportingMode PlatformSensorOHOS::GetReportingMode() {
   if (!sensor_adapter_) {
     LOG(ERROR) << "GetReportingMode Error, sensor_adapter_ is null, Type: "
-      << GetType();
+               << GetType();
     return mojom::ReportingMode::CONTINUOUS;
   }
   int32_t ret = sensor_adapter_->GetOhosSensorReportingMode(
       static_cast<int32_t>(GetType()));
   if (ret == OHOS::NWeb::SENSOR_DATA_REPORT_ON_CHANGE) {
-    return mojom::ReportingMode::ON_CHANGE; 
+    return mojom::ReportingMode::ON_CHANGE;
   }
   return mojom::ReportingMode::CONTINUOUS;
 }
@@ -115,7 +114,7 @@ mojom::ReportingMode PlatformSensorOHOS::GetReportingMode() {
 PlatformSensorConfiguration PlatformSensorOHOS::GetDefaultConfiguration() {
   if (!sensor_adapter_) {
     LOG(ERROR) << "GetDefaultConfiguration Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+               << "Type: " << GetType();
     return PlatformSensorConfiguration(0.0);
   }
   double frequency = sensor_adapter_->GetOhosSensorDefaultSupportedFrequency(
@@ -126,8 +125,9 @@ PlatformSensorConfiguration PlatformSensorOHOS::GetDefaultConfiguration() {
 
 double PlatformSensorOHOS::GetMaximumSupportedFrequency() {
   if (!sensor_adapter_) {
-    LOG(ERROR) << "GetMaximumSupportedFrequency Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+    LOG(ERROR)
+        << "GetMaximumSupportedFrequency Error, sensor_adapter_ is null, "
+        << "Type: " << GetType();
     return 0.0;
   }
   double frequency = sensor_adapter_->GetOhosSensorMaxSupportedFrequency(
@@ -138,8 +138,9 @@ double PlatformSensorOHOS::GetMaximumSupportedFrequency() {
 
 double PlatformSensorOHOS::GetMinimumSupportedFrequency() {
   if (!sensor_adapter_) {
-    LOG(ERROR) << "GetMinimumSupportedFrequency Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+    LOG(ERROR)
+        << "GetMinimumSupportedFrequency Error, sensor_adapter_ is null, "
+        << "Type: " << GetType();
     return 0.0;
   }
   double frequency = sensor_adapter_->GetOhosSensorMinSupportedFrequency(
@@ -151,22 +152,22 @@ double PlatformSensorOHOS::GetMinimumSupportedFrequency() {
 bool PlatformSensorOHOS::StartSensor(
     const PlatformSensorConfiguration& configuration) {
   LOG(INFO) << "StartSensor Start. Type: " << GetType()
-    << ", frequency: " << configuration.frequency();
+            << ", frequency: " << configuration.frequency();
   if (!sensor_adapter_) {
     LOG(ERROR) << "StartSensor Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+               << "Type: " << GetType();
     return false;
   }
   if (configuration.frequency() <= 0.001f) {
     LOG(ERROR) << "StartSensor Error, frequency is invalid, "
-      << "Type: " << GetType();
+               << "Type: " << GetType();
     return false;
   }
   int64_t sampling_interval =
-    (int64_t)(NANOSECONDS_IN_SECOND / configuration.frequency());
+      (int64_t)(NANOSECONDS_IN_SECOND / configuration.frequency());
   if (current_sampling_interval_ == sampling_interval) {
     LOG(INFO) << "StartSensor, Already run with same sampling interval."
-      << " Type: "<< GetType();
+              << " Type: " << GetType();
     return true;
   }
 
@@ -175,22 +176,22 @@ bool PlatformSensorOHOS::StartSensor(
   }
 
   task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-  auto sensor_callback = std::make_unique<OHOSSensorCallback>(task_runner_,
-    weak_factory_.GetWeakPtr());
+  auto sensor_callback = std::make_unique<OHOSSensorCallback>(
+      task_runner_, weak_factory_.GetWeakPtr());
   int32_t ret = sensor_adapter_->RegistOhosSensorCallback(
       static_cast<int32_t>(GetType()), std::move(sensor_callback));
   if (ret != OHOS::NWeb::SENSOR_SUCCESS) {
-    LOG(ERROR) << "RegistOhosSensorCallback Error, Type: "
-      << GetType() << ", ret = " << ret;
+    LOG(ERROR) << "RegistOhosSensorCallback Error, Type: " << GetType()
+               << ", ret = " << ret;
     return false;
   }
 
   ret = sensor_adapter_->SubscribeOhosSensor(static_cast<int32_t>(GetType()),
-    sampling_interval);
+                                             sampling_interval);
   current_sampling_interval_ = sampling_interval;
   if (ret != OHOS::NWeb::SENSOR_SUCCESS) {
-    LOG(ERROR) << "SubscribeOhosSensor Error, Type: " 
-      << GetType() << ", ret = " << ret;
+    LOG(ERROR) << "SubscribeOhosSensor Error, Type: " << GetType()
+               << ", ret = " << ret;
     StopSensor();
     NotifyPlatformSensorError();
     return false;
@@ -202,14 +203,14 @@ bool PlatformSensorOHOS::StartSensor(
 void PlatformSensorOHOS::StopSensor() {
   if (!sensor_adapter_) {
     LOG(ERROR) << "StopSensor Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+               << "Type: " << GetType();
     return;
   }
-  int32_t ret = sensor_adapter_->UnsubscribeOhosSensor(
-      static_cast<int32_t>(GetType()));
+  int32_t ret =
+      sensor_adapter_->UnsubscribeOhosSensor(static_cast<int32_t>(GetType()));
   if (ret != OHOS::NWeb::SENSOR_SUCCESS) {
-    LOG(ERROR) << "UnsubscribeOhosSensor Error, Type: "
-      << GetType() << ", ret: " << ret;
+    LOG(ERROR) << "UnsubscribeOhosSensor Error, Type: " << GetType()
+               << ", ret: " << ret;
   }
   current_sampling_interval_ = 0;
   LOG(INFO) << "StopSensor. Type: " << GetType();
@@ -219,7 +220,7 @@ bool PlatformSensorOHOS::CheckSensorConfiguration(
     const PlatformSensorConfiguration& configuration) {
   if (!sensor_adapter_) {
     LOG(ERROR) << "CheckSensorConfiguration Error, sensor_adapter_ is null, "
-      << "Type: " << GetType();
+               << "Type: " << GetType();
     return false;
   }
   double frequency = configuration.frequency();
@@ -236,14 +237,16 @@ bool PlatformSensorOHOS::CheckSensorConfiguration(
   return true;
 }
 
-void PlatformSensorOHOS::NotifyPlatformSensorError(){
+void PlatformSensorOHOS::NotifyPlatformSensorError() {
   PostTaskToMainSequence(
-    FROM_HERE,
-    base::BindOnce(&PlatformSensorOHOS::NotifySensorError, this));
+      FROM_HERE, base::BindOnce(&PlatformSensorOHOS::NotifySensorError, this));
 }
 
 void PlatformSensorOHOS::UpdatePlatformSensorReading(double timestamp,
-    double value1, double value2, double value3, double value4) {
+                                                     double value1,
+                                                     double value2,
+                                                     double value3,
+                                                     double value4) {
   SensorReading reading;
   reading.raw.timestamp = timestamp * SECONDS_IN_NANOSECOND;
   reading.raw.values[0] = value1;
@@ -254,3 +257,4 @@ void PlatformSensorOHOS::UpdatePlatformSensorReading(double timestamp,
 }
 
 }  // namespace device
+                      

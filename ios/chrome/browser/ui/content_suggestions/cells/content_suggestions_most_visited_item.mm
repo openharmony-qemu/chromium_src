@@ -5,25 +5,14 @@
 #import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_most_visited_item.h"
 
 #import "base/check.h"
-#import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_gesture_commands.h"
+#import "ios/chrome/browser/ui/content_suggestions/cells/most_visited_tiles_commands.h"
 #import "ios/chrome/common/ui/favicon/favicon_attributes.h"
 #import "ios/chrome/common/ui/favicon/favicon_view.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @implementation ContentSuggestionsMostVisitedItem
-
-@synthesize attributes = _attributes;
-@synthesize title = _title;
-@synthesize URL = _URL;
-@synthesize titleSource = _titleSource;
-@synthesize source = _source;
-@synthesize commandHandler = _commandHandler;
 
 #pragma mark - AccessibilityCustomAction
 

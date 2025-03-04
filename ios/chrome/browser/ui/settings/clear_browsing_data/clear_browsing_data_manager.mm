@@ -4,14 +4,18 @@
 
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/clear_browsing_data_manager.h"
 
+#import <string_view>
+
+#import "base/apple/foundation_util.h"
 #import "base/functional/bind.h"
-#import "base/mac/foundation_util.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/scoped_observation.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/browsing_data/core/history_notice_utils.h"
 #import "components/browsing_data/core/pref_names.h"
 #import "components/feature_engagement/public/event_constants.h"
+#import "components/feature_engagement/public/feature_constants.h"
+#import "components/feature_engagement/public/feature_list.h"
 #import "components/feature_engagement/public/tracker.h"
 #import "components/google/core/common/google_util.h"
 #import "components/history/core/browser/web_history_service.h"
@@ -22,21 +26,23 @@
 #import "components/search_engines/template_url_service_observer.h"
 #import "components/signin/public/identity_manager/identity_manager.h"
 #import "components/strings/grit/components_strings.h"
-#import "components/sync/driver/sync_service.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_counter_wrapper.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_features.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_remove_mask.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_remover.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_remover_factory.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_remover_observer_bridge.h"
-#import "ios/chrome/browser/feature_engagement/tracker_factory.h"
-#import "ios/chrome/browser/history/web_history_service_factory.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/search_engines/template_url_service_factory.h"
+#import "components/sync/service/sync_service.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_counter_wrapper.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_features.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_remove_mask.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_remover.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_remover_factory.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_remover_observer_bridge.h"
+#import "ios/chrome/browser/feature_engagement/model/tracker_factory.h"
+#import "ios/chrome/browser/history/model/web_history_service_factory.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
 #import "ios/chrome/browser/shared/coordinator/alert/action_sheet_coordinator.h"
+#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
 #import "ios/chrome/browser/shared/ui/list_model/list_model.h"
 #import "ios/chrome/browser/shared/ui/symbols/chrome_icon.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
@@ -45,28 +51,21 @@
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_link_item.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/identity_manager_factory.h"
-#import "ios/chrome/browser/sync/sync_service_factory.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
+#import "ios/chrome/browser/ui/scoped_ui_blocker/ui_blocker_manager.h"
 #import "ios/chrome/browser/ui/settings/cells/clear_browsing_data_constants.h"
-#import "ios/chrome/browser/ui/settings/cells/search_engine_item.h"
 #import "ios/chrome/browser/ui/settings/cells/table_view_clear_browsing_data_item.h"
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/browsing_data_counter_wrapper_producer.h"
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/clear_browsing_data_consumer.h"
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/clear_browsing_data_ui_constants.h"
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/time_range_selector_table_view_controller.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
 #import "ios/chrome/common/channel_info.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/public/provider/chrome/browser/branded_images/branded_images_api.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 const char kCBDSignOutOfChromeURL[] = "settings://CBDSignOutOfChrome";
 
@@ -106,15 +105,23 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
       break;
     default:
       NOTREACHED();
-      break;
   }
   return symbol;
+}
+
+// Returns YES if UI is currently blocking, to stop a second clear browsing data
+// task to start.
+BOOL UIIsBlocking(Browser* browser) {
+  SceneState* sceneState = browser->GetSceneState();
+  return sceneState.isUIBlocked;
 }
 
 }  // namespace
 
 @interface ClearBrowsingDataManager () <BrowsingDataRemoverObserving,
                                         PrefObserverDelegate> {
+  base::WeakPtr<ProfileIOS> _profile;
+
   // Access to the kDeleteTimePeriod preference.
   IntegerPrefMember _timeRangePref;
   // Pref observer to track changes to prefs.
@@ -136,7 +143,6 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
       _countersByMasks;
 }
 
-@property(nonatomic, assign) ChromeBrowserState* browserState;
 // Whether to show alert about other forms of browsing history.
 @property(nonatomic, assign)
     BOOL shouldShowNoticeAboutOtherFormsOfBrowsingHistory;
@@ -160,32 +166,31 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 @end
 
 @implementation ClearBrowsingDataManager
-@synthesize browserState = _browserState;
 @synthesize consumer = _consumer;
 @synthesize shouldShowNoticeAboutOtherFormsOfBrowsingHistory =
     _shouldShowNoticeAboutOtherFormsOfBrowsingHistory;
 @synthesize shouldPopupDialogAboutOtherFormsOfBrowsingHistory =
     _shouldPopupDialogAboutOtherFormsOfBrowsingHistory;
 
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState {
-  return [self initWithBrowserState:browserState
+- (instancetype)initWithProfile:(ProfileIOS*)profile {
+  return [self initWithProfile:profile
                      browsingDataRemover:BrowsingDataRemoverFactory::
-                                             GetForBrowserState(browserState)
+                                             GetForProfile(profile)
       browsingDataCounterWrapperProducer:[[BrowsingDataCounterWrapperProducer
-                                             alloc] init]];
+                                             alloc] initWithProfile:profile]];
 }
 
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState
+- (instancetype)initWithProfile:(ProfileIOS*)profile
                    browsingDataRemover:(BrowsingDataRemover*)remover
     browsingDataCounterWrapperProducer:
         (BrowsingDataCounterWrapperProducer*)producer {
   self = [super init];
   if (self) {
-    _browserState = browserState;
+    _profile = profile->AsWeakPtr();
     _counterWrapperProducer = producer;
 
     _timeRangePref.Init(browsing_data::prefs::kDeleteTimePeriod,
-                        _browserState->GetPrefs());
+                        self.prefService);
 
     _browsingDataRemoverObserver =
         std::make_unique<BrowsingDataRemoverObserverBridge>(self);
@@ -195,7 +200,7 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
             _browsingDataRemoverObserver.get());
     _scoped_observation->Observe(remover);
 
-    _prefChangeRegistrar.Init(_browserState->GetPrefs());
+    _prefChangeRegistrar.Init(self.prefService);
     _prefObserverBridge.reset(new PrefObserverBridge(self));
   }
   return self;
@@ -250,9 +255,11 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
   _timeRangePref.Destroy();
   _prefObserverBridge.reset();
   _prefChangeRegistrar.RemoveAll();
-  _browsingDataRemoverObserver.reset();
   _scoped_observation.reset();
+  _browsingDataRemoverObserver.reset();
   _countersByMasks.clear();
+  _counterWrapperProducer = nil;
+  _profile.reset();
 }
 
 // Add items for types of browsing data to clear.
@@ -264,8 +271,10 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
                           titleID:IDS_IOS_CLEAR_BROWSING_HISTORY
                              mask:BrowsingDataRemoveMask::REMOVE_HISTORY
                          prefName:browsing_data::prefs::kDeleteBrowsingHistory];
-  [model addItem:self.browsingHistoryItem
-      toSectionWithIdentifier:SectionIdentifierDataTypes];
+  if (self.browsingHistoryItem) {
+    [model addItem:self.browsingHistoryItem
+        toSectionWithIdentifier:SectionIdentifierDataTypes];
+  }
 
   // This data type doesn't currently have an associated counter, but displays
   // an explanatory text instead.
@@ -274,32 +283,40 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
                           titleID:IDS_IOS_CLEAR_COOKIES
                              mask:BrowsingDataRemoveMask::REMOVE_SITE_DATA
                          prefName:browsing_data::prefs::kDeleteCookies];
-  [model addItem:self.cookiesSiteDataItem
-      toSectionWithIdentifier:SectionIdentifierDataTypes];
+  if (self.cookiesSiteDataItem) {
+    [model addItem:self.cookiesSiteDataItem
+        toSectionWithIdentifier:SectionIdentifierDataTypes];
+  }
 
   self.cacheItem =
       [self clearDataItemWithType:ItemTypeDataTypeCache
                           titleID:IDS_IOS_CLEAR_CACHE
                              mask:BrowsingDataRemoveMask::REMOVE_CACHE
                          prefName:browsing_data::prefs::kDeleteCache];
-  [model addItem:self.cacheItem
-      toSectionWithIdentifier:SectionIdentifierDataTypes];
+  if (self.cacheItem) {
+    [model addItem:self.cacheItem
+        toSectionWithIdentifier:SectionIdentifierDataTypes];
+  }
 
   self.savedPasswordsItem =
       [self clearDataItemWithType:ItemTypeDataTypeSavedPasswords
                           titleID:IDS_IOS_CLEAR_SAVED_PASSWORDS
                              mask:BrowsingDataRemoveMask::REMOVE_PASSWORDS
                          prefName:browsing_data::prefs::kDeletePasswords];
-  [model addItem:self.savedPasswordsItem
-      toSectionWithIdentifier:SectionIdentifierDataTypes];
+  if (self.savedPasswordsItem) {
+    [model addItem:self.savedPasswordsItem
+        toSectionWithIdentifier:SectionIdentifierDataTypes];
+  }
 
   self.autofillItem =
       [self clearDataItemWithType:ItemTypeDataTypeAutofill
                           titleID:IDS_IOS_CLEAR_AUTOFILL
                              mask:BrowsingDataRemoveMask::REMOVE_FORM_DATA
                          prefName:browsing_data::prefs::kDeleteFormData];
-  [model addItem:self.autofillItem
-      toSectionWithIdentifier:SectionIdentifierDataTypes];
+  if (self.autofillItem) {
+    [model addItem:self.autofillItem
+        toSectionWithIdentifier:SectionIdentifierDataTypes];
+  }
 }
 
 - (NSString*)counterTextFromResult:
@@ -309,7 +326,7 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
     return l10n_util::GetNSString(IDS_CLEAR_BROWSING_DATA_CALCULATING);
   }
 
-  base::StringPiece prefName = result.source()->GetPrefName();
+  std::string_view prefName = result.source()->GetPrefName();
   if (prefName != browsing_data::prefs::kDeleteCache) {
     return base::SysUTF16ToNSString(
         browsing_data::GetCounterTextFromResult(&result));
@@ -352,8 +369,13 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
                                         browser:(Browser*)browser
                             sourceBarButtonItem:
                                 (UIBarButtonItem*)sourceBarButtonItem {
-  if (dataTypeMaskToRemove == BrowsingDataRemoveMask::REMOVE_NOTHING) {
-    // Nothing to clear (no data types selected).
+  browsing_data::TimePeriod timePeriod =
+      static_cast<browsing_data::TimePeriod>(_timeRangePref.GetValue());
+
+  if (dataTypeMaskToRemove == BrowsingDataRemoveMask::REMOVE_NOTHING ||
+      timePeriod == browsing_data::TimePeriod::LAST_15_MINUTES) {
+    // Nothing to clear (no data types selected) or 15 minutes selected (which
+    // shouldn't be possible).
     return nil;
   }
   __weak ClearBrowsingDataManager* weakSelf = self;
@@ -378,7 +400,13 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
   [actionCoordinator
       addItemWithTitle:l10n_util::GetNSString(IDS_IOS_CLEAR_BUTTON)
                 action:^{
-                  [weakSelf clearDataForDataTypes:dataTypeMaskToRemove];
+                  [weakSelf enhancedSafeBrowsingInlinePromoTriggerCriteriaMet];
+                  if (!UIIsBlocking(browser)) {
+                    // Race condition caused the flow to get here, cancel this
+                    // one.
+                    [weakSelf clearDataForDataTypes:dataTypeMaskToRemove];
+                    [weakSelf.consumer dismissAlertCoordinator];
+                  }
                 }
                  style:UIAlertActionStyleDestructive];
   return actionCoordinator;
@@ -386,10 +414,16 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 
 // Add footers about user's account data.
 - (void)addSyncProfileItemsToModel:(ListModel*)model {
+  ProfileIOS* profile = self.profile;
+  if (!profile) {
+    // The C++ model has been destroyed, return early.
+    return;
+  }
+
   // Google Account footer.
   const BOOL loggedIn = [self loggedIn];
   const TemplateURLService* templateURLService =
-      ios::TemplateURLServiceFactory::GetForBrowserState(_browserState);
+      ios::TemplateURLServiceFactory::GetForProfile(profile);
   const TemplateURL* defaultSearchEngine =
       templateURLService->GetDefaultSearchProvider();
   const BOOL isDefaultSearchEngineGoogle =
@@ -413,13 +447,8 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
   syncer::SyncService* syncService = [self syncService];
   [self addSavedSiteDataSectionWithModel:model];
 
-  // If not syncing, no need to continue with profile syncing.
-  if (![self identityManager]->HasPrimaryAccount(signin::ConsentLevel::kSync)) {
-    return;
-  }
-
   history::WebHistoryService* historyService =
-      ios::WebHistoryServiceFactory::GetForBrowserState(_browserState);
+      ios::WebHistoryServiceFactory::GetForProfile(profile);
 
   __weak ClearBrowsingDataManager* weakSelf = self;
 
@@ -446,7 +475,7 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
   for (auto flag : browsingDataRemoveFlags) {
     if (IsRemoveDataMaskSet(mask, flag)) {
       const auto it = _countersByMasks.find(flag);
-      if (it != _countersByMasks.end()) {
+      if (it != _countersByMasks.end() && it->second) {
         it->second->RestartCounter();
       }
     }
@@ -462,11 +491,17 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
                   titleID:(int)titleMessageID
                      mask:(BrowsingDataRemoveMask)mask
                  prefName:(const char*)prefName {
-  PrefService* prefs = self.browserState->GetPrefs();
+  ProfileIOS* profile = self.profile;
+  PrefService* prefService = self.prefService;
+  if (!profile || !prefService) {
+    // The C++ model has been destroyed, return early.
+    return nullptr;
+  }
+
   TableViewClearBrowsingDataItem* clearDataItem =
       [[TableViewClearBrowsingDataItem alloc] initWithType:itemType];
   clearDataItem.text = l10n_util::GetNSString(titleMessageID);
-  clearDataItem.checked = prefs->GetBoolean(prefName);
+  clearDataItem.checked = prefService->GetBoolean(prefName);
   clearDataItem.accessibilityIdentifier =
       [self accessibilityIdentifierFromItemType:itemType];
   clearDataItem.dataTypeMask = mask;
@@ -495,12 +530,11 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
                                          reload:YES];
         });
     std::unique_ptr<BrowsingDataCounterWrapper> counter =
-        [self.counterWrapperProducer
-            createCounterWrapperWithPrefName:prefName
-                                browserState:self.browserState
-                                 prefService:prefs
-                            updateUiCallback:callback];
-    _countersByMasks.emplace(mask, std::move(counter));
+        [self.counterWrapperProducer createCounterWrapperWithPrefName:prefName
+                                                     updateUiCallback:callback];
+    if (counter) {
+      _countersByMasks.emplace(mask, std::move(counter));
+    }
   }
   return clearDataItem;
 }
@@ -610,13 +644,18 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 }
 
 - (TableViewDetailIconItem*)timeRangeItem {
+  PrefService* prefService = self.prefService;
+  if (!prefService) {
+    // The C++ model has been destroyed, return early.
+    return nil;
+  }
+
   TableViewDetailIconItem* timeRangeItem =
       [[TableViewDetailIconItem alloc] initWithType:ItemTypeTimeRange];
   timeRangeItem.text = l10n_util::GetNSString(
       IDS_IOS_CLEAR_BROWSING_DATA_TIME_RANGE_SELECTOR_TITLE);
   NSString* detailText = [TimeRangeSelectorTableViewController
-      timePeriodLabelForPrefs:self.browserState->GetPrefs()];
-  DCHECK(detailText);
+      timePeriodLabelForPrefs:prefService];
   timeRangeItem.detailText = detailText;
   timeRangeItem.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
   timeRangeItem.accessibilityTraits |= UIAccessibilityTraitButton;
@@ -637,16 +676,28 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
       return kClearAutofillCellAccessibilityIdentifier;
     default: {
       NOTREACHED();
-      return nil;
     }
   }
+}
+
+#pragma mark - Properties
+
+- (ProfileIOS*)profile {
+  return _profile.get();
+}
+
+- (PrefService*)prefService {
+  if (ProfileIOS* profile = self.profile) {
+    return profile->GetPrefs();
+  }
+  return nullptr;
 }
 
 #pragma mark - Private Methods
 
 // An identity manager
 - (signin::IdentityManager*)identityManager {
-  return IdentityManagerFactory::GetForBrowserState(self.browserState);
+  return IdentityManagerFactory::GetForProfile(self.profile);
 }
 
 // Whether user is currently logged-in.
@@ -657,7 +708,7 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 
 // A sync service
 - (syncer::SyncService*)syncService {
-  return SyncServiceFactory::GetForBrowserState(self.browserState);
+  return SyncServiceFactory::GetForProfile(self.profile);
 }
 
 // Add at the end of the list model the elements related to signing-out.
@@ -670,24 +721,29 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 }
 
 - (void)clearDataForDataTypes:(BrowsingDataRemoveMask)mask {
+  ProfileIOS* profile = self.profile;
+  PrefService* prefService = self.prefService;
+  if (!profile || !prefService) {
+    // The C++ model has been destroyed, return early.
+    return;
+  }
+
   DCHECK(mask != BrowsingDataRemoveMask::REMOVE_NOTHING);
 
   browsing_data::TimePeriod timePeriod =
       static_cast<browsing_data::TimePeriod>(_timeRangePref.GetValue());
-  [self.consumer removeBrowsingDataForBrowserState:_browserState
-                                        timePeriod:timePeriod
-                                        removeMask:mask
-                                   completionBlock:nil];
+  [self.consumer removeBrowsingDataForTimePeriod:timePeriod
+                                      removeMask:mask
+                                 completionBlock:nil];
 
   // Send the "Cleared Browsing Data" event to the feature_engagement::Tracker
   // when the user initiates a clear browsing data action. No event is sent if
   // the browsing data is cleared without the user's input.
-  feature_engagement::TrackerFactory::GetForBrowserState(_browserState)
-      ->NotifyEvent(feature_engagement::events::kClearedBrowsingData);
+  feature_engagement::TrackerFactory::GetForProfile(profile)->NotifyEvent(
+      feature_engagement::events::kClearedBrowsingData);
 
   if (IsRemoveDataMaskSet(mask, BrowsingDataRemoveMask::REMOVE_HISTORY)) {
-    PrefService* prefs = _browserState->GetPrefs();
-    int noticeShownTimes = prefs->GetInteger(
+    int noticeShownTimes = prefService->GetInteger(
         browsing_data::prefs::kClearBrowsingDataHistoryNoticeShownTimes);
 
     // When the deletion is complete, we might show an additional dialog with
@@ -700,16 +756,25 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
     if (!showDialog) {
       return;
     }
-    UMA_HISTOGRAM_BOOLEAN(
-        "History.ClearBrowsingData.ShownHistoryNoticeAfterClearing",
-        showDialog);
 
     // Increment the preference.
-    prefs->SetInteger(
+    prefService->SetInteger(
         browsing_data::prefs::kClearBrowsingDataHistoryNoticeShownTimes,
         noticeShownTimes + 1);
     [self.consumer showBrowsingHistoryRemovedDialog];
   }
+}
+
+- (void)enhancedSafeBrowsingInlinePromoTriggerCriteriaMet {
+  if (!base::FeatureList::IsEnabled(
+          feature_engagement::kIPHiOSInlineEnhancedSafeBrowsingPromoFeature) ||
+      !self.profile) {
+    return;
+  }
+  feature_engagement::Tracker* tracker =
+      feature_engagement::TrackerFactory::GetForProfile(self.profile);
+  tracker->NotifyEvent(
+      feature_engagement::events::kEnhancedSafeBrowsingPromoCriterionMet);
 }
 
 #pragma mark Properties
@@ -721,9 +786,6 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
   if (!model) {
     return;
   }
-  UMA_HISTOGRAM_BOOLEAN(
-      "History.ClearBrowsingData.HistoryNoticeShownInFooterWhenUpdated",
-      _shouldShowNoticeAboutOtherFormsOfBrowsingHistory);
 
   if (![self identityManager]->HasPrimaryAccount(signin::ConsentLevel::kSync)) {
     return;
@@ -742,26 +804,36 @@ UIImage* SymbolForItemType(ClearBrowsingDataItemType itemType) {
 #pragma mark - PrefObserverDelegate
 
 - (void)onPreferenceChanged:(const std::string&)preferenceName {
-  PrefService* prefs = self.browserState->GetPrefs();
+  PrefService* prefService = self.prefService;
+  if (!prefService) {
+    // The C++ model has been destroyed, return early.
+    return;
+  }
+
   if (preferenceName == browsing_data::prefs::kDeleteTimePeriod) {
-    NSString* detailText =
-        [TimeRangeSelectorTableViewController timePeriodLabelForPrefs:prefs];
+    NSString* detailText = [TimeRangeSelectorTableViewController
+        timePeriodLabelForPrefs:prefService];
     self.tableViewTimeRangeItem.detailText = detailText;
     [self.consumer updateCellsForItem:self.tableViewTimeRangeItem reload:YES];
   } else if (preferenceName == browsing_data::prefs::kDeleteBrowsingHistory) {
-    self.browsingHistoryItem.checked = prefs->GetBoolean(preferenceName);
+    CHECK(self.browsingHistoryItem);
+    self.browsingHistoryItem.checked = prefService->GetBoolean(preferenceName);
     [self.consumer updateCellsForItem:self.browsingHistoryItem reload:NO];
   } else if (preferenceName == browsing_data::prefs::kDeleteCookies) {
-    self.cookiesSiteDataItem.checked = prefs->GetBoolean(preferenceName);
+    CHECK(self.cookiesSiteDataItem);
+    self.cookiesSiteDataItem.checked = prefService->GetBoolean(preferenceName);
     [self.consumer updateCellsForItem:self.cookiesSiteDataItem reload:NO];
   } else if (preferenceName == browsing_data::prefs::kDeleteCache) {
-    self.cacheItem.checked = prefs->GetBoolean(preferenceName);
+    CHECK(self.cacheItem);
+    self.cacheItem.checked = prefService->GetBoolean(preferenceName);
     [self.consumer updateCellsForItem:self.cacheItem reload:NO];
   } else if (preferenceName == browsing_data::prefs::kDeletePasswords) {
-    self.savedPasswordsItem.checked = prefs->GetBoolean(preferenceName);
+    CHECK(self.savedPasswordsItem);
+    self.savedPasswordsItem.checked = prefService->GetBoolean(preferenceName);
     [self.consumer updateCellsForItem:self.savedPasswordsItem reload:NO];
   } else if (preferenceName == browsing_data::prefs::kDeleteFormData) {
-    self.autofillItem.checked = prefs->GetBoolean(preferenceName);
+    CHECK(self.autofillItem);
+    self.autofillItem.checked = prefService->GetBoolean(preferenceName);
     [self.consumer updateCellsForItem:self.autofillItem reload:NO];
   } else {
     DCHECK(false) << "Unxpected clear browsing data item type.";

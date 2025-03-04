@@ -4,18 +4,21 @@
 
 #import "ios/chrome/browser/ui/sharing/activity_services/activity_service_coordinator.h"
 
+#import <LinkPresentation/LinkPresentation.h>
+
 #import "components/bookmarks/browser/bookmark_model.h"
-#import "ios/chrome/browser/bookmarks/local_or_syncable_bookmark_model_factory.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/reading_list/reading_list_browser_agent.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state_browser_agent.h"
+#import "ios/chrome/browser/bookmarks/model/bookmark_model_factory.h"
+#import "ios/chrome/browser/reading_list/model/reading_list_browser_agent.h"
+#import "ios/chrome/browser/shared/coordinator/default_browser_promo/non_modal_default_browser_promo_scheduler_scene_agent.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/ui/main/default_browser_scene_agent.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activity_service_mediator.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activity_service_presentation.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/canonical_url_retriever.h"
@@ -30,17 +33,10 @@
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_to_data_builder.h"
 #import "ios/chrome/browser/ui/sharing/sharing_params.h"
 #import "ios/chrome/browser/ui/sharing/sharing_positioner.h"
-#import "ios/chrome/browser/web/web_navigation_browser_agent.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/web/model/web_navigation_browser_agent.h"
 #import "ios/web/public/web_state.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "url/gurl.h"
-
-#import <LinkPresentation/LinkPresentation.h>
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -75,8 +71,8 @@ constexpr CGFloat kAppIconPointSize = 80;
                                    browser:(Browser*)browser
                                     params:(SharingParams*)params {
   DCHECK(params);
-  if (self = [super initWithBaseViewController:baseViewController
-                                       browser:browser]) {
+  if ((self = [super initWithBaseViewController:baseViewController
+                                        browser:browser])) {
     _params = params;
   }
   return self;
@@ -85,17 +81,24 @@ constexpr CGFloat kAppIconPointSize = 80;
 #pragma mark - Public methods
 
 - (void)start {
+  NSNotificationCenter* defaultCenter = [NSNotificationCenter defaultCenter];
+  [defaultCenter addObserver:self
+                    selector:@selector(applicationDidEnterBackground:)
+                        name:UIApplicationDidEnterBackgroundNotification
+                      object:nil];
+
   self.handler =
       static_cast<id<BrowserCoordinatorCommands, FindInPageCommands>>(
           self.browser->GetCommandDispatcher());
 
-  ChromeBrowserState* browserState = self.browser->GetBrowserState();
-  self.incognito = browserState->IsOffTheRecord();
+  ProfileIOS* profile = self.browser->GetProfile();
+  self.incognito = profile->IsOffTheRecord();
   bookmarks::BookmarkModel* bookmarkModel =
-      ios::LocalOrSyncableBookmarkModelFactory::GetForBrowserState(
-          browserState);
+      ios::BookmarkModelFactory::GetForProfile(profile);
   id<BookmarksCommands> bookmarksHandler = HandlerForProtocol(
       self.browser->GetCommandDispatcher(), BookmarksCommands);
+  id<HelpCommands> helpHandler =
+      HandlerForProtocol(self.browser->GetCommandDispatcher(), HelpCommands);
   WebNavigationBrowserAgent* agent =
       WebNavigationBrowserAgent::FromBrowser(self.browser);
   ReadingListBrowserAgent* readingListBrowserAgent =
@@ -103,17 +106,17 @@ constexpr CGFloat kAppIconPointSize = 80;
   self.mediator =
       [[ActivityServiceMediator alloc] initWithHandler:self.handler
                                       bookmarksHandler:bookmarksHandler
+                                           helpHandler:helpHandler
                                    qrGenerationHandler:self.scopedHandler
-                                           prefService:browserState->GetPrefs()
+                                           prefService:profile->GetPrefs()
                                          bookmarkModel:bookmarkModel
                                     baseViewController:self.baseViewController
                                        navigationAgent:agent
                                readingListBrowserAgent:readingListBrowserAgent];
 
-  SceneState* sceneState =
-      SceneStateBrowserAgent::FromBrowser(self.browser)->GetSceneState();
-  self.mediator.promoScheduler =
-      [DefaultBrowserSceneAgent agentFromScene:sceneState].nonModalScheduler;
+  SceneState* sceneState = self.browser->GetSceneState();
+  self.mediator.promoScheduler = [NonModalDefaultBrowserPromoSchedulerSceneAgent
+      agentFromScene:sceneState];
 
   [self.mediator shareStartedWithScenario:self.params.scenario];
 
@@ -266,9 +269,7 @@ constexpr CGFloat kAppIconPointSize = 80;
 
   id extraItem = nil;
   if (@available(iOS 16.4, *)) {
-    if (ShouldAddToHomeScreen(self.incognito)) {
-      extraItem = webState->GetActivityItem();
-    }
+    extraItem = webState->GetActivityItem();
   }
   [self shareItems:items activities:activities extraItem:extraItem];
 }
@@ -345,9 +346,7 @@ constexpr CGFloat kAppIconPointSize = 80;
       [self.mediator applicationActivitiesForDataItems:@[ URLData ]];
   id extraItem = nil;
   if (@available(iOS 16.4, *)) {
-    if (ShouldAddToHomeScreen(self.incognito)) {
-      extraItem = webState->GetActivityItem();
-    }
+    extraItem = webState->GetActivityItem();
   }
   [self shareItems:items activities:activities extraItem:extraItem];
 }
@@ -403,13 +402,21 @@ constexpr CGFloat kAppIconPointSize = 80;
 
 - (NSItemProvider*)appIconProvider {
 #if BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
-  UIImage* image = MakeSymbolMulticolor(
-      CustomSymbolWithPointSize(kChromeSymbol, kAppIconPointSize));
+  UIImage* image = MakeSymbolMulticolor(CustomSymbolWithPointSize(
+      kMulticolorChromeballSymbol, kAppIconPointSize));
 #else
   UIImage* image = DefaultSymbolTemplateWithPointSize(kDefaultBrowserSymbol,
                                                       kAppIconPointSize);
 #endif  // BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
   return [[NSItemProvider alloc] initWithObject:image];
+}
+
+#pragma mark - Notification callback
+
+- (void)applicationDidEnterBackground:(NSNotification*)note {
+  [self.viewController.presentingViewController
+      dismissViewControllerAnimated:YES
+                         completion:nil];
 }
 
 @end

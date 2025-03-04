@@ -4,11 +4,12 @@
 
 #include "quiche/quic/core/io/quic_poll_event_loop.h"
 
-#include <poll.h>
-
 #include <algorithm>
 #include <cerrno>
+#include <cmath>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "absl/types/span.h"
 #include "quiche/quic/core/io/quic_event_loop.h"
@@ -38,8 +39,7 @@ QuicSocketEventMask GetEventMask(PollMask poll_mask) {
 
 QuicPollEventLoop::QuicPollEventLoop(QuicClock* clock) : clock_(clock) {}
 
-bool QuicPollEventLoop::RegisterSocket(QuicUdpSocketFd fd,
-                                       QuicSocketEventMask events,
+bool QuicPollEventLoop::RegisterSocket(SocketFd fd, QuicSocketEventMask events,
                                        QuicSocketEventListener* listener) {
   auto [it, success] =
       registrations_.insert({fd, std::make_shared<Registration>()});
@@ -52,12 +52,11 @@ bool QuicPollEventLoop::RegisterSocket(QuicUdpSocketFd fd,
   return true;
 }
 
-bool QuicPollEventLoop::UnregisterSocket(QuicUdpSocketFd fd) {
+bool QuicPollEventLoop::UnregisterSocket(SocketFd fd) {
   return registrations_.erase(fd);
 }
 
-bool QuicPollEventLoop::RearmSocket(QuicUdpSocketFd fd,
-                                    QuicSocketEventMask events) {
+bool QuicPollEventLoop::RearmSocket(SocketFd fd, QuicSocketEventMask events) {
   auto it = registrations_.find(fd);
   if (it == registrations_.end()) {
     return false;
@@ -66,7 +65,7 @@ bool QuicPollEventLoop::RearmSocket(QuicUdpSocketFd fd,
   return true;
 }
 
-bool QuicPollEventLoop::ArtificiallyNotifyEvent(QuicUdpSocketFd fd,
+bool QuicPollEventLoop::ArtificiallyNotifyEvent(SocketFd fd,
                                                 QuicSocketEventMask events) {
   auto it = registrations_.find(fd);
   if (it == registrations_.end()) {
@@ -117,11 +116,13 @@ int QuicPollEventLoop::PollWithRetries(absl::Span<pollfd> fds,
     poll_result =
         PollSyscall(fds.data(), fds.size(), static_cast<int>(timeout_ms));
 
-    // Retry if EINTR happens.
-    bool is_eintr = poll_result < 0 && errno == EINTR;
-    if (!is_eintr) {
+    // Stop if there are events or a non-EINTR error.
+    bool done = poll_result > 0 || (poll_result < 0 && errno != EINTR);
+    if (done) {
       break;
     }
+    // Poll until `clock_` shows the timeout was exceeded.
+    // PollSyscall uses a system clock internally that may run faster.
     QuicTime now = clock_->Now();
     if (now >= timeout_at) {
       break;
@@ -168,7 +169,7 @@ void QuicPollEventLoop::ProcessIoEvents(QuicTime start_time,
 }
 
 void QuicPollEventLoop::DispatchIoEvent(std::vector<ReadyListEntry>& ready_list,
-                                        QuicUdpSocketFd fd, PollMask mask) {
+                                        SocketFd fd, PollMask mask) {
   auto it = registrations_.find(fd);
   if (it == registrations_.end()) {
     QUIC_BUG(poll returned an unregistered fd) << fd;
@@ -177,10 +178,10 @@ void QuicPollEventLoop::DispatchIoEvent(std::vector<ReadyListEntry>& ready_list,
   Registration& registration = *it->second;
 
   mask |= GetPollMask(registration.artificially_notify_at_next_iteration);
-  registration.artificially_notify_at_next_iteration = QuicSocketEventMask();
-
   // poll() always returns certain classes of events even if not requested.
-  mask &= GetPollMask(registration.events);
+  mask &= GetPollMask(registration.events |
+                      registration.artificially_notify_at_next_iteration);
+  registration.artificially_notify_at_next_iteration = QuicSocketEventMask();
   if (!mask) {
     return;
   }
@@ -258,6 +259,14 @@ void QuicPollEventLoop::Alarm::CancelImpl() {
 
 std::unique_ptr<QuicAlarmFactory> QuicPollEventLoop::CreateAlarmFactory() {
   return std::make_unique<AlarmFactory>(this);
+}
+
+int QuicPollEventLoop::PollSyscall(pollfd* fds, size_t nfds, int timeout) {
+#if defined(_WIN32)
+  return WSAPoll(fds, nfds, timeout);
+#else
+  return ::poll(fds, nfds, timeout);
+#endif  // defined(_WIN32)
 }
 
 }  // namespace quic

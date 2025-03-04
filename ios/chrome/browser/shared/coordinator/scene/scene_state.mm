@@ -4,20 +4,17 @@
 
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/ios/crb_protocol_observers.h"
 #import "base/ios/ios_util.h"
 #import "base/logging.h"
-#import "base/mac/foundation_util.h"
 #import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/chrome_overlay_window.h"
-#import "ios/chrome/browser/sessions/scene_util.h"
+#import "ios/chrome/app/profile/profile_state.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_controller.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ios/chrome/browser/shared/coordinator/scene/scene_util.h"
 
 namespace {
 
@@ -61,6 +58,8 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
 
 @implementation SceneState {
   ContentVisibility _contentVisibility;
+  NSString* _sceneSessionID;
+  AppState* _appState;
 }
 
 - (instancetype)initWithAppState:(AppState*)appState {
@@ -71,6 +70,7 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
         observersWithProtocol:@protocol(SceneStateObserver)];
     _contentVisibility = ContentVisibility::kUnknown;
     _agents = [[NSMutableArray alloc] init];
+    _sceneSessionID = @"";
 
     // AppState might be nil in tests.
     if (appState) {
@@ -100,6 +100,14 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
   return self.agents;
 }
 
+- (void)setRootViewController:(UIViewController*)rootViewController
+            makeKeyAndVisible:(BOOL)makeKeyAndVisible {
+  self.window.rootViewController = rootViewController;
+  if (makeKeyAndVisible) {
+    [self.window makeKeyAndVisible];
+  }
+}
+
 #pragma mark - Setters & Getters.
 
 - (UIWindow*)window {
@@ -112,8 +120,17 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
   return mainWindow;
 }
 
-- (NSString*)sceneSessionID {
-  return SessionIdentifierForScene(_scene);
+- (UIViewController*)rootViewController {
+  return [self.window rootViewController];
+}
+
+- (void)setScene:(UIWindowScene*)scene {
+  _scene = scene;
+  if (_scene) {
+    _sceneSessionID = SessionIdentifierForScene(_scene);
+  } else {
+    _sceneSessionID = @"";
+  }
 }
 
 - (void)setActivationLevel:(SceneActivationLevel)newLevel {
@@ -180,7 +197,7 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
       return YES;
 
     case ContentVisibility::kUnknown: {
-      const BOOL incognitoContentVisible = [base::mac::ObjCCast<NSNumber>(
+      const BOOL incognitoContentVisible = [base::apple::ObjCCast<NSNumber>(
           [self sessionObjectForKey:kIncognitoCurrentKey]) boolValue];
 
       _contentVisibility =
@@ -224,10 +241,24 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
   }
 }
 
+- (void)setProfileState:(ProfileState*)profileState {
+  _profileState = profileState;
+  [self.observers sceneState:self profileStateConnected:_profileState];
+}
+
 #pragma mark - UIBlockerTarget
 
-- (id<UIBlockerManager>)uiBlockerManager {
-  return _appState;
+- (BOOL)isUIBlocked {
+  return _presentingModalOverlay;
+}
+
+- (id<UIBlockerManager>)uiBlockerManagerForExtent:(UIBlockerExtent)extent {
+  switch (extent) {
+    case UIBlockerExtent::kProfile:
+      return _profileState;
+    case UIBlockerExtent::kApplication:
+      return _appState;
+  }
 }
 
 - (void)bringBlockerToFront:(UIScene*)requestingScene {
@@ -256,6 +287,11 @@ ContentVisibility ContentVisibilityForIncognito(BOOL isIncognito) {
   switch (self.activationLevel) {
     case SceneActivationLevelUnattached: {
       activityString = @"Unattached";
+      break;
+    }
+
+    case SceneActivationLevelDisconnected: {
+      activityString = @"Disconnected";
       break;
     }
 

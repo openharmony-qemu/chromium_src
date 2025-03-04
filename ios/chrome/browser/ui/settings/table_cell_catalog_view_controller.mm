@@ -4,8 +4,8 @@
 
 #import "ios/chrome/browser/ui/settings/table_cell_catalog_view_controller.h"
 
-#import "base/mac/foundation_util.h"
-#import "ios/chrome/browser/net/crurl.h"
+#import "base/apple/foundation_util.h"
+#import "ios/chrome/browser/net/model/crurl.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/chrome_icon.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
@@ -16,37 +16,36 @@
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_info_button_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_multi_detail_text_item.h"
+#import "ios/chrome/browser/shared/ui/table_view/cells/table_view_multi_line_text_edit_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_tabs_search_suggested_history_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_button_item.h"
+#import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_edit_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_url_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_model.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/signin/constants.h"
-#import "ios/chrome/browser/signin/signin_util.h"
+#import "ios/chrome/browser/signin/model/constants.h"
+#import "ios/chrome/browser/signin/model/signin_util.h"
 #import "ios/chrome/browser/ui/authentication/cells/signin_promo_view_configurator.h"
 #import "ios/chrome/browser/ui/authentication/cells/table_view_account_item.h"
 #import "ios/chrome/browser/ui/authentication/cells/table_view_signin_promo_item.h"
-#import "ios/chrome/browser/ui/autofill/cells/autofill_edit_item.h"
+#import "ios/chrome/browser/ui/settings/address_bar_preference/cells/address_bar_options_item.h"
 #import "ios/chrome/browser/ui/settings/cells/account_sign_in_item.h"
-#import "ios/chrome/browser/ui/settings/cells/copied_to_chrome_item.h"
+#import "ios/chrome/browser/ui/settings/cells/inline_promo_item.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_check_cell.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_check_item.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_image_detail_text_item.h"
 #import "ios/chrome/browser/ui/settings/cells/sync_switch_item.h"
 #import "ios/chrome/browser/ui/settings/elements/enterprise_info_popover_view_controller.h"
+#import "ios/chrome/browser/ui/settings/password/passwords_table_view_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/image_util.h"
 #import "ios/public/provider/chrome/browser/signin/signin_resources_api.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -68,6 +67,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   ItemTypeSearchHistorySuggestedItem,
   ItemTypeTextAccessoryNoImage,
   ItemTypeTextEditItem,
+  ItemTypeTextMultiLineEditItem,
   ItemTypeURLWithActivityIndicator,
   ItemTypeURLWithActivityIndicatorStopped,
   ItemTypeURLWithTimestamp,
@@ -80,6 +80,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   ItemTypeTextSettingsDetail,
   ItemTypeTableViewWithBlueDot,
   ItemTypeLinkFooter,
+  ItemAddressBarOptions,
   ItemTypeDetailText,
   ItemTypeMultiDetailText,
   ItemTypeAccountSignInItem,
@@ -98,6 +99,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   ItemTypeCheck4,
   ItemTypeCheck5,
   ItemTypeCheck6,
+  ItemTypeInlinePromo,
 };
 }
 
@@ -147,7 +149,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   TableViewDetailIconItem* tableViewBlueDotItem =
       [[TableViewDetailIconItem alloc]
           initWithType:ItemTypeTableViewWithBlueDot];
-  tableViewBlueDotItem.showNotificationDot = YES;
+  tableViewBlueDotItem.badgeType = BadgeType::kNotificationDot;
   tableViewBlueDotItem.text = @"I have a blue dot badge!";
   tableViewBlueDotItem.iconImage =
       DefaultSettingsRootSymbol(kDefaultBrowserSymbol);
@@ -383,6 +385,15 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [model addItem:tableViewMultiDetailTextItem
       toSectionWithIdentifier:SectionIdentifierText];
 
+  TableViewMultiLineTextEditItem* tableViewMultiLineTextEditItem =
+      [[TableViewMultiLineTextEditItem alloc]
+          initWithType:ItemTypeTextMultiLineEditItem];
+  tableViewMultiLineTextEditItem.label = @"Multi Line Edit Text Item";
+  tableViewMultiLineTextEditItem.text =
+      @"This is possibly a very very very very very very long multi line text";
+  [model addItem:tableViewMultiLineTextEditItem
+      toSectionWithIdentifier:SectionIdentifierText];
+
   TableViewSwitchItem* tableViewSwitchItem =
       [[TableViewSwitchItem alloc] initWithType:ItemTypeTableViewSwitch1];
   tableViewSwitchItem.text = @"This is a switch item";
@@ -531,6 +542,21 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [model addItem:checkWithInfoButton
       toSectionWithIdentifier:SectionIdentifierSettings];
 
+  AddressBarOptionsItem* addressBarOptions =
+      [[AddressBarOptionsItem alloc] initWithType:ItemAddressBarOptions];
+  addressBarOptions.bottomAddressBarOptionSelected = YES;
+  [model addItem:addressBarOptions
+      toSectionWithIdentifier:SectionIdentifierSettings];
+
+  InlinePromoItem* inlinePromoItem =
+      [[InlinePromoItem alloc] initWithType:ItemTypeInlinePromo];
+  inlinePromoItem.promoImage = [UIImage imageNamed:WidgetPromoImageName()];
+  inlinePromoItem.promoText =
+      @"Text to promote some cool stuff in Settings. Can be on multiple lines.";
+  inlinePromoItem.moreInfoButtonTitle = @"Show Me How";
+  [model addItem:inlinePromoItem
+      toSectionWithIdentifier:SectionIdentifierSettings];
+
   TableViewLinkHeaderFooterItem* linkFooter =
       [[TableViewLinkHeaderFooterItem alloc] initWithType:ItemTypeLinkFooter];
   linkFooter.text =
@@ -546,11 +572,6 @@ typedef NS_ENUM(NSInteger, ItemType) {
   autofillHeader.text = @"Autofill";
   [model setHeader:autofillHeader
       forSectionWithIdentifier:SectionIdentifierAutofill];
-
-  CopiedToChromeItem* copiedToChrome =
-      [[CopiedToChromeItem alloc] initWithType:ItemTypeAutofillData];
-  [model addItem:copiedToChrome
-      toSectionWithIdentifier:SectionIdentifierAutofill];
 
   // SectionIdentifierAccount.
   UIImage* signinPromoAvatar = ios::provider::GetSigninDefaultAvatar();
@@ -755,28 +776,28 @@ typedef NS_ENUM(NSInteger, ItemType) {
       itemType == ItemTypeTableViewInfoButtonWithDetailText ||
       itemType == ItemTypeTableViewInfoButtonWithImage) {
     TableViewInfoButtonCell* managedCell =
-        base::mac::ObjCCastStrict<TableViewInfoButtonCell>(cell);
+        base::apple::ObjCCastStrict<TableViewInfoButtonCell>(cell);
     [managedCell.trailingButton addTarget:self
                                    action:@selector(didTapManagedUIInfoButton:)
                          forControlEvents:UIControlEventTouchUpInside];
   } else if (itemType == ItemTypeCheck6) {
     SettingsCheckCell* checkCell =
-        base::mac::ObjCCastStrict<SettingsCheckCell>(cell);
+        base::apple::ObjCCastStrict<SettingsCheckCell>(cell);
     [checkCell.infoButton addTarget:self
                              action:@selector(didTapCheckInfoButton:)
                    forControlEvents:UIControlEventTouchUpInside];
   } else if (itemType == ItemTypeSearchHistorySuggestedItem) {
     TableViewTabsSearchSuggestedHistoryCell* searchHistoryCell =
-        base::mac::ObjCCastStrict<TableViewTabsSearchSuggestedHistoryCell>(
+        base::apple::ObjCCastStrict<TableViewTabsSearchSuggestedHistoryCell>(
             cell);
     [searchHistoryCell updateHistoryResultsCount:7];
   } else if (itemType == ItemTypeURLWithActivityIndicator) {
     TableViewURLCell* URLCell =
-        base::mac::ObjCCastStrict<TableViewURLCell>(cell);
+        base::apple::ObjCCastStrict<TableViewURLCell>(cell);
     [URLCell startAnimatingActivityIndicator];
   } else if (itemType == ItemTypeURLWithActivityIndicatorStopped) {
     TableViewURLCell* URLCell =
-        base::mac::ObjCCastStrict<TableViewURLCell>(cell);
+        base::apple::ObjCCastStrict<TableViewURLCell>(cell);
     [URLCell startAnimatingActivityIndicator];
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 4 * NSEC_PER_SEC),
                    dispatch_get_main_queue(), ^{

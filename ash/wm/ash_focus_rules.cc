@@ -5,6 +5,7 @@
 #include "ash/wm/ash_focus_rules.h"
 
 #include "ash/public/cpp/shell_window_ids.h"
+#include "ash/public/cpp/window_properties.h"
 #include "ash/session/session_controller_impl.h"
 #include "ash/shell.h"
 #include "ash/shell_delegate.h"
@@ -13,6 +14,7 @@
 #include "ash/wm/float/float_controller.h"
 #include "ash/wm/mru_window_tracker.h"
 #include "ash/wm/overview/overview_controller.h"
+#include "ash/wm/overview/overview_session.h"
 #include "ash/wm/window_restore/window_restore_controller.h"
 #include "ash/wm/window_state.h"
 #include "base/containers/adapters.h"
@@ -167,6 +169,11 @@ bool AshFocusRules::CanFocusWindow(const aura::Window* window,
 aura::Window* AshFocusRules::GetNextActivatableWindow(
     aura::Window* ignore) const {
   DCHECK(ignore);
+  // If the window that lost activation should be ignored, no need to change
+  // window activation.
+  if (ignore->GetProperty(kIgnoreWindowActivationKey)) {
+    return nullptr;
+  }
 
   // If the window that just lost focus |ignore| has a transient parent, then
   // start from the container of that parent, otherwise start from the container
@@ -188,7 +195,7 @@ aura::Window* AshFocusRules::GetNextActivatableWindow(
   } else {
     MruWindowTracker* mru = Shell::Get()->mru_window_tracker();
     aura::Window::Windows windows = mru->BuildMruWindowList(kActiveDesk);
-    starting_window = windows.empty() ? ignore : windows[0];
+    starting_window = windows.empty() ? ignore : windows[0].get();
   }
   DCHECK(starting_window);
 
@@ -215,6 +222,9 @@ aura::Window* AshFocusRules::GetNextActivatableWindow(
   if (!window && starting_container_index > 0) {
     for (int i = starting_container_index - 1; !window && i >= 0; i--)
       window = GetTopmostWindowToActivateForContainerIndex(i, ignore, root);
+  }
+  if (window) {
+    DCHECK(!window->GetProperty(kIgnoreWindowActivationKey));
   }
   return window;
 }
@@ -254,7 +264,8 @@ aura::Window* AshFocusRules::GetTopmostWindowToActivateInContainer(
     // desk.
     if (child != ignore && window_state->CanActivate() &&
         !window_state->IsMinimized() &&
-        !(window_state->IsFloated() && !child->IsVisible())) {
+        !(window_state->IsFloated() && !child->IsVisible()) &&
+        !child->GetProperty(kIgnoreWindowActivationKey)) {
       return child;
     }
   }

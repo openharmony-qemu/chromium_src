@@ -45,7 +45,6 @@ HttpConnection::Method ConvertToHttpConnectionMethod(
       return HttpConnection::DELETE;
     case StreamHttpConnectionResponse::METHOD_UNSPECIFIED:
       NOTREACHED();
-      return HttpConnection::GET;
   }
 }
 
@@ -232,7 +231,7 @@ void GrpcHttpConnectionClient::OnRpcReadAvailable(
       DVLOG(1) << "StreamHttpConnectionResponse::START";
       DCHECK(response.has_parameters());
       const auto& param = response.parameters();
-      auto* http_connection = iter->second;
+      auto* http_connection = iter->second.get();
       http_connection->SetRequest(
           param.url(), ConvertToHttpConnectionMethod(param.method()));
       for (const auto& header : param.headers()) {

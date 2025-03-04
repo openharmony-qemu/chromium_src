@@ -20,10 +20,6 @@
 #import "net/test/embedded_test_server/http_request.h"
 #import "net/test/embedded_test_server/http_response.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using net::test_server::HttpRequest;
 using net::test_server::HttpResponse;
 using net::test_server::HttpMethod;
@@ -35,7 +31,7 @@ namespace download {
 class BackgroundDownloadTaskHelperTest
     : public test::BackgroundDownloadTestBase {
  protected:
-  BackgroundDownloadTaskHelperTest() {}
+  BackgroundDownloadTaskHelperTest() = default;
   ~BackgroundDownloadTaskHelperTest() override = default;
 
   void SetUp() override {
@@ -64,7 +60,7 @@ class BackgroundDownloadTaskHelperTest
 };
 
 // Verifies download can be finished.
-// TODO(crbug/1367306): Re-enable the test.
+// TODO(crbug.com/40239993): Re-enable the test.
 TEST_F(BackgroundDownloadTaskHelperTest, DISABLED_DownloadComplete) {
   base::RunLoop loop;
   std::string guid = base::Uuid::GenerateRandomV4().AsLowercaseString();
@@ -90,7 +86,7 @@ TEST_F(BackgroundDownloadTaskHelperTest, DISABLED_DownloadComplete) {
 }
 
 // Verifies non success http code is treated as error.
-// TODO(crbug/1367306): Re-enable the test.
+// TODO(crbug.com/40239993): Re-enable the test.
 TEST_F(BackgroundDownloadTaskHelperTest,
        DISABLED_DownloadErrorNonSuccessHttpCode) {
   base::RunLoop loop;
@@ -108,7 +104,7 @@ TEST_F(BackgroundDownloadTaskHelperTest,
 }
 
 // Verifies data URL should result in failure.
-// TODO(crbug/1367306): Re-enable the test.
+// TODO(crbug.com/40239993): Re-enable the test.
 TEST_F(BackgroundDownloadTaskHelperTest, DISABLED_DataURL) {
   base::RunLoop loop;
   std::string guid = base::Uuid::GenerateRandomV4().AsLowercaseString();

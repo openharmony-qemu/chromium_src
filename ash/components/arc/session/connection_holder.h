@@ -131,7 +131,7 @@ class ConnectionHolderImpl {
     if (!instance_ || !host_)
       return;
     // When both the instance and host are ready, start connection.
-    // TODO(crbug.com/750563): Fix the race issue.
+    // TODO(crbug.com/40532557): Fix the race issue.
     auto receiver = std::make_unique<mojo::Receiver<HostType>>(host_);
     mojo::PendingRemote<HostType> host_proxy;
     receiver->Bind(host_proxy.InitWithNewPipeAndPassReceiver());
@@ -166,10 +166,10 @@ class ConnectionHolderImpl {
 
   // This class does not have ownership. The pointers should be managed by the
   // caller.
-  const raw_ptr<ConnectionNotifier, ExperimentalAsh> connection_notifier_;
-  raw_ptr<InstanceType, ExperimentalAsh> instance_ = nullptr;
+  const raw_ptr<ConnectionNotifier> connection_notifier_;
+  raw_ptr<InstanceType, DanglingUntriaged> instance_ = nullptr;
   uint32_t instance_version_ = 0;
-  raw_ptr<HostType, DanglingUntriaged | ExperimentalAsh> host_ = nullptr;
+  raw_ptr<HostType, DanglingUntriaged> host_ = nullptr;
 
   // Created when both |instance_| and |host_| ptr are set.
   std::unique_ptr<mojo::Receiver<HostType>> receiver_;
@@ -238,8 +238,8 @@ class ConnectionHolderImpl<InstanceType, void> {
  private:
   // This class does not have ownership. The pointers should be managed by the
   // caller.
-  const raw_ptr<ConnectionNotifier, ExperimentalAsh> connection_notifier_;
-  raw_ptr<InstanceType, ExperimentalAsh> instance_ = nullptr;
+  const raw_ptr<ConnectionNotifier> connection_notifier_;
+  raw_ptr<InstanceType, DanglingUntriaged> instance_ = nullptr;
   uint32_t instance_version_ = 0;
 };
 

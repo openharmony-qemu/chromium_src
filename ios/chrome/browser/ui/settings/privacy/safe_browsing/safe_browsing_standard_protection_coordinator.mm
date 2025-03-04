@@ -4,21 +4,17 @@
 
 #import "ios/chrome/browser/ui/settings/privacy/safe_browsing/safe_browsing_standard_protection_coordinator.h"
 
-#import "base/mac/foundation_util.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/browser.h"
+#import "base/apple/foundation_util.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/identity_manager_factory.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
 #import "ios/chrome/browser/ui/authentication/authentication_flow.h"
 #import "ios/chrome/browser/ui/settings/privacy/safe_browsing/safe_browsing_standard_protection_mediator.h"
 #import "ios/chrome/browser/ui/settings/privacy/safe_browsing/safe_browsing_standard_protection_view_controller.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface SafeBrowsingStandardProtectionCoordinator () <
     SafeBrowsingStandardProtectionViewControllerPresentationDelegate>
@@ -51,11 +47,11 @@
       initWithStyle:ChromeTableViewStyle()];
   self.viewController.presentationDelegate = self;
   self.mediator = [[SafeBrowsingStandardProtectionMediator alloc]
-      initWithUserPrefService:self.browser->GetBrowserState()->GetPrefs()
-                  authService:AuthenticationServiceFactory::GetForBrowserState(
-                                  self.browser->GetBrowserState())
-              identityManager:IdentityManagerFactory::GetForBrowserState(
-                                  self.browser->GetBrowserState())];
+      initWithUserPrefService:self.browser->GetProfile()->GetPrefs()
+                  authService:AuthenticationServiceFactory::GetForProfile(
+                                  self.browser->GetProfile())
+              identityManager:IdentityManagerFactory::GetForProfile(
+                                  self.browser->GetProfile())];
   self.mediator.consumer = self.viewController;
   self.viewController.modelDelegate = self.mediator;
   DCHECK(self.baseNavigationController);

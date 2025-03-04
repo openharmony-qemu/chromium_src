@@ -30,8 +30,9 @@ MockPermissionPromptFactory::MockPermissionPromptFactory(
 MockPermissionPromptFactory::~MockPermissionPromptFactory() {
   manager_->set_view_factory_for_testing(
       base::BindRepeating(&MockPermissionPromptFactory::DoNotCreate));
-  for (auto* prompt : prompts_)
+  for (permissions::MockPermissionPrompt* prompt : prompts_) {
     prompt->factory_ = nullptr;
+  }
   prompts_.clear();
 }
 
@@ -97,7 +98,6 @@ std::unique_ptr<PermissionPrompt> MockPermissionPromptFactory::DoNotCreate(
     content::WebContents* web_contents,
     PermissionPrompt::Delegate* delegate) {
   NOTREACHED();
-  return base::WrapUnique(new MockPermissionPrompt(nullptr, nullptr));
 }
 
 void MockPermissionPromptFactory::HideView(MockPermissionPrompt* prompt) {

@@ -5,10 +5,12 @@
 #ifndef CHROMEOS_ASH_COMPONENTS_CRYPTOHOME_AUTH_FACTOR_H_
 #define CHROMEOS_ASH_COMPONENTS_CRYPTOHOME_AUTH_FACTOR_H_
 
+#include <optional>
 #include <string>
 
 #include "base/component_export.h"
 #include "base/containers/enum_set.h"
+#include "base/time/time.h"
 #include "chromeos/ash/components/cryptohome/common_types.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
@@ -44,6 +46,7 @@ enum class AuthFactorType {
   kRecovery,
   kSmartCard,
   kKiosk,
+  kFingerprint,
 };
 
 using AuthFactorsSet = base::
@@ -119,15 +122,128 @@ class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME)
 };
 
 // Per-factor statuses (read-only properties set by cryptohomed):
+// TODO(b/341733466): Individual per-factor statuses are discouraged.
+// A general auth factor status is already returned by cryptohomed for
+// each AuthFactorWithStatus.
 
-struct COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) PinStatus {
-  bool auth_locked;
+// PinStatus provides the pin status info returned from cryptohomed.
+// PinStatus only represents a status snapshot at the time of its
+// construction. Care must be taken in checking the freshness of
+// any PinStatus object.
+class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) PinStatus {
+ public:
+  // Default constructor: the pin factor is immediately available.
+  PinStatus();
+  // Constructor takes one TimeDelta value:
+  // |available_in| indicates a timeout after which the factor will become
+  // available.
+  //   0 means the factor is immediately available.
+  //   TimeDelta::Max() means the factor is locked out indefinitely.
+  PinStatus(base::TimeDelta available_in);
+
+  PinStatus(PinStatus&&) noexcept;
+  PinStatus& operator=(PinStatus&&) noexcept;
+
+  PinStatus(const PinStatus&);
+  PinStatus& operator=(const PinStatus&);
+
+  ~PinStatus();
+
+  // The time when the pin auth factor will be available.
+  // If locked out indefinitely, return Time::Max().
+  base::Time AvailableAt() const;
+
+  // Indicates a not-avaiable pin.
+  bool IsLockedFactor() const;
+
+ private:
+  base::Time available_at_;
+};
+
+// Represents the time when the pin auth factor will be available. If the field
+// is not present, it means the PIN is enabled or disabled permanently.
+using PinLockAvailability = std::optional<base::Time>;
+
+// Common types used in factor-specific metadata:
+
+// The hash information of an auth factor that is used to generate the actual
+// secret. This can be used to generate the recoverable key store for the auth
+// factor.
+struct COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME)
+    KnowledgeFactorHashInfo {
+  KnowledgeFactorHashAlgorithmWrapper algorithm;
+  std::string salt;
+  bool should_generate_key_store;
 };
 
 // Factor-specific metadata:
 
 struct COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) SmartCardMetadata {
   std::string public_key_spki_der;
+};
+
+struct COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME)
+    CryptohomeRecoveryMetadata {
+  std::string mediator_pub_key;
+};
+
+class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) PasswordMetadata {
+ public:
+  // Constructors that do/don't include the hash info field. Difference with
+  // online and local password metadata is that only local password metadata
+  // needs to generate recoverable key stores.
+  // Generating recoverable key stores will make the password a recovery
+  // factor for some Google sync services, and we only want to do it for local
+  // passwords but not GAIA passwords. This is because the user already needs
+  // their GAIA password to access the Google sync services, so making the GAIA
+  // password a sync recovery factor doesn't provide any extra layer of
+  // security.
+  static PasswordMetadata CreateWithoutSalt();
+  static PasswordMetadata CreateForOnlinePassword(SystemSalt salt);
+  static PasswordMetadata CreateForLocalPassword(SystemSalt salt);
+
+  PasswordMetadata(PasswordMetadata&&) noexcept;
+  PasswordMetadata& operator=(PasswordMetadata&&) noexcept;
+
+  PasswordMetadata(const PasswordMetadata&);
+  PasswordMetadata& operator=(const PasswordMetadata&);
+
+  ~PasswordMetadata();
+
+  const std::optional<KnowledgeFactorHashInfo>& hash_info() const {
+    return hash_info_;
+  }
+
+ private:
+  PasswordMetadata(std::optional<KnowledgeFactorHashInfo> hash_info);
+
+  std::optional<KnowledgeFactorHashInfo> hash_info_;
+};
+
+class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) PinMetadata {
+ public:
+  static PinMetadata CreateWithoutSalt();
+  static PinMetadata Create(PinSalt salt);
+
+  PinMetadata(PinMetadata&&) noexcept;
+  PinMetadata& operator=(PinMetadata&&) noexcept;
+
+  PinMetadata(const PinMetadata&);
+  PinMetadata& operator=(const PinMetadata&);
+
+  ~PinMetadata();
+
+  const std::optional<KnowledgeFactorHashInfo>& hash_info() const {
+    return hash_info_;
+  }
+
+ private:
+  PinMetadata(std::optional<KnowledgeFactorHashInfo> hash_info);
+
+  std::optional<KnowledgeFactorHashInfo> hash_info_;
+};
+
+class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) FingerprintMetadata {
 };
 
 // AuthFactor definition.
@@ -141,7 +257,20 @@ class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) AuthFactor {
              SmartCardMetadata smartcard_metadata);
   AuthFactor(AuthFactorRef ref,
              AuthFactorCommonMetadata metadata,
+             CryptohomeRecoveryMetadata recovery_metadata);
+  AuthFactor(AuthFactorRef ref,
+             AuthFactorCommonMetadata metadata,
+             PasswordMetadata password_metadata);
+  AuthFactor(AuthFactorRef ref,
+             AuthFactorCommonMetadata metadata,
+             PinMetadata pin_metadata);
+  AuthFactor(AuthFactorRef ref,
+             AuthFactorCommonMetadata metadata,
+             PinMetadata pin_metadata,
              PinStatus status);
+  AuthFactor(AuthFactorRef ref,
+             AuthFactorCommonMetadata metadata,
+             FingerprintMetadata fingerprint_metadata);
 
   AuthFactor(AuthFactor&&) noexcept;
   AuthFactor& operator=(AuthFactor&&) noexcept;
@@ -159,12 +288,22 @@ class COMPONENT_EXPORT(CHROMEOS_ASH_COMPONENTS_CRYPTOHOME) AuthFactor {
   // Fails if type does not match:
   const PinStatus& GetPinStatus() const;
   const SmartCardMetadata& GetSmartCardMetadata() const;
+  const CryptohomeRecoveryMetadata& GetCryptohomeRecoveryMetadata() const;
+  const PasswordMetadata& GetPasswordMetadata() const;
+  const PinMetadata& GetPinMetadata() const;
+  const FingerprintMetadata& GetFingerprintMetadata() const;
 
  private:
   AuthFactorRef ref_;
   AuthFactorCommonMetadata common_metadata_;
+  absl::variant<absl::monostate,
+                SmartCardMetadata,
+                CryptohomeRecoveryMetadata,
+                PasswordMetadata,
+                PinMetadata,
+                FingerprintMetadata>
+      factor_metadata_;
   absl::variant<absl::monostate, PinStatus> factor_status_;
-  absl::variant<absl::monostate, SmartCardMetadata> factor_metadata_;
 };
 
 }  // namespace cryptohome

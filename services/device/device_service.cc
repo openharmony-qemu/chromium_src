@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -15,9 +16,6 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "services/device/binder_overrides.h"
-#include "services/device/compute_pressure/pressure_manager_impl.h"
-#include "services/device/device_posture/device_posture_platform_provider.h"
-#include "services/device/device_posture/device_posture_provider_impl.h"
 #include "services/device/fingerprint/fingerprint.h"
 #include "services/device/generic_sensor/platform_sensor_provider.h"
 #include "services/device/generic_sensor/sensor_provider_impl.h"
@@ -29,6 +27,7 @@
 #include "services/device/public/mojom/battery_monitor.mojom.h"
 #include "services/device/serial/serial_port_manager_impl.h"
 #include "services/device/time_zone_monitor/time_zone_monitor.h"
+#include "services/device/vibration/vibration_manager_impl.h"
 #include "services/device/wake_lock/wake_lock_provider.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "ui/gfx/native_widget_types.h"
@@ -37,11 +36,15 @@
 #include "base/android/jni_android.h"
 #include "services/device/device_service_jni_headers/InterfaceRegistrar_jni.h"
 #include "services/device/screen_orientation/screen_orientation_listener_android.h"
+#include "services/device/vibration/vibration_manager_android.h"
 #else
 #include "services/device/battery/battery_monitor_impl.h"
 #include "services/device/battery/battery_status_service.h"
 #include "services/device/hid/hid_manager_impl.h"
-#include "services/device/vibration/vibration_manager_impl.h"
+#endif
+
+#if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
+#include "services/device/compute_pressure/pressure_manager_impl.h"
 #endif
 
 #if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && defined(USE_UDEV)
@@ -51,6 +54,8 @@
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
 #include "chromeos/lacros/lacros_service.h"
 #endif
+
+#include "arkweb/build/features/features.h"
 
 namespace {
 
@@ -94,7 +99,8 @@ std::unique_ptr<DeviceService> CreateDeviceService(
     mojo::PendingReceiver<mojom::DeviceService> receiver) {
   GeolocationProviderImpl::SetGeolocationConfiguration(
       params->url_loader_factory, params->geolocation_api_key,
-      params->custom_location_provider_callback, params->geolocation_manager,
+      params->custom_location_provider_callback,
+      params->geolocation_system_permission_manager,
       params->use_gms_core_location_provider);
   return std::make_unique<DeviceService>(std::move(params),
                                          std::move(receiver));
@@ -118,19 +124,20 @@ DeviceService::DeviceService(
 #endif
 
 #if defined(IS_SERIAL_ENABLED_PLATFORM)
-  serial_port_manager_ = std::make_unique<SerialPortManagerImpl>(
-      io_task_runner_, base::SingleThreadTaskRunner::GetCurrentDefault());
 #if BUILDFLAG(IS_MAC)
   // On macOS the SerialDeviceEnumerator needs to run on the UI thread so that
   // it has access to a CFRunLoop where it can register a notification source.
-  serial_port_manager_task_runner_ =
+  auto serial_port_manager_task_runner =
       base::SingleThreadTaskRunner::GetCurrentDefault();
 #else
   // On other platforms it must be allowed to do blocking IO.
-  serial_port_manager_task_runner_ =
+  auto serial_port_manager_task_runner =
       base::ThreadPool::CreateSequencedTaskRunner(
-          {base::MayBlock(), base::TaskPriority::BEST_EFFORT});
+          {base::MayBlock(), base::TaskPriority::USER_VISIBLE});
 #endif
+  serial_port_manager_.emplace(
+      std::move(serial_port_manager_task_runner), io_task_runner_,
+      base::SingleThreadTaskRunner::GetCurrentDefault());
 #endif  // defined(IS_SERIAL_ENABLED_PLATFORM)
 
 #if !BUILDFLAG(IS_ANDROID)
@@ -149,18 +156,6 @@ DeviceService::~DeviceService() {
   // it's not really important that this runs anyway.
   device::BatteryStatusService::GetInstance()->Shutdown();
 #endif
-#if defined(IS_SERIAL_ENABLED_PLATFORM)
-  auto* serial_port_manager = serial_port_manager_.release();
-  if (!serial_port_manager_task_runner_->DeleteSoon(FROM_HERE,
-                                                    serial_port_manager)) {
-    // The ThreadPool can be shutdown by the time ~DeviceService is triggered.
-    // Synchronously delete |serial_port_manager| in that event (which is
-    // naturally sequenced after the last task on
-    // |serial_port_manager_task_runner_| per ThreadPool shutdown semantics).
-    // See crbug.com/1263149#c20 for details.
-    delete serial_port_manager;
-  }
-#endif  // defined(IS_SERIAL_ENABLED_PLATFORM)
 }
 
 void DeviceService::AddReceiver(
@@ -168,10 +163,10 @@ void DeviceService::AddReceiver(
   receivers_.Add(this, std::move(receiver));
 }
 
-void DeviceService::SetPlatformSensorProviderForTesting(
-    std::unique_ptr<PlatformSensorProvider> provider) {
-  DCHECK(!sensor_provider_);
-  sensor_provider_ = std::make_unique<SensorProviderImpl>(std::move(provider));
+void DeviceService::SetSensorProviderImplForTesting(
+    std::unique_ptr<SensorProviderImpl> sensor_provider) {
+  CHECK(!sensor_provider_);
+  sensor_provider_ = std::move(sensor_provider);
 }
 
 // static
@@ -180,10 +175,18 @@ void DeviceService::OverrideGeolocationContextBinderForTesting(
   internal::GetGeolocationContextBinderOverride() = std::move(binder);
 }
 
+#if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
 // static
 void DeviceService::OverridePressureManagerBinderForTesting(
     PressureManagerBinder binder) {
   internal::GetPressureManagerBinderOverride() = std::move(binder);
+}
+#endif
+
+// static
+void DeviceService::OverrideTimeZoneMonitorBinderForTesting(
+    TimeZoneMonitorBinder binder) {
+  internal::GetTimeZoneMonitorBinderOverride() = std::move(binder);
 }
 
 void DeviceService::BindBatteryMonitor(
@@ -195,6 +198,7 @@ void DeviceService::BindBatteryMonitor(
 #endif
 }
 
+#if BUILDFLAG(ENABLE_COMPUTE_PRESSURE)
 void DeviceService::BindPressureManager(
     mojo::PendingReceiver<mojom::PressureManager> receiver) {
   const auto& binder_override = internal::GetPressureManagerBinderOverride();
@@ -207,6 +211,7 @@ void DeviceService::BindPressureManager(
     pressure_manager_ = PressureManagerImpl::Create();
   pressure_manager_->Bind(std::move(receiver));
 }
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 // static
@@ -226,11 +231,12 @@ void DeviceService::BindNFCProvider(
 #endif
 
 void DeviceService::BindVibrationManager(
-    mojo::PendingReceiver<mojom::VibrationManager> receiver) {
+    mojo::PendingReceiver<mojom::VibrationManager> receiver,
+    mojo::PendingRemote<mojom::VibrationManagerListener> listener) {
 #if BUILDFLAG(IS_ANDROID)
-  GetJavaInterfaceProvider()->GetInterface(std::move(receiver));
+  VibrationManagerAndroid::Create(std::move(receiver), std::move(listener));
 #else
-  VibrationManagerImpl::Create(std::move(receiver));
+  VibrationManagerImpl::Create(std::move(receiver), std::move(listener));
 #endif
 }
 
@@ -240,14 +246,14 @@ void DeviceService::BindHidManager(
   if (IsLaCrOS() && !HidManagerImpl::IsHidServiceTesting()) {
     BindLaCrOSHidManager(std::move(receiver));
   } else {
-#if defined(OHOS_BUGFIX_CRASH)
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
     // OHOS platform functions is not implemented.
     LOG(INFO) << "OHOS don't support hid_device.";
 #else
     if (!hid_manager_)
       hid_manager_ = std::make_unique<HidManagerImpl>();
     hid_manager_->AddReceiver(std::move(receiver));
-#endif  // defined(OHOS_BUGFIX_CRASH)
+#endif  // BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   }
 }
 #endif
@@ -297,6 +303,12 @@ void DeviceService::BindGeolocationControl(
       std::move(receiver));
 }
 
+void DeviceService::BindGeolocationInternals(
+    mojo::PendingReceiver<mojom::GeolocationInternals> receiver) {
+  GeolocationProviderImpl::GetInstance()->BindGeolocationInternalsReceiver(
+      std::move(receiver));
+}
+
 void DeviceService::BindPowerMonitor(
     mojo::PendingReceiver<mojom::PowerMonitor> receiver) {
   if (!power_monitor_message_broadcaster_) {
@@ -340,31 +352,11 @@ void DeviceService::BindSensorProvider(
   sensor_provider_->Bind(std::move(receiver));
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
-void DeviceService::BindDevicePostureProvider(
-    mojo::PendingReceiver<mojom::DevicePostureProvider> receiver) {
-  if (!device_posture_provider_) {
-    auto posture_platform_provider_ = DevicePosturePlatformProvider::Create();
-    if (!posture_platform_provider_)
-      return;
-    device_posture_provider_ = std::make_unique<DevicePostureProviderImpl>(
-        std::move(posture_platform_provider_));
-  }
-  device_posture_provider_->Bind(std::move(receiver));
-}
-#endif
-
 void DeviceService::BindSerialPortManager(
     mojo::PendingReceiver<mojom::SerialPortManager> receiver) {
 #if defined(IS_SERIAL_ENABLED_PLATFORM)
-  // TODO(crbug.com/1109621): SerialPortManagerImpl depends on the
-  // permission_broker service on Chromium OS. We will need to redirect
-  // connections for LaCrOS here.
-  DCHECK(serial_port_manager_task_runner_);
-  serial_port_manager_task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&SerialPortManagerImpl::Bind,
-                                base::Unretained(serial_port_manager_.get()),
-                                std::move(receiver)));
+  serial_port_manager_.AsyncCall(&SerialPortManagerImpl::Bind, FROM_HERE)
+      .WithArgs(std::move(receiver));
 #else   // defined(IS_SERIAL_ENABLED_PLATFORM)
   NOTREACHED() << "Serial devices not supported on this platform.";
 #endif  // defined(IS_SERIAL_ENABLED_PLATFORM)
@@ -372,8 +364,14 @@ void DeviceService::BindSerialPortManager(
 
 void DeviceService::BindTimeZoneMonitor(
     mojo::PendingReceiver<mojom::TimeZoneMonitor> receiver) {
+  const auto& binder_override = internal::GetTimeZoneMonitorBinderOverride();
+  if (binder_override) {
+    binder_override.Run(std::move(receiver));
+    return;
+  }
+
   if (!time_zone_monitor_) {
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_TIME_ZONE)
     time_zone_monitor_ = TimeZoneMonitor::Create();
 #elif
     time_zone_monitor_ = TimeZoneMonitor::Create(file_task_runner_);
@@ -389,7 +387,7 @@ void DeviceService::BindWakeLockProvider(
 
 void DeviceService::BindUsbDeviceManager(
     mojo::PendingReceiver<mojom::UsbDeviceManager> receiver) {
-  // TODO(crbug.com/1109621): usb::DeviceManagerImpl depends on the
+  // TODO(crbug.com/40141825): usb::DeviceManagerImpl depends on the
   // permission_broker service on Chromium OS. We will need to redirect
   // connections for LaCrOS here.
   if (!usb_device_manager_)
@@ -400,7 +398,7 @@ void DeviceService::BindUsbDeviceManager(
 
 void DeviceService::BindUsbDeviceManagerTest(
     mojo::PendingReceiver<mojom::UsbDeviceManagerTest> receiver) {
-  // TODO(crbug.com/1109621): usb::DeviceManagerImpl depends on the
+  // TODO(crbug.com/40141825): usb::DeviceManagerImpl depends on the
   // permission_broker service on Chromium OS. We will need to redirect
   // connections for LaCrOS here.
   if (!usb_device_manager_)

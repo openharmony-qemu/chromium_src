@@ -5,6 +5,7 @@
 #include "components/search_engines/search_host_to_urls_map.h"
 
 #include <memory>
+#include <string_view>
 
 #include "base/ranges/algorithm.h"
 #include "components/search_engines/template_url.h"
@@ -53,8 +54,7 @@ void SearchHostToURLsMap::Remove(const TemplateURL* template_url) {
     host_to_urls_map_.erase(set_with_url);
 }
 
-TemplateURL* SearchHostToURLsMap::GetTemplateURLForHost(
-    base::StringPiece host) {
+TemplateURL* SearchHostToURLsMap::GetTemplateURLForHost(std::string_view host) {
   DCHECK(initialized_);
 
   HostToURLsMap::const_iterator iter = host_to_urls_map_.find(host);
@@ -64,15 +64,14 @@ TemplateURL* SearchHostToURLsMap::GetTemplateURLForHost(
   // Because we have to happily tolerate duplicates in TemplateURLService now,
   /// return the best TemplateURL for `host`, just like
   // `GetTemplateURLForKeyword` returns the best TemplateURL for a keyword.
-  return *std::min_element(
-      iter->second.begin(), iter->second.end(),
-      [](const auto& a, const auto& b) {
-        return a->IsBetterThanEngineWithConflictingKeyword(b);
-      });
+  return *std::min_element(iter->second.begin(), iter->second.end(),
+                           [](const auto& a, const auto& b) {
+                             return a->IsBetterThanConflictingEngine(b);
+                           });
 }
 
 SearchHostToURLsMap::TemplateURLSet* SearchHostToURLsMap::GetURLsForHost(
-    base::StringPiece host) {
+    std::string_view host) {
   DCHECK(initialized_);
 
   auto urls_for_host = host_to_urls_map_.find(host);

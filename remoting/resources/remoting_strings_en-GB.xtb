@@ -4,7 +4,6 @@
 <translation id="1002108253973310084">An incompatible protocol version was detected. Please make sure that you have the latest version of the software installed on both computers and try again.</translation>
 <translation id="1008557486741366299">Not Now</translation>
 <translation id="1201402288615127009">Next</translation>
-<translation id="1296511125400541222">Copyright 2023 The Chromium Authors. All rights reserved.</translation>
 <translation id="1297009705180977556">Error connecting to <ph name="HOSTNAME" /></translation>
 <translation id="1450760146488584666">The requested object does not exist.</translation>
 <translation id="1480046233931937785">Credits</translation>
@@ -29,7 +28,6 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="2329392777730037872">Failed to open <ph name="URL" /> on the client.</translation>
 <translation id="2359808026110333948">Continue</translation>
 <translation id="2366718077645204424">Unable to reach the host. This is probably due to the configuration of the network you are using.</translation>
-<translation id="2370754117186920852"><ph name="OPTIONAL_OFFLINE_REASON" />  Last seen online <ph name="RELATIVE_TIMESTAMP" />.</translation>
 <translation id="2504109125669302160">Grant 'Accessibility' permission to <ph name="PRODUCT_NAME" /></translation>
 <translation id="2509394361235492552">Connected to <ph name="HOSTNAME" /></translation>
 <translation id="2540992418118313681">Would you like to share this computer for another user to see and control?</translation>
@@ -54,7 +52,6 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="3423542133075182604">Security Key Remoting Process</translation>
 <translation id="3581045510967524389">Could not connect to the network. Please check that your device is on-line.</translation>
 <translation id="3596628256176442606">This service enables incoming connections from Chromoting clients.</translation>
-<translation id="369442766917958684">Offline.</translation>
 <translation id="3695446226812920698">Find out how</translation>
 <translation id="3776024066357219166">Your Chrome Remote Desktop session has ended.</translation>
 <translation id="3858860766373142691">Name</translation>
@@ -89,7 +86,6 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="4808503597364150972">Please enter your PIN for <ph name="HOSTNAME" />.</translation>
 <translation id="4812684235631257312">Host</translation>
 <translation id="4867841927763172006">Send PrtScn</translation>
-<translation id="4960795469833295568">Copyright 2023 Google LLC. All rights reserved.</translation>
 <translation id="4974476491460646149">Connection closed for <ph name="HOSTNAME" /></translation>
 <translation id="4985296110227979402">You need to first set up your computer for remote access</translation>
 <translation id="4987330545941822761">Chrome Remote Desktop cannot determine the browser to open URLs locally. Please choose it from the list below.</translation>
@@ -107,7 +103,6 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="5601503069213153581">PIN</translation>
 <translation id="5690427481109656848">Google LLC</translation>
 <translation id="5708869785009007625">Your desktop is currently shared with <ph name="USER" />.</translation>
-<translation id="5750083143895808682">Signed in as <ph name="EMAIL_ADDRESS" />.</translation>
 <translation id="579702532610384533">Reconnect</translation>
 <translation id="5810269635982033450">Screen acts like a trackpad</translation>
 <translation id="5823554426827907568"><ph name="CLIENT_USERNAME" /> has requested access to see your screen and control your keyboard and mouse. Press '<ph name="IDS_SHARE_CONFIRM_DIALOG_DECLINE" />' if you are not expecting this request. Otherwise select '<ph name="IDS_SHARE_CONFIRM_DIALOG_CONFIRM" />' to allow the connection when ready.</translation>
@@ -154,12 +149,13 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="7693372326588366043">Refresh the list of hosts</translation>
 <translation id="7714222945760997814">Report this</translation>
 <translation id="7868137160098754906">Please enter your PIN for the remote computer.</translation>
+<translation id="7881455334687220899">Copyright 2024 The Chromium Authors. All rights reserved.</translation>
 <translation id="7895403300744144251">Security policies on the remote computer do not allow connections from your account.</translation>
 <translation id="7936528439960309876">Dock Right</translation>
 <translation id="7970576581263377361">Authentication failed. Please sign in to Chromium again.</translation>
 <translation id="7981525049612125370">The remote session has expired.</translation>
 <translation id="8038111231936746805">(default)</translation>
-<translation id="8041089156583427627">Send Feedback</translation>
+<translation id="8041089156583427627">Send feedback</translation>
 <translation id="8060029310790625334">Help Centre</translation>
 <translation id="806699900641041263">Connecting to <ph name="HOSTNAME" /></translation>
 <translation id="8073845705237259513">To use Chrome Remote Desktop, you'll need to add a Google Account to your device.</translation>
@@ -185,6 +181,7 @@ If '<ph name="SERVICE_SCRIPT_NAME" />' is already ticked, untick it and then tic
 <translation id="8747048596626351634">Session crashed or failed to start. If ~/.chrome-remote-desktop-session exists on the remote computer, make sure that it starts a long-running foreground process such as a desktop environment or window manager.</translation>
 <translation id="8804164990146287819">Privacy Policy</translation>
 <translation id="8906511416443321782">Microphone access is required to capture audio and stream it to the Chrome Remote Desktop client.</translation>
+<translation id="9042277333359847053">Copyright 2024 Google LLC. All rights reserved.</translation>
 <translation id="9111855907838866522">You are connected to your remote device. To open the menu, please tap the screen with four fingers.</translation>
 <translation id="9126115402994542723">Don't ask for a PIN again when connecting to this host from this device.</translation>
 <translation id="916856682307586697">Launch the default XSession</translation>

@@ -7,12 +7,9 @@
 #include <algorithm>
 #include <array>
 
-#include "base/logging.h"
-#include "components/autofill/core/common/autofill_features.h"
-
 namespace autofill {
 
-FieldCandidate::FieldCandidate(ServerFieldType field_type, float field_score)
+FieldCandidate::FieldCandidate(FieldType field_type, float field_score)
     : type(field_type), score(field_score) {}
 
 FieldCandidates::FieldCandidates() = default;
@@ -22,29 +19,24 @@ FieldCandidates& FieldCandidates::operator=(FieldCandidates&& other) = default;
 
 FieldCandidates::~FieldCandidates() = default;
 
-void FieldCandidates::AddFieldCandidate(ServerFieldType type, float score) {
+void FieldCandidates::AddFieldCandidate(FieldType type, float score) {
   field_candidates_.emplace_back(type, score);
 }
 
 // We currently select a type with the maximum score sum.
-ServerFieldType FieldCandidates::BestHeuristicType() const {
-  if (field_candidates_.empty())
+FieldType FieldCandidates::BestHeuristicType() const {
+  if (field_candidates_.empty()) {
     return UNKNOWN_TYPE;
-
-  // Scores for each type. The index is their ServerFieldType enum value.
-  std::array<float, MAX_VALID_FIELD_TYPE> type_scores;
-  type_scores.fill(0.0f);
-
-  for (const auto& field_candidate : field_candidates_) {
-    VLOG(1) << "type: " << field_candidate.type
-            << " score: " << field_candidate.score;
-    type_scores[field_candidate.type] += field_candidate.score;
   }
 
-  const auto* best_type_iter = base::ranges::max_element(type_scores);
-  const size_t index = std::distance(type_scores.cbegin(), best_type_iter);
+  std::array<float, MAX_VALID_FIELD_TYPE> type_scores{};
+  for (const FieldCandidate& candidate : field_candidates_) {
+    type_scores[candidate.type] += candidate.score;
+  }
 
-  return ToSafeServerFieldType(index, NO_SERVER_DATA);
+  const auto best_type_it = std::ranges::max_element(type_scores);
+  const size_t index = std::distance(type_scores.begin(), best_type_it);
+  return ToSafeFieldType(index, NO_SERVER_DATA);
 }
 
 }  // namespace autofill

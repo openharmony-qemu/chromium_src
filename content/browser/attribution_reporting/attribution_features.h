@@ -10,7 +10,8 @@
 
 namespace content {
 
-CONTENT_EXPORT BASE_DECLARE_FEATURE(kAttributionVerboseDebugReporting);
+CONTENT_EXPORT BASE_DECLARE_FEATURE(
+    kAttributionReportDeliveryThirdRetryAttempt);
 
 }  // namespace content
 

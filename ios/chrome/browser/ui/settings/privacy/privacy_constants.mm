@@ -4,11 +4,9 @@
 
 #import "ios/chrome/browser/ui/settings/privacy/privacy_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 NSString* const kPrivacyTableViewId = @"kPrivacyTableViewId";
+
+NSString* const kPrivacyLockdownModeCellId = @"kPrivacyLockdownModeCellId";
 
 NSString* const kPrivacySafeBrowsingTableViewId =
     @"kPrivacySafeBrowsingTableViewId";
@@ -24,3 +22,14 @@ NSString* const kSettingsSafeBrowsingStandardProtectionCellId =
 
 NSString* const kSettingsSafeBrowsingNoProtectionCellId =
     @"kSettingsSafeBrowsingNoProtectionCellId";
+
+NSString* const kSettingsIncognitoLockCellId = @"kSettingsIncognitoLockCellId";
+
+NSString* const kSettingsIncognitoLockDoNotHideCellId =
+    @"kSettingsIncognitoLockDoNotHideCellId";
+
+NSString* const kSettingsIncognitoLockHideWithSoftLockCellId =
+    @"kSettingsIncognitoLockHideWithSoftLockCellId";
+
+NSString* const kSettingsIncognitoLockHideWithReauthCellId =
+    @"kSettingsIncognitoLockHideWithReauthCellId";

@@ -9,12 +9,14 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ref.h"
+#include "base/memory/stack_allocated.h"
 #include "base/memory/weak_ptr.h"
 #include "base/observer_list.h"
 #include "base/task/sequenced_task_runner.h"
@@ -32,13 +34,13 @@
 #include "gpu/command_buffer/service/program_cache.h"
 #include "gpu/command_buffer/service/scheduler_task_runner.h"
 #include "gpu/command_buffer/service/sequence_id.h"
+#include "gpu/command_buffer/service/task_graph.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "gpu/ipc/common/surface_handle.h"
 #include "gpu/ipc/service/context_url.h"
 #include "gpu/ipc/service/gpu_ipc_service_export.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/shared_associated_remote.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gfx/swap_result.h"
@@ -53,7 +55,6 @@ class MemoryTracker;
 struct SyncToken;
 struct WaitForCommandState;
 class GpuChannel;
-class SyncPointClientState;
 
 // CommandBufferStub is a base class for different CommandBuffer backends
 // (e.g. GLES2, Raster, WebGPU) within the GPU service. Each instance lives on
@@ -66,8 +67,7 @@ class SyncPointClientState;
 class GPU_IPC_SERVICE_EXPORT CommandBufferStub
     : public CommandBufferServiceClient,
       public DecoderClient,
-      public mojom::CommandBuffer,
-      public base::SupportsWeakPtr<CommandBufferStub> {
+      public mojom::CommandBuffer {
  public:
   class DestructionObserver {
    public:
@@ -116,9 +116,11 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   MemoryTracker* GetMemoryTracker() const;
   virtual MemoryTracker* GetContextGroupMemoryTracker() const = 0;
 
+  virtual base::WeakPtr<CommandBufferStub> AsWeakPtr() = 0;
+
   // Executes a DeferredRequest routed to this command buffer by a GpuChannel.
-  void ExecuteDeferredRequest(
-      mojom::DeferredCommandBufferRequestParams& params);
+  void ExecuteDeferredRequest(mojom::DeferredCommandBufferRequestParams& params,
+                              FenceSyncReleaseDelegate* release_delegate);
 
   // Instructs the CommandBuffer to wait asynchronously until the reader has
   // updated the token value to be within the [start, end] range (inclusive).
@@ -139,7 +141,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
                                int32_t end,
                                WaitForStateCallback callback);
 
-#if defined(OHOS_BUGFIX_CRASH)
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   void WaitForGetOffsetInRangeTimeout();
 #endif
 
@@ -157,6 +159,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   void OnRescheduleAfterFinished() override;
   void ScheduleGrContextCleanup() override;
   void HandleReturnData(base::span<const uint8_t> data) override;
+  bool ShouldYield() override;
 
   using MemoryTrackerFactory =
       base::RepeatingCallback<std::unique_ptr<MemoryTracker>()>;
@@ -201,6 +204,8 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   // queries or schedule other delayed work after completion. This makes the
   // context current on construction if possible.
   class ScopedContextOperation {
+    STACK_ALLOCATED();
+
    public:
     explicit ScopedContextOperation(CommandBufferStub& stub);
     ~ScopedContextOperation();
@@ -211,9 +216,9 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
     bool is_context_current() const { return cache_use_.has_value(); }
 
    private:
-    const raw_ref<CommandBufferStub> stub_;
+    CommandBufferStub& stub_;
     bool have_context_ = false;
-    absl::optional<gles2::ProgramCache::ScopedCacheUse> cache_use_;
+    std::optional<gles2::ProgramCache::ScopedCacheUse> cache_use_;
   };
 
   mojom::CommandBufferClient& client() { return *client_.get(); }
@@ -229,11 +234,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
                          GetGpuFenceHandleCallback callback) override;
   void SignalSyncToken(const SyncToken& sync_token, uint32_t id) override;
   void SignalQuery(uint32_t query, uint32_t id) override;
-  void BindMediaReceiver(mojo::GenericPendingAssociatedReceiver receiver,
-                         BindMediaReceiverCallback callback) override;
 
-  virtual void OnTakeFrontBuffer(const Mailbox& mailbox) {}
-  virtual void OnReturnFrontBuffer(const Mailbox& mailbox, bool is_lost) {}
   virtual void OnSetDefaultFramebufferSharedImage(const Mailbox& mailbox,
                                                   int samples_count,
                                                   bool preserve,
@@ -254,6 +255,14 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
 
   bool MakeCurrent();
 
+  bool offscreen() const {
+#if BUILDFLAG(IS_ANDROID)
+    return offscreen_;
+#else
+    return true;
+#endif
+  }
+
   // The lifetime of objects of this class is managed by a GpuChannel. The
   // GpuChannels destroy all the CommandBufferStubs that they own when
   // they are destroyed. So a raw pointer is safe.
@@ -263,7 +272,9 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   ContextUrl active_url_;
 
   bool initialized_;
-  const SurfaceHandle surface_handle_;
+#if BUILDFLAG(IS_ANDROID)
+  const bool offscreen_;
+#endif
   bool use_virtualized_gl_context_;
 
   std::unique_ptr<CommandBufferService> command_buffer_;
@@ -275,7 +286,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   std::unique_ptr<gpu::MemoryTracker> memory_tracker_;
 
   scoped_refptr<gl::GLSurface> surface_;
-  scoped_refptr<SyncPointClientState> sync_point_client_state_;
+  ScopedSyncPointClientState scoped_sync_point_client_state_;
   scoped_refptr<gl::GLShareGroup> share_group_;
 
   const CommandBufferId command_buffer_id_;
@@ -288,7 +299,7 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   void Destroy();
 
   void CreateCacheUse(
-      absl::optional<gles2::ProgramCache::ScopedCacheUse>& cache_use);
+      std::optional<gles2::ProgramCache::ScopedCacheUse>& cache_use);
 
   // Message handlers:
   void OnAsyncFlush(int32_t put_offset,
@@ -343,9 +354,13 @@ class GPU_IPC_SERVICE_EXPORT CommandBufferStub
   mojo::AssociatedReceiver<mojom::CommandBuffer> receiver_{this};
   mojo::SharedAssociatedRemote<mojom::CommandBufferClient> client_;
 
-#if defined(OHOS_BUGFIX_CRASH)
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   base::OneShotTimer wait_for_get_offset_in_range_timer_;
 #endif
+
+  // Caching the `release_delegate` argument of ExecuteDeferredRequest() during
+  // the call.
+  raw_ptr<FenceSyncReleaseDelegate> release_delegate_ = nullptr;
 };
 
 }  // namespace gpu

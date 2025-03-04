@@ -6,18 +6,20 @@
 #define MEDIA_BASE_PIPELINE_STATUS_H_
 
 #include <stdint.h>
+
 #include <iosfwd>
+#include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/time/time.h"
 #include "media/base/decoder.h"
 #include "media/base/media_export.h"
 #include "media/base/status.h"
 #include "media/base/timestamp_constants.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 namespace gfx {
 class Rect;
 }
@@ -72,14 +74,14 @@ enum PipelineStatusCodes : StatusCodeType {
   // The remote media component was disconnected unexpectedly, e.g. crash.
   PIPELINE_ERROR_DISCONNECTED = 24,
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 25,
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER,
 #else
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = PIPELINE_ERROR_DISCONNECTED,
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 struct PipelineStatusTraits {
@@ -99,7 +101,7 @@ MEDIA_EXPORT std::string PipelineStatusToString(const PipelineStatus& status);
 MEDIA_EXPORT std::ostream& operator<<(std::ostream& out,
                                       const PipelineStatus& status);
 
-// TODO(crbug.com/1007799): Delete PipelineStatusCB once all callbacks are
+// TODO(crbug.com/40649615): Delete PipelineStatusCB once all callbacks are
 //                          converted to PipelineStatusCallback.
 using PipelineStatusCB = base::RepeatingCallback<void(PipelineStatus)>;
 using PipelineStatusCallback = base::OnceCallback<void(PipelineStatus)>;
@@ -165,7 +167,7 @@ MEDIA_EXPORT inline std::ostream& operator<<(
 // RendererClient.OnStatisticsUpdate() expects *_decoded*, *_dropped and
 // *memory_usage to be the delta since the last OnStatisticsUpdate() call.
 // WebMediaPlayerImpl expects them to be cumulation since playback start.
-// TODO(crbug.com/1275794): Make the meaning consistent.
+// TODO(crbug.com/40207229): Make the meaning consistent.
 struct MEDIA_EXPORT PipelineStatistics {
   PipelineStatistics();
   PipelineStatistics(const PipelineStatistics& other);
@@ -203,7 +205,7 @@ MEDIA_EXPORT bool operator!=(const PipelineStatistics& first,
 // of all attributes since the last update.
 using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 using RectChangedCB = base::RepeatingCallback<void(const gfx::Rect&)>;
 using RectVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
 using CreateTextureCB = base::OnceCallback<void(RectChangedCB, int)>;

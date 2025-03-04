@@ -6,6 +6,7 @@
 #define CONTENT_BROWSER_WEBID_IDP_NETWORK_REQUEST_MANAGER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,9 +18,12 @@
 #include "services/data_decoder/public/cpp/data_decoder.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/public/mojom/client_security_state.mojom-forward.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+namespace gfx {
+class Image;
+}
 
 namespace net {
 enum class ReferrerPolicy;
@@ -31,6 +35,8 @@ class SimpleURLLoader;
 
 namespace content {
 
+using IdentityProviderDataPtr = scoped_refptr<IdentityProviderData>;
+using IdentityRequestAccountPtr = scoped_refptr<IdentityRequestAccount>;
 class RenderFrameHostImpl;
 
 // Manages network requests and maintains relevant state for interaction with
@@ -52,14 +58,14 @@ class RenderFrameHostImpl;
 //      | POST /idp_url with OIDC request |
 //      |-------------------------------->|
 //      |                                 |
-//      |       token or signin_url       |
+//      |       token or login_url       |
 //      |<--------------------------------|
 //  .-------.                           .---.
 //  |Browser|                           |IDP|
 //  '-------'                           '---'
 //
 // If the IDP returns an token, the sequence finishes. If it returns a
-// signin_url, that URL is loaded as a rendered Document into a new window for
+// login_url, that URL is loaded as a rendered Document into a new window for
 // the user to interact with the IDP.
 class CONTENT_EXPORT IdpNetworkRequestManager {
  public:
@@ -74,6 +80,7 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
     kEmptyListError,
     kInvalidContentTypeError,
   };
+
   struct FetchStatus {
     ParseStatus parse_status;
     // The HTTP response code, if one was received, otherwise the net error. It
@@ -87,6 +94,19 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
     kError,
   };
 
+  // Don't change the meaning or the order of these values because they are
+  // being recorded in metrics and in sync with the counterpart in enums.xml.
+  enum class AccountsResponseInvalidReason {
+    kResponseIsNotJsonOrDict,
+    kNoAccountsKey,
+    kAccountListIsEmpty,
+    kAccountIsNotDict,
+    kAccountMissesRequiredField,
+    kAccountsShareSameId,
+
+    kMaxValue = kAccountsShareSameId
+  };
+
   struct CONTENT_EXPORT Endpoints {
     Endpoints();
     ~Endpoints();
@@ -96,11 +116,31 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
     GURL accounts;
     GURL client_metadata;
     GURL metrics;
+    GURL disconnect;
+  };
+
+  struct CONTENT_EXPORT WellKnown {
+    WellKnown();
+    ~WellKnown();
+    WellKnown(const WellKnown&);
+    std::set<GURL> provider_urls;
+    GURL accounts;
+    GURL login_url;
   };
 
   struct ClientMetadata {
     GURL privacy_policy_url;
     GURL terms_of_service_url;
+    GURL brand_icon_url;
+  };
+
+  struct CONTENT_EXPORT TokenResult {
+    TokenResult();
+    ~TokenResult();
+    TokenResult(const TokenResult&);
+
+    std::string token;
+    std::optional<IdentityCredentialTokenError> error;
   };
 
   // Error codes sent to the metrics endpoint.
@@ -123,15 +163,69 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
     kTokenEndpointInvalidResponse = 402,
   };
 
-  using AccountList = std::vector<IdentityRequestAccount>;
+  enum class DisconnectResponse {
+    kSuccess,
+    kError,
+  };
+
+  // This enum describes the type of error dialog shown.
+  // These values are persisted to logs. Entries should not be renumbered and
+  // numeric values should never be reused.
+  enum class FedCmErrorDialogType {
+    kGenericEmptyWithoutUrl = 0,
+    kGenericEmptyWithUrl = 1,
+    kGenericNonEmptyWithoutUrl = 2,
+    kGenericNonEmptyWithUrl = 3,
+    kInvalidRequestWithoutUrl = 4,
+    kInvalidRequestWithUrl = 5,
+    kUnauthorizedClientWithoutUrl = 6,
+    kUnauthorizedClientWithUrl = 7,
+    kAccessDeniedWithoutUrl = 8,
+    kAccessDeniedWithUrl = 9,
+    kTemporarilyUnavailableWithoutUrl = 10,
+    kTemporarilyUnavailableWithUrl = 11,
+    kServerErrorWithoutUrl = 12,
+    kServerErrorWithUrl = 13,
+
+    kMaxValue = kServerErrorWithUrl
+  };
+
+  // This enum describes the type of token response received.
+  // These values are persisted to logs. Entries should not be renumbered and
+  // numeric values should never be reused.
+  enum class FedCmTokenResponseType {
+    kTokenReceivedAndErrorNotReceivedAndContinueOnNotReceived = 0,
+    kTokenReceivedAndErrorReceivedAndContinueOnNotReceived = 1,
+    kTokenNotReceivedAndErrorNotReceivedAndContinueOnNotReceived = 2,
+    kTokenNotReceivedAndErrorReceivedAndContinueOnNotReceived = 3,
+    kTokenReceivedAndErrorNotReceivedAndContinueOnReceived = 4,
+    kTokenReceivedAndErrorReceivedAndContinueOnReceived = 5,
+    kTokenNotReceivedAndErrorNotReceivedAndContinueOnReceived = 6,
+    kTokenNotReceivedAndErrorReceivedAndContinueOnReceived = 7,
+
+    kMaxValue = kTokenNotReceivedAndErrorReceivedAndContinueOnReceived
+  };
+
+  // This enum describes the type of error URL compared to the IDP's config URL.
+  // These values are persisted to logs. Entries should not be renumbered and
+  // numeric values should never be reused.
+  enum class FedCmErrorUrlType {
+    kSameOrigin = 0,
+    kCrossOriginSameSite = 1,
+    kCrossSite = 2,
+
+    kMaxValue = kCrossSite
+  };
+
   using AccountsRequestCallback =
-      base::OnceCallback<void(FetchStatus, AccountList)>;
+      base::OnceCallback<void(FetchStatus,
+                              std::vector<IdentityRequestAccountPtr>)>;
   using DownloadCallback =
       base::OnceCallback<void(std::unique_ptr<std::string> response_body,
                               int response_code,
                               const std::string& mime_type)>;
   using FetchWellKnownCallback =
-      base::OnceCallback<void(FetchStatus, const std::set<GURL>&)>;
+      base::OnceCallback<void(FetchStatus, const WellKnown&)>;
   using FetchConfigCallback = base::OnceCallback<
       void(FetchStatus, Endpoints, IdentityProviderMetadata)>;
   using FetchClientMetadataCallback =
@@ -140,9 +234,16 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
   using ParseJsonCallback =
       base::OnceCallback<void(FetchStatus,
                               data_decoder::DataDecoder::ValueOrError)>;
-  using TokenRequestCallback =
+  using DisconnectCallback =
       base::OnceCallback<void(FetchStatus, const std::string&)>;
+  using TokenRequestCallback =
+      base::OnceCallback<void(FetchStatus, TokenResult)>;
   using ContinueOnCallback = base::OnceCallback<void(FetchStatus, const GURL&)>;
+  using RecordErrorMetricsCallback =
+      base::OnceCallback<void(FedCmTokenResponseType,
+                              std::optional<FedCmErrorDialogType>,
+                              std::optional<FedCmErrorUrlType>)>;
+  using ImageCallback = base::OnceCallback<void(const gfx::Image&)>;
 
   static std::unique_ptr<IdpNetworkRequestManager> Create(
       RenderFrameHostImpl* host);
@@ -158,7 +259,7 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
   IdpNetworkRequestManager& operator=(const IdpNetworkRequestManager&) = delete;
 
   // Computes the well-known URL from the identity provider URL.
-  static absl::optional<GURL> ComputeWellKnownUrl(const GURL& url);
+  static std::optional<GURL> ComputeWellKnownUrl(const GURL& url);
 
   // Fetch the well-known file. This is the /.well-known/web-identity file on
   // the eTLD+1 calculated from the provider URL, used to check that the
@@ -167,12 +268,15 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
 
   // Attempt to fetch the IDP's FedCM parameters from the config file.
   virtual void FetchConfig(const GURL& provider,
+                           blink::mojom::RpMode rp_mode,
                            int idp_brand_icon_ideal_size,
                            int idp_brand_icon_minimum_size,
                            FetchConfigCallback);
 
   virtual void FetchClientMetadata(const GURL& endpoint,
                                    const std::string& client_id,
+                                   int rp_brand_icon_ideal_size,
+                                   int rp_brand_icon_minimum_size,
                                    FetchClientMetadataCallback);
 
   // Fetch accounts list for this user from the IDP.
@@ -181,11 +285,13 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
                                    AccountsRequestCallback callback);
 
   // Request a new token for this user account and RP from the IDP.
-  virtual void SendTokenRequest(const GURL& token_url,
-                                const std::string& account,
-                                const std::string& url_encoded_post_data,
-                                TokenRequestCallback callback,
-                                ContinueOnCallback continue_on);
+  virtual void SendTokenRequest(
+      const GURL& token_url,
+      const std::string& account,
+      const std::string& url_encoded_post_data,
+      TokenRequestCallback callback,
+      ContinueOnCallback continue_on,
+      RecordErrorMetricsCallback record_error_metrics_callback);
 
   // Sends metrics to metrics endpoint after a token was successfully generated.
   virtual void SendSuccessfulTokenRequestMetrics(
@@ -203,35 +309,59 @@ class CONTENT_EXPORT IdpNetworkRequestManager {
   // Send logout request to a single target.
   virtual void SendLogout(const GURL& logout_url, LogoutCallback);
 
+  // Send a disconnect request to the IDP.
+  virtual void SendDisconnectRequest(const GURL& disconnect_url,
+                                     const std::string& account_hint,
+                                     const std::string& client_id,
+                                     DisconnectCallback callback);
+
+  // Download and decode an image. The request is made uncredentialed.
+  virtual void DownloadAndDecodeImage(const GURL& url, ImageCallback callback);
+
  private:
   // Starts download request using `url_loader`. Calls `parse_json_callback`
   // when the download result has been parsed.
   void DownloadJsonAndParse(
       std::unique_ptr<network::ResourceRequest> resource_request,
-      absl::optional<std::string> url_encoded_post_data,
+      std::optional<std::string> url_encoded_post_data,
       ParseJsonCallback parse_json_callback,
-      size_t max_download_size);
+      size_t max_download_size,
+      bool allow_http_error_results = false);
 
   // Starts download result using `url_loader`. Calls `download_callback` when
   // the download completes.
   void DownloadUrl(std::unique_ptr<network::ResourceRequest> resource_request,
-                   absl::optional<std::string> url_encoded_post_data,
+                   std::optional<std::string> url_encoded_post_data,
                    DownloadCallback download_callback,
-                   size_t max_download_size);
+                   size_t max_download_size,
+                   bool allow_http_error_results = false);
 
   // Called when download initiated by DownloadUrl() completes.
   void OnDownloadedUrl(std::unique_ptr<network::SimpleURLLoader> url_loader,
                        DownloadCallback callback,
                        std::unique_ptr<std::string> response_body);
 
+  void OnDownloadedImage(ImageCallback callback,
+                         std::unique_ptr<std::string> response_body,
+                         int response_code,
+                         const std::string& mime_type);
+
+  void OnDecodedImage(ImageCallback callback, const SkBitmap& decoded_bitmap);
+
   std::unique_ptr<network::ResourceRequest> CreateUncredentialedResourceRequest(
       const GURL& target_url,
       bool send_origin,
       bool follow_redirects = false) const;
 
+  enum class CredentialedResourceRequestType {
+    kNoOrigin,
+    kOriginWithoutCORS,
+    kOriginWithCORS
+  };
+
   std::unique_ptr<network::ResourceRequest> CreateCredentialedResourceRequest(
       const GURL& target_url,
-      bool send_origin) const;
+      CredentialedResourceRequestType type) const;
 
   url::Origin relying_party_origin_;
 

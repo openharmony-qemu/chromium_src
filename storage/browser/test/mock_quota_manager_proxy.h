@@ -12,6 +12,7 @@
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/synchronization/lock.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
 #include "components/services/storage/public/mojom/quota_client.mojom.h"
@@ -95,7 +96,7 @@ class MockQuotaManagerProxy : public QuotaManagerProxy {
   void NotifyBucketModified(
       QuotaClientType client_id,
       const BucketLocator& bucket,
-      int64_t delta,
+      std::optional<int64_t> delta,
       base::Time modification_time,
       scoped_refptr<base::SequencedTaskRunner> callback_task_runner,
       base::OnceClosure callback) override;
@@ -117,7 +118,7 @@ class MockQuotaManagerProxy : public QuotaManagerProxy {
   int notify_bucket_accessed_count() const { return bucket_accessed_count_; }
   int notify_bucket_modified_count() const { return bucket_modified_count_; }
   BucketId last_notified_bucket_id() const { return last_notified_bucket_id_; }
-  int64_t last_notified_bucket_delta() const {
+  std::optional<int64_t> last_notified_bucket_delta() const {
     return last_notified_bucket_delta_;
   }
 
@@ -125,7 +126,12 @@ class MockQuotaManagerProxy : public QuotaManagerProxy {
   ~MockQuotaManagerProxy() override;
 
  private:
-  const raw_ptr<MockQuotaManager> mock_quota_manager_;
+  const raw_ptr<MockQuotaManager, AcrossTasksDanglingUntriaged>
+      mock_quota_manager_;
+
+  // The real QuotaManagerProxy is safe to call into from any thread, therefore
+  // this mock quota manager must also be safe to call into from any thread.
+  base::Lock lock_;
 
   blink::StorageKey last_notified_storage_key_;
   blink::mojom::StorageType last_notified_type_ =
@@ -134,7 +140,7 @@ class MockQuotaManagerProxy : public QuotaManagerProxy {
   int bucket_accessed_count_ = 0;
   int bucket_modified_count_ = 0;
   BucketId last_notified_bucket_id_ = BucketId::FromUnsafeValue(-1);
-  int64_t last_notified_bucket_delta_ = 0;
+  std::optional<int64_t> last_notified_bucket_delta_;
 };
 
 }  // namespace storage

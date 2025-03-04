@@ -7,7 +7,7 @@
 #include <memory>
 #include <tuple>
 
-#include "base/containers/cxx20_erase.h"
+#include "arkweb/build/features/features.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -86,12 +86,9 @@ class MediaWebContentsObserver::PlayerInfo {
 
   bool IsAudible() const { return has_audio_ && is_playing_ && !muted_; }
 
-#if BUILDFLAG(IS_OHOS)
-  void SetIsPlayerGone() {
-    NotifyPlayerGone();
-  }
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void SetIsPlayerGone() { NotifyPlayerGone(); }
 #endif
-
   GlobalRenderFrameHostId GetHostId() { return id_.frame_routing_id; }
 
  private:
@@ -125,12 +122,12 @@ class MediaWebContentsObserver::PlayerInfo {
     }
   }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
   void NotifyPlayerGone() {
     if (observer_ && observer_->web_contents_impl()) {
-      observer_->web_contents_impl()->MediaPlayerGone(
-          WebContentsObserver::MediaPlayerInfo(has_video_, has_audio_), id_);  
-    }  
+      observer_->web_contents_impl()->AsWebContentsImplExt()->MediaPlayerGone(
+          WebContentsObserver::MediaPlayerInfo(has_video_, has_audio_), id_);
+    }
   }
 #endif
 
@@ -154,6 +151,7 @@ MediaWebContentsObserver::MediaWebContentsObserver(
 MediaWebContentsObserver::~MediaWebContentsObserver() = default;
 
 void MediaWebContentsObserver::WebContentsDestroyed() {
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
   use_after_free_checker_.check();
   AudioStreamMonitor* audio_stream_monitor =
       web_contents_impl()->audio_stream_monitor();
@@ -178,15 +176,30 @@ void MediaWebContentsObserver::WebContentsDestroyed() {
 
 void MediaWebContentsObserver::RenderFrameDeleted(
     RenderFrameHost* render_frame_host) {
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
   use_after_free_checker_.check();
 
   GlobalRenderFrameHostId frame_routing_id = render_frame_host->GetGlobalId();
 
-  base::EraseIf(
-      player_info_map_,
-      [frame_routing_id](const PlayerInfoMap::value_type& id_and_player_info) {
-        return frame_routing_id == id_and_player_info.first.frame_routing_id;
-      });
+  // This cannot just use `base::EraseIf()`, because some observers call back
+  // into `this` and query player info when a PlayerInfo is destroyed (!!).
+  // Re-entering a container while erasing an entry is generally not very safe
+  // or robust.
+  for (auto it = player_info_map_.begin(); it != player_info_map_.end();) {
+    if (it->first.frame_routing_id != frame_routing_id) {
+      ++it;
+      continue;
+    }
+    // Instead, remove entries in a multi-step process:
+    // 1. Move ownership of the PlayerInfo out of the map.
+    // 2. Erase the entry from the map.
+    // 3. Destroy the PlayerInfo (by letting it go out of scope).
+    //    Because the entry is already gone from the map, GetPlayerInfo() will
+    //    return null instead of trying to compare keys that are potentially
+    //    destroyed.
+    auto player_info = std::move(it->second);
+    it = player_info_map_.erase(it);
+  }
 
   base::EraseIf(media_player_hosts_,
                 [frame_routing_id](const MediaPlayerHostImplMap::value_type&
@@ -251,6 +264,10 @@ void MediaWebContentsObserver::MaybeUpdateAudibleState() {
 }
 
 bool MediaWebContentsObserver::HasActiveEffectivelyFullscreenVideo() const {
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
+  use_after_free_checker_.check();
+  CHECK(!fullscreen_player_.has_value() ||
+        picture_in_picture_allowed_in_fullscreen_.has_value());
   if (!web_contents()->IsFullscreen() || !fullscreen_player_)
     return false;
 
@@ -263,12 +280,15 @@ bool MediaWebContentsObserver::HasActiveEffectivelyFullscreenVideo() const {
 
 bool MediaWebContentsObserver::IsPictureInPictureAllowedForFullscreenVideo()
     const {
-  DCHECK(picture_in_picture_allowed_in_fullscreen_.has_value());
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
+  use_after_free_checker_.check();
+  CHECK(fullscreen_player_.has_value());
+  CHECK(picture_in_picture_allowed_in_fullscreen_.has_value());
 
   return *picture_in_picture_allowed_in_fullscreen_;
 }
 
-const absl::optional<MediaPlayerId>&
+const std::optional<MediaPlayerId>&
 MediaWebContentsObserver::GetFullscreenVideoMediaPlayerId() const {
   return fullscreen_player_;
 }
@@ -283,11 +303,11 @@ void MediaWebContentsObserver::DidUpdateAudioMutingState(bool muted) {
   session_controllers_manager_->WebContentsMutedStateChanged(muted);
 }
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 void MediaWebContentsObserver::SetHtmlPlayEnabled(bool enabled) {
   session_controllers_manager_->SetHtmlPlayEnabled(enabled);
 }
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaWebContentsObserver::GetHasPlayedBefore(
     GetHasPlayedBeforeCallback callback) {
@@ -425,32 +445,16 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
       RenderFrameHost::FromID(media_player_id_.frame_routing_id);
   DCHECK(render_frame_host);
 
-  auto salt_and_origin = content::GetMediaDeviceSaltAndOrigin(
-      render_frame_host->GetProcess()->GetID(),
-      render_frame_host->GetRoutingID());
-
-  content::GetIOThreadTaskRunner({})->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          // TODO(dcheng): GetMediaDeviceIDForHMAC should not be overloaded,
-          // which would avoid the need for static_casts / wrapper lambdas
-          // (which are not zero cost).
-          static_cast<void (*)(
-              blink::mojom::MediaDeviceType, std::string, url::Origin,
-              std::string, scoped_refptr<base::SequencedTaskRunner>,
-              base::OnceCallback<void(const absl::optional<std::string>&)>)>(
-              &MediaStreamManager::GetMediaDeviceIDForHMAC),
-          blink::mojom::MediaDeviceType::MEDIA_AUDIO_OUTPUT,
-          salt_and_origin.device_id_salt, std::move(salt_and_origin.origin),
-          hashed_device_id, content::GetUIThreadTaskRunner({}),
-          base::BindOnce(
-              &MediaPlayerObserverHostImpl::OnReceivedTranslatedDeviceId,
-              weak_factory_.GetWeakPtr())));
+  content::GetRawDeviceIdFromHMAC(
+      render_frame_host->GetGlobalId(), hashed_device_id,
+      blink::mojom::MediaDeviceType::kMediaAudioOutput,
+      base::BindOnce(&MediaPlayerObserverHostImpl::OnReceivedTranslatedDeviceId,
+                     weak_factory_.GetWeakPtr()));
 }
 
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     OnReceivedTranslatedDeviceId(
-        const absl::optional<std::string>& translated_id) {
+        const std::optional<std::string>& translated_id) {
   if (!translated_id)
     return;
 
@@ -512,12 +516,14 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPaused(
   NotifyAudioStreamMonitorIfNeeded();
 }
 
-#if BUILDFLAG(IS_OHOS)
-void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPlayerGone() {
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnMediaPlayerGone() {
   PlayerInfo* player_info = GetPlayerInfo();
-  if (!player_info)
-    return;      
-  
+  if (!player_info) {
+    return;
+  }
+
   player_info->SetIsPlayerGone();
 }
 #endif
@@ -576,6 +582,10 @@ void MediaWebContentsObserver::OnMediaMetadataChanged(
 void MediaWebContentsObserver::OnMediaEffectivelyFullscreenChanged(
     const MediaPlayerId& player_id,
     blink::WebFullscreenVideoStatus fullscreen_status) {
+  CHECK_CURRENTLY_ON(BrowserThread::UI);
+  use_after_free_checker_.check();
+  CHECK(!fullscreen_player_.has_value() ||
+        picture_in_picture_allowed_in_fullscreen_.has_value());
   switch (fullscreen_status) {
     case blink::WebFullscreenVideoStatus::kFullscreenAndPictureInPictureEnabled:
       fullscreen_player_ = player_id;
@@ -619,6 +629,12 @@ void MediaWebContentsObserver::OnRemotePlaybackMetadataChange(
       player_id, std::move(remote_playback_metadata));
 }
 
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnVideoVisibilityChanged(bool meets_visibility_threshold) {
+  media_web_contents_observer_->session_controllers_manager()
+      ->OnVideoVisibilityChanged(media_player_id_, meets_visibility_threshold);
+}
+
 bool MediaWebContentsObserver::IsMediaPlayerRemoteAvailable(
     const MediaPlayerId& player_id) {
   return media_player_remotes_.contains(player_id);
@@ -629,20 +645,25 @@ MediaWebContentsObserver::GetMediaPlayerRemote(const MediaPlayerId& player_id) {
   return media_player_remotes_.at(player_id);
 }
 
-#if defined(OHOS_MEDIA_POLICY)
-bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id) {
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(
+    const MediaPlayerId& player_id) {
   auto it = media_player_remotes_.find(player_id);
-  if (it != media_player_remotes_.end())
+  if (it != media_player_remotes_.end()) {
     return true;
+  }
 
   return false;
 }
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
     const MediaPlayerId& player_id) {
   DCHECK(media_player_observer_hosts_.contains(player_id));
   media_player_observer_hosts_.erase(player_id);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  web_contents_impl()->OnVideoDestroyed(player_id);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
 device::mojom::WakeLock* MediaWebContentsObserver::GetAudioWakeLock() {
@@ -709,7 +730,22 @@ void MediaWebContentsObserver::OnMediaPlayerAdded(
   remote_it.first->second.Bind(std::move(player_remote));
   remote_it.first->second.set_disconnect_handler(base::BindOnce(
       [](MediaWebContentsObserver* observer, const MediaPlayerId& player_id) {
-        observer->player_info_map_.erase(player_id);
+        // This cannot just use `erase()`, because some observers call back
+        // into `this` and query player info when a PlayerInfo is destroyed
+        // (!!).  Re-entering a container while erasing an entry is generally
+        // not very safe or robust.
+        if (auto it = observer->player_info_map_.find(player_id);
+            it != observer->player_info_map_.end()) {
+          // Instead, remove entries in a multi-step process:
+          // 1. Move ownership of the PlayerInfo out of the map.
+          // 2. Erase the entry from the map.
+          // 3. Destroy the PlayerInfo (by letting it go out of scope).
+          //    Because the entry is already gone from the map, GetPlayerInfo()
+          //    will return null instead of trying to compare keys that are
+          //    potentially destroyed.
+          auto player_info = std::move(it->second);
+          observer->player_info_map_.erase(it);
+        }
         observer->media_player_remotes_.erase(player_id);
         observer->session_controllers_manager_->OnEnd(player_id);
         if (observer->fullscreen_player_ &&
@@ -717,7 +753,7 @@ void MediaWebContentsObserver::OnMediaPlayerAdded(
           observer->fullscreen_player_.reset();
         }
         observer->web_contents_impl()->MediaDestroyed(player_id);
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
         if (!observer->web_contents_impl()->IsHtmlPlayEnabled())
           observer->web_contents_impl()->SetHtmlPlayEnabled(true);
 #endif
@@ -757,36 +793,148 @@ MediaWebContentsObserver::GetWeakPtrForFrame(
   return result.first->second->GetWeakPtr();
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
-    UpdateLayerRect(const gfx::Rect& rect) {
-  media_web_contents_observer_->web_contents_impl()->UpdateLayerRect(
-      media_player_id_, rect);
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateLayerRect(
+    const gfx::Rect& rect) {
+  media_web_contents_observer_->web_contents_impl()
+      ->AsWebContentsImplExt()
+      ->UpdateLayerRect(media_player_id_, rect);
 }
 
-void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
-    FullscreenChanged(bool is_fullscreen) {
-  media_web_contents_observer_->web_contents_impl()->FullScreenChanged(
-      media_player_id_, is_fullscreen);
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::FullscreenChanged(
+    bool is_fullscreen) {
+  media_web_contents_observer_->web_contents_impl()
+      ->AsWebContentsImplExt()
+      ->FullScreenChanged(media_player_id_, is_fullscreen);
 }
 
-void MediaWebContentsObserver::RequestEnterFullscreen(const MediaPlayerId& player_id) {
+void MediaWebContentsObserver::RequestEnterFullscreen(
+    const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
     LOG(WARNING) << "RequestEnterFullscreen failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif  // ARKWEB_LOGGER_REPORT
     return;
   }
   iter->second->RequestEnterFullscreen();
 }
 
-void MediaWebContentsObserver::RequestExitFullscreen(const MediaPlayerId& player_id) {
+void MediaWebContentsObserver::RequestExitFullscreen(
+    const MediaPlayerId& player_id) {
   const auto iter = media_player_remotes_.find(player_id);
   if (iter == media_player_remotes_.end()) {
     LOG(WARNING) << "RequestExitFullscreen failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif  // ARKWEB_LOGGER_REPORT
     return;
   }
   iter->second->RequestExitFullscreen();
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetMediaTitle(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle(data);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetVideoPoster(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster(data);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitMediaTitle() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle("");
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnInitVideoPoster() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster("");
+  }
+}
+#endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+bool MediaWebContentsObserver::IsMediaPlaying(const MediaPlayerId& player_id) {
+  auto player_info = GetPlayerInfo(player_id);
+  return player_info && player_info->is_playing();
+}
+
+void MediaWebContentsObserver::SetPlaybackRate(double playback_rate,
+                                               const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->SetPlaybackRate(playback_rate);
+}
+
+void MediaWebContentsObserver::RequestFullScreen(
+    bool enable,
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  if (enable) {
+    iter->second->RequestEnterFullscreen();
+  } else {
+    iter->second->RequestExitFullscreen();
+  }
+}
+
+void MediaWebContentsObserver::RequestDownloadUrl(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->RequestDownloadUrl();
+}
+
+void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
+    RequestVideoAssistantConfigCallback callback) {
+  LOG(INFO) << "RequestVideoAssistantConfig";
+  auto config = media::mojom::VideoAssistantConfig::New(
+      true, true, media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
+  auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
+  web_contents_impl->PopluateVideoAssistantConfig(config);
+  std::move(callback).Run(std::move(config));
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnVideoPlaying";
+  media_web_contents_observer_->web_contents_impl()->OnVideoPlaying(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnUpdateVideoAttributes(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnUpdateVideoAttributes";
+  media_web_contents_observer_->web_contents_impl()->OnUpdateVideoAttributes(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVideoDestroyed() {
+  LOG(INFO) << "OnVideoDestroyed";
+  media_web_contents_observer_->web_contents_impl()->OnVideoDestroyed(
+      media_player_id_);
+}
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 }  // namespace content

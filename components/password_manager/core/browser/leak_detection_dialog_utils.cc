@@ -17,6 +17,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ANDROID)
+#include "base/android/build_info.h"
+#endif
+
 namespace password_manager {
 
 using metrics_util::LeakDialogType;
@@ -28,12 +32,15 @@ CredentialLeakType CreateLeakType(IsSaved is_saved,
                                   IsReused is_reused,
                                   IsSyncing is_syncing) {
   CredentialLeakType leak_type = 0;
-  if (is_saved)
+  if (is_saved) {
     leak_type |= kPasswordSaved;
-  if (is_reused)
+  }
+  if (is_reused) {
     leak_type |= kPasswordUsedOnOtherSites;
-  if (is_syncing)
+  }
+  if (is_syncing) {
     leak_type |= kPasswordSynced;
+  }
   return leak_type;
 }
 
@@ -68,47 +75,28 @@ std::u16string GetCancelButtonLabel(CredentialLeakType leak_type) {
 }
 
 std::u16string GetDescription(CredentialLeakType leak_type) {
-  if (UsesPasswordManagerUpdatedNaming()) {
-    if (!ShouldCheckPasswords(leak_type)) {
-      return l10n_util::GetStringUTF16(
-          UsesPasswordManagerGoogleBranding()
-              ? IDS_CREDENTIAL_LEAK_CHANGE_PASSWORD_MESSAGE_GPM_BRANDED
-              : IDS_CREDENTIAL_LEAK_CHANGE_PASSWORD_MESSAGE_GPM_NON_BRANDED);
-    }
-    if (password_manager::IsPasswordSaved(leak_type)) {
-      return l10n_util::GetStringUTF16(
-          UsesPasswordManagerGoogleBranding()
-              ? IDS_CREDENTIAL_LEAK_CHECK_PASSWORDS_MESSAGE_GPM_BRANDED
-              : IDS_CREDENTIAL_LEAK_CHECK_PASSWORDS_MESSAGE_GPM_NON_BRANDED);
-    }
+  if (!ShouldCheckPasswords(leak_type)) {
     return l10n_util::GetStringUTF16(
         UsesPasswordManagerGoogleBranding()
-            ? IDS_CREDENTIAL_LEAK_CHANGE_AND_CHECK_PASSWORDS_MESSAGE_GPM_BRANDED
-            : IDS_CREDENTIAL_LEAK_CHANGE_AND_CHECK_PASSWORDS_MESSAGE_GPM_NON_BRANDED);
-  } else {
-    if (!ShouldCheckPasswords(leak_type)) {
-      return l10n_util::GetStringUTF16(
-          IDS_CREDENTIAL_LEAK_CHANGE_PASSWORD_MESSAGE);
-    }
-    if (password_manager::IsPasswordSaved(leak_type)) {
-      return l10n_util::GetStringUTF16(
-          IDS_CREDENTIAL_LEAK_CHECK_PASSWORDS_MESSAGE);
-    }
-    return l10n_util::GetStringUTF16(
-        IDS_CREDENTIAL_LEAK_CHANGE_AND_CHECK_PASSWORDS_MESSAGE);
+            ? IDS_CREDENTIAL_LEAK_CHANGE_PASSWORD_MESSAGE_GPM_BRANDED
+            : IDS_CREDENTIAL_LEAK_CHANGE_PASSWORD_MESSAGE_GPM_NON_BRANDED);
   }
+  if (password_manager::IsPasswordSaved(leak_type)) {
+    return l10n_util::GetStringUTF16(
+        UsesPasswordManagerGoogleBranding()
+            ? IDS_CREDENTIAL_LEAK_CHECK_PASSWORDS_MESSAGE_GPM_BRANDED
+            : IDS_CREDENTIAL_LEAK_CHECK_PASSWORDS_MESSAGE_GPM_NON_BRANDED);
+  }
+  return l10n_util::GetStringUTF16(
+      UsesPasswordManagerGoogleBranding()
+          ? IDS_CREDENTIAL_LEAK_CHANGE_AND_CHECK_PASSWORDS_MESSAGE_GPM_BRANDED
+          : IDS_CREDENTIAL_LEAK_CHANGE_AND_CHECK_PASSWORDS_MESSAGE_GPM_NON_BRANDED);
 }
 
 std::u16string GetTitle(CredentialLeakType leak_type) {
-  if (UsesPasswordManagerUpdatedNaming()) {
-    return l10n_util::GetStringUTF16(ShouldCheckPasswords(leak_type)
-                                         ? IDS_CREDENTIAL_LEAK_TITLE_CHECK_GPM
-                                         : IDS_CREDENTIAL_LEAK_TITLE_CHANGE);
-  } else {
-    return l10n_util::GetStringUTF16(ShouldCheckPasswords(leak_type)
-                                         ? IDS_CREDENTIAL_LEAK_TITLE_CHECK
-                                         : IDS_CREDENTIAL_LEAK_TITLE_CHANGE);
-  }
+  return l10n_util::GetStringUTF16(ShouldCheckPasswords(leak_type)
+                                       ? IDS_CREDENTIAL_LEAK_TITLE_CHECK_GPM
+                                       : IDS_CREDENTIAL_LEAK_TITLE_CHANGE);
 }
 
 std::u16string GetLeakDetectionTooltip() {
@@ -116,6 +104,11 @@ std::u16string GetLeakDetectionTooltip() {
 }
 
 bool ShouldCheckPasswords(CredentialLeakType leak_type) {
+#if BUILDFLAG(IS_ANDROID)
+  if (base::android::BuildInfo::GetInstance()->is_automotive()) {
+    return false;
+  }
+#endif
   return password_manager::IsPasswordUsedOnOtherSites(leak_type);
 }
 
@@ -124,8 +117,9 @@ bool ShouldShowCancelButton(CredentialLeakType leak_type) {
 }
 
 LeakDialogType GetLeakDialogType(CredentialLeakType leak_type) {
-  if (!ShouldCheckPasswords(leak_type))
+  if (!ShouldCheckPasswords(leak_type)) {
     return LeakDialogType::kChange;
+  }
 
   return password_manager::IsPasswordSaved(leak_type)
              ? LeakDialogType::kCheckup
@@ -151,14 +145,6 @@ GURL GetPasswordCheckupURL(PasswordCheckupReferrer referrer) {
           : "password_settings";
 
   return net::AppendQueryParameter(url, "utm_campaign", campaign);
-}
-
-bool UsesPasswordManagerUpdatedNaming() {
-#if BUILDFLAG(IS_ANDROID)
-  return password_manager::features::UsesUnifiedPasswordManagerBranding();
-#else
-  return true;
-#endif
 }
 
 std::unique_ptr<LeakDialogTraits> CreateDialogTraits(

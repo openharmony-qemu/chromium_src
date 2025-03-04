@@ -17,9 +17,10 @@
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "base/process/process_metrics.h"
+#include "ohos/adapter/context_path/context_path_adapter.h"
 
 namespace base {
-
+// TODO: temporary solution to load resources for multiple processes
 bool ParseAssetsOHOS(FilePath* result) {
   if (!base::CommandLine::ForCurrentProcess()) {
     LOG(ERROR) << "CommandLine not init";
@@ -40,9 +41,7 @@ bool ParseAssetsOHOS(FilePath* result) {
   if (for_test) {
     *result = FilePath(bundle_path + "/entry/resources/rawfile");
   } else {
-    *result = DirectoryExists(FilePath(bundle_path + "/nweb")) ?
-                  FilePath(bundle_path + "/nweb/entry/resources/rawfile") :
-                  FilePath(bundle_path + "/arkwebcore/entry/resources/rawfile");
+    *result = FilePath(bundle_path + "/nweb/entry/resources/rawfile");
   }
   return true;
 }
@@ -80,12 +79,12 @@ bool PathProviderOHOS(int key, FilePath* result) {
       NOTIMPLEMENTED();
       return false;
     case base::DIR_CACHE:
-    #ifdef OHOS_COOKIE
+    #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_COOKIE)
       *result = FilePath("/data/storage/el2/base/cache/web");
     #else
       // set to /data/local directory for W|X permission.
       *result = FilePath("/data/local");
-    #endif // #ifdef OHOS_COOKIE
+    #endif // #ifdef ARKWEB_COOKIE
       return true;
     case base::DIR_ASSETS:
       // resource file packed to system images

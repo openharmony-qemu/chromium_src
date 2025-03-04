@@ -3,10 +3,13 @@
 # found in the LICENSE file.
 
 import("///build/config/ozone.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 component("clipboard_types") {
   output_name = "ui_base_clipboard_types"
@@ -40,10 +43,12 @@ component("clipboard_types") {
     sources += [ "clipboard_format_type_win.cc" ]
   }
 
-  if (is_ohos) {
-    sources += [ "ohos/clipboard_format_type_ohos.cc" ]
-  } else if (use_aura && !is_win) {
+  if (use_aura && !is_win && !is_ohos) {
     sources += [ "clipboard_format_type_aura.cc" ]
+  }
+
+  if (is_ohos) {
+    sources += [ "clipboard_format_type_ohos.cc" ]
   }
 
   defines = [ "IS_UI_BASE_CLIPBOARD_TYPES_IMPL" ]
@@ -55,9 +60,9 @@ component("clipboard_types") {
     frameworks += [ "Foundation.framework" ]
   }
   if (is_mac) {
-    frameworks += [ "AppKit.framework" ]
-    weak_frameworks = [
-      "UniformTypeIdentifiers.framework",  # macOS 11
+    frameworks += [
+      "AppKit.framework",
+      "UniformTypeIdentifiers.framework",
     ]
   }
 }
@@ -92,7 +97,6 @@ component("clipboard") {
   sources = [
     "clipboard.cc",
     "clipboard.h",
-    "clipboard_content_type.h",
     "clipboard_metrics.cc",
     "clipboard_metrics.h",
     "clipboard_monitor.cc",
@@ -100,6 +104,8 @@ component("clipboard") {
     "clipboard_observer.cc",
     "clipboard_observer.h",
     "clipboard_sequence_number_token.h",
+    "clipboard_util.cc",
+    "clipboard_util.h",
     "custom_data_helper.cc",
     "custom_data_helper.h",
     "scoped_clipboard_writer.cc",
@@ -130,8 +136,12 @@ component("clipboard") {
   }
 
   if (is_ios) {
-    sources += [ "clipboard_ios.mm" ]
+    sources += [
+      "clipboard_ios.h",
+      "clipboard_ios.mm",
+    ]
   }
+
   if (is_win) {
     sources += [
       "clipboard_util_win.cc",
@@ -145,10 +155,8 @@ component("clipboard") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//mojo/public/cpp/base",
     "//net",
-    "//skia",
     "//ui/base:features",
     "//ui/gfx",
     "//ui/gfx/geometry",
@@ -157,10 +165,11 @@ component("clipboard") {
   public_deps = [
     ":clipboard_types",
     ":file_info",
+    "//skia",
     "//ui/base/data_transfer_policy",
   ]
 
-  if (defined(ohos_clipboard) && ohos_clipboard) {
+  if (arkweb_clipboard) {
     sources -= [
       "clipboard_non_backed.cc",
       "clipboard_non_backed.h",
@@ -170,8 +179,8 @@ component("clipboard") {
       "ohos/clipboard_ohos.h",
       "ohos/clipboard_ohos_read_data.cc",
       "ohos/clipboard_ohos_read_data.h",
-      "ohos/clip_board_image_data_adapter_impl.h",
       "ohos/clip_board_image_data_adapter_impl.cc",
+      "ohos/clip_board_image_data_adapter_impl.h",
     ]
     import("//build/config/ohos/config.gni")
     include_dirs = ohos_src_includes
@@ -193,7 +202,7 @@ component("clipboard") {
   }
 
   if (is_android) {
-    deps += [ "//ui/base:ui_base_jni_headers" ]
+    deps += [ "//ui/base:clipboard_jni_headers" ]
   }
 
   if (is_mac) {
@@ -201,9 +210,7 @@ component("clipboard") {
     frameworks = [
       "AppKit.framework",
       "CoreFoundation.framework",
-    ]
-    weak_frameworks = [
-      "UniformTypeIdentifiers.framework",  # macOS 11
+      "UniformTypeIdentifiers.framework",
     ]
   }
 }
@@ -233,7 +240,6 @@ source_set("clipboard_test_support") {
   deps = [
     "//base/test:test_support",
     "//build:chromecast_buildflags",
-    "//build:chromeos_buildflags",
     "//ui/base:features",
     "//ui/gfx",
   ]
@@ -249,7 +255,17 @@ source_set("clipboard_test") {
   sources = []
   output_name = "ui_base_clipboard_test"
 
-  if (!is_ios) {
+  if (is_ios) {
+    if (use_blink) {
+      # On other OSs, clipboard platform unit tests are run as part of
+      # interactive_ui_tests. However, since interactive_ui_tests is not yet
+      # ready for Blink iOS, we run them here for now.
+      sources += [
+        "clipboard_test_template.h",
+        "clipboard_unittest.cc",
+      ]
+    }
+  } else {
     sources += [
       "custom_data_helper_unittest.cc",
       "test/test_clipboard_unittest.cc",
@@ -262,31 +278,13 @@ source_set("clipboard_test") {
       "clipboard_util_mac_unittest.mm",
       "url_file_parser_unittest.cc",
     ]
-  }
-  
-  if (is_ohos) {
-    sources += [
-      "ohos/clipboard_ohos_read_data_unittest.cc",
-      "ohos/clipboard_ohos_unittest.cc",
-      "scoped_clipboard_writer_unittest.cc",
-    ]
+    frameworks = [ "PDFKit.framework" ]
   }
 
   if (is_win) {
     sources += [ "clipboard_util_win_unittest.cc" ]
   }
 
-  if (use_aura && !is_chromeos_lacros && !is_linux && !is_win) {
-    sources += [
-      "clipboard_data_unittest.cc",
-      "clipboard_non_backed_unittest.cc",
-    ]
-  }
-  if (ohos_unittests) {
-    sources -= [
-      "clipboard_non_backed_unittest.cc",
-    ]
-  }
   deps = [
     ":clipboard_test_support",
     "//base/test:test_support",
@@ -300,6 +298,20 @@ source_set("clipboard_test") {
 
   if (is_mac) {
     deps += [ ":url_file_parser" ]
+  }
+
+  if (use_aura || is_mac) {
+    sources += [
+      "clipboard_data_unittest.cc",
+      "clipboard_non_backed_unittest.cc",
+    ]
+
+    if (use_ozone) {
+      deps += [
+        "//ui/ozone:ozone_switches",
+        "//ui/ozone:platform",
+      ]
+    }
   }
 }
 

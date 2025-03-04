@@ -9,6 +9,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/cdm_context.h"
@@ -60,10 +61,10 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
   init_cb_ = std::move(init_cb);
 
   switch (media_resource_->GetType()) {
-    case MediaResource::Type::STREAM:
+    case MediaResource::Type::kStream:
       InitializeRendererFromStreams(client);
       break;
-    case MediaResource::Type::URL:
+    case MediaResource::Type::KUrl:
       InitializeRendererFromUrl(client);
       break;
   }
@@ -79,7 +80,7 @@ void MojoRenderer::InitializeRendererFromStreams(
   std::vector<DemuxerStream*> streams = media_resource_->GetAllStreams();
   std::vector<mojo::PendingRemote<mojom::DemuxerStream>> stream_proxies;
 
-  for (auto* stream : streams) {
+  for (media::DemuxerStream* stream : streams) {
     mojo::PendingRemote<mojom::DemuxerStream> stream_proxy;
     auto mojo_stream = std::make_unique<MojoDemuxerStreamImpl>(
         stream, stream_proxy.InitWithNewPipeAndPassReceiver());
@@ -111,39 +112,40 @@ void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
 
   BindRemoteRendererIfNeeded();
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   remote_renderer_->SetMediaSourceList(std::move(source_infos_));
-  remote_renderer_->SetMediaControls(show_media_controls_, std::move(controls_list_));
+  remote_renderer_->SetMediaControls(show_media_controls_,
+                                     std::move(controls_list_));
   remote_renderer_->SetPoster(std::move(poster_url_));
   remote_renderer_->SetAttributes(std::move(attributes_));
   remote_renderer_->SetReferrer(std::move(referrer_));
   remote_renderer_->SetIsAudio(is_audio_);
   remote_renderer_->SetMuted(muted_);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   const MediaUrlParams& url_params = media_resource_->GetMediaUrlParams();
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   mojom::CustomMediaUrlParamsPtr custom_media_url_params =
       mojom::CustomMediaUrlParams::New(
           url_params.custom_media_url_params.preload_type,
           url_params.custom_media_url_params.media_source_type);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // Using base::Unretained(this) is safe because |this| owns
   // |remote_renderer_|, and the callback won't be dispatched if
   // |remote_renderer_| is destroyed.
   mojom::MediaUrlParamsPtr media_url_params = mojom::MediaUrlParams::New(
       url_params.media_url, url_params.site_for_cookies,
-      url_params.top_frame_origin, url_params.has_storage_access,
-      url_params.allow_credentials, url_params.is_hls
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-      , std::move(custom_media_url_params)
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
-    );
-
+      url_params.top_frame_origin, url_params.storage_access_api_status,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      url_params.allow_credentials, url_params.is_hls, url_params.headers);
+#else
+      url_params.allow_credentials, url_params.is_hls, url_params.headers,
+      std::move(custom_media_url_params));
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   remote_renderer_->Initialize(client_receiver_.BindNewEndpointAndPassRemote(),
-                               absl::nullopt, std::move(media_url_params),
+                               std::nullopt, std::move(media_url_params),
                                base::BindOnce(&MojoRenderer::OnInitialized,
                                               base::Unretained(this), client));
 }
@@ -162,7 +164,7 @@ void MojoRenderer::SetCdm(CdmContext* cdm_context,
     return;
   }
 
-  absl::optional<base::UnguessableToken> cdm_id = cdm_context->GetCdmId();
+  std::optional<base::UnguessableToken> cdm_id = cdm_context->GetCdmId();
   if (!cdm_id) {
     DVLOG(2) << "MojoRenderer only works with remote CDMs but the CDM ID "
                 "is invalid.";
@@ -178,9 +180,13 @@ void MojoRenderer::SetCdm(CdmContext* cdm_context,
                                                   base::Unretained(this)));
 }
 
-void MojoRenderer::SetLatencyHint(
-    absl::optional<base::TimeDelta> latency_hint) {
-  // TODO(chcunningham): Proxy to remote renderer if needed.
+void MojoRenderer::SetLatencyHint(std::optional<base::TimeDelta> latency_hint) {
+  DVLOG(2) << __func__;
+  DCHECK(task_runner_->RunsTasksInCurrentSequence());
+
+  BindRemoteRendererIfNeeded();
+
+  remote_renderer_->SetLatencyHint(latency_hint);
 }
 
 void MojoRenderer::Flush(base::OnceClosure flush_cb) {
@@ -428,7 +434,7 @@ void MojoRenderer::CancelPendingCallbacks() {
     std::move(cdm_attached_cb_).Run(false);
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MojoRenderer::SetMuted(bool muted) {
   muted_ = muted;
 }
@@ -458,7 +464,8 @@ void MojoRenderer::SetMediaSourceList(
     source_infos_.push_back(std::move(info));
   }
 }
-void MojoRenderer::SetMediaControls(bool show_media_controls,
+void MojoRenderer::SetMediaControls(
+    bool show_media_controls,
     const std::vector<std::string>& controls_list) {
   show_media_controls_ = show_media_controls;
   controls_list_ = controls_list;
@@ -481,19 +488,19 @@ bool MojoRenderer::IsAudio() {
 }
 
 void MojoRenderer::SetPlaybackRateWithReason(double playback_rate,
-    ActionReason reason) {
+                                             ActionReason reason) {
   DVLOG(2) << __func__ << "(" << playback_rate << ")";
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DCHECK(remote_renderer_.is_bound());
 
-  remote_renderer_->SetPlaybackRateWithReason(playback_rate,
-      static_cast<mojom::ActionReason>(reason));
+  remote_renderer_->SetPlaybackRateWithReason(
+      playback_rate, static_cast<mojom::ActionReason>(reason));
 
   {
     base::AutoLock auto_lock(lock_);
     media_time_interpolator_.SetPlaybackRate(playback_rate);
   }
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

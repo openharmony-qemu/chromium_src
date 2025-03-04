@@ -7,21 +7,20 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/app/application_delegate/app_init_stage.h"
 #import "ios/chrome/app/application_delegate/app_state_agent.h"
 #import "ios/chrome/app/application_delegate/app_state_observer.h"
+#import "ios/chrome/app/background_refresh/background_refresh_app_agent_audience.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state_observer.h"
+#import "ios/chrome/browser/ui/device_orientation/portait_orientation_manager.h"
 #import "ios/chrome/browser/ui/scoped_ui_blocker/ui_blocker_manager.h"
 
-@class AppState;
-@protocol BrowserLauncher;
-class ChromeBrowserState;
 @class CommandDispatcher;
-@protocol ConnectionInformation;
-typedef NS_ENUM(NSUInteger, DefaultPromoType);
 @class SceneState;
-@class MainApplicationDelegate;
 @class MemoryWarningHelper;
 @class MetricsMediator;
+@class ProfileState;
+@class DeferredInitializationRunner;
 @protocol StartupInformation;
 
 namespace base {
@@ -46,22 +45,23 @@ enum class PostCrashAction {
 
 // Represents the application state and responds to application state changes
 // and system events.
-@interface AppState : NSObject <UIBlockerManager, SceneStateObserver>
+@interface AppState : NSObject <BackgroundRefreshAudience,
+                                PortraitOrientationManager,
+                                SceneStateObserver,
+                                UIBlockerManager>
 
 - (instancetype)init NS_UNAVAILABLE;
 
-- (instancetype)
-initWithBrowserLauncher:(id<BrowserLauncher>)browserLauncher
-     startupInformation:(id<StartupInformation>)startupInformation
-    applicationDelegate:(MainApplicationDelegate*)applicationDelegate
-    NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithStartupInformation:
+    (id<StartupInformation>)startupInformation NS_DESIGNATED_INITIALIZER;
 
 // Dispatcher for app-level commands for multiwindow use cases.
 // Most features should use the browser-level dispatcher instead.
 @property(nonatomic, strong) CommandDispatcher* appCommandDispatcher;
 
-// The ChromeBrowserState associated with the main (non-OTR) browsing mode.
-@property(nonatomic, assign) ChromeBrowserState* mainBrowserState;
+// The ProfileState associated with the main Profile.
+// TODO(crbug.com/324417250) remove this property.
+@property(nonatomic, weak) ProfileState* mainProfile;
 
 // Container for startup information.
 @property(nonatomic, weak) id<StartupInformation> startupInformation;
@@ -73,20 +73,6 @@ initWithBrowserLauncher:(id<BrowserLauncher>)browserLauncher
 // YES if the sign-in upgrade promo has been presented to the user, once.
 @property(nonatomic) BOOL signinUpgradePromoPresentedOnce;
 
-// YES if the default browser fullscreen promo has met the qualifications to be
-// shown after the last cold start.
-@property(nonatomic) BOOL shouldShowDefaultBrowserPromo;
-
-// The type of default browser fullscreen promo that should be shown to the
-// user.
-@property(nonatomic) DefaultPromoType defaultBrowserPromoTypeToShow;
-
-// YES if the sign-out prompt should be shown to the user when the scene becomes
-// active and enters the foreground. This can happen if the policies have
-// changed since the last cold start, meaning the user was signed out during
-// startup.
-@property(nonatomic) BOOL shouldShowForceSignOutPrompt;
-
 // Indicates what action, if any, is taken after a crash (stash tabs, show NTP,
 // show safe mode).
 @property(nonatomic, assign) PostCrashAction postCrashAction;
@@ -94,18 +80,11 @@ initWithBrowserLauncher:(id<BrowserLauncher>)browserLauncher
 // YES if the app is resuming from safe mode.
 @property(nonatomic) BOOL resumingFromSafeMode;
 
-// The last window which received a tap.
-@property(nonatomic, weak) UIWindow* lastTappedWindow;
-
-// The SceneSession ID for the last session, where the Device doesn't support
-// multiple windows.
-@property(nonatomic, strong) NSString* previousSingleWindowSessionID;
-
 // Timestamp of when a scene was last becoming active. Can be null.
 @property(nonatomic, assign) base::TimeTicks lastTimeInForeground;
 
 // The initialization stage the app is currently at.
-@property(nonatomic, readonly) InitStage initStage;
+@property(nonatomic, readonly) AppInitStage initStage;
 
 // This flag is set when the first scene has initialized its UI and never
 // resets.
@@ -118,13 +97,12 @@ initWithBrowserLauncher:(id<BrowserLauncher>)browserLauncher
 // YES if the application is getting terminated.
 @property(nonatomic, readonly) BOOL appIsTerminating;
 
-// Saves the launchOptions to be used from -newTabFromLaunchOptions. If the
-// application is in background, initialize the browser to basic. If not, launch
-// the browser.
-// Returns whether additional delegate handling should be performed (call to
-// -performActionForShortcutItem or -openURL by the system for example)
-- (BOOL)requiresHandlingAfterLaunchWithOptions:(NSDictionary*)launchOptions
-                               stateBackground:(BOOL)stateBackground;
+// All agents that have been attached. Use -addAgent: and -removeAgent: to
+// add and remove agents.
+@property(nonatomic, readonly) NSArray<id<AppStateAgent>>* connectedAgents;
+
+// Can be used to schedule deferred initialization tasks.
+@property(nonatomic, readonly) DeferredInitializationRunner* deferredRunner;
 
 // Logs duration of the session and records that chrome is no longer in cold
 // start.
@@ -186,6 +164,10 @@ initWithBrowserLauncher:(id<BrowserLauncher>)browserLauncher
 // finally return to the runloop. It is an error to queue more than one
 // transition at once.
 - (void)queueTransitionToNextInitStage;
+
+// Queue the transition (as defined above) to the very first initialization
+// stage.
+- (void)startInitialization;
 
 @end
 

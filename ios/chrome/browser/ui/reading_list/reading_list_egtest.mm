@@ -8,25 +8,33 @@
 #import <functional>
 #import <memory>
 
+#import "base/apple/foundation_util.h"
 #import "base/functional/bind.h"
 #import "base/ios/ios_util.h"
-#import "base/mac/foundation_util.h"
 #import "base/notreached.h"
 #import "base/strings/string_number_conversions.h"
 #import "base/strings/string_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
 #import "base/test/ios/wait_util.h"
+#import "components/sync/base/user_selectable_type.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_constants.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
+#import "ios/chrome/browser/ui/authentication/authentication_constants.h"
+#import "ios/chrome/browser/ui/authentication/signin_earl_grey.h"
+#import "ios/chrome/browser/ui/authentication/signin_earl_grey_ui_test_util.h"
 #import "ios/chrome/browser/ui/popup_menu/popup_menu_constants.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_app_interface.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_constants.h"
-#import "ios/chrome/browser/ui/reading_list/reading_list_earl_grey_ui.h"
+#import "ios/chrome/browser/ui/reading_list/reading_list_egtest_utils.h"
+#import "ios/chrome/browser/ui/settings/google_services/manage_sync_settings_constants.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
 #import "ios/chrome/grit/ios_strings.h"
+#import "ios/chrome/test/earl_grey/chrome_actions.h"
 #import "ios/chrome/test/earl_grey/chrome_actions_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
-#import "ios/chrome/test/earl_grey/chrome_earl_grey_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
@@ -45,14 +53,14 @@
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/test/ios/ui_image_test_utils.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::test::ios::kWaitForUIElementTimeout;
 using chrome_test_util::DeleteButton;
+using chrome_test_util::PrimarySignInButton;
 using chrome_test_util::ReadingListMarkAsReadButton;
 using chrome_test_util::ReadingListMarkAsUnreadButton;
+using reading_list_test_utils::AddedToLocalReadingListSnackbar;
+using reading_list_test_utils::OpenReadingList;
+using reading_list_test_utils::VisibleReadingListItem;
 
 namespace {
 const char kContentToRemove[] = "Text that distillation should remove.";
@@ -72,9 +80,6 @@ NSString* const kUnreadTitle2 = @"I am another unread entry";
 NSString* const kUnreadURL2 = @"http://unreadfoobar2.com";
 const size_t kNumberReadEntries = 2;
 const size_t kNumberUnreadEntries = 2;
-constexpr base::TimeDelta kSnackbarAppearanceTimeout = base::Seconds(5);
-// kSnackbarDisappearanceTimeout = MDCSnackbarMessageDurationMax + 1
-constexpr base::TimeDelta kSnackbarDisappearanceTimeout = base::Seconds(10 + 1);
 constexpr base::TimeDelta kDelayForSlowWebServer = base::Seconds(4);
 constexpr base::TimeDelta kLongPressDuration = base::Seconds(1);
 constexpr base::TimeDelta kDistillationTimeout = base::Seconds(5);
@@ -148,20 +153,16 @@ void TapToolbarButtonWithID(NSString* button_id) {
 
 // Taps the context menu button with the a11y label of `a11y_label_id`.
 void TapContextMenuButtonWithA11yLabelID(int a11y_label_id) {
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::ButtonWithAccessibilityLabelId(
-                                   a11y_label_id)] performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:
+                 chrome_test_util::ContextMenuItemWithAccessibilityLabelId(
+                     a11y_label_id)] performAction:grey_tap()];
 }
 
 // Performs `action` on the entry with the title `entryTitle`. The view can be
 // scrolled down to find the entry.
 void PerformActionOnEntry(NSString* entryTitle, id<GREYAction> action) {
   ScrollToTop();
-  id<GREYMatcher> matcher =
-      grey_allOf(chrome_test_util::StaticTextWithAccessibilityLabel(entryTitle),
-                 grey_ancestor(grey_kindOfClassName(@"TableViewURLCell")),
-                 grey_sufficientlyVisible(), nil);
-  [[[EarlGrey selectElementWithMatcher:matcher]
+  [[[EarlGrey selectElementWithMatcher:VisibleReadingListItem(entryTitle)]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown, 100)
       onElementWithMatcher:grey_accessibilityID(kReadingListViewID)]
       performAction:action];
@@ -181,12 +182,7 @@ void LongPressEntry(NSString* entryTitle) {
 // Asserts that the entry with the title `entryTitle` is visible.
 void AssertEntryVisible(NSString* entryTitle) {
   ScrollToTop();
-  [[[EarlGrey
-      selectElementWithMatcher:
-          grey_allOf(
-              chrome_test_util::StaticTextWithAccessibilityLabel(entryTitle),
-              grey_ancestor(grey_kindOfClassName(@"TableViewURLCell")),
-              grey_sufficientlyVisible(), nil)]
+  [[[EarlGrey selectElementWithMatcher:VisibleReadingListItem(entryTitle)]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown, 100)
       onElementWithMatcher:grey_accessibilityID(kReadingListViewID)]
       assertWithMatcher:grey_notNil()];
@@ -212,11 +208,7 @@ void AssertEntryNotVisible(NSString* title) {
   ScrollToTop();
   NSError* error;
 
-  [[[EarlGrey
-      selectElementWithMatcher:
-          grey_allOf(chrome_test_util::StaticTextWithAccessibilityLabel(title),
-                     grey_ancestor(grey_kindOfClassName(@"TableViewURLCell")),
-                     grey_sufficientlyVisible(), nil)]
+  [[[EarlGrey selectElementWithMatcher:VisibleReadingListItem(title)]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown, 100)
       onElementWithMatcher:grey_accessibilityID(kReadingListViewID)]
       assertWithMatcher:grey_notNil()
@@ -254,7 +246,7 @@ void AddLotOfEntriesAndEnterEdit() {
                                  read:NO],
                   @"Unable to add Reading List item");
   }
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 
   TapToolbarButtonWithID(kReadingListToolbarEditButtonID);
 }
@@ -282,7 +274,7 @@ void AddEntriesAndOpenReadingList() {
                                           read:NO],
       @"Unable to add Reading List item");
 
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 }
 
 void AddEntriesAndEnterEdit() {
@@ -297,32 +289,10 @@ void AddCurrentPageToReadingList() {
   [ChromeEarlGreyUI
       tapToolsMenuAction:chrome_test_util::ButtonWithAccessibilityLabelId(
                              IDS_IOS_SHARE_MENU_READING_LIST_ACTION)];
-
-  // Wait for the snackbar to appear.
-  id<GREYMatcher> snackbar_matcher =
-      grey_accessibilityID(@"MDCSnackbarMessageTitleAutomationIdentifier");
-  ConditionBlock wait_for_appearance = ^{
-    NSError* error = nil;
-    [[EarlGrey selectElementWithMatcher:snackbar_matcher]
-        assertWithMatcher:grey_notNil()
-                    error:&error];
-    return error == nil;
-  };
-  GREYAssert(base::test::ios::WaitUntilConditionOrTimeout(
-                 kSnackbarAppearanceTimeout, wait_for_appearance),
-             @"Snackbar did not appear.");
-
-  // Wait for the snackbar to disappear.
-  ConditionBlock wait_for_disappearance = ^{
-    NSError* error = nil;
-    [[EarlGrey selectElementWithMatcher:snackbar_matcher]
-        assertWithMatcher:grey_nil()
-                    error:&error];
-    return error == nil;
-  };
-  GREYAssert(base::test::ios::WaitUntilConditionOrTimeout(
-                 kSnackbarDisappearanceTimeout, wait_for_disappearance),
-             @"Snackbar did not disappear.");
+  id<GREYMatcher> matcher =
+      grey_allOf(reading_list_test_utils::AddedToLocalReadingListSnackbar(),
+                 grey_sufficientlyVisible(), nil);
+  [[EarlGrey selectElementWithMatcher:matcher] performAction:grey_tap()];
   [ReadingListAppInterface notifyWifiConnection];
 }
 
@@ -386,7 +356,6 @@ std::unique_ptr<net::test_server::HttpResponse> HandleQueryOrCloseSocket(
     return std::move(response);
   }
   NOTREACHED();
-  return std::move(response);
 }
 
 // Serves image URLs.
@@ -422,7 +391,6 @@ std::unique_ptr<net::test_server::HttpResponse> HandleImageQueryOrCloseSocket(
     return std::move(response);
   }
   NOTREACHED();
-  return std::move(response);
 }
 
 // Opens the page security info bubble.
@@ -452,11 +420,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   }
 
   // Test the presence of the omnibox offline chip.
+  UIImage* symbol =
+      DefaultSymbolTemplateWithPointSize(kDownloadPromptFillSymbol, 10);
+
   [[EarlGrey selectElementWithMatcher:
                  grey_allOf(chrome_test_util::PageSecurityInfoIndicator(),
-                            chrome_test_util::ImageViewWithImageNamed(
-                                @"location_bar_connection_offline"),
-                            nil)]
+                            chrome_test_util::ImageViewWithImage(symbol), nil)]
       assertWithMatcher:online ? grey_nil() : grey_notNil()];
 }
 
@@ -511,9 +480,9 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey stopWatcher];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [ChromeEarlGrey stopWatcher];
-  [super tearDown];
+  [super tearDownHelper];
   [ReadingListAppInterface resetConnectionType];
 }
 
@@ -539,7 +508,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   AddCurrentPageToReadingList();
 
   // Verify that an entry with the correct title is present in the reading list.
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
 
   WaitForDistillation();
@@ -563,18 +532,10 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
   base::test::ios::SpinRunLoopWithMinDelay(base::Seconds(1));
 
-  if ([ChromeEarlGrey isLoadSimulatedRequestAPIEnabled]) {
-    // Check that the online version is now displayed.
-    AssertIsShowingDistillablePage(true, distillablePageURL);
-    GREYAssertEqual(1, [ChromeEarlGrey navigationBackListItemsCount],
-                    @"The NTP page should be the first committed URL.");
-  } else {
-    // Check that the offline version is still displayed.
-    AssertIsShowingDistillablePage(false, distillablePageURL);
-    // Check that a new navigation wasn't created.
-    GREYAssertEqual(0, [ChromeEarlGrey navigationBackListItemsCount],
-                    @"The offline page should be the first committed URL.");
-  }
+  // Check that the online version is now displayed.
+  AssertIsShowingDistillablePage(true, distillablePageURL);
+  GREYAssertEqual(1, [ChromeEarlGrey navigationBackListItemsCount],
+                  @"The NTP page should be the first committed URL.");
 
   // Check that navigating forward navigates to the correct page.
   [[EarlGrey selectElementWithMatcher:chrome_test_util::ForwardButton()]
@@ -602,7 +563,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
 
   // Verify that an entry with the correct title is present in the reading list.
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
 
   WaitForDistillation();
@@ -621,13 +582,13 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   OpenPageSecurityInfoBubble();
   // Verify that the Page Info is about offline pages.
   [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::HeaderWithAccessibilityLabelId(
-                                   IDS_IOS_PAGE_INFO_OFFLINE_PAGE_LABEL)]
+      selectElementWithMatcher:grey_text(l10n_util::GetNSString(
+                                   IDS_IOS_PAGE_INFO_OFFLINE_PAGE_LABEL))]
       assertWithMatcher:grey_notNil()];
 
   // Verify that the webState's title is correct.
-  GREYAssertEqualObjects([ChromeEarlGreyAppInterface currentTabTitle],
-                         kDistillableTitle, @"Wrong page name");
+  GREYAssertEqualObjects([ChromeEarlGrey currentTabTitle], kDistillableTitle,
+                         @"Wrong page name");
 }
 
 // Tests that URL can be added in the incognito mode and that a snackbar
@@ -657,7 +618,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
 
   // Verify that an entry with the correct title is present in the reading list.
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
 
   WaitForDistillation();
@@ -681,8 +642,8 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   GREYAssert(checkImage.GetBool(), @"Incorrect image loading.");
 
   // Verify that the webState's title is correct.
-  GREYAssertEqualObjects([ChromeEarlGreyAppInterface currentTabTitle],
-                         kDistillableTitle, @"Wrong page name");
+  GREYAssertEqualObjects([ChromeEarlGrey currentTabTitle], kDistillableTitle,
+                         @"Wrong page name");
 }
 
 // Tests that sharing a web page to the Reading List results in a snackbar
@@ -701,7 +662,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
 
   // Verify that an entry with the correct title is present in the reading list.
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
   WaitForDistillation();
 
@@ -713,14 +674,14 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   self.serverRespondsWithContent = NO;
   base::test::ios::SpinRunLoopWithMinDelay(kServerOperationDelay);
 
-  [ChromeEarlGreyAppInterface startReloading];
+  [ChromeEarlGrey startReloading];
   AssertIsShowingDistillablePage(false, distillableURL);
 }
 
 // Tests that sharing a web page to the Reading List results in a snackbar
 // appearing, and that the Reading List entry is present in the Reading List.
 // Loads offline version by tapping on entry without web server.
-// TODO(crbug.com/1326627): Fix flakiness.
+// TODO(crbug.com/40840653): Fix flakiness.
 - (void)DISABLED_testSavingToReadingListAndLoadNoNetwork {
   [ReadingListAppInterface forceConnectionToWifi];
   GURL distillableURL = self.testServer->GetURL(kDistillableURL);
@@ -735,7 +696,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
 
   // Verify that an entry with the correct title is present in the reading list.
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
   WaitForDistillation();
 
@@ -747,7 +708,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   AssertIsShowingDistillablePage(false, distillableURL);
 
   // Reload. As server is still down, the offline page should show again.
-  [ChromeEarlGreyAppInterface startReloading];
+  [ChromeEarlGrey startReloading];
   AssertIsShowingDistillablePage(false, distillableURL);
 
   [ChromeEarlGrey goBack];
@@ -758,7 +719,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   self.serverRespondsWithContent = YES;
   base::test::ios::SpinRunLoopWithMinDelay(kServerOperationDelay);
 
-  [ChromeEarlGreyAppInterface startReloading];
+  [ChromeEarlGrey startReloading];
   AssertIsShowingDistillablePage(true, distillableURL);
 }
 
@@ -779,7 +740,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [ChromeEarlGrey waitForPageToFinishLoading];
 
   // Verify that an entry with the correct title is present in the reading
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
   AssertEntryVisible(kDistillableTitle);
   WaitForDistillation();
 
@@ -795,10 +756,10 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   AssertIsShowingDistillablePage(false, distillableURL);
 
   // Reload should load online page.
-  [ChromeEarlGreyAppInterface startReloading];
+  [ChromeEarlGrey startReloading];
   AssertIsShowingDistillablePage(true, distillableURL);
   // Reload should load offline page.
-  [ChromeEarlGreyAppInterface startReloading];
+  [ChromeEarlGrey startReloading];
   AssertIsShowingDistillablePage(false, distillableURL);
 }
 
@@ -809,7 +770,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
                                          title:kUnreadTitle
                                           read:NO],
       @"Unable to add Reading List entry.");
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 
   AssertToolbarButtonNotVisibleWithID(kReadingListToolbarDeleteButtonID);
   AssertToolbarButtonNotVisibleWithID(kReadingListToolbarDeleteAllReadButtonID);
@@ -848,12 +809,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 - (void)testVisibleButtonsAfterSwipeDeletion {
   AddEntriesAndOpenReadingList();
 
-  [[[EarlGrey
-      selectElementWithMatcher:
-          grey_allOf(
-              chrome_test_util::StaticTextWithAccessibilityLabel(kReadTitle),
-              grey_ancestor(grey_kindOfClassName(@"TableViewURLCell")),
-              grey_sufficientlyVisible(), nil)]
+  [[[EarlGrey selectElementWithMatcher:VisibleReadingListItem(kReadTitle)]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown, 100)
       onElementWithMatcher:grey_accessibilityID(kReadingListViewID)]
       performAction:grey_swipeFastInDirection(kGREYDirectionLeft)];
@@ -934,10 +890,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   AssertEntryNotVisible(kReadTitle2);
   AssertEntryVisible(kUnreadTitle);
   AssertEntryVisible(kUnreadTitle2);
-  XCTAssertEqual([ReadingListAppInterface readEntriesCount],
-                 static_cast<long>(kNumberReadEntries - 1));
-  XCTAssertEqual([ReadingListAppInterface unreadEntriesCount],
-                 kNumberUnreadEntries);
+  GREYAssertEqual([ReadingListAppInterface readEntriesCount],
+                  static_cast<long>(kNumberReadEntries - 1),
+                  @"Wrong number of read entry after delete.");
+  GREYAssertEqual([ReadingListAppInterface unreadEntriesCount],
+                  kNumberUnreadEntries,
+                  @"Wrong number of unread entry after delete.");
 
   TapToolbarButtonWithID(kReadingListToolbarEditButtonID);
   TapEntry(kReadTitle);
@@ -972,9 +930,11 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   AssertHeaderNotVisible(kReadHeader);
   AssertEntryVisible(kUnreadTitle);
   AssertEntryVisible(kUnreadTitle2);
-  XCTAssertEqual(0l, [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(kNumberUnreadEntries,
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(0l, [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of unread entry.");
+  GREYAssertEqual(kNumberUnreadEntries,
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entries.");
 }
 
 // Marks all unread entries as read.
@@ -990,9 +950,11 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 
   AssertHeaderNotVisible(kUnreadHeader);
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries + kNumberReadEntries),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(0l, [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries + kNumberReadEntries),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entries after marking all read.");
+  GREYAssertEqual(0l, [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entries after marking all read.");
 }
 
 // Marks all read entries as unread.
@@ -1008,9 +970,11 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 
   AssertHeaderNotVisible(kReadHeader);
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries + kNumberReadEntries),
-                 [ReadingListAppInterface unreadEntriesCount]);
-  XCTAssertEqual(0l, [ReadingListAppInterface readEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries + kNumberReadEntries),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entries after marking all unread.");
+  GREYAssertEqual(0l, [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entries after marking all unread.");
 }
 
 // Marks all read entries as unread, when there is a lot of entries. This is to
@@ -1037,10 +1001,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   TapToolbarButtonWithID(kReadingListToolbarMarkButtonID);
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries + 1),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries + 1),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entries after marking read.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entries after marking read.");
 }
 
 // Selects an read entry and mark it as unread.
@@ -1052,10 +1018,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   TapToolbarButtonWithID(kReadingListToolbarMarkButtonID);
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries - 1),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries + 1),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries - 1),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entries after marking unread.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries + 1),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entries after marking unread.");
 }
 
 // Selects read and unread entries and mark them as unread.
@@ -1071,10 +1039,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   TapContextMenuButtonWithA11yLabelID(IDS_IOS_READING_LIST_MARK_UNREAD_BUTTON);
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries - 1),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries + 1),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries - 1),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of unread entry after marking unread.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries + 1),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of read entry after marking unread.");
 }
 
 // Selects read and unread entries and mark them as read.
@@ -1090,10 +1060,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   TapContextMenuButtonWithA11yLabelID(IDS_IOS_READING_LIST_MARK_READ_BUTTON);
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries + 1),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries + 1),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entry after marking read.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entry after marking read.");
 }
 
 // Tests that you can delete multiple read items in the Reading List without
@@ -1110,7 +1082,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
                   @"Unable to add Reading List entry.");
   }
 
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 
   // Make sure the Reading List view is not empty. Therefore, the illustration,
   // title and subtitles shoud not be present.
@@ -1141,7 +1113,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 
 // Tests that the VC can be dismissed by swiping down.
 - (void)testSwipeDownDismiss {
-  // TODO(crbug.com/1129589): Test disabled on iOS14 iPhones.
+  // TODO(crbug.com/40149458): Test disabled on iOS14 iPhones.
   if (![ChromeEarlGrey isIPadIdiom]) {
     EARL_GREY_TEST_DISABLED(@"Fails on iOS14 iPhones.");
   }
@@ -1151,7 +1123,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
                                          title:kUnreadTitle
                                           read:NO],
       @"Unable to add Reading List entry.");
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 
   // Check that the TableView is presented.
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(kReadingListViewID)]
@@ -1201,15 +1173,16 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 }
 
 // Tests the Mark as Read/Unread context menu action for a reading list entry.
-// TODO(crbug.com/1427934): Flaky.
-- (void)DISABLED_testContextMenuMarkAsReadAndBack {
+- (void)testContextMenuMarkAsReadAndBack {
   AddEntriesAndOpenReadingList();
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entry.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entry.");
 
   // Mark an unread entry as read.
   LongPressEntry(kUnreadTitle);
@@ -1218,10 +1191,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
       performAction:grey_tap()];
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries + 1),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries + 1),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entry after marking read.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries - 1),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entry after marking read.");
 
   // Now mark it back as unread.
   LongPressEntry(kUnreadTitle);
@@ -1230,10 +1205,12 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
       performAction:grey_tap()];
 
   AssertAllEntriesVisible();
-  XCTAssertEqual(static_cast<long>(kNumberReadEntries),
-                 [ReadingListAppInterface readEntriesCount]);
-  XCTAssertEqual(static_cast<long>(kNumberUnreadEntries),
-                 [ReadingListAppInterface unreadEntriesCount]);
+  GREYAssertEqual(static_cast<long>(kNumberReadEntries),
+                  [ReadingListAppInterface readEntriesCount],
+                  @"Wrong number of read entry after marking unread.");
+  GREYAssertEqual(static_cast<long>(kNumberUnreadEntries),
+                  [ReadingListAppInterface unreadEntriesCount],
+                  @"Wrong number of unread entry after marking unread.");
 }
 
 // Tests the Share context menu action for a reading list entry.
@@ -1257,11 +1234,327 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
   [self verifyReadingListIsEmpty];
 }
 
+// Tests that review account settings promo is shown if the user is signed in
+// only but reading list account storage is off and gets removed after enabling
+// the toggle.
+- (void)testReviewAccountSettingsPromoWithReadingListToggleDisabled {
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+
+  OpenReadingList();
+  [SigninEarlGreyUI verifySigninPromoVisibleWithMode:
+                        SigninPromoViewModeSignedInWithPrimaryAccount];
+
+  // Open the settings using the sign-in promo.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Turn Reading List On.
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(kSyncReadingListIdentifier)]
+      performAction:chrome_test_util::TurnTableViewSwitchOn(/*on=*/YES)];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Verify that the promo disappears.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(
+                                   chrome_test_util::SettingsDoneButton(),
+                                   grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [SigninEarlGreyUI verifySigninPromoNotVisible];
+}
+
+// Tests that review account settings promo is not shown if the user is signed
+// in only and reading list account storage is already enabled.
+- (void)testAccountSettingsPromoIfSyncToSigninEnabledWithReadingListOn {
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenReadingList();
+  [SigninEarlGreyUI verifySigninPromoNotVisible];
+}
+
+// Tests that account settings are viewed from the reading list manager and
+// account gets removed.
+- (void)testAccountSettingsViewedFroReadingListManager {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+  OpenReadingList();
+  [SigninEarlGreyUI verifySigninPromoVisibleWithMode:
+                        SigninPromoViewModeSignedInWithPrimaryAccount];
+
+  // Open the settings using the sign-in promo.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Remove identity from device.
+  [SigninEarlGrey forgetFakeIdentity:fakeIdentity1];
+  [ChromeEarlGreyUI waitForAppToIdle];
+  [SigninEarlGrey verifySignedOut];
+
+  // Verify that Account Settings is closed.
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_notVisible()];
+  // Sign in promo shows.
+  [SigninEarlGreyUI
+      verifySigninPromoVisibleWithMode:SigninPromoViewModeNoAccounts];
+}
+
+// Tests that account settings promo is displayed when the reading list view
+// is opened from an incognito tab.
+// See: crbug.com/339472472.
+- (void)testAccountSettingsHiddenFromIncognitoTab {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  [ChromeEarlGrey openNewIncognitoTab];
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+  OpenReadingList();
+  [SigninEarlGreyUI verifySigninPromoVisibleWithMode:
+                        SigninPromoViewModeSignedInWithPrimaryAccount];
+
+  // Open the settings using the sign-in promo.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests review account settings promo changes to a sign-in promo after signing
+// out from account settings.
+- (void)testSignOutFromAccountSettingsFromReadingListManager {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+  OpenReadingList();
+  [SigninEarlGreyUI verifySigninPromoVisibleWithMode:
+                        SigninPromoViewModeSignedInWithPrimaryAccount];
+
+  // Open the settings using the sign-in promo.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Scroll to the bottom to view the signout button.
+  id<GREYMatcher> scroll_view_matcher =
+      grey_accessibilityID(kManageSyncTableViewAccessibilityIdentifier);
+  [[EarlGrey selectElementWithMatcher:scroll_view_matcher]
+      performAction:grey_scrollToContentEdge(kGREYContentEdgeBottom)];
+
+  // Tap the "Sign out" button.
+  [[EarlGrey selectElementWithMatcher:
+                 grey_accessibilityLabel(l10n_util::GetNSString(
+                     IDS_IOS_GOOGLE_ACCOUNT_SETTINGS_SIGN_OUT_ITEM))]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+  [SigninEarlGrey verifySignedOut];
+
+  // Verify that Account Settings is closed.
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(
+                                   kManageSyncTableViewAccessibilityIdentifier)]
+      assertWithMatcher:grey_notVisible()];
+
+  // Dismiss sign out snackbar.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityLabel(l10n_util::GetNSString(
+              IDS_IOS_GOOGLE_ACCOUNT_SETTINGS_SIGN_OUT_SNACKBAR_MESSAGE))]
+      performAction:grey_tap()];
+
+  // Sign in promo shows and try to sign in succeeds.
+  [SigninEarlGreyUI
+      verifySigninPromoVisibleWithMode:SigninPromoViewModeSigninWithAccount];
+  [[EarlGrey selectElementWithMatcher:
+                 grey_text(l10n_util::GetNSString(
+                     (IDS_IOS_SIGNIN_PROMO_REVIEW_READING_LIST_SETTINGS)))]
+      assertWithMatcher:grey_notVisible()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity1];
+}
+
+// Tests the review account settings promo does not show after signing in as
+// reading list gets enabled by default on sign-in.
+- (void)testNoReviewAccountSettingsPromo {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+
+  // Sign out.
+  [SigninEarlGreyUI signOut];
+
+  // Sign in from Reading List promo.
+  OpenReadingList();
+  [SigninEarlGreyUI
+      verifySigninPromoVisibleWithMode:SigninPromoViewModeSigninWithAccount];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityLabel(l10n_util::GetNSStringF(
+                                   IDS_IOS_SIGNIN_SNACKBAR_SIGNED_IN_AS,
+                                   base::SysNSStringToUTF16(
+                                       fakeIdentity1.userEmail)))]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Verify Account Settings promo does not show.
+  [SigninEarlGreyUI verifySigninPromoNotVisible];
+
+  // Verify that the reading list type is now enabled.
+  GREYAssertTrue(
+      [SigninEarlGrey
+          isSelectedTypeEnabled:syncer::UserSelectableType::kReadingList],
+      @"Reading list should be enabled.");
+}
+
+// Tests that reading list type gets disabled as it was before signing in when
+// the snackbar undo is tapped.
+- (void)testUndoSignInTypeDisabled {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // By default, `signinWithFakeIdentity` above enables reading list data type,
+  // so turn it off.
+  [SigninEarlGrey setSelectedType:(syncer::UserSelectableType::kReadingList)
+                          enabled:NO];
+
+  // Sign out.
+  [SigninEarlGreyUI signOut];
+
+  // Sign in from Reading List promo.
+  OpenReadingList();
+  [SigninEarlGreyUI
+      verifySigninPromoVisibleWithMode:SigninPromoViewModeSigninWithAccount];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+
+  // Tap undo button from the snackbar.
+  NSString* snackbarMessage = l10n_util::GetNSStringF(
+      IDS_IOS_SIGNIN_SNACKBAR_SIGNED_IN_AS,
+      base::SysNSStringToUTF16(fakeIdentity1.userEmail));
+  [[EarlGrey selectElementWithMatcher:grey_text(snackbarMessage)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(
+                                   grey_accessibilityID(kSigninSnackbarUndo),
+                                   grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [SigninEarlGrey verifySignedOut];
+
+  // Sign back in without using the promo.
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // Verify that the reading list type is disabled as it was before signing in.
+  GREYAssertFalse(
+      [SigninEarlGrey
+          isSelectedTypeEnabled:syncer::UserSelectableType::kReadingList],
+      @"Reading list should be disabled.");
+}
+
+// Tests that reading list type remains enabled as it was before signing in even
+// when the snackbar undo is tapped.
+- (void)testUndoSignInTypeEnabled {
+  FakeSystemIdentity* fakeIdentity1 = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // Make sure reading list type is enabled.
+  GREYAssertTrue(
+      [SigninEarlGrey
+          isSelectedTypeEnabled:syncer::UserSelectableType::kReadingList],
+      @"Reading list should be enabled.");
+
+  // Sign out.
+  [SigninEarlGreyUI signOut];
+
+  // Sign in from Reading List promo.
+  OpenReadingList();
+  [SigninEarlGreyUI
+      verifySigninPromoVisibleWithMode:SigninPromoViewModeSigninWithAccount];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(PrimarySignInButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+
+  // Tap undo button from the snackbar.
+  NSString* snackbarMessage = l10n_util::GetNSStringF(
+      IDS_IOS_SIGNIN_SNACKBAR_SIGNED_IN_AS,
+      base::SysNSStringToUTF16(fakeIdentity1.userEmail));
+  [[EarlGrey selectElementWithMatcher:grey_text(snackbarMessage)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(
+                                   grey_accessibilityID(kSigninSnackbarUndo),
+                                   grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+  [SigninEarlGrey verifySignedOut];
+
+  // Sign back in without using the promo.
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity1];
+
+  // Verify that the reading list type remains enabled as it was before signing
+  // in.
+  GREYAssertTrue(
+      [SigninEarlGrey
+          isSelectedTypeEnabled:syncer::UserSelectableType::kReadingList],
+      @"Reading list should be enabled.");
+}
+
 #pragma mark - Multiwindow
 
 // Tests the Open in New Window context menu action for a reading list entry.
-// TODO(crbug.com/1274099): Test is flaky
-- (void)DISABLED_testContextMenuOpenInNewWindow {
+// TODO(crbug.com/40807345): Test is flaky
+- (void)testContextMenuOpenInNewWindow {
   if (![ChromeEarlGrey areMultipleWindowsSupported])
     EARL_GREY_TEST_DISABLED(@"Multiple windows can't be opened.");
 
@@ -1301,7 +1594,7 @@ void AssertIsShowingDistillablePage(bool online, const GURL& distillable_url) {
 
   [ChromeEarlGrey closeCurrentTab];
   [ChromeEarlGrey openNewTab];
-  [ReadingListEarlGreyUI openReadingList];
+  OpenReadingList();
 }
 
 @end

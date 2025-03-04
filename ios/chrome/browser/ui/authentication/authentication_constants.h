@@ -23,10 +23,10 @@ extern const CGFloat kAuthenticationSeparatorColorAlpha;
 // Height of the separator.
 extern const CGFloat kAuthenticationSeparatorHeight;
 
-// Header image name.
-extern NSString* const kAuthenticationHeaderImageName;
-
 // Accessibility identifier for the Signin/Sync screen.
 extern NSString* const kSigninSyncScreenAccessibilityIdentifier;
+
+// Accessibility identifier for the 'Undo' button in signin snackbar.
+extern NSString* const kSigninSnackbarUndo;
 
 #endif  // IOS_CHROME_BROWSER_UI_AUTHENTICATION_AUTHENTICATION_CONSTANTS_H_

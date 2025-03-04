@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/trace_event/trace_event.h"
@@ -20,12 +21,13 @@
 namespace viz {
 
 OutputSurface::Capabilities::Capabilities() = default;
+OutputSurface::Capabilities::~Capabilities() = default;
 OutputSurface::Capabilities::Capabilities(const Capabilities& capabilities) =
     default;
 OutputSurface::Capabilities& OutputSurface::Capabilities::operator=(
     const Capabilities& capabilities) = default;
 
-OutputSurface::OutputSurface(Type type) : type_(type) {}
+OutputSurface::OutputSurface() : type_(Type::kSkia) {}
 
 OutputSurface::OutputSurface(
     std::unique_ptr<SoftwareOutputDevice> software_device)
@@ -34,14 +36,6 @@ OutputSurface::OutputSurface(
 }
 
 OutputSurface::~OutputSurface() = default;
-
-void OutputSurface::SetDrawRectangle(const gfx::Rect& rect) {
-  NOTREACHED();
-}
-
-void OutputSurface::SetEnableDCLayers(bool enabled) {
-  NOTREACHED();
-}
 
 gfx::Rect OutputSurface::GetCurrentFramebufferDamage() const {
   return gfx::Rect();
@@ -64,10 +58,12 @@ void OutputSurface::UpdateLatencyInfoOnSwap(
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT,
         response.timings.swap_end);
-    std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
-        " ,step: " + "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT";
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                      std::to_string(latency.trace_id()), "trace_content", trace_content_);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                      "trace_id", std::to_string(latency.trace_id()), "step",
+                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & "
+                      "INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
+#endif
   }
 }
 
@@ -76,26 +72,21 @@ void OutputSurface::SetNeedsSwapSizeNotifications(
   DCHECK(!needs_swap_size_notifications);
 }
 
+#if BUILDFLAG(IS_ANDROID)
 base::ScopedClosureRunner OutputSurface::GetCacheBackBufferCb() {
   return base::ScopedClosureRunner();
 }
-
-void OutputSurface::SetGpuVSyncCallback(GpuVSyncCallback callback) {
-  NOTREACHED();
-}
-
-void OutputSurface::SetGpuVSyncEnabled(bool enabled) {
-  NOTREACHED();
-}
-
-gpu::Mailbox OutputSurface::GetOverlayMailbox() const {
-  return gpu::Mailbox();
-}
+#endif
 
 void OutputSurface::InitDelegatedInkPointRendererReceiver(
     mojo::PendingReceiver<gfx::mojom::DelegatedInkPointRenderer>
         pending_receiver) {
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
+}
+
+void OutputSurface::ReadbackForTesting(
+    CopyOutputRequest::CopyOutputRequestCallback result_callback) {
+  NOTIMPLEMENTED();
 }
 
 }  // namespace viz

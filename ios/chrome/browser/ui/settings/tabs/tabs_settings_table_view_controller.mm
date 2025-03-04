@@ -8,25 +8,21 @@
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_icon_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
-#import "ios/chrome/browser/tabs/inactive_tabs/features.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
 #import "ios/chrome/browser/ui/settings/settings_table_view_controller_constants.h"
 #import "ios/chrome/browser/ui/settings/tabs/inactive_tabs/inactive_tabs_settings_table_view_controller.h"
+#import "ios/chrome/browser/ui/settings/tabs/tabs_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/tabs/tabs_settings_table_view_controller_delegate.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
 // List of sections.
 typedef NS_ENUM(NSInteger, SectionIdentifier) {
-  SectionIdentifierActions = kSectionIdentifierEnumZero,
+  SectionIdentifierInactiveTabs = kSectionIdentifierEnumZero,
 };
 
 // List of item types.
@@ -37,7 +33,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 }  // namespace
 
 @implementation TabsSettingsTableViewController {
-  // Updatable inactive tabs items.
+  // Updatable inactive tabs item.
   TableViewDetailIconItem* _inactiveTabsDetailItem;
   // Current inactive tab days threshold.
   int _inactiveDaysThreshold;
@@ -58,21 +54,22 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [super viewDidLoad];
   self.tableView.estimatedRowHeight = 70;
   self.tableView.rowHeight = UITableViewAutomaticDimension;
-
+  self.tableView.accessibilityIdentifier = kTabsSettingsTableViewId;
   [self loadModel];
 }
 
-#pragma mark - ChromeTableViewController
+#pragma mark - LegacyChromeTableViewController
 
 - (void)loadModel {
   [super loadModel];
-
   TableViewModel* model = self.tableViewModel;
-  [model addSectionWithIdentifier:SectionIdentifierActions];
-  [model addItem:[self moveInactiveTabsItem]
-      toSectionWithIdentifier:SectionIdentifierActions];
 
-  [self updateInactiveTabsItemWithDaysThreshold:_inactiveDaysThreshold];
+  if (IsInactiveTabsAvailable()) {
+    [model addSectionWithIdentifier:SectionIdentifierInactiveTabs];
+    [model addItem:[self moveInactiveTabsItem]
+        toSectionWithIdentifier:SectionIdentifierInactiveTabs];
+    [self updateInactiveTabsItemWithDaysThreshold:_inactiveDaysThreshold];
+  }
 }
 
 #pragma mark - SettingsControllerProtocol
@@ -89,33 +86,32 @@ typedef NS_ENUM(NSInteger, ItemType) {
 
 - (void)tableView:(UITableView*)tableView
     didSelectRowAtIndexPath:(NSIndexPath*)indexPath {
-  if (@available(iOS 16.0, *)) {
-    return;
-  }
-
-  NSInteger type = [self.tableViewModel itemTypeForIndexPath:indexPath];
-  if (type == ItemTypeInactiveTabs) {
-    [self.delegate
-        tabsSettingsTableViewControllerDidSelectInactiveTabsSettings:self];
-  }
 }
 
 - (void)tableView:(UITableView*)tableView
     performPrimaryActionForRowAtIndexPath:(NSIndexPath*)indexPath {
-  NSInteger type = [self.tableViewModel itemTypeForIndexPath:indexPath];
-  if (type == ItemTypeInactiveTabs) {
-    [self.delegate
-        tabsSettingsTableViewControllerDidSelectInactiveTabsSettings:self];
-  }
+  [self performPrimaryActionForRowAtIndexPath:indexPath];
 }
 
 #pragma mark - TabsSettingsConsumer
 
-- (void)inactiveTabsTimeThresholdChanged:(int)threshold {
+- (void)setInactiveTabsTimeThreshold:(int)threshold {
   [self updateInactiveTabsItemWithDaysThreshold:threshold];
 }
 
 #pragma mark - Private
+
+// Called when a row is selected at `indexPath`.
+- (void)performPrimaryActionForRowAtIndexPath:(NSIndexPath*)indexPath {
+  ItemType type = static_cast<ItemType>(
+      [self.tableViewModel itemTypeForIndexPath:indexPath]);
+  switch (type) {
+    case ItemTypeInactiveTabs:
+      [self.delegate
+          tabsSettingsTableViewControllerDidSelectInactiveTabsSettings:self];
+      break;
+  }
+}
 
 // Returns a newly created TableViewDetailIconItem for the inactive tabs
 // settings menu.

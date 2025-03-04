@@ -33,18 +33,16 @@ void AddURLPatternSetToList(
     std::vector<network::mojom::CorsOriginPatternPtr>* list,
     network::mojom::CorsOriginAccessMatchPriority priority) {
   static const char* const kSchemes[] = {
-#if defined(OHOS_ARKWEB_EXTENSIONS)
-    content::kArkWebUIScheme,
+      content::kChromeUIScheme,
+#if BUILDFLAG(IS_CHROMEOS)
+      content::kExternalFileScheme,
+    extensions::kArkwebExtensionScheme,
 #endif
-    content::kChromeUIScheme,
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-    content::kExternalFileScheme,
-#endif
-    extensions::kExtensionScheme,
-    url::kFileScheme,
-    url::kFtpScheme,
-    url::kHttpScheme,
-    url::kHttpsScheme,
+      extensions::kExtensionScheme,
+      url::kFileScheme,
+      url::kFtpScheme,
+      url::kHttpScheme,
+      url::kHttpsScheme,
   };
   for (const URLPattern& pattern : pattern_set) {
     for (const char* const scheme : kSchemes) {
@@ -96,7 +94,7 @@ CreateCorsOriginAccessAllowList(const Extension& extension) {
           extension.permissions_data()->policy_allowed_hosts(),
           origin_permissions, URLPatternSet::IntersectionBehavior::kDetailed);
 
-  // TODO(https://crbug.com/1268198): For now, there is (theoretically) no
+  // TODO(crbug.com/40803363): For now, there is (theoretically) no
   // overlap between user-blocked sites and user-allowed sites. This means that,
   // unlike enterprise policy above, we don't need to add in user-allowed sites
   // here (they should already be granted to the extension, and won't be blocked
@@ -137,7 +135,7 @@ CreateCorsOriginAccessBlockList(const Extension& extension) {
   // host allowances; when a block rule and an allow rule have the same
   // priority, the blocking rule wins. We don't add these with "High" priority
   // in order to keep that reserved for browser-defined restrictions.
-  // TODO(https://crbug.com/1268198): This is a pretty tenuous setup. We may
+  // TODO(crbug.com/40803363): This is a pretty tenuous setup. We may
   // just need to plumb more information to the network service.
   AddURLPatternSetToList(
       extension.permissions_data()->GetUserBlockedHosts(), &block_list,

@@ -5,15 +5,16 @@
 #ifndef SERVICES_DEVICE_GEOLOCATION_LOCATION_PROVIDER_OHOS_H_
 #define SERVICES_DEVICE_GEOLOCATION_LOCATION_PROVIDER_OHOS_H_
 
+#include <location_adapter.h>
+
 #include <memory>
 
-#include <location_adapter.h>
+#include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "services/device/public/cpp/geolocation/location_provider.h"
+#include "services/device/public/mojom/geolocation_internals.mojom.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
-
-#include "base/memory/weak_ptr.h"
 
 namespace device {
 class LocationProviderCallback : public OHOS::NWeb::LocationCallbackAdapter {
@@ -65,6 +66,7 @@ class LocationProviderOhos : public LocationProvider {
   void StopProvider() override;
   const mojom::GeopositionResult* GetPosition() override;
   void OnPermissionGranted() override;
+  void FillDiagnostics(mojom::GeolocationDiagnostics& diagnostics) override;
 
   void ProviderUpdateCallback(mojom::GeopositionResultPtr position);
 
@@ -78,7 +80,8 @@ class LocationProviderOhos : public LocationProvider {
   std::shared_ptr<OHOS::NWeb::LocationProxyAdapter> locator_;
 
   LocationProviderUpdateCallback callback_;
-
+  mojom::GeolocationDiagnostics::ProviderState state_ =
+      mojom::GeolocationDiagnostics::ProviderState::kStopped;
   bool is_running_ = false;
   std::shared_ptr<LocationProviderCallback> locator_callback_ = nullptr;
   int32_t callback_id_ = -1;

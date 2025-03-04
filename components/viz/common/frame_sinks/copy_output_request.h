@@ -6,9 +6,11 @@
 #define COMPONENTS_VIZ_COMMON_FRAME_SINKS_COPY_OUTPUT_REQUEST_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/unguessable_token.h"
@@ -18,7 +20,6 @@
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/command_buffer/common/sync_token.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d.h"
 
@@ -55,12 +56,14 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   using CopyOutputRequestCallback =
       base::OnceCallback<void(std::unique_ptr<CopyOutputResult> result)>;
 
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.
   CopyOutputRequest(ResultFormat result_format,
                     ResultDestination result_destination,
-                    CopyOutputRequestCallback result_callback, uint64_t id = 0, const std::string& dump_path = "");
+                    CopyOutputRequestCallback result_callback,
+                    uint64_t id = 0,
+                    const std::string& dump_path = "");
 #else
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.
@@ -179,12 +182,12 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   scoped_refptr<base::SequencedTaskRunner> result_task_runner_;
   gfx::Vector2d scale_from_;
   gfx::Vector2d scale_to_;
-  absl::optional<base::UnguessableToken> source_;
-  absl::optional<gfx::Rect> area_;
-  absl::optional<gfx::Rect> result_selection_;
+  std::optional<base::UnguessableToken> source_;
+  std::optional<gfx::Rect> area_;
+  std::optional<gfx::Rect> result_selection_;
 
-  absl::optional<BlitRequest> blit_request_;
-#if defined(OHOS_DFX_DUMP)
+  std::optional<BlitRequest> blit_request_;
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   uint64_t dump_frame_id_ = 0;
   std::string dump_frame_path_ = "";
 #endif

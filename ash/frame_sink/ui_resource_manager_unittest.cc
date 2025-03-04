@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui_resource_manager.h"
+#include "ash/frame_sink/ui_resource_manager.h"
 
 #include <memory>
 #include <vector>
 
 #include "ash/frame_sink/ui_resource.h"
 #include "base/test/gtest_util.h"
-#include "components/viz/common/resources/resource_format.h"
 #include "components/viz/common/resources/resource_id.h"
 #include "components/viz/common/resources/returned_resource.h"
 #include "components/viz/common/resources/transferable_resource.h"
@@ -29,7 +28,7 @@ std::unique_ptr<UiResource> MakeResource(const gfx::Size& resource_size,
   resource->ui_source_id = ui_source_id;
   resource->format = format;
   resource->resource_size = resource_size;
-  resource->mailbox = gpu::Mailbox::GenerateForSharedImage();
+  resource->SetExternallyOwnedMailbox(gpu::Mailbox::Generate());
   return resource;
 }
 
@@ -135,7 +134,7 @@ TEST_F(UiResourceManagerTest, PrepareResourceForExporting_InvalidIds) {
     // We cannot export a resource that we do not manage.
     auto transferable_resource =
         resource_manager_->PrepareResourceForExport(viz::ResourceId(20));
-    EXPECT_TRUE(transferable_resource.is_null());
+    EXPECT_TRUE(transferable_resource.is_empty());
     EXPECT_EQ(resource_manager_->exported_resources_count(), 0u);
 
     resource_manager_->ReleaseAvailableResource(to_be_released_resource);
@@ -146,7 +145,7 @@ TEST_F(UiResourceManagerTest, PrepareResourceForExporting_InvalidIds) {
 
     auto transferable_resource =
         resource_manager_->PrepareResourceForExport(to_be_released_resource);
-    EXPECT_TRUE(transferable_resource.is_null());
+    EXPECT_TRUE(transferable_resource.is_empty());
     EXPECT_EQ(resource_manager_->exported_resources_count(), 0u);
   }
 }
@@ -181,7 +180,7 @@ TEST_F(UiResourceManagerTest, CannotExportAlreadyExportedResource) {
 
   auto transferable_resource =
       resource_manager_->PrepareResourceForExport(to_be_exported_resource_id);
-  EXPECT_TRUE(transferable_resource.is_null());
+  EXPECT_TRUE(transferable_resource.is_empty());
 }
 
 TEST_F(UiResourceManagerTest, ReleaseResource_InvalidIds) {

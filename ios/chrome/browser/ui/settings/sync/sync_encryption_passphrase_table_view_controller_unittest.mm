@@ -13,23 +13,21 @@
 #import "base/test/ios/wait_util.h"
 #import "components/strings/grit/components_strings.h"
 #import "components/sync/test/mock_sync_service.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
+#import "ios/chrome/browser/settings/model/sync/utils/sync_util.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/system_identity.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
+#import "ios/chrome/browser/signin/model/system_identity.h"
 #import "ios/chrome/browser/ui/settings/cells/byo_textfield_item.h"
 #import "ios/chrome/browser/ui/settings/passphrase_table_view_controller_test.h"
-#import "ios/chrome/browser/ui/settings/sync/utils/sync_util.h"
+#import "ios/chrome/browser/ui/settings/settings_navigation_controller.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -75,12 +73,7 @@ class SyncEncryptionPassphraseTableViewControllerTest
     TurnSyncErrorOff();
   }
 
-  void TearDown() override {
-    [SyncController() settingsWillBeDismissed];
-    PassphraseTableViewControllerTest::TearDown();
-  }
-
-  ChromeTableViewController* InstantiateController() override {
+  LegacyChromeTableViewController* InstantiateController() override {
     return [[SyncEncryptionPassphraseTableViewController alloc]
         initWithBrowser:browser_.get()];
   }
@@ -97,10 +90,10 @@ TEST_F(SyncEncryptionPassphraseTableViewControllerTest, TestModel) {
   EXPECT_EQ(1, NumberOfSections());
   EXPECT_EQ(2, NumberOfItemsInSection(0));
   // Passphrase message item.
-  NSString* userEmail = AuthenticationServiceFactory::GetForBrowserState(
-                            chrome_browser_state_.get())
-                            ->GetPrimaryIdentity(signin::ConsentLevel::kSignin)
-                            .userEmail;
+  NSString* userEmail =
+      AuthenticationServiceFactory::GetForProfile(profile_.get())
+          ->GetPrimaryIdentity(signin::ConsentLevel::kSignin)
+          .userEmail;
   EXPECT_NSEQ(
       l10n_util::GetNSStringF(IDS_IOS_SYNC_ENTER_PASSPHRASE_BODY_WITH_EMAIL,
                               base::SysNSStringToUTF16(userEmail)),
@@ -223,7 +216,7 @@ TEST_F(SyncEncryptionPassphraseTableViewControllerTest, TestMessage) {
   TurnSyncPassphraseErrorOn();
   EXPECT_FALSE([sync_controller syncErrorMessage]);
   TurnSyncOtherErrorOn(otherError);
-  EXPECT_NSEQ(GetSyncErrorMessageForBrowserState(chrome_browser_state_.get()),
+  EXPECT_NSEQ(GetSyncErrorMessageForProfile(profile_.get()),
               [sync_controller syncErrorMessage]);
   TurnSyncErrorOff();
   EXPECT_FALSE([sync_controller syncErrorMessage]);

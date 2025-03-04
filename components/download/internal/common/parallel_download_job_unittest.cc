@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/test/mock_callback.h"
@@ -67,9 +68,9 @@ class ParallelDownloadJobForTest : public ParallelDownloadJob {
         min_slice_size_(min_slice_size),
         min_remaining_time_(min_remaining_time) {}
 
-  ParallelDownloadJobForTest(const ParallelDownloadJobForTest&) = delete;
-  ParallelDownloadJobForTest& operator=(const ParallelDownloadJobForTest&) =
-      delete;
+  // ParallelDownloadJobForTest(const ParallelDownloadJobForTest&) = delete;
+  // ParallelDownloadJobForTest& operator=(const ParallelDownloadJobForTest&) =
+  //     delete;
 
   void CreateRequest(int64_t offset) override {
     auto worker = std::make_unique<DownloadWorker>(this, offset);
@@ -153,11 +154,13 @@ class ParallelDownloadJobTest : public testing::Test {
 
   bool IsJobCanceled() const { return job_->is_canceled_; }
 
-#if defined(OHOS_UNITTESTS)
-  void CancelRequest(bool user_cancel, absl::optional<std::string> guid) { canceled_ = true; }
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CancelRequest(bool user_cancel, std::optional<std::string> guid) {
+    canceled_ = true;
+  }
 #else
   void CancelRequest(bool user_cancel) { canceled_ = true; }
-#endif // OHOS_UNITTESTS
+#endif
 
   void VerifyWorker(int64_t offset, int64_t length) const {
     EXPECT_TRUE(job_->workers_.find(offset) != job_->workers_.end());

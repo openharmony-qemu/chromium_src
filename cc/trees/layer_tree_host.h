@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef CC_TREES_LAYER_TREE_HOST_H_
 #define CC_TREES_LAYER_TREE_HOST_H_
 
@@ -10,15 +15,16 @@
 
 #include <limits>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/containers/flat_map.h"
-#include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
@@ -27,10 +33,12 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
+#include "base/types/optional_ref.h"
 #include "cc/base/completion_event.h"
 #include "cc/benchmarks/micro_benchmark.h"
 #include "cc/benchmarks/micro_benchmark_controller.h"
 #include "cc/cc_export.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "cc/input/browser_controls_state.h"
 #include "cc/input/compositor_input_interfaces.h"
 #include "cc/input/event_listener_properties.h"
@@ -43,7 +51,6 @@
 #include "cc/metrics/begin_main_frame_metrics.h"
 #include "cc/metrics/events_metrics_manager.h"
 #include "cc/metrics/frame_sequence_tracker.h"
-#include "cc/metrics/web_vital_metrics.h"
 #include "cc/paint/node_id.h"
 #include "cc/resources/ui_resource_request.h"
 #include "cc/trees/browser_controls_params.h"
@@ -61,17 +68,11 @@
 #include "cc/trees/target_property.h"
 #include "cc/trees/viewport_layers.h"
 #include "cc/trees/viewport_property_ids.h"
-#include "components/viz/common/resources/resource_format.h"
 #include "components/viz/common/surfaces/local_surface_id.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/delegated_ink_metadata.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/overlay_transform.h"
-
-namespace gfx {
-struct PresentationFeedback;
-}
 
 namespace cc {
 
@@ -244,16 +245,26 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // Visibility and LayerTreeFrameSink -------------------------------
 
   // Sets or gets if the LayerTreeHost is visible. When not visible it will:
-  // - Not request a new LayerTreeFrameSink from the client.
+  // - Not request a new LayerTreeFrameSink from the client (except
+  //   `kWarmUpCompositor` is enabled and warm-up is explicitly requested).
   // - Stop submitting frames to the display compositor.
   // - Stop producing main frames and committing them.
   // The LayerTreeHost is not visible when first created, so this must be called
   // to make it visible before it will attempt to start producing output.
   void SetVisible(bool visible);
   bool IsVisible() const;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
   void SetPinchSmoothMode(bool isEnable);
 #endif
+
+  // Indicates that warm-up is requested to create a new LayerTreeFrameSink
+  // even if the LayerTreeHost is invisible. This is an experimental function
+  // and only used if `kWarmUpCompositor` is enabled. Currently, this will be
+  // requested only from prerendered pages. Please see crbug.com/41496019 for
+  // more details.
+  void SetShouldWarmUp();
+  bool ShouldWarmUp() const;
+
   // Called in response to a LayerTreeFrameSink request made to the client
   // using LayerTreeHostClient::RequestNewLayerTreeFrameSink. The client will
   // be informed of the LayerTreeFrameSink initialization status using
@@ -347,7 +358,7 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // Notification that the proxy started or stopped deferring commits.
   void OnDeferCommitsChanged(bool defer_status,
                              PaintHoldingReason reason,
-                             absl::optional<PaintHoldingCommitTrigger> trigger);
+                             std::optional<PaintHoldingCommitTrigger> trigger);
 
   // Returns whether there are any outstanding ScopedDeferMainFrameUpdate,
   // though commits may be deferred also when the local_surface_id_from_parent()
@@ -379,14 +390,20 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // Input Handling ---------------------------------------------
 
   // Sets the state of the browser controls. (Used for URL bar animations).
-  void UpdateBrowserControlsState(BrowserControlsState constraints,
-                                  BrowserControlsState current,
-                                  bool animate);
+  void UpdateBrowserControlsState(
+      BrowserControlsState constraints,
+      BrowserControlsState current,
+      bool animate,
+      base::optional_ref<const BrowserControlsOffsetTagsInfo> offset_tags_info);
 
   // Returns the delegate that the input handler uses to communicate with the
   // LayerTreeHostImpl on the compositor thread. Must be dereferenced only on
   // the input handling thread.
   const base::WeakPtr<CompositorDelegateForInput>& GetDelegateForInput() const;
+
+  // Detaches the InputDelegateForCompositor (InputHandler) and
+  // RenderFrameMetadataObserver bound on the compositor thread synchronously.p
+  void DetachInputDelegateAndRenderFrameObserver();
 
   // Debugging and benchmarks ---------------------------------
   void SetDebugState(const LayerTreeDebugState& debug_state);
@@ -419,7 +436,7 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
   // to the screen (it's entirely possible some frames may be dropped between
   // the time this is called and the callback is run).
   void RequestSuccessfulPresentationTimeForNextFrame(
-      PresentationTimeCallbackBuffer::SuccessfulCallback callback);
+      PresentationTimeCallbackBuffer::SuccessfulCallbackWithDetails callback);
 
   // Registers a callback that is run when any ongoing scroll-animation ends. If
   // there are no ongoing animations, then the callback is run immediately.
@@ -460,9 +477,9 @@ class CC_EXPORT LayerTreeHost : public MutatorHostClient {
     return pending_commit_state()->selection;
   }
 
-#ifdef OHOS_CLIPBOARD
-void RegisterClippedVisualViewportSelectionBounds(
-  const gfx::Rect& clipped_selection_bounds);
+#if BUILDFLAG(ARKWEB_MENU)
+  void RegisterClippedVisualViewportSelectionBounds(
+      const gfx::Rect& clipped_selection_bounds);
   const gfx::Rect& clipped_selection_bounds() {
     return pending_commit_state()->clipped_selection_bounds;
   }
@@ -589,6 +606,21 @@ void RegisterClippedVisualViewportSelectionBounds(
   // Requests the allocation of a new LocalSurfaceId on the compositor thread.
   void RequestNewLocalSurfaceId();
 
+  // Request to screenshot the current viewport. The screenshot will be tagged
+  // with `destination_token`. The screenshot is tagged with `token`. The caller
+  // must have requested a new `viz::LocalSurfaceID` before making this request.
+  void RequestViewportScreenshot(
+      const base::UnguessableToken& destination_token);
+
+  // Request to set `primary_main_frame_item_sequence_number` on the next
+  // frame's metadata.
+  void SetPrimaryMainFrameItemSequenceNumber(
+      int64_t primary_main_frame_item_sequence_number);
+
+  int64_t primary_main_frame_item_sequence_number_for_testing() const {
+    return pending_commit_state()->primary_main_frame_item_sequence_number;
+  }
+
   // Returns the current state of the new LocalSurfaceId request and resets
   // the state.
   bool new_local_surface_id_request_for_testing() const {
@@ -700,8 +732,7 @@ void RegisterClippedVisualViewportSelectionBounds(
 
   void SetPropertyTreesNeedRebuild();
 
-  // Returns the layer with the given |element_id|. In layer-list mode, only
-  // scrollable layers are registered in this map.
+  // Returns the layer with the given |element_id|.
   Layer* LayerByElementId(ElementId element_id);
   const Layer* LayerByElementId(ElementId element_id) const;
 
@@ -736,29 +767,29 @@ void RegisterClippedVisualViewportSelectionBounds(
       std::unique_ptr<CompletionEvent> completion,
       bool has_updates);
   std::unique_ptr<CommitState> ActivateCommitState();
-  void CommitComplete(const CommitTimestamps&);
+  void CommitComplete(int source_frame_number, const CommitTimestamps&);
   void RequestNewLayerTreeFrameSink();
   void DidInitializeLayerTreeFrameSink();
   void DidFailToInitializeLayerTreeFrameSink();
   std::unique_ptr<LayerTreeHostImpl> CreateLayerTreeHostImpl(
       LayerTreeHostImplClient* client);
   void DidLoseLayerTreeFrameSink();
-  void DidCommitAndDrawFrame() {
+  void DidCommitAndDrawFrame(int source_frame_number) {
     DCHECK(IsMainThread());
-    client_->DidCommitAndDrawFrame();
+    client_->DidCommitAndDrawFrame(source_frame_number);
   }
-  void DidReceiveCompositorFrameAck() {
+  void DidReceiveCompositorFrameAckDeprecatedForCompositor() {
     DCHECK(IsMainThread());
-    client_->DidReceiveCompositorFrameAck();
+    client_->DidReceiveCompositorFrameAckDeprecatedForCompositor();
   }
   bool UpdateLayers();
   void DidPresentCompositorFrame(
       uint32_t frame_token,
       std::vector<PresentationTimeCallbackBuffer::Callback>
           presentation_callbacks,
-      std::vector<PresentationTimeCallbackBuffer::SuccessfulCallback>
+      std::vector<PresentationTimeCallbackBuffer::SuccessfulCallbackWithDetails>
           successful_presentation_callbacks,
-      const gfx::PresentationFeedback& feedback);
+      const viz::FrameTimingDetails& frame_timing_details);
   // Called when the compositor completed page scale animation.
   void DidCompletePageScaleAnimation();
   // Virtual for testing
@@ -768,8 +799,10 @@ void RegisterClippedVisualViewportSelectionBounds(
   void RecordEndOfFrameMetrics(base::TimeTicks frame_begin_time,
                                ActiveFrameSequenceTrackers trackers);
   void NotifyThroughputTrackerResults(CustomTrackerResults results);
+  void NotifyImageDecodeFinished(int request_id, bool decode_succeeded);
   void NotifyTransitionRequestsFinished(
-      const std::vector<uint32_t>& sequence_ids);
+      const uint32_t sequence_id,
+      const viz::ViewTransitionElementResourceRects& rects);
 
   LayerTreeHostClient* client() {
     DCHECK(IsMainThread());
@@ -843,7 +876,7 @@ void RegisterClippedVisualViewportSelectionBounds(
 
   bool RunsOnCurrentThread() const override;
 
-  void ScrollOffsetAnimationFinished() override {}
+  void ScrollOffsetAnimationFinished(ElementId element_id) override {}
 
   void NotifyAnimationWorkletStateChange(AnimationWorkletMutationState state,
                                          ElementListType tree_type) override {}
@@ -881,12 +914,14 @@ void RegisterClippedVisualViewportSelectionBounds(
     return pending_commit_state()->delegated_ink_metadata.get();
   }
 
-  void DidObserveFirstScrollDelay(base::TimeDelta first_scroll_delay,
+  void DidObserveFirstScrollDelay(int source_frame_number,
+                                  base::TimeDelta first_scroll_delay,
                                   base::TimeTicks first_scroll_timestamp);
 
   void AddViewTransitionRequest(std::unique_ptr<ViewTransitionRequest> request);
 
-  std::vector<base::OnceClosure> TakeViewTransitionCallbacksForTesting();
+  std::vector<ViewTransitionRequest::ViewTransitionCaptureCallback>
+  TakeViewTransitionCallbacksForTesting();
 
   // Returns a percentage of dropped frames of the last second.
   double GetPercentDroppedFrames() const;
@@ -906,13 +941,22 @@ void RegisterClippedVisualViewportSelectionBounds(
     return base::AutoReset<bool>(&syncing_deltas_for_test_, true);
   }
 
-  void IncrementVisualUpdateDuration(base::TimeDelta visual_update_duration);
+  bool WaitedForCommitForTesting() const {
+    return waited_for_protected_sequence_;
+  }
 
-#if BUILDFLAG(IS_OHOS)
+  // See CommitState::scrollers_clobbering_active_value_.
+  void DropActiveScrollDeltaNextCommit(ElementId scroll_element);
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
  protected:
   LayerTreeHost(InitParams params, CompositorMode mode);
@@ -1000,7 +1044,7 @@ void RegisterClippedVisualViewportSelectionBounds(
   void UpdateScrollOffsetFromImpl(
       const ElementId&,
       const gfx::Vector2dF& delta,
-      const absl::optional<TargetSnapAreaElementIds>&);
+      const std::optional<TargetSnapAreaElementIds>&);
 
   const CompositorMode compositor_mode_;
 
@@ -1030,6 +1074,7 @@ void RegisterClippedVisualViewportSelectionBounds(
   const LayerTreeSettings settings_;
 
   bool visible_ = false;
+  bool should_warm_up_ = false;
 
   // If set, then page scale animation has completed, but the client hasn't been
   // notified about it yet.
@@ -1055,10 +1100,11 @@ void RegisterClippedVisualViewportSelectionBounds(
   scoped_refptr<HeadsUpDisplayLayer> hud_layer_;
 
   // Layer id to Layer map.
-  std::unordered_map<int, Layer*> layer_id_map_;
+  std::unordered_map<int, raw_ptr<Layer, CtnExperimental>> layer_id_map_;
 
   // This is for layer tree mode only.
-  std::unordered_map<ElementId, Layer*, ElementIdHash> element_layers_map_;
+  std::unordered_map<ElementId, raw_ptr<Layer, CtnExperimental>, ElementIdHash>
+      element_layers_map_;
 
   bool in_paint_layer_contents_ = false;
 
@@ -1092,7 +1138,8 @@ void RegisterClippedVisualViewportSelectionBounds(
   EventsMetricsManager events_metrics_manager_;
 
   // A list of callbacks that need to be invoked when they are processed.
-  base::flat_map<uint32_t, base::OnceClosure> view_transition_callbacks_;
+  base::flat_map<uint32_t, ViewTransitionRequest::ViewTransitionCaptureCallback>
+      view_transition_callbacks_;
 
   // Set if WaitForCommitCompletion() was called before commit completes. Used
   // for histograms.

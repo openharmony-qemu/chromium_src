@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 
+#include "ash/constants/ash_features.h"
+#include "ash/system/diagnostics/diagnostics_log_controller.h"
 #include "ash/system/diagnostics/networking_log.h"
 #include "ash/webui/diagnostics_ui/backend/common/histogram_util.h"
 #include "base/containers/contains.h"
@@ -226,8 +228,7 @@ bool ClearDisconnectedNetwork(NetworkObserverInfo* network_info) {
   return true;
 }
 
-mojom::RoamingState GetRoamingState(
-    absl::optional<std::string>& roaming_state) {
+mojom::RoamingState GetRoamingState(std::optional<std::string>& roaming_state) {
   if (!roaming_state.has_value()) {
     return mojom::RoamingState::kNone;
   }
@@ -240,13 +241,24 @@ mojom::RoamingState GetRoamingState(
 }
 
 constexpr mojom::LockType GetLockType(const std::string& lock_type) {
-  // Possible values are 'sim-pin', 'sim-puk' or empty.
+  // Possible values are 'sim-pin', 'sim-puk', 'network-pin' or empty.
   if (lock_type.empty()) {
     return mojom::LockType::kNone;
   }
-  DCHECK(lock_type == "sim-pin" || lock_type == "sim-puk");
-  return lock_type == "sim-pin" ? mojom::LockType::kSimPin
-                                : mojom::LockType::kSimPuk;
+
+  DCHECK(lock_type == "sim-pin" || lock_type == "sim-puk" ||
+         lock_type == "network-pin");
+
+  if (lock_type == "sim-pin") {
+    return mojom::LockType::kSimPin;
+  }
+  if (lock_type == "sim-puk") {
+    return mojom::LockType::kSimPuk;
+  }
+  if (lock_type == "network-pin") {
+    return mojom::LockType::kNetworkPin;
+  }
+  return mojom::LockType::kNone;
 }
 
 void UpdateNetwork(
@@ -280,7 +292,6 @@ void UpdateNetwork(
     }
     case mojom::NetworkType::kUnsupported:
       NOTREACHED();
-      break;
   }
 }
 
@@ -395,6 +406,10 @@ int GetScoreForNetwork(const mojom::NetworkPtr& network) {
   return kNetworkTypePriorityMap.at(network->type) + state_priority;
 }
 
+bool IsLoggingEnabled() {
+  return diagnostics::DiagnosticsLogController::IsInitialized();
+}
+
 }  // namespace
 
 NetworkObserverInfo::NetworkObserverInfo() = default;
@@ -403,11 +418,7 @@ NetworkObserverInfo& NetworkObserverInfo::operator=(NetworkObserverInfo&&) =
     default;
 NetworkObserverInfo::~NetworkObserverInfo() = default;
 
-NetworkHealthProvider::NetworkHealthProvider()
-    : NetworkHealthProvider(/*networking_log_ptr_=*/nullptr) {}
-
-NetworkHealthProvider::NetworkHealthProvider(NetworkingLog* networking_log_ptr)
-    : networking_log_ptr_(networking_log_ptr) {
+NetworkHealthProvider::NetworkHealthProvider() {
   network_config::BindToInProcessInstance(
       remote_cros_network_config_.BindNewPipeAndPassReceiver());
   remote_cros_network_config_->AddObserver(
@@ -646,7 +657,8 @@ void NetworkHealthProvider::NotifyNetworkListObservers() {
   }
 
   if (IsLoggingEnabled() && !active_guid_.empty()) {
-    networking_log_ptr_->UpdateNetworkList(observer_guids, active_guid_);
+    DiagnosticsLogController::Get()->GetNetworkingLog().UpdateNetworkList(
+        observer_guids, active_guid_);
   }
 }
 
@@ -660,7 +672,8 @@ void NetworkHealthProvider::NotifyNetworkStateObserver(
       mojo::Clone(network_info.network));
 
   if (IsLoggingEnabled()) {
-    networking_log_ptr_->UpdateNetworkState(network_info.network.Clone());
+    DiagnosticsLogController::Get()->GetNetworkingLog().UpdateNetworkState(
+        network_info.network.Clone());
   }
 }
 
@@ -677,15 +690,6 @@ void NetworkHealthProvider::GetDeviceState() {
   remote_cros_network_config_->GetDeviceStateList(
       base::BindOnce(&NetworkHealthProvider::OnDeviceStateListReceived,
                      base::Unretained(this)));
-}
-
-void NetworkHealthProvider::SetNetworkingLogForTesting(
-    NetworkingLog* networking_log_ptr) {
-  networking_log_ptr_ = networking_log_ptr;
-}
-
-bool NetworkHealthProvider::IsLoggingEnabled() const {
-  return networking_log_ptr_ != nullptr;
 }
 
 mojom::NetworkState NetworkHealthProvider::GetNetworkStateForGuid(

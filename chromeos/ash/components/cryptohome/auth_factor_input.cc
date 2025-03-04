@@ -12,12 +12,29 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
 namespace cryptohome {
+
+// =============== `RecoveryCreation` =====================
+AuthFactorInput::RecoveryCreation::RecoveryCreation(
+    const std::string& pub_key,
+    const std::string& user_gaia_id,
+    const std::string& device_user_id,
+    bool ensure_fresh_recovery_id)
+    : pub_key(pub_key),
+      user_gaia_id(user_gaia_id),
+      device_user_id(device_user_id),
+      ensure_fresh_recovery_id(ensure_fresh_recovery_id) {}
+AuthFactorInput::RecoveryCreation::RecoveryCreation(
+    const RecoveryCreation& other) = default;
+AuthFactorInput::RecoveryCreation& AuthFactorInput::RecoveryCreation::operator=(
+    const RecoveryCreation&) = default;
+AuthFactorInput::RecoveryCreation::~RecoveryCreation() = default;
+
 // =============== `SmartCard` =====================
 AuthFactorInput::SmartCard::SmartCard(
-    const std::vector<ChallengeResponseKey::SignatureAlgorithm> algorithms,
-    const std::string dbus_service_name)
-    : signature_algorithms(algorithms),
-      key_delegate_dbus_service_name(dbus_service_name) {}
+    std::vector<ChallengeResponseKey::SignatureAlgorithm> algorithms,
+    std::string dbus_service_name)
+    : signature_algorithms(std::move(algorithms)),
+      key_delegate_dbus_service_name(std::move(dbus_service_name)) {}
 AuthFactorInput::SmartCard::SmartCard(const SmartCard& other) = default;
 AuthFactorInput::SmartCard& AuthFactorInput::SmartCard::operator=(
     const SmartCard&) = default;
@@ -56,7 +73,6 @@ AuthFactorType AuthFactorInput::GetType() const {
     return AuthFactorType::kRecovery;
   }
   NOTREACHED();
-  return AuthFactorType::kUnknownLegacy;
 }
 
 bool AuthFactorInput::UsableForCreation() const {

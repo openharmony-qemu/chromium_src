@@ -5,12 +5,13 @@
 #include "components/autofill/core/browser/payments/local_card_migration_manager.h"
 
 #include <stddef.h>
+
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
 
+#include "base/check_deref.h"
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/utf_string_conversions.h"
@@ -21,41 +22,55 @@
 #include "components/autofill/core/browser/metrics/autofill_metrics.h"
 #include "components/autofill/core/browser/metrics/payments/local_card_migration_metrics.h"
 #include "components/autofill/core/browser/payments/client_behavior_constants.h"
-#include "components/autofill/core/browser/payments/payments_client.h"
+#include "components/autofill/core/browser/payments/credit_card_save_manager.h"
+#include "components/autofill/core/browser/payments/payments_network_interface.h"
+#include "components/autofill/core/browser/payments/payments_requests/payments_request.h"
 #include "components/autofill/core/browser/payments/payments_util.h"
+#include "components/autofill/core/browser/payments_data_manager.h"
 #include "components/autofill/core/browser/personal_data_manager.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "components/autofill/core/common/autofill_payments_features.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
 
 namespace autofill {
+namespace {
+
+using PaymentsRpcResult = payments::PaymentsAutofillClient::PaymentsRpcResult;
+
+}  // namespace
 
 MigratableCreditCard::MigratableCreditCard(const CreditCard& credit_card)
     : credit_card_(credit_card) {}
 
-MigratableCreditCard::~MigratableCreditCard() {}
+MigratableCreditCard::MigratableCreditCard(const MigratableCreditCard&) =
+    default;
+
+MigratableCreditCard::MigratableCreditCard(MigratableCreditCard&&) = default;
+
+MigratableCreditCard& MigratableCreditCard::operator=(
+    const MigratableCreditCard&) = default;
+
+MigratableCreditCard& MigratableCreditCard::operator=(MigratableCreditCard&&) =
+    default;
+
+MigratableCreditCard::~MigratableCreditCard() = default;
 
 LocalCardMigrationManager::LocalCardMigrationManager(
     AutofillClient* client,
-    payments::PaymentsClient* payments_client,
-    const std::string& app_locale,
-    PersonalDataManager* personal_data_manager)
-    : client_(client),
-      payments_client_(payments_client),
-      app_locale_(app_locale),
-      personal_data_manager_(personal_data_manager) {
-}
+    const std::string& app_locale)
+    : client_(CHECK_DEREF(client)), app_locale_(app_locale) {}
 
-LocalCardMigrationManager::~LocalCardMigrationManager() {}
+LocalCardMigrationManager::~LocalCardMigrationManager() = default;
 
 bool LocalCardMigrationManager::ShouldOfferLocalCardMigration(
-    const absl::optional<CreditCard>& credit_card_import_candidate,
+    const std::optional<CreditCard>& extracted_credit_card,
     int credit_card_import_type) {
   // Reset and store the extracted credit card info for a later check of whether
   // the extracted card is supported.
   extracted_credit_card_number_.reset();
-  if (credit_card_import_candidate)
-    extracted_credit_card_number_ = credit_card_import_candidate->number();
+  if (extracted_credit_card) {
+    extracted_credit_card_number_ = extracted_credit_card->number();
+  }
   credit_card_import_type_ = credit_card_import_type;
   // Must be an existing card. New cards always get Upstream or local save.
   switch (credit_card_import_type_) {
@@ -81,7 +96,6 @@ bool LocalCardMigrationManager::ShouldOfferLocalCardMigration(
     return false;
   }
 
-  // Don't show the prompt if max strike count was reached.
   if (GetLocalCardMigrationStrikeDatabase()->ShouldBlockFeature()) {
     switch (credit_card_import_type_) {
       case FormDataImporter::CreditCardImportType::kLocalCard:
@@ -130,26 +144,29 @@ bool LocalCardMigrationManager::ShouldOfferLocalCardMigration(
 
 void LocalCardMigrationManager::AttemptToOfferLocalCardMigration(
     bool is_from_settings_page) {
-  // Abort the migration if |payments_client_| is nullptr.
-  if (!payments_client_)
+  payments::PaymentsNetworkInterface* payments_network_interface =
+      client_->GetPaymentsAutofillClient()->GetPaymentsNetworkInterface();
+  // If `payments_network_interface` is nullptr, we can not offer local card
+  // migration as it requires a server call.
+  if (!payments_network_interface) {
     return;
-  migration_request_ = payments::PaymentsClient::MigrationRequestDetails();
+  }
+  migration_request_ = payments::MigrationRequestDetails();
 
   if (observer_for_testing_)
     observer_for_testing_->OnDecideToRequestLocalCardMigration();
 
-  payments_client_->GetUploadDetails(
+  payments_network_interface->GetCardUploadDetails(
       std::vector<AutofillProfile>(), GetDetectedValues(),
       /*client_behavior_signals=*/std::vector<ClientBehaviorConstants>(),
       app_locale_,
       base::BindOnce(&LocalCardMigrationManager::OnDidGetUploadDetails,
                      weak_ptr_factory_.GetWeakPtr(), is_from_settings_page),
       payments::kMigrateCardsBillableServiceNumber,
-      payments::GetBillingCustomerId(personal_data_manager_),
-      is_from_settings_page ? payments::PaymentsClient::UploadCardSource::
-                                  LOCAL_CARD_MIGRATION_SETTINGS_PAGE
-                            : payments::PaymentsClient::UploadCardSource::
-                                  LOCAL_CARD_MIGRATION_CHECKOUT_FLOW);
+      payments::GetBillingCustomerId(&payments_data_manager()),
+      is_from_settings_page
+          ? payments::UploadCardSource::LOCAL_CARD_MIGRATION_SETTINGS_PAGE
+          : payments::UploadCardSource::LOCAL_CARD_MIGRATION_CHECKOUT_FLOW);
 }
 
 // Callback function when user agrees to migration on the intermediate dialog.
@@ -180,7 +197,7 @@ void LocalCardMigrationManager::OnUserAcceptedMainMigrationDialog(
   auto card_is_selected = [&selected_card_guids](MigratableCreditCard& card) {
     return !base::Contains(selected_card_guids, card.credit_card().guid());
   };
-  base::EraseIf(migratable_credit_cards_, card_is_selected);
+  std::erase_if(migratable_credit_cards_, card_is_selected);
   // Populating risk data and offering migration two-round pop-ups occur
   // asynchronously. If |migration_risk_data_| has already been loaded, send the
   // migrate local cards request. Otherwise, continue to wait and let
@@ -191,25 +208,26 @@ void LocalCardMigrationManager::OnUserAcceptedMainMigrationDialog(
 
 void LocalCardMigrationManager::OnUserDeletedLocalCardViaMigrationDialog(
     const std::string& deleted_card_guid) {
-  personal_data_manager_->RemoveByGUID(deleted_card_guid);
+  client_->GetPersonalDataManager()->RemoveByGUID(deleted_card_guid);
 }
 
 bool LocalCardMigrationManager::IsCreditCardMigrationEnabled() {
   return ::autofill::IsCreditCardMigrationEnabled(
-      personal_data_manager_, client_->GetPrefs(), client_->GetSyncService(),
+      client_->GetPersonalDataManager(), client_->GetSyncService(),
+      *client_->GetPrefs(),
       /*is_test_mode=*/observer_for_testing_, client_->GetLogManager());
 }
 
 void LocalCardMigrationManager::OnDidGetUploadDetails(
     bool is_from_settings_page,
-    AutofillClient::PaymentsRpcResult result,
+    PaymentsRpcResult result,
     const std::u16string& context_token,
     std::unique_ptr<base::Value::Dict> legal_message,
     std::vector<std::pair<int, int>> supported_card_bin_ranges) {
   if (observer_for_testing_)
     observer_for_testing_->OnReceivedGetUploadDetailsResponse();
 
-  if (result == AutofillClient::PaymentsRpcResult::kSuccess) {
+  if (result == PaymentsRpcResult::kSuccess) {
     LegalMessageLine::Parse(*legal_message, &legal_message_lines_,
                             /*escape_apostrophes=*/true);
 
@@ -257,19 +275,18 @@ void LocalCardMigrationManager::OnDidGetUploadDetails(
                 NOT_OFFERED_NO_SUPPORTED_CARDS);
         return;
       }
-      client_->ShowLocalCardMigrationDialog(base::BindOnce(
-          &LocalCardMigrationManager::OnUserAcceptedIntermediateMigrationDialog,
-          weak_ptr_factory_.GetWeakPtr()));
+      client_->GetPaymentsAutofillClient()->ShowLocalCardMigrationDialog(
+          base::BindOnce(&LocalCardMigrationManager::
+                             OnUserAcceptedIntermediateMigrationDialog,
+                         weak_ptr_factory_.GetWeakPtr()));
       autofill_metrics::LogLocalCardMigrationPromptMetric(
           local_card_migration_origin_,
           autofill_metrics::INTERMEDIATE_BUBBLE_SHOWN);
     }
 
-    // TODO(crbug.com/876895): Clean up the LoadRiskData Bind/BindRepeating
-    // usages
-    client_->LoadRiskData(base::BindRepeating(
-        &LocalCardMigrationManager::OnDidGetMigrationRiskData,
-        weak_ptr_factory_.GetWeakPtr()));
+    client_->GetPaymentsAutofillClient()->LoadRiskData(
+        base::BindOnce(&LocalCardMigrationManager::OnDidGetMigrationRiskData,
+                       weak_ptr_factory_.GetWeakPtr()));
     autofill_metrics::LogLocalCardMigrationDecisionMetric(
         autofill_metrics::LocalCardMigrationDecisionMetric::OFFERED);
   } else {
@@ -280,7 +297,7 @@ void LocalCardMigrationManager::OnDidGetUploadDetails(
 }
 
 void LocalCardMigrationManager::OnDidMigrateLocalCards(
-    AutofillClient::PaymentsRpcResult result,
+    PaymentsRpcResult result,
     std::unique_ptr<std::unordered_map<std::string, std::string>> save_result,
     const std::string& display_text) {
   if (observer_for_testing_)
@@ -289,7 +306,7 @@ void LocalCardMigrationManager::OnDidMigrateLocalCards(
   if (!save_result)
     return;
 
-  if (result == AutofillClient::PaymentsRpcResult::kSuccess) {
+  if (result == PaymentsRpcResult::kSuccess) {
     std::vector<CreditCard> migrated_cards;
     // Traverse the migratable credit cards to update each migrated card status.
     for (MigratableCreditCard& card : migratable_credit_cards_) {
@@ -322,18 +339,13 @@ void LocalCardMigrationManager::OnDidMigrateLocalCards(
       }
     }
 
-    // If at least one card was migrated, notifies the |personal_data_manager_|.
-    // PDM uses this information to update the avatar button UI.
-    if (!migrated_cards.empty())
-      personal_data_manager_->OnCreditCardSaved(/*is_local_card=*/false);
-
     // Remove cards that were successfully migrated from local storage.
-    personal_data_manager_->DeleteLocalCreditCards(migrated_cards);
+    payments_data_manager().DeleteLocalCreditCards(migrated_cards);
   }
 
-  client_->ShowLocalCardMigrationResults(
-      result != AutofillClient::PaymentsRpcResult::kSuccess,
-      base::UTF8ToUTF16(display_text), migratable_credit_cards_,
+  client_->GetPaymentsAutofillClient()->ShowLocalCardMigrationResults(
+      result != PaymentsRpcResult::kSuccess, base::UTF8ToUTF16(display_text),
+      migratable_credit_cards_,
       base::BindRepeating(
           &LocalCardMigrationManager::OnUserDeletedLocalCardViaMigrationDialog,
           weak_ptr_factory_.GetWeakPtr()));
@@ -350,19 +362,23 @@ void LocalCardMigrationManager::OnDidGetMigrationRiskData(
     SendMigrateLocalCardsRequest();
 }
 
-// Send the migration request. Will call payments_client to create a new
-// PaymentsRequest. Also create a new callback function OnDidMigrateLocalCards.
+// Send the migration request. Will call
+// `client_->GetPaymentsAutofillClient()->GetPaymentsNetworkInterface()` to
+// create a new PaymentsRequest. Also create a new callback function
+// OnDidMigrateLocalCards.
 void LocalCardMigrationManager::SendMigrateLocalCardsRequest() {
   if (observer_for_testing_)
     observer_for_testing_->OnSentMigrateCardsRequest();
 
   migration_request_.app_locale = app_locale_;
   migration_request_.billing_customer_number =
-      payments::GetBillingCustomerId(personal_data_manager_);
-  payments_client_->MigrateCards(
-      migration_request_, migratable_credit_cards_,
-      base::BindOnce(&LocalCardMigrationManager::OnDidMigrateLocalCards,
-                     weak_ptr_factory_.GetWeakPtr()));
+      payments::GetBillingCustomerId(&payments_data_manager());
+  client_->GetPaymentsAutofillClient()
+      ->GetPaymentsNetworkInterface()
+      ->MigrateCards(
+          migration_request_, migratable_credit_cards_,
+          base::BindOnce(&LocalCardMigrationManager::OnDidMigrateLocalCards,
+                         weak_ptr_factory_.GetWeakPtr()));
   user_accepted_main_migration_dialog_ = false;
 }
 
@@ -384,9 +400,9 @@ void LocalCardMigrationManager::ShowMainMigrationDialog() {
   autofill_metrics::LogLocalCardMigrationPromptMetric(
       local_card_migration_origin_, autofill_metrics::MAIN_DIALOG_SHOWN);
   // Pops up a larger, modal dialog showing the local cards to be uploaded.
-  client_->ConfirmMigrateLocalCardToCloud(
+  client_->GetPaymentsAutofillClient()->ConfirmMigrateLocalCardToCloud(
       legal_message_lines_,
-      personal_data_manager_->GetAccountInfoForPaymentsServer().email,
+      payments_data_manager().GetAccountInfoForPaymentsServer().email,
       migratable_credit_cards_,
       base::BindOnce(
           &LocalCardMigrationManager::OnUserAcceptedMainMigrationDialog,
@@ -402,7 +418,7 @@ int LocalCardMigrationManager::GetDetectedValues() const {
   for (MigratableCreditCard migratable_credit_card : migratable_credit_cards_) {
     all_cards_have_cardholder_name &=
         !migratable_credit_card.credit_card()
-             .GetInfo(AutofillType(CREDIT_CARD_NAME_FULL), app_locale_)
+             .GetInfo(CREDIT_CARD_NAME_FULL, app_locale_)
              .empty();
   }
   if (all_cards_have_cardholder_name)
@@ -410,7 +426,7 @@ int LocalCardMigrationManager::GetDetectedValues() const {
 
   // Local card migration should ONLY be offered when the user already has a
   // Google Payments account.
-  DCHECK_NE(0, payments::GetBillingCustomerId(personal_data_manager_));
+  DCHECK_NE(0, payments::GetBillingCustomerId(&payments_data_manager()));
   detected_values |=
       CreditCardSaveManager::DetectedValue::HAS_GOOGLE_PAYMENTS_ACCOUNT;
 
@@ -419,19 +435,19 @@ int LocalCardMigrationManager::GetDetectedValues() const {
 
 void LocalCardMigrationManager::GetMigratableCreditCards() {
   std::vector<CreditCard*> local_credit_cards =
-      personal_data_manager_->GetLocalCreditCards();
+      payments_data_manager().GetLocalCreditCards();
 
   // Empty previous state.
   migratable_credit_cards_.clear();
 
   // Initialize the local credit card list and queue for showing and uploading.
-  for (CreditCard* credit_card : local_credit_cards) {
+  for (const CreditCard* credit_card : local_credit_cards) {
     // If the card is valid (has a valid card number, expiration date, and is
     // not expired) and is not a server card, add it to the list of migratable
     // cards.
     if (credit_card->IsValid() &&
-        !personal_data_manager_->IsServerCard(credit_card)) {
-      migratable_credit_cards_.push_back(MigratableCreditCard(*credit_card));
+        !payments_data_manager().IsServerCard(credit_card)) {
+      migratable_credit_cards_.emplace_back(*credit_card);
     }
   }
 }
@@ -448,8 +464,19 @@ void LocalCardMigrationManager::FilterOutUnsupportedLocalCards(
           return !payments::IsCreditCardNumberSupported(
               card.credit_card().number(), supported_card_bin_ranges);
         };
-    base::EraseIf(migratable_credit_cards_, card_is_unsupported);
+    std::erase_if(migratable_credit_cards_, card_is_unsupported);
   }
+}
+
+PaymentsDataManager& LocalCardMigrationManager::payments_data_manager() {
+  return const_cast<PaymentsDataManager&>(
+      const_cast<const LocalCardMigrationManager*>(this)
+          ->payments_data_manager());
+}
+
+const PaymentsDataManager& LocalCardMigrationManager::payments_data_manager()
+    const {
+  return client_->GetPersonalDataManager()->payments_data_manager();
 }
 
 }  // namespace autofill

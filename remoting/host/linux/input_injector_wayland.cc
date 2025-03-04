@@ -7,10 +7,13 @@
 #include <gtk/gtk.h>
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
+#include <optional>
 #include <set>
 #include <utility>
 
+#include "base/containers/contains.h"
 #include "base/containers/queue.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -31,10 +34,9 @@
 #include "remoting/host/linux/unicode_to_keysym.h"
 #include "remoting/host/linux/wayland_manager.h"
 #include "remoting/proto/internal.pb.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/webrtc/modules/desktop_capture/desktop_geometry.h"
-#include "third_party/webrtc/modules/desktop_capture/linux/wayland/scoped_glib.h"
-#include "third_party/webrtc/modules/desktop_capture/linux/wayland/xdg_desktop_portal_utils.h"
+#include "third_party/webrtc/modules/portal/scoped_glib.h"
+#include "third_party/webrtc/modules/portal/xdg_desktop_portal_utils.h"
 #include "ui/events/keycodes/dom/dom_code.h"
 #include "ui/events/keycodes/dom/keycode_converter.h"
 
@@ -239,7 +241,7 @@ void InputInjectorWayland::Core::InjectClipboardEvent(
     return;
   }
   if (!clipboard_initialized_) {
-    pending_clipboard_event_ = absl::make_optional(event);
+    pending_clipboard_event_ = std::make_optional(event);
     return;
   }
   clipboard_->InjectClipboardEvent(event);
@@ -322,12 +324,12 @@ void InputInjectorWayland::Core::InjectKeyEventHelper(const KeyEvent& event) {
 
   // Ignore events which can't be mapped.
   if (keycode == ui::KeycodeConverter::InvalidNativeKeycode()) {
-    LOG(ERROR) << __func__ << " : Invalid key code: " << keycode;
+    LOG(ERROR) << __func__ << " : Invalid key code";
     return;
   }
 
   if (event.pressed()) {
-    if (pressed_keys_.find(keycode) != pressed_keys_.end()) {
+    if (base::Contains(pressed_keys_, keycode)) {
       // Ignore repeats for modifier keys.
       if (IsDomModifierKey(static_cast<ui::DomCode>(event.usb_keycode()))) {
         return;
@@ -381,7 +383,7 @@ void InputInjectorWayland::Core::InjectMouseEventHelper(
     webrtc::DesktopVector new_mouse_position(event.x(), event.y());
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     // Interim hack to handle display rotation on Chrome OS.
-    // TODO(crbug.com/439287): Remove this when Chrome OS has completely
+    // TODO(crbug.com/40396937): Remove this when Chrome OS has completely
     // migrated to Ozone.
     gfx::PointF screen_location = point_transformer_.ToScreenCoordinates(
         gfx::PointF(event.x(), event.y()));

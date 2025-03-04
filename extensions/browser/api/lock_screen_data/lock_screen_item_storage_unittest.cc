@@ -23,12 +23,18 @@
 #include "base/time/time.h"
 #include "base/values.h"
 #include "chromeos/ash/components/login/login_state/login_state.h"
+#include "components/account_id/account_id.h"
 #include "components/prefs/scoped_user_pref_update.h"
 #include "components/prefs/testing_pref_service.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "components/user_manager/fake_user_manager.h"
+#include "components/user_manager/scoped_user_manager.h"
+#include "components/user_manager/user.h"
+#include "components/user_manager/user_manager.h"
 #include "components/user_prefs/user_prefs.h"
 #include "components/value_store/test_value_store_factory.h"
 #include "content/public/test/test_browser_context.h"
+#include "extensions/browser/api/lock_screen_data/crypto.h"
 #include "extensions/browser/api/lock_screen_data/data_item.h"
 #include "extensions/browser/api/lock_screen_data/lock_screen_value_store_migrator.h"
 #include "extensions/browser/api/lock_screen_data/operation_result.h"
@@ -40,6 +46,7 @@
 #include "extensions/browser/test_extensions_browser_client.h"
 #include "extensions/common/api/lock_screen_data.h"
 #include "extensions/common/extension_builder.h"
+#include "extensions/common/extension_id.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace extensions {
@@ -48,7 +55,7 @@ namespace lock_screen_data {
 namespace {
 
 constexpr char kTestUserIdHash[] = "user_id_hash";
-constexpr char kTestSymmetricKey[] = "fake_symmetric_key";
+constexpr char kTestSymmetricKey[] = "symmetric keys must be 32 bytes!";
 
 constexpr char kTestExtensionId[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 constexpr char kSecondTestExtensionId[] = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -90,7 +97,7 @@ class TestEventRouter : public extensions::EventRouter {
 
   ~TestEventRouter() override = default;
 
-  bool ExtensionHasEventListener(const std::string& extension_id,
+  bool ExtensionHasEventListener(const ExtensionId& extension_id,
                                  const std::string& event_name) const override {
     return event_name ==
            extensions::api::lock_screen_data::OnDataItemsAvailable::kEventName;
@@ -99,7 +106,7 @@ class TestEventRouter : public extensions::EventRouter {
   void BroadcastEvent(std::unique_ptr<extensions::Event> event) override {}
 
   void DispatchEventToExtension(
-      const std::string& extension_id,
+      const ExtensionId& extension_id,
       std::unique_ptr<extensions::Event> event) override {
     if (event->event_name !=
         extensions::api::lock_screen_data::OnDataItemsAvailable::kEventName) {
@@ -108,9 +115,9 @@ class TestEventRouter : public extensions::EventRouter {
     ASSERT_TRUE(!event->event_args.empty());
     const base::Value& arg_value = event->event_args[0];
 
-    std::unique_ptr<extensions::api::lock_screen_data::DataItemsAvailableEvent>
+    std::optional<extensions::api::lock_screen_data::DataItemsAvailableEvent>
         event_args = extensions::api::lock_screen_data::
-            DataItemsAvailableEvent::FromValueDeprecated(arg_value);
+            DataItemsAvailableEvent::FromValue(arg_value);
     ASSERT_TRUE(event_args);
     was_locked_values_.push_back(event_args->was_locked);
   }
@@ -133,7 +140,7 @@ std::unique_ptr<KeyedService> TestEventRouterFactoryFunction(
 // Keeps track of all fake data items registered during a test.
 class ItemRegistry {
  public:
-  explicit ItemRegistry(const std::string& extension_id)
+  explicit ItemRegistry(const ExtensionId& extension_id)
       : extension_id_(extension_id) {}
 
   ItemRegistry(const ItemRegistry&) = delete;
@@ -201,7 +208,7 @@ class ItemRegistry {
     return result;
   }
 
-  const std::string extension_id_;
+  const ExtensionId extension_id_;
   // Whether data item registration should succeed.
   bool allow_new_ = true;
   // Whether data item retrievals should fail.
@@ -343,7 +350,7 @@ class OperationQueue {
 
  private:
   std::string id_;
-  raw_ptr<ItemRegistry, ExperimentalAsh> item_registry_;
+  raw_ptr<ItemRegistry> item_registry_;
   base::queue<PendingOperation> pending_operations_;
   std::vector<char> content_;
   bool deleted_ = false;
@@ -357,7 +364,7 @@ class TestDataItem : public DataItem {
   // |operations| - Operation queue used by this data item - not owned by this,
   // and expected to outlive this object.
   TestDataItem(const std::string& id,
-               const std::string& extension_id,
+               const ExtensionId& extension_id,
                const std::string& crypto_key,
                OperationQueue* operations)
       : DataItem(id, extension_id, nullptr, nullptr, nullptr, crypto_key),
@@ -385,7 +392,7 @@ class TestDataItem : public DataItem {
   }
 
  private:
-  raw_ptr<OperationQueue, ExperimentalAsh> operations_;
+  raw_ptr<OperationQueue> operations_;
 };
 
 class TestLockScreenValueStoreMigrator : public LockScreenValueStoreMigrator {
@@ -471,10 +478,21 @@ class LockScreenItemStorageTest : public ExtensionsTest {
     user_prefs::UserPrefs::Set(browser_context(), &testing_pref_service_);
     extensions_browser_client()->set_lock_screen_context(&lock_screen_context_);
 
+    // TODO(b/278643115) Remove LoginState dependency.
     ash::LoginState::Initialize();
-    ash::LoginState::Get()->SetLoggedInStateAndPrimaryUser(
+
+    const AccountId account_id = AccountId::FromUserEmail("test@test");
+    auto fake_user_manager = std::make_unique<user_manager::FakeUserManager>();
+    fake_user_manager->AddUser(account_id);
+    fake_user_manager->UserLoggedIn(account_id, kTestUserIdHash,
+                                    /*browser_restart=*/false,
+                                    /*is_child=*/false);
+    scoped_user_manager_ = std::make_unique<user_manager::ScopedUserManager>(
+        std::move(fake_user_manager));
+
+    ash::LoginState::Get()->SetLoggedInState(
         ash::LoginState::LOGGED_IN_ACTIVE,
-        ash::LoginState::LOGGED_IN_USER_REGULAR, kTestUserIdHash);
+        ash::LoginState::LOGGED_IN_USER_REGULAR);
 
     extension_ = CreateTestExtension(kTestExtensionId);
     item_registry_ = std::make_unique<ItemRegistry>(extension()->id());
@@ -510,6 +528,9 @@ class LockScreenItemStorageTest : public ExtensionsTest {
     item_registry_.reset();
     LockScreenItemStorage::SetItemProvidersForTesting(nullptr, nullptr,
                                                       nullptr);
+
+    scoped_user_manager_.reset();
+
     ash::LoginState::Shutdown();
     ExtensionsTest::TearDown();
   }
@@ -728,7 +749,7 @@ class LockScreenItemStorageTest : public ExtensionsTest {
   // Callback for creating test data items - this is the callback passed to
   // LockScreenItemStorage via SetItemFactoryForTesting.
   std::unique_ptr<DataItem> CreateItem(const std::string& id,
-                                       const std::string& extension_id,
+                                       const ExtensionId& extension_id,
                                        const std::string& crypto_key) {
     EXPECT_EQ(extension()->id(), extension_id);
     EXPECT_EQ(kTestSymmetricKey, crypto_key);
@@ -740,7 +761,7 @@ class LockScreenItemStorageTest : public ExtensionsTest {
                                           operation_queue);
   }
 
-  void GetRegisteredItems(const std::string& extension_id,
+  void GetRegisteredItems(const ExtensionId& extension_id,
                           DataItem::RegisteredValuesCallback callback) {
     if (extension()->id() != extension_id) {
       std::move(callback).Run(OperationResult::kUnknownExtension,
@@ -750,12 +771,14 @@ class LockScreenItemStorageTest : public ExtensionsTest {
     item_registry_->HandleGetRequest(std::move(callback));
   }
 
-  void RemoveAllItems(const std::string& extension_id,
+  void RemoveAllItems(const ExtensionId& extension_id,
                       base::OnceClosure callback) {
     ASSERT_EQ(extension()->id(), extension_id);
     item_registry_->RemoveAll();
     std::move(callback).Run();
   }
+
+  std::unique_ptr<user_manager::ScopedUserManager> scoped_user_manager_;
 
   std::unique_ptr<LockScreenItemStorage> lock_screen_item_storage_;
 
@@ -781,7 +804,7 @@ class LockScreenItemStorageTest : public ExtensionsTest {
   // Whether the test is expected to create deprecated value store version.
   bool can_create_deprecated_value_store_ = false;
 
-  raw_ptr<TestLockScreenValueStoreMigrator, ExperimentalAsh>
+  raw_ptr<TestLockScreenValueStoreMigrator, DanglingUntriaged>
       value_store_migrator_ = nullptr;
 };
 

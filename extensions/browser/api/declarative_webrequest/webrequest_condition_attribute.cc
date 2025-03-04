@@ -237,9 +237,10 @@ bool WebRequestConditionAttributeContentType::IsFulfilled(
   if (!(request_data.stage & GetStages()))
     return false;
 
-  std::string content_type;
-  request_data.original_response_headers->GetNormalizedHeader(
-      net::HttpRequestHeaders::kContentType, &content_type);
+  std::string content_type =
+      request_data.original_response_headers
+          ->GetNormalizedHeader(net::HttpRequestHeaders::kContentType)
+          .value_or(std::string());
   std::string mime_type;
   std::string charset;
   bool had_charset = false;
@@ -423,12 +424,11 @@ bool HeaderMatcher::StringMatchTest::Matches(
                                     CaseInsensitiveCompareASCII<char>()) !=
                str.end();
       } else {
-        return str.find(data_) != std::string::npos;
+        return base::Contains(str, data_);
       }
   }
   // We never get past the "switch", but the compiler worries about no return.
   NOTREACHED();
-  return false;
 }
 
 HeaderMatcher::StringMatchTest::StringMatchTest(const std::string& data,
@@ -480,7 +480,6 @@ HeaderMatcher::HeaderMatchTest::Create(const base::Value::Dict& tests) {
       match_type = StringMatchTest::kEquals;
     } else {
       NOTREACHED();  // JSON schema type checking should prevent this.
-      return nullptr;
     }
     const base::Value* content = &entry.second;
 
@@ -502,7 +501,6 @@ HeaderMatcher::HeaderMatchTest::Create(const base::Value::Dict& tests) {
       }
       default: {
         NOTREACHED();  // JSON schema type checking should prevent this.
-        return nullptr;
       }
     }
   }
@@ -733,7 +731,6 @@ bool ParseListOfStages(const base::Value& value, int* out_stages) {
       stages |= ON_AUTH_REQUIRED;
     } else {
       NOTREACHED();  // JSON schema checks prevent getting here.
-      return false;
     }
   }
 

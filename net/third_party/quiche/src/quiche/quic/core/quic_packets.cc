@@ -4,6 +4,10 @@
 
 #include "quiche/quic/core/quic_packets.h"
 
+#include <algorithm>
+#include <memory>
+#include <ostream>
+#include <string>
 #include <utility>
 
 #include "absl/strings/escaping.h"
@@ -13,7 +17,6 @@
 #include "quiche/quic/core/quic_types.h"
 #include "quiche/quic/core/quic_utils.h"
 #include "quiche/quic/core/quic_versions.h"
-#include "quiche/quic/platform/api/quic_flag_utils.h"
 #include "quiche/quic/platform/api/quic_flags.h"
 
 namespace quic {
@@ -106,38 +109,29 @@ size_t GetPacketHeaderSize(
     quiche::QuicheVariableLengthIntegerLength retry_token_length_length,
     QuicByteCount retry_token_length,
     quiche::QuicheVariableLengthIntegerLength length_length) {
-  if (VersionHasIetfInvariantHeader(version)) {
-    if (include_version) {
-      // Long header.
-      size_t size = kPacketHeaderTypeSize + kConnectionIdLengthSize +
-                    destination_connection_id_length +
-                    source_connection_id_length + packet_number_length +
-                    kQuicVersionSize;
-      if (include_diversification_nonce) {
-        size += kDiversificationNonceSize;
-      }
-      if (VersionHasLengthPrefixedConnectionIds(version)) {
-        size += kConnectionIdLengthSize;
-      }
-      QUICHE_DCHECK(
-          QuicVersionHasLongHeaderLengths(version) ||
-          retry_token_length_length + retry_token_length + length_length == 0);
-      if (QuicVersionHasLongHeaderLengths(version)) {
-        size += retry_token_length_length + retry_token_length + length_length;
-      }
-      return size;
+  if (include_version) {
+    // Long header.
+    size_t size = kPacketHeaderTypeSize + kConnectionIdLengthSize +
+                  destination_connection_id_length +
+                  source_connection_id_length + packet_number_length +
+                  kQuicVersionSize;
+    if (include_diversification_nonce) {
+      size += kDiversificationNonceSize;
     }
-    // Short header.
-    return kPacketHeaderTypeSize + destination_connection_id_length +
-           packet_number_length;
+    if (VersionHasLengthPrefixedConnectionIds(version)) {
+      size += kConnectionIdLengthSize;
+    }
+    QUICHE_DCHECK(
+        QuicVersionHasLongHeaderLengths(version) ||
+        retry_token_length_length + retry_token_length + length_length == 0);
+    if (QuicVersionHasLongHeaderLengths(version)) {
+      size += retry_token_length_length + retry_token_length + length_length;
+    }
+    return size;
   }
-  // Google QUIC versions <= 43 can only carry one connection ID.
-  QUICHE_DCHECK(destination_connection_id_length == 0 ||
-                source_connection_id_length == 0);
-  return kPublicFlagsSize + destination_connection_id_length +
-         source_connection_id_length +
-         (include_version ? kQuicVersionSize : 0) + packet_number_length +
-         (include_diversification_nonce ? kDiversificationNonceSize : 0);
+  // Short header.
+  return kPacketHeaderTypeSize + destination_connection_id_length +
+         packet_number_length;
 }
 
 size_t GetStartOfEncryptedData(QuicTransportVersion version,
@@ -320,7 +314,7 @@ QuicEncryptedPacket::QuicEncryptedPacket(absl::string_view data)
 
 std::unique_ptr<QuicEncryptedPacket> QuicEncryptedPacket::Clone() const {
   char* buffer = new char[this->length()];
-  memcpy(buffer, this->data(), this->length());
+  std::copy(this->data(), this->data() + this->length(), buffer);
   return std::make_unique<QuicEncryptedPacket>(buffer, this->length(), true);
 }
 
@@ -361,13 +355,24 @@ QuicReceivedPacket::QuicReceivedPacket(
     const char* buffer, size_t length, QuicTime receipt_time, bool owns_buffer,
     int ttl, bool ttl_valid, char* packet_headers, size_t headers_length,
     bool owns_header_buffer, QuicEcnCodepoint ecn_codepoint)
+    : quic::QuicReceivedPacket(buffer, length, receipt_time, owns_buffer, ttl,
+                               ttl_valid, packet_headers, headers_length,
+                               owns_header_buffer, ecn_codepoint,
+                               /*ipv6_flow_label=*/0) {}
+
+QuicReceivedPacket::QuicReceivedPacket(
+    const char* buffer, size_t length, QuicTime receipt_time, bool owns_buffer,
+    int ttl, bool ttl_valid, char* packet_headers, size_t headers_length,
+    bool owns_header_buffer, QuicEcnCodepoint ecn_codepoint,
+    uint32_t ipv6_flow_label)
     : QuicEncryptedPacket(buffer, length, owns_buffer),
       receipt_time_(receipt_time),
       ttl_(ttl_valid ? ttl : -1),
       packet_headers_(packet_headers),
       headers_length_(headers_length),
       owns_header_buffer_(owns_header_buffer),
-      ecn_codepoint_(ecn_codepoint) {}
+      ecn_codepoint_(ecn_codepoint),
+      ipv6_flow_label_(ipv6_flow_label) {}
 
 QuicReceivedPacket::~QuicReceivedPacket() {
   if (owns_header_buffer_) {
@@ -383,11 +388,12 @@ std::unique_ptr<QuicReceivedPacket> QuicReceivedPacket::Clone() const {
     memcpy(headers_buffer, this->packet_headers(), this->headers_length());
     return std::make_unique<QuicReceivedPacket>(
         buffer, this->length(), receipt_time(), true, ttl(), ttl() >= 0,
-        headers_buffer, this->headers_length(), true);
+        headers_buffer, this->headers_length(), true, this->ecn_codepoint());
   }
 
   return std::make_unique<QuicReceivedPacket>(
-      buffer, this->length(), receipt_time(), true, ttl(), ttl() >= 0);
+      buffer, this->length(), receipt_time(), true, ttl(), ttl() >= 0, nullptr,
+      0, false, this->ecn_codepoint());
 }
 
 std::ostream& operator<<(std::ostream& os, const QuicReceivedPacket& s) {

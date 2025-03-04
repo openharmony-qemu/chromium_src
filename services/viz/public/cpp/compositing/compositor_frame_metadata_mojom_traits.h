@@ -6,18 +6,22 @@
 #define SERVICES_VIZ_PUBLIC_CPP_COMPOSITING_COMPOSITOR_FRAME_METADATA_MOJOM_TRAITS_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "components/viz/common/quads/compositor_frame_metadata.h"
+#include "components/viz/common/quads/offset_tag.h"
 #include "components/viz/common/surfaces/region_capture_bounds.h"
 #include "services/viz/public/cpp/compositing/begin_frame_args_mojom_traits.h"
 #include "services/viz/public/cpp/compositing/compositor_frame_transition_directive_mojom_traits.h"
 #include "services/viz/public/cpp/compositing/frame_deadline_mojom_traits.h"
+#include "services/viz/public/cpp/compositing/frame_interval_inputs_mojom_traits.h"
+#include "services/viz/public/cpp/compositing/offset_tag_mojom_traits.h"
 #include "services/viz/public/cpp/compositing/region_capture_bounds_mojom_traits.h"
 #include "services/viz/public/cpp/compositing/surface_range_mojom_traits.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_metadata.mojom-shared.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/mojom/delegated_ink_metadata_mojom_traits.h"
 #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
 #include "ui/gfx/mojom/overlay_transform_mojom_traits.h"
@@ -52,19 +56,9 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return metadata.content_color_usage;
   }
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_SLIDE)
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
   static bool is_scrolling(const viz::CompositorFrameMetadata& metadata) {
     return metadata.is_scrolling;
-  }
-#endif
-
-#if defined(REPORT_SYS_EVENT)
-  static int64_t dropped_frame_count(const viz::CompositorFrameMetadata& metadata) {
-    return metadata.dropped_frame_count;
-  }
-
-  static int64_t dropped_frame_duration(const viz::CompositorFrameMetadata& metadata) {
-    return metadata.dropped_frame_duration;
   }
 #endif
 
@@ -82,14 +76,9 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return metadata.has_shared_element_resources;
   }
 
-  static bool is_resourceless_software_draw_with_scroll_or_animation(
+  static bool is_handling_interaction(
       const viz::CompositorFrameMetadata& metadata) {
-    return metadata.is_resourceless_software_draw_with_scroll_or_animation;
-  }
-
-  static bool is_actively_scrolling(
-      const viz::CompositorFrameMetadata& metadata) {
-    return metadata.is_actively_scrolling;
+    return metadata.is_handling_interaction;
   }
 
   static SkColor4f root_background_color(
@@ -137,13 +126,6 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
     return metadata.min_page_scale_factor;
   }
 
-  static absl::optional<base::TimeDelta> preferred_frame_interval(
-      const viz::CompositorFrameMetadata& metadata) {
-    DCHECK(!metadata.preferred_frame_interval ||
-           metadata.preferred_frame_interval.value() >= base::TimeDelta());
-    return metadata.preferred_frame_interval;
-  }
-
   static bool top_controls_visible_height_set(
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.top_controls_visible_height.has_value();
@@ -172,6 +154,31 @@ struct StructTraits<viz::mojom::CompositorFrameMetadataDataView,
   static const viz::RegionCaptureBounds& capture_bounds(
       const viz::CompositorFrameMetadata& metadata) {
     return metadata.capture_bounds;
+  }
+
+  static const std::vector<viz::OffsetTagDefinition>& offset_tag_definitions(
+      const viz::CompositorFrameMetadata& metadata) {
+    return metadata.offset_tag_definitions;
+  }
+
+  static const std::vector<viz::OffsetTagValue>& offset_tag_values(
+      const viz::CompositorFrameMetadata& metadata) {
+    return metadata.offset_tag_values;
+  }
+
+  static const std::optional<
+      blink::SameDocNavigationScreenshotDestinationToken>&
+  screenshot_destination(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.screenshot_destination;
+  }
+
+  static bool is_software(const viz::CompositorFrameMetadata& metadata) {
+    return metadata.is_software;
+  }
+
+  static const viz::FrameIntervalInputs& frame_interval_inputs(
+      const viz::CompositorFrameMetadata& metadata) {
+    return metadata.frame_interval_inputs;
   }
 
   static bool Read(viz::mojom::CompositorFrameMetadataDataView data,

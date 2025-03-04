@@ -9,13 +9,17 @@
 
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
-#include "ui/events/gesture_detection/motion_event.h"
+#include "ui/events/velocity_tracker/motion_event.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/touch_selection/touch_handle_orientation.h"
 #include "ui/touch_selection/touch_selection_draggable.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace ui {
 
@@ -32,7 +36,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
   // Update the handle visuals to |orientation|.
   // |mirror_vertical| and |mirror_horizontal| are used to invert the drawables
   // if required for adaptive handle orientation.
-  virtual void SetOrientation(ui::TouchHandleOrientation orientation,
+  virtual void SetOrientation(TouchHandleOrientation orientation,
                               bool mirror_vertical,
                               bool mirror_horizontal) = 0;
 
@@ -51,7 +55,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
   // Returns the transparent horizontal padding ratio of the handle drawable.
   virtual float GetDrawableHorizontalPaddingRatio() const = 0;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   // Sets the Selection left-handle-start or right-handle-end's edge.
   virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;
 #endif
@@ -136,17 +140,15 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandle : public TouchSelectionDraggable {
   TouchHandleOrientation orientation() const { return orientation_; }
   float alpha() const { return alpha_; }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom);
   const gfx::PointF& focus_top() const { return focus_top_; }
   bool GetEnabled() const { return enabled_; }
-#endif
-
-#ifdef OHOS_CLIPBOARD
   void ResetPositionAfterDragEnd();
+  bool GetVisible() const { return is_visible_; }
 #endif
 
-#ifdef OHOS_EX_TOPCONTROLS
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   const gfx::RectF& viewport() const { return viewport_rect_; }
 #endif
 

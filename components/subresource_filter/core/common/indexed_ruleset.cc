@@ -5,15 +5,18 @@
 #include "components/subresource_filter/core/common/indexed_ruleset.h"
 
 #include "base/check.h"
-#include "base/metrics/histogram_macros.h"
+#include "base/hash/hash.h"
+#include "base/metrics/histogram_functions.h"
+#include "base/not_fatal_until.h"
+#include "base/strings/strcat.h"
 #include "base/trace_event/trace_event.h"
 #include "components/subresource_filter/core/common/first_party_origin.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 #include "base/logging.h"
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 namespace subresource_filter {
 
@@ -25,23 +28,21 @@ using EmbedderConditionsMatcher =
     url_pattern_index::UrlPatternIndexMatcher::EmbedderConditionsMatcher;
 
 // A helper function to get the checksum on a data buffer.
-int LocalGetChecksum(const uint8_t* data, size_t size) {
-  uint32_t hash = base::PersistentHash(data, size);
+int LocalGetChecksum(base::span<const uint8_t> data) {
+  uint32_t hash = base::PersistentHash(data);
 
-  // Strip off the sign bit since this needs to bepersisted in preferences
+  // Strip off the sign bit since this needs to be persisted in preferences
   // which don't support unsigned ints.
   return static_cast<int>(hash & 0x7fffffff);
 }
 
-VerifyStatus GetVerifyStatus(const uint8_t* buffer,
-                             size_t size,
+VerifyStatus GetVerifyStatus(base::span<const uint8_t> buffer,
                              int expected_checksum) {
   // TODO(ericrobinson): Remove the verifier once we've updated the ruleset at
   // least once.  The verifier detects a subset of the errors detected by the
   // checksum, and is unneeded once expected_checksum is consistently nonzero.
-  flatbuffers::Verifier verifier(buffer, size);
-  if (expected_checksum != 0 &&
-      expected_checksum != LocalGetChecksum(buffer, size)) {
+  flatbuffers::Verifier verifier(buffer.data(), buffer.size());
+  if (expected_checksum != 0 && expected_checksum != LocalGetChecksum(buffer)) {
     return flat::VerifyIndexedRulesetBuffer(verifier)
                ? VerifyStatus::kChecksumFailVerifierPass
                : VerifyStatus::kChecksumFailVerifierFail;
@@ -58,35 +59,25 @@ VerifyStatus GetVerifyStatus(const uint8_t* buffer,
 
 // RulesetIndexer --------------------------------------------------------------
 
-#ifdef OHOS_ARKWEB_ADBLOCK
 const int RulesetIndexer::kIndexedFormatVersion = 36;
-#else
-const int RulesetIndexer::kIndexedFormatVersion = 36;
-#endif
 
 // This static assert is meant to catch cases where
 // url_pattern_index::kUrlPatternIndexFormatVersion is incremented without
 // updating RulesetIndexer::kIndexedFormatVersion.
-#ifdef OHOS_ARKWEB_ADBLOCK
 static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
               "kUrlPatternIndexFormatVersion has changed, make sure you've "
               "also updated RulesetIndexer::kIndexedFormatVersion above.");
-#else
-static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
-              "kUrlPatternIndexFormatVersion has changed, make sure you've "
-              "also updated RulesetIndexer::kIndexedFormatVersion above.");
-#endif
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 // This static assert is meant to catch cases where
 // url_pattern_index:：kCssPatternIndexFormatVersion is incremented without
 // updating RulesetIndexer::kIndexedFormatVersion.
 static_assert(url_pattern_index::kCssPatternIndexFormatVersion == 1,
               "kCssPatternIndexFormatVersion has changed, make sure you've "
               "also updated RulesetIndexer::kIndexedFormatVersion above.");
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 RulesetIndexer::RulesetIndexer()
     : blocklist_(&builder_),
       allowlist_(&builder_),
@@ -96,7 +87,7 @@ RulesetIndexer::RulesetIndexer()
 #else
 RulesetIndexer::RulesetIndexer()
     : blocklist_(&builder_), allowlist_(&builder_), deactivation_(&builder_) {}
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 RulesetIndexer::~RulesetIndexer() = default;
 
@@ -112,7 +103,7 @@ bool RulesetIndexer::AddUrlRule(const proto::UrlRule& rule) {
     blocklist_.IndexUrlRule(offset);
   } else {
     const auto* flat_rule = flatbuffers::GetTemporaryPointer(builder_, offset);
-    DCHECK(flat_rule);
+    CHECK(flat_rule, base::NotFatalUntil::M129);
     if (flat_rule->element_types())
       allowlist_.IndexUrlRule(offset);
     if (flat_rule->activation_types())
@@ -122,8 +113,7 @@ bool RulesetIndexer::AddUrlRule(const proto::UrlRule& rule) {
   return true;
 }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
-
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 bool RulesetIndexer::AddCssRule(const proto::CssRule& rule) {
   auto offset =
       url_pattern_index::SerializeCssRule(rule, &builder_, &domain_map_);
@@ -143,14 +133,14 @@ bool RulesetIndexer::AddCssRule(const proto::CssRule& rule) {
 
   return true;
 }
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 void RulesetIndexer::Finish() {
   auto blocklist_offset = blocklist_.Finish();
   auto allowlist_offset = allowlist_.Finish();
   auto deactivation_offset = deactivation_.Finish();
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   auto css_blocklist_offset = css_blocklist_.Finish();
   auto css_allowlist_offset = css_allowlist_.Finish();
   LOG(INFO) << "[AdBlock] url whitelist fallback_rule size:"
@@ -187,27 +177,27 @@ void RulesetIndexer::Finish() {
 #else
   auto url_rules_index_offset = flat::CreateIndexedRuleset(
       builder_, blocklist_offset, allowlist_offset, deactivation_offset);
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
   builder_.Finish(url_rules_index_offset);
 }
 
 int RulesetIndexer::GetChecksum() const {
-  return LocalGetChecksum(data(), size());
+  return LocalGetChecksum(data());
 }
 
 // IndexedRulesetMatcher -------------------------------------------------------
 
 // static
-bool IndexedRulesetMatcher::Verify(const uint8_t* buffer,
-                                   size_t size,
-                                   int expected_checksum) {
+bool IndexedRulesetMatcher::Verify(base::span<const uint8_t> buffer,
+                                   int expected_checksum,
+                                   std::string_view uma_tag) {
   TRACE_EVENT_BEGIN1(TRACE_DISABLED_BY_DEFAULT("loading"),
-                     "IndexedRulesetMatcher::Verify", "size", size);
-  SCOPED_UMA_HISTOGRAM_TIMER(
-      "SubresourceFilter.IndexRuleset.Verify2.WallDuration");
-  VerifyStatus status = GetVerifyStatus(buffer, size, expected_checksum);
-  UMA_HISTOGRAM_ENUMERATION("SubresourceFilter.IndexRuleset.Verify.Status",
-                            status);
+                     "IndexedRulesetMatcher::Verify", "size", buffer.size());
+  base::ScopedUmaHistogramTimer scoped_timer(
+      base::StrCat({uma_tag, ".IndexRuleset.Verify2.WallDuration"}));
+  VerifyStatus status = GetVerifyStatus(buffer, expected_checksum);
+  base::UmaHistogramEnumeration(
+      base::StrCat({uma_tag, ".IndexRuleset.Verify.Status"}), status);
   TRACE_EVENT_END1(TRACE_DISABLED_BY_DEFAULT("loading"),
                    "IndexedRulesetMatcher::Verify", "status",
                    static_cast<int>(status));
@@ -215,19 +205,17 @@ bool IndexedRulesetMatcher::Verify(const uint8_t* buffer,
          status == VerifyStatus::kPassChecksumZero;
 }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
-IndexedRulesetMatcher::~IndexedRulesetMatcher() = default;
-
-IndexedRulesetMatcher::IndexedRulesetMatcher(const uint8_t* buffer, size_t size)
-    : root_(flat::GetIndexedRuleset(buffer)),
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+IndexedRulesetMatcher::IndexedRulesetMatcher(base::span<const uint8_t> buffer)
+    : root_(flat::GetIndexedRuleset(buffer.data())),
       blocklist_(root_->blocklist_index()),
       allowlist_(root_->allowlist_index()),
       deactivation_(root_->deactivation_index()),
       css_blocklist_(root_->css_blocklist_index()),
       css_allowlist_(root_->css_allowlist_index()) {}
 #else
-IndexedRulesetMatcher::IndexedRulesetMatcher(const uint8_t* buffer, size_t size)
-    : root_(flat::GetIndexedRuleset(buffer)),
+IndexedRulesetMatcher::IndexedRulesetMatcher(base::span<const uint8_t> buffer)
+    : root_(flat::GetIndexedRuleset(buffer.data())),
       blocklist_(root_->blocklist_index()),
       allowlist_(root_->allowlist_index()),
       deactivation_(root_->deactivation_index()) {}
@@ -282,7 +270,7 @@ const url_pattern_index::flat::UrlRule* IndexedRulesetMatcher::MatchedUrlRule(
   // it is not necessary to differentiate between the resource not matching a
   // blocklist rule and matching an allowlist rule. For subdocuments, matching
   // an allowlist rule can still override ad tagging decisions even if the
-  // subdocument_url did not match a blocklist rule.
+  // subdocument url did not match a blocklist rule.
   //
   // To optimize the subdocument case, we only check the blocklist if an
   // allowlist rule was not matched.
@@ -294,7 +282,7 @@ const url_pattern_index::flat::UrlRule* IndexedRulesetMatcher::MatchedUrlRule(
   }
 
   // For non-subdocument elements, only check the allowlist if there is a
-  // matched blocklist rule to prevent_unnecessary lookups.
+  // matched blocklist rule to prevent unnecessary lookups.
   auto* blocklist_rule = find_match(blocklist_);
   if (!blocklist_rule)
     return nullptr;
@@ -302,7 +290,7 @@ const url_pattern_index::flat::UrlRule* IndexedRulesetMatcher::MatchedUrlRule(
   return allowlist_rule ? allowlist_rule : blocklist_rule;
 }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
 IndexedRulesetMatcher::MatchedCssRule(const GURL& document_url,
                                       bool disable_generic_rules) const {
@@ -405,6 +393,6 @@ bool IndexedRulesetMatcher::HasDocumentOption(
       false, EmbedderConditionsMatcher(), FindRuleStrategy::kAny,
       {} /* disabled_rule_ids */);
 }
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 }  // namespace subresource_filter

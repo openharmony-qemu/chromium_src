@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "base/values.h"
+#include "build/blink_buildflags.h"
 #include "build/build_config.h"
 #include "components/content_settings/core/browser/website_settings_info.h"
 #include "components/content_settings/core/common/content_settings.h"
@@ -62,7 +63,7 @@ TEST_F(WebsiteSettingsRegistryTest, GetByName) {
 }
 
 TEST_F(WebsiteSettingsRegistryTest, GetPlatformDependent) {
-#if BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(USE_BLINK)
   // App banner shouldn't be registered on iOS.
   EXPECT_FALSE(registry()->Get(ContentSettingsType::APP_BANNER));
 #else
@@ -101,7 +102,7 @@ TEST_F(WebsiteSettingsRegistryTest, Properties) {
             info->default_value_pref_name());
   ASSERT_TRUE(info->initial_default_value().is_int());
   EXPECT_EQ(999, info->initial_default_value().GetInt());
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || defined(OHOS_UNITTESTS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   EXPECT_EQ(PrefRegistry::LOSSY_PREF, info->GetPrefRegistrationFlags());
 #else
   EXPECT_EQ(PrefRegistry::LOSSY_PREF |

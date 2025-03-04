@@ -5,8 +5,11 @@
 #ifndef COMPONENTS_SYNC_NIGORI_NIGORI_STORAGE_H_
 #define COMPONENTS_SYNC_NIGORI_NIGORI_STORAGE_H_
 
-#include "components/sync/protocol/nigori_local_data.pb.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include <optional>
+
+namespace sync_pb {
+class NigoriLocalData;
+}  // namespace sync_pb
 
 namespace syncer {
 
@@ -24,8 +27,8 @@ class NigoriStorage {
   virtual void StoreData(const sync_pb::NigoriLocalData& data) = 0;
 
   // Returns previously stored NigoriLocalData. In case error occurs or no data
-  // was stored, returns absl::nullopt.
-  virtual absl::optional<sync_pb::NigoriLocalData> RestoreData() = 0;
+  // was stored, returns std::nullopt.
+  virtual std::optional<sync_pb::NigoriLocalData> RestoreData() = 0;
 
   // Removes all previously stored data.
   virtual void ClearData() = 0;

@@ -9,10 +9,13 @@ jinja2_path = os.path.normpath(
     os.path.join(
         os.path.abspath(__file__), *[os.path.pardir] * 3 + ['third_party']))
 nom_path = os.path.normpath(
-    os.path.join(os.path.abspath(__file__),
+    os.path.join(
+        os.path.abspath(__file__),
         *[os.path.pardir] * 3 + ['tools/json_comment_eater']))
 action_helper_path = os.path.normpath(
-    os.path.join(os.path.abspath(__file__), *[os.path.pardir] * 2))
+    os.path.join(
+        os.path.abspath(__file__),
+        *[os.path.pardir] * 2))
 
 sys.path.insert(0, jinja2_path)
 sys.path.insert(0, nom_path)
@@ -58,6 +61,7 @@ def main():
                       '(e.g. --variables "abc=123")', default='')
 
   options = parser.parse_args()
+
   if options.input_template is None:
     parser.error('--input_template option must be specified')
   if options.output_file is None:
@@ -66,6 +70,7 @@ def main():
   variables = _ParseVariables(options.variables, parser.error)
 
   processJinjaTemplate(options.input_template, options.output_file, context=variables)
+
 
 if __name__ == '__main__':
   main()

@@ -15,6 +15,7 @@
 
 #include "base/check_op.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
@@ -43,6 +44,8 @@
 #include "sandbox/policy/linux/bpf_cros_amd_gpu_policy_linux.h"
 #include "sandbox/policy/linux/bpf_cros_arm_gpu_policy_linux.h"
 #include "sandbox/policy/linux/bpf_cros_intel_gpu_policy_linux.h"
+#include "sandbox/policy/linux/bpf_cros_nvidia_gpu_policy_linux.h"
+#include "sandbox/policy/linux/bpf_cros_virtio_gpu_policy_linux.h"
 #include "sandbox/policy/linux/bpf_gpu_policy_linux.h"
 #include "sandbox/policy/linux/bpf_network_policy_linux.h"
 #include "sandbox/policy/linux/bpf_ppapi_policy_linux.h"
@@ -58,19 +61,23 @@
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
+#include "chromeos/ash/components/assistant/buildflags.h"
 #include "sandbox/policy/features.h"
 #include "sandbox/policy/linux/bpf_ime_policy_linux.h"
+#include "sandbox/policy/linux/bpf_nearby_policy_linux.h"
 #include "sandbox/policy/linux/bpf_tts_policy_linux.h"
-
-#include "chromeos/ash/components/assistant/buildflags.h"
 #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #include "sandbox/policy/linux/bpf_libassistant_policy_linux.h"
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
 #include "sandbox/policy/linux/bpf_hardware_video_decoding_policy_linux.h"
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
+
+#if BUILDFLAG(IS_LINUX)
+#include "sandbox/policy/linux/bpf_on_device_translation_policy_linux.h"
+#endif  // BUILDFLAG(IS_LINUX)
 
 using sandbox::bpf_dsl::Allow;
 using sandbox::bpf_dsl::ResultExpr;
@@ -132,6 +139,12 @@ std::unique_ptr<BPFBasePolicy> GetGpuProcessSandbox(
     if (options.use_intel_specific_policies) {
       return std::make_unique<CrosIntelGpuProcessPolicy>();
     }
+    if (options.use_nvidia_specific_policies) {
+      return std::make_unique<CrosNvidiaGpuProcessPolicy>();
+    }
+    if (options.use_virtio_specific_policies) {
+      return std::make_unique<CrosVirtIoGpuProcessPolicy>();
+    }
   }
   return std::make_unique<GpuProcessPolicy>();
 }
@@ -183,6 +196,8 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
     case sandbox::mojom::Sandbox::kPpapi:
       return std::make_unique<PpapiProcessPolicy>();
 #endif
+    case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
+      return GetGpuProcessSandbox(options);
     case sandbox::mojom::Sandbox::kUtility:
       return std::make_unique<UtilityProcessPolicy>();
     case sandbox::mojom::Sandbox::kCdm:
@@ -203,35 +218,48 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return std::make_unique<ServiceProcessPolicy>();
     case sandbox::mojom::Sandbox::kSpeechRecognition:
       return std::make_unique<SpeechRecognitionProcessPolicy>();
+#if BUILDFLAG(IS_LINUX)
+    case sandbox::mojom::Sandbox::kOnDeviceTranslation:
+      return std::make_unique<OnDeviceTranslationProcessPolicy>();
+#endif  // BUILDFLAG(IS_LINUX)
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
     case sandbox::mojom::Sandbox::kScreenAI:
       return std::make_unique<ScreenAIProcessPolicy>();
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX)
+    case sandbox::mojom::Sandbox::kVideoEffects:
+      return std::make_unique<ServiceProcessPolicy>();
+#endif  // BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
       return std::make_unique<HardwareVideoDecodingProcessPolicy>(
           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
               options.use_amd_specific_policies));
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       // TODO(b/255554267): we're using the GPU process sandbox policy for now
       // as a transition step. However, we should create a policy that's tighter
       // just for hardware video encoding.
       return GetGpuProcessSandbox(options);
+#endif
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     case sandbox::mojom::Sandbox::kIme:
       return std::make_unique<ImeProcessPolicy>();
     case sandbox::mojom::Sandbox::kTts:
       return std::make_unique<TtsProcessPolicy>();
+    case sandbox::mojom::Sandbox::kNearby:
+      return std::make_unique<NearbyProcessPolicy>();
 #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
     case sandbox::mojom::Sandbox::kLibassistant:
       return std::make_unique<LibassistantProcessPolicy>();
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
     case sandbox::mojom::Sandbox::kNoSandbox:
       NOTREACHED();
-      return nullptr;
   }
 }
 
@@ -253,10 +281,15 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       // Without the sandbox, this would EBADF.
       syscall_ret = fchmod(-1, 07777);
       CHECK_EQ(-1, syscall_ret);
+#if !BUILDFLAG(IS_OHOS)
+      // in ohos EPERM is always 1, not equal to errno
       CHECK_EQ(EPERM, errno);
+#endif
 
 // Run most of the sanity checks only in DEBUG mode to avoid a perf.
 // impact.
+// On ohos, no such path for sanity checks
+#if !BUILDFLAG(IS_OHOS)
 #if !defined(NDEBUG)
       // open() must be restricted.
       syscall_ret = open("/etc/passwd", O_RDONLY);
@@ -273,14 +306,18 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       CHECK_EQ(-1, syscall_ret);
       CHECK_EQ(EPERM, errno);
 #endif  // !defined(NDEBUG)
+#endif  // !BUILDFLAG(IS_OHOS)
     } break;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
+#endif
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     case sandbox::mojom::Sandbox::kIme:
     case sandbox::mojom::Sandbox::kTts:
+    case sandbox::mojom::Sandbox::kNearby:
 #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
     case sandbox::mojom::Sandbox::kLibassistant:
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
@@ -289,6 +326,9 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kScreenAI:
 #endif
     case sandbox::mojom::Sandbox::kAudio:
+#if BUILDFLAG(IS_LINUX)
+    case sandbox::mojom::Sandbox::kVideoEffects:
+#endif  // BUILDFLAG(IS_LINUX)
     case sandbox::mojom::Sandbox::kService:
     case sandbox::mojom::Sandbox::kServiceWithJit:
     case sandbox::mojom::Sandbox::kSpeechRecognition:
@@ -296,9 +336,15 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
     case sandbox::mojom::Sandbox::kPrintBackend:
 #endif
+    case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
+#if BUILDFLAG(IS_LINUX)
+    case sandbox::mojom::Sandbox::kOnDeviceTranslation:
+#endif  // BUILDFLAG(IS_LINUX)
     case sandbox::mojom::Sandbox::kUtility:
     case sandbox::mojom::Sandbox::kNoSandbox:
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
       // Otherwise, no checks required.
       break;
   }
@@ -307,7 +353,8 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
 bool SandboxSeccompBPF::StartSandboxWithExternalPolicy(
     std::unique_ptr<bpf_dsl::Policy> policy,
     base::ScopedFD proc_fd,
-    SandboxBPF::SeccompLevel seccomp_level) {
+    SandboxBPF::SeccompLevel seccomp_level,
+    bool force_disable_spectre_variant2_mitigation) {
 #if BUILDFLAG(USE_SECCOMP_BPF)
   if (IsSeccompBPFDesired() && SupportsSandbox()) {
     CHECK(policy);
@@ -320,10 +367,16 @@ bool SandboxSeccompBPF::StartSandboxWithExternalPolicy(
     sandbox.SetProcFd(std::move(proc_fd));
     bool enable_ibpb = true;
 #if BUILDFLAG(IS_CHROMEOS_ASH)
-    enable_ibpb =
-        base::FeatureList::IsEnabled(
-            features::kForceSpectreVariant2Mitigation) ||
-        base::FeatureList::IsEnabled(features::kSpectreVariant2Mitigation);
+    if (force_disable_spectre_variant2_mitigation) {
+      enable_ibpb = false;
+    } else {
+      enable_ibpb =
+          base::FeatureList::IsEnabled(features::kSpectreVariant2Mitigation);
+    }
+#else   // BUILDFLAG(IS_CHROMEOS_ASH)
+    // On Linux desktop and Lacros, the Spectre variant 2 mitigation is
+    // on by default unless force disabled by the caller.
+    enable_ibpb = !force_disable_spectre_variant2_mitigation;
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
     CHECK(sandbox.StartSandbox(seccomp_level, enable_ibpb));
     return true;

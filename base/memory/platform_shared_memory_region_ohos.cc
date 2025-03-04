@@ -3,13 +3,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "base/memory/platform_shared_memory_region.h"
-
 #include <sys/mman.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/bits.h"
 #include "base/logging.h"
 #include "base/memory/page_size.h"
+#include "base/memory/platform_shared_memory_region.h"
 #include "base/memory/shared_memory_tracker.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/posix/eintr_wrapper.h"
@@ -51,7 +51,14 @@ PlatformSharedMemoryRegion PlatformSharedMemoryRegion::Take(
     return {};
   }
 
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (!CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size)) {
+    LOG(ERROR) << "check platform handle permission failed, fd = " << fd.get()
+               << ", mode" << static_cast<int>(mode) << ", size = " << size;
+  }
+#else
   CHECK(CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size));
+#endif
 
   return PlatformSharedMemoryRegion(std::move(fd), mode, size, guid);
 }

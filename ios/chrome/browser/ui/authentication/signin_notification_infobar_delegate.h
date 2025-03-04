@@ -5,16 +5,15 @@
 #ifndef IOS_CHROME_BROWSER_UI_AUTHENTICATION_SIGNIN_NOTIFICATION_INFOBAR_DELEGATE_H_
 #define IOS_CHROME_BROWSER_UI_AUTHENTICATION_SIGNIN_NOTIFICATION_INFOBAR_DELEGATE_H_
 
-#include <memory>
-#include <string>
+#import <memory>
+#import <string>
 
-#include "components/infobars/core/confirm_infobar_delegate.h"
-#include "components/sync/driver/sync_service_observer.h"
-#include "ios/chrome/browser/sync/sync_setup_service.h"
-#include "ui/gfx/image/image.h"
+#import "components/infobars/core/confirm_infobar_delegate.h"
+#import "components/sync/service/sync_service_observer.h"
+#import "ui/gfx/image/image.h"
 
-@protocol ApplicationSettingsCommands;
-class ChromeBrowserState;
+class ProfileIOS;
+@protocol SettingsCommands;
 @class UIViewController;
 
 namespace gfx {
@@ -28,8 +27,8 @@ class InfoBarManager;
 // Shows a sign-in notification in an infobar.
 class SigninNotificationInfoBarDelegate : public ConfirmInfoBarDelegate {
  public:
-  SigninNotificationInfoBarDelegate(ChromeBrowserState* browser_state,
-                                    id<ApplicationSettingsCommands> dispatcher,
+  SigninNotificationInfoBarDelegate(ProfileIOS* profile,
+                                    id<SettingsCommands> dispatcher,
                                     UIViewController* view_controller);
 
   SigninNotificationInfoBarDelegate(const SigninNotificationInfoBarDelegate&) =
@@ -41,8 +40,8 @@ class SigninNotificationInfoBarDelegate : public ConfirmInfoBarDelegate {
 
   // Creates a sign-in notification infobar and adds it to `infobar_manager`.
   static bool Create(infobars::InfoBarManager* infobar_manager,
-                     ChromeBrowserState* browser_state,
-                     id<ApplicationSettingsCommands> dispatcher,
+                     ProfileIOS* profile,
+                     id<SettingsCommands> dispatcher,
                      UIViewController* view_controller);
 
   // InfoBarDelegate implementation.
@@ -65,7 +64,7 @@ class SigninNotificationInfoBarDelegate : public ConfirmInfoBarDelegate {
   std::u16string button_text_;
 
   // Dispatcher.
-  __weak id<ApplicationSettingsCommands> dispatcher_ = nil;
+  __weak id<SettingsCommands> dispatcher_ = nil;
   __weak UIViewController* base_view_controller_ = nil;
 };
 

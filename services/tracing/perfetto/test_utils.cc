@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include "base/containers/heap_array.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_runner.h"
@@ -54,16 +55,16 @@ TestDataSource::TestDataSource(const std::string& data_source_name,
 TestDataSource::~TestDataSource() = default;
 
 void TestDataSource::WritePacketBigly() {
-  std::unique_ptr<char[]> payload(new char[kLargeMessageSize]);
-  memset(payload.get(), '.', kLargeMessageSize);
-  payload.get()[kLargeMessageSize - 1] = 0;
+  auto payload = base::HeapArray<char>::Uninit(kLargeMessageSize);
+  std::ranges::fill(payload, '.');
+  payload.as_span().back() = 0;
 
   std::unique_ptr<perfetto::TraceWriter> writer =
       producer_->CreateTraceWriter(config_.target_buffer());
   CHECK(writer);
 
-  writer->NewTracePacket()->set_for_testing()->set_str(payload.get(),
-                                                       kLargeMessageSize);
+  writer->NewTracePacket()->set_for_testing()->set_str(payload.data(),
+                                                       payload.size());
 }
 
 void TestDataSource::StartTracingImpl(
@@ -206,63 +207,50 @@ void MockProducerClient::SetAgentDisabledCallback(
   client_disabled_callback_ = std::move(client_disabled_callback);
 }
 
-MockConsumer::MockConsumer(std::vector<std::string> data_source_names,
-                           perfetto::TracingService* service,
-                           PacketReceivedCallback packet_received_callback)
-    : MockConsumer(data_source_names,
-                   service,
-                   std::move(packet_received_callback),
-                   GetDefaultTraceConfig(data_source_names)) {}
-
-MockConsumer::MockConsumer(std::vector<std::string> data_source_names,
-                           perfetto::TracingService* service,
-                           PacketReceivedCallback packet_received_callback,
-                           const perfetto::TraceConfig& config)
-    : packet_received_callback_(packet_received_callback),
-      trace_config_(config) {
-  for (const auto& source : data_source_names) {
-    data_sources_.emplace_back(DataSourceStatus{
-        source,
-        perfetto::ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STOPPED});
-  }
-  CHECK(!data_sources_.empty());
+MockConsumerBase::MockConsumerBase(
+    perfetto::TracingService* service,
+    PacketReceivedCallback packet_received_callback)
+    : packet_received_callback_(packet_received_callback) {
   consumer_endpoint_ = service->ConnectConsumer(this, /*uid=*/0);
   CHECK(consumer_endpoint_);
 }
 
-MockConsumer::~MockConsumer() = default;
+MockConsumerBase::~MockConsumerBase() = default;
 
-void MockConsumer::ReadBuffers() {
+void MockConsumerBase::ReadBuffers() {
   CHECK(consumer_endpoint_);
   consumer_endpoint_->ReadBuffers();
 }
 
-void MockConsumer::StopTracing() {
+void MockConsumerBase::StopTracing() {
   ReadBuffers();
   CHECK(consumer_endpoint_);
   consumer_endpoint_->DisableTracing();
 }
 
-void MockConsumer::StartTracing() {
+void MockConsumerBase::CloneSession(const std::string& unique_session_name) {
   CHECK(consumer_endpoint_);
-  consumer_endpoint_->EnableTracing(trace_config_);
+  perfetto::TracingService::ConsumerEndpoint::CloneSessionArgs args{
+      .unique_session_name = unique_session_name};
+  consumer_endpoint_->CloneSession(args);
 }
 
-void MockConsumer::FreeBuffers() {
+void MockConsumerBase::StartTracing(const perfetto::TraceConfig& trace_config) {
+  CHECK(consumer_endpoint_);
+  consumer_endpoint_->EnableTracing(trace_config);
+}
+
+void MockConsumerBase::FreeBuffers() {
   CHECK(consumer_endpoint_);
   consumer_endpoint_->FreeBuffers();
 }
 
-void MockConsumer::OnConnect() {
-  consumer_endpoint_->ObserveEvents(
-      perfetto::ObservableEvents::TYPE_DATA_SOURCES_INSTANCES);
-  StartTracing();
-}
-void MockConsumer::OnDisconnect() {}
-void MockConsumer::OnTracingDisabled(const std::string& error) {}
+void MockConsumerBase::OnConnect() {}
+void MockConsumerBase::OnDisconnect() {}
+void MockConsumerBase::OnTracingDisabled(const std::string& error) {}
 
-void MockConsumer::OnTraceData(std::vector<perfetto::TracePacket> packets,
-                               bool has_more) {
+void MockConsumerBase::OnTraceData(std::vector<perfetto::TracePacket> packets,
+                                   bool has_more) {
   for (auto& encoded_packet : packets) {
     perfetto::protos::TracePacket packet;
     EXPECT_TRUE(packet.ParseFromString(encoded_packet.GetRawBytesForTesting()));
@@ -275,12 +263,48 @@ void MockConsumer::OnTraceData(std::vector<perfetto::TracePacket> packets,
   packet_received_callback_(has_more);
 }
 
-void MockConsumer::OnDetach(bool /*success*/) {}
-void MockConsumer::OnAttach(bool /*success*/, const perfetto::TraceConfig&) {}
-void MockConsumer::OnTraceStats(bool /*success*/, const perfetto::TraceStats&) {
+void MockConsumerBase::OnDetach(bool /*success*/) {}
+void MockConsumerBase::OnAttach(bool /*success*/,
+                                const perfetto::TraceConfig&) {}
+void MockConsumerBase::OnTraceStats(bool /*success*/,
+                                    const perfetto::TraceStats&) {}
+void MockConsumerBase::OnObservableEvents(
+    const perfetto::ObservableEvents& events) {}
+void MockConsumerBase::OnSessionCloned(const OnSessionClonedArgs&) {}
+
+MockConsumer::MockConsumer(std::vector<std::string> data_source_names,
+                           perfetto::TracingService* service,
+                           PacketReceivedCallback packet_received_callback)
+    : MockConsumer(data_source_names,
+                   service,
+                   std::move(packet_received_callback),
+                   GetDefaultTraceConfig(data_source_names)) {}
+
+MockConsumer::MockConsumer(std::vector<std::string> data_source_names,
+                           perfetto::TracingService* service,
+                           PacketReceivedCallback packet_received_callback,
+                           const perfetto::TraceConfig& config)
+    : MockConsumerBase(service, std::move(packet_received_callback)),
+      trace_config_(config) {
+  for (const auto& source : data_source_names) {
+    data_sources_.emplace_back(DataSourceStatus{
+        source,
+        perfetto::ObservableEvents::DATA_SOURCE_INSTANCE_STATE_STOPPED});
+  }
+  CHECK(!data_sources_.empty());
 }
-void MockConsumer::OnSessionCloned(bool /*success*/,
-                                   const std::string& /*error*/) {}
+
+MockConsumer::~MockConsumer() = default;
+
+void MockConsumer::StartTracing() {
+  MockConsumerBase::StartTracing(trace_config_);
+}
+
+void MockConsumer::OnConnect() {
+  consumer_endpoint_->ObserveEvents(
+      perfetto::ObservableEvents::TYPE_DATA_SOURCES_INSTANCES);
+  StartTracing();
+}
 
 void MockConsumer::OnObservableEvents(
     const perfetto::ObservableEvents& events) {
@@ -433,8 +457,7 @@ TracingUnitTest::TracingUnitTest()
           base::test::TaskEnvironment::MainThreadType::IO)),
       tracing_environment_(std::make_unique<base::test::TracingEnvironment>(
           *task_environment_,
-          base::SingleThreadTaskRunner::GetCurrentDefault(),
-          PerfettoTracedProcess::Get()->perfetto_platform_for_testing())) {}
+          base::SingleThreadTaskRunner::GetCurrentDefault())) {}
 
 TracingUnitTest::~TracingUnitTest() {
   CHECK(setup_called_ && teardown_called_);

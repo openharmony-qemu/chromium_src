@@ -1,6 +1,0 @@
-if (is_ohos) {
-  declare_args() {
-    # default package name for gitee
-    ohos_package_name = "com.ohos.arkwebcore"
-  }
-}

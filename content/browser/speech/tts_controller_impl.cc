@@ -46,7 +46,7 @@ const int kInvalidLength = -1;
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 bool VoiceIdMatches(
-    const absl::optional<TtsControllerDelegate::PreferredVoiceId>& id,
+    const std::optional<TtsControllerDelegate::PreferredVoiceId>& id,
     const content::VoiceData& voice) {
   if (!id.has_value() || voice.name.empty() ||
       (voice.engine_id.empty() && !voice.native))
@@ -96,6 +96,7 @@ void TtsController::SkipAddNetworkChangeObserverForTests(bool enabled) {
 // IMPORTANT!
 // These values are written to logs.  Do not renumber or delete
 // existing items; add new entries to the end of the list.
+// LINT.IfChange(UMATextToSpeechEvent)
 enum class UMATextToSpeechEvent {
   START = 0,
   END = 1,
@@ -112,6 +113,7 @@ enum class UMATextToSpeechEvent {
   // increase, but none of the other enum values may change.
   COUNT
 };
+// LINT.ThenChange(/tools/metrics/histograms/metadata/accessibility/enums.xml:TextToSpeechEvent)
 
 //
 // TtsControllerImpl
@@ -319,6 +321,44 @@ void TtsControllerImpl::Resume() {
   }
 }
 
+void TtsControllerImpl::UninstallLanguageRequest(
+    content::BrowserContext* browser_context,
+    const std::string& lang,
+    const std::string& client_id,
+    int source,
+    bool uninstall_immediately) {
+  if (!engine_delegate_) {
+    return;
+  }
+
+  engine_delegate_->UninstallLanguageRequest(browser_context, lang, client_id,
+                                             source, uninstall_immediately);
+}
+
+void TtsControllerImpl::InstallLanguageRequest(BrowserContext* browser_context,
+                                               const std::string& lang,
+                                               const std::string& client_id,
+                                               int source) {
+  if (!engine_delegate_) {
+    return;
+  }
+
+  engine_delegate_->InstallLanguageRequest(browser_context, lang, client_id,
+                                           source);
+}
+
+void TtsControllerImpl::LanguageStatusRequest(BrowserContext* browser_context,
+                                              const std::string& lang,
+                                              const std::string& client_id,
+                                              int source) {
+  if (!engine_delegate_) {
+    return;
+  }
+
+  engine_delegate_->LanguageStatusRequest(browser_context, lang, client_id,
+                                          source);
+}
+
 void TtsControllerImpl::OnTtsEvent(int utterance_id,
                                    TtsEventType event_type,
                                    int char_index,
@@ -366,7 +406,6 @@ void TtsControllerImpl::OnTtsEvent(int utterance_id,
       break;
     default:
       NOTREACHED();
-      return;
   }
   UMA_HISTOGRAM_ENUMERATION("TextToSpeech.Event", metric,
                             UMATextToSpeechEvent::COUNT);
@@ -442,6 +481,29 @@ void TtsControllerImpl::GetVoicesInternal(BrowserContext* browser_context,
 bool TtsControllerImpl::IsSpeaking() {
   return current_utterance_ != nullptr ||
          (TtsPlatformReady() && GetTtsPlatform()->IsSpeaking());
+}
+
+void TtsControllerImpl::UpdateLanguageStatus(
+    const std::string& lang,
+    LanguageInstallStatus install_status,
+    const std::string& error) {
+  if (update_language_status_delegates_.empty()) {
+    return;
+  }
+
+  for (auto& delegate : update_language_status_delegates_) {
+    delegate.OnUpdateLanguageStatus(lang, install_status, error);
+  }
+}
+
+void TtsControllerImpl::AddUpdateLanguageStatusDelegate(
+    UpdateLanguageStatusDelegate* delegate) {
+  update_language_status_delegates_.AddObserver(delegate);
+}
+
+void TtsControllerImpl::RemoveUpdateLanguageStatusDelegate(
+    UpdateLanguageStatusDelegate* delegate) {
+  update_language_status_delegates_.RemoveObserver(delegate);
 }
 
 void TtsControllerImpl::VoicesChanged() {

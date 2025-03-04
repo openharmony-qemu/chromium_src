@@ -12,21 +12,14 @@ import android.content.DialogInterface.OnClickListener;
 import org.chromium.content.R;
 import org.chromium.content.browser.picker.TwoFieldDatePicker.OnMonthOrWeekChangedListener;
 
-/**
- * A two-field data picker dialog.
- */
-public abstract class TwoFieldDatePickerDialog extends AlertDialog implements OnClickListener,
-        OnMonthOrWeekChangedListener {
-
-    private static final String YEAR = "year";
-    private static final String POSITION_IN_YEAR = "position_in_year";
+/** A two-field data picker dialog. */
+public abstract class TwoFieldDatePickerDialog extends AlertDialog
+        implements OnClickListener, OnMonthOrWeekChangedListener {
 
     protected final TwoFieldDatePicker mPicker;
     protected final OnValueSetListener mCallBack;
 
-    /**
-     * The callback used to indicate the user is done filling in the date.
-     */
+    /** The callback used to indicate the user is done filling in the date. */
     public interface OnValueSetListener {
 
         /**
@@ -42,8 +35,9 @@ public abstract class TwoFieldDatePickerDialog extends AlertDialog implements On
      * @param year The initial year of the dialog.
      * @param weekOfYear The initial week of the dialog.
      */
-    public TwoFieldDatePickerDialog(Context context,
-             OnValueSetListener callBack,
+    public TwoFieldDatePickerDialog(
+            Context context,
+            OnValueSetListener callBack,
             int year,
             int positionInYear,
             double minValue,
@@ -58,9 +52,10 @@ public abstract class TwoFieldDatePickerDialog extends AlertDialog implements On
      * @param year The initial year of the dialog.
      * @param weekOfYear The initial week of the dialog.
      */
-    public TwoFieldDatePickerDialog(Context context,
+    public TwoFieldDatePickerDialog(
+            Context context,
             int theme,
-             OnValueSetListener callBack,
+            OnValueSetListener callBack,
             int year,
             int positionInYear,
             double minValue,
@@ -69,10 +64,9 @@ public abstract class TwoFieldDatePickerDialog extends AlertDialog implements On
 
         mCallBack = callBack;
 
-        setButton(BUTTON_POSITIVE, context.getText(
-                R.string.date_picker_dialog_set), this);
-        setButton(BUTTON_NEGATIVE, context.getText(android.R.string.cancel),
-                (OnClickListener) null);
+        setButton(BUTTON_POSITIVE, context.getText(R.string.date_picker_dialog_set), this);
+        setButton(
+                BUTTON_NEGATIVE, context.getText(android.R.string.cancel), (OnClickListener) null);
         setIcon(0);
 
         mPicker = createPicker(context, minValue, maxValue);
@@ -89,9 +83,7 @@ public abstract class TwoFieldDatePickerDialog extends AlertDialog implements On
         tryNotifyDateSet();
     }
 
-    /**
-     * Notifies the listener, if such, that a date has been set.
-     */
+    /** Notifies the listener, if such, that a date has been set. */
     protected void tryNotifyDateSet() {
         if (mCallBack != null) {
             mPicker.clearFocus();

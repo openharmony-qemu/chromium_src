@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
+#include "base/not_fatal_until.h"
 #include "base/process/memory.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
@@ -16,6 +17,7 @@
 #include "cc/paint/image_provider.h"
 #include "cc/paint/render_surface_filters.h"
 #include "components/viz/common/display/renderer_settings.h"
+#include "components/viz/common/features.h"
 #include "components/viz/common/frame_sinks/copy_output_request.h"
 #include "components/viz/common/frame_sinks/copy_output_util.h"
 #include "components/viz/common/quads/aggregated_render_pass_draw_quad.h"
@@ -39,6 +41,7 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint.h"
@@ -94,7 +97,7 @@ SoftwareRenderer::SoftwareRenderer(
                      overlay_processor),
       output_device_(output_surface->software_device()) {}
 
-SoftwareRenderer::~SoftwareRenderer() {}
+SoftwareRenderer::~SoftwareRenderer() = default;
 
 bool SoftwareRenderer::CanPartialSwap() {
   return true;
@@ -121,40 +124,12 @@ void SoftwareRenderer::SwapBuffers(SwapFrameData swap_frame_data) {
   TRACE_EVENT0("viz", "SoftwareRenderer::SwapBuffers");
   OutputSurfaceFrame output_frame;
   output_frame.latency_info = std::move(swap_frame_data.latency_info);
-  output_frame.top_controls_visible_height_changed =
-      swap_frame_data.top_controls_visible_height_changed;
+  output_frame.data.swap_trace_id = swap_frame_data.swap_trace_id;
   output_surface_->SwapBuffers(std::move(output_frame));
-}
-
-bool SoftwareRenderer::FlippedFramebuffer() const {
-  return false;
 }
 
 void SoftwareRenderer::EnsureScissorTestDisabled() {
   is_scissor_enabled_ = false;
-}
-
-void SoftwareRenderer::BindFramebufferToOutputSurface() {
-  DCHECK(!root_canvas_);
-
-  root_canvas_ = output_device_->BeginPaint(current_frame()->root_damage_rect);
-  if (!root_canvas_)
-    output_device_->EndPaint();
-  // `current_canvas_` may be pointing to `current_framebuffer_canvas_`. Make
-  // sure to re-assign it before destroying `current_framebuffer_canvas_`
-  current_canvas_ = root_canvas_;
-  current_framebuffer_canvas_.reset();
-}
-
-void SoftwareRenderer::BindFramebufferToTexture(
-    const AggregatedRenderPassId render_pass_id) {
-  auto it = render_pass_bitmaps_.find(render_pass_id);
-  DCHECK(it != render_pass_bitmaps_.end());
-  SkBitmap& bitmap = it->second;
-
-  current_framebuffer_canvas_ = std::make_unique<SkCanvas>(
-      bitmap, skia::LegacyDisplayGlobals::GetSkSurfaceProps());
-  current_canvas_ = current_framebuffer_canvas_.get();
 }
 
 void SoftwareRenderer::SetScissorTestRect(const gfx::Rect& scissor_rect) {
@@ -228,9 +203,33 @@ void SoftwareRenderer::ClearFramebuffer() {
 }
 
 void SoftwareRenderer::BeginDrawingRenderPass(
+    const AggregatedRenderPass* render_pass,
     bool needs_clear,
-    const gfx::Rect& render_pass_update_rect) {
-  if (render_pass_update_rect == current_viewport_rect_) {
+    const gfx::Rect& render_pass_update_rect,
+    const gfx::Size& viewport_size) {
+  if (render_pass == current_frame()->root_render_pass) {
+    DCHECK(!root_canvas_);
+
+    root_canvas_ =
+        output_device_->BeginPaint(current_frame()->root_damage_rect);
+    if (!root_canvas_) {
+      output_device_->EndPaint();
+    }
+    // `current_canvas_` may be pointing to `current_framebuffer_canvas_`. Make
+    // sure to re-assign it before destroying `current_framebuffer_canvas_`
+    current_canvas_ = root_canvas_;
+    current_framebuffer_canvas_.reset();
+  } else {
+    auto it = render_pass_bitmaps_.find(render_pass->id);
+    CHECK(it != render_pass_bitmaps_.end(), base::NotFatalUntil::M130);
+    SkBitmap& bitmap = it->second.bitmap;
+
+    current_framebuffer_canvas_ = std::make_unique<SkCanvas>(
+        bitmap, skia::LegacyDisplayGlobals::GetSkSurfaceProps());
+    current_canvas_ = current_framebuffer_canvas_.get();
+  }
+
+  if (render_pass_update_rect == gfx::Rect(viewport_size)) {
     EnsureScissorTestDisabled();
   } else {
     SetScissorTestRect(render_pass_update_rect);
@@ -326,7 +325,7 @@ void SoftwareRenderer::DoDrawQuad(const DrawQuad* quad,
     case DrawQuad::Material::kCompositorRenderPass:
       // At this point, all RenderPassDrawQuads should be converted to
       // AggregatedRenderPassDrawQuads.
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       break;
     case DrawQuad::Material::kSolidColor:
       DrawSolidColorQuad(SolidColorDrawQuad::MaterialCast(quad));
@@ -340,13 +339,12 @@ void SoftwareRenderer::DoDrawQuad(const DrawQuad* quad,
     case DrawQuad::Material::kSurfaceContent:
       // Surface content should be fully resolved to other quad types before
       // reaching a direct renderer.
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       break;
     case DrawQuad::Material::kInvalid:
-    case DrawQuad::Material::kYuvVideoContent:
     case DrawQuad::Material::kSharedElement:
       DrawUnsupportedQuad(quad);
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       break;
     case DrawQuad::Material::kVideoHole:
       // VideoHoleDrawQuad should only be used by Cast, and should
@@ -386,14 +384,13 @@ void SoftwareRenderer::DrawPictureQuad(const PictureDrawQuad* quad) {
 
   const bool needs_transparency =
       SkScalarRoundToInt(quad->shared_quad_state->opacity * 255) < 255;
-  const bool disable_image_filtering =
-      disable_picture_quad_image_filtering_ || quad->nearest_neighbor;
+  const bool disable_image_filtering = quad->nearest_neighbor;
 
   TRACE_EVENT0("viz", "SoftwareRenderer::DrawPictureQuad");
 
   SkCanvas* raster_canvas = current_canvas_;
 
-  absl::optional<skia::OpacityFilterCanvas> opacity_canvas;
+  std::optional<skia::OpacityFilterCanvas> opacity_canvas;
   if (needs_transparency || disable_image_filtering) {
     // TODO(aelias): This isn't correct in all cases. We should detect these
     // cases and fall back to a persistent bitmap backing
@@ -416,7 +413,8 @@ void SoftwareRenderer::DrawPictureQuad(const PictureDrawQuad* quad) {
   raster_canvas->translate(-quad->content_rect.x(), -quad->content_rect.y());
   raster_canvas->clipRect(gfx::RectToSkRect(quad->content_rect));
   raster_canvas->scale(quad->contents_scale, quad->contents_scale);
-  quad->display_item_list->Raster(raster_canvas, &image_provider);
+  quad->display_item_list->Raster(raster_canvas, &image_provider,
+                                  &quad->raster_inducing_scroll_offsets);
   raster_canvas->restore();
 }
 
@@ -530,7 +528,7 @@ void SoftwareRenderer::DrawRenderPassQuad(
   auto it = render_pass_bitmaps_.find(quad->render_pass_id);
   if (it == render_pass_bitmaps_.end())
     return;
-  SkBitmap& source_bitmap = it->second;
+  SkBitmap& source_bitmap = it->second.bitmap;
 
   SkRect dest_rect = gfx::RectFToSkRect(QuadVertexRect());
   SkRect dest_visible_rect =
@@ -543,8 +541,7 @@ void SoftwareRenderer::DrawRenderPassQuad(
   const cc::FilterOperations* filters = FiltersForPass(quad->render_pass_id);
   if (filters) {
     DCHECK(!filters->IsEmpty());
-    auto paint_filter = cc::RenderSurfaceFilters::BuildImageFilter(
-        *filters, gfx::SizeF(source_bitmap.width(), source_bitmap.height()));
+    auto paint_filter = cc::RenderSurfaceFilters::BuildImageFilter(*filters);
     auto image_filter =
         paint_filter ? paint_filter->cached_sk_filter_ : nullptr;
     if (image_filter) {
@@ -672,6 +669,78 @@ void SoftwareRenderer::CopyDrawnRenderPass(
       return;
   }
 
+  bitmap.setImmutable();
+
+  // Returning kNativeTextures results is only supported with blit requests, so
+  // we copy to client provided image.
+  if (request->result_destination() ==
+          CopyOutputResult::Destination::kNativeTextures &&
+      request->has_blit_request()) {
+    const auto& blit_request = request->blit_request();
+
+    auto representation = resource_provider()->GetSharedImageRepresentation(
+        blit_request.mailbox(), blit_request.sync_token());
+
+    if (!representation) {
+      DLOG(ERROR) << "BlitRequest: Couldn't create shared image representation";
+      return;
+    }
+
+    const auto dest_rect =
+        gfx::Rect(blit_request.destination_region_offset(),
+                  gfx::Size(bitmap.width(), bitmap.height()));
+
+    if (!gfx::Rect(representation->size()).Contains(dest_rect)) {
+      DLOG(ERROR) << "BlitRequest: Destination is outside of shared image";
+      return;
+    }
+
+    // TODO(crbug.com/330920521): This should be write access, but
+    // MemoryImageRepresentation doesn't have one and there are no
+    // synchronization requirements.
+    auto read_access = representation->BeginScopedReadAccess();
+    if (!read_access) {
+      DLOG(ERROR) << "BlitRequest: Couldn't access the shared image";
+      return;
+    }
+
+    auto surface = SkSurfaces::WrapPixels(
+        read_access->pixmap().info(), read_access->pixmap().writable_addr(),
+        read_access->pixmap().rowBytes(), nullptr);
+
+    CHECK(surface);
+
+    if (blit_request.letterboxing_behavior() ==
+        LetterboxingBehavior::kLetterbox) {
+      surface->getCanvas()->clear(SK_ColorBLACK);
+    }
+
+    SkPaint blit_request_paint;
+    blit_request_paint.setBlendMode(SkBlendMode::kSrc);
+    surface->getCanvas()->drawImage(SkImages::RasterFromBitmap(bitmap),
+                                    dest_rect.x(), dest_rect.y(),
+                                    SkSamplingOptions(), &blit_request_paint);
+
+    for (const BlendBitmap& blend_bitmap : blit_request.blend_bitmaps()) {
+      SkPaint blend_bitmap_paint;
+      blend_bitmap_paint.setBlendMode(SkBlendMode::kSrcOver);
+
+      surface->getCanvas()->drawImageRect(
+          blend_bitmap.image(), gfx::RectToSkRect(blend_bitmap.source_region()),
+          gfx::RectToSkRect(blend_bitmap.destination_region()),
+          SkSamplingOptions(SkFilterMode::kLinear), &blend_bitmap_paint,
+          SkCanvas::kFast_SrcRectConstraint);
+    }
+
+    request->SendResult(std::make_unique<CopyOutputTextureResult>(
+        CopyOutputResult::Format::RGBA, geometry.result_selection,
+        CopyOutputResult::TextureResult(request->blit_request().mailbox(),
+                                        representation->color_space()),
+        CopyOutputResult::ReleaseCallbacks()));
+
+    return;
+  }
+
   // Deliver the result. SoftwareRenderer supports system memory destinations
   // only. For legacy reasons, if a RGBA texture request is being made, clients
   // are prepared to accept system memory results.
@@ -688,10 +757,6 @@ void SoftwareRenderer::DidChangeVisibility() {
     output_surface_->EnsureBackbuffer();
   else
     output_surface_->DiscardBackbuffer();
-}
-
-void SoftwareRenderer::GenerateMipmap() {
-  NOTIMPLEMENTED();
 }
 
 bool SoftwareRenderer::ShouldApplyBackdropFilters(
@@ -735,7 +800,7 @@ sk_sp<SkImage> SoftwareRenderer::ApplyImageFilter(
                              : quad->rect.origin();
   SkImageInfo dst_info =
       SkImageInfo::MakeN32Premul(result_rect->width(), result_rect->height());
-  sk_sp<SkSurface> surface = SkSurface::MakeRaster(dst_info);
+  sk_sp<SkSurface> surface = SkSurfaces::Raster(dst_info);
   if (!surface)
     return nullptr;
 
@@ -766,10 +831,10 @@ SkBitmap SoftwareRenderer::GetBackdropBitmap(
 gfx::Rect SoftwareRenderer::GetBackdropBoundingBoxForRenderPassQuad(
     const AggregatedRenderPassDrawQuad* quad,
     const cc::FilterOperations* backdrop_filters,
-    absl::optional<gfx::RRectF> backdrop_filter_bounds_input,
+    std::optional<gfx::RRectF> backdrop_filter_bounds_input,
     gfx::Transform contents_device_transform,
     gfx::Transform* backdrop_filter_bounds_transform,
-    absl::optional<gfx::RRectF>* backdrop_filter_bounds,
+    std::optional<gfx::RRectF>* backdrop_filter_bounds,
     gfx::Rect* unclipped_rect) const {
   DCHECK(backdrop_filter_bounds_transform);
   DCHECK(backdrop_filter_bounds);
@@ -809,10 +874,9 @@ sk_sp<SkShader> SoftwareRenderer::GetBackdropFilterShader(
       BackdropFiltersForPass(quad->render_pass_id);
   if (!ShouldApplyBackdropFilters(backdrop_filters, quad))
     return nullptr;
-  absl::optional<gfx::RRectF> backdrop_filter_bounds_input =
+  std::optional<gfx::RRectF> backdrop_filter_bounds_input =
       BackdropFilterBoundsForPass(quad->render_pass_id);
-  DCHECK(!FiltersForPass(quad->render_pass_id))
-      << "Filters should always be in a separate Effect node";
+
   if (backdrop_filter_bounds_input.has_value()) {
     backdrop_filter_bounds_input->Scale(quad->filters_scale.x(),
                                         quad->filters_scale.y());
@@ -827,7 +891,7 @@ sk_sp<SkShader> SoftwareRenderer::GetBackdropFilterShader(
       current_frame()->target_to_device_transform);
   contents_device_transform.Flatten();
 
-  absl::optional<gfx::RRectF> backdrop_filter_bounds;
+  std::optional<gfx::RRectF> backdrop_filter_bounds;
   gfx::Transform backdrop_filter_bounds_transform;
   gfx::Rect unclipped_rect;
   gfx::Rect backdrop_rect = GetBackdropBoundingBoxForRenderPassQuad(
@@ -856,25 +920,33 @@ sk_sp<SkShader> SoftwareRenderer::GetBackdropFilterShader(
     // Crop the source image to the backdrop_filter_bounds.
     sk_sp<SkImage> cropped_image = SkImages::RasterFromBitmap(backdrop_bitmap);
     cropped_image = cropped_image->makeSubset(
-        RectToSkIRect(filter_clip), static_cast<GrDirectContext*>(nullptr));
+        static_cast<GrDirectContext*>(nullptr), RectToSkIRect(filter_clip));
     cropped_image->asLegacyBitmap(&backdrop_bitmap);
     image_offset = filter_clip.origin();
   }
 
-  gfx::Vector2dF clipping_offset =
-      (unclipped_rect.top_right() - backdrop_rect.top_right()) +
-      (unclipped_rect.bottom_left() - backdrop_rect.bottom_left());
-
+  // TODO (crbug.com/1451898): software_renderer doesn't apply backdrop filters
+  // correctly in the context of the ZOOM_FILTER operation (the lens bounds are
+  // not applied correctly). The ZOOM_FILTER is never used on platforms that
+  // use software_renderer, so skip calculating the filter bounds to pass
+  // to BuildImageFilter().
   sk_sp<cc::PaintFilter> paint_filter =
-      cc::RenderSurfaceFilters::BuildImageFilter(
-          *backdrop_filters,
-          gfx::SizeF(backdrop_bitmap.width(), backdrop_bitmap.height()),
-          clipping_offset);
+      cc::RenderSurfaceFilters::BuildImageFilter(*backdrop_filters);
   if (!paint_filter)
     return nullptr;
   sk_sp<SkImageFilter> filter = paint_filter->cached_sk_filter_;
 
-  // TODO(989238): Software renderer does not support/implement kClamp_TileMode.
+  // software_renderer doesn't support render passes with combined effects.
+  // While the effect node tree currently doesn't combine them, it may in the
+  // future (crbug.com1495777 and UI layers can combine them. Currently, only
+  // the magnifier widget does so, which mixes a ZOOM backdrop filter with an
+  // OFFSET filter. Due to crbug.com/1451898, that scenario never reaches this
+  // check.
+  DCHECK(!FiltersForPass(quad->render_pass_id))
+      << "Filters should always be in a separate Effect node";
+
+  // TODO(crbug.com/40036319): Software renderer does not support/implement
+  // kClamp_TileMode.
   SkIRect result_rect;
   sk_sp<SkImage> filtered_image =
       ApplyImageFilter(filter.get(), quad, backdrop_bitmap,
@@ -934,7 +1006,7 @@ void SoftwareRenderer::UpdateRenderPassTextures(
     gfx::Size required_size = render_pass_it->second.size;
     // The RenderPassRequirements have a hint, which is only used for gpu
     // compositing so it is ignored here.
-    const SkBitmap& bitmap = pair.second;
+    const SkBitmap& bitmap = pair.second.bitmap;
 
     bool size_appropriate = bitmap.width() >= required_size.width() &&
                             bitmap.height() >= required_size.height();
@@ -953,8 +1025,8 @@ void SoftwareRenderer::AllocateRenderPassResourceIfNeeded(
     const RenderPassRequirements& requirements) {
   auto it = render_pass_bitmaps_.find(render_pass_id);
   if (it != render_pass_bitmaps_.end()) {
-    DCHECK(it->second.width() >= requirements.size.width() &&
-           it->second.height() >= requirements.size.height());
+    DCHECK(it->second.bitmap.width() >= requirements.size.width() &&
+           it->second.bitmap.height() >= requirements.size.height());
     return;
   }
 
@@ -984,10 +1056,28 @@ bool SoftwareRenderer::IsRenderPassResourceAllocated(
 
 gfx::Size SoftwareRenderer::GetRenderPassBackingPixelSize(
     const AggregatedRenderPassId& render_pass_id) {
-  auto it = render_pass_bitmaps_.find(render_pass_id);
-  DCHECK(it != render_pass_bitmaps_.end());
-  SkBitmap& bitmap = it->second;
+  SkBitmap& bitmap = render_pass_bitmaps_.at(render_pass_id).bitmap;
   return gfx::Size(bitmap.width(), bitmap.height());
+}
+
+void SoftwareRenderer::SetRenderPassBackingDrawnRect(
+    const AggregatedRenderPassId& render_pass_id,
+    const gfx::Rect& drawn_rect) {
+  render_pass_bitmaps_.at(render_pass_id).drawn_rect = drawn_rect;
+}
+
+gfx::Rect SoftwareRenderer::GetRenderPassBackingDrawnRect(
+    const AggregatedRenderPassId& render_pass_id) const {
+  auto it = render_pass_bitmaps_.find(render_pass_id);
+  if (it != render_pass_bitmaps_.end()) {
+    return it->second.drawn_rect;
+  } else {
+    // DirectRenderer can call this before it has allocated a render pass
+    // backing if this is the first contiguous frame we're seeing
+    // |render_pass_id|. This can happen because it calculates the render pass
+    // scissor rect before it actually allocates the backing.
+    return gfx::Rect();
+  }
 }
 
 }  // namespace viz

@@ -1082,10 +1082,6 @@ void DrawElementsInstancedBaseVertexBaseInstanceANGLE(
 
 void VertexAttribDivisorANGLE(GLuint index, GLuint divisor) override;
 
-void ProduceTextureDirectCHROMIUM(GLuint texture, GLbyte* mailbox) override;
-
-GLuint CreateAndConsumeTextureCHROMIUM(const GLbyte* mailbox) override;
-
 void BindUniformLocationCHROMIUM(GLuint program,
                                  GLint location,
                                  const char* name) override;
@@ -1102,8 +1098,6 @@ void DiscardFramebufferEXT(GLenum target,
 void LoseContextCHROMIUM(GLenum current, GLenum other) override;
 
 void DrawBuffersEXT(GLsizei count, const GLenum* bufs) override;
-
-void DiscardBackbufferCHROMIUM() override;
 
 void FlushDriverCachesCHROMIUM() override;
 
@@ -1161,23 +1155,12 @@ void BeginSharedImageAccessDirectCHROMIUM(GLuint texture, GLenum mode) override;
 
 void EndSharedImageAccessDirectCHROMIUM(GLuint texture) override;
 
-void ConvertRGBAToYUVAMailboxesINTERNAL(GLenum planes_yuv_color_space,
-                                        GLenum plane_config,
-                                        GLenum subsampling,
-                                        const GLbyte* mailboxes) override;
-
-void ConvertYUVAMailboxesToRGBINTERNAL(GLenum planes_yuv_color_space,
-                                       GLenum plane_config,
-                                       GLenum subsampling,
-                                       const GLbyte* mailboxes) override;
-
 void CopySharedImageINTERNAL(GLint xoffset,
                              GLint yoffset,
                              GLint x,
                              GLint y,
                              GLsizei width,
                              GLsizei height,
-                             GLboolean unpack_flip_y,
                              const GLbyte* mailboxes) override;
 
 void CopySharedImageToTextureINTERNAL(GLuint texture,
@@ -1205,19 +1188,24 @@ GLboolean ReadbackARGBImagePixelsINTERNAL(const GLbyte* mailbox,
                                           GLint plane_index,
                                           void* pixels) override;
 
-void WritePixelsINTERNAL(const GLbyte* mailbox,
-                         const void* src_color_space,
-                         GLuint src_color_space_size,
-                         GLuint src_size,
-                         GLuint src_width,
-                         GLuint src_height,
-                         GLuint src_sk_color_type,
-                         GLuint src_sk_alpha_type,
-                         GLuint src_row_bytes,
-                         GLint x_offset,
-                         GLint y_offset,
-                         GLint plane_index,
-                         const void* src_pixels) override;
+void WritePixelsYUVINTERNAL(const GLbyte* mailbox,
+                            GLuint src_size_plane1,
+                            GLuint src_size_plane2,
+                            GLuint src_size_plane3,
+                            GLuint src_size_plane4,
+                            GLuint src_width,
+                            GLuint src_height,
+                            GLuint src_plane_config,
+                            GLuint src_subsampling,
+                            GLuint src_datatype,
+                            GLuint src_row_bytes_plane1,
+                            GLuint src_row_bytes_plane2,
+                            GLuint src_row_bytes_plane3,
+                            GLuint src_row_bytes_plane4,
+                            const void* src_pixels_plane1,
+                            const void* src_pixels_plane2,
+                            const void* src_pixels_plane3,
+                            const void* src_pixels_plane4) override;
 
 void EnableiOES(GLenum target, GLuint index) override;
 
@@ -1282,5 +1270,13 @@ void GetFramebufferPixelLocalStorageParameterfvANGLE(GLint plane,
 void GetFramebufferPixelLocalStorageParameterivANGLE(GLint plane,
                                                      GLenum pname,
                                                      GLint* params) override;
+
+void ClipControlEXT(GLenum origin, GLenum depth) override;
+
+void PolygonModeANGLE(GLenum face, GLenum mode) override;
+
+void PolygonOffsetClampEXT(GLfloat factor,
+                           GLfloat units,
+                           GLfloat clamp) override;
 
 #endif  // GPU_COMMAND_BUFFER_CLIENT_GLES2_IMPLEMENTATION_AUTOGEN_H_

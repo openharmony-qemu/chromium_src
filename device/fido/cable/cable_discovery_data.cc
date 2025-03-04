@@ -110,13 +110,13 @@ Pairing::Pairing() = default;
 Pairing::~Pairing() = default;
 
 // static
-absl::optional<std::unique_ptr<Pairing>> Pairing::Parse(
+std::optional<std::unique_ptr<Pairing>> Pairing::Parse(
     const cbor::Value& cbor,
     tunnelserver::KnownDomainID domain,
     base::span<const uint8_t, kQRSeedSize> local_identity_seed,
     base::span<const uint8_t, 32> handshake_hash) {
   if (!cbor.is_map()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   const cbor::Value::MapValue& map = cbor.GetMap();
@@ -136,10 +136,10 @@ absl::optional<std::unique_ptr<Pairing>> Pairing::Parse(
           }) ||
       its[3]->second.GetBytestring().size() !=
           std::tuple_size<decltype(pairing->peer_public_key_x962)>::value) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  pairing->tunnel_server_domain = tunnelserver::DecodeDomain(domain);
+  pairing->tunnel_server_domain = domain;
   pairing->contact_id = its[0]->second.GetBytestring();
   pairing->id = its[1]->second.GetBytestring();
   pairing->secret = its[2]->second.GetBytestring();
@@ -150,7 +150,14 @@ absl::optional<std::unique_ptr<Pairing>> Pairing::Parse(
   if (!VerifyPairingSignature(local_identity_seed,
                               pairing->peer_public_key_x962, handshake_hash,
                               its[4]->second.GetBytestring())) {
-    return absl::nullopt;
+    return std::nullopt;
+  }
+
+  const auto play_services_tag_it = map.find(cbor::Value(999));
+  if (play_services_tag_it != map.end() &&
+      play_services_tag_it->second.is_bool() &&
+      play_services_tag_it->second.GetBool()) {
+    pairing->from_new_implementation = true;
   }
 
   return pairing;
@@ -186,6 +193,9 @@ bool Pairing::EqualPublicKeys(const std::unique_ptr<Pairing>& a,
                               const std::unique_ptr<Pairing>& b) {
   return a->peer_public_key_x962 == b->peer_public_key_x962;
 }
+
+Pairing::Pairing(const Pairing&) = default;
+Pairing& Pairing::operator=(const Pairing&) = default;
 
 }  // namespace cablev2
 

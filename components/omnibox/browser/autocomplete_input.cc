@@ -2,11 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/autocomplete_input.h"
 
+#include <string_view>
 #include <vector>
 
 #include "base/logging.h"
+#include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -25,12 +32,9 @@
 #include "url/url_canon_ip.h"
 #include "url/url_util.h"
 
-#if BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_CHROMEOS_ASH)
-#include "chromeos/crosapi/cpp/lacros_startup_state.h"  // nogncheck
+#include "chromeos/constants/url_constants.h"           // nogncheck
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
-#include "chromeos/crosapi/cpp/gurl_os_handler_utils.h"  // nogncheck
-#endif  // BUILDFLAG(IS_CHROMEOS)
 
 namespace {
 
@@ -81,8 +85,8 @@ void OffsetComponentsExcludingScheme(url::Parsed* parts, int offset) {
       &parts->username, &parts->password, &parts->host, &parts->port,
       &parts->path,     &parts->query,    &parts->ref,
   };
-  for (size_t i = 0; i < std::size(components); ++i) {
-    url_formatter::OffsetComponent(offset, components[i]);
+  for (url::Component* component : components) {
+    url_formatter::OffsetComponent(offset, component);
   }
 }
 
@@ -183,7 +187,12 @@ void AutocompleteInput::Init(
   PopulateTermsPrefixedByHttpOrHttps(text_, &terms_prefixed_by_http_or_https_);
 
   DCHECK(!added_default_scheme_to_typed_url_);
-
+  typed_url_had_http_scheme_ =
+      base::StartsWith(text,
+                       base::ASCIIToUTF16(base::StrCat(
+                           {url::kHttpScheme, url::kStandardSchemeSeparator})),
+                       base::CompareCase::INSENSITIVE_ASCII) &&
+      canonicalized_url.SchemeIs(url::kHttpScheme);
   GURL upgraded_url;
   if (should_use_https_as_default_scheme_ &&
       type_ == metrics::OmniboxInputType::URL &&
@@ -267,26 +276,14 @@ metrics::OmniboxInputType AutocompleteInput::Parse(
   if (!canonicalized_url->is_valid())
     return metrics::OmniboxInputType::QUERY;
 
-#if BUILDFLAG(IS_CHROMEOS)
-  const bool is_lacros_or_lacros_is_primary =
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-      true;
-#else
-      // ChromeOS's launcher is using the omnibox from Ash. As such we have to
-      // allow Ash to use the os scheme if Lacros is the primary browser.
-      crosapi::lacros_startup_state::IsLacrosPrimaryEnabled();
-#endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
-  if (is_lacros_or_lacros_is_primary &&
-      crosapi::gurl_os_handler_utils::IsAshOsAsciiScheme(parsed_scheme_utf8)) {
-    // Lacros and Ash have a different set of internal chrome:// pages.
-    // However - once Lacros is the primary browser, the Ash browser cannot be
-    // reached anymore and many internal status / information / ... pages
-    // become inaccessible (e.g. the flags page which allows to disable Lacros).
-    // The os:// scheme is able to forward a keyed set of pages to Ash, hence
-    // making them accessible again.
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  if (base::EqualsCaseInsensitiveASCII(parsed_scheme_utf8,
+                                       chromeos::kAppInstallUriScheme) ||
+      base::EqualsCaseInsensitiveASCII(parsed_scheme_utf8,
+                                       chromeos::kLegacyAppInstallUriScheme)) {
     return metrics::OmniboxInputType::URL;
   }
-#endif  // BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
   if (base::EqualsCaseInsensitiveASCII(parsed_scheme_utf8, url::kFileScheme)) {
     // A user might or might not type a scheme when entering a file URL.  In
@@ -534,7 +531,7 @@ metrics::OmniboxInputType AutocompleteInput::Parse(
   // https://tools.ietf.org/html/rfc6761. Unlike localhost, these are not valid
   // host names, so they must have at least one subdomain to be a URL.
   // .local is used for Multicast DNS in https://www.rfc-editor.org/rfc/rfc6762.
-  for (const base::StringPiece domain : {"example", "test", "local"}) {
+  for (const std::string_view domain : {"example", "test", "local"}) {
     // The +1 accounts for a possible trailing period.
     if (canonicalized_url->DomainIs(domain) &&
         (canonicalized_url->host().length() > (domain.length() + 1)))
@@ -759,7 +756,7 @@ void AutocompleteInput::Clear() {
   omit_asynchronous_matches_ = false;
   focus_type_ = metrics::OmniboxFocusType::INTERACTION_DEFAULT;
   terms_prefixed_by_http_or_https_.clear();
-  query_tile_id_.reset();
+  lens_overlay_suggest_inputs_.reset();
   https_port_for_testing_ = 0;
   use_fake_https_for_https_upgrade_testing_ = false;
 }
@@ -775,9 +772,6 @@ size_t AutocompleteInput::EstimateMemoryUsage() const {
   res += base::trace_event::EstimateMemoryUsage(desired_tld_);
   res +=
       base::trace_event::EstimateMemoryUsage(terms_prefixed_by_http_or_https_);
-  res += query_tile_id_.has_value()
-             ? base::trace_event::EstimateMemoryUsage(query_tile_id_.value())
-             : 0u;
 
   return res;
 }
@@ -789,4 +783,8 @@ void AutocompleteInput::WriteIntoTrace(perfetto::TracedValue context) const {
 
 bool AutocompleteInput::IsZeroSuggest() const {
   return focus_type_ != metrics::OmniboxFocusType::INTERACTION_DEFAULT;
+}
+
+bool AutocompleteInput::InKeywordMode() const {
+  return keyword_mode_entry_method_ != metrics::OmniboxEventProto::INVALID;
 }

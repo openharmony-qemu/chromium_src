@@ -10,6 +10,7 @@
 #include "base/check.h"
 #include "base/functional/callback.h"
 #include "content/public/common/drop_data.h"
+#include "ui/gfx/native_widget_types.h"
 
 namespace content {
 
@@ -17,7 +18,7 @@ WebContentsViewDelegate::~WebContentsViewDelegate() {
 }
 
 gfx::NativeWindow WebContentsViewDelegate::GetNativeWindow() {
-  return nullptr;
+  return gfx::NativeWindow();
 }
 
 WebDragDestDelegate* WebContentsViewDelegate::GetDragDestDelegate() {
@@ -58,13 +59,10 @@ void* WebContentsViewDelegate::GetDelegateForHost(
   return nullptr;
 }
 
-void WebContentsViewDelegate::OnPerformDrop(const DropData& drop_data,
-                                            DropCompletionCallback callback) {
+void WebContentsViewDelegate::OnPerformingDrop(
+    const DropData& drop_data,
+    DropCompletionCallback callback) {
   return std::move(callback).Run(drop_data);
 }
 
-#ifdef OHOS_DRAG_DROP
-  void WebContentsViewDelegate::ClearContextMenu() {
-  }
-#endif // OHOS_DRAG_DROP
 }  // namespace content

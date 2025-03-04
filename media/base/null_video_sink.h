@@ -5,6 +5,7 @@
 #ifndef MEDIA_BASE_NULL_VIDEO_SINK_H_
 #define MEDIA_BASE_NULL_VIDEO_SINK_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/default_tick_clock.h"
@@ -42,7 +43,7 @@ class MEDIA_EXPORT NullVideoSink : public VideoRendererSink {
   void Stop() override;
   void PaintSingleFrame(scoped_refptr<VideoFrame> frame,
                         bool repaint_duplicate_frame) override;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MEDIA)
   void SetFinishPaintCallback(base::RepeatingClosure callback) override;
 #endif
 
@@ -71,7 +72,7 @@ class MEDIA_EXPORT NullVideoSink : public VideoRendererSink {
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 
   bool started_;
-  raw_ptr<RenderCallback> callback_;
+  raw_ptr<RenderCallback, AcrossTasksDanglingUntriaged> callback_;
 
   // Manages cancellation of periodic Render() callback task.
   base::CancelableRepeatingClosure cancelable_worker_;

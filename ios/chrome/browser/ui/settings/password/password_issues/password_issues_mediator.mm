@@ -12,15 +12,14 @@
 #import "components/google/core/common/google_util.h"
 #import "components/password_manager/core/browser/ui/insecure_credentials_manager.h"
 #import "components/password_manager/core/browser/ui/saved_passwords_presenter.h"
-#import "components/password_manager/core/common/password_manager_features.h"
-#import "components/sync/driver/sync_service.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/favicon/favicon_loader.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager.h"
-#import "ios/chrome/browser/passwords/password_check_observer_bridge.h"
-#import "ios/chrome/browser/passwords/password_checkup_utils.h"
-#import "ios/chrome/browser/passwords/password_manager_util_ios.h"
+#import "components/sync/service/sync_service.h"
+#import "ios/chrome/browser/favicon/model/favicon_loader.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager.h"
+#import "ios/chrome/browser/passwords/model/password_check_observer_bridge.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_utils.h"
+#import "ios/chrome/browser/passwords/model/password_manager_util_ios.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_constants.h"
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_consumer.h"
 #import "ios/chrome/browser/ui/settings/password/saved_passwords_presenter_observer.h"
@@ -29,13 +28,8 @@
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using password_manager::CredentialUIEntry;
 using password_manager::WarningType;
-using password_manager::features::IsPasswordCheckupEnabled;
 
 namespace {
 
@@ -48,9 +42,8 @@ NSArray<PasswordIssue*>* GetSortedPasswordIssues(
   NSMutableArray<PasswordIssue*>* passwords = [[NSMutableArray alloc] init];
 
   BOOL enable_compromised_description =
-      IsPasswordCheckupEnabled() &&
-      (warning_type == WarningType::kCompromisedPasswordsWarning ||
-       warning_type == WarningType::kDismissedWarningsWarning);
+      warning_type == WarningType::kCompromisedPasswordsWarning ||
+      warning_type == WarningType::kDismissedWarningsWarning;
 
   for (auto credential : insecure_credentials) {
     [passwords addObject:[[PasswordIssue alloc] initWithCredential:credential
@@ -135,15 +128,6 @@ NSArray<PasswordIssueGroup*>* GetPasswordIssueGroups(
   }
 }
 
-// Builds the text of the Dismissed Warnings button in the consumer.
-NSString* GetDismissedWarningsButtonText(NSInteger dismissed_warnings_count) {
-  return dismissed_warnings_count > 0
-             ? l10n_util::GetNSStringF(
-                   IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DISMISSED_WARNINGS_BUTTON_TITLE,
-                   base::NumberToString16(dismissed_warnings_count))
-             : nil;
-}
-
 // Computes the number of dimissed insecure credentials warnings.
 // Only Compromissed credentials warnings can be dismissed, other warning types
 // always return 0.
@@ -177,7 +161,7 @@ NSInteger GetDismissedWarningsCount(
   // credential was detected but the consumer is displaying weak credentials).
   // A value of nullopt means the consumer hasn't been provided with credentials
   // yet.
-  absl::optional<std::vector<CredentialUIEntry>> _insecureCredentials;
+  std::optional<std::vector<CredentialUIEntry>> _insecureCredentials;
 
   // Last number of dismissed warnings passed to the consumer.
   // Used to only update the consumer when the data it displays changed.
@@ -255,6 +239,10 @@ NSInteger GetDismissedWarningsCount(
   [self providePasswordsToConsumer];
 }
 
+- (void)passwordCheckManagerWillShutdown {
+  _passwordCheckObserver.reset();
+}
+
 #pragma mark - SavedPasswordsPresenterObserver
 
 - (void)savedPasswordsDidChange {
@@ -265,11 +253,6 @@ NSInteger GetDismissedWarningsCount(
 
 - (void)providePasswordsToConsumer {
   DCHECK(self.consumer);
-
-  if (!IsPasswordCheckupEnabled()) {
-    [self providePasswordsToLegacyConsumer];
-    return;
-  }
 
   std::vector<CredentialUIEntry> allInsecureCredentials =
       _manager->GetInsecureCredentials();
@@ -292,10 +275,9 @@ NSInteger GetDismissedWarningsCount(
 
   NSArray<PasswordIssueGroup*>* passwordIssueGroups =
       GetPasswordIssueGroups(_warningType, insecureCredentialsForWarningType);
-  NSString* dismissedCredentialsButtonText =
-      GetDismissedWarningsButtonText(dismissedWarningsCount);
+
   [self.consumer setPasswordIssues:passwordIssueGroups
-       dismissedWarningsButtonText:dismissedCredentialsButtonText];
+            dismissedWarningsCount:dismissedWarningsCount];
 
   [self.consumer
       setNavigationBarTitle:[self
@@ -303,27 +285,9 @@ NSInteger GetDismissedWarningsCount(
                                     insecureCredentialsForWarningType.size()]];
 }
 
-- (void)providePasswordsToLegacyConsumer {
-  CHECK(!IsPasswordCheckupEnabled());
-  CHECK_EQ(_warningType, WarningType::kCompromisedPasswordsWarning);
-
-  [self.consumer
-      setNavigationBarTitle:l10n_util::GetNSString(IDS_IOS_PASSWORDS)];
-
-  std::vector<CredentialUIEntry> insecureCredentials =
-      _manager->GetInsecureCredentials();
-
-  [self.consumer
-                setPasswordIssues:GetPasswordIssueGroups(
-                                      WarningType::kCompromisedPasswordsWarning,
-                                      insecureCredentials)
-      dismissedWarningsButtonText:nil];
-}
-
 // Computes the navigation bar title based on `_warningType` and number of
 // issues.
 - (NSString*)navigationBarTitleForNumberOfIssues:(long)numberOfIssues {
-  CHECK(IsPasswordCheckupEnabled());
   switch (_warningType) {
     case WarningType::kWeakPasswordsWarning:
       return base::SysUTF16ToNSString(l10n_util::GetPluralStringFUTF16(
@@ -342,42 +306,34 @@ NSInteger GetDismissedWarningsCount(
                                      base::NumberToString16(numberOfIssues));
 
     case WarningType::kNoInsecurePasswordsWarning:
-      NOTREACHED_NORETURN();
+      NOTREACHED();
   }
 }
 
 - (void)setConsumerHeader {
   int headerTextID;
-  absl::optional<GURL> headerURL;
+  std::optional<GURL> headerURL;
 
-  if (IsPasswordCheckupEnabled()) {
-    switch (_warningType) {
-      case WarningType::kWeakPasswordsWarning:
-        headerTextID = IDS_IOS_WEAK_PASSWORD_ISSUES_DESCRIPTION;
-        headerURL =
-            GURL(password_manager::
-                     kPasswordManagerHelpCenterCreateStrongPasswordsURL);
-        break;
-      case WarningType::kCompromisedPasswordsWarning:
-        headerTextID = IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DESCRIPTION;
-        headerURL =
-            GURL(password_manager::
-                     kPasswordManagerHelpCenterChangeUnsafePasswordsURL);
-        break;
-      case WarningType::kReusedPasswordsWarning:
-        headerTextID = IDS_IOS_REUSED_PASSWORD_ISSUES_DESCRIPTION;
-        headerURL = absl::nullopt;
-        break;
-      // Dismissed Warnings Page doesn't have a header.
-      case WarningType::kDismissedWarningsWarning:
-      case WarningType::kNoInsecurePasswordsWarning:
-        // no-op
-        return;
-    }
-
-  } else {
-    headerTextID = IDS_IOS_PASSWORD_ISSUES_DESCRIPTION;
-    headerURL = absl::nullopt;
+  switch (_warningType) {
+    case WarningType::kWeakPasswordsWarning:
+      headerTextID = IDS_IOS_WEAK_PASSWORD_ISSUES_DESCRIPTION;
+      headerURL = GURL(
+          password_manager::kPasswordManagerHelpCenterCreateStrongPasswordsURL);
+      break;
+    case WarningType::kCompromisedPasswordsWarning:
+      headerTextID = IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DESCRIPTION;
+      headerURL = GURL(
+          password_manager::kPasswordManagerHelpCenterChangeUnsafePasswordsURL);
+      break;
+    case WarningType::kReusedPasswordsWarning:
+      headerTextID = IDS_IOS_REUSED_PASSWORD_ISSUES_DESCRIPTION;
+      headerURL = std::nullopt;
+      break;
+    // Dismissed Warnings Page doesn't have a header.
+    case WarningType::kDismissedWarningsWarning:
+    case WarningType::kNoInsecurePasswordsWarning:
+      // no-op
+      return;
   }
 
   NSString* headerText = l10n_util::GetNSString(headerTextID);
@@ -420,12 +376,12 @@ NSInteger GetDismissedWarningsCount(
 
 - (void)faviconForPageURL:(CrURL*)URL
                completion:(void (^)(FaviconAttributes*))completion {
-  BOOL isPasswordSyncEnabled =
-      password_manager_util::IsPasswordSyncNormalEncryptionEnabled(
+  BOOL fallbackToGoogleServer =
+      password_manager_util::IsSavingPasswordsToAccountWithNormalEncryption(
           _syncService);
-  _faviconLoader->FaviconForPageUrl(
-      URL.gurl, kDesiredMediumFaviconSizePt, kMinFaviconSizePt,
-      /*fallback_to_google_server=*/isPasswordSyncEnabled, completion);
+  _faviconLoader->FaviconForPageUrl(URL.gurl, kDesiredMediumFaviconSizePt,
+                                    kMinFaviconSizePt, fallbackToGoogleServer,
+                                    completion);
 }
 
 @end

@@ -1,0 +1,102 @@
+import("//gpu/vulkan/features.gni")
+import("//build/config/features.gni")
+
+assert(is_ohos)
+
+visibility = [ "//ui/ozone/*" ]
+
+source_set("ohos") {
+  sources = [
+    "client_native_pixmap_factory_ohos.cc",
+    "client_native_pixmap_factory_ohos.h",
+    "common/ohos_util.cc",
+    "common/ohos_util.h",
+    "gpu/ohos_surface_factory.cc",
+    "gpu/ohos_surface_factory.h",
+    "gpu/gl_surface_egl_readback_ohos.cc",
+    "gpu/gl_surface_egl_readback_ohos.h",
+    "gpu/gl_surface_egl_ohos.cc",
+    "gpu/gl_surface_egl_ohos.h",
+    "host/ohos_canvas_surface.cc",
+    "host/ohos_canvas_surface.h",
+    "host/ohos_cursor_utils.cc",
+    "host/ohos_cursor_utils.h",
+    "host/ohos_event_filter.cc",
+    "host/ohos_event_filter.h",
+    "host/ohos_event_source.cc",
+    "host/ohos_event_source.h",
+    "host/ohos_fake_window.cc",
+    "host/ohos_fake_window.h",
+    "host/ohos_popup.cc",
+    "host/ohos_popup.h",
+    "host/ohos_screen.cc",
+    "host/ohos_screen.h",
+    "host/ohos_toplevel_window.cc",
+    "host/ohos_toplevel_window.h",
+    "host/ohos_window.cc",
+    "host/ohos_window.h",
+    "host/ohos_window_factory.cc",
+    "host/ohos_window_manager.cc",
+    "host/ohos_window_manager.h",
+    "host/ohos_window_observer.cc",
+    "host/ohos_window_observer.h",
+    "ozone_platform_ohos.cc",
+    "ozone_platform_ohos.h",
+    "drag/ohos_drag_manager.cc",
+    "drag/ohos_drag_manager.h",
+    "drag/ohos_whole_screen_move_loop.cc",
+    "drag/ohos_whole_screen_move_loop.h",
+    "drag/ohos_move_loop_delegate.h",
+    "drag/ohos_desktop_window_move_client.cc",
+    "drag/ohos_desktop_window_move_client.h",
+  ]
+
+  defines = [ "OZONE_IMPLEMENTATION" ]
+
+  deps = [
+    "//ohos/adapter:adapter",
+    "//base",
+    "//gpu/vulkan:buildflags",
+    "//skia",
+    "//ui/accessibility:ax_enums_mojo",
+    "//ui/base",
+    "//ui/base/clipboard:clipboard_types",
+    "//ui/base/cursor",
+    "//ui/base/dragdrop:types",
+    "//ui/base/ime",
+    "//ui/base/ime/ohos",
+    "//ui/base/mojom:mojom",
+    "//ui/base/mojom:ui_base_types",
+    "//ui/events",
+    "//ui/events/ozone/layout",
+    "//ui/events/platform",
+    "//ui/gfx/geometry",
+    "//ui/ozone:ozone_base",
+    "//ui/ozone/common",
+    "//ui/platform_window",
+    "//ui/platform_window/wm",
+  ]
+
+  public_deps = [ "//ui/base/mojom:ui_base_types" ]
+
+  libs = [
+    "ace_napi.z",
+    "ace_ndk.z",
+    "native_window",
+    "native_buffer",
+  ]
+}
+
+source_set("test_support") {
+  testonly = true
+
+  sources = [
+    "test/ohos_ozone_ui_controls_test_helper.cc",
+    "test/ohos_ozone_ui_controls_test_helper.h",
+  ]
+
+  deps = [
+    "//ohos/adapter:adapter",
+    "//ui/aura:aura",
+  ]
+}

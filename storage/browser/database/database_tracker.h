@@ -14,10 +14,12 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/gtest_prod_util.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/observer_list.h"
@@ -41,7 +43,6 @@ namespace storage {
 class DatabaseQuotaClient;
 class QuotaClientCallbackWrapper;
 class QuotaManagerProxy;
-class SpecialStoragePolicy;
 
 COMPONENT_EXPORT(STORAGE_BROWSER)
 extern const base::FilePath::CharType kDatabaseDirectoryName[];
@@ -77,7 +78,9 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) OriginInfo {
 // The data in this class is not thread-safe, so all methods of this class
 // should be called on the task runner returned by task_runner(). The only
 // exceptions are the constructor, the destructor, and the getters explicitly
-// marked as thread-safe.
+// marked as thread-safe. Although the destructor itself may run on any thread,
+// destruction effectively occurs in Shutdown(), which expects to be called on
+// task_runner().
 class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
     : public base::RefCountedThreadSafe<DatabaseTracker> {
  public:
@@ -99,13 +102,11 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   static scoped_refptr<DatabaseTracker> Create(
       const base::FilePath& profile_path,
       bool is_incognito,
-      scoped_refptr<SpecialStoragePolicy> special_storage_policy,
       scoped_refptr<QuotaManagerProxy> quota_manager_proxy);
 
   // Exposed for base::MakeRefCounted. Users should call Create().
   DatabaseTracker(const base::FilePath& profile_path,
                   bool is_incognito,
-                  scoped_refptr<SpecialStoragePolicy> special_storage_policy,
                   scoped_refptr<QuotaManagerProxy> quota_manager_proxy,
                   base::PassKey<DatabaseTracker>);
 
@@ -139,14 +140,14 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   // Thread-safe getter.
   const base::FilePath& database_directory() const { return db_dir_; }
 
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
   base::FilePath GetFullDBFilePath(const std::string& origin_identifier,
                                    const std::u16string& database_name,
                                    bool suffix = false);
 #else
   base::FilePath GetFullDBFilePath(const std::string& origin_identifier,
                                    const std::u16string& database_name);
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 
   // virtual for unit-testing only
   virtual bool GetOriginInfo(const std::string& origin_id, OriginInfo* info);
@@ -171,9 +172,6 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
                       net::CompletionOnceCallback callback);
 
   // Deletes databases touched since `cutoff`.
-  //
-  // Does not delete databases belonging to origins designated as protected by
-  // the SpecialStoragePolicy passed to the DatabaseTracker constructor.
   //
   // `callback` must must be non-null, and is invoked upon completion with a
   // net::Error. The status will be net::OK on success, or net::FAILED if not
@@ -202,8 +200,6 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   // Shutdown the database tracker, deleting database files if the tracker is
   // used for an Incognito profile.
   void Shutdown();
-  // Disables the exit-time deletion of session-only data.
-  void SetForceKeepSessionState();
 
  protected:
   // Subclasses need PassKeys to call the constructor.
@@ -251,9 +247,6 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   // Deletes the directory that stores all DBs in Incognito mode, if it
   // exists.
   void DeleteIncognitoDBDirectory();
-
-  // Deletes session-only databases. Blocks databases from being created/opened.
-  void ClearSessionOnlyOrigins();
 
   bool DeleteClosedDatabase(const std::string& origin_identifier,
                             const std::u16string& database_name);
@@ -307,7 +300,6 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
 
   bool is_initialized_ = false;
   const bool is_incognito_;
-  bool force_keep_session_state_ = false;
   bool shutting_down_ = false;
   const base::FilePath profile_path_;
 
@@ -328,9 +320,6 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   std::vector<std::pair<net::CompletionOnceCallback, DatabaseSet>>
       deletion_callbacks_;
 
-  // Apps and Extensions can have special rights.
-  const scoped_refptr<SpecialStoragePolicy> special_storage_policy_;
-
   // Can be accessed from any thread via quota_manager_proxy().
   //
   // Thread-safety argument: The reference is immutable.
@@ -346,7 +335,8 @@ class COMPONENT_EXPORT(STORAGE_BROWSER) DatabaseTracker
   // main DB and journal file that was accessed. When the Incognito profile
   // goes away (or when the browser crashes), all these handles will be
   // closed, and the files will be deleted.
-  std::map<std::u16string, base::File*> incognito_file_handles_;
+  std::map<std::u16string, raw_ptr<base::File, CtnExperimental>>
+      incognito_file_handles_;
 
   // In a non-Incognito profile, all DBs in an origin are stored in a
   // directory named after the origin. In an Incognito profile though, we do

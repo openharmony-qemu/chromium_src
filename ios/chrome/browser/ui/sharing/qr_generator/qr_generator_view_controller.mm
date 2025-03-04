@@ -5,6 +5,7 @@
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_view_controller.h"
 
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
+#import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/confirmation_alert/confirmation_alert_action_handler.h"
@@ -13,10 +14,6 @@
 #import "ios/chrome/common/ui/util/image_util.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -166,10 +163,22 @@ constexpr CGFloat kSymbolSize = 22;
           constraintLessThanOrEqualToAnchor:self.view.safeAreaLayoutGuide
                                                 .bottomAnchor
                                    constant:-8];
+
+  if (@available(iOS 17, *)) {
+    NSArray<UITrait>* traits =
+        TraitCollectionSetForTraits(@[ UITraitVerticalSizeClass.class ]);
+    [self registerForTraitChanges:traits
+                       withTarget:self.view
+                           action:@selector(setNeedsUpdateConstraints)];
+  }
 }
 
+#if !defined(__IPHONE_17_0) || __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_17_0
 - (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
   [super traitCollectionDidChange:previousTraitCollection];
+  if (@available(iOS 17, *)) {
+    return;
+  }
 
   // Update constraints for different size classes.
   BOOL hasNewVerticalSizeClass = previousTraitCollection.verticalSizeClass !=
@@ -179,6 +188,7 @@ constexpr CGFloat kSymbolSize = 22;
     [self.view setNeedsUpdateConstraints];
   }
 }
+#endif
 
 - (void)updateViewConstraints {
   BOOL isVerticalCompact =
@@ -359,10 +369,8 @@ constexpr CGFloat kSymbolSize = 22;
   [primaryActionButton addTarget:self
                           action:@selector(didTapPrimaryActionButton)
                 forControlEvents:UIControlEventTouchUpInside];
-  [primaryActionButton
-      setTitle:l10n_util::GetNSString(IDS_IOS_SHARE_BUTTON_LABEL)
-      forState:UIControlStateNormal];
-  primaryActionButton.titleLabel.adjustsFontSizeToFitWidth = YES;
+  SetConfigurationTitle(primaryActionButton,
+                        l10n_util::GetNSString(IDS_IOS_SHARE_BUTTON_LABEL));
   [primaryActionButton
       setContentHuggingPriority:UILayoutPriorityDefaultHigh + 1
                         forAxis:UILayoutConstraintAxisVertical];

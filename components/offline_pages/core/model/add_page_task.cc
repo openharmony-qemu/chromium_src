@@ -31,7 +31,7 @@ AddPageResult ItemActionStatusToAddPageResult(ItemActionStatus status) {
     case ItemActionStatus::NOT_FOUND:
       break;
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return AddPageResult::STORE_FAILURE;
 }
 
@@ -83,7 +83,7 @@ AddPageTask::AddPageTask(OfflinePageMetadataStore* store,
   DCHECK(!callback_.is_null());
 }
 
-AddPageTask::~AddPageTask() {}
+AddPageTask::~AddPageTask() = default;
 
 void AddPageTask::Run() {
   if (!store_) {

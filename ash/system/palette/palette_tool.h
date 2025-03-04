@@ -51,10 +51,6 @@ class ASH_EXPORT PaletteTool {
     // Returns the root window.
     virtual aura::Window* GetWindow() = 0;
 
-    // Record usage of each pen palette option.
-    virtual void RecordPaletteOptionsUsage(PaletteTrayOptions option,
-                                           PaletteInvocationMethod method) = 0;
-
    protected:
     virtual ~Delegate() {}
   };
@@ -115,7 +111,7 @@ class ASH_EXPORT PaletteTool {
   bool enabled_ = false;
 
   // Unowned pointer to the delegate. The delegate should outlive this instance.
-  raw_ptr<Delegate, ExperimentalAsh> delegate_;
+  raw_ptr<Delegate> delegate_;
 };
 
 }  // namespace ash

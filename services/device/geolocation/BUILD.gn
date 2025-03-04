@@ -5,10 +5,12 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
-  import("//build/config/android/rules.gni")  # For generate_jni().
+  import("//build/config/android/rules.gni")
+  import("//third_party/jni_zero/jni_zero.gni")
 }
 
 source_set("geolocation") {
@@ -27,8 +29,8 @@ source_set("geolocation") {
     "geolocation_provider.h",
     "geolocation_provider_impl.cc",
     "geolocation_provider_impl.h",
-    "location_arbitrator.cc",
-    "location_arbitrator.h",
+    "location_provider_manager.cc",
+    "location_provider_manager.h",
     "network_location_request.cc",
     "network_location_request.h",
     "position_cache.h",
@@ -50,6 +52,8 @@ source_set("geolocation") {
     "wifi_polling_policy.h",
   ]
 
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
+
   deps = [
     "//base",
     "//components/device_event_log",
@@ -57,6 +61,7 @@ source_set("geolocation") {
     "//mojo/public/cpp/system",
     "//net",
     "//services/device/public/cpp:device_features",
+    "//services/device/public/mojom:geolocation_internals",
     "//ui/gfx",
   ]
   public_deps = [
@@ -65,8 +70,7 @@ source_set("geolocation") {
     "//services/network/public/cpp",
   ]
 
-  # ifdef OHOS_GEOLOCATION
-  if (is_ohos && defined(ohos_geolocation) && ohos_geolocation) {
+ if (defined(arkweb_geolocation) && arkweb_geolocation) {
     sources += [
       "ohos/location_provider_ohos.cc",
       "ohos/location_provider_ohos.h",
@@ -77,8 +81,6 @@ source_set("geolocation") {
       "//ohos_glue:ohos_adapter_glue_source",
     ]
   }
-
-  # endif
   if (is_android) {
     sources += [
       "location_api_adapter_android.cc",
@@ -170,6 +172,7 @@ if (is_android) {
   }
 
   android_library("geolocation_java") {
+    srcjar_deps = [ ":geolocation_jni_headers" ]
     sources = [
       "android/java/src/org/chromium/device/geolocation/LocationProviderAdapter.java",
       "android/java/src/org/chromium/device/geolocation/LocationProviderAndroid.java",
@@ -184,14 +187,13 @@ if (is_android) {
       "$google_play_services_package:google_play_services_location_java",
       "$google_play_services_package:google_play_services_tasks_java",
       "//base:base_java",
-      "//base:jni_java",
       "//build/android:build_java",
       "//components/location/android:location_java",
       "//services/device/public/java:geolocation_java",
       "//third_party/android_deps:chromium_play_services_availability_java",
       "//third_party/androidx:androidx_annotation_annotation_java",
+      "//third_party/jni_zero:jni_zero_java",
     ]
-    annotation_processor_deps = [ "//base/android/jni_generator:jni_processor" ]
   }
 }
 
@@ -203,12 +205,15 @@ source_set("test_support") {
     "fake_location_provider.h",
     "fake_position_cache.cc",
     "fake_position_cache.h",
+    "mock_wifi_data_provider.cc",
+    "mock_wifi_data_provider.h",
     "position_cache_test_util.cc",
     "position_cache_test_util.h",
   ]
   public_deps = [ ":geolocation" ]
   deps = [
     "//services/device/public/cpp/geolocation",
+    "//services/device/public/mojom:geolocation_internals",
     "//testing/gmock",
     "//testing/gtest",
   ]

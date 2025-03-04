@@ -7,12 +7,17 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ios/chrome/browser/ui/tab_switcher/tab_collection_consumer.h"
+#import "ios/chrome/browser/ui/tab_switcher/pinned_tab_collection_consumer.h"
 
-@class GridTransitionLayout;
+@class LegacyGridTransitionLayout;
 @class PinnedTabsViewController;
 @protocol TabCollectionDragDropHandler;
 @protocol TabContextMenuProvider;
+@class TabGridTransitionItem;
+
+namespace web {
+class WebStateID;
+}  // namespace web
 
 // Protocol used to relay relevant user interactions from the
 // PinnedTabsViewController.
@@ -22,22 +27,15 @@
 // was selected.
 - (void)pinnedTabsViewController:
             (PinnedTabsViewController*)pinnedTabsViewController
-             didSelectItemWithID:(NSString*)itemID;
-
-// Tells the delegate that the the number of items in `pinnedTabsViewController`
-// changed to `count`.
-- (void)pinnedTabsViewController:
-            (PinnedTabsViewController*)pinnedTabsViewController
-              didChangeItemCount:(NSUInteger)count;
+             didSelectItemWithID:(web::WebStateID)itemID;
 
 // Tells the delegate that the item with `itemID` was moved.
-- (void)pinnedTabsViewController:
-            (PinnedTabsViewController*)pinnedTabsViewController
-               didMoveItemWithID:(NSString*)itemID;
+- (void)pinnedTabsViewControllerDidMoveItem:
+    (PinnedTabsViewController*)pinnedTabsViewController;
 
 // Tells the delegate that the item with `itemID` was removed.
 - (void)pinnedTabsViewController:(PinnedTabsViewController*)gridViewController
-             didRemoveItemWIthID:(NSString*)itemID;
+             didRemoveItemWithID:(web::WebStateID)itemID;
 
 // Tells the delegate that the `pinnedTabsViewController` visibility has
 // changed.
@@ -53,14 +51,22 @@
     (PinnedTabsViewController*)pinnedTabsViewController;
 
 // Tells the delegate that a drag session did end.
+- (void)pinnedViewControllerDragSessionWillBegin:
+    (PinnedTabsViewController*)pinnedTabsViewController;
+
+// Tells the delegate that a drag session did end.
 - (void)pinnedViewControllerDragSessionDidEnd:
+    (PinnedTabsViewController*)pinnedTabsViewController;
+
+// Tells the delegate that a context menu has been requested.
+- (void)pinnedViewControllerDidRequestContextMenu:
     (PinnedTabsViewController*)pinnedTabsViewController;
 
 @end
 
 // UICollectionViewController used to display pinned tabs.
 @interface PinnedTabsViewController
-    : UICollectionViewController <TabCollectionConsumer>
+    : UICollectionViewController <PinnedTabCollectionConsumer>
 
 // Delegate used to to relay relevant user interactions.
 @property(nonatomic, weak) id<PinnedTabsViewControllerDelegate> delegate;
@@ -95,7 +101,10 @@
 - (void)dropAnimationDidEnd;
 
 // Returns the layout of the pinned tabs to be used in an animated transition.
-- (GridTransitionLayout*)transitionLayout;
+- (LegacyGridTransitionLayout*)transitionLayout;
+
+// Returns TabGridTransitionItem for the active cell.
+- (TabGridTransitionItem*)transitionItemForActiveCell;
 
 // Returns whether there is a selected cell in the collection.
 - (BOOL)hasSelectedCell;

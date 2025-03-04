@@ -13,22 +13,23 @@ namespace autofill {
 
 class TestAutofillDataModel : public AutofillDataModel {
  public:
-  TestAutofillDataModel(const std::string& guid, const std::string& origin);
-  TestAutofillDataModel(const std::string& guid,
-                        size_t use_count,
-                        base::Time use_date);
+  explicit TestAutofillDataModel(size_t usage_history_size = 1);
+  TestAutofillDataModel(size_t use_count, base::Time use_date);
 
-  TestAutofillDataModel(const TestAutofillDataModel&) = delete;
-  TestAutofillDataModel& operator=(const TestAutofillDataModel&) = delete;
+  TestAutofillDataModel(const TestAutofillDataModel&) = default;
+  TestAutofillDataModel& operator=(const TestAutofillDataModel&) = default;
 
   ~TestAutofillDataModel() override;
 
+  // For easier access during testing.
+  using AutofillDataModel::MergeUseDates;
+
  private:
-  std::u16string GetRawInfo(ServerFieldType type) const override;
-  void SetRawInfoWithVerificationStatus(ServerFieldType type,
+  std::u16string GetRawInfo(FieldType type) const override;
+  void SetRawInfoWithVerificationStatus(FieldType type,
                                         const std::u16string& value,
                                         VerificationStatus status) override;
-  void GetSupportedTypes(ServerFieldTypeSet* supported_types) const override;
+  void GetSupportedTypes(FieldTypeSet* supported_types) const override;
 };
 
 }  // namespace autofill

@@ -201,16 +201,10 @@ bool FileSystemAccessSafeMoveHelper::RequireAfterWriteChecks() const {
   if (dest_url().type() == storage::kFileSystemTypeTemporary)
     return false;
 
-  if (!base::FeatureList::IsEnabled(
-          features::
-              kFileSystemAccessSkipAfterWriteChecksIfUnchangingExtension)) {
-    return true;
-  }
-
   if (!source_url().IsInSameFileSystem(dest_url()))
     return true;
 
-  // TODO(crbug.com/1250534): Properly handle directory moves here, for
+  // TODO(crbug.com/40198034): Properly handle directory moves here, for
   // which extension checks don't make sense.
   auto source_extension = source_url().path().Extension();
   auto dest_extension = dest_url().path().Extension();
@@ -246,7 +240,6 @@ void FileSystemAccessSafeMoveHelper::DoAfterWriteCheck(
   if (rfh)
     outermost_main_frame_id = rfh->GetOutermostMainFrame()->GetGlobalId();
 
-#if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
   auto item = std::make_unique<FileSystemAccessWriteItem>();
   item->target_file_path = dest_url().path();
   item->full_path = source_url().path();
@@ -259,9 +252,6 @@ void FileSystemAccessSafeMoveHelper::DoAfterWriteCheck(
       std::move(item), context_.frame_id,
       base::BindOnce(&FileSystemAccessSafeMoveHelper::DidAfterWriteCheck,
                      weak_factory_.GetWeakPtr()));
-#else
-  (void)has_transient_user_activation_;
-#endif
 }
 
 void FileSystemAccessSafeMoveHelper::DidAfterWriteCheck(
@@ -354,6 +344,9 @@ void FileSystemAccessSafeMoveHelper::DidFileDoQuarantine(
     quarantine::mojom::Quarantine* raw_quarantine = quarantine_remote.get();
     raw_quarantine->QuarantineFile(
         target_url.path(), authority_url, referrer_url,
+        // TODO(crbug.com/351165321): Consider propagating request_initiator
+        // information here.
+        /*request_initiator=*/std::nullopt,
         GetContentClient()
             ->browser()
             ->GetApplicationClientGUIDForQuarantineCheck(),

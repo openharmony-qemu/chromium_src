@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "components/subresource_filter/content/browser/subresource_filter_test_harness.h"
+
 #include <memory>
 #include <utility>
 
@@ -15,14 +17,15 @@
 #include "components/safe_browsing/core/browser/db/v4_protocol_manager_util.h"
 #include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
 #include "components/subresource_filter/content/browser/content_subresource_filter_web_contents_helper.h"
-#include "components/subresource_filter/content/browser/ruleset_service.h"
+#include "components/subresource_filter/content/browser/safe_browsing_ruleset_publisher.h"
 #include "components/subresource_filter/content/browser/subresource_filter_content_settings_manager.h"
 #include "components/subresource_filter/content/browser/subresource_filter_observer_test_utils.h"
 #include "components/subresource_filter/content/browser/subresource_filter_profile_context.h"
-#include "components/subresource_filter/content/browser/subresource_filter_test_harness.h"
 #include "components/subresource_filter/content/browser/test_ruleset_publisher.h"
+#include "components/subresource_filter/content/shared/browser/ruleset_service.h"
 #include "components/subresource_filter/core/common/activation_decision.h"
 #include "components/subresource_filter/core/common/activation_list.h"
+#include "components/subresource_filter/core/common/constants.h"
 #include "components/subresource_filter/core/common/test_ruleset_creator.h"
 #include "components/subresource_filter/core/common/test_ruleset_utils.h"
 #include "components/subresource_filter/core/mojom/subresource_filter.mojom.h"
@@ -38,7 +41,7 @@
 
 namespace subresource_filter {
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 class MockRulesetServiceClient : public RulesetServiceClient {
  public:
   void OnDeleteRulesetFile() override {}
@@ -68,7 +71,8 @@ void SubresourceFilterTestHarness::SetUp() {
 
   // Set up the ruleset service.
   ASSERT_TRUE(ruleset_service_dir_.CreateUniqueTempDir());
-  IndexedRulesetVersion::RegisterPrefs(pref_service_.registry());
+  IndexedRulesetVersion::RegisterPrefs(pref_service_.registry(),
+                                       kSafeBrowsingRulesetConfig.filter_tag);
   // TODO(csharrison): having separated blocking and background task runners
   // for |ContentRulesetService| and |RulesetService| would be a good idea, but
   // external unit tests code implicitly uses knowledge that blocking and
@@ -80,20 +84,24 @@ void SubresourceFilterTestHarness::SetUp() {
   //    |AsyncDocumentSubresourceFilter| posts core initialization tasks on
   //    blocking task runner and this it is the current thread task runner.
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   base::ScopedTempDir unindex_dir;
   ASSERT_TRUE(unindex_dir.CreateUniqueTempDir());
 
   ruleset_service_ = std::make_unique<RulesetService>(
-      &pref_service_, base::SingleThreadTaskRunner::GetCurrentDefault(),
+      kSafeBrowsingRulesetConfig, &pref_service_,
+      base::SingleThreadTaskRunner::GetCurrentDefault(),
       ruleset_service_dir_.GetPath(), unindex_dir.GetPath(),
       &g_mock_ruleset_service_client_,
-      base::SingleThreadTaskRunner::GetCurrentDefault());
+      base::SingleThreadTaskRunner::GetCurrentDefault(),
+      SafeBrowsingRulesetPublisher::Factory());
 #else
   ruleset_service_ = std::make_unique<RulesetService>(
-      &pref_service_, base::SingleThreadTaskRunner::GetCurrentDefault(),
+      kSafeBrowsingRulesetConfig, &pref_service_,
+      base::SingleThreadTaskRunner::GetCurrentDefault(),
       ruleset_service_dir_.GetPath(),
-      base::SingleThreadTaskRunner::GetCurrentDefault());
+      base::SingleThreadTaskRunner::GetCurrentDefault(),
+      SafeBrowsingRulesetPublisher::Factory());
 #endif
 
   // Publish the test ruleset.
@@ -185,7 +193,7 @@ SubresourceFilterTestHarness::CreateAndNavigateDisallowedSubframe(
 void SubresourceFilterTestHarness::ConfigureAsSubresourceFilterOnlyURL(
     const GURL& url) {
   fake_safe_browsing_database()->AddBlocklistedUrl(
-      url, safe_browsing::SB_THREAT_TYPE_SUBRESOURCE_FILTER);
+      url, safe_browsing::SBThreatType::SB_THREAT_TYPE_SUBRESOURCE_FILTER);
 }
 
 void SubresourceFilterTestHarness::RemoveURLFromBlocklist(const GURL& url) {

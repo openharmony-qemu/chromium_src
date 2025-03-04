@@ -104,10 +104,12 @@ class BrowserGpuChannelHostFactory::EstablishRequest
   // that case we make the sync mojo call since we're on the UI thread and
   // therefore can't wait for an async mojo reply on the same thread.
   void Establish(bool sync);
-  void OnEstablished(mojo::ScopedMessagePipeHandle channel_handle,
-                     const gpu::GPUInfo& gpu_info,
-                     const gpu::GpuFeatureInfo& gpu_feature_info,
-                     viz::GpuHostImpl::EstablishChannelStatus status);
+  void OnEstablished(
+      mojo::ScopedMessagePipeHandle channel_handle,
+      const gpu::GPUInfo& gpu_info,
+      const gpu::GpuFeatureInfo& gpu_feature_info,
+      const gpu::SharedImageCapabilities& shared_image_capabilities,
+      viz::GpuHostImpl::EstablishChannelStatus status);
   void Finish();
   void FinishAndRunCallbacksOnMain();
   void FinishOnMain();
@@ -181,6 +183,7 @@ void BrowserGpuChannelHostFactory::EstablishRequest::OnEstablished(
     mojo::ScopedMessagePipeHandle channel_handle,
     const gpu::GPUInfo& gpu_info,
     const gpu::GpuFeatureInfo& gpu_feature_info,
+    const gpu::SharedImageCapabilities& shared_image_capabilities,
     viz::GpuHostImpl::EstablishChannelStatus status) {
   if (!channel_handle.is_valid() &&
       status == viz::GpuHostImpl::EstablishChannelStatus::kGpuHostInvalid &&
@@ -205,8 +208,8 @@ void BrowserGpuChannelHostFactory::EstablishRequest::OnEstablished(
 
   if (channel_handle.is_valid()) {
     gpu_channel_ = base::MakeRefCounted<gpu::GpuChannelHost>(
-        gpu_client_id_, gpu_info, gpu_feature_info, std::move(channel_handle),
-        GetIOThreadTaskRunner({}));
+        gpu_client_id_, gpu_info, gpu_feature_info, shared_image_capabilities,
+        std::move(channel_handle), GetIOThreadTaskRunner({}));
   }
   Finish();
 }
@@ -324,7 +327,6 @@ scoped_refptr<gpu::GpuChannelHost>
 BrowserGpuChannelHostFactory::EstablishGpuChannelSync() {
 #if BUILDFLAG(IS_ANDROID)
   NOTREACHED();
-  return nullptr;
 #else
   EstablishGpuChannel(gpu::GpuChannelEstablishedCallback(), true);
   return gpu_channel_;
@@ -335,7 +337,7 @@ void BrowserGpuChannelHostFactory::EstablishGpuChannel(
     gpu::GpuChannelEstablishedCallback callback,
     bool sync) {
   if (gpu_channel_.get() && gpu_channel_->IsLost()) {
-// TODO(crbug.com/1248936): DCHECKs are disabled during automated testing on
+// TODO(crbug.com/40790884): DCHECKs are disabled during automated testing on
 // CrOS and this check failed when tested on an experimental builder. Revert
 // https://crrev.com/c/3174621 to enable it. See go/chrome-dcheck-on-cros
 // or http://crbug.com/1113456 for more details.

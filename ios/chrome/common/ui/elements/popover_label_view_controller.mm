@@ -8,10 +8,6 @@
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/common/ui/util/text_view_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // Vertical inset for the text content.
@@ -114,7 +110,7 @@ constexpr CGFloat kIconSize = 16;
 
   AddSameConstraints(self.view.safeAreaLayoutGuide, _scrollView);
 
-  // TODO(crbug.com/1100884): Remove the following workaround:
+  // TODO(crbug.com/40138105): Remove the following workaround:
   // Using a UIView instead of UILayoutGuide as the later behaves weirdly with
   // the scroll view.
   UIView* textContainerView = [[UIView alloc] init];

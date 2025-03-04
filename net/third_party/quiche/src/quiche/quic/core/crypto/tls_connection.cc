@@ -4,6 +4,8 @@
 
 #include "quiche/quic/core/crypto/tls_connection.h"
 
+#include <utility>
+
 #include "absl/strings/string_view.h"
 #include "openssl/ssl.h"
 #include "quiche/quic/platform/api/quic_bug_tracker.h"
@@ -132,6 +134,7 @@ bssl::UniquePtr<SSL_CTX> TlsConnection::CreateSslCtx() {
   SSL_CTX_set_min_proto_version(ssl_ctx.get(), TLS1_3_VERSION);
   SSL_CTX_set_max_proto_version(ssl_ctx.get(), TLS1_3_VERSION);
   SSL_CTX_set_quic_method(ssl_ctx.get(), &kSslQuicMethod);
+  SSL_CTX_set_msg_callback(ssl_ctx.get(), &MessageCallback);
   return ssl_ctx;
 }
 
@@ -201,6 +204,15 @@ int TlsConnection::SendAlertCallback(SSL* ssl,
   ConnectionFromSsl(ssl)->delegate_->SendAlert(QuicEncryptionLevel(level),
                                                desc);
   return 1;
+}
+
+// static
+void TlsConnection::MessageCallback(int is_write, int version, int content_type,
+                                    const void* buf, size_t len, SSL* ssl,
+                                    void*) {
+  ConnectionFromSsl(ssl)->delegate_->MessageCallback(
+      is_write != 0, version, content_type,
+      absl::string_view(static_cast<const char*>(buf), len));
 }
 
 }  // namespace quic

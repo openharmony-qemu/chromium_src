@@ -8,6 +8,7 @@
 
 #include <cmath>
 #include <limits>
+#include <string_view>
 
 #include "base/json/string_escape.h"
 #include "base/logging.h"
@@ -56,6 +57,9 @@ JSONWriter::JSONWriter(int options, std::string* json, size_t max_depth)
     : omit_binary_values_((options & OPTIONS_OMIT_BINARY_VALUES) != 0),
       omit_double_type_preservation_(
           (options & OPTIONS_OMIT_DOUBLE_TYPE_PRESERVATION) != 0),
+#if BUILDFLAG(IS_ARKWEB)
+      omit_double_as_long_((options & OPTIONS_DOUBLE_AS_LONG) != 0),
+#endif
       pretty_print_((options & OPTIONS_PRETTY_PRINT) != 0),
       json_string_(json),
       max_depth_(max_depth),
@@ -85,6 +89,12 @@ bool JSONWriter::BuildJSONString(double node, size_t depth) {
     json_string_->append(NumberToString(static_cast<int64_t>(node)));
     return true;
   }
+#if BUILDFLAG(IS_ARKWEB)
+  if (omit_double_as_long_ && IsValueInRangeForNumericType<int64_t>(node)) {
+    json_string_->append(NumberToString(static_cast<int64_t>(node)));
+    return true;
+  }
+#endif
 
   std::string real = NumberToString(node);
   // Ensure that the number has a .0 if there's no decimal or 'e'.  This
@@ -106,7 +116,7 @@ bool JSONWriter::BuildJSONString(double node, size_t depth) {
   return true;
 }
 
-bool JSONWriter::BuildJSONString(StringPiece node, size_t depth) {
+bool JSONWriter::BuildJSONString(std::string_view node, size_t depth) {
   EscapeJSONString(node, true, json_string_);
   return true;
 }
@@ -215,21 +225,21 @@ void JSONWriter::IndentLine(size_t depth) {
   json_string_->append(depth * 3U, ' ');
 }
 
-absl::optional<std::string> WriteJson(ValueView node, size_t max_depth) {
+std::optional<std::string> WriteJson(ValueView node, size_t max_depth) {
   std::string result;
   if (!JSONWriter::Write(node, &result, max_depth)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return result;
 }
 
-absl::optional<std::string> WriteJsonWithOptions(ValueView node,
-                                                 uint32_t options,
-                                                 size_t max_depth) {
+std::optional<std::string> WriteJsonWithOptions(ValueView node,
+                                                uint32_t options,
+                                                size_t max_depth) {
   std::string result;
   if (!JSONWriter::WriteWithOptions(node, static_cast<int>(options), &result,
                                     max_depth)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return result;
 }

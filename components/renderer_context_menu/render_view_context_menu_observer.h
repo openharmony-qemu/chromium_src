@@ -86,7 +86,7 @@ class Accelerator;
 //
 class RenderViewContextMenuObserver {
  public:
-  virtual ~RenderViewContextMenuObserver() {}
+  virtual ~RenderViewContextMenuObserver() = default;
 
   // Called when the RenderViewContextMenu class initializes a context menu. We
   // usually call RenderViewContextMenuProxy::AddMenuItem() to add menu items

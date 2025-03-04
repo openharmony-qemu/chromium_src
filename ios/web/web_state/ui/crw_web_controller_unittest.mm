@@ -9,12 +9,13 @@
 #import <memory>
 #import <utility>
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/scoped_observation.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/test/scoped_feature_list.h"
+#import "base/test/test_timeouts.h"
 #import "ios/testing/ocmock_complex_type_helper.h"
 #import "ios/web/common/crw_content_view.h"
 #import "ios/web/common/crw_web_view_content_view.h"
@@ -26,7 +27,6 @@
 #import "ios/web/navigation/navigation_item_impl.h"
 #import "ios/web/navigation/navigation_manager_impl.h"
 #import "ios/web/navigation/wk_navigation_action_policy_util.h"
-#import "ios/web/public/deprecated/url_verification_constants.h"
 #import "ios/web/public/download/download_controller.h"
 #import "ios/web/public/download/download_task.h"
 #import "ios/web/public/navigation/referrer.h"
@@ -51,7 +51,7 @@
 #import "ios/web/web_state/ui/crw_web_controller.h"
 #import "ios/web/web_state/ui/crw_web_controller_container_view.h"
 #import "ios/web/web_state/web_state_impl.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "net/cert/x509_util_apple.h"
 #import "net/ssl/ssl_info.h"
 #import "net/test/cert_test_util.h"
@@ -62,10 +62,6 @@
 #import "third_party/ocmock/gtest_support.h"
 #import "third_party/ocmock/ocmock_extensions.h"
 #import "url/scheme_host_port.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::test::ios::WaitUntilConditionOrTimeout;
 using base::test::ios::kWaitForPageLoadTimeout;
@@ -531,7 +527,7 @@ class CRWWebControllerResponseTest : public CRWWebControllerTest {
     NavigationItemImpl* pending_item =
         web_controller()
             .webStateImpl->GetNavigationManagerImpl()
-            .GetPendingItemInCurrentOrRestoredSession();
+            .GetPendingItemImpl();
     const bool has_post_data =
         pending_item && pending_item->GetPostData() != nil;
 
@@ -559,53 +555,51 @@ class CRWWebControllerResponseTest : public CRWWebControllerTest {
     // the interaction is a bit more complex as WebKit will call additional
     // methods on the WKNavigationDelegate before the DownloadTask is created.
     // Mock those necessary interactions.
-    if (@available(iOS 15, *)) {
-      if (*out_policy == WKNavigationResponsePolicyDownload) {
-        id mock_download = [OCMockObject mockForClass:[WKDownload class]];
+    if (*out_policy == WKNavigationResponsePolicyDownload) {
+      id mock_download = [OCMockObject mockForClass:[WKDownload class]];
 
-        __block bool delegate_set = false;
-        __block id download_delegate = nil;
-        OCMStub([mock_download setDelegate:[OCMArg any]])
-            .andDo(^(NSInvocation* invocation) {
-              // Using __unsafe_unretained is required to extract the parameter
-              // from the NSInvocation otherwise ARC will over-release.
-              __unsafe_unretained id argument = nil;
-              [invocation getArgument:&argument atIndex:2];
-              download_delegate = argument;
-              delegate_set = true;
-            });
+      __block bool delegate_set = false;
+      __block id download_delegate = nil;
+      OCMStub([mock_download setDelegate:[OCMArg any]])
+          .andDo(^(NSInvocation* invocation) {
+            // Using __unsafe_unretained is required to extract the parameter
+            // from the NSInvocation otherwise ARC will over-release.
+            __weak id argument = nil;
+            [invocation getArgument:&argument atIndex:2];
+            download_delegate = argument;
+            delegate_set = true;
+          });
 
-        [navigation_delegate_ webView:mock_web_view_
-                   navigationResponse:navigation_response
-                    didBecomeDownload:mock_download];
+      [navigation_delegate_ webView:mock_web_view_
+                 navigationResponse:navigation_response
+                  didBecomeDownload:mock_download];
 
-        if (!WaitUntilConditionOrTimeout(kWaitForPageLoadTimeout, ^{
-              return delegate_set;
-            })) {
-          return false;
-        }
-
-        NSMutableURLRequest* request =
-            [[NSURLRequest requestWithURL:response.URL] mutableCopy];
-        if (has_post_data) {
-          request.HTTPMethod = @"POST";
-        }
-        OCMStub([mock_download originalRequest]).andReturn(request);
-        OCMStub([mock_download cancel:[OCMArg any]])
-            .andDo(^(NSInvocation* invocation) {
-              // Using __unsafe_unretained is required to extract the parameter
-              // from the NSInvocation otherwise ARC will over-release.
-              __unsafe_unretained void (^block)(NSData* data);
-              [invocation getArgument:&block atIndex:2];
-              block(nil);
-            });
-
-        [download_delegate download:mock_download
-            decideDestinationUsingResponse:response
-                         suggestedFilename:@"filename.txt"
-                         completionHandler:^(NSURL* destination){
-                         }];
+      if (!WaitUntilConditionOrTimeout(kWaitForPageLoadTimeout, ^{
+            return delegate_set;
+          })) {
+        return false;
       }
+
+      NSMutableURLRequest* request =
+          [[NSURLRequest requestWithURL:response.URL] mutableCopy];
+      if (has_post_data) {
+        request.HTTPMethod = @"POST";
+      }
+      OCMStub([mock_download originalRequest]).andReturn(request);
+      OCMStub([mock_download cancel:[OCMArg any]])
+          .andDo(^(NSInvocation* invocation) {
+            // Using __unsafe_unretained is required to extract the parameter
+            // from the NSInvocation otherwise ARC will over-release.
+            __weak void (^block)(NSData* data);
+            [invocation getArgument:&block atIndex:2];
+            block(nil);
+          });
+
+      [download_delegate download:mock_download
+          decideDestinationUsingResponse:response
+                       suggestedFilename:@"filename.txt"
+                       completionHandler:^(NSURL* destination){
+                       }];
     }
 
     return true;
@@ -615,10 +609,7 @@ class CRWWebControllerResponseTest : public CRWWebControllerTest {
   // or not (as the new download API requires CRWWKNavigationHandler to return
   // a different policy). This method returns the expected policy for the test.
   [[nodiscard]] static WKNavigationResponsePolicy ExpectedPolicyForDownload() {
-    if (@available(iOS 15, *)) {
-      return WKNavigationResponsePolicyDownload;
-    }
-    return WKNavigationResponsePolicyCancel;
+    return WKNavigationResponsePolicyDownload;
   }
 
   DownloadController* download_controller() {
@@ -728,7 +719,7 @@ TEST_F(CRWWebControllerResponseTest, DownloadForPostRequest) {
   AddPendingItem(url, ui::PAGE_TRANSITION_TYPED);
   web_controller()
       .webStateImpl->GetNavigationManagerImpl()
-      .GetPendingItemInCurrentOrRestoredSession()
+      .GetPendingItemImpl()
       ->SetPostData([NSData data]);
   [web_controller() loadCurrentURLWithRendererInitiatedNavigation:NO];
   NSURLResponse* response = [[NSHTTPURLResponse alloc]
@@ -857,8 +848,8 @@ TEST_F(CRWWebControllerResponseTest, IFrameDownloadWithNSHTTPURLResponse) {
   EXPECT_EQ("", task->GetMimeType());
 }
 
-// Tests `currentURLWithTrustLevel:` method.
-TEST_F(CRWWebControllerTest, CurrentUrlWithTrustLevel) {
+// Tests `currentURL` method.
+TEST_F(CRWWebControllerTest, CurrentUrl) {
   GURL url("http://chromium.test");
   AddPendingItem(url, ui::PAGE_TRANSITION_TYPED);
 
@@ -876,9 +867,7 @@ TEST_F(CRWWebControllerTest, CurrentUrlWithTrustLevel) {
   [fake_wk_list_ setCurrentURL:@"http://chromium.test"];
   [navigation_delegate_ webView:mock_web_view_ didCommitNavigation:nil];
 
-  URLVerificationTrustLevel trust_level = kNone;
-  EXPECT_EQ(url, [web_controller() currentURLWithTrustLevel:&trust_level]);
-  EXPECT_EQ(kAbsolute, trust_level);
+  EXPECT_EQ(url, [web_controller() currentURL]);
 }
 
 // Test fixture to test decidePolicyForNavigationAction:decisionHandler:
@@ -1181,7 +1170,7 @@ TEST_F(WindowOpenByDomTest, DontBlockPopup) {
 }
 
 // Tests that window.close closes the web state.
-// TODO(crbug.com/1307043): Flaky test.
+// TODO(crbug.com/40218609): Flaky test.
 TEST_F(WindowOpenByDomTest, CloseWindow) {
   delegate_.allow_popups(opener_url_);
   ASSERT_NSEQ(@"[object Window]", OpenWindowByDom());
@@ -1197,6 +1186,24 @@ TEST_F(WindowOpenByDomTest, CloseWindow) {
 
   EXPECT_TRUE(delegate_.child_windows().empty());
   EXPECT_TRUE(delegate_.popups().empty());
+}
+
+// Tests that calling document.write() on a newly-opened window doesn't crash.
+TEST_F(WindowOpenByDomTest, DocumentWrite) {
+  delegate_.allow_popups(opener_url_);
+
+  NSString* const kDocumentWriteScript =
+      @"var w = window.open();"
+      @"w.document.write('<p>Hello</p>');"
+      @"w.document.write(\"<meta http-equiv='refresh' content='0; url=\""
+      @"+ location.toString() + \"'>\");"
+      @"w.document.close();";
+
+  ExecuteJavaScript(kDocumentWriteScript);
+  EXPECT_EQ(1U, delegate_.child_windows().size());
+
+  EXPECT_TRUE(test::WaitForWebViewNotContainingText(
+      delegate_.child_windows()[0].get(), "Hello"));
 }
 
 // Tests page title changes.
@@ -1239,7 +1246,7 @@ TEST_F(CRWWebControllerTitleTest, TitleChange) {
   // Expect at least one more TitleWasSet callback after changing title via
   // JavaScript. On iOS 10 WKWebView fires 3 callbacks after JS excucution
   // with the following title changes: "Title2", "" and "Title2".
-  // TODO(crbug.com/696104): There should be only 2 calls of TitleWasSet.
+  // TODO(crbug.com/40508196): There should be only 2 calls of TitleWasSet.
   // Fix expecteation when WKWebView stops sending extra KVO calls.
   ExecuteJavaScript(@"window.document.title = 'Title2';");
   EXPECT_TRUE(WaitUntilConditionOrTimeout(kWaitForJSCompletionTimeout, ^{
@@ -1275,9 +1282,9 @@ class ScriptExecutionTest : public WebTestWithWebController {
               script_executed = true;
             }];
 
-    WaitForCondition(^{
+    EXPECT_TRUE(WaitForCondition(^{
       return script_executed;
-    });
+    }));
 
     if (error) {
       *error = script_error;
@@ -1308,7 +1315,8 @@ TEST_F(ScriptExecutionTest, UserScriptOnAppSpecificPage) {
   nav_manager.AddPendingItem(
       GURL(kTestAppSpecificURL), Referrer(), ui::PAGE_TRANSITION_TYPED,
       NavigationInitiationType::BROWSER_INITIATED,
-      /*is_post_navigation=*/false, web::HttpsUpgradeType::kNone);
+      /*is_post_navigation=*/false, /*is_error_navigation=*/false,
+      web::HttpsUpgradeType::kNone);
   nav_manager.CommitPendingItem();
 
   NSError* error = nil;
@@ -1349,9 +1357,10 @@ TEST_F(CRWWebControllerWebProcessTest, Crash) {
   FakeWebStateObserver observer(web_state());
   FakeWebStateObserver* observer_ptr = &observer;
   SimulateWKWebViewCrash(web_view_);
-  base::test::ios::WaitUntilCondition(^bool() {
-    return observer_ptr->render_process_gone_info();
-  });
+  ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
+      TestTimeouts::action_timeout(), ^bool() {
+        return observer_ptr->render_process_gone_info();
+      }));
   EXPECT_EQ(web_state(), observer.render_process_gone_info()->web_state);
   EXPECT_FALSE([web_controller() isViewAlive]);
   EXPECT_TRUE([web_controller() isWebProcessCrashed]);
@@ -1397,9 +1406,10 @@ TEST_F(CRWWebControllerWebViewTest, CheckNoKVOWhenWebStateDestroyed) {
   NSURL* URL = [NSURL URLWithString:@"about:blank"];
   NSURLRequest* request = [NSURLRequest requestWithURL:URL];
   [web_view_ loadRequest:request];
-  base::test::ios::WaitUntilCondition(^bool() {
-    return !web_view_.loading;
-  });
+  ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
+      TestTimeouts::action_timeout(), ^bool() {
+        return !web_view_.loading;
+      }));
 
   // Destroying the WebState should call stop at a point where all observers are
   // supposed to be removed.

@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "components/ui_devtools/views/overlay_agent_views.h"
-
 #include "base/strings/stringprintf.h"
 #include "components/ui_devtools/ui_devtools_unittest_utils.h"
 #include "components/ui_devtools/ui_element.h"
 #include "components/ui_devtools/views/dom_agent_views.h"
+#include "components/ui_devtools/views/overlay_agent_views.h"
 #include "components/ui_devtools/views/view_element.h"
 #include "components/ui_devtools/views/widget_element.h"
 #include "ui/events/base_event_utils.h"
@@ -16,6 +15,7 @@
 #include "ui/events/types/event_type.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/views/test/views_test_base.h"
+#include "ui/views/view_utils.h"
 #include "ui/views/widget/widget_utils.h"
 #include "ui/views/window/non_client_view.h"
 
@@ -72,8 +72,8 @@ class OverlayAgentTest : public views::ViewsTestBase {
 #else
     ui::EventTarget* target = widget()->GetRootView();
 #endif
-    auto event = std::make_unique<ui::MouseEvent>(ui::ET_MOUSE_MOVED, p, p,
-                                                  ui::EventTimeForNow(),
+    auto event = std::make_unique<ui::MouseEvent>(ui::EventType::kMouseMoved, p,
+                                                  p, ui::EventTimeForNow(),
                                                   ui::EF_NONE, ui::EF_NONE);
     ui::Event::DispatcherApi(event.get()).set_target(target);
     return event;
@@ -118,9 +118,9 @@ class OverlayAgentTest : public views::ViewsTestBase {
   void CreateWidget(const gfx::Rect& bounds,
                     views::Widget::InitParams::Type type) {
     widget_ = std::make_unique<views::Widget>();
-    views::Widget::InitParams params;
+    views::Widget::InitParams params(
+        views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET);
     params.delegate = nullptr;
-    params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
     params.bounds = bounds;
     params.type = type;
 #if defined(USE_AURA)
@@ -254,8 +254,7 @@ TEST_F(OverlayAgentTest, HighlightRects) {
     // view and adding the subviews directly causes NonClientView's hit test to
     // fail.
     views::View* contents_view = widget()->GetContentsView();
-    DCHECK_EQ(contents_view->GetClassName(),
-              views::NonClientView::kViewClassName);
+    DCHECK(views::IsViewClass<views::NonClientView>(contents_view));
     views::NonClientView* non_client_view =
         static_cast<views::NonClientView*>(contents_view);
     views::View* client_view = non_client_view->client_view();
@@ -320,9 +319,9 @@ TEST_F(OverlayAgentTest, MouseEventsGenerateFEEventsInInspectMode) {
   ui::test::EventGenerator generator(GetRootWindow(widget()));
   generator.MoveMouseTo(widget()->GetClientAreaBoundsInScreen().origin());
 
-  // Aura platforms generate both ET_MOUSE_ENTERED and ET_MOUSE_MOVED for
-  // this but Mac just generates ET_MOUSE_ENTERED, so just ensure we sent
-  // at least one.
+  // Aura platforms generate both EventType::kMouseEntered and
+  // EventType::kMouseMoved for this but Mac just generates
+  // EventType::kMouseEntered, so just ensure we sent at least one.
   EXPECT_GT(GetOverlayNodeHighlightRequestedCount(node_id), 0);
   EXPECT_EQ(0, GetOverlayInspectNodeRequestedCount(node_id));
 
@@ -461,7 +460,7 @@ TEST_F(OverlayAgentTest, HighlightWidget) {
 #if defined(USE_AURA)
   EXPECT_EQ(highlightingLayer->parent(), GetContext()->layer());
 #else
-// TODO(https://crbug.com/898280): Fix this for Mac.
+// TODO(crbug.com/40599413): Fix this for Mac.
 #endif
   EXPECT_TRUE(highlightingLayer->visible());
 

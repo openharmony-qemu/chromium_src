@@ -13,12 +13,21 @@
  * limitations under the License.
  */
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #define private public
+#endif
+
 #include "cc/layers/layer_impl.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #undef private
+#endif
 
 #include <algorithm>
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include <memory>
+#endif
 
 #include "base/memory/raw_ptr.h"
 #include "cc/layers/painted_scrollbar_layer_impl.h"
@@ -32,7 +41,11 @@
 #include "cc/trees/tree_synchronizer.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "ui/gfx/geometry/rect_f.h"
+#endif
+
 #include "ui/gfx/geometry/test/geometry_util.h"
 
 namespace cc {
@@ -162,9 +175,9 @@ TEST_F(LayerImplTest, VerifyPendingLayerChangesAreTrackedProperly) {
 
 TEST_F(LayerImplTest, VerifyNeedsUpdateDrawProperties) {
   LayerImpl* root = root_layer();
-  LayerImpl* layer = AddLayer<LayerImpl>();
+  LayerImpl* layer = AddLayerInActiveTree<LayerImpl>();
   layer->SetBounds(gfx::Size(100, 100));
-  LayerImpl* layer2 = AddLayer<LayerImpl>();
+  LayerImpl* layer2 = AddLayerInActiveTree<LayerImpl>();
   SetElementIdsForTesting();
 
   CopyProperties(root, layer);
@@ -220,7 +233,8 @@ TEST_F(LayerImplTest, VerifyNeedsUpdateDrawProperties) {
   VERIFY_NEEDS_UPDATE_DRAW_PROPERTIES(layer->ScrollBy(arbitrary_vector2d));
   VERIFY_NO_NEEDS_UPDATE_DRAW_PROPERTIES(layer->ScrollBy(gfx::Vector2d()));
   VERIFY_NEEDS_UPDATE_DRAW_PROPERTIES(
-      layer->layer_tree_impl()->DidUpdateScrollOffset(layer->element_id()));
+      layer->layer_tree_impl()->DidUpdateScrollOffset(
+          layer->element_id(), /*pushed_from_main_or_pending_tree=*/false));
   layer->layer_tree_impl()
       ->property_trees()
       ->scroll_tree_mutable()
@@ -313,16 +327,33 @@ TEST_F(LayerImplTest, PerspectiveTransformHasReasonableScale) {
   }
 }
 
+TEST_F(LayerImplTest, GetDamageReasons) {
+  LayerImpl* root = root_layer();
+
+  root->layer_tree_impl()->ResetAllChangeTracking();
+  EXPECT_TRUE(root->GetDamageReasons().empty());
+  root->SetBounds(gfx::Size(10, 10));
+  EXPECT_EQ(root->GetDamageReasons(),
+            DamageReasonSet{DamageReason::kUntracked});
+
+  root->layer_tree_impl()->ResetAllChangeTracking();
+  EXPECT_TRUE(root->GetDamageReasons().empty());
+  root->UnionUpdateRect(gfx::Rect(10, 10));
+  EXPECT_EQ(root->GetDamageReasons(),
+            DamageReasonSet{DamageReason::kUntracked});
+}
+
 class LayerImplScrollTest : public LayerImplTest {
  public:
-  LayerImplScrollTest() : LayerImplScrollTest(LayerListSettings()) {}
+  LayerImplScrollTest()
+      : LayerImplScrollTest(CommitToPendingTreeLayerListSettings()) {}
 
   explicit LayerImplScrollTest(const LayerTreeSettings& settings)
       : LayerImplTest(settings) {
     LayerImpl* root = root_layer();
     root->SetBounds(gfx::Size(1, 1));
 
-    layer_ = AddLayer<LayerImpl>();
+    layer_ = AddLayerInActiveTree<LayerImpl>();
     SetElementIdsForTesting();
     // Set the max scroll offset by noting that the root layer has bounds (1,1),
     // thus whatever bounds are set for the layer will be the max scroll
@@ -346,18 +377,13 @@ class LayerImplScrollTest : public LayerImplTest {
   raw_ptr<LayerImpl> layer_;
 };
 
-class CommitToPendingTreeLayerImplScrollTest : public LayerImplScrollTest {
+class CommitToActiveTreeLayerImplScrollTest : public LayerImplScrollTest {
  public:
-  CommitToPendingTreeLayerImplScrollTest() : LayerImplScrollTest(settings()) {}
-
-  LayerTreeSettings settings() {
-    LayerListSettings settings;
-    settings.commit_to_active_tree = false;
-    return settings;
-  }
+  CommitToActiveTreeLayerImplScrollTest()
+      : LayerImplScrollTest(CommitToActiveTreeLayerListSettings()) {}
 };
 
-TEST_F(LayerImplScrollTest, ScrollByWithZeroOffset) {
+TEST_F(CommitToActiveTreeLayerImplScrollTest, ScrollByWithZeroOffset) {
   // Test that LayerImpl::ScrollBy only affects ScrollDelta and total scroll
   // offset is bounded by the range [0, max scroll offset].
 
@@ -386,7 +412,7 @@ TEST_F(LayerImplScrollTest, ScrollByWithZeroOffset) {
                        layer()->element_id()));
 }
 
-TEST_F(LayerImplScrollTest, ScrollByWithNonZeroOffset) {
+TEST_F(CommitToActiveTreeLayerImplScrollTest, ScrollByWithNonZeroOffset) {
   gfx::PointF scroll_offset(10, 5);
   scroll_tree(layer())->UpdateScrollOffsetBaseForTesting(layer()->element_id(),
                                                          scroll_offset);
@@ -416,7 +442,7 @@ TEST_F(LayerImplScrollTest, ScrollByWithNonZeroOffset) {
                        layer()->element_id()));
 }
 
-TEST_F(LayerImplScrollTest, ApplySentScrollsNoListener) {
+TEST_F(CommitToActiveTreeLayerImplScrollTest, ApplySentScrollsNoListener) {
   gfx::PointF scroll_offset(10, 5);
   gfx::Vector2dF scroll_delta(20.5f, 8.5f);
   gfx::Vector2d sent_scroll_delta(12, -3);
@@ -443,7 +469,7 @@ TEST_F(LayerImplScrollTest, ApplySentScrollsNoListener) {
                        layer()->element_id()));
 }
 
-TEST_F(LayerImplScrollTest, ScrollUserUnscrollableLayer) {
+TEST_F(CommitToActiveTreeLayerImplScrollTest, ScrollUserUnscrollableLayer) {
   gfx::PointF scroll_offset(10, 5);
   gfx::Vector2dF scroll_delta(20.5f, 8.5f);
 
@@ -484,8 +510,7 @@ TEST_F(LayerImplScrollTest, TouchActionRegionCacheInvalidation) {
   EXPECT_EQ(layer()->GetAllTouchActionRegions(), region.GetAllRegions());
 }
 
-TEST_F(CommitToPendingTreeLayerImplScrollTest,
-       PushPropertiesToMirrorsCurrentScrollOffset) {
+TEST_F(LayerImplScrollTest, PushPropertiesToMirrorsCurrentScrollOffset) {
   gfx::PointF scroll_offset(10, 5);
   gfx::Vector2dF scroll_delta(12, 18);
 
@@ -564,7 +589,7 @@ TEST_F(LayerImplTest, JitterTest) {
   }
 }
 
-#if defined(OHOS_UNITTESTS)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 TEST_F(LayerImplTest, NativeRect_001) {
   host_impl()->CreatePendingTree();
   auto* root_layer = EnsureRootLayerInPendingTree();
@@ -708,6 +733,6 @@ TEST_F(LayerImplTest, GetNativeRect_004) {
   root_layer->GetNativeRect();
   ASSERT_FALSE(rf.IsEmpty());
 }
-#endif  // OHOS_UNITTESTS
+#endif  // ARKWEB_UNITTESTS
 }  // namespace
 }  // namespace cc

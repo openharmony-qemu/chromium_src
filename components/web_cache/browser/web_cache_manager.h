@@ -13,6 +13,7 @@
 #include <map>
 #include <set>
 
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/weak_ptr.h"
 #include "base/no_destructor.h"
@@ -59,13 +60,13 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
       const content::ChildProcessTerminationInfo& info) override;
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
-#if BUILDFLAG(IS_OHOS)
-  // Add offline resource into MemoryCache.
-  void AddResourceToCache(const std::string& url,
-                          const std::string& origin,
-                          const std::vector<uint8_t>& resource,
-                          const std::map<std::string, std::string>& response_headers,
-                          const int type);
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  void AddResourceToCache(
+      const std::string& url,
+      const std::string& origin,
+      const std::vector<uint8_t>& resource,
+      const std::map<std::string, std::string>& response_headers,
+      const int type);
 #endif
 
  private:

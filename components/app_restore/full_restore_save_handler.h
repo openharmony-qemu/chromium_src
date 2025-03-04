@@ -13,6 +13,8 @@
 
 #include "base/component_export.h"
 #include "base/containers/flat_map.h"
+#include "base/containers/flat_set.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/scoped_multi_source_observation.h"
@@ -37,12 +39,10 @@ class RestoreData;
 struct WindowInfo;
 }  // namespace app_restore
 
-namespace ash {
-namespace full_restore {
+namespace ash::full_restore {
 class FullRestoreServiceTestHavingFullRestoreFile;
 class FullRestoreAppLaunchHandlerArcAppBrowserTest;
-}  // namespace full_restore
-}  // namespace ash
+}  // namespace ash::full_restore
 
 namespace base {
 class FilePath;
@@ -72,6 +72,8 @@ class COMPONENT_EXPORT(APP_RESTORE) FullRestoreSaveHandler
   FullRestoreSaveHandler(const FullRestoreSaveHandler&) = delete;
   FullRestoreSaveHandler& operator=(const FullRestoreSaveHandler&) = delete;
   ~FullRestoreSaveHandler() override;
+
+  void InsertIgnoreApplicationId(const std::string& app_id);
 
   void SetPrimaryProfilePath(const base::FilePath& profile_path);
 
@@ -243,6 +245,10 @@ class COMPONENT_EXPORT(APP_RESTORE) FullRestoreSaveHandler
   // Removes AppRestoreData for |window_id|.
   void RemoveAppRestoreData(int window_id);
 
+  // Applications with their app ids in this set will not have their app launch
+  // infos saved.
+  base::flat_set<std::string> ignore_applications_ids_;
+
   // FullRestoreSaveHandler might be called to save the help app before
   // FullRestoreAppLaunchHandler reads the full restore data from the full
   // restore file during the system startup phase, e.g. when a new user login.
@@ -265,7 +271,8 @@ class COMPONENT_EXPORT(APP_RESTORE) FullRestoreSaveHandler
       profile_path_to_file_handler_;
 
   // The AppRegistryCache for each user's profile. The key is the profile path.
-  base::flat_map<base::FilePath, apps::AppRegistryCache*>
+  base::flat_map<base::FilePath,
+                 raw_ptr<apps::AppRegistryCache, CtnExperimental>>
       profile_path_to_app_registry_cache_;
 
   // The map from the window id to the full restore file path and the app id.

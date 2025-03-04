@@ -5,23 +5,33 @@
 #ifndef IOS_CHROME_BROWSER_UI_SETTINGS_CLEAR_BROWSING_DATA_BROWSING_DATA_COUNTER_WRAPPER_PRODUCER_H_
 #define IOS_CHROME_BROWSER_UI_SETTINGS_CLEAR_BROWSING_DATA_BROWSING_DATA_COUNTER_WRAPPER_PRODUCER_H_
 
-#include <memory>
+#import <Foundation/Foundation.h>
 
-#include "ios/chrome/browser/browsing_data/browsing_data_counter_wrapper.h"
+#import <memory>
+#import <string_view>
 
-class ChromeBrowserState;
+#import "ios/chrome/browser/browsing_data/model/browsing_data_counter_wrapper.h"
+
+class ProfileIOS;
 
 // ClearBrowsingDataManager's dependency on creating BrowsingDataCounterWrapper
 @interface BrowsingDataCounterWrapperProducer : NSObject
 
+- (instancetype)initWithProfile:(ProfileIOS*)profile NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_UNAVAILABLE;
+
 - (std::unique_ptr<BrowsingDataCounterWrapper>)
-    createCounterWrapperWithPrefName:(base::StringPiece)prefName
-                        browserState:(ChromeBrowserState*)browserState
-                         prefService:(PrefService*)prefService
+    createCounterWrapperWithPrefName:(std::string_view)prefName
                     updateUiCallback:
                         (BrowsingDataCounterWrapper::UpdateUICallback)
                             updateUiCallback;
 
+- (std::unique_ptr<BrowsingDataCounterWrapper>)
+    createCounterWrapperWithPrefName:(std::string_view)prefName
+                           beginTime:(base::Time)beginTime
+                    updateUiCallback:
+                        (BrowsingDataCounterWrapper::UpdateUICallback)
+                            updateUiCallback;
 @end
 
 #endif  // IOS_CHROME_BROWSER_UI_SETTINGS_CLEAR_BROWSING_DATA_BROWSING_DATA_COUNTER_WRAPPER_PRODUCER_H_

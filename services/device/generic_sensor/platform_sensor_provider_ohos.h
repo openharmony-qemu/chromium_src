@@ -25,14 +25,17 @@ class PlatformSensorProviderOHOS : public PlatformSensorProvider {
   PlatformSensorProviderOHOS();
 
   PlatformSensorProviderOHOS(const PlatformSensorProviderOHOS&) = delete;
-  PlatformSensorProviderOHOS& operator=(
-      const PlatformSensorProviderOHOS&) = delete;
+
+  base::WeakPtr<PlatformSensorProvider> AsWeakPtr() override;
+
+  PlatformSensorProviderOHOS& operator=(const PlatformSensorProviderOHOS&) =
+      delete;
 
   ~PlatformSensorProviderOHOS() override;
 
  protected:
   void CreateSensorInternal(mojom::SensorType type,
-                            SensorReadingSharedBuffer* reading_buffer,
+                            // SensorReadingSharedBuffer* reading_buffer,
                             CreateSensorCallback callback) override;
 
  private:
@@ -52,6 +55,7 @@ class PlatformSensorProviderOHOS : public PlatformSensorProvider {
   void CreateRelativeOrientationQuaternionSensor(
       SensorReadingSharedBuffer* reading_buffer,
       CreateSensorCallback callback);
+  base::WeakPtrFactory<PlatformSensorProviderOHOS> weak_factory_{this};
 };
 }  // namespace device
 

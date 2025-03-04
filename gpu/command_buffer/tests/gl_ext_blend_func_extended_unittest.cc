@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <GLES2/gl2extchromium.h>
@@ -10,6 +15,9 @@
 
 #include <algorithm>
 
+#include "base/command_line.h"
+#include "build/build_config.h"
+#include "gpu/command_buffer/service/service_utils.h"
 #include "gpu/command_buffer/tests/gl_manager.h"
 #include "gpu/command_buffer/tests/gl_test_utils.h"
 #include "gpu/config/gpu_test_config.h"
@@ -101,7 +109,15 @@ class EXTBlendFuncExtendedDrawTest : public testing::TestWithParam<bool> {
   }
 
   bool IsApplicable() const {
+#if BUILDFLAG(IS_ANDROID)
+    // Skip on Android due to Qualcomm driver bugs with implicitly assigned
+    // output locations and multiple render buffers. This extension is still
+    // used by Skia but Skia works around these bugs.
+    // http://anglebug.com/42267082
+    return false;
+#else
     return GLTestHelper::HasExtension("GL_EXT_blend_func_extended");
+#endif
   }
 
   virtual const char* GetVertexShader() {
@@ -256,6 +272,14 @@ TEST_P(EXTBlendFuncExtendedDrawTest, ESSL1FragData) {
 class EXTBlendFuncExtendedES3DrawTest : public EXTBlendFuncExtendedDrawTest {
  protected:
   void SetUp() override {
+#if BUILDFLAG(IS_ANDROID)
+    auto* command_line = base::CommandLine::ForCurrentProcess();
+    if (!gles2::UsePassthroughCommandDecoder(command_line)) {
+      // TODO(crbug.com/40160681): remove suppression when passthrough ships.
+      GTEST_SKIP();
+    }
+#endif
+
     GLManager::Options options;
     options.size = gfx::Size(kWidth, kHeight);
     options.context_type = CONTEXT_TYPE_OPENGLES3;

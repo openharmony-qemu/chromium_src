@@ -38,20 +38,18 @@ luci.bucket(
                 "service-account-cq",
             ],
             users = [
+                "dawn-automated-expectations@chops-service-accounts.iam.gserviceaccount.com",
                 "findit-for-me@appspot.gserviceaccount.com",
                 "tricium-prod@appspot.gserviceaccount.com",
             ],
             projects = [p for p in [
                 branches.value(branch_selector = branches.selector.MAIN, value = "angle"),
                 branches.value(branch_selector = branches.selector.DESKTOP_BRANCHES, value = "dawn"),
+                branches.value(branch_selector = branches.selector.MAIN, value = "infra"),
                 branches.value(branch_selector = branches.selector.MAIN, value = "skia"),
                 branches.value(branch_selector = branches.selector.MAIN, value = "swiftshader"),
                 branches.value(branch_selector = branches.selector.MAIN, value = "v8"),
             ] if p != None],
-        ),
-        acl.entry(
-            roles = acl.BUILDBUCKET_OWNER,
-            groups = "service-account-chromium-tryserver",
         ),
     ],
 )
@@ -73,12 +71,28 @@ luci.bucket(
         luci.binding(
             roles = "role/buildbucket.creator",
             groups = [
+                "mdb/chrome-build-access-sphinx",
                 "mdb/chrome-troopers",
                 "chromium-led-users",
             ],
             users = [
                 "chromium-orchestrator@chops-service-accounts.iam.gserviceaccount.com",
+                "chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com",
                 "infra-try-recipes-tester@chops-service-accounts.iam.gserviceaccount.com",
+            ],
+        ),
+        luci.binding(
+            roles = "role/buildbucket.triggerer",
+            users = [
+                "chromium-try-builder@chops-service-accounts.iam.gserviceaccount.com",
+            ],
+        ),
+        # TODO(crbug.com/40941662): Remove this binding after shadow bucket
+        # could inherit the view permission from the actual bucket.
+        luci.binding(
+            roles = "role/buildbucket.reader",
+            groups = [
+                "all",
             ],
         ),
         # Allow try builders to create invocations in their own builds.
@@ -114,9 +128,38 @@ luci.cq_group(
         ),
     ],
     additional_modes = [
-        cq.run_mode(cq.MODE_QUICK_DRY_RUN, 1, "Quick-Run", 1),
+        cq.run_mode(
+            name = try_.MEGA_CQ_DRY_RUN_NAME,
+            cq_label_value = 1,
+            triggering_label = "Mega-CQ",
+            triggering_value = 1,
+        ),
+        cq.run_mode(
+            name = try_.MEGA_CQ_FULL_RUN_NAME,
+            cq_label_value = 2,
+            triggering_label = "Mega-CQ",
+            triggering_value = 1,
+        ),
     ],
     tree_status_host = "chromium-status.appspot.com" if settings.is_main else None,
+    user_limit_default = cq.user_limit(
+        name = "default-limit",
+        run = cq.run_limits(max_active = 10),
+    ),
+    user_limits = [
+        cq.user_limit(
+            name = "chromium-src-emergency-quota",
+            groups = ["chromium-src-emergency-quota"],
+            run = cq.run_limits(max_active = None),
+        ),
+        cq.user_limit(
+            name = "bots",
+            users = [
+                "chromium-autoroll@skia-public.iam.gserviceaccount.com",
+            ],
+            run = cq.run_limits(max_active = None),
+        ),
+    ],
 )
 
 # Declare a CQ group that watches all branch heads, excluding the active
@@ -164,11 +207,14 @@ exec("./try/tryserver.blink.star")
 exec("./try/tryserver.chromium.star")
 exec("./try/tryserver.chromium.accessibility.star")
 exec("./try/tryserver.chromium.android.star")
+exec("./try/tryserver.chromium.android.desktop.star")
 exec("./try/tryserver.chromium.angle.star")
 exec("./try/tryserver.chromium.chromiumos.star")
 exec("./try/tryserver.chromium.cft.star")
 exec("./try/tryserver.chromium.dawn.star")
+exec("./try/tryserver.chromium.enterprise_companion.star")
 exec("./try/tryserver.chromium.fuchsia.star")
+exec("./try/tryserver.chromium.fuzz.star")
 exec("./try/tryserver.chromium.infra.star")
 exec("./try/tryserver.chromium.linux.star")
 exec("./try/tryserver.chromium.mac.star")

@@ -7,19 +7,26 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/keyboard/ui_bundled/key_command_actions.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
-#import "ios/chrome/browser/ui/keyboard/key_command_actions.h"
+#import "ios/chrome/browser/shared/public/commands/settings_commands.h"
 #import "ios/chrome/browser/ui/settings/settings_controller_protocol.h"
 
 class Browser;
 @protocol BrowserCommands;
-@protocol BrowsingDataCommands;
-@protocol ImportDataControllerDelegate;
+enum class DefaultBrowserSettingsPageSource;
+@protocol SettingsRootViewControlling;
 @protocol SnackbarCommands;
 @class UserFeedbackData;
+
 namespace password_manager {
 struct CredentialUIEntry;
+enum class PasswordCheckReferrer;
 }  // namespace password_manager
+
+namespace autofill {
+class CreditCard;
+}  // namespace autofill
 
 // The accessibility identifier for the settings' "Done" button.
 extern NSString* const kSettingsDoneButtonId;
@@ -35,24 +42,11 @@ extern NSString* const kSettingsDoneButtonId;
 // need to perform some clean up tasks.
 - (void)settingsWasDismissed;
 
-// Asks the delegate for a handler that can be passed into child view
-// controllers when they are created.
-- (id<ApplicationCommands, BrowserCommands, BrowsingDataCommands>)
-    handlerForSettings;
-
-// Asks the delegate for an ApplicationCommands handler that can be passed into
-// child view controllers when they are created.
-- (id<ApplicationCommands>)handlerForApplicationCommands;
-
-// Asks the delegate for a SnackbarCommands handler that can be passed into
-// child view controllers when they are created.
-- (id<SnackbarCommands>)handlerForSnackbarCommands;
-
 @end
 
 // Controller to modify user settings.
 @interface SettingsNavigationController
-    : UINavigationController <ApplicationSettingsCommands, KeyCommandActions>
+    : UINavigationController <SettingsCommands, KeyCommandActions>
 
 // Creates a new SettingsTableViewController and the chrome around it.
 // `browser` is the browser where settings are being displayed and should not be
@@ -60,9 +54,10 @@ extern NSString* const kSettingsDoneButtonId;
 + (instancetype)
     mainSettingsControllerForBrowser:(Browser*)browser
                             delegate:(id<SettingsNavigationControllerDelegate>)
-                                         delegate;
+                                         delegate
+            hasDefaultBrowserBlueDot:(BOOL)hasDefaultBrowserBlueDot;
 
-// Creates a new AccountsTableViewController and the chrome around it.
+// Creates a new ManageAccountsTableViewController and the chrome around it.
 // `browser` is the browser where settings are being displayed and should not be
 // nil. `delegate` may be nil.
 + (instancetype)
@@ -87,25 +82,44 @@ extern NSString* const kSettingsDoneButtonId;
                             delegate:(id<SettingsNavigationControllerDelegate>)
                                          delegate;
 
+// Creates a new SettingsNavigationController that displays the price tracking
+// notifications UI. `browser` is the browser where settings are being displayed
+// and should not be nil.
++ (instancetype)
+    priceNotificationsControllerForBrowser:(Browser*)browser
+                                  delegate:
+                                      (id<SettingsNavigationControllerDelegate>)
+                                          delegate;
+
 // Creates a new SyncEncryptionPassphraseCollectionViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
 // should not be nil. `delegate` may be nil.
+// When called, the current scene must not be blocked.
 + (instancetype)
     syncPassphraseControllerForBrowser:(Browser*)browser
                               delegate:
                                   (id<SettingsNavigationControllerDelegate>)
                                       delegate;
 
-// Creates a new SavePasswordsCollectionViewController and the chrome around it.
-// `browser` is the browser where settings are being displayed and should not be
-// nil. `delegate` may be nil. `showCancelButton` indicates whether a cancel
-// button should be shown in the upper left corner if the navigation stack is
-// empty.
+// Creates a new view controller presenting the saved passwords list and the
+// chrome around it. `browser` is the browser where settings are being displayed
+// and should not be nil. `delegate` may be nil. `showCancelButton` indicates
+// whether a cancel button should be shown in the upper left corner if the
+// navigation stack is empty.
 + (instancetype)
     savePasswordsControllerForBrowser:(Browser*)browser
                              delegate:(id<SettingsNavigationControllerDelegate>)
                                           delegate
                      showCancelButton:(BOOL)showCancelButton;
+
+// Creates a new PasswordManagerViewController in search mode and the chrome
+// around it. `browser` is the browser where settings are being displayed and
+// should not be nil. `delegate` may be nil.
++ (instancetype)
+    passwordManagerSearchControllerForBrowser:(Browser*)browser
+                                     delegate:
+                                         (id<SettingsNavigationControllerDelegate>)
+                                             delegate;
 
 // Creates a new PasswordDetailsViewController and the chrome around it.
 // `browser` is the browser where the view is being displayed and should not be
@@ -118,7 +132,7 @@ extern NSString* const kSettingsDoneButtonId;
                                        delegate
                              credential:
                                  (password_manager::CredentialUIEntry)credential
-                       showCancelButton:(BOOL)showCancelButton;
+                             inEditMode:(BOOL)editMode;
 
 // Creates and displays a new UIViewController for user to report an issue.
 // `browser` is the browser where settings are being displayed and should not be
@@ -129,20 +143,20 @@ extern NSString* const kSettingsDoneButtonId;
     userFeedbackControllerForBrowser:(Browser*)browser
                             delegate:(id<SettingsNavigationControllerDelegate>)
                                          delegate
-                    userFeedbackData:(UserFeedbackData*)userFeedbackData
-                             handler:(id<ApplicationCommands>)handler;
+                    userFeedbackData:(UserFeedbackData*)userFeedbackData;
 
-// Creates and displays a new ImportDataTableViewController. `browserState`
-// should not be nil.
-// TODO(crbug.com/1018746) pass Browser instead of BrowserState
+// Creates a new AutofillProfileEditTableViewController and the
+// chrome around it. `browser` is the browser where settings are being displayed
+// and should not be nil. `delegate` may be nil. `address` is the address for
+// which the details should be opened.
 + (instancetype)
-    importDataControllerForBrowser:(Browser*)browser
-                          delegate:
-                              (id<SettingsNavigationControllerDelegate>)delegate
-                importDataDelegate:
-                    (id<ImportDataControllerDelegate>)importDataDelegate
-                         fromEmail:(NSString*)fromEmail
-                           toEmail:(NSString*)toEmail;
+    addressDetailsControllerForBrowser:(Browser*)browser
+                              delegate:
+                                  (id<SettingsNavigationControllerDelegate>)
+                                      delegate
+                               address:(autofill::AutofillProfile)address
+                            inEditMode:(BOOL)editMode
+                 offerMigrateToAccount:(BOOL)offerMigrateToAccount;
 
 // Creates a new AutofillProfileTableViewController and the chrome around
 // it. `browser` is the browser where settings are being displayed and should
@@ -153,6 +167,13 @@ extern NSString* const kSettingsDoneButtonId;
                                    (id<SettingsNavigationControllerDelegate>)
                                        delegate;
 
+// Creates a new PrivacyController `browser` is the browser where settings are
+// being displayed and should not be nil. `delegate` may be nil.
++ (instancetype)
+    privacyControllerForBrowser:(Browser*)browser
+                       delegate:
+                           (id<SettingsNavigationControllerDelegate>)delegate;
+
 // Creates a new AutofillCreditCardCollectionViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
 // should not be nil. `delegate` may be nil.
@@ -162,6 +183,17 @@ extern NSString* const kSettingsDoneButtonId;
                                       (id<SettingsNavigationControllerDelegate>)
                                           delegate;
 
+// Creates a new AutofillCreditCardEditTableViewController and the chrome around
+// it. `browser` is the browser where settings are being displayed and should
+// not be nil. `delegate` may be nil.
++ (instancetype)
+    autofillCreditCardEditControllerForBrowser:(Browser*)browser
+                                      delegate:
+                                          (id<SettingsNavigationControllerDelegate>)
+                                              delegate
+                                    creditCard:(autofill::CreditCard)creditCard
+                                    inEditMode:(BOOL)editMode;
+
 // Creates a new DefaultBrowserSettingsTableViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
 // should not be nil. `delegate` may be nil.
@@ -169,7 +201,8 @@ extern NSString* const kSettingsDoneButtonId;
     defaultBrowserControllerForBrowser:(Browser*)browser
                               delegate:
                                   (id<SettingsNavigationControllerDelegate>)
-                                      delegate;
+                                      delegate
+                          sourceForUMA:(DefaultBrowserSettingsPageSource)source;
 
 // Creates a new ClearBrowsingDataTableViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
@@ -182,11 +215,14 @@ extern NSString* const kSettingsDoneButtonId;
 
 // Creates a new SafetyCheckTableViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
-// should not be nil. `delegate` may be nil.
+// should not be nil. `delegate` may be nil. `referrer` represents where in the
+// app the Safety Check is being requested from.
 + (instancetype)
     safetyCheckControllerForBrowser:(Browser*)browser
                            delegate:(id<SettingsNavigationControllerDelegate>)
-                                        delegate;
+                                        delegate
+                           referrer:(password_manager::PasswordCheckReferrer)
+                                        referrer;
 
 // Creates a new PrivacySafeBrowsingViewController and the chrome
 // around it. `browser` is the browser where settings are being displayed and
@@ -204,6 +240,24 @@ extern NSString* const kSettingsDoneButtonId;
                             delegate:(id<SettingsNavigationControllerDelegate>)
                                          delegate;
 
+// Creates a new ContentSettingTableViewController and the chrome
+// around it. `browser` is the browser where settings are being displayed and
+// should not be nil. `delegate` may be nil.
++ (instancetype)
+    contentSettingsControllerForBrowser:(Browser*)browser
+                               delegate:
+                                   (id<SettingsNavigationControllerDelegate>)
+                                       delegate;
+
+// Creates a new NotificationsViewController and the chrome around it. `browser`
+// is the browser where settings are being displayed and should not be nil.
+// `delegate` may be nil.
++ (instancetype)
+    notificationsSettingsControllerForBrowser:(Browser*)browser
+                                     delegate:
+                                         (id<SettingsNavigationControllerDelegate>)
+                                             delegate;
+
 // Initializes the UINavigationController with `rootViewController`.
 - (instancetype)initWithRootViewController:(UIViewController*)rootViewController
                                    browser:(Browser*)browser
@@ -219,8 +273,13 @@ extern NSString* const kSettingsDoneButtonId;
                          bundle:(NSBundle*)nibBundleOrNil NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
+// Returns a new Cancel button for a UINavigationItem which will call
+// `closeSettings` when it is pressed. Should only be called by view controllers
+// owned by SettingsNavigationController.
+- (UIBarButtonItem*)cancelButton;
+
 // Returns a new Done button for a UINavigationItem which will call
-// closeSettings when it is pressed. Should only be called by view controllers
+// `closeSettings` when it is pressed. Should only be called by view controllers
 // owned by SettingsNavigationController.
 - (UIBarButtonItem*)doneButton;
 

@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_PREDICTION_WAITER_H_
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_FORM_PREDICTION_WAITER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -18,8 +19,12 @@ class OneShotTimer;
 namespace password_manager {
 
 // Filling timeout for waiting for asynchronous predictions.
-constexpr base::TimeDelta kMaxFillingDelayForAsyncPredictions =
+inline constexpr base::TimeDelta kMaxFillingDelayForAsyncPredictions =
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    base::Milliseconds(1);
+#else
     base::Milliseconds(500);
+#endif
 
 // Helper class for PasswordFormManager to manage outstanding asynchronous
 // prediction fetches. This issues callbacks to wait on multiple
@@ -36,6 +41,17 @@ class PasswordFormPredictionWaiter {
     virtual void OnTimeout() = 0;
   };
 
+  // This is used for metrics and must be kept in sync with the corresponding
+  // entry in tools/metrics/histograms/metadata/password/enums.xml.
+  // Entries should not be renumbered or reused.
+  enum class WaitResult {
+    kNoTimeout = 0,
+    kTimeoutWaitingForOneClosure = 1,
+    kTimeoutWaitingForTwoOrMoreClosures = 2,
+
+    kMaxValue = kTimeoutWaitingForTwoOrMoreClosures,
+  };
+
   explicit PasswordFormPredictionWaiter(Client* client);
 
   PasswordFormPredictionWaiter(const PasswordFormPredictionWaiter&) = delete;
@@ -45,6 +61,12 @@ class PasswordFormPredictionWaiter {
   ~PasswordFormPredictionWaiter();
 
   void StartTimer();
+
+  // Resets the timer and `outstanding_closures_`.
+  void Reset();
+
+  // Returns whether the waiter is currently active and waiting.
+  bool IsActive() const;
 
   // Issues a new closure that should be invoked when a task is completed.
   // When the timer is active, all issued closures have to be invoked before

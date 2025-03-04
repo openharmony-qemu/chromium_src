@@ -2,44 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-source_set("core") {
-  sources = [
-    "saved_tab_group.cc",
-    "saved_tab_group.h",
-    "saved_tab_group_model.cc",
-    "saved_tab_group_model.h",
-    "saved_tab_group_model_observer.h",
-    "saved_tab_group_sync_bridge.cc",
-    "saved_tab_group_sync_bridge.h",
-    "saved_tab_group_tab.cc",
-    "saved_tab_group_tab.h",
-  ]
+import("//build/buildflag_header.gni")
+
+group("unit_tests") {
+  testonly = true
+
   deps = [
-    "//base",
-    "//components/sync",
-    "//components/tab_groups",
-    "//ui/gfx",
-    "//url",
+    "//components/saved_tab_groups/internal:unit_tests",
+    "//components/saved_tab_groups/public:unit_tests",
   ]
-  public_deps = []
+
+  data_deps = [ ":components_unittests_gtest_filter" ]
 }
 
-source_set("unit_tests") {
+source_set("components_unittests_gtest_filter") {
   testonly = true
-  sources = [
-    "saved_tab_group_model_unittest.cc",
-    "saved_tab_group_proto_conversion_unittest.cc",
-    "saved_tab_group_sync_bridge_unittest.cc",
-    "saved_tab_group_unittest.cc",
-  ]
-  deps = [
-    ":core",
-    "//base",
-    "//base/test:test_support",
-    "//components/sync",
-    "//components/sync:test_support",
-    "//components/tab_groups",
-    "//testing/gtest",
-    "//url",
-  ]
+
+  data = [ "components_unittests.filter" ]
 }

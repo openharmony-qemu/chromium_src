@@ -5,6 +5,7 @@
 #ifndef MEDIA_BASE_VIDEO_RENDERER_SINK_H_
 #define MEDIA_BASE_VIDEO_RENDERER_SINK_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
 #include "media/base/media_export.h"
@@ -70,8 +71,8 @@ class MEDIA_EXPORT VideoRendererSink {
   virtual void PaintSingleFrame(scoped_refptr<VideoFrame> frame,
                                 bool repaint_duplicate_frame = false) = 0;
 
-#if BUILDFLAG(IS_OHOS)
-  virtual void SetFinishPaintCallback(base::RepeatingClosure callback) = 0;
+#if BUILDFLAG(ARKWEB_MEDIA)
+  virtual void SetFinishPaintCallback(base::RepeatingClosure callback) {}
 #endif
 
   virtual ~VideoRendererSink() {}

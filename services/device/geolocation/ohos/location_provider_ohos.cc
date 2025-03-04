@@ -16,7 +16,6 @@ LocationProviderOhos::LocationProviderOhos() {
   locator_callback_ = std::make_shared<LocationProviderCallback>();
 }
 
-
 LocationProviderOhos::~LocationProviderOhos() {
   StopProvider();
   if (locator_ != nullptr) {
@@ -36,54 +35,63 @@ void LocationProviderOhos::SetUpdateCallback(
     return;
   }
 
-  locator_callback_->SetUpdateCallback(base::BindRepeating(
-      &LocationProviderOhos::ProviderUpdateCallback, weak_factory_.GetWeakPtr()));
+  locator_callback_->SetUpdateCallback(
+      base::BindRepeating(&LocationProviderOhos::ProviderUpdateCallback,
+                          weak_factory_.GetWeakPtr()));
 }
 
 void LocationProviderOhos::ProviderUpdateCallback(
     mojom::GeopositionResultPtr position) {
-  if (!callback_.is_null() && is_running_)
+  if (!callback_.is_null() && is_running_) {
     callback_.Run(this, position.Clone());
+  }
 }
 
 void LocationProviderOhos::StartProvider(bool high_accuracy) {
-  LOG(DEBUG) << "LocationProviderOhos::StartProvider";
+  LOG(INFO) << "LocationProviderOhos::StartProvider";
   StopProvider();
+  state_ = high_accuracy
+               ? mojom::GeolocationDiagnostics::ProviderState::kHighAccuracy
+               : mojom::GeolocationDiagnostics::ProviderState::kLowAccuracy;
   RequestLocationUpdate(high_accuracy);
 }
 
 void LocationProviderOhos::StopProvider() {
-  LOG(DEBUG) << "LocationProviderOhos::StopProvider";
-  if (!is_running_)
+  LOG(INFO) << "LocationProviderOhos::StopProvider";
+  if (!is_running_) {
     return;
+  }
   is_running_ = false;
-  if (!locator_)
+  if (!locator_) {
     return;
+  }
   locator_->StopLocating(callback_id_);
+  state_ = mojom::GeolocationDiagnostics::ProviderState::kStopped;
 }
 
 const mojom::GeopositionResult* LocationProviderOhos::GetPosition() {
-  LOG(DEBUG) << "LocationProviderOhos::GetPosition";
+  LOG(INFO) << "LocationProviderOhos::GetPosition";
   return locator_callback_->GetPosition();
 }
 
 void LocationProviderOhos::OnPermissionGranted() {
-  LOG(DEBUG) << "LocationProviderOhos::OnPermissionGranted";
+  LOG(INFO) << "LocationProviderOhos::OnPermissionGranted";
   // Nothing to do here.
 }
 
 void LocationProviderCallback::OnNewLocationAvailable(
     const std::shared_ptr<OHOS::NWeb::LocationInfo> location) {
-  LOG(DEBUG) << "LocationProviderCallback::OnNewLocationAvailable";
-  if (!location)
+  LOG(INFO) << "LocationProviderCallback::OnNewLocationAvailable";
+  if (!location) {
     return;
+  }
 
   auto position = mojom::Geoposition::New();
   position->latitude = location->GetLatitude();
   position->longitude = location->GetLongitude();
   // location->GetTimeStamp() has no value now, so that temporarily passed
   // value 10.
-  position->timestamp = base::Time::FromDoubleT(10);
+  position->timestamp = base::Time::FromSecondsSinceUnixEpoch(10);
   position->altitude = location->GetAltitude();
   position->accuracy = location->GetAccuracy();
   position->heading = location->GetDirection();
@@ -137,11 +145,19 @@ void LocationProviderOhos::CreateLocationManagerIfNeeded() {
       OHOS::NWeb::LocationInstance::GetInstance().CreateLocationProxyAdapter();
 }
 
+void LocationProviderOhos::FillDiagnostics(
+    mojom::GeolocationDiagnostics& diagnostics) {
+  // TODO
+  diagnostics.provider_state = state_;
+  return;
+}
+
 void LocationProviderOhos::SetRequestConfig(
     std::shared_ptr<OHOS::NWeb::LocationRequestConfig>& request_config,
     bool high_accuracy) {
-  if (!request_config)
+  if (!request_config) {
     return;
+  }
 
   request_config->SetPriority(
       OHOS::NWeb::LocationRequestConfig::Priority::PRIORITY_FAST_FIRST_FIX);
@@ -155,8 +171,9 @@ void LocationProviderOhos::SetRequestConfig(
 void LocationProviderCallback::NewGeopositionReport(
     mojom::GeopositionResultPtr position) {
   last_position_ = std::move(position);
-  if (!callback_.is_null())
+  if (!callback_.is_null()) {
     callback_.Run(last_position_.Clone());
+  }
 }
 
 void LocationProviderCallback::OnLocationReport(
@@ -175,9 +192,8 @@ void LocationProviderCallback::OnErrorReport(const int errorCode) {
 }
 
 // static
-std::unique_ptr<LocationProvider> NewSystemLocationProvider(
-    scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
-    GeolocationManager* geolocation_manager) {
+std::unique_ptr<LocationProvider> NewSystemLocationProvider() {
+  LOG(ERROR) << "NewSystemLocationProvider provider come in";
   return base::WrapUnique(new LocationProviderOhos);
 }
 

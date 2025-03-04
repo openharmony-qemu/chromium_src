@@ -12,6 +12,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/tracing/tracing_tls.h"
+#include "base/unguessable_token.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/system/data_pipe_drainer.h"
@@ -32,10 +33,12 @@
 #include "third_party/perfetto/include/perfetto/ext/tracing/core/tracing_service.h"
 #include "third_party/perfetto/include/perfetto/tracing/core/trace_config.h"
 
+using ShmemMode = perfetto::SharedMemoryArbiter::ShmemMode;
+
 namespace tracing {
 namespace {
 
-// TODO(crbug.com/83907): Find a good compromise between performance and
+// TODO(crbug.com/40574593): Find a good compromise between performance and
 // data granularity (mainly relevant to running with small buffer sizes
 // when we use background tracing) on Android.
 #if BUILDFLAG(IS_ANDROID)
@@ -44,7 +47,7 @@ constexpr size_t kDefaultSMBPageSizeBytes = 4 * 1024;
 constexpr size_t kDefaultSMBPageSizeBytes = 32 * 1024;
 #endif
 
-// TODO(crbug.com/839071): Figure out a good buffer size.
+// TODO(crbug.com/40574594): Figure out a good buffer size.
 constexpr size_t kDefaultSMBSizeBytes = 4 * 1024 * 1024;
 
 constexpr char kErrorTracingFailed[] = "Tracing failed";
@@ -240,7 +243,7 @@ class ProducerEndpoint : public perfetto::ProducerEndpoint,
              const std::vector<uint64_t>& data_source_ids) override {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     producer_->Flush(flush_request_id, data_source_ids.data(),
-                     data_source_ids.size());
+                     data_source_ids.size(), perfetto::FlushFlags(0));
   }
 
   void ClearIncrementalState() override {
@@ -257,15 +260,9 @@ class ProducerEndpoint : public perfetto::ProducerEndpoint,
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
     DCHECK(!shared_memory_ == !shared_memory_arbiter_);
-    if (shared_memory_arbiter_) {
-      shared_memory_arbiter_->BindToProducerEndpoint(this,
-                                                     producer_task_runner);
-    } else {
+    if (!shared_memory_) {
       shared_memory_ =
           std::make_unique<ChromeBaseSharedMemory>(shmem_size_bytes_);
-      shared_memory_arbiter_ = perfetto::SharedMemoryArbiter::CreateInstance(
-          shared_memory_.get(), shmem_page_size_bytes_, this,
-          producer_task_runner);
     }
 
     mojo::PendingRemote<mojom::ProducerClient> client_remote;
@@ -283,6 +280,22 @@ class ProducerEndpoint : public perfetto::ProducerEndpoint,
     receiver_->set_disconnect_handler(base::BindOnce(
         [](ProducerEndpoint* endpoint) { endpoint->receiver_->reset(); },
         base::Unretained(this)));
+
+    // The shared memory arbiter can call producer host methods if it has
+    // uncommitted requests at this moment. So bind it to the producer only
+    // after it has been connected to the host.
+    if (shared_memory_arbiter_) {
+      shared_memory_arbiter_->BindToProducerEndpoint(this,
+                                                     producer_task_runner);
+    } else {
+      shared_memory_arbiter_ = perfetto::SharedMemoryArbiter::CreateInstance(
+          shared_memory_.get(), shmem_page_size_bytes_, ShmemMode::kDefault,
+          this, producer_task_runner);
+    }
+
+    // This backend connects to the custom mojo-based tracing service, which
+    // always supports direct SMB patching.
+    shared_memory_arbiter_->SetDirectSMBPatchingSupportedByService();
 
     producer_->OnConnect();
   }
@@ -340,7 +353,7 @@ class ConsumerEndpoint : public perfetto::ConsumerEndpoint,
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     trace_config_ = trace_config;
 #if BUILDFLAG(IS_WIN)
-    // TODO(crbug.com/1158482): Add support on Windows.
+    // TODO(crbug.com/40736989): Add support on Windows.
     DCHECK(!file)
         << "Tracing directly to a file isn't supported on Windows yet";
 #else
@@ -375,7 +388,9 @@ class ConsumerEndpoint : public perfetto::ConsumerEndpoint,
       tracing_session_host_->DisableTracing();
   }
 
-  void Flush(uint32_t timeout_ms, FlushCallback callback) override {
+  void Flush(uint32_t timeout_ms,
+             FlushCallback callback,
+             perfetto::FlushFlags) override {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     // TODO(skyostil): Implement flushing.
     NOTREACHED();
@@ -479,7 +494,8 @@ class ConsumerEndpoint : public perfetto::ConsumerEndpoint,
     observed_events_mask_ = events_mask;
   }
 
-  void QueryServiceState(QueryServiceStateCallback) override {
+  void QueryServiceState(QueryServiceStateArgs,
+                         QueryServiceStateCallback) override {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     // TODO(skyostil): Implement service state querying.
     NOTREACHED();
@@ -497,10 +513,36 @@ class ConsumerEndpoint : public perfetto::ConsumerEndpoint,
     NOTREACHED();
   }
 
-  void CloneSession(perfetto::TracingSessionID) override {
+  void CloneSession(CloneSessionArgs args) override {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-    // Not implemented yet.
-    NOTREACHED();
+    auto uuid =
+        base::UnguessableToken::DeserializeFromString(args.unique_session_name);
+    if (!uuid) {
+      consumer_->OnSessionCloned({
+          .success = false,
+          .error = "Session name is not an UnguessableToken",
+      });
+    }
+    consumer_host_->CloneSession(
+        tracing_session_host_.BindNewPipeAndPassReceiver(),
+        tracing_session_client_.BindNewPipeAndPassRemote(), *uuid,
+        base::BindOnce(
+            [](ConsumerEndpoint* endpoint, bool success,
+               const std::string& error, const base::Token& uuid) {
+              DCHECK_CALLED_ON_VALID_SEQUENCE(endpoint->sequence_checker_);
+
+              perfetto::Consumer::OnSessionClonedArgs args{
+                  .success = success,
+                  .error = std::move(error),
+                  .uuid = perfetto::base::Uuid(uuid.high(), uuid.low()),
+              };
+              endpoint->consumer_->OnSessionCloned(args);
+            },
+            base::Unretained(this)));
+    tracing_session_host_.set_disconnect_handler(base::BindOnce(
+        &ConsumerEndpoint::OnTracingFailed, base::Unretained(this)));
+    tracing_session_client_.set_disconnect_handler(base::BindOnce(
+        &ConsumerEndpoint::OnTracingFailed, base::Unretained(this)));
   }
 
   // tracing::mojom::TracingSessionClient implementation:
@@ -535,19 +577,18 @@ class ConsumerEndpoint : public perfetto::ConsumerEndpoint,
   }
 
   // mojo::DataPipeDrainer::Client implementation:
-  void OnDataAvailable(const void* data, size_t num_bytes) override {
+  void OnDataAvailable(base::span<const uint8_t> data) override {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     if (tokenizer_) {
       // Protobuf-format data.
-      auto packets =
-          tokenizer_->Parse(reinterpret_cast<const uint8_t*>(data), num_bytes);
+      auto packets = tokenizer_->Parse(data.data(), data.size());
       if (!packets.empty())
         consumer_->OnTraceData(std::move(packets), /*has_more=*/true);
     } else {
       // Legacy JSON-format data.
       std::vector<perfetto::TracePacket> packets;
       packets.emplace_back();
-      packets.back().AddSlice(data, num_bytes);
+      packets.back().AddSlice(data.data(), data.size());
       consumer_->OnTraceData(std::move(packets), /*has_more=*/true);
     }
   }
@@ -629,11 +670,10 @@ PerfettoTracingBackend::ConnectConsumer(const ConnectConsumerArgs& args) {
   }
   auto consumer_endpoint =
       std::make_unique<ConsumerEndpoint>(args.consumer, args.task_runner);
-  consumer_endpoint_ = consumer_endpoint->GetWeakPtr();
   consumer_connection_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&PerfettoTracingBackend::CreateConsumerConnection,
-                     base::Unretained(this)));
+                     base::Unretained(this), consumer_endpoint->GetWeakPtr()));
   return consumer_endpoint;
 }
 
@@ -649,13 +689,11 @@ PerfettoTracingBackend::ConnectProducer(const ConnectProducerArgs& args) {
   if (shmem_page_size_hint == 0)
     shmem_page_size_hint = kDefaultSMBPageSizeBytes;
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   if (args.use_producer_provided_smb) {
     shm = std::make_unique<ChromeBaseSharedMemory>(shmem_size_hint);
     arbiter = perfetto::SharedMemoryArbiter::CreateUnboundInstance(
-        shm.get(), shmem_page_size_hint);
+        shm.get(), shmem_page_size_hint, ShmemMode::kDefault);
   }
-#endif  // BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
   auto producer_endpoint = std::make_unique<ProducerEndpoint>(
       args.producer_name, args.producer, args.task_runner, shmem_page_size_hint,
@@ -713,17 +751,23 @@ void PerfettoTracingBackend::BindProducerConnectionIfNecessary() {
   }
 }
 
-void PerfettoTracingBackend::CreateConsumerConnection() {
+void PerfettoTracingBackend::CreateConsumerConnection(
+    base::WeakPtr<ConsumerEndpoint> consumer_endpoint) {
   DCHECK(consumer_connection_task_runner_->RunsTasksInCurrentSequence());
-  consumer_host_remote_.reset();
+  auto consumer_host_remote =
+      std::make_unique<mojo::PendingRemote<mojom::ConsumerHost>>();
   auto& tracing_service = consumer_connection_factory_();
   tracing_service.BindConsumerHost(
-      consumer_host_remote_.InitWithNewPipeAndPassReceiver());
-  muxer_task_runner_->PostTask([this] {
-    if (!consumer_endpoint_)
-      return;
-    consumer_endpoint_->BindConnection(std::move(consumer_host_remote_));
-  });
+      consumer_host_remote->InitWithNewPipeAndPassReceiver());
+  muxer_task_runner_->PostTask(
+      [consumer_endpoint, raw_ptr = consumer_host_remote.release()] {
+        std::unique_ptr<mojo::PendingRemote<mojom::ConsumerHost>>
+            consumer_host_remote(raw_ptr);
+        if (!consumer_endpoint) {
+          return;
+        }
+        consumer_endpoint->BindConnection(std::move(*consumer_host_remote));
+      });
 }
 
 }  // namespace tracing

@@ -41,6 +41,10 @@ bool IsPingPong(const CastMessage& message) {
 
 }  // namespace
 
+CastTransport::~CastTransport() = default;
+CastTransport::Delegate::~Delegate() = default;
+CastTransportImpl::Channel::~Channel() = default;
+
 CastTransportImpl::CastTransportImpl(Channel* channel,
                                      int channel_id,
                                      const net::IPEndPoint& ip_endpoint,
@@ -123,7 +127,7 @@ CastTransportImpl::WriteRequest::WriteRequest(
 
 CastTransportImpl::WriteRequest::WriteRequest(WriteRequest&& other) = default;
 
-CastTransportImpl::WriteRequest::~WriteRequest() {}
+CastTransportImpl::WriteRequest::~WriteRequest() = default;
 
 void CastTransportImpl::SetReadState(ReadState read_state) {
   if (read_state_ != read_state)
@@ -179,10 +183,6 @@ void CastTransportImpl::OnWriteResult(int result) {
       default:
         NOTREACHED() << "Unknown state in write state machine: "
                      << AsInteger(state);
-        SetWriteState(WriteState::WRITE_ERROR);
-        SetErrorState(ChannelError::UNKNOWN);
-        rv = net::ERR_FAILED;
-        break;
     }
   } while (rv != net::ERR_IO_PENDING && !IsTerminalWriteState(write_state_));
 
@@ -303,10 +303,6 @@ void CastTransportImpl::OnReadResult(int result) {
       default:
         NOTREACHED() << "Unknown state in read state machine: "
                      << AsInteger(state);
-        SetReadState(ReadState::READ_ERROR);
-        SetErrorState(ChannelError::UNKNOWN);
-        rv = net::ERR_FAILED;
-        break;
     }
   } while (rv != net::ERR_IO_PENDING && !IsTerminalReadState(read_state_));
 

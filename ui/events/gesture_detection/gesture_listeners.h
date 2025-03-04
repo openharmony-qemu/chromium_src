@@ -4,9 +4,8 @@
 
 #ifndef UI_EVENTS_GESTURE_DETECTION_GESTURE_LISTENERS_H_
 #define UI_EVENTS_GESTURE_DETECTION_GESTURE_LISTENERS_H_
-#ifdef OHOS_DRAG_DROP
-#include "build/build_config.h"
-#endif
+
+#include "arkweb/build/features/features.h"
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 
 namespace ui {
@@ -22,10 +21,10 @@ class GESTURE_DETECTION_EXPORT GestureListener {
   virtual bool OnSingleTapUp(const MotionEvent& e, int tap_count) = 0;
   virtual void OnShortPress(const MotionEvent& e) = 0;
   virtual void OnLongPress(const MotionEvent& e) = 0;
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   virtual void OnDragLongPress(const MotionEvent& e) = 0;
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
   virtual void OnCreateOverlay(const MotionEvent& e) = 0;
 #endif
   virtual bool OnScroll(const MotionEvent& e1,
@@ -69,10 +68,10 @@ class GESTURE_DETECTION_EXPORT SimpleGestureListener
   bool OnSingleTapUp(const MotionEvent& e, int tap_count) override;
   void OnShortPress(const MotionEvent& e) override;
   void OnLongPress(const MotionEvent& e) override;
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void OnDragLongPress(const MotionEvent& e) override;
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
   void OnCreateOverlay(const MotionEvent& e) override;
 #endif
   bool OnScroll(const MotionEvent& e1,

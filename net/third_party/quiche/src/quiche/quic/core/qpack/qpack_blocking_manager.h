@@ -9,6 +9,8 @@
 #include <map>
 #include <set>
 
+#include "absl/container/btree_map.h"
+#include "absl/container/btree_set.h"
 #include "absl/container/flat_hash_map.h"
 #include "quiche/quic/core/quic_types.h"
 #include "quiche/quic/platform/api/quic_export.h"
@@ -22,11 +24,11 @@ class QpackBlockingManagerPeer;
 }  // namespace test
 
 // Class to keep track of blocked streams and blocking dynamic table entries:
-// https://quicwg.org/base-drafts/draft-ietf-quic-qpack.html#blocked-decoding
-// https://quicwg.org/base-drafts/draft-ietf-quic-qpack.html#blocked-insertion
-class QUIC_EXPORT_PRIVATE QpackBlockingManager {
+// https://rfc-editor.org/rfc/rfc9204.html#section-2.2.1.
+// https://rfc-editor.org/rfc/rfc9204.html#section-2.1.2
+class QUICHE_EXPORT QpackBlockingManager {
  public:
-  using IndexSet = std::multiset<uint64_t>;
+  using IndexSet = absl::btree_multiset<uint64_t>;
 
   QpackBlockingManager();
 
@@ -46,7 +48,8 @@ class QUIC_EXPORT_PRIVATE QpackBlockingManager {
 
   // Called when sending a header block containing references to dynamic table
   // entries with |indices|.  |indices| must not be empty.
-  void OnHeaderBlockSent(QuicStreamId stream_id, IndexSet indices);
+  void OnHeaderBlockSent(QuicStreamId stream_id, IndexSet indices,
+                         uint64_t required_insert_count);
 
   // Returns true if sending blocking references on stream |stream_id| would not
   // increase the total number of blocked streams above
@@ -62,35 +65,51 @@ class QUIC_EXPORT_PRIVATE QpackBlockingManager {
   uint64_t smallest_blocking_index() const;
 
   // Returns the Known Received Count as defined at
-  // https://quicwg.org/base-drafts/draft-ietf-quic-qpack.html#known-received-count.
+  // https://rfc-editor.org/rfc/rfc9204.html#section-2.1.4.
   uint64_t known_received_count() const { return known_received_count_; }
 
   // Required Insert Count for set of indices.
+  // TODO(fayang): move this method to qpack_encoder once deprecating
+  // optimize_qpack_blocking_manager flag.
   static uint64_t RequiredInsertCount(const IndexSet& indices);
 
  private:
   friend test::QpackBlockingManagerPeer;
 
   // A stream typically has only one header block, except for the rare cases of
-  // 1xx responses, trailers, or push promises.  Even if there are multiple
-  // header blocks sent on a single stream, they might not be blocked at the
-  // same time.  Use std::list instead of quiche::QuicheCircularDeque because it
-  // has lower memory footprint when holding few elements.
-  using HeaderBlocksForStream = std::list<IndexSet>;
-  using HeaderBlocks = absl::flat_hash_map<QuicStreamId, HeaderBlocksForStream>;
+  // 1xx responses and trailers. Even if there are multiple header blocks sent
+  // on a single stream, they might not be blocked at the same time. Use
+  // std::list instead of quiche::QuicheCircularDeque because it has lower
+  // memory footprint when holding few elements.
+  struct HeaderBlock {
+    const IndexSet indices;
+    const uint64_t required_insert_count = 0;
+  };
+  using HeaderBlocks =
+      absl::flat_hash_map<QuicStreamId, std::list<HeaderBlock>>;
 
   // Increase or decrease the reference count for each index in |indices|.
   void IncreaseReferenceCounts(const IndexSet& indices);
   void DecreaseReferenceCounts(const IndexSet& indices);
+
+  // Called to cleanup blocked_streams_ when known_received_count is increased.
+  void OnKnownReceivedCountIncreased();
 
   // Multiset of indices in each header block for each stream.
   // Must not contain a stream id with an empty queue.
   HeaderBlocks header_blocks_;
 
   // Number of references in |header_blocks_| for each entry index.
-  std::map<uint64_t, uint64_t> entry_reference_counts_;
+  absl::btree_map<uint64_t, uint64_t> entry_reference_counts_;
 
   uint64_t known_received_count_;
+
+  // Mapping from blocked streams to their required insert count (>
+  // known_received_count_).
+  absl::flat_hash_map<QuicStreamId, uint64_t> blocked_streams_;
+
+  const bool optimize_qpack_blocking_manager_ =
+      GetQuicReloadableFlag(quic_optimize_qpack_blocking_manager);
 };
 
 }  // namespace quic

@@ -25,42 +25,43 @@ StrikeDatabaseIntegratorBase::StrikeDatabaseIntegratorBase(
 
 StrikeDatabaseIntegratorBase::~StrikeDatabaseIntegratorBase() = default;
 
-bool StrikeDatabaseIntegratorBase::ShouldBlockFeature(
-    const std::string& id,
-    BlockedReason* blocked_reason) const {
+StrikeDatabaseIntegratorBase::StrikeDatabaseDecision
+StrikeDatabaseIntegratorBase::GetStrikeDatabaseDecision(
+    const std::string& id) const {
   CheckIdUniqueness(id);
 
-  // Returns whether or not strike count for |id| has reached the strike limit
+  // Returns whether or not strike count for `id` has reached the strike limit
   // set by GetMaxStrikesLimit().
   if (GetStrikes(id) >= GetMaxStrikesLimit()) {
-    if (blocked_reason) {
-      *blocked_reason = BlockedReason::kMaxStrikeLimitReached;
-    }
-
-    return true;
+    return StrikeDatabaseDecision::kMaxStrikeLimitReached;
   }
 
-  // Returns whether or not |GetRequiredDelaySinceLastStrike()| has passed since
-  // the last strike was logged for candidate with |id|. Note that some features
+  // Returns whether or not `GetRequiredDelaySinceLastStrike()` has passed since
+  // the last strike was logged for candidate with `id`. Note that some features
   // don't specify a required delay.
   if (GetRequiredDelaySinceLastStrike().has_value() &&
       (AutofillClock::Now() -
        base::Time::FromDeltaSinceWindowsEpoch(base::Microseconds(
            strike_database_->GetLastUpdatedTimestamp(GetKey(id))))) <
           GetRequiredDelaySinceLastStrike()) {
-    if (blocked_reason) {
-      *blocked_reason = BlockedReason::kRequiredDelayNotPassed;
-    }
-
-    return true;
+    return StrikeDatabaseDecision::kRequiredDelayNotPassed;
   }
 
-  return false;
+  return StrikeDatabaseDecision::kDoNotBlock;
+}
+
+StrikeDatabaseIntegratorBase::StrikeDatabaseDecision
+StrikeDatabaseIntegratorBase::GetStrikeDatabaseDecision() const {
+  return GetStrikeDatabaseDecision(kSharedId);
 }
 
 bool StrikeDatabaseIntegratorBase::ShouldBlockFeature(
-    BlockedReason* blocked_reason) const {
-  return ShouldBlockFeature(kSharedId, blocked_reason);
+    const std::string& id) const {
+  return GetStrikeDatabaseDecision(id) != StrikeDatabaseDecision::kDoNotBlock;
+}
+
+bool StrikeDatabaseIntegratorBase::ShouldBlockFeature() const {
+  return GetStrikeDatabaseDecision() != StrikeDatabaseDecision::kDoNotBlock;
 }
 
 int StrikeDatabaseIntegratorBase::AddStrike(const std::string& id) {
@@ -196,6 +197,49 @@ void StrikeDatabaseIntegratorBase::RemoveExpiredStrikes() {
   }
 }
 
+void StrikeDatabaseIntegratorBase::ClearStrikesByIdMatching(
+    const std::set<std::string>& ids_to_delete,
+    base::FunctionRef<std::string(const std::string&)> id_map) {
+  ClearStrikesByIdMatchingAndTime(ids_to_delete, base::Time::Min(),
+                                  base::Time::Max(), id_map);
+}
+
+void StrikeDatabaseIntegratorBase::ClearStrikesByIdMatchingAndTime(
+    const std::set<std::string>& ids_to_delete,
+    base::Time delete_begin,
+    base::Time delete_end,
+    base::FunctionRef<std::string(const std::string&)> id_map) {
+  if (delete_begin.is_null()) {
+    delete_begin = base::Time::Min();
+  }
+
+  if (delete_end.is_null()) {
+    delete_end = base::Time::Max();
+  }
+
+  std::vector<std::string> keys_to_delete;
+  keys_to_delete.reserve(GetStrikeCache().size());
+
+  for (auto const& [key, strike_data] : GetStrikeCache()) {
+    std::string strike_id = GetIdFromKey(key);
+    if (strike_id.empty()) {
+      continue;
+    }
+
+    base::Time last_update = base::Time::FromDeltaSinceWindowsEpoch(
+        base::Microseconds(strike_data.last_update_timestamp()));
+
+    // Check if the time stamp of the record is within deletion range and if the
+    // domain is deleted.
+    if (last_update >= delete_begin && last_update <= delete_end &&
+        ids_to_delete.count(id_map(strike_id)) != 0) {
+      keys_to_delete.push_back(key);
+    }
+  }
+
+  ClearStrikesForKeys(keys_to_delete);
+}
+
 void StrikeDatabaseIntegratorBase::ClearStrikesForKeys(
     const std::vector<std::string>& keys) {
   strike_database_->ClearStrikesForKeys(keys);
@@ -204,7 +248,7 @@ void StrikeDatabaseIntegratorBase::ClearStrikesForKeys(
 std::string StrikeDatabaseIntegratorBase::GetIdFromKey(
     const std::string& key) const {
   std::string prefix = GetProjectPrefix() + kKeyDeliminator;
-  if (!base::StartsWith(key, prefix)) {
+  if (!key.starts_with(prefix)) {
     return std::string();
   }
   return key.substr(prefix.length(), std::string::npos);
@@ -221,18 +265,18 @@ std::string StrikeDatabaseIntegratorBase::GetKey(const std::string& id) const {
   return GetProjectPrefix() + kKeyDeliminator + id;
 }
 
-absl::optional<size_t> StrikeDatabaseIntegratorBase::GetMaximumEntries() const {
-  return absl::nullopt;
+std::optional<size_t> StrikeDatabaseIntegratorBase::GetMaximumEntries() const {
+  return std::nullopt;
 }
 
-absl::optional<size_t>
+std::optional<size_t>
 StrikeDatabaseIntegratorBase::GetMaximumEntriesAfterCleanup() const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<base::TimeDelta>
+std::optional<base::TimeDelta>
 StrikeDatabaseIntegratorBase::GetRequiredDelaySinceLastStrike() const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace autofill

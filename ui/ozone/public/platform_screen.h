@@ -5,6 +5,7 @@
 #ifndef UI_OZONE_PUBLIC_PLATFORM_SCREEN_H_
 #define UI_OZONE_PUBLIC_PLATFORM_SCREEN_H_
 
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -132,9 +133,11 @@ class COMPONENT_EXPORT(OZONE_BASE) PlatformScreen {
   virtual base::Value::List GetGpuExtraInfo(
       const gfx::GpuExtraInfo& gpu_extra_info);
 
-  // Sets device scale factor received from external sources such as toolkits.
-  // Currently only used by Linux.
-  virtual void SetDeviceScaleFactor(float scale);
+  // Returns the preferred scale factor for a |widget|, if any. Used, for
+  // example, in Wayland implementation when wp-fractional-scale protocol is
+  // available.
+  virtual std::optional<float> GetPreferredScaleFactorForAcceleratedWidget(
+      gfx::AcceleratedWidget widget) const;
 
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   // Called when tablet state is changed.
@@ -142,7 +145,7 @@ class COMPONENT_EXPORT(OZONE_BASE) PlatformScreen {
 
   // Returns tablet state. If a platform does not support this, returns
   // display::TabletState::kInClamshellMode.
-  virtual display::TabletState GetTabletState() const;
+  virtual display::TabletState GetTabletState() const = 0;
 #endif
 
  protected:

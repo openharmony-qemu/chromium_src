@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "device/gamepad/gamepad_provider.h"
 
 #include <stddef.h>
@@ -18,7 +23,6 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
-#include "base/third_party/dynamic_annotations/dynamic_annotations.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_restrictions.h"
 #include "build/build_config.h"
@@ -27,75 +31,9 @@
 #include "device/gamepad/gamepad_user_gesture.h"
 #include "device/gamepad/public/cpp/gamepad_features.h"
 #include "mojo/public/cpp/system/platform_handle.h"
+#include "third_party/abseil-cpp/absl/base/dynamic_annotations.h"
 
 namespace device {
-
-namespace {
-std::vector<mojom::ButtonChangePtr> CompareButtons(const Gamepad* old_gamepad,
-                                                   const Gamepad* new_gamepad) {
-  if (!new_gamepad)
-    return {};
-
-  std::vector<mojom::ButtonChangePtr> button_changes;
-  const auto* new_buttons = new_gamepad->buttons;
-  const auto* old_buttons = old_gamepad ? old_gamepad->buttons : nullptr;
-  for (size_t i = 0; i < new_gamepad->buttons_length; ++i) {
-    double new_value = new_buttons[i].value;
-    bool new_pressed = new_buttons[i].pressed;
-    if (old_buttons && i < old_gamepad->buttons_length) {
-      double old_value = old_buttons[i].value;
-      bool old_pressed = old_buttons[i].pressed;
-      auto this_change = mojom::ButtonChange::New();
-      this_change->button_index = i;
-      this_change->button_snapshot = new_buttons[i];
-      bool relevant_change = false;
-      if (old_value != new_value) {
-        relevant_change = true;
-        this_change->value_changed = true;
-      }
-      if (old_pressed != new_pressed) {
-        relevant_change = true;
-        this_change->button_down = new_pressed;
-        this_change->button_up = !new_pressed;
-      }
-      if (relevant_change)
-        button_changes.push_back(std::move(this_change));
-    }
-  }
-  return button_changes;
-}
-
-std::vector<mojom::AxisChangePtr> CompareAxes(const Gamepad* old_gamepad,
-                                              const Gamepad* new_gamepad) {
-  if (!new_gamepad)
-    return {};
-
-  std::vector<mojom::AxisChangePtr> axis_changes;
-  const auto* new_axes = new_gamepad->axes;
-  const auto* old_axes = old_gamepad ? old_gamepad->axes : nullptr;
-  for (size_t i = 0; i < new_gamepad->axes_length; ++i) {
-    const double new_value = new_axes[i];
-    if (old_axes && i < old_gamepad->axes_length) {
-      const double old_value = old_axes[i];
-      if (old_value != new_value) {
-        auto this_change = mojom::AxisChange::New();
-        this_change->axis_index = i;
-        this_change->axis_snapshot = new_value;
-        axis_changes.push_back(std::move(this_change));
-      }
-    }
-  }
-  return axis_changes;
-}
-
-mojom::GamepadChangesPtr CompareGamepadState(const Gamepad* old_gamepad,
-                                             const Gamepad* new_gamepad,
-                                             size_t index) {
-  return mojom::GamepadChanges::New(
-      index, CompareButtons(old_gamepad, new_gamepad),
-      CompareAxes(old_gamepad, new_gamepad), new_gamepad->timestamp);
-}
-}  // namespace
 
 constexpr int64_t kPollingIntervalMilliseconds = 4;  // ~250 Hz
 
@@ -223,7 +161,7 @@ void GamepadProvider::Initialize(std::unique_ptr<GamepadDataFetcher> fetcher) {
   // On Linux, the data fetcher needs to watch file descriptors, so the message
   // loop needs to be a libevent loop.
   const base::MessagePumpType kMessageLoopType = base::MessagePumpType::IO;
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
   // On Android, keeping a message loop of default type.
   const base::MessagePumpType kMessageLoopType = base::MessagePumpType::DEFAULT;
 #else
@@ -356,8 +294,9 @@ void GamepadProvider::DoPoll() {
 
   bool changed;
 
-  ANNOTATE_BENIGN_RACE_SIZED(gamepad_shared_buffer_->buffer(), sizeof(Gamepads),
-                             "Racey reads are discarded");
+  ABSL_ANNOTATE_BENIGN_RACE_SIZED(
+      gamepad_shared_buffer_->buffer(), sizeof(Gamepads),
+      "Racey reads are discarded");
 
   {
     base::AutoLock lock(devices_changed_lock_);
@@ -380,8 +319,6 @@ void GamepadProvider::DoPoll() {
   Gamepads new_buffer;
   GetCurrentGamepadData(&old_buffer);
 
-  std::vector<mojom::GamepadChangesPtr> changes;
-  changes.reserve(Gamepads::kItemsLengthCap);
   for (size_t i = 0; i < Gamepads::kItemsLengthCap; ++i) {
     PadState& state = pad_states_.get()[i];
 
@@ -395,11 +332,6 @@ void GamepadProvider::DoPoll() {
     }
 
     MapAndSanitizeGamepadData(&state, &new_buffer.items[i], sanitize_);
-    if (gamepad_change_client_ &&
-        features::AreGamepadButtonAxisEventsEnabled()) {
-      changes.push_back(
-          CompareGamepadState(&old_buffer.items[i], &new_buffer.items[i], i));
-    }
   }
 
   {
@@ -420,9 +352,6 @@ void GamepadProvider::DoPoll() {
         OnGamepadConnectionChange(true, i, new_buffer.items[i]);
       }
     }
-    for (auto& change : changes) {
-      SendChangeEvents(std::move(change));
-    }
   }
 
   bool did_notify = CheckForUserGesture();
@@ -441,19 +370,6 @@ void GamepadProvider::DoPoll() {
 
   // Schedule our next interval of polling.
   ScheduleDoPoll();
-}
-
-void GamepadProvider::SendChangeEvents(
-    mojom::GamepadChangesPtr gamepad_changes) {
-  DCHECK(gamepad_changes);
-  if (gamepad_changes->button_changes.empty() &&
-      gamepad_changes->axis_changes.empty()) {
-    return;
-  }
-  main_thread_task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&GamepadChangeClient::OnGamepadChange,
-                                base::Unretained(gamepad_change_client_),
-                                std::move(gamepad_changes)));
 }
 
 void GamepadProvider::DisconnectUnrecognizedGamepad(GamepadSource source,

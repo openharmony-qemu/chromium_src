@@ -7,8 +7,9 @@
 
 #include <stdint.h>
 
-#include <string>
+#include <string_view>
 
+#include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "build/chromeos_buildflags.h"
 #include "components/prefs/pref_registry_simple.h"
@@ -30,7 +31,8 @@ namespace user_prefs {
 // logic which is only required to support pref registration after the
 // PrefService has been created which is only used by tests. We can remove this
 // entire class and those tests with some work.
-class PrefRegistrySyncable : public PrefRegistrySimple {
+class COMPONENT_EXPORT(COMPONENTS_PREF_REGISTRY) PrefRegistrySyncable
+    : public PrefRegistrySimple {
  public:
   // Enum of flags used when registering preferences to determine if it should
   // be synced or not. These flags are mutually exclusive, only one of them
@@ -39,8 +41,9 @@ class PrefRegistrySyncable : public PrefRegistrySimple {
   // Note: These must NOT overlap with PrefRegistry::PrefRegistrationFlags.
   //
   // Note: If adding a new pref with these flags, add the same to the syncable
-  // prefs database as well. Refer to chrome/browser/prefs/README.md for more
-  // details.
+  // prefs database as well. Refer to components/sync_preferences/README.md for
+  // more details about syncable prefs, and chrome/browser/prefs/README.md for
+  // details about prefs in general.
   enum PrefRegistrationFlags : uint32_t {
     // The pref will be synced.
     SYNCABLE_PREF = 1 << 0,
@@ -63,7 +66,7 @@ class PrefRegistrySyncable : public PrefRegistrySimple {
   };
 
   using SyncableRegistrationCallback =
-      base::RepeatingCallback<void(const std::string& path, uint32_t flags)>;
+      base::RepeatingCallback<void(std::string_view path, uint32_t flags)>;
 
   PrefRegistrySyncable();
 
@@ -87,8 +90,7 @@ class PrefRegistrySyncable : public PrefRegistrySimple {
   ~PrefRegistrySyncable() override;
 
   // PrefRegistrySimple overrides.
-  void OnPrefRegistered(const std::string& path,
-                        uint32_t flags) override;
+  void OnPrefRegistered(std::string_view path, uint32_t flags) override;
 
   SyncableRegistrationCallback callback_;
 };

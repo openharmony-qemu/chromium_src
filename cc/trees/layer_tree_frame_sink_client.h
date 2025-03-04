@@ -5,12 +5,14 @@
 #ifndef CC_TREES_LAYER_TREE_FRAME_SINK_CLIENT_H_
 #define CC_TREES_LAYER_TREE_FRAME_SINK_CLIENT_H_
 
+#include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "cc/cc_export.h"
 #include "components/viz/common/resources/returned_resource.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "components/viz/common/surfaces/local_surface_id.h"
 #include "ui/gfx/geometry/rect.h"
 
 namespace gfx {
@@ -38,7 +40,7 @@ class CC_EXPORT LayerTreeFrameSinkClient {
   // called during SubmitCompositorFrame().
   // TODO(danakj): Just pass it into SubmitCompositorFrame(), with a
   // LayerTreeSetting to enable it or not.
-  virtual absl::optional<viz::HitTestRegionList> BuildHitTestData() = 0;
+  virtual std::optional<viz::HitTestRegionList> BuildHitTestData() = 0;
 
   // Returns resources sent to SubmitCompositorFrame to be reused or freed.
   virtual void ReclaimResources(
@@ -61,9 +63,9 @@ class CC_EXPORT LayerTreeFrameSinkClient {
       uint32_t frame_token,
       const viz::FrameTimingDetails& details) = 0;
 
-  // The LayerTreeFrameSink is lost when the viz::ContextProviders held by it
-  // encounter an error. In this case the LayerTreeFrameSink (and the
-  // viz::ContextProviders) must be recreated.
+  // The LayerTreeFrameSink is lost when the viz::RasterContextProviders held by
+  // it encounter an error. In this case the LayerTreeFrameSink (and the
+  // viz::RasterContextProviders) must be recreated.
   virtual void DidLoseLayerTreeFrameSink() = 0;
 
   // For SynchronousCompositor (WebView) to ask the layer compositor to submit
@@ -91,7 +93,11 @@ class CC_EXPORT LayerTreeFrameSinkClient {
   virtual void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) {}
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
   virtual void SetDrawRectState(bool isNeedDrawRect) = 0;
+#endif
+
+  virtual void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) {}
 
  protected:
   virtual ~LayerTreeFrameSinkClient() {}

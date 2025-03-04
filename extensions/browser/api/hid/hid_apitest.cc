@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -21,9 +26,9 @@
 #include "services/device/public/cpp/test/fake_hid_manager.h"
 #include "services/device/public/mojom/hid.mojom.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 #include "chromeos/dbus/permission_broker/fake_permission_broker_client.h"  // nogncheck
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 namespace extensions {
 
@@ -134,7 +139,7 @@ class TestExtensionsAPIClient : public ShellExtensionsAPIClient {
 class HidApiTest : public ShellApiTest {
  public:
   HidApiTest() {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     // Required for DevicePermissionsPrompt:
     chromeos::PermissionBrokerClient::InitializeFake();
 #endif
@@ -149,7 +154,7 @@ class HidApiTest : public ShellApiTest {
 
   ~HidApiTest() override {
     HidDeviceManager::OverrideHidManagerBinderForTesting(base::NullCallback());
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     chromeos::PermissionBrokerClient::Shutdown();
 #endif
   }
@@ -261,6 +266,8 @@ device::mojom::HidDeviceInfoPtr CreateDeviceWithOneCollection(
   auto collection = device::mojom::HidCollectionInfo::New();
   collection->usage =
       device::mojom::HidUsageAndPage::New(1, device::mojom::kPageVendor);
+  auto report = device::mojom::HidReportDescription::New();
+  collection->input_reports.push_back(std::move(report));
   device_info->collections.push_back(std::move(collection));
   return device_info;
 }

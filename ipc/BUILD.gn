@@ -11,6 +11,8 @@ import("//testing/test.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
+import("//arkweb/build/features/features.gni")
+
 buildflag_header("ipc_buildflags") {
   header = "ipc_buildflags.h"
 
@@ -72,6 +74,7 @@ component("ipc") {
       "message_router.h",
       "trace_ipc_message.cc",
       "trace_ipc_message.h",
+      "urgent_message_observer.h",
     ]
   }
 
@@ -103,6 +106,9 @@ component("ipc") {
 
   if (enable_ipc_fuzzer) {
     public_configs = [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
+  }
+  if (arkweb_javascript_bridge) {
+    deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -184,6 +190,12 @@ source_set("native_handle_type_converters") {
   ]
 }
 
+mojom("test_mojom") {
+  testonly = true
+  sources = [ "ipc_channel_mojo_unittest.test-mojom" ]
+  public_deps = [ "//mojo/public/mojom/base" ]
+}
+
 mojom_component("mojom") {
   output_prefix = "ipc_mojom"
   macro_prefix = "IPC_MOJOM"
@@ -224,7 +236,6 @@ mojom("mojom_constants") {
 mojom("test_interfaces") {
   testonly = true
   sources = [ "ipc_test.mojom" ]
-  support_lazy_serialization = true
 }
 
 # This is provided as a separate target so other targets can provide param
@@ -307,6 +318,7 @@ if (use_blink) {
       ":protobuf_support",
       ":run_all_unittests",
       ":test_interfaces",
+      ":test_mojom",
       ":test_proto",
       ":test_support",
       "//base",

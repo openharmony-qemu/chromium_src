@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "ash/public/cpp/external_arc/message_center/arc_notification_delegate.h"
@@ -19,7 +20,8 @@
 #include "ash/public/cpp/external_arc/message_center/mock_arc_notification_item.h"
 #include "ash/public/cpp/message_center/arc_notification_constants.h"
 #include "ash/shell.h"
-#include "ash/system/message_center/message_view_factory.h"
+#include "ash/system/notification_center/message_view_factory.h"
+#include "ash/system/notification_center/notification_center_tray.h"
 #include "ash/system/status_area_widget.h"
 #include "ash/system/status_area_widget_test_helper.h"
 #include "ash/system/unified/unified_system_tray.h"
@@ -29,6 +31,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/bind.h"
 #include "components/exo/buffer.h"
+#include "components/exo/key_state.h"
 #include "components/exo/keyboard.h"
 #include "components/exo/keyboard_delegate.h"
 #include "components/exo/keyboard_modifiers.h"
@@ -40,6 +43,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "ui/aura/test/test_window_delegate.h"
 #include "ui/aura/window.h"
+#include "ui/base/l10n/l10n_util.h"
 #include "ui/events/keycodes/dom/dom_code.h"
 #include "ui/events/test/event_generator.h"
 #include "ui/events/test/test_event.h"
@@ -47,6 +51,8 @@
 #include "ui/message_center/public/cpp/notification.h"
 #include "ui/message_center/views/notification_control_buttons_view.h"
 #include "ui/message_center/views/padded_button.h"
+#include "ui/strings/grit/ui_strings.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/test/button_test_api.h"
 #include "ui/views/test/views_test_base.h"
 #include "ui/views/widget/native_widget_delegate.h"
@@ -72,7 +78,8 @@ class MockKeyboardDelegate : public exo::KeyboardDelegate {
   MOCK_METHOD(void,
               OnKeyboardEnter,
               (exo::Surface*,
-               (const base::flat_map<ui::DomCode, exo::KeyState>&)),
+               (const base::flat_map<exo::PhysicalCode,
+                                     base::flat_set<exo::KeyState>>&)),
               (override));
   MOCK_METHOD(void, OnKeyboardLeave, (exo::Surface*), (override));
   MOCK_METHOD(uint32_t,
@@ -87,7 +94,7 @@ class MockKeyboardDelegate : public exo::KeyboardDelegate {
               OnKeyRepeatSettingsChanged,
               (bool, base::TimeDelta, base::TimeDelta),
               (override));
-  MOCK_METHOD(void, OnKeyboardLayoutUpdated, (base::StringPiece), (override));
+  MOCK_METHOD(void, OnKeyboardLayoutUpdated, (std::string_view), (override));
 };
 
 class FakeNotificationSurface : public exo::NotificationSurface {
@@ -112,8 +119,7 @@ class FakeNotificationSurface : public exo::NotificationSurface {
     // null SharedMainThreadContextProvider in test under mash.
   }
 
-  const raw_ptr<exo::NotificationSurfaceManager, ExperimentalAsh>
-      manager_;  // Not owned.
+  const raw_ptr<exo::NotificationSurfaceManager> manager_;  // Not owned.
 };
 
 aura::Window* GetFocusedWindow() {
@@ -191,8 +197,9 @@ class ArcNotificationContentViewTest : public AshTestBase {
             MessageViewFactory::Create(notification, /*shown_in_popup=*/false)
                 .release()));
 
-    views::Widget::InitParams params(views::Widget::InitParams::TYPE_POPUP);
-    params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
+    views::Widget::InitParams params(
+        views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET,
+        views::Widget::InitParams::TYPE_POPUP);
     params.context = Shell::GetPrimaryRootWindow();
     auto wrapper_widget = std::make_unique<views::Widget>();
     wrapper_widget->Init(std::move(params));
@@ -215,9 +222,8 @@ class ArcNotificationContentViewTest : public AshTestBase {
         surface_manager(), surface_.get(), notification_key);
 
     exo::test::ExoTestHelper exo_test_helper;
-    surface_buffer_ =
-        std::make_unique<exo::Buffer>(exo_test_helper.CreateGpuMemoryBuffer(
-            kNotificationSurfaceBounds.size()));
+    surface_buffer_ = exo::test::ExoTestHelper::CreateBuffer(
+        kNotificationSurfaceBounds.size());
     surface_->Attach(surface_buffer_.get());
 
     surface_->Commit();
@@ -272,7 +278,7 @@ class ArcNotificationContentViewTest : public AshTestBase {
   std::unique_ptr<exo::NotificationSurface> notification_surface_;
 
   // owned by the |wrapper_widget_|.
-  raw_ptr<ArcNotificationView, ExperimentalAsh> notification_view_ = nullptr;
+  raw_ptr<ArcNotificationView, DanglingUntriaged> notification_view_ = nullptr;
   std::unique_ptr<views::Widget> wrapper_widget_;
 };
 
@@ -310,6 +316,25 @@ TEST_F(ArcNotificationContentViewTest, CreateNotificationWithoutSurface) {
   Notification notification = CreateNotification(notification_item.get());
 
   CreateAndShowNotificationView(notification);
+  CloseNotificationView();
+}
+
+TEST_F(ArcNotificationContentViewTest,
+       CreateSurfaceAfterCollapsingNotification) {
+  std::string notification_key("notification id");
+
+  auto notification_item =
+      std::make_unique<MockArcNotificationItem>(notification_key);
+  Notification notification = CreateNotification(notification_item.get());
+
+  CreateAndShowNotificationView(notification);
+  GetArcNotificationContentView()->SetVisible(false);
+
+  PrepareSurface(notification_key);
+  EXPECT_FALSE(surface_manager()->GetArcSurface(notification_key)->IsAttached());
+
+  GetArcNotificationContentView()->SetVisible(true);
+  EXPECT_TRUE(surface_manager()->GetArcSurface(notification_key)->IsAttached());
   CloseNotificationView();
 }
 
@@ -370,10 +395,9 @@ TEST_F(ArcNotificationContentViewTest, CloseButtonInMessageCenterView) {
           }));
 
   // Show MessageCenterView and activate its widget.
-  auto* unified_system_tray =
-      StatusAreaWidgetTestHelper::GetStatusAreaWidget()->unified_system_tray();
-  unified_system_tray->ShowBubble();
-  unified_system_tray->ActivateBubble();
+  auto* notification_tray = StatusAreaWidgetTestHelper::GetStatusAreaWidget()
+                                ->notification_center_tray();
+  notification_tray->ShowBubble();
 
   auto notification_item =
       std::make_unique<MockArcNotificationItem>(notification_key);
@@ -415,6 +439,8 @@ TEST_F(ArcNotificationContentViewTest, CloseButtonPosition) {
       std::make_unique<MockArcNotificationItem>(notification_key);
   Notification notification = CreateNotification(notification_item.get());
   PrepareSurface(notification_key);
+
+  base::i18n::SetRTLForTesting(false);
   CreateAndShowNotificationView(notification);
 
   {
@@ -768,6 +794,68 @@ TEST_F(ArcNotificationContentViewTest, TraversalFocusReverseByShiftTab) {
   EXPECT_EQ(GetControlButtonsView()->close_button(),
             focus_manager->GetFocusedView());
 
+  CloseNotificationView();
+}
+
+TEST_F(ArcNotificationContentViewTest, AccessibleProperties) {
+  std::string key("notification id");
+  auto notification_item = std::make_unique<MockArcNotificationItem>(key);
+  auto notification = CreateNotification(notification_item.get());
+
+  PrepareSurface(key);
+  CreateAndShowNotificationView(notification);
+  ArcNotificationContentView* content_view = GetArcNotificationContentView();
+  ASSERT_TRUE(content_view);
+  ArcNotificationSurface* surface = content_view->surface_;
+  ui::AXNodeData data;
+
+  ASSERT_TRUE(surface);
+  content_view->GetViewAccessibility().GetAccessibleNodeData(&data);
+  EXPECT_EQ(surface->GetAXTreeId(), ui::AXTreeIDUnknown());
+  EXPECT_EQ(data.role, ax::mojom::Role::kButton);
+  EXPECT_EQ(
+      data.GetString16Attribute(ax::mojom::StringAttribute::kRoleDescription),
+      l10n_util::GetStringUTF16(
+          IDS_MESSAGE_NOTIFICATION_SETTINGS_BUTTON_ACCESSIBLE_NAME));
+  EXPECT_EQ(content_view->GetViewAccessibility().GetChildTreeID(),
+            surface->GetAXTreeId());
+
+  surface->SetAXTreeId(ui::AXTreeID::CreateNewAXTreeID());
+  data = ui::AXNodeData();
+  content_view->GetViewAccessibility().GetAccessibleNodeData(&data);
+  EXPECT_NE(surface->GetAXTreeId(), ui::AXTreeIDUnknown());
+  EXPECT_EQ(data.role, ax::mojom::Role::kClient);
+  EXPECT_EQ(
+      data.GetString16Attribute(ax::mojom::StringAttribute::kRoleDescription),
+      u"");
+  EXPECT_EQ(content_view->GetViewAccessibility().GetChildTreeID(),
+            surface->GetAXTreeId());
+
+  content_view->SetSurface(nullptr);
+  data = ui::AXNodeData();
+  content_view->GetViewAccessibility().GetAccessibleNodeData(&data);
+  EXPECT_EQ(data.role, ax::mojom::Role::kButton);
+  EXPECT_EQ(
+      data.GetString16Attribute(ax::mojom::StringAttribute::kRoleDescription),
+      l10n_util::GetStringUTF16(
+          IDS_MESSAGE_NOTIFICATION_SETTINGS_BUTTON_ACCESSIBLE_NAME));
+  EXPECT_EQ(content_view->GetViewAccessibility().GetChildTreeID(),
+            ui::AXTreeIDUnknown());
+
+  auto notification_message = std::make_unique<Notification>(
+      message_center::NOTIFICATION_TYPE_SIMPLE,
+      notification_item->GetNotificationId(), u"item_title", u"item_message",
+      ui::ImageModel(), u"arc", GURL(),
+      message_center::NotifierId(message_center::NotifierType::ARC_APPLICATION,
+                                 "ARC_NOTIFICATION"),
+      message_center::RichNotificationData(), nullptr);
+
+  content_view->Update(*notification_message);
+  data = ui::AXNodeData();
+  content_view->GetViewAccessibility().GetAccessibleNodeData(&data);
+
+  EXPECT_EQ(u"item_title\nitem_message",
+            data.GetString16Attribute(ax::mojom::StringAttribute::kName));
   CloseNotificationView();
 }
 

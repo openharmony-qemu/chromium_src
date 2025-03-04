@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "ash/constants/ash_features.h"
 #include "ash/public/cpp/ash_prefs.h"
 #include "ash/session/session_controller_impl.h"
 #include "ash/shell.h"
@@ -16,6 +17,7 @@
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/test/metrics/histogram_tester.h"
+#include "base/test/scoped_feature_list.h"
 #include "components/account_id/account_id.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/testing_pref_service.h"
@@ -86,6 +88,7 @@ class KeyboardModifierMetricsRecorderTest : public AshTestBase {
   ~KeyboardModifierMetricsRecorderTest() override = default;
 
   void SetUp() override {
+    feature_list_.InitAndDisableFeature(features::kInputDeviceSettingsSplit);
     AshTestBase::SetUp();
     ResetHistogramTester();
     recorder_ = Shell::Get()->keyboard_modifier_metrics_recorder();
@@ -101,9 +104,9 @@ class KeyboardModifierMetricsRecorderTest : public AshTestBase {
   }
 
  protected:
-  raw_ptr<KeyboardModifierMetricsRecorder, DanglingUntriaged | ExperimentalAsh>
-      recorder_;
+  raw_ptr<KeyboardModifierMetricsRecorder, DanglingUntriaged> recorder_;
   std::unique_ptr<base::HistogramTester> histogram_tester_;
+  base::test::ScopedFeatureList feature_list_;
 };
 
 class KeyboardModifierMetricsRecorderPrefChangedTest
@@ -125,7 +128,7 @@ class KeyboardModifierMetricsRecorderPrefChangedTest
   }
 
  protected:
-  raw_ptr<PrefService, DanglingUntriaged | ExperimentalAsh> pref_service_;
+  raw_ptr<PrefService, DanglingUntriaged> pref_service_;
 
   KeyboardModifierMetricsRecorderTestData data_;
   ui::mojom::ModifierKey modifier_key_from_;
@@ -142,9 +145,11 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Combine(
         testing::ValuesIn(kKeyboardModifierMetricTestData),
         testing::Range(static_cast<int>(ui::mojom::ModifierKey::kMinValue),
-                       static_cast<int>(ui::mojom::ModifierKey::kMaxValue)),
+                       static_cast<int>(ui::mojom::ModifierKey::kAssistant) +
+                           1),
         testing::Range(static_cast<int>(ui::mojom::ModifierKey::kMinValue),
-                       static_cast<int>(ui::mojom::ModifierKey::kMaxValue))),
+                       static_cast<int>(ui::mojom::ModifierKey::kAssistant) +
+                           1)),
     ([](const testing::TestParamInfo<
          KeyboardModifierMetricsRecorderPrefChangedTest::ParamType>& info) {
       const auto& [data, int_modifier_key_from, int_modifier_key_to] =
@@ -205,8 +210,11 @@ INSTANTIATE_TEST_SUITE_P(
     KeyboardModifierMetricsRecorderPrefStartedTest,
     testing::Combine(
         testing::ValuesIn(kKeyboardModifierMetricTestData),
+        // Only test from 0 to Assistant as those are the only modifiers
+        // supported pre settings split.
         testing::Range(static_cast<int>(ui::mojom::ModifierKey::kMinValue),
-                       static_cast<int>(ui::mojom::ModifierKey::kMaxValue))),
+                       static_cast<int>(ui::mojom::ModifierKey::kAssistant) +
+                           1)),
     ([](const testing::TestParamInfo<
          KeyboardModifierMetricsRecorderPrefStartedTest::ParamType>& info) {
       const auto& [data, int_modifier_key] = info.param;
@@ -223,11 +231,13 @@ TEST_P(KeyboardModifierMetricsRecorderPrefStartedTest, InitializeTest) {
 
   std::unique_ptr<TestingPrefServiceSimple> pref_service1 =
       std::make_unique<TestingPrefServiceSimple>();
-  ash::RegisterUserProfilePrefs(pref_service1->registry(), true);
+  ash::RegisterUserProfilePrefs(pref_service1->registry(), /*country=*/"",
+                                true);
 
   std::unique_ptr<TestingPrefServiceSimple> pref_service2 =
       std::make_unique<TestingPrefServiceSimple>();
-  ash::RegisterUserProfilePrefs(pref_service2->registry(), true);
+  ash::RegisterUserProfilePrefs(pref_service2->registry(), /*country=*/"",
+                                true);
 
   pref_service1->SetInteger(data_.pref_name, static_cast<int>(modifier_key_));
   pref_service2->SetInteger(data_.pref_name, static_cast<int>(modifier_key_));
@@ -275,7 +285,7 @@ TEST_P(KeyboardModifierMetricsRecorderPrefStartedTest, InitializeTest) {
 // expected.
 struct KeyboardModifierMetricsRecorderHashTestData {
   base::flat_map<std::string, ui::mojom::ModifierKey> modifier_remappings;
-  absl::optional<int32_t> expected_value;
+  std::optional<int32_t> expected_value;
 };
 
 class KeyboardModifierMetricsRecorderHashTest
@@ -299,7 +309,7 @@ INSTANTIATE_TEST_SUITE_P(
     KeyboardModifierMetricsRecorderHashTest,
     testing::ValuesIn(std::vector<KeyboardModifierMetricsRecorderHashTestData>{
         // With only default remappings, no metric is expected.
-        {{}, absl::nullopt},
+        {{}, std::nullopt},
 
         // All keys remapped to `ui::mojom::ModifierKey::kMeta` should hash to
         // 0.
@@ -363,11 +373,13 @@ TEST_P(KeyboardModifierMetricsRecorderHashTest, HashTest) {
 
   std::unique_ptr<TestingPrefServiceSimple> pref_service1 =
       std::make_unique<TestingPrefServiceSimple>();
-  ash::RegisterUserProfilePrefs(pref_service1->registry(), true);
+  ash::RegisterUserProfilePrefs(pref_service1->registry(), /*country=*/"",
+                                true);
 
   std::unique_ptr<TestingPrefServiceSimple> pref_service2 =
       std::make_unique<TestingPrefServiceSimple>();
-  ash::RegisterUserProfilePrefs(pref_service2->registry(), true);
+  ash::RegisterUserProfilePrefs(pref_service2->registry(), /*country=*/"",
+                                true);
 
   for (const auto& [pref, remapping] : data_.modifier_remappings) {
     pref_service1->SetInteger(pref, static_cast<int>(remapping));

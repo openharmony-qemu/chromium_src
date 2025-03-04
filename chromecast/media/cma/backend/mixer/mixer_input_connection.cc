@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <utility>
 
 #include "base/command_line.h"
@@ -35,7 +36,6 @@
 #include "media/base/audio_bus.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "media/filters/audio_renderer_algorithm.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace chromecast {
 namespace media {
@@ -49,6 +49,7 @@ constexpr base::TimeDelta kInactivityTimeout = base::Seconds(5);
 constexpr int64_t kDefaultMaxTimestampError = 2000;
 // Max absolute value for timestamp errors, to avoid overflow/underflow.
 constexpr int64_t kTimestampErrorLimit = 1000000;
+constexpr int kMaxChannels = 32;
 
 constexpr int kAudioMessageHeaderSize =
     mixer_service::MixerSocket::kAudioMessageHeaderSize;
@@ -327,7 +328,7 @@ class MixerInputConnection::TimestampedFader : public AudioProvider {
   const int num_channels_;
   const int sample_rate_;
 
-  absl::optional<int> pending_silence_;
+  std::optional<int> pending_silence_;
   FaderProvider fader_provider_;
   AudioFader fader_;
   bool after_silence_ = true;
@@ -1066,7 +1067,8 @@ int MixerInputConnection::FillAudioPlaybackFrames(
       remaining_silence_frames_ = 0;
     }
 
-    float* channels[num_channels_];
+    CHECK_LE(num_channels_, kMaxChannels);
+    float* channels[kMaxChannels];
     for (int c = 0; c < num_channels_; ++c) {
       channels[c] = buffer->channel(c) + write_offset;
     }

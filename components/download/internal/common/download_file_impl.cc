@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/download/public/common/download_file_impl.h"
 
 #include <algorithm>
@@ -34,6 +39,10 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "components/download/public/common/download_utils.h"
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
 namespace download {
 
 namespace {
@@ -56,6 +65,33 @@ const int kNoBytesToWrite = -1;
 // Default content length when the potential file size is not yet determined.
 const int kUnknownContentLength = -1;
 
+#if BUILDFLAG(IS_MAC)
+void UnHideFile(const base::FilePath& path) {
+  base::stat_wrapper_t stat;
+  if (base::File::Stat(path, &stat) < 0) {
+    return;
+  }
+
+  if (!S_ISREG(stat.st_mode)) {
+    return;
+  }
+
+  // Skip files starting with ".".
+  if (base::StartsWith(path.BaseName().value(), ".")) {
+    return;
+  }
+
+  // Update the file's hidden flags.
+  if (stat.st_flags & UF_HIDDEN) {
+    stat.st_flags ^= UF_HIDDEN;
+    chflags(path.value().c_str(), stat.st_flags);
+  }
+}
+#endif
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+static constexpr base::TimeDelta kTimeout = base::Seconds(60);
+#endif
 }  // namespace
 
 DownloadFileImpl::SourceStream::SourceStream(
@@ -130,10 +166,12 @@ DownloadInterruptReason DownloadFileImpl::SourceStream::GetCompletionStatus()
   return input_stream_->GetCompletionStatus();
 }
 
-void DownloadFileImpl::SourceStream::RegisterCompletionCallback(
-    DownloadFileImpl::SourceStream::CompletionCallback callback) {
-  input_stream_->RegisterCompletionCallback(
-      base::BindOnce(std::move(callback), base::Unretained(this)));
+void DownloadFileImpl::SourceStream::RequestCompletionNotification(
+    base::WeakPtr<DownloadFileImpl> download_file) {
+  input_stream_->RegisterCompletionCallback(base::BindOnce(
+      &DownloadFileImpl::OnStreamCompleted, std::move(download_file),
+      // Precondition: `download_file` owns `this`.
+      base::Unretained(this)));
 }
 
 InputStream::StreamState DownloadFileImpl::SourceStream::Read(
@@ -168,16 +206,17 @@ DownloadFileImpl::DownloadFileImpl(
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("download", "DownloadFileActive",
                                     download_id);
 
-  source_streams_[save_info_->offset] = std::make_unique<SourceStream>(
-      save_info_->offset, save_info_->GetStartingFileWriteOffset(),
-      std::move(stream));
+  source_streams_.insert(
+      {save_info_->offset,
+       std::make_unique<SourceStream>(save_info_->offset,
+                                      save_info_->GetStartingFileWriteOffset(),
+                                      std::move(stream))});
 
   DETACH_FROM_SEQUENCE(sequence_checker_);
 }
 
 DownloadFileImpl::~DownloadFileImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   TRACE_EVENT_NESTABLE_ASYNC_END0("download", "DownloadFileActive",
                                   download_id_);
 }
@@ -209,6 +248,15 @@ void DownloadFileImpl::Initialize(
   } else {
     bytes_so_far = save_info_->GetStartingFileWriteOffset();
   }
+
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  // Create the obfuscator if enterprise deep scanning is enabled.
+  if (save_info_->needs_obfuscation && !IsParallelDownloadEnabled()) {
+    obfuscator_ =
+        std::make_unique<enterprise_obfuscation::DownloadObfuscator>();
+  }
+#endif
+
   int64_t bytes_wasted = 0;
   DownloadInterruptReason reason = file_.Initialize(
       save_info_->file_path, default_download_directory_,
@@ -245,10 +293,11 @@ void DownloadFileImpl::AddInputStream(std::unique_ptr<InputStream> stream,
     CancelRequest(offset);
     return;
   }
-  DCHECK(source_streams_.find(offset) == source_streams_.end());
-  source_streams_[offset] =
-      std::make_unique<SourceStream>(offset, offset, std::move(stream));
-  OnSourceStreamAdded(source_streams_[offset].get());
+  auto [it, inserted] =
+      source_streams_.insert({offset, std::make_unique<SourceStream>(
+                                          offset, offset, std::move(stream))});
+  CHECK(inserted);
+  OnSourceStreamAdded(it->second.get());
 }
 
 void DownloadFileImpl::OnSourceStreamAdded(SourceStream* source_stream) {
@@ -271,7 +320,11 @@ DownloadInterruptReason DownloadFileImpl::ValidateAndWriteDataToFile(
     size_t bytes_to_write) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Check if some of the data is for validation purpose.
-  if (bytes_to_validate > 0 &&
+  bool should_validate = bytes_to_validate > 0;
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  should_validate = should_validate && !obfuscator_;
+#endif
+  if (should_validate &&
       !file_.ValidateDataInFile(offset, data, bytes_to_validate)) {
     return DOWNLOAD_INTERRUPT_REASON_FILE_HASH_MISMATCH;
   }
@@ -279,6 +332,31 @@ DownloadInterruptReason DownloadFileImpl::ValidateAndWriteDataToFile(
   // and read the next chunk.
   if (bytes_to_write <= 0)
     return DOWNLOAD_INTERRUPT_REASON_NONE;
+
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  if (obfuscator_) {
+    bool is_last_chunk =
+        save_info_->total_bytes > 0 &&
+        static_cast<int64_t>(offset + bytes_to_validate + bytes_to_write) ==
+            save_info_->total_bytes;
+    auto obfuscated_data = obfuscator_->ObfuscateChunk(
+        base::span(reinterpret_cast<const uint8_t*>(data + bytes_to_validate),
+                   bytes_to_write),
+        is_last_chunk);
+
+    // TODO(b/367259664): Add better error handling for file obfuscation.
+    if (!obfuscated_data.has_value()) {
+      return DOWNLOAD_INTERRUPT_REASON_FILE_FAILED;
+    }
+
+    WillWriteToDisk(obfuscated_data.value().size());
+    return file_.WriteDataToFile(
+        file_.bytes_so_far(),
+        reinterpret_cast<const char*>(obfuscated_data.value().data()),
+        obfuscated_data.value().size());
+  }
+#endif
+
   // Write the remaining data to disk.
   WillWriteToDisk(bytes_to_write);
   return file_.WriteDataToFile(offset + bytes_to_validate,
@@ -343,6 +421,16 @@ void DownloadFileImpl::RenameAndUniquify(const base::FilePath& full_path,
     return;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  if (GetFileRenameOptions() == FileRenameOptions::OVERWRITE_MODE) {
+    std::unique_ptr<RenameParameters> parameters(
+        new RenameParameters(OVERWRITE, full_path, std::move(callback)));
+    RenameWithRetryInternal(std::move(parameters));
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
   std::unique_ptr<RenameParameters> parameters(
       new RenameParameters(UNIQUIFY, full_path, std::move(callback)));
   RenameWithRetryInternal(std::move(parameters));
@@ -353,6 +441,7 @@ void DownloadFileImpl::RenameAndAnnotate(
     const std::string& client_guid,
     const GURL& source_url,
     const GURL& referrer_url,
+    const std::optional<url::Origin>& request_initiator,
     mojo::PendingRemote<quarantine::mojom::Quarantine> remote_quarantine,
     RenameCompletionCallback callback) {
   std::unique_ptr<RenameParameters> parameters(new RenameParameters(
@@ -360,6 +449,7 @@ void DownloadFileImpl::RenameAndAnnotate(
   parameters->client_guid = client_guid;
   parameters->source_url = source_url;
   parameters->referrer_url = referrer_url;
+  parameters->request_initiator = request_initiator;
   parameters->remote_quarantine = std::move(remote_quarantine);
   RenameWithRetryInternal(std::move(parameters));
 }
@@ -413,6 +503,18 @@ void DownloadFileImpl::RenameWithRetryInternal(
 
   DownloadInterruptReason reason = file_.Rename(new_path);
 
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  // Handle the case where the file is shorter due to deobfuscation.
+  if (obfuscator_ && reason == DOWNLOAD_INTERRUPT_REASON_FILE_TOO_SHORT) {
+    int64_t expected_size = bytes_seen_ + obfuscator_->GetTotalOverhead();
+    int64_t actual_size = file_.bytes_so_far();
+    if (expected_size >= 0 && actual_size == expected_size) {
+      // Ignore error as the file was deobfuscated before being renamed.
+      reason = DOWNLOAD_INTERRUPT_REASON_NONE;
+    }
+  }
+#endif
+
   // Attempt to retry the rename if possible. If the rename failed and the
   // subsequent open also failed, then in_progress() would be false. We don't
   // try to retry renames if the in_progress() was false to begin with since we
@@ -447,7 +549,8 @@ void DownloadFileImpl::RenameWithRetryInternal(
     // QuarantineFile when kPreventDownloadsWithSamePath is disabled.
     file_.AnnotateWithSourceInformation(
         parameters->client_guid, parameters->source_url,
-        parameters->referrer_url, std::move(parameters->remote_quarantine),
+        parameters->referrer_url, parameters->request_initiator,
+        std::move(parameters->remote_quarantine),
         base::BindOnce(&DownloadFileImpl::OnRenameComplete,
                        weak_factory_.GetWeakPtr(), new_path,
                        std::move(parameters->completion_callback)));
@@ -472,6 +575,11 @@ void DownloadFileImpl::OnRenameComplete(const base::FilePath& new_path,
     for (auto& stream : source_streams_)
       stream.second->ClearDataReadyCallback();
   }
+#if BUILDFLAG(IS_MAC)
+  else {
+    UnHideFile(new_path);
+  }
+#endif
 
   main_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(std::move(callback), reason,
@@ -498,6 +606,12 @@ void DownloadFileImpl::SetPotentialFileLength(int64_t length) {
     potential_file_length_ = length;
   }
 
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  if (obfuscator_) {
+    potential_file_length_ += obfuscator_->GetTotalOverhead();
+  }
+#endif
+
   // TODO(qinmin): interrupt the download if the received bytes are larger
   // than content length limit.
   LOG_IF(ERROR, TotalBytesReceived() > potential_file_length_)
@@ -521,6 +635,12 @@ void DownloadFileImpl::Pause() {
   // Stop sending updates since meaningless after paused.
   if (update_timer_ && update_timer_->IsRunning())
     update_timer_->Stop();
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_->Stop();
+  }
+#endif
 }
 
 void DownloadFileImpl::Resume() {
@@ -540,7 +660,11 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (is_paused_)
     return;
-
+#if defined(ARKWEB_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_.reset();
+  }
+#endif
   base::TimeTicks start(base::TimeTicks::Now());
   base::TimeTicks now;
   scoped_refptr<net::IOBuffer> incoming_data;
@@ -589,14 +713,13 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
         }
       } break;
       case InputStream::WAIT_FOR_COMPLETION:
-        source_stream->RegisterCompletionCallback(base::BindOnce(
-            &DownloadFileImpl::OnStreamCompleted, weak_factory_.GetWeakPtr()));
+        source_stream->RequestCompletionNotification(
+            weak_factory_.GetWeakPtr());
         break;
       case InputStream::COMPLETE:
         break;
       default:
         NOTREACHED();
-        break;
     }
     now = base::TimeTicks::Now();
   } while (state == InputStream::HAS_DATA &&
@@ -615,6 +738,15 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
     source_stream->RegisterDataReadyCallback(
         base::BindRepeating(&DownloadFileImpl::StreamActive, weak_factory_.GetWeakPtr(),
                    source_stream));
+#if defined(ARKWEB_EX_DOWNLOAD)
+    download_job_timer_ = std::make_unique<base::OneShotTimer>();
+    download_job_timer_->Start(
+        FROM_HERE, kTimeout,
+        base::BindOnce(&DownloadFileImpl::OnTimeout, base::Unretained(this),
+                       source_stream,
+                       DOWNLOAD_INTERRUPT_REASON_NETWORK_DISCONNECTED,
+                       InputStream::COMPLETE, true));
+#endif
   }
 
   if (state == InputStream::COMPLETE)
@@ -630,9 +762,21 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
 void DownloadFileImpl::OnStreamCompleted(SourceStream* source_stream) {
   DownloadInterruptReason reason = HandleStreamCompletionStatus(source_stream);
   SendUpdate();
-
   NotifyObserver(source_stream, reason, InputStream::COMPLETE, false);
 }
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+void DownloadFileImpl::OnTimeout(SourceStream* source_stream,
+                                 DownloadInterruptReason reason,
+                                 InputStream::StreamState stream_state,
+                                 bool should_terminate) {
+  LOG(INFO) << "download time out";
+  if (download_job_timer_) {
+    download_job_timer_.reset();
+  }
+  NotifyObserver(source_stream, reason, stream_state, should_terminate);
+}
+#endif
 
 void DownloadFileImpl::NotifyObserver(SourceStream* source_stream,
                                       DownloadInterruptReason reason,
@@ -679,7 +823,34 @@ void DownloadFileImpl::NotifyObserver(SourceStream* source_stream,
 void DownloadFileImpl::OnDownloadCompleted() {
   RecordFileBandwidth(bytes_seen_, base::TimeTicks::Now() - download_start_);
   weak_factory_.InvalidateWeakPtrs();
+
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  // If total bytes not provided, we append an empty obfuscated chunk to
+  // protect against truncation.
+  if (obfuscator_ && save_info_->total_bytes == 0) {
+    auto obfuscated_empty_data = obfuscator_->ObfuscateChunk({}, true);
+    if (!obfuscated_empty_data.has_value()) {
+      SendErrorUpdateIfFinished(DOWNLOAD_INTERRUPT_REASON_FILE_FAILED);
+      return;
+    }
+
+    DownloadInterruptReason reason = file_.WriteDataToFile(
+        file_.bytes_so_far(),
+        reinterpret_cast<const char*>(obfuscated_empty_data.value().data()),
+        obfuscated_empty_data.value().size());
+
+    if (reason != DOWNLOAD_INTERRUPT_REASON_NONE) {
+      SendErrorUpdateIfFinished(reason);
+      return;
+    }
+  }
+
+  std::unique_ptr<crypto::SecureHash> hash_state =
+      obfuscator_ ? obfuscator_->GetUnobfuscatedHash() : file_.Finish();
+#else
   std::unique_ptr<crypto::SecureHash> hash_state = file_.Finish();
+#endif
+
   update_timer_.reset();
   main_task_runner_->PostTask(
       FROM_HERE,
@@ -689,7 +860,6 @@ void DownloadFileImpl::OnDownloadCompleted() {
 
 void DownloadFileImpl::RegisterAndActivateStream(SourceStream* source_stream) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   source_stream->Initialize();
   // Truncate |source_stream|'s length if necessary.
   for (const auto& received_slice : received_slices_) {
@@ -825,6 +995,8 @@ void DownloadFileImpl::SendErrorUpdateIfFinished(
   // Shut down processing and signal an error to our observer.
   // Our observer will clean us up.
   weak_factory_.InvalidateWeakPtrs();
+
+  // TODO(b/367257039): Maintain obfuscated file hash for interrupted downloads.
   std::unique_ptr<crypto::SecureHash> hash_state = file_.Finish();
   main_task_runner_->PostTask(
       FROM_HERE,
@@ -889,6 +1061,6 @@ DownloadFileImpl::RenameParameters::RenameParameters(
       retries_left(kMaxRenameRetries),
       completion_callback(std::move(completion_callback)) {}
 
-DownloadFileImpl::RenameParameters::~RenameParameters() {}
+DownloadFileImpl::RenameParameters::~RenameParameters() = default;
 
 }  // namespace download

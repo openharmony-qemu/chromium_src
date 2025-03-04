@@ -9,17 +9,20 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/synchronization/lock.h"
 #include "components/content_settings/core/common/content_settings.h"
+#include "components/content_settings/core/common/content_settings_types.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "net/cookies/cookie_change_dispatcher.h"
 #include "net/cookies/cookie_deletion_info.h"
 #include "services/network/cookie_settings.h"
 #include "services/network/public/mojom/cookie_manager.mojom.h"
+#include "services/network/tpcd/metadata/manager.h"
 
 namespace net {
 class CookieStore;
@@ -31,6 +34,12 @@ class GURL;
 namespace network {
 class FirstPartySetsAccessDelegate;
 class SessionCleanupCookieStore;
+
+namespace tpcd::metadata {
+class Manager;
+}
+
+using SettingsChangeCallback = base::RepeatingClosure;
 
 // Wrap a cookie store in an implementation of the mojo cookie interface.
 class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
@@ -44,12 +53,16 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
       net::URLRequestContext* url_request_context,
       FirstPartySetsAccessDelegate* const first_party_sets_access_delegate,
       scoped_refptr<SessionCleanupCookieStore> session_cleanup_cookie_store,
-      mojom::CookieManagerParamsPtr params);
+      mojom::CookieManagerParamsPtr params,
+      tpcd::metadata::Manager* tpcd_metadata_manager);
 
   CookieManager(const CookieManager&) = delete;
   CookieManager& operator=(const CookieManager&) = delete;
 
   ~CookieManager() override;
+
+  // Register a callback to be invoked just before settings change.
+  void AddSettingsWillChangeCallback(SettingsChangeCallback callback);
 
   const CookieSettings& cookie_settings() const { return cookie_settings_; }
 
@@ -73,7 +86,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
                           const GURL& source_url,
                           const net::CookieOptions& cookie_options,
                           SetCanonicalCookieCallback callback) override;
-#ifdef OHOS_COOKIE
+#if BUILDFLAG(ARKWEB_COOKIE)
   void SetCanonicalCookieSync(const net::CanonicalCookie& cookie,
                               const GURL& source_url,
                               const net::CookieOptions& cookie_options,
@@ -89,19 +102,24 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
 #endif
   void DeleteCanonicalCookie(const net::CanonicalCookie& cookie,
                              DeleteCanonicalCookieCallback callback) override;
-  void SetContentSettings(const ContentSettingsForOneType& settings) override;
+  void SetContentSettings(ContentSettingsType content_settings_type,
+                          const ContentSettingsForOneType& settings,
+                          SetContentSettingsCallback callback) override;
   void DeleteCookies(mojom::CookieDeletionFilterPtr filter,
                      DeleteCookiesCallback callback) override;
   void DeleteSessionOnlyCookies(
       DeleteSessionOnlyCookiesCallback callback) override;
+  void DeleteStaleSessionOnlyCookies(
+      DeleteStaleSessionOnlyCookiesCallback callback) override;
   void AddCookieChangeListener(
       const GURL& url,
-      const absl::optional<std::string>& name,
+      const std::optional<std::string>& name,
       mojo::PendingRemote<mojom::CookieChangeListener> listener) override;
   void AddGlobalChangeListener(
       mojo::PendingRemote<mojom::CookieChangeListener> listener) override;
   void CloneInterface(
       mojo::PendingReceiver<mojom::CookieManager> new_interface) override;
+  void SetPreCommitCallbackDelayForTesting(base::TimeDelta delay) override;
 
   size_t GetClientsBoundForTesting() const { return receivers_.size(); }
   size_t GetListenersRegisteredForTesting() const {
@@ -113,15 +131,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
                               AllowFileSchemeCookiesCallback callback) override;
   void SetForceKeepSessionState() override;
   void BlockThirdPartyCookies(bool block) override;
-  void SetContentSettingsForLegacyCookieAccess(
-      const ContentSettingsForOneType& settings) override;
-  void SetStorageAccessGrantSettings(
-      const ContentSettingsForOneType& settings,
-      SetStorageAccessGrantSettingsCallback callback) override;
-  void SetAllStorageAccessSettings(
-      const ContentSettingsForOneType& standard_settings,
-      const ContentSettingsForOneType& top_level_settings,
-      SetAllStorageAccessSettingsCallback callback) override;
+  void SetMitigationsEnabledFor3pcd(bool enable) override;
+  void SetTrackingProtectionEnabledFor3pcd(bool enable) override;
 
   // Configures |out| based on |params|. (This doesn't honor
   // allow_file_scheme_cookies, which affects the cookie store rather than the
@@ -134,6 +145,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
   static void CrashOnGetCookieList();
 
  private:
+  // This is called right before settings are about to change. This is used to
+  // give a chance to adjust expectations for observers that rely on the
+  // previous known settings.
+  void OnSettingsWillChange();
+
   // State associated with a CookieChangeListener.
   struct ListenerRegistration {
     ListenerRegistration();
@@ -163,6 +179,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) CookieManager
   // Note: RestrictedCookieManager and CookieAccessDelegate store pointers to
   // |cookie_settings_|.
   CookieSettings cookie_settings_;
+
+  SettingsChangeCallback settings_will_change_callback_;
 
   base::WeakPtrFactory<CookieManager> weak_factory_{this};
 };

@@ -5,6 +5,7 @@
 #ifndef NET_BASE_NETWORK_CHANGE_NOTIFIER_PASSIVE_H_
 #define NET_BASE_NETWORK_CHANGE_NOTIFIER_PASSIVE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/sequence_checker.h"
 #include "base/synchronization/lock.h"
@@ -17,9 +18,11 @@
 #include "net/base/address_map_cache_linux.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos_adapter_helper.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
+
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace net {
 
@@ -48,6 +51,14 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   void OnConnectionSubtypeChanged(
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  const std::vector<std::string> GetCurrentDnsServers() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  void BindDnsToNetwork(int network_for_dns) override;
+#endif
 
  protected:
   // NetworkChangeNotifier overrides.
@@ -82,13 +93,19 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   AddressMapCacheLinux address_map_cache_;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  std::unique_ptr<OHOS::NWeb::NetConnectAdapter> ohos_net_conn_adapter_;
+#endif
   mutable base::Lock lock_;
   NetworkChangeNotifier::ConnectionType
       connection_type_;        // Guarded by |lock_|.
-#if BUILDFLAG(IS_OHOS)
-  std::unique_ptr<OHOS::NWeb::NetConnectAdapter> ohos_net_conn_adapter_;
-#endif
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int32_t network_for_dns_ = -1;
+  mutable base::Lock dns_server_lock_;
+  std::vector<std::string> dns_servers_;
+#endif
 };
 
 }  // namespace net

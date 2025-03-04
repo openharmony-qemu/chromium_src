@@ -6,6 +6,7 @@
 
 #import <functional>
 
+#import "base/memory/raw_ptr.h"
 #import "base/strings/utf_string_conversions.h"
 #import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
@@ -27,10 +28,6 @@
 #import "testing/gtest/include/gtest/gtest.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using web::Referrer;
 using ::testing::_;
@@ -91,19 +88,17 @@ class TextFragmentsManagerImplTest : public WebTest {
   TextFragmentsManagerImplTest() : context_(), feature_list_() {}
 
   void SetUp() override {
-    std::unique_ptr<FakeWebState> web_state = std::make_unique<FakeWebState>();
-    web_state_ = web_state.get();
-    context_.SetWebState(std::move(web_state));
+    context_.SetWebState(&web_state_);
     last_committed_item_.SetReferrer(GetSearchEngineReferrer());
     auto fake_navigation_manager = std::make_unique<FakeNavigationManager>();
     fake_navigation_manager->SetLastCommittedItem(&last_committed_item_);
-    web_state_->SetNavigationManager(std::move(fake_navigation_manager));
+    web_state_.SetNavigationManager(std::move(fake_navigation_manager));
     TextFragmentsJavaScriptFeature* feature =
         TextFragmentsJavaScriptFeature::GetInstance();
     auto fake_web_frames_manager = std::make_unique<FakeWebFramesManager>();
     web_frames_manager_ = fake_web_frames_manager.get();
-    web_state_->SetWebFramesManager(feature->GetSupportedContentWorld(),
-                                    std::move(fake_web_frames_manager));
+    web_state_.SetWebFramesManager(feature->GetSupportedContentWorld(),
+                                   std::move(fake_web_frames_manager));
   }
 
   TextFragmentsManagerImpl* CreateDefaultManager() {
@@ -124,12 +119,12 @@ class TextFragmentsManagerImplTest : public WebTest {
           /*enabled_features=*/{},
           /*disabled_features=*/{features::kIOSSharedHighlightingColorChange});
     }
-    web_state_->SetHasOpener(has_opener);
+    web_state_.SetHasOpener(has_opener);
     context_.SetHasUserGesture(has_user_gesture);
     context_.SetIsSameDocument(is_same_document);
 
-    TextFragmentsManagerImpl::CreateForWebState(web_state_);
-    auto* manager = TextFragmentsManagerImpl::FromWebState(web_state_);
+    TextFragmentsManagerImpl::CreateForWebState(&web_state_);
+    auto* manager = TextFragmentsManagerImpl::FromWebState(&web_state_);
     manager->SetJSFeatureForTesting(&feature_);
     if (add_web_frame) {
       AddMainWebFrame(manager);
@@ -137,7 +132,7 @@ class TextFragmentsManagerImplTest : public WebTest {
     return manager;
   }
 
-  void SetLastURL(const GURL& last_url) { web_state_->SetCurrentURL(last_url); }
+  void SetLastURL(const GURL& last_url) { web_state_.SetCurrentURL(last_url); }
 
   Referrer GetSearchEngineReferrer() {
     return Referrer(GURL(kSearchEngineURL), web::ReferrerPolicyDefault);
@@ -169,14 +164,14 @@ class TextFragmentsManagerImplTest : public WebTest {
   void AddMainWebFrame(TextFragmentsManagerImpl* fragments_mgr) {
     web_frames_manager_->AddWebFrame(
         FakeWebFrame::CreateMainWebFrame(GURL("https://chromium.org")));
-    fragments_mgr->WebFrameDidBecomeAvailable(
-        web_state_, web_frames_manager_->GetMainWebFrame());
+    fragments_mgr->WebFrameBecameAvailable(
+        web_frames_manager_, web_frames_manager_->GetMainWebFrame());
   }
 
   MockJSFeature feature_;
   web::FakeNavigationContext context_;
-  FakeWebState* web_state_;
-  FakeWebFramesManager* web_frames_manager_;
+  FakeWebState web_state_;
+  raw_ptr<FakeWebFramesManager> web_frames_manager_;
   base::test::ScopedFeatureList feature_list_;
   NavigationItemImpl last_committed_item_;
 };
@@ -188,11 +183,11 @@ TEST_F(TextFragmentsManagerImplTest, ExecuteJavaScriptSuccess) {
   SetLastURL(GURL(kValidFragmentsURL));
 
   base::Value expected = ValueForTestURL();
-  EXPECT_CALL(feature_,
-              ProcessTextFragments(web_state_, Eq(std::ref(expected)), "", ""));
+  EXPECT_CALL(feature_, ProcessTextFragments(&web_state_,
+                                             Eq(std::ref(expected)), "", ""));
 
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that JS still executes even if the main WebFrame isn't yet available
@@ -202,8 +197,8 @@ TEST_F(TextFragmentsManagerImplTest, ExecuteJavaScriptDelayedWebFrame) {
   SetLastURL(GURL(kValidFragmentsURL));
 
   base::Value expected = ValueForTestURL();
-  EXPECT_CALL(feature_,
-              ProcessTextFragments(web_state_, Eq(std::ref(expected)), "", ""));
+  EXPECT_CALL(feature_, ProcessTextFragments(&web_state_,
+                                             Eq(std::ref(expected)), "", ""));
 
   TextFragmentsManagerImpl* manager =
       CreateManager(/*has_opener=*/false,
@@ -211,7 +206,7 @@ TEST_F(TextFragmentsManagerImplTest, ExecuteJavaScriptDelayedWebFrame) {
                     /*is_same_document=*/false,
                     /*feature_color_change=*/false,
                     /*add_web_frame=*/false);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
   AddMainWebFrame(manager);
 }
 
@@ -223,8 +218,9 @@ TEST_F(TextFragmentsManagerImplTest, ExecuteJavaScriptWithColorChange) {
   SetLastURL(GURL(kValidFragmentsURL));
 
   base::Value expected = ValueForTestURL();
-  EXPECT_CALL(feature_, ProcessTextFragments(web_state_, Eq(std::ref(expected)),
-                                             "e9d2fd", "000000"));
+  EXPECT_CALL(feature_,
+              ProcessTextFragments(&web_state_, Eq(std::ref(expected)),
+                                   "e9d2fd", "000000"));
 
   TextFragmentsManagerImpl* manager =
       CreateManager(/*has_opener=*/false,
@@ -232,7 +228,7 @@ TEST_F(TextFragmentsManagerImplTest, ExecuteJavaScriptWithColorChange) {
                     /*is_same_document=*/false,
                     /*feature_color_change=*/true,
                     /*add_web_frame=*/true);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the manager will not execute JavaScript if the WebState has an
@@ -246,7 +242,7 @@ TEST_F(TextFragmentsManagerImplTest, HasOpenerFragmentsDisallowed) {
                     /*add_web_frame=*/true);
 
   EXPECT_CALL(feature_, ProcessTextFragments(_, _, _, _)).Times(0);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the manager will not execute JavaScript if the WebState has no
@@ -260,7 +256,7 @@ TEST_F(TextFragmentsManagerImplTest, NoGestureFragmentsDisallowed) {
                     /*add_web_frame=*/true);
 
   EXPECT_CALL(feature_, ProcessTextFragments(_, _, _, _)).Times(0);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the manager will not execute JavaScript if we navigated on the
@@ -274,7 +270,7 @@ TEST_F(TextFragmentsManagerImplTest, SameDocumentFragmentsDisallowed) {
                     /*add_web_frame=*/true);
 
   EXPECT_CALL(feature_, ProcessTextFragments(_, _, _, _)).Times(0);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the manager will not execute JavaScript if there are no
@@ -290,7 +286,7 @@ TEST_F(TextFragmentsManagerImplTest, NoFragmentsNoJavaScript) {
                     /*add_web_frame=*/true);
 
   EXPECT_CALL(feature_, ProcessTextFragments(_, _, _, _)).Times(0);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the manager will not execute JavaScript if there are no
@@ -306,7 +302,7 @@ TEST_F(TextFragmentsManagerImplTest, IdFragmentNoJavaScript) {
                     /*add_web_frame=*/true);
 
   EXPECT_CALL(feature_, ProcessTextFragments(_, _, _, _)).Times(0);
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 }
 
 // Tests that the LinkSource metric is recorded properly when the link comes
@@ -318,7 +314,7 @@ TEST_F(TextFragmentsManagerImplTest, LinkSourceMetricSearchEngine) {
 
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
 
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 
   histogram_tester.ExpectUniqueSample("TextFragmentAnchor.LinkOpenSource", 1,
                                       1);
@@ -334,7 +330,7 @@ TEST_F(TextFragmentsManagerImplTest, LinkSourceMetricNonSearchEngine) {
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
 
   last_committed_item_.SetReferrer(GetNonSearchEngineReferrer());
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 
   histogram_tester.ExpectUniqueSample("TextFragmentAnchor.LinkOpenSource", 0,
                                       1);
@@ -348,7 +344,7 @@ TEST_F(TextFragmentsManagerImplTest, SelectorCountMetricSingleSelector) {
 
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
 
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 
   histogram_tester.ExpectUniqueSample("TextFragmentAnchor.SelectorCount", 1, 1);
 }
@@ -361,7 +357,7 @@ TEST_F(TextFragmentsManagerImplTest, SelectorCountMetricTwoSelectors) {
 
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
 
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 
   histogram_tester.ExpectUniqueSample("TextFragmentAnchor.SelectorCount", 2, 1);
 }
@@ -371,7 +367,7 @@ TEST_F(TextFragmentsManagerImplTest, SelectorCountMetricTwoSelectors) {
 TEST_F(TextFragmentsManagerImplTest, OnProcessingCompleteSuccessMetrics) {
   SetLastURL(GURL(kTwoFragmentsURL));
   TextFragmentsManagerImpl* manager = CreateDefaultManager();
-  manager->DidFinishNavigation(web_state_, &context_);
+  manager->DidFinishNavigation(&web_state_, &context_);
 
   // 100% rate case.
   {

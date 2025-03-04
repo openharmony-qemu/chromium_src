@@ -8,20 +8,21 @@
 #include <iterator>
 #include <limits>
 #include <list>
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "base/time/time.h"
+#include "components/autofill/core/browser/address_data_manager.h"
 #include "components/autofill/core/browser/autofill_profile_import_process.h"
+#include "components/autofill/core/browser/country_type.h"
 #include "components/autofill/core/browser/data_model/autofill_profile.h"
 #include "components/autofill/core/browser/data_model/autofill_profile_comparator.h"
 #include "components/autofill/core/browser/form_structure.h"
-#include "components/autofill/core/browser/personal_data_manager.h"
 #include "components/autofill/core/common/autofill_clock.h"
 #include "components/autofill/core/common/logging/log_buffer.h"
 #include "components/autofill/core/common/signatures.h"
 #include "components/history/core/browser/history_types.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace autofill {
 
@@ -62,8 +63,7 @@ class TimestampedSameOriginQueue {
   // This is not done as part of `Push()`, as outdated items (for example in the
   // multi-step import use-case) should be deleted as soon as possible for
   // privacy reasons, even when no `Push()` happens.
-  void RemoveOutdatedItems(const base::TimeDelta& ttl,
-                           const url::Origin& new_origin) {
+  void RemoveOutdatedItems(base::TimeDelta ttl, const url::Origin& new_origin) {
     if (origin_ && *origin_ != new_origin) {
       Clear();
     } else {
@@ -75,7 +75,7 @@ class TimestampedSameOriginQueue {
 
   // Returns the origin shared by the elements in the queue. Or nullopt, if
   // the queue is currently `Empty()`.
-  const absl::optional<url::Origin>& origin() const { return origin_; }
+  const std::optional<url::Origin>& origin() const { return origin_; }
 
   size_t size() const { return items_.size(); }
   bool empty() const { return items_.empty(); }
@@ -99,39 +99,11 @@ class TimestampedSameOriginQueue {
  private:
   std::list<value_type> items_;
   // If the queue is not `empty()`, this represents the origin of all `items_`.
-  absl::optional<url::Origin> origin_;
+  std::optional<url::Origin> origin_;
   // The maximum number of elements stored in `items_`. If adding a new item
   // would exceed the `max_size_`, the oldest existing item is removed.
   const size_t max_size_;
 };
-
-// Returns true if minimum requirements for import of a given `profile` have
-// been met. An address submitted via a form must have at least the fields
-// required as determined by its country code. No verification of validity of
-// the contents is performed. This is an existence check only. Assumes `profile`
-// has been finalized.
-bool IsMinimumAddress(const AutofillProfile& profile,
-                      const std::string& predicted_country_code,
-                      const std::string& app_locale,
-                      LogBuffer* import_log_buffer,
-                      bool collect_metrics);
-
-// Checks suitability of an an import candidate `profile` by validating some
-// of the profiles values.
-bool IsValidLearnableProfile(const AutofillProfile& profile,
-                             LogBuffer* import_log_buffer);
-
-// Tries to infer the country `profile` is from, which can be useful to
-// verify whether the data is sensible. Returns a two-letter ISO country code
-// by considering, in decreasing order of priority:
-// - The country specified in `profile`.
-// - The country determined by the variation service stored in
-//   `variation_country_code`.
-// - The country code corresponding to `app_locale`.
-std::string GetPredictedCountryCode(const AutofillProfile& profile,
-                                    const std::string& variation_country_code,
-                                    const std::string& app_locale,
-                                    LogBuffer* import_log_buffer);
 
 // Stores recently submitted profile fragments, which are merged against future
 // import candidates to construct a complete profile. This enables importing
@@ -139,7 +111,7 @@ std::string GetPredictedCountryCode(const AutofillProfile& profile,
 class MultiStepImportMerger {
  public:
   MultiStepImportMerger(const std::string& app_locale,
-                        const std::string& variation_country_code);
+                        const GeoIpCountryCode& variation_country_code);
   ~MultiStepImportMerger();
 
   // Removes updated multi-step candidates, merges `profile` with multi-step
@@ -153,7 +125,7 @@ class MultiStepImportMerger {
                                    const ProfileImportMetadata& import_metadata,
                                    bool is_imported);
 
-  const absl::optional<url::Origin>& origin() const {
+  const std::optional<url::Origin>& origin() const {
     return multistep_candidates_.origin();
   }
 
@@ -162,11 +134,11 @@ class MultiStepImportMerger {
   // Stored profiles can be deleted/modified by the user/through sync, etc. This
   // potentially invalidates `multistep_candidates_`.
   // This function verifies all already imported `multistep_candidates_`
-  // against the corresponding profile stored in the `personal_data_manager`.
-  // Profiles that no longer exist in the personal data manager are removed from
+  // against the corresponding profile stored in the `address_data_manager`.
+  // Profiles that no longer exist in the address data manager are removed from
   // `multistep_candidates`. Similarly, profiles that were in modified in the
-  // personal data manager are updated in `multistep_candidates`.
-  void OnPersonalDataChanged(PersonalDataManager& personal_data_manager);
+  // address data manager are updated in `multistep_candidates`.
+  void OnAddressDataChanged(AddressDataManager& address_data_manager);
 
   void OnBrowsingHistoryCleared(const history::DeletionInfo& deletion_info);
 
@@ -182,17 +154,6 @@ class MultiStepImportMerger {
       AutofillProfile& profile,
       ProfileImportMetadata& import_metadata);
 
-  // Merging can fail if one profile fragment contains an observed country and
-  // the complemented country of the other profile disagrees with it.
-  // This function attempts to make `profile_a` and `profile_b` mergeable by
-  // removing the complemented country.
-  // If successful, true is returned and the complemented country removed.
-  bool MergeableByRemovingIncorrectlyComplementedCountry(
-      AutofillProfile& profile_a,
-      bool& complemented_profile_a,
-      AutofillProfile& profile_b,
-      bool& complemented_profile_b) const;
-
   // `ProfileImportMetadata` is used to log metrics on the user decision,
   // depending on features like invalid phone number removal. When combining two
   // profile fragments, we need to decide which features had an effect on the
@@ -203,7 +164,7 @@ class MultiStepImportMerger {
   // Needed to predict the country code of a merged import candidate, to
   // ultimately decide if the profile meets the minimum import requirements.
   std::string app_locale_;
-  std::string variation_country_code_;
+  GeoIpCountryCode variation_country_code_;
   AutofillProfileComparator comparator_;
 
   // Represents a submitted form, stored to be considered as a merge candidate
@@ -245,10 +206,10 @@ class FormAssociator {
   // any. In particular, the two most recent address and the most recent
   // submitted credit card form signatures from the same origin are returned.
   // One of them is the `form_signature` itself.
-  absl::optional<FormStructure::FormAssociations> GetFormAssociations(
+  std::optional<FormStructure::FormAssociations> GetFormAssociations(
       FormSignature form_signature) const;
 
-  const absl::optional<url::Origin>& origin() const;
+  const std::optional<url::Origin>& origin() const;
 
   void Clear();
 

@@ -2,12 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "cc/scheduler/scheduler_state_machine.h"
 
 #include <stddef.h>
 
 #include "base/test/gtest_util.h"
+#include "base/test/scoped_feature_list.h"
 #include "base/trace_event/trace_event.h"
+#include "cc/base/features.h"
 #include "cc/scheduler/scheduler.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "components/viz/test/begin_frame_args_test.h"
@@ -77,7 +84,6 @@ const char* BeginImplFrameStateToString(
       return "BeginImplFrameState::INSIDE_DEADLINE";
   }
   NOTREACHED();
-  return "???";
 }
 const char* BeginMainFrameStateToString(
     SchedulerStateMachine::BeginMainFrameState state) {
@@ -91,7 +97,6 @@ const char* BeginMainFrameStateToString(
       return "BeginMainFrameState::READY_TO_COMMIT";
   }
   NOTREACHED();
-  return "???";
 }
 
 const char* ActionToString(SchedulerStateMachine::Action action) {
@@ -113,6 +118,8 @@ const char* ActionToString(SchedulerStateMachine::Action action) {
       return "Action::DRAW_FORCED";
     case Action::DRAW_ABORT:
       return "Action::DRAW_ABORT";
+    case Action::UPDATE_DISPLAY_TREE:
+      return "Action::UPDATE_DISPLAY_TREE";
     case Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION:
       return "Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION";
     case Action::PREPARE_TILES:
@@ -127,7 +134,6 @@ const char* ActionToString(SchedulerStateMachine::Action action) {
       return "Action::NOTIFY_BEGIN_MAIN_FRAME_NOT_EXPECTED_SOON";
   }
   NOTREACHED();
-  return "???";
 }
 
 const bool kAnimateOnly = false;
@@ -149,7 +155,7 @@ class StateMachine : public SchedulerStateMachine {
  public:
   explicit StateMachine(const SchedulerSettings& scheduler_settings)
       : SchedulerStateMachine(scheduler_settings),
-        draw_result_for_test_(DRAW_SUCCESS) {}
+        draw_result_for_test_(DrawResult::kSuccess) {}
 
   void CreateAndInitializeLayerTreeFrameSinkWithActivatedCommit() {
     DidCreateAndInitializeLayerTreeFrameSink();
@@ -290,6 +296,10 @@ void PerformAction(StateMachine* sm, SchedulerStateMachine::Action action) {
       sm->AbortDraw();
       return;
     }
+
+    case SchedulerStateMachine::Action::UPDATE_DISPLAY_TREE:
+      sm->WillUpdateDisplayTree();
+      return;
 
     case SchedulerStateMachine::Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION:
       sm->WillBeginLayerTreeFrameSinkCreation();
@@ -616,7 +626,7 @@ TEST(SchedulerStateMachineTest,
 
   // Failing a draw triggers request for a new BeginMainFrame.
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+  state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
@@ -631,7 +641,7 @@ TEST(SchedulerStateMachineTest,
   state.IssueNextBeginImplFrame();
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+  state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameIdle();
@@ -654,7 +664,7 @@ TEST(SchedulerStateMachineTest, FailedDrawForMissingHighResNeedsCommit) {
   // Failing a draw triggers because of high res tiles missing
   // request for a new BeginMainFrame.
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_ABORTED_MISSING_HIGH_RES_CONTENT);
+  state.SetDrawResultForTest(DrawResult::kAbortedMissingHighResContent);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
@@ -686,7 +696,7 @@ TEST(SchedulerStateMachineTest, FailedDrawForMissingHighResNeedsCommit) {
   state.IssueNextBeginImplFrame();
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_SUCCESS);
+  state.SetDrawResultForTest(DrawResult::kSuccess);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   state.DidSubmitCompositorFrame();
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
@@ -713,7 +723,7 @@ TEST(SchedulerStateMachineTest,
   // Then initiate a draw that fails.
   state.SetNeedsRedraw(true);
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+  state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   EXPECT_TRUE(state.BeginFrameNeeded());
@@ -740,7 +750,7 @@ TEST(SchedulerStateMachineTest,
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_SUCCESS);
+  state.SetDrawResultForTest(DrawResult::kSuccess);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_FORCED);
   state.DidSubmitCompositorFrame();
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
@@ -776,7 +786,7 @@ TEST(SchedulerStateMachineTest, TestFailedDrawsDoNotRestartForcedDraw) {
     state.IssueNextBeginImplFrame();
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
     state.OnBeginImplFrameDeadline();
-    state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+    state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
     state.OnBeginImplFrameIdle();
@@ -798,7 +808,7 @@ TEST(SchedulerStateMachineTest, TestFailedDrawsDoNotRestartForcedDraw) {
     state.IssueNextBeginImplFrame();
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
     state.OnBeginImplFrameDeadline();
-    state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+    state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
     EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
     state.OnBeginImplFrameIdle();
@@ -822,7 +832,7 @@ TEST(SchedulerStateMachineTest, TestFailedDrawIsRetriedInNextBeginImplFrame) {
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameDeadline();
   EXPECT_TRUE(state.RedrawPending());
-  state.SetDrawResultForTest(DRAW_ABORTED_CHECKERBOARD_ANIMATIONS);
+  state.SetDrawResultForTest(DrawResult::kAbortedCheckerboardAnimations);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
 
   // Failing the draw for animation checkerboards makes us require a commit.
@@ -839,7 +849,7 @@ TEST(SchedulerStateMachineTest, TestFailedDrawIsRetriedInNextBeginImplFrame) {
   // We should try to draw again at the end of the next BeginImplFrame on
   // the impl thread.
   state.OnBeginImplFrameDeadline();
-  state.SetDrawResultForTest(DRAW_SUCCESS);
+  state.SetDrawResultForTest(DrawResult::kSuccess);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
   state.DidSubmitCompositorFrame();
   state.DidReceiveCompositorFrameAck();
@@ -1237,7 +1247,7 @@ TEST(SchedulerStateMachineTest, AbortedMainFrameDoesNotResetPendingTree) {
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   EXPECT_TRUE(state.has_pending_tree());
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   EXPECT_TRUE(state.has_pending_tree());
   state.OnBeginImplFrameDeadline();
@@ -1464,7 +1474,7 @@ TEST(SchedulerStateMachineTest, TestAbortBeginMainFrameBecauseInvisible) {
 
   // Become invisible and abort BeginMainFrame.
   state.SetVisible(false);
-  state.BeginMainFrameAborted(CommitEarlyOutReason::ABORTED_NOT_VISIBLE);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kAbortedNotVisible);
 
   // NeedsCommit should now be true again because we never actually did a
   // commit.
@@ -1519,7 +1529,7 @@ TEST(SchedulerStateMachineTest, TestAbortBeginMainFrameBecauseCommitNotNeeded) {
 
   // Abort the commit, true means that the BeginMainFrame was sent but there
   // was no work to do on the main thread.
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
 
   // NeedsCommit should now be false because the commit was actually handled.
   EXPECT_FALSE(state.NeedsCommit());
@@ -1576,7 +1586,7 @@ TEST(SchedulerStateMachineTest, TestMainFrameBeforeCommit) {
 
   // Abort the primary BeginMainFrame; the next BeginMainFrame should also be
   // primary.
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
   state.IssueNextBeginImplFrame();
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
@@ -1626,7 +1636,7 @@ TEST(SchedulerStateMachineTest, TestMainFrameBeforeCommit) {
   state.IssueNextBeginImplFrame();
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
   EXPECT_MAIN_FRAME_STATE(
       SchedulerStateMachine::BeginMainFrameState::READY_TO_COMMIT);
   EXPECT_NEXT_MAIN_FRAME_STATE(
@@ -2053,6 +2063,7 @@ TEST(SchedulerStateMachineTest,
   SchedulerSettings default_scheduler_settings;
   StateMachine state(default_scheduler_settings);
   state.SetVisible(true);
+  state.SetCanDraw(true);
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
@@ -2070,8 +2081,20 @@ TEST(SchedulerStateMachineTest,
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::POST_COMMIT);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::ACTIVATE_SYNC_TREE);
   EXPECT_TRUE(state.active_tree_needs_first_draw());
+  EXPECT_TRUE(state.needs_redraw());
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_ABORT);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  EXPECT_FALSE(state.active_tree_needs_first_draw());
+  EXPECT_FALSE(state.needs_redraw());
+
+  // Unpausing should draw again to ensure a frame is submitted for the commit.
+  state.SetBeginFrameSourcePaused(false);
+  EXPECT_TRUE(state.needs_redraw());
+  state.OnBeginImplFrameDeadline();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
+  state.DidSubmitCompositorFrame();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.DidReceiveCompositorFrameAck();
 }
 
 TEST(SchedulerStateMachineTest, TestInitialActionsWhenContextLost) {
@@ -2197,7 +2220,7 @@ TEST(SchedulerStateMachineTest,
 
   // Since only the scroll offset changed, the main thread will abort the
   // commit.
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
 
   // Since the commit was aborted, we should draw right away instead of waiting
   // for the deadline.
@@ -2226,57 +2249,40 @@ void FinishPreviousCommitAndDrawWithoutExitingDeadline(
   state.DidSubmitCompositorFrame();
 }
 
-TEST(SchedulerStateMachineTest, TestImplLatencyTakesPriority) {
+TEST(SchedulerStateMachineTest, TestImplLatencyTakesPriorityImplInvalidations) {
   SchedulerSettings default_scheduler_settings;
   StateMachine state(default_scheduler_settings);
   SET_UP_STATE(state);
 
-  // This test ensures that impl-draws are prioritized over main thread updates
-  // in prefer impl latency mode.
-  state.SetNeedsRedraw(true);
-  state.SetNeedsBeginMainFrame();
-  state.IssueNextBeginImplFrame();
-  EXPECT_ACTION_UPDATE_STATE(
-      SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-
-  // Verify the deadline is not triggered early until we enter
-  // prefer impl latency mode.
-  EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  // Set smoothness priority (used while scrolling).
   state.SetTreePrioritiesAndScrollState(
       SMOOTHNESS_TAKES_PRIORITY,
       ScrollHandlerState::SCROLL_DOES_NOT_AFFECT_SCROLL_HANDLER);
-  EXPECT_TRUE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
 
-  // Trigger the deadline.
+  // Impl-side invalidation creates a pending tree which is not yet activated.
+  bool needs_first_draw_on_activation = true;
+  state.SetNeedsImplSideInvalidation(needs_first_draw_on_activation);
+  viz::BeginFrameId frame_id = viz::BeginFrameId(0, 1);
+  state.OnBeginImplFrame(frame_id, kAnimateOnly);
   state.OnBeginImplFrameDeadline();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
-  state.DidSubmitCompositorFrame();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-  state.DidReceiveCompositorFrameAck();
+  EXPECT_ACTION_UPDATE_STATE(
+      SchedulerStateMachine::Action::PERFORM_IMPL_SIDE_INVALIDATION);
+  state.NotifyReadyToActivate();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::ACTIVATE_SYNC_TREE);
+  state.OnBeginImplFrameIdle();
 
-  // Request a new commit and finish the previous one.
+  // Now we need a main frame.
   state.SetNeedsBeginMainFrame();
-  FinishPreviousCommitAndDrawWithoutExitingDeadline(&state);
+  frame_id.sequence_number++;
+  state.OnBeginImplFrame(frame_id, kAnimateOnly);
+
+  // We should send a BeginMainFrame even though we haven't drawn the impl
+  // tree from last frame yet.
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-  state.DidReceiveCompositorFrameAck();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-
-  // Finish the previous commit and draw it.
-  FinishPreviousCommitAndDrawWithoutExitingDeadline(&state);
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-
-  // Verify we do not send another BeginMainFrame if was are submit-frame
-  // throttled and did not just submit one.
-  state.SetNeedsBeginMainFrame();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-  state.IssueNextBeginImplFrame();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
-  EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
-  state.OnBeginImplFrameDeadline();
-  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.NotifyReadyToCommit();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::COMMIT);
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::POST_COMMIT);
 }
 
 TEST(SchedulerStateMachineTest,
@@ -2402,7 +2408,7 @@ TEST(SchedulerStateMachineTest,
   // Abort the commit, since that is what we expect the main thread to do if the
   // LayerTreeFrameSink was lost due to a synchronous call from the main thread
   // to release the LayerTreeFrameSink.
-  state.BeginMainFrameAborted(CommitEarlyOutReason::ABORTED_DEFERRED_COMMIT);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kAbortedDeferredCommit);
 
   // The scheduler should begin the LayerTreeFrameSink creation now.
   EXPECT_ACTION_UPDATE_STATE(
@@ -2510,7 +2516,7 @@ TEST(SchedulerStateMachineTest,
   state.IssueNextBeginImplFrame();
   EXPECT_ACTION_UPDATE_STATE(
       SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   state.OnBeginImplFrameDeadline();
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
@@ -2886,7 +2892,7 @@ TEST(SchedulerStateMachineTest, TestFullPipelineMode) {
             state.CurrentBeginImplFrameDeadlineMode());
 
   // Abort commit and ensure that we don't block anymore.
-  state.BeginMainFrameAborted(CommitEarlyOutReason::FINISHED_NO_UPDATES);
+  state.BeginMainFrameAborted(CommitEarlyOutReason::kFinishedNoUpdates);
   EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
   EXPECT_MAIN_FRAME_STATE(SchedulerStateMachine::BeginMainFrameState::IDLE);
   EXPECT_EQ(SchedulerStateMachine::BeginImplFrameDeadlineMode::IMMEDIATE,
@@ -3198,7 +3204,90 @@ TEST(SchedulerStateMachineTest,
       SchedulerStateMachine::Action::PERFORM_IMPL_SIDE_INVALIDATION);
 }
 
-class ScrollingSchedulerStateMachineTest : public testing::Test {
+// Text fixture class for the SchedulerStateMachine tests. Parameterized to
+// include a boolean which indicates whether frame rate limits are enabled
+// or not i.e. whether the disable_frame_rate_limit flag is set.
+class DisableFrameRateLimitSchedulerStateMachineTests
+    : public testing::Test,
+      public testing::WithParamInterface<bool> {
+ public:
+  SchedulerSettings GetSchedulerSettings() {
+    SchedulerSettings settings;
+    settings.disable_frame_rate_limit = GetParam();
+    return settings;
+  }
+};
+
+TEST_P(DisableFrameRateLimitSchedulerStateMachineTests,
+       TestImplLatencyTakesPriority) {
+  SchedulerSettings default_scheduler_settings = GetSchedulerSettings();
+  StateMachine state(default_scheduler_settings);
+  SET_UP_STATE(state);
+
+  // This test ensures that impl-draws are prioritized over main thread updates
+  // in prefer impl latency mode.
+  state.SetNeedsRedraw(true);
+  state.SetNeedsBeginMainFrame();
+  state.IssueNextBeginImplFrame();
+  EXPECT_ACTION_UPDATE_STATE(
+      SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+
+  // Verify the deadline is not triggered early until we enter
+  // prefer impl latency mode.
+  EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  state.SetTreePrioritiesAndScrollState(
+      SMOOTHNESS_TAKES_PRIORITY,
+      ScrollHandlerState::SCROLL_DOES_NOT_AFFECT_SCROLL_HANDLER);
+  EXPECT_TRUE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+
+  // Trigger the deadline.
+  state.OnBeginImplFrameDeadline();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::DRAW_IF_POSSIBLE);
+  state.DidSubmitCompositorFrame();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.DidReceiveCompositorFrameAck();
+
+  // Request a new commit and finish the previous one.
+  state.SetNeedsBeginMainFrame();
+  FinishPreviousCommitAndDrawWithoutExitingDeadline(&state);
+  EXPECT_ACTION_UPDATE_STATE(
+      SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.DidReceiveCompositorFrameAck();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+
+  // Finish the previous commit and draw it.
+  FinishPreviousCommitAndDrawWithoutExitingDeadline(&state);
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+
+  // Verify we do not send another BeginMainFrame if was are submit-frame
+  // throttled and did not just submit one.
+  state.SetNeedsBeginMainFrame();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.IssueNextBeginImplFrame();
+  // If disable_frame_rate_limit is enabled, then draws aren't throttled in
+  // the SchedulerStateMachine. We need to update the expectations accordingly.
+  if (default_scheduler_settings.disable_frame_rate_limit) {
+    EXPECT_ACTION_UPDATE_STATE(
+        SchedulerStateMachine::Action::SEND_BEGIN_MAIN_FRAME);
+  } else {
+    EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  }
+  EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  state.OnBeginImplFrameDeadline();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+}
+
+INSTANTIATE_TEST_SUITE_P(DisableFrameRateLimitSchedulerStateMachineTests,
+                         DisableFrameRateLimitSchedulerStateMachineTests,
+                         testing::Bool());
+
+// Text fixture class for the ScrollingSchedulerStateMachineTest tests.
+// Parameterized to include a boolean which indicates whether frame rate limits
+// are enabled or not i.e. whether the disable_frame_rate_limit flag is set.
+class ScrollingSchedulerStateMachineTest
+    : public DisableFrameRateLimitSchedulerStateMachineTests {
  public:
   ScrollingSchedulerStateMachineTest();
   ~ScrollingSchedulerStateMachineTest() override = default;
@@ -3207,7 +3296,7 @@ class ScrollingSchedulerStateMachineTest : public testing::Test {
 
   void SetUp() override;
 
- private:
+ protected:
   SchedulerSettings InitScrollDeadlineMode();
 
   SchedulerSettings scheduler_settings_;
@@ -3226,12 +3315,14 @@ void ScrollingSchedulerStateMachineTest::BeginImplFrameWaitingForScrollEvent() {
 }
 
 SchedulerSettings ScrollingSchedulerStateMachineTest::InitScrollDeadlineMode() {
+  scheduler_settings_ =
+      DisableFrameRateLimitSchedulerStateMachineTests::GetSchedulerSettings();
   scheduler_settings_.scroll_deadline_mode_enabled = true;
   return scheduler_settings_;
 }
 
 void ScrollingSchedulerStateMachineTest::SetUp() {
-  testing::Test::SetUp();
+  DisableFrameRateLimitSchedulerStateMachineTests::SetUp();
   SET_UP_STATE(state);
   state.set_is_scrolling(true);
   state.SetTreePrioritiesAndScrollState(
@@ -3242,7 +3333,7 @@ void ScrollingSchedulerStateMachineTest::SetUp() {
 // Tests that when we should wait for scroll events, that we do not send
 // BeginMainFrame. And that either receiving a scroll, or reaching the deadline,
 // that we unblock BeginMainFrames.
-TEST_F(ScrollingSchedulerStateMachineTest, ScrollModeBlocksBeginMainFrame) {
+TEST_P(ScrollingSchedulerStateMachineTest, ScrollModeBlocksBeginMainFrame) {
   state.SetNeedsBeginMainFrame();
 
   // Once the frame starts, we are told to wait for scroll event.
@@ -3268,7 +3359,7 @@ TEST_F(ScrollingSchedulerStateMachineTest, ScrollModeBlocksBeginMainFrame) {
 
 // Tests that even if we want to delay for scrolls, if we weren't prepared to
 // draw immediately, that we use a longer deadline.
-TEST_F(ScrollingSchedulerStateMachineTest, ScrollModeBlockedByNoImmediateMode) {
+TEST_P(ScrollingSchedulerStateMachineTest, ScrollModeBlockedByNoImmediateMode) {
   // We apply back pressure on frame production. After submission we do not
   // allow Immediate mode until `DidReceiveCompositorFrameAck`.
   state.DidSubmitCompositorFrame();
@@ -3277,10 +3368,32 @@ TEST_F(ScrollingSchedulerStateMachineTest, ScrollModeBlockedByNoImmediateMode) {
 
   // While under back-pressure we should not trigger scroll deadline
   BeginImplFrameWaitingForScrollEvent();
-  EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  // If disable_frame_rate_limit is set, then draws are not throttled. The
+  // ShouldTriggerBeginImplFrameDeadlineImmediately() function returns true
+  // in this case. Adjust the expectations accordingly. Please note that
+  // the expectation changes are just for the tests to pass.
+  //
+  // The disable_frame_rate_limit switch is not enabled by default. It is
+  // likely that some of the assumptions made in the SchedulerStateMachine
+  // class are not true and we need further testing.
+  if (scheduler_settings_.disable_frame_rate_limit) {
+    EXPECT_TRUE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  } else {
+    EXPECT_FALSE(state.ShouldTriggerBeginImplFrameDeadlineImmediately());
+  }
   EXPECT_TRUE(state.ShouldWaitForScrollEvent());
-  EXPECT_NE(SchedulerStateMachine::BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL,
-            state.CurrentBeginImplFrameDeadlineMode());
+  // If disable_frame_rate_limit is set, then draws are not throttled. The
+  // ShouldTriggerBeginImplFrameDeadlineImmediately() function returns true
+  // in this case. Adjust the expectations accordingly.
+  if (scheduler_settings_.disable_frame_rate_limit) {
+    EXPECT_EQ(
+        SchedulerStateMachine::BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL,
+        state.CurrentBeginImplFrameDeadlineMode());
+  } else {
+    EXPECT_NE(
+        SchedulerStateMachine::BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL,
+        state.CurrentBeginImplFrameDeadlineMode());
+  }
 
   // When we receive the Ack then we should be able select scroll deadline
   // again.
@@ -3289,6 +3402,36 @@ TEST_F(ScrollingSchedulerStateMachineTest, ScrollModeBlockedByNoImmediateMode) {
   EXPECT_TRUE(state.ShouldWaitForScrollEvent());
   EXPECT_EQ(SchedulerStateMachine::BeginImplFrameDeadlineMode::WAIT_FOR_SCROLL,
             state.CurrentBeginImplFrameDeadlineMode());
+}
+
+INSTANTIATE_TEST_SUITE_P(ScrollingSchedulerStateMachineTest,
+                         ScrollingSchedulerStateMachineTest,
+                         testing::Bool());
+
+class WarmUpCompositorSchedulerStateMachineTest : public testing::Test {
+ public:
+  WarmUpCompositorSchedulerStateMachineTest() {
+    scoped_feature_list_.InitAndEnableFeature(features::kWarmUpCompositor);
+  }
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
+};
+
+// Tests that `SetShouldWarmUp()` will start initial `LayerTreeFrameSink`
+// creation even if invisible.
+TEST_F(WarmUpCompositorSchedulerStateMachineTest,
+       SetShouldWarmUpWillStartLayerTreeFrameSinkCreation) {
+  SchedulerSettings default_scheduler_settings;
+  StateMachine state(default_scheduler_settings);
+  state.SetVisible(false);
+
+  state.SetShouldWarmUp();
+  EXPECT_ACTION_UPDATE_STATE(
+      SchedulerStateMachine::Action::BEGIN_LAYER_TREE_FRAME_SINK_CREATION);
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
+  state.DidCreateAndInitializeLayerTreeFrameSink();
+  EXPECT_ACTION_UPDATE_STATE(SchedulerStateMachine::Action::NONE);
 }
 
 }  // namespace

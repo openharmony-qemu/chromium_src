@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "base/auto_reset.h"
 #include "base/check.h"
@@ -33,7 +34,7 @@
 #endif  // defined(USE_AURA)
 
 // Currently, touch is only supported on ChromeOS Ash.
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 #define TOUCH_INPUT_SUPPORTED 1
 #else
 #define TOUCH_INPUT_SUPPORTED 0
@@ -42,7 +43,7 @@
 namespace views::test {
 
 namespace {
-base::raw_ptr<InteractionTestUtilMouse> g_current_mouse_util = nullptr;
+raw_ptr<InteractionTestUtilMouse> g_current_mouse_util = nullptr;
 
 void PostTask(base::OnceClosure task) {
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
@@ -106,7 +107,7 @@ class InteractionTestUtilMouse::DragEnder
     }
     // Only Ash actually supports observing the drag-drop client. Therefore, on
     // other platforms, only direct cancel is possible.
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     if (auto* const client = GetClient()) {
       drag_client_observation_.Observe(client);
     }
@@ -129,10 +130,9 @@ class InteractionTestUtilMouse::DragEnder
                "on  ChromeOS-on-Linux.\n"
             << "This is not necessarily a serious error if the test functions "
                "normally; however, if you see this too often or your test "
-               "flakes as a result of the cancel you may need to  insert "
-               "additional FlushEvents() steps into your test, or restructure "
-               "it so that you can be sure the drag has started before "
-               "attempting to invoke  ReleaseMouse().";
+               "flakes as a result of the cancel you may need to restructure "
+               "the test so that you can be sure the drag has started before "
+               "attempting to invoke ReleaseMouse().";
         client->DragCancel();
         return true;
       }
@@ -169,7 +169,7 @@ class InteractionTestUtilMouse::DragEnder
   // a proxy for the existence of the DragDropClient, and unregister listeners
   // when the window goes away. If this is not done, UAFs may happen when the
   // scoped observation of the drag client goes away.
-  base::raw_ptr<aura::Window> window_;
+  raw_ptr<aura::Window> window_;
   base::ScopedObservation<aura::Window, aura::WindowObserver>
       window_observation_{this};
   base::ScopedObservation<aura::client::DragDropClient,
@@ -408,7 +408,7 @@ bool InteractionTestUtilMouse::PerformGesturesImpl(
 
     base::RunLoop run_loop{base::RunLoop::Type::kNestableTasksAllowed};
     if (MouseButtonGesture* const button =
-            absl::get_if<MouseButtonGesture>(&gesture)) {
+            std::get_if<MouseButtonGesture>(&gesture)) {
       switch (button->second) {
         case ui_controls::UP: {
           CHECK(buttons_down_.erase(button->first));
@@ -475,7 +475,7 @@ bool InteractionTestUtilMouse::PerformGesturesImpl(
           break;
       }
     } else {
-      const auto& move = absl::get<MouseMoveGesture>(gesture);
+      const auto& move = std::get<MouseMoveGesture>(gesture);
 #if defined(USE_AURA)
       if (!buttons_down_.empty()) {
         CHECK(base::Contains(buttons_down_, ui_controls::LEFT));

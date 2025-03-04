@@ -6,13 +6,14 @@ import os
 import sys
 import json
 import itertools
-from typing import Any, List
+from typing import Any, List, Set
 import unittest
 
 import gpu_path_util
 from gpu_tests import common_browser_args as cba
 from gpu_tests import common_typing as ct
 from gpu_tests import gpu_integration_test
+from gpu_tests.util import host_information
 
 html_path = os.path.join(gpu_path_util.CHROMIUM_SRC_DIR, 'content', 'test',
                          'data', 'gpu', 'webcodecs')
@@ -23,7 +24,10 @@ four_colors_img_path = os.path.join(data_path, 'four-colors.y4m')
 frame_sources = [
     'camera', 'capture', 'offscreen', 'arraybuffer', 'hw_decoder', 'sw_decoder'
 ]
-video_codecs = ['avc1.42001E', 'vp8', 'vp09.00.10.08', 'av01.0.04M.08']
+hbd_frame_sources = ['hbd_arraybuffer']
+video_codecs = [
+    'avc1.42001E', 'hvc1.1.6.L123.00', 'vp8', 'vp09.00.10.08', 'av01.0.04M.08'
+]
 accelerations = ['prefer-hardware', 'prefer-software']
 
 
@@ -31,6 +35,30 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
   @classmethod
   def Name(cls) -> str:
     return 'webcodecs'
+
+  @classmethod
+  def _SuiteSupportsParallelTests(cls) -> bool:
+    return True
+
+  def _GetSerialGlobs(self) -> Set[str]:
+    serial_globs = set()
+    if host_information.IsWindows() and host_information.IsNvidiaGpu():
+      serial_globs |= {
+          # crbug.com/1473480. Windows + NVIDIA has a maximum parallel encode
+          # limit of 2, so serialize hardware encoding tests on Windows.
+          'WebCodecs_*prefer-hardware*',
+      }
+    return serial_globs
+
+  def _GetSerialTests(self) -> Set[str]:
+    serial_tests = set()
+    if host_information.IsWindows() and host_information.IsArmCpu():
+      serial_tests |= {
+          # crbug.com/323824490. Seems to flakily lose the D3D11 device when
+          # run in parallel.
+          'WebCodecs_FrameSizeChange_vp09.00.10.08_hw_decoder',
+      }
+    return serial_tests
 
 # pylint: disable=too-many-branches
 
@@ -53,6 +81,15 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
           source_type
       }])
       yield ('WebCodecs_copyTo_' + source_type, 'copyTo.html', [{
+          'source_type':
+          source_type
+      }])
+      yield ('WebCodecs_convertToRGB_' + source_type, 'convert-to-rgb.html', [{
+          'source_type':
+          source_type
+      }])
+    for source_type in hbd_frame_sources:
+      yield ('WebCodecs_DrawImage_' + source_type, 'draw-image.html', [{
           'source_type':
           source_type
       }])
@@ -82,7 +119,10 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
 
   @classmethod
   def BitrateTests(cls) -> ct.TestGenerator:
-    high_res_codecs = ['avc1.420034', 'vp8', 'vp09.00.10.08', 'av01.0.04M.08']
+    high_res_codecs = [
+        'avc1.420034', 'hvc1.1.6.L123.00', 'vp8', 'vp09.00.10.08',
+        'av01.0.04M.08'
+    ]
     for codec in high_res_codecs:
       for acc in accelerations:
         for bitrate_mode in ['constant', 'variable']:
@@ -106,8 +146,36 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
            'webrtc-peer-connection.html', [{
                'use_worker': True
            }])
+    yield ('WebCodecs_Terminate_Worker', 'terminate-worker.html', [{
+        'source_type':
+        'offscreen',
+    }])
 
-    for source_type in ['offscreen', 'arraybuffer']:
+    source_type = 'offscreen'
+    codec = 'avc1.42001E'
+    acc = 'prefer-hardware'
+    args = (source_type, codec, acc)
+    yield ('WebCodecs_PerFrameQpEncoding_%s_%s_%s' % args,
+           'frame-qp-encoding.html', [{
+               'source_type': source_type,
+               'codec': codec,
+               'acceleration': acc
+           }])
+
+    codec = 'av01.0.04M.08'
+    acc = 'prefer-software'
+    for layers in range(4):
+      args = (codec, acc, layers)
+      yield ('WebCodecs_ManualSVC_%s_%s_layers_%d' % args, 'manual-svc.html', [{
+          'codec':
+          codec,
+          'acceleration':
+          acc,
+          'layers':
+          layers
+      }])
+
+    for source_type in frame_sources:
       for codec in video_codecs:
         for acc in accelerations:
           args = (source_type, codec, acc)
@@ -133,11 +201,36 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
               acc
           }])
 
+    for resolution in ['1920x1080', '3840x2160', '7680x3840']:
+      for framerate in [30, 60, 120, 240]:
+        # Use at least level 6.2 (H.264/H.265/VP9), or level 6.3 (AV1) mimetypes
+        # to test 8k 120fps support.
+        for codec in [
+            'avc1.64003E', 'hvc1.1.6.L186.B0', 'vp09.00.62.08', 'av01.1.19M.08'
+        ]:
+          acc = 'prefer-hardware'
+          latency_mode = 'quality'
+          args = (resolution, framerate, codec, acc, latency_mode)
+          yield ('WebCodecs_EncodingFramerateResolutions_%s_%s_%s_%s_%s' % args,
+                 'encoding-framerate-resolutions.html', [{
+                     'resolution':
+                     resolution,
+                     'framerate':
+                     framerate,
+                     'codec':
+                     codec,
+                     'acceleration':
+                     acc,
+                     'latency_mode':
+                     latency_mode,
+                 }])
+
     for codec in video_codecs:
       for acc in accelerations:
         for bitrate_mode in ['constant', 'variable']:
           for latency_mode in ['realtime', 'quality']:
             source_type = 'offscreen'
+            content_hint = 'motion'
             args = (source_type, codec, acc, bitrate_mode, latency_mode)
             yield ('WebCodecs_EncodingModes_%s_%s_%s_%s_%s' % args,
                    'encoding-modes.html', [{
@@ -145,8 +238,25 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
                        'codec': codec,
                        'acceleration': acc,
                        'bitrate_mode': bitrate_mode,
-                       'latency_mode': latency_mode
+                       'latency_mode': latency_mode,
+                       'content_hint': content_hint
                    }])
+
+    for codec in video_codecs:
+      for content_hint in ['detail', 'text', 'motion']:
+        source_type = 'offscreen'
+        acc = 'prefer-hardware'
+        bitrate_mode = 'constant'
+        latency_mode = 'realtime'
+        yield ('WebCodecs_ContentHint_%s_%s' % (codec, content_hint),
+               'encoding-modes.html', [{
+                   'source_type': source_type,
+                   'codec': codec,
+                   'acceleration': acc,
+                   'bitrate_mode': bitrate_mode,
+                   'latency_mode': latency_mode,
+                   'content_hint': content_hint
+               }])
 
     for codec in video_codecs:
       for acc in accelerations:
@@ -168,6 +278,15 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
                'encode-color-space.html', [{
                    'codec': codec,
                    'acceleration': acc
+               }])
+
+    for codec in video_codecs:
+      for source_type in frame_sources:
+        args = (codec, source_type)
+        yield ('WebCodecs_FrameSizeChange_%s_%s' % args,
+               'frame-size-change.html', [{
+                   'codec': codec,
+                   'source_type': source_type
                }])
 # pylint: enable=too-many-branches
 
@@ -195,15 +314,17 @@ class WebCodecsIntegrationTest(gpu_integration_test.GpuIntegrationTest):
   def SetUpProcess(cls) -> None:
     super(WebCodecsIntegrationTest, cls).SetUpProcess()
     args = [
-        '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
-        '--enable-blink-features=SharedArrayBuffer'
+        '--use-fake-device-for-media-stream',
+        '--use-fake-ui-for-media-stream',
+        '--enable-blink-features=SharedArrayBuffer',
+        cba.ENABLE_PLATFORM_HEVC_ENCODER_SUPPORT,
+        cba.ENABLE_EXPERIMENTAL_WEB_PLATFORM_FEATURES,
     ] + cba.ENABLE_WEBGPU_FOR_TESTING
 
     # If we don't call CustomizeBrowserArgs cls.platform is None
     cls.CustomizeBrowserArgs(args)
-    platform = cls.platform
 
-    if cls.CameraCanShowFourColors(platform.GetOSName()):
+    if cls.CameraCanShowFourColors(cls.platform.GetOSName()):
       args.append('--use-file-for-fake-video-capture=' + four_colors_img_path)
       cls.CustomizeBrowserArgs(args)
 

@@ -40,28 +40,30 @@ WakeLockContextHost::WakeLockContextHost(WebContents* web_contents)
 
 WakeLockContextHost::~WakeLockContextHost() {
   g_id_to_context_host.Get().erase(id_);
-#if defined(OHOS_SCREEN_LOCK)
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   NWebScreenLockTracker::Instance().RemoveScreenLock(window_id_, id_);
-#endif
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 }
 
-#if defined(OHOS_SCREEN_LOCK)
-void WakeLockContextHost::SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler) {
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+void WakeLockContextHost::SetWakeLockHandler(int32_t windowId,
+                                             const SetKeepScreenOn& handler) {
   if (handler) {
     window_id_ = windowId;
-    NWebScreenLockTracker::Instance().AddScreenLock(windowId, id_, std::move(handler));
+    NWebScreenLockTracker::Instance().AddScreenLock(windowId, id_,
+                                                    std::move(handler));
   } else {
     NWebScreenLockTracker::Instance().RemoveScreenLock(windowId, id_);
   }
 }
-#endif
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
 // static
 gfx::NativeView WakeLockContextHost::GetNativeViewForContext(int context_id) {
   WakeLockContextHost* context_host = ContextHostFromId(context_id);
   if (context_host)
     return context_host->web_contents_->GetNativeView();
-  return nullptr;
+  return gfx::NativeView();
 }
 
 }  // namespace content

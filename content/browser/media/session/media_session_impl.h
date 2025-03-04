@@ -8,9 +8,11 @@
 #include <stddef.h>
 
 #include <map>
+#include <optional>
 #include <set>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/id_map.h"
@@ -30,19 +32,21 @@
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "mojo/public/cpp/bindings/remote_set.h"
 #include "services/media_session/public/mojom/audio_focus.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/mediasession/media_session.mojom.h"
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#include "media/base/media_content_type.h"
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 namespace media {
 class OHOSAudioOutputStream;
 }
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 namespace media_session {
 struct MediaMetadata;
@@ -63,9 +67,9 @@ class MediaSessionServiceImplBrowserTest;
 class MediaSessionAndroid;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OHOS_MEDIA_AVSESSION)
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 class MediaSessionOHOS;
-#endif  // defined(OHOS_MEDIA_AVSESSION)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
 // MediaSessionImpl is the implementation of MediaSession. It manages the media
 // session and audio focus for a given WebContents. It is requesting the audio
@@ -284,13 +288,17 @@ class MediaSessionImpl : public MediaSession,
   // Exit picture-in-picture.
   void ExitPictureInPicture() override;
 
+  // Automatically enter picture-in-picture from a non-user source (e.g. in
+  // reaction to content being hidden).
+  void EnterAutoPictureInPicture() override;
+
   // Routes the audio from this Media Session to the given output device. If
   // |id| is null, we will route to the default output device.
   // Players created after this setting has been set will also have their audio
   // rerouted. This setting persists until cross-origin navigation occurs, the
   // renderer reports an audio sink change to a device different from |id|, or
   // this method is called again.
-  void SetAudioSinkId(const absl::optional<std::string>& id) override;
+  void SetAudioSinkId(const std::optional<std::string>& id) override;
 
   // Mute/Unmute the microphone for a WebRTC session.
   void ToggleMicrophone() override;
@@ -339,6 +347,9 @@ class MediaSessionImpl : public MediaSession,
   // device switching.
   void OnAudioOutputSinkChangingDisabled();
 
+  // Called when any of the normal players video visibility changes.
+  CONTENT_EXPORT void OnVideoVisibilityChanged();
+
   // Update the value of `remote_playback_metadata_`.
   CONTENT_EXPORT void SetRemotePlaybackMetadata(
       media_session::mojom::RemotePlaybackMetadataPtr metadata);
@@ -357,25 +368,33 @@ class MediaSessionImpl : public MediaSession,
   base::WeakPtr<MediaSessionImpl> GetWeakPtr();
 
   CONTENT_EXPORT bool HasImageCacheForTest(const GURL& image_url) const;
-  
-#if BUILDFLAG(IS_OHOS)
-  bool HasOnlyOneShotPlayersPublic() const;
-#endif //BUILDFLAG(IS_OHOS)
 
-#if defined(OHOS_MEDIA_POLICY)
+  // Make sure that all observers have received any pending callbacks from us,
+  // that might otherwise be sitting in a message pipe somewhere.
+  void flush_observers_for_testing() { observers_.FlushForTesting(); }
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  void PutWebMediaAVSessionEnabled(bool enable);
+#endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
  public:
   enum NWebPlaybackState { NONE, PLAYING, PAUSED, STOP };
   enum NWebMediaSessionState { NOINITIAL, NONEED, NEED };
   NWebPlaybackState NWebGetState();
-  
-  void SetWebviewShow(bool show);
-  void SetWebviewShowForAudio(bool show);
-  void SetWebviewShowForVideo(bool show);
+
   bool IsEndOfMedia();
   void SetEndOfMedia(bool end_of_media);
   bool GetPlayingState();
   void SetPlayingState(bool playingState);
   bool GetMuteState();
+  bool IsPauseByAvsession();
+  void SetPauseByAvsession(bool is_pause);
+  void SetWebviewShow(bool show, bool is_special_for_audio);
+  void SetMediaContentType(media::MediaContentType media_content_type) {
+    media_content_type_ = media_content_type;
+  }
+  media::MediaContentType getMediaContentType() { return media_content_type_; }
 
   void SetSessionState(NWebMediaSessionState sessionState);
   NWebMediaSessionState GetSessionState();
@@ -386,7 +405,7 @@ class MediaSessionImpl : public MediaSession,
   bool isPlayingState_ = false;
   base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
  private:
   friend class content::WebContentsUserData<MediaSessionImpl>;
@@ -400,9 +419,10 @@ class MediaSessionImpl : public MediaSession,
   friend class MediaSessionImplTest;
   friend class MediaSessionImplDurationThrottleTest;
   friend class MediaInternalsAudioFocusTest;
-#if defined(OHOS_MEDIA_AVSESSION)
+  friend class WebAppSystemMediaControlsBrowserTest;
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   friend class MediaSessionOHOS;
-#endif  // defined(OHOS_MEDIA_AVSESSION)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   CONTENT_EXPORT void RemoveAllPlayersForTest();
   CONTENT_EXPORT MediaSessionUmaHelper* uma_helper_for_test();
@@ -420,8 +440,7 @@ class MediaSessionImpl : public MediaSession,
     bool operator==(const PlayerIdentifier& other) const;
     bool operator!=(const PlayerIdentifier& other) const;
     bool operator<(const PlayerIdentifier& other) const;
-    // This field is not a raw_ptr<> because it was filtered by the rewriter
-    // for: #constexpr-ctor-field-initializer, #union
+    // RAW_PTR_EXCLUSION: #union
     RAW_PTR_EXCLUSION MediaSessionPlayerObserver* observer;
     int player_id;
   };
@@ -499,7 +518,28 @@ class MediaSessionImpl : public MediaSession,
   // changed.
   void RebuildAndNotifyMetadataChanged();
 
+#if BUILDFLAG(IS_CHROMEOS)
+  void BuildPlaceholderMetadata(
+      media_session::MediaMetadata& metadata,
+      std::vector<media_session::MediaImage>& artwork);
+#endif
+
+  void BuildMetadata(media_session::MediaMetadata& metadata,
+                     std::vector<media_session::MediaImage>& artwork);
+
   bool IsPictureInPictureAvailable() const;
+
+  // Iterates over all |normal_players_| and returns true if any of the players'
+  // videos is sufficiently visible, false otherwise.
+  CONTENT_EXPORT bool HasSufficientlyVisibleVideo() const;
+
+  // Iterates over all |normal_players_| and returns true if any of the players'
+  // videos is sufficiently visible, false otherwise.
+  //
+  // This is very similar to `HasSufficientlyVisibleVideo`, however this method
+  // is used to get notifications on demand, while `HasSufficientlyVisibleVideo`
+  // is constantly reporting visibility.
+  void GetVisibility(GetVisibilityCallback get_visibility_callback) override;
 
   // Returns the device ID for the audio output device being used by all of the
   // normal players. If the players are not all using the same audio output
@@ -525,8 +565,8 @@ class MediaSessionImpl : public MediaSession,
   void ForAllPlayers(base::RepeatingCallback<void(const PlayerIdentifier&)>);
 
   // Restrict duration update under certain frequency.
-  absl::optional<media_session::MediaPosition> MaybeGuardDurationUpdate(
-      absl::optional<media_session::MediaPosition> position);
+  std::optional<media_session::MediaPosition> MaybeGuardDurationUpdate(
+      std::optional<media_session::MediaPosition> position);
 
   void IncreaseDurationUpdateAllowance();
 
@@ -573,7 +613,7 @@ class MediaSessionImpl : public MediaSession,
   media_session::mojom::MediaSessionInfoPtr session_info_;
 
   // The last updated |MediaPosition| that was sent to |observers_|.
-  absl::optional<media_session::MediaPosition> position_;
+  std::optional<media_session::MediaPosition> position_;
 
   MediaSessionUmaHelper uma_helper_;
 
@@ -594,7 +634,7 @@ class MediaSessionImpl : public MediaSession,
   // Used to persist audio device selection between navigations on the same
   // origin.
   url::Origin origin_;
-  absl::optional<std::string> audio_device_id_for_origin_;
+  std::optional<std::string> audio_device_id_for_origin_;
 
   class PageData : public content::PageUserData<PageData> {
    public:
@@ -624,6 +664,10 @@ class MediaSessionImpl : public MediaSession,
     base::flat_map<GURL, SkBitmap> image_cache_;
   };
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media::MediaContentType media_content_type_;
+#endif
+
   // Returns the PageData for the specified |page|.
   PageData& GetPageData(content::Page& page) const;
 
@@ -631,13 +675,14 @@ class MediaSessionImpl : public MediaSession,
   std::unique_ptr<MediaSessionAndroid> session_android_;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OHOS_MEDIA_AVSESSION)
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   std::unique_ptr<MediaSessionOHOS> session_ohos_;
-#endif  // defined(OHOS_MEDIA_AVSESSION)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // MediaSessionService-related fields
   using ServicesMap =
-      std::map<GlobalRenderFrameHostId, MediaSessionServiceImpl*>;
+      std::map<GlobalRenderFrameHostId,
+               raw_ptr<MediaSessionServiceImpl, CtnExperimental>>;
 
   // The current metadata and images associated with the current media session.
   media_session::MediaMetadata metadata_;
@@ -671,9 +716,18 @@ class MediaSessionImpl : public MediaSession,
   // Whether the associated WebContents is connected to a presentation.
   bool has_presentation_ = false;
 
-  absl::optional<PlayerIdentifier> guarding_player_id_;
+  std::optional<PlayerIdentifier> guarding_player_id_;
 
   media_session::mojom::RemotePlaybackMetadataPtr remote_playback_metadata_;
+
+  // Used by tests to force media sessions to be ignored when finding a new
+  // active session.
+  bool always_ignore_for_active_session_for_testing_ = false;
+
+  // True if the given media has infinite duration OR has a duration that
+  // changes often enough to be considered live. See
+  // `MaybeGuardDurationUpdate()` for details on duration changes.
+  bool is_considered_live_ = false;
 
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 

@@ -10,7 +10,9 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
@@ -178,8 +180,7 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
                       const ui::LatencyInfo& latency_info,
                       blink::mojom::InputEventResultState state,
                       blink::mojom::DidOverscrollParamsPtr overscroll,
-                      blink::mojom::TouchActionOptionalPtr touch_action,
-                      blink::mojom::ScrollResultDataPtr scroll_result_data);
+                      blink::mojom::TouchActionOptionalPtr touch_action);
 
     // Return if the callback is set.
     bool HasCallback() const;
@@ -262,10 +263,11 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 
   void DispatchEvent(std::unique_ptr<blink::WebCoalescedInputEvent> event,
                      DispatchEventCallback callback) override;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
   void TryStartFling() override {}
   void TryFinishFling() override {}
 #endif
+
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
@@ -281,14 +283,18 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void GetFrameWidgetInputHandler(
       mojo::PendingAssociatedReceiver<blink::mojom::FrameWidgetInputHandler>
           interface_request) override;
-  void UpdateBrowserControlsState(cc::BrowserControlsState constraints,
-                                  cc::BrowserControlsState current,
-                                  bool animate) override;
-#if defined(OHOS_UNITTESTS)
+  void UpdateBrowserControlsState(
+      cc::BrowserControlsState constraints,
+      cc::BrowserControlsState current,
+      bool animate,
+      const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
+      override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetGestureEventResult(bool result, bool stopPropagation) override {}
   void SetNativeEmbedMode(bool flag) override {}
-  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
-  compositor_request) override {}
+  void AttachSoftwareCompositorOhos(
+      ::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
+          compositor_request) override {}
   void ScrollBy(float delta_x, float delta_y) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;

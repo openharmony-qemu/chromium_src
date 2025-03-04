@@ -21,7 +21,7 @@ namespace extensions {
 
 namespace errors = manifest_errors;
 
-typedef ManifestTest FileHandlersManifestTest;
+using FileHandlersManifestTest = ManifestTest;
 
 TEST_F(FileHandlersManifestTest, InvalidFileHandlers) {
   Testcase testcases[] = {
@@ -93,7 +93,7 @@ TEST_F(FileHandlersManifestTest, NotPlatformApp) {
 
 class WebFileHandlersTest : public ManifestTest {
  public:
-  WebFileHandlersTest() : channel_(version_info::Channel::DEV) {
+  WebFileHandlersTest() : channel_(version_info::Channel::BETA) {
     feature_list_.InitAndEnableFeature(
         extensions_features::kExtensionWebFileHandlers);
   }
@@ -213,7 +213,7 @@ TEST_F(WebFileHandlersTest, GeneralSuccess) {
 
     // Exercise the web `file_handlers` key with a subkey introduced in MV3.
     for (const auto& file_handler : *file_handlers) {
-      EXPECT_TRUE(file_handler.action.size() > 0);
+      EXPECT_TRUE(file_handler.file_handler.action.size() > 0);
     }
   }
 }
@@ -303,6 +303,17 @@ TEST_F(WebFileHandlersTest, GeneralErrors) {
           }])",
           "Invalid value for 'file_handlers[0]'. `action` must "
           "start with a forward slash.",
+      },
+      {
+          "Error if `launch_type` multiple-clients is singular.",
+          R"([{
+            "name":"test",
+            "action":"/path",
+            "accept": {"text/csv": ".csv"},
+            "launch_type": "multiple-client"
+          }])",
+          "Invalid value for 'file_handlers[0]'. `launch_type` must have a "
+          "valid value.",
       }};
 
   for (const auto& test_case : test_cases) {
@@ -468,7 +479,7 @@ TEST_F(WebFileHandlersTest, IconErrors) {
   }
 }
 
-// TODO(crbug/1179530): Add tests for MV2, MV3, and missing the flag.
+// TODO(crbug.com/40169582): Add tests for MV2, MV3, and missing the flag.
 // crrev.com/c/4215992/comment/5c5148e7_2b24c9d3
 
 }  // namespace extensions

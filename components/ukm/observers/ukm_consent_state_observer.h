@@ -6,12 +6,14 @@
 #define COMPONENTS_UKM_OBSERVERS_UKM_CONSENT_STATE_OBSERVER_H_
 
 #include <stdint.h>
+
 #include <map>
+#include <optional>
 
 #include "base/feature_list.h"
 #include "base/scoped_multi_source_observation.h"
-#include "components/sync/driver/sync_service.h"
-#include "components/sync/driver/sync_service_observer.h"
+#include "components/sync/service/sync_service.h"
+#include "components/sync/service/sync_service_observer.h"
 #include "components/ukm/ukm_consent_state.h"
 #include "components/unified_consent/url_keyed_data_collection_consent_helper.h"
 #include "services/metrics/public/cpp/metrics_export.h"
@@ -20,8 +22,10 @@ class PrefService;
 
 namespace ukm {
 
-// This feature controls whether App Sync relies on MSBB to be enabled.
-BASE_DECLARE_FEATURE(kAppMetricsOnlyRelyOnAppSync);
+// Marker type used to indicate that the initial UkmConsentState should
+// be left in an uninitialized state (i.e. std::nullopt).
+struct NoInitialUkmConsentStateTag {};
+constexpr NoInitialUkmConsentStateTag NoInitialUkmConsentState;
 
 // Observer that monitors whether UKM is allowed for all profiles.
 //
@@ -32,6 +36,7 @@ class UkmConsentStateObserver
       public unified_consent::UrlKeyedDataCollectionConsentHelper::Observer {
  public:
   UkmConsentStateObserver();
+  UkmConsentStateObserver(NoInitialUkmConsentStateTag);
 
   UkmConsentStateObserver(const UkmConsentStateObserver&) = delete;
   UkmConsentStateObserver& operator=(const UkmConsentStateObserver&) = delete;
@@ -139,10 +144,13 @@ class UkmConsentStateObserver
       std::unique_ptr<unified_consent::UrlKeyedDataCollectionConsentHelper>>
       consent_helpers_;
 
-  // Tracks what type of UKM is allowed for all profiles after the last state
+  // Tracks what consent type is granted on all profiles after the last state
   // change. Consent is only granted when EVERY profile consents.
   // Empty means none.
-  UkmConsentState ukm_consent_state_;
+  //
+  // std::nullopt means that no profile has been loaded yet. This is only used
+  // if constructed with UkmConsentStateObserver(NoInitialUkmConsentStateTag).
+  std::optional<UkmConsentState> ukm_consent_state_;
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   // Indicate whether the device is in demo mode. If it is true,

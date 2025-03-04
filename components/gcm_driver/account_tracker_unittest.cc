@@ -83,8 +83,8 @@ namespace gcm {
 
 class AccountTrackerObserver : public AccountTracker::Observer {
  public:
-  AccountTrackerObserver() {}
-  virtual ~AccountTrackerObserver() {}
+  AccountTrackerObserver() = default;
+  virtual ~AccountTrackerObserver() = default;
 
   testing::AssertionResult CheckEvents();
   testing::AssertionResult CheckEvents(const TrackingEvent& e1);
@@ -229,9 +229,9 @@ testing::AssertionResult AccountTrackerObserver::CheckEvents(
 
 class AccountTrackerTest : public testing::Test {
  public:
-  AccountTrackerTest() {}
+  AccountTrackerTest() = default;
 
-  ~AccountTrackerTest() override {}
+  ~AccountTrackerTest() override = default;
 
   void SetUp() override {
     account_tracker_ =
@@ -257,6 +257,8 @@ class AccountTrackerTest : public testing::Test {
   // exercise functionality dependent on that callback firing are not relevant
   // on ChromeOS and should simply not run on that platform.
   CoreAccountInfo SetActiveAccount(const std::string& email) {
+    // TODO(crbug.com/40067875): Delete account-tracking code, latest when
+    // ConsentLevel::kSync is cleaned up from the codebase.
     return identity_test_env_.SetPrimaryAccount(email,
                                                 signin::ConsentLevel::kSync);
   }

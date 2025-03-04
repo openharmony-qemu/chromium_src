@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/377326291): Fix and remove.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/public/browser/browser_message_filter.h"
 
 #include "base/check_op.h"
@@ -108,8 +113,6 @@ class BrowserMessageFilter::Internal : public IPC::MessageFilter {
   scoped_refptr<BrowserMessageFilter> filter_;
 };
 
-BrowserMessageFilter::BrowserMessageFilter() = default;
-
 BrowserMessageFilter::BrowserMessageFilter(uint32_t message_class_to_filter)
     : message_classes_to_filter_(1, message_class_to_filter) {}
 
@@ -120,14 +123,6 @@ BrowserMessageFilter::BrowserMessageFilter(
           message_classes_to_filter,
           message_classes_to_filter + num_message_classes_to_filter) {
   DCHECK(num_message_classes_to_filter);
-}
-
-void BrowserMessageFilter::AddAssociatedInterface(
-    const std::string& name,
-    const IPC::ChannelProxy::GenericAssociatedInterfaceFactory& factory,
-    base::OnceClosure filter_removed_callback) {
-  associated_interfaces_.emplace_back(name, factory);
-  filter_removed_callbacks_.emplace_back(std::move(filter_removed_callback));
 }
 
 base::ProcessHandle BrowserMessageFilter::PeerHandle() {
@@ -194,13 +189,6 @@ IPC::MessageFilter* BrowserMessageFilter::GetFilter() {
   DCHECK(!internal_) << "Should only be called once.";
   internal_ = new Internal(this);
   return internal_;
-}
-
-void BrowserMessageFilter::RegisterAssociatedInterfaces(
-    IPC::ChannelProxy* proxy) {
-  for (const auto& entry : associated_interfaces_)
-    proxy->AddGenericAssociatedInterfaceForIOThread(entry.first, entry.second);
-  associated_interfaces_.clear();
 }
 
 }  // namespace content

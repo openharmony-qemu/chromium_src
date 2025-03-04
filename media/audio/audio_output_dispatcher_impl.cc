@@ -10,6 +10,7 @@
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "media/audio/audio_logging.h"
@@ -103,7 +104,7 @@ bool AudioOutputDispatcherImpl::StartStream(
 void AudioOutputDispatcherImpl::StopStream(AudioOutputProxy* stream_proxy) {
   DCHECK(audio_manager()->GetTaskRunner()->BelongsToCurrentThread());
   auto it = proxy_to_physical_map_.find(stream_proxy);
-  DCHECK(it != proxy_to_physical_map_.end());
+  CHECK(it != proxy_to_physical_map_.end(), base::NotFatalUntil::M130);
   StopPhysicalStream(it->second);
   proxy_to_physical_map_.erase(it);
   ++idle_proxies_;
@@ -128,11 +129,7 @@ void AudioOutputDispatcherImpl::CloseStream(AudioOutputProxy* stream_proxy) {
 
   // Leave at least a single stream running until the close timer fires to help
   // cycle time when streams are opened and closed repeatedly.
-#if defined(OHOS_MEDIA_POLICY)
-  CloseIdleStreams(std::max(idle_proxies_, static_cast<size_t>(0)));
-#else
   CloseIdleStreams(std::max(idle_proxies_, static_cast<size_t>(1)));
-#endif // defined(OHOS_MEDIA_POLICY)
   close_timer_.Reset();
 }
 
@@ -160,7 +157,7 @@ bool AudioOutputDispatcherImpl::CreateAndOpenStream() {
   DCHECK(audio_manager()->GetTaskRunner()->BelongsToCurrentThread());
   const int stream_id = audio_stream_id_++;
   std::unique_ptr<AudioLog> audio_log = audio_manager()->CreateAudioLog(
-      AudioLogFactory::AUDIO_OUTPUT_STREAM, stream_id);
+      AudioLogFactory::AudioComponent::kAudioOutputStream, stream_id);
   AudioOutputStream* stream = audio_manager()->MakeAudioOutputStream(
       params_, device_id_,
       base::BindRepeating(&AudioLog::OnLogMessage,
@@ -194,7 +191,7 @@ void AudioOutputDispatcherImpl::CloseIdleStreams(size_t keep_alive) {
     stream->Close();
 
     auto it = audio_logs_.find(stream);
-    DCHECK(it != audio_logs_.end());
+    CHECK(it != audio_logs_.end(), base::NotFatalUntil::M130);
     it->second->OnClosed();
     audio_logs_.erase(it);
   }

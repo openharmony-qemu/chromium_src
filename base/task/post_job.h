@@ -7,11 +7,12 @@
 
 #include <limits>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/dcheck_is_on.h"
 #include "base/functional/callback.h"
 #include "base/location.h"
-#include "base/memory/raw_ptr.h"
+#include "base/memory/stack_allocated.h"
 
 namespace base {
 namespace internal {
@@ -26,6 +27,8 @@ enum class TaskPriority : uint8_t;
 // communicate with the scheduler. To prevent deadlocks, JobDelegate methods
 // should never be called while holding a user lock.
 class BASE_EXPORT JobDelegate {
+  STACK_ALLOCATED();
+
  public:
   // A JobDelegate is instantiated for each worker task that is run.
   // |task_source| is the task source whose worker task is running with this
@@ -70,9 +73,8 @@ class BASE_EXPORT JobDelegate {
  private:
   static constexpr uint8_t kInvalidTaskId = std::numeric_limits<uint8_t>::max();
 
-  const raw_ptr<internal::JobTaskSource> task_source_;
-  const raw_ptr<internal::PooledTaskRunnerDelegate>
-      pooled_task_runner_delegate_;
+  internal::JobTaskSource* task_source_ = nullptr;
+  internal::PooledTaskRunnerDelegate* pooled_task_runner_delegate_ = nullptr;
   uint8_t task_id_ = kInvalidTaskId;
 
 #if DCHECK_IS_ON()
@@ -130,10 +132,8 @@ class BASE_EXPORT JobHandle {
   // Can be invoked before ~JobHandle() to avoid waiting on the job completing.
   void Detach();
 
-#if BUILDFLAG(IS_OHOS)
-  internal::JobTaskSource* GetTaskSource() {
-    return task_source_.get();
-  }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  internal::JobTaskSource* GetTaskSource() { return task_source_.get(); }
 #endif
 
  private:

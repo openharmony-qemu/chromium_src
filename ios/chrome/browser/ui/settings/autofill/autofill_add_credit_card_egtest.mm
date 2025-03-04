@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #import "base/ios/ios_util.h"
-#import "ios/chrome/browser/ui/autofill/autofill_app_interface.h"
+#import "ios/chrome/browser/autofill/ui_bundled/autofill_app_interface.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
@@ -12,10 +12,6 @@
 #import "ios/testing/earl_grey/app_launch_configuration.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::ButtonWithAccessibilityLabel;
 using chrome_test_util::ButtonWithAccessibilityLabelId;
@@ -108,9 +104,9 @@ id<GREYMatcher> CardNumberIconView(NSString* icon_type) {
       performAction:grey_tap()];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [AutofillAppInterface clearCreditCardStore];
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 #pragma mark - Test that all fields on the 'Add Credit Card' screen appear
@@ -144,7 +140,7 @@ id<GREYMatcher> CardNumberIconView(NSString* icon_type) {
 }
 
 // Tests that the 'Cancel' button dismisses the screen.
-// TODO(crbug.com/1149306): test flaky on iPads.
+// TODO(crbug.com/40157443): test flaky on iPads.
 - (void)testCancelButtonDismissesScreen {
   if ([ChromeEarlGrey isIPadIdiom]) {
     EARL_GREY_TEST_DISABLED(@"Fails on iPad.");
@@ -222,7 +218,7 @@ id<GREYMatcher> CardNumberIconView(NSString* icon_type) {
 // Tests when a user tries to add a valid card number, the screen is dismissed
 // and the new card number appears on the Autofill Credit Card 'Payment Methods'
 // screen.
-// TODO(crbug.com/1149306): test flaky on iPads.
+// TODO(crbug.com/40157443): test flaky on iPads.
 - (void)testAddButtonOnValidNumber {
   if ([ChromeEarlGrey isIPadIdiom]) {
     EARL_GREY_TEST_DISABLED(@"Fails on iPad.");
@@ -301,8 +297,9 @@ id<GREYMatcher> CardNumberIconView(NSString* icon_type) {
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Clearing the text enables the edit icon.
+  // TODO(crbug.com/40916973): Revert to grey_clearText when fixed in EG.
   [[EarlGrey selectElementWithMatcher:CardNumberTextField()]
-      performAction:grey_clearText()];
+      performAction:grey_replaceText(@"")];
   [[EarlGrey selectElementWithMatcher:CardNumberIconView(kEditIconIdentifier)]
       assertWithMatcher:grey_sufficientlyVisible()];
 }
@@ -311,16 +308,16 @@ id<GREYMatcher> CardNumberIconView(NSString* icon_type) {
 // the fields valid.
 - (void)testAddButtonDisabledTillValidForm {
   [[EarlGrey selectElementWithMatcher:CardNumberTextField()]
-      performAction:grey_typeText(@"4111111111111111")];
+      performAction:grey_replaceText(@"4111111111111111")];
   [[EarlGrey selectElementWithMatcher:MonthOfExpiryTextField()]
-      performAction:grey_typeText(@"12")];
+      performAction:grey_replaceText(@"12")];
   [[EarlGrey selectElementWithMatcher:YearOfExpiryTextField()]
-      performAction:grey_typeText(@"299")];
+      performAction:grey_replaceText(@"299")];
   [[EarlGrey selectElementWithMatcher:chrome_test_util::AddCreditCardButton()]
       assertWithMatcher:grey_allOf(grey_not(grey_enabled()),
                                    grey_sufficientlyVisible(), nil)];
   [[EarlGrey selectElementWithMatcher:YearOfExpiryTextField()]
-      performAction:grey_typeText(@"9")];
+      performAction:grey_replaceText(@"2999")];
   [[EarlGrey selectElementWithMatcher:chrome_test_util::AddCreditCardButton()]
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];

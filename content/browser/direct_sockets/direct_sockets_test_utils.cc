@@ -4,6 +4,8 @@
 
 #include "content/browser/direct_sockets/direct_sockets_test_utils.h"
 
+#include <string_view>
+
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
 #include "base/strings/stringprintf.h"
@@ -57,7 +59,7 @@ void MockUDPSocket::Send(
 }
 
 void MockUDPSocket::MockSend(int32_t result,
-                             const absl::optional<base::span<uint8_t>>& data) {
+                             const std::optional<base::span<uint8_t>>& data) {
   listener_->OnReceived(result, {}, data);
 }
 
@@ -74,11 +76,11 @@ MockRestrictedUDPSocket::~MockRestrictedUDPSocket() = default;
 MockNetworkContext::MockNetworkContext()
     : MockNetworkContext(/*host_mapping_rules=*/"") {}
 
-MockNetworkContext::MockNetworkContext(base::StringPiece host_mapping_rules)
+MockNetworkContext::MockNetworkContext(std::string_view host_mapping_rules)
     : network::TestNetworkContextWithHostResolver(
           net::HostResolver::CreateStandaloneResolver(
               net::NetLog::Get(),
-              /*options=*/absl::nullopt,
+              /*options=*/std::nullopt,
               host_mapping_rules,
               /*enable_caching=*/false)) {}
 
@@ -168,20 +170,29 @@ bool IsolatedWebAppContentBrowserClient::ShouldUrlUseApplicationIsolationLevel(
   return isolated_app_origin_ == url::Origin::Create(url);
 }
 
-absl::optional<blink::ParsedPermissionsPolicy>
+std::optional<blink::ParsedPermissionsPolicy>
 IsolatedWebAppContentBrowserClient::GetPermissionsPolicyForIsolatedWebApp(
-    content::BrowserContext* browser_context,
+    WebContents* web_contents,
     const url::Origin& app_origin) {
-  blink::ParsedPermissionsPolicy out;
-  blink::ParsedPermissionsPolicyDeclaration decl(
+  blink::ParsedPermissionsPolicyDeclaration coi_decl(
+      blink::mojom::PermissionsPolicyFeature::kCrossOriginIsolated,
+      /*allowed_origins=*/{},
+      /*self_if_matches=*/std::nullopt,
+      /*matches_all_origins=*/true, /*matches_opaque_src=*/false);
+
+  blink::ParsedPermissionsPolicyDeclaration sockets_decl(
       blink::mojom::PermissionsPolicyFeature::kDirectSockets,
-      /*allowed_origins=*/
-      {blink::OriginWithPossibleWildcards(app_origin,
-                                          /*has_subdomain_wildcard=*/false)},
-      /*self_if_matches=*/absl::nullopt,
+      /*allowed_origins=*/{},
+      /*self_if_matches=*/app_origin,
       /*matches_all_origins=*/false, /*matches_opaque_src=*/false);
-  out.push_back(decl);
-  return out;
+
+  blink::ParsedPermissionsPolicyDeclaration sockets_pna_decl(
+      blink::mojom::PermissionsPolicyFeature::kDirectSocketsPrivate,
+      /*allowed_origins=*/{},
+      /*self_if_matches=*/app_origin,
+      /*matches_all_origins=*/false, /*matches_opaque_src=*/false);
+
+  return {{coi_decl, sockets_decl, sockets_pna_decl}};
 }
 
 // misc

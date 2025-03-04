@@ -6,13 +6,10 @@
 
 #import <memory>
 
+#import "base/memory/raw_ptr.h"
 #import "components/reading_list/core/reading_list_model.h"
 #import "components/reading_list/core/reading_list_model_observer.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_menu_notification_delegate.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 class ReadingListObserverBridge;
 
@@ -24,7 +21,7 @@ class ReadingListObserverBridge;
   __weak id<ReadingListMenuNotificationDelegate> _delegate;
 
   // Keep a reference to detach before deallocing.
-  ReadingListModel* _readingListModel;  // weak
+  raw_ptr<ReadingListModel> _readingListModel;  // weak
 }
 
 // Detach the observer on the reading list.
@@ -35,8 +32,8 @@ class ReadingListObserverBridge;
 
 @end
 
-// TODO(crbug.com/590725): use the one-and-only protocol-based implementation of
-// ReadingListModelObserver
+// TODO(crbug.com/41241675): use the one-and-only protocol-based implementation
+// of ReadingListModelObserver
 class ReadingListObserverBridge : public ReadingListModelObserver {
  public:
   explicit ReadingListObserverBridge(ReadingListMenuNotifier* owner)
@@ -68,7 +65,7 @@ class ReadingListObserverBridge : public ReadingListModelObserver {
 @synthesize delegate = _delegate;
 
 - (instancetype)initWithReadingList:(ReadingListModel*)readingListModel {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _readingListObserverBridge.reset(new ReadingListObserverBridge(self));
     _readingListModel = readingListModel;
     _readingListModel->AddObserver(_readingListObserverBridge.get());

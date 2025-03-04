@@ -6,18 +6,16 @@
 
 #import <string>
 
+#import "base/apple/foundation_util.h"
 #import "base/functional/callback.h"
-#import "base/mac/foundation_util.h"
 #import "base/strings/utf_string_conversions.h"
+#import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_constants.h"
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_constants.h"
 #import "ios/chrome/browser/ui/content_suggestions/ntp_home_constant.h"
-#import "ios/chrome/browser/ui/ntp/new_tab_page_constants.h"
+#import "ios/chrome/browser/ui/content_suggestions/set_up_list/constants.h"
+#import "ios/chrome/browser/ui/content_suggestions/set_up_list/set_up_list_item_view.h"
 #import "ios/testing/earl_grey/earl_grey_app.h"
 #import "ios/web/common/uikit_ui_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -43,14 +41,19 @@ UIView* SubviewWithAccessibilityIdentifier(NSString* accessibilityID,
 
 namespace ntp_home {
 
+UIView* NTPView() {
+  return base::apple::ObjCCast<UIView>(SubviewWithAccessibilityIdentifier(
+      kNTPViewIdentifier, GetAnyKeyWindow()));
+}
+
 UICollectionView* CollectionView() {
-  return base::mac::ObjCCast<UICollectionView>(
+  return base::apple::ObjCCast<UICollectionView>(
       SubviewWithAccessibilityIdentifier(kNTPCollectionViewIdentifier,
                                          GetAnyKeyWindow()));
 }
 
 UICollectionView* ContentSuggestionsCollectionView() {
-  return base::mac::ObjCCast<UICollectionView>(
+  return base::apple::ObjCCast<UICollectionView>(
       SubviewWithAccessibilityIdentifier(
           kContentSuggestionsCollectionIdentifier, GetAnyKeyWindow()));
 }
@@ -61,8 +64,14 @@ UIView* FakeOmnibox() {
 }
 
 UILabel* DiscoverHeaderLabel() {
-  return base::mac::ObjCCast<UILabel>(SubviewWithAccessibilityIdentifier(
+  return base::apple::ObjCCast<UILabel>(SubviewWithAccessibilityIdentifier(
       DiscoverHeaderTitleAccessibilityID(), GetAnyKeyWindow()));
+}
+
+SetUpListItemView* SetUpListItemViewInMagicStackWithAccessibilityId(
+    NSString* accessibility_id) {
+  return base::apple::ObjCCast<SetUpListItemView>(
+      SubviewWithAccessibilityIdentifier(accessibility_id, GetAnyKeyWindow()));
 }
 
 }  // namespace ntp_home

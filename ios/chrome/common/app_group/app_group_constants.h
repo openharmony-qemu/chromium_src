@@ -20,6 +20,20 @@ enum AppGroupApplications {
   APP_GROUP_TODAY_EXTENSION,
 };
 
+// The different types of outcome used for UMA and created by the open
+// extension.
+// The entries should not be removed or reordered.
+// Also add the name of the enum and histogram.
+enum class OpenExtensionOutcome : NSInteger {
+  kSuccess = 0,
+  kInvalid = 1,
+  kFailureInvalidURL = 2,
+  kFailureURLNotFound = 3,
+  kFailureOpenInNotFound = 4,
+  kFailureUnsupportedScheme = 5,
+  kMaxValue = kFailureUnsupportedScheme,
+};
+
 // The different types of item that can be created by the share extension.
 enum ShareExtensionItemType {
   READING_LIST_ITEM = 0,
@@ -82,6 +96,9 @@ extern const char kChromeAppGroupQRScannerCommand[];
 // The command to open Lens.
 extern const char kChromeAppGroupLensCommand[];
 
+// The command to open the Password Manager's search page.
+extern const char kChromeAppGroupSearchPasswordsCommand[];
+
 // The key in kChromeAppGroupCommandPreference containing a NSDate at which
 // `kChromeAppGroupCommandAppPreference` issued the command.
 extern const char kChromeAppGroupCommandTimePreference[];
@@ -111,6 +128,10 @@ extern const char kChromeAppGroupIsGoogleDefaultSearchEngine[];
 // provider.
 extern const char kChromeAppGroupEnableLensInWidget[];
 
+// The key of a preference containing whether the home screen widget should show
+// the color Lens and voice icons if Lens is shown.
+extern const char kChromeAppGroupEnableColorLensAndVoiceIconsInWidget[];
+
 // The key of a preference containing Chrome client ID reported in the metrics
 // client ID. If the user does not opt in, this value must be cleared from the
 // shared user defaults.
@@ -139,9 +160,14 @@ extern NSString* const kOpenCommandSourceContentExtension;
 extern NSString* const kOpenCommandSourceSearchExtension;
 extern NSString* const kOpenCommandSourceShareExtension;
 extern NSString* const kOpenCommandSourceCredentialsExtension;
+extern NSString* const kOpenCommandSourceOpenExtension;
 
 // The value of the key for the sharedDefaults used by the Content Widget.
 extern NSString* const kSuggestedItems;
+
+// The value of the key for the sharedDefaults last modification date used by
+// the Shortcuts Widget.
+extern NSString* const kSuggestedItemsLastModificationDate;
 
 // The current epoch time, on the first run of chrome on this machine. It is set
 // once and must be attached to metrics reports forever thereafter.
@@ -150,6 +176,23 @@ extern const char kInstallDate[];
 // The brand code string associated with the install. This brand code will be
 // added to metrics logs.
 extern const char kBrandCode[];
+
+// The five keys of the outcomes by the open extension to Chrome (Success,
+// FailureInvalidURL, FailureURLNotFound, FailureOpenInNotFound,
+// FailureUnsupportedScheme).
+extern NSString* const kOpenExtensionOutcomeSuccess;
+extern NSString* const kOpenExtensionOutcomeFailureInvalidURL;
+extern NSString* const kOpenExtensionOutcomeFailureURLNotFound;
+extern NSString* const kOpenExtensionOutcomeFailureOpenInNotFound;
+extern NSString* const kOpenExtensionOutcomeFailureUnsupportedScheme;
+
+// A key in the application group NSUserDefault that contains
+// the outcomes of the Open Extension.
+extern NSString* const kOpenExtensionOutcomes;
+
+// Conversion helpers between keys and OpenExtensionOutcome.
+NSString* KeyForOpenExtensionOutcomeType(OpenExtensionOutcome);
+OpenExtensionOutcome OutcomeTypeFromKey(NSString*);
 
 // Gets the application group.
 NSString* ApplicationGroup();
@@ -160,7 +203,7 @@ NSString* CommonApplicationGroup();
 // Gets the legacy share extension folder URL.
 // This folder is deprecated and will be removed soon. Please do not add items
 // to it.
-// TODO(crbug.com/695381): Remove this value.
+// TODO(crbug.com/41303853): Remove this value.
 NSURL* LegacyShareExtensionItemsFolder();
 
 // Gets the shared folder URL containing commands from other applications.

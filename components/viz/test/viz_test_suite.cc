@@ -6,13 +6,8 @@
 
 #include "base/threading/thread_id_name_manager.h"
 #include "components/viz/test/paths.h"
-#include "third_party/skia/include/core/SkGraphics.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gl/test/gl_surface_test_support.h"
-
-static bool AlwaysUseAAA(const SkPath&) {
-  return true;
-}
 
 namespace viz {
 
@@ -34,12 +29,8 @@ void VizTestSuite::Initialize() {
 
   // Must be initialized after time outs are initialized in by the TestSuite.
   CHECK(!task_environment_);
-#if defined(OHOS_UNITTESTS)
-  task_environment_ = std::make_unique<base::test::TaskEnvironment>();
-#else
   task_environment_ = std::make_unique<base::test::TaskEnvironment>(
-    base::test::TaskEnvironment::MainThreadType::UI);
-#endif
+      base::test::TaskEnvironment::MainThreadType::UI);
 
   platform_event_source_ = ui::PlatformEventSource::CreateDefault();
 
@@ -49,8 +40,6 @@ void VizTestSuite::Initialize() {
   base::ThreadIdNameManager::GetInstance()->SetName("Main");
 
   base::DiscardableMemoryAllocator::SetInstance(&discardable_memory_allocator_);
-
-  SkGraphics::SetPathAnalyticAADecider(AlwaysUseAAA);
 }
 
 void VizTestSuite::Shutdown() {

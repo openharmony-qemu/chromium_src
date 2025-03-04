@@ -24,7 +24,6 @@ std::string GetErrorString(lock_screen_data::OperationResult result) {
     case lock_screen_data::OperationResult::kSuccess:
     case lock_screen_data::OperationResult::kCount:
       NOTREACHED() << "Expected a failure code.";
-      return "Unknown";
     case lock_screen_data::OperationResult::kFailed:
       return "Unknown";
     case lock_screen_data::OperationResult::kInvalidKey:
@@ -37,7 +36,6 @@ std::string GetErrorString(lock_screen_data::OperationResult result) {
       return "Not found";
   }
   NOTREACHED() << "Unknown operation status";
-  return "Unknown";
 }
 
 }  // namespace
@@ -64,10 +62,6 @@ ExtensionFunction::ResponseAction LockScreenDataCreateFunction::Run() {
 void LockScreenDataCreateFunction::OnDone(
     lock_screen_data::OperationResult result,
     const lock_screen_data::DataItem* item) {
-  UMA_HISTOGRAM_ENUMERATION(
-      "Apps.LockScreen.DataItemStorage.OperationResult.RegisterItem", result,
-      lock_screen_data::OperationResult::kCount);
-
   if (result != lock_screen_data::OperationResult::kSuccess) {
     Respond(Error(GetErrorString(result)));
     return;
@@ -120,7 +114,7 @@ ExtensionFunction::ResponseAction LockScreenDataGetContentFunction::Run() {
   if (!storage)
     return RespondNow(Error("Not available"));
 
-  absl::optional<api::lock_screen_data::GetContent::Params> params =
+  std::optional<api::lock_screen_data::GetContent::Params> params =
       api::lock_screen_data::GetContent::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -133,10 +127,6 @@ ExtensionFunction::ResponseAction LockScreenDataGetContentFunction::Run() {
 void LockScreenDataGetContentFunction::OnDone(
     lock_screen_data::OperationResult result,
     std::unique_ptr<std::vector<char>> data) {
-  UMA_HISTOGRAM_ENUMERATION(
-      "Apps.LockScreen.DataItemStorage.OperationResult.ReadItem", result,
-      lock_screen_data::OperationResult::kCount);
-
   if (result == lock_screen_data::OperationResult::kSuccess) {
     Respond(ArgumentList(api::lock_screen_data::GetContent::Results::Create(
         std::vector<uint8_t>(data->begin(), data->end()))));
@@ -150,7 +140,7 @@ LockScreenDataSetContentFunction::LockScreenDataSetContentFunction() = default;
 LockScreenDataSetContentFunction::~LockScreenDataSetContentFunction() = default;
 
 ExtensionFunction::ResponseAction LockScreenDataSetContentFunction::Run() {
-  absl::optional<api::lock_screen_data::SetContent::Params> params =
+  std::optional<api::lock_screen_data::SetContent::Params> params =
       api::lock_screen_data::SetContent::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -168,10 +158,6 @@ ExtensionFunction::ResponseAction LockScreenDataSetContentFunction::Run() {
 
 void LockScreenDataSetContentFunction::OnDone(
     lock_screen_data::OperationResult result) {
-  UMA_HISTOGRAM_ENUMERATION(
-      "Apps.LockScreen.DataItemStorage.OperationResult.WriteItem", result,
-      lock_screen_data::OperationResult::kCount);
-
   if (result == lock_screen_data::OperationResult::kSuccess) {
     Respond(NoArguments());
     return;
@@ -184,7 +170,7 @@ LockScreenDataDeleteFunction::LockScreenDataDeleteFunction() = default;
 LockScreenDataDeleteFunction::~LockScreenDataDeleteFunction() = default;
 
 ExtensionFunction::ResponseAction LockScreenDataDeleteFunction::Run() {
-  absl::optional<api::lock_screen_data::Delete::Params> params =
+  std::optional<api::lock_screen_data::Delete::Params> params =
       api::lock_screen_data::Delete::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -201,10 +187,6 @@ ExtensionFunction::ResponseAction LockScreenDataDeleteFunction::Run() {
 
 void LockScreenDataDeleteFunction::OnDone(
     lock_screen_data::OperationResult result) {
-  UMA_HISTOGRAM_ENUMERATION(
-      "Apps.LockScreen.DataItemStorage.OperationResult.DeleteItem", result,
-      lock_screen_data::OperationResult::kCount);
-
   if (result == lock_screen_data::OperationResult::kSuccess) {
     Respond(NoArguments());
     return;

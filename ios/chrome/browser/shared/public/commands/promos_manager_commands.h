@@ -7,8 +7,6 @@
 
 #import <StoreKit/StoreKit.h>
 
-#import "ios/chrome/browser/promos_manager/constants.h"
-
 @class ShowSigninCommand;
 
 // Commands to show app-wide promos.
@@ -28,6 +26,9 @@
 
 // Display default browser promo.
 - (void)maybeDisplayDefaultBrowserPromo;
+
+// Display the default browser promo after the user tapped Remind Me Later.
+- (void)displayDefaultBrowserPromoAfterRemindMeLater;
 
 @end
 

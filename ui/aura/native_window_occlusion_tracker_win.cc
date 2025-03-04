@@ -10,7 +10,6 @@
 #include <string>
 
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -96,12 +95,18 @@ void NativeWindowOcclusionTrackerWin::Enable(Window* window) {
   DCHECK(window->IsRootWindow());
   if (window->HasObserver(this)) {
     NOTREACHED() << "window shouldn't already be observing occlusion tracker";
-    return;
   }
   // Add this as an observer so that we can be notified
   // when it's no longer true that all windows are minimized, and when the
   // window is destroyed.
   HWND root_window_hwnd = window->GetHost()->GetAcceleratedWidget();
+
+  // Delay occlusion tracking for initially-minimized windows.
+  // See CEF issue #3638.
+  if (IsIconic(root_window_hwnd)) {
+    return;
+  }
+
   window->AddObserver(this);
   // Remember this mapping from hwnd to Window*.
   hwnd_root_window_map_[root_window_hwnd] = window;
@@ -268,7 +273,7 @@ bool NativeWindowOcclusionTrackerWin::IsWindowVisibleAndFullyOpaque(
   // Window or the Windows Taskbar
   if (::GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP) {
     std::wstring hwnd_class_name = gfx::GetClassName(hwnd);
-    if (!base::StartsWith(hwnd_class_name, L"Chrome_WidgetWin_") &&
+    if (!hwnd_class_name.starts_with(L"Chrome_WidgetWin_") &&
         hwnd_class_name != L"Shell_TrayWnd") {
       return false;
     }
@@ -682,7 +687,7 @@ void NativeWindowOcclusionTrackerWin::WindowOcclusionCalculator::
   // but Windows prevented it, and the user clicks on the task bar to bring the
   // window forward. See https://crbug.com/1137982. This is the only event I
   // could find that always gets sent in this scenario, and isn't too common.
-  // TODO(crbug.com/1297684): See if we can make handling this event cheaper,
+  // TODO(crbug.com/40215249): See if we can make handling this event cheaper,
   // since we typically don't need it, e.g., by using a longer timer interval
   // for starting the occlusion calculation for this event, to batch subsequent
   // events.
@@ -840,9 +845,8 @@ void NativeWindowOcclusionTrackerWin::WindowOcclusionCalculator::
   bool calculate_occlusion = true;
   if (::GetWindowLong(hwnd, GWL_STYLE) & WS_POPUP) {
     std::wstring hwnd_class_name = gfx::GetClassName(hwnd);
-    calculate_occlusion =
-        base::StartsWith(hwnd_class_name, L"Chrome_WidgetWin_") ||
-        hwnd_class_name == L"Shell_TrayWnd";
+    calculate_occlusion = hwnd_class_name.starts_with(L"Chrome_WidgetWin_") ||
+                          hwnd_class_name == L"Shell_TrayWnd";
   }
 
   // Detect if either the alt tab view or the task list thumbnail is being
@@ -894,9 +898,11 @@ void NativeWindowOcclusionTrackerWin::WindowOcclusionCalculator::
       // Ignore move events if it's not a root window that's being moved. If it
       // is a root window, we want to calculate occlusion to support tab
       // dragging to windows that were occluded when the drag was started but
-      // are no longer occluded.
-      if (root_window_hwnds_occlusion_state_.find(hwnd) ==
-          root_window_hwnds_occlusion_state_.end()) {
+      // are no longer occluded.  If there is only one root window, occlusion
+      // calculation is not needed.
+      if ((root_window_hwnds_occlusion_state_.size() <= 1) ||
+          (root_window_hwnds_occlusion_state_.find(hwnd) ==
+           root_window_hwnds_occlusion_state_.end())) {
         return;
       }
     } else {
@@ -942,8 +948,8 @@ bool NativeWindowOcclusionTrackerWin::WindowOcclusionCalculator::
          (IsWindowOnCurrentVirtualDesktop(hwnd) == true);
 }
 
-absl::optional<bool> NativeWindowOcclusionTrackerWin::
-    WindowOcclusionCalculator::IsWindowOnCurrentVirtualDesktop(HWND hwnd) {
+std::optional<bool> NativeWindowOcclusionTrackerWin::WindowOcclusionCalculator::
+    IsWindowOnCurrentVirtualDesktop(HWND hwnd) {
   if (!virtual_desktop_manager_)
     return true;
 

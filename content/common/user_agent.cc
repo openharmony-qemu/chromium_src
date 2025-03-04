@@ -6,15 +6,14 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/logging.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
-#include "base/system/sys_info.h"
 #include "build/build_config.h"
 #include "build/util/chromium_git_revision.h"
-#include "ohos_adapter_helper.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"
@@ -30,18 +29,26 @@
 #include <sys/utsname.h>
 #endif
 
-#ifdef OHOS_USERAGENT
-#include "base/ohos/sys_info_utils.h"
-#include "components/embedder_support/arkweb_version.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#endif
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include <atomic>
 
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#include "components/embedder_support/arkweb_version.h"
+#include "content/public/common/content_switches.h"
 #include "third_party/bounds_checking_function/include/securec.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 
 namespace content {
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+std::atomic<bool> is_compatible_type_setted{false};
+static std::string compatible_device_type;
+#endif
 
 const char kFrozenUserAgentTemplate[] =
     "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 "
@@ -65,7 +72,7 @@ std::string GetUserAgentPlatform() {
   return ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
              ? "iPad; "
              : "iPhone; ";
-#elif BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#elif BUILDFLAG(ARKWEB_USERAGENT)
   return "";
 #else
 #error Unsupported platform
@@ -85,13 +92,13 @@ std::string GetUnifiedPlatform() {
   return "Fuchsia";
 #elif BUILDFLAG(IS_LINUX)
   return "X11; Linux x86_64";
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_IOS)
   if (ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET) {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";
   }
   return "iPhone; CPU iPhone OS 14_0 like Mac OS X";
-#elif BUILDFLAG(IS_OHOS)
-  return "";
 #else
 #error Unsupported platform
 #endif
@@ -121,7 +128,7 @@ std::string BuildCpuInfo() {
   cpuinfo = ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
                 ? "iPad"
                 : "iPhone";
-#elif BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#elif BUILDFLAG(ARKWEB_USERAGENT)
   cpuinfo = "";
 #elif BUILDFLAG(IS_WIN)
   base::win::OSInfo* os_info = base::win::OSInfo::GetInstance();
@@ -224,20 +231,19 @@ std::string GetCpuBitness() {
 #endif
 }
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#if BUILDFLAG(ARKWEB_USERAGENT)
 std::string GetDistVersion() {
   std::string dist_version;
   int versionPartOne;
   int versionPartTwo;
-  int versionPartthree;
+  int versionPartThree;
   std::string os_version = base::ohos::OsVersion();
-  int ret = sscanf_s(os_version.c_str(), "%d.%d.%d",
-      &versionPartOne, &versionPartTwo, &versionPartthree);
-  if (ret <= 0){
+  int ret = sscanf_s(os_version.c_str(), "%d.%d.%d", &versionPartOne,
+                     &versionPartTwo, &versionPartThree);
+  if (ret <= 0) {
     return dist_version;
   }
-  base::StringAppendF(&dist_version, "%d.%d",
-                      versionPartOne, versionPartTwo);
+  base::StringAppendF(&dist_version, "%d.%d", versionPartOne, versionPartTwo);
   return dist_version;
 }
 #endif
@@ -265,25 +271,25 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 
 #endif
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#if BUILDFLAG(ARKWEB_USERAGENT)
   std::string device_type_string = "Phone";
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line->HasSwitch(::switches::kUserAgentValue)) {
-    device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
+    device_type_string =
+        command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
   }
 
-  std::string compatible_device_type = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                            .GetSystemPropertiesInstance()
-                                            .GetCompatibleDeviceType();
-  if (!compatible_device_type.empty()) {
-    if (compatible_device_type == "Phone" ||
-        compatible_device_type == "PC" ||
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
+    if (compatible_device_type == "Phone" || compatible_device_type == "PC" ||
         compatible_device_type == "Tablet") {
-      LOG(INFO) << "compatible device type is: " << compatible_device_type;
+      LOG(DEBUG) << "compatible device type is: " << compatible_device_type;
       device_type_string = compatible_device_type;
     } else {
-      LOG(INFO) << "unknown compatible device type: " << compatible_device_type;
+      LOG(DEBUG) << "unknown compatible device type: "
+                 << compatible_device_type;
     }
+    is_compatible_type_setted = true;
   }
 
   int32_t ohos_major_version = base::ohos::MajorVersion();
@@ -291,22 +297,25 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
   std::string dist_os_name = base::ohos::OsName();
   std::string base_os_name = base::ohos::BaseOsName();
   std::string ohos_fullname_str;
-  if (base_os_name.empty() || ohos_major_version == -1 || ohos_senior_version == -1) {
+  if (base_os_name.empty() || ohos_major_version == -1 ||
+      ohos_senior_version == -1) {
     std::string base_os_name_default = "OpenHarmony";
-    base::StringAppendF(&ohos_fullname_str, "%s; %s", 
-      device_type_string.c_str(), base_os_name_default.c_str());
+    base::StringAppendF(&ohos_fullname_str, "%s; %s",
+                        device_type_string.c_str(),
+                        base_os_name_default.c_str());
   } else {
-    base::StringAppendF(&ohos_fullname_str, "%s; %s %d.%d", 
-      device_type_string.c_str(), base_os_name.c_str(),
-      ohos_major_version, ohos_senior_version);
+    base::StringAppendF(&ohos_fullname_str, "%s; %s %d.%d",
+                        device_type_string.c_str(), base_os_name.c_str(),
+                        ohos_major_version, ohos_senior_version);
   }
   std::string dist_version = GetDistVersion();
-  if (!dist_version.empty() && !dist_os_name.empty() && dist_os_name != base_os_name) {
-    base::StringAppendF(&ohos_fullname_str, "; %s %s",
-      dist_os_name.c_str(), dist_version.c_str());
+  if (!dist_version.empty() && !dist_os_name.empty() &&
+      dist_os_name != base_os_name) {
+    base::StringAppendF(&ohos_fullname_str, "; %s %s", dist_os_name.c_str(),
+                        dist_version.c_str());
   }
-  
 #endif
+
 #if BUILDFLAG(IS_ANDROID)
   std::string android_version_str = base::SysInfo::OperatingSystemVersion();
   std::string android_info_str =
@@ -327,7 +336,7 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 #elif BUILDFLAG(IS_ANDROID)
                       "%s%s", android_version_str.c_str(),
                       android_info_str.c_str()
-#elif BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#elif BUILDFLAG(ARKWEB_USERAGENT)
                       "%s", ohos_fullname_str.c_str()
 #else
                       ""
@@ -374,7 +383,7 @@ std::string BuildOSCpuInfoFromOSVersionAndCpuType(const std::string& os_version,
                       "Android %s", os_version.c_str()
 #elif BUILDFLAG(IS_FUCHSIA)
                       "Fuchsia"
-#elif BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+#elif BUILDFLAG(ARKWEB_USERAGENT)
                       "%s%s",
                       os_version.c_str(),  // e.g. 4
                       cpu_type.c_str()     // e.g. ""
@@ -452,6 +461,14 @@ std::string BuildUserAgentFromProductAndExtraOSInfo(
   return BuildUserAgentFromOSAndProduct(os_info, product);
 }
 
+std::string BuildUnifiedPlatformUAFromProductAndExtraOs(
+    const std::string& product,
+    const std::string& extra_os_info) {
+  std::string os_info;
+  base::StrAppend(&os_info, {GetUnifiedPlatform(), extra_os_info});
+  return BuildUserAgentFromOSAndProduct(os_info, product);
+}
+
 std::string GetAndroidOSInfo(
     IncludeAndroidBuildNumber include_android_build_number,
     IncludeAndroidModel include_android_model) {
@@ -491,17 +508,20 @@ std::string BuildUserAgentFromOSAndProduct(const std::string& os_info,
                       "Mozilla/5.0 (%s) AppleWebKit/537.36 (KHTML, like Gecko) "
                       "%s Safari/537.36 ",
                       os_info.c_str(), product.c_str());
-  
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
   std::string product_string = "";
 
-  std::string compatible_device_type = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                            .GetSystemPropertiesInstance()
-                                            .GetCompatibleDeviceType();
+  if (!is_compatible_type_setted) {
+    compatible_device_type = base::ohos::CompatibleDeviceType();
+    is_compatible_type_setted = true;
+  }
+
   base::StringAppendF(&product_string, " ArkWeb/%s", ARKWEB_VERSION);
   if (base::ohos::IsMobileDevice()) {
     product_string += " Mobile";
-  } else if (base::ohos::IsTabletDevice() && (compatible_device_type == "Phone")) {
+  } else if (base::ohos::IsTabletDevice() &&
+             (compatible_device_type == "Phone")) {
     product_string += " Mobile";
   } else if (base::ohos::IsPcDevice() && (compatible_device_type == "Phone")) {
     product_string += " Mobile";

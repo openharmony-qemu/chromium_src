@@ -6,6 +6,7 @@
 #define COMPONENTS_MIRRORING_SERVICE_OPENSCREEN_SESSION_HOST_H_
 
 #include "base/component_export.h"
+#include "base/gtest_prod_util.h"
 #include "base/logging.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -14,23 +15,23 @@
 #include "components/mirroring/mojom/session_observer.mojom.h"
 #include "components/mirroring/mojom/session_parameters.mojom.h"
 #include "components/mirroring/service/media_remoter.h"
-#include "components/mirroring/service/message_dispatcher.h"
 #include "components/mirroring/service/mirror_settings.h"
+#include "components/mirroring/service/mirroring_logger.h"
 #include "components/mirroring/service/openscreen_message_port.h"
-#include "components/mirroring/service/openscreen_rpc_dispatcher.h"
+#include "components/mirroring/service/openscreen_stats_client.h"
+#include "components/mirroring/service/rpc_dispatcher.h"
 #include "components/mirroring/service/rtp_stream.h"
 #include "components/openscreen_platform/event_trace_logging_platform.h"
 #include "components/openscreen_platform/task_runner.h"
 #include "gpu/config/gpu_info.h"
 #include "media/capture/video/video_capture_feedback.h"
 #include "media/cast/cast_environment.h"
-#include "media/cast/net/cast_transport_defines.h"
 #include "media/mojo/mojom/video_encode_accelerator.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/network/public/mojom/network_context.mojom.h"
-#include "third_party/openscreen/src/cast/streaming/sender_session.h"
+#include "third_party/openscreen/src/cast/streaming/public/sender_session.h"
 
 using openscreen::cast::capture_recommendations::Recommendations;
 
@@ -49,6 +50,7 @@ class Gpu;
 
 namespace mirroring {
 
+class RpcDispatcher;
 class VideoCaptureClient;
 
 // Minimum required bitrate used for calculating bandwidth.
@@ -110,7 +112,7 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
       const openscreen::cast::SenderSession* session,
       openscreen::cast::RemotingCapabilities capabilities) override;
   void OnError(const openscreen::cast::SenderSession* session,
-               openscreen::Error error) override;
+               const openscreen::Error& error) override;
 
   // RtpStreamClient overrides.
   void OnError(const std::string& message) override;
@@ -131,14 +133,13 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   // Callback by media::cast::VideoSender to set a new target playout delay.
   void SetTargetPlayoutDelay(base::TimeDelta playout_delay);
 
+  base::Value::Dict GetMirroringStats() const;
+  void SetSenderStatsForTest(const openscreen::cast::SenderStats& test_stats);
+
  private:
   friend class OpenscreenSessionHostTest;
   FRIEND_TEST_ALL_PREFIXES(OpenscreenSessionHostTest, ChangeTargetPlayoutDelay);
   FRIEND_TEST_ALL_PREFIXES(OpenscreenSessionHostTest, UpdateBandwidthEstimate);
-  FRIEND_TEST_ALL_PREFIXES(OpenscreenSessionHostTest,
-                           ShouldEnableHardwareVp8EncodingIfSupported);
-  FRIEND_TEST_ALL_PREFIXES(OpenscreenSessionHostTest,
-                           ShouldEnableHardwareH264EncodingIfSupported);
   class AudioCapturingCallback;
   using SupportedProfiles = media::VideoEncodeAccelerator::SupportedProfiles;
 
@@ -146,11 +147,8 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   // to software rendering being used.
   void OnAsyncInitialized(const SupportedProfiles& profiles);
 
-  // Notify `observer_` of a relevant logging message.
-  void LogInfoMessage(const std::string& message);
-
   // Notify `observer_` that error occurred and close the session.
-  void ReportAndLogError(mojom::SessionError error, const std::string& message);
+  void ReportAndLogError(mojom::SessionError error, std::string_view message);
 
   // Stops the current streaming session. If not called from StopSession(), a
   // new streaming session will start later after exchanging OFFER/ANSWER
@@ -165,8 +163,8 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   // library and applying them to the given audio and video configs.
   void SetConstraints(
       const Recommendations& recommendations,
-      absl::optional<media::cast::FrameSenderConfig>& audio_config,
-      absl::optional<media::cast::FrameSenderConfig>& video_config);
+      std::optional<media::cast::FrameSenderConfig>& audio_config,
+      std::optional<media::cast::FrameSenderConfig>& video_config);
 
   // Sends a request to create an audio input stream through the Audio Service,
   // configured with the specified audio `params`. The `shared_memory_count`
@@ -178,7 +176,8 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
       uint32_t shared_memory_count);
 
   // Callback by Audio/VideoSender to indicate encoder status change.
-  void OnEncoderStatusChange(media::cast::OperationalStatus status);
+  void OnEncoderStatusChange(const media::cast::FrameSenderConfig& config,
+                             media::cast::OperationalStatus status);
 
   // Callback by media::cast::VideoSender to report resource utilization.
   void ProcessFeedback(const media::VideoCaptureFeedback& feedback);
@@ -244,6 +243,9 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   // channels.
   OpenscreenMessagePort message_port_;
 
+  // Utility object for logging.
+  MirroringLogger logger_;
+
   // Used to initialize video and audio capture clients.
   MirrorSettings mirror_settings_;
 
@@ -268,7 +270,7 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   // Stored as part of generating an OFFER.
   // NOTE: currently we only support Opus audio, but may provide a variety of
   // video codec configurations.
-  absl::optional<media::cast::FrameSenderConfig> last_offered_audio_config_;
+  std::optional<media::cast::FrameSenderConfig> last_offered_audio_config_;
   std::vector<media::cast::FrameSenderConfig> last_offered_video_configs_;
 
   // Created after OFFER/ANSWER exchange succeeds.
@@ -294,7 +296,7 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
 
   // Used as an interface for the media remoter to send RPC messages. Created
   // when a successful capabilities response arrives.
-  std::unique_ptr<OpenscreenRpcDispatcher> rpc_dispatcher_;
+  std::unique_ptr<RpcDispatcher> rpc_dispatcher_;
 
   // Manages remoting content to the Cast Receiver. Created when a successful
   // capabilities response arrives.
@@ -329,10 +331,14 @@ class COMPONENT_EXPORT(MIRRORING_SERVICE) OpenscreenSessionHost final
   base::OneShotTimer remote_playback_start_timer_;
   // Records the time when the streaming session is started and `media_remoter_`
   // is initialized.
-  absl::optional<base::Time> remote_playback_start_time_;
+  std::optional<base::Time> remote_playback_start_time_;
+
+  // An optional stats client for fetching quality statistics from an Openscreen
+  // casting session.
+  std::unique_ptr<OpenscreenStatsClient> stats_client_;
 
   // Used in callbacks executed on task runners, such as by RtpStream.
-  // TODO(https://crbug.com/1363503): determine if weak pointers can be removed.
+  // TODO(crbug.com/40238714): determine if weak pointers can be removed.
   base::WeakPtrFactory<OpenscreenSessionHost> weak_factory_{this};
 };
 

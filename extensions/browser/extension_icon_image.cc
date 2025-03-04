@@ -13,7 +13,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "extensions/browser/image_loader.h"
 #include "extensions/common/extension.h"
-#include "ui/base/layout.h"
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/geometry/size_conversions.h"
@@ -22,6 +21,10 @@
 #include "ui/gfx/image/image_skia_operations.h"
 #include "ui/gfx/image/image_skia_rep.h"
 #include "ui/gfx/image/image_skia_source.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_icon_image_observer.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 // The ImageSkia provided by extensions::IconImage contains ImageSkiaReps that
 // are computed and updated using the following algorithm (if no default icon
@@ -48,7 +51,7 @@ extensions::ExtensionResource GetExtensionIconResource(
     const extensions::Extension& extension,
     const ExtensionIconSet& icons,
     int size,
-    ExtensionIconSet::MatchType match_type) {
+    ExtensionIconSet::Match match_type) {
   const std::string& path = icons.Get(size, match_type);
   return path.empty() ? extensions::ExtensionResource()
                       : extension.GetResource(path);
@@ -189,16 +192,17 @@ void IconImage::LoadImageForScaleAsync(float scale) {
 
   extensions::ExtensionResource resource;
 
-  // Find extension resource for non bundled component extensions.
+  // Find a bigger extension icon resource for non bundled component extensions.
+  // TODO(crbug.com/329953472): Use a predefined threshold.
   resource =
       GetExtensionIconResource(*extension_, icon_set_, resource_size_in_pixel,
-                               ExtensionIconSet::MATCH_BIGGER);
+                               ExtensionIconSet::Match::kBigger);
 
-  // If resource is not found by now, try matching smaller one.
+  // If a larger icon wasn't found, try matching a smaller one.
   if (resource.empty()) {
     resource =
         GetExtensionIconResource(*extension_, icon_set_, resource_size_in_pixel,
-                                 ExtensionIconSet::MATCH_SMALLER);
+                                 ExtensionIconSet::Match::kSmaller);
   }
 
   if (!resource.empty()) {
@@ -254,6 +258,9 @@ void IconImage::OnImageRepLoaded(const gfx::ImageSkiaRep& rep) {
 
   for (auto& observer : observers_)
     observer.OnExtensionIconImageChanged(this);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  DestroyExtensionIconImageObserver(extension_->id());
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void IconImage::OnExtensionUnloaded(content::BrowserContext* browser_context,

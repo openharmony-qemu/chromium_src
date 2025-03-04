@@ -4,40 +4,45 @@
 
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/clear_browsing_data_manager.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/functional/bind.h"
-#import "base/mac/foundation_util.h"
+#import "base/memory/raw_ptr.h"
+#import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
+#import "base/test/scoped_feature_list.h"
 #import "components/browsing_data/core/pref_names.h"
+#import "components/feature_engagement/public/feature_constants.h"
 #import "components/pref_registry/pref_registry_syncable.h"
 #import "components/search_engines/template_url_data_util.h"
 #import "components/search_engines/template_url_prepopulate_data.h"
 #import "components/search_engines/template_url_service.h"
-#import "components/sync/driver/sync_service.h"
+#import "components/signin/public/base/signin_metrics.h"
+#import "components/strings/grit/components_strings.h"
+#import "components/sync/service/sync_service.h"
 #import "components/sync/test/test_sync_service.h"
 #import "components/sync_preferences/pref_service_mock_factory.h"
 #import "components/sync_preferences/pref_service_syncable.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/browsing_data/browsing_data_features.h"
-#import "ios/chrome/browser/browsing_data/cache_counter.h"
-#import "ios/chrome/browser/browsing_data/fake_browsing_data_remover.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/prefs/browser_prefs.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
-#import "ios/chrome/browser/search_engines/template_url_service_factory.h"
+#import "ios/chrome/browser/browsing_data/model/browsing_data_features.h"
+#import "ios/chrome/browser/browsing_data/model/cache_counter.h"
+#import "ios/chrome/browser/browsing_data/model/fake_browsing_data_remover.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/prefs/browser_prefs.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_icon_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_model.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/chrome_account_manager_service.h"
-#import "ios/chrome/browser/signin/chrome_account_manager_service_factory.h"
-#import "ios/chrome/browser/signin/fake_authentication_service_delegate.h"
-#import "ios/chrome/browser/signin/fake_system_identity_manager.h"
-#import "ios/chrome/browser/sync/sync_service_factory.h"
-#import "ios/chrome/browser/sync/sync_setup_service_factory.h"
-#import "ios/chrome/browser/sync/sync_setup_service_mock.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service_factory.h"
+#import "ios/chrome/browser/signin/model/fake_authentication_service_delegate.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity_manager.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
 #import "ios/chrome/browser/ui/settings/clear_browsing_data/fake_browsing_data_counter_wrapper_producer.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
@@ -46,10 +51,6 @@
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using TemplateURLPrepopulateData::GetAllPrepopulatedEngines;
 using TemplateURLPrepopulateData::PrepopulatedEngine;
@@ -69,53 +70,52 @@ class ClearBrowsingDataManagerTest : public PlatformTest {
         new user_prefs::PrefRegistrySyncable);
     std::unique_ptr<sync_preferences::PrefServiceSyncable> prefs =
         factory.CreateSyncable(registry.get());
-    RegisterBrowserStatePrefs(registry.get());
+    RegisterProfilePrefs(registry.get());
 
-    TestChromeBrowserState::Builder builder;
+    TestProfileIOS::Builder builder;
     builder.AddTestingFactory(SyncServiceFactory::GetInstance(),
                               base::BindRepeating(&CreateTestSyncService));
     builder.AddTestingFactory(
-        SyncSetupServiceFactory::GetInstance(),
-        base::BindRepeating(&SyncSetupServiceMock::CreateKeyedService));
-    builder.AddTestingFactory(
         AuthenticationServiceFactory::GetInstance(),
-        AuthenticationServiceFactory::GetDefaultFactory());
+        AuthenticationServiceFactory::GetFactoryWithDelegate(
+            std::make_unique<FakeAuthenticationServiceDelegate>()));
     builder.AddTestingFactory(
         ios::TemplateURLServiceFactory::GetInstance(),
         ios::TemplateURLServiceFactory::GetDefaultFactory());
-    browser_state_ = builder.Build();
+    profile_ = std::move(builder).Build();
 
-    AuthenticationServiceFactory::CreateAndInitializeForBrowserState(
-        browser_state_.get(),
-        std::make_unique<FakeAuthenticationServiceDelegate>());
     account_manager_service_ =
-        ChromeAccountManagerServiceFactory::GetForBrowserState(
-            browser_state_.get());
+        ChromeAccountManagerServiceFactory::GetForProfile(profile_.get());
 
     // Load TemplateURLService.
-    template_url_service_ = ios::TemplateURLServiceFactory::GetForBrowserState(
-        browser_state_.get());
+    template_url_service_ =
+        ios::TemplateURLServiceFactory::GetForProfile(profile_.get());
     template_url_service_->Load();
 
-    FakeSystemIdentityManager* system_identity_manager =
+    FakeSystemIdentityManager* fake_system_identity_manager =
         FakeSystemIdentityManager::FromSystemIdentityManager(
             GetApplicationContext()->GetSystemIdentityManager());
-    system_identity_manager->AddIdentities(@[ @"foo" ]);
+    FakeSystemIdentity* fake_identity = [FakeSystemIdentity fakeIdentity1];
+    fake_system_identity_manager->AddIdentity(fake_identity);
 
     model_ = [[TableViewModel alloc] init];
     remover_ = std::make_unique<FakeBrowsingDataRemover>();
-    manager_ = [[ClearBrowsingDataManager alloc]
-                      initWithBrowserState:browser_state_.get()
-                       browsingDataRemover:remover_.get()
-        browsingDataCounterWrapperProducer:
-            [[FakeBrowsingDataCounterWrapperProducer alloc] init]];
+    manager_ =
+        [[ClearBrowsingDataManager alloc] initWithProfile:profile_.get()
+                                      browsingDataRemover:remover_.get()
+                       browsingDataCounterWrapperProducer:
+                           [[FakeBrowsingDataCounterWrapperProducer alloc]
+                               initWithProfile:profile_.get()]];
     [manager_ prepare];
 
     test_sync_service_ = static_cast<syncer::TestSyncService*>(
-        SyncServiceFactory::GetForBrowserState(browser_state_.get()));
+        SyncServiceFactory::GetForProfile(profile_.get()));
 
     time_range_pref_.Init(browsing_data::prefs::kDeleteTimePeriod,
-                          browser_state_->GetPrefs());
+                          profile_->GetPrefs());
+    scoped_feature_list_.InitWithFeatures(
+        {feature_engagement::kIPHiOSInlineEnhancedSafeBrowsingPromoFeature},
+        {});
   }
 
   ~ClearBrowsingDataManagerTest() override { [manager_ disconnect]; }
@@ -168,15 +168,16 @@ class ClearBrowsingDataManagerTest : public PlatformTest {
 
  protected:
   web::WebTaskEnvironment task_environment_;
-  IOSChromeScopedTestingLocalState local_state_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  IOSChromeScopedTestingLocalState scoped_testing_local_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   TableViewModel* model_;
   std::unique_ptr<BrowsingDataRemover> remover_;
   ClearBrowsingDataManager* manager_;
-  syncer::TestSyncService* test_sync_service_;
+  raw_ptr<syncer::TestSyncService> test_sync_service_;
   IntegerPrefMember time_range_pref_;
-  TemplateURLService* template_url_service_;  // weak
-  ChromeAccountManagerService* account_manager_service_;
+  raw_ptr<TemplateURLService> template_url_service_;  // weak
+  raw_ptr<ChromeAccountManagerService> account_manager_service_;
+  base::test::ScopedFeatureList scoped_feature_list_;
 };
 
 // Tests model is set up with all appropriate items and sections.
@@ -198,11 +199,11 @@ TEST_F(ClearBrowsingDataManagerTest, TestModel) {
 // but sync is off.
 TEST_F(ClearBrowsingDataManagerTest, TestModelSignedInSyncOff) {
   // Ensure that sync is not running.
-  test_sync_service_->SetDisableReasons(
-      syncer::SyncService::DISABLE_REASON_USER_CHOICE);
+  test_sync_service_->SetSignedIn(signin::ConsentLevel::kSignin);
 
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
-      ->SignIn(fake_identity());
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
+      ->SignIn(fake_identity(),
+               signin_metrics::AccessPoint::ACCESS_POINT_SETTINGS);
 
   [manager_ loadModel:model_];
 
@@ -228,11 +229,24 @@ TEST_F(ClearBrowsingDataManagerTest, TestModelSignedInSyncOff) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestCacheCounterFormattingForAllTime) {
-  ASSERT_EQ("en", GetApplicationContext()->GetApplicationLocale());
-  PrefService* prefs = browser_state_->GetPrefs();
+  PrefService* prefs = profile_->GetPrefs();
   prefs->SetInteger(browsing_data::prefs::kDeleteTimePeriod,
                     static_cast<int>(browsing_data::TimePeriod::ALL_TIME));
-  CacheCounter counter(browser_state_.get());
+  CacheCounter counter(profile_.get());
+
+  NSByteCountFormatter* formatter = [[NSByteCountFormatter alloc] init];
+  formatter.allowedUnits = NSByteCountFormatterUseAll &
+                           (~NSByteCountFormatterUseBytes) &
+                           (~NSByteCountFormatterUseKB);
+  formatter.countStyle = NSByteCountFormatterCountStyleMemory;
+
+  NSString* format_1_mb = [formatter stringFromByteCount:(1 << 20)];
+  NSString* less_than_1_mb =
+      l10n_util::GetNSString(IDS_DEL_CACHE_COUNTER_ALMOST_EMPTY);
+  NSString* format_1_5_mb =
+      [formatter stringFromByteCount:(1 << 20) + (1 << 19)];
+  NSString* format_2_mb = [formatter stringFromByteCount:(1 << 21)];
+  NSString* format_1_gb = [formatter stringFromByteCount:(1 << 30)];
 
   // Test multiple possible types of formatting.
   // clang-format off
@@ -240,12 +254,13 @@ TEST_F(ClearBrowsingDataManagerTest, TestCacheCounterFormattingForAllTime) {
         int cache_size;
         NSString* expected_output;
     } kTestCases[] = {
-        {0, @"Less than 1 MB"},
-        {(1 << 20) - 1, @"Less than 1 MB"},
-        {(1 << 20), @"1 MB"},
-        {(1 << 20) + (1 << 19), @"1.5 MB"},
-        {(1 << 21), @"2 MB"},
-        {(1 << 30), @"1 GB"}
+        {0, less_than_1_mb},
+        {(1 << 20) - 1, less_than_1_mb},
+        {(1 << 20), format_1_mb},
+        {(1 << 20) + (1 << 19), format_1_5_mb},
+        {(1 << 21) - 10, format_2_mb},
+        {(1 << 21), format_2_mb},
+        {(1 << 30), format_1_gb}
     };
   // clang-format on
 
@@ -259,12 +274,36 @@ TEST_F(ClearBrowsingDataManagerTest, TestCacheCounterFormattingForAllTime) {
 
 TEST_F(ClearBrowsingDataManagerTest,
        TestCacheCounterFormattingForLessThanAllTime) {
-  ASSERT_EQ("en", GetApplicationContext()->GetApplicationLocale());
-
-  PrefService* prefs = browser_state_->GetPrefs();
+  PrefService* prefs = profile_->GetPrefs();
   prefs->SetInteger(browsing_data::prefs::kDeleteTimePeriod,
                     static_cast<int>(browsing_data::TimePeriod::LAST_HOUR));
-  CacheCounter counter(browser_state_.get());
+  CacheCounter counter(profile_.get());
+
+  NSByteCountFormatter* formatter = [[NSByteCountFormatter alloc] init];
+  formatter.allowedUnits = NSByteCountFormatterUseAll &
+                           (~NSByteCountFormatterUseBytes) &
+                           (~NSByteCountFormatterUseKB);
+  formatter.countStyle = NSByteCountFormatterCountStyleMemory;
+
+  NSString* almost_empty =
+      l10n_util::GetNSString(IDS_DEL_CACHE_COUNTER_ALMOST_EMPTY);
+  NSString* format_1_mb = [formatter stringFromByteCount:(1 << 20)];
+  NSString* less_than_1_mb =
+      l10n_util::GetNSStringF(IDS_DEL_CACHE_COUNTER_UPPER_ESTIMATE,
+                              base::SysNSStringToUTF16(format_1_mb));
+  NSString* format_1_5_mb =
+      [formatter stringFromByteCount:(1 << 20) + (1 << 19)];
+  NSString* less_than_1_5_mb =
+      l10n_util::GetNSStringF(IDS_DEL_CACHE_COUNTER_UPPER_ESTIMATE,
+                              base::SysNSStringToUTF16(format_1_5_mb));
+  NSString* format_2_mb = [formatter stringFromByteCount:(1 << 21)];
+  NSString* less_than_2_mb =
+      l10n_util::GetNSStringF(IDS_DEL_CACHE_COUNTER_UPPER_ESTIMATE,
+                              base::SysNSStringToUTF16(format_2_mb));
+  NSString* format_1_gb = [formatter stringFromByteCount:(1 << 30)];
+  NSString* less_than_1_gb =
+      l10n_util::GetNSStringF(IDS_DEL_CACHE_COUNTER_UPPER_ESTIMATE,
+                              base::SysNSStringToUTF16(format_1_gb));
 
   // Test multiple possible types of formatting.
   // clang-format off
@@ -272,12 +311,13 @@ TEST_F(ClearBrowsingDataManagerTest,
         int cache_size;
         NSString* expected_output;
     } kTestCases[] = {
-        {0, @"Less than 1 MB"},
-        {(1 << 20) - 1, @"Less than 1 MB"},
-        {(1 << 20), @"Less than 1 MB"},
-        {(1 << 20) + (1 << 19), @"Less than 1.5 MB"},
-        {(1 << 21), @"Less than 2 MB"},
-        {(1 << 30), @"Less than 1 GB"}
+        {0, almost_empty},
+        {(1 << 20) - 1, almost_empty},
+        {(1 << 20), less_than_1_mb},
+        {(1 << 20) + (1 << 19), less_than_1_5_mb},
+        {(1 << 21) - 10, less_than_2_mb},
+        {(1 << 21), less_than_2_mb},
+        {(1 << 30), less_than_1_gb}
     };
   // clang-format on
 
@@ -311,8 +351,9 @@ TEST_F(ClearBrowsingDataManagerTest, TestOnPreferenceChanged) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestGoogleDSETextSignedIn) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
-      ->SignIn(fake_identity());
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
+      ->SignIn(fake_identity(),
+               signin_metrics::AccessPoint::ACCESS_POINT_SETTINGS);
 
   [manager_ loadModel:model_];
 
@@ -323,14 +364,14 @@ TEST_F(ClearBrowsingDataManagerTest, TestGoogleDSETextSignedIn) {
   ListItem* googleAccount =
       [model_ footerForSectionWithIdentifier:SectionIdentifierGoogleAccount];
   TableViewLinkHeaderFooterItem* accountFooterTextItem =
-      base::mac::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
+      base::apple::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
   ASSERT_TRUE(([accountFooterTextItem.text rangeOfString:@"Google"].location !=
                NSNotFound));
   ASSERT_EQ(2u, [accountFooterTextItem.urls count]);
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestGoogleDSETextSignedOut) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
       ->SignOut(signin_metrics::ProfileSignout::kAbortSignin,
                 /*force_clear_browsing_data=*/false, nil);
 
@@ -341,8 +382,9 @@ TEST_F(ClearBrowsingDataManagerTest, TestGoogleDSETextSignedOut) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedIn) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
-      ->SignIn(fake_identity());
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
+      ->SignIn(fake_identity(),
+               signin_metrics::AccessPoint::ACCESS_POINT_SETTINGS);
 
   // Set DSE to one from "prepoulated list".
   const std::string kEngineP1Name = "prepopulated-1";
@@ -361,7 +403,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedIn) {
   ListItem* googleAccount =
       [model_ footerForSectionWithIdentifier:SectionIdentifierGoogleAccount];
   TableViewLinkHeaderFooterItem* accountFooterTextItem =
-      base::mac::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
+      base::apple::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
   ASSERT_TRUE(
       ([accountFooterTextItem.text
            rangeOfString:[NSString
@@ -373,7 +415,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedIn) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedOut) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
       ->SignOut(signin_metrics::ProfileSignout::kAbortSignin,
                 /*force_clear_browsing_data=*/false, nil);
 
@@ -395,7 +437,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedOut) {
   ListItem* googleAccount =
       [model_ footerForSectionWithIdentifier:SectionIdentifierGoogleAccount];
   TableViewLinkHeaderFooterItem* accountFooterTextItem =
-      base::mac::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
+      base::apple::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
   ASSERT_TRUE(
       ([accountFooterTextItem.text
            rangeOfString:[NSString
@@ -407,8 +449,9 @@ TEST_F(ClearBrowsingDataManagerTest, TestPrepopulatedTextSignedOut) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestCustomTextSignedIn) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
-      ->SignIn(fake_identity());
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
+      ->SignIn(fake_identity(),
+               signin_metrics::AccessPoint::ACCESS_POINT_SETTINGS);
 
   // Set DSE to a be fully custom.
   const std::string kEngineC1Name = "custom-1";
@@ -429,7 +472,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestCustomTextSignedIn) {
   ListItem* googleAccount =
       [model_ footerForSectionWithIdentifier:SectionIdentifierGoogleAccount];
   TableViewLinkHeaderFooterItem* accountFooterTextItem =
-      base::mac::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
+      base::apple::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
   ASSERT_FALSE(
       ([accountFooterTextItem.text
            rangeOfString:[NSString
@@ -441,7 +484,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestCustomTextSignedIn) {
 }
 
 TEST_F(ClearBrowsingDataManagerTest, TestCustomeTextSignedOut) {
-  AuthenticationServiceFactory::GetForBrowserState(browser_state_.get())
+  AuthenticationServiceFactory::GetForProfile(profile_.get())
       ->SignOut(signin_metrics::ProfileSignout::kAbortSignin,
                 /*force_clear_browsing_data=*/false, nil);
 
@@ -464,7 +507,7 @@ TEST_F(ClearBrowsingDataManagerTest, TestCustomeTextSignedOut) {
   ListItem* googleAccount =
       [model_ footerForSectionWithIdentifier:SectionIdentifierGoogleAccount];
   TableViewLinkHeaderFooterItem* accountFooterTextItem =
-      base::mac::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
+      base::apple::ObjCCastStrict<TableViewLinkHeaderFooterItem>(googleAccount);
   ASSERT_FALSE(
       ([accountFooterTextItem.text
            rangeOfString:[NSString

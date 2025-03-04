@@ -1,0 +1,72 @@
+{
+  "string": [
+    {
+      "name": "page_show",
+      "value": "page from package"
+    },
+    {
+      "name": "reason",
+      "value": "Geolocation requires user_grant permission"
+    },
+    {
+      "name": "access_bluetooth",
+      "value": "Used to access bluetooth"
+    },
+    {
+      "name": "reason_print",
+      "value": "Print requires user_grant permission"
+    },
+    {
+      "name": "microphone",
+      "value": "Microphone requires user_grant permission"
+    },
+    {
+      "name": "camera",
+      "value": "Camera requires user_grant permission"
+    },
+    {
+      "name": "print_title",
+      "value": "Print prompt"
+    },
+    {
+      "name": "print_tip",
+      "value": "Preview data has not finished loading, please print after loading!"
+    },
+    {
+      "name": "print_ok",
+      "value": "OK"
+    },
+    {
+      "name": "access_pasteboard",
+      "value": "Pasteboard requires user_grant permission"
+    },
+    {
+      "name": "reason_download",
+      "value": "Download requires user_grant permission"
+    },
+    {
+      "name": "reason_documents",
+      "value": "Documents requires user_grant permission"
+    },
+    {
+      "name": "reason_desktop",
+      "value": "Desktop requires user_grant permission"
+    },
+    {
+      "name": "download_dialog_title",
+      "value": "Unable to access system folder"
+    },
+    {
+      "name": "download_dialog_content",
+      "value": "You have disabled access to the folder. It is recommended to go to Settings ->Privacy and Security ->Folder and enable access to the label folder"
+    },
+    {
+      "name": "download_dialog_confirm_button",
+      "value": "Go to System Settings"
+    },
+    {
+      "name": "download_dialog_cancel_button",
+      "value": "cancel"
+    }
+  ]
+}

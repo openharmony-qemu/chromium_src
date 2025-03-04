@@ -7,8 +7,9 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
-#include "base/strings/string_piece_forward.h"
+#include "arkweb/build/features/features.h"
 #include "base/threading/thread_checker.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -54,9 +55,10 @@ class TimeZoneMonitor : public device::mojom::TimeZoneMonitor {
   // operations on it when necessary.
   static std::unique_ptr<TimeZoneMonitor> Create(
       scoped_refptr<base::SequencedTaskRunner> file_task_runner);
-
-  // On OHOS, Monitor get timezone from Time_service subsystem.
+#if BUILDFLAG(ARKWEB_TIME_ZONE)
+  // On ArkWeb, Monitor get timezone from Time_service subsystem.
   static std::unique_ptr<TimeZoneMonitor> Create();
+#endif
 
   TimeZoneMonitor(const TimeZoneMonitor&) = delete;
   TimeZoneMonitor& operator=(const TimeZoneMonitor&) = delete;
@@ -69,7 +71,7 @@ class TimeZoneMonitor : public device::mojom::TimeZoneMonitor {
 
   // Notifies clients that the system time zone may have changed and is now
   // zone_id_str.
-  void NotifyClients(base::StringPiece zone_id_str);
+  void NotifyClients(std::string_view zone_id_str);
 
   // Sets ICU's default TimeZone for the process and calls NotifyClients().
   void UpdateIcuAndNotifyClients(std::unique_ptr<icu::TimeZone> new_zone);

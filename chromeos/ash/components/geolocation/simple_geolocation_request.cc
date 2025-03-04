@@ -26,6 +26,7 @@
 #include "google_apis/google_api_keys.h"
 #include "net/base/load_flags.h"
 #include "net/http/http_status_code.h"
+#include "services/device/public/cpp/geolocation/network_location_request_source.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/public/cpp/simple_url_loader.h"
@@ -141,6 +142,12 @@ void RecordUmaResult(SimpleGeolocationRequestResult result, size_t retries) {
                            std::min(retries, kMaxRetriesValueInHistograms));
 }
 
+void RecordUmaNetworkLocationRequestSource() {
+  base::UmaHistogramEnumeration(
+      "Geolocation.NetworkLocationRequest.Source",
+      device::NetworkLocationRequestSource::kSimpleGeolocationProvider);
+}
+
 // Creates the request url to send to the server.
 GURL GeolocationRequestURL(const GURL& url) {
   if (url != SimpleGeolocationProvider::DefaultGeolocationProviderURL())
@@ -233,7 +240,7 @@ bool ParseServerResponse(const GURL& server_url,
   }
 
   if (location_object) {
-    absl::optional<double> latitude = location_object->FindDouble(kLatString);
+    std::optional<double> latitude = location_object->FindDouble(kLatString);
     if (!latitude) {
       PrintGeolocationError(server_url, "Missing 'lat' attribute.", position);
       RecordUmaEvent(SIMPLE_GEOLOCATION_REQUEST_EVENT_RESPONSE_MALFORMED);
@@ -241,7 +248,7 @@ bool ParseServerResponse(const GURL& server_url,
     }
     position->latitude = latitude.value();
 
-    absl::optional<double> longitude = location_object->FindDouble(kLngString);
+    std::optional<double> longitude = location_object->FindDouble(kLngString);
     if (!longitude) {
       PrintGeolocationError(server_url, "Missing 'lon' attribute.", position);
       RecordUmaEvent(SIMPLE_GEOLOCATION_REQUEST_EVENT_RESPONSE_MALFORMED);
@@ -249,7 +256,7 @@ bool ParseServerResponse(const GURL& server_url,
     }
     position->longitude = longitude.value();
 
-    absl::optional<double> accuracy =
+    std::optional<double> accuracy =
         response_value_dict.FindDouble(kAccuracyString);
     if (!accuracy) {
       PrintGeolocationError(server_url, "Missing 'accuracy' attribute.",
@@ -449,6 +456,7 @@ void SimpleGeolocationRequest::StartRequest() {
       shared_url_loader_factory_.get(),
       base::BindOnce(&SimpleGeolocationRequest::OnSimpleURLLoaderComplete,
                      base::Unretained(this)));
+  RecordUmaNetworkLocationRequestSource();
 }
 
 void SimpleGeolocationRequest::MakeRequest(ResponseCallback callback) {
@@ -503,10 +511,13 @@ void SimpleGeolocationRequest::OnSimpleURLLoaderComplete(
       << "SimpleGeolocationRequest::OnSimpleURLLoaderComplete(): position={"
       << position_.ToString() << "}";
 
-  if (!success) {
+  // Retry on error, except when it's being rate-limited (handled by the
+  // caller).
+  if (!success && response_code != net::HTTP_TOO_MANY_REQUESTS) {
     Retry(server_error);
     return;
   }
+
   const base::TimeDelta elapsed = base::Time::Now() - request_started_at_;
   RecordUmaResponseTime(elapsed, success);
 

@@ -4,7 +4,6 @@
 
 package org.chromium.device.battery;
 
-import org.chromium.base.Log;
 import org.chromium.base.ThreadUtils;
 import org.chromium.device.battery.BatteryStatusManager.BatteryStatusCallback;
 import org.chromium.device.mojom.BatteryMonitor;
@@ -31,20 +30,21 @@ public class BatteryMonitorFactory implements InterfaceFactory<BatteryMonitor> {
     private boolean mHasStatusUpdate;
     private BatteryStatus mBatteryStatus;
 
-    private final BatteryStatusCallback mCallback = new BatteryStatusCallback() {
-        @Override
-        public void onBatteryStatusChanged(BatteryStatus batteryStatus) {
-            ThreadUtils.assertOnUiThread();
+    private final BatteryStatusCallback mCallback =
+            new BatteryStatusCallback() {
+                @Override
+                public void onBatteryStatusChanged(BatteryStatus batteryStatus) {
+                    ThreadUtils.assertOnUiThread();
 
-            mHasStatusUpdate = true;
-            mBatteryStatus = batteryStatus;
+                    mHasStatusUpdate = true;
+                    mBatteryStatus = batteryStatus;
 
-            List<BatteryMonitorImpl> monitors = new ArrayList<>(mSubscribedMonitors);
-            for (BatteryMonitorImpl monitor : monitors) {
-                monitor.didChange(batteryStatus);
-            }
-        }
-    };
+                    List<BatteryMonitorImpl> monitors = new ArrayList<>(mSubscribedMonitors);
+                    for (BatteryMonitorImpl monitor : monitors) {
+                        monitor.didChange(batteryStatus);
+                    }
+                }
+            };
 
     public BatteryMonitorFactory() {
         mHasStatusUpdate = false;
@@ -55,8 +55,8 @@ public class BatteryMonitorFactory implements InterfaceFactory<BatteryMonitor> {
     public BatteryMonitor createImpl() {
         ThreadUtils.assertOnUiThread();
 
-        if (mSubscribedMonitors.isEmpty() && !mManager.start()) {
-            Log.e(TAG, "BatteryStatusManager failed to start.");
+        if (mSubscribedMonitors.isEmpty()) {
+            mManager.start();
         }
 
         BatteryMonitorImpl monitor = new BatteryMonitorImpl(this);

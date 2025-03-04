@@ -36,7 +36,7 @@ class SANDBOX_POLICY_EXPORT Sandbox {
   static bool Initialize(sandbox::mojom::Sandbox sandbox_type,
                          SandboxLinux::PreSandboxHook hook,
                          const SandboxLinux::Options& options);
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
   static bool Initialize(sandbox::mojom::Sandbox sandbox_type,

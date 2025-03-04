@@ -10,8 +10,8 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/metrics/histogram_macros.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
@@ -72,11 +72,19 @@ class CC_BASE_EXPORT ScopedLayerTask {
 
 class CC_BASE_EXPORT ScopedImageTask {
  public:
-  enum ImageType { kAvif, kBmp, kGif,
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
-   kHeif,
+  enum class ImageType {
+    kAvif,
+    kBmp,
+    kGif,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    kHeif,
 #endif
-   kIco, kJpeg, kPng, kWebP, kOther };
+    kIco,
+    kJpeg,
+    kPng,
+    kWebP,
+    kOther
+  };
 
   explicit ScopedImageTask(ImageType image_type)
       : image_type_(image_type), start_time_(base::TimeTicks::Now()) {}
@@ -110,8 +118,8 @@ class CC_BASE_EXPORT ScopedImageUploadTask : public ScopedImageTask {
 
 class CC_BASE_EXPORT ScopedImageDecodeTask : public ScopedImageTask {
  public:
-  enum TaskType { kInRaster, kOutOfRaster };
-  enum DecodeType { kSoftware, kGpu };
+  enum class TaskType { kInRaster, kOutOfRaster };
+  enum class DecodeType { kSoftware, kGpu };
 
   ScopedImageDecodeTask(const void* image_ptr,
                         DecodeType decode_type,

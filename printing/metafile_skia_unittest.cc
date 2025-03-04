@@ -2,14 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if defined(OHOS_UNITTESTS)
-#define private public
-#include "printing/metafile_skia.cc"
 #include "printing/metafile_skia.h"
-#undef private
-#else  // OHOS_UNITTESTS
-#include "printing/metafile_skia.h"
-#endif  // OHOS_UNITTESTS
 
 #include <utility>
 
@@ -18,9 +11,15 @@
 #include "cc/paint/paint_record.h"
 #include "printing/common/metafile_utils.h"
 #include "printing/mojom/print.mojom.h"
+#include "skia/ext/font_utils.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/codec/SkPngDecoder.h"
+#include "third_party/skia/include/codec/SkJpegDecoder.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkFont.h"
+#include "third_party/skia/include/core/SkFontStyle.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -29,12 +28,15 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkStream.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceProps.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "third_party/skia/include/encode/SkJpegEncoder.h"
 
 namespace printing {
 
-TEST(MetafileSkiaTest, TestFrameContent) {
+TEST(MetafileSkiaTest, FrameContent) {
   constexpr int kPictureSideLen = 100;
   constexpr int kPageSideLen = 150;
 
@@ -101,7 +103,47 @@ TEST(MetafileSkiaTest, TestFrameContent) {
   EXPECT_EQ(bitmap.getColor(kPictureSideLen, kPictureSideLen), SK_ColorWHITE);
 }
 
-TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
+TEST(MetafileSkiaTest, GetPageBounds) {
+  constexpr int kPictureSideLen = 100;
+  constexpr int kPageSideWidth = 150;
+  constexpr int kPageSideHeight = 120;
+
+  // Create a placeholder picture.
+  sk_sp<SkPicture> pic_holder = SkPicture::MakePlaceholder(
+      SkRect::MakeXYWH(0, 0, kPictureSideLen, kPictureSideLen));
+
+  // Create the page with nested content which is the placeholder and will be
+  // replaced later.
+  cc::PaintOpBuffer buffer;
+  cc::PaintFlags flags;
+  flags.setColor(SK_ColorWHITE);
+  const SkRect page_rect =
+      SkRect::MakeXYWH(0, 0, kPageSideWidth, kPageSideHeight);
+  buffer.push<cc::DrawRectOp>(page_rect, flags);
+  const uint32_t content_id = pic_holder->uniqueID();
+  buffer.push<cc::CustomDataOp>(content_id);
+  SkSize page_size = SkSize::Make(kPageSideWidth, kPageSideHeight);
+
+  // Finish creating the entire metafile.
+  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
+  metafile.AppendPage(page_size, buffer.ReleaseAsRecord());
+  metafile.AppendSubframeInfo(content_id, base::UnguessableToken::Create(),
+                              std::move(pic_holder));
+  metafile.FinishFrameContent();
+
+  // Confirm there is 1 page in the doc.
+  EXPECT_EQ(1u, metafile.GetPageCount());
+
+  // Test in bound case.
+  EXPECT_EQ(gfx::Rect(kPageSideWidth, kPageSideHeight),
+            metafile.GetPageBounds(/*page_number=*/1));
+
+  // Test out of bounds cases.
+  EXPECT_EQ(gfx::Rect(), metafile.GetPageBounds(/*page_number=*/0));
+  EXPECT_EQ(gfx::Rect(), metafile.GetPageBounds(/*page_number=*/2));
+}
+
+TEST(MetafileSkiaTest, MultiPictureDocumentTypefaces) {
   constexpr int kPictureSideLen = 100;
   constexpr int kPageSideLen = 150;
   constexpr int kDocumentCookie = 1;
@@ -120,15 +162,11 @@ TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
 #else
   constexpr char kTypefaceName2[] = "monospace";
 #endif
-#if defined(OHOS_UNITTESTS)
-  constexpr size_t kNumTypefaces = 1;
-#else
   constexpr size_t kNumTypefaces = 2;
-#endif  // defined(OHOS_UNITTESTS)
   sk_sp<SkTypeface> typeface1 =
-      SkTypeface::MakeFromName(kTypefaceName1, SkFontStyle());
+      skia::MakeTypefaceFromName(kTypefaceName1, SkFontStyle());
   sk_sp<SkTypeface> typeface2 =
-      SkTypeface::MakeFromName(kTypefaceName2, SkFontStyle());
+      skia::MakeTypefaceFromName(kTypefaceName2, SkFontStyle());
   const SkFont font1 = SkFont(typeface1, 10);
   const SkFont font2 = SkFont(typeface2, 12);
 
@@ -198,149 +236,64 @@ TEST(MetafileSkiaTest, TestMultiPictureDocumentTypefaces) {
   }
 }
 
-#if defined(OHOS_UNITTESTS)
-class MockSkStreamAsset : public SkStreamAsset {
- public:
-  MockSkStreamAsset(size_t length) : fLength_(length), fPosition_(0) {}
-  size_t read(void* buffer, size_t size) override {
-    if (fPosition_ + size > fLength_) {
-      size = fLength_ - fPosition_;
-    }
-    std::memset(buffer, 'A', size);
-    fPosition_ += size;
-    return size;
-  }
+TEST(MetafileSkiaTest, SerializeUnencodedRasterImageAsPNG) {
+    // Make raster surface
+    sk_sp<SkSurface> surface =
+            SkSurfaces::Raster(SkImageInfo::MakeN32(100, 50, kOpaque_SkAlphaType));
+    SkCanvas* canvas = surface->getCanvas();
 
-  bool isAtEnd() const override { return fPosition_ >= fLength_; }
+    // Draw to it
+    SkPaint paint;
+    paint.setColor(SK_ColorGREEN);
+    canvas->clear(SK_ColorYELLOW);
+    canvas->drawRect(SkRect::MakeSize(SkSize::Make(75, 25)), paint);
 
-  bool rewind() override {
-    fPosition_ = 0;
-    return true;
-  }
+    // Make sure that the image is not encoded
+    sk_sp<SkImage> image = surface->makeImageSnapshot();
+    ASSERT_FALSE(image->refEncodedData());
 
-  bool hasPosition() const override { return true; }
+    // Use the image serialization proc and assert that we get encoded data back
+    PictureSerializationContext subframes;
+    SkSerialProcs procs = SerializationProcs(&subframes, nullptr);
 
-  size_t getPosition() const override { return fPosition_; }
+    sk_sp<SkData> encoded_data = (*procs.fImageProc)(image.get(), nullptr);
+    ASSERT_TRUE(encoded_data);
 
-  bool seek(size_t position) override {
-    if (position <= fLength_) {
-      fPosition_ = position;
-      return true;
-    }
-    return false;
-  }
-
-  bool move(long offset) override {
-    size_t newPosition = fPosition_ + offset;
-    if (newPosition <= fLength_) {
-      fPosition_ = newPosition;
-      return true;
-    }
-    return false;
-  }
-
-  size_t getLength() const override { return fLength_; }
-
-  SkStreamAsset* onDuplicate() const override {
-    return new MockSkStreamAsset(fLength_);
-  }
-
-  SkStreamAsset* onFork() const override {
-    return new MockSkStreamAsset(fLength_, fPosition_);
-  }
-
- private:
-  MockSkStreamAsset(size_t length, size_t position)
-      : fLength_(length), fPosition_(position) {}
-
-  size_t fLength_;
-  size_t fPosition_;
-};
-
-TEST(MetafileSkiaTest, OhosFinishDocument001) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->data_stream = nullptr;
-  std::function<bool()> checkCancel = []() { return true; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(true, result);
+    // We expect unencoded images to be encoded as PNG.
+    ASSERT_TRUE(SkPngDecoder::IsPng(encoded_data->data(), encoded_data->size()));
 }
 
-TEST(MetafileSkiaTest, OhosFinishDocument002) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  std::unique_ptr<SkStreamAsset> mock_data_stream =
-      std::make_unique<MockSkStreamAsset>(1);
-  metafile.data_->data_stream = std::move(mock_data_stream);
-  std::function<bool()> checkCancel = []() { return true; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(false, result);
-}
+TEST(MetafileSkiaTest, SkipEncodingAsPngWhenImageIsAlreadyEncoded) {
+    // Make raster surface
+    sk_sp<SkSurface> surface =
+            SkSurfaces::Raster(SkImageInfo::MakeN32(100, 50, kOpaque_SkAlphaType));
+    SkCanvas* canvas = surface->getCanvas();
 
-TEST(MetafileSkiaTest, OhosFinishDocument003) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->recorder.is_recording_ = false;
-  std::function<bool()> checkCancel = []() { return true; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
-  EXPECT_EQ(true, result);
-}
+    // Draw to it
+    SkPaint paint;
+    paint.setColor(SK_ColorGREEN);
+    canvas->clear(SK_ColorYELLOW);
+    canvas->drawRect(SkRect::MakeSize(SkSize::Make(75, 25)), paint);
 
-TEST(MetafileSkiaTest, OhosFinishDocument004) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->recorder.is_recording_ = false;
-  std::function<bool()> checkCancel = []() { return true; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
-  EXPECT_EQ(mojom::SkiaDocumentType::kPDF, metafile.data_->type);
-  EXPECT_EQ(true, result);
-}
+    // Get an image that is not encoded
+    sk_sp<SkImage> unencoded_img = surface->makeImageSnapshot();
+    ASSERT_FALSE(unencoded_img->refEncodedData());
 
-TEST(MetafileSkiaTest, OhosFinishDocument005) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
-  metafile.data_->recorder.is_recording_ = false;
-  std::function<bool()> checkCancel = []() { return true; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(nullptr, metafile.data_->recorder.getRecordingCanvas());
-  EXPECT_EQ(mojom::SkiaDocumentType::kMSKP, metafile.data_->type);
-  EXPECT_EQ(true, result);
-}
+    // Encode the image data as JPEG
+    SkCodecs::Register(SkJpegDecoder::Decoder());
+    sk_sp<SkData> jpeg_data =
+            SkJpegEncoder::Encode(nullptr, unencoded_img.get(), SkJpegEncoder::Options{});
+    sk_sp<SkImage> jpeg_img = SkImages::DeferredFromEncodedData(jpeg_data);
+    ASSERT_TRUE(jpeg_img->refEncodedData());
 
-TEST(MetafileSkiaTest, OhosFinishDocument007) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->data_stream = nullptr;
-  std::function<bool()> checkCancel = []() { return false; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(true, result);
-  EXPECT_NE(metafile.data_->data_stream, nullptr);
-}
+    // Call serialization proc on the JPEG image
+    PictureSerializationContext subframes;
+    SkSerialProcs procs = SerializationProcs(&subframes, nullptr);
+    sk_sp<SkData> encoded_data = (*procs.fImageProc)(jpeg_img.get(), nullptr);
+    ASSERT_TRUE(encoded_data);
 
-TEST(MetafileSkiaTest, OhosFinishDocument008) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kMSKP, 1);
-  metafile.data_->data_stream = nullptr;
-  std::function<bool()> checkCancel = []() { return false; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(true, result);
-  EXPECT_NE(metafile.data_->data_stream, nullptr);
+    // Make sure the data is still encoded as JPEG
+    ASSERT_TRUE(SkJpegDecoder::IsJpeg(encoded_data->data(), encoded_data->size()));
 }
-
-TEST(MetafileSkiaTest, OhosFinishDocument009) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->data_stream = nullptr;
-  metafile.data_->pages.clear();
-  std::function<bool()> checkCancel = []() { return false; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(true, result);
-  EXPECT_NE(metafile.data_->data_stream, nullptr);
-}
-
-TEST(MetafileSkiaTest, OhosFinishDocument010) {
-  MetafileSkia metafile(mojom::SkiaDocumentType::kPDF, 1);
-  metafile.data_->data_stream = nullptr;
-  metafile.data_->recorder.is_recording_ = false;
-  std::function<bool()> checkCancel = []() { return false; };
-  auto result = metafile.OhosFinishDocument(checkCancel);
-  EXPECT_EQ(true, result);
-  EXPECT_NE(metafile.data_->data_stream, nullptr);
-}
-#endif  // OHOS_UNITTESTS
 
 }  // namespace printing

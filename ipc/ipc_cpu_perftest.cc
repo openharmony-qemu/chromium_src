@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include <string_view>
 #include <tuple>
 
 #include "base/check_op.h"
@@ -16,6 +17,7 @@
 #include "base/test/perf_log.h"
 #include "base/test/task_environment.h"
 #include "base/timer/timer.h"
+#include "base/types/expected.h"
 #include "ipc/ipc_channel_proxy.h"
 #include "ipc/ipc_perftest_messages.h"
 #include "ipc/ipc_perftest_util.h"
@@ -67,12 +69,12 @@ base::TimeDelta GetFrameTime(size_t frames_per_second) {
 
 class PerfCpuLogger {
  public:
-  explicit PerfCpuLogger(base::StringPiece test_name)
+  explicit PerfCpuLogger(std::string_view test_name)
       : test_name_(test_name),
         process_metrics_(base::ProcessMetrics::CreateCurrentProcessMetrics()) {
     // Query the CPU usage once to start the recording interval.
     const double inital_cpu_usage =
-        process_metrics_->GetPlatformIndependentCPUUsage();
+        process_metrics_->GetPlatformIndependentCPUUsage().value_or(-1.0);
     // This should have been the first call so the reported cpu usage should be
     // exactly zero.
     DCHECK_EQ(inital_cpu_usage, 0.0);
@@ -82,7 +84,8 @@ class PerfCpuLogger {
   PerfCpuLogger& operator=(const PerfCpuLogger&) = delete;
 
   ~PerfCpuLogger() {
-    double result = process_metrics_->GetPlatformIndependentCPUUsage();
+    const double result =
+        process_metrics_->GetPlatformIndependentCPUUsage().value_or(-1.0);
     base::LogPerfResult(test_name_.c_str(), result, "%");
   }
 
@@ -179,7 +182,7 @@ class ChannelSteadyPingPongListener : public Listener {
 
   void StopPingPong() {
     cpu_logger_.reset();
-    timer_.AbandonAndStop();
+    timer_.Stop();
     std::move(quit_closure_).Run();
   }
 
@@ -356,7 +359,7 @@ class MojoSteadyPingPongTest : public mojo::core::test::MojoTestBase {
 
   void StopPingPong() {
     cpu_logger_.reset();
-    timer_.AbandonAndStop();
+    timer_.Stop();
     std::move(quit_closure_).Run();
   }
 

@@ -6,9 +6,10 @@ package org.chromium.components.segmentation_platform;
 
 import androidx.annotation.VisibleForTesting;
 
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.url.GURL;
 
 import java.util.HashMap;
@@ -159,17 +160,54 @@ public class InputContext {
             }
         }
 
-        InputContextJni.get().fillNative(target, booleanKeys, booleanValues, intKeys, intValues,
-                floatKeys, floatValues, doubleKeys, doubleValues, stringKeys, stringValues,
-                timeKeys, timeValues, int64Keys, int64Values, urlKeys, urlValues);
+        InputContextJni.get()
+                .fillNative(
+                        target,
+                        booleanKeys,
+                        booleanValues,
+                        intKeys,
+                        intValues,
+                        floatKeys,
+                        floatValues,
+                        doubleKeys,
+                        doubleValues,
+                        stringKeys,
+                        stringValues,
+                        timeKeys,
+                        timeValues,
+                        int64Keys,
+                        int64Values,
+                        urlKeys,
+                        urlValues);
+    }
+
+    public ProcessedValue getEntryForTesting(String key) {
+        return mMetadata.get(key);
+    }
+
+    public int getSizeForTesting() {
+        return mMetadata.size();
     }
 
     @NativeMethods
     interface Natives {
-        void fillNative(long target, String[] booleanKeys, boolean[] booleanValues,
-                String[] integerKeys, int[] integerValues, String[] floatKeys, float[] floatValues,
-                String[] doubleKeys, double[] doubleValues, String[] stringKeys,
-                String[] stringValues, String[] timeKeys, long[] timeValues, String[] int64Keys,
-                long[] int64Values, String[] urlKeys, GURL[] urlValues);
+        void fillNative(
+                long target,
+                String[] booleanKeys,
+                boolean[] booleanValues,
+                String[] integerKeys,
+                int[] integerValues,
+                String[] floatKeys,
+                float[] floatValues,
+                String[] doubleKeys,
+                double[] doubleValues,
+                String[] stringKeys,
+                String[] stringValues,
+                String[] timeKeys,
+                long[] timeValues,
+                String[] int64Keys,
+                long[] int64Values,
+                String[] urlKeys,
+                GURL[] urlValues);
     }
 }

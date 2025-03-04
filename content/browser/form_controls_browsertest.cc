@@ -7,7 +7,6 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "cc/test/pixel_comparator.h"
-#include "content/browser/form_controls_browsertest_mac.h"
 #include "content/public/browser/render_widget_host_view.h"
 #include "content/public/common/content_paths.h"
 #include "content/public/common/content_switches.h"
@@ -17,6 +16,7 @@
 #include "content/public/test/content_browser_test_utils.h"
 #include "content/public/test/test_utils.h"
 #include "content/shell/browser/shell.h"
+#include "gpu/config/gpu_finch_features.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/base/ui_base_switches.h"
 
@@ -24,7 +24,7 @@
 #include "base/android/build_info.h"
 #endif
 
-// TODO(crbug.com/958242): Move the baselines to skia gold for easier
+// TODO(crbug.com/40625383): Move the baselines to skia gold for easier
 //   rebaselining when all platforms are supported.
 
 // To rebaseline this test on all platforms:
@@ -45,17 +45,12 @@ class FormControlsBrowserTest : public ContentBrowserTest {
   }
 
   void SetUpCommandLine(base::CommandLine* command_line) override {
-    ContentBrowserTest::SetUpCommandLine(command_line);
-
     // The --disable-lcd-text flag helps text render more similarly on
     // different bots and platform.
     command_line->AppendSwitch(switches::kDisableLCDText);
 
     // This is required to allow dark mode to be used on some platforms.
     command_line->AppendSwitch(switches::kForceDarkMode);
-
-    // Force the CPU backend to use AAA. (https://crbug.com/1421297)
-    command_line->AppendSwitch(switches::kForceSkiaAnalyticAntialiasing);
   }
 
   void RunTest(const std::string& screenshot_filename,
@@ -75,13 +70,15 @@ class FormControlsBrowserTest : public ContentBrowserTest {
     platform_suffix = "_chromeos";
 #elif BUILDFLAG(IS_ANDROID)
     int sdk_int = base::android::BuildInfo::GetInstance()->sdk_int();
-    if (sdk_int == base::android::SDK_VERSION_KITKAT) {
-      platform_suffix = "_android_kitkat";
+    if (sdk_int >= base::android::SDK_VERSION_T) {
+      platform_suffix = "_android_T";
     } else {
       platform_suffix = "_android";
     }
 #elif BUILDFLAG(IS_FUCHSIA)
     platform_suffix = "_fuchsia";
+#elif BUILDFLAG(IS_IOS)
+    platform_suffix = "_ios";
 #endif
 
     base::FilePath dir_test_data;
@@ -100,7 +97,7 @@ class FormControlsBrowserTest : public ContentBrowserTest {
         NavigateToURL(shell()->web_contents(),
                       GURL("data:text/html,<!DOCTYPE html>" + body_html)));
 
-#if BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_APPLE)
     // This fuzzy pixel comparator handles several mac behaviors:
     // - Different font rendering after 10.14
     // - Slight differences in radio and checkbox rendering in 10.15
@@ -186,12 +183,12 @@ IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, Radio) {
           /* screenshot_height */ 40);
 }
 
-IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, DarkModeTextSelection) {
 #if BUILDFLAG(IS_MAC)
-  if (!MacOSVersionSupportsDarkMode())
-    return;
+#define MAYBE_DarkModeTextSelection DISABLED_DarkModeTextSelection
+#else
+#define MAYBE_DarkModeTextSelection DarkModeTextSelection
 #endif
-
+IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, MAYBE_DarkModeTextSelection) {
   if (SkipTestForOldAndroidVersions())
     return;
 
@@ -233,7 +230,12 @@ IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, Input) {
           /* screenshot_height */ 330);
 }
 
-IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, Textarea) {
+#if (BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS))
+#define MAYBE_Textarea DISABLED_Textarea
+#else
+#define MAYBE_Textarea Textarea
+#endif
+IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, MAYBE_Textarea) {
   if (SkipTestForOldAndroidVersions())
     return;
 
@@ -356,6 +358,15 @@ IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, MultiSelect) {
 IN_PROC_BROWSER_TEST_F(FormControlsBrowserTest, Progress) {
   if (SkipTestForOldAndroidVersions())
     return;
+
+#if BUILDFLAG(IS_MAC) && !defined(ARCH_CPU_ARM64)
+  // The pixel comparison fails on Mac Intel GPUs with Graphite due to MSAA
+  // issues.
+  // TODO(crbug.com/40940637): Re-enable test if possible.
+  if (features::IsSkiaGraphiteEnabled(base::CommandLine::ForCurrentProcess())) {
+    return;
+  }
+#endif
 
   RunTest("form_controls_browsertest_progress",
           R"HTML(

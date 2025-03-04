@@ -27,6 +27,10 @@
 // clang-format on
 
 #include <iostream>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
@@ -57,9 +61,6 @@ class QuicPacketPrinter : public QuicFramerVisitorInterface {
     return true;
   }
   void OnPacket() override { std::cerr << "OnPacket\n"; }
-  void OnPublicResetPacket(const QuicPublicResetPacket& /*packet*/) override {
-    std::cerr << "OnPublicResetPacket\n";
-  }
   void OnVersionNegotiationPacket(
       const QuicVersionNegotiationPacket& /*packet*/) override {
     std::cerr << "OnVersionNegotiationPacket\n";
@@ -129,7 +130,7 @@ class QuicPacketPrinter : public QuicFramerVisitorInterface {
     return true;
   }
   bool OnAckFrameEnd(QuicPacketNumber start,
-                     const absl::optional<QuicEcnCounts>& ecn_counts) override {
+                     const std::optional<QuicEcnCounts>& ecn_counts) override {
     std::cerr << "OnAckFrameEnd, start: " << start;
     if (ecn_counts.has_value()) {
       std::cerr << "  ECN counts: " << ecn_counts->ToString();
@@ -216,6 +217,10 @@ class QuicPacketPrinter : public QuicFramerVisitorInterface {
     std::cerr << "OnAckFrequencyFrame: " << frame;
     return true;
   }
+  bool OnResetStreamAtFrame(const QuicResetStreamAtFrame& frame) override {
+    std::cerr << "OnResetStreamAtFrame: " << frame;
+    return true;
+  }
   void OnPacketComplete() override { std::cerr << "OnPacketComplete\n"; }
   bool IsValidStatelessResetToken(
       const StatelessResetToken& /*token*/) const override {
@@ -269,7 +274,11 @@ int main(int argc, char* argv[]) {
     quiche::QuichePrintCommandLineFlagHelp(usage);
     return 1;
   }
-  std::string hex = absl::HexStringToBytes(args[1]);
+  std::string hex;
+  if (!absl::HexStringToBytes(args[1], &hex)) {
+    std::cerr << "Invalid hex string" << std::endl;
+    return 1;
+  }
   quic::ParsedQuicVersionVector versions = quic::AllSupportedVersions();
   // Fake a time since we're not actually generating acks.
   quic::QuicTime start(quic::QuicTime::Zero());

@@ -37,7 +37,7 @@ class ServiceWorkerPaymentAppCreator {
   ServiceWorkerPaymentAppCreator& operator=(
       const ServiceWorkerPaymentAppCreator&) = delete;
 
-  ~ServiceWorkerPaymentAppCreator() {}
+  ~ServiceWorkerPaymentAppCreator() = default;
 
   void CreatePaymentApps(
       content::InstalledPaymentAppsFinder::PaymentApps apps,
@@ -134,16 +134,15 @@ class ServiceWorkerPaymentAppCreator {
   }
 
  private:
-  void OnSWPaymentAppValidated(ServiceWorkerPaymentApp* app, bool result) {
-    if (!delegate_) {
+  void OnSWPaymentAppValidated(base::WeakPtr<ServiceWorkerPaymentApp> app) {
+    if (!app || !delegate_) {
       FinishAndCleanup();
       return;
     }
 
-    auto iterator = available_apps_.find(app);
+    auto iterator = available_apps_.find(app.get());
     if (iterator != available_apps_.end()) {
-      if (result)
-        delegate_->OnPaymentAppCreated(std::move(iterator->second));
+      delegate_->OnPaymentAppCreated(std::move(iterator->second));
       available_apps_.erase(iterator);
     }
 
@@ -167,7 +166,7 @@ class ServiceWorkerPaymentAppCreator {
 ServiceWorkerPaymentAppFactory::ServiceWorkerPaymentAppFactory()
     : PaymentAppFactory(PaymentApp::Type::SERVICE_WORKER_APP) {}
 
-ServiceWorkerPaymentAppFactory::~ServiceWorkerPaymentAppFactory() {}
+ServiceWorkerPaymentAppFactory::~ServiceWorkerPaymentAppFactory() = default;
 
 void ServiceWorkerPaymentAppFactory::Create(base::WeakPtr<Delegate> delegate) {
   auto* rfh = delegate->GetInitiatorRenderFrameHost();

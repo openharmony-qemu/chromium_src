@@ -7,15 +7,18 @@ package org.chromium.components.browser_ui.notifications;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationChannelGroup;
-import android.os.Build;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+
+import org.chromium.base.Callback;
+import org.chromium.base.task.PostTask;
+import org.chromium.base.task.TaskTraits;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Mocked implementation of the NotificationManagerProxy. Imitates behavior of the Android
@@ -24,18 +27,31 @@ import java.util.Map;
 public class MockNotificationManagerProxy implements NotificationManagerProxy {
     private static final String KEY_SEPARATOR = ":";
 
-    /**
-     * Holds a notification and the arguments passed to #notify and #cancel.
-     */
-    public static class NotificationEntry {
+    /** Holds a notification and the arguments passed to #notify and #cancel. */
+    public static class NotificationEntry implements StatusBarNotificationProxy {
         public final Notification notification;
         public final String tag;
         public final int id;
 
-        NotificationEntry(Notification notification, String tag, int id) {
+        public NotificationEntry(Notification notification, String tag, int id) {
             this.notification = notification;
             this.tag = tag;
             this.id = id;
+        }
+
+        @Override
+        public int getId() {
+            return id;
+        }
+
+        @Override
+        public String getTag() {
+            return tag;
+        }
+
+        @Override
+        public Notification getNotification() {
+            return notification;
         }
     }
 
@@ -86,8 +102,13 @@ public class MockNotificationManagerProxy implements NotificationManagerProxy {
     }
 
     @Override
+    public void areNotificationsEnabled(Callback<Boolean> callback) {
+        callback.onResult(mNotificationsEnabled);
+    }
+
+    @Override
     public void cancel(int id) {
-        cancel(null /* tag */, id);
+        cancel(/* tag= */ null, id);
     }
 
     @Override
@@ -105,7 +126,7 @@ public class MockNotificationManagerProxy implements NotificationManagerProxy {
 
     @Override
     public void notify(int id, Notification notification) {
-        notify(null /* tag */, id, notification);
+        notify(/* tag= */ null, id, notification);
     }
 
     @Override
@@ -116,7 +137,9 @@ public class MockNotificationManagerProxy implements NotificationManagerProxy {
 
     @Override
     public void notify(NotificationWrapper notification) {
-        notify(notification.getMetadata().tag, notification.getMetadata().id,
+        notify(
+                notification.getMetadata().tag,
+                notification.getMetadata().id,
                 notification.getNotification());
     }
 
@@ -130,31 +153,33 @@ public class MockNotificationManagerProxy implements NotificationManagerProxy {
     // have compatibility issues (NotificationChannel is new in O), and we currently don't need them
     // where the MockNotificationManagerProxy is used in tests.
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @Override
     public void createNotificationChannel(NotificationChannel channel) {}
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @Override
     public void createNotificationChannelGroup(NotificationChannelGroup channelGroup) {}
 
-    @RequiresApi(Build.VERSION_CODES.O)
     @Override
     public List<NotificationChannel> getNotificationChannels() {
         return null;
     }
 
     @Override
-    @RequiresApi(Build.VERSION_CODES.O)
-    public List<NotificationChannelGroup> getNotificationChannelGroups() {
-        return null;
+    public void getNotificationChannelGroups(Callback<List<NotificationChannelGroup>> callback) {
+        callback.onResult(null);
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @Override
+    public void getNotificationChannels(Callback<List<NotificationChannel>> callback) {
+        callback.onResult(null);
+    }
+
     @Override
     public void deleteNotificationChannel(String id) {}
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @Override
+    public void deleteAllNotificationChannels(Function<String, Boolean> func) {}
+
     @Override
     public NotificationChannel getNotificationChannel(String channelId) {
         return null;
@@ -162,4 +187,10 @@ public class MockNotificationManagerProxy implements NotificationManagerProxy {
 
     @Override
     public void deleteNotificationChannelGroup(String groupId) {}
+
+    @Override
+    public void getActiveNotifications(
+            Callback<List<? extends StatusBarNotificationProxy>> callback) {
+        PostTask.runOrPostTask(TaskTraits.UI_DEFAULT, () -> callback.onResult(getNotifications()));
+    }
 }

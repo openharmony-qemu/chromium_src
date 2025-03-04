@@ -9,10 +9,6 @@
 
 #import "base/check.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface ChromeActivityImageSource ()
 
 // The shared image.
@@ -28,7 +24,7 @@
 - (instancetype)initWithImage:(UIImage*)image title:(NSString*)title {
   DCHECK(image);
   DCHECK(title);
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _image = image;
     _title = title;
   }

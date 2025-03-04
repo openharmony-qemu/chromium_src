@@ -6,12 +6,14 @@
 
 #include <unistd.h>
 
+#include <optional>
+
+#include "base/apple/bundle_locations.h"
+#include "base/apple/foundation_util.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
-#include "base/mac/bundle_locations.h"
-#include "base/mac/foundation_util.h"
 #include "base/mac/mac_util.h"
 #include "base/no_destructor.h"
 #include "base/numerics/checked_math.h"
@@ -19,27 +21,26 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/sys_string_conversions.h"
 #include "base/system/sys_info.h"
-#include "components/services/screen_ai/buildflags/buildflags.h"
+#include "content/browser/mac_helpers.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
-#include "ppapi/buildflags/buildflags.h"
 #include "printing/buildflags/buildflags.h"
 #include "sandbox/mac/sandbox_compiler.h"
 #include "sandbox/policy/mac/params.h"
 #include "sandbox/policy/mac/sandbox_mac.h"
 #include "sandbox/policy/mojom/sandbox.mojom.h"
 #include "sandbox/policy/switches.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "services/screen_ai/buildflags/buildflags.h"
 
 namespace content {
 
 namespace {
 
-absl::optional<base::FilePath>& GetNetworkTestCertsDirectory() {
+std::optional<base::FilePath>& GetNetworkTestCertsDirectory() {
   // Set by SetNetworkTestCertsDirectoryForTesting().
-  static base::NoDestructor<absl::optional<base::FilePath>>
+  static base::NoDestructor<std::optional<base::FilePath>>
       network_test_certs_dir;
   return *network_test_certs_dir;
 }
@@ -56,7 +57,7 @@ std::string GetOSVersion() {
   os_version += minor_version;
 
   int32_t final_os_version = os_version.ValueOrDie();
-  return std::to_string(final_os_version);
+  return base::NumberToString(final_os_version);
 }
 
 // Retrieves the users shared darwin dirs and adds it to the profile.
@@ -104,11 +105,11 @@ void SetupCommonSandboxParameters(
       sandbox::policy::kParamDisableSandboxDenialLogging, !enable_logging));
 
   std::string bundle_path =
-      sandbox::policy::GetCanonicalPath(base::mac::MainBundlePath()).value();
+      sandbox::policy::GetCanonicalPath(base::apple::MainBundlePath()).value();
   CHECK(compiler->SetParameter(sandbox::policy::kParamBundlePath, bundle_path));
 
-  std::string bundle_id = base::mac::BaseBundleID();
-  DCHECK(!bundle_id.empty()) << "base::mac::OuterBundle is unset";
+  std::string bundle_id = base::apple::BaseBundleID();
+  DCHECK(!bundle_id.empty()) << "base::apple::OuterBundle is unset";
   CHECK(compiler->SetParameter(sandbox::policy::kParamBundleId, bundle_id));
 
   CHECK(compiler->SetParameter(sandbox::policy::kParamBrowserPid,
@@ -124,7 +125,7 @@ void SetupCommonSandboxParameters(
 #if defined(COMPONENT_BUILD)
   // For component builds, allow access to one directory level higher, where
   // the dylibs live.
-  base::FilePath component_path = base::mac::MainBundlePath().Append("..");
+  base::FilePath component_path = base::apple::MainBundlePath().Append("..");
   std::string component_path_canonical =
       sandbox::policy::GetCanonicalPath(component_path).value();
   CHECK(compiler->SetParameter(sandbox::policy::kParamComponentPath,
@@ -174,34 +175,7 @@ void SetupNetworkSandboxParameters(sandbox::SandboxCompiler* compiler,
   }
 }
 
-#if BUILDFLAG(ENABLE_PPAPI)
-void SetupPPAPISandboxParameters(
-    const std::vector<content::WebPluginInfo>& plugins,
-    sandbox::SandboxCompiler* compiler,
-    const base::CommandLine& command_line) {
-  SetupCommonSandboxParameters(compiler, command_line);
-
-  base::FilePath bundle_path =
-      sandbox::policy::GetCanonicalPath(base::mac::MainBundlePath());
-
-  const std::string param_base_name = "PPAPI_PATH_";
-  int index = 0;
-  for (const auto& plugin : plugins) {
-    // Only add plugins which are external to Chrome's bundle to the profile.
-    if (!bundle_path.IsParent(plugin.path) && plugin.path.IsAbsolute()) {
-      std::string param_name =
-          param_base_name + base::StringPrintf("%d", index++);
-      CHECK(compiler->SetParameter(param_name, plugin.path.value()));
-    }
-  }
-
-  // The profile does not support more than 4 PPAPI plugins, but it will be set
-  // to n+1 more than the plugins added.
-  CHECK(index <= 5);
-}
-#endif
-
-void SetupGpuSandboxParameters(sandbox::SandboxCompiler* compiler,
+bool SetupGpuSandboxParameters(sandbox::SandboxCompiler* compiler,
                                const base::CommandLine& command_line) {
   SetupCommonSandboxParameters(compiler, command_line);
   AddDarwinDirs(compiler);
@@ -209,21 +183,38 @@ void SetupGpuSandboxParameters(sandbox::SandboxCompiler* compiler,
       sandbox::policy::kParamDisableMetalShaderCache,
       command_line.HasSwitch(
           sandbox::policy::switches::kDisableMetalShaderCache)));
+
+  base::FilePath helper_bundle_path =
+      base::apple::GetInnermostAppBundlePath(command_line.GetProgram());
+
+  // The helper may not be contained in an app bundle for unit tests.
+  // In that case `kParamHelperBundleId` will remain unset.
+  if (!helper_bundle_path.empty()) {
+    @autoreleasepool {
+      NSBundle* helper_bundle = [NSBundle
+          bundleWithPath:base::SysUTF8ToNSString(helper_bundle_path.value())];
+      if (!helper_bundle) {
+        return false;
+      }
+
+      return compiler->SetParameter(
+          sandbox::policy::kParamHelperBundleId,
+          base::SysNSStringToUTF8(helper_bundle.bundleIdentifier));
+    }
+  }
+
+  return true;
 }
 
 }  // namespace
 
-void SetupSandboxParameters(sandbox::mojom::Sandbox sandbox_type,
+bool SetupSandboxParameters(sandbox::mojom::Sandbox sandbox_type,
                             const base::CommandLine& command_line,
-#if BUILDFLAG(ENABLE_PPAPI)
-                            const std::vector<content::WebPluginInfo>& plugins,
-#endif
                             sandbox::SandboxCompiler* compiler) {
   switch (sandbox_type) {
     case sandbox::mojom::Sandbox::kAudio:
     case sandbox::mojom::Sandbox::kCdm:
     case sandbox::mojom::Sandbox::kMirroring:
-    case sandbox::mojom::Sandbox::kNaClLoader:
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
     case sandbox::mojom::Sandbox::kPrintBackend:
 #endif
@@ -234,18 +225,12 @@ void SetupSandboxParameters(sandbox::mojom::Sandbox sandbox_type,
     case sandbox::mojom::Sandbox::kUtility:
       SetupCommonSandboxParameters(compiler, command_line);
       break;
-    case sandbox::mojom::Sandbox::kGpu: {
-      SetupGpuSandboxParameters(compiler, command_line);
-      break;
-    }
+    case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
+    case sandbox::mojom::Sandbox::kGpu:
+      return SetupGpuSandboxParameters(compiler, command_line);
     case sandbox::mojom::Sandbox::kNetwork:
       SetupNetworkSandboxParameters(compiler, command_line);
       break;
-#if BUILDFLAG(ENABLE_PPAPI)
-    case sandbox::mojom::Sandbox::kPpapi:
-      SetupPPAPISandboxParameters(plugins, compiler, command_line);
-      break;
-#endif
     case sandbox::mojom::Sandbox::kNoSandbox:
       CHECK(false) << "Unhandled parameters for sandbox_type "
                    << static_cast<int>(sandbox_type);
@@ -255,10 +240,13 @@ void SetupSandboxParameters(sandbox::mojom::Sandbox sandbox_type,
     case sandbox::mojom::Sandbox::kScreenAI:
 #endif
     case sandbox::mojom::Sandbox::kSpeechRecognition:
+    case sandbox::mojom::Sandbox::kOnDeviceTranslation:
       SetupCommonSandboxParameters(compiler, command_line);
       CHECK(GetContentClient()->browser()->SetupEmbedderSandboxParameters(
           sandbox_type, compiler));
+      break;
   }
+  return true;
 }
 
 void SetNetworkTestCertsDirectoryForTesting(const base::FilePath& path) {

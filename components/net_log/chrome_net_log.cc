@@ -28,7 +28,7 @@ base::Value::Dict GetPlatformConstantsForNetLog(
   // We have everything we need to send the right values.
   dict.Set("name", version_info::GetProductName());
   dict.Set("version", version_info::GetVersionNumber());
-  dict.Set("cl", std::string(version_info::GetLastChange()));
+  dict.Set("cl", version_info::GetLastChange());
   dict.Set("version_mod", channel_string);
   dict.Set("official",
            version_info::IsOfficialBuild() ? "official" : "unofficial");

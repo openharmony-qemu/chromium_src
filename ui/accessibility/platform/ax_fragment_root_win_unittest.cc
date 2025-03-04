@@ -11,7 +11,6 @@
 #include "base/win/scoped_safearray.h"
 #include "base/win/scoped_variant.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "ui/accessibility/accessibility_switches.h"
 #include "ui/accessibility/platform/ax_platform_node_win.h"
 #include "ui/accessibility/platform/ax_platform_node_win_unittest.h"
 #include "ui/accessibility/platform/test_ax_node_wrapper.h"
@@ -521,37 +520,37 @@ TEST_F(AXFragmentRootTest, TestUIAMultipleFragmentRoots) {
   //     / \       / \
   //   U6---U7   U8---U9
 
-  ui::AXNodeData top_fragment_root_n1;
+  AXNodeData top_fragment_root_n1;
   top_fragment_root_n1.id = 1;
 
-  ui::AXNodeData sibling_n2;
+  AXNodeData sibling_n2;
   sibling_n2.id = 2;
 
-  ui::AXNodeData child_fragment_root_n3;
+  AXNodeData child_fragment_root_n3;
   child_fragment_root_n3.id = 3;
 
-  ui::AXNodeData sibling_n6;
+  AXNodeData sibling_n6;
   sibling_n6.id = 6;
-  ui::AXNodeData sibling_n7;
+  AXNodeData sibling_n7;
   sibling_n7.id = 7;
 
   child_fragment_root_n3.child_ids = {6, 7};
 
-  ui::AXNodeData sibling_n4;
+  AXNodeData sibling_n4;
   sibling_n4.id = 4;
 
-  ui::AXNodeData child_fragment_root_n5;
+  AXNodeData child_fragment_root_n5;
   child_fragment_root_n5.id = 5;
 
-  ui::AXNodeData sibling_n8;
+  AXNodeData sibling_n8;
   sibling_n8.id = 8;
-  ui::AXNodeData sibling_n9;
+  AXNodeData sibling_n9;
   sibling_n9.id = 9;
 
   child_fragment_root_n5.child_ids = {8, 9};
   top_fragment_root_n1.child_ids = {2, 3, 4, 5};
 
-  ui::AXTreeUpdate update;
+  AXTreeUpdate update;
   update.has_tree_data = true;
   update.root_id = top_fragment_root_n1.id;
   update.nodes = {top_fragment_root_n1,
@@ -563,7 +562,7 @@ TEST_F(AXFragmentRootTest, TestUIAMultipleFragmentRoots) {
                   child_fragment_root_n5,
                   sibling_n8,
                   sibling_n9};
-  update.tree_data.tree_id = ui::AXTreeID::CreateNewAXTreeID();
+  update.tree_data.tree_id = AXTreeID::CreateNewAXTreeID();
 
   Init(update);
   InitFragmentRoot();

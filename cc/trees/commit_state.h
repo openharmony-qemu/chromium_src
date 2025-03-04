@@ -10,9 +10,11 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "base/time/time.h"
 #include "cc/benchmarks/micro_benchmark_impl.h"
 #include "cc/cc_export.h"
@@ -27,8 +29,10 @@
 #include "cc/metrics/event_metrics.h"
 #include "cc/paint/paint_image.h"
 #include "cc/resources/ui_resource_request.h"
+#include "cc/trees/begin_main_frame_trace_id.h"
 #include "cc/trees/browser_controls_params.h"
 #include "cc/trees/presentation_time_callback_buffer.h"
+#include "cc/trees/render_frame_metadata.h"
 #include "cc/trees/swap_promise.h"
 #include "cc/trees/viewport_property_ids.h"
 #include "cc/view_transition/view_transition_request.h"
@@ -42,6 +46,7 @@
 #include "ui/gfx/overlay_transform.h"
 
 namespace cc {
+static constexpr int kInvalidSourceFrameNumber = -1;
 
 // CommitState and ThreadUnsafeCommitState contain all of the information from
 // LayerTreeHost that is needed to run compositor commit. CommitState is
@@ -100,7 +105,8 @@ struct CC_EXPORT CommitState {
   int hud_layer_id = Layer::INVALID_ID;
   int source_frame_number = 0;
   LayerSelection selection;
-#ifdef OHOS_CLIPBOARD
+
+#if BUILDFLAG(ARKWEB_MENU)
   gfx::Rect clipped_selection_bounds;
 #endif
   LayerTreeDebugState debug_state;
@@ -108,8 +114,6 @@ struct CC_EXPORT CommitState {
   SkColor4f background_color = SkColors::kWhite;
   ViewportPropertyIds viewport_property_ids;
   viz::LocalSurfaceId local_surface_id_from_parent;
-  base::TimeDelta previous_surfaces_visual_update_duration;
-  base::TimeDelta visual_update_duration;
 
   // -------------------------------------------------------------------------
   // Take/reset: these values are reset on the LayerTreeHost between commits.
@@ -126,7 +130,7 @@ struct CC_EXPORT CommitState {
   bool new_local_surface_id_request = false;
   bool next_commit_forces_recalculate_raster_scales = false;
   bool next_commit_forces_redraw = false;
-  uint64_t trace_id = 0;
+  BeginMainFrameTraceId trace_id{0};
   EventMetrics::List event_metrics;
 
   // Latency information for work done in ProxyMain::BeginMainFrame. The
@@ -148,7 +152,7 @@ struct CC_EXPORT CommitState {
   // added here.
   std::vector<PresentationTimeCallbackBuffer::Callback>
       pending_presentation_callbacks;
-  std::vector<PresentationTimeCallbackBuffer::SuccessfulCallback>
+  std::vector<PresentationTimeCallbackBuffer::SuccessfulCallbackWithDetails>
       pending_successful_presentation_callbacks;
 
   std::vector<std::unique_ptr<MicroBenchmarkImpl>> benchmarks;
@@ -161,7 +165,23 @@ struct CC_EXPORT CommitState {
   std::vector<UIResourceRequest> ui_resource_request_queue;
   base::flat_map<UIResourceId, gfx::Size> ui_resource_sizes;
   PropertyTreesChangeState property_trees_change_state;
-  base::flat_set<Layer*> layers_that_should_push_properties;
+  // RAW_PTR_EXCLUSION: Performance reasons (based on analysis of speedometer3).
+  RAW_PTR_EXCLUSION base::flat_set<Layer*> layers_that_should_push_properties;
+
+  // Specific scrollers may request clobbering the active delta value on the
+  // compositor when committing the current scroll offset to ensure the scroll
+  // is set to a specific value, overriding any compositor updates.
+  base::flat_set<ElementId> scrollers_clobbering_active_value;
+
+  // When non-empty, the next compositor frame also informs viz to issue a
+  // screenshot against the previous surface.
+  base::UnguessableToken screenshot_destination_token;
+
+  // Indicates the `item_sequence_number` for the primary main frame's
+  // `content::FrameNavigationEntry`. This is only set if the primary main frame
+  // is rendering to this compositor.
+  int64_t primary_main_frame_item_sequence_number =
+      RenderFrameMetadata::kInvalidItemSequenceNumber;
 };
 
 struct CC_EXPORT ThreadUnsafeCommitState {

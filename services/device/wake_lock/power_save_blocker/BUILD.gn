@@ -5,9 +5,11 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
+  import("//third_party/jni_zero/jni_zero.gni")
 }
 
 source_set("power_save_blocker") {
@@ -26,9 +28,14 @@ source_set("power_save_blocker") {
     "//remoting/host:*",
     "//remoting/host/win:*",
     "//services/device/wake_lock:*",
+
+    # Scan Service in Ash needs to directly use the PowerSaveBlocker.
+    "//chrome/browser/ash/scanning",
   ]
 
   sources = [ "power_save_blocker.h" ]
+
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
   public_deps = [ "//services/device/public/mojom" ]
 
@@ -71,11 +78,14 @@ source_set("power_save_blocker") {
     ]
   } else if (is_win) {
     sources += [ "power_save_blocker_win.cc" ]
-  } else if (is_ohos && defined(ohos_screen_lock) && ohos_screen_lock) {
+  } else if (is_ohos) {
     sources += [
-      "nweb_screen_lock_tracker.cc",
-      "power_save_blocker_ohos.cc",
+      "power_save_blocker_ohos.cc"
     ]
+    if (arkweb_screen_lock) {
+      sources += arkweb_screen_lock_sources
+    }
+
     import("//build/config/ohos/config.gni")
     include_dirs = ohos_src_includes
     deps += [
@@ -104,6 +114,6 @@ if (is_android) {
       "//services/device:*",
     ]
     sources = java_sources_needing_jni
-    deps = [ "//base:jni_java" ]
+    deps = [ "//third_party/jni_zero:jni_zero_java" ]
   }
 }

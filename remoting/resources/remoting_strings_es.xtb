@@ -4,7 +4,6 @@
 <translation id="1002108253973310084">Se ha detectado una versión de protocolo incompatible. Asegúrate de tener instalada la última versión del software en ambos ordenadores y vuelve a intentarlo.</translation>
 <translation id="1008557486741366299">Ahora no</translation>
 <translation id="1201402288615127009">Siguiente</translation>
-<translation id="1296511125400541222">Copyright 2023 The Chromium Authors. Todos los derechos reservados.</translation>
 <translation id="1297009705180977556">No se ha podido establecer conexión con <ph name="HOSTNAME" /></translation>
 <translation id="1450760146488584666">El objeto seleccionado no existe.</translation>
 <translation id="1480046233931937785">Créditos</translation>
@@ -29,7 +28,6 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="2329392777730037872">No se ha podido abrir <ph name="URL" /> en el cliente.</translation>
 <translation id="2359808026110333948">Continuar</translation>
 <translation id="2366718077645204424">No se puede establecer conexión con el host. Es probable que el error se deba a la configuración de la red que se está utilizando.</translation>
-<translation id="2370754117186920852"><ph name="OPTIONAL_OFFLINE_REASON" /> Visto por última vez online <ph name="RELATIVE_TIMESTAMP" />.</translation>
 <translation id="2504109125669302160">Conceder permiso de accesibilidad a <ph name="PRODUCT_NAME" /></translation>
 <translation id="2509394361235492552">Conectado a <ph name="HOSTNAME" /></translation>
 <translation id="2540992418118313681">¿Quieres compartir este ordenador para que otro usuario pueda acceder a él y controlarlo?</translation>
@@ -54,7 +52,6 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="3423542133075182604">Proceso remoto de la llave de seguridad</translation>
 <translation id="3581045510967524389">No se ha podido establecer conexión con la red. Comprueba que el dispositivo esté conectado a Internet.</translation>
 <translation id="3596628256176442606">Este servicio permite las conexiones entrantes de los clientes de Chromoting.</translation>
-<translation id="369442766917958684">No conectado</translation>
 <translation id="3695446226812920698">Descubre cómo hacerlo</translation>
 <translation id="3776024066357219166">Ha finalizado tu sesión en Escritorio Remoto de Chrome.</translation>
 <translation id="3858860766373142691">Nombre</translation>
@@ -89,7 +86,6 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="4808503597364150972">Introduce el PIN de <ph name="HOSTNAME" />.</translation>
 <translation id="4812684235631257312">Host</translation>
 <translation id="4867841927763172006">Enviar Impr Pant</translation>
-<translation id="4960795469833295568">Copyright 2023 Google LLC. Todos los derechos reservados.</translation>
 <translation id="4974476491460646149">Conexión cerrada para <ph name="HOSTNAME" /></translation>
 <translation id="4985296110227979402">En primer lugar, debes configurar el acceso remoto a tu ordenador</translation>
 <translation id="4987330545941822761">Escritorio Remoto de Chrome no puede identificar el navegador que debe abrir las URLs localmente. Selecciónalo en la lista de abajo.</translation>
@@ -107,7 +103,6 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="5601503069213153581">PIN</translation>
 <translation id="5690427481109656848">Google LLC</translation>
 <translation id="5708869785009007625">Tu ordenador está compartido actualmente con <ph name="USER" />.</translation>
-<translation id="5750083143895808682">Has iniciado sesión como <ph name="EMAIL_ADDRESS" />.</translation>
 <translation id="579702532610384533">Reconectar</translation>
 <translation id="5810269635982033450">La pantalla hace de panel táctil</translation>
 <translation id="5823554426827907568"><ph name="CLIENT_USERNAME" /> ha solicitado acceso para ver tu pantalla y controlar tu teclado y ratón. Si no esperabas esta solicitud, pulsa <ph name="IDS_SHARE_CONFIRM_DIALOG_DECLINE" />. De lo contrario, selecciona <ph name="IDS_SHARE_CONFIRM_DIALOG_CONFIRM" /> para permitir la conexión cuanto todo esté listo.</translation>
@@ -154,6 +149,7 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="7693372326588366043">Actualiza la lista de hosts</translation>
 <translation id="7714222945760997814">Informar de este error</translation>
 <translation id="7868137160098754906">Introduce tu código PIN para el ordenador remoto.</translation>
+<translation id="7881455334687220899">Copyright 2024 The Chromium Authors. Todos los derechos reservados.</translation>
 <translation id="7895403300744144251">Las políticas de seguridad del ordenador remoto no permiten conexiones desde tu cuenta.</translation>
 <translation id="7936528439960309876">Anclar a la derecha</translation>
 <translation id="7970576581263377361">Error de autenticación. Vuelve a iniciar sesión en Chromium.</translation>
@@ -185,6 +181,7 @@ Si la casilla <ph name="SERVICE_SCRIPT_NAME" /> ya está marcada, desmárcala y 
 <translation id="8747048596626351634">La sesión ha fallado o no se ha podido iniciar. Si hay una secuencia de comandos ~/.chrome-remote-desktop-session en el ordenador remoto, esta debe iniciar un proceso largo en primer plano, como un entorno de escritorio o un administrador de ventanas.</translation>
 <translation id="8804164990146287819">Política de Privacidad</translation>
 <translation id="8906511416443321782">Se necesita acceso al micrófono para capturar audio y emitirlo en el cliente de Escritorio Remoto de Chrome.</translation>
+<translation id="9042277333359847053">Copyright 2024 Google LLC. Todos los derechos reservados.</translation>
 <translation id="9111855907838866522">Estás conectado al dispositivo remoto. Para abrir el menú, toca la pantalla con cuatro dedos.</translation>
 <translation id="9126115402994542723">No volver a pedir un PIN al conectarse a este host desde este dispositivo.</translation>
 <translation id="916856682307586697">Iniciar la XSession predeterminada</translation>

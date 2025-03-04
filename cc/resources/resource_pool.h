@@ -23,10 +23,11 @@
 #include "base/trace_event/memory_allocator_dump_guid.h"
 #include "base/trace_event/memory_dump_provider.h"
 #include "cc/cc_export.h"
-#include "components/viz/common/resources/resource_format.h"
 #include "components/viz/common/resources/resource_id.h"
 #include "components/viz/common/resources/resource_sizes.h"
 #include "components/viz/common/resources/shared_bitmap.h"
+#include "components/viz/common/resources/shared_image_format.h"
+#include "components/viz/common/resources/transferable_resource.h"
 #include "gpu/command_buffer/common/sync_token.h"
 #include "third_party/khronos/GLES2/gl2.h"
 #include "ui/gfx/color_space.h"
@@ -38,18 +39,17 @@ class SingleThreadTaskRunner;
 }
 
 namespace gpu {
-struct Capabilities;
+class ClientSharedImage;
 }
 
 namespace viz {
 class ClientResourceProvider;
-class ContextProvider;
+class RasterContextProvider;
 }
 
 namespace cc {
 
 class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
- private:
   class PoolResource;
 
  public:
@@ -57,16 +57,19 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   static constexpr base::TimeDelta kDefaultExpirationDelay = base::Seconds(5);
   // Max delay before an evicted resource is flushed.
   static constexpr base::TimeDelta kDefaultMaxFlushDelay = base::Seconds(1);
-#ifdef OHOS_NWEB_EX
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
   static constexpr base::TimeDelta kDefaultMaxExpirationDelay =
       base::Seconds(60);
   static constexpr size_t kUnusedResourcesToKeep = 12;
 #endif
+
   // A base class to hold ownership of gpu backed PoolResources. Allows the
   // client to define destruction semantics.
-  class GpuBacking {
+  class CC_EXPORT GpuBacking {
    public:
-    virtual ~GpuBacking() = default;
+    GpuBacking();
+    virtual ~GpuBacking();
 
     // Dumps information about the memory backing the GpuBacking to |pmd|.
     // The memory usage is attributed to |buffer_dump_guid|.
@@ -80,14 +83,8 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
         uint64_t tracing_process_id,
         int importance) const = 0;
 
-    void InitOverlayCandidateAndTextureTarget(
-        const viz::SharedImageFormat format,
-        const gpu::Capabilities& caps,
-        bool use_gpu_memory_buffer_resources);
-
-    gpu::Mailbox mailbox;
+    scoped_refptr<gpu::ClientSharedImage> shared_image;
     gpu::SyncToken mailbox_sync_token;
-    GLenum texture_target = 0;
     bool overlay_candidate = false;
     // For resources that are modified directly on the gpu, outside the command
     // stream, a fence must be used to know when the backing is not in use and
@@ -107,9 +104,10 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
 
   // A base class to hold ownership of software backed PoolResources. Allows the
   // client to define destruction semantics.
-  class SoftwareBacking {
+  class CC_EXPORT SoftwareBacking {
    public:
-    virtual ~SoftwareBacking() = default;
+    SoftwareBacking();
+    virtual ~SoftwareBacking();
 
     // Dumps information about the memory backing the SoftwareBacking to |pmd|.
     // The memory usage is attributed to |buffer_dump_guid|.
@@ -123,7 +121,11 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
         uint64_t tracing_process_id,
         int importance) const = 0;
 
+    // Mailbox
     viz::SharedBitmapId shared_bitmap_id;
+
+    scoped_refptr<gpu::ClientSharedImage> shared_image;
+    gpu::SyncToken mailbox_sync_token;
   };
 
   // Scoped move-only object returned when getting a resource from the pool.
@@ -213,7 +215,7 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   // and when holding software resources, it should be null. It is used for
   // consistency checking as well as for correctness.
   ResourcePool(viz::ClientResourceProvider* resource_provider,
-               viz::ContextProvider* context_provider,
+               viz::RasterContextProvider* context_provider,
                scoped_refptr<base::SingleThreadTaskRunner> task_runner,
                const base::TimeDelta& expiration_delay,
                bool disallow_non_exact_reuse);
@@ -250,7 +252,9 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   // Returns false if the backing does not contain valid data, in particular
   // a zero mailbox for GpuBacking, in which case the resource is not exported,
   // and true otherwise.
-  bool PrepareForExport(const InUsePoolResource& resource);
+  bool PrepareForExport(
+      const InUsePoolResource& resource,
+      viz::TransferableResource::ResourceSource resource_source);
 
   // Marks any resources in the pool as invalid, preventing their reuse. Call if
   // previous resources were allocated in one way, but future resources should
@@ -295,6 +299,11 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
 
   // Overrides internal clock for testing purposes.
   void SetClockForTesting(const base::TickClock* clock) { clock_ = clock; }
+  int tracing_id() const { return tracing_id_; }
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  void EnableDeleteUnusedResourcesDelay(bool enable);
+#endif
 
  private:
   FRIEND_TEST_ALL_PREFIXES(ResourcePoolTest, ReuseResource);
@@ -389,7 +398,7 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
       // Early research found with raw draw, GPU memory usage is reduced to
       // 50%, so we consider a raw draw backing uses 50% of a normal backing
       // in average.
-      // TODO(crbug.com/1295443): use accurate size for raw draw backings.
+      // TODO(crbug.com/40214331): use accurate size for raw draw backings.
       if (gpu_backing_ && gpu_backing_->is_using_raw_draw) {
         memory_usage = memory_usage / 2;
       }
@@ -467,7 +476,7 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   void FlushEvictedResources();
 
   const raw_ptr<viz::ClientResourceProvider> resource_provider_;
-  const raw_ptr<viz::ContextProvider> context_provider_;
+  const raw_ptr<viz::RasterContextProvider> context_provider_;
   const scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   const base::TimeDelta resource_expiration_delay_;
   const bool disallow_non_exact_reuse_ = false;
@@ -494,11 +503,8 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   base::TimeTicks flush_evicted_resources_deadline_;
 
   raw_ptr<const base::TickClock> clock_;
-#ifdef OHOS_NWEB_EX
- public:
-  void EnableDeleteUnusedResourcesDelay(bool enable);
 
- private:
+#if BUILDFLAG(IS_ARKWEB_EXT)
   bool delete_unused_resources_delay_enabled_ = false;
 #endif
 

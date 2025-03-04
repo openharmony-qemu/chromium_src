@@ -13,6 +13,7 @@
 #include "components/history/core/browser/history_service.h"
 #include "components/history/core/test/history_service_test_util.h"
 #include "components/history_clusters/core/config.h"
+#include "components/history_clusters/core/features.h"
 #include "components/history_clusters/core/history_clusters_prefs.h"
 #include "components/history_clusters/core/history_clusters_service.h"
 #include "components/history_clusters/core/history_clusters_service_test_api.h"
@@ -70,6 +71,9 @@ class HistoryClustersActionTest : public testing::Test {
     search_actions_config_.is_journeys_enabled_no_locale_check = true;
     search_actions_config_.omnibox_action = true;
     search_actions_config_.omnibox_action_on_navigation_intents = false;
+    // Setting this to false even though users see true behavior so that we do
+    // not need to register history clusters specific prefs in this test.
+    search_actions_config_.persist_caches_to_prefs = false;
     SetConfigForTesting(search_actions_config_);
   }
 
@@ -80,11 +84,10 @@ class HistoryClustersActionTest : public testing::Test {
 
     history_clusters_service_ = std::make_unique<HistoryClustersService>(
         "en-US", history_service_.get(),
-        /*entity_metadata_provider=*/nullptr,
         /*url_loader_factory=*/nullptr,
         /*engagement_score_provider=*/nullptr,
         /*template_url_service=*/nullptr,
-        /*optimization_guide_decider=*/nullptr, /*pref_service=*/nullptr);
+        /*optimization_guide_decider=*/nullptr, &prefs_enabled_);
 
     history_clusters_service_test_api_ =
         std::make_unique<HistoryClustersServiceTestApi>(
@@ -94,17 +97,16 @@ class HistoryClustersActionTest : public testing::Test {
   }
 
   void TestAttachHistoryClustersActions(std::vector<MatchData> matches_data,
-                                        HistoryClustersService* service,
-                                        TestingPrefServiceSimple* prefs) {
+                                        HistoryClustersService* service) {
     AutocompleteResult result;
     result.AppendMatches(CreateACMatches(matches_data));
 
-    AttachHistoryClustersActions(service, prefs, result);
+    AttachHistoryClustersActions(service, result);
 
     for (size_t i = 0; i < matches_data.size(); ++i) {
       bool has_history_clusters_action =
-          result.match_at(i)->GetPrimaryAction() &&
-          result.match_at(i)->GetPrimaryAction()->ActionId() ==
+          result.match_at(i)->GetActionAt(0u) &&
+          result.match_at(i)->GetActionAt(0u)->ActionId() ==
               OmniboxActionId::HISTORY_CLUSTERS;
       EXPECT_EQ(has_history_clusters_action,
                 matches_data[i].expect_history_clusters_action);
@@ -117,8 +119,15 @@ class HistoryClustersActionTest : public testing::Test {
   }
 
   void TestAttachHistoryClustersActions(std::vector<MatchData> matches_data) {
-    TestAttachHistoryClustersActions(
-        matches_data, history_clusters_service_.get(), &prefs_enabled_);
+    TestAttachHistoryClustersActions(matches_data,
+                                     history_clusters_service_.get());
+  }
+
+  void SetHistoryClustersVisiblePref(bool value) {
+    prefs_enabled_.SetBoolean(history_clusters::prefs::kVisible, value);
+    // Make the history clusters visible pref managed.
+    prefs_enabled_.SetManagedPref(history_clusters::prefs::kVisible,
+                                  std::make_unique<base::Value>(value));
   }
 
   base::test::TaskEnvironment task_environment_;
@@ -138,7 +147,7 @@ class HistoryClustersActionTest : public testing::Test {
 TEST_F(HistoryClustersActionTest, AttachHistoryClustersActions) {
   {
     SCOPED_TRACE("Shouldn't add action if history cluster service is nullptr.");
-    TestAttachHistoryClustersActions({{}}, nullptr, &prefs_enabled_);
+    TestAttachHistoryClustersActions({{}}, nullptr);
   }
 
   {
@@ -160,11 +169,10 @@ TEST_F(HistoryClustersActionTest, AttachHistoryClustersActions) {
   {
     SCOPED_TRACE("Shouldn't add action if `kVisible` pref is false.");
     SetUpWithConfig(search_actions_config_);
-    TestingPrefServiceSimple prefs_disabled;
-    prefs_disabled.registry()->RegisterBooleanPref(
-        history_clusters::prefs::kVisible, false);
-    TestAttachHistoryClustersActions({{}}, history_clusters_service_.get(),
-                                     &prefs_disabled);
+    SetHistoryClustersVisiblePref(false);
+    TestAttachHistoryClustersActions({{}}, history_clusters_service_.get());
+    // Reset this back to true for future tests.
+    SetHistoryClustersVisiblePref(true);
   }
 
   {

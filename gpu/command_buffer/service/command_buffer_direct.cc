@@ -55,8 +55,9 @@ void CommandBufferDirect::SetGetBuffer(int32_t transfer_buffer_id) {
 scoped_refptr<Buffer> CommandBufferDirect::CreateTransferBuffer(
     uint32_t size,
     int32_t* id,
+    uint32_t alignment,
     TransferBufferAllocationOption option) {
-  return service_.CreateTransferBuffer(size, id);
+  return service_.CreateTransferBuffer(size, id, alignment);
 }
 
 void CommandBufferDirect::DestroyTransferBuffer(int32_t id) {
@@ -104,6 +105,10 @@ scoped_refptr<Buffer> CommandBufferDirect::CreateTransferBufferWithId(
 
 void CommandBufferDirect::HandleReturnData(base::span<const uint8_t> data) {
   NOTIMPLEMENTED();
+}
+
+bool CommandBufferDirect::ShouldYield() {
+  return service_.ShouldYield();
 }
 
 }  // namespace gpu

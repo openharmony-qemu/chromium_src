@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/display/win/screen_win.h"
 
 #include <windows.h>
+
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -16,6 +22,7 @@
 #include "base/strings/stringprintf.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/display/display.h"
+#include "ui/display/display_features.h"
 #include "ui/display/display_switches.h"
 #include "ui/display/screen.h"
 #include "ui/display/test/display_test_util.h"
@@ -62,21 +69,20 @@ class TestScreenWin : public ScreenWin {
   // Finding the corresponding monitor from a point is generally handled by
   // Windows's MonitorFromPoint. This mocked function requires that the provided
   // point is contained entirely in the monitor.
-  MONITORINFOEX MonitorInfoFromScreenPoint(const gfx::Point& screen_point) const
-      override {
+  std::optional<MONITORINFOEX> MonitorInfoFromScreenPoint(
+      const gfx::Point& screen_point) const override {
     for (const MONITORINFOEX& monitor_info : monitor_infos_) {
       if (gfx::Rect(monitor_info.rcMonitor).Contains(screen_point))
         return monitor_info;
     }
     NOTREACHED();
-    return monitor_infos_[0];
   }
 
   // Finding the corresponding monitor from a rect is generally handled by
   // Windows's MonitorFromRect. This mocked function requires that the provided
   // rectangle overlap at least part of the monitor.
-  MONITORINFOEX MonitorInfoFromScreenRect(const gfx::Rect& screen_rect) const
-      override {
+  std::optional<MONITORINFOEX> MonitorInfoFromScreenRect(
+      const gfx::Rect& screen_rect) const override {
     MONITORINFOEX candidate = monitor_infos_[0];
     int largest_area = 0;
     for (const MONITORINFOEX& monitor_info : monitor_infos_) {
@@ -100,8 +106,9 @@ class TestScreenWin : public ScreenWin {
   // otherwise this could cause MonitorInfoFromScreenRect or
   // MonitorInfoFromScreenPoint to fail to find the monitor based off of a rect
   // or point within the HWND.
-  MONITORINFOEX MonitorInfoFromWindow(HWND hwnd, DWORD default_options)
-      const override {
+  std::optional<MONITORINFOEX> MonitorInfoFromWindow(
+      HWND hwnd,
+      DWORD default_options) const override {
     auto search = hwnd_map_.find(hwnd);
     if (search != hwnd_map_.end())
       return MonitorInfoFromScreenRect(search->second);
@@ -114,7 +121,6 @@ class TestScreenWin : public ScreenWin {
       }
     }
     NOTREACHED();
-    return monitor_infos_[0];
   }
 
   HWND GetRootWindow(HWND hwnd) const override {
@@ -166,7 +172,7 @@ class TestScreenWinManager final : public TestScreenWinInitializer {
         win::test::CreateMonitorInfo(pixel_bounds, pixel_work, device_name);
     monitor_infos_.push_back(monitor_info);
     display_infos_.push_back(internal::DisplayInfo(
-        monitor_info, device_scale_factor, 1.0f, Display::ROTATE_0, 60,
+        monitor_info, device_scale_factor, 1.0f, Display::ROTATE_0, 60.0f,
         gfx::Vector2dF(), tech, std::string()));
   }
 
@@ -220,6 +226,8 @@ class ScreenWinTest : public testing::Test {
     ScreenWin* screen_win = screen_win_initializer_->GetScreenWin();
     return screen_win->GetNativeWindowFromHWND(hwnd);
   }
+
+  ScreenWin* GetScreenWin() { return screen_win_initializer_->GetScreenWin(); }
 
  private:
   std::unique_ptr<TestScreenWinManager> screen_win_initializer_;
@@ -398,6 +406,26 @@ TEST_F(ScreenWinTestSingleDisplay1x, GetDisplayMatching) {
 TEST_F(ScreenWinTestSingleDisplay1x, GetPrimaryDisplay) {
   Screen* screen = GetScreen();
   EXPECT_EQ(gfx::Point(0, 0), screen->GetPrimaryDisplay().bounds().origin());
+}
+
+TEST_F(ScreenWinTestSingleDisplay1x, DisconnectPrimaryDisplay) {
+  auto* screen = GetScreen();
+  ASSERT_EQ(1, screen->GetNumDisplays());
+  auto primary = screen->GetPrimaryDisplay();
+  EXPECT_NE(primary.id(), display::kInvalidDisplayId);
+
+  GetScreenWin()->UpdateFromDisplayInfos({});
+
+  if (base::FeatureList::IsEnabled(features::kSkipEmptyDisplayHotplugEvent)) {
+    EXPECT_EQ(1, screen->GetNumDisplays());
+
+    auto new_primary = screen->GetPrimaryDisplay();
+    EXPECT_FALSE(new_primary.detected());
+    // `GetPrimaryDisplay()` should return the same except for the detected
+    // status.
+    new_primary.set_detected(true);
+    EXPECT_EQ(primary, new_primary);
+  }
 }
 
 namespace {
@@ -3757,6 +3785,37 @@ TEST_F(ScreenWinTestTwoDisplaysOneInternal, InternalDisplayIdSet) {
 
 namespace {
 
+// One display with a max-length |szDevice| value.
+class ScreenWinTestOneDisplayLongName : public ScreenWinTest {
+ public:
+  ScreenWinTestOneDisplayLongName() = default;
+
+  ScreenWinTestOneDisplayLongName(const ScreenWinTestOneDisplayLongName&) =
+      delete;
+  ScreenWinTestOneDisplayLongName& operator=(
+      const ScreenWinTestOneDisplayLongName&) = delete;
+
+  void SetUpScreen(TestScreenWinInitializer* initializer) override {
+    const wchar_t* device_name = L"ThisDeviceNameIs32CharactersLong";
+    EXPECT_EQ(::wcslen(device_name),
+              static_cast<size_t>(ARRAYSIZE(MONITORINFOEX::szDevice)));
+    initializer->AddMonitor(gfx::Rect(0, 0, 1920, 1200),
+                            gfx::Rect(0, 0, 1920, 1100), device_name, 1.0);
+  }
+};
+
+}  // namespace
+
+TEST_F(ScreenWinTestOneDisplayLongName, CheckIdStability) {
+  // Callers may use the display ID as a way to persist data like window
+  // coordinates across runs. As a result, the IDs must remain stable.
+  Screen* screen = GetScreen();
+  ASSERT_EQ(1, screen->GetNumDisplays());
+  EXPECT_EQ(1875308985, screen->GetAllDisplays()[0].id());
+}
+
+namespace {
+
 // Zero displays.
 class ScreenWinTestNoDisplay : public ScreenWinTest {
  public:
@@ -3781,6 +3840,16 @@ TEST_F(ScreenWinTestNoDisplay, DIPToScreenRectNullHWND) {
   gfx::Rect middle(253, 495, 41, 52);
   EXPECT_EQ(origin, ScreenWin::DIPToScreenRect(nullptr, origin));
   EXPECT_EQ(middle, ScreenWin::DIPToScreenRect(nullptr, middle));
+}
+
+// GetPrimaryDisplay should return a valid display even if there is no display.
+TEST_F(ScreenWinTestNoDisplay, GetPrimaryDisplay) {
+  auto primary = GetScreen()->GetPrimaryDisplay();
+  EXPECT_NE(primary.id(), display::kInvalidDisplayId);
+  EXPECT_TRUE(primary.bounds().origin().IsOrigin());
+  EXPECT_FALSE(primary.bounds().IsEmpty());
+  EXPECT_FALSE(primary.work_area().IsEmpty());
+  EXPECT_FALSE(primary.detected());
 }
 
 TEST_F(ScreenWinTestNoDisplay, GetDisplays) {

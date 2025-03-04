@@ -6,6 +6,7 @@
 #define COMPONENTS_AUTOFILL_CORE_BROWSER_PAYMENTS_LOCAL_CARD_MIGRATION_MANAGER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -13,25 +14,24 @@
 
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
-#include "components/autofill/core/browser/autofill_client.h"
 #include "components/autofill/core/browser/metrics/autofill_metrics.h"
 #include "components/autofill/core/browser/metrics/payments/local_card_migration_metrics.h"
 #include "components/autofill/core/browser/payments/legal_message_line.h"
-#include "components/autofill/core/browser/payments/payments_client.h"
+#include "components/autofill/core/browser/payments/payments_autofill_client.h"
+#include "components/autofill/core/browser/payments/payments_request_details.h"
 #include "components/autofill/core/browser/strike_databases/payments/local_card_migration_strike_database.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace autofill {
 
 class CreditCard;
-class PersonalDataManager;
+class PaymentsDataManager;
 
 // Server-side response can return SUCCESS, TEMPORARY_FAILURE, or
 // PERMANENT_FAILURE (see SaveResult enum). Use these to extract migration
 // result.
-const char kMigrationResultPermanentFailure[] = "PERMANENT_FAILURE";
-const char kMigrationResultTemporaryFailure[] = "TEMPORARY_FAILURE";
-const char kMigrationResultSuccess[] = "SUCCESS";
+inline constexpr char kMigrationResultPermanentFailure[] = "PERMANENT_FAILURE";
+inline constexpr char kMigrationResultTemporaryFailure[] = "TEMPORARY_FAILURE";
+inline constexpr char kMigrationResultSuccess[] = "SUCCESS";
 
 // MigratableCreditCard class is used as a data structure to work as an
 // intermediary between the UI side and the migration manager. Besides the basic
@@ -51,6 +51,10 @@ class MigratableCreditCard {
   };
 
   explicit MigratableCreditCard(const CreditCard& credit_card);
+  MigratableCreditCard(const MigratableCreditCard&);
+  MigratableCreditCard(MigratableCreditCard&&);
+  MigratableCreditCard& operator=(const MigratableCreditCard&);
+  MigratableCreditCard& operator=(MigratableCreditCard&&);
   ~MigratableCreditCard();
 
   CreditCard credit_card() const { return credit_card_; }
@@ -83,11 +87,9 @@ class LocalCardMigrationManager {
     virtual void OnReceivedMigrateCardsResponse() = 0;
   };
 
-  // The parameters should outlive the LocalCardMigrationManager.
+  // `client` must outlive the LocalCardMigrationManager.
   LocalCardMigrationManager(AutofillClient* client,
-                            payments::PaymentsClient* payments_client,
-                            const std::string& app_locale,
-                            PersonalDataManager* personal_data_manager);
+                            const std::string& app_locale);
 
   LocalCardMigrationManager(const LocalCardMigrationManager&) = delete;
   LocalCardMigrationManager& operator=(const LocalCardMigrationManager&) =
@@ -97,12 +99,12 @@ class LocalCardMigrationManager {
 
   // Returns true if all of the conditions for allowing local credit card
   // migration are satisfied. Initializes the local card list for upload. Stores
-  // a local copy of `credit_card_import_candidate` and
+  // a local copy of `extracted_credit_card` and
   // `credit_card_import_type` locally for later check whether
-  // the imported card is supported. `credit_card_import_candidate` might be
+  // the imported card is supported. `extracted_credit_card` might be
   // null if a user used server card.
   bool ShouldOfferLocalCardMigration(
-      const absl::optional<CreditCard>& credit_card_import_candidate,
+      const std::optional<CreditCard>& extracted_credit_card,
       int credit_card_import_type);
 
   // Called from FormDataImporter or settings page when all migration
@@ -161,7 +163,7 @@ class LocalCardMigrationManager {
   // directly. If not, trigger the intermediate prompt. Exposed for testing.
   virtual void OnDidGetUploadDetails(
       bool is_from_settings_page,
-      AutofillClient::PaymentsRpcResult result,
+      payments::PaymentsAutofillClient::PaymentsRpcResult result,
       const std::u16string& context_token,
       std::unique_ptr<base::Value::Dict> legal_message,
       std::vector<std::pair<int, int>> supported_card_bin_ranges);
@@ -171,15 +173,12 @@ class LocalCardMigrationManager {
   // trigger a window showing the migration result together with display text to
   // the user.
   void OnDidMigrateLocalCards(
-      AutofillClient::PaymentsRpcResult result,
+      payments::PaymentsAutofillClient::PaymentsRpcResult result,
       std::unique_ptr<std::unordered_map<std::string, std::string>> save_result,
       const std::string& display_text);
 
-  const raw_ptr<AutofillClient> client_;
-
-  // Handles Payments service requests.
-  // Owned by BrowserAutofillManager.
-  raw_ptr<payments::PaymentsClient> payments_client_;
+  PaymentsDataManager& payments_data_manager();
+  const PaymentsDataManager& payments_data_manager() const;
 
  private:
   friend class LocalCardMigrationBrowserTest;
@@ -212,7 +211,7 @@ class LocalCardMigrationManager {
   // has accepted the main migration dialog.
   void OnDidGetMigrationRiskData(const std::string& risk_data);
 
-  // Finalizes the migration request and calls PaymentsClient.
+  // Finalizes the migration request and calls the PaymentsNetworkInterface.
   void SendMigrateLocalCardsRequest();
 
   // For testing.
@@ -220,29 +219,25 @@ class LocalCardMigrationManager {
     observer_for_testing_ = observer;
   }
 
-  // The parsed lines from the legal message return from GetUploadDetails.
-  LegalMessageLines legal_message_lines_;
+  const raw_ref<AutofillClient> client_;
 
   std::string app_locale_;
 
-  // The personal data manager, used to save and load personal data to/from the
-  // web database.  This is overridden by the BrowserAutofillManagerTest.
-  // Weak reference.
-  // May be NULL.  NULL indicates OTR.
-  raw_ptr<PersonalDataManager> personal_data_manager_;
+  // The parsed lines from the legal message return from GetUploadDetails.
+  LegalMessageLines legal_message_lines_;
 
   // The imported credit card number from the form submission.
-  absl::optional<std::u16string> extracted_credit_card_number_;
+  std::optional<std::u16string> extracted_credit_card_number_;
 
   // The imported credit card record type from the form submission.
   int credit_card_import_type_;
 
   // Collected information about a pending migration request.
-  payments::PaymentsClient::MigrationRequestDetails migration_request_;
+  payments::MigrationRequestDetails migration_request_;
 
   // The local credit cards to be uploaded. Owned by LocalCardMigrationManager.
   // The order of cards should not be changed.
-  // TODO(crbug.com/867194): Currently we will not handle the case of local
+  // TODO(crbug.com/40586517): Currently we will not handle the case of local
   // cards added/deleted during migration.
   std::vector<MigratableCreditCard> migratable_credit_cards_;
 

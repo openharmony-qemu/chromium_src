@@ -5,6 +5,7 @@
 #include "media/mojo/services/mojo_renderer_service.h"
 
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "base/functional/bind.h"
@@ -16,12 +17,11 @@
 #include "media/mojo/common/media_type_converters.h"
 #include "media/mojo/services/media_resource_shim.h"
 #include "media/mojo/services/mojo_cdm_service_context.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace media {
 
 // Time interval to update media time.
-constexpr auto kTimeUpdateInterval = base::Milliseconds(50);
+constexpr auto kTimeUpdateInterval = base::Milliseconds(125);
 
 // static
 mojo::SelfOwnedReceiverRef<mojom::Renderer> MojoRendererService::Create(
@@ -55,7 +55,7 @@ MojoRendererService::~MojoRendererService() = default;
 
 void MojoRendererService::Initialize(
     mojo::PendingAssociatedRemote<mojom::RendererClient> client,
-    absl::optional<std::vector<mojo::PendingRemote<mojom::DemuxerStream>>>
+    std::optional<std::vector<mojo::PendingRemote<mojom::DemuxerStream>>>
         streams,
     mojom::MediaUrlParamsPtr media_url_params,
     InitializeCallback callback) {
@@ -77,14 +77,16 @@ void MojoRendererService::Initialize(
   DCHECK(!media_url_params->media_url.is_empty());
   media_resource_ = std::make_unique<MediaUrlDemuxer>(
       nullptr, media_url_params->media_url, media_url_params->site_for_cookies,
-      media_url_params->top_frame_origin, media_url_params->has_storage_access,
+      media_url_params->top_frame_origin,
+      media_url_params->storage_access_api_status,
       media_url_params->allow_credentials, media_url_params->is_hls);
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  media_resource_->SetHeaders(std::move(media_url_params->headers));
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   media_resource_->SetPreloadType(
       media_url_params->custom_media_url_params->preload_type);
   media_resource_->SetMediaSourceType(
       media_url_params->custom_media_url_params->media_source_type);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   renderer_->Initialize(
       media_resource_.get(), this,
       base::BindOnce(&MojoRendererService::OnRendererInitializeDone, weak_this_,
@@ -124,7 +126,7 @@ void MojoRendererService::SetVolume(float volume) {
 }
 
 void MojoRendererService::SetCdm(
-    const absl::optional<base::UnguessableToken>& cdm_id,
+    const std::optional<base::UnguessableToken>& cdm_id,
     SetCdmCallback callback) {
   if (cdm_context_ref_) {
     DVLOG(1) << "Switching CDM not supported";
@@ -161,6 +163,15 @@ void MojoRendererService::SetCdm(
   renderer_->SetCdm(cdm_context,
                     base::BindOnce(&MojoRendererService::OnCdmAttached,
                                    weak_this_, std::move(callback)));
+}
+
+void MojoRendererService::SetLatencyHint(
+    std::optional<base::TimeDelta> latency_hint) {
+  if (latency_hint.has_value() && latency_hint->is_negative()) {
+    mojo::ReportBadMessage("Latency hint should be non-negative");
+    return;
+  }
+  renderer_->SetLatencyHint(latency_hint);
 }
 
 void MojoRendererService::OnError(PipelineStatus error) {
@@ -219,7 +230,7 @@ void MojoRendererService::OnVideoOpacityChange(bool opaque) {
   client_->OnVideoOpacityChange(opaque);
 }
 
-void MojoRendererService::OnVideoFrameRateChange(absl::optional<int> fps) {
+void MojoRendererService::OnVideoFrameRateChange(std::optional<int> fps) {
   DVLOG(2) << __func__ << "(" << (fps ? *fps : -1) << ")";
   // TODO(liberato): plumb to |client_|.
 }
@@ -301,14 +312,15 @@ void MojoRendererService::OnCdmAttached(base::OnceCallback<void(bool)> callback,
   std::move(callback).Run(success);
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MojoRendererService::SetMuted(bool muted) {
   renderer_->SetMuted(muted);
 }
 void MojoRendererService::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
   renderer_->SetSurfaceId(surface_id, rect);
 }
-void MojoRendererService::SetMediaPlayerState(bool is_suspend, int suspend_type) {
+void MojoRendererService::SetMediaPlayerState(bool is_suspend,
+                                              int suspend_type) {
   renderer_->SetMediaPlayerState(is_suspend, suspend_type);
 }
 void MojoRendererService::SetMediaSourceList(
@@ -320,7 +332,8 @@ void MojoRendererService::SetMediaSourceList(
   }
   renderer_->SetMediaSourceList(infos);
 }
-void MojoRendererService::SetMediaControls(bool show_media_controls,
+void MojoRendererService::SetMediaControls(
+    bool show_media_controls,
     const std::vector<std::string>& controls_list) {
   renderer_->SetMediaControls(show_media_controls, controls_list);
 }
@@ -337,10 +350,11 @@ void MojoRendererService::SetReferrer(const std::string& referrer) {
 void MojoRendererService::SetIsAudio(bool is_audio) {
   renderer_->SetIsAudio(is_audio);
 }
-void MojoRendererService::SetPlaybackRateWithReason(double playback_rate,
+void MojoRendererService::SetPlaybackRateWithReason(
+    double playback_rate,
     mojom::ActionReason reason) {
   renderer_->SetPlaybackRateWithReason(playback_rate,
-    static_cast<ActionReason>(reason));
+                                       static_cast<ActionReason>(reason));
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }  // namespace media

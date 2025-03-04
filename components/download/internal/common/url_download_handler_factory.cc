@@ -4,6 +4,7 @@
 
 #include "components/download/public/common/url_download_handler_factory.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "components/download/internal/common/resource_downloader.h"
@@ -26,9 +27,9 @@ UrlDownloadHandlerFactory::Create(
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner) {
   std::unique_ptr<network::ResourceRequest> request =
       CreateResourceRequest(params.get());
-#if defined(OHOS_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   request->is_download_request = true;
-#endif  //  OHOS_EX_DOWNLOAD
+#endif  //  ARKWEB_EX_DOWNLOAD
   return UrlDownloadHandler::UniqueUrlDownloadHandlerPtr(
       download::ResourceDownloader::BeginDownload(
           delegate, std::move(params), std::move(request),

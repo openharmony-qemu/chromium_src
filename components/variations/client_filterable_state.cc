@@ -9,8 +9,36 @@
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "components/prefs/pref_service.h"
+#include "components/variations/pref_names.h"
 
 namespace variations {
+
+ClientFilterableState::ClientFilterableState(
+    IsEnterpriseFunction is_enterprise_function,
+    GoogleGroupsFunction google_groups_function)
+    : is_enterprise_function_(std::move(is_enterprise_function)),
+      google_groups_function_(std::move(google_groups_function)) {
+  // The callback is only used when processing a study that uses the
+  // is_enterprise filter. If you're building a client that isn't expecting that
+  // filter, you should use a callback that always returns false.
+  DCHECK(is_enterprise_function_);
+}
+ClientFilterableState::~ClientFilterableState() = default;
+
+bool ClientFilterableState::IsEnterprise() const {
+  if (!is_enterprise_.has_value()) {
+    is_enterprise_ = std::move(is_enterprise_function_).Run();
+  }
+  return is_enterprise_.value();
+}
+
+base::flat_set<uint64_t> ClientFilterableState::GoogleGroups() const {
+  if (!google_groups_.has_value()) {
+    google_groups_ = std::move(google_groups_function_).Run();
+  }
+  return google_groups_.value();
+}
 
 // static
 Study::Platform ClientFilterableState::GetCurrentPlatform() {
@@ -28,20 +56,17 @@ Study::Platform ClientFilterableState::GetCurrentPlatform() {
   return Study::PLATFORM_ANDROID;
 #elif BUILDFLAG(IS_FUCHSIA)
   return Study::PLATFORM_FUCHSIA;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_BSD) || BUILDFLAG(IS_SOLARIS) || \
-    BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_BSD) || BUILDFLAG(IS_SOLARIS)
   // Default BSD and SOLARIS to Linux to not break those builds, although these
   // platforms are not officially supported by Chrome.
   return Study::PLATFORM_LINUX;
+#elif BUILDFLAG(IS_OHOS)
+  return Study::PLATFORM_OHOS;
 #else
 #error Unknown platform
 #endif
 }
 
-// TODO(b/957197): Improve how we handle OS versions.
-// Add os_version.h and os_version_<platform>.cc that handle retrieving and
-// parsing OS versions. Then get rid of all the platform-dependent code here.
-//
 // static
 base::Version ClientFilterableState::GetOSVersion() {
   base::Version ret;
@@ -62,29 +87,13 @@ base::Version ClientFilterableState::GetOSVersion() {
   return ret;
 }
 
-ClientFilterableState::ClientFilterableState(
-    IsEnterpriseFunction is_enterprise_function,
-    GoogleGroupsFunction google_groups_function)
-    : is_enterprise_function_(std::move(is_enterprise_function)),
-      google_groups_function_(std::move(google_groups_function)) {
-  // The callback is only used when processing a study that uses the
-  // is_enterprise filter. If you're building a client that isn't expecting that
-  // filter, you should use a callback that always returns false.
-  DCHECK(is_enterprise_function_);
-}
-ClientFilterableState::~ClientFilterableState() = default;
-
-bool ClientFilterableState::IsEnterprise() const {
-  if (!is_enterprise_.has_value())
-    is_enterprise_ = std::move(is_enterprise_function_).Run();
-  return is_enterprise_.value();
-}
-
-base::flat_set<uint64_t> ClientFilterableState::GoogleGroups() const {
-  if (!google_groups_.has_value()) {
-    google_groups_ = std::move(google_groups_function_).Run();
-  }
-  return google_groups_.value();
+std::string ClientFilterableState::GetHardwareClass() {
+  // TODO(crbug.com/40708998): Expand to other platforms.
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_ANDROID)
+  return base::SysInfo::HardwareModelName();
+#else
+  return "";
+#endif
 }
 
 }  // namespace variations

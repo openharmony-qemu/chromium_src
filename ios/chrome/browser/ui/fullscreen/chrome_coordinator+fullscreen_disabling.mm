@@ -9,13 +9,9 @@
 #import <memory>
 
 #import "base/check.h"
-#import "ios/chrome/browser/main/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_controller.h"
 #import "ios/chrome/browser/ui/fullscreen/scoped_fullscreen_disabler.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 // The key under which ScopedFullscreenDisablerWrapper are associated with their
@@ -55,9 +51,9 @@ const void* const kFullscreenDisablerKey = &kFullscreenDisablerKey;
 
 + (instancetype)wrapperForCoordinator:(ChromeCoordinator*)coordinator {
   // ChromeCoordinators that need to disable fullscreen must be initialized with
-  // a ChromeBrowserState.
-  ChromeBrowserState* browserState = coordinator.browser->GetBrowserState();
-  DCHECK(browserState);
+  // a ProfileIOS.
+  ProfileIOS* profile = coordinator.browser->GetProfile();
+  DCHECK(profile);
   // Fetch the associated wrapper.
   ScopedFullscreenDisablerWrapper* wrapper =
       objc_getAssociatedObject(coordinator, kFullscreenDisablerKey);
@@ -74,7 +70,7 @@ const void* const kFullscreenDisablerKey = &kFullscreenDisablerKey;
 }
 
 - (instancetype)initWithFullscreenController:(FullscreenController*)controller {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _controller = controller;
     DCHECK(_controller);
   }

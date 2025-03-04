@@ -41,9 +41,10 @@ class COMPONENT_EXPORT(NETWORK_CPP) EmptyURLLoaderClient
   void OnReceiveResponse(
       mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle body,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override;
-#if BUILDFLAG(IS_OHOS)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+      std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override {}
 #endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          mojom::URLResponseHeadPtr head) override;
@@ -54,12 +55,12 @@ class COMPONENT_EXPORT(NETWORK_CPP) EmptyURLLoaderClient
   void OnComplete(const URLLoaderCompletionStatus& status) override;
 
   // mojo::DataPipeDrainer::Client overrides:
-  void OnDataAvailable(const void* data, size_t num_bytes) override;
+  void OnDataAvailable(base::span<const uint8_t> data) override;
   void OnDataComplete() override;
 
   std::unique_ptr<mojo::DataPipeDrainer> response_body_drainer_;
 
-  absl::optional<URLLoaderCompletionStatus> done_status_;
+  std::optional<URLLoaderCompletionStatus> done_status_;
   base::OnceCallback<void(const URLLoaderCompletionStatus&)> callback_;
 };
 

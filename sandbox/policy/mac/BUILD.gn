@@ -11,13 +11,13 @@ sb_files = [
   "common.sb",
   "gpu.sb",
   "mirroring.sb",
-  "nacl_loader.sb",
   "network.sb",
-  "ppapi.sb",
+  "on_device_model_execution.sb",
   "print_compositor.sb",
   "renderer.sb",
   "screen_ai.sb",
   "speech_recognition.sb",
+  "on_device_translation.sb",
   "utility.sb",
 ]
 

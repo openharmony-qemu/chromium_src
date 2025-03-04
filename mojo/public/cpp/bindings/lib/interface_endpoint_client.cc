@@ -6,21 +6,26 @@
 
 #include <stdint.h>
 
+#include <optional>
+#include <string_view>
 #include <tuple>
+#include <vector>
 
 #include "base/check.h"
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/debug/alias.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/common/task_annotator.h"
 #include "base/task/sequenced_task_runner.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread_local.h"
 #include "base/trace_event/interned_args_helper.h"
 #include "base/trace_event/typed_macros.h"
@@ -33,7 +38,6 @@
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #include "mojo/public/cpp/bindings/sync_event_watcher.h"
 #include "mojo/public/cpp/bindings/thread_safe_proxy.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/perfetto/protos/perfetto/trace/track_event/chrome_mojo_event_info.pbzero.h"
 
 namespace mojo {
@@ -41,6 +45,8 @@ namespace mojo {
 // ----------------------------------------------------------------------------
 
 namespace {
+
+constinit thread_local base::HistogramBase* g_end_to_end_metric = nullptr;
 
 // A helper to expose a subset of an InterfaceEndpointClient's functionality
 // through a thread-safe interface. Used by SharedRemote.
@@ -81,8 +87,10 @@ class ThreadSafeInterfaceEndpointClientProxy : public ThreadSafeProxy {
   ~ThreadSafeInterfaceEndpointClientProxy() override {
     // If there are ongoing sync calls signal their completion now.
     base::AutoLock l(sync_calls_->lock);
-    for (auto* pending_response : sync_calls_->pending_responses)
+    for (ThreadSafeInterfaceEndpointClientProxy::SyncResponseInfo*
+             pending_response : sync_calls_->pending_responses) {
       pending_response->event.Signal();
+    }
   }
 
   // Data that we need to share between the sequences involved in a sync call.
@@ -135,7 +143,8 @@ class ThreadSafeInterfaceEndpointClientProxy : public ThreadSafeProxy {
 
     // |lock| protects access to |pending_responses|.
     base::Lock lock;
-    std::vector<SyncResponseInfo*> pending_responses GUARDED_BY(lock);
+    std::vector<raw_ptr<SyncResponseInfo, VectorExperimental>> pending_responses
+        GUARDED_BY(lock);
 
    private:
     friend class base::RefCountedThreadSafe<InProgressSyncCalls>;
@@ -262,6 +271,10 @@ class ResponderThunk : public MessageReceiverWithStatus {
           endpoint_client_->RaiseError();
         }
       } else {
+        // Instantiate a ScopedFizzleBlockShutdownTasks to allow this PostTask
+        // to fizzle if it happens after shutdown and the endpoint is bound to a
+        // BLOCK_SHUTDOWN sequence. ref. crbug.com/1442134
+        base::ThreadPoolInstance::ScopedFizzleBlockShutdownTasks fizzler;
         task_runner_->PostTask(
             FROM_HERE, base::BindOnce(&InterfaceEndpointClient::RaiseError,
                                       endpoint_client_));
@@ -433,7 +446,7 @@ void ThreadSafeInterfaceEndpointClientProxy::SendMessageWithResponder(
 
   {
     base::AutoLock l(sync_calls->lock);
-    base::Erase(sync_calls->pending_responses, response.get());
+    std::erase(sync_calls->pending_responses, response.get());
   }
 
   if (response->received)
@@ -533,7 +546,7 @@ void InterfaceEndpointClient::RaiseError() {
 }
 
 void InterfaceEndpointClient::CloseWithReason(uint32_t custom_reason,
-                                              base::StringPiece description) {
+                                              std::string_view description) {
   CHECK(sequence_checker_.CalledOnValidSequence());
 
   auto handle = PassHandle();
@@ -570,11 +583,16 @@ bool InterfaceEndpointClient::AcceptWithResponder(
 
 bool InterfaceEndpointClient::SendMessage(Message* message,
                                           bool is_control_message) {
-  
   CHECK(sequence_checker_.CalledOnValidSequence());
-
   DCHECK(!message->has_flag(Message::kFlagExpectsResponse));
-  DCHECK(!handle_.pending_association());
+
+  CHECK(!handle_.pending_association())
+      << "Cannot send a message when the endpoint hasn't been associated with "
+         "a message pipe. This failure typically happens when attempting to "
+         "make a call with an AssociatedRemote before one of the endpoints "
+         "(either the AssociatedRemote itself or its entangled "
+         "AssociatedReceiver) is sent over a Remote/Receiver pair or an "
+         "already-established AssociatedRemote/AssociatedReceiver pair.";
 
   // This has to been done even if connection error has occurred. For example,
   // the message contains a pending associated request. The user may try to use
@@ -583,19 +601,23 @@ bool InterfaceEndpointClient::SendMessage(Message* message,
   // to work properly.
   message->SerializeHandles(handle_.group_controller());
 
-  if (encountered_error_)
+  if (encountered_error_) {
+    message->NotifyPeerClosureForSerializedHandles(handle_.group_controller());
     return false;
+  }
 
   InitControllerIfNecessary();
 
 #if DCHECK_IS_ON()
-  // TODO(https://crbug.com/695289): Send |next_call_location_| in a control
+  // TODO(crbug.com/40507817): Send |next_call_location_| in a control
   // message before calling |SendMessage()| below.
 #endif
 
   message->set_heap_profiler_tag(interface_name_);
-  if (!controller_->SendMessage(message))
+  if (!controller_->SendMessage(message)) {
+    message->NotifyPeerClosureForSerializedHandles(handle_.group_controller());
     return false;
+  }
 
   if (!is_control_message && idle_handler_)
     ++num_unacked_messages_;
@@ -608,15 +630,21 @@ bool InterfaceEndpointClient::SendMessageWithResponder(
     bool is_control_message,
     SyncSendMode sync_send_mode,
     std::unique_ptr<MessageReceiver> responder) {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#else
   CHECK(sequence_checker_.CalledOnValidSequence());
+#endif
   DCHECK(message->has_flag(Message::kFlagExpectsResponse));
   DCHECK(!handle_.pending_association());
 
   // Please see comments in Accept().
   message->SerializeHandles(handle_.group_controller());
 
-  if (encountered_error_)
+  if (encountered_error_) {
+    message->NotifyPeerClosureForSerializedHandles(handle_.group_controller());
     return false;
+  }
 
   InitControllerIfNecessary();
 
@@ -629,7 +657,7 @@ bool InterfaceEndpointClient::SendMessageWithResponder(
   message->set_heap_profiler_tag(interface_name_);
 
 #if DCHECK_IS_ON()
-  // TODO(https://crbug.com/695289): Send |next_call_location_| in a control
+  // TODO(crbug.com/40507817): Send |next_call_location_| in a control
   // message before calling |SendMessage()| below.
 #endif
 
@@ -638,8 +666,10 @@ bool InterfaceEndpointClient::SendMessageWithResponder(
   const bool exclusive_wait =
       message->has_flag(Message::kFlagNoInterrupt) ||
       !SyncCallRestrictions::AreSyncCallInterruptsEnabled();
-  if (!controller_->SendMessage(message))
+  if (!controller_->SendMessage(message)) {
+    message->NotifyPeerClosureForSerializedHandles(handle_.group_controller());
     return false;
+  }
 
   if (!is_control_message && idle_handler_)
     ++num_unacked_messages_;
@@ -705,7 +735,7 @@ bool InterfaceEndpointClient::HandleIncomingMessage(Message* message) {
 }
 
 void InterfaceEndpointClient::NotifyError(
-    const absl::optional<DisconnectReason>& reason) {
+    const std::optional<DisconnectReason>& reason) {
   TRACE_EVENT("toplevel", "Closed mojo endpoint",
               [&](perfetto::EventContext& ctx) {
                 auto* info = ctx.event()->set_chrome_mojo_event_info();
@@ -848,7 +878,7 @@ void InterfaceEndpointClient::ResetFromAnotherSequenceUnsafe() {
 }
 
 void InterfaceEndpointClient::ForgetAsyncRequest(uint64_t request_id) {
-  absl::optional<PendingAsyncResponse> response;
+  std::optional<PendingAsyncResponse> response;
   {
     base::AutoLock lock(async_responders_lock_);
     auto it = async_responders_.find(request_id);
@@ -860,15 +890,8 @@ void InterfaceEndpointClient::ForgetAsyncRequest(uint64_t request_id) {
 }
 
 void InterfaceEndpointClient::InitControllerIfNecessary() {
-#ifdef OHOS_BUGFIX_CRASH
-  if (controller_ || handle_.pending_association() || !handle_.group_controller()) {
-    LOG(ERROR) << "InitControllerIfNecessary returned";
-    return;
-  }
-#else
   if (controller_ || handle_.pending_association())
     return;
-#endif
 
   controller_ = handle_.group_controller()->AttachEndpointClient(handle_, this,
                                                                  task_runner_);
@@ -918,7 +941,7 @@ bool InterfaceEndpointClient::HandleValidatedMessage(Message* message) {
                   info->set_ipc_hash((*method_info)());
                   const auto method_address =
                       reinterpret_cast<uintptr_t>(method_info);
-                  const absl::optional<size_t> location_iid =
+                  const std::optional<size_t> location_iid =
                       base::trace_event::InternedUnsymbolizedSourceLocation::
                           Get(&ctx, method_address);
                   if (location_iid) {
@@ -938,6 +961,18 @@ bool InterfaceEndpointClient::HandleValidatedMessage(Message* message) {
               });
 
   DCHECK_EQ(handle_.id(), message->interface_id());
+
+  int64_t creation_timeticks_us = message->creation_timeticks_us();
+  if (creation_timeticks_us > 0) {
+    if (!g_end_to_end_metric) {
+      SetThreadNameSuffixForMetrics("Default");
+    }
+    base::TimeTicks creation_timeticks =
+        base::TimeTicks() + base::Microseconds(creation_timeticks_us);
+    base::TimeDelta end_to_end_duration =
+        base::TimeTicks::Now() - creation_timeticks;
+    g_end_to_end_metric->AddTimeMicrosecondsGranularity(end_to_end_duration);
+  }
 
   // Sync messages can be sent and received at arbitrary points in time and we
   // should not associate them with the top-level scheduler task.
@@ -997,7 +1032,7 @@ bool InterfaceEndpointClient::HandleValidatedMessage(Message* message) {
       sync_responses_.erase(it);
     }
 
-    absl::optional<PendingAsyncResponse> pending_response;
+    std::optional<PendingAsyncResponse> pending_response;
     {
       base::AutoLock lock(async_responders_lock_);
       auto it = async_responders_.find(request_id);
@@ -1028,6 +1063,14 @@ bool InterfaceEndpointClient::HandleValidatedMessage(Message* message) {
   }
 
   return accepted_interface_message;
+}
+
+// static
+void InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+    std::string thread_name) {
+  g_end_to_end_metric = base::Histogram::FactoryMicrosecondsTimeGet(
+      "Mojo.EndToEndLatencyUs." + thread_name, base::Microseconds(1),
+      base::Seconds(1), 100, base::HistogramBase::kUmaTargetedHistogramFlag);
 }
 
 }  // namespace mojo

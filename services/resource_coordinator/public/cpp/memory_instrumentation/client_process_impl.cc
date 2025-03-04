@@ -7,14 +7,14 @@
 #include "base/containers/flat_map.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
-#include "base/strings/string_piece.h"
+#include "base/not_fatal_until.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/memory_dump_request_args.h"
 #include "build/build_config.h"
 #include "services/resource_coordinator/public/cpp/memory_instrumentation/memory_instrumentation.h"
 #include "services/resource_coordinator/public/cpp/memory_instrumentation/os_metrics.h"
-#include "services/resource_coordinator/public/cpp/memory_instrumentation/tracing_observer.h"
+#include "services/resource_coordinator/public/cpp/memory_instrumentation/tracing_observer_proto.h"
 #include "services/resource_coordinator/public/mojom/memory_instrumentation/memory_instrumentation.mojom.h"
 
 namespace memory_instrumentation {
@@ -66,9 +66,8 @@ ClientProcessImpl::ClientProcessImpl(
           base::Unretained(this)),
       is_browser_process);
 
-  tracing_observer_ = std::make_unique<TracingObserver>(
-      base::trace_event::TraceLog::GetInstance(),
-      base::trace_event::MemoryDumpManager::GetInstance());
+  // Register the memory_instrumentation datasource.
+  TracingObserverProto::GetInstance();
 }
 
 ClientProcessImpl::~ClientProcessImpl() = default;
@@ -93,7 +92,8 @@ void ClientProcessImpl::OnChromeMemoryDumpDone(
   DCHECK(success || !process_memory_dump);
 
   auto callback_it = pending_chrome_callbacks_.find(dump_guid);
-  DCHECK(callback_it != pending_chrome_callbacks_.end());
+  CHECK(callback_it != pending_chrome_callbacks_.end(),
+        base::NotFatalUntil::M130);
 
   auto callback = std::move(callback_it->second);
   pending_chrome_callbacks_.erase(callback_it);
@@ -137,7 +137,7 @@ void ClientProcessImpl::RequestGlobalMemoryDump_NoCallback(
     coordinator = MemoryInstrumentation::GetInstance()->GetCoordinator();
   coordinator->RequestGlobalMemoryDumpAndAppendToTrace(
       dump_type, level_of_detail,
-      base::trace_event::MemoryDumpDeterminism::NONE,
+      base::trace_event::MemoryDumpDeterminism::kNone,
       mojom::Coordinator::RequestGlobalMemoryDumpAndAppendToTraceCallback());
 }
 

@@ -55,20 +55,16 @@ class GESTURE_DETECTION_EXPORT FilteredGestureProvider final
   void OnTouchEventAck(uint32_t unique_event_id,
                        bool event_consumed,
                        bool is_source_touch_event_set_blocking,
-                       const absl::optional<EventLatencyMetadata>&
-                           event_latency_metadata = absl::nullopt);
+                       const std::optional<EventLatencyMetadata>&
+                           event_latency_metadata = std::nullopt);
 
   void ResetGestureHandlingState();
 
   // Synthesizes and propagates gesture end events.
   void SendSynthesizedEndEvents();
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void ResetDetection(bool is_lost_focus);
-#endif
-
-#ifdef OHOS_AI
-  void OnAITextSelected();
 #endif
 
   // Methods delegated to |gesture_provider_|.
@@ -77,9 +73,11 @@ class GESTURE_DETECTION_EXPORT FilteredGestureProvider final
   void SetDoubleTapSupportForPlatformEnabled(bool enabled);
   void SetDoubleTapSupportForPageEnabled(bool enabled);
   const ui::MotionEvent* GetCurrentDownEvent() const;
-#if BUILDFLAG(IS_OHOS)
-  void SetNativeEmbedEnabled(bool enabled);
+
+#if BUILDFLAG(ARKWEB_AI)
+  void OnAITextSelected();
 #endif
+
  private:
   // GestureProviderClient implementation.
   void OnGestureEvent(const ui::GestureEventData& event) override;

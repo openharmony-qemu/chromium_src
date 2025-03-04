@@ -4,31 +4,24 @@
 
 #import "ios/chrome/browser/ui/authentication/cells/signin_promo_view_configurator.h"
 
+#import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "build/branding_buildflags.h"
-#import "ios/chrome/browser/signin/constants.h"
-#import "ios/chrome/browser/signin/signin_util.h"
+#import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_feature.h"
+#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
+#import "ios/chrome/browser/signin/model/constants.h"
+#import "ios/chrome/browser/signin/model/signin_util.h"
 #import "ios/chrome/browser/ui/authentication/cells/signin_promo_view.h"
 #import "ios/chrome/browser/ui/authentication/cells/signin_promo_view_constants.h"
-#import "ios/chrome/browser/ui/ntp/new_tab_page_feature.h"
 #import "ios/chrome/common/ui/util/image_util.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/public/provider/chrome/browser/signin/signin_resources_api.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::SysNSStringToUTF16;
 using l10n_util::GetNSString;
 using l10n_util::GetNSStringF;
-
-namespace {
-// The image name of the SigninPromoViewStyleCompactTitled view's icon.
-NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
-}  // namespace
 
 @interface SigninPromoViewConfigurator ()
 
@@ -85,12 +78,13 @@ NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
       [self configureStandardSigninPromoView:signinPromoView];
       break;
     }
-    case SigninPromoViewStyleCompactTitled:
-    case SigninPromoViewStyleCompactHorizontal:
-    case SigninPromoViewStyleCompactVertical: {
+    case SigninPromoViewStyleCompact: {
       [self configureCompactPromoView:signinPromoView withStyle:promoViewStyle];
       break;
     }
+    case SigninPromoViewStyleOnlyButton:
+      [self configureOnlyButtonPromoView:signinPromoView];
+      break;
   }
   if (_hasSignInSpinner) {
     [signinPromoView startSignInSpinner];
@@ -104,8 +98,6 @@ NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
 // Configures the view elements of the `signinPromoView` to conform to the
 // `SigninPromoViewStyleStandard` style.
 - (void)configureStandardSigninPromoView:(SigninPromoView*)signinPromoView {
-  signinPromoView.titleLabel.hidden = YES;
-  //  signinPromoView.secondaryButton.hidden = NO;
   NSString* name =
       self.userGivenName.length ? self.userGivenName : self.userEmail;
   std::u16string name16 = SysNSStringToUTF16(name);
@@ -113,25 +105,29 @@ NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
     case SigninPromoViewModeNoAccounts: {
       DCHECK(!name);
       DCHECK(!self.userImage);
-      NSString* signInString = GetNSString(IDS_IOS_SYNC_PROMO_TURN_ON_SYNC);
-      [signinPromoView.primaryButton setTitle:signInString
-                                     forState:UIControlStateNormal];
+      NSString* signInString =
+          self.primaryButtonTitleOverride
+              ? self.primaryButtonTitleOverride
+              : GetNSString(IDS_IOS_SYNC_PROMO_TURN_ON_SYNC);
+      [signinPromoView configurePrimaryButtonWithTitle:signInString];
       break;
     }
     case SigninPromoViewModeSigninWithAccount: {
-      [signinPromoView.primaryButton
-          setTitle:GetNSStringF(IDS_IOS_SIGNIN_PROMO_CONTINUE_AS, name16)
-          forState:UIControlStateNormal];
+      [signinPromoView
+          configurePrimaryButtonWithTitle:GetNSStringF(
+                                              IDS_IOS_SIGNIN_PROMO_CONTINUE_AS,
+                                              name16)];
       [signinPromoView.secondaryButton
           setTitle:GetNSString(IDS_IOS_SIGNIN_PROMO_CHANGE_ACCOUNT)
           forState:UIControlStateNormal];
       [self assignProfileImageToSigninPromoView:signinPromoView];
       break;
     }
-    case SigninPromoViewModeSyncWithPrimaryAccount: {
-      [signinPromoView.primaryButton
-          setTitle:GetNSString(IDS_IOS_SYNC_PROMO_TURN_ON_SYNC)
-          forState:UIControlStateNormal];
+    case SigninPromoViewModeSignedInWithPrimaryAccount: {
+      [signinPromoView configurePrimaryButtonWithTitle:
+                           self.primaryButtonTitleOverride
+                               ? self.primaryButtonTitleOverride
+                               : GetNSString(IDS_IOS_SYNC_PROMO_TURN_ON_SYNC)];
       [self assignProfileImageToSigninPromoView:signinPromoView];
       break;
     }
@@ -144,34 +140,31 @@ NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
                         withStyle:(SigninPromoViewStyle)promoStyle {
   switch (promoStyle) {
     case SigninPromoViewStyleStandard:
-      // This function shouldn't be used for the standard promo.
-      CHECK(NO);
-      break;
-    case SigninPromoViewStyleCompactTitled:
-      signinPromoView.titleLabel.hidden = NO;
-      [signinPromoView.primaryButton
-          setTitle:GetNSString(IDS_IOS_NTP_FEED_SIGNIN_PROMO_CONTINUE)
-          forState:UIControlStateNormal];
-      [signinPromoView
-          setNonProfileImage:[UIImage imageNamed:kPromoViewImageName]];
-      break;
-    case SigninPromoViewStyleCompactHorizontal:
-    case SigninPromoViewStyleCompactVertical:
-      signinPromoView.titleLabel.hidden = YES;
-      [signinPromoView.primaryButton
-          setTitle:GetNSString(IDS_IOS_NTP_FEED_SIGNIN_PROMO_CONTINUE)
-          forState:UIControlStateNormal];
+    case SigninPromoViewStyleOnlyButton:
+      // This function shouldn't be used for the non-compact promos.
+      NOTREACHED();
+    case SigninPromoViewStyleCompact:
+      [signinPromoView configurePrimaryButtonWithTitle:
+                           GetNSString(IDS_IOS_NTP_FEED_SIGNIN_PROMO_CONTINUE)];
       switch (self.signinPromoViewMode) {
         case SigninPromoViewModeNoAccounts:
           DCHECK(!self.userImage);
           [self assignNonProfileImageToSigninPromoView:signinPromoView];
           break;
         case SigninPromoViewModeSigninWithAccount:
-        case SigninPromoViewModeSyncWithPrimaryAccount:
+        case SigninPromoViewModeSignedInWithPrimaryAccount:
           [self assignProfileImageToSigninPromoView:signinPromoView];
           break;
       }
   }
+}
+
+// Configures the view elements of the `signinPromoView` to conform to the
+// `SigninPromoViewStyleOnlyButton` style.
+- (void)configureOnlyButtonPromoView:(SigninPromoView*)signinPromoView {
+  [signinPromoView
+      configurePrimaryButtonWithTitle:l10n_util::GetNSString(
+                                          IDS_IOS_SIGNIN_PROMO_TURN_ON)];
 }
 
 // Sets profile image to a given `signinPromoView`.
@@ -188,12 +181,11 @@ NSString* const kPromoViewImageName = @"ntp_feed_signin_promo_icon";
 // Sets non-profile image to a given `signinPromoView`.
 - (void)assignNonProfileImageToSigninPromoView:
     (SigninPromoView*)signinPromoView {
-  UIImage* logo = nil;
-#if BUILDFLAG(GOOGLE_CHROME_BRANDING)
-  logo = [UIImage imageNamed:@"signin_promo_logo_chrome_color"];
+#if BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
+  UIImage* logo = [UIImage imageNamed:kChromeSigninPromoLogoImage];
 #else
-  logo = [UIImage imageNamed:@"signin_promo_logo_chromium_color"];
-#endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
+  UIImage* logo = [UIImage imageNamed:kChromiumSigninPromoLogoImage];
+#endif  // BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
   DCHECK(logo);
   [signinPromoView setNonProfileImage:logo];
 }

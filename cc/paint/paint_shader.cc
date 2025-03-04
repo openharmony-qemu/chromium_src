@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "cc/paint/paint_shader.h"
 
 #include <algorithm>
@@ -256,9 +261,37 @@ size_t PaintShader::GetSerializedSize(const PaintShader* shader) {
 PaintShader::PaintShader(Type type) : shader_type_(type) {}
 PaintShader::~PaintShader() = default;
 
-bool PaintShader::has_discardable_images() const {
-  return (image_ && !image_.IsTextureBacked()) ||
-         (record_ && record_->HasDiscardableImages());
+bool PaintShader::HasDiscardableImages(
+    gfx::ContentColorUsage* content_color_usage) const {
+  switch (shader_type_) {
+    case Type::kEmpty:
+    case Type::kColor:
+    case Type::kLinearGradient:
+    case Type::kRadialGradient:
+    case Type::kTwoPointConicalGradient:
+    case Type::kSweepGradient:
+      return false;
+    case Type::kImage:
+      if (image_ && !image_.IsTextureBacked()) {
+        if (content_color_usage) {
+          *content_color_usage =
+              std::max(*content_color_usage, image_.GetContentColorUsage());
+        }
+        return true;
+      }
+      return false;
+    case Type::kPaintRecord:
+      if (record_ && record_->has_discardable_images()) {
+        if (content_color_usage) {
+          *content_color_usage =
+              std::max(*content_color_usage, record_->content_color_usage());
+        }
+        return true;
+      }
+      return false;
+    case Type::kShaderCount:
+      NOTREACHED();
+  }
 }
 
 bool PaintShader::GetClampedRasterizationTileRect(const SkMatrix& ctm,
@@ -406,8 +439,8 @@ sk_sp<PaintShader> PaintShader::CreateDecodedImage(
 
 sk_sp<SkShader> PaintShader::GetSkShader(
     PaintFlags::FilterQuality quality) const {
-  SkSamplingOptions sampling(
-      PaintFlags::FilterQualityToSkSamplingOptions(quality));
+  SkSamplingOptions sampling(PaintFlags::FilterQualityToSkSamplingOptions(
+      quality, PaintFlags::ScalingOperation::kUnknown));
 
   switch (shader_type_) {
     case Type::kEmpty:
@@ -474,7 +507,6 @@ sk_sp<SkShader> PaintShader::GetSkShader(
       break;
     case Type::kShaderCount:
       NOTREACHED();
-      break;
   }
 
   // If we didn't create a shader for whatever reason, create a fallback
@@ -568,7 +600,6 @@ bool PaintShader::IsOpaque() const {
       return false;
     case Type::kShaderCount:
       NOTREACHED();
-      break;
   }
   return fallback_color_.isOpaque();
 }

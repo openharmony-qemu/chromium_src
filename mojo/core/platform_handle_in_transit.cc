@@ -12,8 +12,9 @@
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_WIN)
-#include <ntstatus.h>
 #include <windows.h>
+
+#include <ntstatus.h>
 
 #include "base/win/nt_status.h"
 #include "base/win/scoped_handle.h"
@@ -33,6 +34,11 @@ HANDLE TransferHandle(HANDLE handle,
   if (trust == PlatformHandleInTransit::kUntrustedTarget) {
     DcheckIfFileHandleIsUnsafe(handle);
   }
+
+  // Duplicating INVALID_HANDLE_VALUE passes a process handle. If you intend to
+  // do this, you must open a valid process handle, not pass the result of
+  // GetCurrentProcess(). e.g. https://crbug.com/243339.
+  CHECK(handle != INVALID_HANDLE_VALUE);
 
   HANDLE out_handle;
   BOOL result =

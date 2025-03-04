@@ -18,11 +18,15 @@
 #include <windows.h>
 #undef IN  // On Windows, windef.h defines this, which screws up "India" cases.
 #elif BUILDFLAG(IS_APPLE)
-#include "base/mac/scoped_cftyperef.h"
+#include "base/apple/scoped_cftyperef.h"
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/locale_utils.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
 #endif
 
 namespace country_codes {
@@ -157,7 +161,7 @@ int GetCurrentCountryID() {
 #elif BUILDFLAG(IS_APPLE)
 
 int GetCurrentCountryID() {
-  base::ScopedCFTypeRef<CFLocaleRef> locale(CFLocaleCopyCurrent());
+  base::apple::ScopedCFTypeRef<CFLocaleRef> locale(CFLocaleCopyCurrent());
   CFStringRef country =
       (CFStringRef)CFLocaleGetValue(locale.get(), kCFLocaleCountryCode);
   if (!country)
@@ -175,6 +179,13 @@ int GetCurrentCountryID() {
 
 int GetCurrentCountryID() {
   return CountryStringToCountryID(base::android::GetDefaultCountryCode());
+}
+
+#elif BUILDFLAG(IS_OHOS)
+
+int GetCurrentCountryID() {
+  return CountryStringToCountryID(
+      ::ohos::adapter::ohos_i18n::getLocaleRegion());
 }
 
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)

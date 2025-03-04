@@ -82,6 +82,7 @@ CryptAuthEnrollmentManagerImpl::Factory*
     CryptAuthEnrollmentManagerImpl::Factory::factory_instance_ = nullptr;
 
 // static
+// TODO: b/365057260 - This is now unused and can be removed.
 std::unique_ptr<CryptAuthEnrollmentManager>
 CryptAuthEnrollmentManagerImpl::Factory::Create(
     base::Clock* clock,
@@ -110,6 +111,7 @@ void CryptAuthEnrollmentManagerImpl::Factory::SetFactoryForTesting(
 CryptAuthEnrollmentManagerImpl::Factory::~Factory() = default;
 
 // static
+// TODO: b/365057260 - This is now unused and can be removed.
 void CryptAuthEnrollmentManagerImpl::RegisterPrefs(
     PrefRegistrySimple* registry) {
   registry->RegisterBooleanPref(
@@ -163,7 +165,7 @@ void CryptAuthEnrollmentManagerImpl::Start() {
 
 void CryptAuthEnrollmentManagerImpl::ForceEnrollmentNow(
     cryptauth::InvocationReason invocation_reason,
-    const absl::optional<std::string>& session_id) {
+    const std::optional<std::string>& session_id) {
   // We store the invocation reason in a preference so that it can persist
   // across browser restarts. If the sync fails, the next retry should still use
   // this original reason instead of
@@ -181,7 +183,7 @@ bool CryptAuthEnrollmentManagerImpl::IsEnrollmentValid() const {
 }
 
 base::Time CryptAuthEnrollmentManagerImpl::GetLastEnrollmentTime() const {
-  return base::Time::FromDoubleT(pref_service_->GetDouble(
+  return base::Time::FromSecondsSinceUnixEpoch(pref_service_->GetDouble(
       prefs::kCryptAuthEnrollmentLastEnrollmentTimeSeconds));
 }
 
@@ -203,7 +205,7 @@ void CryptAuthEnrollmentManagerImpl::OnEnrollmentFinished(bool success) {
   if (success) {
     pref_service_->SetDouble(
         prefs::kCryptAuthEnrollmentLastEnrollmentTimeSeconds,
-        clock_->Now().ToDoubleT());
+        clock_->Now().InSecondsFSinceUnixEpoch());
     pref_service_->SetInteger(prefs::kCryptAuthEnrollmentReason,
                               cryptauth::INVOCATION_REASON_UNKNOWN);
   }
@@ -219,7 +221,7 @@ void CryptAuthEnrollmentManagerImpl::OnEnrollmentFinished(bool success) {
 }
 
 std::string CryptAuthEnrollmentManagerImpl::GetUserPublicKey() const {
-  absl::optional<std::string> public_key = util::DecodeFromValueString(
+  std::optional<std::string> public_key = util::DecodeFromValueString(
       &pref_service_->GetValue(prefs::kCryptAuthEnrollmentUserPublicKey));
   if (!public_key) {
     PA_LOG(ERROR) << "Invalid public key stored in user prefs.";
@@ -230,7 +232,7 @@ std::string CryptAuthEnrollmentManagerImpl::GetUserPublicKey() const {
 }
 
 std::string CryptAuthEnrollmentManagerImpl::GetUserPrivateKey() const {
-  absl::optional<std::string> private_key = util::DecodeFromValueString(
+  std::optional<std::string> private_key = util::DecodeFromValueString(
       &pref_service_->GetValue(prefs::kCryptAuthEnrollmentUserPrivateKey));
   if (!private_key) {
     PA_LOG(ERROR) << "Invalid private key stored in user prefs.";
@@ -275,10 +277,10 @@ void CryptAuthEnrollmentManagerImpl::OnKeyPairGenerated(
 }
 
 void CryptAuthEnrollmentManagerImpl::OnReenrollMessage(
-    const absl::optional<std::string>& session_id,
-    const absl::optional<CryptAuthFeatureType>& feature_type) {
+    const std::optional<std::string>& session_id,
+    const std::optional<CryptAuthFeatureType>& feature_type) {
   ForceEnrollmentNow(cryptauth::INVOCATION_REASON_SERVER_INITIATED,
-                     absl::nullopt /* session_id */);
+                     std::nullopt /* session_id */);
 }
 
 void CryptAuthEnrollmentManagerImpl::OnSyncRequested(
@@ -286,7 +288,9 @@ void CryptAuthEnrollmentManagerImpl::OnSyncRequested(
   NotifyEnrollmentStarted();
 
   sync_request_ = std::move(sync_request);
-  if (gcm_manager_->GetRegistrationId().empty() ||
+  const std::string& registration_id = gcm_manager_->GetRegistrationId();
+  if (registration_id.empty() ||
+      CryptAuthGCMManager::IsRegistrationIdDeprecated(registration_id) ||
       pref_service_->GetInteger(prefs::kCryptAuthEnrollmentReason) ==
           cryptauth::INVOCATION_REASON_MANUAL) {
     gcm_manager_->RegisterWithGCM();

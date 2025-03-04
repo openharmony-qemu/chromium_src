@@ -6,8 +6,8 @@
 
 #import <stdlib.h>
 
-#import "ios/chrome/browser/ntp/features.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/popup_menu/public/popup_menu_ui_constants.h"
 #import "ios/chrome/browser/ui/reading_list/number_badge_view.h"
@@ -15,10 +15,6 @@
 #import "ios/chrome/common/material_timing.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 const CGFloat kImageLength = 28;
@@ -60,7 +56,7 @@ NSString* const kToolsMenuTextBadgeAccessibilityIdentifier =
 #pragma mark - PopupMenuItem
 
 - (CGSize)cellSizeForWidth:(CGFloat)width {
-  // TODO(crbug.com/828357): This should be done at the table view level.
+  // TODO(crbug.com/41380449): This should be done at the table view level.
   static PopupMenuToolsCell* cell;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{

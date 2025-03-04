@@ -26,8 +26,8 @@ public class TaskRemovedMonitorService extends Service {
     @VisibleForTesting
     static final String SESSION_KEY = "sessionId";
 
-    public String mRootSessionId;
-    public String mSessionId;
+    public String mRootSessionId = "";
+    public String mSessionId = "";
 
     public static void start(String rootSessionId, String sessionId) {
         Context ctx = ContextUtils.getApplicationContext();
@@ -44,15 +44,11 @@ public class TaskRemovedMonitorService extends Service {
     }
 
     @Override
-    public void onCreate() {
-        mRootSessionId = "";
-        mRootSessionId = "";
-    }
-
-    @Override
     public int onStartCommand(Intent intent, int flag, int startId) {
         mRootSessionId = intent.getStringExtra(ROOT_SESSION_KEY);
         mSessionId = intent.getStringExtra(SESSION_KEY);
+        Log.d(TAG, "Started tracking CastWebContentsActivity: rootSessionId="
+                + mRootSessionId + ", sessionId=" + mSessionId);
         return START_NOT_STICKY;
     }
 
@@ -70,9 +66,8 @@ public class TaskRemovedMonitorService extends Service {
         }
         if (!mSessionId.isEmpty()
                 && mRootSessionId.equals(CastWebContentsIntentUtils.getSessionId(rootIntent))) {
-            Log.d(TAG,
-                    "Detected CastWebContentsActivity task removed, stopping session: "
-                            + mSessionId);
+            Log.d(TAG, "Detected CastWebContentsActivity task removed, stopping session: "
+                    + mSessionId);
             CastWebContentsComponent.onComponentClosed(mSessionId);
             stopSelf();
         }

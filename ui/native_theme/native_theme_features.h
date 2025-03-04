@@ -13,8 +13,15 @@
 namespace features {
 
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kOverlayScrollbar);
+
+#if BUILDFLAG(IS_CHROMEOS)
+NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kOverlayScrollbarsOSSetting);
+NATIVE_THEME_EXPORT bool IsOverlayScrollbarOSSettingEnabled();
+#endif
+
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kFluentScrollbar);
-#if defined(OHOS_SCROLLBAR)
+NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kFluentOverlayScrollbar);
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kForceScrollbar);
 #endif
 
@@ -22,11 +29,13 @@ NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kForceScrollbar);
 
 namespace ui {
 
-NATIVE_THEME_EXPORT bool IsOverlayScrollbarEnabled();
+NATIVE_THEME_EXPORT bool IsFluentOverlayScrollbarEnabled();
 NATIVE_THEME_EXPORT bool IsFluentScrollbarEnabled();
-#if defined(OHOS_SCROLLBAR)
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
 NATIVE_THEME_EXPORT bool IsForceScrollbarEnabled();
 #endif
+
+NATIVE_THEME_EXPORT bool IsOverlayScrollbarEnabledByFeatureFlag();
 
 }  // namespace ui
 

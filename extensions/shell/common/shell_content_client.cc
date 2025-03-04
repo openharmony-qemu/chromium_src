@@ -4,7 +4,8 @@
 
 #include "extensions/shell/common/shell_content_client.h"
 
-#include "base/strings/string_piece.h"
+#include <string_view>
+
 #include "base/strings/utf_string_conversions.h"
 #include "components/nacl/common/buildflags.h"
 #include "extensions/common/constants.h"
@@ -80,13 +81,20 @@ void ShellContentClient::AddAdditionalSchemes(Schemes* schemes) {
   schemes->secure_schemes.push_back(kExtensionScheme);
   schemes->cors_enabled_schemes.push_back(kExtensionScheme);
   schemes->csp_bypassing_schemes.push_back(kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->standard_schemes.push_back(extensions::kArkwebExtensionScheme);
+  schemes->savable_schemes.push_back(kArkwebExtensionScheme);
+  schemes->secure_schemes.push_back(kArkwebExtensionScheme);
+  schemes->cors_enabled_schemes.push_back(kArkwebExtensionScheme);
+  schemes->csp_bypassing_schemes.push_back(kArkwebExtensionScheme);
+#endif
 }
 
 std::u16string ShellContentClient::GetLocalizedString(int message_id) {
   return l10n_util::GetStringUTF16(message_id);
 }
 
-base::StringPiece ShellContentClient::GetDataResource(
+std::string_view ShellContentClient::GetDataResource(
     int resource_id,
     ui::ResourceScaleFactor scale_factor) {
   return ui::ResourceBundle::GetSharedInstance().GetRawDataResourceForScale(

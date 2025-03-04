@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "components/search_engines/keyword_table.h"
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "base/files/scoped_temp_dir.h"
+#include "base/strings/cstring_view.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
-#include "components/search_engines/keyword_table.h"
 #include "components/search_engines/template_url_data.h"
 #include "components/webdata/common/web_database.h"
 #include "sql/statement.h"
@@ -21,12 +23,12 @@ using base::Time;
 
 class KeywordTableTest : public testing::Test {
  public:
-  KeywordTableTest() {}
+  KeywordTableTest() = default;
 
   KeywordTableTest(const KeywordTableTest&) = delete;
   KeywordTableTest& operator=(const KeywordTableTest&) = delete;
 
-  ~KeywordTableTest() override {}
+  ~KeywordTableTest() override = default;
 
  protected:
   void SetUp() override {
@@ -62,7 +64,8 @@ class KeywordTableTest : public testing::Test {
     keyword.date_created = base::Time::UnixEpoch();
     keyword.last_modified = base::Time::UnixEpoch();
     keyword.last_visited = base::Time::UnixEpoch();
-    keyword.created_by_policy = true;
+    keyword.created_by_policy =
+        TemplateURLData::CreatedByPolicy::kDefaultSearchProvider;
     keyword.usage_count = 32;
     keyword.prepopulate_id = 10;
     keyword.sync_guid = "1234-5678-90AB-CDEF";
@@ -70,6 +73,7 @@ class KeywordTableTest : public testing::Test {
     keyword.alternate_urls.push_back("a_url2");
     keyword.starter_pack_id = 1;
     keyword.enforced_by_policy = true;
+    keyword.featured_by_policy = true;
     AddKeyword(keyword);
     return keyword;
   }
@@ -90,17 +94,21 @@ class KeywordTableTest : public testing::Test {
 
   void KeywordMiscTest() const {
     EXPECT_EQ(kInvalidTemplateURLID, table_->GetDefaultSearchProviderID());
-    EXPECT_EQ(0, table_->GetBuiltinKeywordVersion());
+    EXPECT_EQ(0, table_->GetBuiltinKeywordDataVersion());
+    EXPECT_EQ(0, table_->GetBuiltinKeywordCountry());
 
     EXPECT_TRUE(table_->SetDefaultSearchProviderID(10));
-    EXPECT_TRUE(table_->SetBuiltinKeywordVersion(11));
+    EXPECT_TRUE(table_->SetBuiltinKeywordDataVersion(11));
+    EXPECT_TRUE(table_->SetBuiltinKeywordCountry(12));
 
     EXPECT_EQ(10, table_->GetDefaultSearchProviderID());
-    EXPECT_EQ(11, table_->GetBuiltinKeywordVersion());
+    EXPECT_EQ(11, table_->GetBuiltinKeywordDataVersion());
+    EXPECT_EQ(12, table_->GetBuiltinKeywordCountry());
   }
 
-  void GetStatement(const char* sql, sql::Statement* statement) const {
-    statement->Assign(table_->db_->GetUniqueStatement(sql));
+  void GetStatement(const base::cstring_view sql,
+                    sql::Statement* statement) const {
+    statement->Assign(table_->db()->GetUniqueStatement(sql));
   }
 
  private:
@@ -143,6 +151,7 @@ TEST_F(KeywordTableTest, Keywords) {
   EXPECT_EQ(keyword.is_active, restored_keyword.is_active);
   EXPECT_EQ(keyword.starter_pack_id, restored_keyword.starter_pack_id);
   EXPECT_EQ(keyword.enforced_by_policy, restored_keyword.enforced_by_policy);
+  EXPECT_EQ(keyword.featured_by_policy, restored_keyword.featured_by_policy);
 
   RemoveKeyword(restored_keyword.id);
 
@@ -163,6 +172,7 @@ TEST_F(KeywordTableTest, UpdateKeyword) {
   keyword.created_from_play_api = true;
   keyword.starter_pack_id = 0;
   keyword.enforced_by_policy = false;
+  keyword.featured_by_policy = false;
   UpdateKeyword(keyword);
 
   KeywordTable::Keywords keywords(GetKeywords());
@@ -184,6 +194,7 @@ TEST_F(KeywordTableTest, UpdateKeyword) {
   EXPECT_EQ(keyword.is_active, restored_keyword.is_active);
   EXPECT_EQ(keyword.starter_pack_id, restored_keyword.starter_pack_id);
   EXPECT_EQ(keyword.enforced_by_policy, restored_keyword.enforced_by_policy);
+  EXPECT_EQ(keyword.featured_by_policy, restored_keyword.featured_by_policy);
 }
 
 TEST_F(KeywordTableTest, KeywordWithNoFavicon) {

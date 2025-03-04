@@ -19,8 +19,6 @@
 
 namespace memory_instrumentation {
 
-class TracingObserver;
-
 // This is the bridge between MemoryDumpManager and the Coordinator service.
 // This indirection is needed to avoid a dependency from //base, where
 // MemoryDumpManager lives, to //services, where the Coordinator service lives.
@@ -93,7 +91,7 @@ class COMPONENT_EXPORT(RESOURCE_COORDINATOR_PUBLIC_MEMORY_INSTRUMENTATION)
   // https://bugs.chromium.org/p/chromium/issues/detail?id=812346#c16.
   std::map<uint64_t, std::vector<OSMemoryDumpArgs>>
       delayed_os_memory_dump_callbacks_;
-  absl::optional<uint64_t> most_recent_chrome_memory_dump_guid_;
+  std::optional<uint64_t> most_recent_chrome_memory_dump_guid_;
 
   mojo::Receiver<mojom::ClientProcess> receiver_;
   mojo::Remote<mojom::Coordinator> coordinator_;
@@ -101,11 +99,6 @@ class COMPONENT_EXPORT(RESOURCE_COORDINATOR_PUBLIC_MEMORY_INSTRUMENTATION)
 
   // Only browser process is allowed to request memory dumps.
   const bool is_browser_process_;
-
-  // TODO(crbug.com/728199): The observer is only used to setup and tear down
-  // MemoryDumpManager in each process. Setting up MemoryDumpManager should
-  // be moved away from TracingObserver.
-  std::unique_ptr<TracingObserver> tracing_observer_;
 };
 
 }  // namespace memory_instrumentation

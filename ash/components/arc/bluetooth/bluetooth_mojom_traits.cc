@@ -115,8 +115,7 @@ bool StructTraits<arc::mojom::BluetoothUUIDDataView,
 
   // BluetoothUUID expects the format below with the dashes inserted.
   // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  std::string uuid_str =
-      base::HexEncode(address_bytes.data(), address_bytes.size());
+  std::string uuid_str = base::HexEncode(address_bytes);
   constexpr size_t kUuidDashPos[] = {8, 13, 18, 23};
   for (auto pos : kUuidDashPos)
     uuid_str = uuid_str.insert(pos, "-");
@@ -144,7 +143,6 @@ struct EnumTraits<arc::mojom::BluetoothAdvertisementType,
         return true;
     }
     NOTREACHED() << "Invalid type: " << static_cast<uint32_t>(mojom_type);
-    return false;
   }
 };
 

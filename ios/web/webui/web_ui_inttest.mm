@@ -23,10 +23,6 @@
 #import "url/gurl.h"
 #import "url/scheme_host_port.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::test::ios::kWaitForPageLoadTimeout;
 using base::test::ios::WaitUntilConditionOrTimeout;
 using web::test::TapWebViewElementWithId;
@@ -106,7 +102,7 @@ class WebUITest : public WebTestWithWebState {
     test::LoadUrl(web_state(), url);
 
     // LoadIfNecessary is needed because the view is not created (but needed)
-    // when loading the page. TODO(crbug.com/705819): Remove this call.
+    // when loading the page. TODO(crbug.com/41309809): Remove this call.
     web_state()->GetNavigationManager()->LoadIfNecessary();
 
     ASSERT_TRUE(WaitUntilConditionOrTimeout(kWaitForPageLoadTimeout, ^{

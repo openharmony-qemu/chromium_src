@@ -11,10 +11,12 @@
 
 namespace autofill {
 
+// TODO(crbug.com/40932427): Refactor these methods and create separate
+// constructors that are specific to each offer.
 // static
 AutofillOfferData AutofillOfferData::GPayCardLinkedOffer(
     int64_t offer_id,
-    const base::Time& expiry,
+    base::Time expiry,
     const std::vector<GURL>& merchant_origins,
     const GURL& offer_details_url,
     const DisplayStrings& display_strings,
@@ -26,13 +28,16 @@ AutofillOfferData AutofillOfferData::GPayCardLinkedOffer(
 }
 
 // static
+// TODO(b/351080010): DEPRECATED, remove this function.
 AutofillOfferData AutofillOfferData::FreeListingCouponOffer(
     int64_t offer_id,
-    const base::Time& expiry,
+    base::Time expiry,
     const std::vector<GURL>& merchant_origins,
     const GURL& offer_details_url,
     const DisplayStrings& display_strings,
-    const std::string& promo_code) {
+    const std::string& promo_code,
+    bool is_merchant_wide,
+    std::optional<std::string> terms_and_conditions) {
   return AutofillOfferData(OfferType::FREE_LISTING_COUPON_OFFER, offer_id,
                            expiry, merchant_origins, offer_details_url,
                            display_strings, promo_code);
@@ -41,7 +46,7 @@ AutofillOfferData AutofillOfferData::FreeListingCouponOffer(
 // static
 AutofillOfferData AutofillOfferData::GPayPromoCodeOffer(
     int64_t offer_id,
-    const base::Time& expiry,
+    base::Time expiry,
     const std::vector<GURL>& merchant_origins,
     const GURL& offer_details_url,
     const DisplayStrings& display_strings,
@@ -63,11 +68,6 @@ AutofillOfferData& AutofillOfferData::operator=(const AutofillOfferData&) =
 bool AutofillOfferData::operator==(
     const AutofillOfferData& other_offer_data) const {
   return Compare(other_offer_data) == 0;
-}
-
-bool AutofillOfferData::operator!=(
-    const AutofillOfferData& other_offer_data) const {
-  return Compare(other_offer_data) != 0;
 }
 
 int AutofillOfferData::Compare(
@@ -141,16 +141,11 @@ bool AutofillOfferData::IsCardLinkedOffer() const {
 }
 
 bool AutofillOfferData::IsPromoCodeOffer() const {
-  return GetOfferType() == OfferType::GPAY_PROMO_CODE_OFFER ||
-         GetOfferType() == OfferType::FREE_LISTING_COUPON_OFFER;
+  return GetOfferType() == OfferType::GPAY_PROMO_CODE_OFFER;
 }
 
 bool AutofillOfferData::IsGPayPromoCodeOffer() const {
   return GetOfferType() == OfferType::GPAY_PROMO_CODE_OFFER;
-}
-
-bool AutofillOfferData::IsFreeListingCouponOffer() const {
-  return GetOfferType() == OfferType::FREE_LISTING_COUPON_OFFER;
 }
 
 bool AutofillOfferData::IsActiveAndEligibleForOrigin(const GURL& origin) const {
@@ -160,7 +155,7 @@ bool AutofillOfferData::IsActiveAndEligibleForOrigin(const GURL& origin) const {
 
 AutofillOfferData::AutofillOfferData(
     int64_t offer_id,
-    const base::Time& expiry,
+    base::Time expiry,
     const std::vector<GURL>& merchant_origins,
     const GURL& offer_details_url,
     const DisplayStrings& display_strings,
@@ -177,7 +172,7 @@ AutofillOfferData::AutofillOfferData(
 
 AutofillOfferData::AutofillOfferData(OfferType offer_type,
                                      int64_t offer_id,
-                                     const base::Time& expiry,
+                                     base::Time expiry,
                                      const std::vector<GURL>& merchant_origins,
                                      const GURL& offer_details_url,
                                      const DisplayStrings& display_strings,

@@ -42,7 +42,7 @@ void RealTimeUploader::Upload(
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   if (!report_queue_) {
-    NOTREACHED();
+    NOTREACHED_IN_MIGRATION();
     return;
   }
 
@@ -68,25 +68,25 @@ void RealTimeUploader::CreateReportQueue(const std::string& dm_token,
       dm_token, destination,
       base::BindRepeating([]() { return reporting::Status::StatusOK(); }));
 
-  if (!config.ok()) {
+  if (!config.has_value()) {
     // No special handler as we never record reporting queue config creation
     // failure.
     LOG(ERROR) << "Failed to create CBCM reporting queue config: "
-               << config.status();
+               << config.error();
     return;
   }
 
   auto report_queue = reporting::ReportQueueProvider::CreateSpeculativeQueue(
-      std::move(config.ValueOrDie()));
-  if (!report_queue.ok()) {
+      std::move(config.value()));
+  if (!report_queue.has_value()) {
     // No special handler as we never record reporting queue creation failure.
     LOG(ERROR) << "Failed to create CBCM reporting queue. "
-               << report_queue.status();
+               << report_queue.error();
     return;
   }
-  report_queue_ = std::move(report_queue.ValueOrDie());
+  report_queue_ = std::move(report_queue.value());
 #else
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 #endif  // !BUILDFLAG(IS_IOS)
 }
 

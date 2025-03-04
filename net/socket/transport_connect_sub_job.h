@@ -55,15 +55,11 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   // Implementation of WebSocketEndpointLockManager::EndpointWaiter.
   void GotEndpointLock() override;
 
-#if BUILDFLAG(IS_OHOS)
-  void SetFromPreload(bool from_preload) {
-    from_preload_ = from_preload;
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  StreamSocket* Socket() {
+    return transport_socket_ ? transport_socket_.get() : nullptr;
   }
-
-  bool IsFromPreload() const {
-    return from_preload_;
-  }
-#endif
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 
  private:
   enum State {
@@ -91,10 +87,6 @@ class TransportConnectSubJob : public WebSocketEndpointLockManager::Waiter {
   const SubJobType type_;
 
   std::unique_ptr<StreamSocket> transport_socket_;
-
-#if BUILDFLAG(IS_OHOS)
-  bool from_preload_ = false;
-#endif
 };
 
 }  // namespace net

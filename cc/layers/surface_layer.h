@@ -61,10 +61,16 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
   void SetMayContainVideo(bool may_contain_video);
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
   void SetVideoRectChangeCallback(RectChangeCallback callback);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+  void OnLayerRectUpdate(const gfx::Rect& rect) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  using LayerBoundsChangeCallback =
+      base::RepeatingCallback<void(const gfx::Rect&)>;
+  void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
@@ -73,19 +79,19 @@ class CC_EXPORT SurfaceLayer : public Layer {
   void PushPropertiesTo(LayerImpl* layer,
                         const CommitState& commit_state,
                         const ThreadUnsafeCommitState& unsafe_state) override;
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-  void OnLayerRectUpdate(const gfx::Rect& rect) override;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
   }
 
-  const absl::optional<viz::SurfaceId>& oldest_acceptable_fallback() const {
+  const std::optional<viz::SurfaceId>& oldest_acceptable_fallback() const {
     return surface_range_.Read(*this).start();
   }
 
-  absl::optional<uint32_t> deadline_in_frames() const {
+  std::optional<uint32_t> deadline_in_frames() const {
     return deadline_in_frames_.Read(*this);
   }
 
@@ -102,7 +108,7 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
   ProtectedSequenceReadable<bool> may_contain_video_;
   ProtectedSequenceReadable<viz::SurfaceRange> surface_range_;
-  ProtectedSequenceWritable<absl::optional<uint32_t>> deadline_in_frames_;
+  ProtectedSequenceWritable<std::optional<uint32_t>> deadline_in_frames_;
 
   ProtectedSequenceReadable<bool> stretch_content_to_fill_bounds_;
 
@@ -123,9 +129,16 @@ class CC_EXPORT SurfaceLayer : public Layer {
   // This surface layer is reflecting the root surface of another display.
   ProtectedSequenceReadable<bool> is_reflection_;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  // Keep track when we change LayerTreeHosts as SurfaceLayerImpl needs to know
+  // in order to keep the visibility callback state consistent.
+  ProtectedSequenceWritable<bool> callback_layer_tree_host_changed_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   RectChangeCallback video_rect_change_callback_;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  LayerBoundsChangeCallback layer_bounds_change_callback_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 };
 
 }  // namespace cc

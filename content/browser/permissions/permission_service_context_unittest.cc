@@ -80,6 +80,13 @@ class PermissionServiceContextTest : public RenderViewHostTestHarness {
             render_frame_host);
   }
 
+  void TearDown() override {
+    permission_controller_ = nullptr;
+    render_frame_host_impl_ = nullptr;
+    permission_service_context_ = nullptr;
+    RenderViewHostTestHarness::TearDown();
+  }
+
   std::unique_ptr<TestPermissionObserver> CreateSubscription(
       PermissionType type,
       blink::mojom::PermissionStatus last_status,
@@ -87,7 +94,8 @@ class PermissionServiceContextTest : public RenderViewHostTestHarness {
     permission_controller()->SetOverrideForDevTools(origin_, type, last_status);
     auto observer = std::make_unique<TestPermissionObserver>();
     permission_service_context()->CreateSubscription(
-        type, origin_, current_status, last_status, observer->GetRemote());
+        type, origin_, current_status, last_status,
+        /*should_include_device_status=*/false, observer->GetRemote());
     WaitForAsyncTasksToComplete();
     return observer;
   }
@@ -161,7 +169,7 @@ TEST_F(PermissionServiceContextTest,
   permission_service_context->CreateSubscription(
       PermissionType::GEOLOCATION, url::Origin::Create(GURL(kTestUrl)),
       blink::mojom::PermissionStatus::ASK, blink::mojom::PermissionStatus::ASK,
-      observer_child->GetRemote());
+      /*should_include_device_status=*/false, observer_child->GetRemote());
   SimulatePermissionChangedEvent(blink::PermissionType::GEOLOCATION,
                                  blink::mojom::PermissionStatus::ASK);
   EXPECT_EQ(observer->change_event_count(), 2U);

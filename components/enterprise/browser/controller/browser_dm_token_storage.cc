@@ -33,15 +33,15 @@ constexpr char kInvalidTokenValue[] = "INVALID_DM_TOKEN";
 DMToken CreateValidToken(const std::string& dm_token) {
   DCHECK_NE(dm_token, kInvalidTokenValue);
   DCHECK(!dm_token.empty());
-  return DMToken(DMToken::Status::kValid, dm_token);
+  return DMToken::CreateValidToken(dm_token);
 }
 
 DMToken CreateInvalidToken() {
-  return DMToken(DMToken::Status::kInvalid, "");
+  return DMToken::CreateInvalidToken();
 }
 
 DMToken CreateEmptyToken() {
-  return DMToken(DMToken::Status::kEmpty, "");
+  return DMToken::CreateEmptyToken();
 }
 
 }  // namespace
@@ -151,7 +151,7 @@ void BrowserDMTokenStorage::InitIfNeeded() {
                        "FakeBrowserDMTokenStorage to the test fixture.";
 
   if (is_initialized_) {
-    // TODO(crbug/1416651): Ideally we would execute this initialization
+    // TODO(crbug.com/40893625): Ideally we would execute this initialization
     // based on an event we listen to. However, because this may happen so
     // early, we don't have any place where we can hook this. We should find
     // a better solution in the future.

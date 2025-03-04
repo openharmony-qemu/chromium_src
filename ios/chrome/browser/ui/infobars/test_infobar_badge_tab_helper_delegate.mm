@@ -5,11 +5,8 @@
 #import "ios/chrome/browser/ui/infobars/test_infobar_badge_tab_helper_delegate.h"
 
 #import <map>
-#import "ios/chrome/browser/ui/badges/badge_tappable_item.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ios/chrome/browser/badges/ui_bundled/badge_tappable_item.h"
 
 @interface TestInfobarTabHelperDelegate () {
   std::map<InfobarType, id<BadgeItem>> _badgeItems;

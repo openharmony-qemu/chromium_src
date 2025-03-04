@@ -5,6 +5,7 @@
 #ifndef IOS_WEB_VIEW_INTERNAL_PASSWORDS_WEB_VIEW_PASSWORD_FEATURE_MANAGER_H_
 #define IOS_WEB_VIEW_INTERNAL_PASSWORDS_WEB_VIEW_PASSWORD_FEATURE_MANAGER_H_
 
+#include "base/memory/raw_ptr.h"
 #include "components/password_manager/core/browser/password_feature_manager.h"
 
 namespace syncer {
@@ -33,20 +34,18 @@ class WebViewPasswordFeatureManager
   bool ShouldShowAccountStorageReSignin(
       const GURL& current_page_url) const override;
 
-  bool ShouldShowAccountStorageBubbleUi() const override;
-
   password_manager::PasswordForm::Store GetDefaultPasswordStore()
       const override;
   bool IsDefaultPasswordStoreSet() const override;
 
-  password_manager::metrics_util::PasswordAccountStorageUsageLevel
+  password_manager::features_util::PasswordAccountStorageUsageLevel
   ComputePasswordAccountStorageUsageLevel() const override;
 
   bool IsBiometricAuthenticationBeforeFillingEnabled() const override;
 
  private:
-  PrefService* const pref_service_;
-  const syncer::SyncService* const sync_service_;
+  const raw_ptr<PrefService> pref_service_;
+  const raw_ptr<const syncer::SyncService> sync_service_;
 };
 }  // namespace ios_web_view
 

@@ -9,22 +9,22 @@
 #include <stdint.h>
 
 #include <map>
+#include <optional>
+#include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ptr_exclusion.h"
-#include "base/strings/string_piece_forward.h"
 #include "components/url_pattern_index/closed_hash_map.h"
 #include "components/url_pattern_index/flat/url_pattern_index_generated.h"
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 #include "components/url_pattern_index/flat/css_pattern_index_generated.h"
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 #include "components/url_pattern_index/proto/rules.pb.h"
 #include "components/url_pattern_index/uint64_hasher.h"
 #include "components/url_pattern_index/url_pattern.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/flatbuffers/src/include/flatbuffers/flatbuffers.h"
 
 class GURL;
@@ -46,7 +46,7 @@ using NGramHashTableProber = DefaultProber<NGram, NGramHasher>;
 using UrlRuleOffset = flatbuffers::Offset<flat::UrlRule>;
 using UrlPatternIndexOffset = flatbuffers::Offset<flat::UrlPatternIndex>;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 using CssRuleOffset = flatbuffers::Offset<flat::CssRule>;
 using CssPatternIndexOffset = flatbuffers::Offset<flat::CssPatternIndex>;
 #endif
@@ -62,9 +62,9 @@ struct OffsetVectorCompare {
 using FlatDomainMap = std::
     map<std::vector<FlatStringOffset>, FlatDomainsOffset, OffsetVectorCompare>;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 using FlatCssRuleList = flatbuffers::Vector<flatbuffers::Offset<flat::CssRule>>;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 constexpr size_t kNGramSize = 5;
 static_assert(kNGramSize <= sizeof(NGram), "NGram type is too narrow.");
@@ -88,11 +88,11 @@ UrlRuleOffset SerializeUrlRule(const proto::UrlRule& rule,
                                flatbuffers::FlatBufferBuilder* builder,
                                FlatDomainMap* domain_map);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 CssRuleOffset SerializeCssRule(const proto::CssRule& rule,
                                flatbuffers::FlatBufferBuilder* builder,
                                FlatDomainMap* domain_map);
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 // Performs three-way comparison between two domains. In the total order defined
 // by this predicate, the lengths of domains will be monotonically decreasing.
@@ -100,17 +100,13 @@ CssRuleOffset SerializeCssRule(const proto::CssRule& rule,
 // Returns a negative value if |lhs_domain| should be ordered before
 // |rhs_domain|, zero if |lhs_domain| is equal to |rhs_domain| and a positive
 // value if |lhs_domain| should be ordered after |rhs_domain|.
-int CompareDomains(base::StringPiece lhs_domain, base::StringPiece rhs_domain);
+int CompareDomains(std::string_view lhs_domain, std::string_view rhs_domain);
 
 // The current format version of UrlPatternIndex.
 // Increase this value when introducing an incompatible change to the
 // UrlPatternIndex schema (flat/url_pattern_index.fbs). url_pattern_index
 // clients can use this as a signal to rebuild rulesets.
-#ifdef OHOS_ARKWEB_ADBLOCK
 constexpr int kUrlPatternIndexFormatVersion = 15;
-#else
-constexpr int kUrlPatternIndexFormatVersion = 15;
-#endif
 
 // The class used to construct an index over the URL patterns of a set of URL
 // rules. The rules themselves need to be converted to FlatBuffers format by the
@@ -134,10 +130,10 @@ class UrlPatternIndexBuilder {
   // and returns an offset to it in the resulting FlatBuffer.
   UrlPatternIndexOffset Finish();
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   int GetNGramHashTableSize() { return ngram_index_.table_size(); }
   int GetFallbackRuleListSize() { return fallback_rules_.size(); }
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
  private:
   using MutableUrlRuleList = std::vector<UrlRuleOffset>;
@@ -148,7 +144,7 @@ class UrlPatternIndexBuilder {
   // N-gram is picked using a greedy heuristic, i.e. the one is chosen which
   // corresponds to the shortest list of rules within the index. If there are no
   // valid N-grams in the |pattern|, the return value is 0.
-  NGram GetMostDistinctiveNGram(base::StringPiece pattern);
+  NGram GetMostDistinctiveNGram(std::string_view pattern);
 
   // This index contains all non-REGEXP rules that have at least one acceptable
   // N-gram. For each given rule, the N-gram used as an index key is picked
@@ -162,7 +158,7 @@ class UrlPatternIndexBuilder {
   raw_ptr<flatbuffers::FlatBufferBuilder> flat_builder_;
 };
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 bool DoesOriginMatchDomainList(const url::Origin& origin,
                                const flat::CssRule& rule);
 
@@ -203,7 +199,7 @@ class CssPatternIndexBuilder {
   // N-gram is picked using a greedy heuristic,i.e.the one is chosen which
   // corresponds to the shortest list of rules within the index. If there ane no
   // valid N-grams in the lpatternl, the return value is 0.
-  NGram GetMostDistinctiveNGram(base::StringPiece pattern);
+  NGram GetMostDistinctiveNGram(std::string_view pattern);
 
   // This index contains all non-REGEXP rules that have at least one acceptable
   // N-gram. For each given rule, the N-gram used as an index key is picked
@@ -222,7 +218,7 @@ class CssPatternIndexBuilder {
 
   int ngram_table_rule_size_ = 0;
 };
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 // Encapsulates a read-only index built over the URL patterns of a set of URL
 // rules, and provides fast matching of network requests against these rules.
@@ -338,12 +334,10 @@ class UrlPatternIndexMatcher {
 
  private:
   // Must outlive this instance.
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #union
-  RAW_PTR_EXCLUSION const flat::UrlPatternIndex* flat_index_;
+  raw_ptr<const flat::UrlPatternIndex> flat_index_;
 
   // The number of rules in this index. Mutable since this is lazily computed.
-  mutable absl::optional<size_t> rules_count_;
+  mutable std::optional<size_t> rules_count_;
 };
 
 // Returns whether the `rule` is considered "generic". A generic rule is one
@@ -380,7 +374,7 @@ bool DoesRuleFlagsMatch(const flat::UrlRule& rule,
                         const UrlPatternIndexMatcher::EmbedderConditionsMatcher&
                             embedder_conditions_matcher);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 class CssPatternIndexMatcher {
  public:
   enum class FindRulestrategy {
@@ -417,7 +411,7 @@ class CssPatternIndexMatcher {
   // #union
   RAW_PTR_EXCLUSION const flat::CssPatternIndex* flat_index_;
 };
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 }  // namespace url_pattern_index
 

@@ -4,7 +4,7 @@
 
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_mediator.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/metrics/user_metrics.h"
@@ -14,73 +14,64 @@
 #import "base/time/time.h"
 #import "base/version.h"
 #import "components/password_manager/core/browser/leak_detection_dialog_utils.h"
+#import "components/password_manager/core/browser/password_sync_util.h"
 #import "components/password_manager/core/browser/ui/password_check_referrer.h"
-#import "components/password_manager/core/common/password_manager_features.h"
 #import "components/prefs/pref_service.h"
 #import "components/safe_browsing/core/common/features.h"
 #import "components/safe_browsing/core/common/safe_browsing_prefs.h"
 #import "components/safety_check/safety_check.h"
+#import "components/sync/service/sync_service.h"
+#import "components/sync/service/sync_user_settings.h"
 #import "components/version_info/version_info.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/omaha/omaha_service.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager_factory.h"
-#import "ios/chrome/browser/passwords/password_check_observer_bridge.h"
-#import "ios/chrome/browser/passwords/password_checkup_utils.h"
-#import "ios/chrome/browser/passwords/password_store_observer_bridge.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
+#import "ios/chrome/browser/omaha/model/omaha_service.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager_factory.h"
+#import "ios/chrome/browser/passwords/model/password_check_observer_bridge.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_utils.h"
+#import "ios/chrome/browser/passwords/model/password_store_observer_bridge.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_client_id.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_settings_util.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_backed_boolean.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/utils/observable_boolean.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/sync/sync_setup_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_check_item.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_constants.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_consumer.h"
-#import "ios/chrome/browser/ui/settings/safety_check/safety_check_mediator+private.h"
+#import "ios/chrome/browser/ui/settings/safety_check/safety_check_mediator+Testing.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_navigation_commands.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_table_view_controller.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_utils.h"
-#import "ios/chrome/browser/ui/settings/utils/observable_boolean.h"
-#import "ios/chrome/browser/ui/settings/utils/pref_backed_boolean.h"
-#import "ios/chrome/browser/upgrade/upgrade_constants.h"
-#import "ios/chrome/browser/upgrade/upgrade_recommended_details.h"
-#import "ios/chrome/browser/upgrade/upgrade_utils.h"
+#import "ios/chrome/browser/upgrade/model/upgrade_constants.h"
+#import "ios/chrome/browser/upgrade/model/upgrade_recommended_details.h"
+#import "ios/chrome/browser/upgrade/model/upgrade_utils.h"
 #import "ios/chrome/common/channel_info.h"
 #import "ios/chrome/common/string_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/common/url_scheme_util.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "services/network/public/cpp/shared_url_loader_factory.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/time_format.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using l10n_util::GetNSString;
 using password_manager::WarningType;
-using password_manager::features::IsPasswordCheckupEnabled;
 
 namespace {
 
 // The size of leading symbol icons.
 constexpr NSInteger kLeadingSymbolImagePointSize = 22;
-
-constexpr char kSafetyCheckMetricsUpdates[] =
-    "Settings.SafetyCheck.UpdatesResult";
-constexpr char kSafetyCheckMetricsPasswords[] =
-    "Settings.SafetyCheck.PasswordsResult";
-constexpr char kSafetyCheckMetricsSafeBrowsing[] =
-    "Settings.SafetyCheck.SafeBrowsingResult";
-constexpr char kSafetyCheckInteractions[] = "Settings.SafetyCheck.Interactions";
 
 typedef NSArray<TableViewItem*>* ItemArray;
 
@@ -93,6 +84,8 @@ typedef NS_ENUM(NSInteger, SafteyCheckItemType) {
   // CheckStart section.
   CheckStartItemType,
   TimestampFooterItem,
+  // Notifications opt-in section.
+  NotificationsOptInItemType,
 };
 
 // The minimum time each of the three checks should show a running state. This
@@ -126,12 +119,11 @@ bool IsPasswordCheckItemTappable(
     PasswordCheckRowStates password_check_row_state) {
   switch (password_check_row_state) {
     case PasswordCheckRowStateUnmutedCompromisedPasswords:
-      return true;
     case PasswordCheckRowStateReusedPasswords:
     case PasswordCheckRowStateWeakPasswords:
     case PasswordCheckRowStateDismissedWarnings:
     case PasswordCheckRowStateSafe:
-      return IsPasswordCheckupEnabled();
+      return true;
     case PasswordCheckRowStateDefault:
     case PasswordCheckRowStateRunning:
     case PasswordCheckRowStateDisabled:
@@ -178,13 +170,69 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 @property(nonatomic, assign) AuthenticationService* authService;
 
 // Service to check if passwords are synced.
-@property(nonatomic, assign) SyncSetupService* syncService;
+@property(nonatomic, assign) syncer::SyncService* syncService;
 
 // Service used to check user preference values.
 @property(nonatomic, assign, readonly) PrefService* userPrefService;
 
+// Service used to check local preference values.
+@property(nonatomic, assign, readonly) PrefService* localPrefService;
+
 // When the check was started.
 @property(nonatomic, assign) base::Time checkStartTime;
+
+// SettingsCheckItem used to display the state of the update check.
+@property(nonatomic, strong) SettingsCheckItem* updateCheckItem;
+
+// Current state of the update check.
+@property(nonatomic, assign) UpdateCheckRowStates updateCheckRowState;
+
+// Previous on load or finished check state of the update check.
+@property(nonatomic, assign) UpdateCheckRowStates previousUpdateCheckRowState;
+
+// SettingsCheckItem used to display the state of the password check.
+@property(nonatomic, strong) SettingsCheckItem* passwordCheckItem;
+
+// Current state of the password check.
+@property(nonatomic, assign) PasswordCheckRowStates passwordCheckRowState;
+
+// Previous on load or finished check state of the password check.
+@property(nonatomic, assign)
+    PasswordCheckRowStates previousPasswordCheckRowState;
+
+// SettingsCheckItem used to display the state of the Safe Browsing check.
+@property(nonatomic, strong) SettingsCheckItem* safeBrowsingCheckItem;
+
+// Current state of the Safe Browsing check.
+@property(nonatomic, assign)
+    SafeBrowsingCheckRowStates safeBrowsingCheckRowState;
+
+// Previous on load or finished check state of the Safe Browsing check.
+@property(nonatomic, assign)
+    SafeBrowsingCheckRowStates previousSafeBrowsingCheckRowState;
+
+// Row button to start the safety check.
+@property(nonatomic, strong) TableViewTextItem* checkStartItem;
+
+// Current state of the start safety check row button.
+@property(nonatomic, assign) CheckStartStates checkStartState;
+
+// Row button to opt-in to Safety Check notifications.
+@property(nonatomic, strong) TableViewTextItem* notificationsOptInItem;
+
+// Whether or not a safety check just ran.
+@property(nonatomic, assign) BOOL checkDidRun;
+
+// Current state of password check.
+@property(nonatomic, assign) PasswordCheckState currentPasswordCheckState;
+
+// Preference value for Safe Browsing.
+@property(nonatomic, strong, readonly)
+    PrefBackedBoolean* safeBrowsingPreference;
+
+// Preference value for Enhanced Safe Browsing.
+@property(nonatomic, strong, readonly)
+    PrefBackedBoolean* enhancedSafeBrowsingPreference;
 
 @end
 
@@ -192,20 +240,25 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 
 @synthesize passwordCheckManager = _passwordCheckManager;
 
-- (instancetype)initWithUserPrefService:(PrefService*)userPrefService
-                   passwordCheckManager:
-                       (scoped_refptr<IOSChromePasswordCheckManager>)
-                           passwordCheckManager
-                            authService:(AuthenticationService*)authService
-                            syncService:(SyncSetupService*)syncService {
+- (instancetype)
+    initWithUserPrefService:(PrefService*)userPrefService
+           localPrefService:(PrefService*)localPrefService
+       passwordCheckManager:
+           (scoped_refptr<IOSChromePasswordCheckManager>)passwordCheckManager
+                authService:(AuthenticationService*)authService
+                syncService:(syncer::SyncService*)syncService
+                   referrer:(password_manager::PasswordCheckReferrer)referrer {
   self = [super init];
+
   if (self) {
     DCHECK(userPrefService);
+    DCHECK(localPrefService);
     DCHECK(passwordCheckManager);
     DCHECK(authService);
     DCHECK(syncService);
 
     _userPrefService = userPrefService;
+    _localPrefService = localPrefService;
     _authService = authService;
     _syncService = syncService;
 
@@ -228,8 +281,13 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 
     _headerItem =
         [[TableViewLinkHeaderFooterItem alloc] initWithType:HeaderItem];
+
     _headerItem.text =
-        l10n_util::GetNSString(IDS_IOS_SETTINGS_SAFETY_CHECK_PAGE_HEADER);
+        referrer ==
+                password_manager::PasswordCheckReferrer::kSafetyCheckMagicStack
+            ? l10n_util::GetNSString(
+                  IDS_IOS_SETTINGS_SAFETY_CHECK_MAGIC_STACK_PAGE_HEADER)
+            : l10n_util::GetNSString(IDS_IOS_SETTINGS_SAFETY_CHECK_PAGE_HEADER);
 
     _updateCheckRowState = UpdateCheckRowStateDefault;
     _updateCheckItem = [[SettingsCheckItem alloc] initWithType:UpdateItemType];
@@ -291,10 +349,33 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     _checkStartState = CheckStartStateDefault;
     _checkStartItem =
         [[TableViewTextItem alloc] initWithType:CheckStartItemType];
+    _checkStartItem.accessibilityIdentifier =
+        kSafetyCheckCheckNowButtonAccessibilityID;
     _checkStartItem.text = GetNSString(IDS_IOS_CHECK_PASSWORDS_NOW_BUTTON);
     _checkStartItem.textColor = [UIColor colorNamed:kBlueColor];
     _checkStartItem.accessibilityTraits |= UIAccessibilityTraitButton;
+
+    if (IsSafetyCheckNotificationsEnabled()) {
+      TableViewTextItem* notificationsOptInItem =
+          [[TableViewTextItem alloc] initWithType:NotificationsOptInItemType];
+
+      notificationsOptInItem.accessibilityIdentifier =
+          kSafetyCheckNotificationsOptInButtonAccessibilityID;
+      notificationsOptInItem.text =
+          push_notification_settings::
+                  GetMobileNotificationPermissionStatusForClient(
+                      PushNotificationClientId::kSafetyCheck, "")
+              ? GetNSString(
+                    IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_OFF_NOTIFICATIONS_ELLIPSIS)
+              : GetNSString(
+                    IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_ON_NOTIFICATIONS_ELLIPSIS);
+      notificationsOptInItem.textColor = [UIColor colorNamed:kBlueColor];
+      notificationsOptInItem.accessibilityTraits |= UIAccessibilityTraitButton;
+
+      self.notificationsOptInItem = notificationsOptInItem;
+    }
   }
+
   return self;
 }
 
@@ -308,6 +389,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
   [_consumer setCheckItems:checkItems];
   [_consumer setSafetyCheckHeaderItem:self.headerItem];
   [_consumer setCheckStartItem:self.checkStartItem];
+  [_consumer setNotificationsOptInItem:self.notificationsOptInItem];
 
   // Need to reconfigure the safety check items if there are remaining issues
   // from the last check ran.
@@ -323,6 +405,21 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     return;
   }
   [self startCheck];
+}
+
+- (void)reconfigureNotificationsSection:(BOOL)enabled {
+  CHECK(IsSafetyCheckNotificationsEnabled());
+
+  // If notifications are `enabled`, the button should prompt users to disable
+  // them.
+  self.notificationsOptInItem.text =
+      enabled
+          ? GetNSString(
+                IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_OFF_NOTIFICATIONS_ELLIPSIS)
+          : GetNSString(
+                IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_ON_NOTIFICATIONS_ELLIPSIS);
+
+  [self reconfigureCellForItem:self.notificationsOptInItem];
 }
 
 #pragma mark - PasswordCheckObserver
@@ -349,6 +446,10 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
   [self reconfigurePasswordCheckItem];
 }
 
+- (void)passwordCheckManagerWillShutdown {
+  _passwordCheckObserver.reset();
+}
+
 #pragma mark - SafetyCheckServiceDelegate
 
 - (void)didSelectItem:(TableViewItem*)item {
@@ -369,14 +470,16 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
         case UpdateCheckRowStateNetError:      // i tap: Show error popover.
           break;
         case UpdateCheckRowStateOutOfDate: {  // i tap: Go to app store.
-          NSString* updateLocation = [[NSUserDefaults standardUserDefaults]
-              stringForKey:kIOSChromeUpgradeURLKey];
+          PrefService* prefService = GetApplicationContext()->GetLocalState();
+          std::string updateLocation =
+              prefService->GetString(kIOSChromeUpgradeURLKey);
           base::RecordAction(base::UserMetricsAction(
               "Settings.SafetyCheck.RelaunchAfterUpdates"));
           base::UmaHistogramEnumeration(
               kSafetyCheckInteractions,
               SafetyCheckInteractions::kUpdatesRelaunch);
-          [self.handler showUpdateAtLocation:updateLocation];
+          [self.handler
+              showUpdateAtLocation:base::SysUTF8ToNSString(updateLocation)];
           break;
         }
       }
@@ -404,13 +507,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
               kSafetyCheckInteractions,
               SafetyCheckInteractions::kPasswordsManage);
 
-          if (IsPasswordCheckupEnabled()) {
-            [self.handler showPasswordCheckupPage];
-          } else {
-            password_manager::LogPasswordCheckReferrer(
-                password_manager::PasswordCheckReferrer::kSafetyCheck);
-            [self.handler showPasswordIssuesPage];
-          }
+          [self.handler showPasswordCheckupPage];
           break;
       }
       break;
@@ -430,6 +527,10 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     }
     case CheckStartItemType: {  // Start or stop a safety check.
       [self checkStartOrCancel];
+      break;
+    }
+    case NotificationsOptInItemType: {
+      [self.delegate toggleSafetyCheckNotifications];
       break;
     }
     case HeaderItem:
@@ -454,12 +555,14 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     case HeaderItem:
     case TimestampFooterItem:
       return NO;
+    case NotificationsOptInItemType:
+      return YES;
   }
 }
 
 - (BOOL)isItemWithErrorInfo:(TableViewItem*)item {
   SafteyCheckItemType type = static_cast<SafteyCheckItemType>(item.type);
-  return (type != CheckStartItemType);
+  return (type != CheckStartItemType && type != NotificationsOptInItemType);
 }
 
 - (void)infoButtonWasTapped:(UIButton*)buttonView
@@ -514,6 +617,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     case HeaderItem:
     case SafeBrowsingItemType:
     case TimestampFooterItem:
+    case NotificationsOptInItemType:
       return nil;
   }
 }
@@ -538,39 +642,22 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     case PasswordCheckState::kSignedOut:
       base::UmaHistogramEnumeration(kSafetyCheckMetricsPasswords,
                                     safety_check::PasswordsStatus::kSignedOut);
-      if (!IsPasswordCheckupEnabled() && !noInsecurePasswords) {
-        return PasswordCheckRowStateUnmutedCompromisedPasswords;
-      }
       return PasswordCheckRowStateError;
     case PasswordCheckState::kOffline:
       base::UmaHistogramEnumeration(kSafetyCheckMetricsPasswords,
                                     safety_check::PasswordsStatus::kOffline);
-      if (!IsPasswordCheckupEnabled() && !noInsecurePasswords) {
-        return PasswordCheckRowStateUnmutedCompromisedPasswords;
-      }
       return PasswordCheckRowStateError;
     case PasswordCheckState::kQuotaLimit:
       base::UmaHistogramEnumeration(kSafetyCheckMetricsPasswords,
                                     safety_check::PasswordsStatus::kQuotaLimit);
-      if (!IsPasswordCheckupEnabled() && !noInsecurePasswords) {
-        return PasswordCheckRowStateUnmutedCompromisedPasswords;
-      }
       return PasswordCheckRowStateError;
     case PasswordCheckState::kOther:
       base::UmaHistogramEnumeration(kSafetyCheckMetricsPasswords,
                                     safety_check::PasswordsStatus::kError);
-      if (!IsPasswordCheckupEnabled() && !noInsecurePasswords) {
-        return PasswordCheckRowStateUnmutedCompromisedPasswords;
-      }
       return PasswordCheckRowStateError;
     case PasswordCheckState::kCanceled:
     case PasswordCheckState::kIdle: {
-      if (!IsPasswordCheckupEnabled() && !noInsecurePasswords) {
-        base::UmaHistogramEnumeration(
-            kSafetyCheckMetricsPasswords,
-            safety_check::PasswordsStatus::kCompromisedExist);
-        return PasswordCheckRowStateUnmutedCompromisedPasswords;
-      } else if (self.currentPasswordCheckState == PasswordCheckState::kIdle) {
+      if (self.currentPasswordCheckState == PasswordCheckState::kIdle) {
         // Safe state is only possible after the state transitioned from
         // kRunning to kIdle.
         if (wasRunning) {
@@ -579,8 +666,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
                                           safety_check::PasswordsStatus::kSafe);
             return PasswordCheckRowStateSafe;
           }
-          // Reaching this point means that the kIOSPasswordCheckup feature is
-          // enabled and that there are insecure passwords.
+          // Reaching this point means that there are insecure passwords.
           return [self passwordCheckRowStateFromHighestPriorityWarningType:
                            insecureCredentials];
         }
@@ -602,10 +688,19 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
           safety_check::PasswordsStatus::kCompromisedExist);
       return PasswordCheckRowStateUnmutedCompromisedPasswords;
     case WarningType::kReusedPasswordsWarning:
+      base::UmaHistogramEnumeration(
+          kSafetyCheckMetricsPasswords,
+          safety_check::PasswordsStatus::kReusedPasswordsExist);
       return PasswordCheckRowStateReusedPasswords;
     case WarningType::kWeakPasswordsWarning:
+      base::UmaHistogramEnumeration(
+          kSafetyCheckMetricsPasswords,
+          safety_check::PasswordsStatus::kWeakPasswordsExist);
       return PasswordCheckRowStateWeakPasswords;
     case WarningType::kDismissedWarningsWarning:
+      base::UmaHistogramEnumeration(
+          kSafetyCheckMetricsPasswords,
+          safety_check::PasswordsStatus::kMutedCompromisedExist);
       return PasswordCheckRowStateDismissedWarnings;
     case WarningType::kNoInsecurePasswordsWarning:
       base::UmaHistogramEnumeration(kSafetyCheckMetricsPasswords,
@@ -651,51 +746,32 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
   switch (self.currentPasswordCheckState) {
     case PasswordCheckState::kRunning:
     case PasswordCheckState::kNoPasswords:
-      message = IsPasswordCheckupEnabled()
-                    ? l10n_util::GetNSString(
-                          IDS_IOS_PASSWORD_CHECKUP_ERROR_NO_PASSWORDS)
-                    : l10n_util::GetNSString(
-                          IDS_IOS_PASSWORD_CHECK_ERROR_NO_PASSWORDS);
+      message =
+          l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_NO_PASSWORDS);
       break;
     case PasswordCheckState::kCanceled:
     case PasswordCheckState::kIdle:
       return nil;
     case PasswordCheckState::kSignedOut:
       message =
-          IsPasswordCheckupEnabled()
-              ? l10n_util::GetNSString(
-                    IDS_IOS_PASSWORD_CHECKUP_ERROR_SIGNED_OUT)
-              : l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECK_ERROR_SIGNED_OUT);
+          l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_SIGNED_OUT);
       break;
     case PasswordCheckState::kOffline:
-      message =
-          IsPasswordCheckupEnabled()
-              ? l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_OFFLINE)
-              : l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECK_ERROR_OFFLINE);
+      message = l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_OFFLINE);
       break;
     case PasswordCheckState::kQuotaLimit:
       if ([self canUseAccountPasswordCheckup]) {
-        message =
-            IsPasswordCheckupEnabled()
-                ? l10n_util::GetNSString(
-                      IDS_IOS_PASSWORD_CHECKUP_ERROR_QUOTA_LIMIT_VISIT_GOOGLE)
-                : l10n_util::GetNSString(
-                      IDS_IOS_PASSWORD_CHECK_ERROR_QUOTA_LIMIT_VISIT_GOOGLE);
+        message = l10n_util::GetNSString(
+            IDS_IOS_PASSWORD_CHECKUP_ERROR_QUOTA_LIMIT_VISIT_GOOGLE);
         linkURL = password_manager::GetPasswordCheckupURL(
             password_manager::PasswordCheckupReferrer::kPasswordCheck);
       } else {
-        message = IsPasswordCheckupEnabled()
-                      ? l10n_util::GetNSString(
-                            IDS_IOS_PASSWORD_CHECKUP_ERROR_QUOTA_LIMIT)
-                      : l10n_util::GetNSString(
-                            IDS_IOS_PASSWORD_CHECK_ERROR_QUOTA_LIMIT);
+        message =
+            l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_QUOTA_LIMIT);
       }
       break;
     case PasswordCheckState::kOther:
-      message =
-          IsPasswordCheckupEnabled()
-              ? l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_OTHER)
-              : l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECK_ERROR_OTHER);
+      message = l10n_util::GetNSString(IDS_IOS_PASSWORD_CHECKUP_ERROR_OTHER);
       break;
   }
   return [self attributedStringWithText:message link:linkURL];
@@ -703,8 +779,9 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 
 // Computes whether user is capable to run password check in Google Account.
 - (BOOL)canUseAccountPasswordCheckup {
-  return self.syncService->CanSyncFeatureStart() &&
-         !self.syncService->IsEncryptEverythingEnabled();
+  return password_manager::sync_util::GetAccountForSaving(self.userPrefService,
+                                                          self.syncService) &&
+         !self.syncService->GetUserSettings()->IsEncryptEverythingEnabled();
 }
 
 // Configures check error info with a link for popovers.
@@ -760,6 +837,10 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 - (void)startCheck {
   // Otherwise start a check.
   self.checkStartTime = base::Time::Now();
+
+  if (IsSafetyCheckMagicStackEnabled()) {
+    [self updateTimestampOfLastRun];
+  }
 
   // Record the current state of the checks.
   self.previousUpdateCheckRowState = self.updateCheckRowState;
@@ -838,7 +919,8 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
             }
           });
     } else {
-      self.passwordCheckManager->StartPasswordCheck();
+      self.passwordCheckManager->StartPasswordCheck(
+          password_manager::LeakDetectionInitiator::kBulkSyncedPasswordsCheck);
     }
     // Want to show the loading wheel momentarily.
     dispatch_after(
@@ -849,6 +931,15 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
           // push a completed state to the UI if the check was cancelled.
           if (weakSelf.checksRemaining)
             [weakSelf checkAndReconfigureSafeBrowsingState];
+
+          NSString* announcement = weakSelf.updateCheckItem.detailText;
+          announcement = [announcement
+              stringByAppendingString:weakSelf.passwordCheckItem.detailText];
+          announcement = [announcement
+              stringByAppendingString:weakSelf.safeBrowsingCheckItem
+                                          .detailText];
+          UIAccessibilityPostNotification(
+              UIAccessibilityScreenChangedNotification, announcement);
         });
   }
 }
@@ -866,13 +957,22 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
       (FoundInsecurePasswords(self.passwordCheckRowState));
   if (self.checkDidRun && issuesFound) {
     [self updateTimestampOfLastCheck];
+
+    if (IsSafetyCheckMagicStackEnabled()) {
+      [self updateTimestampOfLastRun];
+    }
+
     self.checkDidRun = NO;
   } else if (self.checkDidRun && !issuesFound) {
     // Clear the timestamp if the last check found no issues.
     [[NSUserDefaults standardUserDefaults]
-        setDouble:base::Time().ToDoubleT()
+        setDouble:base::Time().InSecondsFSinceUnixEpoch()
            forKey:kTimestampOfLastIssueFoundKey];
     self.checkDidRun = NO;
+
+    if (IsSafetyCheckMagicStackEnabled()) {
+      [self updateTimestampOfLastRun];
+    }
   }
   // If no checks are still running, reset `checkStartItem`.
   self.checkStartState = CheckStartStateDefault;
@@ -922,8 +1022,8 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 // jittery, delay the reconfigure call, using `newRowState`.
 - (void)possiblyDelayReconfigureUpdateCheckItemWithState:
     (UpdateCheckRowStates)newRowState {
-  double secondsSinceStart =
-      base::Time::Now().ToDoubleT() - self.checkStartTime.ToDoubleT();
+  double secondsSinceStart = base::Time::Now().InSecondsFSinceUnixEpoch() -
+                             self.checkStartTime.InSecondsFSinceUnixEpoch();
   double minDelay = kUpdateRowMinDelay;
   if (secondsSinceStart < minDelay) {
     // Want to show the loading wheel for minimum time.
@@ -952,8 +1052,6 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
   if (self.updateCheckRowState != UpdateCheckRowStateRunning) {
     return;
   }
-
-  NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
 
   if (details.is_up_to_date) {
     [self possiblyDelayReconfigureUpdateCheckItemWithState:
@@ -988,15 +1086,14 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     base::UmaHistogramEnumeration(kSafetyCheckMetricsUpdates,
                                   safety_check::UpdateStatus::kOutdated);
 
-    // Valid results, update all NSUserDefaults.
-    [defaults setValue:base::SysUTF8ToNSString(upgradeUrl.spec())
-                forKey:kIOSChromeUpgradeURLKey];
-    [defaults setValue:base::SysUTF8ToNSString(details.next_version)
-                forKey:kIOSChromeNextVersionKey];
+    // Valid results, update all prefs.
+    PrefService* prefService = GetApplicationContext()->GetLocalState();
+    prefService->SetString(kIOSChromeNextVersionKey, details.next_version);
+    prefService->SetString(kIOSChromeUpgradeURLKey, upgradeUrl.spec());
 
     // Treat the safety check finding the device out of date as if the update
     // infobar was just shown to not overshow the infobar to the user.
-    [defaults setObject:[NSDate date] forKey:kLastInfobarDisplayTimeKey];
+    prefService->SetTime(kLastInfobarDisplayTimeKey, base::Time::Now());
   }
 }
 
@@ -1005,9 +1102,11 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 - (void)performUpdateCheck {
   __weak __typeof__(self) weakSelf = self;
 
-  OmahaService::CheckNow(base::BindOnce(^(UpgradeRecommendedDetails details) {
-    [weakSelf handleOmahaResponse:details];
-  }));
+  if (OmahaService::HasStarted()) {
+    OmahaService::CheckNow(base::BindOnce(^(UpgradeRecommendedDetails details) {
+      [weakSelf handleOmahaResponse:details];
+    }));
+  }
 
   // If after 30 seconds the Omaha server has not responded, assume Omaha error.
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(30 * NSEC_PER_SEC)),
@@ -1111,8 +1210,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
       }
     }
   }
-
-  [self.consumer reconfigureCellsForItems:@[ self.updateCheckItem ]];
+  [self reconfigureCellForItem:_updateCheckItem];
 }
 
 // Reconfigures the display of the `passwordCheckItem` based on current state of
@@ -1137,10 +1235,8 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
       break;
     }
     case PasswordCheckRowStateRunning: {
-      if (IsPasswordCheckupEnabled()) {
-        self.passwordCheckItem.detailText =
-            GetNSString(IDS_IOS_SAFETY_CHECK_PASSWORD_CHECKUP_ONGOING);
-      }
+      self.passwordCheckItem.detailText =
+          GetNSString(IDS_IOS_SAFETY_CHECK_PASSWORD_CHECKUP_ONGOING);
       self.passwordCheckItem.indicatorHidden = NO;
       break;
     }
@@ -1153,17 +1249,12 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
       break;
     }
     case PasswordCheckRowStateUnmutedCompromisedPasswords: {
-      NSInteger compromisedPasswordCount =
-          IsPasswordCheckupEnabled()
-              ? GetPasswordCountForWarningType(
-                    WarningType::kCompromisedPasswordsWarning,
-                    self.passwordCheckManager->GetInsecureCredentials())
-              : self.passwordCheckManager->GetInsecureCredentials().size();
+      NSInteger compromisedPasswordCount = GetPasswordCountForWarningType(
+          WarningType::kCompromisedPasswordsWarning,
+          self.passwordCheckManager->GetInsecureCredentials());
       self.passwordCheckItem.detailText =
           base::SysUTF16ToNSString(l10n_util::GetPluralStringFUTF16(
-              IsPasswordCheckupEnabled()
-                  ? IDS_IOS_PASSWORD_CHECKUP_COMPROMISED_COUNT
-                  : IDS_IOS_CHECK_PASSWORDS_COMPROMISED_COUNT,
+              IDS_IOS_PASSWORD_CHECKUP_COMPROMISED_COUNT,
               compromisedPasswordCount));
       self.passwordCheckItem.warningState = WarningState::kSevereWarning;
       break;
@@ -1207,7 +1298,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     }
   }
 
-  [self.consumer reconfigureCellsForItems:@[ self.passwordCheckItem ]];
+  [self reconfigureCellForItem:_passwordCheckItem];
 }
 
 // Reconfigures the display of the `safeBrowsingCheckItem` based on current
@@ -1256,7 +1347,7 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     }
   }
 
-  [self.consumer reconfigureCellsForItems:@[ self.safeBrowsingCheckItem ]];
+  [self reconfigureCellForItem:_safeBrowsingCheckItem];
 }
 
 // Chooses the Safe Browsing detail text string that should be used based on the
@@ -1273,7 +1364,6 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
           IDS_IOS_SETTINGS_SAFETY_CHECK_SAFE_BROWSING_ENHANCED_PROTECTION_ENABLED_DESC);
     default:
       NOTREACHED();
-      return nil;
   }
 }
 
@@ -1285,14 +1375,23 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
     self.checkStartItem.text =
         GetNSString(IDS_IOS_CANCEL_PASSWORD_CHECK_BUTTON);
   }
-  [self.consumer reconfigureCellsForItems:@[ self.checkStartItem ]];
+  [self reconfigureCellForItem:_checkStartItem];
 }
 
 // Updates the timestamp of when safety check last found an issue.
 - (void)updateTimestampOfLastCheck {
   NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-  [defaults setDouble:base::Time::Now().ToDoubleT()
+  [defaults setDouble:base::Time::Now().InSecondsFSinceUnixEpoch()
                forKey:kTimestampOfLastIssueFoundKey];
+}
+
+// Updates the timestamp of when the safety check was most recently run.
+//
+// TODO(crbug.com/40930653): Remove this method once Settings Safety Check is
+// refactored to use the new Safety Check Manager.
+- (void)updateTimestampOfLastRun {
+  _localPrefService->SetTime(prefs::kIosSettingsSafetyCheckLastRunTime,
+                             base::Time::Now());
 }
 
 // Shows the timestamp if the last safety check found issues.
@@ -1312,23 +1411,36 @@ void ResetSettingsCheckItem(SettingsCheckItem* item) {
 // Formats the last safety check issues found timestamp for display.
 - (NSString*)formatElapsedTimeSinceLastCheck {
   NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-  base::Time lastCompletedCheck = base::Time::FromDoubleT(
+  base::Time lastCompletedCheck = base::Time::FromSecondsSinceUnixEpoch(
       [defaults doubleForKey:kTimestampOfLastIssueFoundKey]);
 
   base::TimeDelta elapsedTime = base::Time::Now() - lastCompletedCheck;
 
-  std::u16string timestamp;
   // If check found issues less than 1 minuete ago.
   if (elapsedTime < base::Minutes(1)) {
-    timestamp = l10n_util::GetStringUTF16(IDS_IOS_CHECK_FINISHED_JUST_NOW);
-  } else {
-    timestamp = ui::TimeFormat::SimpleWithMonthAndYear(
-        ui::TimeFormat::FORMAT_ELAPSED, ui::TimeFormat::LENGTH_LONG,
-        elapsedTime, true);
+    return l10n_util::GetNSString(IDS_IOS_CHECK_FINISHED_JUST_NOW);
   }
+
+  std::u16string timestamp = ui::TimeFormat::SimpleWithMonthAndYear(
+      ui::TimeFormat::FORMAT_ELAPSED, ui::TimeFormat::LENGTH_LONG, elapsedTime,
+      true);
 
   return l10n_util::GetNSStringF(
       IDS_IOS_SETTINGS_SAFETY_CHECK_ISSUES_FOUND_TIME, timestamp);
+}
+
+// Updates the consumer's cell corresponding to `item`.
+- (void)reconfigureCellForItem:(TableViewItem*)item {
+  CHECK(item);
+  // Reconfiguration can change the height the cell needs for displaying its
+  // content. Wrapping it around `performBatchTableViewUpdates` so the cell is
+  // properly resized.
+  __weak __typeof(self) weakSelf = self;
+  [self.consumer
+      performBatchTableViewUpdates:^{
+        [weakSelf.consumer reconfigureCellsForItems:@[ item ]];
+      }
+                        completion:nil];
 }
 
 @end

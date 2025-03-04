@@ -24,6 +24,7 @@
 #include "ash/test/ash_test_base.h"
 #include "ash/test_shell_delegate.h"
 #include "base/command_line.h"
+#include "base/files/safe_base_name.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
@@ -32,6 +33,7 @@
 #include "components/prefs/pref_service.h"
 #include "components/session_manager/session_manager_types.h"
 #include "ui/compositor/scoped_animation_duration_scale_mode.h"
+#include "ui/display/manager/display_manager.h"
 #include "ui/display/test/display_manager_test_api.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/devices/device_data_manager.h"
@@ -39,6 +41,7 @@
 #include "ui/events/devices/stylus_state.h"
 #include "ui/events/event.h"
 #include "ui/events/test/event_generator.h"
+#include "ui/views/accessibility/view_accessibility.h"
 
 namespace ash {
 
@@ -97,7 +100,7 @@ class PaletteTrayTest : public AshTestBase {
     return Shell::Get()->session_controller()->GetActivePrefService();
   }
 
-  raw_ptr<PaletteTray, ExperimentalAsh> palette_tray_ = nullptr;  // not owned
+  raw_ptr<PaletteTray, DanglingUntriaged> palette_tray_ = nullptr;  // not owned
 
   std::unique_ptr<PaletteTrayTestApi> test_api_;
 };
@@ -477,6 +480,22 @@ TEST_F(PaletteTrayTestWithInternalStylus, PaletteBubbleShownOnEject) {
       PaletteToolId::LASER_POINTER));
 }
 
+// Verify that palette bubble is shown/hidden on stylus eject/insert iff the
+// auto open palette setting is true.
+TEST_F(PaletteTrayTestWithInternalStylus, PaletteBubbleViewAccessibleName) {
+  active_user_pref_service()->SetBoolean(prefs::kEnableStylusTools, true);
+
+  // Removing the stylus shows the bubble.
+  EjectStylus();
+  ASSERT_TRUE(palette_tray_->GetBubbleView());
+
+  ui::AXNodeData node_data;
+  palette_tray_->GetBubbleView()->GetViewAccessibility().GetAccessibleNodeData(
+      &node_data);
+  EXPECT_EQ(node_data.GetString16Attribute(ax::mojom::StringAttribute::kName),
+            test_api_->GetAccessibleNameForBubble());
+}
+
 // Base class for tests that need to simulate an internal stylus, and need to
 // start without an active session.
 class PaletteTrayNoSessionTestWithInternalStylus : public PaletteTrayTest {
@@ -584,13 +603,6 @@ class PaletteTrayTestMultiDisplay : public PaletteTrayTest {
   PaletteTrayTestMultiDisplay& operator=(const PaletteTrayTestMultiDisplay&) =
       delete;
 
-  // Performs a tap on the palette tray button.
-  void PerformTap(PaletteTray* tray) {
-    ui::GestureEvent tap(0, 0, 0, base::TimeTicks(),
-                         ui::GestureEventDetails(ui::ET_GESTURE_TAP));
-    tray->PerformAction(tap);
-  }
-
   // Fake a stylus ejection.
   void EjectStylus() {
     test_api_->OnStylusStateChanged(ui::StylusState::REMOVED);
@@ -631,7 +643,7 @@ class PaletteTrayTestMultiDisplay : public PaletteTrayTest {
   }
 
  protected:
-  raw_ptr<PaletteTray, ExperimentalAsh> palette_tray_external_ = nullptr;
+  raw_ptr<PaletteTray, DanglingUntriaged> palette_tray_external_ = nullptr;
 
   std::unique_ptr<PaletteTrayTestApi> test_api_external_;
 };
@@ -758,9 +770,7 @@ TEST_F(PaletteTrayTestMultiDisplay, MirrorModeEnable) {
 
 class PaletteTrayTestWithProjector : public PaletteTrayTest {
  public:
-  PaletteTrayTestWithProjector() {
-    scoped_feature_list_.InitWithFeatures({features::kProjector}, {});
-  }
+  PaletteTrayTestWithProjector() = default;
 
   PaletteTrayTestWithProjector(const PaletteTrayTestWithProjector&) = delete;
   PaletteTrayTestWithProjector& operator=(const PaletteTrayTestWithProjector&) =
@@ -775,10 +785,7 @@ class PaletteTrayTestWithProjector : public PaletteTrayTest {
   }
 
  protected:
-  raw_ptr<ProjectorSessionImpl, ExperimentalAsh> projector_session_;
-
- private:
-  base::test::ScopedFeatureList scoped_feature_list_;
+  raw_ptr<ProjectorSessionImpl, DanglingUntriaged> projector_session_;
 };
 
 // Verify that the palette tray is hidden during a Projector session.
@@ -795,7 +802,8 @@ TEST_F(PaletteTrayTestWithProjector,
 
   // Verify palette tray is hidden and the active tool is deactivated during
   // Projector session.
-  projector_session_->Start("projector_data");
+  projector_session_->Start(
+      base::SafeBaseName::Create("projector_data").value());
   EXPECT_FALSE(palette_tray_->GetVisible());
   EXPECT_EQ(
       test_api_->palette_tool_manager()->GetActiveTool(PaletteGroup::MODE),

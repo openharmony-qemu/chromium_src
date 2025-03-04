@@ -7,14 +7,14 @@
 
 #import <UIKit/UIKit.h>
 
-#include "ios/chrome/app/application_mode.h"
-#import "ios/chrome/browser/main/browser_provider_interface.h"
+#import "ios/chrome/app/application_mode.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider_interface.h"
 
 @protocol ApplicationCommands;
-@protocol BrowsingDataCommands;
 class Browser;
-class ChromeBrowserState;
+class ProfileIOS;
 @class SceneState;
+@protocol SettingsCommands;
 @class WrangledBrowser;
 
 // Wrangler (a class in need of further refactoring) for handling the creation
@@ -22,19 +22,20 @@ class ChromeBrowserState;
 // BrowserViewControllers.
 @interface BrowserViewWrangler : NSObject <BrowserProviderInterface>
 
-// Initialize a new instance of this class using `browserState` as the primary
-// browser state for the tab models and BVCs.
+// Initialize a new instance of this class using `profile` as the primary
+// browser state for the tab models and BVCs. The Browser objects are created
+// during the initialization (the OTR Browser may be destroyed and recreated
+// during the application lifetime).
+//
 // `sceneState` is the scene state that will be associated with any Browsers
 // created.
-// `applicationCommandEndpoint` and `browsingDataCommandEndpoint` are the
-// objects that methods in the ApplicationCommands and BrowsingDataCommands
-// protocol should be dispatched to.
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState
-                          sceneState:(SceneState*)sceneState
-          applicationCommandEndpoint:
-              (id<ApplicationCommands>)applicationCommandEndpoint
-         browsingDataCommandEndpoint:
-             (id<BrowsingDataCommands>)browsingDataCommandEndpoint
+// `applicationEndpoint`, `settingsEndpoint, and `browsingDataEndpoint` are the
+// objects that methods in the respective command protocols should be
+// dispatched to.
+- (instancetype)initWithProfile:(ProfileIOS*)profile
+                     sceneState:(SceneState*)sceneState
+            applicationEndpoint:(id<ApplicationCommands>)applicationEndpoint
+               settingsEndpoint:(id<SettingsCommands>)settingsEndpoint
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)init NS_UNAVAILABLE;
@@ -52,38 +53,26 @@ class ChromeBrowserState;
 @property(nonatomic, readonly) WrangledBrowser* mainInterface;
 // The incognito interface. Its `incognito` property must be YES.
 @property(nonatomic, readonly) WrangledBrowser* incognitoInterface;
-// YES iff `incognitoInterface` is already created.
-@property(nonatomic, assign, readonly) BOOL hasIncognitoInterface;
-
-// Creates the main Browser used by the receiver, using the browser state
-// it was configured with.
-// Returns the created browser. The browser's internals, e.g.
-// the dispatcher, can now be accessed. But createMainCoordinatorAndInterface
-// should be called shortly after.
-- (Browser*)createMainBrowser;
 
 // Creates the main interface; until this
 // method is called, the main and incognito interfaces will be nil. This should
 // be done before the main interface is accessed, usually immediately after
 // initialization.
-// -createMainBrowser MUST be called before calling this method.
 - (void)createMainCoordinatorAndInterface;
 
-// Creates the inactive browser that stores all tabs from the main browser that
-// have not been opened after a defined time. This browser is added to the main
-// interface. -createMainBrowser and -createMainCoordinatorAndInterface MUST be
-// called before calling this method.
-- (void)createInactiveBrowser;
+// Requests the session to be loaded for all Browsers. Needs to be called
+// after -createMainCoordinatorAndInterface.
+- (void)loadSession;
 
 // Tells the receiver to clean up all the state that is tied to the incognito
-// BrowserState. This method should be called before the incognito BrowserState
+// profile. This method should be called before the incognito profile
 // is destroyed.
-- (void)willDestroyIncognitoBrowserState;
+- (void)willDestroyIncognitoProfile;
 
 // Tells the receiver to create all state that is tied to the incognito
-// BrowserState. This method should be called after the incognito BrowserState
+// profile. This method should be called after the incognito profile
 // has been created.
-- (void)incognitoBrowserStateCreated;
+- (void)incognitoProfileCreated;
 
 // Tells the receiver to clean up prior to deallocation. It is an error for an
 // instance of this class to deallocate without a call to this method first.

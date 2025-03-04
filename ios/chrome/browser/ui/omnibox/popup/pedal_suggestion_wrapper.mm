@@ -6,10 +6,6 @@
 #import "base/notreached.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @implementation PedalSuggestionWrapper
 
 - (instancetype)initWithPedal:(id<OmniboxPedal, OmniboxIcon>)pedal {
@@ -93,7 +89,6 @@
 
 - (NSString*)matchTypeIconAccessibilityIdentifier {
   NOTREACHED();
-  return nil;
 }
 
 - (BOOL)isMatchTypeSearch {
@@ -110,6 +105,10 @@
 
 - (NSAttributedString*)omniboxPreviewText {
   return self.text;
+}
+
+- (NSMutableArray*)actionsInSuggest {
+  return nil;
 }
 
 @end

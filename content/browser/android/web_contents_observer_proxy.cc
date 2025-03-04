@@ -13,16 +13,19 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "content/browser/android/navigation_handle_proxy.h"
+#include "content/browser/media/session/media_session_android.h"
+#include "content/browser/media/session/media_session_impl.h"
 #include "content/browser/renderer_host/navigation_request.h"
 #include "content/browser/renderer_host/render_widget_host_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
-#include "content/public/android/content_jni_headers/LoadCommittedDetails_jni.h"
-#include "content/public/android/content_jni_headers/WebContentsObserverProxy_jni.h"
 #include "content/public/browser/navigation_details.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/navigation_handle.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/android/gurl_android.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "content/public/android/content_jni_headers/LoadCommittedDetails_jni.h"
+#include "content/public/android/content_jni_headers/WebContentsObserverProxy_jni.h"
 
 using base::android::AttachCurrentThread;
 using base::android::JavaParamRef;
@@ -89,10 +92,12 @@ void WebContentsObserverProxy::RenderFrameDeleted(
 void WebContentsObserverProxy::PrimaryMainFrameRenderProcessGone(
     base::TerminationStatus termination_status) {
   JNIEnv* env = AttachCurrentThread();
-  Java_WebContentsObserverProxy_renderProcessGone(env, java_observer_);
+  Java_WebContentsObserverProxy_primaryMainFrameRenderProcessGone(
+      env, java_observer_, termination_status);
 }
 
 void WebContentsObserverProxy::DidStartLoading() {
+  TRACE_EVENT("browser", "WebContentsObserverProxy::DidStartLoading");
   JNIEnv* env = AttachCurrentThread();
   if (auto* entry = web_contents()->GetController().GetPendingEntry()) {
     base_url_of_last_started_data_url_ = entry->GetBaseURLForDataURL();
@@ -107,7 +112,7 @@ void WebContentsObserverProxy::DidStopLoading() {
   GURL url = web_contents()->GetLastCommittedURL();
   bool assume_valid = SetToBaseURLForDataURLIfNeeded(&url);
   // DidStopLoading is the last event we should get.
-  base_url_of_last_started_data_url_ = GURL::EmptyGURL();
+  base_url_of_last_started_data_url_ = GURL();
   Java_WebContentsObserverProxy_didStopLoading(
       env, java_observer_, url::GURLAndroid::FromNativeGURL(env, url),
       assume_valid);
@@ -141,6 +146,7 @@ void WebContentsObserverProxy::PrimaryMainDocumentElementAvailable() {
 
 void WebContentsObserverProxy::DidStartNavigation(
     NavigationHandle* navigation_handle) {
+  TRACE_EVENT("browser", "WebContentsObserverProxy::DidStartNavigation");
   if (navigation_handle->IsInPrimaryMainFrame()) {
     Java_WebContentsObserverProxy_didStartNavigationInPrimaryMainFrame(
         AttachCurrentThread(), java_observer_,
@@ -230,6 +236,11 @@ void WebContentsObserverProxy::DidChangeThemeColor() {
   Java_WebContentsObserverProxy_didChangeThemeColor(env, java_observer_);
 }
 
+void WebContentsObserverProxy::OnBackgroundColorChanged() {
+  JNIEnv* env = AttachCurrentThread();
+  Java_WebContentsObserverProxy_onBackgroundColorChanged(env, java_observer_);
+}
+
 void WebContentsObserverProxy::MediaStartedPlaying(
     const MediaPlayerInfo& video_type,
     const MediaPlayerId& id) {
@@ -268,15 +279,9 @@ void WebContentsObserverProxy::DidFirstVisuallyNonEmptyPaint() {
 
 void WebContentsObserverProxy::OnVisibilityChanged(
     content::Visibility visibility) {
-  // Occlusion is not supported on Android.
-  DCHECK_NE(visibility, content::Visibility::OCCLUDED);
-
   JNIEnv* env = AttachCurrentThread();
-
-  if (visibility == content::Visibility::VISIBLE)
-    Java_WebContentsObserverProxy_wasShown(env, java_observer_);
-  else
-    Java_WebContentsObserverProxy_wasHidden(env, java_observer_);
+  Java_WebContentsObserverProxy_onVisibilityChanged(
+      env, java_observer_, static_cast<jint>(visibility));
 }
 
 void WebContentsObserverProxy::TitleWasSet(NavigationEntry* entry) {
@@ -328,6 +333,15 @@ void WebContentsObserverProxy::OnWebContentsFocused(RenderWidgetHost*) {
 void WebContentsObserverProxy::OnWebContentsLostFocus(RenderWidgetHost*) {
   JNIEnv* env = AttachCurrentThread();
   Java_WebContentsObserverProxy_onWebContentsLostFocus(env, java_observer_);
+}
+
+void WebContentsObserverProxy::MediaSessionCreated(MediaSession* session) {
+  JNIEnv* env = AttachCurrentThread();
+  Java_WebContentsObserverProxy_mediaSessionCreated(
+      env, java_observer_,
+      static_cast<MediaSessionImpl*>(session)
+          ->GetMediaSessionAndroid()
+          ->GetJavaObject());
 }
 
 }  // namespace content

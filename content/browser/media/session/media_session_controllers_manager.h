@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_observer.h"  // For MediaPlayerId.
@@ -74,10 +75,10 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when the WebContents was muted or unmuted.
   void WebContentsMutedStateChanged(bool muted);
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   // Set whether to the HTML play can be used to control media
   void SetHtmlPlayEnabled(bool enabled);
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Called when the player's mute status changed.
   void OnMediaMutedStatusChanged(const MediaPlayerId& id, bool mute);
@@ -99,6 +100,10 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   void OnRemotePlaybackMetadataChange(
       const MediaPlayerId& id,
       media_session::mojom::RemotePlaybackMetadataPtr remote_playback_metadata);
+
+  // Called when video visibility for the player |id| has changed.
+  void OnVideoVisibilityChanged(const MediaPlayerId& id,
+                                bool meets_visibility_threshold);
 
  private:
   using ControllersMap =

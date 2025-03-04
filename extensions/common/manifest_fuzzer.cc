@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "extensions/common/manifest.h"
+
+#include <fuzzer/FuzzedDataProvider.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <fuzzer/FuzzedDataProvider.h>
 
 #include "base/at_exit.h"
 #include "base/check.h"
@@ -18,10 +20,8 @@
 #include "base/values.h"
 #include "extensions/common/extensions_client.h"
 #include "extensions/common/install_warning.h"
-#include "extensions/common/manifest.h"
 #include "extensions/common/mojom/manifest.mojom-shared.h"
 #include "extensions/test/test_extensions_client.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace extensions {
 
@@ -80,8 +80,9 @@ struct PerInputEnvironment {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   static Environment env;
-  if (size > kMaxInputSizeBytes)
+  if (size > kMaxInputSizeBytes) {
     return 0;
+  }
   FuzzedDataProvider fuzzed_data_provider(data, size);
   PerInputEnvironment per_input_env(fuzzed_data_provider);
 
@@ -89,7 +90,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (extension_id.empty())
     extension_id.resize(1);
 
-  absl::optional<base::Value> parsed_json = base::JSONReader::Read(
+  std::optional<base::Value> parsed_json = base::JSONReader::Read(
       fuzzed_data_provider.ConsumeRemainingBytesAsString());
   if (!parsed_json || !parsed_json->is_dict())
     return 0;
@@ -97,9 +98,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   for (auto location : kLocations) {
     Manifest manifest(location, parsed_json->GetDict().Clone(), extension_id);
 
-    std::string error;
     std::vector<InstallWarning> install_warning;
-    manifest.ValidateManifest(&error, &install_warning);
+    manifest.ValidateManifest(&install_warning);
   }
 
   return 0;

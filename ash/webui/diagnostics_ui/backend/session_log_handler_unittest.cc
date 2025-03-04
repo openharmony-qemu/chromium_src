@@ -8,7 +8,6 @@
 #include <string>
 #include <utility>
 
-#include "ash/constants/ash_features.h"
 #include "ash/public/cpp/holding_space/mock_holding_space_client.h"
 #include "ash/system/diagnostics/diagnostics_browser_delegate.h"
 #include "ash/system/diagnostics/diagnostics_log_controller.h"
@@ -26,7 +25,6 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/test/bind.h"
-#include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
 #include "base/test/test_simple_task_runner.h"
 #include "base/values.h"
@@ -40,6 +38,7 @@
 #include "ui/shell_dialogs/select_file_dialog.h"
 #include "ui/shell_dialogs/select_file_dialog_factory.h"
 #include "ui/shell_dialogs/select_file_policy.h"
+#include "ui/shell_dialogs/selected_file_info.h"
 #include "url/gurl.h"
 
 namespace ash::diagnostics {
@@ -71,22 +70,6 @@ std::vector<std::string> GetCombinedLogContents(
   std::string contents;
   base::ReadFileToString(log_path, &contents);
   return GetLogLines(contents);
-}
-
-}  // namespace
-
-class TestSelectFilePolicy : public ui::SelectFilePolicy {
- public:
-  TestSelectFilePolicy& operator=(const TestSelectFilePolicy&) = delete;
-
-  bool CanOpenSelectFileDialog() override { return true; }
-  void SelectFileDenied() override {}
-};
-
-// A fake SelectFilePolicyCreator.
-std::unique_ptr<ui::SelectFilePolicy> CreateTestSelectFilePolicy(
-    content::WebContents* web_contents) {
-  return std::make_unique<TestSelectFilePolicy>();
 }
 
 // A fake DiagnosticsBrowserDelegate.
@@ -122,21 +105,19 @@ class TestSelectFileDialog : public ui::SelectFileDialog {
                       int file_type_index,
                       const base::FilePath::StringType& default_extension,
                       gfx::NativeWindow owning_window,
-                      void* params,
                       const GURL* caller) override {
     if (selected_path_.empty()) {
-      listener_->FileSelectionCanceled(params);
+      listener_->FileSelectionCanceled();
       return;
     }
 
-    listener_->FileSelected(selected_path_, /*index=*/0,
-                            /*params=*/nullptr);
+    listener_->FileSelected(ui::SelectedFileInfo(selected_path_), /*index=*/0);
   }
 
   bool IsRunning(gfx::NativeWindow owning_window) const override {
     return true;
   }
-  void ListenerDestroyed() override {}
+  void ListenerDestroyed() override { listener_ = nullptr; }
   bool HasMultipleFileTypeChoicesImpl() override { return false; }
 
  private:
@@ -186,12 +167,11 @@ class SessionLogHandlerTest : public NoSessionAshTestBase {
     NoSessionAshTestBase::SetUp();
     DiagnosticsLogController::Initialize(
         std::make_unique<FakeDiagnosticsBrowserDelegate>());
-    auto* controller = DiagnosticsLogController::Get();
-    telemetry_log_ = controller->GetTelemetryLog();
-    routine_log_ = controller->GetRoutineLog();
-    networking_log_ = controller->GetNetworkingLog();
     session_log_handler_ = std::make_unique<diagnostics::SessionLogHandler>(
-        base::BindRepeating(&CreateTestSelectFilePolicy),
+        base::BindRepeating(
+            [](content::WebContents*) -> std::unique_ptr<ui::SelectFilePolicy> {
+              return nullptr;
+            }),
         /*telemetry_log*/ nullptr, /*routine_log*/ nullptr,
         /*networking_log*/ nullptr, &holding_space_client_);
     session_log_handler_->SetWebUIForTest(&web_ui_);
@@ -232,11 +212,10 @@ class SessionLogHandlerTest : public NoSessionAshTestBase {
   content::TestWebUI web_ui_;
   std::unique_ptr<SessionLogHandler> session_log_handler_;
   base::ScopedTempDir temp_dir_;
-  raw_ptr<TelemetryLog, ExperimentalAsh> telemetry_log_;
-  raw_ptr<RoutineLog, ExperimentalAsh> routine_log_;
-  raw_ptr<NetworkingLog, ExperimentalAsh> networking_log_;
   testing::NiceMock<ash::MockHoldingSpaceClient> holding_space_client_;
 };
+
+}  // namespace
 
 TEST_F(SessionLogHandlerTest, SaveSessionLog) {
   // Run until idle to finish necessary setup.
@@ -244,7 +223,8 @@ TEST_F(SessionLogHandlerTest, SaveSessionLog) {
 
   base::RunLoop run_loop;
   // Populate routine log
-  routine_log_->LogRoutineStarted(mojom::RoutineType::kCpuStress);
+  DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineStarted(
+      mojom::RoutineType::kCpuStress);
   task_environment()->RunUntilIdle();
 
   // Populate telemetry log
@@ -263,11 +243,13 @@ TEST_F(SessionLogHandlerTest, SaveSessionLog) {
       expected_cpu_max_clock_speed_khz, expected_has_battery,
       expected_milestone_version, expected_full_version);
 
-  telemetry_log_->UpdateSystemInfo(std::move(test_info));
+  DiagnosticsLogController::Get()->GetTelemetryLog().UpdateSystemInfo(
+      std::move(test_info));
 
   // Select file
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
   base::Value::List args;
   args.Append(kHandlerFunctionName);
   session_log_handler_->SetLogCreatedClosureForTest(run_loop.QuitClosure());
@@ -322,7 +304,8 @@ TEST_F(SessionLogHandlerTest, SaveHeaderOnlySessionLog) {
 
   // Simulate select file
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
   base::Value::List args;
   args.Append(kHandlerFunctionName);
   session_log_handler_->SetLogCreatedClosureForTest(run_loop.QuitClosure());
@@ -357,7 +340,8 @@ TEST_F(SessionLogHandlerTest, SaveHeaderOnlySessionLog) {
 // was successful.
 TEST_F(SessionLogHandlerTest, SelectDirectory) {
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
 
   const size_t call_data_count_before_call = web_ui_.call_data().size();
   base::Value::List args;
@@ -380,7 +364,7 @@ TEST_F(SessionLogHandlerTest, CancelDialog) {
   // A dialog returning an empty file path simulates the user closing the
   // dialog without selecting a path.
   ui::SelectFileDialog::SetFactory(
-      new TestSelectFileDialogFactory(base::FilePath()));
+      std::make_unique<TestSelectFileDialogFactory>(base::FilePath()));
 
   const size_t call_data_count_before_call = web_ui_.call_data().size();
   base::Value::List args;
@@ -400,7 +384,8 @@ TEST_F(SessionLogHandlerTest, CancelDialog) {
 // added to the holding space.
 TEST_F(SessionLogHandlerTest, AddToHoldingSpace) {
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
   base::Value::List args;
   args.Append(kHandlerFunctionName);
 
@@ -419,7 +404,8 @@ TEST_F(SessionLogHandlerTest, AddToHoldingSpace) {
 // dialog is open when session_log_handler is destroyed.
 TEST_F(SessionLogHandlerTest, CleanUpDialogOnDeconstruct) {
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
   base::Value::List args;
   args.Append(kHandlerFunctionName);
   base::RunLoop run_loop;
@@ -434,11 +420,9 @@ TEST_F(SessionLogHandlerTest, CleanUpDialogOnDeconstruct) {
 // Validates CreateSessionLog task does not trigger a Use-After-Free error
 // when SessionLogHandler is destroyed before task is run. See crbug/1328708.
 TEST_F(SessionLogHandlerTest, NoUseAfterFree) {
-  base::test::ScopedFeatureList features;
-  features.InitAndDisableFeature(
-      ash::features::kEnableLogControllerForDiagnosticsApp);
   base::FilePath log_path = temp_dir_.GetPath().AppendASCII("test_path");
-  ui::SelectFileDialog::SetFactory(new TestSelectFileDialogFactory(log_path));
+  ui::SelectFileDialog::SetFactory(
+      std::make_unique<TestSelectFileDialogFactory>(log_path));
   base::Value::List args;
   args.Append(kHandlerFunctionName);
   base::RunLoop run_loop;

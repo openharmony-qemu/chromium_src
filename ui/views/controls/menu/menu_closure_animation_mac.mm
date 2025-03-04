@@ -38,7 +38,7 @@ void MenuClosureAnimationMac::Start() {
     step_ = AnimationStep::kFading;
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, base::BindOnce(&MenuClosureAnimationMac::AdvanceAnimation,
-                                  AsWeakPtr()));
+                                  weak_ptr_factory_.GetWeakPtr()));
     return;
   }
   AdvanceAnimation();
@@ -92,7 +92,7 @@ void MenuClosureAnimationMac::AnimationProgressed(
   while (submenu) {
     NSWindow* window =
         submenu->GetWidget()->GetNativeWindow().GetNativeNSWindow();
-    [window setAlphaValue:animation->CurrentValueBetween(1.0, 0.0)];
+    window.alphaValue = animation->CurrentValueBetween(1.0, 0.0);
 
     MenuItemView* parent = submenu->GetMenuItem()->GetParentMenuItem();
     submenu = parent ? parent->GetSubmenu() : nullptr;
@@ -105,7 +105,7 @@ void MenuClosureAnimationMac::AnimationEnded(const gfx::Animation* animation) {
 
 void MenuClosureAnimationMac::AnimationCanceled(
     const gfx::Animation* animation) {
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 }  // namespace views

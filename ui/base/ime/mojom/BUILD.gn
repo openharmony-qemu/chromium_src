@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//build/config/features.gni")
 
 component("shared_mojom_traits") {
   output_name = "ime_shared_mojom_traits"
@@ -10,11 +11,14 @@ component("shared_mojom_traits") {
   sources = [
     "ime_types_mojom_traits.cc",
     "ime_types_mojom_traits.h",
+    "text_edit_command_mojom_traits.cc",
+    "text_edit_command_mojom_traits.h",
   ]
   public_deps = [
     ":mojom_shared",
     "//ipc:param_traits",
     "//ui/base/ime:ime_types",
+    "//ui/base/ime:text_edit_commands",
   ]
 }
 
@@ -22,6 +26,7 @@ mojom("mojom") {
   generate_java = true
   sources = [
     "ime_types.mojom",
+    "text_edit_commands.mojom",
     "text_input_state.mojom",
     "virtual_keyboard_types.mojom",
   ]
@@ -56,6 +61,10 @@ mojom("mojom") {
           cpp = "::ui::TextInputAction"
         },
         {
+          mojom = "ui.mojom.TextEditCommand"
+          cpp = "::ui::TextEditCommand"
+        },
+        {
           mojom = "ui.mojom.TextInputMode"
           cpp = "::ui::TextInputMode"
         },
@@ -65,7 +74,10 @@ mojom("mojom") {
         },
       ]
 
-      traits_headers = [ "ime_types_mojom_traits.h" ]
+      traits_headers = [
+        "ime_types_mojom_traits.h",
+        "text_edit_command_mojom_traits.h",
+      ]
       traits_public_deps = [
         ":shared_mojom_traits",
         "//ui/gfx/range",
@@ -76,6 +88,11 @@ mojom("mojom") {
   export_class_attribute_blink = "BLINK_PLATFORM_EXPORT"
   export_define_blink = "BLINK_PLATFORM_IMPLEMENTATION=1"
   export_header_blink = "third_party/blink/public/platform/web_common.h"
+
+  enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_input_events" ]
+  }
 }
 
 mojom("test_interfaces") {

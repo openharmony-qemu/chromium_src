@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "google_apis/drive/drive_api_url_generator.h"
 
 #include <stddef.h>
@@ -374,16 +379,34 @@ TEST_F(DriveApiUrlGeneratorTest, GetInitiateUploadExistingFileUrl) {
 }
 
 TEST_F(DriveApiUrlGeneratorTest, GetMultipartUploadNewFileUrl) {
-  const bool kSetModifiedDate = true;
+  EXPECT_EQ(url_generator_
+                .GetMultipartUploadNewFileUrl(/*set_modified_date=*/false,
+                                              /*convert=*/false)
+                .spec(),
+            "https://www.example.com/upload/drive/v2/files?uploadType=multipart"
+            "&supportsTeamDrives=true");
+  EXPECT_EQ(
+      url_generator_
+          .GetMultipartUploadNewFileUrl(/*set_modified_date=*/true,
+                                        /*convert=*/false)
+          .spec(),
+      "https://www.example.com/upload/drive/v2/files?uploadType=multipart&"
+      "supportsTeamDrives=true&setModifiedDate=true");
 
   EXPECT_EQ(
-      "https://www.example.com/upload/drive/v2/files?uploadType=multipart"
-      "&supportsTeamDrives=true",
-      url_generator_.GetMultipartUploadNewFileUrl(!kSetModifiedDate).spec());
-  EXPECT_EQ(
+      url_generator_
+          .GetMultipartUploadNewFileUrl(/*set_modified_date=*/false,
+                                        /*convert=*/true)
+          .spec(),
       "https://www.example.com/upload/drive/v2/files?uploadType=multipart&"
-      "supportsTeamDrives=true&setModifiedDate=true",
-      url_generator_.GetMultipartUploadNewFileUrl(kSetModifiedDate).spec());
+      "supportsTeamDrives=true&convert=true");
+  EXPECT_EQ(
+      url_generator_
+          .GetMultipartUploadNewFileUrl(/*set_modified_date=*/true,
+                                        /*convert=*/true)
+          .spec(),
+      "https://www.example.com/upload/drive/v2/files?uploadType=multipart&"
+      "supportsTeamDrives=true&setModifiedDate=true&convert=true");
 }
 
 TEST_F(DriveApiUrlGeneratorTest, GetMultipartUploadExistingFileUrl) {

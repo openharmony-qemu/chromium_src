@@ -97,8 +97,10 @@ class SnoopingProtectionControllerTestBase : public NoSessionAshTestBase {
   const bool service_state_;
   const std::map<std::string, std::string> params_;
 
-  raw_ptr<FakeHumanPresenceDBusClient, ExperimentalAsh> dbus_client_ = nullptr;
-  raw_ptr<SnoopingProtectionController, ExperimentalAsh> controller_ = nullptr;
+  raw_ptr<FakeHumanPresenceDBusClient, DanglingUntriaged> dbus_client_ =
+      nullptr;
+  raw_ptr<SnoopingProtectionController, DanglingUntriaged> controller_ =
+      nullptr;
 
   // Simulates a login. This will trigger a DBus call if and only if logging in
   // was the final precondition required for the feature. Hence we wait for any
@@ -168,7 +170,7 @@ TEST_F(SnoopingProtectionControllerTestAbsent, PresenceChange) {
 // Test that daemon signals are only enabled when session and pref state means
 // they will be used.
 //
-// TODO(https://crbug.com/1410425): Flaky test.
+// TODO(crbug.com/40254348): Flaky test.
 TEST_F(SnoopingProtectionControllerTestAbsent, DISABLED_ReconfigureOnPrefs) {
   // When the service becomes available for the first time, one disable is
   // performed in case the last session ended in a crash without de-configuring
@@ -205,7 +207,7 @@ TEST_F(SnoopingProtectionControllerTestAbsent, DISABLED_ReconfigureOnPrefs) {
 // Test that daemon signals are correctly enabled/disabled when the daemon
 // starts and stops.
 //
-// TODO(https://crbug.com/1410425): Flaky test.
+// TODO(crbug.com/40254348): Flaky test.
 TEST_F(SnoopingProtectionControllerTestAbsent, DISABLED_ReconfigureOnRestarts) {
   SimulateLogin();
   SetEnabledPref(true);
@@ -292,7 +294,8 @@ TEST_F(SnoopingProtectionControllerTestPresent, Oobe) {
   TestSessionControllerClient* session = GetSessionControllerClient();
 
   // Simulate end of OOBE when user is logged in.
-  session->AddUserSession("testuser@gmail.com", user_manager::USER_TYPE_REGULAR,
+  session->AddUserSession("testuser@gmail.com",
+                          user_manager::UserType::kRegular,
                           /*provide_pref_service=*/true,
                           /*is_new_profile=*/true);
   session->SwitchActiveUser(AccountId::FromUserEmail("testuser@gmail.com"));

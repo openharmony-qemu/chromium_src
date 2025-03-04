@@ -7,8 +7,14 @@
 
 namespace remoting {
 
+// The bundle ID for the Remoting Host.
+extern const char kBundleId[];
+
 // The name of the Remoting Host service that is registered with launchd.
 extern const char kServiceName[];
+
+// The name of the Remoting Host broker that is registered with launchd.
+extern const char kBrokerName[];
 
 // Use a single configuration file, instead of separate "auth" and "host" files.
 // This is because the SetConfigAndStart() API only provides a single
@@ -28,7 +34,7 @@ extern const char kHostSettingsFilePath[];
 extern const char kHostServiceBinaryPath[];
 
 // Path to the old host helper script, which is still used after user updates
-// their host on macOS 10.14.*.
+// their host on macOS 10.14.*. TODO(crbug.com/40275162): Remove.
 extern const char kOldHostHelperScriptPath[];
 
 // Path to the service binary (.app).
@@ -42,6 +48,9 @@ extern const char kHostEnabledPath[];
 
 // The .plist file for the Chromoting service.
 extern const char kServicePlistPath[];
+
+// The .plist file for the Chromoting agent broker.
+extern const char kBrokerPlistPath[];
 
 // Path to the host log file
 extern const char kLogFilePath[];

@@ -10,12 +10,15 @@
 
 @protocol WhatsNewMediatorConsumer;
 @protocol ApplicationCommands;
+@protocol WhatsNewCommands;
+@protocol LensCommands;
+@protocol SettingsCommands;
 
 class UrlLoadingBrowserAgent;
 
 // Mediator between the Model and the UI.
 // What's New mediator between `WhatsNewModel` and the view layers
-// `WhatsNewTableViewController` and `WhatsNewDetailViewController`.
+// `WhatsNewTableViewController`.
 @interface WhatsNewMediator
     : NSObject <WhatsNewDetailViewActionHandler, WhatsNewTableViewActionHandler>
 
@@ -25,11 +28,17 @@ class UrlLoadingBrowserAgent;
 // Url loading agent.
 @property(nonatomic, assign) UrlLoadingBrowserAgent* urlLoadingAgent;
 
-// Browser coordinator command handler.
-@property(nonatomic, weak) id<ApplicationCommands> handler;
+// Application command handler.
+@property(nonatomic, weak) id<ApplicationCommands> applicationHandler;
 
-// The view controller that presents the popup menu.
-@property(nonatomic, weak) UIViewController* baseViewController;
+// Dispatcher for handling Lens promo actions.
+@property(nonatomic, weak) id<LensCommands> lensHandler;
+
+// What's New command handler.
+@property(nonatomic, weak) id<WhatsNewCommands> whatsNewHandler;
+
+// Settings command handler.
+@property(nonatomic, weak) id<SettingsCommands> settingsHandler;
 
 @end
 

@@ -11,7 +11,6 @@
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/render_frame.h"
 #include "extensions/common/error_utils.h"
-#include "extensions/common/extension_messages.h"
 #include "extensions/common/manifest_constants.h"
 #include "extensions/common/mojom/host_id.mojom.h"
 #include "extensions/common/permissions/api_permission.h"
@@ -48,6 +47,11 @@ blink::mojom::UserActivationOption ProgrammaticScriptInjector::IsUserGesture()
 mojom::ExecutionWorld ProgrammaticScriptInjector::GetExecutionWorld() const {
   DCHECK(params_->injection->is_js());
   return params_->injection->get_js()->world;
+}
+
+const std::optional<std::string>&
+ProgrammaticScriptInjector::GetExecutionWorldId() const {
+  return params_->injection->get_js()->world_id;
 }
 
 mojom::CSSOrigin ProgrammaticScriptInjector::GetCssOrigin() const {
@@ -163,7 +167,7 @@ ProgrammaticScriptInjector::GetCssSources(
 }
 
 void ProgrammaticScriptInjector::OnInjectionComplete(
-    absl::optional<base::Value> execution_result,
+    std::optional<base::Value> execution_result,
     mojom::RunLocation run_location) {
   DCHECK(!result_.has_value());
   result_ = std::move(execution_result);

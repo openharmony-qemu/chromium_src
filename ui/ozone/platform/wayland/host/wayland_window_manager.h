@@ -6,6 +6,7 @@
 #define UI_OZONE_PLATFORM_WAYLAND_HOST_WAYLAND_WINDOW_MANAGER_H_
 
 #include <memory>
+#include <ostream>
 
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ptr.h"
@@ -114,6 +115,17 @@ class WaylandWindowManager {
   // Creates a new unique gfx::AcceleratedWidget.
   gfx::AcceleratedWidget AllocateAcceleratedWidget();
 
+  // Returns the current value that to be used as windows' UI scale. If UI
+  // scaling feature is disabled or unavailable (eg: per-surface scaling
+  // unsupported), 1 is returned. If present, the value passed in through the
+  // force-device-scale-factor switch is used, otherwise the current font scale
+  // is returned, which presumably comes from system's "text scaling factor"
+  // setting, provided by LinuxUi, and set via SetFontScale function below.
+  float DetermineUiScale() const;
+  void SetFontScale(float new_font_scale);
+
+  void DumpState(std::ostream& out) const;
+
  private:
   raw_ptr<WaylandWindow> pointer_focused_window_ = nullptr;
   raw_ptr<WaylandWindow> keyboard_focused_window_ = nullptr;
@@ -122,7 +134,9 @@ class WaylandWindowManager {
 
   base::ObserverList<WaylandWindowObserver> observers_;
 
-  base::flat_map<gfx::AcceleratedWidget, WaylandWindow*> window_map_;
+  base::flat_map<gfx::AcceleratedWidget,
+                 raw_ptr<WaylandWindow, CtnExperimental>>
+      window_map_;
 
   // The cache of |primary_subsurface_| of the last closed WaylandWindow. This
   // will be destroyed lazily to make sure the window closing animation works
@@ -134,6 +148,10 @@ class WaylandWindowManager {
   // Stores strictly monotonically increasing counter for allocating unique
   // AccelerateWidgets.
   gfx::AcceleratedWidget last_accelerated_widget_ = gfx::kNullAcceleratedWidget;
+
+  // Current system's text font scaling factor provided by WaylandScreen,
+  // through LinuxUi, when enabled.
+  float font_scale_ = 1.0f;
 };
 
 }  // namespace ui

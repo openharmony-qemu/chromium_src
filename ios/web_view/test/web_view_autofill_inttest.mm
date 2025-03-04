@@ -11,15 +11,11 @@
 #import "ios/web_view/public/cwv_navigation_delegate.h"
 #import "ios/web_view/test/web_view_inttest_base.h"
 #import "ios/web_view/test/web_view_test_util.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #include "net/test/embedded_test_server/embedded_test_server.h"
 #include "testing/gtest_mac.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #include "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::test::ios::kWaitForActionTimeout;
 using base::test::ios::WaitUntilConditionOrTimeout;
@@ -88,10 +84,19 @@ NSString* const kTestFormHtml =
 class WebViewAutofillTest : public WebViewInttestBase {
  protected:
   WebViewAutofillTest()
-      : autofill_controller_(web_view_.autofillController),
-        autofill_controller_delegate_(
+      : autofill_controller_delegate_(
             OCMProtocolMock(@protocol(CWVAutofillControllerDelegate))) {
+    data_source_ =
+        OCMStrictProtocolMock(@protocol(CWVSyncControllerDataSource));
+    OCMStub([data_source_ allKnownIdentities]).andReturn(@[]);
+    CWVSyncController.dataSource = data_source_;
+    autofill_controller_ = web_view_.autofillController;
     autofill_controller_.delegate = autofill_controller_delegate_;
+  }
+
+  void TearDown() override {
+    [(id)data_source_ verify];
+    [(id)autofill_controller_delegate_ verify];
   }
 
   // Loads a test page with a single form and waits until Autofill has parsed
@@ -176,6 +181,7 @@ class WebViewAutofillTest : public WebViewInttestBase {
   id autofill_controller_delegate_ = nil;
   id<CWVNavigationDelegate> navigation_delegate_ = nil;
   UIView* dummy_super_view_ = nil;
+  id<CWVSyncControllerDataSource> data_source_;
 };
 
 // Tests that CWVAutofillControllerDelegate receives callbacks.
@@ -242,11 +248,13 @@ TEST_F(WebViewAutofillTest, TestDelegateCallbacks) {
   [autofill_controller_delegate_
       verifyWithDelay:kWaitForActionTimeout.InSecondsF()];
 
-  [[autofill_controller_delegate_ expect]
+  // TODO(crbug.com/40911875): `userInitiated` flipped from `NO` in iOS 16.1 to
+  // `YES` in 16.4, so we cannot reliably verify it until the bug is fixed.
+  [[[autofill_controller_delegate_ expect] ignoringNonObjectArgs]
          autofillController:autofill_controller_
       didSubmitFormWithName:kTestFormName
                     frameID:[OCMArg any]
-              userInitiated:NO];
+              userInitiated:[OCMArg any]];
   // The 'submit' event listener defined in form.js is only called during the
   // bubbling phase.
   NSString* submit_script =
@@ -321,6 +329,7 @@ TEST_F(WebViewAutofillTest, TestSuggestionFetchFillClear) {
   EXPECT_NSEQ(main_frame_id, fetched_suggestion.frameID);
 
   [autofill_controller_ acceptSuggestion:fetched_suggestion
+                                 atIndex:0
                        completionHandler:nil];
   NSString* filled_script =
       [NSString stringWithFormat:@"document.getElementById('%@').value",

@@ -5,7 +5,6 @@
 // Use the <code>chrome.app.runtime</code> API to manage the app lifecycle.
 // The app runtime manages app installation, controls the event page, and can
 // shut down the app at anytime.
-[modernised_enums]
 namespace app.runtime {
 
   [inline_doc] dictionary LaunchItem {
@@ -47,7 +46,9 @@ namespace app.runtime {
     context_menu,
     arc,
     intent_url,
-    app_home_page
+    app_home_page,
+    focus_mode,
+    sparky
   };
 
   // An app can be launched with a specific action in mind, for example, to

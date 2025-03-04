@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -726,7 +731,7 @@ TEST_F(WebCryptoAesCbcTest, WrapUnwrapRoundtripSpkiPkcs8) {
                               &wrapping_key));
 
   // Generate an RSA key pair to be wrapped.
-  const unsigned int modulus_length = 256;
+  const unsigned int modulus_length = 2048;
   const std::vector<uint8_t> public_exponent = HexStringToBytes("010001");
 
   blink::WebCryptoKey public_key;

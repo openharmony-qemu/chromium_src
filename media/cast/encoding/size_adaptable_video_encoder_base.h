@@ -18,6 +18,9 @@
 #include "ui/gfx/geometry/size.h"
 
 namespace media {
+
+class VideoEncoderMetricsProvider;
+
 namespace cast {
 
 struct SenderEncodedFrame;
@@ -32,7 +35,9 @@ class SizeAdaptableVideoEncoderBase : public VideoEncoder {
   SizeAdaptableVideoEncoderBase(
       const scoped_refptr<CastEnvironment>& cast_environment,
       const FrameSenderConfig& video_config,
-      StatusChangeCallback status_change_cb);
+      std::unique_ptr<VideoEncoderMetricsProvider> metrics_provider,
+      StatusChangeCallback status_change_cb,
+      FrameEncodedCallback output_cb);
 
   SizeAdaptableVideoEncoderBase(const SizeAdaptableVideoEncoderBase&) = delete;
   SizeAdaptableVideoEncoderBase& operator=(
@@ -42,11 +47,9 @@ class SizeAdaptableVideoEncoderBase : public VideoEncoder {
 
   // VideoEncoder implementation.
   bool EncodeVideoFrame(scoped_refptr<media::VideoFrame> video_frame,
-                        base::TimeTicks reference_time,
-                        FrameEncodedCallback frame_encoded_callback) final;
+                        base::TimeTicks reference_time) final;
   void SetBitRate(int new_bit_rate) final;
   void GenerateKeyFrame() final;
-  std::unique_ptr<VideoFrameFactory> CreateVideoFrameFactory() final;
   void EmitFrames() final;
 
  protected:
@@ -55,12 +58,18 @@ class SizeAdaptableVideoEncoderBase : public VideoEncoder {
   const FrameSenderConfig& video_config() const { return video_config_; }
   const gfx::Size& frame_size() const { return frame_size_; }
   FrameId next_frame_id() const { return next_frame_id_; }
+  VideoEncoderMetricsProvider& metrics_provider() const {
+    return *metrics_provider_.get();
+  }
 
   // Returns a callback that calls OnEncoderStatusChange().  The callback is
   // canceled by invalidating its bound weak pointer just before a replacement
   // encoder is instantiated.  In this scheme, OnEncoderStatusChange() can only
   // be called by the most-recent encoder.
   StatusChangeCallback CreateEncoderStatusChangeCallback();
+
+  // Returns a callback that calls OnEncodedVideoFrame().
+  FrameEncodedCallback CreateFrameEncodedCallback();
 
   // Overridden by subclasses to create a new encoder instance that handles
   // frames of the size specified by |frame_size()|.
@@ -84,8 +93,7 @@ class SizeAdaptableVideoEncoderBase : public VideoEncoder {
   void OnEncoderStatusChange(OperationalStatus status);
 
   // Called by the |encoder_| with the next EncodedFrame.
-  void OnEncodedVideoFrame(FrameEncodedCallback frame_encoded_callback,
-                           std::unique_ptr<SenderEncodedFrame> encoded_frame);
+  void OnEncodedVideoFrame(std::unique_ptr<SenderEncodedFrame> encoded_frame);
 
   const scoped_refptr<CastEnvironment> cast_environment_;
 
@@ -93,8 +101,13 @@ class SizeAdaptableVideoEncoderBase : public VideoEncoder {
   // SetBitRate(), for when a replacement encoder is spawned.
   FrameSenderConfig video_config_;
 
+  const std::unique_ptr<VideoEncoderMetricsProvider> metrics_provider_;
+
   // Run whenever the underlying encoder reports a status change.
   const StatusChangeCallback status_change_cb_;
+
+  // Run whenever a frame is encoded.
+  const FrameEncodedCallback output_cb_;
 
   // The underlying platform video encoder and the frame size it expects.
   std::unique_ptr<VideoEncoder> encoder_;

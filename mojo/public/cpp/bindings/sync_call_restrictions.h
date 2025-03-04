@@ -26,7 +26,7 @@ class StreamTextureFactory;
 #if BUILDFLAG(IS_WIN)
 class DCOMPTextureFactory;
 #endif
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 class NativeTextureFactory;
 #endif
 }  // namespace content
@@ -38,6 +38,7 @@ class ScopedAllowSyncCall;
 namespace gpu {
 class CommandBufferProxyImpl;
 class GpuChannelHost;
+class SharedImageInterfaceProxy;
 }  // namespace gpu
 
 namespace ui {
@@ -50,6 +51,12 @@ class GpuHostImpl;
 class HostFrameSinkManager;
 class HostGpuMemoryBufferManager;
 }  // namespace viz
+
+#if BUILDFLAG(IS_MAC)
+namespace web_app {
+class WebAppShortcutCopierSyncCallHelper;
+}  // namespace web_app
+#endif
 
 namespace mojo {
 class ScopedAllowSyncCallForTesting;
@@ -135,12 +142,16 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   // GPU client code uses a few sync IPCs, grandfathered in from legacy IPC.
   friend class gpu::GpuChannelHost;
   friend class gpu::CommandBufferProxyImpl;
+  friend class gpu::SharedImageInterfaceProxy;
   friend class content::StreamTextureFactory;
 #if BUILDFLAG(IS_WIN)
   friend class content::DCOMPTextureFactory;
 #endif
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   friend class content::NativeTextureFactory;
+#endif
+#if BUILDFLAG(IS_MAC)
+  friend class web_app::WebAppShortcutCopierSyncCallHelper;
 #endif
   // END ALLOWED USAGE.
 
@@ -167,9 +178,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
     ~ScopedAllowSyncCall() { DecreaseScopedAllowCount(); }
 
    private:
-#if ENABLE_SYNC_CALL_RESTRICTIONS
     base::ScopedAllowBaseSyncPrimitivesOutsideBlockingScope allow_wait_;
-#endif
   };
 };
 

@@ -43,13 +43,9 @@ void BackgroundTracingAgentClientImpl::OnInitialized() {
 }
 
 void BackgroundTracingAgentClientImpl::OnTriggerBackgroundTrace(
-    const std::string& name) {
-  BackgroundTracingManagerImpl::GetInstance().EmitNamedTrigger(
-      base::StrCat({"org.chromium.background_tracing.", name}));
-}
-
-void BackgroundTracingAgentClientImpl::OnAbortBackgroundTrace() {
-  BackgroundTracingManagerImpl::GetInstance().AbortScenario();
+    tracing::mojom::BackgroundTracingRulePtr rule,
+    std::optional<int32_t> histogram_value) {
+  base::trace_event::EmitNamedTrigger(rule->rule_id, histogram_value);
 }
 
 BackgroundTracingAgentClientImpl::BackgroundTracingAgentClientImpl(

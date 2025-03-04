@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/browser/api/web_request/upload_data_presenter.h"
 
+#include <string_view>
 #include <utility>
 
 #include "base/containers/span.h"
@@ -24,8 +30,9 @@ namespace {
 base::Value::List& GetOrCreateList(base::Value::Dict& dictionary,
                                    const std::string& key) {
   base::Value::List* list = dictionary.FindList(key);
-  if (list)
+  if (list) {
     return *list;
+  }
   return dictionary.Set(key, base::Value::List())->GetList();
 }
 
@@ -51,7 +58,7 @@ RawDataPresenter::RawDataPresenter() = default;
 
 RawDataPresenter::~RawDataPresenter() = default;
 
-void RawDataPresenter::FeedBytes(base::StringPiece bytes) {
+void RawDataPresenter::FeedBytes(std::string_view bytes) {
   FeedNextBytes(bytes.data(), bytes.size());
 }
 
@@ -63,7 +70,7 @@ bool RawDataPresenter::Succeeded() {
   return true;
 }
 
-absl::optional<base::Value> RawDataPresenter::TakeResult() {
+std::optional<base::Value> RawDataPresenter::TakeResult() {
   return base::Value(std::move(list_));
 }
 
@@ -83,15 +90,17 @@ ParsedDataPresenter::ParsedDataPresenter(
     const net::HttpRequestHeaders& request_headers)
     : parser_(FormDataParser::Create(request_headers)),
       success_(parser_ != nullptr) {
-  if (success_)
+  if (success_) {
     dictionary_.emplace();
+  }
 }
 
 ParsedDataPresenter::~ParsedDataPresenter() = default;
 
-void ParsedDataPresenter::FeedBytes(base::StringPiece bytes) {
-  if (!success_)
+void ParsedDataPresenter::FeedBytes(std::string_view bytes) {
+  if (!success_) {
     return;
+  }
 
   if (!parser_->SetSource(bytes)) {
     Abort();
@@ -109,14 +118,16 @@ void ParsedDataPresenter::FeedBytes(base::StringPiece bytes) {
 void ParsedDataPresenter::FeedFile(const base::FilePath& path) {}
 
 bool ParsedDataPresenter::Succeeded() {
-  if (success_ && !parser_->AllDataReadOK())
+  if (success_ && !parser_->AllDataReadOK()) {
     Abort();
+  }
   return success_;
 }
 
-absl::optional<base::Value> ParsedDataPresenter::TakeResult() {
-  if (!success_)
-    return absl::nullopt;
+std::optional<base::Value> ParsedDataPresenter::TakeResult() {
+  if (!success_) {
+    return std::nullopt;
+  }
   return base::Value(std::move(dictionary_.value()));
 }
 
@@ -129,8 +140,9 @@ std::unique_ptr<ParsedDataPresenter> ParsedDataPresenter::CreateForTests() {
 ParsedDataPresenter::ParsedDataPresenter(const std::string& form_type)
     : parser_(FormDataParser::CreateFromContentTypeHeader(&form_type)),
       success_(parser_.get() != nullptr) {
-  if (success_)
+  if (success_) {
     dictionary_.emplace();
+  }
 }
 
 void ParsedDataPresenter::Abort() {

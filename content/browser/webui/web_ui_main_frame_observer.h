@@ -42,7 +42,7 @@ class CONTENT_EXPORT WebUIMainFrameObserver : public WebContentsObserver {
   // Override from WebContentsObserver
   void PrimaryPageChanged(Page& page) override;
 
-// TODO(crbug.com/1129544) This is currently disabled due to Windows DLL
+// TODO(crbug.com/40149439) This is currently disabled due to Windows DLL
 // thunking issues. Fix & re-enable.
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   // On official Google builds, capture and report JavaScript error messages on
@@ -54,12 +54,16 @@ class CONTENT_EXPORT WebUIMainFrameObserver : public WebContentsObserver {
       const std::u16string& message,
       int32_t line_no,
       const std::u16string& source_id,
-      const absl::optional<std::u16string>& untrusted_stack_trace) override;
+      const std::optional<std::u16string>& untrusted_stack_trace) override;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
   void ReadyToCommitNavigation(NavigationHandle* navigation_handle) override;
 
+  void DidFirstVisuallyNonEmptyPaint() override;
+
  private:
+  const GURL& GetUrlForLogging() const;
+
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   void MaybeEnableWebUIJavaScriptErrorReporting(
       NavigationHandle* navigation_handle);
@@ -67,6 +71,8 @@ class CONTENT_EXPORT WebUIMainFrameObserver : public WebContentsObserver {
   // Do we report JavaScript errors ?
   bool error_reporting_enabled_ = false;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+  bool pending_non_empty_paint_ = false;
 
   raw_ptr<WebUIImpl> web_ui_;
 };

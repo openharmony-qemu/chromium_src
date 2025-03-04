@@ -5,6 +5,7 @@
 #include "quiche/quic/core/http/quic_headers_stream.h"
 
 #include <cstdint>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -13,6 +14,11 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "quiche/http2/core/http2_frame_decoder_adapter.h"
+#include "quiche/http2/core/recording_headers_handler.h"
+#include "quiche/http2/core/spdy_alt_svc_wire_format.h"
+#include "quiche/http2/core/spdy_protocol.h"
+#include "quiche/http2/test_tools/spdy_test_utils.h"
 #include "quiche/quic/core/crypto/null_encrypter.h"
 #include "quiche/quic/core/http/spdy_utils.h"
 #include "quiche/quic/core/quic_data_writer.h"
@@ -26,16 +32,11 @@
 #include "quiche/quic/test_tools/quic_spdy_session_peer.h"
 #include "quiche/quic/test_tools/quic_stream_peer.h"
 #include "quiche/quic/test_tools/quic_test_utils.h"
+#include "quiche/common/http/http_header_block.h"
 #include "quiche/common/quiche_endian.h"
-#include "quiche/spdy/core/http2_frame_decoder_adapter.h"
-#include "quiche/spdy/core/http2_header_block.h"
-#include "quiche/spdy/core/recording_headers_handler.h"
-#include "quiche/spdy/core/spdy_alt_svc_wire_format.h"
-#include "quiche/spdy/core/spdy_protocol.h"
-#include "quiche/spdy/test_tools/spdy_test_utils.h"
 
+using quiche::HttpHeaderBlock;
 using spdy::ERROR_CODE_PROTOCOL_ERROR;
-using spdy::Http2HeaderBlock;
 using spdy::RecordingHeadersHandler;
 using spdy::SETTINGS_ENABLE_PUSH;
 using spdy::SETTINGS_HEADER_TABLE_SIZE;
@@ -354,7 +355,7 @@ class QuicHeadersStreamTest : public QuicTestWithParam<TestParams> {
   StrictMock<MockQuicConnection>* connection_;
   StrictMock<MockQuicSpdySession> session_;
   QuicHeadersStream* headers_stream_;
-  Http2HeaderBlock headers_;
+  HttpHeaderBlock headers_;
   std::unique_ptr<RecordingHeadersHandler> headers_handler_;
   std::string body_;
   std::string saved_data_;
@@ -397,40 +398,6 @@ TEST_P(QuicHeadersStreamTest, WriteHeaders) {
   }
 }
 
-TEST_P(QuicHeadersStreamTest, WritePushPromises) {
-  for (QuicStreamId stream_id = client_id_1_; stream_id < client_id_3_;
-       stream_id += next_stream_id_) {
-    QuicStreamId promised_stream_id = NextPromisedStreamId();
-    if (perspective() == Perspective::IS_SERVER) {
-      // Write the headers and capture the outgoing data
-      EXPECT_CALL(session_, WritevData(QuicUtils::GetHeadersStreamId(
-                                           connection_->transport_version()),
-                                       _, _, NO_FIN, _, _))
-          .WillOnce(WithArgs<1>(Invoke(this, &QuicHeadersStreamTest::SaveIov)));
-      session_.WritePushPromise(stream_id, promised_stream_id,
-                                headers_.Clone());
-
-      // Parse the outgoing data and check that it matches was was written.
-      EXPECT_CALL(visitor_,
-                  OnPushPromise(stream_id, promised_stream_id, kFrameComplete));
-      headers_handler_ = std::make_unique<RecordingHeadersHandler>();
-      EXPECT_CALL(visitor_, OnHeaderFrameStart(stream_id))
-          .WillOnce(Return(headers_handler_.get()));
-      EXPECT_CALL(visitor_, OnHeaderFrameEnd(stream_id)).Times(1);
-      deframer_->ProcessInput(saved_data_.data(), saved_data_.length());
-      EXPECT_FALSE(deframer_->HasError())
-          << http2::Http2DecoderAdapter::SpdyFramerErrorToString(
-                 deframer_->spdy_framer_error());
-      CheckHeaders();
-      saved_data_.clear();
-    } else {
-      EXPECT_QUIC_BUG(session_.WritePushPromise(stream_id, promised_stream_id,
-                                                headers_.Clone()),
-                      "Client shouldn't send PUSH_PROMISE");
-    }
-  }
-}
-
 TEST_P(QuicHeadersStreamTest, ProcessRawData) {
   for (QuicStreamId stream_id = client_id_1_; stream_id < client_id_3_;
        stream_id += next_stream_id_) {
@@ -465,16 +432,12 @@ TEST_P(QuicHeadersStreamTest, ProcessRawData) {
 }
 
 TEST_P(QuicHeadersStreamTest, ProcessPushPromise) {
-  if (perspective() == Perspective::IS_SERVER) {
-    return;
-  }
   for (QuicStreamId stream_id = client_id_1_; stream_id < client_id_3_;
        stream_id += next_stream_id_) {
     QuicStreamId promised_stream_id = NextPromisedStreamId();
     SpdyPushPromiseIR push_promise(stream_id, promised_stream_id,
                                    headers_.Clone());
     SpdySerializedFrame frame(framer_->SerializeFrame(push_promise));
-    bool connection_closed = false;
     if (perspective() == Perspective::IS_SERVER) {
       EXPECT_CALL(*connection_,
                   CloseConnection(QUIC_INVALID_HEADERS_STREAM_DATA,
@@ -482,23 +445,12 @@ TEST_P(QuicHeadersStreamTest, ProcessPushPromise) {
           .WillRepeatedly(InvokeWithoutArgs(
               this, &QuicHeadersStreamTest::TearDownLocalConnectionState));
     } else {
-      ON_CALL(*connection_, CloseConnection(_, _, _))
-          .WillByDefault(testing::Assign(&connection_closed, true));
-      EXPECT_CALL(session_, OnPromiseHeaderList(stream_id, promised_stream_id,
-                                                frame.size(), _))
-          .WillOnce(
-              Invoke(this, &QuicHeadersStreamTest::SavePromiseHeaderList));
+      EXPECT_CALL(session_, MaybeSendRstStreamFrame(promised_stream_id, _, _));
     }
     stream_frame_.data_buffer = frame.data();
     stream_frame_.data_length = frame.size();
     headers_stream_->OnStreamFrame(stream_frame_);
-    if (perspective() == Perspective::IS_CLIENT) {
-      stream_frame_.offset += frame.size();
-      // CheckHeaders crashes if the connection is closed so this ensures we
-      // fail the test instead of crashing.
-      ASSERT_FALSE(connection_closed);
-      CheckHeaders();
-    }
+    stream_frame_.offset += frame.size();
   }
 }
 

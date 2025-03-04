@@ -1,19 +1,18 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
-
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
-#include "nweb_screen_lock_tracker.h"
+#include "ohos/adapter/runninglock/runninglock_adapter.h"
+#include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
 
 namespace device {
 
 class PowerSaveBlocker::Delegate
     : public base::RefCountedThreadSafe<PowerSaveBlocker::Delegate> {
  public:
-  Delegate(mojom::WakeLockType type);
+  Delegate(mojom::WakeLockType type) : type_(type) {}
 
   Delegate(const Delegate&) = delete;
   Delegate& operator=(const Delegate&) = delete;
@@ -22,24 +21,25 @@ class PowerSaveBlocker::Delegate
   void RemoveBlock(const int32_t& id);
 
  private:
-  friend class base::RefCountedThreadSafe<Delegate>;
-  virtual ~Delegate() {}
-
   mojom::WakeLockType type_;
+  friend class base::RefCountedThreadSafe<Delegate>;
+  ~Delegate() {}
 };
 
-PowerSaveBlocker::Delegate::Delegate(mojom::WakeLockType type): type_(type) {}
-
 void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
+  if (type_ != mojom::WakeLockType::kPreventDisplaySleep) {
+    return;
+  }
+
   switch (type_) {
     case mojom::WakeLockType::kPreventAppSuspension:
       if (id != -1) {
-        NWebScreenLockTracker::Instance().Lock(id);
+        ohos::adapter::runninglock::RunningLockAdapter::GetInstance().Start();
       }
       break;
     case mojom::WakeLockType::kPreventDisplaySleep:
     case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
-      NWebScreenLockTracker::Instance().Lock(id);
+      ohos::adapter::runninglock::RunningLockAdapter::GetInstance().Start();
       break;
     default:
       LOG(INFO) << "Unhandled block type " << type_;
@@ -47,15 +47,19 @@ void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
 }
 
 void PowerSaveBlocker::Delegate::RemoveBlock(const int32_t& id) {
+  if (type_ != mojom::WakeLockType::kPreventDisplaySleep) {
+    return;
+  }
+
   switch (type_) {
     case mojom::WakeLockType::kPreventAppSuspension:
       if (id != -1) {
-        NWebScreenLockTracker::Instance().UnLock(id);
+        ohos::adapter::runninglock::RunningLockAdapter::GetInstance().Stop();
       }
       break;
     case mojom::WakeLockType::kPreventDisplaySleep:
     case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
-      NWebScreenLockTracker::Instance().UnLock(id);
+      ohos::adapter::runninglock::RunningLockAdapter::GetInstance().Stop();
       break;
     default:
       LOG(INFO) << "Unhandled block type " << type_;

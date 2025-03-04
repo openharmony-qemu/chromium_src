@@ -5,6 +5,11 @@
 import("//net/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 enable_built_in_dns = use_blink
 
@@ -28,6 +33,13 @@ source_set("dns") {
     "//net/*",
     "//services/network/*",
   ]
+
+  if (defined(arkweb_ex_network_connection) && arkweb_ex_network_connection) {
+    defines = []
+    if (target_cpu == "arm64") {
+      defines += [ "ARKWEB_ARM64" ]
+    }
+  }
 
   public = []
   sources = [
@@ -56,6 +68,8 @@ source_set("dns") {
     "dns_server_iterator.h",
     "dns_session.cc",
     "dns_session.h",
+    "dns_task_results_manager.cc",
+    "dns_task_results_manager.h",
     "dns_transaction.cc",
     "dns_udp_tracker.cc",
     "dns_udp_tracker.h",
@@ -63,9 +77,19 @@ source_set("dns") {
     "dns_util.h",
     "host_cache.cc",
     "host_resolver.cc",
+    "host_resolver_cache.cc",
+    "host_resolver_cache.h",
+    "host_resolver_dns_task.cc",
+    "host_resolver_dns_task.h",
     "host_resolver_internal_result.cc",
     "host_resolver_internal_result.h",
     "host_resolver_manager.cc",
+    "host_resolver_manager_job.cc",
+    "host_resolver_manager_job.h",
+    "host_resolver_manager_request_impl.cc",
+    "host_resolver_manager_request_impl.h",
+    "host_resolver_manager_service_endpoint_request_impl.cc",
+    "host_resolver_manager_service_endpoint_request_impl.h",
     "host_resolver_mdns_listener_impl.cc",
     "host_resolver_mdns_listener_impl.h",
     "host_resolver_mdns_task.cc",
@@ -79,6 +103,8 @@ source_set("dns") {
     "https_record_rdata.cc",
     "httpssvc_metrics.cc",
     "httpssvc_metrics.h",
+    "loopback_only.cc",
+    "loopback_only.h",
     "mapped_host_resolver.cc",
     "nsswitch_reader.cc",
     "nsswitch_reader.h",
@@ -129,10 +155,21 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
+  } else if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
+    sources += [
+      "dns_config_service_ohos.cc",
+      "dns_config_service_ohos.h",
+    ]
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",
       "dns_config_service_posix.h",
+    ]
+  }
+
+  if (is_ohos) {
+    libs = [
+      "net_connection"
     ]
   }
 
@@ -300,13 +337,13 @@ source_set("dns_client") {
   friend = [
     # chrome/browser/local_discovery/service_discovery_client_impl.cc
     # Result parsing utilities for parsing results read through MdnsClient.
-    # TODO(crbug.com/874662): Remove once migrated to network service.
+    # TODO(crbug.com/41408297): Remove once migrated to network service.
     "//chrome/browser",
 
     # chrome/browser/ash/smb_client/discovery/mdns_host_locator.cc
     # Result parsing for results read through MdnsClient.
-    # TODO(crbug.com/902531): Remove once migrated to network service.
-    "//chrome/browser/ash",
+    # TODO(crbug.com/41424787): Remove once migrated to network service.
+    "//chrome/browser/ash/smb_client/discovery",
 
     # Tests and test support
     "//chrome/browser:test_support",
@@ -355,19 +392,19 @@ source_set("mdns_client") {
     # chrome/browser/local_discovery/service_discovery_client_mdns.h
     # chrome/browser/local_discovery/service_discovery_client_impl.h
     # Makes MDNS queries using MDnsClient.
-    # TODO(crbug.com/874662): Remove once migrated to network service.
+    # TODO(crbug.com/41408297): Remove once migrated to network service.
     "//chrome/browser",
 
     # chrome/tools/service_discovery_sniffer/service_discovery_sniffer.cc
     # Creates MDnsClient instance and passes to ServiceDiscoveryClientImpl.
-    # TODO(crbug.com/874662): Remove once discovery client migrated.
+    # TODO(crbug.com/41408297): Remove once discovery client migrated.
     "//chrome/tools/service_discovery_sniffer",
 
     # chrome/browser/ash/smb_client/discovery/mdns_host_locator.h
     # chrome/browser/ash/smb_client/discovery/mdns_host_locator.cc
     # Makes MDNS queries using MDnsClient.
-    # TODO(crbug.com/902531): Remove once migrated to network service.
-    "//chrome/browser/ash",
+    # TODO(crbug.com/41424787): Remove once migrated to network service.
+    "//chrome/browser/ash/smb_client/discovery",
 
     # Tests and test support
     "//chrome/browser:test_support",
@@ -404,14 +441,19 @@ source_set("tests") {
     "dns_query_unittest.cc",
     "dns_response_result_extractor_unittest.cc",
     "dns_response_unittest.cc",
+    "dns_task_results_manager_unittest.cc",
     "dns_transaction_unittest.cc",
     "dns_udp_tracker_unittest.cc",
     "dns_util_unittest.cc",
     "host_cache_unittest.cc",
+    "host_resolver_cache_unittest.cc",
     "host_resolver_internal_result_unittest.cc",
+    "host_resolver_manager_ipv6_reachability_override_unittest.cc",
     "host_resolver_manager_unittest.cc",
+    "host_resolver_service_endpoint_request_unittest.cc",
     "https_record_rdata_unittest.cc",
     "httpssvc_metrics_unittest.cc",
+    "loopback_only_unittest.cc",
     "mapped_host_resolver_unittest.cc",
     "nsswitch_reader_unittest.cc",
     "opt_record_rdata_unittest.cc",
@@ -426,10 +468,12 @@ source_set("tests") {
     sources += [ "dns_config_service_win_unittest.cc" ]
   }
 
-  if (is_android || is_ohos) {
+  if (is_android) {
     sources += [ "dns_config_service_android_unittest.cc" ]
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
+  } else if (is_ohos) {
+    sources += [ "dns_config_service_ohos_unittest.cc" ]
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }
@@ -472,6 +516,7 @@ source_set("test_support") {
   public = [
     "dns_test_util.h",
     "host_resolver_internal_result_test_util.h",
+    "host_resolver_manager_unittest.h",
     "host_resolver_results_test_util.h",
     "mock_host_resolver.h",
   ]
@@ -489,6 +534,7 @@ source_set("test_support") {
 
   deps = [
     "//base",
+    "//base/test:test_support",
     "//net",
     "//testing/gmock",
     "//testing/gtest",
@@ -524,10 +570,10 @@ fuzzer_test("net_dns_host_cache_fuzzer") {
     ":host_cache_fuzzer_proto",
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
     "//testing/libfuzzer/proto:json_proto",
     "//testing/libfuzzer/proto:json_proto_converter",
     "//third_party/libprotobuf-mutator",
+    "//cef:libcef_static",
   ]
   dict = "//testing/libfuzzer/fuzzers/dicts/json.dict"
 }
@@ -538,8 +584,21 @@ fuzzer_test("net_dns_hosts_parse_fuzzer") {
     "//base",
     "//net",
     "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_hosts_parse_fuzzer.dict"
+}
+
+fuzzer_test("net_dns_host_resolver_cache_fuzzer") {
+  sources = [ "host_resolver_cache_fuzzer.cc" ]
+  deps = [
+    "//base",
+    "//net",
+    "//net:net_fuzzer_test_support",
+    "//testing/libfuzzer/proto:json_proto",
+    "//testing/libfuzzer/proto:json_proto_converter",
+    "//third_party/libprotobuf-mutator",
+  ]
 }
 
 fuzzer_test("net_dns_https_record_rdata_fuzzer") {
@@ -547,7 +606,7 @@ fuzzer_test("net_dns_https_record_rdata_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -557,7 +616,7 @@ fuzzer_test("net_dns_nsswitch_reader_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_nsswitch_reader_fuzzer.dict"
 }
@@ -567,7 +626,7 @@ fuzzer_test("net_dns_record_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -577,7 +636,7 @@ fuzzer_test("net_dns_query_parse_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -587,7 +646,7 @@ fuzzer_test("net_dns_response_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_dns_record_fuzzer.dict"
 }
@@ -599,8 +658,10 @@ fuzzer_test("net_host_resolver_manager_fuzzer") {
     "//net",
     "//net:net_fuzzer_test_support",
     "//net:test_support",
+    "//cef:libcef_static",
   ]
   dict = "//net/data/fuzzer_dictionaries/net_host_resolver_manager_fuzzer.dict"
+  libfuzzer_options = [ "max_len=4096" ]
 }
 
 if (is_win) {

@@ -24,12 +24,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * The Autofill suggestion popup that lists relevant suggestions.
- */
+/** The Autofill suggestion popup that lists relevant suggestions. */
 public class AutofillPopup extends DropdownPopupWindow
-        implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener,
-                   PopupWindow.OnDismissListener {
+        implements AdapterView.OnItemClickListener,
+                AdapterView.OnItemLongClickListener,
+                PopupWindow.OnDismissListener {
     /**
      * We post a delayed runnable to clear accessibility focus from the autofill popup's list view
      * when we receive a {@code TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED} event because we receive a
@@ -43,12 +42,13 @@ public class AutofillPopup extends DropdownPopupWindow
     private final AutofillDelegate mAutofillDelegate;
     private List<AutofillSuggestion> mSuggestions;
 
-    private final Runnable mClearAccessibilityFocusRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mAutofillDelegate.accessibilityFocusCleared();
-        }
-    };
+    private final Runnable mClearAccessibilityFocusRunnable =
+            new Runnable() {
+                @Override
+                public void run() {
+                    mAutofillDelegate.accessibilityFocusCleared();
+                }
+            };
 
     /**
      * Creates an AutofillWindow with specified parameters.
@@ -58,7 +58,10 @@ public class AutofillPopup extends DropdownPopupWindow
      * @param autofillDelegate An object that handles the calls to the native AutofillPopupView.
      * @param visibleWebContentsRectProvider The {@link RectProvider} for popup limits.
      */
-    public AutofillPopup(Context context, View anchorView, AutofillDelegate autofillDelegate,
+    public AutofillPopup(
+            Context context,
+            View anchorView,
+            AutofillDelegate autofillDelegate,
             @Nullable RectProvider visibleWebContentsRectProvider) {
         super(context, anchorView, visibleWebContentsRectProvider);
         mContext = context;
@@ -73,8 +76,9 @@ public class AutofillPopup extends DropdownPopupWindow
 
     /**
      * Filters the Autofill suggestions to the ones that we support and shows the popup.
+     *
      * @param suggestions Autofill suggestion data.
-     * @param isRtl @code true if right-to-left text.
+     * @param isRtl true if right-to-left text.
      */
     @SuppressLint("InlinedApi")
     public void filterAndShow(AutofillSuggestion[] suggestions, boolean isRtl) {
@@ -83,8 +87,8 @@ public class AutofillPopup extends DropdownPopupWindow
         List<DropdownItem> cleanedData = new ArrayList<>();
         HashSet<Integer> separators = new HashSet<Integer>();
         for (int i = 0; i < suggestions.length; i++) {
-            int itemId = suggestions[i].getSuggestionId();
-            if (itemId == PopupItemId.ITEM_ID_SEPARATOR) {
+            int itemId = suggestions[i].getSuggestionType();
+            if (itemId == SuggestionType.SEPARATOR) {
                 separators.add(cleanedData.size());
             } else {
                 cleanedData.add(suggestions[i]);
@@ -95,19 +99,24 @@ public class AutofillPopup extends DropdownPopupWindow
         setRtl(isRtl);
         show();
         getListView().setOnItemLongClickListener(this);
-        getListView().setAccessibilityDelegate(new AccessibilityDelegate() {
-            @Override
-            public boolean onRequestSendAccessibilityEvent(
-                    ViewGroup host, View child, AccessibilityEvent event) {
-                getListView().removeCallbacks(mClearAccessibilityFocusRunnable);
-                if (event.getEventType()
-                        == AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED) {
-                    getListView().postDelayed(
-                            mClearAccessibilityFocusRunnable, CLEAR_ACCESSIBILITY_FOCUS_DELAY_MS);
-                }
-                return super.onRequestSendAccessibilityEvent(host, child, event);
-            }
-        });
+        getListView()
+                .setAccessibilityDelegate(
+                        new AccessibilityDelegate() {
+                            @Override
+                            public boolean onRequestSendAccessibilityEvent(
+                                    ViewGroup host, View child, AccessibilityEvent event) {
+                                getListView().removeCallbacks(mClearAccessibilityFocusRunnable);
+                                if (event.getEventType()
+                                        == AccessibilityEvent
+                                                .TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED) {
+                                    getListView()
+                                            .postDelayed(
+                                                    mClearAccessibilityFocusRunnable,
+                                                    CLEAR_ACCESSIBILITY_FOCUS_DELAY_MS);
+                                }
+                                return super.onRequestSendAccessibilityEvent(host, child, event);
+                            }
+                        });
     }
 
     @Override

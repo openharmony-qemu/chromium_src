@@ -9,7 +9,6 @@
 #include <string>
 #include <utility>
 
-#include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/ptr_util.h"
@@ -38,14 +37,6 @@ namespace gpu {
 class SharedContextStateTest : public ::testing::Test {
  public:
   SharedContextStateTest() = default;
-#if defined(OHOS_UNITTESTS) 
-  void SetUp() override {
-    base::CommandLine::ForCurrentProcess()->AppendSwitch(
-        switches::kDisableLowEndDeviceMode); 
-    base::CommandLine::ForCurrentProcess()->RemoveSwitch(
-        switches::kEnableLowEndDeviceMode);  
-  }
-#endif
 };
 
 TEST_F(SharedContextStateTest, InitFailsIfLostContext) {
@@ -63,10 +54,13 @@ TEST_F(SharedContextStateTest, InitFailsIfLostContext) {
 
     auto surface = base::MakeRefCounted<gl::GLSurfaceStub>();
     auto context = base::MakeRefCounted<gl::GLContextStub>();
-    const char gl_version[] = "2.1";
+    const char gl_version[] = "OpenGL ES 2.0";
     context->SetGLVersionString(gl_version);
     const char gl_extensions[] = "GL_KHR_robustness";
     context->SetExtensionsString(gl_extensions);
+    // The stub ctx needs to be initialized so that the gl::GLContext can
+    // store the offscreen stub |surface|.
+    context->Initialize(surface.get(), {});
 
     context->MakeCurrent(surface.get());
 
@@ -75,7 +69,7 @@ TEST_F(SharedContextStateTest, InitFailsIfLostContext) {
     auto feature_info =
         base::MakeRefCounted<gles2::FeatureInfo>(workarounds, gpu_feature_info);
     gles2::TestHelper::SetupFeatureInfoInitExpectationsWithGLVersion(
-        &gl_interface, gl_extensions, "", gl_version, context_type);
+        &gl_interface, gl_extensions, "ANGLE", gl_version, context_type);
     feature_info->Initialize(gpu::CONTEXT_TYPE_OPENGLES2,
                              false /* passthrough */,
                              gles2::DisallowedFeatures());
@@ -96,7 +90,8 @@ TEST_F(SharedContextStateTest, InitFailsIfLostContext) {
 
     auto shared_context_state = base::MakeRefCounted<SharedContextState>(
         new gl::GLShareGroup(), surface, context,
-        false /* use_virtualized_gl_contexts */, base::DoNothing());
+        false /* use_virtualized_gl_contexts */, base::DoNothing(),
+        GrContextType::kGL);
 
     bool result =
         shared_context_state->InitializeGL(GpuPreferences(), feature_info);

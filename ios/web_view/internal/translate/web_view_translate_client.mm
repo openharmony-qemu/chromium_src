@@ -21,10 +21,6 @@
 #import "ios/web_view/internal/translate/web_view_translate_ranker_factory.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace ios_web_view {
 
 // static
@@ -51,7 +47,7 @@ WebViewTranslateClient::WebViewTranslateClient(
     language::AcceptLanguagesService* accept_languages)
     : pref_service_(pref_service),
       translate_driver_(web_state,
-                        /*translate_model_service=*/nullptr),
+                        /*language_detection_model_service=*/nullptr),
       translate_manager_(this, translate_ranker, language_model),
       accept_languages_(accept_languages) {
   DCHECK(pref_service_);
@@ -86,7 +82,6 @@ bool WebViewTranslateClient::RequestTranslationOffer() {
 std::unique_ptr<infobars::InfoBar> WebViewTranslateClient::CreateInfoBar(
     std::unique_ptr<translate::TranslateInfoBarDelegate> delegate) const {
   NOTREACHED();
-  return nullptr;
 }
 
 bool WebViewTranslateClient::ShowTranslateUI(
@@ -119,11 +114,6 @@ WebViewTranslateClient::GetTranslatePrefs() {
 language::AcceptLanguagesService*
 WebViewTranslateClient::GetAcceptLanguagesService() {
   return accept_languages_;
-}
-
-int WebViewTranslateClient::GetInfobarIconID() const {
-  NOTREACHED();
-  return 0;
 }
 
 bool WebViewTranslateClient::IsTranslatableURL(const GURL& url) {

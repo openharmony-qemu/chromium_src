@@ -11,10 +11,6 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // The size of the symbol image used in content suggestions.
@@ -36,7 +32,6 @@ NSString* TitleForCollectionShortcutType(NTPCollectionShortcutType type) {
       return l10n_util::GetNSString(IDS_IOS_CONTENT_SUGGESTIONS_WHATS_NEW);
     case NTPCollectionShortcutTypeCount:
       NOTREACHED();
-      return @"";
   }
 }
 
@@ -59,7 +54,6 @@ UIImage* SymbolForCollectionShortcutType(NTPCollectionShortcutType type) {
           kCheckmarkSealSymbol, kSymbolContentSuggestionsPointSize);
     case NTPCollectionShortcutTypeCount:
       NOTREACHED();
-      return nil;
   }
 }
 

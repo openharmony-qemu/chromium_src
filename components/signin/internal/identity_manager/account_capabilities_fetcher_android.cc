@@ -6,19 +6,23 @@
 
 #include "base/android/jni_android.h"
 #include "base/functional/callback.h"
-#include "components/signin/public/android/jni_headers/AccountCapabilitiesFetcher_jni.h"
 #include "components/signin/public/identity_manager/account_capabilities.h"
 #include "components/signin/public/identity_manager/account_info.h"
 
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "components/signin/public/android/jni_headers/AccountCapabilitiesFetcher_jni.h"
+
 namespace {
 using OnAccountCapabilitiesFetchedCallback =
-    base::OnceCallback<void(const absl::optional<AccountCapabilities>&)>;
+    base::OnceCallback<void(const std::optional<AccountCapabilities>&)>;
 }
 
 AccountCapabilitiesFetcherAndroid::AccountCapabilitiesFetcherAndroid(
     const CoreAccountInfo& account_info,
+    AccountCapabilitiesFetcher::FetchPriority fetch_priority,
     AccountCapabilitiesFetcher::OnCompleteCallback on_complete_callback)
     : AccountCapabilitiesFetcher(account_info,
+                                 fetch_priority,
                                  std::move(on_complete_callback)) {
   JNIEnv* env = base::android::AttachCurrentThread();
 

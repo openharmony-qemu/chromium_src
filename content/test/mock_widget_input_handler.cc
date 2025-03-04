@@ -6,6 +6,7 @@
 
 #include "base/run_loop.h"
 #include "build/build_config.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/input/web_gesture_event.h"
 #include "third_party/blink/public/common/input/web_mouse_event.h"
@@ -140,7 +141,8 @@ void MockWidgetInputHandler::GetFrameWidgetInputHandler(
 void MockWidgetInputHandler::UpdateBrowserControlsState(
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
-    bool animate) {}
+    bool animate,
+    const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info) {}
 
 MockWidgetInputHandler::DispatchedMessage::DispatchedMessage(
     const std::string& name)
@@ -233,10 +235,9 @@ MockWidgetInputHandler::DispatchedEventMessage::DispatchedEventMessage(
 
 MockWidgetInputHandler::DispatchedEventMessage::~DispatchedEventMessage() {
   if (callback_) {
-    std::move(callback_).Run(blink::mojom::InputEventResultSource::kUnknown,
-                             ui::LatencyInfo(),
-                             blink::mojom::InputEventResultState::kNotConsumed,
-                             nullptr, nullptr, nullptr);
+    std::move(callback_).Run(
+        blink::mojom::InputEventResultSource::kUnknown, ui::LatencyInfo(),
+        blink::mojom::InputEventResultState::kNotConsumed, nullptr, nullptr);
     base::RunLoop().RunUntilIdle();
   }
 }
@@ -250,8 +251,7 @@ void MockWidgetInputHandler::DispatchedEventMessage::CallCallback(
     blink::mojom::InputEventResultState state) {
   if (callback_) {
     std::move(callback_).Run(blink::mojom::InputEventResultSource::kMainThread,
-                             ui::LatencyInfo(), state, nullptr, nullptr,
-                             nullptr);
+                             ui::LatencyInfo(), state, nullptr, nullptr);
     base::RunLoop().RunUntilIdle();
   }
 }
@@ -261,12 +261,10 @@ void MockWidgetInputHandler::DispatchedEventMessage::CallCallback(
     const ui::LatencyInfo& latency_info,
     blink::mojom::InputEventResultState state,
     blink::mojom::DidOverscrollParamsPtr overscroll,
-    blink::mojom::TouchActionOptionalPtr touch_action,
-    blink::mojom::ScrollResultDataPtr scroll_result_data) {
+    blink::mojom::TouchActionOptionalPtr touch_action) {
   if (callback_) {
     std::move(callback_).Run(source, latency_info, state, std::move(overscroll),
-                             std::move(touch_action),
-                             std::move(scroll_result_data));
+                             std::move(touch_action));
     base::RunLoop().RunUntilIdle();
   }
 }

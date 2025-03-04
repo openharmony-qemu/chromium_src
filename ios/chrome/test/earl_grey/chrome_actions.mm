@@ -4,15 +4,11 @@
 
 #import "ios/chrome/test/earl_grey/chrome_actions.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "ios/chrome/test/earl_grey/chrome_actions_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ios/web/public/test/element_selector.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace chrome_test_util {
 
@@ -50,6 +46,10 @@ id<GREYAction> TapWebElementWithIdInFrame(const std::string& element_id,
                                           inFrameWithIndex:frame_index]];
 }
 
+id<GREYAction> LongPressOnHiddenElement() {
+  return [ChromeActionsAppInterface longPressOnHiddenElement];
+}
+
 id<GREYAction> ScrollToTop() {
   return [ChromeActionsAppInterface scrollToTop];
 }
@@ -63,6 +63,10 @@ id<GREYAction> TapAtPointPercentage(CGFloat xOriginStartPercentage,
 
 id<GREYAction> SwipeToShowDeleteButton() {
   return [ChromeActionsAppInterface swipeToShowDeleteButton];
+}
+
+id<GREYAction> AccessibilitySwipeRight() {
+  return [ChromeActionsAppInterface accessibilitySwipeRight];
 }
 
 }  // namespace chrome_test_util

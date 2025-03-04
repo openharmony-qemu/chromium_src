@@ -16,6 +16,7 @@
 #include "base/location.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram.h"
+#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/stringprintf.h"
@@ -64,14 +65,16 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   int int_fields[7];
   gfx::Vector2dF offset;
   unsigned bitfields;
-  int native_embed_id_;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   gfx::RectF native_rect_;
-  raw_ptr<void> debug_info;
+  int native_embed_id_;
+#endif
+  std::unique_ptr<int> debug_info;
 
   bool should_intercept_touch_event_;
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   bool should_overlay_;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),
@@ -86,25 +89,13 @@ LayerDebugInfo::LayerDebugInfo() = default;
 LayerDebugInfo::LayerDebugInfo(const LayerDebugInfo&) = default;
 LayerDebugInfo::~LayerDebugInfo() = default;
 
-Layer::Inputs::Inputs()
-    : hit_testable(false),
-      contents_opaque(false),
-      contents_opaque_for_text(false),
-      is_drawable(false),
-      double_sided(true),
-      background_color(SkColors::kTransparent) {}
+Layer::RareInputs::RareInputs() = default;
+Layer::RareInputs::~RareInputs() = default;
 
+Layer::Inputs::Inputs() = default;
 Layer::Inputs::~Inputs() = default;
 
-Layer::LayerTreeInputs::LayerTreeInputs()
-    : masks_to_bounds(false),
-      is_fast_rounded_corner(false),
-      user_scrollable_horizontal(true),
-      user_scrollable_vertical(true),
-      trilinear_filtering(false),
-      hide_layer_and_subtree(false),
-      scrollable(false) {}
-
+Layer::LayerTreeInputs::LayerTreeInputs() = default;
 Layer::LayerTreeInputs::~LayerTreeInputs() = default;
 
 scoped_refptr<Layer> Layer::Create() {
@@ -123,9 +114,12 @@ Layer::Layer()
       scroll_tree_index_(kInvalidPropertyNodeId),
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
       native_(false),
+#endif
       bitflags_(0u),
-      subtree_property_changed_(false) {}
+      subtree_property_changed_(false) {
+}
 
 Layer::~Layer() {
   // Our parent should be holding a reference to us so there should be no
@@ -186,8 +180,7 @@ void Layer::SetLayerTreeHost(LayerTreeHost* host) {
   }
 
   // See comment in layer.h to learn why this assignment is so weird.
-  raw_ptr<LayerTreeHost> host_ptr(host);
-  swap(host_ptr, const_cast<raw_ptr<LayerTreeHost>&>(layer_tree_host_));
+  const_cast<raw_ptr<LayerTreeHost>&>(layer_tree_host_) = host;
 
   if (property_tree_indices_invalid)
     InvalidatePropertyTreesIndices();
@@ -394,7 +387,7 @@ void Layer::ReplaceChild(Layer* reference, scoped_refptr<Layer> new_layer) {
   auto& inputs = inputs_.Write(*this);
   auto reference_it = base::ranges::find(inputs.children, reference,
                                          &scoped_refptr<Layer>::get);
-  DCHECK(reference_it != inputs.children.end());
+  CHECK(reference_it != inputs.children.end(), base::NotFatalUntil::M130);
   size_t reference_index = reference_it - inputs.children.begin();
   reference->RemoveFromParent();
 
@@ -856,7 +849,6 @@ void Layer::SetBlendMode(SkBlendMode blend_mode) {
       // Porter Duff Compositing Operators are not yet supported
       // http://dev.w3.org/fxtf/compositing-1/#porterduffcompositingoperators
       NOTREACHED();
-      return;
   }
 
   inputs.blend_mode = blend_mode;
@@ -865,18 +857,20 @@ void Layer::SetBlendMode(SkBlendMode blend_mode) {
   SetPropertyTreesNeedRebuild();
 }
 
-void Layer::SetHitTestable(bool should_hit_test) {
+void Layer::SetHitTestOpaqueness(HitTestOpaqueness opaqueness) {
   DCHECK(IsPropertyChangeAllowed());
   auto& inputs = inputs_.Write(*this);
-  if (inputs.hit_testable == should_hit_test)
+  if (inputs.hit_test_opaqueness == opaqueness) {
     return;
-  inputs.hit_testable = should_hit_test;
+  }
+  inputs.hit_test_opaqueness = opaqueness;
   SetPropertyTreesNeedRebuild();
   SetNeedsCommit();
 }
 
-bool Layer::HitTestable() const {
-  return inputs_.Read(*this).hit_testable;
+void Layer::SetHitTestable(bool hit_testable) {
+  SetHitTestOpaqueness(hit_testable ? HitTestOpaqueness::kMixed
+                                    : HitTestOpaqueness::kTransparent);
 }
 
 void Layer::SetContentsOpaque(bool opaque) {
@@ -1134,51 +1128,32 @@ bool Layer::IsScrollbarLayerForTesting() const {
   return false;
 }
 
-void Layer::SetUserScrollable(bool horizontal, bool vertical) {
-  DCHECK(IsPropertyChangeAllowed());
-  auto& inputs = EnsureLayerTreeInputs();
-  if (inputs.user_scrollable_horizontal == horizontal &&
-      inputs.user_scrollable_vertical == vertical)
-    return;
-  inputs.user_scrollable_horizontal = horizontal;
-  inputs.user_scrollable_vertical = vertical;
-  if (!IsAttached())
-    return;
-
-  if (scrollable()) {
-    auto& scroll_tree =
-        layer_tree_host()->property_trees()->scroll_tree_mutable();
-    if (auto* scroll_node = scroll_tree.Node(scroll_tree_index_.Read(*this))) {
-      scroll_node->user_scrollable_horizontal = horizontal;
-      scroll_node->user_scrollable_vertical = vertical;
-    } else {
-      SetPropertyTreesNeedRebuild();
-    }
-  }
-
-  SetNeedsCommit();
-}
-
-bool Layer::GetUserScrollableHorizontal() const {
-  // user_scrollable_horizontal is true by default.
-  return !layer_tree_inputs() ||
-         layer_tree_inputs()->user_scrollable_horizontal;
-}
-
-bool Layer::GetUserScrollableVertical() const {
-  // user_scrollable_vertical is true by default.
-  return !layer_tree_inputs() || layer_tree_inputs()->user_scrollable_vertical;
-}
-
-void Layer::SetNonFastScrollableRegion(const Region& region) {
+void Layer::SetMainThreadScrollHitTestRegion(const Region& region) {
   DCHECK(IsPropertyChangeAllowed());
   const auto& rare_inputs = inputs_.Read(*this).rare_inputs;
   if (!rare_inputs && region.IsEmpty())
     return;
-  if (rare_inputs && rare_inputs->non_fast_scrollable_region == region)
+  if (rare_inputs &&
+      rare_inputs->main_thread_scroll_hit_test_region == region) {
     return;
-  EnsureRareInputs().non_fast_scrollable_region = region;
+  }
+  EnsureRareInputs().main_thread_scroll_hit_test_region = region;
   SetPropertyTreesNeedRebuild();
+  SetNeedsCommit();
+}
+
+void Layer::SetNonCompositedScrollHitTestRects(
+    std::vector<ScrollHitTestRect> rects) {
+  DCHECK(IsPropertyChangeAllowed());
+  const auto& rare_inputs = inputs_.Read(*this).rare_inputs;
+  if (!rare_inputs && rects.empty()) {
+    return;
+  }
+  if (rare_inputs &&
+      rare_inputs->non_composited_scroll_hit_test_rects == rects) {
+    return;
+  }
+  EnsureRareInputs().non_composited_scroll_hit_test_rects = std::move(rects);
   SetNeedsCommit();
 }
 
@@ -1402,14 +1377,15 @@ std::string Layer::ToString() const {
       "  name: %s\n"
       "  Bounds: %s\n"
       "  ElementId: %s\n"
-      "  HitTestable: %d\n"
+      "  HitTestOpaqueness: %s\n"
       "  OffsetToTransformParent: %s\n"
       "  clip_tree_index: %d\n"
       "  effect_tree_index: %d\n"
       "  scroll_tree_index: %d\n"
       "  transform_tree_index: %d\n",
       id(), DebugName().c_str(), bounds().ToString().c_str(),
-      element_id().ToString().c_str(), HitTestable(),
+      element_id().ToString().c_str(),
+      HitTestOpaquenessToString(hit_test_opaqueness()),
       offset_to_transform_parent().ToString().c_str(), clip_tree_index(),
       effect_tree_index(), scroll_tree_index(), transform_tree_index());
 }
@@ -1447,6 +1423,10 @@ void Layer::SetNeedsDisplayRect(const gfx::Rect& dirty_rect) {
     layer_tree_host()->SetNeedsUpdateLayers();
 }
 
+bool Layer::RequiresSetNeedsDisplayOnHdrHeadroomChange() const {
+  return false;
+}
+
 bool Layer::IsSnappedToPixelGridInTarget() const {
   return false;
 }
@@ -1475,21 +1455,21 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   layer->SetScrollTreeIndex(scroll_tree_index(property_trees));
   layer->SetOffsetToTransformParent(offset_to_transform_parent_.Read(*this));
   layer->SetDrawsContent(draws_content());
-  layer->SetHitTestable(HitTestable());
+  layer->SetHitTestOpaqueness(inputs.hit_test_opaqueness);
   // subtree_property_changed_ is propagated to all descendants while building
   // property trees. So, it is enough to check it only for the current layer.
   if (subtree_property_changed_.Read(*this))
     layer->NoteLayerPropertyChanged();
   layer->set_may_contain_video(may_contain_video());
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   layer->set_may_contain_native(may_contain_native());
   layer->set_native_embed_id(native_embed_id());
   layer->SetNativeRect(native_rect_);
+#endif
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);
   layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);
   layer->SetShouldCheckBackfaceVisibility(should_check_backface_visibility());
-
-  layer->UpdateScrollable();
 
   // The property trees must be safe to access because they will be used below
   // to call |SetScrollOffsetClobberActiveValue|.
@@ -1513,8 +1493,10 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   layer->UpdateDebugInfo(debug_info_.Write(*this).get());
 
   if (inputs.rare_inputs) {
-    layer->SetNonFastScrollableRegion(
-        inputs.rare_inputs->non_fast_scrollable_region);
+    layer->SetMainThreadScrollHitTestRegion(
+        inputs.rare_inputs->main_thread_scroll_hit_test_region);
+    layer->SetNonCompositedScrollHitTestRects(
+        inputs.rare_inputs->non_composited_scroll_hit_test_rects);
     layer->SetCaptureBounds(inputs.rare_inputs->capture_bounds);
     layer->SetWheelEventHandlerRegion(inputs.rare_inputs->wheel_event_region);
   } else {
@@ -1710,13 +1692,13 @@ void Layer::SetNativeEmbedId(int embedId) {
   SetNeedsPushProperties();
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 bool Layer::ShouldOverlay() {
   return should_overlay_;
 }
 void Layer::SetShouldOverlay(bool should_overlay) {
   should_overlay_ = should_overlay;
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace cc

@@ -5,11 +5,15 @@
 #include "ash/public/cpp/login_screen_test_api.h"
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "ash/login/ui/arrow_button_view.h"
+#include "ash/login/ui/auth_error_bubble.h"
 #include "ash/login/ui/kiosk_app_default_message.h"
+#include "ash/login/ui/local_authentication_request_controller_impl.h"
+#include "ash/login/ui/local_authentication_test_api.h"
 #include "ash/login/ui/lock_contents_view_test_api.h"
 #include "ash/login/ui/lock_screen.h"
 #include "ash/login/ui/login_auth_user_view.h"
@@ -21,6 +25,7 @@
 #include "ash/login/ui/login_user_view.h"
 #include "ash/login/ui/pin_request_view.h"
 #include "ash/login/ui/pin_request_widget.h"
+#include "ash/public/cpp/login/local_authentication_request_controller.h"
 #include "ash/public/cpp/login_screen.h"
 #include "ash/public/cpp/login_screen_client.h"
 #include "ash/shelf/login_shelf_view.h"
@@ -30,6 +35,7 @@
 #include "base/check.h"
 #include "base/functional/callback.h"
 #include "base/run_loop.h"
+#include "components/account_id/account_id.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/test/ui_controls.h"
 #include "ui/compositor/layer.h"
@@ -80,6 +86,24 @@ views::View* GetShutDownButton() {
   return shelf_view->GetViewByID(LoginShelfView::kShutdown);
 }
 
+views::View* GetShutDownButtonContainer() {
+  LoginShelfView* shelf_view = GetLoginShelfView();
+  if (!shelf_view) {
+    return nullptr;
+  }
+
+  return shelf_view->GetButtonContainerByID(LoginShelfView::kShutdown);
+}
+
+views::View* GetAppsButton() {
+  LoginShelfView* shelf_view = GetLoginShelfView();
+  if (!shelf_view) {
+    return nullptr;
+  }
+
+  return shelf_view->GetViewByID(LoginShelfView::kApps);
+}
+
 LoginBigUserView* GetBigUserView(const AccountId& account_id) {
   LockScreen::TestApi lock_screen_test(LockScreen::Get());
   LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
@@ -98,7 +122,7 @@ bool SimulateButtonPressedForTesting(LoginShelfView::ButtonId button_id) {
   }
 
   views::test::ButtonTestApi(views::Button::AsButton(button))
-      .NotifyClick(ui::MouseEvent(ui::ET_MOUSE_PRESSED, gfx::PointF(),
+      .NotifyClick(ui::MouseEvent(ui::EventType::kMousePressed, gfx::PointF(),
                                   gfx::PointF(), base::TimeTicks(), 0, 0));
   return true;
 }
@@ -211,13 +235,6 @@ bool LoginScreenTestApi::IsShutdownButtonShown() {
 // static
 bool LoginScreenTestApi::IsAppsButtonShown() {
   return IsLoginShelfViewButtonShown(LoginShelfView::kApps);
-}
-
-// static
-bool LoginScreenTestApi::IsAuthErrorBubbleShown() {
-  LockScreen::TestApi lock_screen_test(LockScreen::Get());
-  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
-  return lock_contents_test.auth_error_bubble()->GetVisible();
 }
 
 // static
@@ -348,8 +365,24 @@ bool LoginScreenTestApi::IsManagedIconShown(const AccountId& account_id) {
     return false;
   }
   LoginUserView::TestApi user_test(big_user_view->GetUserView());
-  auto* enterprise_icon = user_test.enterprise_icon();
-  return enterprise_icon->GetVisible();
+  auto* enterprise_icon_container = user_test.enterprise_icon_container();
+  return enterprise_icon_container->GetVisible();
+}
+
+// static
+bool LoginScreenTestApi::ShowRemoveAccountDialog(const AccountId& account_id) {
+  LoginBigUserView* big_user_view = GetBigUserView(account_id);
+  if (!big_user_view) {
+    ADD_FAILURE() << "Could not find user " << account_id.Serialize();
+    return false;
+  }
+  LoginAuthUserView::TestApi auth_test(big_user_view->auth_user());
+  if (auth_test.remove_account_dialog()) {
+    ADD_FAILURE() << "Dialog already shown for user " << account_id.Serialize();
+    return false;
+  }
+  auth_test.ShowDialog();
+  return true;
 }
 
 // static
@@ -360,9 +393,14 @@ bool LoginScreenTestApi::IsManagedMessageInDialogShown(
     ADD_FAILURE() << "Could not find user " << account_id.Serialize();
     return false;
   }
-  LoginUserView::TestApi user_test(big_user_view->GetUserView());
+  LoginAuthUserView::TestApi auth_test(big_user_view->auth_user());
+  if (!auth_test.remove_account_dialog()) {
+    ADD_FAILURE() << "Could not find dialog for user "
+                  << account_id.Serialize();
+    return false;
+  }
   LoginRemoveAccountDialog::TestApi user_dialog_test(
-      user_test.remove_account_dialog());
+      auth_test.remove_account_dialog());
   auto* management_disclosure_label =
       user_dialog_test.management_disclosure_label();
   return management_disclosure_label &&
@@ -485,6 +523,12 @@ bool LoginScreenTestApi::LaunchApp(const std::string& app_id) {
 }
 
 // static
+bool LoginScreenTestApi::LaunchApp(const AccountId& account_id) {
+  LoginShelfView* view = GetLoginShelfView();
+  return view && view->LaunchAppForTesting(account_id);
+}
+
+// static
 bool LoginScreenTestApi::ClickAppsButton() {
   return SimulateButtonPressedForTesting(LoginShelfView::kApps);
 }
@@ -524,7 +568,7 @@ bool LoginScreenTestApi::PressAccelerator(const ui::Accelerator& accelerator) {
 // static
 bool LoginScreenTestApi::SendAcceleratorNatively(
     const ui::Accelerator& accelerator) {
-  gfx::NativeWindow login_window = nullptr;
+  gfx::NativeWindow login_window = gfx::NativeWindow();
   if (LockScreen::HasInstance()) {
     login_window = LockScreen::Get()->widget()->GetNativeWindow();
   } else {
@@ -603,7 +647,7 @@ bool LoginScreenTestApi::ExpandPublicSessionPod(const AccountId& account_id) {
   }
   views::test::ButtonTestApi(
       views::Button::AsButton(public_account_test.arrow_button()))
-      .NotifyClick(ui::MouseEvent(ui::ET_MOUSE_PRESSED, gfx::PointF(),
+      .NotifyClick(ui::MouseEvent(ui::EventType::kMousePressed, gfx::PointF(),
                                   gfx::PointF(), base::TimeTicks(), 0, 0));
   return lock_contents_test.expanded_view();
 }
@@ -656,7 +700,7 @@ void LoginScreenTestApi::ClickPublicExpandedAdvancedViewButton() {
       lock_contents_test.expanded_view());
   views::test::ButtonTestApi(
       views::Button::AsButton(expanded_test.advanced_view_button()))
-      .NotifyClick(ui::MouseEvent(ui::ET_MOUSE_PRESSED, gfx::PointF(),
+      .NotifyClick(ui::MouseEvent(ui::EventType::kMousePressed, gfx::PointF(),
                                   gfx::PointF(), base::TimeTicks(), 0, 0));
 }
 
@@ -668,7 +712,7 @@ void LoginScreenTestApi::ClickPublicExpandedSubmitButton() {
       lock_contents_test.expanded_view());
   views::test::ButtonTestApi(
       views::Button::AsButton(expanded_test.submit_button()))
-      .NotifyClick(ui::MouseEvent(ui::ET_MOUSE_PRESSED, gfx::PointF(),
+      .NotifyClick(ui::MouseEvent(ui::EventType::kMousePressed, gfx::PointF(),
                                   gfx::PointF(), base::TimeTicks(), 0, 0));
 }
 
@@ -781,8 +825,13 @@ std::u16string LoginScreenTestApi::GetManagementDisclosureText(
     ADD_FAILURE() << "Could not find user " << account_id.Serialize();
     return std::u16string();
   }
-  LoginUserView::TestApi user_test(big_user_view->GetUserView());
-  LoginRemoveAccountDialog::TestApi dialog(user_test.remove_account_dialog());
+  LoginAuthUserView::TestApi auth_test(big_user_view->auth_user());
+  if (!auth_test.remove_account_dialog()) {
+    ADD_FAILURE() << "Could not find dialog for user "
+                  << account_id.Serialize();
+    return std::u16string();
+  }
+  LoginRemoveAccountDialog::TestApi dialog(auth_test.remove_account_dialog());
   return dialog.management_disclosure_label()->GetText();
 }
 
@@ -815,12 +864,27 @@ gfx::Rect LoginScreenTestApi::GetShutDownButtonTargetBounds() {
 
 // static
 gfx::Rect LoginScreenTestApi::GetShutDownButtonMirroredBounds() {
+  views::View* button_container = GetShutDownButtonContainer();
   views::View* button = GetShutDownButton();
   if (!button) {
     return gfx::Rect();
   }
+  gfx::Point button_container_origin =
+      button_container->GetMirroredBounds().origin();
+  gfx::Rect button_mirrored_bounds = button->GetMirroredBounds();
+  button_mirrored_bounds.set_origin(button_container_origin +
+                                    button_mirrored_bounds.OffsetFromOrigin());
+  return button_mirrored_bounds;
+}
 
-  return button->GetMirroredBounds();
+// static
+std::string LoginScreenTestApi::GetAppsButtonClassName() {
+  views::View* button = GetAppsButton();
+  if (!button) {
+    return "";
+  }
+
+  return button->GetClassName();
 }
 
 // static
@@ -873,6 +937,97 @@ void LoginScreenTestApi::CancelPinRequestWidget() {
   event_generator->MoveMouseTo(
       pin_view_test.back_button()->GetBoundsInScreen().CenterPoint());
   event_generator->ClickLeftButton();
+}
+
+// static
+bool LoginScreenTestApi::IsLocalAuthenticationDialogVisible() {
+  auto* controller = LocalAuthenticationRequestController::Get();
+  if (controller == nullptr) {
+    return false;
+  }
+  return controller->IsDialogVisible();
+}
+
+// static
+void LoginScreenTestApi::CancelLocalAuthenticationDialog() {
+  auto* controller = LocalAuthenticationRequestController::Get();
+  if (controller == nullptr || !controller->IsDialogVisible()) {
+    FAIL() << "Local Authentication dialog is not shown";
+  }
+  auto test_api = GetLocalAuthenticationTestApi(controller);
+  test_api->Close();
+}
+
+// static
+void LoginScreenTestApi::SubmitPasswordLocalAuthenticationDialog(
+    const std::string& password) {
+  auto* controller = LocalAuthenticationRequestController::Get();
+  if (controller == nullptr || !controller->IsDialogVisible()) {
+    FAIL() << "Local Authentication dialog is not shown";
+  }
+  auto test_api = GetLocalAuthenticationTestApi(controller);
+  test_api->SubmitPassword(password);
+}
+
+// static
+void LoginScreenTestApi::SubmitPinLocalAuthenticationDialog(
+    const std::string& pin) {
+  auto* controller = LocalAuthenticationRequestController::Get();
+  if (controller == nullptr || !controller->IsDialogVisible()) {
+    FAIL() << "Local Authentication dialog is not shown";
+  }
+  if (!controller->IsPinSupported()) {
+    FAIL() << "This controller is not supporting pin";
+  }
+  auto test_api = GetLocalAuthenticationTestApi(controller);
+  test_api->SubmitPin(pin);
+}
+
+// static
+bool LoginScreenTestApi::IsAuthErrorBubbleShown() {
+  LockScreen::TestApi lock_screen_test(LockScreen::Get());
+  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
+  return lock_contents_test.IsAuthErrorBubbleVisible();
+}
+
+// static
+void LoginScreenTestApi::ShowAuthError(int unlock_attempt) {
+  if (IsAuthErrorBubbleShown()) {
+    ADD_FAILURE() << "Auth error bubble is already shown.";
+  }
+  LockScreen::TestApi lock_screen_test(LockScreen::Get());
+  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
+  lock_contents_test.ShowAuthErrorBubble(unlock_attempt);
+}
+
+// static
+void LoginScreenTestApi::HideAuthError() {
+  if (!IsAuthErrorBubbleShown()) {
+    ADD_FAILURE() << "Auth error bubble is not shown.";
+  }
+  LockScreen::TestApi lock_screen_test(LockScreen::Get());
+  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
+  lock_contents_test.HideAuthErrorBubble();
+}
+
+// static
+void LoginScreenTestApi::PressAuthErrorRecoveryButton() {
+  if (!IsAuthErrorBubbleShown()) {
+    ADD_FAILURE() << "Auth error bubble is not shown.";
+  }
+  LockScreen::TestApi lock_screen_test(LockScreen::Get());
+  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
+  lock_contents_test.PressAuthErrorRecoveryButton();
+}
+
+// static
+void LoginScreenTestApi::PressAuthErrorLearnMoreButton() {
+  if (!IsAuthErrorBubbleShown()) {
+    ADD_FAILURE() << "Auth error bubble is not shown.";
+  }
+  LockScreen::TestApi lock_screen_test(LockScreen::Get());
+  LockContentsViewTestApi lock_contents_test(lock_screen_test.contents_view());
+  lock_contents_test.PressAuthErrorLearnMoreButton();
 }
 
 }  // namespace ash

@@ -18,8 +18,8 @@ sys.path.append(os.path.join(_SRC_DIR, 'third_party', 'node'))
 import node
 import node_modules
 
-from path_mappings import GetDepToPathMappings
-from validate_tsconfig import validateTsconfigJson, validateJavaScriptAllowed, validateRootDir, isUnsupportedJsTarget
+from path_utils import isInAshFolder, getTargetPath
+from validate_tsconfig import validateTsconfigJson, validateJavaScriptAllowed, validateRootDir, isUnsupportedJsTarget, isMappingAllowed, validateDefinitionDeps
 
 
 def _write_tsconfig_json(gen_dir, tsconfig, tsconfig_file):
@@ -33,10 +33,10 @@ def _write_tsconfig_json(gen_dir, tsconfig, tsconfig_file):
 
 def main(argv):
   parser = argparse.ArgumentParser()
-  parser.add_argument('--raw_deps', nargs='*')
   parser.add_argument('--deps', nargs='*')
   parser.add_argument('--gen_dir', required=True)
   parser.add_argument('--path_mappings', nargs='*')
+  parser.add_argument('--path_mappings_file')
 
   parser.add_argument('--root_gen_dir', required=True)
   parser.add_argument('--root_src_dir', required=True)
@@ -154,38 +154,31 @@ def main(argv):
           '.d.ts'), f'Invalid definition \'{d}\'. Should end with \'.d.ts\''
     tsconfig['files'].extend(args.definitions)
 
-  # Handle path mappings, for example chrome://resources/ URLs.
-  path_mappings = collections.defaultdict(list)
+  target_path = getTargetPath(args.gen_dir, args.root_gen_dir)
+  is_ash_target = isInAshFolder(target_path)
 
   if args.deps is not None:
     tsconfig['references'] = [{'path': dep} for dep in args.deps]
 
-    assert args.raw_deps is not None
-    dep_to_path_mappings = GetDepToPathMappings(
-        args.root_gen_dir,
-        # Sometimes root_src_dir has trailing slashes. Remove them if necessary.
-        args.root_src_dir.rstrip('/'),
-        args.platform)
+  path_mappings = collections.defaultdict(list)
+  # Load all mappings from the input file, if one exists.
+  if (args.path_mappings_file is not None):
+    path_mappings_path = os.path.join(args.gen_dir, args.path_mappings_file)
+    with open(path_mappings_path, 'r', encoding='utf-8') as f:
+      file_mappings = json.loads(f.read())
+      for url in file_mappings:
+        path_mappings[url] = file_mappings[url]
+        if url.startswith("chrome:"):
+          path_mappings[url.replace("chrome:", "arkweb:")] = file_mappings[url]
 
-    for dep in args.raw_deps:
-      if dep not in dep_to_path_mappings:
-        assert not dep.startswith("//ui/webui/resources"), \
-            f'Missing path mapping for \'{dep}\'. Update ' \
-            '//tools/typescript/path_mappings.py accordingly.'
-
-        # Path mappings outside of //ui/webui/resources are not inferred from
-        # |args.deps| yet.
-        continue
-
-      mappings = dep_to_path_mappings[dep]
-      for (url, dir) in mappings:
-        path_mappings[url].append(os.path.join('./', dir))
-        path_mappings['chrome:' + url].append(os.path.join('./', dir))
-        path_mappings['arkweb:' + url].append(os.path.join('./', dir))
-
+  # Add target-specified mappings.
   if args.path_mappings is not None:
     for m in args.path_mappings:
       mapping = m.split('|')
+      mapping_path = os.path.relpath(mapping[1], args.root_src_dir)
+      assert isMappingAllowed(is_ash_target, target_path, mapping_path), \
+          f'Cannot use mapping to Ash-specific folder {mapping_path} from ' \
+          f'non-Ash target {target_path}'
       path_mappings[mapping[0]].append(os.path.join('./', mapping[1]))
 
   tsconfig['compilerOptions']['paths'] = path_mappings
@@ -254,9 +247,26 @@ def main(argv):
       if os.path.exists(tsbuildinfo_path):
         os.remove(tsbuildinfo_path)
 
-  if args.in_files is not None:
+  # Invoke the TS compiler again, with the --listFilesOnly flag, to detect any
+  # files that are used by the build, but not properly declared as dependencies.
+  out = node.RunNode([
+      node_modules.PathToTypescript(),
+      '--project',
+      os.path.join(args.gen_dir, tsconfig_file),
+      '--listFilesOnly',
+  ])
+  files_list = out.split('\n')
+  definitions_files = list(filter(lambda f: f.endswith('.d.ts'), files_list))
+  definitions = args.definitions if args.definitions is not None else []
+  list_valid, error_msg = validateDefinitionDeps(definitions_files, target_path,
+                                                 args.gen_dir,
+                                                 args.root_gen_dir, definitions)
+  if not list_valid:
+    raise AssertionError(error_msg)
 
-    manifest_path = os.path.join(args.gen_dir, f'{args.output_suffix}.manifest')
+  if args.in_files is not None:
+    manifest_path = os.path.join(args.gen_dir,
+                                 f'{args.output_suffix}_manifest.json')
     with open(manifest_path, 'w', encoding='utf-8') as manifest_file:
       manifest_data = {}
       manifest_data['base_dir'] = args.out_dir

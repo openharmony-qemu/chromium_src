@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//media/media_options.gni")
+import("//testing/test.gni")
 
 source_set("cdm_api") {
   sources = [ "api/content_decryption_module.h" ]
@@ -38,7 +39,7 @@ source_set("cdm") {
   visibility = [
     "//media",
 
-    # TODO(crbug.com/583067): These files should not be in //media/base.
+    # TODO(crbug.com/41237623): These files should not be in //media/base.
     "//media/base/android",
     "//media/filters",
   ]
@@ -50,8 +51,6 @@ source_set("cdm") {
     "aes_decryptor.h",
     "cbcs_decryptor.cc",
     "cbcs_decryptor.h",
-    "cdm_capability.cc",
-    "cdm_capability.h",
     "cdm_context_ref_impl.cc",
     "cdm_context_ref_impl.h",
     "cenc_decryptor.cc",
@@ -245,6 +244,10 @@ source_set("unit_tests") {
       "//media/cdm/library_cdm:cdm_host_proxy",
       "//media/cdm/library_cdm:test_support",
     ]
+
+    if (enable_arkweb) {
+      deps += [ "//arkweb/build/features" ]
+    }
   }
 
   if (proprietary_codecs) {
@@ -258,4 +261,20 @@ source_set("unit_tests") {
       "win/media_foundation_cdm_unittest.cc",
     ]
   }
+}
+
+test("aes_decryptor_fuzztests") {
+  sources = [ "aes_decryptor_fuzztests.cc" ]
+
+  fuzztests = [
+    "AesDecryptorFuzzTests.CreateSessionDoesNotCrash",
+    "AesDecryptorFuzzTests.UpdateSessionDoesNotCrash",
+    "AesDecryptorFuzzTests.DecryptDoesNotCrash",
+  ]
+
+  deps = [
+    "//base/test:test_support",
+    "//media:test_support",
+    "//third_party/fuzztest:fuzztest_gtest_main",
+  ]
 }

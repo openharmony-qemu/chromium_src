@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 
 #include <stddef.h>
@@ -25,7 +30,6 @@
 #include "ui/gfx/x/generated_protos/xinput.h"
 #include "ui/gfx/x/generated_protos/xproto.h"
 #endif
-
 #include "ui/gfx/x/xproto_types.h"
 
 #define VKEY_UNSUPPORTED VKEY_UNKNOWN
@@ -1199,7 +1203,11 @@ KeyboardCode DefaultKeyboardCodeFromHardwareKeycode(
 }
 
 // TODO(jcampan): this method might be incomplete.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+int XKeysymForWindowsKeyCode(KeyboardCode keycode, bool shift, bool capslock) {
+#else
 int XKeysymForWindowsKeyCode(KeyboardCode keycode, bool shift) {
+#endif
   switch (keycode) {
     case VKEY_NUMPAD0:
       return XK_KP_0;
@@ -1351,7 +1359,11 @@ int XKeysymForWindowsKeyCode(KeyboardCode keycode, bool shift) {
     case VKEY_X:
     case VKEY_Y:
     case VKEY_Z:
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      return ((shift ^ capslock) ? XK_A : XK_a) + (keycode - VKEY_A);
+#else
       return (shift ? XK_A : XK_a) + (keycode - VKEY_A);
+#endif
 
     case VKEY_LWIN:
       return XK_Super_L;
@@ -1493,8 +1505,13 @@ unsigned int XKeyCodeForWindowsKeyCode(ui::KeyboardCode key_code,
   // crbug.com/386066 and crbug.com/390263 are examples of problems
   // associated with this.
   //
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  return static_cast<uint8_t>(
+      connection->KeysymToKeycode(XKeysymForWindowsKeyCode(key_code, false, false)));
+#else
   return static_cast<uint8_t>(
       connection->KeysymToKeycode(XKeysymForWindowsKeyCode(key_code, false)));
+#endif
 }
 
 }  // namespace ui

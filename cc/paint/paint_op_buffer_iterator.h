@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef CC_PAINT_PAINT_OP_BUFFER_ITERATOR_H_
 #define CC_PAINT_PAINT_OP_BUFFER_ITERATOR_H_
 
@@ -12,6 +17,7 @@
 #include "base/debug/alias.h"
 #include "cc/paint/paint_op.h"
 #include "cc/paint/paint_op_buffer.h"
+#include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
 namespace cc {
@@ -28,6 +34,8 @@ class PaintOpBufferIteratorBase {
 class CC_PAINT_EXPORT PaintOpBuffer::Iterator
     : public PaintOpBufferIteratorBase {
  public:
+  constexpr Iterator() = default;
+
   explicit Iterator(const PaintOpBuffer& buffer)
       : Iterator(buffer, buffer.data_.get(), 0u) {}
 
@@ -48,8 +56,8 @@ class CC_PAINT_EXPORT PaintOpBuffer::Iterator
   Iterator& operator++() {
     DCHECK(*this);
     const PaintOp& op = **this;
-    ptr_ += op.aligned_size;
-    op_offset_ += op.aligned_size;
+    ptr_ += op.AlignedSize();
+    op_offset_ += op.AlignedSize();
 
     CHECK_LE(op_offset_, buffer_->used_);
     return *this;
@@ -122,7 +130,7 @@ class CC_PAINT_EXPORT PaintOpBuffer::OffsetIterator
     op_offset_ = target_offset;
 
     DCHECK(!*this || (*this)->type <=
-                         static_cast<uint32_t>(PaintOpType::LastPaintOpType));
+                         static_cast<uint32_t>(PaintOpType::kLastPaintOpType));
     return *this;
   }
   OffsetIterator operator++(int) {
@@ -232,7 +240,7 @@ class CC_PAINT_EXPORT PaintOpBuffer::PlaybackFoldingIterator
   PaintOpBuffer::CompositeIterator iter_;
 
   // FIFO queue of paint ops that have been peeked at.
-  base::StackVector<const PaintOp*, 3> stack_;
+  absl::InlinedVector<const PaintOp*, 3> stack_;
   DrawColorOp folded_draw_color_;
 
   // `current_op_` is not a raw_ptr<...> for performance reasons (based on

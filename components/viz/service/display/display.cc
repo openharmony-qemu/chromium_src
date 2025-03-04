@@ -9,9 +9,12 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "base/check.h"
 #include "base/containers/contains.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_macros.h"
@@ -20,8 +23,10 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/timer/elapsed_timer.h"
+#include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
+#include "base/trace_event/typed_macros.h"
 #include "build/build_config.h"
 #include "cc/base/math_util.h"
 #include "cc/base/region.h"
@@ -33,6 +38,7 @@
 #include "components/viz/common/quads/compositor_frame.h"
 #include "components/viz/common/quads/draw_quad.h"
 #include "components/viz/common/quads/shared_quad_state.h"
+#include "components/viz/common/switches.h"
 #include "components/viz/common/viz_utils.h"
 #include "components/viz/service/debugger/viz_debugger.h"
 #include "components/viz/service/display/aggregated_frame.h"
@@ -44,8 +50,14 @@
 #include "components/viz/service/display/display_resource_provider_skia.h"
 #include "components/viz/service/display/display_resource_provider_software.h"
 #include "components/viz/service/display/display_scheduler.h"
+#include "components/viz/service/display/display_utils.h"
+#include "components/viz/service/display/frame_interval_decider.h"
+#include "components/viz/service/display/frame_interval_matchers.h"
 #include "components/viz/service/display/null_renderer.h"
+#include "components/viz/service/display/occlusion_culler.h"
 #include "components/viz/service/display/output_surface.h"
+#include "components/viz/service/display/overdraw_tracker.h"
+#include "components/viz/service/display/overlay_candidate_factory.h"
 #include "components/viz/service/display/renderer_utils.h"
 #include "components/viz/service/display/skia_output_surface.h"
 #include "components/viz/service/display/skia_renderer.h"
@@ -54,109 +66,107 @@
 #include "components/viz/service/surfaces/surface.h"
 #include "components/viz/service/surfaces/surface_manager.h"
 #include "gpu/command_buffer/common/swap_buffers_complete_params.h"
+#include "gpu/command_buffer/service/scheduler.h"
 #include "gpu/command_buffer/service/scheduler_sequence.h"
+#include "gpu/command_buffer/service/shared_image/shared_image_format_service_utils.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
 #include "third_party/perfetto/protos/perfetto/trace/track_event/chrome_latency_info.pbzero.h"
 #include "ui/gfx/buffer_types.h"
+#include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_fence_handle.h"
+#include "ui/gfx/overlay_transform.h"
 #include "ui/gfx/overlay_transform_utils.h"
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
 
-#if defined(OHOS_DFX_DUMP)
-#include "components/viz/service/display/frame_dump_copy_output_request.h"
-#include "ohos_adapter_helper.h"
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "arkweb/chromium_ext/components/viz/service/display/frame_dump_copy_output_request.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "gpu/config/gpu_finch_features.h"
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/android_surface_control_compat.h"
 #endif
 namespace viz {
-#if defined(OHOS_DFX_DUMP)
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
 const int DUMP_FRAME_FREQ = 60;
 
 class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
  public:
-    DumpFrameObserver() = default;
-    ~DumpFrameObserver() override = default;
+  DumpFrameObserver() = default;
+  ~DumpFrameObserver() override = default;
 
-    void PropertiesUpdate(const char* value) override {
-      dump_param_list_.clear();
-      if (strcmp(value, "true") == 0) {
-        should_dump_ = true;
-      } else if (strcmp(value, "false") == 0) {
-        should_dump_ = false;
-      } else {
-        std::string str_value = std::string(value);
-        std::stringstream origin_str(str_value);
-        std::string item_str;
-        while (std::getline(origin_str, item_str, '#')) {
-          dump_param_list_.emplace_back(item_str);
-        }
+  void PropertiesUpdate(const char* value) override {
+    dump_param_list_.clear();
+    if (strcmp(value, "true") == 0) {
+      should_dump_ = true;
+    } else if (strcmp(value, "false") == 0) {
+      should_dump_ = false;
+    } else {
+      std::string str_value = std::string(value);
+      std::stringstream origin_str(str_value);
+      std::string item_str;
+      while (std::getline(origin_str, item_str, '#')) {
+        dump_param_list_.emplace_back(item_str);
       }
     }
+  }
 
-    bool ShouldDump() {
-      return should_dump_ || (dump_param_list_.size() > 0 && dump_param_list_[0] == "true");
+  bool ShouldDump() {
+    return should_dump_ ||
+           (dump_param_list_.size() > 0 && dump_param_list_[0] == "true");
+  }
+
+  bool ShouldDumpInFreq() {
+    int32_t dumpFreq = DUMP_FRAME_FREQ;
+    if (dump_param_list_.size() > 1) {
+      dumpFreq = std::stoi(dump_param_list_[1]);
     }
 
-    bool ShouldDumpInFreq() {
-      int32_t dumpFreq = DUMP_FRAME_FREQ;
-      if (dump_param_list_.size() > 1) {
-        dumpFreq = std::stoi(dump_param_list_[1]);
-      }
+    if (dump_freq_count == dumpFreq) {
+      dump_freq_count = 0;
+      return true;
+    } else {
+      dump_freq_count++;
+      return false;
+    }
+  }
 
-      if (dump_freq_count == dumpFreq) {
-        dump_freq_count = 0;
-        return true;
-      } else {
-        dump_freq_count++;
-        return false;
-      }
+  std::string DumpPath() {
+    if (dump_param_list_.size() > 2) {
+      return dump_param_list_[2];
     }
 
-    std::string DumpPath() {
-      if (dump_param_list_.size() > 2) {
-        return dump_param_list_[2];
-      }
-
-      return "";
-    }
+    return "";
+  }
 
  private:
-    bool should_dump_ = false;
-    int dump_freq_count = 0;
-    std::vector<std::string> dump_param_list_;
+  bool should_dump_ = false;
+  int dump_freq_count = 0;
+  std::vector<std::string> dump_param_list_;
 };
 #endif
 
 namespace {
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
 const int MAX_SURFACE_SIZE = 8000;
 const int MIN_FITCONTENT_SURFACE_SIZE = 6000;
-#if defined(OHOS_DFX_DUMP)
+#endif
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
 static uint64_t g_dump_frame_id = 0;
 #endif
 
-const DrawQuad::Material kNonSplittableMaterials[] = {
-    // Exclude debug quads from quad splitting
-    DrawQuad::Material::kDebugBorder,
-    // Exclude possible overlay candidates from quad splitting
-    // See OverlayCandidate::FromDrawQuad
-    DrawQuad::Material::kTextureContent,
-    DrawQuad::Material::kVideoHole,
-    // See DCLayerOverlayProcessor::ProcessRenderPass
-    DrawQuad::Material::kYuvVideoContent,
-};
-
+#if !BUILDFLAG(IS_MAC)
 constexpr base::TimeDelta kAllowedDeltaFromFuture = base::Milliseconds(16);
-
-// A lower bounds for GetEstimatedDisplayDrawTime, influenced by
-// Compositing.Display.DrawToSwapUs.
-constexpr base::TimeDelta kMinEstimatedDisplayDrawTime =
-    base::Microseconds(250);
+#endif
 
 // Assign each Display instance a starting value for the the display-trace id,
 // so that multiple Displays all don't start at 0, because that makes it
@@ -176,140 +186,34 @@ gfx::PresentationFeedback SanitizePresentationFeedback(
   // before swap-time), then invalidate the feedback. Also report how far into
   // the future (or from the past) the timestamps are.
   // https://crbug.com/894440
-  const auto now = base::TimeTicks::Now();
+  //
   // The timestamp for the presentation feedback may have a different source and
   // therefore the timestamp can be slightly in the future in comparison with
   // base::TimeTicks::Now(). Such presentation feedbacks should not be rejected.
   // See https://crbug.com/1040178
   // Sometimes we snap the feedback's time stamp to the nearest vsync, and that
   // can be offset by one vsync-internal. These feedback has kVSync set.
+
+  // If the the presentation is from before the swap-time, then invalidate
+  // the feedback.
+  if (feedback.timestamp < draw_time) {
+    return gfx::PresentationFeedback::Failure();
+  }
+
+  // All |feedback.timestamp| on Mac are valid and should not be sanitized.
+#if !BUILDFLAG(IS_MAC)
+  const auto now = base::TimeTicks::Now();
   const auto allowed_delta_from_future =
       ((feedback.flags & (gfx::PresentationFeedback::kHWClock |
                           gfx::PresentationFeedback::kVSync)) != 0)
           ? kAllowedDeltaFromFuture
           : base::TimeDelta();
-  if ((feedback.timestamp > now + allowed_delta_from_future) ||
-      (feedback.timestamp < draw_time)) {
+  if (feedback.timestamp > now + allowed_delta_from_future) {
     return gfx::PresentationFeedback::Failure();
   }
-  return feedback;
-}
-
-// Returns the bounds for the largest rect that can be inscribed in a rounded
-// rect.
-gfx::RectF GetOccludingRectForRRectF(const gfx::RRectF& bounds) {
-  if (bounds.IsEmpty())
-    return gfx::RectF();
-  if (bounds.GetType() == gfx::RRectF::Type::kRect)
-    return bounds.rect();
-  gfx::RectF occluding_rect = bounds.rect();
-
-  // Compute the radius for each corner
-  float top_left = bounds.GetCornerRadii(gfx::RRectF::Corner::kUpperLeft).x();
-  float top_right = bounds.GetCornerRadii(gfx::RRectF::Corner::kUpperRight).x();
-  float lower_right =
-      bounds.GetCornerRadii(gfx::RRectF::Corner::kLowerRight).x();
-  float lower_left = bounds.GetCornerRadii(gfx::RRectF::Corner::kLowerLeft).x();
-
-  // Get a bounding rect that does not intersect with the rounding clip.
-  // When a rect has rounded corner with radius r, then the largest rect that
-  // can be inscribed inside it has an inset of |((2 - sqrt(2)) / 2) * radius|.
-  occluding_rect.Inset(
-      gfx::InsetsF::TLBR(std::max(top_left, top_right) * 0.3f,
-                         std::max(top_left, lower_left) * 0.3f,
-                         std::max(lower_right, lower_left) * 0.3f,
-                         std::max(top_right, lower_right) * 0.3f));
-  return occluding_rect;
-}
-
-// SkRegion uses INT_MAX as a sentinel. Reduce gfx::Rect values when they are
-// equal to INT_MAX to prevent conversion to an empty region.
-gfx::Rect SafeConvertRectForRegion(const gfx::Rect& r) {
-  gfx::Rect safe_rect(r);
-  if (safe_rect.x() == INT_MAX)
-    safe_rect.set_x(INT_MAX - 1);
-  if (safe_rect.y() == INT_MAX)
-    safe_rect.set_y(INT_MAX - 1);
-  if (safe_rect.width() == INT_MAX)
-    safe_rect.set_width(INT_MAX - 1);
-  if (safe_rect.height() == INT_MAX)
-    safe_rect.set_height(INT_MAX - 1);
-  return safe_rect;
-}
-
-// Decides whether or not a DrawQuad should be split into a more complex visible
-// region in order to avoid overdraw.
-bool CanSplitQuad(const DrawQuad::Material m,
-                  const std::vector<gfx::Rect>& visible_region_rects,
-                  const gfx::Size& visible_region_bounding_size,
-                  int minimum_fragments_reduced,
-                  const float device_scale_factor) {
-  if (base::Contains(kNonSplittableMaterials, m))
-    return false;
-
-  base::CheckedNumeric<int> area = 0;
-  for (const auto& r : visible_region_rects) {
-    area += r.size().GetCheckedArea();
-    // In calculations below, assume false if this addition overflows.
-    if (!area.IsValid()) {
-      return false;
-    }
-  }
-
-  base::CheckedNumeric<int> visible_region_bounding_area =
-      visible_region_bounding_size.GetCheckedArea();
-  if (!visible_region_bounding_area.IsValid()) {
-    // In calculations below, assume true if this overflows.
-    return true;
-  }
-
-  area = visible_region_bounding_area - area;
-  if (!area.IsValid()) {
-    // In calculations below, assume false if this subtraction underflows.
-    return false;
-  }
-
-  int int_area = area.ValueOrDie();
-  return int_area * device_scale_factor * device_scale_factor >
-         minimum_fragments_reduced;
-}
-
-// Attempts to consolidate rectangles that were only split because of the
-// nature of base::Region and transforms the region into a list of visible
-// rectangles. Returns true upon successful reduction of the region to under
-// |complexity_limit|, false otherwise.
-bool ReduceComplexity(const cc::Region& region,
-                      size_t complexity_limit,
-                      std::vector<gfx::Rect>* reduced_region) {
-  DCHECK(reduced_region);
-
-  reduced_region->clear();
-  for (gfx::Rect r : region) {
-    auto it = base::ranges::find_if(*reduced_region, [&r](const gfx::Rect& a) {
-      return a.SharesEdgeWith(r);
-    });
-    if (it != reduced_region->end()) {
-      it->Union(r);
-      continue;
-    }
-    reduced_region->push_back(r);
-
-    if (reduced_region->size() >= complexity_limit)
-      return false;
-  }
-  return true;
-}
-
-bool SupportsSetFrameRate(const OutputSurface* output_surface) {
-#if BUILDFLAG(IS_ANDROID)
-  return output_surface->capabilities().supports_surfaceless &&
-         gfx::SurfaceControl::SupportsSetFrameRate();
-#elif BUILDFLAG(IS_WIN)
-  return output_surface->capabilities().supports_dc_layers &&
-         features::ShouldUseSetPresentDuration();
-#else
-  return false;
 #endif
+
+  return feedback;
 }
 
 void IssueDisplayRenderingStatsEvent() {
@@ -343,10 +247,14 @@ void Display::PresentationGroupTiming::AddPresentationHelper(
 void Display::PresentationGroupTiming::OnDraw(
     base::TimeTicks frame_time,
     base::TimeTicks draw_start_timestamp,
-    base::flat_set<base::PlatformThreadId> thread_ids) {
+    base::flat_set<base::PlatformThreadId> animation_thread_ids,
+    base::flat_set<base::PlatformThreadId> renderer_main_thread_ids,
+    HintSession::BoostType boost_type) {
   frame_time_ = frame_time;
   draw_start_timestamp_ = draw_start_timestamp;
-  thread_ids_ = std::move(thread_ids);
+  animation_thread_ids_ = std::move(animation_thread_ids);
+  renderer_main_thread_ids_ = std::move(renderer_main_thread_ids);
+  boost_type_ = boost_type;
 }
 
 void Display::PresentationGroupTiming::OnSwap(gfx::SwapTimings timings,
@@ -364,7 +272,9 @@ void Display::PresentationGroupTiming::OnSwap(gfx::SwapTimings timings,
   }
   // Can be nullptr in unittests.
   if (scheduler) {
-    scheduler->ReportFrameTime(frame_latency, std::move(thread_ids_));
+    scheduler->ReportFrameTime(frame_latency, std::move(animation_thread_ids_),
+                               std::move(renderer_main_thread_ids_),
+                               draw_start_timestamp_, boost_type_);
   }
 }
 
@@ -376,8 +286,16 @@ void Display::PresentationGroupTiming::OnPresent(
   }
 }
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+constexpr base::TimeDelta reset_state_delay = base::Milliseconds(600);
+constexpr base::TimeDelta reenable_draw_delay = base::Milliseconds(3000);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
 Display::Display(
     SharedBitmapManager* bitmap_manager,
+    gpu::SharedImageManager* shared_image_manager,
+    gpu::SyncPointManager* sync_point_manager,
+    gpu::Scheduler* gpu_scheduler,
     const RendererSettings& settings,
     const DebugRendererSettings* debug_settings,
     const FrameSinkId& frame_sink_id,
@@ -387,6 +305,9 @@ Display::Display(
     std::unique_ptr<DisplaySchedulerBase> scheduler,
     scoped_refptr<base::SingleThreadTaskRunner> current_task_runner)
     : bitmap_manager_(bitmap_manager),
+      shared_image_manager_(shared_image_manager),
+      sync_point_manager_(sync_point_manager),
+      gpu_scheduler_(gpu_scheduler),
       settings_(settings),
       debug_settings_(debug_settings),
       frame_sink_id_(frame_sink_id),
@@ -401,15 +322,39 @@ Display::Display(
       last_presented_trace_id_(swapped_trace_id_) {
   DCHECK(output_surface_);
   DCHECK(frame_sink_id_.is_valid());
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  static bool logged = false;
+  // TODO(b/329688656): Remove this after the issue is resolved.
+  if (!logged && output_surface_->capabilities().max_texture_size > 0) {
+    logged = true;
+    LOG(ERROR) << "Max Texture Size="
+               << output_surface_->capabilities().max_texture_size;
+  }
+#endif
+
+  occlusion_culler_ = std::make_unique<OcclusionCuller>(
+      overlay_processor_.get(), settings_.occlusion_culler_settings);
+
   if (scheduler_)
     scheduler_->SetClient(this);
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   dump_frame_observer_ = std::make_unique<DumpFrameObserver>();
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                      .GetSystemPropertiesInstance();
-  system_properties_adapter.AttachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
-      dump_frame_observer_.get());
+                                        .GetSystemPropertiesInstance();
+  system_properties_adapter.AttachSysPropObserver(
+      OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP, dump_frame_observer_.get());
 #endif
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  reset_init_timer_ = std::make_unique<base::RetainingOneShotTimer>(
+      FROM_HERE, reset_state_delay,
+      base::BindRepeating(&Display::RestoreRenderFitTimeElapsed,
+                          base::Unretained(this)));
+  reenable_swap_timer_ = std::make_unique<base::RetainingOneShotTimer>(
+      FROM_HERE, reenable_draw_delay,
+      base::BindRepeating(&Display::RestoreRenderFitTimeElapsed,
+                          base::Unretained(this)));
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 }
 
 Display::~Display() {
@@ -417,11 +362,11 @@ Display::~Display() {
   allow_schedule_gpu_task_during_destruction_.reset(
       new gpu::ScopedAllowScheduleGpuTask);
 #endif
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                                      .GetSystemPropertiesInstance();
-  system_properties_adapter.DetachSysPropObserver(OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP,
-      dump_frame_observer_.get());
+                                        .GetSystemPropertiesInstance();
+  system_properties_adapter.DetachSysPropObserver(
+      OHOS::NWeb::PropertiesKey::PROP_RENDER_DUMP, dump_frame_observer_.get());
 #endif
   if (resource_provider_) {
     resource_provider_->SetAllowAccessToGPUThread(true);
@@ -455,7 +400,6 @@ Display::~Display() {
 
 void Display::Initialize(DisplayClient* client,
                          SurfaceManager* surface_manager,
-                         bool enable_shared_images,
                          bool hw_support_for_multiple_refresh_rates) {
   DCHECK(client);
   DCHECK(surface_manager);
@@ -467,11 +411,20 @@ void Display::Initialize(DisplayClient* client,
   if (output_surface_->software_device())
     output_surface_->software_device()->BindToClient(this);
 
-  frame_rate_decider_ = std::make_unique<FrameRateDecider>(
-      surface_manager_, this, hw_support_for_multiple_refresh_rates,
-      SupportsSetFrameRate(output_surface_.get()));
+  if (features::IsUsingFrameIntervalDecider()) {
+    frame_interval_decider_ = std::make_unique<FrameIntervalDecider>();
+  } else {
+    bool output_surface_supports_set_frame_rate = false;
+#if BUILDFLAG(IS_ANDROID)
+    output_surface_supports_set_frame_rate =
+        OutputSurfaceSupportsSetFrameRate();
+#endif
+    frame_rate_decider_ = std::make_unique<FrameRateDecider>(
+        surface_manager_, this, hw_support_for_multiple_refresh_rates,
+        output_surface_supports_set_frame_rate);
+  }
 
-  InitializeRenderer(enable_shared_images);
+  InitializeRenderer();
 
   damage_tracker_ = std::make_unique<DisplayDamageTracker>(surface_manager_,
                                                            aggregator_.get());
@@ -525,7 +478,7 @@ void Display::SetVisible(bool visible) {
 
 void Display::Resize(const gfx::Size& size) {
   disable_swap_until_resize_ = false;
-
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
   gfx::Size newSize = size;
   if (newSize.width() > MAX_SURFACE_SIZE) {
     newSize.set_width(MAX_SURFACE_SIZE);
@@ -534,6 +487,7 @@ void Display::Resize(const gfx::Size& size) {
     newSize.set_height(MAX_SURFACE_SIZE);
   }
   LOG(INFO) << "Display::Resize newSize = " << newSize.ToString();
+#endif
   if (size == current_surface_size_)
     return;
 
@@ -544,15 +498,35 @@ void Display::Resize(const gfx::Size& size) {
   TRACE_EVENT0("viz", "Display::Resize");
 
   swapped_since_resize_ = false;
-  LOG(DEBUG) << "Display::Resize,current_surface_size is :" << current_surface_size_.ToString().c_str();
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  LOG(DEBUG) << "Display::Resize,current_surface_size is :"
+             << current_surface_size_.ToString().c_str();
   if (draw_mode_ &&
-      current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE && current_surface_size_.height() <= MAX_SURFACE_SIZE) {
+      current_surface_size_.height() >= MIN_FITCONTENT_SURFACE_SIZE &&
+      current_surface_size_.height() <= MAX_SURFACE_SIZE) {
     current_surface_size_.set_width(newSize.width());
   } else {
     current_surface_size_ = newSize;
   }
-
+#endif
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  if (temp_idle_state_ == TempIdleState::INIT) {
+    LOG(INFO) << "Display::Resize, disable swap, frame_sink_id_: "
+              << frame_sink_id_.ToString();
+    if (reset_init_timer_ && reset_init_timer_->IsRunning()) {
+      reset_init_timer_->Stop();
+    }
+    temp_idle_state_ = TempIdleState::DISABLE_SWAP;
+    if (reenable_swap_timer_) {
+      reenable_swap_timer_->Reset();
+    }
+  }
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   damage_tracker_->DisplayResized();
+}
+
+void Display::SetOutputSurfaceClipRect(const gfx::Rect& clip_rect) {
+  renderer_->SetOutputSurfaceClipRect(clip_rect);
 }
 
 void Display::InvalidateCurrentSurfaceId() {
@@ -586,13 +560,46 @@ void Display::DisableSwapUntilResize(
     std::move(no_pending_swaps_callback).Run();
 }
 
-#if defined(OHOS_COMPOSITE_RENDER)
-void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
-  scheduler_->SetShouldFrameSubmissionBeforeDraw(should);
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void Display::DisableSwapUntilMaximized() {
+  temp_idle_state_ = TempIdleState::INIT;
+  if (reset_init_timer_) {
+    reset_init_timer_->Reset();
+  }
 }
 
-void Display::SetDrawRect(const gfx::Rect& new_rect)
-{
+void Display::ReenableSwapCheck(const SurfaceId& surface_id,
+                                int width,
+                                int height) {
+  if (temp_idle_state_ != TempIdleState::DISABLE_SWAP) {
+    return;
+  }
+  if (surface_id.is_valid() && surface_id != CurrentSurfaceId()) {
+    return;
+  }
+  if (width >= current_surface_size_.width() &&
+      height >= current_surface_size_.height()) {
+    LOG(INFO) << "Display::ReenableSwap, frame_sink_id_: "
+              << frame_sink_id_.ToString();
+    if (reenable_swap_timer_ && reenable_swap_timer_->IsRunning()) {
+      reenable_swap_timer_->Stop();
+    }
+    temp_idle_state_ = TempIdleState::REENABLE_SWAP;
+  }
+}
+
+void Display::RestoreRenderFitTimeElapsed() {
+  LOG(INFO) << "Display::RestoreRenderFitTimeElapsed, frame_sink_id_: "
+            << frame_sink_id_.ToString();
+  temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+  if (client_) {
+    client_->RestoreRenderFit(frame_sink_id_);
+  }
+}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+void Display::SetDrawRect(const gfx::Rect& new_rect) {
   if (draw_mode_ == 0) {
     LOG(ERROR) << "draw_mode =" << draw_mode_;
     return;
@@ -604,12 +611,17 @@ void Display::SetDrawRect(const gfx::Rect& new_rect)
   LOG(INFO) << "SetDrawRect new_rect=" << new_rect.ToString();
 }
 
-void Display::SetDrawMode(const int32_t mode)
-{
+void Display::SetDrawMode(const int32_t mode) {
   LOG(INFO) << "SetDrawMode mode=" << mode;
   draw_mode_ = mode;
 }
-#endif  // defined(OHOS_COMPOSITE_RENDER)
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
+  scheduler_->SetShouldFrameSubmissionBeforeDraw(should);
+}
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 void Display::SetColorMatrix(const SkM44& matrix) {
   if (output_surface_)
@@ -644,7 +656,7 @@ void Display::SetOutputIsSecure(bool secure) {
   }
 }
 
-void Display::InitializeRenderer(bool enable_shared_images) {
+void Display::InitializeRenderer() {
   if (skia_output_surface_) {
     auto resource_provider = std::make_unique<DisplayResourceProviderSkia>();
     renderer_ = std::make_unique<SkiaRenderer>(
@@ -659,8 +671,9 @@ void Display::InitializeRenderer(bool enable_shared_images) {
         resource_provider.get(), overlay_processor_.get());
     resource_provider_ = std::move(resource_provider);
   } else {
-    auto resource_provider =
-        std::make_unique<DisplayResourceProviderSoftware>(bitmap_manager_);
+    auto resource_provider = std::make_unique<DisplayResourceProviderSoftware>(
+        bitmap_manager_, shared_image_manager_, sync_point_manager_,
+        gpu_scheduler_);
     DCHECK(!overlay_processor_->IsOverlaySupported());
     auto renderer = std::make_unique<SoftwareRenderer>(
         &settings_, debug_settings_, output_surface_.get(),
@@ -673,13 +686,6 @@ void Display::InitializeRenderer(bool enable_shared_images) {
   renderer_->Initialize();
   renderer_->SetVisible(visible_);
 
-  // Outputting a partial list of quads might not work in cases where contents
-  // outside the damage rect might be needed by the renderer.
-  bool output_partial_list =
-      renderer_->use_partial_swap() &&
-      output_surface_->capabilities().only_invalidates_damage_rect &&
-      !overlay_processor_->IsOverlaySupported();
-
   SurfaceAggregator::ExtraPassForReadbackOption extra_pass_option =
       SurfaceAggregator::ExtraPassForReadbackOption::kNone;
   if (output_surface_->capabilities().root_is_vulkan_secondary_command_buffer) {
@@ -689,9 +695,20 @@ void Display::InitializeRenderer(bool enable_shared_images) {
             : SurfaceAggregator::ExtraPassForReadbackOption::
                   kAddPassForReadback;
   }
+#if BUILDFLAG(IS_WIN)
+  const bool prevent_merging_surfaces_to_root_pass =
+      features::IsDelegatedCompositingEnabled() &&
+      features::kDelegatedCompositingModeParam.Get() ==
+          features::DelegatedCompositingMode::kLimitToUi &&
+      output_surface_->capabilities().dc_support_level >=
+          OutputSurface::DCSupportLevel::kDCompTexture;
+#else
+  const bool prevent_merging_surfaces_to_root_pass = false;
+#endif
   aggregator_ = std::make_unique<SurfaceAggregator>(
-      surface_manager_, resource_provider_.get(), output_partial_list,
-      overlay_processor_->NeedsSurfaceDamageRectList(), extra_pass_option);
+      surface_manager_, resource_provider_.get(),
+      overlay_processor_->NeedsSurfaceDamageRectList(), extra_pass_option,
+      prevent_merging_surfaces_to_root_pass);
 
   aggregator_->set_output_is_secure(output_is_secure_);
   aggregator_->SetDisplayColorSpaces(display_color_spaces_);
@@ -723,9 +740,17 @@ namespace {
 
 DBG_FLAG_FBOOL("frame.debug.non_root_passes", debug_non_root_passes)
 
-void DebugDrawFrame(const AggregatedFrame& frame) {
-  if (!VizDebugger::GetInstance()->IsEnabled())
+DBG_FLAG_FBOOL("frame.render_pass.non_root_passes_in_root_space",
+               non_root_passes_in_root_space)
+
+void DebugDrawFrame(
+    const AggregatedFrame& frame,
+    const std::unique_ptr<DisplayResourceProvider>& resource_provider) {
+  bool is_debugger_connected = false;
+  DBG_CONNECTED_OR_TRACING(is_debugger_connected);
+  if (!is_debugger_connected) {
     return;
+  }
 
   for (auto& render_pass : frame.render_pass_list) {
     if (render_pass != frame.render_pass_list.back() &&
@@ -733,14 +758,39 @@ void DebugDrawFrame(const AggregatedFrame& frame) {
       continue;
     }
 
-    DBG_LOG_OPT("frame.render_pass.numquads", DBG_OPT_BLUE,
-                "Num render pass quads=%d",
-                static_cast<int>(render_pass->quad_list.size()));
+    auto output_rect = render_pass->output_rect;
+    auto damage_rect = render_pass->damage_rect;
+    if (non_root_passes_in_root_space()) {
+      output_rect = render_pass->transform_to_root_target.MapRect(output_rect);
+      damage_rect = render_pass->transform_to_root_target.MapRect(damage_rect);
+    }
+
+    DBG_DRAW_RECT_OPT("frame.render_pass.output_rect", DBG_OPT_BLUE,
+                      output_rect);
+    DBG_DRAW_RECT_OPT("frame.render_pass.damage", DBG_OPT_RED, damage_rect);
+
+    DBG_LOG_OPT("frame.render_pass.meta", DBG_OPT_BLUE,
+                "Render pass id=%" PRIu64
+                ", output_rect=(%s), damage_rect=(%s), "
+                "quad_list.size=%zu",
+                render_pass->id.value(),
+                render_pass->output_rect.ToString().c_str(),
+                render_pass->damage_rect.ToString().c_str(),
+                render_pass->quad_list.size());
+    DBG_LOG_OPT(
+        "frame.render_pass.transform_to_root_target", DBG_OPT_BLUE,
+        "Render pass transform=%s",
+        render_pass->transform_to_root_target.ToDecomposedString().c_str());
 
     for (auto* quad : render_pass->quad_list) {
       auto* sqs = quad->shared_quad_state;
-      auto& transform = sqs->quad_to_target_transform;
-      auto display_rect = transform.MapRect(gfx::RectF(quad->rect));
+      auto quad_to_root_transform = sqs->quad_to_target_transform;
+      if (non_root_passes_in_root_space()) {
+        quad_to_root_transform.PostConcat(
+            render_pass->transform_to_root_target);
+      }
+      auto display_rect =
+          quad_to_root_transform.MapRect(gfx::RectF(quad->rect));
       DBG_DRAW_TEXT_OPT("frame.render_pass.material", DBG_OPT_GREEN,
                         display_rect.origin(),
                         base::NumberToString(static_cast<int>(quad->material)));
@@ -753,15 +803,26 @@ void DebugDrawFrame(const AggregatedFrame& frame) {
           "frame.render_pass.resource_id", DBG_OPT_RED, display_rect.origin(),
           base::NumberToString(quad->resources.ids[0].GetUnsafeValue()));
 
+      if (quad->resources.ids[0] != kInvalidResourceId) {
+        DBG_DRAW_TEXT_OPT(
+            "frame.render_pass.buf_format", DBG_OPT_BLUE, display_rect.origin(),
+            resource_provider->GetSharedImageFormat(quad->resources.ids[0])
+                .ToString());
+        DBG_DRAW_TEXT_OPT(
+            "frame.render_pass.buf_color_space", DBG_OPT_GREEN,
+            display_rect.origin(),
+            resource_provider->GetColorSpace(quad->resources.ids[0])
+                .ToString());
+      }
       DBG_DRAW_RECT("frame.render_pass.quad", display_rect);
-      DBG_DRAW_RECT_OPT("frame.render_pass.damage", DBG_OPT_RED,
-                        render_pass->damage_rect);
     }
   }
 }
 
 void DebugDrawFrameVisible(const AggregatedFrame& frame) {
-  if (!VizDebugger::GetInstance()->IsEnabled()) {
+  bool is_debugger_connected = false;
+  DBG_CONNECTED_OR_TRACING(is_debugger_connected);
+  if (!is_debugger_connected) {
     return;
   }
 
@@ -786,8 +847,11 @@ void DebugDrawFrameVisible(const AggregatedFrame& frame) {
 void VisualDebuggerSync(gfx::OverlayTransform current_display_transform,
                         gfx::Size current_surface_size,
                         int64_t last_presented_trace_id) {
-  if (!VizDebugger::GetInstance()->IsEnabled())
+  bool is_debugger_connected = false;
+  DBG_CONNECTED_OR_TRACING(is_debugger_connected);
+  if (!is_debugger_connected) {
     return;
+  }
 
   const gfx::Transform display_transform = gfx::OverlayTransformToTransform(
       current_display_transform, gfx::SizeF(current_surface_size));
@@ -796,11 +860,152 @@ void VisualDebuggerSync(gfx::OverlayTransform current_display_transform,
           display_transform, gfx::Rect(current_surface_size))
           .size();
 
+  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("viz.visual_debugger"),
+               "visual_debugger_sync", "last_presented_trace_id",
+               last_presented_trace_id, "display_size",
+               current_surface_size.ToString());
   VizDebugger::GetInstance()->CompleteFrame(
       last_presented_trace_id, current_surface_size, base::TimeTicks::Now());
 }
 
 }  // namespace
+
+void Display::MaybeLogQuadsProperties(
+    AggregatedRenderPass& last_render_pass,
+    const SurfaceDamageRectList* surface_damage_rect_list) {
+  // A restraint on how frequently we log quad infos in number of frames.
+  constexpr double kLogQuadInfoProbability = 1.0 / 20000;
+  if (!metrics_subsampler_.ShouldSample(kLogQuadInfoProbability)) {
+    return;
+  }
+  base::ElapsedTimer logging_timer;
+  int num_nonopaque_quads = 0;
+  int num_roundedcorners_quads = 0;
+  int num_transformation_quads = 0;
+  int num_nonaligned_quads = 0;
+  int num_nonpixelaligned_quads = 0;
+  int num_solid_quads = 0;
+  int num_scaled_quads = 0;
+  int num_failed_candidate = 0;
+
+  OverlayCandidateFactory::OverlayContext context;
+  context.is_delegated_context = true;
+  context.supports_clip_rect = true;
+  context.supports_out_of_window_clip_rect = true;
+  context.supports_arbitrary_transform = true;
+  context.supports_mask_filter = true;
+  context.transform_and_clip_rpdq = true;
+  context.supports_flip_rotate_transform = true;
+
+  SkM44 color_matrix;
+  // auto resource_provider = std::make_unique<DisplayResourceProviderSkia>();
+  base::flat_map<AggregatedRenderPassId,
+                 raw_ptr<cc::FilterOperations, CtnExperimental>>
+      render_pass_filters;
+  render_pass_filters[last_render_pass.id] = &(last_render_pass.filters);
+  OverlayCandidateFactory candidate_factory = OverlayCandidateFactory(
+      &last_render_pass, resource_provider_.get(), surface_damage_rect_list,
+      &color_matrix, gfx::RectF(), &render_pass_filters, context);
+
+  OverlayCandidate candidate;
+
+  for (auto* quad : last_render_pass.quad_list) {
+    auto result = candidate_factory.FromDrawQuad(quad, candidate);
+    if (result == OverlayCandidate::CandidateStatus::kFailNotAxisAligned ||
+        result ==
+            OverlayCandidate::CandidateStatus::kFailNotAxisAligned3dTransform ||
+        result ==
+            OverlayCandidate::CandidateStatus::kFailNotAxisAligned2dShear ||
+        result ==
+            OverlayCandidate::CandidateStatus::kFailNotAxisAligned2dRotation) {
+      num_nonaligned_quads++;
+    }
+
+    if (result != OverlayCandidate::CandidateStatus::kSuccess) {
+      num_failed_candidate++;
+    }
+
+    if (!candidate.rounded_corners.IsEmpty()) {
+      num_roundedcorners_quads++;
+    }
+    if (!candidate.is_opaque) {
+      num_nonopaque_quads++;
+    }
+    if (!absl::holds_alternative<gfx::OverlayTransform>(candidate.transform) ||
+        absl::get<gfx::OverlayTransform>(candidate.transform) !=
+             gfx::OVERLAY_TRANSFORM_NONE) {
+      num_transformation_quads++;
+    }
+    if (candidate.is_solid_color) {
+      num_solid_quads++;
+    }
+    auto rect = OverlayCandidate::DisplayRectInTargetSpace(candidate);
+    if (IsNearestRectWithinDistance(rect,
+                                    std::numeric_limits<float>::epsilon())) {
+      num_nonpixelaligned_quads++;
+    }
+    UMA_HISTOGRAM_ENUMERATION(
+        "Compositing.Display.Draw.LastPass.Quads.ColorSpacePrimaryID",
+        candidate.color_space.GetPrimaryID());
+    UMA_HISTOGRAM_ENUMERATION(
+        "Compositing.Display.Draw.LastPass.Quads.ColorSpaceTransferID",
+        candidate.color_space.GetTransferID());
+    UMA_HISTOGRAM_ENUMERATION(
+        "Compositing.Display.Draw.LastPass.Quads.BufferFormat",
+        gpu::ToBufferFormat(candidate.format));
+    gfx::RectF uv_rect = candidate.uv_rect;
+    candidate_factory.HandleClipAndSubsampling(candidate);
+    if (uv_rect != candidate.uv_rect) {
+      num_scaled_quads++;
+    }
+  }
+
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.LastPass.Quads",
+                           last_render_pass.quad_list.size());
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.LastPass.Quads.NonOpaque",
+                           num_nonopaque_quads);
+  UMA_HISTOGRAM_COUNTS_100(
+      "Compositing.Display.Draw.LastPass.Quads.RoundedCorners",
+      num_roundedcorners_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.Transformations",
+                           num_transformation_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.NonAligned",
+                           num_nonaligned_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.NonPixelAligned",
+                           num_nonpixelaligned_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.SolidColor",
+                           num_solid_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.Scaled",
+                           num_scaled_quads);
+  UMA_HISTOGRAM_COUNTS_100("Compositing.Display.Draw.Quads.FailedCandidate",
+                           num_failed_candidate);
+
+  UMA_HISTOGRAM_COUNTS_1M("Compositing.Display.Draw.Quads.LoggingTimeUs",
+                          logging_timer.Elapsed().InMicroseconds());
+}
+
+void Display::StartTrackingOverdraw(int interval_length_in_seconds) {
+  CHECK(!overdraw_tracker_);
+
+  OverdrawTracker::Settings settings;
+  settings.interval_length_in_seconds = interval_length_in_seconds;
+
+  overdraw_tracker_ = std::make_unique<OverdrawTracker>(settings);
+}
+
+OverdrawTracker::OverdrawTimeSeries Display::StopTrackingOverdraw() {
+  // Returns empty time series if `overdraw_tracker_` has no value. This could
+  // happen when gpu-process is restarted in middle of test and test scripts
+  // still calls this at the end.
+  if (!overdraw_tracker_) {
+    return OverdrawTracker::OverdrawTimeSeries();
+  }
+
+  auto overdraw_data = overdraw_tracker_->TakeDataAsTimeSeries();
+  overdraw_tracker_.reset();
+
+  return overdraw_data;
+}
 
 bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
   TRACE_EVENT0("viz", "Display::DrawAndSwap");
@@ -824,6 +1029,18 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     return false;
   }
 
+  ++swapped_trace_id_;
+  TRACE_EVENT(
+      "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
+      perfetto::Flow::Global(swapped_trace_id_),
+      [this](perfetto::EventContext ctx) {
+        auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
+        auto* data = event->set_chrome_graphics_pipeline();
+        data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                           StepName::STEP_DRAW_AND_SWAP);
+        data->set_display_trace_id(swapped_trace_id_);
+      });
+
   if (params.max_pending_swaps >= 0 && skia_output_surface_ &&
       skia_output_surface_->capabilities()
           .supports_dynamic_frame_buffer_allocation) {
@@ -844,9 +1061,12 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     }
   }
 
-  base::ScopedClosureRunner visual_debugger_sync_scoped_exit(
-      base::BindOnce(&VisualDebuggerSync, current_display_transform,
-                     current_surface_size_, last_presented_trace_id_));
+  absl::Cleanup visual_debugger_sync_scoped_exit =
+      [current_display_transform, current_surface_size = current_surface_size_,
+       last_presented_trace_id = last_presented_trace_id_] {
+        VisualDebuggerSync(current_display_transform, current_surface_size,
+                           last_presented_trace_id);
+      };
 
   // During aggregation, SurfaceAggregator marks all resources used for a draw
   // in the resource provider.  This has the side effect of deleting unused
@@ -862,11 +1082,18 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       resource_provider_.get(), /*allow_access_to_gpu_thread=*/true);
 
   base::ElapsedTimer aggregate_timer;
-  aggregate_timer.Begin();
   AggregatedFrame frame;
   {
-    FrameRateDecider::ScopedAggregate scoped_aggregate(
-        frame_rate_decider_.get());
+    std::optional<FrameRateDecider::ScopedAggregate> scoped_aggregate;
+    if (frame_rate_decider_) {
+      scoped_aggregate.emplace(frame_rate_decider_.get());
+    }
+    std::unique_ptr<FrameIntervalDecider::ScopedAggregate>
+        scoped_interval_decider;
+    if (frame_interval_decider_) {
+      scoped_interval_decider = frame_interval_decider_->WrapAggregate(
+          *surface_manager_, params.frame_time);
+    }
     gfx::Rect target_damage_bounding_rect;
     if (output_surface_->capabilities().supports_target_damage)
       target_damage_bounding_rect = renderer_->GetTargetDamageBoundingRect();
@@ -878,15 +1105,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     frame = aggregator_->Aggregate(
         current_surface_id_, params.expected_display_time,
         current_display_transform, target_damage_bounding_rect,
-        ++swapped_trace_id_);
-
-    // Dump aggregated frame (will dump render passes and draw quads) if run
-    // with: --vmodule=display=3
-    if (VLOG_IS_ON(3)) {
-      VLOG(3) << "Post-aggregation\n" << frame.ToString();
-    }
+        swapped_trace_id_);
   }
-  DebugDrawFrame(frame);
+  DebugDrawFrame(frame, resource_provider_);
 
   if (frame.delegated_ink_metadata) {
     TRACE_EVENT_INSTANT1(
@@ -938,10 +1159,21 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
                             stored_latency_info_.end());
   stored_latency_info_.clear();
   bool have_copy_requests = frame.has_copy_requests;
+  size_t total_quad_count = 0;
+  for (const auto& pass : frame.render_pass_list) {
+    total_quad_count += pass->quad_list.size();
+  }
+  UMA_HISTOGRAM_COUNTS_1000("Compositing.Display.Draw.Quads", total_quad_count);
 
   gfx::Size surface_size;
   bool have_damage = false;
   auto& last_render_pass = *frame.render_pass_list.back();
+
+  // log quad types every so often if experiment and n-th frame
+  if (features::ShouldLogFrameQuadInfo()) {
+    MaybeLogQuadsProperties(last_render_pass,
+                            &(frame.surface_damage_rect_list_));
+  }
 
   // The CompositorFrame provided by the SurfaceAggregator includes the display
   // transform while |current_surface_size_| is the pre-transform size received
@@ -952,21 +1184,28 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
           display_transform, gfx::Rect(current_surface_size_))
           .size();
-#if BUILDFLAG(IS_OHOS)
-  if (draw_mode_ || (settings_.auto_resize_output_surface &&
-      last_render_pass.output_rect.size() != current_surface_size &&
-      last_render_pass.damage_rect == last_render_pass.output_rect &&
-      !current_surface_size.IsEmpty())) {
-      LOG(INFO) << "resize_output_surface = " << current_surface_size.ToString();
-      LOG(INFO) << "output_rect = " <<  last_render_pass.output_rect.ToString();
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  if (draw_mode_ ||
+      (settings_.auto_resize_output_surface &&
+       last_render_pass.output_rect.size() != current_surface_size &&
+       last_render_pass.damage_rect == last_render_pass.output_rect &&
+       !current_surface_size.IsEmpty())) {
+    LOG(INFO) << "resize_output_surface = " << current_surface_size.ToString();
+    LOG(INFO) << "output_rect = " << last_render_pass.output_rect.ToString();
     // Resize the |output_rect| to the |current_surface_size| so that we won't
     // skip the draw and so that the GL swap won't stretch the output.
+#if BUILDFLAG(ARKWEB_VULKAN)
+    if (features::IsUsingVulkan()) {
+      renderer_->disable_partial_swap();
+    }
+#endif
     last_render_pass.output_rect.set_size(current_surface_size);
     last_render_pass.output_rect.set_y(draw_rect_.y());
     last_render_pass.output_rect.set_x(draw_rect_.x());
     last_render_pass.damage_rect = last_render_pass.output_rect;
     frame.surface_damage_rect_list_.push_back(last_render_pass.damage_rect);
-    LOG(INFO) << "output_rect modify = " <<  last_render_pass.output_rect.ToString();
+    LOG(INFO) << "output_rect modify = "
+              << last_render_pass.output_rect.ToString();
   }
 #else
   if (settings_.auto_resize_output_surface &&
@@ -988,52 +1227,48 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     TRACE_EVENT_INSTANT0("viz", "Size mismatch.", TRACE_EVENT_SCOPE_THREAD);
 
   bool should_draw = have_copy_requests || (have_damage && size_matches);
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  should_draw =
+      should_draw && (temp_idle_state_ != TempIdleState::DISABLE_SWAP);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   client_->DisplayWillDrawAndSwap(should_draw, &frame.render_pass_list);
 
-  absl::optional<base::ElapsedTimer> draw_timer;
+  std::optional<base::ElapsedTimer> draw_timer;
   if (should_draw) {
     TRACE_EVENT_ASYNC_STEP_INTO0("viz,benchmark",
                                  "Graphics.Pipeline.DrawAndSwap",
                                  swapped_trace_id_, "Draw");
     base::ElapsedTimer draw_occlusion_timer;
-    RemoveOverdrawQuads(&frame);
+    occlusion_culler_->RemoveOverdrawQuads(&frame, device_scale_factor_);
     DebugDrawFrameVisible(frame);
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
     if (dump_frame_observer_ && dump_frame_observer_->ShouldDump()) {
       if (dump_frame_observer_->ShouldDumpInFreq()) {
-        auto request = std::make_unique<FrameDumpCopyOutputRequest>(++g_dump_frame_id,
-          dump_frame_observer_->DumpPath());
+        auto request = std::make_unique<FrameDumpCopyOutputRequest>(
+            ++g_dump_frame_id, dump_frame_observer_->DumpPath());
         auto& root_render_pass = frame.render_pass_list.back();
         if (root_render_pass) {
           root_render_pass->copy_requests.push_back(std::move(request));
         }
       }
-
     }
 #endif
     UMA_HISTOGRAM_COUNTS_1000(
         "Compositing.Display.Draw.Occlusion.Calculation.Time",
         draw_occlusion_timer.Elapsed().InMicroseconds());
 
-    // TODO(vmpstr): This used to set to
-    // frame.metadata.is_resourceless_software_draw_with_scroll_or_animation
-    // from CompositedFrame. However, after changing this to AggregatedFrame, it
-    // seems that the value is never changed from the default false (i.e.
-    // SurfaceAggregator has no reference to
-    // is_resourceless_software_draw_with_scroll_or_animation). The TODO here is
-    // to clean up the code below or to figure out if this value is important.
-    bool disable_image_filtering = false;
-    if (software_renderer_) {
-      software_renderer_->SetDisablePictureQuadImageFiltering(
-          disable_image_filtering);
-    } else {
-      // This should only be set for software draws in synchronous compositor.
-      DCHECK(!disable_image_filtering);
+    DBG_LOG("renderer.ptr", "renderer = %p%s", this,
+            renderer_.get() == software_renderer_ ? " (software)" : "");
+
+    if (overdraw_tracker_) {
+      overdraw_tracker_->EstimateAndRecordOverdraw(&frame,
+                                                   base::TimeTicks::Now());
     }
+
+    OverdrawTracker::EstimateAndRecordOverdrawAsUMAMetric(&frame);
 
     draw_timer.emplace();
     overlay_processor_->SetFrameSequenceNumber(frame_sequence_number_);
-    overlay_processor_->SetIsVideoCaptureEnabled(frame.video_capture_enabled);
     overlay_processor_->SetIsPageFullscreen(frame.page_fullscreen_mode);
     renderer_->DrawFrame(&frame.render_pass_list, device_scale_factor_,
                          current_surface_size, display_color_spaces_,
@@ -1043,21 +1278,87 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
   }
 
   bool should_swap = !disable_swap_until_resize_ && should_draw && size_matches;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  should_swap =
+      should_swap && (temp_idle_state_ != TempIdleState::DISABLE_SWAP);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   if (should_swap) {
     PresentationGroupTiming& presentation_group_timing =
         pending_presentation_group_timings_.emplace_back();
 
-    base::flat_set<base::PlatformThreadId> thread_ids;
+    const auto& main_surfaces =
+        surface_manager_->GetSurfacesReferencedByParent(current_surface_id_);
+    const bool main_frame_only_adpf_renderer_main =
+        base::FeatureList::IsEnabled(
+            features::kEnableMainFrameOnlyADPFRendererMain);
+
+    const bool interactive_only_adpf_renderer = base::FeatureList::IsEnabled(
+        features::kEnableInteractiveOnlyADPFRenderer);
+    bool has_interactive_surface = false;
+    if (interactive_only_adpf_renderer) {
+      for (const auto& surface_id :
+           aggregator_->previous_contained_surfaces()) {
+        surface = surface_manager_->GetSurfaceForId(surface_id);
+        if (surface && surface->HasActiveFrame() &&
+            surface->GetActiveFrameMetadata().is_handling_interaction) {
+          has_interactive_surface = true;
+          break;
+        }
+      }
+    }
+
+    base::flat_set<base::PlatformThreadId> animation_thread_ids;
+    base::flat_set<base::PlatformThreadId> renderer_main_thread_ids;
     for (const auto& surface_id : aggregator_->previous_contained_surfaces()) {
       surface = surface_manager_->GetSurfaceForId(surface_id);
       if (surface) {
-        base::flat_set<base::PlatformThreadId> surface_thread_ids =
-            surface->GetThreadIds();
-        thread_ids.insert(surface_thread_ids.begin(), surface_thread_ids.end());
+        // current_surface_id_ is the root surface, and its threads are Browser
+        // threads. Browser threads should always be in the ADPF session.
+        // Direct children of the root surface correspond to Renderers for main
+        // frames.
+        const bool is_for_main_frame =
+            surface_id == current_surface_id_ ||
+            main_surfaces.find(surface_id) != main_surfaces.end();
+        if (interactive_only_adpf_renderer &&
+            surface_id != current_surface_id_) {
+          const bool is_handling_interaction =
+              surface->HasActiveFrame() &&
+              surface->GetActiveFrameMetadata().is_handling_interaction;
+          // If there's at least one frame handling an interaction, include
+          // only interactive Renderers. Otherwise include the main frame
+          // Renderer.
+          const bool should_be_included =
+              is_handling_interaction ||
+              (!has_interactive_surface && is_for_main_frame);
+          if (!should_be_included) {
+            continue;
+          }
+        }
+        std::vector<Thread> surface_threads = surface->GetThreads();
+        for (const auto& thread : surface_threads) {
+          if (thread.type == Thread::Type::kMain &&
+              main_frame_only_adpf_renderer_main && !is_for_main_frame) {
+            continue;
+          }
+
+          if (thread.type == Thread::Type::kMain &&
+              surface_id != current_surface_id_) {
+            renderer_main_thread_ids.insert(thread.id);
+          } else {
+            animation_thread_ids.insert(thread.id);
+          }
+        }
       }
     }
-    presentation_group_timing.OnDraw(params.frame_time, draw_timer->Begin(),
-                                     std::move(thread_ids));
+
+    HintSession::BoostType boost_type = HintSession::BoostType::kDefault;
+    if (IsScroll(frame.latency_info)) {
+      boost_type = HintSession::BoostType::kScrollBoost;
+    }
+    presentation_group_timing.OnDraw(
+        params.frame_time, draw_timer->start_time(),
+        std::move(animation_thread_ids), std::move(renderer_main_thread_ids),
+        boost_type);
 
     for (const auto& surface_id : aggregator_->previous_contained_surfaces()) {
       surface = surface_manager_->GetSurfaceForId(surface_id);
@@ -1074,28 +1375,34 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
                                  "Graphics.Pipeline.DrawAndSwap",
                                  swapped_trace_id_, "WaitForSwap");
     swapped_since_resize_ = true;
-
-    ui::LatencyInfo::TraceIntermediateFlowEvents(
-        frame.latency_info,
-        perfetto::protos::pbzero::ChromeLatencyInfo::STEP_DRAW_AND_SWAP);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
     for (auto& latency : frame.latency_info) {
-      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
-          " ,step: " + "STEP_DRAW_AND_SWAP";
-      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                        "trace_id", std::to_string(latency.trace_id()), "step",
+                        "STEP_DRAW_AND_SWAP");
     }
+#endif
     IssueDisplayRenderingStatsEvent();
     DirectRenderer::SwapFrameData swap_frame_data;
     swap_frame_data.latency_info = std::move(frame.latency_info);
     swap_frame_data.seq =
         current_surface_id_.local_surface_id().parent_sequence_number();
     swap_frame_data.choreographer_vsync_id = params.choreographer_vsync_id;
-    if (frame.top_controls_visible_height.has_value()) {
-      swap_frame_data.top_controls_visible_height_changed =
-          last_top_controls_visible_height_ !=
-          *frame.top_controls_visible_height;
-      last_top_controls_visible_height_ = *frame.top_controls_visible_height;
-    }
+    swap_frame_data.swap_trace_id = swapped_trace_id_;
+    swap_frame_data.display_hdr_headroom =
+        display_color_spaces_.GetHDRMaxLuminanceRelative();
+
+    TRACE_EVENT(
+        "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
+        perfetto::Flow::Global(swap_frame_data.swap_trace_id),
+        [swap_trace_id =
+             swap_frame_data.swap_trace_id](perfetto::EventContext ctx) {
+          auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
+          auto* data = event->set_chrome_graphics_pipeline();
+          data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                             StepName::STEP_SEND_BUFFER_SWAP);
+          data->set_display_trace_id(swap_trace_id);
+        });
 
 #if BUILDFLAG(IS_APPLE)
     swap_frame_data.ca_layer_error_code =
@@ -1163,8 +1470,23 @@ void Display::DidReceiveSwapBuffersAck(
   // DidReceiveSwapBuffersAck.
   DCHECK(!pending_presentation_group_timings_.empty());
 
+  TRACE_EVENT(
+      "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
+      perfetto::TerminatingFlow::Global(params.swap_trace_id),
+      [&](perfetto::EventContext ctx) {
+        auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
+        auto* data = event->set_chrome_graphics_pipeline();
+        data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                           StepName::STEP_SWAP_BUFFERS_ACK);
+        data->set_display_trace_id(params.swap_trace_id);
+      });
+
+  // Both cases require full damage. That is, if buffers are recreated or
+  // non-simple overlays failed, a frame is expected to be sent again.
   if (params.swap_response.result ==
-      gfx::SwapResult::SWAP_NAK_RECREATE_BUFFERS) {
+          gfx::SwapResult::SWAP_NAK_RECREATE_BUFFERS ||
+      params.swap_response.result ==
+          gfx::SwapResult::SWAP_NON_SIMPLE_OVERLAYS_FAILED) {
     aggregator_->SetFullDamageForSurface(current_surface_id_);
     damage_tracker_->SetRootSurfaceDamaged();
   }
@@ -1212,7 +1534,6 @@ void Display::DidReceiveSwapBuffersAck(
   // the swap was triggered. Note that not all output surfaces provide timing
   // information, hence the check for a valid swap_start.
 
-  base::TimeDelta draw_start_to_swap_end;
   if (!timings.swap_start.is_null()) {
     DCHECK_LE(draw_start_timestamp, timings.swap_start);
     base::TimeDelta draw_start_to_swap_start =
@@ -1220,14 +1541,12 @@ void Display::DidReceiveSwapBuffersAck(
     UMA_HISTOGRAM_CUSTOM_MICROSECONDS_TIMES(
         "Compositing.Display.DrawToSwapUs", draw_start_to_swap_start,
         kDrawToSwapMin, kDrawToSwapMax, kDrawToSwapUsBuckets);
-    draw_start_to_swap_end = timings.swap_end - draw_start_timestamp;
   }
 
-  base::TimeDelta schedule_draw_to_gpu_start;
   if (!timings.viz_scheduled_draw.is_null()) {
     DCHECK(!timings.gpu_started_draw.is_null());
     DCHECK_LE(timings.viz_scheduled_draw, timings.gpu_started_draw);
-    schedule_draw_to_gpu_start =
+    base::TimeDelta schedule_draw_to_gpu_start =
         timings.gpu_started_draw - timings.viz_scheduled_draw;
     UMA_HISTOGRAM_CUSTOM_MICROSECONDS_TIMES(
         "Compositing.Display.VizScheduledDrawToGpuStartedDrawUs",
@@ -1251,13 +1570,6 @@ void Display::DidReceiveSwapBuffersAck(
         "Compositing.Display.VizDependencyResolvedToGpuStartedDrawUs",
         scheduling_delta, kDrawToSwapMin, kDrawToSwapMax, kDrawToSwapUsBuckets);
   }
-
-  if (!timings.swap_start.is_null()) {
-    draw_time_without_scheduling_waits_.InsertSample(
-        draw_start_to_swap_end - schedule_draw_to_gpu_start);
-    // These two values can be equal in unit tests.
-    DCHECK_GE(draw_start_to_swap_end, schedule_draw_to_gpu_start);
-  }
 }
 
 void Display::DidReceiveCALayerParams(
@@ -1276,6 +1588,15 @@ void Display::DidReceivePresentationFeedback(
   if (renderer_)
     renderer_->BuffersPresented();
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  if (temp_idle_state_ == TempIdleState::REENABLE_SWAP && client_) {
+    LOG(INFO) << "Display RestoreRenderFit, frame_sink_id_: "
+              << frame_sink_id_.ToString();
+    temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+    client_->RestoreRenderFit(frame_sink_id_);
+  }
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
   if (pending_presentation_group_timings_.empty()) {
     DLOG(ERROR) << "Received unexpected PresentationFeedback";
     return;
@@ -1288,7 +1609,8 @@ void Display::DidReceivePresentationFeedback(
       "viz,benchmark", "Graphics.Pipeline.DrawAndSwap",
       last_presented_trace_id_, copy_feedback.timestamp);
   TRACE_EVENT_INSTANT_WITH_TIMESTAMP0(
-      "benchmark,viz", "Display::FrameDisplayed", TRACE_EVENT_SCOPE_THREAD,
+      "benchmark,viz," TRACE_DISABLED_BY_DEFAULT("display.framedisplayed"),
+      "Display::FrameDisplayed", TRACE_EVENT_SCOPE_THREAD,
       copy_feedback.timestamp);
 
   if (renderer_->CompositeTimeTracingEnabled()) {
@@ -1328,22 +1650,6 @@ void Display::DidFinishFrame(const BeginFrameAck& ack) {
   frame_sequence_number_ = ack.frame_id.sequence_number;
 }
 
-base::TimeDelta Display::GetEstimatedDisplayDrawTime(base::TimeDelta interval,
-                                                     double percentile) const {
-  base::TimeDelta default_estimate =
-      BeginFrameArgs::DefaultEstimatedDisplayDrawTime(interval);
-  if (draw_time_without_scheduling_waits_.sample_count() >= 60 &&
-      default_estimate > kMinEstimatedDisplayDrawTime) {
-    // We do not want the deadline adjustmens to exceed a default of 1/3 VSync,
-    // as we would not give other processes enough time to produce content. So
-    // this would make high latency situations worse.
-    return std::clamp(
-        draw_time_without_scheduling_waits_.Percentile(percentile),
-        kMinEstimatedDisplayDrawTime, default_estimate);
-  }
-  return default_estimate;
-}
-
 const SurfaceId& Display::CurrentSurfaceId() const {
   return current_surface_id_;
 }
@@ -1374,227 +1680,13 @@ void Display::SetNeedsOneBeginFrame() {
     scheduler_->SetNeedsOneBeginFrame(false);
 }
 
-void Display::RemoveOverdrawQuads(AggregatedFrame* frame) {
-  if (frame->render_pass_list.empty())
-    return;
-
-  base::flat_map<AggregatedRenderPassId, gfx::Rect> backdrop_filter_rects;
-  for (const auto& pass : frame->render_pass_list) {
-    if (!pass->backdrop_filters.IsEmpty() &&
-        pass->backdrop_filters.HasFilterThatMovesPixels()) {
-      backdrop_filter_rects[pass->id] = cc::MathUtil::MapEnclosingClippedRect(
-          pass->transform_to_root_target, pass->output_rect);
-    }
-  }
-
-  for (const auto& pass : frame->render_pass_list) {
-    const SharedQuadState* last_sqs = nullptr;
-    cc::Region occlusion_in_target_space;
-    cc::Region backdrop_filters_in_target_space;
-    bool current_sqs_intersects_occlusion = false;
-
-    // TODO(yiyix): Add filter effects to draw occlusion calculation
-    if (!pass->filters.IsEmpty() || !pass->backdrop_filters.IsEmpty())
-      continue;
-
-    // When there is only one quad in the render pass, occlusion is not
-    // possible.
-    if (pass->quad_list.size() == 1)
-      continue;
-
-    auto quad_list_end = pass->quad_list.end();
-    cc::Region occlusion_in_quad_content_space;
-    gfx::Rect render_pass_quads_in_content_space;
-    for (auto quad = pass->quad_list.begin(); quad != quad_list_end;) {
-      // Sanity check: we should not have a Compositor
-      // CompositorRenderPassDrawQuad here.
-      DCHECK_NE(quad->material, DrawQuad::Material::kCompositorRenderPass);
-      // Skip quad if it is a AggregatedRenderPassDrawQuad because it is a
-      // special type of DrawQuad where the visible_rect of shared quad state is
-      // not entirely covered by draw quads in it.
-      if (auto* rpdq = quad->DynamicCast<AggregatedRenderPassDrawQuad>()) {
-        // A RenderPass with backdrop filters may apply to a quad underlying
-        // RenderPassQuad. These regions should be tracked so that correctly
-        // handle splitting and occlusion of the underlying quad.
-        auto it = backdrop_filter_rects.find(rpdq->render_pass_id);
-        if (it != backdrop_filter_rects.end()) {
-          backdrop_filters_in_target_space.Union(it->second);
-        }
-        ++quad;
-        continue;
-      }
-      // Also skip quad if the DrawQuad is inside a 3d object.
-      if (quad->shared_quad_state->sorting_context_id != 0) {
-        ++quad;
-        continue;
-      }
-
-      if (!last_sqs)
-        last_sqs = quad->shared_quad_state;
-
-      gfx::Transform transform =
-          quad->shared_quad_state->quad_to_target_transform;
-
-      // TODO(yiyix): Find a rect interior to each transformed quad.
-      if (last_sqs != quad->shared_quad_state) {
-        if (last_sqs->opacity == 1 && last_sqs->are_contents_opaque &&
-            (last_sqs->blend_mode == SkBlendMode::kSrcOver ||
-             last_sqs->blend_mode == SkBlendMode::kSrc) &&
-            last_sqs->quad_to_target_transform
-                .NonDegeneratePreserves2dAxisAlignment()) {
-          gfx::Rect sqs_rect_in_target =
-              cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
-                  last_sqs->quad_to_target_transform,
-                  last_sqs->visible_quad_layer_rect);
-
-          // If a rounded corner is being applied then the visible rect for the
-          // sqs is actually even smaller. Reduce the rect size to get a
-          // rounded corner adjusted occluding region.
-          if (last_sqs->mask_filter_info.HasRoundedCorners()) {
-            sqs_rect_in_target.Intersect(
-                gfx::ToEnclosedRect(GetOccludingRectForRRectF(
-                    last_sqs->mask_filter_info.rounded_corner_bounds())));
-          }
-
-          if (last_sqs->clip_rect)
-            sqs_rect_in_target.Intersect(*last_sqs->clip_rect);
-
-          // If region complexity is above our threshold, remove the smallest
-          // rects from occlusion region.
-          occlusion_in_target_space.Union(sqs_rect_in_target);
-          while (occlusion_in_target_space.GetRegionComplexity() >
-                 settings_.kMaximumOccluderComplexity) {
-            gfx::Rect smallest_rect = *occlusion_in_target_space.begin();
-            for (auto occluding_rect : occlusion_in_target_space) {
-              if (occluding_rect.size().GetCheckedArea().ValueOrDefault(
-                      INT_MAX) <
-                  smallest_rect.size().GetCheckedArea().ValueOrDefault(
-                      INT_MAX)) {
-                smallest_rect = occluding_rect;
-              }
-            }
-            occlusion_in_target_space.Subtract(smallest_rect);
-          }
-        }
-        // If the visible_rect of the current shared quad state does not
-        // intersect with the occlusion rect, we can skip draw occlusion checks
-        // for quads in the current SharedQuadState.
-        last_sqs = quad->shared_quad_state;
-        occlusion_in_quad_content_space.Clear();
-        render_pass_quads_in_content_space = gfx::Rect();
-        const auto current_sqs_in_target_space =
-            cc::MathUtil::MapEnclosingClippedRect(
-                transform, last_sqs->visible_quad_layer_rect);
-        current_sqs_intersects_occlusion =
-            occlusion_in_target_space.Intersects(current_sqs_in_target_space);
-
-        // Compute the occlusion region in the quad content space for scale and
-        // translation transforms. Note that 0 scale transform will fail the
-        // positive scale check.
-        if (current_sqs_intersects_occlusion &&
-            transform.IsPositiveScaleOrTranslation()) {
-          // Scale transform can be inverted by multiplying 1/scale (given
-          // scale > 0) and translation transform can be inverted by applying
-          // the reversed directional translation. Therefore, |transform| is
-          // always invertible.
-          gfx::Transform reverse_transform = transform.GetCheckedInverse();
-          DCHECK_LE(occlusion_in_target_space.GetRegionComplexity(),
-                    settings_.kMaximumOccluderComplexity);
-
-          // Since transform can only be a scale or a translation matrix, it is
-          // safe to use function MapEnclosedRectWith2dAxisAlignedTransform to
-          // define occluded region in the quad content space with inverted
-          // transform.
-          for (gfx::Rect rect_in_target_space : occlusion_in_target_space) {
-            if (current_sqs_in_target_space.Intersects(rect_in_target_space)) {
-              auto rect_in_content =
-                  cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
-                      reverse_transform, rect_in_target_space);
-              occlusion_in_quad_content_space.Union(
-                  SafeConvertRectForRegion(rect_in_content));
-            }
-          }
-
-          // A render pass quad may apply some filter or transform to an
-          // underlying quad. Do not split quads when they intersect with a
-          // render pass quad.
-          if (current_sqs_in_target_space.Intersects(
-                  backdrop_filters_in_target_space.bounds())) {
-            for (auto rect_in_target_space : backdrop_filters_in_target_space) {
-              auto rect_in_content =
-                  cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
-                      reverse_transform, rect_in_target_space);
-              render_pass_quads_in_content_space.Union(rect_in_content);
-            }
-          }
-        }
-      }
-
-      if (!current_sqs_intersects_occlusion) {
-        ++quad;
-        continue;
-      }
-
-      if (occlusion_in_quad_content_space.Contains(quad->visible_rect)) {
-        // Case 1: for simple transforms (scale or translation), define the
-        // occlusion region in the quad content space. If |quad| is not
-        // shown on the screen, then set its rect and visible_rect to be empty.
-        quad->visible_rect.set_size(gfx::Size());
-      } else if (occlusion_in_quad_content_space.Intersects(
-                     quad->visible_rect)) {
-        // Case 2: for simple transforms, if the quad is partially shown on
-        // screen and the region formed by (occlusion region - visible_rect) is
-        // a rect, then update visible_rect to the resulting rect.
-        cc::Region visible_region = quad->visible_rect;
-        visible_region.Subtract(occlusion_in_quad_content_space);
-        quad->visible_rect = visible_region.bounds();
-
-        // Split quad into multiple draw quads when area can be reduce by
-        // more than X fragments.
-        const bool should_split_quads =
-            !overlay_processor_->DisableSplittingQuads() &&
-            !visible_region.Intersects(render_pass_quads_in_content_space) &&
-            ReduceComplexity(visible_region, settings_.quad_split_limit,
-                             &cached_visible_region_) &&
-            CanSplitQuad(quad->material, cached_visible_region_,
-                         visible_region.bounds().size(),
-                         settings_.minimum_fragments_reduced,
-                         device_scale_factor_);
-        if (should_split_quads) {
-          auto new_quad = pass->quad_list.InsertCopyBeforeDrawQuad(
-              quad, cached_visible_region_.size() - 1);
-          for (const auto& visible_rect : cached_visible_region_) {
-            new_quad->visible_rect = visible_rect;
-            ++new_quad;
-          }
-          quad = new_quad;
-          continue;
-        }
-      } else if (occlusion_in_quad_content_space.IsEmpty() &&
-                 occlusion_in_target_space.Contains(
-                     cc::MathUtil::MapEnclosingClippedRect(
-                         transform, quad->visible_rect))) {
-        // Case 3: for non simple transforms, define the occlusion region in
-        // target space. If |quad| is not shown on the screen, then set its
-        // rect and visible_rect to be empty.
-        quad->visible_rect.set_size(gfx::Size());
-      }
-      ++quad;
-    }
-  }
-}
-
 void Display::SetPreferredFrameInterval(base::TimeDelta interval) {
-  if (frame_rate_decider_->supports_set_frame_rate()) {
-    float interval_s = interval.InSecondsF();
-    float frame_rate = interval_s == 0 ? 0 : (1 / interval_s);
-    output_surface_->SetFrameRate(frame_rate);
 #if BUILDFLAG(IS_ANDROID)
-    // On Android we want to return early because the |client_| callback hits
-    // a platform API in the browser process.
+  if (OutputSurfaceSupportsSetFrameRate()) {
+    SetFrameIntervalOnOutputSurface(interval);
     return;
-#endif  // BUILDFLAG(IS_ANDROID)
   }
+#endif
 
   client_->SetPreferredFrameInterval(interval);
 }
@@ -1606,13 +1698,35 @@ base::TimeDelta Display::GetPreferredFrameIntervalForFrameSinkId(
 }
 
 void Display::SetSupportedFrameIntervals(
-    std::vector<base::TimeDelta> intervals) {
-  frame_rate_decider_->SetSupportedFrameIntervals(std::move(intervals));
+    base::flat_set<base::TimeDelta> intervals) {
+  if (frame_rate_decider_) {
+    frame_rate_decider_->SetSupportedFrameIntervals(std::move(intervals));
+  }
+}
+
+void Display::SetHwSupportForMultipleRefreshRates(bool support) {
+  if (frame_rate_decider_) {
+    frame_rate_decider_->SetHwSupportForMultipleRefreshRates(support);
+  }
+}
+
+#if BUILDFLAG(IS_ANDROID)
+bool Display::OutputSurfaceSupportsSetFrameRate() {
+  return output_surface_ &&
+         output_surface_->capabilities().supports_surfaceless &&
+         gfx::SurfaceControl::SupportsSetFrameRate();
+}
+
+void Display::SetFrameIntervalOnOutputSurface(base::TimeDelta interval) {
+  float interval_s = interval.InSecondsF();
+  float frame_rate = interval_s == 0 ? 0 : (1 / interval_s);
+  output_surface_->SetFrameRate(frame_rate);
 }
 
 base::ScopedClosureRunner Display::GetCacheBackBufferCb() {
   return output_surface_->GetCacheBackBufferCb();
 }
+#endif
 
 void Display::DisableGPUAccessByDefault() {
   DCHECK(resource_provider_);
@@ -1628,8 +1742,30 @@ void Display::PreserveChildSurfaceControls() {
 void Display::InitDelegatedInkPointRendererReceiver(
     mojo::PendingReceiver<gfx::mojom::DelegatedInkPointRenderer>
         pending_receiver) {
-  if (DoesPlatformSupportDelegatedInk() &&
-      features::ShouldUsePlatformDelegatedInk() && output_surface_) {
+  if (std::optional<switches::DelegatedInkRendererMode> mode =
+          switches::GetDelegatedInkRendererMode()) {
+    switch (mode.value()) {
+      case switches::DelegatedInkRendererMode::kSkia:
+        if (DelegatedInkPointRendererBase* ink_renderer =
+                renderer_->GetDelegatedInkPointRenderer(
+                    /*create_if_necessary=*/true)) {
+          ink_renderer->InitMessagePipeline(std::move(pending_receiver));
+        }
+        break;
+      case switches::DelegatedInkRendererMode::kSystem:
+        if (DoesPlatformSupportDelegatedInk()) {
+          output_surface_->InitDelegatedInkPointRendererReceiver(
+              std::move(pending_receiver));
+        }
+        break;
+      case switches::DelegatedInkRendererMode::kNone:
+        // Do not initialize a receiver for `kNone` or any other values.
+        return;
+    }
+    return;
+  }
+
+  if (DoesPlatformSupportDelegatedInk() && output_surface_) {
     output_surface_->InitDelegatedInkPointRendererReceiver(
         std::move(pending_receiver));
   } else if (DelegatedInkPointRendererBase* ink_renderer =
@@ -1637,6 +1773,11 @@ void Display::InitDelegatedInkPointRendererReceiver(
                      /*create_if_necessary=*/true)) {
     ink_renderer->InitMessagePipeline(std::move(pending_receiver));
   }
+}
+
+void Display::ResetDisplayClientForTesting(DisplayClient* old_client) {
+  CHECK_EQ(client_, old_client);
+  client_ = nullptr;
 }
 
 }  // namespace viz

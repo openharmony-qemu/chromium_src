@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/screenlock_monitor/screenlock_monitor.h"
 
 #include "base/memory/raw_ptr.h"
@@ -59,7 +64,7 @@ class ScreenlockMonitorTest : public testing::Test {
     screenlock_monitor_ = std::make_unique<ScreenlockMonitor>(
         std::unique_ptr<ScreenlockMonitorSource>(screenlock_monitor_source_));
   }
-  ~ScreenlockMonitorTest() override = default;
+  ~ScreenlockMonitorTest() override { screenlock_monitor_source_ = nullptr; }
 
  protected:
   raw_ptr<ScreenlockMonitorTestSource> screenlock_monitor_source_;

@@ -5,13 +5,25 @@
 #ifndef SERVICES_NETWORK_PUBLIC_CPP_FEATURES_H_
 #define SERVICES_NETWORK_PUBLIC_CPP_FEATURES_H_
 
+#include <string>
+
 #include "base/component_export.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 
-namespace network {
-namespace features {
+namespace url {
+class Origin;
+}  // namespace url
+
+namespace network::features {
+
+COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kBlockAcceptClientHints);
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<std::string> kBlockAcceptClientHintsBlockedSite;
+COMPONENT_EXPORT(NETWORK_CPP)
+bool ShouldBlockAcceptClientHintsFor(const url::Origin& origin);
 
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kNetworkErrorLogging);
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kReporting);
@@ -20,25 +32,34 @@ COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kDelayRequestsOnMultiplexedConnections);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kPauseBrowserInitiatedHeavyTrafficForP2P);
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kCORBProtectionSniffing);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kProactivelyThrottleLowPriorityRequests);
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kCrossOriginOpenerPolicy);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kCrossOriginOpenerPolicyByDefault);
+COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kCoopNoopenerAllowPopups);
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kCoopRestrictProperties);
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kCoopRestrictPropertiesOriginTrial);
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kSplitAuthCacheByNetworkIsolationKey);
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kDnsOverHttpsUpgrade);
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kMaskedDomainList);
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kMdnsResponderGeneratedNameListing);
+extern const base::FeatureParam<int> kMaskedDomainListExperimentGroup;
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kOpaqueResponseBlockingV01_LAUNCHED);
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kOpaqueResponseBlockingV02);
+extern const base::FeatureParam<std::string>
+    kMaskedDomainListExperimentalVersion;
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kMdnsResponderGeneratedNameListing);
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kOpaqueResponseBlockingV02);
+#endif
 
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kAttributionReportingTriggerAttestation);
+BASE_DECLARE_FEATURE(kOpaqueResponseBlockingErrorsForAllFetches);
 
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kAttributionReportingCrossAppWeb);
@@ -63,9 +84,6 @@ extern const base::FeatureParam<TrustTokenOriginTrialSpec>
     kTrustTokenOperationsRequiringOriginTrial;
 COMPONENT_EXPORT(NETWORK_CPP)
 
-COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kWebSocketReassembleShortMessages);
-
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kAcceptCHFrame);
 
 enum class DataPipeAllocationSize {
@@ -77,19 +95,17 @@ COMPONENT_EXPORT(NETWORK_CPP)
 extern uint32_t GetDataPipeDefaultAllocationSize(
     DataPipeAllocationSize = DataPipeAllocationSize::kDefaultSizeOnly);
 
-COMPONENT_EXPORT(NETWORK_CPP)
-extern uint32_t GetLoaderChunkSize();
+// The maximal number of bytes consumed in a loading task. When there are more
+// bytes in the data pipe, they will be consumed in following tasks. Setting too
+// small of a number will generate many tasks but setting a too large of a
+// number will lead to thread janks. This value was optimized via Finch:
+// see crbug.com/1041006.
+inline constexpr size_t kMaxNumConsumedBytesInTask = 1024 * 1024;
 
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kCorsNonWildcardRequestHeadersSupport);
 
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kBatchSimpleURLLoader);
-
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kNetworkServiceMemoryCache);
-
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kOmitCorsClientCert);
-
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kCacheTransparency);
 
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kPervasivePayloadsList);
 
@@ -103,33 +119,25 @@ extern const base::FeatureParam<base::TimeDelta>
     kReduceAcceptLanguageCacheDuration;
 
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kReduceAcceptLanguageOriginTrial);
-
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kDisableResourceScheduler);
-
-COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kPrivateNetworkAccessPreflightShortTimeout);
 
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kLocalNetworkAccessAllowPotentiallyTrustworthySameOrigin);
 
 COMPONENT_EXPORT(NETWORK_CPP)
-extern const base::FeatureParam<bool> kPrefetchDNSWithURLAllAnchorElements;
+BASE_DECLARE_FEATURE(kPrivateNetworkAccessPermissionPrompt);
 
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kOutOfProcessSystemDnsResolution);
+extern const base::FeatureParam<bool> kPrefetchDNSWithURLAllAnchorElements;
 
 COMPONENT_EXPORT(NETWORK_CPP)
 BASE_DECLARE_FEATURE(kAccessControlAllowMethodsInCORSPreflightSpecConformant);
 
-// If enabled, then navigation requests should check the match responses in the
-// prefetch cache by using the No-Vary-Search rules if No-Vary-Search header
-// is specified in prefetched responses.
-// Feature Meta bug: crbug.com/1378072.
-// No-Vary-Search explainer:
-//   https://github.com/WICG/nav-speculation/blob/main/no-vary-search.md
+// If enabled, then the network service will parse the Cookie-Indices header.
+// This does not currently control changing cache behavior according to the
+// value of this header.
 COMPONENT_EXPORT(NETWORK_CPP)
-BASE_DECLARE_FEATURE(kPrefetchNoVarySearch);
+BASE_DECLARE_FEATURE(kCookieIndicesHeader);
 
 // Enables UMA to track received GetCookiesString IPCs. This feature is enabled
 // by default, it is just here to allow some tests to disable it. These tests
@@ -137,10 +145,77 @@ BASE_DECLARE_FEATURE(kPrefetchNoVarySearch);
 // interacts poorly with this metric that is recorded every 30s.
 COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kGetCookiesStringUma);
 
-// Decrease Mojo calls from network service to browser.
-COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kLessChattyNetworkService);
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kCompressionDictionaryTransportBackend);
 
-}  // namespace features
-}  // namespace network
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kCompressionDictionaryTransport);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kPreloadedDictionaryConditionalUse);
+
+// Enables visibility aware network service resource scheduler. When enabled,
+// request may be prioritized or de-prioritized based on the visibility of
+// requestors.
+// TODO(crbug.com/40066382): Remove this feature.
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kVisibilityAwareResourceScheduler);
+
+// Enables Compression Dictionary Transport with Zstandard (aka Shared Zstd).
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kSharedZstd);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kReduceTransferSizeUpdatedIPC);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kSkipTpcdMitigationsForAds);
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsHeuristics;
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsMetadata;
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsTrial;
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsTopLevelTrial;
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kAvoidResourceRequestCopies);
+
+COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kDocumentIsolationPolicy);
+
+// To actually use the prefetch results, it's also necessary to enable
+// kNetworkContextPrefetchUseCache, below.
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kNetworkContextPrefetch);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<int> kNetworkContextPrefetchMaxLoaders;
+
+COMPONENT_EXPORT(NETWORK_CPP)
+extern const base::FeatureParam<base::TimeDelta>
+    kNetworkContextPrefetchEraseGraceTime;
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kNetworkContextPrefetchUseMatches);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kTreatNullIPAsPublicAddressSpace);
+
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kCloneDevToolsConnectionOnlyIfRequested);
+
+// Enables the Storage Access Headers semantics.
+COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kStorageAccessHeaders);
+
+// Enables the Storage Access Headers Origin Trial.
+COMPONENT_EXPORT(NETWORK_CPP) BASE_DECLARE_FEATURE(kStorageAccessHeadersTrial);
+
+#if BUILDFLAG(IS_WIN)
+COMPONENT_EXPORT(NETWORK_CPP)
+BASE_DECLARE_FEATURE(kEnableLockCookieDatabaseByDefault);
+#endif  // BUILDFLAG(IS_WIN)
+
+}  // namespace network::features
 
 #endif  // SERVICES_NETWORK_PUBLIC_CPP_FEATURES_H_

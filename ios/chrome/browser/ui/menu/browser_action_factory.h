@@ -8,12 +8,17 @@
 #import <UIKit/UIKit.h>
 
 #import "base/ios/block_types.h"
+#import "ios/chrome/browser/ui/lens/lens_entrypoint.h"
 #import "ios/chrome/browser/ui/menu/action_factory.h"
 #import "ios/chrome/browser/ui/menu/menu_action_type.h"
-#import "ios/chrome/browser/window_activities/window_activity_helpers.h"
+#import "ios/chrome/browser/window_activities/model/window_activity_helpers.h"
 
 class Browser;
 class GURL;
+
+namespace web {
+class WebState;
+}
 
 // Factory providing methods to create UIActions that depends on the provided
 // browser with consistent titles, images and metrics structure. When using any
@@ -66,6 +71,17 @@ class GURL;
                                            completion:
                                                (ProceduralBlock)completion;
 
+// Creates a UIAction instance for searching with Lens.
+- (UIAction*)actionToSearchWithLensWithEntryPoint:(LensEntrypoint)entryPoint;
+
+// Creates a UIAction instance for saving an image to Photos. `block` will be
+// executed if the action is triggered to perform any additional action before
+// the Save to Photos UI is started.
+- (UIAction*)actionToSaveToPhotosWithImageURL:(const GURL&)url
+                                     referrer:(const web::Referrer&)referrer
+                                     webState:(web::WebState*)webState
+                                        block:(ProceduralBlock)block;
+
 // Creates a UIAction instance for opening a new tab.
 - (UIAction*)actionToOpenNewTab;
 
@@ -95,6 +111,9 @@ class GURL;
 
 // Creates a UIAction instance for searching for the text in the pasteboard.
 - (UIAction*)actionToSearchCopiedText;
+
+// Creates a UIAction instance for opening the AI debug menu.
+- (UIAction*)actionToOpenAIMenu;
 
 @end
 

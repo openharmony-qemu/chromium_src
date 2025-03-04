@@ -14,6 +14,7 @@
 #include "storage/browser/blob/blob_url_loader_factory.h"
 #include "storage/browser/blob/blob_url_registry.h"
 #include "storage/browser/blob/blob_url_utils.h"
+#include "storage/browser/blob/features.h"
 #include "url/url_util.h"
 
 namespace storage {
@@ -65,17 +66,15 @@ class BlobURLTokenImpl : public blink::mojom::BlobURLToken {
 
 BlobURLStoreImpl::BlobURLStoreImpl(
     const blink::StorageKey& storage_key,
+    const url::Origin& renderer_origin,
+    int render_process_host_id,
     base::WeakPtr<BlobUrlRegistry> registry,
     BlobURLValidityCheckBehavior validity_check_behavior)
     : storage_key_(storage_key),
+      renderer_origin_(renderer_origin),
+      render_process_host_id_(render_process_host_id),
       registry_(std::move(registry)),
-      validity_check_behavior_(validity_check_behavior) {
-  if (validity_check_behavior_ ==
-      BlobURLValidityCheckBehavior::ALLOW_OPAQUE_ORIGIN_STORAGE_KEY_MISMATCH) {
-    DCHECK(base::FeatureList::IsEnabled(
-        net::features::kSupportPartitionedBlobUrl));
-  }
-}
+      validity_check_behavior_(validity_check_behavior) {}
 
 BlobURLStoreImpl::~BlobURLStoreImpl() {
   if (registry_) {
@@ -87,11 +86,11 @@ BlobURLStoreImpl::~BlobURLStoreImpl() {
 void BlobURLStoreImpl::Register(
     mojo::PendingRemote<blink::mojom::Blob> blob,
     const GURL& url,
-    // TODO(https://crbug.com/1224926): Remove these once experiment is over.
+    // TODO(crbug.com/40775506): Remove these once experiment is over.
     const base::UnguessableToken& unsafe_agent_cluster_id,
-    const absl::optional<net::SchemefulSite>& unsafe_top_level_site,
+    const std::optional<net::SchemefulSite>& unsafe_top_level_site,
     RegisterCallback callback) {
-  // TODO(https://crbug.com/1376126): Generate blob URLs here, rather than
+  // TODO(crbug.com/40061399): Generate blob URLs here, rather than
   // validating the URLs the renderer process generated.
   if (!BlobUrlIsValid(url, "Register")) {
     std::move(callback).Run();
@@ -100,6 +99,7 @@ void BlobURLStoreImpl::Register(
 
   if (registry_)
     registry_->AddUrlMapping(url, std::move(blob), storage_key_,
+                             renderer_origin_, render_process_host_id_,
                              unsafe_agent_cluster_id, unsafe_top_level_site);
   urls_.insert(url);
   std::move(callback).Run();
@@ -114,28 +114,30 @@ void BlobURLStoreImpl::Revoke(const GURL& url) {
   urls_.erase(url);
 }
 
-void BlobURLStoreImpl::Resolve(const GURL& url, ResolveCallback callback) {
-  if (!registry_) {
-    std::move(callback).Run(mojo::NullRemote(), absl::nullopt);
-    return;
-  }
-  mojo::PendingRemote<blink::mojom::Blob> blob = registry_->GetBlobFromUrl(url);
-  std::move(callback).Run(std::move(blob),
-                          registry_->GetUnsafeAgentClusterID(url));
-}
-
 void BlobURLStoreImpl::ResolveAsURLLoaderFactory(
     const GURL& url,
     mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
     ResolveAsURLLoaderFactoryCallback callback) {
   if (!registry_) {
     BlobURLLoaderFactory::Create(mojo::NullRemote(), url, std::move(receiver));
-    std::move(callback).Run(absl::nullopt, absl::nullopt);
+    std::move(callback).Run(std::nullopt, std::nullopt);
+    return;
+  }
+  if (base::FeatureList::IsEnabled(
+          features::kBlockCrossPartitionBlobUrlFetching) &&
+      !registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url),
+                              storage_key_)) {
+    BlobURLLoaderFactory::Create(mojo::NullRemote(), url, std::move(receiver));
+    std::move(callback).Run(std::nullopt, std::nullopt);
     return;
   }
 
   BlobURLLoaderFactory::Create(registry_->GetBlobFromUrl(url), url,
                                std::move(receiver));
+  // When a fragment URL is present, registry_->GetUnsafeAgentClusterID(url) and
+  // registry_->GetUnsafeTopLevelSite(url) will return nullopt because their
+  // implementations don't remove the fragment and only support fragmentless
+  // URLs (crbug.com/40775506).
   std::move(callback).Run(registry_->GetUnsafeAgentClusterID(url),
                           registry_->GetUnsafeTopLevelSite(url));
 }
@@ -145,21 +147,40 @@ void BlobURLStoreImpl::ResolveForNavigation(
     mojo::PendingReceiver<blink::mojom::BlobURLToken> token,
     ResolveForNavigationCallback callback) {
   if (!registry_) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
   mojo::PendingRemote<blink::mojom::Blob> blob = registry_->GetBlobFromUrl(url);
   if (!blob) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
   new BlobURLTokenImpl(registry_, url, std::move(blob), std::move(token));
   std::move(callback).Run(registry_->GetUnsafeAgentClusterID(url));
 }
 
+void BlobURLStoreImpl::ResolveForWorkerScriptFetch(
+    const GURL& url,
+    mojo::PendingReceiver<blink::mojom::BlobURLToken> token,
+    ResolveForNavigationCallback callback) {
+  if (!registry_) {
+    std::move(callback).Run(std::nullopt);
+    return;
+  }
+  if (base::FeatureList::IsEnabled(
+          features::kBlockCrossPartitionBlobUrlFetching) &&
+      !registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url),
+                              storage_key_)) {
+    std::move(callback).Run(std::nullopt);
+    return;
+  }
+
+  ResolveForNavigation(url, std::move(token), std::move(callback));
+}
+
 bool BlobURLStoreImpl::BlobUrlIsValid(const GURL& url,
                                       const char* method) const {
-  // TODO(crbug.com/1278268): Remove crash keys.
+  // TODO(crbug.com/40810120): Remove crash keys.
   url::Origin storage_key_origin = storage_key_.origin();
   static crash_reporter::CrashKeyString<256> origin_key("origin");
   static crash_reporter::CrashKeyString<256> url_key("url");
@@ -185,14 +206,8 @@ bool BlobURLStoreImpl::BlobUrlIsValid(const GURL& url,
   bool valid_origin = true;
   if (url_origin.scheme() == url::kFileScheme) {
     valid_origin = storage_key_origin.scheme() == url::kFileScheme;
-  }
-#ifdef OHOS_HAP_DECOMPRESSED
-  else if (url_origin.scheme() == url::kResourcesScheme) {
-    valid_origin = storage_key_origin.scheme() == url::kResourcesScheme;
-  }
-#endif
-  else if (url_origin.opaque()) {
-    // TODO(https://crbug.com/1058759): Once `storage_key_` corresponds to an
+  } else if (url_origin.opaque()) {
+    // TODO(crbug.com/40051700): Once `storage_key_` corresponds to an
     // opaque origin under the circumstances described in the crbug, remove the
     // ALLOW_OPAQUE_ORIGIN_STORAGE_KEY_MISMATCH workaround here.
     valid_origin =

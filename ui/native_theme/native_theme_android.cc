@@ -24,7 +24,6 @@ NativeTheme* NativeTheme::GetInstanceForWeb() {
 
 NativeTheme* NativeTheme::GetInstanceForNativeUi() {
   NOTREACHED();
-  return nullptr;
 }
 #endif
 

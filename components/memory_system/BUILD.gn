@@ -4,8 +4,21 @@
 
 import("//base/allocator/allocator.gni")
 import("//base/debug/debug.gni")
+import("//build/buildflag_header.gni")
 import("//build/config/compiler/compiler.gni")
+import("//build/config/compiler/pgo/pgo.gni")
 import("//components/gwp_asan/buildflags/buildflags.gni")
+
+buildflag_header("memory_system_buildflags") {
+  header = "buildflags.h"
+
+  # If creating a profiling build include the allocation recorder
+  # unconditionally. This way we ensure that the recorder is covered by the
+  # profile even if the profiling device doesn't support MTE.
+  force_allocation_trace_recorder = chrome_pgo_phase == 1
+
+  flags = [ "FORCE_ALLOCATION_TRACE_RECORDER=$force_allocation_trace_recorder" ]
+}
 
 # We use a source set instead of a component. Using a component leads to
 # duplicate symbols when creating a component build.
@@ -15,30 +28,35 @@ source_set("memory_system") {
     "initializer.h",
     "memory_system.cc",
     "memory_system.h",
+    "memory_system_features.cc",
+    "memory_system_features.h",
     "parameters.cc",
     "parameters.h",
   ]
 
   public_deps = [
-    "//components/metrics:call_stack_profile_params",
     "//components/version_info",
     "//third_party/abseil-cpp:absl",
   ]
 
   deps = [
+    ":memory_system_buildflags",
     "//base",
     "//base/allocator:buildflags",
     "//components/gwp_asan/buildflags",
+    "//components/sampling_profiler:profile_params",
   ]
 
   if (enable_gwp_asan) {
     deps += [ "//components/gwp_asan/client" ]
-    if (is_chromeos) {
-      deps += [
-        # for crash_reporter::IsCrashpadEnabled()
-        "//components/crash/core/app",
-      ]
-    }
+  }
+
+  # Regardless of `enable_gwp_asan`, we must depend directly
+  # on the presence of the `base::Feature` that governs it. This is
+  # because WebView depends on it, but support cannot be "compiled out"
+  # hinging on a buildflag.
+  if (is_android) {
+    deps += [ "//components/gwp_asan/client:features" ]
   }
 
   if (is_chromeos) {
@@ -56,5 +74,12 @@ source_set("memory_system") {
 
   if (build_allocation_stack_trace_recorder) {
     deps += [ "//components/allocation_recorder/crash_client" ]
+
+    if (build_allocation_trace_recorder_full_reporting) {
+      sources += [
+        "allocation_trace_recorder_statistics_reporter.cc",
+        "allocation_trace_recorder_statistics_reporter.h",
+      ]
+    }
   }
 }

@@ -19,8 +19,8 @@
 
 namespace content {
 
-absl::optional<int> ContentMainDelegate::BasicStartupComplete() {
-  return absl::nullopt;
+std::optional<int> ContentMainDelegate::BasicStartupComplete() {
+  return std::nullopt;
 }
 
 absl::variant<int, MainFunctionParams> ContentMainDelegate::RunProcess(
@@ -29,7 +29,7 @@ absl::variant<int, MainFunctionParams> ContentMainDelegate::RunProcess(
   return std::move(main_function_params);
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 void ContentMainDelegate::ZygoteStarting(
     std::vector<std::unique_ptr<ZygoteForkDelegate>>* delegates) {}
@@ -51,14 +51,14 @@ bool ContentMainDelegate::ShouldLockSchemeRegistry() {
   return true;
 }
 
-absl::optional<int> ContentMainDelegate::PreBrowserMain() {
+std::optional<int> ContentMainDelegate::PreBrowserMain() {
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   // On LaCrOS, GPU sandbox failures should always be fatal because we control
   // the driver environment on ChromeOS.
   base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
       sandbox::policy::switches::kGpuSandboxFailuresFatal, "yes");
 
-  // TODO(crbug.com/1351777): remove this workaround once SwANGLE can work with
+  // TODO(crbug.com/40857355): remove this workaround once SwANGLE can work with
   // the GPU process sandbox.
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kOverrideUseSoftwareGLForTests)) {
@@ -66,7 +66,7 @@ absl::optional<int> ContentMainDelegate::PreBrowserMain() {
         sandbox::policy::switches::kDisableGpuSandbox);
   }
 #endif
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool ContentMainDelegate::ShouldCreateFeatureList(InvokedIn invoked_in) {
@@ -82,9 +82,13 @@ ContentMainDelegate::CreateVariationsIdsProvider() {
   return nullptr;
 }
 
-absl::optional<int> ContentMainDelegate::PostEarlyInitialization(
+void ContentMainDelegate::CreateThreadPool(std::string_view name) {
+  base::ThreadPoolInstance::Create(name);
+}
+
+std::optional<int> ContentMainDelegate::PostEarlyInitialization(
     InvokedIn invoked_in) {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 ContentClient* ContentMainDelegate::CreateContentClient() {

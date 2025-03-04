@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "mojo/public/cpp/bindings/remote.h"
+
 #include <stdint.h>
 
+#include <optional>
 #include <tuple>
 #include <utility>
 
@@ -25,7 +28,6 @@
 #include "mojo/public/cpp/bindings/associated_receiver_set.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
-#include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/bindings/remote_set.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/bindings/shared_associated_remote.h"
@@ -39,7 +41,6 @@
 #include "mojo/public/interfaces/bindings/tests/sample_service.mojom.h"
 #include "mojo/public/interfaces/bindings/tests/scoping.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace mojo {
 namespace test {
@@ -1307,7 +1308,7 @@ TEST_P(RemoteTest, SharedRemoteSyncCallsFromBoundNonConstructionSequence) {
 }
 
 TEST_P(RemoteTest, RemoteSet) {
-  std::vector<absl::optional<MathCalculatorImpl>> impls(4);
+  std::vector<std::optional<MathCalculatorImpl>> impls(4);
 
   PendingRemote<math::Calculator> remote0;
   PendingRemote<math::Calculator> remote1;
@@ -1468,7 +1469,7 @@ class LargeMessageTestImpl : public mojom::LargeMessageTest {
   Receiver<mojom::LargeMessageTest> receiver_;
 };
 
-// TODO(crbug.com/1329178): Flaky on Linux/ASAN, Mac, and Fuchsia bots.
+// TODO(crbug.com/40226674): Flaky on Linux/ASAN, Mac, and Fuchsia bots.
 TEST_P(RemoteTest, DISABLED_SendVeryLargeMessages) {
   Remote<mojom::LargeMessageTest> remote;
   LargeMessageTestImpl impl(remote.BindNewPipeAndPassReceiver());

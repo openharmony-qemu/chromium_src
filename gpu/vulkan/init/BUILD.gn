@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
 
@@ -16,6 +17,8 @@ component("init") {
   ]
 
   defines = [ "IS_VULKAN_INIT_IMPL" ]
+
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
   public_deps = [
     "//base",
@@ -38,17 +41,22 @@ component("init") {
   if (is_apple) {
     deps += [ "//gpu/vulkan/mac" ]
   }
+  if (arkweb_vulkan) {
+    deps += [ "//arkweb/chromium_ext/gpu/vulkan/ohos" ]
+  }
 }
 
 component("skia") {
   output_name = "vulkan_init_skia"
 
   sources = [
-    "gr_vk_memory_allocator_impl.cc",
-    "gr_vk_memory_allocator_impl.h",
+    "skia_vk_memory_allocator_impl.cc",
+    "skia_vk_memory_allocator_impl.h",
   ]
 
   defines = [ "IS_VULKAN_INIT_IMPL" ]
+
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
   public_deps = [
     "//base",

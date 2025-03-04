@@ -7,7 +7,10 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "ui/base/ui_base_features.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "ui/gl/init/gl_factory.h"
+#endif
 
 namespace viz {
 
@@ -16,8 +19,10 @@ cc::PixelTest::GraphicsBackend VizPixelTest::RenderTypeToBackend(
     RendererType renderer_type) {
   if (renderer_type == RendererType::kSkiaVk) {
     return GraphicsBackend::kSkiaVulkan;
-  } else if (renderer_type == RendererType::kSkiaGraphite) {
-    return GraphicsBackend::kSkiaGraphite;
+  } else if (renderer_type == RendererType::kSkiaGraphiteDawn) {
+    return GraphicsBackend::kSkiaGraphiteDawn;
+  } else if (renderer_type == RendererType::kSkiaGraphiteMetal) {
+    return GraphicsBackend::kSkiaGraphiteMetal;
   }
 
   return GraphicsBackend::kDefault;
@@ -27,15 +32,18 @@ VizPixelTest::VizPixelTest(RendererType type)
     : PixelTest(RenderTypeToBackend(type)), renderer_type_(type) {}
 
 void VizPixelTest::SetUp() {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
   gl::init::InitializeGLNoExtensionsOneOff(
-    /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+#endif
   switch (renderer_type_) {
     case RendererType::kSoftware:
       SetUpSoftwareRenderer();
       break;
     case RendererType::kSkiaGL:
     case RendererType::kSkiaVk:
-    case RendererType::kSkiaGraphite:
+    case RendererType::kSkiaGraphiteDawn:
+    case RendererType::kSkiaGraphiteMetal:
       SetUpSkiaRenderer(GetSurfaceOrigin());
       break;
   }

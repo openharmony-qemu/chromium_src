@@ -44,7 +44,7 @@ class SurfaceAggregatorPixelTest : public VizPixelTestWithParam {
             &manager_,
             kArbitraryRootFrameSinkId,
             kIsRoot)) {}
-  ~SurfaceAggregatorPixelTest() override {}
+  ~SurfaceAggregatorPixelTest() override = default;
 
   base::TimeTicks GetNextDisplayTime() {
     base::TimeTicks display_time = next_display_time_;
@@ -80,8 +80,10 @@ SharedQuadState* CreateAndAppendTestSharedQuadState(
   const SkBlendMode blend_mode = SkBlendMode::kSrcOver;
   auto* shared_state = render_pass->CreateAndAppendSharedQuadState();
   shared_state->SetAll(transform, layer_rect, visible_layer_rect,
-                       mask_filter_info, absl::nullopt, are_contents_opaque,
-                       opacity, blend_mode, 0);
+                       mask_filter_info, /*clip=*/std::nullopt,
+                       are_contents_opaque, opacity, blend_mode,
+                       /*sorting_context=*/0,
+                       /*layer_id=*/0u, /*fast_rounded_corner=*/false);
   return shared_state;
 }
 
@@ -110,7 +112,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawSimpleFrame) {
       this->root_allocator_.GetCurrentLocalSurfaceId(), std::move(root_frame));
 
   SurfaceAggregator aggregator(this->manager_.surface_manager(),
-                               this->resource_provider_.get(), true, false);
+                               this->resource_provider_.get(), false);
   auto aggregated_frame = aggregator.Aggregate(
       root_surface_id, this->GetNextDisplayTime(), gfx::OVERLAY_TRANSFORM_NONE);
 
@@ -151,7 +153,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawSimpleAggregatedFrame) {
     auto* surface_quad = pass->CreateAndAppendDrawQuad<SurfaceDrawQuad>();
     surface_quad->SetNew(
         pass->shared_quad_state_list.back(), gfx::Rect(child_size),
-        gfx::Rect(child_size), SurfaceRange(absl::nullopt, child_surface_id),
+        gfx::Rect(child_size), SurfaceRange(std::nullopt, child_surface_id),
         SkColors::kWhite, /*stretch_content_to_fill_bounds=*/false);
 
     auto* color_quad = pass->CreateAndAppendDrawQuad<SolidColorDrawQuad>();
@@ -188,7 +190,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawSimpleAggregatedFrame) {
   }
 
   SurfaceAggregator aggregator(this->manager_.surface_manager(),
-                               this->resource_provider_.get(), true, false);
+                               this->resource_provider_.get(), false);
   auto aggregated_frame = aggregator.Aggregate(
       root_surface_id, this->GetNextDisplayTime(), gfx::OVERLAY_TRANSFORM_NONE);
 
@@ -244,7 +246,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAggregatedFrameWithSurfaceTransforms) {
     auto* left_surface_quad = pass->CreateAndAppendDrawQuad<SurfaceDrawQuad>();
     left_surface_quad->SetNew(
         pass->shared_quad_state_list.back(), gfx::Rect(child_size),
-        gfx::Rect(child_size), SurfaceRange(absl::nullopt, left_child_id),
+        gfx::Rect(child_size), SurfaceRange(std::nullopt, left_child_id),
         SkColors::kWhite, /*stretch_content_to_fill_bounds=*/false);
 
     surface_transform.Translate(100, 0);
@@ -254,7 +256,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAggregatedFrameWithSurfaceTransforms) {
     auto* right_surface_quad = pass->CreateAndAppendDrawQuad<SurfaceDrawQuad>();
     right_surface_quad->SetNew(
         pass->shared_quad_state_list.back(), gfx::Rect(child_size),
-        gfx::Rect(child_size), SurfaceRange(absl::nullopt, right_child_id),
+        gfx::Rect(child_size), SurfaceRange(std::nullopt, right_child_id),
         SkColors::kWhite, /*stretch_content_to_fill_bounds=*/false);
 
     auto root_frame =
@@ -321,7 +323,7 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAggregatedFrameWithSurfaceTransforms) {
   }
 
   SurfaceAggregator aggregator(this->manager_.surface_manager(),
-                               this->resource_provider_.get(), true, false);
+                               this->resource_provider_.get(), false);
   auto aggregated_frame = aggregator.Aggregate(
       root_surface_id, this->GetNextDisplayTime(), gfx::OVERLAY_TRANSFORM_NONE);
 
@@ -348,7 +350,8 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAndEraseDelegatedInkTrail) {
 
   delegated_ink_helper.CreateAndSendMetadata(kFirstPoint, 7.7f,
                                              SkColors::kWhite, kFirstTimestamp,
-                                             gfx::RectF(0, 0, 200, 200));
+                                             gfx::RectF(0, 0, 200, 200),
+                                             /*render_pass_id=*/1);
 
   gfx::Rect rect(this->device_viewport_size_);
   CompositorRenderPassId id{1};
@@ -373,15 +376,18 @@ TEST_P(SurfaceAggregatorPixelTest, DrawAndEraseDelegatedInkTrail) {
       this->root_allocator_.GetCurrentLocalSurfaceId(), std::move(root_frame));
 
   SurfaceAggregator aggregator(this->manager_.surface_manager(),
-                               this->resource_provider_.get(), true, false);
+                               this->resource_provider_.get(), false);
   auto aggregated_frame = aggregator.Aggregate(
       root_surface_id, this->GetNextDisplayTime(), gfx::OVERLAY_TRANSFORM_NONE);
 
   cc::FuzzyPixelOffByOneComparator pixel_comparator;
   auto* pass_list = &aggregated_frame.render_pass_list;
-  EXPECT_TRUE(this->RunPixelTest(
-      pass_list, base::FilePath(FILE_PATH_LITERAL("delegated_ink_trail.png")),
-      pixel_comparator));
+  base::FilePath expected_result =
+      base::FilePath(FILE_PATH_LITERAL("delegated_ink_trail.png"));
+  if (is_skia_graphite()) {
+    expected_result = expected_result.InsertBeforeExtensionASCII("_graphite");
+  }
+  EXPECT_TRUE(this->RunPixelTest(pass_list, expected_result, pixel_comparator));
 
   // Providing the damage rect as the target damage ensures that aggregation
   // occurs and DrawFrame() has something new to draw. If this doesn't cause

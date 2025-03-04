@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/events/blink/blink_event_util.h"
 
-#define  protected public
-#include "ui/events/gesture_detection/motion_event_generic.h"
-#undef protected
 #include "base/time/time.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/input/web_gesture_event.h"
@@ -20,7 +22,7 @@ namespace ui {
 using BlinkEventUtilTest = testing::Test;
 
 TEST(BlinkEventUtilTest, NoScalingWith1DSF) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_UPDATE, 1, 1);
+  ui::GestureEventDetails details(ui::EventType::kGestureScrollUpdate, 1, 1);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
       CreateWebGestureEvent(details,
@@ -84,7 +86,7 @@ TEST(BlinkEventUtilTest, PaginatedWebMouseWheelEvent) {
 }
 
 TEST(BlinkEventUtilTest, NonPaginatedScrollBeginEvent) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_BEGIN, 1, 1);
+  ui::GestureEventDetails details(ui::EventType::kGestureScrollBegin, 1, 1);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
       CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
@@ -98,94 +100,8 @@ TEST(BlinkEventUtilTest, NonPaginatedScrollBeginEvent) {
   EXPECT_EQ(2.f, gestureEvent->data.scroll_begin.delta_y_hint);
 }
 
-TEST(BlinkEventUtilTest, CreateWebTouchEventFromMotionEvent001) {
-  ui::MotionEventGeneric motionEvent_;
-  const MotionEvent& event_pointer_ = motionEvent_;
-  auto webTouchEvent_ =
-      CreateWebTouchEventFromMotionEvent(event_pointer_, true, true, 1);
-  EXPECT_TRUE(webTouchEvent_.is_fit_content);
-}
-
-TEST(BlinkEventUtilTest, CreateWebTouchEventFromMotionEvent002) {
-  ui::MotionEventGeneric motionEvent_;
-  const MotionEvent& event_pointer_ = motionEvent_;
-  auto webTouchEvent_ =
-      CreateWebTouchEventFromMotionEvent(event_pointer_, true, true, 0);
-  EXPECT_FALSE(webTouchEvent_.is_fit_content);
-}
-
-TEST(BlinkEventUtilTest, CreateWebGestureEvent001) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_DRAG_LONG_PRESS, 1, 1);
-  details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
-  auto event =
-      CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
-                            gfx::PointF(1.f, 1.f), 0, 0U);
-  event.data.long_press.width = 1.f;
-  event.data.long_press.height = 1.f;
-  std::unique_ptr<blink::WebInputEvent> webEvent =
-      ScaleWebInputEvent(event, 2.f);
-  EXPECT_TRUE(webEvent);
-  blink::WebGestureEvent* gestureEvent =
-      static_cast<blink::WebGestureEvent*>(webEvent.get());
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.width);
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.height);
-}
-
-TEST(BlinkEventUtilTest, CreateWebGestureEvent002) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_CREATE_OVERLAY, 1, 1);
-  details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
-  auto event =
-      CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
-                            gfx::PointF(1.f, 1.f), 0, 0U);
-  event.data.long_press.width = 1.f;
-  event.data.long_press.height = 1.f;
-  std::unique_ptr<blink::WebInputEvent> webEvent =
-      ScaleWebInputEvent(event, 2.f);
-  EXPECT_TRUE(webEvent);
-  blink::WebGestureEvent* gestureEvent =
-      static_cast<blink::WebGestureEvent*>(webEvent.get());
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.width);
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.height);
-}
-
-TEST(BlinkEventUtilTest, TranslateAndScaleWebInputEvent001) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_CREATE_OVERLAY, 1, 1);
-  details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
-  auto event =
-      CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
-                            gfx::PointF(1.f, 1.f), 0, 0U);
-  event.SetType(blink::WebInputEvent::Type::kGestureDragLongPress);
-  event.data.long_press.width = 1.f;
-  event.data.long_press.height = 1.f;
-  auto result_webevent = TranslateAndScaleWebInputEvent(
-      event, gfx::Vector2dF(), 2.f, absl::make_optional(1));
-  EXPECT_TRUE(result_webevent);
-  blink::WebGestureEvent* gestureEvent =
-      static_cast<blink::WebGestureEvent*>(result_webevent.get());
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.width);
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.height);
-}
-
-TEST(BlinkEventUtilTest, TranslateAndScaleWebInputEvent002) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_BEGIN, 1, 1);
-  details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
-  auto event =
-      CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
-                            gfx::PointF(1.f, 1.f), 0, 0U);
-  event.SetType(blink::WebInputEvent::Type::kGestureCreateOverlay);
-  event.data.long_press.width = 1.f;
-  event.data.long_press.height = 1.f;
-  auto result_webevent = TranslateAndScaleWebInputEvent(
-      event, gfx::Vector2dF(), 2.f, absl::make_optional(1));
-  EXPECT_TRUE(result_webevent);
-  blink::WebGestureEvent* gestureEvent =
-      static_cast<blink::WebGestureEvent*>(result_webevent.get());
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.width);
-  EXPECT_EQ(2.f, gestureEvent->data.long_press.height);
-}
-
 TEST(BlinkEventUtilTest, PaginatedScrollBeginEvent) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_BEGIN, 1, 1,
+  ui::GestureEventDetails details(ui::EventType::kGestureScrollBegin, 1, 1,
                                   ui::ScrollGranularity::kScrollByPage);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
@@ -202,7 +118,8 @@ TEST(BlinkEventUtilTest, PaginatedScrollBeginEvent) {
 
 TEST(BlinkEventUtilTest, EnsureFlingVelocityNotNaN) {
   float nan_number = std::nanf("");
-  ui::GestureEventDetails details(ui::ET_SCROLL_FLING_START, nan_number, 1.f);
+  ui::GestureEventDetails details(ui::EventType::kScrollFlingStart, nan_number,
+                                  1.f);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
       CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
@@ -213,7 +130,7 @@ TEST(BlinkEventUtilTest, EnsureFlingVelocityNotNaN) {
 }
 
 TEST(BlinkEventUtilTest, NonPaginatedScrollUpdateEvent) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_UPDATE, 1, 1);
+  ui::GestureEventDetails details(ui::EventType::kGestureScrollUpdate, 1, 1);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
       CreateWebGestureEvent(details, base::TimeTicks(), gfx::PointF(1.f, 1.f),
@@ -228,7 +145,7 @@ TEST(BlinkEventUtilTest, NonPaginatedScrollUpdateEvent) {
 }
 
 TEST(BlinkEventUtilTest, PaginatedScrollUpdateEvent) {
-  ui::GestureEventDetails details(ui::ET_GESTURE_SCROLL_UPDATE, 1, 1,
+  ui::GestureEventDetails details(ui::EventType::kGestureScrollUpdate, 1, 1,
                                   ui::ScrollGranularity::kScrollByPage);
   details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   auto event =
@@ -245,8 +162,8 @@ TEST(BlinkEventUtilTest, PaginatedScrollUpdateEvent) {
 
 TEST(BlinkEventUtilTest, LineAndDocumentScrollEvents) {
   static const ui::EventType types[] = {
-      ui::ET_GESTURE_SCROLL_BEGIN,
-      ui::ET_GESTURE_SCROLL_UPDATE,
+      ui::EventType::kGestureScrollBegin,
+      ui::EventType::kGestureScrollUpdate,
   };
 
   static const ui::ScrollGranularity units[] = {
@@ -269,11 +186,11 @@ TEST(BlinkEventUtilTest, LineAndDocumentScrollEvents) {
       blink::WebGestureEvent* gestureEvent =
           static_cast<blink::WebGestureEvent*>(webEvent.get());
       // Line and document based scroll events should not be scaled.
-      if (type == ui::ET_GESTURE_SCROLL_BEGIN) {
+      if (type == ui::EventType::kGestureScrollBegin) {
         EXPECT_EQ(1.f, gestureEvent->data.scroll_begin.delta_x_hint);
         EXPECT_EQ(1.f, gestureEvent->data.scroll_begin.delta_y_hint);
       } else {
-        EXPECT_TRUE(type == ui::ET_GESTURE_SCROLL_UPDATE);
+        EXPECT_TRUE(type == ui::EventType::kGestureScrollUpdate);
         EXPECT_EQ(1.f, gestureEvent->data.scroll_update.delta_x);
         EXPECT_EQ(1.f, gestureEvent->data.scroll_update.delta_y);
       }

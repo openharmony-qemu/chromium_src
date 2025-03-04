@@ -27,11 +27,9 @@ const execution_context::ExecutionContext* GetExecutionContext(
 // without being actual GraphOwned objects. This class wraps both to allow this.
 class GraphOwnedWrapper : public GraphOwned {
  public:
-  GraphOwnedWrapper() {
-    VotingChannel voting_channel = observer_.BuildVotingChannel();
-    voter_id_ = voting_channel.voter_id();
-    ad_frame_voter_.SetVotingChannel(std::move(voting_channel));
-  }
+  GraphOwnedWrapper()
+      : ad_frame_voter_(observer_.BuildVotingChannel()),
+        voter_id_(ad_frame_voter_.voter_id()) {}
 
   ~GraphOwnedWrapper() override = default;
 
@@ -40,10 +38,10 @@ class GraphOwnedWrapper : public GraphOwned {
 
   // GraphOwned:
   void OnPassedToGraph(Graph* graph) override {
-    graph->AddFrameNodeObserver(&ad_frame_voter_);
+    graph->AddInitializingFrameNodeObserver(&ad_frame_voter_);
   }
   void OnTakenFromGraph(Graph* graph) override {
-    graph->RemoveFrameNodeObserver(&ad_frame_voter_);
+    graph->RemoveInitializingFrameNodeObserver(&ad_frame_voter_);
   }
 
   // Exposes the DummyVoteObserver to validate expectations.
@@ -70,7 +68,6 @@ class AdFrameVoterTest : public GraphTestHarness {
   AdFrameVoterTest& operator=(const AdFrameVoterTest&) = delete;
 
   void SetUp() override {
-    GetGraphFeatures().EnableExecutionContextRegistry();
     Super::SetUp();
     auto wrapper = std::make_unique<GraphOwnedWrapper>();
     wrapper_ = wrapper.get();
@@ -91,7 +88,7 @@ TEST_F(AdFrameVoterTest, SetIsAdFrameTrue) {
   // Create a graph with a single frame. It should not initially be an ad frame.
   MockSinglePageInSingleProcessGraph mock_graph(graph());
   auto& frame_node = mock_graph.frame;
-  EXPECT_FALSE(frame_node->is_ad_frame());
+  EXPECT_FALSE(frame_node->IsAdFrame());
   EXPECT_EQ(observer().GetVoteCount(), 0u);
   EXPECT_FALSE(
       observer().HasVote(voter_id(), GetExecutionContext(frame_node.get())));
@@ -115,11 +112,11 @@ TEST_F(AdFrameVoterTest, SetIsAdFrameFalse) {
   MockSinglePageInSingleProcessGraph mock_graph(graph());
   auto& frame_node = mock_graph.frame;
   mock_graph.frame->SetIsAdFrame(true);
-  EXPECT_TRUE(frame_node->is_ad_frame());
+  EXPECT_TRUE(frame_node->IsAdFrame());
 
   // Unset the frame as an ad. This should invalidate any vote.
   mock_graph.frame->SetIsAdFrame(false);
-  EXPECT_FALSE(frame_node->is_ad_frame());
+  EXPECT_FALSE(frame_node->IsAdFrame());
   EXPECT_EQ(observer().GetVoteCount(), 0u);
   EXPECT_FALSE(
       observer().HasVote(voter_id(), GetExecutionContext(frame_node.get())));

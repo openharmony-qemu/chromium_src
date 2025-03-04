@@ -17,8 +17,9 @@ namespace {
 
 using testing::Eq;
 
-TEST(TrustedVaultServerConstantsTest,
-     ShouldGetGetSecurityDomainMemberURLPathAndQuery) {
+TEST(TrustedVaultServerConstantsTest, ShouldGetGetSecurityDomainMemberURL) {
+  const GURL kTestUrl("https://example.com/v1/");
+
   // Arbitrary key, with an appropriate length.
   const std::vector<uint8_t> kPublicKey{
       0x4,  0xF2, 0x4C, 0x45, 0xBA, 0xF4, 0xF8, 0x6C, 0xF9, 0x73, 0xCE,
@@ -36,12 +37,29 @@ TEST(TrustedVaultServerConstantsTest,
 
   // Note that production code (TrustedVaultRequest::CreateURLLoader) will
   // append &alt=proto to the URL.
-  EXPECT_THAT(GetGetSecurityDomainMemberURLPathAndQuery(kPublicKey),
-              Eq("users/me/members/"
+  EXPECT_THAT(GetGetSecurityDomainMemberURL(kTestUrl, kPublicKey).spec(),
+              Eq("https://example.com/v1/users/me/members/"
                  "BPJMRbr0-Gz5c851DMnUD0pTt4VGQfsxFw_"
                  "rC0XkKWmbsgcSwQk977tX3FYSKfJz4cWZHEk6ojD5ujuxg88bXeg"
                  "?view=2"
                  "&request_header.force_master_read=true"));
+}
+
+TEST(TrustedVaultServerConstantsTest, GetSecurityDomainByName) {
+  EXPECT_THAT(GetSecurityDomainByName("chromesync"),
+              Eq(SecurityDomainId::kChromeSync));
+  EXPECT_THAT(GetSecurityDomainByName("hw_protected"),
+              Eq(SecurityDomainId::kPasskeys));
+  EXPECT_THAT(GetSecurityDomainByName("users/me/securitydomains/chromesync"),
+              Eq(std::nullopt));
+  EXPECT_THAT(GetSecurityDomainByName(""), Eq(std::nullopt));
+}
+
+TEST(TrustedVaultServerConstantsTest, GetSecurityDomainName) {
+  EXPECT_THAT(GetSecurityDomainName(SecurityDomainId::kChromeSync),
+              Eq("chromesync"));
+  EXPECT_THAT(GetSecurityDomainName(SecurityDomainId::kPasskeys),
+              Eq("hw_protected"));
 }
 
 }  // namespace

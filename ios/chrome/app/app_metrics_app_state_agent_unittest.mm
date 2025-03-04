@@ -5,19 +5,18 @@
 #import "ios/chrome/app/app_metrics_app_state_agent.h"
 
 #import "base/test/task_environment.h"
+#import "ios/chrome/app/application_delegate/app_init_stage_test_utils.h"
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/application_delegate/metrics_mediator.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/metrics/ios_profile_session_durations_service.h"
-#import "ios/chrome/browser/metrics/ios_profile_session_durations_service_factory.h"
+#import "ios/chrome/browser/metrics/model/ios_profile_session_durations_service.h"
+#import "ios/chrome/browser/metrics/model/ios_profile_session_durations_service_factory.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_manager_ios.h"
+#import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "third_party/ocmock/gtest_support.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -63,23 +62,23 @@ class FakeProfileSessionDurationsService
 @interface FakeAppState : AppState
 @property(nonatomic, strong) NSArray<SceneState*>* connectedScenes;
 // Init stage that will be returned by the initStage getter when testing.
-@property(nonatomic, assign) InitStage initStageForTesting;
+@property(nonatomic, assign) AppInitStage initStageForTesting;
 @end
 
 @implementation FakeAppState
 
-- (InitStage)initStage {
+- (AppInitStage)initStage {
   return self.initStageForTesting;
 }
 
 @end
 
-InitStage GetMinimalInitStageThatAllowsLogging() {
-  return static_cast<InitStage>(InitStageSafeMode + 1);
+AppInitStage GetMinimalInitStageThatAllowsLogging() {
+  return AppInitStage::kBrowserObjectsForBackgroundHandlers;
 }
 
-InitStage GetMaximalInitStageThatDontAllowLogging() {
-  return static_cast<InitStage>(InitStageSafeMode);
+AppInitStage GetMaximalInitStageThatDontAllowLogging() {
+  return PreviousAppInitStage(GetMinimalInitStageThatAllowsLogging());
 }
 
 class AppMetricsAppStateAgentTest : public PlatformTest {
@@ -87,42 +86,42 @@ class AppMetricsAppStateAgentTest : public PlatformTest {
   AppMetricsAppStateAgentTest() {
     agent_ = [[AppMetricsAppStateAgent alloc] init];
 
-    TestChromeBrowserState::Builder test_cbs_builder;
-    test_cbs_builder.AddTestingFactory(
+    TestProfileIOS::Builder test_profile_builder;
+    test_profile_builder.AddTestingFactory(
         IOSProfileSessionDurationsServiceFactory::GetInstance(),
         base::BindRepeating(&FakeProfileSessionDurationsService::Create));
-    browser_state_ = test_cbs_builder.Build();
+    profile_ =
+        profile_manager_.AddProfileWithBuilder(std::move(test_profile_builder));
 
-    app_state_ = [[FakeAppState alloc] initWithBrowserLauncher:nil
-                                            startupInformation:nil
-                                           applicationDelegate:nil];
+    app_state_ = [[FakeAppState alloc] initWithStartupInformation:nil];
   }
 
   void SetUp() override {
     PlatformTest::SetUp();
-    app_state_.mainBrowserState = browser_state_.get();
     app_state_.initStageForTesting = GetMinimalInitStageThatAllowsLogging();
     [agent_ setAppState:app_state_];
   }
 
   FakeProfileSessionDurationsService* getProfileSessionDurationsService() {
     return static_cast<FakeProfileSessionDurationsService*>(
-        IOSProfileSessionDurationsServiceFactory::GetForBrowserState(
-            browser_state_.get()));
+        IOSProfileSessionDurationsServiceFactory::GetForProfile(
+            profile_.get()));
   }
 
   void SimulateTransitionToCurrentStage() {
-    InitStage previousStage =
-        app_state_.initStage == InitStageStart
-            ? InitStageStart
-            : static_cast<InitStage>(app_state_.initStage - 1);
+    AppInitStage previousStage =
+        app_state_.initStage == AppInitStage::kStart
+            ? AppInitStage::kStart
+            : PreviousAppInitStage(app_state_.initStage);
     [agent_ appState:app_state_ didTransitionFromInitStage:previousStage];
   }
 
-  AppMetricsAppStateAgent* agent_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
-  FakeAppState* app_state_;
   base::test::TaskEnvironment task_environment_;
+  IOSChromeScopedTestingLocalState scoped_testing_local_state_;
+  TestProfileManagerIOS profile_manager_;
+  AppMetricsAppStateAgent* agent_;
+  raw_ptr<ProfileIOS> profile_;
+  FakeAppState* app_state_;
 };
 
 TEST_F(AppMetricsAppStateAgentTest, CountSessionDuration) {
@@ -187,7 +186,7 @@ TEST_F(AppMetricsAppStateAgentTest, CountSessionDurationMultiwindow) {
 TEST_F(AppMetricsAppStateAgentTest, CountSessionDurationSafeMode) {
   SceneState* scene = [[SceneState alloc] initWithAppState:app_state_];
   app_state_.connectedScenes = @[ scene ];
-  app_state_.initStageForTesting = InitStageSafeMode;
+  app_state_.initStageForTesting = AppInitStage::kSafeMode;
   [agent_ appState:app_state_ sceneConnected:scene];
 
   EXPECT_EQ(0, getProfileSessionDurationsService()->session_started_count());
@@ -223,7 +222,7 @@ TEST_F(AppMetricsAppStateAgentTest, logStartupDuration) {
   id metricsMediator = [OCMockObject mockForClass:[MetricsMediator class]];
 
   [[metricsMediator expect] createStartupTrackingTask];
-  [[metricsMediator expect] logStartupDuration:nil connectionInformation:nil];
+  [[metricsMediator expect] logStartupDuration:nil];
   [metricsMediator setExpectationOrderMatters:YES];
 
   SceneState* sceneA = [[SceneState alloc] initWithAppState:app_state_];
@@ -234,9 +233,8 @@ TEST_F(AppMetricsAppStateAgentTest, logStartupDuration) {
 
   // Simulate transitioning to the current app init stage before scenes going on
   // the foreground.
-  [agent_ appState:app_state_
-      didTransitionFromInitStage:static_cast<InitStage>(app_state_.initStage -
-                                                        1)];
+  AppInitStage previousInitStage = PreviousAppInitStage(app_state_.initStage);
+  [agent_ appState:app_state_ didTransitionFromInitStage:previousInitStage];
 
   // Should not log startup duration until the scene is active.
   sceneA.activationLevel = SceneActivationLevelForegroundInactive;
@@ -261,7 +259,7 @@ TEST_F(AppMetricsAppStateAgentTest, logStartupDurationWhenSafeMode) {
   id metricsMediator = [OCMockObject mockForClass:[MetricsMediator class]];
 
   [[metricsMediator reject] createStartupTrackingTask];
-  [[metricsMediator reject] logStartupDuration:nil connectionInformation:nil];
+  [[metricsMediator reject] logStartupDuration:nil];
 
   app_state_.initStageForTesting = GetMaximalInitStageThatDontAllowLogging();
 
@@ -271,9 +269,8 @@ TEST_F(AppMetricsAppStateAgentTest, logStartupDurationWhenSafeMode) {
 
   // Simulate transitioning to the current app init stage before scenes going on
   // the foreground.
-  [agent_ appState:app_state_
-      didTransitionFromInitStage:static_cast<InitStage>(app_state_.initStage -
-                                                        1)];
+  AppInitStage previousInitStage = PreviousAppInitStage(app_state_.initStage);
+  [agent_ appState:app_state_ didTransitionFromInitStage:previousInitStage];
 
   // This would normally log startup information, but not when in safe mode.
   sceneA.activationLevel = SceneActivationLevelForegroundActive;

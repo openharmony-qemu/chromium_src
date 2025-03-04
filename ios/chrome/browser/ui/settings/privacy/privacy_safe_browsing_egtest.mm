@@ -3,12 +3,11 @@
 // found in the LICENSE file.
 
 #import "base/test/ios/wait_util.h"
-#import "components/password_manager/core/common/password_manager_features.h"
 #import "components/password_manager/core/common/password_manager_pref_names.h"
 #import "components/safe_browsing/core/common/features.h"
 #import "components/safe_browsing/core/common/safe_browsing_prefs.h"
 #import "components/strings/grit/components_strings.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey_ui_test_util.h"
 #import "ios/chrome/browser/ui/authentication/signin_matchers.h"
@@ -24,10 +23,6 @@
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::ButtonWithAccessibilityLabelId;
 using chrome_test_util::SettingsDoneButton;
@@ -64,13 +59,6 @@ namespace {
   AppLaunchConfiguration config;
   // TODO (crbug.com/1285974) Remove when bug is resolved.
   config.features_disabled.push_back(kNewOverflowMenu);
-
-  if ([self isRunningTest:@selector
-            (testTogglePasswordLeakCheckForSignedOutUser)]) {
-    config.features_enabled.push_back(
-        password_manager::features::kLeakDetectionUnauthenticated);
-  }
-
   return config;
 }
 
@@ -83,11 +71,11 @@ namespace {
   [ChromeEarlGrey setBoolValue:NO forUserPref:prefs::kSafeBrowsingEnhanced];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   // Reset preferences back to default values.
   [ChromeEarlGrey setBoolValue:YES forUserPref:prefs::kSafeBrowsingEnabled];
   [ChromeEarlGrey setBoolValue:NO forUserPref:prefs::kSafeBrowsingEnhanced];
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 - (void)testOpenPrivacySafeBrowsingSettings {
@@ -200,13 +188,56 @@ namespace {
   [self openPrivacySafeBrowsingSettings];
   [self pressInfoButtonForCell:kSettingsSafeBrowsingEnhancedProtectionCellId];
 
-  // Check all rows exist.
+  // Check that headers and footer exist.
   [[self elementInteractionWithGreyMatcher:
-             grey_accessibilityID(kSafeBrowsingEnhancedProtectionShieldCellId)
+             grey_accessibilityID(
+                 kSafeBrowsingEnhancedProtectionTableViewFirstHeaderId)
                          scrollViewMatcher:
                              grey_accessibilityID(
                                  kSafeBrowsingEnhancedProtectionTableViewId)]
       assertWithMatcher:grey_notNil()];
+  [[self elementInteractionWithGreyMatcher:
+             grey_accessibilityID(
+                 kSafeBrowsingEnhancedProtectionTableViewSecondHeaderId)
+                         scrollViewMatcher:
+                             grey_accessibilityID(
+                                 kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+
+  // Check that rows exist
+  [[self elementInteractionWithGreyMatcher:
+             grey_accessibilityID(kSafeBrowsingEnhancedProtectionDataCellId)
+                         scrollViewMatcher:
+                             grey_accessibilityID(
+                                 kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+  [[self elementInteractionWithGreyMatcher:
+             grey_accessibilityID(kSafeBrowsingEnhancedProtectionDownloadCellId)
+                         scrollViewMatcher:
+                             grey_accessibilityID(
+                                 kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+  [[self elementInteractionWithGreyMatcher:
+             grey_accessibilityID(kSafeBrowsingEnhancedProtectionLinkCellId)
+                         scrollViewMatcher:
+                             grey_accessibilityID(
+                                 kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+
+  [[self elementInteractionWithGreyMatcher:
+             grey_accessibilityID(kSafeBrowsingEnhancedProtectionAccountCellId)
+                         scrollViewMatcher:
+                             grey_accessibilityID(
+                                 kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+  [[self
+      elementInteractionWithGreyMatcher:
+          grey_accessibilityID(kSafeBrowsingEnhancedProtectionTableViewFooterId)
+                      scrollViewMatcher:
+                          grey_accessibilityID(
+                              kSafeBrowsingEnhancedProtectionTableViewId)]
+      assertWithMatcher:grey_notNil()];
+
   [[self elementInteractionWithGreyMatcher:
              grey_accessibilityID(kSafeBrowsingEnhancedProtectionGIconCellId)
                          scrollViewMatcher:
@@ -225,12 +256,6 @@ namespace {
                              grey_accessibilityID(
                                  kSafeBrowsingEnhancedProtectionTableViewId)]
       assertWithMatcher:grey_notNil()];
-  [[self elementInteractionWithGreyMatcher:
-             grey_accessibilityID(kSafeBrowsingEnhancedProtectionMetricCellId)
-                         scrollViewMatcher:
-                             grey_accessibilityID(
-                                 kSafeBrowsingEnhancedProtectionTableViewId)]
-      assertWithMatcher:grey_notNil()];
 }
 
 // Tests that Standard Protection page can be navigated to and populated
@@ -238,20 +263,6 @@ namespace {
 - (void)testStandardProtectionSettingsPage {
   [self openPrivacySafeBrowsingSettings];
   [self pressInfoButtonForCell:kSettingsSafeBrowsingStandardProtectionCellId];
-
-  // Check all rows exist.
-  [[self elementInteractionWithGreyMatcher:
-             grey_accessibilityID(kSafeBrowsingStandardProtectionShieldCellId)
-                         scrollViewMatcher:
-                             grey_accessibilityID(
-                                 kSafeBrowsingStandardProtectionTableViewId)]
-      assertWithMatcher:grey_notNil()];
-  [[self elementInteractionWithGreyMatcher:
-             grey_accessibilityID(kSafeBrowsingStandardProtectionMetricCellId)
-                         scrollViewMatcher:
-                             grey_accessibilityID(
-                                 kSafeBrowsingStandardProtectionTableViewId)]
-      assertWithMatcher:grey_notNil()];
   [[self elementInteractionWithGreyMatcher:
              grey_accessibilityID(
                  kSafeBrowsingStandardProtectionPasswordLeakCellId)
@@ -279,7 +290,7 @@ namespace {
 
   // Sign in.
   FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
   // Open Privacy Safe Browsing settings.
   [self openPrivacySafeBrowsingSettings];
 

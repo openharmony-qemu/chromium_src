@@ -4,11 +4,12 @@
 
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 
+#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/ranges/algorithm.h"
 #include "base/trace_event/process_memory_dump.h"
 #include "build/build_config.h"
-#include "components/viz/common/resources/resource_format_utils.h"
+#include "components/viz/common/resources/shared_image_format_utils.h"
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/command_buffer/common/shared_image_trace_utils.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
@@ -17,6 +18,10 @@
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
+
+#if BUILDFLAG(IS_WIN)
+#include "ui/gfx/win/d3d_shared_fence.h"
+#endif
 
 namespace gpu {
 namespace {
@@ -35,8 +40,6 @@ const char* BackingTypeToString(SharedImageBackingType type) {
       return "AHardwareBufferImageBacking";
     case SharedImageBackingType::kAngleVulkan:
       return "AngleVulkanImageBacking";
-    case SharedImageBackingType::kGLImage:
-      return "GLImageBacking";
     case SharedImageBackingType::kGLTexture:
       return "GLTextureImageBacking";
     case SharedImageBackingType::kOzone:
@@ -46,7 +49,7 @@ const char* BackingTypeToString(SharedImageBackingType type) {
     case SharedImageBackingType::kSharedMemory:
       return "SharedMemoryImageBacking";
     case SharedImageBackingType::kVideo:
-      return "SharedImageVideo";
+      return "AndroidVideoImageBacking";
     case SharedImageBackingType::kWrappedSkImage:
       return "WrappedSkImage";
     case SharedImageBackingType::kCompound:
@@ -59,21 +62,30 @@ const char* BackingTypeToString(SharedImageBackingType type) {
       return "DCompSurface";
     case SharedImageBackingType::kDXGISwapChain:
       return "DXGISwapChain";
+    case SharedImageBackingType::kWrappedGraphiteTexture:
+      return "WrappedGraphiteTexture";
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case SharedImageBackingType::kOHOSNativeBuffer:
+      return "OHOSNativeBuffer";
+#endif
   }
   NOTREACHED();
 }
 
 }  // namespace
 
-SharedImageBacking::SharedImageBacking(const Mailbox& mailbox,
-                                       viz::SharedImageFormat format,
-                                       const gfx::Size& size,
-                                       const gfx::ColorSpace& color_space,
-                                       GrSurfaceOrigin surface_origin,
-                                       SkAlphaType alpha_type,
-                                       uint32_t usage,
-                                       size_t estimated_size,
-                                       bool is_thread_safe)
+SharedImageBacking::SharedImageBacking(
+    const Mailbox& mailbox,
+    viz::SharedImageFormat format,
+    const gfx::Size& size,
+    const gfx::ColorSpace& color_space,
+    GrSurfaceOrigin surface_origin,
+    SkAlphaType alpha_type,
+    SharedImageUsageSet usage,
+    std::string debug_label,
+    size_t estimated_size,
+    bool is_thread_safe,
+    std::optional<gfx::BufferUsage> buffer_usage)
     : mailbox_(mailbox),
       format_(format),
       size_(size),
@@ -81,7 +93,9 @@ SharedImageBacking::SharedImageBacking(const Mailbox& mailbox,
       surface_origin_(surface_origin),
       alpha_type_(alpha_type),
       usage_(usage),
-      estimated_size_(estimated_size) {
+      debug_label_(std::move(debug_label)),
+      estimated_size_(estimated_size),
+      buffer_usage_(std::move(buffer_usage)) {
   DCHECK_CALLED_ON_VALID_THREAD(factory_thread_checker_);
 
   if (is_thread_safe)
@@ -105,7 +119,12 @@ SkImageInfo SharedImageBacking::AsSkImageInfo(int plane_index) const {
 }
 
 bool SharedImageBacking::CopyToGpuMemoryBuffer() {
-  return false;
+  NOTREACHED();
+}
+
+void SharedImageBacking::CopyToGpuMemoryBufferAsync(
+    base::OnceCallback<void(bool)> callback) {
+  std::move(callback).Run(CopyToGpuMemoryBuffer());
 }
 
 void SharedImageBacking::Update(std::unique_ptr<gfx::GpuFence> in_fence) {}
@@ -113,13 +132,17 @@ void SharedImageBacking::Update(std::unique_ptr<gfx::GpuFence> in_fence) {}
 bool SharedImageBacking::UploadFromMemory(
     const std::vector<SkPixmap>& pixmaps) {
   NOTREACHED();
-  return false;
 }
 
 bool SharedImageBacking::ReadbackToMemory(
     const std::vector<SkPixmap>& pixmaps) {
   NOTREACHED();
-  return false;
+}
+
+void SharedImageBacking::ReadbackToMemoryAsync(
+    const std::vector<SkPixmap>& pixmaps,
+    base::OnceCallback<void(bool)> callback) {
+  std::move(callback).Run(ReadbackToMemory(pixmaps));
 }
 
 bool SharedImageBacking::PresentSwapChain() {
@@ -133,15 +156,20 @@ base::trace_event::MemoryAllocatorDump* SharedImageBacking::OnMemoryDump(
     uint64_t client_tracing_id) {
   base::trace_event::MemoryAllocatorDump* dump =
       pmd->CreateAllocatorDump(dump_name);
+  auto byte_size = GetEstimatedSizeForMemoryDump();
   dump->AddScalar(base::trace_event::MemoryAllocatorDump::kNameSize,
                   base::trace_event::MemoryAllocatorDump::kUnitsBytes,
-                  GetEstimatedSizeForMemoryDump());
+                  byte_size);
 
   dump->AddString("type", "", GetName());
   dump->AddString("dimensions", "", size().ToString());
   dump->AddString("format", "", format().ToString());
   dump->AddString("usage", "", CreateLabelForSharedImageUsage(usage()));
+  dump->AddString("debug label", "", debug_label_);
   dump->AddScalar("purgeable", "bool", IsPurgeable());
+#if BUILDFLAG(IS_CHROMEOS)
+  dump->AddScalar("non_exo_size", "bool", IsImportedFromExo() ? 0 : byte_size);
+#endif
 
   // Add ownership edge to `client_guid` which expresses shared ownership with
   // the client process.
@@ -168,7 +196,33 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageBacking::ProduceSkia(
     SharedImageManager* manager,
     MemoryTypeTracker* tracker,
     scoped_refptr<SharedContextState> context_state) {
-  return ProduceSkiaGanesh(manager, tracker, context_state);
+  // For testing if no context state, then default to SkiaGanesh representation.
+  if (!context_state) {
+    return ProduceSkiaGanesh(manager, tracker, context_state);
+  }
+
+  switch (context_state->gr_context_type()) {
+    case gpu::GrContextType::kNone:
+      // `kNone` signifies that the GPU process is being used only for WebGL via
+      // SwiftShader. Skia is not initialized and should never be used in this
+      // case but renderer/extension processes find out about software
+      // compositing fallback asynchronously. They could issue GPU work before
+      // finding out.
+      // TODO(crbug.com/335279173): This would never be reached if clients found
+      // out about compositing mode from the GPU process when they initialize a
+      // GPU channel.
+      return nullptr;
+    case gpu::GrContextType::kGL:
+    case gpu::GrContextType::kVulkan:
+      return ProduceSkiaGanesh(manager, tracker, context_state);
+    case gpu::GrContextType::kGraphiteMetal:
+    case gpu::GrContextType::kGraphiteDawn:
+      return ProduceSkiaGraphite(manager, tracker, context_state);
+      // NOTE: Do not add a default case to force any new types to be
+      // handled here on addition.
+  }
+
+  NOTREACHED();
 }
 
 std::unique_ptr<SkiaGaneshImageRepresentation>
@@ -179,25 +233,35 @@ SharedImageBacking::ProduceSkiaGanesh(
   return nullptr;
 }
 
+std::unique_ptr<SkiaGraphiteImageRepresentation>
+SharedImageBacking::ProduceSkiaGraphite(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker,
+    scoped_refptr<SharedContextState> context_state) {
+  return nullptr;
+}
+
 std::unique_ptr<DawnImageRepresentation> SharedImageBacking::ProduceDawn(
     SharedImageManager* manager,
     MemoryTypeTracker* tracker,
-    WGPUDevice device,
-    WGPUBackendType backend_type,
-    std::vector<WGPUTextureFormat> view_formats) {
+    const wgpu::Device& device,
+    wgpu::BackendType backend_type,
+    std::vector<wgpu::TextureFormat> view_formats,
+    scoped_refptr<SharedContextState> context_state) {
+  return nullptr;
+}
+
+std::unique_ptr<DawnBufferRepresentation> SharedImageBacking::ProduceDawnBuffer(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker,
+    const wgpu::Device& device,
+    wgpu::BackendType backend_type) {
   return nullptr;
 }
 
 std::unique_ptr<OverlayImageRepresentation> SharedImageBacking::ProduceOverlay(
     SharedImageManager* manager,
     MemoryTypeTracker* tracker) {
-  return nullptr;
-}
-
-std::unique_ptr<VaapiImageRepresentation> SharedImageBacking::ProduceVASurface(
-    SharedImageManager* manager,
-    MemoryTypeTracker* tracker,
-    VaapiDependenciesFactory* dep_factory) {
   return nullptr;
 }
 
@@ -213,18 +277,36 @@ std::unique_ptr<RasterImageRepresentation> SharedImageBacking::ProduceRaster(
   return nullptr;
 }
 
-std::unique_ptr<VideoDecodeImageRepresentation>
-SharedImageBacking::ProduceVideoDecode(SharedImageManager* manager,
-                                       MemoryTypeTracker* tracker,
-                                       VideoDecodeDevice device) {
+std::unique_ptr<VideoImageRepresentation> SharedImageBacking::ProduceVideo(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker,
+    VideoDevice device) {
   return nullptr;
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ENABLE_VULKAN)
+std::unique_ptr<VulkanImageRepresentation> SharedImageBacking::ProduceVulkan(
+    SharedImageManager* manager,
+    MemoryTypeTracker* tracker,
+    gpu::VulkanDeviceQueue* vulkan_device_queue,
+    gpu::VulkanImplementation& vulkan_impl,
+    bool needs_detiling) {
+  return nullptr;
+}
+#endif
+
+#if BUILDFLAG(IS_ANDROID)
 std::unique_ptr<LegacyOverlayImageRepresentation>
 SharedImageBacking::ProduceLegacyOverlay(SharedImageManager* manager,
                                          MemoryTypeTracker* tracker) {
   return nullptr;
+}
+#endif
+
+#if BUILDFLAG(IS_WIN)
+void SharedImageBacking::UpdateExternalFence(
+    scoped_refptr<gfx::D3DSharedFence> external_fence) {
+  NOTIMPLEMENTED_LOG_ONCE();
 }
 #endif
 
@@ -267,7 +349,7 @@ void SharedImageBacking::ReleaseRef(SharedImageRepresentation* representation) {
   DCHECK(is_ref_counted_);
 
   auto found = base::ranges::find(refs_, representation);
-  DCHECK(found != refs_.end());
+  CHECK(found != refs_.end(), base::NotFatalUntil::M130);
 
   // If the found representation is the first (owning) ref, free the attributed
   // memory.
@@ -365,9 +447,11 @@ ClearTrackingSharedImageBacking::ClearTrackingSharedImageBacking(
     const gfx::ColorSpace& color_space,
     GrSurfaceOrigin surface_origin,
     SkAlphaType alpha_type,
-    uint32_t usage,
+    gpu::SharedImageUsageSet usage,
+    std::string debug_label,
     size_t estimated_size,
-    bool is_thread_safe)
+    bool is_thread_safe,
+    std::optional<gfx::BufferUsage> buffer_usage)
     : SharedImageBacking(mailbox,
                          format,
                          size,
@@ -375,8 +459,10 @@ ClearTrackingSharedImageBacking::ClearTrackingSharedImageBacking(
                          surface_origin,
                          alpha_type,
                          usage,
+                         std::move(debug_label),
                          estimated_size,
-                         is_thread_safe) {}
+                         is_thread_safe,
+                         std::move(buffer_usage)) {}
 
 gfx::Rect ClearTrackingSharedImageBacking::ClearedRect() const {
   AutoLock auto_lock(this);
@@ -402,7 +488,18 @@ scoped_refptr<gfx::NativePixmap> SharedImageBacking::GetNativePixmap() {
   return nullptr;
 }
 
+gfx::GpuMemoryBufferHandle SharedImageBacking::GetGpuMemoryBufferHandle() {
+  // Reaching here is invalid since this method should be only called for
+  // backings which implements it,i.e., memory buffer handle should only be
+  // retrieved from the backings which supports native buffer or shared memory.
+  NOTREACHED();
+}
+
 bool SharedImageBacking::IsPurgeable() const {
+  return false;
+}
+
+bool SharedImageBacking::IsImportedFromExo() {
   return false;
 }
 

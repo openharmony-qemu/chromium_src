@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
@@ -13,30 +14,33 @@
 #include "base/memory/memory_pressure_listener.h"
 #include "base/memory/memory_pressure_monitor.h"
 #include "base/system/sys_info.h"
+#include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
-#include "components/viz/common/features.h"
-#ifdef OHOS_NWEB_EX
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
 #include "base/command_line.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "content/public/common/content_switches.h"
 #endif
-#if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
-#include "base/ohos/sys_info_utils.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/trace_event/trace_event.h"
 #endif
 
 namespace viz {
 namespace {
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_FLING)
 constexpr int kOhosFramesMax = 10;
 constexpr int kOhosFramesBase = 2;
 constexpr int kPhysicalMemoryBlockSize = 256;
 #endif
+
 const int kModeratePressurePercentage = 50;
 const int kCriticalPressurePercentage = 10;
-#if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
 const int kMaxNumberOfSavedFrames = 100000;
 #endif
 
@@ -98,28 +102,24 @@ void FrameEvictionManager::UnlockFrame(FrameEvictionManagerClient* frame) {
   }
 }
 
+void FrameEvictionManager::StartFrameCullingTimer() {
+  // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
+  // outlive it, and cancels the task in its destructor.
+  idle_frame_culling_timer_.Start(
+      FROM_HERE, kPeriodicCullingDelay,
+      base::BindOnce(&FrameEvictionManager::CullOldUnlockedFrames,
+                     base::Unretained(this)));
+}
+
 void FrameEvictionManager::RegisterUnlockedFrame(
     FrameEvictionManagerClient* frame) {
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
-#ifdef OHOS_NWEB_EX
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-           switches::kEnableNwebEx)) {
-#endif
-    if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling)) {
-      if (!idle_frames_culling_timer_.IsRunning()) {
-        // Unretained: `idle_frames_culling_timer_` is a member of `this`, doesn't
-        // outlive it, and cancels the task in its destructor.
-        idle_frames_culling_timer_.Start(
-            FROM_HERE, kPeriodicCullingDelay,
-            base::BindRepeating(&FrameEvictionManager::CullOldUnlockedFrames,
-                                base::Unretained(this)));
-      }
-    }
-#ifdef OHOS_NWEB_EX
+#if !BUILDFLAG(IS_ARKWEB)
+  if (!idle_frame_culling_timer_.IsRunning()) {
+    StartFrameCullingTimer();
   }
 #endif
 }
-
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
   int percentage = 100;
@@ -155,19 +155,26 @@ FrameEvictionManager::FrameEvictionManager()
       // If the amount of memory on the device is >= 3.5 GB, save up to 5
       // frames.
       base::SysInfo::AmountOfPhysicalMemoryMB() < 1024 * 3.5f ? 1 : 5;
-#elif BUILDFLAG(IS_OHOS)
-      std::min(kOhosFramesMax, kOhosFramesBase + (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
+#elif BUILDFLAG(ARKWEB_FLING)
+      std::min(kOhosFramesMax, kOhosFramesBase +
+          (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
 #else
       std::min(5, 2 + (base::SysInfo::AmountOfPhysicalMemoryMB() / 256));
 #endif
 
-#if (BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_DISCARD_BG_WEBPAGE))
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kMaxNumberOfSavedFrames)) {
+          switches::kMaxNumberOfSavedFrames)) {
     max_number_of_saved_frames_ = kMaxNumberOfSavedFrames;
   }
-
 #endif
+
+  // For WebView, we may not have a default task runner.
+  if (base::SingleThreadTaskRunner::HasCurrentDefault()) {
+    base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
+        this, "FrameEvictionManager",
+        base::SingleThreadTaskRunner::GetCurrentDefault());
+  }
 }
 
 void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
@@ -187,7 +194,15 @@ void FrameEvictionManager::CullUnlockedFrames(size_t saved_frame_limit) {
   }
 }
 
+#if BUILDFLAG(IS_ANDROID)
+void FrameEvictionManager::CullOldUnlockedFrames(
+    base::MemoryReductionTaskContext task_type) {
+  const bool should_cull_all =
+      task_type == base::MemoryReductionTaskContext::kProactive;
+#else
 void FrameEvictionManager::CullOldUnlockedFrames() {
+  const bool should_cull_all = false;
+#endif
   DCHECK(std::is_sorted(
       unlocked_frames_.begin(), unlocked_frames_.end(),
       [](const auto& a, const auto& b) { return a.second >= b.second; }));
@@ -198,9 +213,17 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
 
   auto now = clock_->NowTicks();
   while (!unlocked_frames_.empty() &&
-         now - unlocked_frames_.back().second >= kPeriodicCullingDelay) {
+         (should_cull_all ||
+          now - unlocked_frames_.back().second >= kPeriodicCullingDelay)) {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
+#if BUILDFLAG(IS_ARKWEB)
+    TRACE_EVENT0("viz",
+                 "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked "
+                 "frame because timeout");
+    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked "
+                 "frame because timeout";
+#endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again
     // later. This should be a rare case, so don't bother rescheduling earlier
@@ -212,8 +235,9 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
       break;
   }
 
-  if (unlocked_frames_.empty())
-    idle_frames_culling_timer_.Stop();
+  if (!unlocked_frames_.empty()) {
+    StartFrameCullingTimer();
+  }
 }
 
 void FrameEvictionManager::OnMemoryPressure(
@@ -223,10 +247,7 @@ void FrameEvictionManager::OnMemoryPressure(
       PurgeMemory(kModeratePressurePercentage);
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
-      if (base::FeatureList::IsEnabled(features::kAggressiveFrameCulling))
-        PurgeAllUnlockedFrames();
-      else
-        PurgeMemory(kCriticalPressurePercentage);
+      PurgeAllUnlockedFrames();
       break;
     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE:
       // No need to change anything when there is no pressure.
@@ -251,7 +272,7 @@ void FrameEvictionManager::PurgeAllUnlockedFrames() {
 void FrameEvictionManager::SetOverridesForTesting(
     scoped_refptr<base::SingleThreadTaskRunner> task_runner,
     const base::TickClock* clock) {
-  idle_frames_culling_timer_.SetTaskRunner(task_runner);
+  idle_frame_culling_timer_.SetTaskRunner(task_runner);
   clock_ = clock;
 }
 
@@ -267,6 +288,16 @@ void FrameEvictionManager::Unpause() {
     CullUnlockedFrames(pending_unlocked_frame_limit_.value());
     pending_unlocked_frame_limit_.reset();
   }
+}
+
+bool FrameEvictionManager::OnMemoryDump(
+    const base::trace_event::MemoryDumpArgs& args,
+    base::trace_event::ProcessMemoryDump* pmd) {
+  auto* dump = pmd->CreateAllocatorDump("frame_evictor");
+  dump->AddScalar("locked_frames", "count", locked_frames_.size());
+  dump->AddScalar("unlocked_frames", "count", unlocked_frames_.size());
+
+  return true;
 }
 
 }  // namespace viz

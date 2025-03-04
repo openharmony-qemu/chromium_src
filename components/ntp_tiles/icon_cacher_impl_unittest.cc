@@ -175,7 +175,7 @@ class IconCacherTestPopularSites : public IconCacherTestBase {
 #else
     base::PathService::Get(base::DIR_ASSETS, &pak_path);
 #endif
-#if !defined(OHOS_UNITTESTS)
+
     base::FilePath ui_test_pak_path;
     ASSERT_TRUE(base::PathService::Get(ui::UI_TEST_PAK, &ui_test_pak_path));
     ui::ResourceBundle::InitSharedInstanceWithPakPath(ui_test_pak_path);
@@ -183,7 +183,6 @@ class IconCacherTestPopularSites : public IconCacherTestBase {
     ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(
         pak_path.AppendASCII("components_tests_resources.pak"),
         ui::kScaleFactorNone);
-#endif
   }
 
   PopularSites::Site site_;

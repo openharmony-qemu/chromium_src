@@ -85,7 +85,7 @@ void BookmarkUpdateManager::RunUpdate() {
   ScheduleUpdate();
 
   std::vector<const bookmarks::BookmarkNode*> nodes =
-      GetAllShoppingBookmarks(bookmark_model_);
+      shopping_service_->GetAllShoppingBookmarks();
 
   if (nodes.empty()) {
     return;
@@ -141,7 +141,7 @@ void BookmarkUpdateManager::StartNextBatch() {
 void BookmarkUpdateManager::HandleOnDemandResponse(
     const int64_t bookmark_id,
     const GURL& url,
-    absl::optional<ProductInfo> info) {
+    std::optional<ProductInfo> info) {
   received_bookmark_updates_++;
   if (received_bookmark_updates_ >= expected_bookmark_updates_) {
     StartNextBatch();

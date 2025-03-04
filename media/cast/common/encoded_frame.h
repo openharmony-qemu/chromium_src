@@ -5,31 +5,20 @@
 #ifndef MEDIA_CAST_COMMON_ENCODED_FRAME_H_
 #define MEDIA_CAST_COMMON_ENCODED_FRAME_H_
 
-#include <cstdint>
-#include <string>
-
+#include "base/containers/heap_array.h"
 #include "base/time/time.h"
 #include "media/cast/cast_config.h"
 #include "media/cast/common/frame_id.h"
 #include "media/cast/common/rtp_time.h"
-#include "third_party/openscreen/src/cast/streaming/encoded_frame.h"
+#include "third_party/openscreen/src/cast/streaming/public/encoded_frame.h"
 
-namespace media {
-namespace cast {
+namespace media::cast {
 
 // A combination of metadata and data for one encoded frame.  This can contain
 // audio data or video data or other.
 struct EncodedFrame {
   EncodedFrame();
   virtual ~EncodedFrame();
-
-  // Convenience accessors to data as an array of uint8_t elements.
-  const uint8_t* bytes() const {
-    return reinterpret_cast<const uint8_t*>(std::data(data));
-  }
-  uint8_t* mutable_bytes() {
-    return reinterpret_cast<uint8_t*>(std::data(data));
-  }
 
   // Copies all data members except |data| to |dest|.
   // Does not modify |dest->data|.
@@ -69,10 +58,9 @@ struct EncodedFrame {
   uint16_t new_playout_delay_ms = 0;
 
   // The encoded signal data.
-  std::string data;
+  base::HeapArray<uint8_t> data;
 };
 
-}  // namespace cast
-}  // namespace media
+}  // namespace media::cast
 
 #endif  // MEDIA_CAST_COMMON_ENCODED_FRAME_H_

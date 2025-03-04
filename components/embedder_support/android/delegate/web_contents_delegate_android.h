@@ -20,6 +20,7 @@ class GURL;
 namespace content {
 class WebContents;
 class WebContentsDelegate;
+class NavigationHandle;
 struct NativeWebKeyboardEvent;
 struct OpenURLParams;
 }  // namespace content
@@ -43,13 +44,16 @@ enum WebContentsDelegateLogLevel {
 // as required.
 class WebContentsDelegateAndroid : public content::WebContentsDelegate {
  public:
-  WebContentsDelegateAndroid(JNIEnv* env, jobject obj);
+  WebContentsDelegateAndroid(JNIEnv* env,
+                             const jni_zero::JavaRef<jobject>& obj);
   ~WebContentsDelegateAndroid() override;
 
   // Overridden from WebContentsDelegate:
   content::WebContents* OpenURLFromTab(
       content::WebContents* source,
-      const content::OpenURLParams& params) override;
+      const content::OpenURLParams& params,
+      base::OnceCallback<void(content::NavigationHandle&)>
+          navigation_handle_callback) override;
   std::unique_ptr<content::ColorChooser> OpenColorChooser(
       content::WebContents* source,
       SkColor color,
@@ -64,9 +68,9 @@ class WebContentsDelegateAndroid : public content::WebContentsDelegate {
   void RendererUnresponsive(content::WebContents* source,
                             content::RenderWidgetHost* render_widget_host,
                             base::RepeatingClosure hang_monitor_restarter
-#if defined(OHOS_RENDERER_ANR_DUMP)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
                             ,
-                            content::RenderProcessNotRespondingReason reason
+                            content::RendererIsUnresponsiveReason reason
 #endif
 
                             ) override;
@@ -94,9 +98,8 @@ class WebContentsDelegateAndroid : public content::WebContentsDelegate {
                               int32_t line_no,
                               const std::u16string& source_id) override;
   void UpdateTargetURL(content::WebContents* source, const GURL& url) override;
-  bool HandleKeyboardEvent(
-      content::WebContents* source,
-      const content::NativeWebKeyboardEvent& event) override;
+  bool HandleKeyboardEvent(content::WebContents* source,
+                           const input::NativeWebKeyboardEvent& event) override;
   bool TakeFocus(content::WebContents* source, bool reverse) override;
   void ShowRepostFormWarningDialog(content::WebContents* source) override;
   bool ShouldBlockMediaRequest(const GURL& url) override;
@@ -124,6 +127,18 @@ class WebContentsDelegateAndroid : public content::WebContentsDelegate {
   int GetVirtualKeyboardHeight(content::WebContents* contents) override;
   blink::mojom::DisplayMode GetDisplayMode(
       const content::WebContents* web_contents) override;
+  void DidChangeCloseSignalInterceptStatus() override;
+  // Return true if the WebContents is presenting a java native view for the
+  // committed navigation entry. This is possible for chrome* URLs, such as
+  // an NTP. Callback is guaranteed to be dispatched asynchronously (with an
+  // empty bitmap if the capture fails) only if this returns true.
+  bool MaybeCopyContentAreaAsBitmap(
+      base::OnceCallback<void(const SkBitmap&)> callback) override;
+  SkBitmap MaybeCopyContentAreaAsBitmapSync() override;
+  void DidBackForwardTransitionAnimationChange() override;
+  content::BackForwardTransitionAnimationManager::FallbackUXConfig
+  GetBackForwardTransitionFallbackUXConfig() override;
+  void ContentsZoomChange(bool zoom_in) override;
 
  protected:
   base::android::ScopedJavaLocalRef<jobject> GetJavaDelegate(JNIEnv* env) const;

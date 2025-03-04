@@ -8,16 +8,12 @@
 #import "components/content_settings/core/common/content_settings.h"
 #import "components/content_settings/core/common/content_settings_types.h"
 #import "components/sync_preferences/testing_pref_service_syncable.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/content_settings/host_content_settings_map_factory.h"
-#import "ios/chrome/browser/ui/settings/utils/fake_observable_boolean.h"
+#import "ios/chrome/browser/content_settings/model/host_content_settings_map_factory.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/utils/fake_observable_boolean.h"
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/platform_test.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -26,8 +22,8 @@ const ContentSettingsType kTestContentSettingID = ContentSettingsType::POPUPS;
 class ContentSettingBackedBooleanTest : public PlatformTest {
  public:
   void SetUp() override {
-    TestChromeBrowserState::Builder test_cbs_builder;
-    chrome_browser_state_ = test_cbs_builder.Build();
+    TestProfileIOS::Builder builder;
+    profile_ = std::move(builder).Build();
     observable_boolean_ = [[ContentSettingBackedBoolean alloc]
         initWithHostContentSettingsMap:SettingsMap()
                              settingID:kTestContentSettingID
@@ -48,12 +44,11 @@ class ContentSettingBackedBooleanTest : public PlatformTest {
   }
 
   HostContentSettingsMap* SettingsMap() {
-    return ios::HostContentSettingsMapFactory::GetForBrowserState(
-        chrome_browser_state_.get());
+    return ios::HostContentSettingsMapFactory::GetForProfile(profile_.get());
   }
 
   sync_preferences::TestingPrefServiceSyncable* PrefService() {
-    return chrome_browser_state_->GetTestingPrefService();
+    return profile_->GetTestingPrefService();
   }
 
   ContentSettingBackedBoolean* GetObservableBoolean() {
@@ -68,7 +63,7 @@ class ContentSettingBackedBooleanTest : public PlatformTest {
   }
 
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> chrome_browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   ContentSettingBackedBoolean* observable_boolean_;
 };
 

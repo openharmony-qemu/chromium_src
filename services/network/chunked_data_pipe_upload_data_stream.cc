@@ -2,12 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "services/network/chunked_data_pipe_upload_data_stream.h"
 
 #include "base/check_op.h"
+#include "base/containers/span.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/location.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "mojo/public/c/system/types.h"
 #include "net/base/io_buffer.h"
@@ -17,7 +24,7 @@ namespace network {
 ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
     scoped_refptr<ResourceRequestBody> resource_request_body,
     mojo::PendingRemote<mojom::ChunkedDataPipeGetter> chunked_data_pipe_getter,
-#if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
     bool has_null_source,
     bool get_size_when_initialize)
 #else
@@ -28,25 +35,36 @@ ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
                             resource_request_body->identifier()),
       resource_request_body_(std::move(resource_request_body)),
       chunked_data_pipe_getter_(std::move(chunked_data_pipe_getter)),
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
       handle_watcher_(FROM_HERE,
                       mojo::SimpleWatcher::ArmingPolicy::MANUAL,
                       base::SequencedTaskRunner::GetCurrentDefault()),
       has_null_source_(has_null_source),
       get_size_when_initialize_(get_size_when_initialize) {
+#else
+      handle_watcher_(FROM_HERE,
+                      mojo::SimpleWatcher::ArmingPolicy::MANUAL,
+                      base::SequencedTaskRunner::GetCurrentDefault()) {
+#endif
   // TODO(yhirano): Turn this to a DCHECK once we find the root cause of
   // https://crbug.com/1156550.
   CHECK(chunked_data_pipe_getter_.is_bound());
-  #if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   if (!get_size_when_initialize) {
-#endif
     chunked_data_pipe_getter_.set_disconnect_handler(
         base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
                        base::Unretained(this)));
     chunked_data_pipe_getter_->GetSize(
         base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
                        base::Unretained(this)));
-#if defined(OHOS_SCHEME_HANDLER)
   }
+#else
+  chunked_data_pipe_getter_.set_disconnect_handler(
+      base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
+                     base::Unretained(this)));
+  chunked_data_pipe_getter_->GetSize(
+      base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
+                     base::Unretained(this)));
 #endif
 }
 
@@ -58,7 +76,7 @@ bool ChunkedDataPipeUploadDataStream::AllowHTTP1() const {
 
 int ChunkedDataPipeUploadDataStream::InitInternal(
     const net::NetLogWithSource& net_log) {
-#if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   if (get_size_when_initialize_) {
     chunked_data_pipe_getter_.set_disconnect_handler(
         base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
@@ -136,11 +154,11 @@ int ChunkedDataPipeUploadDataStream::ReadInternal(net::IOBuffer* buf,
                             base::Unretained(this)));
   }
 
-  uint32_t num_bytes = buf_len;
+  size_t num_bytes = base::checked_cast<size_t>(buf_len);
   if (size_ && num_bytes > *size_ - bytes_read_)
     num_bytes = *size_ - bytes_read_;
-  MojoResult rv =
-      data_pipe_->ReadData(buf->data(), &num_bytes, MOJO_READ_DATA_FLAG_NONE);
+  MojoResult rv = data_pipe_->ReadData(MOJO_READ_DATA_FLAG_NONE,
+                                       buf->span().first(num_bytes), num_bytes);
   if (rv == MOJO_RESULT_OK) {
     bytes_read_ += num_bytes;
     // Not needed for correctness, but this allows the consumer to send the
@@ -229,6 +247,9 @@ void ChunkedDataPipeUploadDataStream::OnSizeReceived(int32_t status,
     buf_len_ = 0;
     chunked_data_pipe_getter_.reset();
 
+    if (status_ < net::ERR_IO_PENDING) {
+      LOG(ERROR) << "OnSizeReceived failed with Error: " << status_;
+    }
     OnReadCompleted(status_);
 
     // |this| may have been deleted at this point.
@@ -246,8 +267,12 @@ void ChunkedDataPipeUploadDataStream::OnHandleReadable(MojoResult result) {
 
   int rv = ReadInternal(buf.get(), buf_len);
 
-  if (rv != net::ERR_IO_PENDING)
+  if (rv != net::ERR_IO_PENDING) {
+    if (rv < net::ERR_IO_PENDING) {
+      LOG(ERROR) << "OnHandleReadable failed with Error: " << rv;
+    }
     OnReadCompleted(rv);
+  }
 
   // |this| may have been deleted at this point.
 }
@@ -269,7 +294,7 @@ void ChunkedDataPipeUploadDataStream::EnableCache(size_t dst_window_size) {
 }
 
 void ChunkedDataPipeUploadDataStream::WriteToCacheIfNeeded(net::IOBuffer* buf,
-                                                           uint32_t num_bytes) {
+                                                           size_t num_bytes) {
   if (cache_state_ != CacheState::kActive)
     return;
 
@@ -305,7 +330,7 @@ int ChunkedDataPipeUploadDataStream::ReadFromCacheIfNeeded(net::IOBuffer* buf,
   return read_size;
 }
 
-#if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
 mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
 ChunkedDataPipeUploadDataStream::ReleaseChunkedDataPipeGetter() {
   return chunked_data_pipe_getter_.Unbind();

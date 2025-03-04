@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//device/vr/buildflags/buildflags.gni")
@@ -41,10 +42,10 @@ target(link_target_type, "child") {
     "blink_platform_impl.h",
     "browser_exposed_child_interfaces.cc",
     "browser_exposed_child_interfaces.h",
-    "child_histogram_fetcher_impl.cc",
-    "child_histogram_fetcher_impl.h",
     "child_process.cc",
     "child_process.h",
+    "child_process_synthetic_trial_syncer.cc",
+    "child_process_synthetic_trial_syncer.h",
     "child_thread_impl.cc",
     "child_thread_impl.h",
     "field_trial.cc",
@@ -62,16 +63,17 @@ target(link_target_type, "child") {
     "//gpu/ipc/client:client",
     "//ipc",
     "//services/service_manager/public/mojom:mojom_blink",
+    "//ui/base/mojom:ui_base_types",
   ]
 
   deps = [
     "//base",
     "//build/config/compiler:compiler_buildflags",
     "//cc/paint",
-    "//components/autofill/core/common:features",
     "//components/discardable_memory/client",
     "//components/discardable_memory/public/mojom",
-    "//components/power_scheduler",
+    "//components/metrics",
+    "//components/permissions:permissions_common",
     "//components/tracing:startup_tracing",
     "//components/variations",
     "//components/webcrypto",
@@ -94,6 +96,7 @@ target(link_target_type, "child") {
     "//services/tracing/public/cpp",
     "//services/tracing/public/cpp:traced_process",
     "//services/tracing/public/cpp/background_tracing:background_tracing",
+    "//services/webnn/public/mojom",
     "//skia",
     "//storage/common",
     "//third_party/blink/public:blink_headers",
@@ -101,6 +104,7 @@ target(link_target_type, "child") {
     "//third_party/blink/public:resources",
     "//third_party/blink/public:scaled_resources",
     "//third_party/blink/public/common",
+    "//third_party/blink/public/common:buildflags",
     "//third_party/blink/public/strings",
     "//third_party/ced",
     "//third_party/zlib/google:compression_utils",
@@ -115,10 +119,16 @@ target(link_target_type, "child") {
     "//v8",
   ]
 
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
   if (is_linux || is_chromeos) {
     sources += [
       "child_process_sandbox_support_impl_linux.cc",
       "child_process_sandbox_support_impl_linux.h",
+      "sandboxed_process_thread_type_handler.cc",
+      "sandboxed_process_thread_type_handler.h",
     ]
     deps += [
       "//components/services/font/public/cpp",

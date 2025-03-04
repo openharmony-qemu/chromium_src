@@ -790,7 +790,6 @@ LayerAnimationElement::ToAnimatableProperty(cc::TargetProperty::Type property) {
       return OPACITY;
     default:
       NOTREACHED();
-      return AnimatableProperty();
   }
 }
 
@@ -843,7 +842,6 @@ std::string LayerAnimationElement::AnimatablePropertiesToString(
           break;
         case SENTINEL:
           NOTREACHED();
-          break;
       }
       property_count++;
     }

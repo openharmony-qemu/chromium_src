@@ -6,6 +6,7 @@ package org.chromium.ui.dragdrop;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -34,7 +35,7 @@ public class DropDataContentProvider extends ContentProvider {
      */
     @Override
     public boolean onCreate() {
-        // TODO(crbug.com/1302383): Lazily create DropPipeDataWriter in #openFile.
+        // TODO(crbug.com/40825314): Lazily create DropPipeDataWriter in #openFile.
         mDropDataProviderImpl = new DropDataProviderImpl();
         return true;
     }
@@ -50,12 +51,22 @@ public class DropDataContentProvider extends ContentProvider {
     }
 
     @Override
+    public AssetFileDescriptor openAssetFile(Uri uri, String mode)
+            throws FileNotFoundException, SecurityException {
+        return mDropDataProviderImpl.openAssetFile(this, uri, mode);
+    }
+
+    @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         return mDropDataProviderImpl.openFile(this, uri);
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         return mDropDataProviderImpl.query(uri, projection);
     }

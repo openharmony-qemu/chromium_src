@@ -108,7 +108,7 @@ class CONTENT_EXPORT ServiceWorkerNewScriptLoader final
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override;
+      const std::optional<GURL>& new_url) override;
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
   void PauseReadingBodyFromNet() override;
@@ -119,9 +119,10 @@ class CONTENT_EXPORT ServiceWorkerNewScriptLoader final
   void OnReceiveResponse(
       network::mojom::URLResponseHeadPtr response_head,
       mojo::ScopedDataPipeConsumerHandle body,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override;
-#if BUILDFLAG(IS_OHOS)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+      std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override {}
 #endif
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
@@ -167,7 +168,7 @@ class CONTENT_EXPORT ServiceWorkerNewScriptLoader final
                  uint32_t bytes_available);
   void OnWriteDataComplete(
       scoped_refptr<network::MojoToNetPendingBuffer> pending_buffer,
-      uint32_t bytes_written,
+      size_t bytes_written,
       net::Error error);
 
   // This is the last method that is called on this class. Notifies the final

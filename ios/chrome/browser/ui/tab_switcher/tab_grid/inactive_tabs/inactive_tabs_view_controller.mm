@@ -4,16 +4,12 @@
 
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_view_controller.h"
 
-#import "ios/chrome/browser/tabs/inactive_tabs/features.h"
-#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_view_controller.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_grid_view_controller.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_grid_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface InactiveTabsViewController () <UINavigationBarDelegate>
 
@@ -35,9 +31,8 @@
   CHECK(IsInactiveTabsAvailable());
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _gridViewController = [[GridViewController alloc] init];
+    _gridViewController = [[InactiveGridViewController alloc] init];
     _gridViewController.theme = GridThemeLight;
-    _gridViewController.mode = TabGridModeInactive;
   }
   return self;
 }
@@ -107,7 +102,8 @@
                         }];
   _closeAllInactiveButton =
       [[UIBarButtonItem alloc] initWithPrimaryAction:closeAllInactiveAction];
-  _closeAllInactiveButton.accessibilityIdentifier = kInactiveTabGridIdentifier;
+  _closeAllInactiveButton.accessibilityIdentifier =
+      kInactiveTabGridCloseAllButtonIdentifier;
   UIBarButtonItem* flexibleSpace = [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
                            target:nil
@@ -121,8 +117,11 @@
       CGRectGetMaxY(_navigationBar.frame) - CGRectGetMinY(self.view.bounds);
   CGFloat bottomInset =
       CGRectGetMaxY(self.view.bounds) - CGRectGetMinY(_bottomBar.frame);
-  _gridViewController.gridView.contentInset =
-      UIEdgeInsetsMake(topInset, 0, bottomInset, 0);
+  CGFloat leftInset = self.view.safeAreaInsets.left;
+  CGFloat rightInset = self.view.safeAreaInsets.right;
+
+  _gridViewController.contentInsets =
+      UIEdgeInsetsMake(topInset, leftInset, bottomInset, rightInset);
 }
 
 - (void)viewWillAppear:(BOOL)animated {

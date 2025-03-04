@@ -10,10 +10,12 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_hardware_buffer_fence_sync.h"
 #endif
+#include "arkweb/build/features/features.h"
 #include "gpu/gpu_gles2_export.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gl/gl_bindings.h"
-#if BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #endif
 
@@ -27,8 +29,7 @@ namespace gpu {
 class TextureOwner;
 class TextureBase;
 
-// This class is a specialized GLImage that lets SharedImageVideo draw video
-// frames.
+// This class lets AndroidVideoImageBacking draw video frames.
 class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
     : public base::RefCounted<StreamTextureSharedImageInterface> {
  public:
@@ -83,7 +84,7 @@ class GPU_GLES2_EXPORT StreamTextureSharedImageInterface
   GetAHardwareBuffer() = 0;
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual std::unique_ptr<ScopedNativeBufferFenceSync> GetNativeBuffer() = 0;
 #endif
 

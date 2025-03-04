@@ -2,30 +2,33 @@
 <grit-part>
   <!-- ohos blocking page-->
   <message name="IDS_OHOS_BLOCK_PAGE_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unsafe">
-   Warning
+   Note
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_INFO_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unavaiable">
-   This page cannot be accessed.
+   Website blocked
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is unavaiable">
-   Beware of online fraud.
+   Beware of fraud
+  </message>
+  <message name="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL contains risky content">
+   Harmful content ahead
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE" use_name_for_id="true" desc="The title of the block page shown when the requested URL is restricted.">
-   This page is restricted from accessing.
+   Access restricted
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-   According the laws and regulations and complaints, this page contains illegal or illegal content and has been stopped.
+   This site can't be accessed because it contains illegal or prohibited content.
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-   The web page you visit is at risk of fraud. Please pay attention to the security of personal information and property.
+   This site may try to scam you. Please protect your personal information.
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY" use_name_for_id="true" desc="Message informing the user this website is illegal and cann't access it">
-    The web page you visit has security risks. Please pay attention to the security of personal information and property.
+   This site is not secure. Please protect your personal information.
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED" use_name_for_id="true" desc="Go back">
-   BACK
+   Back
   </message>
   <message name="IDS_OHOS_BLOCK_PAGE_PROCEED" use_name_for_id="true" desc="Continue to the site anyway">
-   CONTINUE
+   Continue
   </message>
 </grit-part>

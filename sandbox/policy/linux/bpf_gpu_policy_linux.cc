@@ -78,6 +78,11 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
 #endif
     case __NR_getdents64:
     case __NR_ioctl:
+#if BUILDFLAG(IS_OHOS)
+    case __NR_openat:
+    case __NR_faccessat:
+    case __NR_newfstatat:
+#endif
       return Allow();
 #if defined(__i386__) || defined(__x86_64__) || defined(__mips__)
     // The Nvidia driver uses flags not in the baseline policy

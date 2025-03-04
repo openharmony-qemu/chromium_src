@@ -5,27 +5,34 @@
 #import "ios/chrome/browser/ui/post_restore_signin/post_restore_signin_provider.h"
 
 #import "base/check_op.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/feature_engagement/public/feature_constants.h"
 #import "components/signin/public/identity_manager/account_info.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/promos_manager/constants.h"
-#import "ios/chrome/browser/promos_manager/promo_config.h"
+#import "components/signin/public/identity_manager/identity_manager.h"
+#import "components/sync/service/sync_service.h"
+#import "components/sync/service/sync_user_settings.h"
+#import "ios/chrome/browser/promos_manager/model/constants.h"
+#import "ios/chrome/browser/promos_manager/model/promo_config.h"
+#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider_interface.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/public/commands/show_signin_command.h"
-#import "ios/chrome/browser/signin/signin_util.h"
-#import "ios/chrome/browser/ui/post_restore_signin/features.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
+#import "ios/chrome/browser/signin/model/signin_util.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
+#import "ios/chrome/browser/ui/authentication/signin/signin_constants.h"
 #import "ios/chrome/browser/ui/post_restore_signin/metrics.h"
 #import "ios/chrome/browser/ui/post_restore_signin/post_restore_signin_view_controller.h"
 #import "ios/chrome/common/ui/promo_style/promo_style_view_controller.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/device_form_factor.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface PostRestoreSignInProvider ()
 
@@ -35,22 +42,29 @@
 // Returns the given name of the last account that was signed in pre-restore.
 @property(readonly) NSString* userGivenName;
 
-// Local state is used to retrieve and/or clear the pre-restore identity.
-@property(nonatomic, assign) PrefService* localState;
+// Profile pref used to retrieve and/or clear the pre-restore identity.
+@property(nonatomic, assign) PrefService* prefService;
 
 @end
 
 @implementation PostRestoreSignInProvider {
-  PromoStyleViewController* _viewController;
-  absl::optional<AccountInfo> _accountInfo;
+  raw_ptr<syncer::SyncUserSettings> _syncUserSettings;
+  std::optional<AccountInfo> _accountInfo;
+  bool _historySyncEnabled;
+  raw_ptr<Browser> _browser;
 }
 
 #pragma mark - Initializers
 
-- (instancetype)init {
-  if (self = [super init]) {
-    _localState = GetApplicationContext()->GetLocalState();
-    _accountInfo = GetPreRestoreIdentity(_localState);
+- (instancetype)initForBrowser:(Browser*)browser {
+  if ((self = [super init])) {
+    _browser = browser;
+    _syncUserSettings =
+        SyncServiceFactory::GetForProfile(_browser->GetProfile())
+            ->GetUserSettings();
+    _prefService = browser->GetProfile()->GetPrefs();
+    _accountInfo = GetPreRestoreIdentity(_prefService);
+    _historySyncEnabled = GetPreRestoreHistorySyncEnabled(_prefService);
   }
   return self;
 }
@@ -69,42 +83,28 @@
 // Conditionally returns the promo identifier (promos_manager::Promo) based on
 // which variation of the Post Restore Sign-in Promo is currently active.
 - (promos_manager::Promo)identifier {
-  post_restore_signin::features::PostRestoreSignInType promoType =
-      post_restore_signin::features::CurrentPostRestoreSignInType();
-
-  // PostRestoreSignInProvider should not exist unless the feature
-  // `kIOSNewPostRestoreExperience` is enabled. Therefore, `promoType` should
-  // never be `kDisabled` here.
-  DCHECK_NE(promoType,
-            post_restore_signin::features::PostRestoreSignInType::kDisabled);
-
-  if (promoType ==
-      post_restore_signin::features::PostRestoreSignInType::kFullscreen) {
-    return promos_manager::Promo::PostRestoreSignInFullscreen;
-  } else if (promoType ==
-             post_restore_signin::features::PostRestoreSignInType::kAlert) {
-    return promos_manager::Promo::PostRestoreSignInAlert;
-  }
-
-  // PostRestoreSignInProvider should not exist unless the feature
-  // `kIOSNewPostRestoreExperience` is enabled. Therefore, this code path should
-  // never be reached.
-  NOTREACHED();
-
-  // Returns the fullscreen, FRE-like promo as the default.
-  return promos_manager::Promo::PostRestoreSignInFullscreen;
+  return promos_manager::Promo::PostRestoreSignInAlert;
 }
 
 #pragma mark - StandardPromoAlertHandler
 
 - (void)standardPromoAlertDefaultAction {
+  base::UmaHistogramEnumeration(kIOSPostRestoreSigninChoiceHistogram,
+                                IOSPostRestoreSigninChoice::Continue);
+  ClearPreRestoreIdentity(_prefService);
+
+  if ([self isSignedIn]) {
+    // The user has signed in after the promo was presented, so sign-in has
+    // already completed.
+    return;
+  }
   [self showSignin];
 }
 
 - (void)standardPromoAlertCancelAction {
   base::UmaHistogramEnumeration(kIOSPostRestoreSigninChoiceHistogram,
                                 IOSPostRestoreSigninChoice::Dismiss);
-  ClearPreRestoreIdentity(_localState);
+  ClearPreRestoreIdentity(_prefService);
 }
 
 #pragma mark - StandardPromoAlertProvider
@@ -141,44 +141,6 @@
       IDS_IOS_POST_RESTORE_SIGN_IN_ALERT_PROMO_CANCEL_ACTION);
 }
 
-#pragma mark - StandardPromoViewProvider
-
-- (PromoStyleViewController*)viewController {
-  if (_viewController)
-    return _viewController;
-
-  _viewController = [[PostRestoreSignInViewController alloc]
-      initWithAccountInfo:_accountInfo.value()];
-
-  return _viewController;
-}
-
-#pragma mark - StandardPromoActionHandler
-
-// The "Primary Action" was touched.
-- (void)standardPromoPrimaryAction {
-  [self.viewController dismissViewControllerAnimated:YES
-                                          completion:^{
-                                            [self showSignin];
-                                          }];
-}
-
-// The "Dismiss" button was touched. This same dismiss handler will be used for
-// two promo variations:
-//
-// (Variation #1) A fullscren, FRE-like promo, where the dismiss button says
-// "Don't Sign In".
-//
-// (Variation #2) A native iOS alert promo, where the dismiss button says
-// "Cancel".
-//
-// In both variations, the same dismiss functionality is desired.
-- (void)standardPromoDismissAction {
-  base::UmaHistogramEnumeration(kIOSPostRestoreSigninChoiceHistogram,
-                                IOSPostRestoreSigninChoice::Dismiss);
-  ClearPreRestoreIdentity(_localState);
-}
-
 #pragma mark - Internal
 
 // Returns the user's pre-restore given name.
@@ -197,22 +159,41 @@
   return base::SysUTF8ToNSString(_accountInfo->email);
 }
 
+// Shows the signin / sync UI flow.
 - (void)showSignin {
   DCHECK(self.handler);
 
-  base::UmaHistogramEnumeration(kIOSPostRestoreSigninChoiceHistogram,
-                                IOSPostRestoreSigninChoice::Continue);
-  ClearPreRestoreIdentity(_localState);
-
+  __weak __typeof(self) weakSelf = self;
+  ShowSigninCommandCompletionCallback completion =
+      ^(SigninCoordinatorResult result, SigninCompletionInfo* completionInfo) {
+        if (result == SigninCoordinatorResultSuccess) {
+          [weakSelf signinDone];
+        }
+      };
   ShowSigninCommand* command = [[ShowSigninCommand alloc]
-      initWithOperation:AuthenticationOperationReauthenticate
+      initWithOperation:AuthenticationOperation::kResignin
                identity:nil
             accessPoint:signin_metrics::AccessPoint::
                             ACCESS_POINT_POST_DEVICE_RESTORE_SIGNIN_PROMO
             promoAction:signin_metrics::PromoAction::
                             PROMO_ACTION_NO_SIGNIN_PROMO
-               callback:nil];
+             completion:completion];
   [self.handler showSignin:command];
+}
+
+- (void)signinDone {
+  _syncUserSettings->SetSelectedType(syncer::UserSelectableType::kHistory,
+                                     _historySyncEnabled);
+  _syncUserSettings->SetSelectedType(syncer::UserSelectableType::kTabs,
+                                     _historySyncEnabled);
+}
+
+// Returns true if the user is signed-in.
+- (bool)isSignedIn {
+  CoreAccountInfo primaryAccount =
+      IdentityManagerFactory::GetForProfile(_browser->GetProfile())
+          ->GetPrimaryAccountInfo(signin::ConsentLevel::kSignin);
+  return !primaryAccount.IsEmpty();
 }
 
 @end

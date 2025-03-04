@@ -12,9 +12,9 @@
 #include "ash/wm/desks/templates/saved_desk_item_view.h"
 #include "ash/wm/desks/templates/saved_desk_name_view.h"
 #include "ash/wm/overview/overview_controller.h"
-#include "ash/wm/overview/overview_highlight_controller.h"
 #include "ash/wm/overview/overview_session.h"
 #include "base/i18n/string_compare.h"
+#include "base/memory/raw_ptr.h"
 #include "base/ranges/algorithm.h"
 #include "third_party/icu/source/i18n/unicode/coll.h"
 #include "ui/accessibility/ax_enums.mojom-shared.h"
@@ -25,7 +25,6 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/transform_util.h"
 #include "ui/views/animation/animation_builder.h"
-#include "ui/views/animation/bounds_animator.h"
 #include "ui/views/widget/widget.h"
 #include "ui/wm/core/window_util.h"
 
@@ -106,8 +105,8 @@ void SavedDeskGridView::SortEntries(const base::Uuid& order_first_uuid) {
       rest, grid_items_.end(),
       [&collator](const SavedDeskItemView* a, const SavedDeskItemView* b) {
         return base::i18n::CompareString16WithCollator(
-                   *collator, a->name_view()->GetAccessibleName(),
-                   b->name_view()->GetAccessibleName()) < 0;
+                   *collator, a->name_view()->GetText(),
+                   b->name_view()->GetText()) < 0;
       });
 
   // A11y traverses views based on the order of the children, so we need to
@@ -121,11 +120,11 @@ void SavedDeskGridView::SortEntries(const base::Uuid& order_first_uuid) {
 
   if (bounds_animator_.IsAnimating())
     bounds_animator_.Cancel();
-  Layout();
+  DeprecatedLayoutImmediately();
 }
 
 void SavedDeskGridView::AddOrUpdateEntries(
-    const std::vector<const DeskTemplate*>& entries,
+    const std::vector<raw_ptr<const DeskTemplate, VectorExperimental>>& entries,
     const base::Uuid& order_first_uuid,
     bool animate) {
   std::vector<SavedDeskItemView*> new_grid_items;
@@ -147,19 +146,17 @@ void SavedDeskGridView::AddOrUpdateEntries(
 
   SortEntries(order_first_uuid);
 
+  // The preferred size of `SavedDeskGridView` is related to the number of
+  // items. Here our quantities may have changed which means the preferred size
+  // has period.
+  PreferredSizeChanged();
+
   if (animate)
     AnimateGridItems(new_grid_items);
 }
 
 void SavedDeskGridView::DeleteEntries(const std::vector<base::Uuid>& uuids,
                                       bool delete_animation) {
-  OverviewHighlightController* highlight_controller =
-      Shell::Get()
-          ->overview_controller()
-          ->overview_session()
-          ->highlight_controller();
-  DCHECK(highlight_controller);
-
   for (const base::Uuid& uuid : uuids) {
     auto iter = base::ranges::find(grid_items_, uuid, &SavedDeskItemView::uuid);
 
@@ -167,8 +164,6 @@ void SavedDeskGridView::DeleteEntries(const std::vector<base::Uuid>& uuids,
       continue;
 
     SavedDeskItemView* grid_item = *iter;
-    highlight_controller->OnViewDestroyingOrDisabling(grid_item);
-    highlight_controller->OnViewDestroyingOrDisabling(grid_item->name_view());
 
     // Performs an animation of changing the deleted grid item opacity
     // from 1 to 0 and scales down to `kAddOrDeleteItemScale`. `old_layer_tree`
@@ -201,14 +196,15 @@ bool SavedDeskGridView::IsSavedDeskNameBeingModified() const {
   if (!GetWidget()->IsActive())
     return false;
 
-  for (auto* grid_item : grid_items_) {
+  for (ash::SavedDeskItemView* grid_item : grid_items_) {
     if (grid_item->IsNameBeingModified())
       return true;
   }
   return false;
 }
 
-gfx::Size SavedDeskGridView::CalculatePreferredSize() const {
+gfx::Size SavedDeskGridView::CalculatePreferredSize(
+    const views::SizeBounds& available_size) const {
   if (grid_items_.empty())
     return gfx::Size();
 
@@ -224,7 +220,7 @@ gfx::Size SavedDeskGridView::CalculatePreferredSize() const {
                    rows * item_height + (rows - 1) * kSaveDeskPaddingDp);
 }
 
-void SavedDeskGridView::Layout() {
+void SavedDeskGridView::Layout(PassKey) {
   if (grid_items_.empty())
     return;
 
@@ -326,7 +322,7 @@ void SavedDeskGridView::AnimateGridItems(
   }
 }
 
-BEGIN_METADATA(SavedDeskGridView, views::View)
+BEGIN_METADATA(SavedDeskGridView)
 END_METADATA
 
 }  // namespace ash

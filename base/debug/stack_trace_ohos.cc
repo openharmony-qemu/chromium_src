@@ -1,26 +1,20 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "base/debug/stack_trace.h"
-
-#include <stddef.h>
 #include <unwind.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <ostream>
 
 #include "base/debug/proc_maps_linux.h"
+#include "base/debug/stack_trace.h"
 #include "base/logging.h"
 #include "base/stl_util.h"
+#include "base/strings/strcat.h"
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_restrictions.h"
-#include "third_party/bounds_checking_function/include/securec.h"
-
-#if defined(USE_SYMBOLIZE)
-#include "base/posix/eintr_wrapper.h"
-#include "base/third_party/symbolize/symbolize.h"
-#endif
 
 #ifdef __LP64__
 #define FMT_ADDR "0x%016lx"
@@ -54,17 +48,16 @@ _Unwind_Reason_Code TraceStackFrame(_Unwind_Context* context, void* arg) {
   }
 
   state->frames[state->frame_count++] = ip;
-  if (state->frame_count >= state->max_depth)
+  if (state->frame_count >= state->max_depth) {
     return _URC_END_OF_STACK;
+  }
   return _URC_NO_REASON;
 }
 
-#if !defined(USE_SYMBOLIZE)
 bool EndsWith(const std::string& s, const std::string& suffix) {
   return s.size() >= suffix.size() &&
          s.substr(s.size() - suffix.size(), suffix.size()) == suffix;
 }
-#endif
 
 }  // namespace
 
@@ -75,8 +68,9 @@ namespace internal {
 char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   // Make sure we can write at least one NUL byte.
   size_t n = 1;
-  if (n > sz)
+  if (n > sz) {
     return nullptr;
+  }
 
   if (base < 2 || base > 16) {
     buf[0] = '\000';
@@ -114,8 +108,9 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
     *ptr++ = "0123456789abcdef"[j % base];
     j /= base;
 
-    if (padding > 0)
+    if (padding > 0) {
       padding--;
+    }
   } while (j > 0 || padding > 0);
 
   // Terminate the output with a NUL character.
@@ -132,143 +127,47 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
   }
   return buf;
 }
-} //namespace internal
-
-#if defined(USE_SYMBOLIZE)
-
-class BacktraceOutputHandler {
- public:
-  virtual void HandleOutput(const char* output) = 0;
-
- protected:
-  virtual ~BacktraceOutputHandler() = default;
-};
-
-void OutputPointer(void* pointer, BacktraceOutputHandler* handler) {
-  // This should be more than enough to store a 64-bit number in hex:
-  // 16 hex digits + 1 for null-terminator.
-  char buf[17] = { '\0' };
-  handler->HandleOutput("0x");
-  internal::itoa_r(reinterpret_cast<intptr_t>(pointer),
-                   buf, sizeof(buf), 16, 12);
-  handler->HandleOutput(buf);
-}
-
-void OutputFrameId(intptr_t frame_id, BacktraceOutputHandler* handler) {
-  // Max unsigned 64-bit number in decimal has 20 digits (18446744073709551615).
-  // Hence, 30 digits should be more than enough to represent it in decimal
-  // (including the null-terminator).
-  char buf[30] = { '\0' };
-  handler->HandleOutput("#");
-  internal::itoa_r(frame_id, buf, sizeof(buf), 10, 1);
-  handler->HandleOutput(buf);
-}
-
-void PrintToStderr(const char* output) {
-  // NOTE: This code MUST be async-signal safe (it's used by in-process
-  // stack dumping signal handler). NO malloc or stdio is allowed here.
-  ignore_result(HANDLE_EINTR(write(STDERR_FILENO, output, strlen(output))));
-  //LOG(ERROR) << output;
-}
-
-class PrintBacktraceOutputHandler : public BacktraceOutputHandler {
- public:
-  PrintBacktraceOutputHandler() = default;
-
-  void HandleOutput(const char* output) override {
-    // NOTE: This code MUST be async-signal safe (it's used by in-process
-    // stack dumping signal handler). NO malloc or stdio is allowed here.
-    PrintToStderr(output);
-  }
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(PrintBacktraceOutputHandler);
-};
-
-class StreamBacktraceOutputHandler : public BacktraceOutputHandler {
- public:
-  explicit StreamBacktraceOutputHandler(std::ostream* os) : os_(os) {
-  }
-
-  void HandleOutput(const char* output) override { (*os_) << output; }
-
- private:
-  std::ostream* os_;
-
-  DISALLOW_COPY_AND_ASSIGN(StreamBacktraceOutputHandler);
-};
-
-void ProcessBacktrace(void* const* trace,
-                      size_t size,
-                      const char* prefix_string,
-                      BacktraceOutputHandler* handler) {
-// NOTE: This code MUST be async-signal safe (it's used by in-process
-// stack dumping signal handler). NO malloc or stdio is allowed here.
-
-  for (size_t i = 0; i < size; ++i) {
-    if (prefix_string)
-      handler->HandleOutput(prefix_string);
-
-    OutputFrameId(i, handler);
-    handler->HandleOutput(" ");
-    OutputPointer(trace[i], handler);
-    handler->HandleOutput(" ");
-
-    char buf[1024] = { '\0' };
-
-    // Subtract by one as return address of function may be in the next
-    // function when a function is annotated as noreturn.
-    void* address = static_cast<char*>(trace[i]) - 1;
-    if (google::Symbolize(address, buf, sizeof(buf)))
-      handler->HandleOutput(buf);
-    else
-      handler->HandleOutput("<unknown>");
-
-    handler->HandleOutput("\n");
-  }
-}
-
-#endif // defined (USE_SYMBOLIZE)
+}  // namespace internal
 
 bool EnableInProcessStackDumping() {
-  // When running in an application, our code typically expects SIGPIPE
-  // to be ignored.  Therefore, when testing that same code, it should run
-  // with SIGPIPE ignored as well.
-  // TODO(phajdan.jr): De-duplicate this SIGPIPE code.
   struct sigaction action;
-  memset_s(&action, sizeof(action), 0, sizeof(action));
+  std::fill(reinterpret_cast<unsigned char*>(&action),
+            reinterpret_cast<unsigned char*>(&action) + sizeof(action), 0);
   action.sa_handler = SIG_IGN;
   sigemptyset(&action.sa_mask);
   return (sigaction(SIGPIPE, &action, NULL) == 0);
 }
 
-size_t CollectStackTrace(void** trace, size_t count) {
-  StackCrawlState state(reinterpret_cast<uintptr_t*>(trace), count);
+size_t CollectStackTrace(span<const void*> trace) {
+  StackCrawlState state(reinterpret_cast<uintptr_t*>(trace.data()),
+                        trace.size());
   _Unwind_Backtrace(&TraceStackFrame, &state);
   return state.frame_count;
 }
 
-void StackTrace::PrintWithPrefix(const char* prefix_string) const {
-#if !defined(USE_SYMBOLIZE)
+// static
+void StackTrace::PrintMessageWithPrefix(cstring_view prefix_string,
+                                        cstring_view message) {
+  if (!prefix_string.empty()) {
+    LOG(ERROR) << StrCat({prefix_string, message}).c_str();
+  } else {
+    LOG(ERROR) << message.c_str();
+  }
+}
+
+void StackTrace::PrintWithPrefixImpl(cstring_view prefix_string) const {
   std::string backtrace = ToStringWithPrefix(prefix_string);
-  LOG(WARNING) << "backtrace:\n" << backtrace.c_str();
-#else
-  PrintBacktraceOutputHandler handler;
-  ProcessBacktrace(trace_, count_, prefix_string, &handler);
-#endif // !defined(USE_SYMBOLIZE)
+  LOG(ERROR) << backtrace;
 }
 
 // NOTE: Native libraries in APKs are stripped before installing. Print out the
 // relocatable address and library names so host computers can use tools to
 // symbolize and demangle (e.g., addr2line, c++filt).
-void StackTrace::OutputToStreamWithPrefix(std::ostream* os,
-                                          const char* prefix_string) const {
+void StackTrace::OutputToStreamWithPrefixImpl(
+    std::ostream* os,
+    cstring_view prefix_string) const {
   std::string proc_maps;
   std::vector<MappedMemoryRegion> regions;
-#if defined(USE_SYMBOLIZE)
-  StreamBacktraceOutputHandler handler(os);
-  ProcessBacktrace(trace_, count_, prefix_string, &handler);
-#else
   // Allow IO to read /proc/self/maps. Reading this file doesn't hit the disk
   // since it lives in procfs, and this is currently used to print a stack trace
   // on fatal log messages in debug builds only. If the restriction is enabled
@@ -295,8 +194,7 @@ void StackTrace::OutputToStreamWithPrefix(std::ostream* os,
       ++iter;
     }
 
-    if (prefix_string)
-      *os << prefix_string;
+    *os << prefix_string;
 
     // Adjust absolute address to be an offset within the mapped region, to
     // match the format dumped by Android's crash output.
@@ -319,7 +217,6 @@ void StackTrace::OutputToStreamWithPrefix(std::ostream* os,
 
     *os << "\n";
   }
-#endif // defined(USE_SYMBOLIZE)
 }
 
 }  // namespace debug

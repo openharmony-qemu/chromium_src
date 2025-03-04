@@ -14,15 +14,17 @@
 #include "base/native_library.h"
 #include "base/ranges/algorithm.h"
 #include "gpu/config/skia_limits.h"
-#include "gpu/vulkan/init/gr_vk_memory_allocator_impl.h"
+#include "gpu/vulkan/init/skia_vk_memory_allocator_impl.h"
 #include "gpu/vulkan/init/vulkan_factory.h"
 #include "gpu/vulkan/vulkan_device_queue.h"
 #include "gpu/vulkan/vulkan_fence_helper.h"
 #include "gpu/vulkan/vulkan_function_pointers.h"
 #include "gpu/vulkan/vulkan_util.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
+#include "third_party/skia/include/gpu/vk/VulkanBackendContext.h"
+#include "third_party/skia/include/gpu/vk/VulkanExtensions.h"
+#include "third_party/skia/include/gpu/vk/VulkanTypes.h"
 
 namespace android_webview {
 
@@ -129,18 +131,18 @@ bool AwVulkanContextProvider::Globals::Initialize(
       params->graphics_queue_index, std::move(device_extensions));
 
   // Create our Skia GrContext.
-  GrVkGetProc get_proc = [](const char* proc_name, VkInstance instance,
-                            VkDevice device) {
+  skgpu::VulkanGetProc get_proc = [](const char* proc_name, VkInstance instance,
+                                     VkDevice device) {
     return device ? vkGetDeviceProcAddr(device, proc_name)
                   : vkGetInstanceProcAddr(instance, proc_name);
   };
-  GrVkExtensions vk_extensions;
+  skgpu::VulkanExtensions vk_extensions;
   vk_extensions.init(get_proc, params->instance, params->physical_device,
                      params->enabled_instance_extension_names_length,
                      params->enabled_instance_extension_names,
                      params->enabled_device_extension_names_length,
                      params->enabled_device_extension_names);
-  GrVkBackendContext backend_context{
+  skgpu::VulkanBackendContext backend_context{
       .fInstance = params->instance,
       .fPhysicalDevice = params->physical_device,
       .fDevice = params->device,
@@ -150,11 +152,11 @@ bool AwVulkanContextProvider::Globals::Initialize(
       .fVkExtensions = &vk_extensions,
       .fDeviceFeatures = params->device_features,
       .fDeviceFeatures2 = params->device_features_2,
-      .fMemoryAllocator = gpu::CreateGrVkMemoryAllocator(device_queue.get()),
+      .fMemoryAllocator =
+          gpu::CreateSkiaVulkanMemoryAllocator(device_queue.get()),
       .fGetProc = get_proc,
-      .fOwnsInstanceAndDevice = false,
   };
-  gr_context = GrDirectContext::MakeVulkan(backend_context);
+  gr_context = GrDirectContexts::MakeVulkan(backend_context);
   if (!gr_context) {
     LOG(ERROR) << "Unable to initialize GrContext.";
     return false;
@@ -212,9 +214,8 @@ void AwVulkanContextProvider::EnqueueSecondaryCBPostSubmitTask(
   post_submit_tasks_.push_back(std::move(closure));
 }
 
-absl::optional<uint32_t> AwVulkanContextProvider::GetSyncCpuMemoryLimit()
-    const {
-  return absl::optional<uint32_t>();
+std::optional<uint32_t> AwVulkanContextProvider::GetSyncCpuMemoryLimit() const {
+  return std::optional<uint32_t>();
 }
 
 bool AwVulkanContextProvider::Initialize(AwDrawFn_InitVkParams* params) {

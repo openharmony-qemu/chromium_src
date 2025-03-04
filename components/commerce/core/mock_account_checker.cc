@@ -3,17 +3,22 @@
 // found in the LICENSE file.
 
 #include "components/commerce/core/mock_account_checker.h"
+#include "components/prefs/pref_service.h"
 
 namespace commerce {
 
 MockAccountChecker::MockAccountChecker()
-    : AccountChecker(nullptr, nullptr, nullptr, nullptr) {
+    : AccountChecker("", "", nullptr, nullptr, nullptr, nullptr, nullptr) {
   // Default to an account checker with the fewest restrictions.
   SetSignedIn(true);
   SetSyncingBookmarks(true);
   SetAnonymizedUrlDataCollectionEnabled(true);
-  SetWebAndAppActivityEnabled(true);
   SetIsSubjectToParentalControls(false);
+  SetCanUseModelExecutionFeatures(true);
+  SetCountry("us");
+  SetLocale("en-us");
+  ON_CALL(*this, IsDefaultSearchEngineGoogle)
+      .WillByDefault(testing::Return(true));
 }
 
 MockAccountChecker::~MockAccountChecker() = default;
@@ -31,15 +36,28 @@ void MockAccountChecker::SetAnonymizedUrlDataCollectionEnabled(bool enabled) {
       .WillByDefault(testing::Return(enabled));
 }
 
-void MockAccountChecker::SetWebAndAppActivityEnabled(bool enabled) {
-  ON_CALL(*this, IsWebAndAppActivityEnabled)
-      .WillByDefault(testing::Return(enabled));
-}
-
 void MockAccountChecker::SetIsSubjectToParentalControls(
     bool subject_to_parental_controls) {
   ON_CALL(*this, IsSubjectToParentalControls)
       .WillByDefault(testing::Return(subject_to_parental_controls));
+}
+
+void MockAccountChecker::SetCanUseModelExecutionFeatures(
+    bool can_use_model_execution_features) {
+  ON_CALL(*this, CanUseModelExecutionFeatures)
+      .WillByDefault(testing::Return(can_use_model_execution_features));
+}
+
+void MockAccountChecker::SetCountry(std::string country) {
+  ON_CALL(*this, GetCountry).WillByDefault(testing::Return(country));
+}
+
+void MockAccountChecker::SetLocale(std::string locale) {
+  ON_CALL(*this, GetLocale).WillByDefault(testing::Return(locale));
+}
+
+void MockAccountChecker::SetPrefs(PrefService* prefs) {
+  ON_CALL(*this, GetPrefs).WillByDefault(testing::Return(prefs));
 }
 
 }  // namespace commerce

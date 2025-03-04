@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ash/webui/help_app_ui/help_app_kids_magazine_untrusted_ui.h"
 
+#include <string_view>
+
 #include "ash/webui/help_app_ui/url_constants.h"
-#include "base/strings/string_piece.h"
 #include "chromeos/grit/chromeos_help_app_kids_magazine_bundle_resources.h"
 #include "chromeos/grit/chromeos_help_app_kids_magazine_bundle_resources_map.h"
 #include "content/public/browser/web_contents.h"
@@ -21,8 +27,7 @@ const char kKidsMagazinePathPrefix[] = "kids_magazine/";
 
 // Function to remove a prefix from an input string. Does nothing if the string
 // does not begin with the prefix.
-base::StringPiece StripPrefix(base::StringPiece input,
-                              base::StringPiece prefix) {
+std::string_view StripPrefix(std::string_view input, std::string_view prefix) {
   if (input.find(prefix) == 0) {
     return input.substr(prefix.size());
   }
@@ -61,18 +66,11 @@ void CreateAndAddHelpAppKidsMagazineUntrustedDataSource(
 }  // namespace
 
 HelpAppKidsMagazineUntrustedUIConfig::HelpAppKidsMagazineUntrustedUIConfig()
-    : WebUIConfig(content::kChromeUIUntrustedScheme,
-                  kChromeUIHelpAppKidsMagazineHost) {}
+    : DefaultWebUIConfig(content::kChromeUIUntrustedScheme,
+                         kChromeUIHelpAppKidsMagazineHost) {}
 
 HelpAppKidsMagazineUntrustedUIConfig::~HelpAppKidsMagazineUntrustedUIConfig() =
     default;
-
-std::unique_ptr<content::WebUIController>
-HelpAppKidsMagazineUntrustedUIConfig::CreateWebUIController(
-    content::WebUI* web_ui,
-    const GURL& url) {
-  return std::make_unique<HelpAppKidsMagazineUntrustedUI>(web_ui);
-}
 
 HelpAppKidsMagazineUntrustedUI::HelpAppKidsMagazineUntrustedUI(
     content::WebUI* web_ui)

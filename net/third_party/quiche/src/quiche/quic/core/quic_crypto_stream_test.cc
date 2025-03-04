@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -133,7 +134,7 @@ class QuicCryptoStreamTest : public QuicTest {
                                            Perspective::IS_CLIENT)),
         session_(connection_, /*create_mock_crypto_stream=*/false) {
     EXPECT_CALL(*static_cast<MockPacketWriter*>(connection_->writer()),
-                WritePacket(_, _, _, _, _))
+                WritePacket(_, _, _, _, _, _))
         .WillRepeatedly(Return(WriteResult(WRITE_STATUS_OK, 0)));
     stream_ = new MockQuicCryptoStream(&session_);
     session_.SetCryptoStream(stream_);
@@ -500,7 +501,7 @@ TEST_F(QuicCryptoStreamTest, RetransmitStreamData) {
       .WillOnce(InvokeWithoutArgs([this]() {
         return session_.ConsumeData(
             QuicUtils::GetCryptoStreamId(connection_->transport_version()), 150,
-            1350, NO_FIN, HANDSHAKE_RETRANSMISSION, absl::nullopt);
+            1350, NO_FIN, HANDSHAKE_RETRANSMISSION, std::nullopt);
       }));
 
   EXPECT_FALSE(stream_->RetransmitStreamData(1350, 1350, false,
@@ -639,10 +640,7 @@ TEST_F(QuicCryptoStreamTest, CryptoMessageFramingOverhead) {
   for (const ParsedQuicVersion& version :
        AllSupportedVersionsWithQuicCrypto()) {
     SCOPED_TRACE(version);
-    QuicByteCount expected_overhead = 48;
-    if (version.HasIetfInvariantHeader()) {
-      expected_overhead += 4;
-    }
+    QuicByteCount expected_overhead = 52;
     if (version.HasLongHeaderLengths()) {
       expected_overhead += 3;
     }

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/media/media_internals_ui.h"
 
 #include "base/command_line.h"
@@ -30,6 +35,9 @@ void CreateAndAddMediaInternalsHTMLSource(BrowserContext* browser_context) {
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::TrustedTypes,
       "trusted-types static-types;");
+  source->OverrideContentSecurityPolicy(
+      network::mojom::CSPDirectiveName::ScriptSrc,
+      "script-src chrome://resources chrome://webui-test 'self';");
 }
 
 }  // namespace

@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/media/media_license_manager.h"
 
+#include <string_view>
 #include <vector>
 
 #include "base/files/file_enumerator.h"
@@ -11,12 +17,13 @@
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/memory/scoped_refptr.h"
-#include "base/strings/string_piece_forward.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/test/gmock_expected_support.h"
 #include "base/test/task_environment.h"
 #include "base/test/test_future.h"
 #include "components/services/storage/public/cpp/buckets/bucket_locator.h"
 #include "components/services/storage/public/cpp/constants.h"
+#include "content/browser/media/cdm_storage_common.h"
 #include "content/browser/media/media_license_quota_client.h"
 #include "content/public/browser/storage_partition.h"
 #include "media/cdm/cdm_type.h"
@@ -69,15 +76,13 @@ class MediaLicenseManagerTest : public testing::Test {
 
   // Hard-coded to the default bucket, since this API should never be used in
   // non-default buckets anyways.
-  storage::BucketLocator GetOrCreateBucket(
+  storage::QuotaErrorOr<storage::BucketLocator> GetOrCreateBucket(
       const blink::StorageKey& storage_key) {
     base::test::TestFuture<storage::QuotaErrorOr<storage::BucketInfo>> future;
     quota_manager_->UpdateOrCreateBucket(
         storage::BucketInitParams::ForDefaultBucket(storage_key),
         future.GetCallback());
-    auto bucket = future.Take();
-    EXPECT_TRUE(bucket.has_value());
-    return bucket->ToBucketLocator();
+    return future.Take().transform(&storage::BucketInfo::ToBucketLocator);
   }
 
   mojo::AssociatedRemote<media::mojom::CdmFile> OpenCdmFile(
@@ -109,7 +114,7 @@ class MediaLicenseManagerTest : public testing::Test {
   // `expected_data`.
   void ExpectFileContents(
       const mojo::AssociatedRemote<media::mojom::CdmFile>& cdm_file,
-      const base::StringPiece expected_data) {
+      std::string_view expected_data) {
     base::test::TestFuture<media::mojom::CdmFile::Status, std::vector<uint8_t>>
         future;
     cdm_file->Read(future.GetCallback<media::mojom::CdmFile::Status,
@@ -118,8 +123,8 @@ class MediaLicenseManagerTest : public testing::Test {
     media::mojom::CdmFile::Status status = future.Get<0>();
     auto data = future.Get<1>();
     EXPECT_EQ(status, media::mojom::CdmFile::Status::kSuccess);
-    EXPECT_EQ(base::StringPiece(reinterpret_cast<const char*>(data.data()),
-                                data.size()),
+    EXPECT_EQ(std::string_view(reinterpret_cast<const char*>(data.data()),
+                               data.size()),
               expected_data);
   }
 
@@ -156,8 +161,9 @@ TEST_F(MediaLicenseManagerTest, DeleteBucketData) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -190,8 +196,9 @@ TEST_F(MediaLicenseManagerTest, DeleteBucketDataClosedStorage) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -225,8 +232,9 @@ TEST_F(MediaLicenseManagerTest, DeleteBucketDataOpenConnection) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -263,8 +271,9 @@ TEST_F(MediaLicenseManagerTest, BucketCreationFailed) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Disable the quota database, causing GetOrCreateBucket() to fail.
   quota_manager_->SetDisableDatabase(/*disable=*/true);
@@ -294,8 +303,9 @@ TEST_F(MediaLicenseManagerIncognitoTest, DeleteBucketData) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -322,8 +332,9 @@ TEST_F(MediaLicenseManagerIncognitoTest, DeleteBucketDataClosedStorage) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -350,8 +361,9 @@ TEST_F(MediaLicenseManagerIncognitoTest, DeleteBucketDataOpenConnection) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Open CDM storage for a storage key.
   manager_->OpenCdmStorage(binding_context,
@@ -385,8 +397,9 @@ TEST_F(MediaLicenseManagerIncognitoTest, BucketCreationFailed) {
   mojo::Remote<media::mojom::CdmStorage> remote;
   blink::StorageKey storage_key =
       blink::StorageKey::CreateFromStringForTesting(kExampleOrigin);
-  storage::BucketLocator bucket = GetOrCreateBucket(storage_key);
-  MediaLicenseManager::BindingContext binding_context(storage_key, kCdmType);
+  ASSERT_OK_AND_ASSIGN(storage::BucketLocator bucket,
+                       GetOrCreateBucket(storage_key));
+  CdmStorageBindingContext binding_context(storage_key, kCdmType);
 
   // Disable the quota database, causing GetOrCreateBucket() to fail.
   quota_manager_->SetDisableDatabase(/*disable=*/true);

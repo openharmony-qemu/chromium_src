@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "content/browser/child_process_launcher_helper.h"
+
+#include "base/apple/mach_port_rendezvous.h"
 #include "base/command_line.h"
 #include "base/containers/flat_map.h"
-#include "base/mac/mach_port_rendezvous.h"
 #include "base/no_destructor.h"
 #include "base/path_service.h"
 #include "base/posix/global_descriptors.h"
@@ -12,7 +14,6 @@
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
 #include "content/browser/child_process_launcher.h"
-#include "content/browser/child_process_launcher_helper.h"
 #include "content/browser/child_process_launcher_helper_posix.h"
 #include "content/browser/child_process_task_port_provider_mac.h"
 #include "content/browser/sandbox_parameters_mac.h"
@@ -23,7 +24,6 @@
 #include "content/public/common/content_switches.h"
 #include "content/public/common/result_codes.h"
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
-#include "ppapi/buildflags/buildflags.h"
 #include "sandbox/mac/sandbox_compiler.h"
 #include "sandbox/mac/seatbelt_exec.h"
 #include "sandbox/policy/features.h"
@@ -31,12 +31,6 @@
 #include "sandbox/policy/sandbox.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "sandbox/policy/switches.h"
-
-#if BUILDFLAG(ENABLE_PPAPI)
-#include "content/public/browser/plugin_service.h"
-#include "content/public/common/webplugininfo.h"
-#include "sandbox/policy/mojom/sandbox.mojom.h"
-#endif
 
 namespace content {
 namespace internal {
@@ -80,21 +74,14 @@ class SandboxProfileCache {
 
 }  // namespace
 
-absl::optional<mojo::NamedPlatformChannel>
+std::optional<mojo::NamedPlatformChannel>
 ChildProcessLauncherHelper::CreateNamedPlatformChannelOnLauncherThread() {
   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void ChildProcessLauncherHelper::BeforeLaunchOnClientThread() {
   DCHECK(client_task_runner_->RunsTasksInCurrentSequence());
-
-#if BUILDFLAG(ENABLE_PPAPI)
-  auto sandbox_type =
-      sandbox::policy::SandboxTypeFromCommandLine(*command_line_);
-  if (sandbox_type == sandbox::mojom::Sandbox::kPpapi)
-    PluginService::GetInstance()->GetInternalPlugins(&plugins_);
-#endif
 }
 
 std::unique_ptr<PosixFileDescriptorInfo>
@@ -127,6 +114,7 @@ bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
   options->disclaim_responsibility = delegate_->DisclaimResponsibility();
   options->enable_cpu_security_mitigations =
       delegate_->EnableCpuSecurityMitigations();
+  options->process_requirement = delegate_->GetProcessRequirement();
 
   auto sandbox_type =
       sandbox::policy::SandboxTypeFromCommandLine(*command_line_);
@@ -136,9 +124,12 @@ bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
       sandbox::policy::IsUnsandboxedSandboxType(sandbox_type);
 
   if (!no_sandbox) {
-    // Disable os logging to com.apple.diagnosticd which is a performance
-    // problem.
-    options->environment.insert(std::make_pair("OS_ACTIVITY_MODE", "disable"));
+    if (!LOG_IS_ON(INFO)) {
+      // Disable os logging to com.apple.diagnosticd when logging is not
+      // enabled. The system logging has a measureable performance impact.
+      options->environment.insert(
+          std::make_pair("OS_ACTIVITY_MODE", "disable"));
+    }
 
     const auto* cached_policy = SandboxProfileCache::Get().Query(sandbox_type);
     if (cached_policy) {
@@ -152,11 +143,13 @@ bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
           can_cache_policy ? sandbox::SandboxCompiler::Target::kCompiled
                            : sandbox::SandboxCompiler::Target::kSource);
       compiler.SetProfile(sandbox::policy::GetSandboxProfile(sandbox_type));
-      SetupSandboxParameters(sandbox_type, *command_line_.get(),
-#if BUILDFLAG(ENABLE_PPAPI)
-                             plugins_,
-#endif
-                             &compiler);
+      const bool sandbox_ok =
+          SetupSandboxParameters(sandbox_type, *command_line_.get(), &compiler);
+
+      if (!sandbox_ok) {
+        LOG(ERROR) << "Sandbox setup failed.";
+        return false;
+      }
 
       std::string error;
       if (!compiler.CompilePolicyToProto(policy_, error)) {
@@ -225,7 +218,7 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
 // static
 bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
                                                   int exit_code) {
-  // TODO(https://crbug.com/818244): Determine whether we should also call
+  // TODO(crbug.com/40565504): Determine whether we should also call
   // EnsureProcessTerminated() to make sure of process-exit, and reap it.
   return process.Terminate(exit_code, false);
 }
@@ -240,12 +233,11 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
   base::EnsureProcessTerminated(std::move(process.process));
 }
 
-void ChildProcessLauncherHelper::SetProcessBackgroundedOnLauncherThread(
+void ChildProcessLauncherHelper::SetProcessPriorityOnLauncherThread(
     base::Process process,
-    bool is_background) {
-  if (process.CanBackgroundProcesses()) {
-    process.SetProcessBackgrounded(ChildProcessTaskPortProvider::GetInstance(),
-                                   is_background);
+    base::Process::Priority priority) {
+  if (process.CanSetPriority()) {
+    process.SetPriority(ChildProcessTaskPortProvider::GetInstance(), priority);
   }
 }
 
@@ -254,7 +246,6 @@ base::File OpenFileToShare(const base::FilePath& path,
   // Not used yet (until required files are described in the service manifest on
   // Mac).
   NOTREACHED();
-  return base::File();
 }
 
 }  //  namespace internal

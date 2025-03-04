@@ -11,12 +11,12 @@
 #include "base/files/file_util.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/strings/stringprintf.h"
-#include "components/subresource_filter/core/browser/copying_file_stream.h"
+#include "components/subresource_filter/core/common/copying_file_stream.h"
 #include "components/subresource_filter/core/common/indexed_ruleset.h"
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 #include "base/logging.h"
 #endif
 
@@ -40,18 +40,18 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
       &copying_stream, 4096 /* buffer_size */);
   UnindexedRulesetReader reader(&zero_copy_stream_adaptor);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   size_t num_supported_url_rules = 0;
   size_t num_supported_css_rules = 0;
   size_t num_unsupported_rules = 0;
   size_t num_unsupported_css_rules = 0;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   url_pattern_index::proto::FilteringRules ruleset_chunk;
 
   while (reader.ReadNextChunk(&ruleset_chunk)) {
     for (const auto& rule : ruleset_chunk.url_rules()) {
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
       if (!indexer.AddUrlRule(rule)) {
         ++num_unsupported_rules;
       } else {
@@ -61,7 +61,7 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
       indexer.AddUrlRule(rule);
 #endif
     }
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
     for (const auto& rule : ruleset_chunk.css_rules()) {
       if (!indexer.AddCssRule(rule)) {
         ++num_unsupported_css_rules;
@@ -69,20 +69,20 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
         ++num_supported_css_rules;
       }
     }
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
   }
 
   indexer.Finish();
 
-  base::WriteFile(indexed_path, base::make_span(indexer));
+  base::WriteFile(indexed_path, indexer.data());
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   LOG(INFO) << "[AdBlock]reader.num bytes read=" << reader.num_bytes_read()
             << ",num unsupported url rules=" << num_unsupported_rules
             << "num unsupported_css_rules=" << num_unsupported_css_rules
             << "num supported_url rules=" << num_supported_url_rules
             << ", num_supported_css_rules=" << num_supported_css_rules;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   if (out_checksum)
     *out_checksum = indexer.GetChecksum();
@@ -93,7 +93,7 @@ bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,
 void WriteVersionMetadata(const base::FilePath& path,
                           const std::string& content_version,
                           int checksum) {
-  const char* version_format = R"({
+  static constexpr char kVersionFormat[] = R"({
   "subresource_filter": {
     "ruleset_version": {
       "content": "%s",
@@ -103,7 +103,7 @@ void WriteVersionMetadata(const base::FilePath& path,
   }
 })";
   std::string version = base::StringPrintf(
-      version_format, content_version.c_str(),
+      kVersionFormat, content_version.c_str(),
       subresource_filter::RulesetIndexer::kIndexedFormatVersion, checksum);
   base::WriteFile(path, version);
 }

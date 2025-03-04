@@ -1,0 +1,19 @@
+{
+  "ssh": {
+    "ssh_server_ip": "172.27.119.98",
+    "ssh_username": "webauto"
+  },
+  "code": {
+    // "chromium_src_path": "Z:\\workspace\\chromium114_0208\\src", // 用windows 网络驱动器方式
+    "chromium_src_path": "/home/webauto/ut_workspace/chromium_next_dev/src", // 如果为空，使用相对路径../../
+    "code_location": "linux_local" //如果ut代码所在的服务器是samba，映射为网络驱动器, 设置为"samba";如果oh代码在ssh server上设置为"ssh_server";如果oh代码在ssh server上设置为"linux_local"
+  },
+  "device": {
+    "exe_path": "/data/app/el1/bundle/public/com.ohos.nweb/libs/arm64",
+    "project_name": "musl_64"
+  },
+  "python": {
+    "proxy_ip": "172.27.112.1",
+    "proxy_port": "8710"
+  }
+}

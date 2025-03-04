@@ -8,11 +8,14 @@
 #include "base/android/jni_android.h"
 #include "base/android/jni_weak_ref.h"
 #include "base/android/scoped_java_ref.h"
+#include "content/common/gin_java_bridge.mojom-forward.h"
 #include "content/public/browser/web_contents_user_data.h"
+#include "mojo/public/cpp/bindings/pending_receiver.h"
 
 namespace content {
 
 class GinJavaBridgeDispatcherHost;
+class WebContentsImpl;
 
 class JavascriptInjector : public WebContentsUserData<JavascriptInjector> {
  public:
@@ -41,9 +44,11 @@ class JavascriptInjector : public WebContentsUserData<JavascriptInjector> {
   void RemoveInterface(JNIEnv* env,
                        const base::android::JavaParamRef<jobject>& /* obj */,
                        const base::android::JavaParamRef<jstring>& name);
-
  private:
   friend class content::WebContentsUserData<JavascriptInjector>;
+
+  WebContentsImpl& GetWebContentsImpl();
+
   // A weak reference to the Java JavascriptInjectorImpl object.
   JavaObjectWeakGlobalRef java_ref_;
 

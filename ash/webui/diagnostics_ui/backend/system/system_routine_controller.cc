@@ -2,8 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ash/webui/diagnostics_ui/backend/system/system_routine_controller.h"
 
+#include <optional>
+
+#include "ash/constants/ash_features.h"
+#include "ash/system/diagnostics/diagnostics_log_controller.h"
 #include "ash/system/diagnostics/routine_log.h"
 #include "ash/webui/diagnostics_ui/backend/common/histogram_util.h"
 #include "ash/webui/diagnostics_ui/backend/common/routine_properties.h"
@@ -24,7 +33,6 @@
 #include "chromeos/ash/services/cros_healthd/public/mojom/nullable_primitives.mojom.h"
 #include "content/public/browser/device_service.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash::diagnostics {
 
@@ -74,7 +82,6 @@ mojom::StandardRoutineResult TestStatusToResult(
     case healthd::DiagnosticRoutineStatusEnum::kCancelling:
     case healthd::DiagnosticRoutineStatusEnum::kUnknown:
       NOTREACHED();
-      return mojom::StandardRoutineResult::kExecutionError;
   }
 }
 
@@ -105,13 +112,13 @@ std::string ReadMojoHandleToJsonString(mojo::PlatformHandle handle) {
   return std::string(contents.begin(), contents.end());
 }
 
+bool IsLoggingEnabled() {
+  return diagnostics::DiagnosticsLogController::IsInitialized();
+}
+
 }  // namespace
 
-SystemRoutineController::SystemRoutineController()
-    : SystemRoutineController(/*routine_log_ptr=*/nullptr) {}
-
-SystemRoutineController::SystemRoutineController(RoutineLog* routine_log_ptr)
-    : routine_log_ptr_(routine_log_ptr) {
+SystemRoutineController::SystemRoutineController() {
   inflight_routine_timer_ = std::make_unique<base::OneShotTimer>();
 }
 
@@ -126,7 +133,8 @@ SystemRoutineController::~SystemRoutineController() {
         inflight_routine_id_, healthd::DiagnosticRoutineCommandEnum::kCancel,
         /*should_include_output=*/false, base::DoNothing());
     if (IsLoggingEnabled() && inflight_routine_type_.has_value()) {
-      routine_log_ptr_->LogRoutineCancelled(inflight_routine_type_.value());
+      DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineCancelled(
+          inflight_routine_type_.value());
     }
   }
 
@@ -319,6 +327,7 @@ void SystemRoutineController::ExecuteRoutine(mojom::RoutineType routine_type) {
     case mojom::RoutineType::kMemory:
       AcquireWakeLock();
       diagnostics_service_->RunMemoryRoutine(
+          std::nullopt,
           base::BindOnce(&SystemRoutineController::OnRoutineStarted,
                          weak_factory_.GetWeakPtr(), routine_type));
       memory_routine_start_timestamp_ = base::Time::Now();
@@ -330,7 +339,8 @@ void SystemRoutineController::ExecuteRoutine(mojom::RoutineType routine_type) {
       break;
   }
   if (IsLoggingEnabled()) {
-    routine_log_ptr_->LogRoutineStarted(routine_type);
+    DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineStarted(
+        routine_type);
   }
 }
 
@@ -609,7 +619,7 @@ void SystemRoutineController::OnPowerRoutineJsonParsed(
     return;
   }
 
-  absl::optional<double> charge_percent_opt =
+  std::optional<double> charge_percent_opt =
       routine_type == mojom::RoutineType::kBatteryCharge
           ? result_details_dict->FindDouble(kChargePercentKey)
           : result_details_dict->FindDouble(kDischargePercentKey);
@@ -639,7 +649,8 @@ void SystemRoutineController::OnStandardRoutineResult(
                                        memory_routine_start_timestamp_);
   }
   if (IsLoggingEnabled()) {
-    routine_log_ptr_->LogRoutineCompleted(routine_type, result);
+    DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineCompleted(
+        routine_type, result);
   }
 }
 
@@ -654,7 +665,8 @@ void SystemRoutineController::OnPowerRoutineResult(
   SendRoutineResult(std::move(result_info));
   metrics::EmitRoutineResult(routine_type, result);
   if (IsLoggingEnabled()) {
-    routine_log_ptr_->LogRoutineCompleted(routine_type, result);
+    DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineCompleted(
+        routine_type, result);
   }
 }
 
@@ -715,7 +727,8 @@ void SystemRoutineController::OnInflightRoutineRunnerDisconnected() {
   inflight_routine_id_ = kInvalidRoutineId;
 
   if (IsLoggingEnabled() && inflight_routine_type_.has_value()) {
-    routine_log_ptr_->LogRoutineCancelled(inflight_routine_type_.value());
+    DiagnosticsLogController::Get()->GetRoutineLog().LogRoutineCancelled(
+        inflight_routine_type_.value());
   }
 }
 
@@ -729,10 +742,6 @@ void SystemRoutineController::OnRoutineCancelAttempted(
     DVLOG(2) << "Failed to cancel routine.";
     return;
   }
-}
-
-bool SystemRoutineController::IsLoggingEnabled() const {
-  return routine_log_ptr_ != nullptr;
 }
 
 void SystemRoutineController::AcquireWakeLock() {

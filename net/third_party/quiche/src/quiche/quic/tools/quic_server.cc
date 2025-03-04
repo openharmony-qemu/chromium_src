@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "quiche/quic/core/crypto/crypto_handshake.h"
 #include "quiche/quic/core/crypto/quic_random.h"
@@ -66,6 +67,8 @@ QuicServer::QuicServer(
                      std::move(proof_source), KeyExchangeSource::Default()),
       crypto_config_options_(crypto_config_options),
       version_manager_(supported_versions),
+      max_sessions_to_create_per_socket_event_(
+          kNumSessionsToCreatePerSocketEvent),
       packet_reader_(new QuicPacketReader()),
       quic_simple_server_backend_(quic_simple_server_backend),
       expected_server_connection_id_length_(
@@ -97,8 +100,13 @@ void QuicServer::Initialize() {
 }
 
 QuicServer::~QuicServer() {
-  close(fd_);
-  fd_ = -1;
+  if (event_loop_ != nullptr) {
+    if (!event_loop_->UnregisterSocket(fd_)) {
+      QUIC_LOG(ERROR) << "Failed to unregister socket: " << fd_;
+    }
+  }
+  (void)socket_api::Close(fd_);
+  fd_ = kInvalidSocketFd;
 
   // Should be fine without because nothing should send requests to the backend
   // after `this` is destroyed, but for extra pointer safety, clear the socket
@@ -133,12 +141,12 @@ bool QuicServer::CreateUDPSocketAndListen(const QuicSocketAddress& address) {
   QUIC_LOG(INFO) << "Listening on " << address.ToString();
   port_ = address.port();
   if (port_ == 0) {
-    QuicSocketAddress address;
-    if (address.FromSocket(fd_) != 0) {
+    QuicSocketAddress self_address;
+    if (self_address.FromSocket(fd_) != 0) {
       QUIC_LOG(ERROR) << "Unable to get self address.  Error: "
                       << strerror(errno);
     }
-    port_ = address.port();
+    port_ = self_address.port();
   }
 
   bool register_result = event_loop_->RegisterSocket(
@@ -198,7 +206,7 @@ void QuicServer::OnSocketEvent(QuicEventLoop* /*event_loop*/,
   if (events & kSocketEventReadable) {
     QUIC_DVLOG(1) << "EPOLLIN";
 
-    dispatcher_->ProcessBufferedChlos(kNumSessionsToCreatePerSocketEvent);
+    dispatcher_->ProcessBufferedChlos(max_sessions_to_create_per_socket_event_);
 
     bool more_to_read = true;
     while (more_to_read) {

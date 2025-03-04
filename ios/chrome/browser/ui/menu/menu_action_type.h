@@ -7,7 +7,8 @@
 
 // Enum representing the existing set of menu actions as types. Current values
 // should not be renumbered. Please keep in sync with "IOSMenuAction" in
-// src/tools/metrics/histograms/enums.xml.
+// src/tools/metrics/histograms/metadata/mobile/enums.xml.
+// LINT.IfChange
 enum class MenuActionType {
   OpenInNewTab = 0,
   OpenInNewIncognitoTab = 1,
@@ -50,7 +51,33 @@ enum class MenuActionType {
   SearchCopiedText = 38,
   PinTab = 39,
   UnpinTab = 40,
-  kMaxValue = UnpinTab
+  LensCameraSearch = 41,
+  SaveImageToGooglePhotos = 42,
+  CloseAllOtherTabs = 43,
+  AddTabToNewGroup = 44,
+  AddTabToExistingGroup = 45,
+  RenameTabGroup = 46,
+  NewTabInGroup = 47,
+  UngroupTabGroup = 48,
+  CloseTabGroup = 49,
+  DeleteTabGroup = 50,
+  MoveTabToExistingGroup = 51,
+  RemoveTabFromGroup = 52,
+  OpenLinkInNewGroup = 53,
+  ShowDetails = 54,
+  ShowFullURL = 55,
+  SortDriveItemsByName = 56,
+  SortDriveItemsByModificationTime = 57,
+  SortDriveItemsByOpeningTime = 58,
+  SelectDriveIdentity = 59,
+  AddDriveAccount = 60,
+  ManageInNewTab = 61,
+  RecentActivityInSharedTabGroup = 62,
+  AIPrototyping = 63,
+  ManageSharedTabGroup = 64,
+  ShareLocalTabGroup = 65,
+  kMaxValue = ShareLocalTabGroup,
 };
+// LINT.ThenChange(/tools/metrics/histograms/metadata/mobile/enums.xml)
 
 #endif  // IOS_CHROME_BROWSER_UI_MENU_MENU_ACTION_TYPE_H_

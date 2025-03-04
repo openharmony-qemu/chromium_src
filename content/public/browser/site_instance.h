@@ -27,6 +27,7 @@ class RenderProcessHost;
 class StoragePartitionConfig;
 
 using SiteInstanceId = base::IdType32<class SiteInstanceIdTag>;
+using SiteInstanceGroupId = base::IdType32<class SiteInstanceGroupIdTag>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SiteInstance interface.
@@ -126,6 +127,11 @@ class CONTENT_EXPORT SiteInstance : public base::RefCounted<SiteInstance> {
   // BrowserContext.
   virtual RenderProcessHost* GetProcess() = 0;
 
+  // Returns the ID of the SiteInstanceGroup this SiteInstance belongs to. If
+  // the SiteInstance has no group, return 0, which is an invalid
+  // SiteInstanceGroup ID.
+  virtual SiteInstanceGroupId GetSiteInstanceGroupId() = 0;
+
   // Browser context to which this SiteInstance (and all related
   // SiteInstances) belongs.
   virtual BrowserContext* GetBrowserContext() = 0;
@@ -176,6 +182,10 @@ class CONTENT_EXPORT SiteInstance : public base::RefCounted<SiteInstance> {
   // Returns true if this SiteInstance is for a process-isolated origin with its
   // own OriginAgentCluster.
   virtual bool RequiresOriginKeyedProcess() = 0;
+
+  // Returns true if the SiteInstance is for a process-isolated sandboxed
+  // documents only.
+  virtual bool IsSandboxed() = 0;
 
   // Return whether this SiteInstance and the provided |url| are part of the
   // same web site, for the purpose of assigning them to processes accordingly.
@@ -234,6 +244,14 @@ class CONTENT_EXPORT SiteInstance : public base::RefCounted<SiteInstance> {
   // which should be passed in via `partition_config`.
   static scoped_refptr<SiteInstance> CreateForGuest(
       BrowserContext* browser_context,
+      const StoragePartitionConfig& partition_config);
+
+  // Factory method to create a SiteInstance in a new BrowsingInstance with a
+  // custom StoragePartition that is preserved across navigations.
+  // `partition_config` needs to be for a non-default StoragePartition.
+  static scoped_refptr<SiteInstance> CreateForFixedStoragePartition(
+      BrowserContext* browser_context,
+      const GURL& url,
       const StoragePartitionConfig& partition_config);
 
   // Determine if a URL should "use up" a site.  URLs such as about:blank or

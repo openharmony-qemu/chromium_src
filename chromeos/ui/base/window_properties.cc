@@ -11,11 +11,15 @@
 #include "ui/gfx/geometry/rect.h"
 
 DEFINE_EXPORTED_UI_CLASS_PROPERTY_TYPE(COMPONENT_EXPORT(CHROMEOS_UI_BASE),
+                                       chromeos::AppType)
+DEFINE_EXPORTED_UI_CLASS_PROPERTY_TYPE(COMPONENT_EXPORT(CHROMEOS_UI_BASE),
                                        chromeos::WindowPinType)
 DEFINE_EXPORTED_UI_CLASS_PROPERTY_TYPE(COMPONENT_EXPORT(CHROMEOS_UI_BASE),
                                        chromeos::WindowStateType)
 
 namespace chromeos {
+
+DEFINE_UI_CLASS_PROPERTY_KEY(AppType, kAppTypeKey, AppType::NON_APP)
 
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kAutoMaximizeXdgShellEnabled, true)
 
@@ -24,6 +28,7 @@ DEFINE_UI_CLASS_PROPERTY_KEY(bool, kBlockedForAssistantSnapshotKey, false)
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kEscHoldToExitFullscreen, false)
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kUseOverviewToExitFullscreen, false)
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kUseOverviewToExitPointerLock, false)
+DEFINE_UI_CLASS_PROPERTY_KEY(bool, kNoExitFullscreenOnLock, false)
 
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kTrackDefaultFrameColors, true)
 DEFINE_UI_CLASS_PROPERTY_KEY(SkColor, kFrameActiveColorKey, kDefaultFrameColor)
@@ -39,6 +44,8 @@ DEFINE_UI_CLASS_PROPERTY_KEY(bool, kImmersiveIsActive, false)
 DEFINE_OWNED_UI_CLASS_PROPERTY_KEY(gfx::Rect,
                                    kImmersiveTopContainerBoundsInScreen,
                                    nullptr)
+
+DEFINE_UI_CLASS_PROPERTY_KEY(bool, kIsGameKey, false)
 
 DEFINE_UI_CLASS_PROPERTY_KEY(bool, kIsShowingInOverviewKey, false)
 

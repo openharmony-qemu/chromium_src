@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "gpu/command_buffer/client/gl_helper.h"
 
 #include <GLES2/gl2.h>
@@ -58,14 +63,6 @@ class GLHelperTest : public testing::Test {
     feature_list_.Init();
 
     ContextCreationAttribs attributes;
-    attributes.alpha_size = 8;
-    attributes.depth_size = 24;
-    attributes.red_size = 8;
-    attributes.green_size = 8;
-    attributes.blue_size = 8;
-    attributes.stencil_size = 8;
-    attributes.samples = 4;
-    attributes.sample_buffers = 1;
     attributes.bind_generates_resource = false;
 
     context_ = std::make_unique<GLInProcessContext>();
@@ -83,6 +80,7 @@ class GLHelperTest : public testing::Test {
   void TearDown() override {
     helper_scaling_.reset(nullptr);
     helper_.reset(nullptr);
+    gl_ = nullptr;
     context_.reset(nullptr);
   }
 
@@ -828,7 +826,7 @@ class GLHelperTest : public testing::Test {
         gfx::Vector2dF offset;
         scaler->ComputeRegionOfInfluence(framebuffer_size, gfx::Vector2dF(),
                                          patch_rect, &sampling_rect, &offset);
-        // TODO(crbug.com/775740): Only test offsets having whole-numbered
+        // TODO(crbug.com/41350322): Only test offsets having whole-numbered
         // coordinates until the scalers can account for the other case.
         if (offset.x() == std::floor(offset.x()) &&
             offset.y() == std::floor(offset.y())) {
@@ -1264,7 +1262,7 @@ class GLHelperTest : public testing::Test {
 
   base::test::ScopedFeatureList feature_list_;
   std::unique_ptr<GLInProcessContext> context_;
-  raw_ptr<gles2::GLES2Interface> gl_;
+  raw_ptr<gles2::GLES2Interface> gl_;  // This is owned by |context_|.
   std::unique_ptr<GLHelper> helper_;
   std::unique_ptr<GLHelperScaling> helper_scaling_;
   base::circular_deque<GLHelperScaling::ScaleOp> x_ops_, y_ops_;
@@ -1275,7 +1273,7 @@ class GLHelperPixelTest : public GLHelperTest {
   gl::DisableNullDrawGLBindings enable_pixel_output_;
 };
 
-// TODO(crbug.com/1384328): Re-enable this test
+// TODO(crbug.com/40246425): Re-enable this test
 TEST_F(GLHelperTest, DISABLED_RGBAASyncReadbackTest) {
   const int kTestSize = 64;
   bool result = TestTextureFormatReadback(gfx::Size(kTestSize, kTestSize),
@@ -1302,7 +1300,7 @@ class GLHelperPixelReadbackTest
 
 // Per pixel tests, all sizes are small so that we can print
 // out the generated bitmaps.
-// TODO(crbug.com/1367486): Very flaky on Linux ASAN.
+// TODO(crbug.com/40867694): Very flaky on Linux ASAN.
 #if BUILDFLAG(IS_LINUX) && defined(ADDRESS_SANITIZER)
 #define MAYBE_ScaleTest DISABLED_ScaleTest
 #else

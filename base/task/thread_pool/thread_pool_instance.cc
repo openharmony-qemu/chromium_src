@@ -5,9 +5,9 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 
 #include <algorithm>
+#include <string_view>
 
 #include "base/check.h"
-#include "base/cxx17_backports.h"
 #include "base/memory/ptr_util.h"
 #include "base/system/sys_info.h"
 #include "base/task/thread_pool/thread_pool_impl.h"
@@ -69,6 +69,16 @@ ThreadPoolInstance::ScopedBestEffortExecutionFence::
   g_thread_pool->EndBestEffortFence();
 }
 
+ThreadPoolInstance::ScopedRestrictedTasks::ScopedRestrictedTasks() {
+  DCHECK(g_thread_pool);
+  g_thread_pool->BeginRestrictedTasks();
+}
+
+ThreadPoolInstance::ScopedRestrictedTasks::~ScopedRestrictedTasks() {
+  DCHECK(g_thread_pool);
+  g_thread_pool->EndRestrictedTasks();
+}
+
 ThreadPoolInstance::ScopedFizzleBlockShutdownTasks::
     ScopedFizzleBlockShutdownTasks() {
   // It's possible for this to be called without a ThreadPool present in tests.
@@ -85,7 +95,8 @@ ThreadPoolInstance::ScopedFizzleBlockShutdownTasks::
 
 #if !BUILDFLAG(IS_NACL)
 // static
-void ThreadPoolInstance::CreateAndStartWithDefaultParams(StringPiece name) {
+void ThreadPoolInstance::CreateAndStartWithDefaultParams(
+    std::string_view name) {
   Create(name);
   g_thread_pool->StartWithDefaultParams();
 }
@@ -103,7 +114,7 @@ void ThreadPoolInstance::StartWithDefaultParams() {
 }
 #endif  // !BUILDFLAG(IS_NACL)
 
-void ThreadPoolInstance::Create(StringPiece name) {
+void ThreadPoolInstance::Create(std::string_view name) {
   Set(std::make_unique<internal::ThreadPoolImpl>(name));
 }
 

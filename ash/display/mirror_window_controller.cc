@@ -26,7 +26,6 @@
 #include "ui/aura/window_delegate.h"
 #include "ui/aura/window_event_dispatcher.h"
 #include "ui/aura/window_tree_host.h"
-#include "ui/base/layout.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/compositor/compositor.h"
 #include "ui/compositor/layer.h"
@@ -99,7 +98,7 @@ class MirroringScreenPositionClient
   }
 
  private:
-  raw_ptr<MirrorWindowController, ExperimentalAsh> controller_;  // not owned.
+  raw_ptr<MirrorWindowController> controller_;  // not owned.
 };
 
 // A trivial CaptureClient that does nothing. That is, calls to set/release
@@ -148,7 +147,7 @@ struct MirrorWindowController::MirroringHostInfo {
   ~MirroringHostInfo();
   std::unique_ptr<AshWindowTreeHost> ash_host;
   gfx::Size mirror_window_host_size;
-  raw_ptr<aura::Window, ExperimentalAsh> mirror_window = nullptr;
+  raw_ptr<aura::Window> mirror_window = nullptr;
 };
 
 MirrorWindowController::MirroringHostInfo::MirroringHostInfo() = default;
@@ -189,8 +188,7 @@ void MirrorWindowController::UpdateWindow(
           display::Screen::GetScreen()->GetPrimaryDisplay().bounds(), display);
     }
 
-    if (mirroring_host_info_map_.find(display_info.id()) ==
-        mirroring_host_info_map_.end()) {
+    if (!base::Contains(mirroring_host_info_map_, display_info.id())) {
       AshWindowTreeHostInitParams init_params;
       init_params.initial_bounds = display_info.bounds_in_native();
       init_params.display_id = display_info.id();
@@ -268,7 +266,8 @@ void MirrorWindowController::UpdateWindow(
             ->compositor();
     gfx::Size mirror_size = source_compositor->size();
 
-    auto* mirroring_host_info = mirroring_host_info_map_[display_info.id()];
+    auto* mirroring_host_info =
+        mirroring_host_info_map_[display_info.id()].get();
 
     const bool should_undo_rotation = ShouldUndoRotationForMirror();
 

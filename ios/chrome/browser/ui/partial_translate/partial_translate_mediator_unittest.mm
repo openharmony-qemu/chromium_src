@@ -2,27 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Foundation/Foundation.h>
-
 #import "ios/chrome/browser/ui/partial_translate/partial_translate_mediator.h"
 
+#import <Foundation/Foundation.h>
+
 #import "base/ios/ios_util.h"
+#import "base/memory/raw_ptr.h"
 #import "base/test/ios/wait_util.h"
 #import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
 #import "components/sync_preferences/pref_service_syncable.h"
 #import "components/sync_preferences/testing_pref_service_syncable.h"
 #import "components/translate/core/browser/translate_pref_names.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/test/fake_web_state_list_delegate.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_opener.h"
 #import "ios/chrome/browser/shared/public/commands/browser_coordinator_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/ui/browser_container/edit_menu_alert_delegate.h"
-#import "ios/chrome/browser/web/chrome_web_client.h"
-#import "ios/chrome/browser/web_selection/web_selection_tab_helper.h"
-#import "ios/chrome/browser/web_state_list/fake_web_state_list_delegate.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_list_delegate.h"
-#import "ios/chrome/browser/web_state_list/web_state_opener.h"
+#import "ios/chrome/browser/web/model/chrome_web_client.h"
+#import "ios/chrome/browser/web_selection/model/web_selection_tab_helper.h"
+#import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
 #import "ios/chrome/test/providers/partial_translate/test_partial_translate.h"
 #import "ios/web/public/test/scoped_testing_web_client.h"
 #import "ios/web/public/test/web_state_test_util.h"
@@ -32,10 +33,6 @@
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "third_party/ocmock/gtest_support.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -146,19 +143,16 @@ NSString* kPageHTMLTemplate =
 class PartialTranslateMediatorTest : public PlatformTest {
  public:
   PartialTranslateMediatorTest()
-      : task_environment_(web::WebTaskEnvironment::Options::DEFAULT,
-                          base::test::TaskEnvironment::TimeSource::MOCK_TIME),
-        web_client_(std::make_unique<ChromeWebClient>()),
+      : web_client_(std::make_unique<ChromeWebClient>()),
         web_state_list_(&web_state_list_delegate_) {
-    feature_list_.InitAndEnableFeature(kIOSEditMenuPartialTranslate);
-    browser_state_ = TestChromeBrowserState::Builder().Build();
+    profile_ = TestProfileIOS::Builder().Build();
 
-    web::WebState::CreateParams params(browser_state_.get());
+    web::WebState::CreateParams params(profile_.get());
     auto web_state = web::WebState::Create(params);
     WebSelectionTabHelper::CreateForWebState(web_state.get());
-    web_state_list_.InsertWebState(0, std::move(web_state),
-                                   WebStateList::INSERT_ACTIVATE,
-                                   WebStateOpener());
+    web_state_list_.InsertWebState(
+        std::move(web_state),
+        WebStateList::InsertionParams::Automatic().Activate());
     web_state_ = web_state_list_.GetActiveWebState();
     base_view_controller_ = [[UIViewController alloc] init];
     fake_alert_controller_ = [[FakeAlertController alloc] init];
@@ -167,7 +161,7 @@ class PartialTranslateMediatorTest : public PlatformTest {
     mediator_ = [[PartialTranslateMediator alloc]
           initWithWebStateList:&web_state_list_
         withBaseViewController:base_view_controller_
-                   prefService:browser_state_->GetSyncablePrefs()
+                   prefService:profile_->GetSyncablePrefs()
           fullscreenController:nullptr
                      incognito:NO];
     mediator_.alertDelegate = fake_alert_controller_;
@@ -212,13 +206,14 @@ class PartialTranslateMediatorTest : public PlatformTest {
   }
 
  protected:
-  web::WebTaskEnvironment task_environment_;
+  IOSChromeScopedTestingLocalState scoped_testing_local_state_;
+  web::WebTaskEnvironment task_environment_{
+      base::test::TaskEnvironment::TimeSource::MOCK_TIME};
   web::ScopedTestingWebClient web_client_;
-  base::test::ScopedFeatureList feature_list_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   FakeWebStateListDelegate web_state_list_delegate_;
   WebStateList web_state_list_;
-  web::WebState* web_state_;
+  raw_ptr<web::WebState> web_state_;
   UIViewController* base_view_controller_;
   FakeAlertController* fake_alert_controller_;
   id mock_browser_coordinator_commands_handler_;
@@ -245,7 +240,7 @@ TEST_F(PartialTranslateMediatorTest, EnterpriseDisabled) {
   auto factory = SetupTranslateControllerFactory(true);
 
   base::Value managed_value(false);
-  browser_state_->GetTestingPrefService()->SetManagedPref(
+  profile_->GetTestingPrefService()->SetManagedPref(
       translate::prefs::kOfferTranslateEnabled, managed_value.Clone());
   EXPECT_FALSE([mediator_ shouldInstallPartialTranslate]);
   EXPECT_NSEQ(nil, factory.latestController);
@@ -253,14 +248,10 @@ TEST_F(PartialTranslateMediatorTest, EnterpriseDisabled) {
 
 // Tests the behavior in incognito.
 TEST_F(PartialTranslateMediatorTest, IncognitoSupportedSuccess) {
-  if (!base::ios::IsRunningOnIOS16OrLater()) {
-    // Partial translate not supported before iOS16.
-    return;
-  }
   PartialTranslateMediator* mediator = [[PartialTranslateMediator alloc]
         initWithWebStateList:&web_state_list_
       withBaseViewController:base_view_controller_
-                 prefService:browser_state_->GetSyncablePrefs()
+                 prefService:profile_->GetSyncablePrefs()
         fullscreenController:nullptr
                    incognito:YES];
   base::HistogramTester histogram_tester;
@@ -270,7 +261,8 @@ TEST_F(PartialTranslateMediatorTest, IncognitoSupportedSuccess) {
   EXPECT_TRUE([mediator canHandlePartialTranslateSelection]);
   [mediator handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return factory.latestController != nil;
       }));
   EXPECT_NSEQ(@"AAAAAAAAAA", factory.latestController.sourceText);
@@ -284,14 +276,10 @@ TEST_F(PartialTranslateMediatorTest, IncognitoNotSupported) {
     // Partial translate not supported before iOS16.
     return;
   }
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeatureWithParameters(
-      kIOSEditMenuPartialTranslate,
-      {{kIOSEditMenuPartialTranslateNoIncognitoParam, "true"}});
   PartialTranslateMediator* mediator = [[PartialTranslateMediator alloc]
         initWithWebStateList:&web_state_list_
       withBaseViewController:base_view_controller_
-                 prefService:browser_state_->GetSyncablePrefs()
+                 prefService:profile_->GetSyncablePrefs()
         fullscreenController:nullptr
                    incognito:YES];
   EXPECT_FALSE([mediator shouldInstallPartialTranslate]);
@@ -309,8 +297,10 @@ TEST_F(PartialTranslateMediatorTest, SupportedSuccess) {
   EXPECT_TRUE([mediator_ shouldInstallPartialTranslate]);
   EXPECT_TRUE([mediator_ canHandlePartialTranslateSelection]);
   [mediator_ handlePartialTranslateSelection];
+
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return factory.latestController != nil;
       }));
   EXPECT_NSEQ(@"AAAAAAAAAA", factory.latestController.sourceText);
@@ -332,7 +322,8 @@ TEST_F(PartialTranslateMediatorTest, StringTooLongCancel) {
   EXPECT_TRUE([mediator_ canHandlePartialTranslateSelection]);
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(nil, factory.latestController.sourceText);
@@ -356,7 +347,8 @@ TEST_F(PartialTranslateMediatorTest, StringTooLongFullTranslate) {
   ExpectShowTranslate();
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(nil, factory.latestController.sourceText);
@@ -378,7 +370,8 @@ TEST_F(PartialTranslateMediatorTest, StringEmptyCancel) {
   EXPECT_TRUE([mediator_ canHandlePartialTranslateSelection]);
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(nil, factory.latestController.sourceText);
@@ -400,7 +393,8 @@ TEST_F(PartialTranslateMediatorTest, StringSpacesCancel) {
   EXPECT_TRUE([mediator_ canHandlePartialTranslateSelection]);
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(nil, factory.latestController.sourceText);
@@ -424,7 +418,8 @@ TEST_F(PartialTranslateMediatorTest, StringEmptyFullTranslate) {
   ExpectShowTranslate();
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(nil, factory.latestController.sourceText);
@@ -446,7 +441,8 @@ TEST_F(PartialTranslateMediatorTest, InternalErrorCancel) {
   EXPECT_TRUE([mediator_ canHandlePartialTranslateSelection]);
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(@"AAAAAAAAAA", factory.latestController.sourceText);
@@ -470,7 +466,8 @@ TEST_F(PartialTranslateMediatorTest, InternalErrorFullTranslate) {
   ExpectShowTranslate();
   [mediator_ handlePartialTranslateSelection];
   ASSERT_TRUE(base::test::ios::WaitUntilConditionOrTimeout(
-      base::test::ios::kWaitForJSCompletionTimeout, ^{
+      base::test::ios::kWaitForJSCompletionTimeout, /*run_message_loop=*/true,
+      ^{
         return fake_alert_controller_.called;
       }));
   EXPECT_NSEQ(@"AAAAAAAAAA", factory.latestController.sourceText);

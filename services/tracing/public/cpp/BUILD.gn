@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/buildflag_header.gni")
-import("//build/config/chromecast_build.gni")
+import("//build/config/cast.gni")
 import("//build/config/compiler/compiler.gni")
 import("//build/config/features.gni")
 import("//build_overrides/build.gni")
@@ -65,6 +65,8 @@ target(tracing_lib_type, "cpp") {
       "perfetto/dummy_producer.cc",
       "perfetto/dummy_producer.h",
       "perfetto/interning_index.h",
+      "perfetto/metadata_data_source.cc",
+      "perfetto/metadata_data_source.h",
       "perfetto/perfetto_config.cc",
       "perfetto/perfetto_config.h",
       "perfetto/perfetto_producer.cc",
@@ -96,16 +98,22 @@ target(tracing_lib_type, "cpp") {
       "perfetto/track_name_recorder.h",
       "stack_sampling/tracing_sampler_profiler.cc",
       "stack_sampling/tracing_sampler_profiler.h",
+      "system_metrics_sampler.cc",
+      "system_metrics_sampler.h",
       "trace_event_agent.cc",
       "trace_event_agent.h",
       "trace_event_args_allowlist.cc",
       "trace_event_args_allowlist.h",
       "trace_startup.cc",
       "trace_startup.h",
+      "trace_startup_config.cc",
+      "trace_startup_config.h",
       "traced_process_impl.cc",
       "traced_process_impl.h",
       "tracing_features.cc",
       "tracing_features.h",
+      "triggers_data_source.cc",
+      "triggers_data_source.h",
     ]
 
     if (is_android) {
@@ -141,8 +149,13 @@ target(tracing_lib_type, "cpp") {
       ":buildflags",
       "//build:chromecast_buildflags",
       "//build:chromeos_buildflags",
+      "//components/system_cpu:system_cpu",
       "//third_party/perfetto/protos/perfetto/trace/chrome:minimal_complete_lite",
     ]
+
+    if (!(is_chromeos_ash && target_cpu == "arm64" && current_cpu == "arm")) {
+      deps += [ "//components/variations" ]
+    }
 
     # Add the SystemProducer implementations.
     if (is_posix || is_fuchsia) {
@@ -175,6 +188,10 @@ target(tracing_lib_type, "cpp") {
 
     if (is_chromeos_ash) {
       deps += [ "//chromeos/dbus/constants" ]
+    }
+
+    if(is_ohos) {
+      libs = ["hitrace_ndk.z"]
     }
   }  # !is_ios && !is_nacl
 }

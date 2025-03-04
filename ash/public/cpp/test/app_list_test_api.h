@@ -30,8 +30,10 @@ class EventGenerator;
 namespace ash {
 class AppsGridView;
 class AppListModel;
+class ContinueTaskView;
 class PaginationModel;
 class AppListItemView;
+class SearchResultListView;
 
 // Accesses ash data for app list view testing.
 class ASH_EXPORT AppListTestApi {
@@ -173,12 +175,17 @@ class ASH_EXPORT AppListTestApi {
   // Returns the recent app item item specified by `index`.
   views::View* GetRecentAppAt(int index);
 
+  std::vector<ContinueTaskView*> GetContinueTaskViews();
+
   // Returns the list of app IDs shown in recent apps view, in order they appear
   // in the  UI.
   std::vector<std::string> GetRecentAppIds();
 
   // Updates launcher search box content, and triggers search.
   void SimulateSearch(const std::u16string& query);
+
+  // Returns the top visible search result list view.
+  SearchResultListView* GetTopVisibleSearchResultListView();
 
   // App list sort related methods ---------------------------------------------
 

@@ -15,10 +15,6 @@ class CommandLine;
 
 namespace content {
 
-extern const char kFirstRendererProcess[];
-
-CONTENT_EXPORT bool IsPinchToZoomEnabled();
-
 blink::mojom::V8CacheOptions GetV8CacheOptions();
 
 void WaitForDebugger(const std::string& label);

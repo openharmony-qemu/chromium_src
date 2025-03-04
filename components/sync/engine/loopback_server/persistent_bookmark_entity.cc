@@ -22,7 +22,7 @@ namespace {
 
 // Returns true if and only if |client_entity| is a bookmark.
 bool IsBookmark(const sync_pb::SyncEntity& client_entity) {
-  return syncer::GetModelTypeFromSpecifics(client_entity.specifics()) ==
+  return syncer::GetDataTypeFromSpecifics(client_entity.specifics()) ==
          syncer::BOOKMARKS;
 }
 
@@ -149,7 +149,7 @@ PersistentBookmarkEntity::PersistentBookmarkEntity(
       parent_id_(parent_id),
       creation_time_(creation_time),
       last_modified_time_(last_modified_time) {
-  if (!client_tag_hash.empty()) {
+  if (!client_tag_hash.empty() && !originator_client_item_id.empty()) {
     // This relies technically on a well-behaving client, but verifying here to
     // avoid issues with Local Sync, which uses LoopbackServer.
     DCHECK_EQ(

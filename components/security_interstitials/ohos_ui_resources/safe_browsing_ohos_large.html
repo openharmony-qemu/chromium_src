@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="theme-color" content="#fff">
+    <link rel="stylesheet" href="safe_browsing_ohos.css">
+    <title>$i18n{title}</title>
+    <script type="text/javascript">
+      var policy = parseInt('$i18n{policy}')
+      var isTablet = ('$i18n{is_tablet_device}' == '1');
+      var isPc = ('$i18n{is_pc_device}' == '1');
+      var FORBIDDEN_POLICY = 3;
+      var MIN_GAP = 32;
+      var MIN_PADDING_GAP = 48;
+      var MIN_WIDTH = 188;
+
+      const SecurityInterstitialCommandId = {
+        CMD_DONT_PROCEED: 0,
+        CMD_PROCEED: 1
+      };
+
+      function sendCommand(cmd) {
+        if (window.certificateErrorPageController) {
+          switch (cmd) {
+            case SecurityInterstitialCommandId.CMD_DONT_PROCEED:
+              certificateErrorPageController.dontProceed();
+              break;
+            case SecurityInterstitialCommandId.CMD_PROCEED:
+              certificateErrorPageController.proceed();
+              break;
+          }
+          return;
+        }
+        window.domAutomationController?.send(cmd);
+      }
+
+      function onFillErrorPageHtml() {
+        if (policy == FORBIDDEN_POLICY) {
+          document.getElementById("hw_proceed").style.display = 'none';
+        }
+
+        document.body.addEventListener('mousemove', function (event) {
+          if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) {
+            return;
+          }
+          document.body.classList.add('using-mouse');
+        });
+ 
+        document.body.addEventListener('touchstart', function () {
+          document.body.classList.remove('using-mouse');
+        });
+ 
+        document.addEventListener('touchend', function () {
+          const buttons = document.querySelectorAll('button');
+          buttons.forEach(button => {
+            button.blur();
+          });
+        });
+        
+        if (isTablet) {
+          document.body.classList.add("hw-istablet");
+        } else if (isPc) {
+          document.body.classList.add("hw-ispc");
+        }
+
+        calcViewportSize();
+      }
+
+      window.addEventListener("resize", () => {
+            calcViewportSize();   
+      }, false)
+
+      window.onload = function() {
+        onFillErrorPageHtml()
+      }
+      
+      function calcViewportSize() {
+        let vh = window.innerHeight * 0.09 > MIN_GAP ? window.innerHeight * 0.09 : MIN_GAP;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+        let ph = window.innerHeight * 0.2 > MIN_PADDING_GAP ? window.innerHeight * 0.2 : MIN_PADDING_GAP;
+        document.documentElement.style.setProperty('--ph', ph + 'px');
+        let vw = ((window.innerWidth - 24 * 13) / 6 + 24)  >  MIN_WIDTH ? ((window.innerWidth - 24 * 13) / 6 + 24) : MIN_WIDTH;
+        document.documentElement.style.setProperty('--vw', vw + 'px');
+      }
+
+      function onDontProceed() {
+        sendCommand(SecurityInterstitialCommandId.CMD_DONT_PROCEED);
+      }
+
+      function onProceed() {
+        sendCommand(SecurityInterstitialCommandId.CMD_PROCEED);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="main"></div>
+    <div class="hw_block_page" style="direction: $i18n{page_direction};">
+      <div class="hw-content--wrap">
+        <div class="hw-block-img">
+          <img src="ic_safe_browsing_error.svg" id="hw_block_img"/>
+        </div>
+
+        <div class="hw-block-info">
+          <div class="hw-block-info__title"><p>$i18n{block_info_title}</p></div>
+          <div class="hw-block-info__body">
+            <p>$i18n{block_info_body}</p>
+          </div>
+        </div>
+
+        <div class="hw-block-link">
+          <div class="hw-link">
+            <button id="hw_not_proceed" onclick="onDontProceed()">
+                <p><span>$i18n{dontproceed}</span></p>
+            </button>
+            <button id="hw_proceed" onclick="onProceed()">
+                <p><span>$i18n{proceed}</span></p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

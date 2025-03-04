@@ -2,12 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "storage/browser/file_system/isolated_context.h"
 
 #include <stddef.h>
 
 #include <string>
 
+#include "base/containers/contains.h"
 #include "storage/browser/file_system/file_system_url.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
@@ -84,8 +90,8 @@ TEST_F(IsolatedContextTest, RegisterAndRevokeTest) {
   std::vector<FileInfo> toplevels;
   ASSERT_TRUE(isolated_context()->GetDraggedFileInfo(id_, &toplevels));
   ASSERT_EQ(fileset_.size(), toplevels.size());
-  for (size_t i = 0; i < toplevels.size(); ++i) {
-    ASSERT_TRUE(fileset_.find(toplevels[i].path) != fileset_.end());
+  for (const auto& toplevel : toplevels) {
+    ASSERT_TRUE(base::Contains(fileset_, toplevel.path));
   }
 
   // See if the name of each registered kTestPaths (that is what we

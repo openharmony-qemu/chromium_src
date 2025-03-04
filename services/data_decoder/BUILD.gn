@@ -5,6 +5,7 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
 source_set("lib") {
   # This target should only be depended upon by components that host a
@@ -18,6 +19,8 @@ source_set("lib") {
   ]
 
   sources = [
+    "cbor_parser_impl.cc",
+    "cbor_parser_impl.h",
     "data_decoder_service.cc",
     "data_decoder_service.h",
     "gzipper.cc",
@@ -39,9 +42,17 @@ source_set("lib") {
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
   deps = [
     "//base",
     "//build:chromeos_buildflags",
+    "//components/cbor",
+    "//components/facilitated_payments/core/mojom:pix_code_validator_mojom",
+    "//components/facilitated_payments/core/util",
     "//components/web_package",
     "//mojo/public/cpp/bindings",
     "//net",
@@ -69,6 +80,7 @@ source_set("tests") {
   testonly = true
 
   sources = [
+    "cbor_parser_unittest.cc",
     "gzipper_unittest.cc",
     "public/cpp/data_decoder_unittest.cc",
     "public/cpp/json_sanitizer_unittest.cc",
@@ -85,6 +97,9 @@ source_set("tests") {
     ":lib",
     "//base",
     "//base/test:test_support",
+    "//components/cbor",
+    "//components/web_package",
+    "//components/web_package/test_support:test_support",
     "//services/data_decoder/public/cpp",
     "//services/data_decoder/public/cpp:test_support",
     "//skia",
@@ -92,7 +107,11 @@ source_set("tests") {
     "//ui/gfx",
   ]
 
-  data = [ "//components/test/data/web_package/" ]
+  if (is_ios) {
+    deps += [ "//components/test:web_package_test_bundle_data" ]
+  } else {
+    data = [ "//components/test/data/web_package/" ]
+  }
 
   if (use_blink) {
     sources += [ "image_decoder_impl_unittest.cc" ]
@@ -124,7 +143,7 @@ source_set("xml_parser_fuzzer_deps") {
     "//third_party/libxml:libxml_utils",
     "//third_party/libxml:xml_reader",
   ]
-  if (is_ohos) {
+  if (arkweb_fuzz_compile_error_fix) {
     public_deps += [ "//content/public/renderer:renderer" ]
   }
 }

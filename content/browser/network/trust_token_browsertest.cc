@@ -6,9 +6,9 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "base/run_loop.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/stringprintf.h"
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
@@ -72,12 +72,12 @@ MATCHER_P2(HasHeader,
            other_matcher,
            "has header " + std::string(name) + " that " +
                DescribeMatcher<std::string>(other_matcher)) {
-  std::string header;
-  if (!arg.headers.GetHeader(name, &header)) {
+  std::optional<std::string> header = arg.headers.GetHeader(name);
+  if (!header) {
     *result_listener << base::StringPrintf("%s wasn't present", name);
     return false;
   }
-  return ExplainMatchResult(other_matcher, header, result_listener);
+  return ExplainMatchResult(other_matcher, *header, result_listener);
 }
 
 MATCHER(
@@ -121,14 +121,14 @@ void TrustTokenBrowsertest::SetUpOnMainThread() {
 }
 
 void TrustTokenBrowsertest::ProvideRequestHandlerKeyCommitmentsToNetworkService(
-    std::vector<base::StringPiece> hosts) {
-  base::flat_map<url::Origin, base::StringPiece> origins_and_commitments;
+    std::vector<std::string_view> hosts) {
+  base::flat_map<url::Origin, std::string_view> origins_and_commitments;
   std::string key_commitments = request_handler_.GetKeyCommitmentRecord();
 
   // TODO(davidvc): This could be extended to make the request handler aware
   // of different origins, which would allow using different key commitments
   // per origin.
-  for (base::StringPiece host : hosts) {
+  for (std::string_view host : hosts) {
     GURL::Replacements replacements;
     replacements.SetHostStr(host);
     origins_and_commitments.insert_or_assign(
@@ -188,6 +188,46 @@ IN_PROC_BROWSER_TEST_F(TrustTokenBrowsertest, FetchEndToEnd) {
   EXPECT_EQ(
       "Success",
       EvalJs(shell(), JsReplace(command, IssuanceOriginFromHost("a.test"))));
+
+  EXPECT_THAT(
+      request_handler_.last_incoming_signed_request(),
+      Optional(AllOf(
+          HasHeader(network::kTrustTokensRequestHeaderSecRedemptionRecord),
+          HasHeader(network::kTrustTokensSecTrustTokenVersionHeader))));
+
+  // Expect three accesses, one for issue, redeem, and sign.
+  EXPECT_EQ(3, access_count_);
+}
+
+// Fetch is called directly from top level (a.test), issuer origin (b.test)
+// is different from top frame origin.
+IN_PROC_BROWSER_TEST_F(TrustTokenBrowsertest, FetchEndToEndThirdParty) {
+  ProvideRequestHandlerKeyCommitmentsToNetworkService({"b.test"});
+
+  const GURL start_url = server_.GetURL("a.test", "/title1.html");
+  ASSERT_TRUE(NavigateToURL(shell(), start_url));
+
+  std::string command = R"(
+  (async () => {
+    await fetch($1, {privateToken: {version: 1,
+                                        operation: 'token-request'}});
+    await fetch($2, {privateToken: {version: 1,
+                                         operation: 'token-redemption'}});
+    await fetch($3, {privateToken: {version: 1,
+                                       operation: 'send-redemption-record',
+                                       issuers: [$4]}});
+    return "Success"; })(); )";
+
+  const std::string issuer_origin = IssuanceOriginFromHost("b.test");
+  const std::string issuance_url = server_.GetURL("b.test", "/issue").spec();
+  const std::string redemption_url = server_.GetURL("b.test", "/redeem").spec();
+  const std::string signature_url = server_.GetURL("b.test", "/sign").spec();
+
+  // We use EvalJs here, not ExecJs, because EvalJs waits for promises to
+  // resolve.
+  EXPECT_EQ("Success",
+            EvalJs(shell(), JsReplace(command, issuance_url, redemption_url,
+                                      signature_url, issuer_origin)));
 
   EXPECT_THAT(
       request_handler_.last_incoming_signed_request(),
@@ -280,8 +320,8 @@ IN_PROC_BROWSER_TEST_F(TrustTokenBrowsertest, IframeSendRedemptionRecord) {
 
   EXPECT_EQ("Success", EvalJs(shell(), command));
 
-  auto execute_op_via_iframe = [&](base::StringPiece path,
-                                   base::StringPiece trust_token) {
+  auto execute_op_via_iframe = [&](std::string_view path,
+                                   std::string_view trust_token) {
     // It's important to set the trust token arguments before updating src, as
     // the latter triggers a load.
     EXPECT_TRUE(ExecJs(
@@ -317,8 +357,8 @@ IN_PROC_BROWSER_TEST_F(TrustTokenBrowsertest,
   GURL start_url = server_.GetURL("a.test", "/page_with_iframe.html");
   ASSERT_TRUE(NavigateToURL(shell(), start_url));
 
-  auto fail_to_execute_op_via_iframe = [&](base::StringPiece path,
-                                           base::StringPiece trust_token) {
+  auto fail_to_execute_op_via_iframe = [&](std::string_view path,
+                                           std::string_view trust_token) {
     // It's important to set the trust token arguments before updating src, as
     // the latter triggers a load.
     EXPECT_TRUE(ExecJs(

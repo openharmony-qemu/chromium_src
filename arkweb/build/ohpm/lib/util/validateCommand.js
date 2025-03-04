@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.replaceCommandInject=void 0,exports.replaceCommandInject=function(e){if(e){["\\","|","&",";","`","'","$","!",">","{","}","[","]","&lt;","\n"].forEach((function(n){if(-1!==e.indexOf(n)){var r=new RegExp("\\"+n,"g");e=e.replace(r,"\\"+n)}}))}return e};

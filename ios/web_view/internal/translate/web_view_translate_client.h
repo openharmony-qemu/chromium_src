@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#import "base/memory/raw_ptr.h"
 #include "components/language/core/browser/accept_languages_service.h"
 #include "components/language/core/browser/language_model.h"
 #include "components/prefs/pref_service.h"
@@ -69,7 +70,6 @@ class WebViewTranslateClient : public translate::TranslateClient {
   PrefService* GetPrefs() override;
   std::unique_ptr<translate::TranslatePrefs> GetTranslatePrefs() override;
   language::AcceptLanguagesService* GetAcceptLanguagesService() override;
-  int GetInfobarIconID() const override;
   std::unique_ptr<infobars::InfoBar> CreateInfoBar(
       std::unique_ptr<translate::TranslateInfoBarDelegate> delegate)
       const override;
@@ -81,7 +81,7 @@ class WebViewTranslateClient : public translate::TranslateClient {
   bool IsTranslatableURL(const GURL& url) override;
 
  private:
-  PrefService* pref_service_;
+  raw_ptr<PrefService> pref_service_;
   translate::IOSTranslateDriver translate_driver_;
   translate::TranslateManager translate_manager_;
   language::AcceptLanguagesService* accept_languages_;

@@ -96,6 +96,8 @@ FingerprintAuthFactorModel::GetAuthFactorState() const {
       [[fallthrough]];
     case FingerprintState::DISABLED_FROM_TIMEOUT:
       return AuthFactorState::kErrorPermanent;
+    case FingerprintState::AVAILABLE_WITH_FAILED_ATTEMPT:
+      NOTREACHED();
   }
 }
 
@@ -124,6 +126,8 @@ int FingerprintAuthFactorModel::GetLabelId() const {
     case FingerprintState::DISABLED_FROM_TIMEOUT:
       return can_use_pin_ ? IDS_AUTH_FACTOR_LABEL_PASSWORD_OR_PIN_REQUIRED
                           : IDS_AUTH_FACTOR_LABEL_PASSWORD_REQUIRED;
+    case FingerprintState::AVAILABLE_WITH_FAILED_ATTEMPT:
+      NOTREACHED();
   }
   NOTREACHED();
 }
@@ -156,16 +160,18 @@ void FingerprintAuthFactorModel::UpdateIcon(AuthIconView* icon) {
     case FingerprintState::AVAILABLE_WITH_TOUCH_SENSOR_WARNING:
       icon->SetIcon(kLockScreenFingerprintIcon);
       break;
+    case FingerprintState::AVAILABLE_WITH_FAILED_ATTEMPT:
+      NOTREACHED();
     case FingerprintState::UNAVAILABLE:
       [[fallthrough]];
     case FingerprintState::DISABLED_FROM_TIMEOUT:
       icon->SetIcon(kLockScreenFingerprintDisabledIcon,
-                    AuthIconView::Color::kDisabled);
+                    AuthIconView::Status::kDisabled);
       break;
     case FingerprintState::DISABLED_FROM_ATTEMPTS:
       if (has_permanent_error_display_timed_out_) {
         icon->SetIcon(kLockScreenFingerprintDisabledIcon,
-                      AuthIconView::Color::kDisabled);
+                      AuthIconView::Status::kDisabled);
       } else {
         icon->SetAnimation(IDR_LOGIN_FINGERPRINT_UNLOCK_SPINNER,
                            kFingerprintFailedAnimationDuration,

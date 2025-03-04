@@ -80,18 +80,19 @@ class FakeRemoteFrame : public blink::mojom::RemoteFrame {
           parsed_permissions_policy) override {}
   void DidUpdateFramePolicy(const blink::FramePolicy& frame_policy) override {}
   void UpdateOpener(
-      const absl::optional<blink::FrameToken>& opener_frame_token) override;
+      const std::optional<blink::FrameToken>& opener_frame_token) override;
   void DetachAndDispose() override;
   void EnableAutoResize(const gfx::Size& min_size,
                         const gfx::Size& max_size) override;
   void DisableAutoResize() override;
   void DidUpdateVisualProperties(
       const cc::RenderFrameMetadata& metadata) override;
-  void SetFrameSinkId(const viz::FrameSinkId& frame_sink_id) override;
+  void SetFrameSinkId(const viz::FrameSinkId& frame_sink_id,
+                      bool allow_paint_holding) override;
   void ChildProcessGone() override;
   void CreateRemoteChild(
       const blink::RemoteFrameToken& token,
-      const absl::optional<blink::FrameToken>& opener_frame_token,
+      const std::optional<blink::FrameToken>& opener_frame_token,
       blink::mojom::TreeScopeType tree_scope_type,
       blink::mojom::FrameReplicationStatePtr replication_state,
       blink::mojom::FrameOwnerPropertiesPtr owner_properties,
@@ -101,6 +102,8 @@ class FakeRemoteFrame : public blink::mojom::RemoteFrame {
       override;
   void CreateRemoteChildren(
       std::vector<blink::mojom::CreateRemoteChildParamsPtr> params) override;
+  void ForwardFencedFrameEventToEmbedder(
+      const std::string& event_type) override;
 
  private:
   mojo::AssociatedReceiver<blink::mojom::RemoteFrame> receiver_{this};

@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -32,7 +33,11 @@ const char kComponentPlatform[] =
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
 #else
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_ARKWEB)
+    "";
+#else
 #error unsupported platform
+#endif
 #endif
 
 // Name of the component architecture.

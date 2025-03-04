@@ -5,16 +5,18 @@
 #include "base/android/build_info.h"
 
 #include <string>
-#if !BUILDFLAG(IS_OHOS)
+
 #include "base/android/jni_android.h"
 #include "base/android/jni_array.h"
+#include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
-#include "base/base_jni_headers/BuildInfo_jni.h"
-#endif
 #include "base/check_op.h"
 #include "base/memory/singleton.h"
 #include "base/notreached.h"
 #include "base/strings/string_number_conversions.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "base/base_jni/BuildInfo_jni.h"
 
 namespace base {
 namespace android {
@@ -37,17 +39,11 @@ int GetIntParam(const std::vector<std::string>& params, size_t index) {
 
 struct BuildInfoSingletonTraits {
   static BuildInfo* New() {
-#if !BUILDFLAG(IS_OHOS)
     JNIEnv* env = AttachCurrentThread();
     ScopedJavaLocalRef<jobjectArray> params_objs = Java_BuildInfo_getAll(env);
     std::vector<std::string> params;
     AppendJavaStringArrayToStringVector(env, params_objs, &params);
     return new BuildInfo(params);
-#else
-    std::vector<std::string> params;
-    return new BuildInfo(params);
-#endif
-
   }
 
   static void Delete(BuildInfo* x) {
@@ -80,19 +76,39 @@ BuildInfo::BuildInfo(const std::vector<std::string>& params)
       gms_version_code_(StrDupParam(params, 15)),
       installer_package_name_(StrDupParam(params, 16)),
       abi_name_(StrDupParam(params, 17)),
-      firebase_app_id_(StrDupParam(params, 18)),
-      custom_themes_(StrDupParam(params, 19)),
-      resources_version_(StrDupParam(params, 20)),
-      target_sdk_version_(GetIntParam(params, 21)),
-      is_debug_android_(GetIntParam(params, 22)),
-      is_tv_(GetIntParam(params, 23)),
-      version_incremental_(StrDupParam(params, 24)),
-      hardware_(StrDupParam(params, 25)),
-      is_at_least_t_(GetIntParam(params, 26)),
-      is_automotive_(GetIntParam(params, 27)),
-      is_at_least_u_(GetIntParam(params, 28)),
-      targets_at_least_u_(GetIntParam(params, 29)),
-      codename_(StrDupParam(params, 30)) {}
+      custom_themes_(StrDupParam(params, 18)),
+      resources_version_(StrDupParam(params, 19)),
+      target_sdk_version_(GetIntParam(params, 20)),
+      is_debug_android_(GetIntParam(params, 21)),
+      is_tv_(GetIntParam(params, 22)),
+      version_incremental_(StrDupParam(params, 23)),
+      hardware_(StrDupParam(params, 24)),
+      is_at_least_t_(GetIntParam(params, 25)),
+      is_automotive_(GetIntParam(params, 26)),
+      is_at_least_u_(GetIntParam(params, 27)),
+      targets_at_least_u_(GetIntParam(params, 28)),
+      codename_(StrDupParam(params, 29)),
+      vulkan_deqp_level_(GetIntParam(params, 30)),
+      is_foldable_(GetIntParam(params, 31)),
+      soc_manufacturer_(StrDupParam(params, 32)),
+      is_debug_app_(GetIntParam(params, 33)),
+      is_desktop_(GetIntParam(params, 34)) {}
+
+BuildInfo::~BuildInfo() = default;
+
+void BuildInfo::set_gms_version_code_for_test(
+    const std::string& gms_version_code) {
+  // This leaks the string, just like production code.
+  gms_version_code_ = strdup(gms_version_code.c_str());
+  Java_BuildInfo_setGmsVersionCodeForTest(AttachCurrentThread(),
+                                          gms_version_code);
+}
+
+std::string BuildInfo::host_signing_cert_sha256() {
+  JNIEnv* env = AttachCurrentThread();
+  return base::android::ConvertJavaStringToUTF8(
+      env, Java_BuildInfo_lazyGetHostSigningCertSha256(env));
+}
 
 // static
 BuildInfo* BuildInfo::GetInstance() {

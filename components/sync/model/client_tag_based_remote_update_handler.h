@@ -6,24 +6,24 @@
 #define COMPONENTS_SYNC_MODEL_CLIENT_TAG_BASED_REMOTE_UPDATE_HANDLER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 
 #include "base/memory/raw_ptr.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-
 #include "components/sync/engine/commit_and_get_updates_types.h"
 #include "components/sync/model/conflict_resolution.h"
 #include "components/sync/model/entity_change.h"
 #include "components/sync/model/model_error.h"
 
 namespace sync_pb {
-class ModelTypeState;
+class DataTypeState;
+class GarbageCollectionDirective;
 }  // namespace sync_pb
 
 namespace syncer {
 
-class ModelTypeSyncBridge;
+class DataTypeSyncBridge;
 class ProcessorEntityTracker;
 class ProcessorEntity;
 
@@ -31,14 +31,15 @@ class ProcessorEntity;
 class ClientTagBasedRemoteUpdateHandler {
  public:
   // All parameters must not be nullptr and they must outlive this object.
-  ClientTagBasedRemoteUpdateHandler(ModelType type,
-                                    ModelTypeSyncBridge* bridge,
+  ClientTagBasedRemoteUpdateHandler(DataType type,
+                                    DataTypeSyncBridge* bridge,
                                     ProcessorEntityTracker* entities);
 
   // Processes incremental updates from the sync server.
-  absl::optional<ModelError> ProcessIncrementalUpdate(
-      const sync_pb::ModelTypeState& model_type_state,
-      UpdateResponseDataList updates);
+  std::optional<ModelError> ProcessIncrementalUpdate(
+      const sync_pb::DataTypeState& data_type_state,
+      UpdateResponseDataList updates,
+      std::optional<sync_pb::GarbageCollectionDirective> gc_directive);
 
   ClientTagBasedRemoteUpdateHandler(const ClientTagBasedRemoteUpdateHandler&) =
       delete;
@@ -67,15 +68,14 @@ class ClientTagBasedRemoteUpdateHandler {
 
   // Creates an entity in the entity tracker for |storage_key| queried from the
   // bridge for the given |update|. Provided |storage_key| (if any, i.e. if
-  // non-empty) must not exist in the entity tracker. Returns nullptr if the
-  // remote creation should be ignored (i.e. it contains invalid data).
+  // non-empty) must not exist in the entity tracker.
   ProcessorEntity* CreateEntity(const UpdateResponseData& update);
 
-  // The model type this object syncs.
-  const ModelType type_;
+  // The data type this object syncs.
+  const DataType type_;
 
-  // ModelTypeSyncBridge linked to associated processor.
-  const raw_ptr<ModelTypeSyncBridge> bridge_;
+  // DataTypeSyncBridge linked to associated processor.
+  const raw_ptr<DataTypeSyncBridge> bridge_;
 
   // A map of client tag hash to sync entities known to the processor.
   // Should be replaced with new interface.

@@ -11,6 +11,7 @@
 
 #include "ash/components/arc/session/arc_client_adapter.h"
 #include "ash/components/arc/session/arc_session.h"
+#include "ash/components/arc/session/mojo_invitation_manager.h"
 #include "base/files/scoped_file.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -135,7 +136,8 @@ class ArcSessionImpl : public ArcSession,
    public:
     // Used for ConnectMojo completion callback.
     using ConnectMojoCallback =
-        base::OnceCallback<void(std::unique_ptr<mojom::ArcBridgeHost>)>;
+        base::OnceCallback<void(std::unique_ptr<mojom::ArcBridgeHost>,
+                                std::unique_ptr<MojoInvitationManager>)>;
     using CreateSocketCallback = base::OnceCallback<void(base::ScopedFD)>;
 
     virtual ~Delegate() = default;
@@ -151,7 +153,7 @@ class ArcSessionImpl : public ArcSession,
 
     // Gets the available disk space under /home. The result is in bytes.
     using GetFreeDiskSpaceCallback =
-        base::OnceCallback<void(absl::optional<int64_t>)>;
+        base::OnceCallback<void(std::optional<int64_t>)>;
     virtual void GetFreeDiskSpace(GetFreeDiskSpaceCallback callback) = 0;
 
     // Returns the channel for the installation.
@@ -199,6 +201,7 @@ class ArcSessionImpl : public ArcSession,
   void TrimVmMemory(TrimVmMemoryCallback callback, int page_limit) override;
   void SetDefaultDeviceScaleFactor(float scale_factor) override;
   void SetUseVirtioBlkData(bool use_virtio_blk_data) override;
+  void SetArcSignedIn(bool arc_signed_in) override;
 
   // ash::SchedulerConfigurationManagerBase::Observer overrides:
   void OnConfigurationSet(bool success, size_t num_cores_disabled) override;
@@ -224,7 +227,9 @@ class ArcSessionImpl : public ArcSession,
 
   // Called when Mojo connection is established (or canceled during the
   // connect.)
-  void OnMojoConnected(std::unique_ptr<mojom::ArcBridgeHost> arc_bridge_host);
+  void OnMojoConnected(
+      std::unique_ptr<mojom::ArcBridgeHost> arc_bridge_host,
+      std::unique_ptr<MojoInvitationManager> invitation_manager);
 
   // Request to stop ARC instance via DBus. Also backs up the ARC
   // bug report if |should_backup_log| is set to true.
@@ -241,7 +246,7 @@ class ArcSessionImpl : public ArcSession,
   void DoStartMiniInstance(size_t num_cores_disabled);
 
   // Free disk space under /home in bytes.
-  void OnFreeDiskSpace(absl::optional<int64_t> space);
+  void OnFreeDiskSpace(std::optional<int64_t> space);
 
   // Whether adb sideloading can be changed
   void OnCanChangeAdbSideloading(bool can_change_adb_sideloading);
@@ -271,6 +276,9 @@ class ArcSessionImpl : public ArcSession,
   // Whether ARCVM uses virtio-blk for /data.
   bool use_virtio_blk_data_ = false;
 
+  // Whether ARC is already signed in (provisioned).
+  bool arc_signed_in_ = false;
+
   // In CONNECTING_MOJO state, this is set to the write side of the pipe
   // to notify cancelling of the procedure.
   base::ScopedFD accept_cancel_pipe_;
@@ -281,12 +289,29 @@ class ArcSessionImpl : public ArcSession,
   // Mojo endpoint.
   std::unique_ptr<mojom::ArcBridgeHost> arc_bridge_host_;
 
+  // Handles sending a Mojo invitation to ARCVM.
+  //
+  // If required (i.e. if ipcz is enabled in Ash Chrome), it also launches
+  // an instance of Mojo Proxy to act as a translation layer between ipcz
+  // and Mojo legacy protocol.
+  //
+  // It is instantiated in a background thread by `ArcSessionImpl::Delegate` as
+  // part of the connection procedure (specifically, in `ConnectMojoInternal`).
+  //
+  // Once the connection is established, the delegate callback
+  // `ArcSessionImpl::OnMojoConnected` receives the instance and assigns it to
+  // this member, conceptually binding it to the UI/main thread.
+  //
+  // The instance is destroyed on ARC's shutdown (`OnStopped`).
+  // On destruction, it posts a task to collect the Mojo Proxy process, if any.
+  std::unique_ptr<MojoInvitationManager> mojo_invitation_manager_;
+
   int lcd_density_ = 0;
-  const raw_ptr<ash::SchedulerConfigurationManagerBase, ExperimentalAsh>
+  const raw_ptr<ash::SchedulerConfigurationManagerBase>
       scheduler_configuration_manager_;
 
   // Owned by ArcSessionManager.
-  const raw_ptr<AdbSideloadingAvailabilityDelegate, ExperimentalAsh>
+  const raw_ptr<AdbSideloadingAvailabilityDelegate>
       adb_sideloading_availability_delegate_;
 
   // Callback to read system memory info.

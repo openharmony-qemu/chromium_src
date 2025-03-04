@@ -4,13 +4,9 @@
 
 #import "ios/chrome/test/earl_grey/chrome_xcui_actions.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -62,13 +58,13 @@ XCUIElement* GetElementMatchingIdentifierInWindow(XCUIApplication* app,
 }
 
 // Long press at `start_point` and drag to `end_point`, with fixed press and
-// hold druations and drag velocity.
+// hold durations and drag velocity.
 void LongPressAndDragBetweenCoordinates(XCUICoordinate* start_point,
                                         XCUICoordinate* end_point) {
-  [start_point pressForDuration:1.5
+  [start_point pressForDuration:2.5
            thenDragToCoordinate:end_point
                    withVelocity:XCUIGestureVelocityDefault
-            thenHoldForDuration:1.0];
+            thenHoldForDuration:2.5];
 }
 
 // Long press on `src_element`'s center then drag to the point in `dst_element`

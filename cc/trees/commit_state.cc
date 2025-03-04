@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "cc/trees/commit_state.h"
 #include "components/viz/common/frame_sinks/copy_output_request.h"
 
@@ -34,7 +39,7 @@ CommitState::CommitState(const CommitState& prev)
       hud_layer_id(prev.hud_layer_id),
       source_frame_number(prev.source_frame_number),
       selection(prev.selection),
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
       clipped_selection_bounds(prev.clipped_selection_bounds),
 #endif
       debug_state(prev.debug_state),
@@ -42,9 +47,8 @@ CommitState::CommitState(const CommitState& prev)
       background_color(prev.background_color),
       viewport_property_ids(prev.viewport_property_ids),
       local_surface_id_from_parent(prev.local_surface_id_from_parent),
-      previous_surfaces_visual_update_duration(
-          prev.previous_surfaces_visual_update_duration),
-      visual_update_duration(prev.visual_update_duration) {
+      primary_main_frame_item_sequence_number(
+          prev.primary_main_frame_item_sequence_number) {
   memcpy(event_listener_properties, prev.event_listener_properties,
          sizeof(event_listener_properties));
 }

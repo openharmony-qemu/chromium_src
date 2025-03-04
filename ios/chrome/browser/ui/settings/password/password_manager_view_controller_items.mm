@@ -6,9 +6,9 @@
 
 #import <UIKit/UIKit.h>
 
+#import "base/apple/foundation_util.h"
 #import "base/check.h"
 #import "base/containers/span.h"
-#import "base/mac/foundation_util.h"
 #import "base/ranges/algorithm.h"
 #import "base/strings/string_number_conversions.h"
 #import "base/strings/sys_string_conversions.h"
@@ -16,9 +16,9 @@
 #import "components/password_manager/core/browser/ui/affiliated_group.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
 #import "components/password_manager/core/common/password_manager_features.h"
-#import "ios/chrome/browser/net/crurl.h"
+#import "ios/chrome/browser/net/model/crurl.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_favicon_data_source.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_table_view_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
@@ -28,10 +28,6 @@
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 #pragma mark - PasswordFormContentCell
 
@@ -82,7 +78,7 @@
   [_localOnlyIcon
       setContentCompressionResistancePriority:UILayoutPriorityRequired
                                       forAxis:UILayoutConstraintAxisVertical];
-  _localOnlyIcon.accessibilityIdentifier = kLocalOnlyPasswordIconId;
+  _localOnlyIcon.accessibilityIdentifier = kLocalOnlyPasswordIconID;
 
   _titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleBody];
   _titleLabel.adjustsFontForContentSizeCategory = YES;
@@ -173,7 +169,7 @@
                             }];
 }
 
-// TODO(crbug.com/1392705): If FaviconContainerView exposed its state, the
+// TODO(crbug.com/40880506): If FaviconContainerView exposed its state, the
 // implementation of this readonly property could use that rather than an ivar.
 - (void)setFaviconTypeForMetrics:(FaviconType)faviconTypeForMetrics {
   _faviconTypeForMetrics = faviconTypeForMetrics;
@@ -223,13 +219,13 @@
   [super configureCell:tableCell withStyler:styler];
 
   PasswordFormContentCell* cell =
-      base::mac::ObjCCastStrict<PasswordFormContentCell>(tableCell);
+      base::apple::ObjCCastStrict<PasswordFormContentCell>(tableCell);
   cell.titleLabel.text = self.title;
   // Title might be a URL, use "...oo.bar.com", not "fooooooooo..." if too big.
   cell.titleLabel.lineBreakMode = NSLineBreakByTruncatingHead;
   cell.detailLabel.text = self.detailText;
   cell.detailLabel.hidden = !cell.detailLabel.text.length;
-  // TODO(crbug.com/1355956): Use AffiliationGroup::GetIconURL() instead.
+  // TODO(crbug.com/40860113): Use AffiliationGroup::GetIconURL() instead.
   cell.faviconPageURL = self.affiliatedGroup.GetCredentials().begin()->GetURL();
   cell.localOnlyIcon.hidden = !self.showLocalOnlyIcon;
   if (styler.cellTitleColor) {
@@ -251,9 +247,9 @@
 
 @end
 
-#pragma mark - CredentialTableViewItem
+#pragma mark - BlockedSiteTableViewItem
 
-@implementation CredentialTableViewItem
+@implementation BlockedSiteTableViewItem
 
 - (instancetype)initWithType:(NSInteger)type {
   self = [super initWithType:type];
@@ -265,17 +261,17 @@
 
 - (void)configureCell:(TableViewCell*)tableCell
            withStyler:(ChromeTableViewStyler*)styler {
+  CHECK(self.credential.blocked_by_user);
   [super configureCell:tableCell withStyler:styler];
 
   PasswordFormContentCell* cell =
-      base::mac::ObjCCastStrict<PasswordFormContentCell>(tableCell);
+      base::apple::ObjCCastStrict<PasswordFormContentCell>(tableCell);
   cell.titleLabel.text = self.title;
   // Title is a URL, use "...oo.bar.com", not "fooooooooo..." if too big.
   cell.titleLabel.lineBreakMode = NSLineBreakByTruncatingHead;
-  cell.detailLabel.text = self.detailText;
   cell.detailLabel.hidden = !cell.detailLabel.text.length;
   cell.faviconPageURL = self.credential.GetURL();
-  cell.localOnlyIcon.hidden = !self.showLocalOnlyIcon;
+  cell.localOnlyIcon.hidden = YES;
   if (styler.cellTitleColor) {
     cell.titleLabel.textColor = styler.cellTitleColor;
   }
@@ -285,13 +281,6 @@
   return base::SysUTF8ToNSString(
       password_manager::GetShownOrigin(self.credential));
   ;
-}
-
-- (NSString*)detailText {
-  if (self.credential.blocked_by_user) {
-    return @"";
-  }
-  return base::SysUTF16ToNSString(self.credential.username);
 }
 
 @end

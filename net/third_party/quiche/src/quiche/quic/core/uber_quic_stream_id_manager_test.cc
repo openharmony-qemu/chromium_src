@@ -4,6 +4,9 @@
 
 #include "quiche/quic/core/uber_quic_stream_id_manager.h"
 
+#include <string>
+#include <vector>
+
 #include "quiche/quic/core/quic_utils.h"
 #include "quiche/quic/core/quic_versions.h"
 #include "quiche/quic/platform/api/quic_test.h"
@@ -46,6 +49,7 @@ std::vector<TestParams> GetTestParams() {
 
 class MockDelegate : public QuicStreamIdManager::DelegateInterface {
  public:
+  MOCK_METHOD(bool, CanSendMaxStreams, (), (override));
   MOCK_METHOD(void, SendMaxStreams,
               (QuicStreamCount stream_count, bool unidirectional), (override));
 };

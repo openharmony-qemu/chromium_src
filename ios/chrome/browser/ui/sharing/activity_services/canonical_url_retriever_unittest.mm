@@ -10,7 +10,7 @@
 #import "base/test/ios/wait_util.h"
 #import "base/test/metrics/histogram_tester.h"
 #import "components/ui_metrics/canonical_url_share_metrics_types.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/web/public/test/fakes/fake_web_client.h"
 #import "ios/web/public/test/scoped_testing_web_client.h"
 #import "ios/web/public/test/web_state_test_util.h"
@@ -19,18 +19,14 @@
 #import "testing/platform_test.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 // Test fixture for the retrieving canonical URLs.
 class CanonicalURLRetrieverTest : public PlatformTest {
  public:
   CanonicalURLRetrieverTest()
       : web_client_(std::make_unique<web::FakeWebClient>()) {
-    browser_state_ = TestChromeBrowserState::Builder().Build();
+    profile_ = TestProfileIOS::Builder().Build();
 
-    web::WebState::CreateParams params(browser_state_.get());
+    web::WebState::CreateParams params(profile_.get());
     web_state_ = web::WebState::Create(params);
     web_state_->GetView();
     web_state_->SetKeepRenderProcessAlive(true);
@@ -65,7 +61,7 @@ class CanonicalURLRetrieverTest : public PlatformTest {
 
   web::ScopedTestingWebClient web_client_;
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   std::unique_ptr<web::WebState> web_state_;
 
   // Used to verify histogram logging.

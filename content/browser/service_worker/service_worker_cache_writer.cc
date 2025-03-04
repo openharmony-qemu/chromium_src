@@ -2,14 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/service_worker/service_worker_cache_writer.h"
 
 #include <algorithm>
 #include <string>
 
+#include "base/containers/span.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "crypto/secure_hash.h"
 #include "crypto/sha2.h"
@@ -71,7 +78,7 @@ class ServiceWorkerCacheWriter::ReadResponseHeadCallbackAdapter
 
   void DidReadResponseHead(int result,
                            network::mojom::URLResponseHeadPtr response_head,
-                           absl::optional<mojo_base::BigBuffer>) {
+                           std::optional<mojo_base::BigBuffer>) {
     result_ = result;
     if (!owner_)
       return;
@@ -151,8 +158,6 @@ int ServiceWorkerCacheWriter::DoLoop(int status) {
         break;
       default:
         NOTREACHED() << "Unknown state in DoLoop";
-        state_ = STATE_DONE;
-        break;
     }
   } while (status != net::ERR_IO_PENDING && state_ != STATE_DONE);
   io_pending_ = (status == net::ERR_IO_PENDING);
@@ -453,7 +458,7 @@ int ServiceWorkerCacheWriter::DoReadDataForCompare(int result) {
   DCHECK_GE(result, 0);
   DCHECK(data_to_write_);
 
-  data_to_read_ = base::MakeRefCounted<net::IOBuffer>(len_to_write_);
+  data_to_read_ = base::MakeRefCounted<net::IOBufferWithSize>(len_to_write_);
   len_to_read_ = len_to_write_;
   state_ = STATE_READ_DATA_FOR_COMPARE_DONE;
   compare_offset_ = 0;
@@ -494,8 +499,8 @@ int ServiceWorkerCacheWriter::DoReadDataForCompareDone(int result) {
 
   // Compare the data from the ServiceWorker script cache to the data from the
   // network.
-  if (memcmp(data_to_read_->data(), data_to_write_->data() + compare_offset_,
-             result)) {
+  if (!std::equal(data_to_read_->data(), data_to_read_->data() + result,
+                  data_to_write_->data() + compare_offset_)) {
     // Data mismatched. This method already validated that all the bytes through
     // |bytes_compared_| were identical, so copy the first |bytes_compared_|
     // over, then start writing network data back after the changed point.
@@ -549,7 +554,7 @@ int ServiceWorkerCacheWriter::DoReadHeadersForCopy(int result) {
   }
 
   bytes_copied_ = 0;
-  data_to_copy_ = base::MakeRefCounted<net::IOBuffer>(kCopyBufferSize);
+  data_to_copy_ = base::MakeRefCounted<net::IOBufferWithSize>(kCopyBufferSize);
   state_ = STATE_READ_HEADERS_FOR_COPY_DONE;
   return ReadResponseHead(copy_reader_.get());
 }
@@ -718,7 +723,7 @@ class ServiceWorkerCacheWriter::DataPipeReader {
             ReadCallback callback) {
     DCHECK(buffer);
     buffer_ = std::move(buffer);
-    num_bytes_to_read_ = num_bytes;
+    num_bytes_to_read_ = base::checked_cast<size_t>(num_bytes);
     callback_ = std::move(callback);
 
     if (!data_.is_valid()) {
@@ -738,8 +743,9 @@ class ServiceWorkerCacheWriter::DataPipeReader {
 
  private:
   void ReadInternal(MojoResult) {
-    MojoResult result = data_->ReadData(buffer_->data(), &num_bytes_to_read_,
-                                        MOJO_READ_DATA_FLAG_NONE);
+    MojoResult result = data_->ReadData(
+        MOJO_READ_DATA_FLAG_NONE, buffer_->span().first(num_bytes_to_read_),
+        num_bytes_to_read_);
     if (result == MOJO_RESULT_SHOULD_WAIT) {
       watcher_.ArmOrNotify();
       return;
@@ -747,10 +753,10 @@ class ServiceWorkerCacheWriter::DataPipeReader {
     if (result != MOJO_RESULT_OK) {
       // Disconnected means it's the end of the body or an error occurs during
       // reading the body.
-      // TODO(https://crbug.com/1055677): notify of errors.
+      // TODO(crbug.com/40120038): notify of errors.
       num_bytes_to_read_ = 0;
     }
-    owner_->AsyncDoLoop(num_bytes_to_read_);
+    owner_->AsyncDoLoop(base::checked_cast<int>(num_bytes_to_read_));
   }
 
   void OnReadDataPrepared(mojo::ScopedDataPipeConsumerHandle data) {
@@ -769,14 +775,14 @@ class ServiceWorkerCacheWriter::DataPipeReader {
                        weak_factory_.GetWeakPtr()));
     ReadInternal(MOJO_RESULT_OK);
 
-    // TODO(https://crbug.com/1055677): provide a callback to notify of errors
+    // TODO(crbug.com/40120038): provide a callback to notify of errors
     // if any.
     reader_->ReadData({});
   }
 
   // Parameters set on Read().
   scoped_refptr<net::IOBuffer> buffer_;
-  uint32_t num_bytes_to_read_ = 0;
+  size_t num_bytes_to_read_ = 0;
   ReadCallback callback_;
 
   // |reader_| is safe to be kept as a rawptr because |owner_| owns |this| and

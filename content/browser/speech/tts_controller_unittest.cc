@@ -103,8 +103,10 @@ class MockTtsPlatformImpl : public TtsPlatform {
     utterance_id_ = -1;
   }
 
+  void ClearController() { controller_ = nullptr; }
+
  private:
-  const raw_ptr<TtsController> controller_;
+  raw_ptr<TtsController> controller_;
   bool platform_supported_ = true;
   bool platform_initialized_ = true;
   std::vector<VoiceData> voices_;
@@ -132,6 +134,22 @@ class MockTtsEngineDelegate : public TtsEngineDelegate {
   void Speak(TtsUtterance* utterance, const VoiceData& voice) override {
     utterance_id_ = utterance->GetId();
   }
+
+  void UninstallLanguageRequest(content::BrowserContext* browser_context,
+                                const std::string& lang,
+                                const std::string& client_id,
+                                int source,
+                                bool uninstall_immediately) override {}
+
+  void InstallLanguageRequest(BrowserContext* browser_context,
+                              const std::string& lang,
+                              const std::string& client_id,
+                              int source) override {}
+
+  void LanguageStatusRequest(BrowserContext* browser_context,
+                             const std::string& lang,
+                             const std::string& client_id,
+                             int source) override {}
 
   void LoadBuiltInTtsEngine(BrowserContext* browser_context) override {}
 
@@ -193,7 +211,7 @@ class MockTtsControllerDelegate : public TtsControllerDelegate {
                                         double* volume) override {}
 
  private:
-  raw_ptr<BrowserContext, ExperimentalAsh> last_browser_context_ = nullptr;
+  raw_ptr<BrowserContext> last_browser_context_ = nullptr;
   PreferredVoiceIds ids_;
 };
 #endif
@@ -257,7 +275,12 @@ class TtsControllerTest : public testing::Test {
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   MockTtsControllerDelegate* delegate() { return &delegate_; }
 #endif
-  void ReleaseTtsController() { controller_.reset(); }
+  void ReleaseTtsController() {
+    // Need to clear the controller on MockTtsPlatformImpl to avoid a dangling
+    // pointer.
+    platform_impl_->ClearController();
+    controller_.reset();
+  }
   void ReleaseBrowserContext() {
     // BrowserContext::~BrowserContext(...) is calling OnBrowserContextDestroyed
     // on the tts controller singleton. That call is simulated here to ensures
@@ -579,7 +602,7 @@ TEST_F(TtsControllerTest, TestGetMatchingVoice) {
 // Note: The following tests are disabled since they do not apply for Lacros
 // build. TtsPlatformImpl is not supported for Lacros when lacros tts support
 // feature is disabled.
-// TODO(crbug.com/1227543): Add new tests for lacros with tts support feature
+// TODO(crbug.com/40189267): Add new tests for lacros with tts support feature
 // being enabled.
 #if !BUILDFLAG(IS_CHROMEOS_LACROS)
 TEST_F(TtsControllerTest, TestTtsControllerShutdown) {

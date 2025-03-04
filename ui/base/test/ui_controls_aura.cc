@@ -7,7 +7,6 @@
 #include "base/check.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/gfx/native_widget_types.h"
 
 namespace ui_controls {
@@ -16,9 +15,11 @@ UIControlsAura* instance_ = NULL;
 bool g_ui_controls_enabled = false;
 }  // namespace
 
+#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_WIN)
 void EnableUIControls() {
   g_ui_controls_enabled = true;
 }
+#endif  // !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_WIN)
 
 void ResetUIControlsIfEnabled() {}
 
@@ -44,11 +45,14 @@ bool SendKeyPressNotifyWhenDone(gfx::NativeWindow window,
                                 bool shift,
                                 bool alt,
                                 bool command,
-                                base::OnceClosure task) {
+                                base::OnceClosure task,
+                                KeyEventType wait_for) {
   CHECK(g_ui_controls_enabled);
+  CHECK(wait_for == ui_controls::KeyEventType::kKeyPress ||
+        wait_for == ui_controls::KeyEventType::kKeyRelease);
   return instance_->SendKeyEventsNotifyWhenDone(
       window, key, kKeyPress | kKeyRelease, std::move(task),
-      GenerateAcceleratorState(control, shift, alt, command));
+      GenerateAcceleratorState(control, shift, alt, command), wait_for);
 }
 
 // static
@@ -83,12 +87,13 @@ bool SendKeyEventsNotifyWhenDone(gfx::NativeWindow window,
          accelerator_state <= (kShift | kControl | kAlt | kCommand));
 
   return instance_->SendKeyEventsNotifyWhenDone(
-      window, key, key_event_types, std::move(task), accelerator_state);
+      window, key, key_event_types, std::move(task), accelerator_state,
+      KeyEventType::kKeyPress);
 }
 
 // static
 bool SendMouseMove(int x, int y, gfx::NativeWindow) {
-  // TODO(crbug.com/1396661): Maybe use the window hint on other platforms.
+  // TODO(crbug.com/40249511): Maybe use the window hint on other platforms.
   CHECK(g_ui_controls_enabled);
   return instance_->SendMouseMove(x, y);
 }
@@ -98,7 +103,7 @@ bool SendMouseMoveNotifyWhenDone(int x,
                                  int y,
                                  base::OnceClosure task,
                                  gfx::NativeWindow) {
-  // TODO(crbug.com/1396661): Maybe use the window hint on other platforms.
+  // TODO(crbug.com/40249511): Maybe use the window hint on other platforms.
   CHECK(g_ui_controls_enabled);
   return instance_->SendMouseMoveNotifyWhenDone(x, y, std::move(task));
 }
@@ -108,7 +113,7 @@ bool SendMouseEvents(MouseButton type,
                      int button_state,
                      int accelerator_state,
                      gfx::NativeWindow) {
-  // TODO(crbug.com/1396661): Maybe use the window hint on other platforms.
+  // TODO(crbug.com/40249511): Maybe use the window hint on other platforms.
   CHECK(g_ui_controls_enabled);
   return instance_->SendMouseEvents(type, button_state, accelerator_state);
 }
@@ -119,7 +124,7 @@ bool SendMouseEventsNotifyWhenDone(MouseButton type,
                                    base::OnceClosure task,
                                    int accelerator_state,
                                    gfx::NativeWindow) {
-  // TODO(crbug.com/1396661): Maybe use the window hint on other platforms.
+  // TODO(crbug.com/40249511): Maybe use the window hint on other platforms.
   CHECK(g_ui_controls_enabled);
   return instance_->SendMouseEventsNotifyWhenDone(
       type, button_state, std::move(task), accelerator_state);
@@ -127,7 +132,7 @@ bool SendMouseEventsNotifyWhenDone(MouseButton type,
 
 // static
 bool SendMouseClick(MouseButton type, gfx::NativeWindow) {
-  // TODO(crbug.com/1396661): Do any Aura platforms need to use the hint?
+  // TODO(crbug.com/40249511): Do any Aura platforms need to use the hint?
   CHECK(g_ui_controls_enabled);
   return instance_->SendMouseClick(type);
 }
@@ -163,11 +168,13 @@ UIControlsAura::UIControlsAura() {
 UIControlsAura::~UIControlsAura() {
 }
 
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
 // static. declared in ui_controls.h
 void InstallUIControlsAura(UIControlsAura* instance) {
-  EnableUIControls();
+  g_ui_controls_enabled = true;
   delete instance_;
   instance_ = instance;
 }
+#endif  // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_WIN)
 
 }  // namespace ui_controls

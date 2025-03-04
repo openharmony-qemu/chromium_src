@@ -17,7 +17,6 @@ EnumTraits<audio::mojom::DebugRecordingStreamType,
       return audio::mojom::DebugRecordingStreamType::kOutput;
   }
   NOTREACHED();
-  return audio::mojom::DebugRecordingStreamType::kInput;
 }
 
 bool EnumTraits<audio::mojom::DebugRecordingStreamType,
@@ -33,7 +32,6 @@ bool EnumTraits<audio::mojom::DebugRecordingStreamType,
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
 }  // namespace mojo

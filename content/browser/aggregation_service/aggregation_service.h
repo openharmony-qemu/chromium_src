@@ -5,12 +5,14 @@
 #ifndef CONTENT_BROWSER_AGGREGATION_SERVICE_AGGREGATION_SERVICE_H_
 #define CONTENT_BROWSER_AGGREGATION_SERVICE_AGGREGATION_SERVICE_H_
 
+#include <set>
 #include <vector>
 
 #include "base/functional/callback_forward.h"
 #include "content/browser/aggregation_service/aggregatable_report_assembler.h"
 #include "content/browser/aggregation_service/aggregatable_report_sender.h"
 #include "content/browser/aggregation_service/aggregation_service_storage.h"
+#include "content/common/content_export.h"
 #include "content/public/browser/storage_partition.h"
 
 class GURL;
@@ -20,6 +22,10 @@ class Time;
 class Value;
 }  // namespace base
 
+namespace url {
+class Origin;
+}  // namespace url
+
 namespace content {
 
 class AggregationServiceObserver;
@@ -28,7 +34,7 @@ class AggregatableReportRequest;
 class BrowserContext;
 
 // External interface for the aggregation service.
-class AggregationService {
+class CONTENT_EXPORT AggregationService {
  public:
   using AssemblyStatus = AggregatableReportAssembler::AssemblyStatus;
   using AssemblyCallback = AggregatableReportAssembler::AssemblyCallback;
@@ -50,23 +56,27 @@ class AggregationService {
 
   // Constructs an AggregatableReport from the information in `report_request`.
   // `callback` will be run once completed which returns the assembled report
-  // if successful, otherwise `absl::nullopt` will be returned.
+  // if successful, otherwise `std::nullopt` will be returned.
   virtual void AssembleReport(AggregatableReportRequest report_request,
                               AssemblyCallback callback) = 0;
 
   // TODO(alexmt): Consider removing `SendReport()`.
 
   // Sends an aggregatable report to the reporting endpoint `url`.
-  virtual void SendReport(const GURL& url,
-                          const AggregatableReport& report,
-                          SendCallback callback) = 0;
+  virtual void SendReport(
+      const GURL& url,
+      const AggregatableReport& report,
+      std::optional<AggregatableReportRequest::DelayType> delay_type,
+      SendCallback callback) = 0;
 
   // Sends the contents of an aggregatable report to the reporting endpoint
   // `url`. This allows a caller to modify the report's JSON serialization as
   // needed.
-  virtual void SendReport(const GURL& url,
-                          const base::Value& contents,
-                          SendCallback callback) = 0;
+  virtual void SendReport(
+      const GURL& url,
+      const base::Value& contents,
+      std::optional<AggregatableReportRequest::DelayType> delay_type,
+      SendCallback callback) = 0;
 
   // Deletes all data in storage that were fetched/stored between `delete_begin`
   // and `delete_end` time (inclusive). Null times are treated as unbounded
@@ -100,6 +110,11 @@ class AggregationService {
   virtual void SendReportsForWebUI(
       const std::vector<AggregationServiceStorage::RequestId>& ids,
       base::OnceClosure reports_sent_callback) = 0;
+
+  // Runs `callback` with a set containing all the distinct reporting origins
+  // stored in the report request table.
+  virtual void GetPendingReportReportingOrigins(
+      base::OnceCallback<void(std::set<url::Origin>)> callback) = 0;
 
   virtual void AddObserver(AggregationServiceObserver* observer) = 0;
 

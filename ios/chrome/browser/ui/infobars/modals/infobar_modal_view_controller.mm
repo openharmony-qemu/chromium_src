@@ -9,10 +9,6 @@
 #import "ios/chrome/browser/ui/infobars/modals/infobar_modal_delegate.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface InfobarModalViewController ()
 
 @property(strong, nonatomic) id<InfobarModalDelegate> infobarModalDelegate;
@@ -32,7 +28,7 @@
 
 #pragma mark - View Lifecycle
 
-// TODO(crbug.com/1372916): PLACEHOLDER UI for the modal ViewController.
+// TODO(crbug.com/40061288): PLACEHOLDER UI for the modal ViewController.
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.view.backgroundColor = [UIColor colorNamed:kBackgroundColor];

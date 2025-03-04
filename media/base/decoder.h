@@ -8,6 +8,7 @@
 #include <ostream>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "media/base/media_export.h"
 #include "media/base/status.h"
 
@@ -51,15 +52,18 @@ enum class VideoDecoderType : int {
   kVda = 14,     // VDAVideoDecoder
   // kChromeOs = 15,  // DEPRECATED, should be kVaapi, kV4L2, or kOutOfProcess
   // instead.
-  kV4L2 = 16,  // V4L2VideoDecoder
+  kV4L2 = 16,          // V4L2VideoDecoder
+  kTesting = 17,       // Never send this to UKM, for tests only.
+  kOutOfProcess = 18,  // OOPVideoDecoder (Linux and ChromeOS)
+  kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
 
-  kTesting = 17,  // Never send this to UKM, for tests only.
-  kOHOS = 18, //OHOSVideoDecoder
-
-  kOutOfProcess = 19,  // OOPVideoDecoder (Linux and ChromeOS)
-
-  // Keep this at the end and equal to the last entry.
-  kMaxValue = kOutOfProcess
+// Keep this at the end and equal to the last entry.
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  kOHOS = 20,
+  kMaxValue = kOHOS
+#else
+  kMaxValue = kVideoToolbox
+#endif
 };
 
 MEDIA_EXPORT std::string GetDecoderName(AudioDecoderType type);
@@ -78,7 +82,7 @@ class MEDIA_EXPORT Decoder {
 
   // Returns true if the implementation supports decoding configs with
   // encryption.
-  // TODO(crbug.com/1099488): Sometimes it's not possible to give a definitive
+  // TODO(crbug.com/40137516): Sometimes it's not possible to give a definitive
   // yes or no answer unless more context is given. While this doesn't pose any
   // problems, it does allow incompatible decoders to pass the filtering step in
   // |DecoderSelector| potentially slowing down the selection process.

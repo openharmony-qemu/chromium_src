@@ -59,8 +59,12 @@ class MockMediaSession : public MediaSession {
   MOCK_METHOD(void, EnterPictureInPicture, (), (override));
   MOCK_METHOD(void, ExitPictureInPicture, (), (override));
   MOCK_METHOD(void,
+              GetVisibility,
+              (GetVisibilityCallback callback),
+              (override));
+  MOCK_METHOD(void,
               SetAudioSinkId,
-              (const absl::optional<std::string>& id),
+              (const std::optional<std::string>& id),
               (override));
   MOCK_METHOD(void, ToggleMicrophone, (), (override));
   MOCK_METHOD(void, ToggleCamera, (), (override));
@@ -70,8 +74,9 @@ class MockMediaSession : public MediaSession {
   MOCK_METHOD(void, RequestMediaRemoting, (), (override));
   MOCK_METHOD(void, PreviousSlide, (), (override));
   MOCK_METHOD(void, NextSlide, (), (override));
+  MOCK_METHOD(void, EnterAutoPictureInPicture, (), (override));
 };
 
 }  // namespace content
 
-#endif
+#endif  // CONTENT_PUBLIC_TEST_MOCK_MEDIA_SESSION_H_

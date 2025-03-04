@@ -34,8 +34,8 @@
 //
 // If you just use Views, then the RootView handles focus traversal for you. The
 // default traversal order is the order in which the views have been added to
-// their container. You can call View::SetNextFocusableView to modify this
-// order.
+// their container. You can call View::Insert{Before,After}InFocusList() to
+// explicitly control the focus order.
 //
 // If you are embedding a native view containing a nested RootView (for example
 // by adding a view that contains a native widget as its native component),
@@ -364,11 +364,11 @@ class VIEWS_EXPORT FocusManager : public ViewObserver {
       focus_change_listeners_;
 
   // This is true if full keyboard accessibility is needed. This causes
-  // IsAccessibilityFocusable() to be checked rather than IsFocusable(). This
-  // can be set depending on platform constraints. FocusSearch uses this in
-  // addition to its own accessibility mode, which handles accessibility at the
-  // FocusTraversable level. Currently only used on Mac, when Full Keyboard
-  // access is enabled.
+  // GetViewAccessibility().IsAccessibilityFocusable() to be checked rather than
+  // IsFocusable(). This can be set depending on platform constraints.
+  // FocusSearch uses this in addition to its own accessibility mode, which
+  // handles accessibility at the FocusTraversable level. Currently only used on
+  // Mac, when Full Keyboard access is enabled.
   bool keyboard_accessible_ = false;
 
   // Whether FocusManager is currently trying to restore a focused view.

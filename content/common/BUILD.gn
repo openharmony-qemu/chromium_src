@@ -7,12 +7,15 @@ import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//content/public/common/zygote/features.gni")
 import("//ipc/features.gni")
+import("//media/media_options.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//ppapi/buildflags/buildflags.gni")
 import("//sandbox/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 import("features.gni")
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 # For feature flags internal to content. See content/public/common:features
 # for feature flags that clients of contents need to know about.
@@ -25,13 +28,13 @@ buildflag_header("buildflags") {
   flags = [
     "USE_EXTERNAL_POPUP_MENU=$use_external_popup_menu",
     "ALLOW_CRITICAL_MEMORY_PRESSURE_HANDLING_IN_FOREGROUND=$allow_critical_memory_pressure_handling_in_foreground",
-    "ENABLE_SCREEN_CAPTURE=$enable_screen_capture",
     "MBI_MODE_PER_RENDER_PROCESS_HOST=$_mbi_mode_per_render_process_host",
     "MBI_MODE_PER_SITE_INSTANCE=$_mbi_mode_per_site_instance",
+    "CONTENT_ENABLE_LEGACY_IPC=$content_enable_legacy_ipc",
   ]
 }
 
-if (is_linux || is_chromeos || is_ohos) {
+if (is_linux || is_chromeos) {
   source_set("sandbox_support_linux") {
     public = [
       "zygote/zygote_commands_linux.h",
@@ -81,8 +84,6 @@ source_set("common") {
     "content_constants_internal.h",
     "content_export.h",
     "content_ipc_logging.cc",
-    "content_message_generator.cc",
-    "content_message_generator.h",
     "content_navigation_policy.cc",
     "content_navigation_policy.h",
     "content_param_traits.cc",
@@ -106,52 +107,78 @@ source_set("common") {
     "font_list.cc",
     "font_list.h",
     "font_list_fontconfig.cc",
-    "gin_java_bridge_messages.h",
     "in_process_child_thread_params.cc",
     "in_process_child_thread_params.h",
     "input/actions_parser.cc",
     "input/actions_parser.h",
-    "input/event_with_latency_info.h",
-    "input/gesture_event_stream_validator.cc",
-    "input/gesture_event_stream_validator.h",
-    "input/input_event_ack_state.cc",
-    "input/input_event_stream_validator.cc",
-    "input/input_event_stream_validator.h",
+    "input/synthetic_gesture.cc",
+    "input/synthetic_gesture.h",
+    "input/synthetic_gesture_controller.cc",
+    "input/synthetic_gesture_controller.h",
     "input/synthetic_gesture_params.cc",
     "input/synthetic_gesture_params.h",
+    "input/synthetic_gesture_target.h",
+    "input/synthetic_mouse_driver.cc",
+    "input/synthetic_mouse_driver.h",
+    "input/synthetic_pen_driver.cc",
+    "input/synthetic_pen_driver.h",
+    "input/synthetic_pinch_gesture.cc",
+    "input/synthetic_pinch_gesture.h",
     "input/synthetic_pinch_gesture_params.cc",
     "input/synthetic_pinch_gesture_params.h",
+    "input/synthetic_pointer_action.cc",
+    "input/synthetic_pointer_action.h",
     "input/synthetic_pointer_action_list_params.cc",
     "input/synthetic_pointer_action_list_params.h",
     "input/synthetic_pointer_action_params.cc",
     "input/synthetic_pointer_action_params.h",
+    "input/synthetic_pointer_driver.cc",
+    "input/synthetic_pointer_driver.h",
+    "input/synthetic_smooth_drag_gesture.cc",
+    "input/synthetic_smooth_drag_gesture.h",
     "input/synthetic_smooth_drag_gesture_params.cc",
     "input/synthetic_smooth_drag_gesture_params.h",
+    "input/synthetic_smooth_move_gesture.cc",
+    "input/synthetic_smooth_move_gesture.h",
+    "input/synthetic_smooth_scroll_gesture.cc",
+    "input/synthetic_smooth_scroll_gesture.h",
     "input/synthetic_smooth_scroll_gesture_params.cc",
     "input/synthetic_smooth_scroll_gesture_params.h",
+    "input/synthetic_tap_gesture.cc",
+    "input/synthetic_tap_gesture.h",
     "input/synthetic_tap_gesture_params.cc",
     "input/synthetic_tap_gesture_params.h",
-    "input/touch_event_stream_validator.cc",
-    "input/touch_event_stream_validator.h",
-    "input/web_touch_event_traits.cc",
-    "input/web_touch_event_traits.h",
+    "input/synthetic_touch_driver.cc",
+    "input/synthetic_touch_driver.h",
+    "input/synthetic_touchpad_pinch_gesture.cc",
+    "input/synthetic_touchpad_pinch_gesture.h",
+    "input/synthetic_touchscreen_pinch_gesture.cc",
+    "input/synthetic_touchscreen_pinch_gesture.h",
     "media/cdm_info.cc",
-    "mojo_core_library_support.cc",
-    "mojo_core_library_support.h",
     "navigation_gesture.h",
     "navigation_params_utils.h",
     "origin_util.cc",
+    "peak_gpu_memory_callback.cc",
+    "peak_gpu_memory_callback.h",
     "process_type.cc",
     "process_visibility_tracker.cc",
     "process_visibility_tracker.h",
     "pseudonymization_salt.cc",
     "pseudonymization_salt.h",
+    "service_worker/forwarded_race_network_request_url_loader_factory.cc",
+    "service_worker/forwarded_race_network_request_url_loader_factory.h",
+    "service_worker/race_network_request_read_buffer_manager.cc",
+    "service_worker/race_network_request_read_buffer_manager.h",
+    "service_worker/race_network_request_simple_buffer_manager.cc",
+    "service_worker/race_network_request_simple_buffer_manager.h",
     "service_worker/race_network_request_url_loader_client.cc",
     "service_worker/race_network_request_url_loader_client.h",
+    "service_worker/race_network_request_write_buffer_manager.cc",
+    "service_worker/race_network_request_write_buffer_manager.h",
     "service_worker/service_worker_resource_loader.cc",
     "service_worker/service_worker_resource_loader.h",
-    "set_process_title.cc",
-    "set_process_title.h",
+    "service_worker/service_worker_router_evaluator.cc",
+    "service_worker/service_worker_router_evaluator.h",
     "skia_utils.cc",
     "skia_utils.h",
     "thread_pool_util.cc",
@@ -160,6 +187,8 @@ source_set("common") {
     "url_schemes.cc",
     "url_schemes.h",
     "user_agent.cc",
+    "user_level_memory_pressure_signal_features.cc",
+    "user_level_memory_pressure_signal_features.h",
     "web_package/signed_exchange_utils.cc",
     "web_package/signed_exchange_utils.h",
     "webid/identity_url_loader_throttle.cc",
@@ -192,16 +221,15 @@ source_set("common") {
     ":buildflags",
     "//base",
     "//base/allocator:buildflags",
-    "//base/third_party/dynamic_annotations",
     "//build:branding_buildflags",
     "//build:chromeos_buildflags",
     "//build/util:chromium_git_revision",
     "//components/discardable_memory/common",
-    "//components/power_scheduler",
+    "//components/input",
     "//components/services/filesystem/public/mojom",
     "//components/tracing:startup_tracing",
+    "//components/embedder_support:make_ohos_arkweb_version",
     "//content:content_resources",
-    "//content:dev_ui_content_resources",
     "//content/common/fetch:fetch_api_request_proto",
     "//content/public/common:interfaces",
     "//content/public/common/zygote:buildflags",
@@ -220,7 +248,6 @@ source_set("common") {
     "//media/base/ipc",
     "//media/capture",
     "//media/gpu:buildflags",
-    "//media/gpu/ipc/client",
     "//media/gpu/ipc/common",
     "//media/midi",
     "//media/midi:mojo",
@@ -244,7 +271,9 @@ source_set("common") {
     "//ui/base",
     "//ui/base/cursor/mojom:cursor_type",
     "//ui/base/ime",
+    "//ui/color",
     "//ui/display",
+    "//ui/events:gesture_detection",
     "//ui/events/blink",
     "//ui/gfx",
     "//ui/gfx/geometry",
@@ -300,10 +329,7 @@ source_set("common") {
     ]
 
     if (use_seccomp_bpf) {
-      sources += [
-        "//sandbox/policy/linux/bpf_base_policy_linux.cc",
-        "//sandbox/policy/linux/bpf_base_policy_linux.h",
-      ]
+      deps += [ "//sandbox/policy" ]
     }
   }
 
@@ -337,13 +363,14 @@ source_set("common") {
   if (is_android) {
     deps += [
       "//content/public/android:common_aidl",
-      "//content/public/android:jni",
+      "//content/public/android:common_jni",
+      "//content/public/android:jar_jni",
     ]
 
     libs += [ "android" ]
   }
 
-  if (is_debug && !is_component_build && enable_plugins) {
+  if (is_debug && !is_component_build && enable_ppapi) {
     # Content depends on the PPAPI message logging stuff; if this isn't here,
     # some unit test binaries won't compile. This only worked in release mode
     # because logging is disabled there.
@@ -360,15 +387,38 @@ source_set("common") {
     sources -= [ "cursors/webcursor_aura.cc" ]
   }
 
-  if (is_linux || is_chromeos || is_ohos) {
+  if (is_linux || is_chromeos) {
+    sources += [
+      "gpu_pre_sandbox_hook_linux.cc",
+      "gpu_pre_sandbox_hook_linux.h",
+    ]
+    public_deps += [ "//sandbox/policy" ]
     deps += [
       ":sandbox_support_linux",
-      ":set_process_title_linux",
+      "//media/gpu:buildflags",
+      "//sandbox/linux:sandbox_services",
+      "//sandbox/linux:seccomp_bpf",
+      "//sandbox/policy:chromecast_sandbox_allowlist_buildflags",
       "//third_party/fontconfig",
     ]
-    if (is_ohos) {
-      deps -= [ "//third_party/fontconfig" ]
+    if (use_v4l2_codec) {
+      deps += [ "//media/gpu/v4l2" ]
     }
+  }
+
+  if (is_ohos) {
+    sources += [
+      "font_list_ohos.cc",
+      "gpu_pre_sandbox_hook_linux.cc",
+      "gpu_pre_sandbox_hook_linux.h",
+    ]
+    public_deps += [ "//sandbox/policy" ]
+    deps += [
+      "//ohos/adapter:adapter",
+      "//sandbox/linux:sandbox_services",
+      "//sandbox/linux:seccomp_bpf",
+    ]
+    libs += [ "deviceinfo_ndk.z" ]
   }
 
   if (use_zygote) {
@@ -380,10 +430,6 @@ source_set("common") {
 
   if (is_mac || is_win || is_android || is_fuchsia || is_ios || is_ohos) {
     sources -= [ "font_list_fontconfig.cc" ]
-  }
-
-  if (is_ohos) {
-    sources += [ "font_list_android.cc" ]
   }
 
   if (enable_ppapi) {
@@ -421,6 +467,10 @@ source_set("common") {
   if (use_clang_profiling_inside_sandbox) {
     sources += [ "profiling_utils.cc" ]
   }
+
+  if (arkweb_same_layer) {
+    sources += arkweb_content_common_sources
+  }
 }
 
 # This is used by content/shell as well, which we don't want to depend on the
@@ -432,14 +482,6 @@ component("main_frame_counter") {
     "main_frame_counter.h",
   ]
   deps = [ "//base:base" ]
-}
-
-if (is_linux || is_chromeos || is_ohos) {
-  source_set("set_process_title_linux") {
-    public = [ "set_process_title_linux.h" ]
-    sources = [ "set_process_title_linux.cc" ]
-    deps = [ "//base" ]
-  }
 }
 
 # See comment at the top of //content/BUILD.gn for how this works.
@@ -468,7 +510,6 @@ mojom("mojo_bindings") {
     "field_trial_recorder.mojom",
     "frame.mojom",
     "frame_messages.mojom",
-    "histogram_fetcher.mojom",
     "input/input_injector.mojom",
     "media/media_log_records.mojom",
     "native_types.mojom",
@@ -477,16 +518,51 @@ mojom("mojo_bindings") {
     "renderer.mojom",
     "renderer_host.mojom",
     "renderer_variations_configuration.mojom",
+    "synthetic_trial_configuration.mojom",
     "web_ui.mojom",
   ]
+
+  if (is_linux || is_chromeos) {
+    sources += [ "thread_type_switcher.mojom" ]
+  }
+
+  if (is_android) {
+    sources += [ "gin_java_bridge.mojom" ]
+  }
 
   enabled_features = []
   if (enable_ipc_logging) {
     enabled_features += [ "ipc_logging" ]
   }
-  if (is_linux || is_chromeos || is_ohos) {
-    enabled_features += [ "supports_thread_types" ]
+  if (arkweb_render_process_mode) {
+    enabled_features += [ "arkweb_render_process_mode" ]
   }
+
+  if (arkweb_menu) {
+    enabled_features += [ "arkweb_menu" ]
+  }
+
+  if (arkweb_drag_drop) {
+    enabled_features += [ "arkweb_drag_drop" ]
+  }
+
+  if (arkweb_ai) {
+    enabled_features += [ "arkweb_ai" ]
+  }
+
+  if (enable_arkweb) {
+    enabled_features += [ "arkweb_theme_font" ]
+    enabled_features += [ "arkweb_i18n" ]
+  }
+
+  if (arkweb_renderer_anr_dump) {
+    enabled_features += ["arkweb_renderer_anr_dump"]
+  }
+
+  if (arkweb_performance_scheduling) {
+    enabled_features += ["arkweb_performance_scheduling"]
+  }
+
   if (use_clang_profiling_inside_sandbox) {
     enabled_features += [ "clang_profiling_inside_sandbox" ]
   }
@@ -494,8 +570,23 @@ mojom("mojo_bindings") {
     enabled_features += [ "is_non_android_posix" ]
   }
 
+  if (arkweb_multi_window) {
+    enabled_features +=[ "arkweb_multi_window" ]
+  }
+
+  if (arkweb_network_base) {
+    enabled_features += [ "arkweb_network_base" ]
+  }
+
   if (enable_plugins) {
     sources += [ "pepper_plugin.mojom" ]
+  }
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    enabled_features += [ "arkweb_adblock" ]
+  }
+  if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
+    enabled_features += [ "arkweb_javascript_bridge" ]
   }
 
   cpp_typemaps = [
@@ -612,6 +703,7 @@ mojom("mojo_bindings") {
   public_deps = [
     "//cc/mojom",
     "//components/attribution_reporting:mojom",
+    "//components/metrics/public/mojom:histogram_fetcher_mojo_bindings",
     "//components/variations:variations_mojom",
     "//content/public/common:interfaces",
     "//ipc:mojom",
@@ -627,12 +719,12 @@ mojom("mojo_bindings") {
     "//services/viz/public/mojom",
     "//skia/public/mojom",
     "//third_party/blink/public/mojom:mojom_core",
+    "//third_party/blink/public/mojom:mojom_modules",
     "//third_party/blink/public/mojom:web_feature_mojo_bindings",
     "//ui/accessibility:ax_enums_mojo",
     "//ui/accessibility/mojom",
     "//ui/base/ime/mojom",
     "//ui/base/mojom",
-    "//ui/color:mojom",
     "//ui/display/mojom",
     "//ui/events/mojom",
     "//ui/events/mojom:event_latency_metadata_mojom",
@@ -670,7 +762,10 @@ mojom("mojo_bindings") {
     ]
   }
 
-  overridden_deps = [ "//third_party/blink/public/mojom:mojom_core" ]
+  overridden_deps = [
+    "//third_party/blink/public/mojom:mojom_core",
+    "//third_party/blink/public/mojom:mojom_modules",
+  ]
   component_deps = [ "//third_party/blink/public/common" ]
 
   component_output_prefix = "content_common_mojo_bindings"

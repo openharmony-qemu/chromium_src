@@ -8,21 +8,24 @@
 #include <utility>
 
 #include "base/base64.h"
-#include "base/feature_list.h"
+#include "base/build_time.h"
+#include "base/command_line.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
-#include "base/metrics/field_trial_params.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/numerics/safe_math.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/task_runner.h"
 #include "base/task/thread_pool.h"
 #include "build/build_config.h"
+#include "build/chromeos_buildflags.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/variations/client_filterable_state.h"
 #include "components/variations/pref_names.h"
 #include "components/variations/proto/variations_seed.pb.h"
+#include "components/variations/variations_safe_seed_store_local_state.h"
+#include "components/variations/variations_switches.h"
 #include "components/version_info/version_info.h"
 #include "crypto/signature_verifier.h"
 #include "third_party/protobuf/src/google/protobuf/io/coded_stream.h"
@@ -33,18 +36,18 @@
 #include "components/variations/metrics.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+#include "base/functional/callback.h"
+#include "chromeos/ash/components/dbus/featured/featured.pb.h"
+#include "chromeos/ash/components/dbus/featured/featured_client.h"
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+
 #if BUILDFLAG(IS_IOS)
 #include "components/variations/metrics.h"
 #endif  // BUILDFLAG(IS_IOS)
 
 namespace variations {
 namespace {
-
-BASE_FEATURE(kVariationsAsyncNewCodePath,
-             "VariationsAsyncNewCodePath",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-const base::FeatureParam<bool> kVariationsAsyncProcessing{
-    &kVariationsAsyncNewCodePath, "Async", true};
 
 // The ECDSA public key of the variations server for verifying variations seed
 // signatures.
@@ -63,6 +66,24 @@ const uint8_t kPublicKey[] = {
 // prefs to indicate that the latest seed is identical to the safe seed. Used to
 // avoid duplicating storage space.
 constexpr char kIdenticalToSafeSeedSentinel[] = "safe_seed_content";
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+// Number of attempts to send the safe seed from Chrome to CrOS platforms before
+// giving up.
+constexpr int kSendPlatformSafeSeedMaxAttempts = 2;
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+
+// The name of the seed file that stores the latest seed data.
+const base::FilePath::CharType kSeedFilename[] =
+    FILE_PATH_LITERAL("VariationsSeedV1");
+
+// Returns true if |signature| is empty and if the command-line flag to accept
+// empty seed signature is specified.
+bool AcceptEmptySeedSignatureForTesting(const std::string& signature) {
+  return signature.empty() &&
+         base::CommandLine::ForCurrentProcess()->HasSwitch(
+             switches::kAcceptEmptySeedSignatureForTesting);
+}
 
 // Verifies a variations seed (the serialized proto bytes) with the specified
 // base-64 encoded signature that was received from the server and returns the
@@ -135,19 +156,62 @@ StoreSeedResult Uncompress(const std::string& compressed, std::string* result) {
   return StoreSeedResult::kSuccess;
 }
 
+// Returns true if the client is eligible to participate in the seed file trial.
+bool IsEligibleForSeedFileTrial(
+    version_info::Channel channel,
+    const base::FilePath& seed_file_dir,
+    const variations::EntropyProviders* entropy_providers) {
+  // Note platforms that should not participate in the experiment will
+  // deliberately pass an empty |seed_file_dir| and null |entropy_provider|.
+  if (seed_file_dir.empty() || entropy_providers == nullptr) {
+    return false;
+  }
+  return channel == version_info::Channel::CANARY ||
+         channel == version_info::Channel::DEV ||
+         channel == version_info::Channel::BETA;
+}
+
+// Sets up the seed file experiment which only some clients are eligible for
+// (see IsEligibleForSeedFileTrial()).
+void SetUpSeedFileTrial(
+    const base::FieldTrial::EntropyProvider& entropy_provider) {
+  scoped_refptr<base::FieldTrial> trial(
+      base::FieldTrialList::FactoryGetFieldTrial(
+          kSeedFileTrial, /*total_probability=*/100, kDefaultGroup,
+          entropy_provider));
+
+  trial->AppendGroup(kControlGroup, /*group_probability=*/50);
+  trial->AppendGroup(kSeedFilesGroup, /*group_probability=*/50);
+}
+
 }  // namespace
 
-VariationsSeedStore::VariationsSeedStore(PrefService* local_state)
-    : VariationsSeedStore(local_state, nullptr, true) {}
+ValidatedSeed::ValidatedSeed() = default;
+ValidatedSeed::~ValidatedSeed() = default;
+ValidatedSeed::ValidatedSeed(ValidatedSeed&& other) = default;
+ValidatedSeed& ValidatedSeed::operator=(ValidatedSeed&& other) = default;
 
 VariationsSeedStore::VariationsSeedStore(
     PrefService* local_state,
     std::unique_ptr<SeedResponse> initial_seed,
     bool signature_verification_enabled,
+    std::unique_ptr<VariationsSafeSeedStore> safe_seed_store,
+    version_info::Channel channel,
+    const base::FilePath& seed_file_dir,
+    const variations::EntropyProviders* entropy_providers,
     bool use_first_run_prefs)
     : local_state_(local_state),
+      safe_seed_store_(std::move(safe_seed_store)),
       signature_verification_enabled_(signature_verification_enabled),
-      use_first_run_prefs_(use_first_run_prefs) {
+      use_first_run_prefs_(use_first_run_prefs),
+      seed_reader_writer_(std::make_unique<SeedReaderWriter>(
+          local_state,
+          seed_file_dir,
+          kSeedFilename,
+          prefs::kVariationsCompressedSeed)) {
+  if (IsEligibleForSeedFileTrial(channel, seed_file_dir, entropy_providers)) {
+    SetUpSeedFileTrial(entropy_providers->default_entropy());
+  }
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   if (initial_seed)
     ImportInitialSeed(std::move(initial_seed));
@@ -188,67 +252,38 @@ void VariationsSeedStore::StoreSeedData(
   };
   RecordSeedInstanceManipulations(im);
 
-  // TODO(crbug.com/1324295): Enable by default and delete other code path.
-  if (base::FeatureList::IsEnabled(kVariationsAsyncNewCodePath)) {
-    // Note: SeedData is move-only, so it will be moved into a param below.
-    SeedData seed_data;
-    seed_data.data = std::move(data);
-    seed_data.base64_seed_signature = std::move(base64_seed_signature);
-    seed_data.country_code = std::move(country_code);
-    seed_data.date_fetched = date_fetched;
-    seed_data.is_gzip_compressed = is_gzip_compressed;
-    seed_data.is_delta_compressed = is_delta_compressed;
+  // Note: SeedData is move-only, so it will be moved into a param below.
+  SeedData seed_data;
+  seed_data.data = std::move(data);
+  seed_data.base64_seed_signature = std::move(base64_seed_signature);
+  seed_data.country_code = std::move(country_code);
+  seed_data.date_fetched = date_fetched;
+  seed_data.is_gzip_compressed = is_gzip_compressed;
+  seed_data.is_delta_compressed = is_delta_compressed;
 
-    if (is_delta_compressed) {
-      LoadSeedResult read_result =
-          ReadSeedData(SeedType::LATEST, &seed_data.existing_seed_bytes);
-      if (read_result != LoadSeedResult::kSuccess) {
-        RecordStoreSeedResult(StoreSeedResult::kFailedDeltaReadSeed);
-        std::move(done_callback).Run(false, VariationsSeed());
-        return;
-      }
+  if (is_delta_compressed) {
+    LoadSeedResult read_result =
+        ReadSeedData(SeedType::LATEST, &seed_data.existing_seed_bytes);
+    if (read_result != LoadSeedResult::kSuccess) {
+      RecordStoreSeedResult(StoreSeedResult::kFailedDeltaReadSeed);
+      std::move(done_callback).Run(false, VariationsSeed());
+      return;
     }
-
-    if (!require_synchronous && kVariationsAsyncProcessing.Get()) {
-      base::ThreadPool::PostTaskAndReplyWithResult(
-          FROM_HERE, {base::TaskPriority::BEST_EFFORT},
-          base::BindOnce(&VariationsSeedStore::ProcessSeedData,
-                         signature_verification_enabled_, std::move(seed_data)),
-          base::BindOnce(&VariationsSeedStore::OnSeedDataProcessed,
-                         weak_ptr_factory_.GetWeakPtr(),
-                         std::move(done_callback)));
-    } else {
-      SeedProcessingResult result = ProcessSeedData(
-          signature_verification_enabled_, std::move(seed_data));
-      OnSeedDataProcessed(std::move(done_callback), std::move(result));
-    }
-    return;
   }
 
-  std::string seed_bytes;
-  StoreSeedResult im_result =
-      ResolveInstanceManipulations(data, im, &seed_bytes);
-  if (im_result != StoreSeedResult::kSuccess) {
-    RecordStoreSeedResult(im_result);
-    std::move(done_callback).Run(false, VariationsSeed());
-    return;
+  if (require_synchronous) {
+    SeedProcessingResult result =
+        ProcessSeedData(signature_verification_enabled_, std::move(seed_data));
+    OnSeedDataProcessed(std::move(done_callback), std::move(result));
+  } else {
+    base::ThreadPool::PostTaskAndReplyWithResult(
+        FROM_HERE, {base::TaskPriority::BEST_EFFORT},
+        base::BindOnce(&VariationsSeedStore::ProcessSeedData,
+                       signature_verification_enabled_, std::move(seed_data)),
+        base::BindOnce(&VariationsSeedStore::OnSeedDataProcessed,
+                       weak_ptr_factory_.GetWeakPtr(),
+                       std::move(done_callback)));
   }
-
-  ValidatedSeed validated;
-  StoreSeedResult validate_result =
-      ValidateSeedBytes(seed_bytes, base64_seed_signature, SeedType::LATEST,
-                        signature_verification_enabled_, &validated);
-  if (validate_result != StoreSeedResult::kSuccess) {
-    RecordStoreSeedResult(validate_result);
-    if (im.delta_compressed)
-      RecordStoreSeedResult(StoreSeedResult::kFailedDeltaStore);
-    std::move(done_callback).Run(false, VariationsSeed());
-    return;
-  }
-
-  StoreValidatedSeed(validated, country_code, date_fetched);
-  RecordStoreSeedResult(StoreSeedResult::kSuccess);
-  std::move(done_callback).Run(true, std::move(validated.parsed));
 }
 
 bool VariationsSeedStore::LoadSafeSeed(VariationsSeed* seed,
@@ -261,17 +296,16 @@ bool VariationsSeedStore::LoadSafeSeed(VariationsSeed* seed,
   if (result != LoadSeedResult::kSuccess)
     return false;
 
-  // TODO(crbug/1261685): While it's not immediately obvious, |client_state| is
-  // not used for successfully loaded safe seeds that are rejected after
-  // additional validation (expiry and future milestone).
+  // TODO(crbug.com/40202311): While it's not immediately obvious,
+  // |client_state| is not used for successfully loaded safe seeds that are
+  // rejected after additional validation (expiry and future milestone).
   client_state->reference_date =
-      local_state_->GetTime(prefs::kVariationsSafeSeedDate);
-  client_state->locale =
-      local_state_->GetString(prefs::kVariationsSafeSeedLocale);
-  client_state->permanent_consistency_country = local_state_->GetString(
-      prefs::kVariationsSafeSeedPermanentConsistencyCountry);
-  client_state->session_consistency_country = local_state_->GetString(
-      prefs::kVariationsSafeSeedSessionConsistencyCountry);
+      GetTimeForStudyDateChecks(/*is_safe_seed=*/true);
+  client_state->locale = safe_seed_store_->GetLocale();
+  client_state->permanent_consistency_country =
+      safe_seed_store_->GetPermanentConsistencyCountry();
+  client_state->session_consistency_country =
+      safe_seed_store_->GetSessionConsistencyCountry();
   return true;
 }
 
@@ -282,7 +316,8 @@ bool VariationsSeedStore::StoreSafeSeed(
     const ClientFilterableState& client_state,
     base::Time seed_fetch_time) {
   ValidatedSeed seed;
-  // TODO(crbug.com/1324295): See if we can avoid calling this on the UI thread.
+  // TODO(crbug.com/40839193): See if we can avoid calling this on the UI
+  // thread.
   StoreSeedResult validation_result =
       ValidateSeedBytes(seed_data, base64_seed_signature, SeedType::SAFE,
                         signature_verification_enabled_, &seed);
@@ -301,7 +336,37 @@ base::Time VariationsSeedStore::GetLastFetchTime() const {
 }
 
 base::Time VariationsSeedStore::GetSafeSeedFetchTime() const {
-  return local_state_->GetTime(prefs::kVariationsSafeSeedFetchTime);
+  return safe_seed_store_->GetFetchTime();
+}
+
+int VariationsSeedStore::GetLatestMilestone() const {
+  return local_state_->GetInteger(prefs::kVariationsSeedMilestone);
+}
+
+int VariationsSeedStore::GetSafeSeedMilestone() const {
+  return safe_seed_store_->GetMilestone();
+}
+
+base::Time VariationsSeedStore::GetLatestTimeForStudyDateChecks() const {
+  return local_state_->GetTime(prefs::kVariationsSeedDate);
+}
+
+base::Time VariationsSeedStore::GetSafeSeedTimeForStudyDateChecks() const {
+  return safe_seed_store_->GetTimeForStudyDateChecks();
+}
+
+base::Time VariationsSeedStore::GetTimeForStudyDateChecks(bool is_safe_seed) {
+  const base::Time seed_date = is_safe_seed
+                                   ? GetSafeSeedTimeForStudyDateChecks()
+                                   : GetLatestTimeForStudyDateChecks();
+  const base::Time build_time = base::GetBuildTime();
+
+  // Use the build time for date checks if either the seed date is unknown or
+  // the build time is newer than the seed date.
+  if (seed_date.is_null() || seed_date < build_time) {
+    return build_time;
+  }
+  return seed_date;
 }
 
 void VariationsSeedStore::RecordLastFetchTime(base::Time fetch_time) {
@@ -309,9 +374,10 @@ void VariationsSeedStore::RecordLastFetchTime(base::Time fetch_time) {
 
   // If the latest and safe seeds are identical, update the fetch time for the
   // safe seed as well.
+  // TODO(crbug.com/374947675): Use |seed_reader_writer_| to read a seed.
   if (local_state_->GetString(prefs::kVariationsCompressedSeed) ==
       kIdenticalToSafeSeedSentinel) {
-    local_state_->SetTime(prefs::kVariationsSafeSeedFetchTime, fetch_time);
+    safe_seed_store_->SetFetchTime(fetch_time);
   }
 }
 
@@ -360,19 +426,7 @@ void VariationsSeedStore::RegisterPrefs(PrefRegistrySimple* registry) {
   registry->RegisterTimePref(prefs::kVariationsSeedDate, base::Time());
   registry->RegisterStringPref(prefs::kVariationsSeedSignature, std::string());
 
-  // Safe seed prefs:
-  registry->RegisterStringPref(prefs::kVariationsSafeCompressedSeed,
-                               std::string());
-  registry->RegisterTimePref(prefs::kVariationsSafeSeedDate, base::Time());
-  registry->RegisterTimePref(prefs::kVariationsSafeSeedFetchTime, base::Time());
-  registry->RegisterStringPref(prefs::kVariationsSafeSeedLocale, std::string());
-  registry->RegisterIntegerPref(prefs::kVariationsSafeSeedMilestone, 0);
-  registry->RegisterStringPref(
-      prefs::kVariationsSafeSeedPermanentConsistencyCountry, std::string());
-  registry->RegisterStringPref(
-      prefs::kVariationsSafeSeedSessionConsistencyCountry, std::string());
-  registry->RegisterStringPref(prefs::kVariationsSafeSeedSignature,
-                               std::string());
+  VariationsSafeSeedStoreLocalState::RegisterPrefs(registry);
 }
 
 // static
@@ -419,7 +473,7 @@ VariationsSeedStore::SeedProcessingResult::operator=(
 // for the next safe seed.
 void VariationsSeedStore::ClearPrefs(SeedType seed_type) {
   if (seed_type == SeedType::LATEST) {
-    local_state_->ClearPref(prefs::kVariationsCompressedSeed);
+    seed_reader_writer_->ClearSeed();
     local_state_->ClearPref(prefs::kVariationsLastFetchTime);
     local_state_->ClearPref(prefs::kVariationsSeedDate);
     local_state_->ClearPref(prefs::kVariationsSeedSignature);
@@ -427,15 +481,7 @@ void VariationsSeedStore::ClearPrefs(SeedType seed_type) {
   }
 
   DCHECK_EQ(seed_type, SeedType::SAFE);
-  local_state_->ClearPref(prefs::kVariationsSafeCompressedSeed);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedDate);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedFetchTime);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedLocale);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedMilestone);
-  local_state_->ClearPref(
-      prefs::kVariationsSafeSeedPermanentConsistencyCountry);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedSessionConsistencyCountry);
-  local_state_->ClearPref(prefs::kVariationsSafeSeedSignature);
+  safe_seed_store_->ClearState();
 }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
@@ -474,48 +520,117 @@ void VariationsSeedStore::ImportInitialSeed(
 }
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
 
-LoadSeedResult VariationsSeedStore::LoadSeedImpl(
-    SeedType seed_type,
-    VariationsSeed* seed,
-    std::string* seed_data,
-    std::string* base64_seed_signature) {
-  LoadSeedResult read_result = ReadSeedData(seed_type, seed_data);
-  if (read_result != LoadSeedResult::kSuccess)
-    return read_result;
+// static
+std::optional<std::string> VariationsSeedStore::SeedBytesToCompressedBase64Seed(
+    const std::string& seed_bytes) {
+  if (seed_bytes.empty()) {
+    return std::nullopt;
+  }
 
-  *base64_seed_signature = local_state_->GetString(
-      seed_type == SeedType::LATEST ? prefs::kVariationsSeedSignature
-                                    : prefs::kVariationsSafeSeedSignature);
-  if (signature_verification_enabled_) {
-    const VerifySignatureResult result =
-        VerifySeedSignature(*seed_data, *base64_seed_signature);
-    if (seed_type == SeedType::LATEST) {
-      UMA_HISTOGRAM_ENUMERATION("Variations.LoadSeedSignature", result,
-                                VerifySignatureResult::ENUM_SIZE);
-    } else {
-      UMA_HISTOGRAM_ENUMERATION(
-          "Variations.SafeMode.LoadSafeSeed.SignatureValidity", result,
-          VerifySignatureResult::ENUM_SIZE);
-    }
-    if (result != VerifySignatureResult::VALID_SIGNATURE) {
-      ClearPrefs(seed_type);
+  std::string compressed_seed_data;
+  if (!compression::GzipCompress(seed_bytes, &compressed_seed_data)) {
+    return std::nullopt;
+  }
+
+  return base::Base64Encode(compressed_seed_data);
+}
+
+SeedReaderWriter* VariationsSeedStore::GetSeedReaderWriterForTesting() {
+  return seed_reader_writer_.get();
+}
+
+void VariationsSeedStore::SetSeedReaderWriterForTesting(
+    std::unique_ptr<SeedReaderWriter> seed_reader_writer) {
+  seed_reader_writer_ = std::move(seed_reader_writer);
+}
+
+SeedReaderWriter* VariationsSeedStore::GetSafeSeedReaderWriterForTesting() {
+  return safe_seed_store_->GetSeedReaderWriterForTesting();  // IN-TEST
+}
+
+void VariationsSeedStore::SetSafeSeedReaderWriterForTesting(
+    std::unique_ptr<SeedReaderWriter> seed_reader_writer) {
+  safe_seed_store_->SetSeedReaderWriterForTesting(  // IN-TEST
+      std::move(seed_reader_writer));
+}
+
+LoadSeedResult VariationsSeedStore::VerifyAndParseSeed(
+    VariationsSeed* seed,
+    const std::string& seed_data,
+    const std::string& base64_seed_signature,
+    std::optional<VerifySignatureResult>* verify_signature_result) {
+  // TODO(crbug.com/40228403): get rid of |signature_verification_enabled_| and
+  // only support switches::kAcceptEmptySeedSignatureForTesting.
+  if (signature_verification_enabled_ &&
+      !AcceptEmptySeedSignatureForTesting(base64_seed_signature)) {
+    *verify_signature_result =
+        VerifySeedSignature(seed_data, base64_seed_signature);
+    if (*verify_signature_result != VerifySignatureResult::VALID_SIGNATURE) {
       return LoadSeedResult::kInvalidSignature;
     }
   }
 
-  if (!seed->ParseFromString(*seed_data)) {
-    ClearPrefs(seed_type);
+  if (!seed->ParseFromString(seed_data)) {
     return LoadSeedResult::kCorruptProtobuf;
   }
 
   return LoadSeedResult::kSuccess;
 }
 
+LoadSeedResult VariationsSeedStore::LoadSeedImpl(
+    SeedType seed_type,
+    VariationsSeed* seed,
+    std::string* seed_data,
+    std::string* base64_seed_signature) {
+  LoadSeedResult read_result = ReadSeedData(seed_type, seed_data);
+  if (read_result != LoadSeedResult::kSuccess) {
+    return read_result;
+  }
+
+  if (seed_type == SeedType::LATEST) {
+    *base64_seed_signature =
+        local_state_->GetString(prefs::kVariationsSeedSignature);
+  } else {
+    *base64_seed_signature = safe_seed_store_->GetSignature();
+  }
+
+  std::optional<VerifySignatureResult> verify_signature_result;
+  LoadSeedResult result = VerifyAndParseSeed(
+      seed, *seed_data, *base64_seed_signature, &verify_signature_result);
+  if (verify_signature_result.has_value()) {
+    VerifySignatureResult signature_result = verify_signature_result.value();
+    if (seed_type == SeedType::LATEST) {
+      UMA_HISTOGRAM_ENUMERATION("Variations.LoadSeedSignature",
+                                signature_result,
+                                VerifySignatureResult::ENUM_SIZE);
+    } else {
+      UMA_HISTOGRAM_ENUMERATION(
+          "Variations.SafeMode.LoadSafeSeed.SignatureValidity",
+          signature_result, VerifySignatureResult::ENUM_SIZE);
+    }
+    if (signature_result != VerifySignatureResult::VALID_SIGNATURE) {
+      ClearPrefs(seed_type);
+    }
+  }
+
+  if (result == LoadSeedResult::kCorruptProtobuf) {
+    ClearPrefs(seed_type);
+  }
+
+  return result;
+}
+
 LoadSeedResult VariationsSeedStore::ReadSeedData(SeedType seed_type,
                                                  std::string* seed_data) {
-  std::string base64_seed_data = local_state_->GetString(
-      seed_type == SeedType::LATEST ? prefs::kVariationsCompressedSeed
-                                    : prefs::kVariationsSafeCompressedSeed);
+  std::string base64_seed_data;
+  if (seed_type == SeedType::LATEST) {
+    // TODO(crbug.com/374947675): Use |seed_reader_writer_| to read a seed.
+    base64_seed_data =
+        local_state_->GetString(prefs::kVariationsCompressedSeed);
+  } else {
+    base64_seed_data = safe_seed_store_->GetCompressedSeed();
+  }
+
   if (base64_seed_data.empty())
     return LoadSeedResult::kEmpty;
 
@@ -607,6 +722,7 @@ void VariationsSeedStore::StoreValidatedSeed(const ValidatedSeed& seed,
 #if BUILDFLAG(IS_ANDROID)
   // If currently we do not have any stored pref then we mark seed storing as
   // successful on the Java side to avoid repeated seed fetches.
+  // TODO(crbug.com/374947675): Use |seed_reader_writer_| to read a seed.
   if (local_state_->GetString(prefs::kVariationsCompressedSeed).empty() &&
       use_first_run_prefs_) {
     android::MarkVariationsSeedAsStored();
@@ -624,10 +740,9 @@ void VariationsSeedStore::StoreValidatedSeed(const ValidatedSeed& seed,
   // As a space optimization, store an alias to the safe seed if the contents
   // are identical.
   bool matches_safe_seed =
-      (seed.base64_seed_data ==
-       local_state_->GetString(prefs::kVariationsSafeCompressedSeed));
-  local_state_->SetString(
-      prefs::kVariationsCompressedSeed,
+      (seed.base64_seed_data == safe_seed_store_->GetCompressedSeed());
+  seed_reader_writer_->StoreValidatedSeed(
+      seed.compressed_seed_data,
       matches_safe_seed ? kIdenticalToSafeSeedSentinel : seed.base64_seed_data);
 
   UpdateSeedDateAndLogDayChange(date_fetched);
@@ -643,8 +758,7 @@ void VariationsSeedStore::StoreValidatedSafeSeed(
     base::Time seed_fetch_time) {
   // As a performance optimization, avoid an expensive no-op of overwriting
   // the previous safe seed with an identical copy.
-  std::string previous_safe_seed =
-      local_state_->GetString(prefs::kVariationsSafeCompressedSeed);
+  const std::string& previous_safe_seed = safe_seed_store_->GetCompressedSeed();
   if (seed.base64_seed_data != previous_safe_seed) {
     // It's theoretically possible to overwrite an existing safe seed value,
     // which was identical to the latest seed, with a new value. This could
@@ -663,32 +777,33 @@ void VariationsSeedStore::StoreValidatedSafeSeed(
     // value should be overwritten in this case, as a seed should not be
     // considered safe unless a new seed can be both received *and saved* from
     // the server.
+    // TODO(crbug.com/374947675): Use |seed_reader_writer_| to read a seed.
     std::string latest_seed =
         local_state_->GetString(prefs::kVariationsCompressedSeed);
     if (latest_seed == kIdenticalToSafeSeedSentinel) {
+      // TODO(crbug.com/369080917): Use |seed_reader_writer_| to store a seed.
       local_state_->SetString(prefs::kVariationsCompressedSeed,
                               previous_safe_seed);
     }
-    local_state_->SetString(prefs::kVariationsSafeCompressedSeed,
-                            seed.base64_seed_data);
+    safe_seed_store_->SetCompressedSeed(seed.compressed_seed_data,
+                                        seed.base64_seed_data);
   }
 
-  local_state_->SetString(prefs::kVariationsSafeSeedSignature,
-                          seed.base64_seed_signature);
-  local_state_->SetTime(prefs::kVariationsSafeSeedDate,
-                        client_state.reference_date);
-  local_state_->SetString(prefs::kVariationsSafeSeedLocale,
-                          client_state.locale);
-  local_state_->SetInteger(prefs::kVariationsSafeSeedMilestone, seed_milestone);
-  local_state_->SetString(prefs::kVariationsSafeSeedPermanentConsistencyCountry,
-                          client_state.permanent_consistency_country);
-  local_state_->SetString(prefs::kVariationsSafeSeedSessionConsistencyCountry,
-                          client_state.session_consistency_country);
+  safe_seed_store_->SetSignature(seed.base64_seed_signature);
+  safe_seed_store_->SetTimeForStudyDateChecks(client_state.reference_date);
+  safe_seed_store_->SetLocale(client_state.locale);
+  safe_seed_store_->SetMilestone(seed_milestone);
+  safe_seed_store_->SetPermanentConsistencyCountry(
+      client_state.permanent_consistency_country);
+  safe_seed_store_->SetSessionConsistencyCountry(
+      client_state.session_consistency_country);
 
   // As a space optimization, overwrite the stored latest seed data with an
   // alias to the safe seed, if they are identical.
+  // TODO(crbug.com/374947675): Use |seed_reader_writer_| to read a seed.
   if (seed.base64_seed_data ==
       local_state_->GetString(prefs::kVariationsCompressedSeed)) {
+    // TODO(crbug.com/369080917): Use |seed_reader_writer_| to store a seed.
     local_state_->SetString(prefs::kVariationsCompressedSeed,
                             kIdenticalToSafeSeedSentinel);
 
@@ -696,7 +811,17 @@ void VariationsSeedStore::StoreValidatedSafeSeed(
     // match the latest seed's.
     seed_fetch_time = GetLastFetchTime();
   }
-  local_state_->SetTime(prefs::kVariationsSafeSeedFetchTime, seed_fetch_time);
+  safe_seed_store_->SetFetchTime(seed_fetch_time);
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  // `SendSafeSeedToPlatform` will send the safe seed at most twice and should
+  // only be called if the seed is successfully validated.
+  // This is a best effort attempt and it is possible that the safe seed for
+  // platform and Chrome are different if sending the safe seed fails twice.
+  send_seed_to_platform_attempts_ = 0;
+  SendSafeSeedToPlatform(GetSafeSeedStateForPlatform(
+      seed, seed_milestone, client_state, seed_fetch_time));
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 }
 
 // static
@@ -752,7 +877,10 @@ StoreSeedResult VariationsSeedStore::ValidateSeedBytes(
   if (!seed.ParseFromString(seed_bytes))
     return StoreSeedResult::kFailedParse;
 
-  if (signature_verification_enabled) {
+  // TODO(crbug.com/40228403): get rid of |signature_verification_enabled| and
+  // only support switches::kAcceptEmptySeedSignatureForTesting.
+  if (signature_verification_enabled &&
+      !AcceptEmptySeedSignatureForTesting(base64_seed_signature)) {
     const VerifySignatureResult verify_result =
         VerifySeedSignature(seed_bytes, base64_seed_signature);
     switch (seed_type) {
@@ -773,10 +901,11 @@ StoreSeedResult VariationsSeedStore::ValidateSeedBytes(
   }
 
   std::string compressed_seed_data;
-  if (!compression::GzipCompress(seed_bytes, &compressed_seed_data))
+  if (!compression::GzipCompress(seed_bytes, &compressed_seed_data)) {
     return StoreSeedResult::kFailedGzip;
-
-  base::Base64Encode(compressed_seed_data, &result->base64_seed_data);
+  }
+  result->base64_seed_data = base::Base64Encode(compressed_seed_data);
+  result->compressed_seed_data = std::move(compressed_seed_data);
   result->base64_seed_signature = base64_seed_signature;
   result->parsed.Swap(&seed);
   return StoreSeedResult::kSuccess;
@@ -829,5 +958,50 @@ bool VariationsSeedStore::ApplyDeltaPatch(const std::string& existing_data,
   }
   return true;
 }
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+featured::SeedDetails VariationsSeedStore::GetSafeSeedStateForPlatform(
+    const ValidatedSeed& seed,
+    const int seed_milestone,
+    const ClientFilterableState& client_state,
+    const base::Time seed_fetch_time) {
+  featured::SeedDetails safe_seed;
+  safe_seed.set_b64_compressed_data(seed.base64_seed_data);
+  safe_seed.set_locale(client_state.locale);
+  safe_seed.set_milestone(seed_milestone);
+  safe_seed.set_permanent_consistency_country(
+      client_state.permanent_consistency_country);
+  safe_seed.set_session_consistency_country(
+      client_state.session_consistency_country);
+  safe_seed.set_signature(seed.base64_seed_signature);
+  safe_seed.set_date(
+      client_state.reference_date.ToDeltaSinceWindowsEpoch().InMilliseconds());
+  safe_seed.set_fetch_time(
+      seed_fetch_time.ToDeltaSinceWindowsEpoch().InMilliseconds());
+
+  return safe_seed;
+}
+
+void VariationsSeedStore::MaybeRetrySendSafeSeed(
+    const featured::SeedDetails& safe_seed,
+    bool success) {
+  // Do not retry after two failed attempts.
+  if (!success &&
+      send_seed_to_platform_attempts_ < kSendPlatformSafeSeedMaxAttempts) {
+    SendSafeSeedToPlatform(safe_seed);
+  }
+}
+
+void VariationsSeedStore::SendSafeSeedToPlatform(
+    const featured::SeedDetails& safe_seed) {
+  send_seed_to_platform_attempts_++;
+  ash::featured::FeaturedClient* client = ash::featured::FeaturedClient::Get();
+  if (client) {
+    client->HandleSeedFetched(
+        safe_seed, base::BindOnce(&VariationsSeedStore::MaybeRetrySendSafeSeed,
+                                  weak_ptr_factory_.GetWeakPtr(), safe_seed));
+  }
+}
+#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
 }  // namespace variations

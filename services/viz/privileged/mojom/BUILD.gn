@@ -4,6 +4,7 @@
 
 import("//components/viz/common/debugger/viz_debugger.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 mojom("mojom") {
   sources = [ "viz_main.mojom" ]
@@ -12,15 +13,24 @@ mojom("mojom") {
   if (use_viz_debugger) {
     enabled_features += [ "use_viz_debugger" ]
   }
+  if (use_ozone) {
+    enabled_features += [ "use_ozone" ]
+  }
 
   public_deps = [
     "//components/discardable_memory/public/mojom",
+    "//components/viz/service/debugger/mojom",
     "//services/network/public/mojom",
     "//services/viz/privileged/mojom/compositing",
     "//services/viz/privileged/mojom/gl",
     "//services/viz/public/mojom",
     "//ui/gfx/mojom",
   ]
+
+  if (arkweb_occluded_opt) {
+    enabled_features += [ "arkweb_occluded_opt" ]
+  }
+
 }
 
 source_set("unit_tests") {

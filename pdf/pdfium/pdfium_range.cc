@@ -4,8 +4,9 @@
 
 #include "pdf/pdfium/pdfium_range.h"
 
+#include <string>
+
 #include "base/check_op.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/strings/string_util.h"
 #include "pdf/pdfium/pdfium_api_string_buffer_adapter.h"
 #include "third_party/pdfium/public/fpdf_searchex.h"
@@ -30,6 +31,11 @@ bool IsIgnorableCharacter(char16_t c) {
   return c == kZeroWidthSpace || c == kPDFSoftHyphenMarker;
 }
 
+// static
+PDFiumRange PDFiumRange::AllTextOnPage(PDFiumPage* page) {
+  return PDFiumRange(page, 0, page->GetCharCount());
+}
+
 PDFiumRange::PDFiumRange(PDFiumPage* page, int char_index, int char_count)
     : page_unload_preventer_(page),
       page_(page),
@@ -46,7 +52,13 @@ PDFiumRange::PDFiumRange(PDFiumPage* page, int char_index, int char_count)
 #endif
 }
 
-PDFiumRange::PDFiumRange(const PDFiumRange& that) = default;
+PDFiumRange::PDFiumRange(const PDFiumRange&) = default;
+
+PDFiumRange& PDFiumRange::operator=(const PDFiumRange&) = default;
+
+PDFiumRange::PDFiumRange(PDFiumRange&&) noexcept = default;
+
+PDFiumRange& PDFiumRange::operator=(PDFiumRange&&) noexcept = default;
 
 PDFiumRange::~PDFiumRange() = default;
 
@@ -156,7 +168,7 @@ std::u16string PDFiumRange::GetText() const {
         in_bound_text += result[i];
     }
     result = in_bound_text;
-    base::EraseIf(result, IsIgnorableCharacter);
+    std::erase_if(result, IsIgnorableCharacter);
   }
 
   return result;

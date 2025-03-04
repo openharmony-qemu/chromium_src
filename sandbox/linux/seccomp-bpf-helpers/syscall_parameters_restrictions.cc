@@ -174,7 +174,17 @@ ResultExpr RestrictPrctl() {
               , PR_SET_PTRACER, PR_SET_TIMERSLACK
               , PR_GET_NO_NEW_PRIVS
 #if defined(ARCH_CPU_ARM64)
-              , PR_PAC_RESET_KEYS, PR_GET_TAGGED_ADDR_CTRL
+                ,
+                PR_PAC_RESET_KEYS
+                // PR_GET_TAGGED_ADDR_CTRL is used by debuggerd to report
+                // whether memory tagging is active.
+                ,
+                PR_GET_TAGGED_ADDR_CTRL
+                // PR_PAC_GET_ENABLED_KEYS is used by debuggerd to report
+                // whether pointer authentication is enabled and which keys (A
+                // or B) are active.
+                ,
+                PR_PAC_GET_ENABLED_KEYS
 #endif
 
 // Enable PR_SET_TIMERSLACK_PID, an Android custom prctl which is used in:
@@ -219,14 +229,17 @@ ResultExpr RestrictIoctl() {
 }
 
 ResultExpr RestrictMmapFlags() {
-  // The flags you see are actually the allowed ones, and the variable is a
-  // "denied" mask because of the negation operator.
-  // Significantly, we don't permit MAP_HUGETLB, or the newer flags such as
-  // MAP_POPULATE.
+#if BUILDFLAG(IS_ANDROID) && defined(__x86_64__)
+  const uint64_t kArchSpecificAllowedMask = MAP_32BIT;
+#else
+  const uint64_t kArchSpecificAllowedMask = 0;
+#endif
+  // The flags MAP_HUGETLB and MAP_POPULATE are specifically not permitted.
   // TODO(davidung), remove MAP_DENYWRITE with updated Tegra libraries.
   const uint64_t kAllowedMask = MAP_SHARED | MAP_PRIVATE | MAP_ANONYMOUS |
                                 MAP_STACK | MAP_NORESERVE | MAP_FIXED |
-                                MAP_DENYWRITE | MAP_LOCKED;
+                                MAP_DENYWRITE | MAP_LOCKED |
+                                kArchSpecificAllowedMask;
   const Arg<int> flags(3);
   return If((flags & ~kAllowedMask) == 0, Allow()).Else(CrashSIGSYS());
 }
@@ -323,7 +336,6 @@ ResultExpr RestrictKillTarget(pid_t target_pid, int sysno) {
       return CrashSIGSYSKill();
     default:
       NOTREACHED();
-      return CrashSIGSYS();
   }
 }
 
@@ -372,7 +384,6 @@ ResultExpr RestrictSchedTarget(pid_t target_pid, int sysno) {
     }
     default:
       NOTREACHED();
-      return CrashSIGSYS();
   }
 }
 
@@ -418,9 +429,13 @@ ResultExpr RestrictClockID() {
 #define GRND_NONBLOCK 1
 #endif
 
+#if !defined(GRND_INSECURE)
+#define GRND_INSECURE 4
+#endif
+
 ResultExpr RestrictGetRandom() {
   const Arg<unsigned int> flags(2);
-  const unsigned int kGoodFlags = GRND_NONBLOCK;
+  const unsigned int kGoodFlags = GRND_NONBLOCK | GRND_INSECURE;
   return If((flags & ~kGoodFlags) == 0, Allow()).Else(CrashSIGSYS());
 }
 
@@ -445,16 +460,20 @@ ResultExpr RestrictPtrace() {
   const Arg<uintptr_t> addr(2);
 #endif
   return Switch(request)
-      .Cases({
+      .Cases(
+          {
 #if !defined(__aarch64__)
-                 PTRACE_GETREGS, PTRACE_GETFPREGS,
-                 PTRACE_GETREGSET,
+              PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GET_THREAD_AREA,
+              PTRACE_GETREGSET,
+#if !defined(__aarch64__) && BUILDFLAG(IS_ARKWEB)
+              PTRACE_GETREGS, PTRACE_GETFPREGS, PTRACE_GETREGSET,
+#endif
 #endif
 #if defined(__arm__)
-                 PTRACE_GETVFPREGS,
+              PTRACE_GETVFPREGS,
 #endif
-                 PTRACE_PEEKDATA, PTRACE_ATTACH, PTRACE_DETACH},
-             Allow())
+              PTRACE_PEEKDATA, PTRACE_ATTACH, PTRACE_DETACH},
+          Allow())
 #if defined(__aarch64__)
       .Case(
           PTRACE_GETREGSET,

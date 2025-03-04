@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "content/common/buildflags.h"
@@ -17,6 +18,10 @@
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 class WebGestureEvent;
 }
@@ -25,10 +30,10 @@ namespace gfx {
 class ImageSkia;
 class Rect;
 class Vector2d;
-#ifdef OHOS_AI
+#if BUILDFLAG(IS_OHOS)
 class Point;
 #endif
-#ifdef OHOS_DISPLAY_CUTOUT
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
 class Insets;
 #endif
 }
@@ -39,11 +44,19 @@ class OverscrollRefreshHandler;
 }
 #endif
 
+namespace url {
+class Origin;
+}
+
 namespace content {
 class RenderFrameHost;
 class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+class WebContents;
+#endif
 
 // This class provides a way for the RenderViewHost to reach out to its
 // delegate's view.
@@ -52,15 +65,22 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // A context menu should be shown, to be built using the context information
   // provided in the supplied params.
   //
-  // The |render_frame_host| represents the frame that requests the context menu
+  // The `render_frame_host` represents the frame that requests the context menu
   // (typically this frame is focused, but this is not necessarily the case -
   // see https://crbug.com/1257907#c14).
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params) {}
-
-#if defined(OHOS_CLIPBOARD)
+#if BUILDFLAG(ARKWEB_MENU)
   virtual void MouseSelectMenuShow(bool show) {}
   virtual void ChangeVisibilityOfQuickMenu() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  virtual bool CloseImageOverlaySelection() { return false; }
+#endif  // BUILDFLAG(ARKWEB_AI)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual gfx::Rect GetVisibleRectToWeb();
 #endif
 
   // The user started dragging content of the specified type within the
@@ -91,6 +111,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   //   `blink::DragController::StartDrag()`.
   virtual void StartDragging(
       const DropData& drop_data,
+      const url::Origin& source_origin,
       blink::DragOperationsMask allowed_ops,
       const gfx::ImageSkia& image,
       const gfx::Vector2d& cursor_offset,
@@ -99,8 +120,11 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
       RenderWidgetHostImpl* source_rwh) {}
 
   // The page wants to update the mouse cursor during a drag & drop operation.
-  // |operation| describes the current operation (none, move, copy, link.)
-  virtual void UpdateDragCursor(ui::mojom::DragOperation operation) {}
+  // `operation` describes the current operation (none, move, copy, link.).
+  // `document_is_handling_drag` describes if the document is handling the
+  // drop.
+  virtual void UpdateDragOperation(ui::mojom::DragOperation operation,
+                                   bool document_is_handling_drag) {}
 
   // Notification that view for this delegate got the focus.
   virtual void GotFocus(RenderWidgetHostImpl* render_widget_host) {}
@@ -113,19 +137,22 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   // retrieved by doing a Shift-Tab.
   virtual void TakeFocus(bool reverse) {}
 
-  // Returns the height of the top controls in DIP.
-#ifdef OHOS_EX_TOPCONTROLS
+  // Returns the height of the top controls in physical pixels (not DIPs).
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   virtual int GetTopControlsHeight();
 #else
   virtual int GetTopControlsHeight() const;
 #endif
-  // Returns the minimum visible height the top controls can have in DIP.
+
+  // Returns the minimum visible height the top controls can have in physical
+  // pixels (not DIPs).
   virtual int GetTopControlsMinHeight() const;
 
-  // Returns the height of the bottom controls in DIP.
+  // Returns the height of the bottom controls in physical pixels (not DIPs).
   virtual int GetBottomControlsHeight() const;
 
-  // Returns the minimum visible height the bottom controls can have in DIP.
+  // Returns the minimum visible height the bottom controls can have in physical
+  // pixels (not DIPs).
   virtual int GetBottomControlsMinHeight() const;
 
   // Returns true if the changes in browser controls height (including min
@@ -164,14 +191,18 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual ui::OverscrollRefreshHandler* GetOverscrollRefreshHandler() const;
 #endif
 
-#ifdef OHOS_DISPLAY_CUTOUT
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets);
 #endif
 
-#ifdef OHOS_AI
+#if BUILDFLAG(IS_OHOS)
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
                              const gfx::Point& touch_point) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 
  protected:

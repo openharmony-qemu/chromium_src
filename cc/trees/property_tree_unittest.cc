@@ -9,6 +9,7 @@
 #include "cc/input/main_thread_scrolling_reason.h"
 #include "cc/test/fake_impl_task_runner_provider.h"
 #include "cc/test/fake_layer_tree_host_impl.h"
+#include "cc/test/layer_test_common.h"
 #include "cc/test/test_task_graph_runner.h"
 #include "cc/trees/clip_node.h"
 #include "cc/trees/draw_property_utils.h"
@@ -671,7 +672,7 @@ TEST(EffectTreeTest, CopyOutputRequestsThatBecomeIllegalAreDropped) {
 // (fractionally) larger due to floating point precision errors, and if the
 // scroll offset is near zero that can naively lead to a negative offset being
 // returned which is not desirable.
-TEST(ScrollTreeTest, GetPixelSnappedScrollOffsetNegativeOffset) {
+TEST(ScrollTreeTest, GetScrollOffsetForScrollTimelineNegativeOffset) {
   FakeProtectedSequenceSynchronizer synchronizer;
   PropertyTrees property_trees(synchronizer);
   ScrollTree& scroll_tree = property_trees.scroll_tree_mutable();
@@ -693,7 +694,8 @@ TEST(ScrollTreeTest, GetPixelSnappedScrollOffsetNegativeOffset) {
   transform_tree.Node(transform_node_id)->needs_local_transform_update = false;
 
   // The returned offset should be clamped at a minimum of 0.
-  gfx::PointF offset = scroll_tree.GetPixelSnappedScrollOffset(scroll_node_id);
+  gfx::PointF offset = scroll_tree.GetScrollOffsetForScrollTimeline(
+      *scroll_tree.Node(scroll_node_id));
   EXPECT_EQ(offset.y(), 0);
 }
 
@@ -717,8 +719,9 @@ TEST(ScrollTreeTest, PushScrollUpdatesFromMainThreadIntegerDelta) {
   // Set up FakeLayerTreeHostImpl.
   TestTaskGraphRunner task_graph_runner;
   FakeImplTaskRunnerProvider impl_task_runner_provider;
-  FakeLayerTreeHostImpl host_impl(
-      LayerTreeSettings(), &impl_task_runner_provider, &task_graph_runner);
+  FakeLayerTreeHostImpl host_impl(CommitToPendingTreeLayerTreeSettings(),
+                                  &impl_task_runner_provider,
+                                  &task_graph_runner);
   host_impl.CreatePendingTree();
 
   // Set up pending property trees.

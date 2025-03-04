@@ -4,12 +4,15 @@
 
 #include "quiche/quic/core/quic_stream.h"
 
+#include <algorithm>
 #include <limits>
+#include <optional>
 #include <string>
+#include <utility>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "quiche/quic/core/frames/quic_reset_stream_at_frame.h"
 #include "quiche/quic/core/quic_error_codes.h"
 #include "quiche/quic/core/quic_flow_controller.h"
 #include "quiche/quic/core/quic_session.h"
@@ -126,7 +129,12 @@ PendingStream::PendingStream(QuicStreamId id, QuicSession* session)
                        kStreamReceiveWindowLimit,
                        session->flow_controller()->auto_tune_receive_window(),
                        session->flow_controller()),
-      sequencer_(this) {}
+      sequencer_(this),
+      creation_time_(session->GetClock()->ApproximateNow()) {
+  if (is_bidirectional_) {
+    QUIC_CODE_COUNT_N(quic_pending_stream, 3, 3);
+  }
+}
 
 void PendingStream::OnDataAvailable() {
   // Data should be kept in the sequencer so that
@@ -245,6 +253,26 @@ void PendingStream::OnRstStreamFrame(const QuicRstStreamFrame& frame) {
   }
 }
 
+void PendingStream::OnResetStreamAtFrame(const QuicResetStreamAtFrame& frame) {
+  if (frame.reliable_offset > sequencer()->close_offset()) {
+    OnUnrecoverableError(
+        QUIC_STREAM_MULTIPLE_OFFSET,
+        absl::StrCat(
+            "Stream ", id_,
+            " received reliable reset with offset: ", frame.reliable_offset,
+            " greater than the FIN offset: ", sequencer()->close_offset()));
+    return;
+  }
+  if (buffered_reset_stream_at_.has_value() &&
+      (frame.reliable_offset > buffered_reset_stream_at_->reliable_offset)) {
+    // Ignore a reliable reset that raises the reliable size. It might have
+    // arrived out of sequence.
+    return;
+  }
+  buffered_reset_stream_at_ = frame;
+  sequencer_.OnReliableReset(frame.reliable_offset);
+}
+
 void PendingStream::OnWindowUpdateFrame(const QuicWindowUpdateFrame& frame) {
   QUICHE_DCHECK(is_bidirectional_);
   flow_controller_.UpdateSendWindowOffset(frame.max_data);
@@ -284,29 +312,31 @@ void PendingStream::StopReading() {
 
 QuicStream::QuicStream(PendingStream* pending, QuicSession* session,
                        bool is_static)
-    : QuicStream(pending->id_, session, std::move(pending->sequencer_),
-                 is_static,
-                 QuicUtils::GetStreamType(pending->id_, session->perspective(),
-                                          /*peer_initiated = */ true,
-                                          session->version()),
-                 pending->stream_bytes_read_, pending->fin_received_,
-                 std::move(pending->flow_controller_),
-                 pending->connection_flow_controller_) {
+    : QuicStream(
+          pending->id_, session, std::move(pending->sequencer_), is_static,
+          QuicUtils::GetStreamType(pending->id_, session->perspective(),
+                                   /*peer_initiated = */ true,
+                                   session->version()),
+          pending->stream_bytes_read_, pending->fin_received_,
+          std::move(pending->flow_controller_),
+          pending->connection_flow_controller_,
+          (session->GetClock()->ApproximateNow() - pending->creation_time())) {
   QUICHE_DCHECK(session->version().HasIetfQuicFrames());
   sequencer_.set_stream(this);
+  buffered_reset_stream_at_ = pending->buffered_reset_stream_at();
 }
 
 namespace {
 
-absl::optional<QuicFlowController> FlowController(QuicStreamId id,
-                                                  QuicSession* session,
-                                                  StreamType type) {
+std::optional<QuicFlowController> FlowController(QuicStreamId id,
+                                                 QuicSession* session,
+                                                 StreamType type) {
   if (type == CRYPTO) {
     // The only QuicStream with a StreamType of CRYPTO is QuicCryptoStream, when
     // it is using crypto frames instead of stream frames. The QuicCryptoStream
     // doesn't have any flow control in that case, so we don't create a
     // QuicFlowController for it.
-    return absl::nullopt;
+    return std::nullopt;
   }
   return QuicFlowController(
       session, id,
@@ -324,19 +354,19 @@ QuicStream::QuicStream(QuicStreamId id, QuicSession* session, bool is_static,
                        StreamType type)
     : QuicStream(id, session, QuicStreamSequencer(this), is_static, type, 0,
                  false, FlowController(id, session, type),
-                 session->flow_controller()) {}
+                 session->flow_controller(), QuicTime::Delta::Zero()) {}
 
 QuicStream::QuicStream(QuicStreamId id, QuicSession* session,
                        QuicStreamSequencer sequencer, bool is_static,
                        StreamType type, uint64_t stream_bytes_read,
                        bool fin_received,
-                       absl::optional<QuicFlowController> flow_controller,
-                       QuicFlowController* connection_flow_controller)
+                       std::optional<QuicFlowController> flow_controller,
+                       QuicFlowController* connection_flow_controller,
+                       QuicTime::Delta pending_duration)
     : sequencer_(std::move(sequencer)),
       id_(id),
       session_(session),
       stream_delegate_(session),
-      priority_(QuicStreamPriority::Default(session->priority_type())),
       stream_bytes_read_(stream_bytes_read),
       stream_error_(QuicResetStreamError::NoError()),
       connection_error_(QUIC_NO_ERROR),
@@ -369,6 +399,7 @@ QuicStream::QuicStream(QuicStreamId id, QuicSession* session,
                                            session->version())
                 : type),
       creation_time_(session->connection()->clock()->ApproximateNow()),
+      pending_duration_(pending_duration),
       perspective_(session->perspective()) {
   if (type_ == WRITE_UNIDIRECTIONAL) {
     fin_received_ = true;
@@ -501,6 +532,12 @@ bool QuicStream::OnStopSending(QuicResetStreamError error) {
 
   stream_error_ = error;
   MaybeSendRstStream(error);
+  if (session()->enable_stop_sending_for_zombie_streams() &&
+      read_side_closed_ && write_side_closed_ && !IsWaitingForAcks()) {
+    QUIC_RELOADABLE_FLAG_COUNT_N(quic_deliver_stop_sending_to_zombie_streams, 3,
+                                 3);
+    session()->MaybeCloseZombieStream(id_);
+  }
   return true;
 }
 
@@ -554,15 +591,39 @@ void QuicStream::OnStreamReset(const QuicRstStreamFrame& frame) {
   CloseReadSide();
 }
 
-void QuicStream::OnConnectionClosed(QuicErrorCode error,
+void QuicStream::OnResetStreamAtFrame(const QuicResetStreamAtFrame& frame) {
+  if (frame.reliable_offset > sequencer()->close_offset()) {
+    OnUnrecoverableError(
+        QUIC_STREAM_MULTIPLE_OFFSET,
+        absl::StrCat(
+            "Stream ", id_,
+            " received reliable reset with offset: ", frame.reliable_offset,
+            " greater than the FIN offset: ", sequencer()->close_offset()));
+    return;
+  }
+  if (buffered_reset_stream_at_.has_value() &&
+      (frame.reliable_offset > buffered_reset_stream_at_->reliable_offset)) {
+    // Ignore a reliable reset that raises the reliable size. It might have
+    // arrived out of sequence.
+    return;
+  }
+  buffered_reset_stream_at_ = frame;
+  MaybeCloseStreamWithBufferedReset();
+  if (!rst_received_) {
+    sequencer_.OnReliableReset(frame.reliable_offset);
+  }
+}
+
+void QuicStream::OnConnectionClosed(const QuicConnectionCloseFrame& frame,
                                     ConnectionCloseSource /*source*/) {
   if (read_side_closed_ && write_side_closed_) {
     return;
   }
-  if (error != QUIC_NO_ERROR) {
+  auto error_code = frame.quic_error_code;
+  if (error_code != QUIC_NO_ERROR) {
     stream_error_ =
         QuicResetStreamError::FromInternal(QUIC_STREAM_CONNECTION_ERROR);
-    connection_error_ = error;
+    connection_error_ = error_code;
   }
 
   CloseWriteSide();
@@ -755,7 +816,8 @@ QuicConsumedData QuicStream::WriteMemSlice(quiche::QuicheMemSlice span,
 }
 
 QuicConsumedData QuicStream::WriteMemSlices(
-    absl::Span<quiche::QuicheMemSlice> span, bool fin) {
+    absl::Span<quiche::QuicheMemSlice> span, bool fin,
+    bool buffer_unconditionally) {
   QuicConsumedData consumed_data(0, false);
   if (span.empty() && !fin) {
     QUIC_BUG(quic_bug_10586_6) << "span.empty() && !fin";
@@ -778,7 +840,7 @@ QuicConsumedData QuicStream::WriteMemSlices(
   }
 
   bool had_buffered_data = HasBufferedData();
-  if (CanWriteNewData() || span.empty()) {
+  if (CanWriteNewData() || span.empty() || buffer_unconditionally) {
     consumed_data.fin_consumed = fin;
     if (!span.empty()) {
       // Buffer all data if buffered data size is below limit.
@@ -1012,6 +1074,7 @@ void QuicStream::AddBytesConsumed(QuicByteCount bytes) {
   if (stream_contributes_to_connection_flow_control_) {
     connection_flow_controller_->AddBytesConsumed(bytes);
   }
+  MaybeCloseStreamWithBufferedReset();
 }
 
 bool QuicStream::MaybeConfigSendWindowOffset(QuicStreamOffset new_offset,
@@ -1186,10 +1249,6 @@ bool QuicStream::IsWaitingForAcks() const {
          (send_buffer_.stream_bytes_outstanding() || fin_outstanding_);
 }
 
-QuicByteCount QuicStream::ReadableBytes() const {
-  return sequencer_.ReadableBytes();
-}
-
 bool QuicStream::WriteStreamData(QuicStreamOffset offset,
                                  QuicByteCount data_length,
                                  QuicDataWriter* writer) {
@@ -1215,20 +1274,11 @@ void QuicStream::WriteBufferedData(EncryptionLevel level) {
 
   bool fin = fin_buffered_;
 
+  QUIC_BUG_IF(quic_bug_10586_13, !flow_controller_.has_value())
+      << ENDPOINT << "WriteBufferedData called on stream without flow control";
+
   // How much data flow control permits to be written.
-  QuicByteCount send_window;
-  if (flow_controller_.has_value()) {
-    send_window = flow_controller_->SendWindowSize();
-  } else {
-    send_window = std::numeric_limits<QuicByteCount>::max();
-    QUIC_BUG(quic_bug_10586_13)
-        << ENDPOINT
-        << "WriteBufferedData called on stream without flow control";
-  }
-  if (stream_contributes_to_connection_flow_control_) {
-    send_window =
-        std::min(send_window, connection_flow_controller_->SendWindowSize());
-  }
+  QuicByteCount send_window = CalculateSendWindowSize();
 
   if (send_window == 0 && !fin_with_zero_data) {
     // Quick return if nothing can be sent.
@@ -1389,6 +1439,14 @@ bool QuicStream::HasDeadlinePassed() const {
   return true;
 }
 
+void QuicStream::MaybeCloseStreamWithBufferedReset() {
+  if (buffered_reset_stream_at_.has_value() && !sequencer_.IsClosed() &&
+      NumBytesConsumed() >= buffered_reset_stream_at_->reliable_offset) {
+    OnStreamReset(buffered_reset_stream_at_->ToRstStream());
+    buffered_reset_stream_at_ = std::nullopt;
+  }
+}
+
 void QuicStream::OnDeadlinePassed() { Reset(QUIC_STREAM_TTL_EXPIRED); }
 
 bool QuicStream::IsFlowControlBlocked() const {
@@ -1418,21 +1476,35 @@ void QuicStream::UpdateReceiveWindowSize(QuicStreamOffset size) {
   flow_controller_->UpdateReceiveWindowSize(size);
 }
 
-absl::optional<QuicByteCount> QuicStream::GetSendWindow() const {
+std::optional<QuicByteCount> QuicStream::GetSendWindow() const {
   return flow_controller_.has_value()
-             ? absl::optional<QuicByteCount>(flow_controller_->SendWindowSize())
-             : absl::nullopt;
+             ? std::optional<QuicByteCount>(flow_controller_->SendWindowSize())
+             : std::nullopt;
 }
 
-absl::optional<QuicByteCount> QuicStream::GetReceiveWindow() const {
+std::optional<QuicByteCount> QuicStream::GetReceiveWindow() const {
   return flow_controller_.has_value()
-             ? absl::optional<QuicByteCount>(
+             ? std::optional<QuicByteCount>(
                    flow_controller_->receive_window_size())
-             : absl::nullopt;
+             : std::nullopt;
 }
 
 void QuicStream::OnStreamCreatedFromPendingStream() {
   sequencer()->SetUnblocked();
+}
+
+QuicByteCount QuicStream::CalculateSendWindowSize() const {
+  QuicByteCount send_window;
+  if (flow_controller_.has_value()) {
+    send_window = flow_controller_->SendWindowSize();
+  } else {
+    send_window = std::numeric_limits<QuicByteCount>::max();
+  }
+  if (stream_contributes_to_connection_flow_control_) {
+    send_window =
+        std::min(send_window, connection_flow_controller_->SendWindowSize());
+  }
+  return send_window;
 }
 
 }  // namespace quic

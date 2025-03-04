@@ -4,6 +4,7 @@
 
 #include "services/network/public/cpp/url_loader_completion_status_mojom_traits.h"
 
+#include "arkweb/build/features/features.h"
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/network/public/cpp/network_param_mojom_traits.h"
 
@@ -28,7 +29,6 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
       !data.ReadTrustTokenOperationStatus(&out->trust_token_operation_status) ||
       !data.ReadSslInfo(&out->ssl_info) ||
       !data.ReadBlockedByResponseReason(&out->blocked_by_response_reason) ||
-      !data.ReadProxyServer(&out->proxy_server) ||
       !data.ReadResolveErrorInfo(&out->resolve_error_info)) {
     return false;
   }
@@ -40,12 +40,12 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
   out->encoded_data_length = data.encoded_data_length();
   out->encoded_body_length = data.encoded_body_length();
   out->decoded_body_length = data.decoded_body_length();
-  out->should_report_corb_blocking = data.should_report_corb_blocking();
+  out->should_report_orb_blocking = data.should_report_orb_blocking();
   out->should_collapse_initiator = data.should_collapse_initiator();
-  out->pervasive_payload_requested = data.pervasive_payload_requested();
-#if defined(OHOS_EX_DOWNLOAD)
-  out->abort_due_to_cef_browser_destroyed = data.abort_due_to_cef_browser_destroyed();
-#endif  //  OHOS_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  out->abort_due_to_cef_browser_destroyed =
+      data.abort_due_to_cef_browser_destroyed();
+#endif  //  ARKWEB_EX_DOWNLOAD
   return true;
 }
 

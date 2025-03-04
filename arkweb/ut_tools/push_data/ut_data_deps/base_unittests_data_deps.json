@@ -1,0 +1,57 @@
+[
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["data"],
+        "src_paths": [
+            "base",
+            "test"
+        ],
+        "dst_path": "base/test"
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["libimmediate_crash_test_helper.so"],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["test_child_process"],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["libtest_shared_library.so"],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["histograms"],
+        "src_paths": [
+            "tools",
+            "metrics"
+        ],
+        "dst_path": "tools/metrics"
+    }
+]

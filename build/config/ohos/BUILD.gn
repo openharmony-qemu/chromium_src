@@ -1,4 +1,4 @@
-# Copyright 2022 The Huawei Authors. All rights reserved.
+# Copyright 2024 The Huawei Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,6 +6,7 @@ import("//build/config/c++/c++.gni")
 import("//build/config/compiler/compiler.gni")
 import("//build/config/ohos/config.gni")
 import("//build/config/sanitizers/sanitizers.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(is_ohos)
 
@@ -16,15 +17,35 @@ config("compiler") {
   cflags = [
     "-ffunction-sections",
     "-fno-short-enums",
-    "-funwind-tables",
+    "-Wno-unused-function",
+    "-Wno-global-constructors",
+    "-Wno-vla-cxx-extension",
+    "-Wno-deprecated-this-capture",
+    "-Wno-return-type",
   ]
+
+  cflags_cc = [
+    "-fexperimental-library",
+    "-Wno-vla-cxx-extension",
+    "-Wno-vla-extension",
+  ]
+
   defines = [
     "OSOHOS",
+    "OS_OHOS",
 
     # The NDK has these things, but doesn't define the constants to say that it
     # does. Define them here instead.
     "HAVE_SYS_UIO_H",
   ]
+  
+  if (is_arkweb) {
+    defines += [ "ENABLE_ARKWEB" ]
+  }
+
+  if (is_arkweb_ext) {
+    defines += [ "ENABLE_ARKWEB_EXT" ]
+  }
 
   if (use_musl) {
     defines += [
@@ -32,6 +53,9 @@ config("compiler") {
       "_LIBCPP_HAS_MUSL_LIBC",
       "__BUILD_LINUX_WITH_CLANG",
     ]
+    if (current_cpu == "x64") {
+      defines += [ "PTRACE_GET_THREAD_AREA=25" ]
+    }
   } else {
     defines += [ "__BUILD_LINUX_WITH_CLANG" ]
   }
@@ -40,7 +64,7 @@ config("compiler") {
     "-Wl,--exclude-libs=libgcc.a",
     "-Wl,--no-undefined",
     "-Wl,--exclude-libs=libunwind_llvm.a",
-    "-Wl,--exclude-libs=libc++_static.a",
+    #"-Wl,--exclude-libs=libc++_static.a",
 
     # Don't allow visible symbols from libraries that contain
     # assembly code with symbols that aren't hidden properly.
@@ -60,9 +84,10 @@ config("compiler") {
     if (arm_control_flow_integrity == "standard") {
       cflags += [ "-mbranch-protection=pac-ret+b-key+bti" ]
       rustflags = [ "-Zbranch-protection=bti" ]
+      ldflags += [ "-Wl,-z,force-bti" ]
     } else if (arm_control_flow_integrity == "pac") {
       cflags += [ "-mbranch-protection=pac-ret+b-key" ]
-      rustflags = [ "-Zbranch-protection=pac-ret+b-key" ]
+      rustflags = [ "-Zbranch-protection=pac-ret" ]
     }
     # For outline atomics on AArch64 (can't pass this unconditionally
     # due to unused flag warning on other targets).
@@ -95,9 +120,9 @@ config("compiler") {
 
   if (use_musl) {
     cflags += [ "--target=$abi_target" ]
-    include_dirs = [ "$ohos_toolchain_root/include/libcxx-ohos/include/c++/v1" ]
+    include_dirs = [ "$ohos_toolchain_root/include/c++/v1" ]
     if (current_cpu == "x64") {
-      if (defined(ohos_asan) && ohos_asan) {
+      if (arkweb_asan) {
         include_dirs +=
             [ "$ohos_sysroot/usr/include/x86_64-linux-ohos/asm-x86" ]
       }
@@ -139,21 +164,26 @@ config("runtime_library") {
   }
   if (use_musl) {
     dynamic_linker = "/lib/ld-musl-arm.so.1"
-
     if (current_cpu == "arm") {
       ldflags += [ "-L" + rebase_path("$ohos_sysroot/usr/lib/arm-linux-ohos",
                                       root_build_dir) ]
       ldflags +=
-          [ "-L" + rebase_path("$ohos_toolchain_root/lib/arm-linux-ohos/c++",
+          [ "-L" + rebase_path("$ohos_toolchain_root/lib/arm-linux-ohos",
                                root_build_dir) ]
       ldflags +=
           [ "-L" + rebase_path(
                 "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos",
                 root_build_dir) ]
+
       libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.builtins.a"
 
-      if (is_asan && defined(ohos_asan) && ohos_asan) {
+      if (is_asan && arkweb_asan) {
         libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.so"
+        libs += [ rebase_path(libasan_file) ]
+        dynamic_linker = "/lib/ld-musl-arm-asan.so.1"
+      }
+      if (using_sanitizer) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.ubsan_standalone.so"
         libs += [ rebase_path(libasan_file) ]
       }
     }
@@ -166,21 +196,19 @@ config("runtime_library") {
           [ "-L" + rebase_path("$ohos_sysroot/usr/lib/aarch64-linux-ohos",
                                root_build_dir) ]
       ldflags += [ "-L" + rebase_path(
-                       "$ohos_toolchain_root/lib/aarch64-linux-ohos/c++",
+                       "$ohos_toolchain_root/lib/aarch64-linux-ohos",
                        root_build_dir) ]
+      llvm_version = "19"
       ldflags +=
           [ "-L" + rebase_path(
-                "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos",
+                "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos",
                 root_build_dir) ]
-      libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.builtins.a"
 
-      if (is_asan && defined(ohos_asan) && ohos_asan) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.asan.so"
+      libclang_rt_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.builtins.a"
+
+      if (is_asan) {
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.so"
         libs += [ rebase_path(libasan_file) ]
-      }
-      if (using_sanitizer && is_ohos) {
-        libusan_file = "$ohos_toolchain_root/lib/clang/current/lib/aarch64-linux-ohos/libclang_rt.ubsan_standalone.so"
-        libs += [ rebase_path(libusan_file) ]
       }
     }
 
@@ -202,8 +230,6 @@ config("runtime_library") {
     ldflags += [ "-Wl,--dynamic-linker,$dynamic_linker" ]
     libs += [
       rebase_path(libclang_rt_file),
-      "c",
-      "c++",
       "c++abi",
     ]
   } else {
@@ -307,15 +333,5 @@ config("lld_pack_relocations") {
     ldflags = [ "-Wl,--pack-dyn-relocs=relr" ]
   } else {
     ldflags = [ "-Wl,--pack-dyn-relocs=android" ]
-  }
-}
-
-# Used for instrumented build to generate the orderfile.
-config("default_orderfile_instrumentation") {
-  if (use_order_profiling) {
-    cflags = [ "-finstrument-function-entry-bare" ]
-    if (use_thin_lto) {
-      ldflags = [ "-Wl,-u,__cyg_profile_func_enter_bare" ]
-    }
   }
 }

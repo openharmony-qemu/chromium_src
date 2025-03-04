@@ -4,8 +4,9 @@
 
 #include "cc/test/fake_layer_tree_frame_sink.h"
 
+#include <vector>
+
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/functional/bind.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_runner.h"
@@ -16,12 +17,13 @@
 #include "components/viz/common/frame_sinks/delay_based_time_source.h"
 #include "components/viz/common/resources/returned_resource.h"
 #include "components/viz/test/begin_frame_args_test.h"
+#include "gpu/ipc/client/client_shared_image_interface.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace cc {
 
 FakeLayerTreeFrameSink::Builder::Builder()
-    : compositor_context_provider_(viz::TestContextProvider::Create()),
+    : compositor_context_provider_(viz::TestContextProvider::CreateRaster()),
       worker_context_provider_(viz::TestContextProvider::CreateWorker()) {}
 
 FakeLayerTreeFrameSink::Builder::~Builder() = default;
@@ -36,7 +38,7 @@ FakeLayerTreeFrameSink::Builder::Build() {
 }
 
 FakeLayerTreeFrameSink::FakeLayerTreeFrameSink(
-    scoped_refptr<viz::ContextProvider> context_provider,
+    scoped_refptr<viz::RasterContextProvider> context_provider,
     scoped_refptr<viz::RasterContextProvider> worker_context_provider)
     : LayerTreeFrameSink(
           std::move(context_provider),
@@ -48,7 +50,8 @@ FakeLayerTreeFrameSink::FakeLayerTreeFrameSink(
                         /*for_renderer=*/false))
               : nullptr,
           base::SingleThreadTaskRunner::GetCurrentDefault(),
-          nullptr) {
+          nullptr,
+          /*shared_image_interface=*/nullptr) {
   gpu_memory_buffer_manager_ =
       context_provider_ ? &test_gpu_memory_buffer_manager_ : nullptr;
 }
@@ -102,7 +105,7 @@ void FakeLayerTreeFrameSink::DidAllocateSharedBitmap(
 void FakeLayerTreeFrameSink::DidDeleteSharedBitmap(
     const viz::SharedBitmapId& id) {
   DCHECK(base::Contains(shared_bitmaps_, id));
-  base::Erase(shared_bitmaps_, id);
+  std::erase(shared_bitmaps_, id);
 }
 
 void FakeLayerTreeFrameSink::DidReceiveCompositorFrameAck() {

@@ -93,21 +93,26 @@ void WebCacheManager::ClearRendererCache(
   }
 }
 
-#if BUILDFLAG(IS_OHOS)
-void WebCacheManager::AddResourceToCache(const std::string& url,
-                                         const std::string& origin,
-                                         const std::vector<uint8_t>& resource,
-                                         const std::map<std::string, std::string>& response_headers,
-                                         const int type) {
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+void WebCacheManager::AddResourceToCache(
+    const std::string& url,
+    const std::string& origin,
+    const std::vector<uint8_t>& resource,
+    const std::map<std::string, std::string>& response_headers,
+    const int type) {
   if (web_cache_services_.size() != 1) {
-    LOG(ERROR) << "Add resource to MemoryCache failed. No render service or in multiple render services mode.";
+    LOG(ERROR) << "Add resource to MemoryCache failed. No render service or in "
+                  "multiple render services mode.";
+    return;
   }
 
   auto service = web_cache_services_.begin();
 
   if (service != web_cache_services_.end() && service->second.is_bound()) {
-    base::flat_map<std::string, std::string> headers_flat_map(response_headers.begin(), response_headers.end());
-    service->second->AddResourceToCache(url, origin, resource, headers_flat_map, type);
+    base::flat_map<std::string, std::string> headers_flat_map(
+        response_headers.begin(), response_headers.end());
+    service->second->AddResourceToCache(url, origin, resource, headers_flat_map,
+                                        type);
   }
 }
 #endif

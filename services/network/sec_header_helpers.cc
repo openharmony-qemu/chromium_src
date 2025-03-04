@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string>
 
+#include "base/check.h"
 #include "base/feature_list.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "net/http/http_request_headers.h"
@@ -24,10 +25,11 @@ namespace network {
 
 namespace {
 
-const char kSecFetchMode[] = "Sec-Fetch-Mode";
-const char kSecFetchSite[] = "Sec-Fetch-Site";
-const char kSecFetchUser[] = "Sec-Fetch-User";
-const char kSecFetchDest[] = "Sec-Fetch-Dest";
+constexpr std::string_view kSecFetchMode = "Sec-Fetch-Mode";
+constexpr std::string_view kSecFetchSite = "Sec-Fetch-Site";
+constexpr std::string_view kSecFetchUser = "Sec-Fetch-User";
+constexpr std::string_view kSecFetchDest = "Sec-Fetch-Dest";
+constexpr std::string_view kSecFetchStorageAccess = "Sec-Fetch-Storage-Access";
 
 // Sec-Fetch-Site infrastructure:
 //
@@ -116,6 +118,19 @@ SecFetchSiteValue GetHeaderValueForRequest(
   return header_value;
 }
 
+char const* GetSecFetchStorageAccessHeaderValue(
+    net::cookie_util::StorageAccessStatus storage_access_status) {
+  switch (storage_access_status) {
+    case net::cookie_util::StorageAccessStatus::kInactive:
+      return "inactive";
+    case net::cookie_util::StorageAccessStatus::kActive:
+      return "active";
+    case net::cookie_util::StorageAccessStatus::kNone:
+      return "none";
+  }
+  NOTREACHED();
+}
+
 // Sec-Fetch-Site
 void SetSecFetchSiteHeader(net::URLRequest* request,
                            const GURL* pending_redirect_url,
@@ -151,50 +166,25 @@ void SetSecFetchDestHeader(net::URLRequest* request,
   // https://w3c.github.io/webappsec-fetch-metadata/#abstract-opdef-set-dest
   // If r's destination is the empty string, set header's value to the string
   // "empty". Otherwise, set header's value to r's destination.
-  std::string header_value = dest == mojom::RequestDestination::kEmpty
-                                 ? "empty"
-                                 : RequestDestinationToString(dest);
+  std::string header_value = RequestDestinationToString(
+      dest, EmptyRequestDestinationOption::kUseFiveCharEmptyString);
   request->SetExtraRequestHeaderByName(kSecFetchDest, header_value, true);
 }
 
-}  // namespace
-
-#ifdef OHOS_NETWORK_LOAD
-std::map<std::string, std::string> GetFetchMetadataHeaders(
-    const GURL& target_url,
-    network::mojom::RequestMode mode,
-    bool has_user_activation,
-    network::mojom::RequestDestination dest,
-    const absl::optional<url::Origin>& initiator) {
- 
-  std::map<std::string, std::string> headers;
-  if (!IsUrlPotentiallyTrustworthy(target_url))
-    return headers;
- 
-  // Other requests default to `kSameOrigin`, and walk through the request's URL
-  // chain to calculate the correct value.
-  auto header_value = SecFetchSiteValue::kSameOrigin;
-  if (!initiator.has_value()) {
-    header_value = SecFetchSiteValue::kNoOrigin;
-  } else {
-    header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
-                                            target_url, initiator.value()));
+// Sec-Fetch-Storage-Access
+void SetSecFetchStorageAccessHeader(net::URLRequest& request) {
+  if (!request.storage_access_status()) {
+    request.RemoveRequestHeaderByName(kSecFetchStorageAccess);
+    return;
   }
- 
-  headers[kSecFetchSite] = GetSecFetchSiteHeaderString(header_value);
- 
-  headers[kSecFetchMode] = RequestModeToString(mode);
- 
-  if (has_user_activation)
-    headers[kSecFetchUser] = "?1";
- 
-  std::string destination_value = dest == mojom::RequestDestination::kEmpty
-                                 ? "empty"
-                                 : RequestDestinationToString(dest);
-  headers[kSecFetchDest] = destination_value;
-  return headers;
+  request.SetExtraRequestHeaderByName(
+      kSecFetchStorageAccess,
+      GetSecFetchStorageAccessHeaderValue(
+          request.storage_access_status().value()),
+      /*overwrite=*/true);
 }
-#endif
+
+}  // namespace
 
 void SetFetchMetadataHeaders(
     net::URLRequest* request,
@@ -218,6 +208,7 @@ void SetFetchMetadataHeaders(
   SetSecFetchModeHeader(request, mode);
   SetSecFetchUserHeader(request, has_user_activation);
   SetSecFetchDestHeader(request, dest);
+  SetSecFetchStorageAccessHeader(*request);
 }
 
 void MaybeRemoveSecHeaders(net::URLRequest* request,
@@ -244,5 +235,44 @@ void MaybeRemoveSecHeaders(net::URLRequest* request,
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::map<std::string, std::string> GetFetchMetadataHeaders(
+    const GURL& target_url,
+    network::mojom::RequestMode mode,
+    bool has_user_activation,
+    network::mojom::RequestDestination dest,
+    const absl::optional<url::Origin>& initiator) {
+  std::map<std::string, std::string> headers;
+  if (!IsUrlPotentiallyTrustworthy(target_url)) {
+    return headers;
+  }
+
+  // Other requests default to `kSameOrigin`, and walk through the request's URL
+  // chain to calculate the correct value.
+  auto header_value = SecFetchSiteValue::kSameOrigin;
+  if (!initiator.has_value()) {
+    header_value = SecFetchSiteValue::kNoOrigin;
+  } else {
+    header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
+                                              target_url, initiator.value()));
+  }
+
+  headers[std::string(kSecFetchSite)] =
+      GetSecFetchSiteHeaderString(header_value);
+
+  headers[std::string(kSecFetchMode)] = RequestModeToString(mode);
+
+  if (has_user_activation) {
+    headers[std::string(kSecFetchUser)] = "?1";
+  }
+
+  std::string destination_value = dest == mojom::RequestDestination::kEmpty
+                                      ? "empty"
+                                      : RequestDestinationToString(dest);
+  headers[std::string(kSecFetchDest)] = destination_value;
+  return headers;
+}
+#endif
 
 }  // namespace network

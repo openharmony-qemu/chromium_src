@@ -17,9 +17,14 @@ namespace features {
 // The following features are declared alphabetically. The features should be
 // documented with descriptions of their behaviors in the .cc file.
 
-#if BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_CHROMEOS)
+COMPONENT_EXPORT(PRINTING_BASE)
+BASE_DECLARE_FEATURE(kAddPrinterViaPrintscanmgr);
+#endif  // BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
 COMPONENT_EXPORT(PRINTING_BASE) BASE_DECLARE_FEATURE(kCupsIppPrintingBackend);
-#endif  // BUILDFLAG(IS_MAC)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
 
 #if BUILDFLAG(IS_WIN)
 COMPONENT_EXPORT(PRINTING_BASE)
@@ -30,30 +35,21 @@ COMPONENT_EXPORT(PRINTING_BASE)
 BASE_DECLARE_FEATURE(kReadPrinterCapabilitiesWithXps);
 COMPONENT_EXPORT(PRINTING_BASE) BASE_DECLARE_FEATURE(kUseXpsForPrinting);
 COMPONENT_EXPORT(PRINTING_BASE) BASE_DECLARE_FEATURE(kUseXpsForPrintingFromPdf);
-
-// Helper function to determine if there is any print path which could require
-// the use of XPS print capabilities.
-COMPONENT_EXPORT(PRINTING_BASE) bool IsXpsPrintCapabilityRequired();
-
-// Helper function to determine if printing of a document from a particular
-// source should be done using XPS printing API instead of with GDI.
-COMPONENT_EXPORT(PRINTING_BASE)
-bool ShouldPrintUsingXps(bool source_is_pdf);
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
 COMPONENT_EXPORT(PRINTING_BASE) BASE_DECLARE_FEATURE(kEnableOopPrintDrivers);
 COMPONENT_EXPORT(PRINTING_BASE)
+extern const base::FeatureParam<bool> kEnableOopPrintDriversEarlyStart;
+COMPONENT_EXPORT(PRINTING_BASE)
 extern const base::FeatureParam<bool> kEnableOopPrintDriversJobPrint;
 COMPONENT_EXPORT(PRINTING_BASE)
 extern const base::FeatureParam<bool> kEnableOopPrintDriversSandbox;
-#endif  // BUILDFLAG(ENABLE_OOP_PRINTING)
-
-#if BUILDFLAG(ENABLE_PRINT_CONTENT_ANALYSIS)
+#if BUILDFLAG(IS_WIN)
 COMPONENT_EXPORT(PRINTING_BASE)
-BASE_DECLARE_FEATURE(kEnablePrintContentAnalysis);
-BASE_DECLARE_FEATURE(kEnablePrintScanAfterPreview);
-#endif  // BUILDFLAG(ENABLE_PRINT_CONTENT_ANALYSIS)
+extern const base::FeatureParam<bool> kEnableOopPrintDriversSingleProcess;
+#endif
+#endif  // BUILDFLAG(ENABLE_OOP_PRINTING)
 
 }  // namespace features
 }  // namespace printing

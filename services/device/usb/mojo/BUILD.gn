@@ -14,6 +14,8 @@ source_set("mojo") {
     "device_manager_test.h",
   ]
 
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
+
   deps = [
     "//build:chromeos_buildflags",
     "//mojo/public/cpp/bindings",
@@ -22,6 +24,7 @@ source_set("mojo") {
     "//services/device/public/mojom:usb",
     "//services/device/public/mojom:usb_test",
     "//services/device/usb",
+    "//third_party/blink/public/common",
   ]
 
   if (is_chromeos_ash) {

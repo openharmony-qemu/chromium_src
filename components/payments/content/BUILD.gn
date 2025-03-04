@@ -12,8 +12,8 @@ static_library("content") {
     "android_payment_app.h",
     "android_payment_app_factory.cc",
     "android_payment_app_factory.h",
-    "can_make_payment_query_factory.cc",
-    "can_make_payment_query_factory.h",
+    "has_enrolled_instrument_query_factory.cc",
+    "has_enrolled_instrument_query_factory.h",
     "initialization_task.cc",
     "initialization_task.h",
     "payment_app.cc",
@@ -38,6 +38,8 @@ static_library("content") {
     "payment_request_converter.h",
     "payment_request_spec.cc",
     "payment_request_spec.h",
+    "payment_request_web_contents_manager.cc",
+    "payment_request_web_contents_manager.h",
     "payment_ui_observer.h",
     "payments_userdata_key.cc",
     "payments_userdata_key.h",
@@ -87,6 +89,15 @@ static_library("content") {
     "//url",
   ]
 
+  if (is_chromeos) {
+    sources += [
+      "android_app_communication_helpers.cc",
+      "android_app_communication_helpers.h",
+    ]
+
+    deps += [ "//chromeos/components/payments/mojom" ]
+  }
+
   if (is_chromeos_ash) {
     sources += [ "android_app_communication_ash.cc" ]
 
@@ -96,7 +107,13 @@ static_library("content") {
     ]
   }
 
-  if (!is_chromeos_ash) {
+  if (is_chromeos_lacros) {
+    sources += [ "android_app_communication_lacros.cc" ]
+
+    deps += [ "//chromeos/lacros" ]
+  }
+
+  if (!is_chromeos) {
     sources += [ "android_app_communication_stub.cc" ]
   }
 
@@ -116,8 +133,6 @@ static_library("content") {
       "payment_request_display_manager.h",
       "payment_request_state.cc",
       "payment_request_state.h",
-      "payment_request_web_contents_manager.cc",
-      "payment_request_web_contents_manager.h",
       "payment_response_helper.cc",
       "payment_response_helper.h",
       "secure_payment_confirmation_controller.cc",
@@ -195,6 +210,7 @@ static_library("test_support") {
   deps = [
     ":utils",
     "//base/test:test_support",
+    "//components/os_crypt/async/browser:test_support",
     "//components/webdata/common",
     "//components/webdata_services",
     "//testing/gmock",
@@ -207,6 +223,9 @@ source_set("unit_tests") {
   testonly = true
   sources = [
     "android_app_communication_test_support.h",
+    "android_app_communication_unittest.cc",
+    "android_payment_app_factory_unittest.cc",
+    "android_payment_app_unittest.cc",
     "mock_android_app_communication.cc",
     "mock_android_app_communication.h",
     "mock_payment_app_factory_delegate.cc",
@@ -219,17 +238,12 @@ source_set("unit_tests") {
     "web_app_manifest_section_table_unittest.cc",
   ]
 
-  if (!ohos_unittests) {
-    source += [
-      "android_app_communication_unittest.cc",
-      "android_payment_app_factory_unittest.cc",
-      "android_payment_app_unittest.cc",
-    ]
-  }
-
   if (!is_android) {
     sources += [
+      "mock_content_payment_request_delegate.cc",
+      "mock_content_payment_request_delegate.h",
       "payment_app_unittest.cc",
+      "payment_request_display_manager_unittest.cc",
       "payment_request_spec_unittest.cc",
       "payment_request_state_unittest.cc",
       "payment_request_web_contents_manager_unittest.cc",
@@ -252,6 +266,7 @@ source_set("unit_tests") {
     "//base/test:test_support",
     "//components/autofill/core/browser",
     "//components/autofill/core/browser:test_support",
+    "//components/os_crypt/async/browser:test_support",
     "//components/payments/core",
     "//components/payments/core:error_strings",
     "//components/payments/core:method_strings",
@@ -271,8 +286,21 @@ source_set("unit_tests") {
     "//third_party/libaddressinput:test_support",
   ]
 
+  if (is_chromeos) {
+    sources += [
+      "android_app_communication_test_support_chrome_os.cc",
+      "android_app_communication_test_support_chrome_os.h",
+    ]
+    deps += [
+      "//chromeos/components/payments:test_support",
+      "//chromeos/components/payments/mojom",
+    ]
+  } else {
+    sources += [ "android_app_communication_test_support_stub.cc" ]
+  }
+
   if (is_chromeos_ash) {
-    sources += [ "android_app_communication_test_support_chrome_os.cc" ]
+    sources += [ "android_app_communication_test_support_ash.cc" ]
 
     deps += [
       "//ash/components/arc",
@@ -283,7 +311,11 @@ source_set("unit_tests") {
     ]
   }
 
-  if (!is_chromeos_ash) {
-    sources += [ "android_app_communication_test_support_stub.cc" ]
+  if (is_chromeos_lacros) {
+    sources += [ "android_app_communication_test_support_lacros.cc" ]
+    deps += [
+      "//chromeos/lacros",
+      "//chromeos/lacros:test_support",
+    ]
   }
 }

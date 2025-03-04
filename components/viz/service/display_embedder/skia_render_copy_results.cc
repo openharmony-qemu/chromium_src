@@ -117,8 +117,21 @@ const SkBitmap& CopyOutputResultSkiaRGBA::AsSkBitmap() const {
   } else if (!bitmap_created_) {
     const auto* data = result_->data(0);
     auto row_bytes = result_->rowBytes(0);
-    auto info = SkImageInfo::MakeN32Premul(size().width(), size().height(),
-                                           color_space_);
+
+    // TODO(https://bugs.chromium.org/p/skia/issues/detail?id=14389):
+    // BGRA is not supported on iOS, so explicitly request RGBA here. This
+    // should not prevent readback, however, so once that is fixed, this code
+    // could be removed.
+    auto info =
+#if BUILDFLAG(IS_IOS)
+        SkImageInfo::Make(size().width(), size().height(),
+                          kRGBA_8888_SkColorType, kPremul_SkAlphaType,
+                          color_space_);
+#else
+        SkImageInfo::MakeN32Premul(size().width(), size().height(),
+                                   color_space_);
+#endif  // BUILDFLAG(IS_IOS)
+
     SkBitmap bitmap;
     bitmap.installPixels(info, const_cast<void*>(data), row_bytes);
 
@@ -141,6 +154,39 @@ bool CopyOutputResultSkiaRGBA::LockSkBitmap() const {
 void CopyOutputResultSkiaRGBA::UnlockSkBitmap() const {
   result_.lock().AssertAcquired();
   result_.lock().Release();
+}
+
+ReadbackContextTexture::ReadbackContextTexture(
+    base::WeakPtr<SkiaOutputSurfaceImplOnGpu> impl_on_gpu,
+    std::unique_ptr<CopyOutputRequest> request,
+    const gfx::Rect& result_rect,
+    const gpu::Mailbox& mailbox,
+    const gfx::ColorSpace& color_space)
+    : impl_on_gpu_(impl_on_gpu),
+      request_(std::move(request)),
+      result_rect_(result_rect),
+      mailbox_(mailbox),
+      color_space_(color_space) {}
+
+ReadbackContextTexture::~ReadbackContextTexture() = default;
+
+void ReadbackContextTexture::OnMailboxReady(GrGpuFinishedContext c) {
+  auto context = base::WrapUnique(static_cast<ReadbackContextTexture*>(c));
+  context->OnMailboxReadyInternal();
+  // `context` is destroyed when this goes out of scope.
+}
+
+void ReadbackContextTexture::OnMailboxReadyInternal() {
+  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+
+  if (impl_on_gpu_) {
+    impl_on_gpu_->ReadbackDone();
+  }
+
+  request_->SendResult(std::make_unique<CopyOutputTextureResult>(
+      request_->result_format(), result_rect_,
+      CopyOutputResult::TextureResult(mailbox_, color_space_),
+      CopyOutputResult::ReleaseCallbacks()));
 }
 
 CopyOutputResultSkiaYUV::CopyOutputResultSkiaYUV(
@@ -321,51 +367,6 @@ void CopyOutputResultSkiaNV12::OnNV12PlaneReadbackDone(
 
   context->nv12_planes_readback->PlaneReadbackDone(context->plane_index,
                                                    std::move(async_result));
-}
-
-NV12PlanesReadyContext::NV12PlanesReadyContext(
-    base::WeakPtr<SkiaOutputSurfaceImplOnGpu> impl_on_gpu,
-    std::unique_ptr<CopyOutputRequest> request,
-    const gfx::Rect& result_rect,
-    const std::array<gpu::MailboxHolder, CopyOutputResult::kMaxPlanes>&
-        plane_mailbox_holders,
-    const gfx::ColorSpace& color_space)
-    : request_(std::move(request)),
-      result_rect_(result_rect),
-      plane_mailbox_holders_(plane_mailbox_holders),
-      color_space_(color_space) {}
-
-NV12PlanesReadyContext::~NV12PlanesReadyContext() {
-  DCHECK_EQ(outstanding_planes_, 0);
-}
-
-void NV12PlanesReadyContext::OnNV12PlaneReady() {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
-  if (impl_on_gpu_) {
-    impl_on_gpu_->ReadbackDone();
-  }
-
-  outstanding_planes_--;
-  if (outstanding_planes_ == 0) {
-    request_->SendResult(std::make_unique<CopyOutputTextureResult>(
-        CopyOutputResult::Format::NV12_PLANES, result_rect_,
-        CopyOutputResult::TextureResult(plane_mailbox_holders_, color_space_),
-        CopyOutputResult::ReleaseCallbacks()));
-  }
-}
-
-NV12SinglePlaneReadyContext::NV12SinglePlaneReadyContext(
-    scoped_refptr<NV12PlanesReadyContext> nv12_planes_flushed)
-    : nv12_planes_flushed(nv12_planes_flushed) {}
-
-NV12SinglePlaneReadyContext::~NV12SinglePlaneReadyContext() = default;
-
-// static
-void NV12SinglePlaneReadyContext::OnNV12PlaneReady(GrGpuFinishedContext c) {
-  auto context = base::WrapUnique(static_cast<NV12SinglePlaneReadyContext*>(c));
-
-  context->nv12_planes_flushed->OnNV12PlaneReady();
 }
 
 }  // namespace viz

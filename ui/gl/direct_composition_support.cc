@@ -4,21 +4,24 @@
 
 #include "ui/gl/direct_composition_support.h"
 
+#include <d3d11on12.h>
+#include <dcomp.h>
 #include <dxgi1_6.h>
 
+#include <set>
+
 #include "base/command_line.h"
+#include "base/compiler_specific.h"
+#include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/synchronization/lock.h"
 #include "base/win/windows_version.h"
 #include "ui/gfx/geometry/rect.h"
-#include "ui/gl/gl_angle_util_win.h"
-#include "ui/gl/gl_bindings.h"
-#include "ui/gl/gl_display.h"
 #include "ui/gl/gl_features.h"
-#include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/gl_utils.h"
+#include "ui/gl/gpu_switching_manager.h"
 
 namespace gl {
 namespace {
@@ -29,6 +32,8 @@ bool g_overlay_caps_valid = false;
 bool g_supports_overlays = false;
 // Whether the GPU can support hardware overlays or not.
 bool g_supports_hardware_overlays = false;
+// Whether video processor auto HDR is supported.
+bool g_supports_vp_auto_hdr = false;
 // Whether the DecodeSwapChain is disabled or not.
 bool g_disable_decode_swap_chain = false;
 // Whether to force the nv12 overlay support.
@@ -52,6 +57,11 @@ bool SupportsHardwareOverlays() {
   return g_supports_hardware_overlays;
 }
 
+bool SupportsVideoProcessorAutoHDR() {
+  base::AutoLock auto_lock(GetOverlayLock());
+  return g_supports_vp_auto_hdr;
+}
+
 void SetSupportsOverlays(bool support) {
   base::AutoLock auto_lock(GetOverlayLock());
   g_supports_overlays = support;
@@ -60,6 +70,11 @@ void SetSupportsOverlays(bool support) {
 void SetSupportsHardwareOverlays(bool support) {
   base::AutoLock auto_lock(GetOverlayLock());
   g_supports_hardware_overlays = support;
+}
+
+void SetSupportsVideoProcessorAutoHDR(bool support) {
+  base::AutoLock auto_lock(GetOverlayLock());
+  g_supports_vp_auto_hdr = support;
 }
 
 bool SupportsSoftwareOverlays() {
@@ -78,7 +93,7 @@ void SetOverlayCapsValid(bool valid) {
   g_overlay_caps_valid = valid;
 }
 
-// A warpper of IDXGIOutput4::CheckOverlayColorSpaceSupport()
+// A wrapper of IDXGIOutput4::CheckOverlayColorSpaceSupport()
 bool CheckOverlayColorSpaceSupport(
     DXGI_FORMAT dxgi_format,
     DXGI_COLOR_SPACE_TYPE dxgi_color_space,
@@ -104,8 +119,16 @@ int g_num_monitors = 0;
 // Whether there is a HDR capable display monitor being connected.
 bool g_system_hdr_enabled = false;
 
+// Per-monitor HDR capability
+std::set<HMONITOR>* GetHDRMonitors() {
+  static base::NoDestructor<std::set<HMONITOR>> hdr_monitors;
+  return hdr_monitors.get();
+}
+
 // Global direct composition device.
-IDCompositionDevice2* g_dcomp_device = nullptr;
+IDCompositionDevice3* g_dcomp_device = nullptr;
+// Global d3d11 device used by direct composition.
+ID3D11Device* g_d3d11_device = nullptr;
 // Whether swap chain present failed and direct composition should be disabled.
 bool g_direct_composition_swap_chain_failed = false;
 
@@ -121,13 +144,14 @@ UINT g_nv12_overlay_support_flags = 0;
 UINT g_yuy2_overlay_support_flags = 0;
 UINT g_bgra8_overlay_support_flags = 0;
 UINT g_rgb10a2_overlay_support_flags = 0;
+UINT g_p010_overlay_support_flags = 0;
 
 // When this is set, if NV12 or YUY2 overlays are supported, set BGRA8 overlays
 // as supported as well.
 bool g_enable_bgra8_overlays_with_yuv_overlay_support = false;
 
 // Force enabling DXGI_FORMAT_R10G10B10A2_UNORM format for overlay. Intel
-// celake and Tigerlake fail to report the cap of this HDR overlay format.
+// Icelake and Tigerlake fail to report the cap of this HDR overlay format.
 // TODO(magchen@): Remove this workaround when this cap is fixed in the Intel
 // drivers.
 bool g_force_rgb10a2_overlay_support = false;
@@ -141,12 +165,14 @@ bool g_check_ycbcr_studio_g22_left_p709_for_nv12_support = false;
 void SetOverlaySupportFlagsForFormats(UINT nv12_flags,
                                       UINT yuy2_flags,
                                       UINT bgra8_flags,
-                                      UINT rgb10a2_flags) {
+                                      UINT rgb10a2_flags,
+                                      UINT p010_flags) {
   base::AutoLock auto_lock(GetOverlayLock());
   g_nv12_overlay_support_flags = nv12_flags;
   g_yuy2_overlay_support_flags = yuy2_flags;
   g_bgra8_overlay_support_flags = bgra8_flags;
   g_rgb10a2_overlay_support_flags = rgb10a2_flags;
+  g_p010_overlay_support_flags = p010_flags;
 }
 
 bool FlagsSupportsOverlays(UINT flags) {
@@ -161,7 +187,8 @@ void GetGpuDriverOverlayInfo(bool* supports_overlays,
                              UINT* nv12_overlay_support_flags,
                              UINT* yuy2_overlay_support_flags,
                              UINT* bgra8_overlay_support_flags,
-                             UINT* rgb10a2_overlay_support_flags) {
+                             UINT* rgb10a2_overlay_support_flags,
+                             UINT* p010_overlay_support_flags) {
   // Initialization
   *supports_overlays = false;
   *supports_hardware_overlays = false;
@@ -171,6 +198,7 @@ void GetGpuDriverOverlayInfo(bool* supports_overlays,
   *yuy2_overlay_support_flags = 0;
   *bgra8_overlay_support_flags = 0;
   *rgb10a2_overlay_support_flags = 0;
+  *p010_overlay_support_flags = 0;
 
   // Check for DirectComposition support first to prevent likely crashes.
   if (!DirectCompositionSupported())
@@ -181,29 +209,22 @@ void GetGpuDriverOverlayInfo(bool* supports_overlays,
   if (base::win::GetVersion() < base::win::Version::WIN10_RS1)
     return;
 
-  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device =
-      QueryD3D11DeviceObjectFromANGLE();
+  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
   if (!d3d11_device) {
-    DLOG(ERROR) << "Failed to retrieve D3D11 device";
+    LOG(ERROR) << __func__ << ": Failed to retrieve D3D11 device";
     return;
   }
 
   Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
-  if (FAILED(d3d11_device.As(&dxgi_device))) {
-    DLOG(ERROR) << "Failed to retrieve DXGI device";
-    return;
-  }
+  CHECK_EQ(d3d11_device.As(&dxgi_device), S_OK);
 
   Microsoft::WRL::ComPtr<IDXGIAdapter> dxgi_adapter;
-  if (FAILED(dxgi_device->GetAdapter(&dxgi_adapter))) {
-    DLOG(ERROR) << "Failed to retrieve DXGI adapter";
-    return;
-  }
+  CHECK_EQ(dxgi_device->GetAdapter(&dxgi_adapter), S_OK);
 
   // This will fail if the D3D device is "Microsoft Basic Display Adapter".
   Microsoft::WRL::ComPtr<ID3D11VideoDevice> video_device;
   if (FAILED(d3d11_device.As(&video_device))) {
-    DLOG(ERROR) << "Failed to retrieve video device";
+    LOG(ERROR) << __func__ << ": Failed to retrieve video device";
     return;
   }
 
@@ -228,6 +249,8 @@ void GetGpuDriverOverlayInfo(bool* supports_overlays,
     output3->CheckOverlaySupport(DXGI_FORMAT_R10G10B10A2_UNORM,
                                  d3d11_device.Get(),
                                  rgb10a2_overlay_support_flags);
+    output3->CheckOverlaySupport(DXGI_FORMAT_P010, d3d11_device.Get(),
+                                 p010_overlay_support_flags);
     if (FlagsSupportsOverlays(*nv12_overlay_support_flags)) {
       // NV12 format is preferred if it's supported.
       *overlay_format_used = DXGI_FORMAT_NV12;
@@ -292,6 +315,7 @@ void GetGpuDriverOverlayInfo(bool* supports_overlays,
   *yuy2_overlay_support_flags = 0;
   *bgra8_overlay_support_flags = 0;
   *rgb10a2_overlay_support_flags = 0;
+  *p010_overlay_support_flags = 0;
 
   // Software overlays always use NV12 because it's slightly more efficient and
   // YUY2 was only used because Skylake doesn't support NV12 hardware overlays.
@@ -311,12 +335,13 @@ void UpdateOverlaySupport() {
   UINT yuy2_overlay_support_flags = 0;
   UINT bgra8_overlay_support_flags = 0;
   UINT rgb10a2_overlay_support_flags = 0;
+  UINT p010_overlay_support_flags = 0;
 
   GetGpuDriverOverlayInfo(
       &supports_overlays, &supports_hardware_overlays, &overlay_format_used,
       &overlay_format_used_hdr, &nv12_overlay_support_flags,
       &yuy2_overlay_support_flags, &bgra8_overlay_support_flags,
-      &rgb10a2_overlay_support_flags);
+      &rgb10a2_overlay_support_flags, &p010_overlay_support_flags);
 
   if (g_force_nv12_overlay_support) {
     supports_overlays = true;
@@ -335,9 +360,11 @@ void UpdateOverlaySupport() {
       overlay_format_used = DXGI_FORMAT_YUY2;
     } else if (override_format == kSwapChainFormatBGRA) {
       overlay_format_used = DXGI_FORMAT_B8G8R8A8_UNORM;
+    } else if (override_format == kSwapChainFormatP010) {
+      overlay_format_used = DXGI_FORMAT_P010;
     } else {
-      DLOG(ERROR) << "Invalid value for switch "
-                  << switches::kDirectCompositionVideoSwapChainFormat;
+      LOG(ERROR) << "Invalid value for switch "
+                 << switches::kDirectCompositionVideoSwapChainFormat;
     }
   }
 
@@ -356,9 +383,79 @@ void UpdateOverlaySupport() {
   SetSupportsHardwareOverlays(supports_hardware_overlays);
   SetOverlaySupportFlagsForFormats(
       nv12_overlay_support_flags, yuy2_overlay_support_flags,
-      bgra8_overlay_support_flags, rgb10a2_overlay_support_flags);
+      bgra8_overlay_support_flags, rgb10a2_overlay_support_flags,
+      p010_overlay_support_flags);
   g_overlay_format_used = overlay_format_used;
   g_overlay_format_used_hdr = overlay_format_used_hdr;
+}
+
+std::vector<DXGI_OUTPUT_DESC1> GetDirectCompositionOutputDescs() {
+  std::vector<DXGI_OUTPUT_DESC1> output_descs;
+  // HDR support was introduced in Windows 10 Creators Update.
+  if (base::win::GetVersion() < base::win::Version::WIN10_RS2) {
+    return output_descs;
+  }
+
+  // Only direct composition surface can allocate HDR swap chains.
+  if (!DirectCompositionSupported()) {
+    return output_descs;
+  }
+
+  HRESULT hr = S_OK;
+  Microsoft::WRL::ComPtr<IDXGIFactory1> factory;
+  hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CreateDXGIFactory1 failed: "
+               << logging::SystemErrorCodeToString(hr);
+    return output_descs;
+  }
+
+  for (UINT adapter_index = 0;; ++adapter_index) {
+    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
+    hr = factory->EnumAdapters(adapter_index, &adapter);
+    if (hr == DXGI_ERROR_NOT_FOUND) {
+      break;
+    }
+    if (FAILED(hr)) {
+      LOG(ERROR)
+          << "Unexpected error creating DXGI adapter, EnumAdapters failed: "
+          << logging::SystemErrorCodeToString(hr);
+      break;
+    }
+
+    for (UINT output_index = 0;; ++output_index) {
+      Microsoft::WRL::ComPtr<IDXGIOutput> output;
+      hr = adapter->EnumOutputs(output_index, &output);
+      if (hr == DXGI_ERROR_NOT_FOUND) {
+        break;
+      }
+      if (FAILED(hr)) {
+        LOG(ERROR)
+            << "Unexpected error creating DXGI adapter, EnumOutputs failed: "
+            << logging::SystemErrorCodeToString(hr);
+        break;
+      }
+
+      Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
+      hr = output->QueryInterface(IID_PPV_ARGS(&output6));
+      if (FAILED(hr)) {
+        LOG(WARNING) << "IDXGIOutput6 is required for HDR detection.";
+        continue;
+      }
+
+      DXGI_OUTPUT_DESC1 desc;
+      hr = output6->GetDesc1(&desc);
+      if (FAILED(hr)) {
+        LOG(ERROR) << "Unexpected error getting output descriptor: "
+                   << logging::SystemErrorCodeToString(hr);
+        continue;
+      }
+
+      output_descs.push_back(std::move(desc));
+    }
+  }
+
+  return output_descs;
 }
 
 void UpdateMonitorInfo() {
@@ -372,61 +469,184 @@ void UpdateMonitorInfo() {
   } else {
     g_primary_monitor_size = gfx::Size();
   }
+
+  GetHDRMonitors()->clear();
   g_system_hdr_enabled = false;
-  auto dxgi_info = gl::GetDirectCompositionHDRMonitorDXGIInfo();
-  for (const auto& output_desc : dxgi_info->output_descs)
-    g_system_hdr_enabled |= output_desc->hdr_enabled;
+  for (const auto& desc : GetDirectCompositionOutputDescs()) {
+    if (desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+      GetHDRMonitors()->insert(desc.Monitor);
+      g_system_hdr_enabled = true;
+    }
+  }
+  UMA_HISTOGRAM_BOOLEAN("GPU.Output.HDR", g_system_hdr_enabled);
+}
+
+// Update video processor auto HDR feature support status.
+// Note that NVIDIA GPU is the only one that supports Auto HDR feature
+// currently.
+// Must be called on GpuMain thread.
+void UpdateVideoProcessorAutoHDRSupport() {
+  if (GetGlWorkarounds().disable_vp_auto_hdr) {
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  if (!base::FeatureList::IsEnabled(features::kNvidiaVpTrueHDR)) {
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
+  if (!d3d11_device) {
+    LOG(ERROR) << __func__ << ": Failed to retrieve D3D11 device";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
+  if (FAILED(d3d11_device.As(&dxgi_device))) {
+    DLOG(ERROR) << "Failed to retrieve DXGI device";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<IDXGIAdapter> dxgi_adapter;
+  if (FAILED(dxgi_device->GetAdapter(&dxgi_adapter))) {
+    DLOG(ERROR) << "Failed to retrieve DXGI adapter";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  DXGI_ADAPTER_DESC adapter_desc;
+  if (FAILED(dxgi_adapter->GetDesc(&adapter_desc))) {
+    DLOG(ERROR) << "Failed to get adapter desc";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  // Check the vendor ID to make sure it's NVIDIA.
+  if (adapter_desc.VendorId != 0x10de) {
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d11_context;
+  // D3D11 immediate context isn't allowed to be accessed simultaneously on two
+  // threads, and all other callers are using this on the GpuMain thread, so
+  // this function must be called on GpuMain thread.
+  d3d11_device->GetImmediateContext(&d3d11_context);
+  if (!d3d11_context) {
+    LOG(ERROR) << __func__ << ": Failed to get immediate context";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11VideoContext> d3d11_video_context;
+  if (FAILED(d3d11_context.As(&d3d11_video_context))) {
+    LOG(ERROR) << __func__ << ": Failed to retrieve video context";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11VideoDevice> d3d11_video_device;
+  if (FAILED(d3d11_device.As(&d3d11_video_device))) {
+    LOG(ERROR) << __func__ << ": Failed to retrieve video device";
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  D3D11_VIDEO_PROCESSOR_CONTENT_DESC desc;
+  desc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+  desc.InputFrameRate.Numerator = 60;
+  desc.InputFrameRate.Denominator = 1;
+  desc.InputWidth = 1920;
+  desc.InputHeight = 1080;
+  desc.OutputFrameRate.Numerator = 60;
+  desc.OutputFrameRate.Denominator = 1;
+  desc.OutputWidth = 1920;
+  desc.OutputHeight = 1080;
+  desc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+  HRESULT hr = S_OK;
+
+  Microsoft::WRL::ComPtr<ID3D11VideoProcessorEnumerator> d3d11_video_enumerator;
+  hr = d3d11_video_device->CreateVideoProcessorEnumerator(
+      &desc, &d3d11_video_enumerator);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CreateVideoProcessorEnumerator failed: "
+               << logging::SystemErrorCodeToString(hr);
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11VideoProcessor> d3d11_video_processor;
+  hr = d3d11_video_device->CreateVideoProcessor(d3d11_video_enumerator.Get(), 0,
+                                                &d3d11_video_processor);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CreateVideoProcessor failed: "
+               << logging::SystemErrorCodeToString(hr);
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  constexpr GUID kNvidiaTrueHDRInterfaceGUID = {
+      0xfdd62bb4,
+      0x620b,
+      0x4fd7,
+      {0x9a, 0xb3, 0x1e, 0x59, 0xd0, 0xd5, 0x44, 0xb3}};
+
+  UINT driver_supports_true_hdr = 0;
+  hr = d3d11_video_context->VideoProcessorGetStreamExtension(
+      d3d11_video_processor.Get(), 0, &kNvidiaTrueHDRInterfaceGUID,
+      sizeof(driver_supports_true_hdr), &driver_supports_true_hdr);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "VideoProcessorGetStreamExtension failed: "
+               << logging::SystemErrorCodeToString(hr);
+    SetSupportsVideoProcessorAutoHDR(false);
+    return;
+  }
+
+  d3d11_video_processor.Reset();
+  d3d11_video_enumerator.Reset();
+  d3d11_video_context.Reset();
+  d3d11_video_device.Reset();
+  d3d11_context.Reset();
+  d3d11_device.Reset();
+
+  SetSupportsVideoProcessorAutoHDR(driver_supports_true_hdr == 1);
 }
 
 }  // namespace
 
-void InitializeDirectComposition(GLDisplayEGL* display) {
+void InitializeDirectComposition(
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device) {
   DCHECK(!g_dcomp_device);
-
   if (GetGlWorkarounds().disable_direct_composition) {
     return;
   }
-
-  // Direct composition can only be used with ANGLE.
-  if (gl::GetGLImplementation() != gl::kGLImplementationEGLANGLE)
-    return;
 
   // Blocklist direct composition if MCTU.dll or MCTUX.dll are injected. These
   // are user mode drivers for display adapters from Magic Control Technology
   // Corporation.
   if (GetModuleHandle(TEXT("MCTU.dll")) || GetModuleHandle(TEXT("MCTUX.dll"))) {
-    DLOG(ERROR) << "Blocklisted due to third party modules";
-    return;
-  }
-
-  // EGL_KHR_no_config_context surface compatibility is required to be able to
-  // MakeCurrent with the default pbuffer surface.
-  if (!display->ext->b_EGL_KHR_no_config_context) {
-    DLOG(ERROR) << "EGL_KHR_no_config_context not supported";
-    return;
-  }
-
-  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device =
-      QueryD3D11DeviceObjectFromANGLE();
-  if (!d3d11_device) {
-    DLOG(ERROR) << "Failed to retrieve D3D11 device";
+    LOG(ERROR) << "Blocklisted due to third party modules";
     return;
   }
 
   // Load DLL at runtime since older Windows versions don't have dcomp.
   HMODULE dcomp_module = ::GetModuleHandle(L"dcomp.dll");
   if (!dcomp_module) {
-    DLOG(ERROR) << "Failed to load dcomp.dll";
+    LOG(ERROR) << "Failed to load dcomp.dll";
     return;
   }
 
-  using PFN_DCOMPOSITION_CREATE_DEVICE2 = HRESULT(WINAPI*)(
+  using PFN_DCOMPOSITION_CREATE_DEVICE3 = HRESULT(WINAPI*)(
       IUnknown * renderingDevice, REFIID iid, void** dcompositionDevice);
-  PFN_DCOMPOSITION_CREATE_DEVICE2 create_device_function =
-      reinterpret_cast<PFN_DCOMPOSITION_CREATE_DEVICE2>(
-          ::GetProcAddress(dcomp_module, "DCompositionCreateDevice2"));
-  if (!create_device_function) {
-    DLOG(ERROR) << "GetProcAddress failed for DCompositionCreateDevice2";
+  PFN_DCOMPOSITION_CREATE_DEVICE3 create_device3_function =
+      reinterpret_cast<PFN_DCOMPOSITION_CREATE_DEVICE3>(
+          ::GetProcAddress(dcomp_module, "DCompositionCreateDevice3"));
+  if (!create_device3_function) {
+    LOG(ERROR) << "GetProcAddress failed for DCompositionCreateDevice3";
     return;
   }
 
@@ -435,34 +655,44 @@ void InitializeDirectComposition(GLDisplayEGL* display) {
 
   Microsoft::WRL::ComPtr<IDCompositionDesktopDevice> desktop_device;
   HRESULT hr =
-      create_device_function(dxgi_device.Get(), IID_PPV_ARGS(&desktop_device));
+      create_device3_function(dxgi_device.Get(), IID_PPV_ARGS(&desktop_device));
   if (FAILED(hr)) {
-    DLOG(ERROR) << "DCompositionCreateDevice2 failed with error 0x" << std::hex
-                << hr;
+    LOG(ERROR) << "DCompositionCreateDevice3 failed: "
+               << logging::SystemErrorCodeToString(hr);
     return;
   }
 
-  Microsoft::WRL::ComPtr<IDCompositionDevice2> dcomp_device;
+  Microsoft::WRL::ComPtr<IDCompositionDevice3> dcomp_device;
   hr = desktop_device.As(&dcomp_device);
   if (FAILED(hr)) {
-    DLOG(ERROR) << "Failed to retrieve IDCompositionDevice2 with error 0x"
-                << std::hex << hr;
+    LOG(ERROR) << "Failed to retrieve IDCompositionDevice3: "
+               << logging::SystemErrorCodeToString(hr);
     return;
   }
 
   g_dcomp_device = dcomp_device.Detach();
   DCHECK(g_dcomp_device);
+
+  g_d3d11_device = d3d11_device.Detach();
+
+  UpdateVideoProcessorAutoHDRSupport();
 }
 
 void ShutdownDirectComposition() {
   if (g_dcomp_device) {
     g_dcomp_device->Release();
     g_dcomp_device = nullptr;
+    g_d3d11_device->Release();
+    g_d3d11_device = nullptr;
   }
 }
 
-IDCompositionDevice2* GetDirectCompositionDevice() {
+IDCompositionDevice3* GetDirectCompositionDevice() {
   return g_dcomp_device;
+}
+
+ID3D11Device* GetDirectCompositionD3D11Device() {
+  return g_d3d11_device;
 }
 
 bool DirectCompositionSupported() {
@@ -514,11 +744,112 @@ bool DirectCompositionScaledOverlaysSupported() {
            (SupportsOverlays() && SupportsSoftwareOverlays());
   } else if (g_overlay_format_used == DXGI_FORMAT_YUY2) {
     return !!(g_yuy2_overlay_support_flags & DXGI_OVERLAY_SUPPORT_FLAG_SCALING);
+  } else if (g_overlay_format_used == DXGI_FORMAT_P010) {
+    return !!(g_p010_overlay_support_flags & DXGI_OVERLAY_SUPPORT_FLAG_SCALING);
   } else {
     DCHECK_EQ(g_overlay_format_used, DXGI_FORMAT_B8G8R8A8_UNORM);
     // Assume scaling is supported for BGRA overlays.
     return true;
   }
+}
+
+bool VideoProcessorAutoHDRSupported() {
+  return SupportsVideoProcessorAutoHDR();
+}
+
+bool CheckVideoProcessorFormatSupport(DXGI_FORMAT dxgi_format) {
+  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
+  if (!d3d11_device) {
+    LOG(ERROR) << __func__ << ": Failed to retrieve D3D11 device";
+    return false;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11VideoDevice> video_device;
+  if (FAILED(d3d11_device.As(&video_device))) {
+    LOG(ERROR) << __func__ << ": Failed to retrieve video device";
+    return false;
+  }
+
+  HRESULT hr = S_OK;
+
+  UINT device = 0;
+  hr = d3d11_device->CheckFormatSupport(dxgi_format, &device);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CheckFormatSupport failed: "
+               << logging::SystemErrorCodeToString(hr);
+    return false;
+  }
+
+  D3D11_VIDEO_PROCESSOR_CONTENT_DESC desc;
+  desc.InputFrameFormat = D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE;
+  desc.InputFrameRate.Numerator = 60;
+  desc.InputFrameRate.Denominator = 1;
+  desc.InputWidth = 1920;
+  desc.InputHeight = 1080;
+  desc.OutputFrameRate.Numerator = 60;
+  desc.OutputFrameRate.Denominator = 1;
+  desc.OutputWidth = 1920;
+  desc.OutputHeight = 1080;
+  desc.Usage = D3D11_VIDEO_USAGE_PLAYBACK_NORMAL;
+
+  Microsoft::WRL::ComPtr<ID3D11VideoProcessorEnumerator> video_enumerator;
+  hr = video_device->CreateVideoProcessorEnumerator(&desc, &video_enumerator);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CreateVideoProcessorEnumerator failed: "
+               << logging::SystemErrorCodeToString(hr);
+    return false;
+  }
+
+  if (!video_enumerator) {
+    LOG(ERROR) << "Failed to locate video enumerator";
+    return false;
+  }
+
+  UINT enumerator = 0;
+  hr = video_enumerator->CheckVideoProcessorFormat(dxgi_format, &enumerator);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CheckVideoProcessorFormat failed: "
+               << logging::SystemErrorCodeToString(hr);
+    video_enumerator.Reset();
+    return false;
+  }
+
+  video_enumerator.Reset();
+  return (enumerator & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_OUTPUT) &&
+         (device & D3D11_FORMAT_SUPPORT_VIDEO_PROCESSOR_OUTPUT);
+}
+
+bool CheckDisplayableSupportForP010() {
+  static const bool p010_displayable = [] {
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
+    if (!d3d11_device) {
+      DLOG(ERROR) << "Failed to retrieve D3D11 device";
+      return false;
+    }
+
+    // According to the document:
+    // https://learn.microsoft.com/en-us/windows/win32/direct3d11/displayable-surfaces#formats
+    // DXGI_FORMAT_P010 display feature is optional and provided by platform
+    // driver.
+    D3D11_FEATURE_DATA_FORMAT_SUPPORT2 supported_format;
+    supported_format.InFormat = DXGI_FORMAT_P010;
+
+    if (!SUCCEEDED(d3d11_device->CheckFeatureSupport(
+            D3D11_FEATURE_FORMAT_SUPPORT2, &supported_format,
+            sizeof(supported_format)))) {
+      DLOG(ERROR) << "Failed to check supported feature";
+      return false;
+    }
+
+    if (supported_format.OutFormatSupport2 &
+        D3D11_FORMAT_SUPPORT2_DISPLAYABLE) {
+      return true;
+    }
+
+    return false;
+  }();
+
+  return p010_displayable;
 }
 
 UINT GetDirectCompositionOverlaySupportFlags(DXGI_FORMAT format) {
@@ -538,9 +869,11 @@ UINT GetDirectCompositionOverlaySupportFlags(DXGI_FORMAT format) {
     case DXGI_FORMAT_R10G10B10A2_UNORM:
       support_flag = g_rgb10a2_overlay_support_flags;
       break;
+    case DXGI_FORMAT_P010:
+      support_flag = g_p010_overlay_support_flags;
+      break;
     default:
       NOTREACHED();
-      break;
   }
   return support_flag;
 }
@@ -563,6 +896,15 @@ bool DirectCompositionSystemHDREnabled() {
   return g_system_hdr_enabled;
 }
 
+bool DirectCompositionMonitorHDREnabled(HWND window) {
+  if (g_num_monitors == 0) {
+    UpdateMonitorInfo();
+  }
+
+  return GetHDRMonitors()->find(MonitorFromWindow(
+             window, MONITOR_DEFAULTTONEAREST)) != GetHDRMonitors()->end();
+}
+
 DXGI_FORMAT GetDirectCompositionSDROverlayFormat() {
   return g_overlay_format_used;
 }
@@ -573,10 +915,12 @@ void SetDirectCompositionScaledOverlaysSupportedForTesting(bool supported) {
     g_nv12_overlay_support_flags |= DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
     g_yuy2_overlay_support_flags |= DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
     g_rgb10a2_overlay_support_flags |= DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
+    g_p010_overlay_support_flags |= DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
   } else {
     g_nv12_overlay_support_flags &= ~DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
     g_yuy2_overlay_support_flags &= ~DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
     g_rgb10a2_overlay_support_flags &= ~DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
+    g_p010_overlay_support_flags &= ~DXGI_OVERLAY_SUPPORT_FLAG_SCALING;
   }
   g_disable_sw_overlays = !supported;
   SetSupportsHardwareOverlays(supported);
@@ -585,7 +929,7 @@ void SetDirectCompositionScaledOverlaysSupportedForTesting(bool supported) {
 
 void SetDirectCompositionOverlayFormatUsedForTesting(DXGI_FORMAT format) {
   DCHECK(format == DXGI_FORMAT_NV12 || format == DXGI_FORMAT_YUY2 ||
-         format == DXGI_FORMAT_B8G8R8A8_UNORM);
+         format == DXGI_FORMAT_B8G8R8A8_UNORM || format == DXGI_FORMAT_P010);
   UpdateOverlaySupport();
   g_overlay_format_used = format;
   DCHECK_EQ(format, GetDirectCompositionSDROverlayFormat());
@@ -593,87 +937,36 @@ void SetDirectCompositionOverlayFormatUsedForTesting(DXGI_FORMAT format) {
 
 gfx::mojom::DXGIInfoPtr GetDirectCompositionHDRMonitorDXGIInfo() {
   auto result_info = gfx::mojom::DXGIInfo::New();
-  // HDR support was introduced in Windows 10 Creators Update.
-  if (base::win::GetVersion() < base::win::Version::WIN10_RS2)
-    return result_info;
 
-  // Only direct composition surface can allocate HDR swap chains.
-  if (!DirectCompositionSupported())
-    return result_info;
-
-  HRESULT hr = S_OK;
-  Microsoft::WRL::ComPtr<IDXGIFactory1> factory;
-  hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-  if (FAILED(hr)) {
-    DLOG(ERROR) << "Failed to create DXGI factory.";
-    return result_info;
+  for (const auto& desc : GetDirectCompositionOutputDescs()) {
+    auto result_output = gfx::mojom::DXGIOutputDesc::New();
+    result_output->device_name = desc.DeviceName;
+    result_output->hdr_enabled =
+        desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+    result_output->primaries.fRX = desc.RedPrimary[0];
+    // SAFETY: required from Windows API.
+    result_output->primaries.fRY = UNSAFE_BUFFERS(desc.RedPrimary[1]);
+    result_output->primaries.fGX = desc.GreenPrimary[0];
+    result_output->primaries.fGY = UNSAFE_BUFFERS(desc.GreenPrimary[1]);
+    result_output->primaries.fBX = desc.BluePrimary[0];
+    result_output->primaries.fBY = UNSAFE_BUFFERS(desc.BluePrimary[1]);
+    result_output->primaries.fWX = desc.WhitePoint[0];
+    result_output->primaries.fWY = UNSAFE_BUFFERS(desc.WhitePoint[1]);
+    result_output->min_luminance = desc.MinLuminance;
+    result_output->max_luminance = desc.MaxLuminance;
+    result_output->max_full_frame_luminance = desc.MaxFullFrameLuminance;
+    result_info->output_descs.push_back(std::move(result_output));
   }
 
-  bool hdr_monitor_found = false;
-  for (UINT adapter_index = 0;; ++adapter_index) {
-    Microsoft::WRL::ComPtr<IDXGIAdapter> adapter;
-    hr = factory->EnumAdapters(adapter_index, &adapter);
-    if (hr == DXGI_ERROR_NOT_FOUND)
-      break;
-    if (FAILED(hr)) {
-      DLOG(ERROR) << "Unexpected error creating DXGI adapter.";
-      break;
-    }
-
-    for (UINT output_index = 0;; ++output_index) {
-      Microsoft::WRL::ComPtr<IDXGIOutput> output;
-      hr = adapter->EnumOutputs(output_index, &output);
-      if (hr == DXGI_ERROR_NOT_FOUND)
-        break;
-      if (FAILED(hr)) {
-        DLOG(ERROR) << "Unexpected error creating DXGI adapter.";
-        break;
-      }
-
-      Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
-      hr = output->QueryInterface(IID_PPV_ARGS(&output6));
-      if (FAILED(hr)) {
-        DLOG(WARNING) << "IDXGIOutput6 is required for HDR detection.";
-        continue;
-      }
-
-      DXGI_OUTPUT_DESC1 desc;
-      if (FAILED(output6->GetDesc1(&desc))) {
-        DLOG(ERROR) << "Unexpected error getting output descriptor.";
-        continue;
-      }
-
-      auto result_output = gfx::mojom::DXGIOutputDesc::New();
-      result_output->device_name = desc.DeviceName;
-      result_output->hdr_enabled =
-          desc.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-      result_output->primaries.fRX = desc.RedPrimary[0];
-      result_output->primaries.fRY = desc.RedPrimary[1];
-      result_output->primaries.fGX = desc.GreenPrimary[0];
-      result_output->primaries.fGY = desc.GreenPrimary[1];
-      result_output->primaries.fBX = desc.BluePrimary[0];
-      result_output->primaries.fBY = desc.BluePrimary[1];
-      result_output->primaries.fWX = desc.WhitePoint[0];
-      result_output->primaries.fWY = desc.WhitePoint[1];
-      result_output->min_luminance = desc.MinLuminance;
-      result_output->max_luminance = desc.MaxLuminance;
-      result_output->max_full_frame_luminance = desc.MaxFullFrameLuminance;
-      hdr_monitor_found |= result_output->hdr_enabled;
-      result_info->output_descs.push_back(std::move(result_output));
-    }
-  }
-
-  UMA_HISTOGRAM_BOOLEAN("GPU.Output.HDR", hdr_monitor_found);
   return result_info;
 }
 
 bool DXGISwapChainTearingSupported() {
   static const bool supported = [] {
-    Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device =
-        QueryD3D11DeviceObjectFromANGLE();
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
     if (!d3d11_device) {
-      DLOG(ERROR) << "Not using swap chain tearing because failed to retrieve "
-                     "D3D11 device from ANGLE";
+      LOG(ERROR) << "Not using swap chain tearing because failed to retrieve "
+                    "D3D11 device from ANGLE";
       return false;
     }
     Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
@@ -684,8 +977,8 @@ bool DXGISwapChainTearingSupported() {
     DCHECK(dxgi_adapter);
     Microsoft::WRL::ComPtr<IDXGIFactory5> dxgi_factory;
     if (FAILED(dxgi_adapter->GetParent(IID_PPV_ARGS(&dxgi_factory)))) {
-      DLOG(ERROR) << "Not using swap chain tearing because failed to retrieve "
-                     "IDXGIFactory5 interface";
+      LOG(ERROR) << "Not using swap chain tearing because failed to retrieve "
+                    "IDXGIFactory5 interface";
       return false;
     }
 
@@ -694,7 +987,7 @@ bool DXGISwapChainTearingSupported() {
     if (FAILED(dxgi_factory->CheckFeatureSupport(
             DXGI_FEATURE_PRESENT_ALLOW_TEARING, &present_allow_tearing,
             sizeof(present_allow_tearing)))) {
-      DLOG(ERROR)
+      LOG(ERROR)
           << "Not using swap chain tearing because CheckFeatureSupport failed";
       return false;
     }
@@ -719,7 +1012,7 @@ UINT GetDXGIWaitableSwapChainMaxQueuedFrames() {
 void SetDirectCompositionOverlayWorkarounds(
     const DirectCompositionOverlayWorkarounds& workarounds) {
   // This has to be set before initializing overlay caps.
-  DCHECK(!OverlayCapsValid());
+  CHECK(!OverlayCapsValid());
   g_disable_sw_overlays = workarounds.disable_sw_video_overlays;
   g_disable_decode_swap_chain = workarounds.disable_decode_swap_chain;
   g_enable_bgra8_overlays_with_yuv_overlay_support =
@@ -743,6 +1036,66 @@ void SetDirectCompositionMonitorInfoForTesting(
     const gfx::Size& primary_monitor_size) {
   g_num_monitors = num_monitors;
   g_primary_monitor_size = primary_monitor_size;
+}
+
+std::optional<bool> g_direct_composition_texture_supported;
+
+bool DirectCompositionTextureSupported() {
+  if (g_direct_composition_texture_supported.has_value()) {
+    return g_direct_composition_texture_supported.value();
+  }
+
+  if (!g_dcomp_device || !g_d3d11_device) {
+    // We don't support DComp textures if we haven't initialized Direct
+    // Composition. This can happen if Direct Composition is disabled, e.g.
+    // during software rendering mode.
+    return false;
+  }
+
+  Microsoft::WRL::ComPtr<IDCompositionDevice2> dcomp_device = g_dcomp_device;
+  CHECK(dcomp_device);
+
+  Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device = g_d3d11_device;
+  CHECK(d3d11_device);
+
+  // Set the result to false early in case any of the following conditions fail.
+  // We don't set this earlier in case this function is called before
+  // |InitializeDirectComposition|.
+  g_direct_composition_texture_supported = false;
+
+  Microsoft::WRL::ComPtr<IDCompositionDevice4> dcomp_device4;
+  HRESULT hr = dcomp_device.As(&dcomp_device4);
+  if (FAILED(hr)) {
+    // Not a recent enough Windows system
+    LOG(ERROR) << "QueryInterface to IDCompositionDevice4 failed: "
+               << logging::SystemErrorCodeToString(hr);
+    return false;
+  }
+
+  BOOL supports_composition_textures = FALSE;
+  hr = dcomp_device4->CheckCompositionTextureSupport(
+      d3d11_device.Get(), &supports_composition_textures);
+  if (FAILED(hr)) {
+    LOG(ERROR) << "CheckCompositionTextureSupport failed: "
+               << logging::SystemErrorCodeToString(hr);
+    return false;
+  }
+
+  if (supports_composition_textures == FALSE) {
+    LOG(ERROR) << "CheckCompositionTextureSupport reported unsupported";
+    return false;
+  }
+
+  Microsoft::WRL::ComPtr<ID3D11On12Device> d3d11on12_device;
+  if (SUCCEEDED(d3d11_device.As(&d3d11on12_device))) {
+    // IDCompositionTexture is not implemented on an 11on12, even though the
+    // device will claim support for it.
+    LOG(WARNING) << "IDCompositionTexture is not supported on 11on12 devices.";
+    return false;
+  }
+
+  g_direct_composition_texture_supported = true;
+  return true;
 }
 
 // For DirectComposition Display Monitor.
@@ -787,6 +1140,7 @@ void DirectCompositionOverlayCapsMonitor::OnGpuSwitched(
 void DirectCompositionOverlayCapsMonitor::OnDisplayAdded() {
   SetOverlayCapsValid(false);
   UpdateOverlaySupport();
+  UpdateVideoProcessorAutoHDRSupport();
   UpdateMonitorInfo();
 
   NotifyOverlayCapsChanged();
@@ -796,6 +1150,7 @@ void DirectCompositionOverlayCapsMonitor::OnDisplayAdded() {
 void DirectCompositionOverlayCapsMonitor::OnDisplayRemoved() {
   SetOverlayCapsValid(false);
   UpdateOverlaySupport();
+  UpdateVideoProcessorAutoHDRSupport();
   UpdateMonitorInfo();
 
   NotifyOverlayCapsChanged();

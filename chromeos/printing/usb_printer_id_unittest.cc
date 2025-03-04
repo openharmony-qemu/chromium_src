@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "chromeos/printing/usb_printer_id.h"
 
 #include <map>
@@ -66,7 +71,13 @@ TEST(UsbPrinterIdTest, EmptyDeviceId) {
 TEST(UsbPrinterIdTest, SimpleSanityTest) {
   MapType mapping = GetDefaultDeviceId();
   std::vector<uint8_t> buffer = MapToBuffer(mapping);
-  EXPECT_EQ(mapping, BuildDeviceIdMapping(buffer));
+
+  // Output also includes original buffer without the two leading size bytes.
+  MapType expected = mapping;
+  expected["CHROMEOS_RAW_ID"].emplace_back(
+      reinterpret_cast<const char*>(buffer.data()) + 2, buffer.size() - 2);
+
+  EXPECT_EQ(expected, BuildDeviceIdMapping(buffer));
 }
 
 }  // namespace

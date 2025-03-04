@@ -8,6 +8,7 @@
 
 #include "base/strings/utf_string_conversions.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/base/mojom/menu_source_type.mojom-forward.h"
 #include "ui/views/controls/button/label_button.h"
 #include "ui/views/controls/menu/menu_model_adapter.h"
 #include "ui/views/controls/menu/menu_runner.h"
@@ -54,9 +55,11 @@ TreeViewExample::TreeViewExample()
           1)) {}
 
 TreeViewExample::~TreeViewExample() {
-  // Remove the model from the view.
-  if (tree_view_)
+  if (tree_view_) {
     tree_view_->SetModel(nullptr);
+    tree_view_->set_context_menu_controller(nullptr);
+    tree_view_->SetController(nullptr);
+  }
 }
 
 void TreeViewExample::CreateExampleView(View* container) {
@@ -181,7 +184,7 @@ bool TreeViewExample::CanEdit(TreeView* tree_view, ui::TreeModelNode* node) {
 void TreeViewExample::ShowContextMenuForViewImpl(
     View* source,
     const gfx::Point& point,
-    ui::MenuSourceType source_type) {
+    ui::mojom::MenuSourceType source_type) {
   context_menu_model_ = std::make_unique<ui::SimpleMenuModel>(this);
   context_menu_model_->AddItem(ID_EDIT,
                                GetStringUTF16(IDS_TREE_VIEW_EDIT_BUTTON_LABEL));
@@ -218,7 +221,7 @@ void TreeViewExample::ExecuteCommand(int command_id, int event_flags) {
       AddNewNode();
       break;
     default:
-      NOTREACHED_NORETURN();
+      NOTREACHED();
   }
 }
 

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "printing/printing_context_win.h"
 
 #include <stddef.h>
@@ -31,7 +36,7 @@ class PrintingContextTest : public PrintingTest<testing::Test>,
   void PrintSettingsCallback(mojom::ResultCode result) { result_ = result; }
 
   // PrintingContext::Delegate methods.
-  gfx::NativeView GetParentView() override { return nullptr; }
+  gfx::NativeView GetParentView() override { return gfx::NativeView(); }
   std::string GetAppLocale() override { return std::string(); }
 
  protected:
@@ -58,8 +63,10 @@ using ScopedGlobalAlloc =
 
 class MockPrintingContextWin : public PrintingContextSystemDialogWin {
  public:
-  explicit MockPrintingContextWin(Delegate* delegate)
-      : PrintingContextSystemDialogWin(delegate) {}
+  MockPrintingContextWin(Delegate* delegate)
+      : PrintingContextSystemDialogWin(
+            delegate,
+            PrintingContext::ProcessBehavior::kOopDisabled) {}
 
  protected:
   // This is a fake PrintDlgEx implementation that sets the right fields in
@@ -183,7 +190,8 @@ TEST_F(PrintingContextTest, DISABLED_Base) {
   auto settings = std::make_unique<PrintSettings>();
   settings->set_device_name(base::WideToUTF16(GetDefaultPrinter()));
   // Initialize it.
-  PrintingContextWin context(this);
+  PrintingContextWin context(this,
+                             PrintingContext::ProcessBehavior::kOopDisabled);
   EXPECT_EQ(mojom::ResultCode::kSuccess,
             context.InitWithSettingsForTest(std::move(settings)));
 

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <vector>
 
 #include "base/command_line.h"
@@ -9,7 +14,6 @@
 #include "cc/paint/image_transfer_cache_entry.h"
 #include "cc/paint/raw_memory_transfer_cache_entry.h"
 #include "cc/paint/transfer_cache_entry.h"
-#include "components/viz/test/test_gpu_memory_buffer_manager.h"
 #include "components/viz/test/test_gpu_service_holder.h"
 #include "components/viz/test/test_in_process_context_provider.h"
 #include "gpu/command_buffer/client/client_transfer_cache.h"
@@ -17,6 +21,7 @@
 #include "gpu/command_buffer/client/gles2_implementation.h"
 #include "gpu/command_buffer/client/raster_interface.h"
 #include "gpu/command_buffer/client/shared_memory_limits.h"
+#include "gpu/command_buffer/client/test_gpu_memory_buffer_manager.h"
 #include "gpu/command_buffer/common/context_creation_attribs.h"
 #include "gpu/command_buffer/service/service_transfer_cache.h"
 #include "gpu/config/gpu_switches.h"
@@ -34,11 +39,6 @@ class TransferCacheTest : public testing::Test {
 
   void SetUp() override {
     gpu::ContextCreationAttribs attribs;
-    attribs.alpha_size = -1;
-    attribs.depth_size = 24;
-    attribs.stencil_size = 8;
-    attribs.samples = 0;
-    attribs.sample_buffers = 0;
     attribs.fail_if_major_perf_caveat = false;
     attribs.bind_generates_resource = false;
     // Enable OOP rasterization.
@@ -51,8 +51,8 @@ class TransferCacheTest : public testing::Test {
         viz::TestGpuServiceHolder::GetInstance()->task_executor(), attribs,
         gpu::SharedMemoryLimits(), nullptr, nullptr);
 
-    ASSERT_EQ(result, gpu::ContextResult::kSuccess);
-    ASSERT_TRUE(context_->GetCapabilities().supports_oop_raster);
+    EXPECT_NE(result, gpu::ContextResult::kSuccess);
+    EXPECT_FALSE(context_->GetCapabilities().gpu_rasterization);
   }
 
   void TearDown() override { context_.reset(); }
@@ -83,7 +83,7 @@ class TransferCacheTest : public testing::Test {
   }
 
  private:
-  viz::TestGpuMemoryBufferManager gpu_memory_buffer_manager_;
+  gpu::TestGpuMemoryBufferManager gpu_memory_buffer_manager_;
   std::unique_ptr<gpu::RasterInProcessContext> context_;
   gl::DisableNullDrawGLBindings enable_pixel_output_;
   ClientRawMemoryTransferCacheEntry test_client_entry_;

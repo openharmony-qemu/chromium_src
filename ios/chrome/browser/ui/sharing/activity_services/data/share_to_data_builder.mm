@@ -7,34 +7,30 @@
 #import "base/check.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/send_tab_to_self/entry_point_display_reason.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/find_in_page/abstract_find_tab_helper.h"
+#import "components/send_tab_to_self/send_tab_to_self_sync_service.h"
+#import "ios/chrome/browser/find_in_page/model/abstract_find_tab_helper.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/util/url_with_title.h"
-#import "ios/chrome/browser/signin/chrome_account_manager_service.h"
-#import "ios/chrome/browser/signin/chrome_account_manager_service_factory.h"
-#import "ios/chrome/browser/sync/send_tab_to_self_sync_service_factory.h"
-#import "ios/chrome/browser/sync/sync_service_factory.h"
-#import "ios/chrome/browser/tabs/tab_title_util.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service_factory.h"
+#import "ios/chrome/browser/sync/model/send_tab_to_self_sync_service_factory.h"
+#import "ios/chrome/browser/tabs/model/tab_title_util.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/data/chrome_activity_item_thumbnail_generator.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_to_data.h"
 #import "ios/web/public/navigation/navigation_item.h"
 #import "ios/web/public/navigation/navigation_manager.h"
 #import "ios/web/public/web_state.h"
-#import "third_party/abseil-cpp/absl/types/optional.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace activity_services {
 
 ShareToData* ShareToDataForWebState(web::WebState* web_state,
                                     const GURL& share_url) {
-  DCHECK(web_state);
+  CHECK(web_state);
 
   BOOL is_original_title = NO;
-  DCHECK(web_state->GetNavigationManager());
+  CHECK(web_state->GetNavigationManager());
   web::NavigationItem* last_committed_item =
       web_state->GetNavigationManager()->GetLastCommittedItem();
   if (last_committed_item) {
@@ -42,11 +38,6 @@ ShareToData* ShareToDataForWebState(web::WebState* web_state,
     // original page title.
     const std::u16string& original_title = last_committed_item->GetTitle();
     if (!original_title.empty()) {
-      // If the original page title exists, it is expected to match the Tab's
-      // title. If this ever changes, then a decision has to be made on which
-      // one should be used for sharing.
-      DCHECK([tab_util::GetTabTitle(web_state)
-          isEqual:base::SysUTF16ToNSString(original_title)]);
       is_original_title = YES;
     }
   }
@@ -60,13 +51,13 @@ ShareToData* ShareToDataForWebState(web::WebState* web_state,
           : [[ChromeActivityItemThumbnailGenerator alloc]
                 initWithWebState:web_state];
 
-  const GURL& finalURLToShare =
+  const GURL& final_url_to_share =
       !share_url.is_empty() ? share_url : web_state->GetVisibleURL();
-  web::NavigationItem* visibleItem =
+  web::NavigationItem* visible_item =
       web_state->GetNavigationManager()->GetVisibleItem();
-  web::UserAgentType userAgent = web::UserAgentType::NONE;
-  if (visibleItem) {
-    userAgent = visibleItem->GetUserAgentType();
+  web::UserAgentType user_agent = web::UserAgentType::NONE;
+  if (visible_item) {
+    user_agent = visible_item->GetUserAgentType();
   }
 
   auto* helper = GetConcreteFindTabHelperFromWebState(web_state);
@@ -75,23 +66,18 @@ ShareToData* ShareToDataForWebState(web::WebState* web_state,
        !helper->IsFindUIActive());
   NSString* tab_title = tab_util::GetTabTitle(web_state);
 
-  ChromeBrowserState* browser_state =
-      ChromeBrowserState::FromBrowserState(web_state->GetBrowserState());
-  ChromeAccountManagerService* accountManagerService =
-      ChromeAccountManagerServiceFactory::GetForBrowserState(browser_state);
-  // Divergence between iOS and other platforms: today the sign-in promo UI only
-  // supports the case where there are already accounts on the device.
+  ProfileIOS* profile =
+      ProfileIOS::FromBrowserState(web_state->GetBrowserState());
+  ChromeAccountManagerService* account_manager_service =
+      ChromeAccountManagerServiceFactory::GetForProfile(profile);
+  send_tab_to_self::SendTabToSelfSyncService* send_tab_to_self_service =
+      SendTabToSelfSyncServiceFactory::GetForProfile(profile);
   BOOL can_send_tab_to_self =
-      !browser_state->IsOffTheRecord() && accountManagerService &&
-      accountManagerService->HasIdentities() &&
-      send_tab_to_self::GetEntryPointDisplayReason(
-          finalURLToShare,
-          SyncServiceFactory::GetForBrowserState(browser_state),
-          SendTabToSelfSyncServiceFactory::GetForBrowserState(browser_state),
-          browser_state->GetPrefs())
-          .has_value();
+      account_manager_service &&
+      send_tab_to_self_service &&
+      send_tab_to_self_service->GetEntryPointDisplayReason(final_url_to_share);
 
-  return [[ShareToData alloc] initWithShareURL:finalURLToShare
+  return [[ShareToData alloc] initWithShareURL:final_url_to_share
                                     visibleURL:web_state->GetVisibleURL()
                                          title:tab_title
                                 additionalText:nil
@@ -99,30 +85,30 @@ ShareToData* ShareToDataForWebState(web::WebState* web_state,
                                isPagePrintable:is_page_printable
                               isPageSearchable:is_page_searchable
                               canSendTabToSelf:can_send_tab_to_self
-                                     userAgent:userAgent
+                                     userAgent:user_agent
                             thumbnailGenerator:thumbnail_generator
                                   linkMetadata:nil];
 }
 
-ShareToData* ShareToDataForURL(const GURL& URL,
+ShareToData* ShareToDataForURL(const GURL& url,
                                NSString* title,
-                               NSString* additionalText,
-                               LPLinkMetadata* linkMetadata) {
-  return [[ShareToData alloc] initWithShareURL:URL
-                                    visibleURL:URL
+                               NSString* additional_text,
+                               LPLinkMetadata* link_metadata) {
+  return [[ShareToData alloc] initWithShareURL:url
+                                    visibleURL:url
                                          title:title
-                                additionalText:additionalText
+                                additionalText:additional_text
                                isOriginalTitle:YES
                                isPagePrintable:NO
                               isPageSearchable:NO
                               canSendTabToSelf:NO
                                      userAgent:web::UserAgentType::NONE
                             thumbnailGenerator:nil
-                                  linkMetadata:linkMetadata];
+                                  linkMetadata:link_metadata];
 }
 
-ShareToData* ShareToDataForURLWithTitle(URLWithTitle* URLWithTitle) {
-  return ShareToDataForURL(URLWithTitle.URL, URLWithTitle.title, nil, nil);
+ShareToData* ShareToDataForURLWithTitle(URLWithTitle* url_with_title) {
+  return ShareToDataForURL(url_with_title.URL, url_with_title.title, nil, nil);
 }
 
 }  // namespace activity_services

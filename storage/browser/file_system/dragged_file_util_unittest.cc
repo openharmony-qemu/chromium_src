@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "storage/browser/file_system/dragged_file_util.h"
 
 #include <stddef.h>
@@ -13,6 +18,7 @@
 #include <vector>
 
 #include "base/check.h"
+#include "base/containers/contains.h"
 #include "base/containers/queue.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_util.h"
@@ -248,7 +254,7 @@ class DraggedFileUtilTest : public testing::Test {
           continue;
         }
         base::FilePath relative = GetRelativeVirtualPath(root2, url2);
-        EXPECT_TRUE(file_set1.find(relative) != file_set1.end());
+        EXPECT_TRUE(base::Contains(file_set1, relative));
         VerifyFilesHaveSameContent(url1, url2);
       }
     }
@@ -271,7 +277,7 @@ class DraggedFileUtilTest : public testing::Test {
 
       // We create the test case files under one of the kRootPaths
       // to simulate a drop with multiple directories.
-      if (toplevel_root_map_.find(toplevel) == toplevel_root_map_.end()) {
+      if (!base::Contains(toplevel_root_map_, toplevel)) {
         base::FilePath root = root_path().Append(
             kRootPaths[(root_path_index++) % std::size(kRootPaths)]);
         toplevel_root_map_[toplevel] = root;
@@ -382,7 +388,9 @@ TEST_F(DraggedFileUtilTest, ReadDirectoryTest) {
                        ? filesystem::mojom::FsFileType::DIRECTORY
                        : filesystem::mojom::FsFileType::REGULAR_FILE;
 
-      entry.name = current.BaseName();
+      auto name = base::SafeBaseName::Create(current);
+      CHECK(name) << current;
+      entry.name = *name;
       expected_entry_map[entry.name.value()] = entry;
 
 #if BUILDFLAG(IS_POSIX)
@@ -491,7 +499,7 @@ TEST_F(DraggedFileUtilTest, CopyOutDirectoryTest) {
   }
 }
 
-// TODO(https://crbug.com/702990): Remove this test once last_access_time has
+// TODO(crbug.com/40511450): Remove this test once last_access_time has
 // been removed after PPAPI has been deprecated. Fuchsia does not support touch,
 // which breaks this test that relies on it. Since PPAPI is being deprecated,
 // this test is excluded from the Fuchsia build.

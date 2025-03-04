@@ -18,6 +18,11 @@ void FakeNotificationsInstance::SendNotificationEventToAndroid(
   events_.emplace_back(key, event);
 }
 
+void FakeNotificationsInstance::SendNotificationButtonClickToAndroid(
+    const std::string& key,
+    uint32_t button_index,
+    const std::string& input) {}
+
 void FakeNotificationsInstance::CreateNotificationWindow(
     const std::string& key) {}
 
@@ -25,6 +30,9 @@ void FakeNotificationsInstance::CloseNotificationWindow(
     const std::string& key) {}
 
 void FakeNotificationsInstance::OpenNotificationSettings(
+    const std::string& key) {}
+
+void FakeNotificationsInstance::PopUpAppNotificationSettings(
     const std::string& key) {}
 
 void FakeNotificationsInstance::OpenNotificationSnoozeSettings(

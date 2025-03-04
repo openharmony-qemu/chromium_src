@@ -7,7 +7,7 @@
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
-#import "ios/chrome/browser/main/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activity_service_presentation.h"
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_view_controller.h"
 #import "ios/chrome/browser/ui/sharing/sharing_coordinator.h"
@@ -17,12 +17,8 @@
 #import "ios/chrome/common/ui/confirmation_alert/confirmation_alert_action_handler.h"
 #import "ios/chrome/common/ui/elements/popover_label_view_controller.h"
 #import "ios/chrome/grit/ios_strings.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface QRGeneratorCoordinator () <ConfirmationAlertActionHandler> {
   // URL of a page to generate a QR code for.
@@ -55,8 +51,8 @@
                                      title:(NSString*)title
                                        URL:(const GURL&)URL
                                    handler:(id<QRGenerationCommands>)handler {
-  if (self = [super initWithBaseViewController:viewController
-                                       browser:browser]) {
+  if ((self = [super initWithBaseViewController:viewController
+                                        browser:browser])) {
     _title = title;
     _URL = URL;
     _handler = handler;

@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "base/memory/memory_pressure_listener.h"
-#include "base/memory/raw_ptr_exclusion.h"
+#include "base/memory/raw_ptr.h"
 #include "base/ranges/algorithm.h"
 #include "base/test/test_mock_time_task_runner.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -41,10 +41,7 @@ class TestFrameEvictionManagerClient : public FrameEvictionManagerClient {
   bool has_frame() const { return has_frame_; }
 
  private:
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #constexpr-ctor-field-initializer
-  RAW_PTR_EXCLUSION FrameEvictionManager* manager_ =
-      FrameEvictionManager::GetInstance();
+  raw_ptr<FrameEvictionManager> manager_ = FrameEvictionManager::GetInstance();
   bool has_frame_ = true;
 };
 
@@ -88,21 +85,18 @@ TEST_F(FrameEvictionManagerTest, PeriodicCulling) {
   TestFrameEvictionManagerClient frame1{&manager}, frame2{&manager},
       frame3{&manager};
   manager.AddFrame(&frame1, false);
-  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
+  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 10);
   manager.AddFrame(&frame2, true);
   manager.AddFrame(&frame3, false);
 
-  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
-  manager.CullOldUnlockedFrames();
+  task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
   EXPECT_FALSE(frame1.has_frame());
   EXPECT_TRUE(frame2.has_frame());
   EXPECT_TRUE(frame3.has_frame());  // Too early for this one.
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
-  manager.CullOldUnlockedFrames();
   EXPECT_FALSE(frame3.has_frame());
 
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
-  manager.CullOldUnlockedFrames();
   manager.UnlockFrame(&frame2);
   EXPECT_TRUE(frame2.has_frame());
 
@@ -110,12 +104,10 @@ TEST_F(FrameEvictionManagerTest, PeriodicCulling) {
   // ScopedPause because it impacts the singleton.
   manager.Pause();
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay / 2);
-  manager.CullOldUnlockedFrames();
   EXPECT_TRUE(frame2.has_frame());
   manager.Unpause();
 
   task_runner->FastForwardBy(FrameEvictionManager::kPeriodicCullingDelay);
-  manager.CullOldUnlockedFrames();
   EXPECT_FALSE(frame2.has_frame());
 }
 

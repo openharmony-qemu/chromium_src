@@ -7,10 +7,6 @@
 #import "ios/chrome/browser/shared/ui/table_view/table_view_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 // The StackView vertical spacing between the image, the title and the subtitle.
 const CGFloat kStackViewVerticalSpacingPt = 12.0;
@@ -63,7 +59,7 @@ NSAttributedString* GetAttributedMessage(NSString* message) {
                         image:(UIImage*)image
                         title:(NSString*)title
            attributedSubtitle:(NSAttributedString*)attributedSubtitle {
-  if (self = [super initWithFrame:frame]) {
+  if ((self = [super initWithFrame:frame])) {
     _title = title;
     _subtitle = attributedSubtitle;
     _image = image;

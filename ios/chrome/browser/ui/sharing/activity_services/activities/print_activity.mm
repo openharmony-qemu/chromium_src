@@ -11,10 +11,6 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 NSString* const kPrintActivityType = @"com.google.chrome.printActivity";
@@ -38,7 +34,7 @@ NSString* const kPrintActivityType = @"com.google.chrome.printActivity";
 - (instancetype)initWithData:(ShareToData*)webData
                      handler:(id<BrowserCoordinatorCommands>)handler
           baseViewController:(UIViewController*)baseViewController {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _webData = webData;
     _handler = handler;
     _baseViewController = baseViewController;
@@ -49,7 +45,7 @@ NSString* const kPrintActivityType = @"com.google.chrome.printActivity";
 - (instancetype)initWithImageData:(ShareImageData*)imageData
                           handler:(id<BrowserCoordinatorCommands>)handler
                baseViewController:(UIViewController*)baseViewController {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _imageData = imageData;
     _handler = handler;
     _baseViewController = baseViewController;

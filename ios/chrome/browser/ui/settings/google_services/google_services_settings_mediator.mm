@@ -4,26 +4,37 @@
 
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_mediator.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/auto_reset.h"
-#import "base/mac/foundation_util.h"
+#import "base/feature_list.h"
 #import "base/notreached.h"
 #import "components/metrics/metrics_pref_names.h"
 #import "components/password_manager/core/common/password_manager_features.h"
 #import "components/password_manager/core/common/password_manager_pref_names.h"
 #import "components/prefs/pref_service.h"
 #import "components/signin/public/base/signin_pref_names.h"
-#import "components/sync/driver/sync_service.h"
+#import "components/signin/public/identity_manager/tribool.h"
+#import "components/supervised_user/core/browser/family_link_user_capabilities.h"
+#import "components/supervised_user/core/browser/supervised_user_preferences.h"
+#import "components/supervised_user/core/common/features.h"
+#import "components/sync/service/sync_service.h"
 #import "components/unified_consent/pref_names.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/policy/policy_util.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
+#import "ios/chrome/browser/parcel_tracking/features.h"
+#import "ios/chrome/browser/parcel_tracking/parcel_tracking_opt_in_status.h"
+#import "ios/chrome/browser/policy/model/policy_util.h"
+#import "ios/chrome/browser/settings/model/sync/utils/sync_util.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_backed_boolean.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/utils/observable_boolean.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_icon_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_info_button_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_item.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/system_identity.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
+#import "ios/chrome/browser/signin/model/system_identity.h"
 #import "ios/chrome/browser/ui/authentication/authentication_constants.h"
 #import "ios/chrome/browser/ui/authentication/cells/table_view_account_item.h"
 #import "ios/chrome/browser/ui/settings/cells/account_sign_in_item.h"
@@ -32,19 +43,12 @@
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_command_handler.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/settings_table_view_controller_constants.h"
-#import "ios/chrome/browser/ui/settings/sync/utils/sync_util.h"
-#import "ios/chrome/browser/ui/settings/utils/observable_boolean.h"
-#import "ios/chrome/browser/ui/settings/utils/pref_backed_boolean.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/public/provider/chrome/browser/signin/signin_resources_api.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using l10n_util::GetNSString;
 
@@ -60,6 +64,7 @@ NSString* const kTrackPricesOnTabsItemAccessibilityID =
 // List of sections.
 typedef NS_ENUM(NSInteger, SectionIdentifier) {
   NonPersonalizedSectionIdentifier = kSectionIdentifierEnumZero,
+  ParcelTrackingSectionIdentifier
 };
 
 // List of items. For implementation details in
@@ -76,13 +81,14 @@ typedef NS_ENUM(NSInteger, ItemType) {
   ImproveSearchSuggestionsItemType,
   ImproveSearchSuggestionsManagedItemType,
   TrackPricesOnTabsItemType,
+  ParcelTrackingItemType,
 };
 
-// TODO(crbug.com/1244632): Use the Authentication Service sign-in status API
+// TODO(crbug.com/40788009): Use the Authentication Service sign-in status API
 // instead of this when available.
 // Returns true when sign-in can be enabled/disabled by the user from the
 // google service settings.
-bool IsSigninControllableByUser() {
+bool IsControllingSigninAllowedByPolicy() {
   BrowserSigninMode policy_mode = static_cast<BrowserSigninMode>(
       GetApplicationContext()->GetLocalState()->GetInteger(
           prefs::kBrowserSigninPolicy));
@@ -94,7 +100,6 @@ bool IsSigninControllableByUser() {
       return false;
   }
   NOTREACHED();
-  return true;
 }
 
 bool GetStatusForSigninPolicy() {
@@ -109,7 +114,6 @@ bool GetStatusForSigninPolicy() {
       return false;
   }
   NOTREACHED();
-  return false;
 }
 
 }  // namespace
@@ -123,7 +127,7 @@ bool GetStatusForSigninPolicy() {
 @property(nonatomic, strong, readonly)
     PrefBackedBoolean* allowChromeSigninPreference;
 // Preference value for the "Help improve Chromium's features" for Wifi-Only.
-// TODO(crbug.com/872101): Needs to create the UI to change from Wifi-Only to
+// TODO(crbug.com/40588486): Needs to create the UI to change from Wifi-Only to
 // always
 @property(nonatomic, strong, readonly)
     PrefBackedBoolean* sendDataUsageWifiOnlyPreference;
@@ -159,12 +163,16 @@ bool GetStatusForSigninPolicy() {
 
 @synthesize nonPersonalizedItems = _nonPersonalizedItems;
 
-- (instancetype)initWithUserPrefService:(PrefService*)userPrefService
+- (instancetype)initWithIdentityManager:
+                    (signin::IdentityManager*)identityManager
+                        userPrefService:(PrefService*)userPrefService
                        localPrefService:(PrefService*)localPrefService {
   self = [super init];
   if (self) {
+    DCHECK(identityManager);
     DCHECK(userPrefService);
     DCHECK(localPrefService);
+    _identityManager = identityManager;
     _userPrefService = userPrefService;
     _localPrefService = localPrefService;
     _allowChromeSigninPreference =
@@ -193,7 +201,9 @@ bool GetStatusForSigninPolicy() {
 }
 
 - (TableViewItem*)allowChromeSigninItem {
-  if (IsSigninControllableByUser()) {
+  // Supervised users cannot manually enable/disable sign-in.
+  if (![self isSubjectToParentalControls] &&
+      IsControllingSigninAllowedByPolicy()) {
     return
         [self switchItemWithItemType:AllowChromeSigninItemType
                         textStringID:
@@ -233,8 +243,10 @@ bool GetStatusForSigninPolicy() {
     switch (type) {
       case AllowChromeSigninItemType: {
         SyncSwitchItem* signinDisabledItem =
-            base::mac::ObjCCast<SyncSwitchItem>(item);
-        if (IsSigninControllableByUser()) {
+            base::apple::ObjCCast<SyncSwitchItem>(item);
+        // Supervised users cannot manually enable/disable sign-in.
+        if (![self isSubjectToParentalControls] &&
+            IsControllingSigninAllowedByPolicy()) {
           signinDisabledItem.on = self.allowChromeSigninPreference.value;
         } else {
           signinDisabledItem.on = NO;
@@ -243,38 +255,40 @@ bool GetStatusForSigninPolicy() {
         break;
       }
       case ImproveChromeItemType:
-        base::mac::ObjCCast<SyncSwitchItem>(item).on =
+        base::apple::ObjCCast<SyncSwitchItem>(item).on =
             self.sendDataUsagePreference.value;
         break;
       case ImproveChromeManagedItemType:
-        base::mac::ObjCCast<TableViewInfoButtonItem>(item).statusText =
+        base::apple::ObjCCast<TableViewInfoButtonItem>(item).statusText =
             self.sendDataUsagePreference.value
                 ? l10n_util::GetNSString(IDS_IOS_SETTING_ON)
                 : l10n_util::GetNSString(IDS_IOS_SETTING_OFF);
         break;
       case BetterSearchAndBrowsingItemType:
-        base::mac::ObjCCast<SyncSwitchItem>(item).on =
+        base::apple::ObjCCast<SyncSwitchItem>(item).on =
             self.anonymizedDataCollectionPreference.value;
         break;
       case BetterSearchAndBrowsingManagedItemType:
-        base::mac::ObjCCast<TableViewInfoButtonItem>(item).statusText =
+        base::apple::ObjCCast<TableViewInfoButtonItem>(item).statusText =
             self.anonymizedDataCollectionPreference.value
                 ? l10n_util::GetNSString(IDS_IOS_SETTING_ON)
                 : l10n_util::GetNSString(IDS_IOS_SETTING_OFF);
         break;
       case ImproveSearchSuggestionsItemType:
-        base::mac::ObjCCast<SyncSwitchItem>(item).on =
+        base::apple::ObjCCast<SyncSwitchItem>(item).on =
             self.improveSearchSuggestionsPreference.value;
         break;
       case ImproveSearchSuggestionsManagedItemType:
-        base::mac::ObjCCast<TableViewInfoButtonItem>(item).statusText =
+        base::apple::ObjCCast<TableViewInfoButtonItem>(item).statusText =
             self.improveSearchSuggestionsPreference.value
                 ? l10n_util::GetNSString(IDS_IOS_SETTING_ON)
                 : l10n_util::GetNSString(IDS_IOS_SETTING_OFF);
         break;
       case TrackPricesOnTabsItemType:
-        base::mac::ObjCCast<SyncSwitchItem>(item).on =
+        base::apple::ObjCCast<SyncSwitchItem>(item).on =
             self.trackPricesOnTabsPreference.value;
+        break;
+      case ParcelTrackingItemType:
         break;
     }
   }
@@ -421,11 +435,9 @@ bool GetStatusForSigninPolicy() {
     managedItem.iconTintColor = [UIColor colorNamed:kGrey300Color];
   }
 
-  // This item is not controllable, then set the color opacity to 40%.
-  managedItem.textColor =
-      [[UIColor colorNamed:kTextPrimaryColor] colorWithAlphaComponent:0.4f];
-  managedItem.detailTextColor =
-      [[UIColor colorNamed:kTextSecondaryColor] colorWithAlphaComponent:0.4f];
+  // This item is not controllable; set to lighter colors.
+  managedItem.textColor = [UIColor colorNamed:kTextSecondaryColor];
+  managedItem.detailTextColor = [UIColor colorNamed:kTextTertiaryColor];
   managedItem.accessibilityHint =
       l10n_util::GetNSString(IDS_IOS_TOGGLE_SETTING_MANAGED_ACCESSIBILITY_HINT);
   return managedItem;
@@ -437,10 +449,59 @@ bool GetStatusForSigninPolicy() {
     (GoogleServicesSettingsViewController*)controller {
   DCHECK_EQ(self.consumer, controller);
   [self loadNonPersonalizedSection];
+
+  if (IsIOSParcelTrackingEnabled()) {
+    TableViewModel* model = self.consumer.tableViewModel;
+    [model addSectionWithIdentifier:ParcelTrackingSectionIdentifier];
+
+    TableViewDetailIconItem* parcelTrackingItem =
+        [[TableViewDetailIconItem alloc] initWithType:ParcelTrackingItemType];
+    parcelTrackingItem.text = l10n_util::GetNSString(
+        IDS_IOS_CONTENT_SUGGESTIONS_PARCEL_TRACKING_MODULE_TITLE);
+    parcelTrackingItem.accessoryType =
+        UITableViewCellAccessoryDisclosureIndicator;
+    parcelTrackingItem.accessibilityTraits |= UIAccessibilityTraitButton;
+    [model addItem:parcelTrackingItem
+        toSectionWithIdentifier:ParcelTrackingSectionIdentifier];
+
+    IOSParcelTrackingOptInStatus optInStatus =
+        static_cast<IOSParcelTrackingOptInStatus>(
+            self.userPrefService->GetInteger(
+                prefs::kIosParcelTrackingOptInStatus));
+    NSString* currentOptInStatusString = nil;
+    switch (optInStatus) {
+      case IOSParcelTrackingOptInStatus::kAlwaysTrack:
+        currentOptInStatusString = l10n_util::GetNSString(
+            IDS_IOS_GOOGLE_SERVICES_SETTINGS_AUTO_TRACK_PACKAGES_ALL);
+        break;
+      case IOSParcelTrackingOptInStatus::kAskToTrack:
+      case IOSParcelTrackingOptInStatus::kStatusNotSet:
+        currentOptInStatusString = l10n_util::GetNSString(
+            IDS_IOS_PARCEL_TRACKING_OPT_IN_TERTIARY_ACTION);
+        break;
+      case IOSParcelTrackingOptInStatus::kNeverTrack:
+        currentOptInStatusString = l10n_util::GetNSString(
+            IDS_IOS_GOOGLE_SERVICES_SETTINGS_AUTO_TRACK_PACKAGES_NEVER);
+        break;
+    }
+    parcelTrackingItem.detailText = currentOptInStatusString;
+  }
 }
 
 - (BOOL)isAllowChromeSigninItem:(int)type {
   return type == AllowChromeSigninItemType;
+}
+
+- (BOOL)isViewControllerSubjectToParentalControls {
+  return [self isSubjectToParentalControls];
+}
+
+- (void)googleServicesSettingsViewControllerDidSelectItemAtIndexPath:
+    (NSIndexPath*)indexPath {
+  if ([self.consumer.tableViewModel itemAtIndexPath:indexPath].type ==
+      ParcelTrackingItemType) {
+    [self.commandHandler showParcelTrackingSettingsPage];
+  }
 }
 
 #pragma mark - GoogleServicesSettingsServiceDelegate
@@ -448,7 +509,7 @@ bool GetStatusForSigninPolicy() {
 - (void)toggleSwitchItem:(TableViewItem*)item
                withValue:(BOOL)value
               targetRect:(CGRect)targetRect {
-  SyncSwitchItem* syncSwitchItem = base::mac::ObjCCast<SyncSwitchItem>(item);
+  SyncSwitchItem* syncSwitchItem = base::apple::ObjCCast<SyncSwitchItem>(item);
   syncSwitchItem.on = value;
   ItemType type = static_cast<ItemType>(item.type);
   switch (type) {
@@ -491,6 +552,7 @@ bool GetStatusForSigninPolicy() {
     case ImproveChromeManagedItemType:
     case ImproveSearchSuggestionsManagedItemType:
       NOTREACHED();
+    case ParcelTrackingItemType:
       break;
   }
 }
@@ -499,6 +561,21 @@ bool GetStatusForSigninPolicy() {
 
 - (void)booleanDidChange:(id<ObservableBoolean>)observableBoolean {
   [self updateNonPersonalizedSectionWithNotification:YES];
+}
+
+#pragma mark - Private
+
+- (BOOL)isSubjectToParentalControls {
+  if (base::FeatureList::IsEnabled(
+          supervised_user::
+              kReplaceSupervisionPrefsWithAccountCapabilitiesOnIOS)) {
+    return self.identityManager &&
+           supervised_user::IsPrimaryAccountSubjectToParentalControls(
+               self.identityManager) == signin::Tribool::kTrue;
+  } else {
+    return self.userPrefService &&
+           supervised_user::IsSubjectToParentalControls(*self.userPrefService);
+  }
 }
 
 @end

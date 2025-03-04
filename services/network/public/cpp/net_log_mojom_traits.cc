@@ -38,7 +38,6 @@ EnumTraits<network::mojom::NetLogCaptureMode, net::NetLogCaptureMode>::ToMojom(
   }
 
   NOTREACHED();
-  return network::mojom::NetLogCaptureMode::DEFAULT;
 }
 
 // static
@@ -73,7 +72,6 @@ EnumTraits<network::mojom::NetLogEventPhase, net::NetLogEventPhase>::ToMojom(
   }
 
   NOTREACHED();
-  return network::mojom::NetLogEventPhase::NONE;
 }
 
 }  // namespace mojo

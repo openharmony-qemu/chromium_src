@@ -31,7 +31,6 @@
 #include "content/shell/browser/shell_content_browser_client.h"
 #include "content/shell/browser/shell_content_index_provider.h"
 #include "content/shell/browser/shell_download_manager_delegate.h"
-#include "content/shell/browser/shell_federated_permission_context.h"
 #include "content/shell/browser/shell_paths.h"
 #include "content/shell/browser/shell_permission_manager.h"
 #include "content/shell/common/shell_switches.h"
@@ -41,15 +40,9 @@
 
 namespace content {
 
-ShellBrowserContext::ShellResourceContext::ShellResourceContext() {}
-
-ShellBrowserContext::ShellResourceContext::~ShellResourceContext() {
-}
-
 ShellBrowserContext::ShellBrowserContext(bool off_the_record,
                                          bool delay_services_creation)
-    : resource_context_(std::make_unique<ShellResourceContext>()),
-      off_the_record_(off_the_record) {
+    : off_the_record_(off_the_record) {
   InitWhileIOAllowed();
 #if BUILDFLAG(IS_WIN)
   base::SetExtraNoExecuteAllowedPath(SHELL_DIR_USER_DATA);
@@ -74,14 +67,6 @@ ShellBrowserContext::~ShellBrowserContext() {
 
   SimpleKeyMap::GetInstance()->Dissociate(this);
 
-  // Need to destruct the ResourceContext before posting tasks which may delete
-  // the URLRequestContext because ResourceContext's destructor will remove any
-  // outstanding request while URLRequestContext's destructor ensures that there
-  // are no more outstanding requests.
-  if (resource_context_) {
-    GetIOThreadTaskRunner({})->DeleteSoon(FROM_HERE,
-                                          resource_context_.release());
-  }
   ShutdownStoragePartitions();
 }
 
@@ -89,8 +74,9 @@ void ShellBrowserContext::InitWhileIOAllowed() {
   base::CommandLine* cmd_line = base::CommandLine::ForCurrentProcess();
   if (cmd_line->HasSwitch(switches::kIgnoreCertificateErrors))
     ignore_certificate_errors_ = true;
-  if (cmd_line->HasSwitch(switches::kContentShellDataPath)) {
-    path_ = cmd_line->GetSwitchValuePath(switches::kContentShellDataPath);
+
+  if (cmd_line->HasSwitch(switches::kContentShellUserDataDir)) {
+    path_ = cmd_line->GetSwitchValuePath(switches::kContentShellUserDataDir);
     if (base::DirectoryExists(path_) || base::CreateDirectory(path_))  {
       // BrowserContext needs an absolute path, which we would normally get via
       // PathService. In this case, manually ensure the path is absolute.
@@ -138,10 +124,6 @@ DownloadManagerDelegate* ShellBrowserContext::GetDownloadManagerDelegate()  {
   }
 
   return download_manager_delegate_.get();
-}
-
-ResourceContext* ShellBrowserContext::GetResourceContext()  {
-  return resource_context_.get();
 }
 
 BrowserPluginGuestManager* ShellBrowserContext::GetGuestManager() {
@@ -203,31 +185,6 @@ ContentIndexProvider* ShellBrowserContext::GetContentIndexProvider() {
   if (!content_index_provider_)
     content_index_provider_ = std::make_unique<ShellContentIndexProvider>();
   return content_index_provider_.get();
-}
-
-FederatedIdentityApiPermissionContextDelegate*
-ShellBrowserContext::GetFederatedIdentityApiPermissionContext() {
-  if (!federated_permission_context_)
-    federated_permission_context_ =
-        std::make_unique<ShellFederatedPermissionContext>();
-  return federated_permission_context_.get();
-}
-
-FederatedIdentityAutoReauthnPermissionContextDelegate*
-ShellBrowserContext::GetFederatedIdentityAutoReauthnPermissionContext() {
-  if (!federated_permission_context_) {
-    federated_permission_context_ =
-        std::make_unique<ShellFederatedPermissionContext>();
-  }
-  return federated_permission_context_.get();
-}
-
-FederatedIdentityPermissionContextDelegate*
-ShellBrowserContext::GetFederatedIdentityPermissionContext() {
-  if (!federated_permission_context_)
-    federated_permission_context_ =
-        std::make_unique<ShellFederatedPermissionContext>();
-  return federated_permission_context_.get();
 }
 
 ReduceAcceptLanguageControllerDelegate*

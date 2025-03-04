@@ -15,12 +15,12 @@
 
 #include <iomanip>
 #include <memory>
+#include <string_view>
 
 #include "base/base_export.h"
 #include "base/files/dir_reader_posix.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_file.h"
-#include "base/logging.h"
 #include "base/strings/safe_sprintf.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
@@ -28,6 +28,10 @@
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
 
 namespace base {
 
@@ -89,6 +93,24 @@ class DistroNameGetter {
 };
 #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
 
+bool GetThreadsFromProcessDir(const char* dir_path, std::vector<pid_t>* tids) {
+  DirReaderPosix dir_reader(dir_path);
+
+  if (!dir_reader.IsValid()) {
+    DLOG(WARNING) << "Cannot open " << dir_path;
+    return false;
+  }
+
+  while (dir_reader.Next()) {
+    pid_t tid;
+    if (StringToInt(dir_reader.name(), &tid)) {
+      tids->push_back(tid);
+    }
+  }
+
+  return true;
+}
+
 // Account for the terminating null character.
 constexpr int kDistroSize = 128 + 1;
 
@@ -101,8 +123,6 @@ char g_linux_distro[kDistroSize] =
     "CrOS";
 #elif BUILDFLAG(IS_ANDROID)
     "Android";
-#elif BUILDFLAG(IS_OHOS)
-    "OHOS";
 #else
     "Unknown";
 #endif
@@ -138,23 +158,14 @@ void SetLinuxDistro(const std::string& distro) {
 }
 
 bool GetThreadsForProcess(pid_t pid, std::vector<pid_t>* tids) {
-  // 25 > strlen("/proc//task") + strlen(std::to_string(INT_MAX)) + 1 = 22
+  // 25 > strlen("/proc//task") + strlen(base::NumberToString(INT_MAX)) + 1 = 22
   char buf[25];
   strings::SafeSPrintf(buf, "/proc/%d/task", pid);
-  DirReaderPosix dir_reader(buf);
+  return GetThreadsFromProcessDir(buf, tids);
+}
 
-  if (!dir_reader.IsValid()) {
-    DLOG(WARNING) << "Cannot open " << buf;
-    return false;
-  }
-
-  while (dir_reader.Next()) {
-    pid_t tid;
-    if (StringToInt(dir_reader.name(), &tid))
-      tids->push_back(tid);
-  }
-
-  return true;
+bool GetThreadsForCurrentProcess(std::vector<pid_t>* tids) {
+  return GetThreadsFromProcessDir("/proc/self/task", tids);
 }
 
 pid_t FindThreadIDWithSyscall(pid_t pid, const std::string& expected_data,
@@ -175,8 +186,9 @@ pid_t FindThreadIDWithSyscall(pid_t pid, const std::string& expected_data,
       continue;
 
     *syscall_supported = true;
-    if (!ReadFromFD(fd.get(), syscall_data.data(), syscall_data.size()))
+    if (!ReadFromFD(fd.get(), syscall_data)) {
       continue;
+    }
 
     if (0 == strncmp(expected_data.c_str(), syscall_data.data(),
                      expected_data.size())) {
@@ -200,14 +212,15 @@ pid_t FindThreadID(pid_t pid, pid_t ns_tid, bool* ns_pid_supported) {
     if (!ReadFileToString(FilePath(buf), &status))
       return -1;
     StringTokenizer tokenizer(status, "\n");
-    while (tokenizer.GetNext()) {
-      StringPiece value_str(tokenizer.token_piece());
-      if (!StartsWith(value_str, "NSpid"))
+    while (std::optional<std::string_view> token =
+               tokenizer.GetNextTokenView()) {
+      if (!StartsWith(token.value(), "NSpid")) {
         continue;
+      }
 
       *ns_pid_supported = true;
-      std::vector<StringPiece> split_value_str = SplitStringPiece(
-          value_str, "\t", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
+      std::vector<std::string_view> split_value_str = SplitStringPiece(
+          token.value(), "\t", TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
       DCHECK_GE(split_value_str.size(), 2u);
       int value;
       // The last value in the list is the PID in the namespace.

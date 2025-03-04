@@ -7,6 +7,7 @@ module viz.mojom;
 import "gpu/ipc/common/context_result.mojom";
 import "gpu/ipc/common/surface_handle.mojom";
 import "mojo/public/mojom/base/time.mojom";
+import "ui/display/mojom/display_constants.mojom";
 import "ui/gfx/mojom/ca_layer_params.mojom";
 import "ui/gfx/mojom/delegated_ink_point_renderer.mojom";
 import "ui/gfx/mojom/display_color_spaces.mojom";
@@ -28,15 +29,15 @@ interface DisplayPrivate {
   [EnableIf=is_win, Sync]
   DisableSwapUntilResize() => ();
 
-  [EnableIf=ohos_composite_render, Sync]
+  [EnableIf=is_ohos, Sync]
   SetShouldFrameSubmissionBeforeDraw(bool should) => ();
 
   [EnableIf=is_ohos]
   SetDrawRect(gfx.mojom.Rect rect);
-
+ 
   [EnableIf=is_ohos]
   SetDrawMode(int32 mode);
-
+ 
   // Resizes the display.
   Resize(gfx.mojom.Size size);
 
@@ -76,7 +77,7 @@ interface DisplayPrivate {
   UpdateRefreshRate(float refresh_rate);
 
   // Updates the list of refresh rates supported by the associated Display.
-  [EnableIf=is_android]
+  [EnableIf=can_set_refresh_rate]
   SetSupportedRefreshRates(array<float> refresh_rates);
 
   // Notifies associated Display to not detach child surface controls during
@@ -111,13 +112,18 @@ interface DisplayPrivate {
   SetStandaloneBeginFrameObserver(pending_remote<BeginFrameObserver> observer);
 
   // Sets the maximum vsync interval supported by the display for use with
-  // variable refresh rates. An absent value indicates that VRR is not enabled
-  // on the display.
-  SetMaxVrrInterval(mojo_base.mojom.TimeDelta? max_vrr_interval);
- 
+  // variable refresh rates and/or virtual modes, if supported. Also sets
+  // the current VRR state indicating whether it is enabled on the display.
+  SetMaxVSyncAndVrr(
+    mojo_base.mojom.TimeDelta? max_vsync_interval,
+    display.mojom.VariableRefreshRateState vrr_state);
+
   // Set Current Display client Frame sink ID.
-  [EnableIf=ohos_performance_jitter]
+  [EnableIf=arkweb_performance_jitter]
   SetCurrentFrameSinkId(FrameSinkId frame_sink_id);
+
+  [EnableIf=arkweb_maximize_resize, Sync]
+  DisableSwapUntilMaximized() => ();
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.
@@ -144,11 +150,11 @@ interface DisplayClient {
   DidCompleteSwapWithSize(gfx.mojom.Size size);
 
   // Notifies that a swap has occurred with a new size.
-  [EnableIf=is_linux]
+  [EnableIf=linux_x11]
   DidCompleteSwapWithNewSize(gfx.mojom.Size size);
 
   // Notifies that a swap has occurred with a new size in OHOS.
-  [EnableIf=ohos_composite_render]
+  [EnableIf=arkweb_composite_render]
   DidCompleteSwapWithNewSizeOHOS(gfx.mojom.Size size);
 
   // Notifies the client of the result of context creation attempt. On Android we can't
@@ -161,6 +167,7 @@ interface DisplayClient {
   [EnableIf=is_android]
   SetWideColorEnabled(bool enabled);
 
-  [EnableIf=is_android]
+  // Notifies that there is a new refresh rate preference.
+  [EnableIf=can_set_refresh_rate]
   SetPreferredRefreshRate(float refresh_rate);
 };

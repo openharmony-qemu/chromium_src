@@ -54,7 +54,7 @@ class HostScanSchedulerImplTest : public testing::Test {
  protected:
   void SetUp() override {
     helper_ = std::make_unique<NetworkStateTestHelper>(
-        true /* use_default_devices_and_services */);
+        /*use_default_devices_and_services=*/true);
 
     histogram_tester_ = std::make_unique<base::HistogramTester>();
 
@@ -172,7 +172,8 @@ class HostScanSchedulerImplTest : public testing::Test {
   std::unique_ptr<FakeHostScanner> fake_host_scanner_;
   std::unique_ptr<session_manager::SessionManager> session_manager_;
 
-  raw_ptr<base::MockOneShotTimer, ExperimentalAsh> mock_host_scan_batch_timer_;
+  raw_ptr<base::MockOneShotTimer, DanglingUntriaged>
+      mock_host_scan_batch_timer_;
   base::SimpleTestClock test_clock_;
   scoped_refptr<base::TestSimpleTaskRunner> test_task_runner_;
 

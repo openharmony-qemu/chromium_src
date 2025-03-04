@@ -12,10 +12,6 @@
 #import "net/http/http_response_headers.h"
 #import "testing/gtest/include/gtest/gtest.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @implementation CRWFakeWebStateObserver {
   // Arguments passed to `webStateWasShown:`.
   std::unique_ptr<web::TestWasShownInfo> _wasShownInfo;
@@ -48,6 +44,9 @@
   // Arguments passed to `webState:didUpdateFaviconURLCandidates`.
   std::unique_ptr<web::TestUpdateFaviconUrlCandidatesInfo>
       _updateFaviconUrlCandidatesInfo;
+  // Arguments passed to `webStateDidChangeUnderPageBackgroundColor:`.
+  std::unique_ptr<web::TestUnderPageBackgroundColorChangedInfo>
+      _underPageBackgroundColorChangedInfo;
   // Arguments passed to `webState:renderProcessGoneForWebState:`.
   std::unique_ptr<web::TestRenderProcessGoneInfo> _renderProcessGoneInfo;
   // Arguments passed to `webStateRealized:`.
@@ -110,6 +109,11 @@
 
 - (web::TestUpdateFaviconUrlCandidatesInfo*)updateFaviconUrlCandidatesInfo {
   return _updateFaviconUrlCandidatesInfo.get();
+}
+
+- (web::TestUnderPageBackgroundColorChangedInfo*)
+    underPageBackgroundColorChangedInfo {
+  return _underPageBackgroundColorChangedInfo.get();
 }
 
 - (web::TestRenderProcessGoneInfo*)renderProcessGoneInfo {
@@ -235,6 +239,12 @@
       std::make_unique<web::TestUpdateFaviconUrlCandidatesInfo>();
   _updateFaviconUrlCandidatesInfo->web_state = webState;
   _updateFaviconUrlCandidatesInfo->candidates = candidates;
+}
+
+- (void)webStateDidChangeUnderPageBackgroundColor:(web::WebState*)webState {
+  _underPageBackgroundColorChangedInfo =
+      std::make_unique<web::TestUnderPageBackgroundColorChangedInfo>();
+  _underPageBackgroundColorChangedInfo->web_state = webState;
 }
 
 - (void)webState:(web::WebState*)webState

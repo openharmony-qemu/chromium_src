@@ -21,6 +21,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/run_loop.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
+#include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/common/gpu/context_provider.h"
 #include "components/viz/common/quads/compositor_frame.h"
 #include "components/viz/common/resources/resource_id.h"
@@ -32,6 +33,16 @@
 
 namespace ash {
 namespace {
+
+class StubBeginFrameSource : public viz::BeginFrameSource {
+ public:
+  StubBeginFrameSource() : viz::BeginFrameSource(0u) {}
+
+  void DidFinishFrame(viz::BeginFrameObserver* obs) override {}
+  void AddObserver(viz::BeginFrameObserver* obs) override {}
+  void RemoveObserver(viz::BeginFrameObserver* obs) override {}
+  void OnGpuNoLongerBusy() override {}
+};
 
 class TestFrameFactory {
  public:
@@ -112,7 +123,9 @@ class FrameSinkHolderTest : public AshTestBase {
     frame_sink_holder_ = std::make_unique<FrameSinkHolder>(
         std::move(layer_tree_frame_sink),
         base::BindRepeating(&TestFrameFactory::CreateCompositorFrame,
-                            base::Unretained(frame_factory_.get())));
+                            base::Unretained(frame_factory_.get())),
+        /*on_first_frame_requested_callback=*/base::DoNothing(),
+        /*on_frame_sink_lost_callback=*/base::DoNothing());
 
     holder_weak_ptr_ = frame_sink_holder_->GetWeakPtr();
   }
@@ -125,7 +138,7 @@ class FrameSinkHolderTest : public AshTestBase {
   // holder did not schedule a delete task, it will get destroyed once we
   // delete the root_window of `host_window_`.
   std::unique_ptr<FrameSinkHolder> frame_sink_holder_;
-  base::raw_ptr<aura::Window, DanglingUntriaged | ExperimentalAsh> host_window_;
+  raw_ptr<aura::Window, DanglingUntriaged> host_window_;
 
   // Will be used to access the frame_sink_holder once we pass the
   // ownership of `frame_sink_holder_` to
@@ -136,7 +149,7 @@ class FrameSinkHolderTest : public AshTestBase {
   std::unique_ptr<TestFrameFactory> frame_factory_;
 
   // Keeping a reference to be used in tests.
-  base::raw_ptr<TestLayerTreeFrameSink, DanglingUntriaged | ExperimentalAsh>
+  raw_ptr<TestLayerTreeFrameSink, DanglingUntriaged>
       layer_tree_frame_sink_;  // no owned
 };
 
@@ -186,6 +199,76 @@ TEST_F(FrameSinkHolderTest, SubmitFrameSynchronouslyBeforeFirstFrameRequested) {
   EXPECT_THAT(
       layer_tree_frame_sink_->GetLatestReceivedFrame().metadata.begin_frame_ack,
       IsBeginFrameAckEqual(viz::BeginFrameAck::CreateManualAckWithDamage()));
+}
+
+TEST_F(FrameSinkHolderTest, ObserveBeginFrameSourceOnDemand) {
+  FrameSinkHolderTestApi test_api(frame_sink_holder_.get());
+
+  StubBeginFrameSource source;
+  frame_sink_holder_->SetBeginFrameSource(&source);
+
+  // FrameSinkHolder should be observing the source when it is set.
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  // After consecutively not producing frames for a certain number of
+  // BeginFrames, FrameSinkHolder should stop observing the source.
+  for (int i = 0; i < 4; i++) {
+    frame_sink_holder_->OnBeginFrame(CreateValidBeginFrameArgsForTesting());
+  }
+
+  frame_sink_holder_->SubmitCompositorFrame(/*synchronous_draw=*/true);
+  frame_sink_holder_->OnBeginFrame(CreateValidBeginFrameArgsForTesting());
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  for (int i = 0; i < 5; i++) {
+    frame_sink_holder_->OnBeginFrame(CreateValidBeginFrameArgsForTesting());
+  }
+
+  EXPECT_FALSE(test_api.IsObservingBeginFrameSource());
+
+  // However, if there is request to submit a new frame, FrameSinkHolder should
+  // start observing the source again.
+  frame_sink_holder_->SubmitCompositorFrame(/*synchronous_draw=*/true);
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  frame_sink_holder_->SetBeginFrameSource(nullptr);
+}
+
+TEST_F(FrameSinkHolderTest, ObserveBeginFrameSourceOnDemand_AutoUpdate) {
+  FrameSinkHolderTestApi test_api(frame_sink_holder_.get());
+
+  frame_sink_holder_->SetAutoUpdateMode(true);
+
+  StubBeginFrameSource source;
+  frame_sink_holder_->SetBeginFrameSource(&source);
+
+  // FrameSinkHolder should be observing BeginFrameSource when it is set.
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  // When auto update mode is on, we should not stop observation of
+  // BeginFrameSource.
+  for (int i = 0; i < 10; i++) {
+    frame_sink_holder_->OnBeginFrame(CreateValidBeginFrameArgsForTesting());
+  }
+
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  // However once the auto update mode is turned off, we should stop observing
+  // the BeginFrameSource as needed.
+  frame_sink_holder_->SetAutoUpdateMode(false);
+
+  for (int i = 0; i < 5; i++) {
+    frame_sink_holder_->OnBeginFrame(CreateValidBeginFrameArgsForTesting());
+  }
+
+  EXPECT_FALSE(test_api.IsObservingBeginFrameSource());
+
+  // Renablending the auto update mode should start the observation of
+  // BeginFrameSource.
+  frame_sink_holder_->SetAutoUpdateMode(true);
+  EXPECT_TRUE(test_api.IsObservingBeginFrameSource());
+
+  frame_sink_holder_->SetBeginFrameSource(nullptr);
 }
 
 TEST_F(FrameSinkHolderTest, SubmitFrameSynchronouslyWhilePendingFrameAck) {

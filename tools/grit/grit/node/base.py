@@ -28,7 +28,7 @@ class Node:
   _CONTENT_TYPE_MIXED = 2  # CDATA and children, possibly intermingled
 
   # Types of files to be compressed by default.
-  _COMPRESS_BY_DEFAULT_EXTENSIONS = ('.js', '.html', '.css', '.svg')
+  _COMPRESS_BY_DEFAULT_EXTENSIONS = ('.js', '.html', '.css', '.svg', '.json')
 
   # Types of files to disallow compressing, as it provides no benefit, and can
   # potentially even make the file larger.
@@ -497,10 +497,10 @@ class Node:
       elif name == 'defs':
         value = defs
 
-      elif name == 'is_ohos':
-        value = target_platform == 'ohos'
       elif name == 'is_linux':
         value = target_platform == 'linux'
+      elif name == 'is_ohos':
+        value = target_platform == 'ohos'
       elif name == 'is_chromeos':
         value = target_platform == 'chromeos'
       elif name == 'is_macosx':
@@ -517,7 +517,7 @@ class Node:
         value = 'bsd' in target_platform
       elif name == 'is_posix':
         value = (target_platform in ('linux', 'darwin', 'sunos5', 'android',
-                                     'ios', 'chromeos', 'ohos')
+                                     'ios', 'chromeos', "ohos")
                  or 'bsd' in target_platform)
 
       elif name == 'pp_ifdef':
@@ -659,9 +659,6 @@ class Node:
                                self._COMPRESS_BY_DEFAULT_EXTENSIONS))
 
     if compress == 'gzip' or compress_by_default:
-      # We only use rsyncable compression for platforms built on Linux.
-      if sys.platform == 'linux':
-        return grit.format.gzip_string.GzipStringRsyncable(data)
       return grit.format.gzip_string.GzipString(data)
 
     if compress == 'brotli':

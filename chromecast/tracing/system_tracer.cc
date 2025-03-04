@@ -7,12 +7,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+
+#include <string_view>
 #include <utility>
 
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
-#include "base/message_loop/message_pump_libevent.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/posix/unix_domain_socket.h"
 #include "base/trace_event/trace_config.h"
@@ -49,7 +50,7 @@ class SystemTracerImpl : public SystemTracer {
   SystemTracerImpl() : buffer_(new char[kBufferSize]) {}
   ~SystemTracerImpl() override { Cleanup(); }
 
-  void StartTracing(base::StringPiece categories,
+  void StartTracing(std::string_view categories,
                     StartTracingCallback callback) override;
 
   void StopTracing(const StopTracingCallback& callback) override;
@@ -93,7 +94,7 @@ class SystemTracerImpl : public SystemTracer {
   std::string trace_data_;
 };
 
-void SystemTracerImpl::StartTracing(base::StringPiece categories,
+void SystemTracerImpl::StartTracing(std::string_view categories,
                                     StartTracingCallback callback) {
   start_tracing_callback_ = std::move(callback);
   if (state_ != State::INITIAL) {
@@ -244,7 +245,7 @@ class FakeSystemTracer : public SystemTracer {
   FakeSystemTracer() = default;
   ~FakeSystemTracer() override = default;
 
-  void StartTracing(base::StringPiece categories,
+  void StartTracing(std::string_view categories,
                     StartTracingCallback callback) override {
     std::move(callback).Run(Status::OK);
   }

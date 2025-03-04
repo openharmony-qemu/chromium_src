@@ -43,7 +43,7 @@ class MediaStringViewTest : public AmbientAshTestBase {
 };
 
 TEST_F(MediaStringViewTest, ShowMediaTitleAndArtist) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -57,7 +57,7 @@ TEST_F(MediaStringViewTest, ShowMediaTitleAndArtist) {
 }
 
 TEST_F(MediaStringViewTest, TextContainerFitsWidthOfShortText) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -66,14 +66,20 @@ TEST_F(MediaStringViewTest, TextContainerFitsWidthOfShortText) {
 
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
-  EXPECT_EQ(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_EQ(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             GetMediaStringViewTextContainer()->GetPreferredSize().width());
 }
 
 TEST_F(MediaStringViewTest, TextContainerHasMaxWidthWithLongText) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -82,7 +88,10 @@ TEST_F(MediaStringViewTest, TextContainerHasMaxWidthWithLongText) {
 
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_EQ(kMediaStringMaxWidthDip,
             GetMediaStringViewTextContainer()->GetPreferredSize().width());
@@ -92,7 +101,7 @@ TEST_F(MediaStringViewTest, HasNoAnimationWithShortText) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
 
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -103,7 +112,10 @@ TEST_F(MediaStringViewTest, HasNoAnimationWithShortText) {
       media_session::mojom::MediaPlaybackState::kPlaying);
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -117,7 +129,7 @@ TEST_F(MediaStringViewTest, HasAnimationWithLongText) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
 
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -128,7 +140,10 @@ TEST_F(MediaStringViewTest, HasAnimationWithLongText) {
       media_session::mojom::MediaPlaybackState::kPlaying);
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -142,7 +157,7 @@ TEST_F(MediaStringViewTest, ShouldStopAndStartAnimationWhenTextChanges) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
 
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -153,7 +168,10 @@ TEST_F(MediaStringViewTest, ShouldStopAndStartAnimationWhenTextChanges) {
       media_session::mojom::MediaPlaybackState::kPlaying);
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -167,7 +185,10 @@ TEST_F(MediaStringViewTest, ShouldStopAndStartAnimationWhenTextChanges) {
   metadata.artist = u"Another super duper long artist name";
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -181,7 +202,7 @@ TEST_F(MediaStringViewTest, ShouldStartAndStopAnimationWhenTextChanges) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
 
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -192,7 +213,10 @@ TEST_F(MediaStringViewTest, ShouldStartAndStopAnimationWhenTextChanges) {
       media_session::mojom::MediaPlaybackState::kPlaying);
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -206,7 +230,10 @@ TEST_F(MediaStringViewTest, ShouldStartAndStopAnimationWhenTextChanges) {
   metadata.artist = u"A super duper long artist name";
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -220,7 +247,10 @@ TEST_F(MediaStringViewTest, ShouldStartAndStopAnimationWhenTextChanges) {
   metadata.artist = u"name";
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -234,7 +264,7 @@ TEST_F(MediaStringViewTest, PauseMediaWillNotStopAnimationWithLongText) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
 
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -245,7 +275,10 @@ TEST_F(MediaStringViewTest, PauseMediaWillNotStopAnimationWithLongText) {
       media_session::mojom::MediaPlaybackState::kPlaying);
   SimulateMediaMetadataChanged(metadata);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
 
   EXPECT_FALSE(
@@ -262,7 +295,7 @@ TEST_F(MediaStringViewTest, PauseMediaWillNotStopAnimationWithLongText) {
 }
 
 TEST_F(MediaStringViewTest, HasNoMaskLayerWithShortText) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -276,14 +309,17 @@ TEST_F(MediaStringViewTest, HasNoMaskLayerWithShortText) {
   for (auto* view : GetContainerViews())
     views::test::RunScheduledLayout(view);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_TRUE(
       GetMediaStringViewTextContainer()->layer()->gradient_mask().IsEmpty());
 }
 
 TEST_F(MediaStringViewTest, HasMaskLayerWithLongText) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -297,14 +333,17 @@ TEST_F(MediaStringViewTest, HasMaskLayerWithLongText) {
   for (auto* view : GetContainerViews())
     views::test::RunScheduledLayout(view);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_FALSE(
       GetMediaStringViewTextContainer()->layer()->gradient_mask().IsEmpty());
 }
 
 TEST_F(MediaStringViewTest, MaskLayerShouldUpdate) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -318,7 +357,10 @@ TEST_F(MediaStringViewTest, MaskLayerShouldUpdate) {
   for (auto* view : GetContainerViews())
     views::test::RunScheduledLayout(view);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_TRUE(
       GetMediaStringViewTextContainer()->layer()->gradient_mask().IsEmpty());
@@ -332,7 +374,10 @@ TEST_F(MediaStringViewTest, MaskLayerShouldUpdate) {
   for (auto* view : GetContainerViews())
     views::test::RunScheduledLayout(view);
 
-  EXPECT_GT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_GT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_FALSE(
       GetMediaStringViewTextContainer()->layer()->gradient_mask().IsEmpty());
@@ -346,14 +391,17 @@ TEST_F(MediaStringViewTest, MaskLayerShouldUpdate) {
   for (auto* view : GetContainerViews())
     views::test::RunScheduledLayout(view);
 
-  EXPECT_LT(GetMediaStringViewTextLabel()->GetPreferredSize().width(),
+  EXPECT_LT(GetMediaStringViewTextLabel()
+                ->GetPreferredSize(views::SizeBounds(
+                    GetMediaStringViewTextLabel()->width(), {}))
+                .width(),
             kMediaStringMaxWidthDip);
   EXPECT_TRUE(
       GetMediaStringViewTextContainer()->layer()->gradient_mask().IsEmpty());
 }
 
 TEST_F(MediaStringViewTest, ShowWhenMediaIsPlaying) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
   EXPECT_FALSE(GetMediaStringView()->GetVisible());
 
   // Sets media playstate for the current session.
@@ -363,7 +411,7 @@ TEST_F(MediaStringViewTest, ShowWhenMediaIsPlaying) {
 }
 
 TEST_F(MediaStringViewTest, DoNotShowWhenMediaIsPaused) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
   EXPECT_FALSE(GetMediaStringView()->GetVisible());
 
   // Sets media playstate for the current session.
@@ -384,7 +432,7 @@ TEST_F(MediaStringViewTest, DoNotShowOnLockScreenIfPrefIsDisabled) {
   pref->SetBoolean(prefs::kLockScreenMediaControlsEnabled, false);
   // Simulates Ambient Mode shown on lock-screen.
   LockScreen();
-  FastForwardToLockScreenTimeout();
+  FastForwardByLockScreenInactivityTimeout();
   FastForwardTiny();
 
   // Simulates active and playing media session.
@@ -396,7 +444,7 @@ TEST_F(MediaStringViewTest, DoNotShowOnLockScreenIfPrefIsDisabled) {
 }
 
 TEST_F(MediaStringViewTest, ShouldHasDifferentTransform) {
-  ShowAmbientScreen();
+  SetAmbientShownAndWaitForWidgets();
 
   // Sets metadata for current session.
   media_session::MediaMetadata metadata;
@@ -412,8 +460,8 @@ TEST_F(MediaStringViewTest, ShouldHasDifferentTransform) {
   // consecutive updates, therefore we test with two updates.
   gfx::Transform transform1 =
       GetMediaStringView()->layer()->GetTargetTransform();
-  FastForwardToNextImage();
-  FastForwardToNextImage();
+  FastForwardByPhotoRefreshInterval();
+  FastForwardByPhotoRefreshInterval();
   gfx::Transform transform2 =
       GetMediaStringView()->layer()->GetTargetTransform();
   EXPECT_NE(transform1, transform2);

@@ -9,7 +9,7 @@
 #include "ui/events/event_constants.h"
 #include "ui/events/gesture_detection/gesture_detector.h"
 #include "ui/events/gesture_detection/gesture_provider_config_helper.h"
-#include "ui/events/gesture_detection/motion_event.h"
+#include "ui/events/velocity_tracker/motion_event.h"
 
 using ui::GestureDetector;
 using ui::MotionEvent;
@@ -30,7 +30,7 @@ std::unique_ptr<GestureDetector> CreateGestureDetector(
   std::unique_ptr<ui::GestureDetector> detector(
       new ui::GestureDetector(config, listener, null_double_tap_listener));
   detector->set_press_and_hold_enabled(false);
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   detector->set_draglongpress_enabled(false);
 #endif
   detector->set_showpress_enabled(false);
@@ -102,7 +102,6 @@ bool StylusTextSelector::OnTouchEvent(const MotionEvent& event) {
     case MotionEvent::Action::BUTTON_PRESS:
     case MotionEvent::Action::BUTTON_RELEASE:
       NOTREACHED();
-      break;
   }
 
   if (!gesture_detector_)

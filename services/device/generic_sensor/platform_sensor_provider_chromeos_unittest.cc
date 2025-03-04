@@ -2,11 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "services/device/generic_sensor/platform_sensor_provider_chromeos.h"
 
 #include <memory>
+#include <optional>
 #include <utility>
 
+#include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/test/bind.h"
@@ -17,7 +24,6 @@
 #include "services/device/generic_sensor/sensor_impl.h"
 #include "services/device/public/cpp/generic_sensor/sensor_traits.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "chromeos/components/sensors/ash/sensor_hal_dispatcher.h"
@@ -55,7 +61,7 @@ class FakeClient : public PlatformSensor::Client {
   bool IsSuspended() override { return false; }
 
  private:
-  PlatformSensor* platform_sensor_;
+  raw_ptr<PlatformSensor> platform_sensor_;
 };
 
 }  // namespace
@@ -80,8 +86,8 @@ class PlatformSensorProviderChromeOSTest : public ::testing::Test {
 
   void AddDevice(int32_t iio_device_id,
                  chromeos::sensors::mojom::DeviceType type,
-                 const absl::optional<std::string>& scale,
-                 const absl::optional<std::string>& location,
+                 const std::optional<std::string>& scale,
+                 const std::optional<std::string>& location,
                  std::vector<chromeos::sensors::FakeSensorDevice::ChannelData>
                      channels_data = {}) {
     AddDevice(iio_device_id,
@@ -91,8 +97,8 @@ class PlatformSensorProviderChromeOSTest : public ::testing::Test {
 
   void AddDevice(int32_t iio_device_id,
                  std::set<chromeos::sensors::mojom::DeviceType> types,
-                 const absl::optional<std::string>& scale,
-                 const absl::optional<std::string>& location,
+                 const std::optional<std::string>& scale,
+                 const std::optional<std::string>& location,
                  std::vector<chromeos::sensors::FakeSensorDevice::ChannelData>
                      channels_data = {}) {
     auto sensor_device = std::make_unique<chromeos::sensors::FakeSensorDevice>(
@@ -165,7 +171,8 @@ class PlatformSensorProviderChromeOSTest : public ::testing::Test {
   }
 
   std::unique_ptr<chromeos::sensors::FakeSensorHalServer> sensor_hal_server_;
-  std::vector<chromeos::sensors::FakeSensorDevice*> sensor_devices_;
+  std::vector<raw_ptr<chromeos::sensors::FakeSensorDevice, VectorExperimental>>
+      sensor_devices_;
 
   std::unique_ptr<PlatformSensorProviderChromeOS> provider_;
 
@@ -212,7 +219,7 @@ TEST_F(PlatformSensorProviderChromeOSTest, CheckUnsupportedTypes) {
 
 TEST_F(PlatformSensorProviderChromeOSTest, MissingScale) {
   AddDevice(kFakeDeviceId, chromeos::sensors::mojom::DeviceType::ACCEL,
-            /*scale=*/absl::nullopt, chromeos::sensors::mojom::kLocationBase);
+            /*scale=*/std::nullopt, chromeos::sensors::mojom::kLocationBase);
 
   RegisterSensorHalServer();
 
@@ -222,7 +229,7 @@ TEST_F(PlatformSensorProviderChromeOSTest, MissingScale) {
 TEST_F(PlatformSensorProviderChromeOSTest, MissingLocation) {
   AddDevice(kFakeDeviceId, chromeos::sensors::mojom::DeviceType::ACCEL,
             base::NumberToString(kScaleValue),
-            /*location=*/absl::nullopt);
+            /*location=*/std::nullopt);
 
   RegisterSensorHalServer();
 
@@ -747,7 +754,7 @@ TEST_F(PlatformSensorProviderChromeOSTest, LatePresentLightSensors) {
   // Wait until |provider_| finishes processing the new device.
   base::RunLoop().RunUntilIdle();
 
-  // Test PlatformSensorProviderBase::NotifySensorCreated on different sensors
+  // Test PlatformSensorProvider::NotifySensorCreated on different sensors
   // of the same type.
   auto light_lid = CreateSensor(mojom::SensorType::AMBIENT_LIGHT);
   EXPECT_TRUE(light_lid);
@@ -767,7 +774,7 @@ TEST_F(PlatformSensorProviderChromeOSTest, LatePresentLightSensors) {
   SensorReading result;
   EXPECT_FALSE(light_base->GetLatestReading(&result));
 
-  // Test PlatformSensorProviderBase::RemoveSensor on different sensors of the
+  // Test PlatformSensorProvider::RemoveSensor on different sensors of the
   // same type.
   light_base.reset();
 

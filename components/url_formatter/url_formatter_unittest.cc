@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/url_formatter/url_formatter.h"
 
 #include <stddef.h>
@@ -11,7 +16,6 @@
 
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -594,8 +598,14 @@ TEST(UrlFormatterTest, FormatUrlRoundTripPathASCII) {
 }
 
 // Make sure that calling FormatUrl on a GURL and then converting back to a GURL
-// results in the original GURL, for each escaped ASCII character in the path.
+// results in a different GURL, for each escaped ASCII character in the path.
+// GURL no longer unescapes percent-encoded ASCII characters. See
+// https://crbug.com/1252531
 TEST(UrlFormatterTest, FormatUrlRoundTripPathEscaped) {
+  // A full list of characters which FormatURL should unescape.
+  const std::string_view kUnescapedCharacters =
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~";
+
   for (unsigned char test_char = 32; test_char < 128; ++test_char) {
     std::string original_url("http://www.google.com/");
     original_url.push_back('%');
@@ -606,7 +616,12 @@ TEST(UrlFormatterTest, FormatUrlRoundTripPathEscaped) {
     std::u16string formatted =
         FormatUrl(url, kFormatUrlOmitUsernamePassword,
                   base::UnescapeRule::NORMAL, nullptr, &prefix_len, nullptr);
-    EXPECT_EQ(url.spec(), GURL(formatted).spec());
+    if (test_char && kUnescapedCharacters.find(static_cast<char>(test_char)) !=
+                         kUnescapedCharacters.npos) {
+      EXPECT_NE(url.spec(), GURL(formatted).spec());
+    } else {
+      EXPECT_EQ(url.spec(), GURL(formatted).spec());
+    }
   }
 }
 

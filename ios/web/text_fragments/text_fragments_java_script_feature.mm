@@ -14,10 +14,6 @@
 #import "ios/web/public/js_messaging/web_frames_manager.h"
 #import "ios/web/text_fragments/text_fragments_manager_impl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 const char kScriptName[] = "text_fragments";
 const char kScriptHandlerName[] = "textFragments";
@@ -65,12 +61,11 @@ void TextFragmentsJavaScriptFeature::ProcessTextFragments(
                              ? base::Value()
                              : base::Value(foreground_color_hex_rgb);
 
-  std::vector<base::Value> parameters;
-  parameters.push_back(std::move(parsed_fragments));
-  parameters.emplace_back(/*scroll=*/true);
-  parameters.push_back(std::move(bg_color));
-  parameters.push_back(std::move(fg_color));
-
+  auto parameters = base::Value::List()
+                        .Append(std::move(parsed_fragments))
+                        .Append(/*scroll=*/true)
+                        .Append(std::move(bg_color))
+                        .Append(std::move(fg_color));
   CallJavaScriptFunction(frame, kHandleFragmentsScript, parameters);
 }
 
@@ -82,8 +77,8 @@ void TextFragmentsJavaScriptFeature::RemoveHighlights(WebState* web_state,
     return;
   }
 
-  std::vector<base::Value> parameters;
-  parameters.emplace_back(new_url.is_valid() ? new_url.spec() : "");
+  auto parameters =
+      base::Value::List().Append(new_url.is_valid() ? new_url.spec() : "");
   CallJavaScriptFunction(frame, kRemoveHighlightsScript, parameters);
 }
 
@@ -116,9 +111,9 @@ void TextFragmentsJavaScriptFeature::ScriptMessageReceived(
 
   if (*command == "textFragments.processingComplete") {
     // Extract success metrics.
-    absl::optional<double> optional_fragment_count =
+    std::optional<double> optional_fragment_count =
         dict.FindDoubleByDottedPath("result.fragmentsCount");
-    absl::optional<double> optional_success_count =
+    std::optional<double> optional_success_count =
         dict.FindDoubleByDottedPath("result.successCount");
 
     // Since the response can't be trusted, don't log metrics if the results
@@ -144,7 +139,7 @@ void TextFragmentsJavaScriptFeature::ScriptMessageReceived(
   } else if (*command == "textFragments.onClick") {
     manager->OnClick();
   } else if (*command == "textFragments.onClickWithSender") {
-    absl::optional<CGRect> rect =
+    std::optional<CGRect> rect =
         shared_highlighting::ParseRect(dict.FindDict("rect"));
     const std::string* text = dict.FindString("text");
 
@@ -152,7 +147,7 @@ void TextFragmentsJavaScriptFeature::ScriptMessageReceived(
     std::vector<shared_highlighting::TextFragment> fragments;
     if (fragment_values_list) {
       for (const base::Value& val : *fragment_values_list) {
-        absl::optional<shared_highlighting::TextFragment> fragment =
+        std::optional<shared_highlighting::TextFragment> fragment =
             shared_highlighting::TextFragment::FromValue(&val);
         if (fragment) {
           fragments.push_back(*fragment);
@@ -169,7 +164,7 @@ void TextFragmentsJavaScriptFeature::ScriptMessageReceived(
   }
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 TextFragmentsJavaScriptFeature::GetScriptMessageHandlerName() const {
   return kScriptHandlerName;
 }

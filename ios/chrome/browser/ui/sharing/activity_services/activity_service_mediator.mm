@@ -6,19 +6,20 @@
 
 #import <MobileCoreServices/MobileCoreServices.h>
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/string_number_conversions.h"
 #import "base/strings/sys_string_conversions.h"
-#import "components/bookmarks/browser/bookmark_model.h"
 #import "components/prefs/pref_service.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/coordinator/default_browser_promo/non_modal_default_browser_promo_scheduler_scene_agent.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/url/url_util.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
 #import "ios/chrome/browser/shared/public/commands/qr_generation_commands.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/sync/send_tab_to_self_sync_service_factory.h"
-#import "ios/chrome/browser/ui/default_promo/default_browser_promo_non_modal_scheduler.h"
+#import "ios/chrome/browser/sync/model/send_tab_to_self_sync_service_factory.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activities/bookmark_activity.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activities/copy_activity.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/activities/find_in_page_activity.h"
@@ -39,16 +40,14 @@
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_to_data.h"
 #import "ios/chrome/browser/ui/sharing/sharing_positioner.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface ActivityServiceMediator ()
 
 @property(nonatomic, weak) id<BrowserCoordinatorCommands, FindInPageCommands>
     handler;
 
 @property(nonatomic, weak) id<BookmarksCommands> bookmarksHandler;
+
+@property(nonatomic, weak) id<HelpCommands> helpHandler;
 
 @property(nonatomic, weak) id<QRGenerationCommands> qrGenerationHandler;
 
@@ -72,6 +71,7 @@
 - (instancetype)initWithHandler:
                     (id<BrowserCoordinatorCommands, FindInPageCommands>)handler
                bookmarksHandler:(id<BookmarksCommands>)bookmarksHandler
+                    helpHandler:(id<HelpCommands>)helpHandler
             qrGenerationHandler:(id<QRGenerationCommands>)qrGenerationHandler
                     prefService:(PrefService*)prefService
                   bookmarkModel:(bookmarks::BookmarkModel*)bookmarkModel
@@ -79,9 +79,10 @@
                 navigationAgent:(WebNavigationBrowserAgent*)navigationAgent
         readingListBrowserAgent:
             (ReadingListBrowserAgent*)readingListBrowserAgent {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _handler = handler;
     _bookmarksHandler = bookmarksHandler;
+    _helpHandler = helpHandler;
     _qrGenerationHandler = qrGenerationHandler;
     _prefService = prefService;
     _bookmarkModel = bookmarkModel;
@@ -162,9 +163,14 @@
     RequestDesktopOrMobileSiteActivity* requestActivity =
         [[RequestDesktopOrMobileSiteActivity alloc]
             initWithUserAgent:data.userAgent
-                      handler:self.handler
+                  helpHandler:self.helpHandler
               navigationAgent:self.navigationAgent];
     [applicationActivities addObject:requestActivity];
+  } else if (UrlIsDownloadedFile(data.shareURL) ||
+             UrlIsExternalFileReference(data.shareURL)) {
+    FindInPageActivity* findInPageActivity =
+        [[FindInPageActivity alloc] initWithData:data handler:self.handler];
+    [applicationActivities addObject:findInPageActivity];
   }
 
   if (self.prefService->GetBoolean(prefs::kPrintingEnabled)) {

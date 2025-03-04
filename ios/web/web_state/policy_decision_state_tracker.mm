@@ -6,10 +6,6 @@
 
 #import "base/barrier_closure.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 PolicyDecisionStateTracker::PolicyDecisionStateTracker(
@@ -49,7 +45,7 @@ void PolicyDecisionStateTracker::FinishedRequestingDecisions(
   decision_closure_ = base::BarrierClosure(
       num_decisions_requested - num_decisions_received_,
       base::BindOnce(&PolicyDecisionStateTracker::OnFinalResultDetermined,
-                     AsWeakPtr()));
+                     weak_ptr_factory_.GetWeakPtr()));
 }
 
 void PolicyDecisionStateTracker::OnFinalResultDetermined() {

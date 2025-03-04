@@ -4,7 +4,7 @@
 
 #import "base/ios/ios_util.h"
 #import "components/strings/grit/components_strings.h"
-#import "ios/chrome/browser/ui/autofill/autofill_app_interface.h"
+#import "ios/chrome/browser/autofill/ui_bundled/autofill_app_interface.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
@@ -14,10 +14,6 @@
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::ButtonWithAccessibilityLabel;
 using chrome_test_util::ButtonWithAccessibilityLabelId;
@@ -68,6 +64,10 @@ id<GREYMatcher> YearOfExpiryTextField() {
 - (void)setUp {
   [super setUp];
 
+  [AutofillAppInterface setUpMockReauthenticationModule];
+  [AutofillAppInterface mockReauthenticationModuleCanAttempt:YES];
+  [AutofillAppInterface setMandatoryReauthEnabled:YES];
+
   [AutofillAppInterface clearCreditCardStore];
   NSString* lastDigits = [AutofillAppInterface saveLocalCreditCard];
 
@@ -80,9 +80,10 @@ id<GREYMatcher> YearOfExpiryTextField() {
       performAction:grey_tap()];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [AutofillAppInterface clearCreditCardStore];
-  [super tearDown];
+  [AutofillAppInterface clearMockReauthenticationModule];
+  [super tearDownHelper];
 }
 
 #pragma mark - Test that all fields on the 'Add Credit Card' screen appear

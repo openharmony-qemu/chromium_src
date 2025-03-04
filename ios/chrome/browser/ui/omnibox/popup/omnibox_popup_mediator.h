@@ -13,7 +13,7 @@
 #import "components/omnibox/browser/autocomplete_result.h"
 #import "ios/chrome/browser/ui/omnibox/popup/autocomplete_controller_observer_bridge.h"
 #import "ios/chrome/browser/ui/omnibox/popup/autocomplete_result_consumer.h"
-#import "ios/chrome/browser/ui/omnibox/popup/carousel_item_menu_provider.h"
+#import "ios/chrome/browser/ui/omnibox/popup/carousel/carousel_item_menu_provider.h"
 #import "ios/chrome/browser/ui/omnibox/popup/favicon_retriever.h"
 #import "ios/chrome/browser/ui/omnibox/popup/image_retriever.h"
 #import "ios/chrome/browser/ui/omnibox/popup/popup_debug_info_consumer.h"
@@ -21,26 +21,24 @@
 #import "ui/base/window_open_disposition.h"
 
 @protocol ApplicationCommands;
-@protocol BrowserCommands;
 @class BrowserActionFactory;
 @class CarouselItem;
 @protocol CarouselItemConsumer;
-@class DefaultBrowserPromoNonModalScheduler;
 class FaviconLoader;
 @class OmniboxPedalAnnotator;
 @class OmniboxPopupMediator;
 @class OmniboxPopupPresenter;
+@class SceneState;
 @protocol SnackbarCommands;
-class WebStateList;
 class AutocompleteController;
 
 namespace image_fetcher {
 class ImageDataFetcher;
-}  // namespace
+}  // namespace image_fetcher
 
 namespace feature_engagement {
 class Tracker;
-}
+}  // namespace feature_engagement
 
 class OmniboxPopupMediatorDelegate {
  public:
@@ -51,6 +49,7 @@ class OmniboxPopupMediatorDelegate {
   virtual void OnMatchSelectedForAppending(const AutocompleteMatch& match) = 0;
   virtual void OnMatchSelectedForDeletion(const AutocompleteMatch& match) = 0;
   virtual void OnScroll() = 0;
+  virtual void OnCallActionTap() = 0;
 };
 
 /// Provider that returns protocols and services that are instantiated after
@@ -91,7 +90,6 @@ class OmniboxPopupMediatorDelegate {
 - (void)setSemanticContentAttribute:
     (UISemanticContentAttribute)semanticContentAttribute;
 
-@property(nonatomic, weak) id<BrowserCommands> dispatcher;
 @property(nonatomic, weak) id<AutocompleteResultConsumer> consumer;
 /// Consumer for debug info.
 @property(nonatomic, weak) id<PopupDebugInfoConsumer,
@@ -99,16 +97,14 @@ class OmniboxPopupMediatorDelegate {
                               AutocompleteControllerObserver>
     debugInfoConsumer;
 @property(nonatomic, weak) id<ApplicationCommands> applicationCommandsHandler;
-/// Scheduler to notify about events happening in this popup.
-@property(nonatomic, weak) DefaultBrowserPromoNonModalScheduler* promoScheduler;
+/// Browser scene state to notify about events happening in this popup.
+@property(nonatomic, weak) SceneState* sceneState;
 @property(nonatomic, assign, getter=isIncognito) BOOL incognito;
 /// Whether the popup is open.
 @property(nonatomic, assign, getter=isOpen) BOOL open;
 /// Presenter for the popup, handling the positioning and the presentation
 /// animations.
 @property(nonatomic, strong) OmniboxPopupPresenter* presenter;
-/// The web state list this mediator is handling.
-@property(nonatomic, assign) WebStateList* webStateList;
 /// Whether the default search engine is Google impacts which icon is used in
 /// some cases
 @property(nonatomic, assign) BOOL defaultSearchEngineIsGoogle;
@@ -141,8 +137,14 @@ class OmniboxPopupMediatorDelegate {
 /// Sets the text alignment of the popup content.
 - (void)setTextAlignment:(NSTextAlignment)alignment;
 
+/// Sets whether the omnibox has a thumbnail.
+- (void)setHasThumbnail:(BOOL)hasThumbnail;
+
 /// Updates the popup with the `results`.
 - (void)updateWithResults:(const AutocompleteResult&)results;
+
+// Disconnects all observers set by the mediator.
+- (void)disconnect;
 
 @end
 

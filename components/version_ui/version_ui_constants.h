@@ -7,16 +7,9 @@
 
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "cef/libcef/features/features.h"
 
 namespace version_ui {
-
-// Resource paths.
-// Must match the resource file names.
-extern const char kAboutVersionCSS[];
-#if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID)
-extern const char kAboutVersionMobileCSS[];
-#endif
-extern const char kVersionJS[];
 
 // Message handlers.
 // Must match the constants used in the resource files.
@@ -32,7 +25,7 @@ extern const char kKeyProfilePath[];
 // Strings.
 // Must match the constants used in the resource files.
 extern const char kApplicationLabel[];
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 extern const char kARC[];
 #endif
 extern const char kCL[];
@@ -43,18 +36,15 @@ extern const char kCompany[];
 extern const char kUpdateCohortName[];
 #endif
 extern const char kCopyright[];
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 extern const char kCustomizationId[];
 #endif
 #if !BUILDFLAG(IS_IOS)
 extern const char kExecutablePath[];
 extern const char kExecutablePathName[];
 #endif
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 extern const char kFirmwareVersion[];
-#endif
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-extern const char kAshChromeVersion[];
 #endif
 #if !BUILDFLAG(IS_IOS)
 extern const char kJSEngine[];
@@ -75,8 +65,9 @@ extern const char kTargetsUName[];
 extern const char kTargetsU[];
 extern const char kGmsName[];
 extern const char kGmsVersion[];
+extern const char kIsDesktopAndroid[];
 #endif
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 extern const char kPlatform[];
 #endif
 #if !BUILDFLAG(IS_IOS)
@@ -89,18 +80,32 @@ extern const char kOsVersionHeaderText2[];
 extern const char kOsVersionHeaderLink[];
 #endif
 extern const char kCopyLabel[];
+extern const char kCopyNotice[];
 extern const char kRevision[];
 extern const char kSanitizer[];
 extern const char kTitle[];
 extern const char kUserAgent[];
 extern const char kUserAgentName[];
 extern const char kVariationsCmdName[];
+extern const char kCopyVariationsLabel[];
+extern const char kCopyVariationsNotice[];
 extern const char kVariationsName[];
 extern const char kVariationsSeed[];
 extern const char kVariationsSeedName[];
 extern const char kVersion[];
 extern const char kVersionModifier[];
 extern const char kVersionProcessorVariation[];
+
+#if BUILDFLAG(ENABLE_CEF)
+extern const char kKeyModulePath[];
+extern const char kKeyUserDataPath[];
+
+extern const char kCefVersion[];
+extern const char kModulePath[];
+extern const char kModulePathName[];
+extern const char kUserDataPath[];
+extern const char kUserDataPathName[];
+#endif
 
 }  // namespace version_ui
 

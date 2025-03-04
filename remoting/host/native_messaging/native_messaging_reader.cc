@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "remoting/host/native_messaging/native_messaging_reader.h"
 
 #include <cstdint>
@@ -121,7 +126,7 @@ void NativeMessagingReader::Core::ReadMessage() {
       return;
     }
 
-    absl::optional<base::Value> message = base::JSONReader::Read(message_json);
+    std::optional<base::Value> message = base::JSONReader::Read(message_json);
     if (!message) {
       LOG(ERROR) << "Failed to parse JSON message: " << message_json;
       NotifyEof();

@@ -21,7 +21,6 @@
 #include "cc/trees/effect_node.h"
 #include "cc/trees/layer_tree_impl.h"
 #include "components/viz/common/display/renderer_settings.h"
-#include "components/viz/common/features.h"
 #include "components/viz/common/frame_sinks/copy_output_request.h"
 #include "components/viz/common/frame_sinks/copy_output_result.h"
 #include "components/viz/common/gpu/raster_context_provider.h"
@@ -31,7 +30,12 @@
 #include "components/viz/test/paths.h"
 #include "components/viz/test/test_gpu_service_holder.h"
 #include "components/viz/test/test_in_process_context_provider.h"
-#include "gpu/command_buffer/client/gles2_implementation.h"
+#include "skia/buildflags.h"
+
+#if BUILDFLAG(SKIA_USE_DAWN)
+#include "third_party/dawn/include/dawn/dawn_proc.h"
+#include "third_party/dawn/include/dawn/native/DawnNative.h"  // nogncheck
+#endif
 
 using gpu::gles2::GLES2Interface;
 
@@ -44,7 +48,8 @@ TestRasterType GetDefaultRasterType(viz::RendererType renderer_type) {
     case viz::RendererType::kSoftware:
       return TestRasterType::kBitmap;
     case viz::RendererType::kSkiaVk:
-    case viz::RendererType::kSkiaGraphite:
+    case viz::RendererType::kSkiaGraphiteDawn:
+    case viz::RendererType::kSkiaGraphiteMetal:
       return TestRasterType::kGpu;
     default:
       return TestRasterType::kOneCopy;
@@ -58,7 +63,11 @@ LayerTreePixelTest::LayerTreePixelTest(viz::RendererType renderer_type)
       raster_type_(GetDefaultRasterType(renderer_type)),
       pixel_comparator_(
           std::make_unique<AlphaDiscardingExactPixelComparator>()),
-      pending_texture_mailbox_callbacks_(0) {}
+      pending_texture_mailbox_callbacks_(0) {
+#if BUILDFLAG(SKIA_USE_DAWN)
+  dawnProcSetProcs(&dawn::native::GetProcs());
+#endif
+}
 
 LayerTreePixelTest::~LayerTreePixelTest() = default;
 
@@ -66,14 +75,14 @@ std::unique_ptr<TestLayerTreeFrameSink>
 LayerTreePixelTest::CreateLayerTreeFrameSink(
     const viz::RendererSettings& renderer_settings,
     double refresh_rate,
-    scoped_refptr<viz::ContextProvider>,
+    scoped_refptr<viz::RasterContextProvider>,
     scoped_refptr<viz::RasterContextProvider>) {
   scoped_refptr<viz::TestInProcessContextProvider> compositor_context_provider;
   scoped_refptr<viz::TestInProcessContextProvider> worker_context_provider;
   if (!use_software_renderer()) {
     compositor_context_provider =
         base::MakeRefCounted<viz::TestInProcessContextProvider>(
-            viz::TestContextType::kGLES2, /*support_locking=*/false);
+            viz::TestContextType::kSoftwareRaster, /*support_locking=*/false);
 
     viz::TestContextType worker_ri_type;
     switch (raster_type()) {
@@ -135,9 +144,8 @@ void LayerTreePixelTest::DrawLayersOnThread(LayerTreeHostImpl* host_impl) {
         worker_context_provider);
     EXPECT_EQ(use_accelerated_raster(),
               worker_context_provider->ContextCapabilities().gpu_rasterization);
-    EXPECT_EQ(
-        raster_type() == TestRasterType::kGpu,
-        worker_context_provider->ContextCapabilities().supports_oop_raster);
+    EXPECT_EQ(raster_type() == TestRasterType::kGpu,
+              worker_context_provider->ContextCapabilities().gpu_rasterization);
   } else {
     EXPECT_EQ(TestRasterType::kBitmap, raster_type());
   }

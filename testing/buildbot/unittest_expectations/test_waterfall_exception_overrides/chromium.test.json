@@ -7,14 +7,12 @@
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
+        "name": "foo_test",
         "swarming": {
-          "can_use_on_swarming_builders": true,
-          "dimension_sets": [
-            {
-              "integrity": "high",
-              "os": "Linux"
-            }
-          ],
+          "dimensions": {
+            "integrity": "high",
+            "os": "Linux"
+          },
           "expiration": 120,
           "value": "exception"
         },

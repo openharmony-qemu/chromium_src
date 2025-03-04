@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/queue.h"
 #include "base/time/time.h"
@@ -35,7 +36,9 @@
 #endif
 
 namespace gl {
-
+#if BUILDFLAG(IS_OHOS)
+constexpr uint32_t kMaxSwapIntervalOhos = 16;
+#endif
 class GLSurfacePresentationHelper;
 
 // Interface for EGL surface.
@@ -133,7 +136,8 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   GLSurfacePresentationHelper* presentation_helper() const {
     return presentation_helper_.get();
   }
-#if BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,
                                         gfx::FrameData data) override;
@@ -142,6 +146,7 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
                                         PresentationCallback callback,
                                         gfx::FrameData data);
 #endif
+
  private:
   struct SwapInfo {
     bool frame_id_is_valid;
@@ -178,6 +183,12 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
 
   bool vsync_enabled_ = true;
   std::unique_ptr<GLSurfacePresentationHelper> presentation_helper_;
+
+#if BUILDFLAG(IS_OHOS)
+ protected:
+  bool enable_replace_swap_buffer_output_ = false;
+  bool is_first_swapbuffers_ = true;
+#endif
 };
 
 // Encapsulates a pbuffer EGL surface.

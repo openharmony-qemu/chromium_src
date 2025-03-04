@@ -25,7 +25,8 @@ DomKey NonPrintableXKeySymToDomKey(xkb_keysym_t keysym);
 // char16_t DeadXKeySymToCombiningCharacter(xkb_keysym_t keysym);
 
 // Return the DomKey determined by the XKB layout result (keysym, character).
-KEYCODES_X_EXPORT DomKey XKeySymToDomKey(xkb_keysym_t keysym, char16_t character);
+KEYCODES_X_EXPORT DomKey XKeySymToDomKey(xkb_keysym_t keysym,
+                                         char16_t character);
 
 }  // namespace ui
 

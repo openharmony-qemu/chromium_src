@@ -9,7 +9,9 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/check.h"
@@ -23,18 +25,26 @@
 #include "base/token.h"
 #include "chromeos/components/sensors/mojom/cros_sensor_service.mojom.h"
 #include "chromeos/crosapi/mojom/account_manager.mojom.h"
+#include "chromeos/crosapi/mojom/automation.mojom.h"
 #include "chromeos/crosapi/mojom/crosapi.mojom.h"
 #include "chromeos/crosapi/mojom/device_attributes.mojom.h"
+#include "chromeos/crosapi/mojom/magic_boost.mojom.h"
 #include "chromeos/crosapi/mojom/multi_capture_service.mojom.h"
+#include "chromeos/crosapi/mojom/nonclosable_app_toast_service.mojom.h"
+#include "chromeos/crosapi/mojom/one_drive_notification_service.mojom.h"
 #include "chromeos/crosapi/mojom/structured_metrics_service.mojom.h"
 #include "chromeos/crosapi/mojom/video_capture.mojom.h"
+#include "chromeos/crosapi/mojom/volume_manager.mojom.h"
 #include "chromeos/lacros/lacros_service_never_blocking_state.h"
+#include "chromeos/services/chromebox_for_meetings/public/mojom/cfm_service_manager.mojom.h"
 #include "chromeos/services/machine_learning/public/mojom/machine_learning_service.mojom.h"
+#include "components/policy/core/common/policy_namespace.h"
 #include "mojo/public/cpp/bindings/generic_pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "mojo/public/cpp/system/message_pipe.h"
 
 namespace media {
 namespace stable::mojom {
@@ -110,21 +120,6 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // For example, "87.0.0.1 dev", "86.0.4240.38 beta".
   void BindReceiver(const std::string& browser_version);
 
-  // Each of these functions guards usage of access to the corresponding remote.
-  // Keep these in alphabetical order.
-  // Most use-cases of these methods can be replaced by IsAvailable(). See
-  // crosapi::mojom::Clipboard for an example.
-  bool IsAccountManagerAvailable() const;
-  bool IsBrowserCdmFactoryAvailable() const;
-  bool IsMediaSessionAudioFocusAvailable() const;
-  bool IsMediaSessionAudioFocusDebugAvailable() const;
-  bool IsMediaSessionControllerAvailable() const;
-  bool IsMetricsReportingAvailable() const;
-  bool IsMultiCaptureServiceAvailable() const;
-  bool IsSmartReaderClientAvailable() const;
-  bool IsSensorHalClientAvailable() const;
-  bool IsStableVideoDecoderFactoryAvailable() const;
-
   // Methods to add/remove observer. Safe to call from any thread.
   void AddObserver(Observer* obs);
   void RemoveObserver(Observer* obs);
@@ -141,6 +136,12 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // Notifies that the device account component policy is updated with the
   // input data. Must be called on the affined sequence.
   void NotifyComponentPolicyUpdated(ComponentPolicyMap policy);
+
+  // Returns whether Ash supports that crosapi.
+  template <typename CrosapiInterface>
+  bool IsSupported() const {
+    return GetInterfaceVersion<CrosapiInterface>() >= 0;
+  }
 
   // Returns whether this interface uses the automatic registration system to be
   // available for immediate use at startup. Any crosapi interface can be
@@ -205,6 +206,11 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   void BindBrowserCdmFactory(mojo::GenericPendingReceiver receiver);
 
   // This may be called on any thread.
+  void BindCfmServiceContext(
+      mojo::PendingReceiver<chromeos::cfm::mojom::CfmServiceContext>
+          pending_receiver);
+
+  // This may be called on any thread.
   void BindGeolocationService(
       mojo::PendingReceiver<crosapi::mojom::GeolocationService>
           pending_receiver);
@@ -215,18 +221,26 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
           chromeos::machine_learning::mojom::MachineLearningService> receiver);
 
   // This may be called on any thread.
+  void BindMagicBoostController(
+      mojo::PendingReceiver<crosapi::mojom::MagicBoostController> receiver);
+
+  // Binds the mahi browser delegate to the mahi browser client.
+  void BindMahiBrowserDelegate(
+      mojo::PendingReceiver<crosapi::mojom::MahiBrowserDelegate> receiver);
+
+  // This may be called on any thread.
   void BindMediaControllerManager(
       mojo::PendingReceiver<media_session::mojom::MediaControllerManager>
           remote);
 
   // This may be called on any thread.
-  void BindMetricsReporting(
-      mojo::PendingReceiver<crosapi::mojom::MetricsReporting> receiver);
-
-  // This may be called on any thread.
   void BindRemoteAppsLacrosBridge(
       mojo::PendingReceiver<
           chromeos::remote_apps::mojom::RemoteAppsLacrosBridge> receiver);
+
+  // This may be called on any thread.
+  void BindPrintPreviewCrosDelegate(
+      mojo::PendingReceiver<crosapi::mojom::PrintPreviewCrosDelegate> receiver);
 
   // This may be called on any thread.
   void BindScreenManagerReceiver(
@@ -235,6 +249,9 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // This may be called on any thread.
   void BindSensorHalClient(
       mojo::PendingRemote<chromeos::sensors::mojom::SensorHalClient> remote);
+
+  // This may be called on any thread.
+  void BindMediaApp(mojo::PendingRemote<crosapi::mojom::MediaApp> remote);
 
   // OnLacrosStartup method of Crosapi can only be called if this method
   // returns true.
@@ -249,10 +266,6 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   void BindStableVideoDecoderFactory(
       mojo::PendingReceiver<media::stable::mojom::StableVideoDecoderFactory>
           receiver);
-
-  // BindVideoCaptureDeviceFactory() can only be used if this method returns
-  // true.
-  bool IsVideoCaptureDeviceFactoryAvailable() const;
 
   // Binds video conference manager to lacros-browser clients.
   void BindVideoConferenceManager(
@@ -275,7 +288,7 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
     return GetInterfaceVersion(T::Uuid_);
   }
 
-  // Similar to Above, but taking UUID.
+  // Prefer using GetInterfaceVersion<T>().
   int GetInterfaceVersion(base::Token interface_uuid) const;
 
   using Crosapi = crosapi::mojom::Crosapi;
@@ -327,7 +340,7 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
     bool IsAvailable() const { return available_; }
 
     // Initialization for the remote and |available_|.
-    virtual void MaybeBind(uint32_t crosapi_version, LacrosService* impl) = 0;
+    virtual void MaybeBind(LacrosService* impl) = 0;
 
     template <typename CrosapiInterface>
     void InjectRemoteForTesting(
@@ -352,6 +365,8 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // this class.
   friend class LacrosServiceNeverBlockingState;
 
+  FRIEND_TEST_ALL_PREFIXES(LacrosServiceTest, CheckCrosapiRemoteVersion);
+
   // Forward declare inner class to give it access to private members.
   template <typename CrosapiInterface,
             void (Crosapi::*bind_func)(mojo::PendingReceiver<CrosapiInterface>),
@@ -361,7 +376,7 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // Returns ash's version of the Crosapi mojo interface version. This
   // determines which interface methods are available. This is safe to call from
   // any sequence. This can only be called after BindReceiver().
-  absl::optional<uint32_t> CrosapiVersion() const;
+  std::optional<uint32_t> CrosapiVersion() const;
 
   // Requests ash-chrome to send idle info updates.
   void StartSystemIdleCache();
@@ -369,13 +384,29 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
   // Requests ash-chrome to send native theme info updates.
   void StartNativeThemeCache();
 
-  // This function initializes a remote for a given CrosapiInterface.
-  // It performs the following operations:
-  //   1) Calls BindNewPipeAndPassReceiver() on the remote.
-  //   2) Calls BindPendingReceiverOrRemote() on the PendingReceiver.
+  // This function initializes a remote for a given CrosapiInterface. Returns
+  // true if remote initialization succeeds; otherwise, returns false.
   template <typename CrosapiInterface,
             void (Crosapi::*bind_func)(mojo::PendingReceiver<CrosapiInterface>)>
-  void InitializeAndBindRemote(mojo::Remote<CrosapiInterface>* remote);
+  bool MaybeInitializeAndBindRemote(mojo::Remote<CrosapiInterface>* remote) {
+    const int version = GetInterfaceVersion<CrosapiInterface>();
+    if (version < 0) {
+      return false;
+    }
+
+    // Implement the same functionality as
+    // `mojo::Remote::BindNewPipeAndPassReceiver()`, but explicitly set the
+    // remote version.
+    mojo::MessagePipe pipe;
+    remote->Bind(
+        mojo::PendingRemote<CrosapiInterface>(std::move(pipe.handle0), version),
+        /*task_runner=*/nullptr);
+
+    BindPendingReceiverOrRemote<mojo::PendingReceiver<CrosapiInterface>,
+                                bind_func>(
+        mojo::PendingReceiver<CrosapiInterface>(std::move(pipe.handle1)));
+    return true;
+  }
 
   // This function constructs a new remote for a crosapi interface and stashes
   // it in |interfaces_|. This remote will later be bound during BindReceiver().
@@ -383,11 +414,6 @@ class COMPONENT_EXPORT(CHROMEOS_LACROS) LacrosService {
             void (Crosapi::*bind_func)(mojo::PendingReceiver<CrosapiInterface>),
             uint32_t MethodMinVersion>
   void ConstructRemote();
-
-  // BrowserService implementation injected by chrome/. Must only be used on the
-  // affine sequence.
-  // TODO(hidehiko): Remove this.
-  std::unique_ptr<crosapi::mojom::BrowserService> browser_service_;
 
   // Receiver and cache of system idle info updates.
   std::unique_ptr<SystemIdleCache> system_idle_cache_;

@@ -11,10 +11,6 @@
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/platform_test.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using MainContentUIBroadcastingUtilTest = PlatformTest;
 
 // Test implementation of MainContentUI.
@@ -26,7 +22,7 @@ using MainContentUIBroadcastingUtilTest = PlatformTest;
 @synthesize mainContentUIState = _mainContentUIState;
 
 - (instancetype)init {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _mainContentUIState = [[TestMainContentUIState alloc] init];
   }
   return self;

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/functional/bind.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/sequence_checker.h"
 #include "base/task/sequenced_task_runner.h"
@@ -58,7 +59,7 @@ class StreamTimestampOffsetTracker
 
   base::TimeDelta audio_position_ = {};
   base::TimeDelta offset_ = {};
-  media::DemuxerHost* demuxer_host_ = nullptr;
+  raw_ptr<media::DemuxerHost> demuxer_host_ = nullptr;
 };
 
 namespace {
@@ -197,14 +198,13 @@ class FrameInjectingDemuxerStream
     }
   }
 
-  // DemuxerStream partial implementation.
-  void Read(uint32_t count, ReadCB read_cb) final {
+  // DemuxerStream partial implementation. Method returns only a single buffer
+  // at a time, hence |count| is not taken into account.
+  void Read(uint32_t /*count*/, ReadCB read_cb) final {
     DVLOG(3) << __func__;
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     DCHECK(!pending_read_cb_);
     DCHECK(!buffer_requester_ || current_buffer_provider_);
-    DCHECK_EQ(count, 1u)
-        << "FrameInjectingDemuxerStream only reads a single buffer.";
 
     pending_read_cb_ = std::move(read_cb);
 
@@ -293,7 +293,7 @@ class FrameInjectingAudioDemuxerStream final
   // DemuxerStream remainder of implementation.
   media::AudioDecoderConfig audio_decoder_config() final { return config(); }
   media::VideoDecoderConfig video_decoder_config() final {
-    NOTREACHED();
+    NOTREACHED_IN_MIGRATION();
     return media::VideoDecoderConfig();
   }
   Type type() const final { return Type::AUDIO; }
@@ -310,7 +310,7 @@ class FrameInjectingVideoDemuxerStream final
  private:
   // DemuxerStream remainder of implementation.
   media::AudioDecoderConfig audio_decoder_config() final {
-    NOTREACHED();
+    NOTREACHED_IN_MIGRATION();
     return media::AudioDecoderConfig();
   }
   media::VideoDecoderConfig video_decoder_config() final { return config(); }
@@ -495,10 +495,10 @@ int64_t FrameInjectingDemuxer::GetMemoryUsage() const {
   return 0;
 }
 
-absl::optional<media::container_names::MediaContainerName>
+std::optional<media::container_names::MediaContainerName>
 FrameInjectingDemuxer::GetContainerForMetrics() const {
   // Cast Streaming frames have no container.
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 // Not supported.
@@ -508,7 +508,7 @@ void FrameInjectingDemuxer::OnEnabledAudioTracksChanged(
     TrackChangeCB change_completed_cb) {
   DLOG(WARNING) << "Track changes are not supported.";
   std::vector<media::DemuxerStream*> streams;
-  std::move(change_completed_cb).Run(media::DemuxerStream::AUDIO, streams);
+  std::move(change_completed_cb).Run(streams);
 }
 
 // Not supported.
@@ -518,7 +518,7 @@ void FrameInjectingDemuxer::OnSelectedVideoTrackChanged(
     TrackChangeCB change_completed_cb) {
   DLOG(WARNING) << "Track changes are not supported.";
   std::vector<media::DemuxerStream*> streams;
-  std::move(change_completed_cb).Run(media::DemuxerStream::VIDEO, streams);
+  std::move(change_completed_cb).Run(streams);
 }
 
 }  // namespace cast_streaming

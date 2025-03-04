@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <set>
 #include <tuple>
 
@@ -16,10 +21,10 @@ namespace ash {
 namespace {
 
 // The number of non-Search-based accelerators.
-constexpr int kNonSearchAcceleratorsNum = 109;
+constexpr int kNonSearchAcceleratorsNum = 113;
 // The hash of non-Search-based accelerators. See HashAcceleratorData().
 constexpr char kNonSearchAcceleratorsHash[] =
-    "2cada710fecfc1ae0fa22ecad7900f16";
+    "d8d437fd800f34f648c5bc4bb47926b0";
 
 struct Cmp {
   bool operator()(const AcceleratorData& lhs,
@@ -41,12 +46,12 @@ std::string AcceleratorDataToString(const AcceleratorData& accelerator) {
 }
 
 std::string HashAcceleratorData(
-    const std::vector<AcceleratorData> accelerators) {
+    const std::vector<AcceleratorData>& accelerators) {
   base::MD5Context context;
   base::MD5Init(&context);
-  for (const AcceleratorData& accelerator : accelerators)
+  for (const AcceleratorData& accelerator : accelerators) {
     base::MD5Update(&context, AcceleratorDataToString(accelerator));
-
+  }
   base::MD5Digest digest;
   base::MD5Final(&digest, &context);
   return MD5DigestToBase16(digest);

@@ -7,6 +7,8 @@
 
 #import <UIKit/UIKit.h>
 
+enum class ToolbarTabGroupState;
+
 // ToolbarConsumer sets the current appearance of the Toolbar.
 @protocol ToolbarConsumer
 // Updates the toolbar with the current forward navigation state.
@@ -27,6 +29,12 @@
 - (void)setShareMenuEnabled:(BOOL)enabled;
 // Sets whether the toolbar is displaying for an NTP.
 - (void)setIsNTP:(BOOL)isNTP;
+// Sets the page theme color.
+- (void)setPageThemeColor:(UIColor*)themeColor;
+// Sets the under page background color.
+- (void)setUnderPageBackgroundColor:(UIColor*)underPageBackgroundColor;
+// Updates the toolbar for the given TabGroup state.
+- (void)updateTabGroupState:(ToolbarTabGroupState)tabGroupState;
 @end
 
 #endif  // IOS_CHROME_BROWSER_UI_TOOLBAR_TOOLBAR_CONSUMER_H_

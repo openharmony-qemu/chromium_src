@@ -7,6 +7,7 @@ import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/devtools.gni")
 import("//build/config/locales.gni")
 import("//build/config/ui.gni")
+import("//cef/libcef/features/features.gni")
 
 shared_intermediate_dir = rebase_path(root_gen_dir, root_build_dir)
 devtools_grd_path = "$shared_intermediate_dir/$devtools_grd_location"
@@ -15,10 +16,8 @@ devtools_grd_path_no_ext = get_path_info(devtools_grd_path, "dir") + "/" +
 
 # Prefer using this (and excluding specific platforms) when a resource applies
 # to (most) desktop platforms.
-if (is_ohos) {
-  assert(toolkit_views ==
-         (is_chromeos || is_fuchsia || is_linux || is_mac || is_win))
-}
+assert(toolkit_views ==
+       (is_chromeos || is_fuchsia || is_linux || is_mac || is_win || is_ohos))
 
 # Variables that are passed to grit with the -D flag.
 
@@ -40,10 +39,8 @@ _grit_defines = [
   # Mac and iOS want Title Case strings.
   "use_titlecase=${is_apple}",
 
+  "enable_cef=${enable_cef}",
   "enable_pseudolocales=${enable_pseudolocales}",
-
-  # IS_OHOS
-  "is_ohos=${is_ohos}",
 ]
 
 # Must match `enable_hidpi` in ui/base/ui_features.gni.
@@ -54,6 +51,7 @@ if (!is_android) {
 # Environment variables to be used by grit and its subproceses.
 
 _grit_environment_vars = [
+  "branding_path_component=$branding_path_component",
   "root_gen_dir=" + rebase_path(root_gen_dir, root_build_dir),
   "root_src_dir=" + rebase_path("//", root_build_dir),
 ]
@@ -101,9 +99,6 @@ if (current_toolchain != host_toolchain || is_chromeos) {
   if (is_linux) {
     _target_platform = "linux"
   }
-  if (is_ohos) {
-    _target_platform = "ohos"
-  }
   if (is_chromeos) {
     _target_platform = "chromeos"
   }
@@ -112,6 +107,9 @@ if (current_toolchain != host_toolchain || is_chromeos) {
   }
   if (is_win) {
     _target_platform = "win32"
+  }
+  if (is_ohos) {
+    _target_platform = "ohos"
   }
 
   if (_target_platform != "") {

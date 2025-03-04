@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/notreached.h"
@@ -17,18 +18,9 @@ namespace base {
 
 const MemoryMappedFile::Region MemoryMappedFile::Region::kWholeFile = {0, 0};
 
-bool MemoryMappedFile::Region::operator==(
-    const MemoryMappedFile::Region& other) const {
-  return other.offset == offset && other.size == size;
-}
-
-bool MemoryMappedFile::Region::operator!=(
-    const MemoryMappedFile::Region& other) const {
-  return other.offset != offset || other.size != size;
-}
-
 MemoryMappedFile::~MemoryMappedFile() {
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
   if (!customizeData_) {
     CloseHandles();
     return;
@@ -45,7 +37,8 @@ MemoryMappedFile::~MemoryMappedFile() {
 #endif
 }
 
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) ||defined(OHOS_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
 void MemoryMappedFile::SetOhosFileMapper(
     std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
   if (IsValid()) {
@@ -65,12 +58,18 @@ void MemoryMappedFile::SetOhosFileMapper(
 
   if (!mapper->IsCompressed()) {
     mapper_ = std::move(mapper);
-    data_ = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
-    length_ = mapper_->GetDataLen();
+    // data_ = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
+    // length_ = mapper_->GetDataLen();
+    uint8_t* tempData = reinterpret_cast<uint8_t*>(mapper_->GetDataPtr());
+    size_t tempLength = mapper_->GetDataLen();
+    bytes_ = span<uint8_t>(tempData, tempLength);
   } else {
     uint8_t* tmp;
-    mapper->UnzipData(&tmp, length_);
-    data_ = tmp;
+    // mapper->UnzipData(&tmp, length_);
+    // data_ = tmp;
+    size_t tmpLength = bytes_.size();
+    mapper->UnzipData(&tmp, tmpLength);
+    bytes_ = span<uint8_t>(tmp, tmpLength);
   }
 }
 #endif
@@ -85,13 +84,20 @@ bool MemoryMappedFile::Initialize(const FilePath& file_name, Access access) {
     case READ_ONLY:
       flags = File::FLAG_OPEN | File::FLAG_READ;
       break;
+    case READ_WRITE_COPY:
+      flags = File::FLAG_OPEN | File::FLAG_READ;
+#if BUILDFLAG(IS_FUCHSIA)
+      // Fuchsia's mmap() implementation does not allow us to create a
+      // copy-on-write mapping of a file opened as read-only.
+      flags |= File::FLAG_WRITE;
+#endif
+      break;
     case READ_WRITE:
       flags = File::FLAG_OPEN | File::FLAG_READ | File::FLAG_WRITE;
       break;
     case READ_WRITE_EXTEND:
       // Can't open with "extend" because no maximum size is known.
       NOTREACHED();
-      break;
 #if BUILDFLAG(IS_WIN)
     case READ_CODE_IMAGE:
       flags |= File::FLAG_OPEN | File::FLAG_READ |
@@ -136,6 +142,7 @@ bool MemoryMappedFile::Initialize(File file,
       [[fallthrough]];
     case READ_ONLY:
     case READ_WRITE:
+    case READ_WRITE_COPY:
       // Ensure that the region values are valid.
       if (region.offset < 0) {
         DLOG(ERROR) << "Region bounds are not valid.";
@@ -144,9 +151,7 @@ bool MemoryMappedFile::Initialize(File file,
       break;
 #if BUILDFLAG(IS_WIN)
     case READ_CODE_IMAGE:
-      // Can't open with "READ_CODE_IMAGE", not supported outside Windows
-      // or with a |region|.
-      NOTREACHED();
+      DCHECK(Region::kWholeFile == region);
       break;
 #endif
   }
@@ -168,7 +173,7 @@ bool MemoryMappedFile::Initialize(File file,
 }
 
 bool MemoryMappedFile::IsValid() const {
-  return data_ != nullptr;
+  return !bytes_.empty();
 }
 
 // static
@@ -182,7 +187,7 @@ void MemoryMappedFile::CalculateVMAlignedBoundaries(int64_t start,
   CHECK(IsValueInRangeForNumericType<int32_t>(mask));
   *offset = static_cast<int32_t>(static_cast<uint64_t>(start) & mask);
   *aligned_start = static_cast<int64_t>(static_cast<uint64_t>(start) & ~mask);
-  // The DCHECK above means bit 31 is not set in `mask`, which in turn means
+  // The CHECK above means bit 31 is not set in `mask`, which in turn means
   // *offset is positive.  Therefore casting it to a size_t is safe.
   *aligned_size =
       (size + static_cast<size_t>(*offset) + static_cast<size_t>(mask)) & ~mask;

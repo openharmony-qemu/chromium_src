@@ -1,0 +1,17 @@
+import("//build/config/ohos/config.gni")
+arkweb_ui_gl_ext_sources = [
+  "//arkweb/chromium_ext/ui/gl/gl_surface_egl_ohos.cc",
+  "//arkweb/chromium_ext/ui/gl/ohos/ohos_native_image.cc",
+  "//arkweb/chromium_ext/ui/gl/ohos/native_buffer_utils.cc",
+  "//arkweb/chromium_ext/ui/gl/ohos/frame_available_listener_impl.cc",
+]
+
+include_dirs = [ "//third_party/mesa_headers" ]
+
+#all_dependent_configs = [ ":gl_config" ]
+
+public_configs = [ "//third_party/khronos:khronos_headers" ]
+
+deps = [
+  "//ohos_glue:ohos_adapter_glue_source",
+]

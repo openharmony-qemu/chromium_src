@@ -2,27 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "ios/chrome/browser/ui/settings/content_settings/block_popups_table_view_controller.h"
+
 #import <Foundation/Foundation.h>
 
 #import <memory>
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
+#import "base/containers/contains.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "components/content_settings/core/browser/host_content_settings_map.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/content_settings/host_content_settings_map_factory.h"
+#import "ios/chrome/browser/content_settings/model/host_content_settings_map_factory.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_text_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
-#import "ios/chrome/browser/ui/settings/content_settings/block_popups_table_view_controller.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -34,29 +32,27 @@ const char* kAllowedPattern3 = "[*.]example.org";
 const char* kAllowedURL3 = "http://example.org";
 
 class BlockPopupsTableViewControllerTest
-    : public ChromeTableViewControllerTest {
+    : public LegacyChromeTableViewControllerTest {
  protected:
   void SetUp() override {
-    ChromeTableViewControllerTest::SetUp();
-    TestChromeBrowserState::Builder test_cbs_builder;
-    chrome_browser_state_ = test_cbs_builder.Build();
+    LegacyChromeTableViewControllerTest::SetUp();
+    TestProfileIOS::Builder builder;
+    profile_ = std::move(builder).Build();
   }
 
-  ChromeTableViewController* InstantiateController() override {
-    return [[BlockPopupsTableViewController alloc]
-        initWithBrowserState:chrome_browser_state_.get()];
+  LegacyChromeTableViewController* InstantiateController() override {
+    return
+        [[BlockPopupsTableViewController alloc] initWithProfile:profile_.get()];
   }
 
   void SetDisallowPopups() {
-    ios::HostContentSettingsMapFactory::GetForBrowserState(
-        chrome_browser_state_.get())
+    ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
         ->SetDefaultContentSetting(ContentSettingsType::POPUPS,
                                    CONTENT_SETTING_BLOCK);
   }
 
   void SetAllowPopups() {
-    ios::HostContentSettingsMapFactory::GetForBrowserState(
-        chrome_browser_state_.get())
+    ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
         ->SetDefaultContentSetting(ContentSettingsType::POPUPS,
                                    CONTENT_SETTING_ALLOW);
   }
@@ -65,19 +61,17 @@ class BlockPopupsTableViewControllerTest
     ContentSettingsPattern allowed_pattern =
         ContentSettingsPattern::FromString(pattern);
 
-    ios::HostContentSettingsMapFactory::GetForBrowserState(
-        chrome_browser_state_.get())
+    ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
         ->SetContentSettingCustomScope(
             allowed_pattern, ContentSettingsPattern::Wildcard(),
             ContentSettingsType::POPUPS, CONTENT_SETTING_ALLOW);
     EXPECT_EQ(CONTENT_SETTING_ALLOW,
-              ios::HostContentSettingsMapFactory::GetForBrowserState(
-                  chrome_browser_state_.get())
+              ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                   ->GetContentSetting(url, url, ContentSettingsType::POPUPS));
   }
 
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> chrome_browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   UINavigationController* navigation_controller_;
 };
 
@@ -125,19 +119,17 @@ TEST_F(BlockPopupsTableViewControllerTest, TestOneAllowedItem) {
 TEST_F(BlockPopupsTableViewControllerTest, TestOneAllowedItemDeleted) {
   // Get the number of entries before testing, to ensure after adding and
   // deleting, the entries are the same.
-  ContentSettingsForOneType initial_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &initial_entries);
+  ContentSettingsForOneType initial_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
 
   // Add the pattern to be deleted.
   AddAllowedPattern(kAllowedPattern, GURL(kAllowedURL));
 
   // Make sure adding the pattern changed the settings size.
-  ContentSettingsForOneType added_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &added_entries);
+  ContentSettingsForOneType added_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
   EXPECT_NE(initial_entries.size(), added_entries.size());
 
   CreateController();
@@ -154,10 +146,9 @@ TEST_F(BlockPopupsTableViewControllerTest, TestOneAllowedItemDeleted) {
       }));
 
   // Verify that there are no longer any allowed patterns in `profile_`.
-  ContentSettingsForOneType final_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &final_entries);
+  ContentSettingsForOneType final_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
   EXPECT_EQ(initial_entries.size(), final_entries.size());
 }
 
@@ -165,10 +156,9 @@ TEST_F(BlockPopupsTableViewControllerTest, TestOneAllowedItemDeleted) {
 TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
   // Get the number of entries before testing, to ensure after adding and
   // deleting, the entries are the same.
-  ContentSettingsForOneType initial_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &initial_entries);
+  ContentSettingsForOneType initial_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
 
   // Add 3 patterns.
   AddAllowedPattern(kAllowedPattern, GURL(kAllowedURL));
@@ -184,10 +174,9 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
       std::pair<std::string, std::string>(kAllowedPattern3, kAllowedURL3));
 
   // Make sure adding the pattern changed the settings size.
-  ContentSettingsForOneType added_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &added_entries);
+  ContentSettingsForOneType added_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
   EXPECT_NE(initial_entries.size(), added_entries.size());
 
   CreateController();
@@ -201,10 +190,10 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
   NSIndexPath* first_index = [NSIndexPath indexPathForRow:0 inSection:1];
   NSIndexPath* second_index = [NSIndexPath indexPathForRow:1 inSection:1];
   TableViewDetailTextItem* first_item =
-      base::mac::ObjCCastStrict<TableViewDetailTextItem>(
+      base::apple::ObjCCastStrict<TableViewDetailTextItem>(
           [popups_controller.tableViewModel itemAtIndexPath:first_index]);
   TableViewDetailTextItem* second_item =
-      base::mac::ObjCCastStrict<TableViewDetailTextItem>(
+      base::apple::ObjCCastStrict<TableViewDetailTextItem>(
           [popups_controller.tableViewModel itemAtIndexPath:second_index]);
 
   std::set<std::string> deleted_patterns{
@@ -222,11 +211,11 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
 
   std::vector<std::string> blocked_urls;
   std::vector<std::string> allowed_urls;
-  for (std::pair<std::string, std::string> element : patterns_to_url) {
-    if (deleted_patterns.find(element.first) != deleted_patterns.end()) {
-      blocked_urls.push_back(element.second);
+  for (const auto& [pattern, url] : patterns_to_url) {
+    if (base::Contains(deleted_patterns, pattern)) {
+      blocked_urls.push_back(url);
     } else {
-      allowed_urls.push_back(element.second);
+      allowed_urls.push_back(url);
     }
   }
 
@@ -236,15 +225,13 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
 
   for (std::string url : blocked_urls) {
     EXPECT_EQ(CONTENT_SETTING_BLOCK,
-              ios::HostContentSettingsMapFactory::GetForBrowserState(
-                  chrome_browser_state_.get())
+              ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                   ->GetContentSetting(GURL(url), GURL(url),
                                       ContentSettingsType::POPUPS));
   }
   for (std::string url : allowed_urls) {
     EXPECT_EQ(CONTENT_SETTING_ALLOW,
-              ios::HostContentSettingsMapFactory::GetForBrowserState(
-                  chrome_browser_state_.get())
+              ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                   ->GetContentSetting(GURL(url), GURL(url),
                                       ContentSettingsType::POPUPS));
   }
@@ -254,10 +241,9 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted) {
 TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted2) {
   // Get the number of entries before testing, to ensure after adding and
   // deleting, the entries are the same.
-  ContentSettingsForOneType initial_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &initial_entries);
+  ContentSettingsForOneType initial_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
 
   // Add 3 patterns.
   AddAllowedPattern(kAllowedPattern, GURL(kAllowedURL));
@@ -265,10 +251,9 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted2) {
   AddAllowedPattern(kAllowedPattern3, GURL(kAllowedURL3));
 
   // Make sure adding the pattern changed the settings size.
-  ContentSettingsForOneType added_entries;
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_browser_state_.get())
-      ->GetSettingsForOneType(ContentSettingsType::POPUPS, &added_entries);
+  ContentSettingsForOneType added_entries =
+      ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
+          ->GetSettingsForOneType(ContentSettingsType::POPUPS);
   EXPECT_NE(initial_entries.size(), added_entries.size());
 
   CreateController();
@@ -283,18 +268,15 @@ TEST_F(BlockPopupsTableViewControllerTest, TestMultipleAllowedItemsDeleted2) {
 
   // No URL should be allowed.
   EXPECT_EQ(CONTENT_SETTING_BLOCK,
-            ios::HostContentSettingsMapFactory::GetForBrowserState(
-                chrome_browser_state_.get())
+            ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                 ->GetContentSetting(GURL(kAllowedURL), GURL(kAllowedURL),
                                     ContentSettingsType::POPUPS));
   EXPECT_EQ(CONTENT_SETTING_BLOCK,
-            ios::HostContentSettingsMapFactory::GetForBrowserState(
-                chrome_browser_state_.get())
+            ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                 ->GetContentSetting(GURL(kAllowedURL2), GURL(kAllowedURL2),
                                     ContentSettingsType::POPUPS));
   EXPECT_EQ(CONTENT_SETTING_BLOCK,
-            ios::HostContentSettingsMapFactory::GetForBrowserState(
-                chrome_browser_state_.get())
+            ios::HostContentSettingsMapFactory::GetForProfile(profile_.get())
                 ->GetContentSetting(GURL(kAllowedURL3), GURL(kAllowedURL3),
                                     ContentSettingsType::POPUPS));
 }

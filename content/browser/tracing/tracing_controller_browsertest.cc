@@ -5,6 +5,8 @@
 #include "content/public/browser/tracing_controller.h"
 
 #include <stdint.h>
+
+#include <optional>
 #include <utility>
 
 #include "base/files/file_util.h"
@@ -32,7 +34,6 @@
 #include "services/tracing/public/cpp/perfetto/trace_event_data_source.h"
 #include "services/tracing/public/cpp/trace_event_agent.h"
 #include "services/tracing/public/cpp/tracing_features.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "chromeos/ash/components/dbus/debug_daemon/debug_daemon_client.h"
@@ -125,7 +126,7 @@ class TracingControllerTest : public ContentBrowserTest {
     EXPECT_TRUE(NavigateToURL(shell, GetTestUrl("", "title1.html")));
   }
 
-  absl::optional<base::Value::Dict> GenerateMetadataDict() {
+  std::optional<base::Value::Dict> GenerateMetadataDict() {
     return std::move(metadata_);
   }
 
@@ -155,9 +156,9 @@ class TracingControllerTest : public ContentBrowserTest {
     {
       base::ScopedAllowBlockingForTesting allow_blocking;
       EXPECT_TRUE(PathExists(file_path));
-      int64_t file_size;
-      base::GetFileSize(file_path, &file_size);
-      EXPECT_GT(file_size, 0);
+      std::optional<int64_t> file_size = base::GetFileSize(file_path);
+      ASSERT_TRUE(file_size.has_value());
+      EXPECT_GT(file_size.value(), 0);
     }
     std::move(quit_callback).Run();
     last_actual_recording_file_path_ = file_path;
@@ -214,8 +215,6 @@ class TracingControllerTest : public ContentBrowserTest {
   }
 
   void TestStartAndStopTracingStringWithFilter() {
-    TracingControllerImpl::GetInstance()->SetTracingDelegateForTesting(
-        std::make_unique<TracingDelegate>());
 
     Navigate(shell());
 
@@ -243,9 +242,7 @@ class TracingControllerTest : public ContentBrowserTest {
       scoped_refptr<TracingController::TraceDataEndpoint> trace_data_endpoint =
           TracingController::CreateStringEndpoint(std::move(callback));
 
-      base::Value::Dict metadata;
-      metadata.Set("not-whitelisted", "this_not_found");
-      metadata_ = std::move(metadata);
+      metadata_ = base::Value::Dict().Set("not-whitelisted", "this_not_found");
       tracing::TraceEventMetadataSource::GetInstance()->AddGeneratorFunction(
           base::BindRepeating(&TracingControllerTest::GenerateMetadataDict,
                               base::Unretained(this)));
@@ -257,8 +254,6 @@ class TracingControllerTest : public ContentBrowserTest {
       run_loop.Run();
       EXPECT_EQ(disable_recording_done_callback_count(), 1);
     }
-
-    TracingControllerImpl::GetInstance()->SetTracingDelegateForTesting(nullptr);
   }
 
   void TestStartAndStopTracingCompressed() {
@@ -336,7 +331,7 @@ class TracingControllerTest : public ContentBrowserTest {
   int enable_recording_done_callback_count_;
   int disable_recording_done_callback_count_;
   base::FilePath last_actual_recording_file_path_;
-  absl::optional<base::Value::Dict> metadata_;
+  std::optional<base::Value::Dict> metadata_;
   std::unique_ptr<std::string> last_data_;
 };
 
@@ -391,7 +386,7 @@ IN_PROC_BROWSER_TEST_F(TracingControllerTest,
   TestStartAndStopTracingString();
   // Check that a number of important keys exist in the metadata dictionary. The
   // values are not checked to ensure the test is robust.
-  absl::optional<base::Value> trace_json = base::JSONReader::Read(last_data());
+  std::optional<base::Value> trace_json = base::JSONReader::Read(last_data());
   ASSERT_TRUE(trace_json);
   ASSERT_TRUE(trace_json->is_dict());
   auto* metadata_json = trace_json->GetDict().FindDict("metadata");
@@ -428,7 +423,7 @@ IN_PROC_BROWSER_TEST_F(TracingControllerTest,
                        MAYBE_NotWhitelistedMetadataStripped) {
   TestStartAndStopTracingStringWithFilter();
   // Check that a number of important keys exist in the metadata dictionary.
-  absl::optional<base::Value> trace_json = base::JSONReader::Read(last_data());
+  std::optional<base::Value> trace_json = base::JSONReader::Read(last_data());
   ASSERT_TRUE(trace_json);
   const base::Value::Dict* metadata_json =
       trace_json->GetDict().FindDict("metadata");

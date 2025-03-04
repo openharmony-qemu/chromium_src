@@ -73,13 +73,12 @@ void NavigationHandleObserver::DidFinishNavigation(
   navigation_handle_timing_ = navigation_handle->GetNavigationHandleTiming();
 
   handle_ = nullptr;
+  content_settings_ = navigation_handle->GetContentSettingsForTesting();
 }
 
 std::string NavigationHandleObserver::GetNormalizedResponseHeader(
     const std::string& key) const {
-  std::string value;
-  response_headers_->GetNormalizedHeader(key, &value);
-  return value;
+  return response_headers_->GetNormalizedHeader(key).value_or(std::string());
 }
 
 }  // namespace content

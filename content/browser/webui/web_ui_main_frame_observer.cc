@@ -10,6 +10,7 @@
 #include "build/build_config.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/webui/web_ui_impl.h"
+#include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/web_ui_controller.h"
 
@@ -62,7 +63,7 @@ void WebUIMainFrameObserver::OnDidAddMessageToConsole(
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id,
-    const absl::optional<std::u16string>& untrusted_stack_trace) {
+    const std::optional<std::u16string>& untrusted_stack_trace) {
   DVLOG(3) << "OnDidAddMessageToConsole called for " << message;
   if (untrusted_stack_trace) {
     DVLOG(3) << "stack is " << *untrusted_stack_trace;
@@ -97,7 +98,7 @@ void WebUIMainFrameObserver::OnDidAddMessageToConsole(
   }
 
   // Redact query parameters & fragment. Also the username and password.
-  // TODO(https://crbug.com/1121816) Improve redaction.
+  // TODO(crbug.com/40146362) Improve redaction.
   GURL url(source_id);
   if (!url.is_valid()) {
     DVLOG(3) << "Message not reported, invalid URL";
@@ -165,7 +166,10 @@ void WebUIMainFrameObserver::ReadyToCommitNavigation(
   web_ui_->GetController()->WebUIReadyToCommitNavigation(
       web_ui_->GetRenderFrameHost());
 
-// TODO(crbug.com/1129544) This is currently disabled due to Windows DLL
+  GetContentClient()->browser()->LogWebUICreated(GetUrlForLogging());
+  pending_non_empty_paint_ = true;
+
+// TODO(crbug.com/40149439) This is currently disabled due to Windows DLL
 // thunking issues. Fix & re-enable.
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   MaybeEnableWebUIJavaScriptErrorReporting(navigation_handle);
@@ -175,6 +179,24 @@ void WebUIMainFrameObserver::ReadyToCommitNavigation(
 void WebUIMainFrameObserver::PrimaryPageChanged(Page& page) {
   web_ui_->DisallowJavascriptOnAllHandlers();
   web_ui_->GetController()->WebUIPrimaryPageChanged(page);
+}
+
+void WebUIMainFrameObserver::DidFirstVisuallyNonEmptyPaint() {
+  // Ignore paint events if we are not expecting one. They could come
+  // from frames that are not associated with this WebUI.
+  if (!pending_non_empty_paint_) {
+    return;
+  }
+  pending_non_empty_paint_ = false;
+
+  GetContentClient()->browser()->LogWebUIShown(GetUrlForLogging());
+}
+
+const GURL& WebUIMainFrameObserver::GetUrlForLogging() const {
+  // This returns the actual WebUI url which can differ from the visible
+  // URL (e.g. chrome://newtab can be rewrote to chrome://new-tab-page or
+  // chrome://new-tab-page-third-party)
+  return web_ui_->GetRenderFrameHost()->GetSiteInstance()->GetSiteURL();
 }
 
 }  // namespace content

@@ -20,6 +20,7 @@
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "content/public/common/content_switches.h"
+#include "content/public/common/isolated_world_ids.h"
 #include "content/public/test/browser_test.h"
 #include "content/public/test/content_browser_test.h"
 #include "content/shell/browser/shell.h"
@@ -52,9 +53,9 @@ namespace dom_distiller {
 
 const char* kExternalTestResourcesPath =
     "third_party/dom_distiller_js/dist/test/data";
-// TODO(877461): Remove filter once image construction happens synchronously and
-// asserts do not flake anymore when exposed to different garbage collection
-// heuristics.
+// TODO(crbug.com/40590818): Remove filter once image construction happens
+// synchronously and asserts do not flake anymore when exposed to different
+// garbage collection heuristics.
 const char* kTestFilePath =
     "/war/test.html?console_log=0&filter="
     "-*.testImageExtractorWithAttributesCSSHeightCM"
@@ -66,7 +67,7 @@ const char* kRunJsTestsJs =
 
 class DomDistillerJsTest : public content::ContentBrowserTest {
  public:
-  DomDistillerJsTest() {}
+  DomDistillerJsTest() = default;
 
   // content::ContentBrowserTest:
   void SetUpOnMainThread() override {
@@ -104,7 +105,7 @@ class DomDistillerJsTest : public content::ContentBrowserTest {
 
   void SetUpTestServer() {
     base::FilePath path;
-    base::PathService::Get(base::DIR_SOURCE_ROOT, &path);
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &path);
     path = path.AppendASCII(kExternalTestResourcesPath);
     embedded_test_server()->ServeFilesFromDirectory(path);
     ASSERT_TRUE(embedded_test_server()->Start());
@@ -153,20 +154,21 @@ IN_PROC_BROWSER_TEST_F(DomDistillerJsTest, MAYBE_RunJsTests) {
   web_contents->GetPrimaryMainFrame()->ExecuteJavaScriptForTests(
       base::UTF8ToUTF16(kRunJsTestsJs),
       base::BindOnce(&DomDistillerJsTest::OnJsTestExecutionDone,
-                     base::Unretained(this)));
+                     base::Unretained(this)),
+      content::ISOLATED_WORLD_ID_GLOBAL);
   run_loop.Run();
 
   // Convert to dictionary and parse the results.
   ASSERT_TRUE(result_.is_dict()) << "Result is not a dictionary: " << result_;
 
   const base::Value::Dict& dict = result_.GetDict();
-  absl::optional<bool> success = dict.FindBool("success");
+  std::optional<bool> success = dict.FindBool("success");
   ASSERT_TRUE(success.has_value());
-  absl::optional<int> num_tests = dict.FindInt("numTests");
+  std::optional<int> num_tests = dict.FindInt("numTests");
   ASSERT_TRUE(num_tests.has_value());
-  absl::optional<int> failed = dict.FindInt("failed");
+  std::optional<int> failed = dict.FindInt("failed");
   ASSERT_TRUE(failed.has_value());
-  absl::optional<int> skipped = dict.FindInt("skipped");
+  std::optional<int> skipped = dict.FindInt("skipped");
   ASSERT_TRUE(skipped.has_value());
 
   VLOG(0) << "Ran " << num_tests.value()

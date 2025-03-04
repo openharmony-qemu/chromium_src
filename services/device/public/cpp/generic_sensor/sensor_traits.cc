@@ -12,8 +12,10 @@ double GetSensorMaxAllowedFrequency(SensorType type) {
   switch (type) {
     case SensorType::AMBIENT_LIGHT:
       return SensorTraits<SensorType::AMBIENT_LIGHT>::kMaxAllowedFrequency;
+#if BUILDFLAG(ARKWEB_SENSOR)
     case SensorType::PROXIMITY:
       return SensorTraits<SensorType::PROXIMITY>::kMaxAllowedFrequency;
+#endif
     case SensorType::ACCELEROMETER:
       return SensorTraits<SensorType::ACCELEROMETER>::kMaxAllowedFrequency;
     case SensorType::LINEAR_ACCELERATION:
@@ -25,8 +27,10 @@ double GetSensorMaxAllowedFrequency(SensorType type) {
       return SensorTraits<SensorType::GYROSCOPE>::kMaxAllowedFrequency;
     case SensorType::MAGNETOMETER:
       return SensorTraits<SensorType::MAGNETOMETER>::kMaxAllowedFrequency;
+#if BUILDFLAG(ARKWEB_SENSOR)
     case SensorType::PRESSURE:
       return SensorTraits<SensorType::PRESSURE>::kMaxAllowedFrequency;
+#endif
     case SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
       return SensorTraits<
           SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES>::kMaxAllowedFrequency;
@@ -41,16 +45,20 @@ double GetSensorMaxAllowedFrequency(SensorType type) {
           SensorType::RELATIVE_ORIENTATION_QUATERNION>::kMaxAllowedFrequency;
     // No default so the compiler will warn us if a new type is added.
   }
+#if BUILDFLAG(ARKWEB_SENSOR)
   NOTREACHED() << "Unknown sensor type " << type;
   return SensorTraits<SensorType::kMaxValue>::kMaxAllowedFrequency;
+#endif
 }
 
 double GetSensorDefaultFrequency(mojom::SensorType type) {
   switch (type) {
     case SensorType::AMBIENT_LIGHT:
       return SensorTraits<SensorType::AMBIENT_LIGHT>::kDefaultFrequency;
+#if BUILDFLAG(ARKWEB_SENSOR)
     case SensorType::PROXIMITY:
       return SensorTraits<SensorType::PROXIMITY>::kDefaultFrequency;
+#endif
     case SensorType::ACCELEROMETER:
       return SensorTraits<SensorType::ACCELEROMETER>::kDefaultFrequency;
     case SensorType::LINEAR_ACCELERATION:
@@ -61,8 +69,10 @@ double GetSensorDefaultFrequency(mojom::SensorType type) {
       return SensorTraits<SensorType::GYROSCOPE>::kDefaultFrequency;
     case SensorType::MAGNETOMETER:
       return SensorTraits<SensorType::MAGNETOMETER>::kDefaultFrequency;
+#if BUILDFLAG(ARKWEB_SENSOR)
     case SensorType::PRESSURE:
       return SensorTraits<SensorType::PRESSURE>::kDefaultFrequency;
+#endif
     case SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
       return SensorTraits<
           SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES>::kDefaultFrequency;
@@ -77,8 +87,10 @@ double GetSensorDefaultFrequency(mojom::SensorType type) {
           SensorType::RELATIVE_ORIENTATION_QUATERNION>::kDefaultFrequency;
     // No default so the compiler will warn us if a new type is added.
   }
+#if BUILDFLAG(ARKWEB_SENSOR)
   NOTREACHED() << "Unknown sensor type " << type;
   return SensorTraits<SensorType::kMaxValue>::kDefaultFrequency;
+#endif
 }
 
 }  // namespace device

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "media/cast/encoding/video_encoder_impl.h"
-#include "third_party/libaom/libaom_buildflags.h"
 
 #include <utility>
 
@@ -11,10 +10,13 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
+#include "media/base/video_codecs.h"
 #include "media/base/video_frame.h"
+#include "third_party/libaom/libaom_buildflags.h"
 #if BUILDFLAG(ENABLE_LIBAOM)
 #include "media/cast/encoding/av1_encoder.h"
 #endif
+#include "media/base/video_encoder_metrics_provider.h"
 #include "media/cast/common/sender_encoded_frame.h"
 #include "media/cast/encoding/fake_software_video_encoder.h"
 #include "media/cast/encoding/vpx_encoder.h"
@@ -37,7 +39,7 @@ void EncodeVideoFrameOnEncoderThread(
     scoped_refptr<media::VideoFrame> video_frame,
     base::TimeTicks reference_time,
     const VideoEncoderImpl::CodecDynamicConfig& dynamic_config,
-    VideoEncoderImpl::FrameEncodedCallback frame_encoded_callback) {
+    VideoEncoderImpl::FrameEncodedCallback output_cb) {
   DCHECK(environment->CurrentlyOn(CastEnvironment::VIDEO));
   if (dynamic_config.key_frame_requested) {
     encoder->GenerateKeyFrame();
@@ -45,35 +47,44 @@ void EncodeVideoFrameOnEncoderThread(
   encoder->UpdateRates(dynamic_config.bit_rate);
 
   auto encoded_frame = std::make_unique<SenderEncodedFrame>();
+  encoded_frame->capture_begin_time =
+      video_frame->metadata().capture_begin_time;
+  encoded_frame->capture_end_time = video_frame->metadata().capture_end_time;
   encoder->Encode(std::move(video_frame), reference_time, encoded_frame.get());
   encoded_frame->encode_completion_time = environment->Clock()->NowTicks();
   environment->PostTask(CastEnvironment::MAIN, FROM_HERE,
-                        base::BindOnce(std::move(frame_encoded_callback),
-                                       std::move(encoded_frame)));
+                        base::BindOnce(output_cb, std::move(encoded_frame)));
 }
 }  // namespace
 
 VideoEncoderImpl::VideoEncoderImpl(
     scoped_refptr<CastEnvironment> cast_environment,
     const FrameSenderConfig& video_config,
-    StatusChangeCallback status_change_cb)
+    std::unique_ptr<VideoEncoderMetricsProvider> metrics_provider,
+    StatusChangeCallback status_change_cb,
+    FrameEncodedCallback output_cb)
     : cast_environment_(cast_environment) {
   CHECK(cast_environment_->HasVideoThread());
-  DCHECK(status_change_cb);
+  CHECK(status_change_cb);
+  CHECK(output_cb);
 
-  if (video_config.codec == Codec::kVideoVp8 ||
-      video_config.codec == Codec::kVideoVp9) {
-    encoder_ = std::make_unique<VpxEncoder>(video_config);
+  output_cb_ = std::move(output_cb);
+  VideoCodec codec = video_config.video_codec();
+  if (codec == VideoCodec::kVP8 || codec == VideoCodec::kVP9) {
+    encoder_ =
+        std::make_unique<VpxEncoder>(video_config, std::move(metrics_provider));
     cast_environment_->PostTask(
         CastEnvironment::VIDEO, FROM_HERE,
         base::BindOnce(&InitializeEncoderOnEncoderThread, cast_environment,
                        encoder_.get()));
-  } else if (video_config.enable_fake_codec_for_tests &&
-             video_config.codec == Codec::kVideoFake) {
+  } else if (codec == VideoCodec::kUnknown &&
+             video_config.video_codec_params.value()
+                 .enable_fake_codec_for_tests) {
     encoder_ = std::make_unique<FakeSoftwareVideoEncoder>(video_config);
 #if BUILDFLAG(ENABLE_LIBAOM)
-  } else if (video_config.codec == Codec::kVideoAv1) {
-    encoder_ = std::make_unique<Av1Encoder>(video_config);
+  } else if (codec == VideoCodec::kAV1) {
+    encoder_ =
+        std::make_unique<Av1Encoder>(video_config, std::move(metrics_provider));
     cast_environment_->PostTask(
         CastEnvironment::VIDEO, FROM_HERE,
         base::BindOnce(&InitializeEncoderOnEncoderThread, cast_environment,
@@ -105,17 +116,15 @@ VideoEncoderImpl::~VideoEncoderImpl() {
 
 bool VideoEncoderImpl::EncodeVideoFrame(
     scoped_refptr<media::VideoFrame> video_frame,
-    base::TimeTicks reference_time,
-    FrameEncodedCallback frame_encoded_callback) {
+    base::TimeTicks reference_time) {
   DCHECK(cast_environment_->CurrentlyOn(CastEnvironment::MAIN));
   DCHECK(!video_frame->visible_rect().IsEmpty());
-  DCHECK(!frame_encoded_callback.is_null());
 
   cast_environment_->PostTask(
       CastEnvironment::VIDEO, FROM_HERE,
       base::BindOnce(&EncodeVideoFrameOnEncoderThread, cast_environment_,
                      encoder_.get(), std::move(video_frame), reference_time,
-                     dynamic_config_, std::move(frame_encoded_callback)));
+                     dynamic_config_, output_cb_));
 
   dynamic_config_.key_frame_requested = false;
   return true;

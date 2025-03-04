@@ -35,11 +35,9 @@ device::mojom::BiometricType ToMojom(biod::BiometricType type) {
       return device::mojom::BiometricType::UNKNOWN;
     case biod::BIOMETRIC_TYPE_FINGERPRINT:
       return device::mojom::BiometricType::FINGERPRINT;
-    case biod::BIOMETRIC_TYPE_MAX:
-      return device::mojom::BiometricType::kMaxValue;
+    default:
+      NOTREACHED();
   }
-  NOTREACHED();
-  return device::mojom::BiometricType::UNKNOWN;
 }
 device::mojom::ScanResult ToMojom(biod::ScanResult type) {
   switch (type) {
@@ -59,11 +57,9 @@ device::mojom::ScanResult ToMojom(biod::ScanResult type) {
       return device::mojom::ScanResult::IMMOBILE;
     case biod::SCAN_RESULT_NO_MATCH:
       return device::mojom::ScanResult::NO_MATCH;
-    case biod::SCAN_RESULT_MAX:
-      return device::mojom::ScanResult::kMaxValue;
+    default:
+      NOTREACHED();
   }
-  NOTREACHED();
-  return device::mojom::ScanResult::INSUFFICIENT;
 }
 
 device::mojom::FingerprintError ToMojom(biod::FingerprintError type) {
@@ -84,9 +80,9 @@ device::mojom::FingerprintError ToMojom(biod::FingerprintError type) {
       return device::mojom::FingerprintError::LOCKOUT;
     case biod::ERROR_NO_TEMPLATES:
       return device::mojom::FingerprintError::NO_TEMPLATES;
+    default:
+      NOTREACHED();
   }
-  NOTREACHED();
-  return device::mojom::FingerprintError::UNKNOWN;
 }
 
 device::mojom::BiometricsManagerStatus ToMojom(
@@ -94,9 +90,9 @@ device::mojom::BiometricsManagerStatus ToMojom(
   switch (status) {
     case biod::BiometricsManagerStatus::INITIALIZED:
       return device::mojom::BiometricsManagerStatus::INITIALIZED;
+    default:
+      NOTREACHED();
   }
-  NOTREACHED();
-  return device::mojom::BiometricsManagerStatus::UNKNOWN;
 }
 
 }  // namespace
@@ -301,14 +297,12 @@ void FingerprintChromeOS::BiodAuthScanDoneReceived(
           converted_msg.get_fingerprint_error()));
       break;
     default:
-      LOG(ERROR) << "Unsupported fingerprint message received";
-      NOTREACHED();
-      return;
+      NOTREACHED() << "Unsupported fingerprint message received";
   }
 
   for (auto& observer : observers_) {
     observer->OnAuthScanDone(
-        {absl::in_place, converted_msg},
+        {std::in_place, converted_msg},
         // TODO(patrykd): Construct the map at the beginning of this function.
         base::flat_map<std::string, std::vector<std::string>>(entries));
   }

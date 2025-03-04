@@ -6,14 +6,12 @@
 
 #include "build/build_config.h"
 #include "components/viz/common/gpu/vulkan_context_provider.h"
-#include "gpu/command_buffer/common/gpu_memory_buffer_support.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/buffer_usage_util.h"
 #include "ui/gfx/client_native_pixmap.h"
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/gfx/native_pixmap.h"
 #include "ui/gl/gl_implementation.h"
-#include "ui/ozone/buildflags.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 

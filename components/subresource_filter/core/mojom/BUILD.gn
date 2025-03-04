@@ -2,9 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
 mojom("mojom") {
   sources = [ "subresource_filter.mojom" ]
   deps = [ "//mojo/public/mojom/base" ]
+
+  enabled_features = []
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    enabled_features += [ "arkweb_adblock" ]
+  }
 }

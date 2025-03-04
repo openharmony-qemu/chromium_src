@@ -5,10 +5,13 @@
 #ifndef UI_SHELL_DIALOGS_SELECT_FILE_DIALOG_LINUX_PORTAL_H_
 #define UI_SHELL_DIALOGS_SELECT_FILE_DIALOG_LINUX_PORTAL_H_
 
+#include <optional>
+
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/synchronization/atomic_flag.h"
 #include "base/task/sequenced_task_runner.h"
 #include "dbus/bus.h"
@@ -17,6 +20,7 @@
 #include "ui/shell_dialogs/select_file_dialog_linux.h"
 
 namespace ui {
+
 using OnSelectFileExecutedCallback =
     base::OnceCallback<void(std::vector<base::FilePath> paths,
                             std::string current_filter)>;
@@ -39,8 +43,8 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
   // around program start.
   static void StartAvailabilityTestInBackground();
 
-  // Checks if the file chooser portal is available. Blocks if the availability
-  // test from above has not yet completed (which should generally not happen).
+  // Checks if the file chooser portal is available. Logs a warning if the
+  // availability test has not yet completed.
   static bool IsPortalAvailable();
 
   // Destroys the connection to the bus.
@@ -53,7 +57,6 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
   bool IsRunning(gfx::NativeWindow parent_window) const override;
 
   // SelectFileDialog implementation.
-  // |params| is user data we pass back via the Listener interface.
   void SelectFileImpl(Type type,
                       const std::u16string& title,
                       const base::FilePath& default_path,
@@ -61,7 +64,6 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
                       int file_type_index,
                       const base::FilePath::StringType& default_extension,
                       gfx::NativeWindow owning_window,
-                      void* params,
                       const GURL* caller) override;
 
   bool HasMultipleFileTypeChoicesImpl() override;
@@ -92,7 +94,7 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
     PortalFilterSet& operator=(PortalFilterSet&& other) = default;
 
     std::vector<PortalFilter> filters;
-    absl::optional<PortalFilter> default_filter;
+    std::optional<PortalFilter> default_filter;
   };
 
   // A wrapper over some shared contextual information that needs to be passed
@@ -104,7 +106,8 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
   // DialogInfo notifies the end result via one of the callbacks.
   class DialogInfo : public base::RefCountedThreadSafe<DialogInfo> {
    public:
-    DialogInfo(OnSelectFileExecutedCallback selected_callback,
+    DialogInfo(base::OnceClosure created_callback,
+               OnSelectFileExecutedCallback selected_callback,
                OnSelectFileCanceledCallback canceled_callback);
 
     // Sets up listeners for the response handle's signals.
@@ -140,7 +143,7 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
     void AppendOptions(dbus::MessageWriter* writer,
                        const std::string& response_handle_token,
                        const base::FilePath& default_path,
-                       const bool derfault_path_exists,
+                       const bool default_path_exists,
                        const PortalFilterSet& filter_set);
     void AppendFilterStruct(dbus::MessageWriter* writer,
                             const PortalFilter& filter);
@@ -156,6 +159,8 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
     void CancelOpen();
 
     // These callbacks should run on main thread.
+    // It will point to SelectFileDialogPortal::DialogCreatedOnMainThread.
+    base::OnceClosure created_callback_;
     // It will point to SelectFileDialogPortal::CompleteOpenOnMainThread.
     OnSelectFileExecutedCallback selected_callback_;
     // It will point to SelectFileDialogPortal::CancelOpenOnMainThread.
@@ -164,12 +169,14 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
     // The response object handle that the portal will send a signal to upon the
     // dialog's completion.
     raw_ptr<dbus::ObjectProxy, DanglingUntriaged> response_handle_ = nullptr;
+
+    // `response_handle_` owns callbacks with methods bound to `this`.  To
+    // prevent leaking, the callbacks are bound with weak references to `this`.
+    base::WeakPtrFactory<DialogInfo> weak_factory_{this};
   };
 
   // D-Bus configuration and initialization.
   static void CheckPortalAvailabilityOnBusThread();
-  static bool IsPortalRunningOnBusThread(dbus::ObjectProxy* dbus_proxy);
-  static bool IsPortalActivatableOnBusThread(dbus::ObjectProxy* dbus_proxy);
 
   // Returns a flag, written by the D-Bus thread and read by the UI thread,
   // indicating whether or not the availability test has completed.
@@ -184,6 +191,7 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
       base::FilePath::StringType default_extension,
       std::string parent_handle);
 
+  void DialogCreatedOnMainThread();
   void CompleteOpenOnMainThread(std::vector<base::FilePath> paths,
                                 std::string current_filter);
   void CancelOpenOnMainThread();
@@ -192,11 +200,7 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
   void UnparentOnMainThread();
 
   // This should be used in the main thread.
-  absl::optional<gfx::AcceleratedWidget> parent_;
-
-  // The untyped params to pass to the listener, it should be used in the main
-  // thread.
-  raw_ptr<void> listener_params_ = nullptr;
+  base::WeakPtr<aura::WindowTreeHost> host_;
 
   // Data shared across main thread and D-Bus thread.
   scoped_refptr<DialogInfo> info_;
@@ -208,6 +212,16 @@ class SelectFileDialogLinuxPortal : public SelectFileDialogLinux {
   static int handle_token_counter_;
 
   std::vector<PortalFilter> filters_;
+
+  // Event handling on the parent window is disabled while the dialog is active
+  // to make the dialog modal.  This closure should be run when the dialog is
+  // closed to reenable event handling.
+  base::OnceClosure reenable_window_event_handling_;
+
+  // `DialogInfo` keeps callbacks to methods bound to `this`, and `this` keeps
+  // a strong reference to `DialogInfo`.  To prevent a reference cycle, the
+  // `DialogInfo` is instead passed callbacks that weakly reference `this`.
+  base::WeakPtrFactory<SelectFileDialogLinuxPortal> weak_factory_{this};
 };
 
 }  // namespace ui

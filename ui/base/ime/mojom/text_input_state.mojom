@@ -79,6 +79,7 @@ struct TextInputState {
   array<ImeTextSpanInfo> ime_text_spans_info;
 
   // custom attributes fo input element
+  [EnableIf=arkweb_input_events]
   map<string, string> input_element_attributes;
 };
 

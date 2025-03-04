@@ -5,6 +5,7 @@
 #include "components/signin/public/identity_manager/account_info.h"
 
 #include "build/build_config.h"
+#include "components/signin/public/base/signin_metrics.h"
 #include "components/signin/public/identity_manager/tribool.h"
 #include "google_apis/gaia/gaia_auth_util.h"
 
@@ -35,11 +36,13 @@ bool UpdateField(std::string* field,
   return true;
 }
 
-// Updates |field| with |new_value| if true. Returns whether |field| was
-// changed.
-bool UpdateField(bool* field, bool new_value) {
-  if (*field == new_value || !new_value)
+// Updates |field| with |new_value| if different from the default value.
+// Returns whether |field| was changed.
+template <typename T>
+bool UpdateField(T* field, T new_value, T default_value) {
+  if (*field == new_value || new_value == default_value) {
     return false;
+  }
 
   *field = new_value;
   return true;
@@ -47,12 +50,15 @@ bool UpdateField(bool* field, bool new_value) {
 
 // Updates |field| with |new_value| if true. Returns whether |field| was
 // changed.
-bool UpdateField(signin::Tribool* field, signin::Tribool new_value) {
-  if (*field == new_value || new_value == signin::Tribool::kUnknown)
-    return false;
+bool UpdateField(bool* field, bool new_value) {
+  return UpdateField<bool>(field, new_value, false);
+}
 
-  *field = new_value;
-  return true;
+// Updates |field| with |new_value| if true. Returns whether |field| was
+// changed.
+bool UpdateField(signin::Tribool* field, signin::Tribool new_value) {
+  return UpdateField<signin::Tribool>(field, new_value,
+                                      signin::Tribool::kUnknown);
 }
 
 }  // namespace
@@ -102,7 +108,7 @@ bool AccountInfo::IsEmpty() const {
 bool AccountInfo::IsValid() const {
   return !account_id.empty() && !email.empty() && !gaia.empty() &&
          !hosted_domain.empty() && !full_name.empty() && !given_name.empty() &&
-         !locale.empty() && !picture_url.empty();
+         !picture_url.empty();
 }
 
 bool AccountInfo::UpdateWith(const AccountInfo& other) {
@@ -121,6 +127,8 @@ bool AccountInfo::UpdateWith(const AccountInfo& other) {
   modified |= UpdateField(&locale, other.locale, nullptr);
   modified |= UpdateField(&picture_url, other.picture_url, kNoPictureURLFound);
   modified |= UpdateField(&is_child_account, other.is_child_account);
+  modified |= UpdateField(&access_point, other.access_point,
+                          signin_metrics::AccessPoint::ACCESS_POINT_UNKNOWN);
   modified |= UpdateField(&is_under_advanced_protection,
                           other.is_under_advanced_protection);
   modified |= capabilities.UpdateWith(other.capabilities);
@@ -143,13 +151,22 @@ bool AccountInfo::IsManaged() const {
   return IsManaged(hosted_domain);
 }
 
+bool AccountInfo::IsEduAccount() const {
+  return capabilities.can_use_edu_features() == signin::Tribool::kTrue &&
+         IsManaged();
+}
+
+bool AccountInfo::CanHaveEmailAddressDisplayed() const {
+  return capabilities.can_have_email_address_displayed() ==
+             signin::Tribool::kTrue ||
+         capabilities.can_have_email_address_displayed() ==
+             signin::Tribool::kUnknown;
+}
+
 bool operator==(const CoreAccountInfo& l, const CoreAccountInfo& r) {
   return l.account_id == r.account_id && l.gaia == r.gaia &&
          gaia::AreEmailsSame(l.email, r.email) &&
          l.is_under_advanced_protection == r.is_under_advanced_protection;
-}
-bool operator!=(const CoreAccountInfo& l, const CoreAccountInfo& r) {
-  return !(l == r);
 }
 
 std::ostream& operator<<(std::ostream& os, const CoreAccountInfo& account) {
@@ -163,7 +180,7 @@ std::ostream& operator<<(std::ostream& os, const CoreAccountInfo& account) {
 base::android::ScopedJavaLocalRef<jobject> ConvertToJavaCoreAccountInfo(
     JNIEnv* env,
     const CoreAccountInfo& account_info) {
-  DCHECK(!account_info.IsEmpty());
+  CHECK(!account_info.IsEmpty());
   return signin::Java_CoreAccountInfo_Constructor(
       env, ConvertToJavaCoreAccountId(env, account_info.account_id),
       base::android::ConvertUTF8ToJavaString(env, account_info.email),
@@ -173,7 +190,7 @@ base::android::ScopedJavaLocalRef<jobject> ConvertToJavaCoreAccountInfo(
 base::android::ScopedJavaLocalRef<jobject> ConvertToJavaAccountInfo(
     JNIEnv* env,
     const AccountInfo& account_info) {
-  DCHECK(!account_info.IsEmpty());
+  CHECK(!account_info.IsEmpty());
   gfx::Image avatar_image = account_info.account_image;
   return signin::Java_AccountInfo_Constructor(
       env, ConvertToJavaCoreAccountId(env, account_info.account_id),
@@ -190,7 +207,7 @@ base::android::ScopedJavaLocalRef<jobject> ConvertToJavaAccountInfo(
 base::android::ScopedJavaLocalRef<jobject> ConvertToJavaCoreAccountId(
     JNIEnv* env,
     const CoreAccountId& account_id) {
-  DCHECK(!account_id.empty());
+  CHECK(!account_id.empty());
   return signin::Java_CoreAccountId_Constructor(
       env, base::android::ConvertUTF8ToJavaString(env, account_id.ToString()));
 }
@@ -198,7 +215,7 @@ base::android::ScopedJavaLocalRef<jobject> ConvertToJavaCoreAccountId(
 CoreAccountInfo ConvertFromJavaCoreAccountInfo(
     JNIEnv* env,
     const base::android::JavaRef<jobject>& j_core_account_info) {
-  DCHECK(j_core_account_info);
+  CHECK(j_core_account_info);
   CoreAccountInfo account;
   account.account_id = ConvertFromJavaCoreAccountId(
       env, signin::Java_CoreAccountInfo_getId(env, j_core_account_info));
@@ -212,7 +229,7 @@ CoreAccountInfo ConvertFromJavaCoreAccountInfo(
 CoreAccountId ConvertFromJavaCoreAccountId(
     JNIEnv* env,
     const base::android::JavaRef<jobject>& j_core_account_id) {
-  DCHECK(j_core_account_id);
+  CHECK(j_core_account_id);
   CoreAccountId id =
       CoreAccountId::FromString(base::android::ConvertJavaStringToUTF8(
           signin::Java_CoreAccountId_getId(env, j_core_account_id)));

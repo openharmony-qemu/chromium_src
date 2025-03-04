@@ -5,6 +5,9 @@
 #ifndef SERVICES_NETWORK_PUBLIC_CPP_URL_LOADER_COMPLETION_STATUS_MOJOM_TRAITS_H_
 #define SERVICES_NETWORK_PUBLIC_CPP_URL_LOADER_COMPLETION_STATUS_MOJOM_TRAITS_H_
 
+#include <optional>
+
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"
@@ -15,7 +18,6 @@
 #include "services/network/public/mojom/blocked_by_response_reason.mojom-shared.h"
 #include "services/network/public/mojom/cors.mojom-shared.h"
 #include "services/network/public/mojom/url_loader_completion_status.mojom-shared.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace mojo {
 
@@ -57,12 +59,13 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
       const network::URLLoaderCompletionStatus& status) {
     return status.exists_in_memory_cache;
   }
-  
-#if defined(OHOS_EX_DOWNLOAD)
-  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  static bool abort_due_to_cef_browser_destroyed(
+      const network::URLLoaderCompletionStatus& status) {
     return status.abort_due_to_cef_browser_destroyed;
   }
- #endif  //  OHOS_EX_DOWNLOAD
+#endif  //  ARKWEB_EX_DOWNLOAD
 
   static const base::TimeTicks& completion_time(
       const network::URLLoaderCompletionStatus& status) {
@@ -84,7 +87,7 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return status.decoded_body_length;
   }
 
-  static const absl::optional<network::CorsErrorStatus>& cors_error_status(
+  static const std::optional<network::CorsErrorStatus>& cors_error_status(
       const network::URLLoaderCompletionStatus& status) {
     return status.cors_error_status;
   }
@@ -100,24 +103,19 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return status.trust_token_operation_status;
   }
 
-  static const absl::optional<net::SSLInfo>& ssl_info(
+  static const std::optional<net::SSLInfo>& ssl_info(
       const network::URLLoaderCompletionStatus& status) {
     return status.ssl_info;
   }
 
-  static const absl::optional<network::mojom::BlockedByResponseReason>&
+  static const std::optional<network::mojom::BlockedByResponseReason>&
   blocked_by_response_reason(const network::URLLoaderCompletionStatus& status) {
     return status.blocked_by_response_reason;
   }
 
-  static bool should_report_corb_blocking(
+  static bool should_report_orb_blocking(
       const network::URLLoaderCompletionStatus& status) {
-    return status.should_report_corb_blocking;
-  }
-
-  static const net::ProxyServer& proxy_server(
-      const network::URLLoaderCompletionStatus& status) {
-    return status.proxy_server;
+    return status.should_report_orb_blocking;
   }
 
   static const net::ResolveErrorInfo& resolve_error_info(
@@ -128,11 +126,6 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
   static bool should_collapse_initiator(
       const network::URLLoaderCompletionStatus& status) {
     return status.should_collapse_initiator;
-  }
-
-  static bool pervasive_payload_requested(
-      const network::URLLoaderCompletionStatus& status) {
-    return status.pervasive_payload_requested;
   }
 
   static bool Read(network::mojom::URLLoaderCompletionStatusDataView data,

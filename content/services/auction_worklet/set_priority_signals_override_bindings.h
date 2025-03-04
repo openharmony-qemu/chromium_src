@@ -11,7 +11,6 @@
 #include "content/services/auction_worklet/auction_v8_helper.h"
 #include "content/services/auction_worklet/context_recycler.h"
 #include "content/services/auction_worklet/public/mojom/bidder_worklet.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 #include "v8/include/v8-forward.h"
 

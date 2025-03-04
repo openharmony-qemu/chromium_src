@@ -6,20 +6,25 @@
 
 #include <utility>
 
+#include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
 
 namespace gfx {
 
 NativePixmapDmaBuf::NativePixmapDmaBuf(const gfx::Size& size,
                                        gfx::BufferFormat format,
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                                        gfx::NativePixmapHandle handle,
                                        void* window_buffer)
-
-    : size_(size), format_(format), handle_(std::move(handle)), native_window_buffer_(window_buffer) {}
+    : size_(size),
+      format_(format),
+      handle_(std::move(handle)),
+      native_window_buffer_(window_buffer) {
+}
 #else
                                        gfx::NativePixmapHandle handle)
-    : size_(size), format_(format), handle_(std::move(handle)) {}
+    : size_(size), format_(format), handle_(std::move(handle)) {
+}
 #endif
 
 NativePixmapDmaBuf::~NativePixmapDmaBuf() {}
@@ -68,7 +73,7 @@ size_t NativePixmapDmaBuf::GetNumberOfPlanes() const {
 }
 
 bool NativePixmapDmaBuf::SupportsZeroCopyWebGPUImport() const {
-  // TODO(crbug.com/1258986): Figure out how to import multi-planar pixmap into
+  // TODO(crbug.com/40201271): Figure out how to import multi-planar pixmap into
   // WebGPU without copy.
   return false;
 }
@@ -89,7 +94,7 @@ bool NativePixmapDmaBuf::ScheduleOverlayPlane(
   return false;
 }
 
-gfx::NativePixmapHandle NativePixmapDmaBuf::ExportHandle() {
+gfx::NativePixmapHandle NativePixmapDmaBuf::ExportHandle() const {
   return gfx::CloneHandleForIPC(handle_);
 }
 

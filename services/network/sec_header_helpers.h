@@ -5,12 +5,15 @@
 #ifndef SERVICES_NETWORK_SEC_HEADER_HELPERS_H_
 #define SERVICES_NETWORK_SEC_HEADER_HELPERS_H_
 
-#include <map>
-
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
 #include "url/gurl.h"
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include <map>
+
 #include "url/origin.h"
+#endif
 
 namespace net {
 class URLRequest;
@@ -52,14 +55,14 @@ COMPONENT_EXPORT(NETWORK_SERVICE)
 void MaybeRemoveSecHeaders(net::URLRequest* request,
                            const GURL& pending_redirect_url);
 
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 COMPONENT_EXPORT(NETWORK_SERVICE)
 std::map<std::string, std::string> GetFetchMetadataHeaders(
-     const GURL& target_url,
-     network::mojom::RequestMode mode,
-     bool has_user_activation,
-     network::mojom::RequestDestination dest,
-     const absl::optional<url::Origin>& initiator);
+    const GURL& target_url,
+    network::mojom::RequestMode mode,
+    bool has_user_activation,
+    network::mojom::RequestDestination dest,
+    const std::optional<url::Origin>& initiator);
 #endif
 
 }  // namespace network

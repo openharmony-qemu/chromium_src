@@ -34,18 +34,23 @@ class FakeFastPairDelegate : public FastPairDelegate {
     return forgotten_device_addresses_;
   }
 
-  absl::optional<std::string> GetDeviceNickname(
-      const std::string& mac_address) {
+  std::optional<std::string> GetDeviceNickname(const std::string& mac_address) {
     const auto it = mac_address_to_nickname_.find(mac_address);
     if (it == mac_address_to_nickname_.end()) {
-      return absl::nullopt;
+      return std::nullopt;
     }
     return it->second;
   }
 
+  void SetFastPairableDeviceProperties(
+      std::vector<mojom::PairedBluetoothDevicePropertiesPtr>&
+          fast_pairable_device_properties);
+
   // FastPairDelegate:
-  absl::optional<DeviceImageInfo> GetDeviceImageInfo(
+  std::optional<DeviceImageInfo> GetDeviceImageInfo(
       const std::string& mac_address) override;
+  std::vector<mojom::PairedBluetoothDevicePropertiesPtr>
+  GetFastPairableDeviceProperties() override;
   void ForgetDevice(const std::string& mac_address) override;
   void SetAdapterStateController(
       AdapterStateController* adapter_state_controller) override;
@@ -57,9 +62,10 @@ class FakeFastPairDelegate : public FastPairDelegate {
   base::flat_map<std::string, DeviceImageInfo> mac_address_to_images_;
   base::flat_map<std::string, std::string> mac_address_to_nickname_;
   std::vector<std::string> forgotten_device_addresses_;
-  raw_ptr<AdapterStateController, ExperimentalAsh> adapter_state_controller_ =
-      nullptr;
-  raw_ptr<DeviceNameManager, ExperimentalAsh> device_name_manager_ = nullptr;
+  raw_ptr<AdapterStateController> adapter_state_controller_ = nullptr;
+  raw_ptr<DeviceNameManager> device_name_manager_ = nullptr;
+  std::vector<bluetooth_config::mojom::PairedBluetoothDevicePropertiesPtr>
+      fast_pairable_device_properties_;
 };
 
 }  // namespace ash::bluetooth_config

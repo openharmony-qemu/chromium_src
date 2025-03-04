@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//cc/cc.gni")
+import("//arkweb/build/features/features.gni")
 
 cc_component("mojo_embedder") {
   output_name = "cc_mojo_embedder"
@@ -13,29 +14,30 @@ cc_component("mojo_embedder") {
     "viz_layer_context.h",
   ]
 
-  if (defined(ohos_software_compositor) && ohos_software_compositor) {
-    sources += [
-      "software_compositor_registry_ohos.h",
-      "software_compositor_renderer_ohos.cc",
-      "software_compositor_renderer_ohos.h",
-    ]
-  }
-
   defines = [ "CC_MOJO_EMBEDDER_IMPLEMENTATION" ]
 
   deps = [
     "//base",
     "//cc",
-    "//components/power_scheduler",
+    "//cc/animation",
     "//components/viz/client",
     "//components/viz/common",
+    "//gpu/ipc/client",
     "//mojo/public/cpp/bindings",
     "//services/viz/public/mojom",
+    "//ui/gfx/animation",
+    "//ui/gfx/animation/keyframe",
   ]
 
-  if (defined(ohos_software_compositor) && ohos_software_compositor) {
+  if (arkweb_software_compositor) {
     deps += [
       "//components/viz/service",
+    ]
+
+    sources += [
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_registry_ohos.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.cc",
+      "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.h",
     ]
   }
 

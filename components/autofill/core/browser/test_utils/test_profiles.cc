@@ -46,14 +46,13 @@ void SetProfileObservedTestValues(AutofillProfile* profile,
   SetProfileTestValues(profile, observed_test_data, finalize);
 }
 
-AutofillProfile StandardProfile() {
-  AutofillProfile profile;
+AutofillProfile StandardProfile(AddressCountryCode country_code) {
+  AutofillProfile profile(country_code);
   const std::vector<ProfileTestData> observed_profile_test_data = {
       {NAME_FULL, "Pablo Diego de la Ruiz y Picasso",
        VerificationStatus::kUserVerified},
       {ADDRESS_HOME_STREET_ADDRESS, "123 Mainstreet",
        VerificationStatus::kObserved},
-      {ADDRESS_HOME_COUNTRY, "US", VerificationStatus::kObserved},
       {ADDRESS_HOME_STATE, "CA", VerificationStatus::kObserved},
       {ADDRESS_HOME_ZIP, "98765", VerificationStatus::kObserved},
       {ADDRESS_HOME_CITY, "Mountainview", VerificationStatus::kObserved}};
@@ -62,13 +61,12 @@ AutofillProfile StandardProfile() {
 }
 
 AutofillProfile UpdateableStandardProfile() {
-  AutofillProfile profile;
+  AutofillProfile profile(AddressCountryCode("US"));
   const std::vector<ProfileTestData> observed_profile_test_data = {
       {NAME_FULL, "Pablo Diego de la Ruiz y Picasso",
        VerificationStatus::kObserved},
       {ADDRESS_HOME_STREET_ADDRESS, "123 Mainstreet",
        VerificationStatus::kObserved},
-      {ADDRESS_HOME_COUNTRY, "US", VerificationStatus::kObserved},
       {ADDRESS_HOME_STATE, "CA", VerificationStatus::kObserved},
       {ADDRESS_HOME_ZIP, "98765", VerificationStatus::kObserved},
       {ADDRESS_HOME_CITY, "Mountainview", VerificationStatus::kObserved}};
@@ -77,11 +75,10 @@ AutofillProfile UpdateableStandardProfile() {
 }
 
 AutofillProfile SubsetOfStandardProfile() {
-  AutofillProfile profile;
+  AutofillProfile profile(AddressCountryCode("US"));
   const std::vector<ProfileTestData> observed_profile_test_data = {
       {NAME_FULL, "Pablo Diego de la Ruiz y Picasso"},
       {ADDRESS_HOME_STREET_ADDRESS, "123 Mainstreet"},
-      {ADDRESS_HOME_COUNTRY, "US"},
       {ADDRESS_HOME_STATE, "CA"},
       {ADDRESS_HOME_ZIP, ""},
       {ADDRESS_HOME_CITY, ""}};
@@ -90,11 +87,10 @@ AutofillProfile SubsetOfStandardProfile() {
 }
 
 AutofillProfile DifferentFromStandardProfile() {
-  AutofillProfile profile;
+  AutofillProfile profile(AddressCountryCode("US"));
   const std::vector<ProfileTestData> observed_profile_test_data = {
       {NAME_FULL, "Neo Anderson"},
       {ADDRESS_HOME_STREET_ADDRESS, "119 Some Avenue"},
-      {ADDRESS_HOME_COUNTRY, "US"},
       {ADDRESS_HOME_STATE, "CA"},
       {ADDRESS_HOME_ZIP, "99666"},
       {ADDRESS_HOME_CITY, "Los Angeles"}};

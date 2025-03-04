@@ -5,7 +5,6 @@
 #include "gpu/ipc/service/image_transport_surface.h"
 
 #include "gpu/ipc/service/image_transport_surface_overlay_mac.h"
-#include "gpu/ipc/service/pass_through_image_transport_surface.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/buildflags.h"
 #include "ui/gl/gl_surface_stub.h"
@@ -15,14 +14,15 @@ namespace gpu {
 // static
 scoped_refptr<gl::Presenter> ImageTransportSurface::CreatePresenter(
     gl::GLDisplay* display,
-    base::WeakPtr<ImageTransportSurfaceDelegate> delegate,
+    const GpuDriverBugWorkarounds& workarounds,
+    const GpuFeatureInfo& gpu_feature_info,
     SurfaceHandle surface_handle,
-    gl::GLSurfaceFormat format) {
+    DawnContextProvider* dawn_context_provider) {
   DCHECK_NE(surface_handle, kNullSurfaceHandle);
   if (gl::GetGLImplementation() == gl::kGLImplementationEGLGLES2 ||
       gl::GetGLImplementation() == gl::kGLImplementationEGLANGLE) {
-    return base::WrapRefCounted<gl::Presenter>(
-        new ImageTransportSurfaceOverlayMacEGL(delegate));
+    return base::MakeRefCounted<ImageTransportSurfaceOverlayMacEGL>(
+        dawn_context_provider);
   }
 
   return nullptr;
@@ -31,7 +31,6 @@ scoped_refptr<gl::Presenter> ImageTransportSurface::CreatePresenter(
 // static
 scoped_refptr<gl::GLSurface> ImageTransportSurface::CreateNativeGLSurface(
     gl::GLDisplay* display,
-    base::WeakPtr<ImageTransportSurfaceDelegate> delegate,
     SurfaceHandle surface_handle,
     gl::GLSurfaceFormat format) {
   DCHECK_NE(surface_handle, kNullSurfaceHandle);

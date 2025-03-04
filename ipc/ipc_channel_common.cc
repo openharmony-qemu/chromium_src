@@ -10,7 +10,7 @@
 
 namespace IPC {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 namespace {
 int g_global_pid = 0;
@@ -26,7 +26,7 @@ int Channel::GetGlobalPid() {
   return g_global_pid;
 }
 
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 // static
 std::unique_ptr<Channel> Channel::CreateClient(
@@ -66,11 +66,21 @@ Channel::AssociatedInterfaceSupport* Channel::GetAssociatedInterfaceSupport() {
   return nullptr;
 }
 
-void Channel::Pause() { NOTREACHED(); }
+void Channel::Pause() {
+  NOTREACHED();
+}
 
-void Channel::Unpause(bool flush) { NOTREACHED(); }
+void Channel::Unpause(bool flush) {
+  NOTREACHED();
+}
 
-void Channel::Flush() { NOTREACHED(); }
+void Channel::Flush() {
+  NOTREACHED();
+}
+
+void Channel::SetUrgentMessageObserver(UrgentMessageObserver* observer) {
+  // Ignored for non-mojo channels.
+}
 
 void Channel::WillConnect() {
   did_start_connect_ = true;

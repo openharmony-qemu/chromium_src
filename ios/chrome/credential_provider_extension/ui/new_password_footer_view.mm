@@ -8,10 +8,6 @@
 #import "ios/chrome/common/credential_provider/constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // Spacing above the label.
@@ -33,7 +29,7 @@ const CGFloat kLabelSpacing = 8;
 }
 
 - (instancetype)initWithReuseIdentifier:(NSString*)reuseIdentifier {
-  if (self = [super initWithReuseIdentifier:reuseIdentifier]) {
+  if ((self = [super initWithReuseIdentifier:reuseIdentifier])) {
     _footerTextLabel = [[UILabel alloc] init];
     _footerTextLabel.translatesAutoresizingMaskIntoConstraints = NO;
     _footerTextLabel.numberOfLines = 0;

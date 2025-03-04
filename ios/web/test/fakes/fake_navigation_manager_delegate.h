@@ -7,6 +7,8 @@
 
 #import "ios/web/navigation/navigation_manager_delegate.h"
 
+#import "base/memory/raw_ptr.h"
+
 @protocol CRWWebViewNavigationProxy;
 
 namespace web {
@@ -28,6 +30,7 @@ class FakeNavigationManagerDelegate : public NavigationManagerDelegate {
                                bool has_user_gesture) override;
   void RemoveWebView() override;
   NavigationItemImpl* GetPendingItem() override;
+  GURL GetCurrentURL() const override;
 
   // Setters for tests to inject dependencies.
   void SetWebViewNavigationProxy(id test_web_view);
@@ -35,7 +38,7 @@ class FakeNavigationManagerDelegate : public NavigationManagerDelegate {
 
  private:
   id test_web_view_;
-  WebState* web_state_ = nullptr;
+  raw_ptr<WebState> web_state_ = nullptr;
 };
 
 }  // namespace web

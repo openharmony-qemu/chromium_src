@@ -59,7 +59,7 @@ template("css_to_wrapper") {
       # Declare additional dependency.
       inputs += [ "//tools/polymer/html_minifier.js" ]
     }
-    # OHOS_ARKWEB_EXTENSIONS
+    # ARKWEB_ARKWEB_EXTENSIONS
     if (defined(invoker.arkweb_as_default_scheme) && invoker.arkweb_as_default_scheme) {
       args += [ "--arkweb_as_default_scheme" ]
     }

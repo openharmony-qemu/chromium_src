@@ -9,12 +9,15 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
 #include "content/browser/media/audio_stream_monitor.h"
+#include "content/browser/media/media_devices_util.h"
 #include "content/browser/media/media_power_experiment_manager.h"
 #include "content/browser/media/session/media_session_controllers_manager.h"
 #include "content/common/content_export.h"
@@ -30,7 +33,6 @@
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/device/public/mojom/wake_lock.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
@@ -88,7 +90,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
   bool IsPictureInPictureAllowedForFullscreenVideo() const;
 
   // Gets the MediaPlayerId of the fullscreen video if it exists.
-  const absl::optional<MediaPlayerId>& GetFullscreenVideoMediaPlayerId() const;
+  const std::optional<MediaPlayerId>& GetFullscreenVideoMediaPlayerId() const;
 
   // WebContentsObserver implementation.
   void WebContentsDestroyed() override;
@@ -96,10 +98,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void MediaPictureInPictureChanged(bool is_picture_in_picture) override;
   void DidUpdateAudioMutingState(bool muted) override;
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   // Set whether to the HTML play can be used to control media
   void SetHtmlPlayEnabled(bool enabled) override;
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // MediaPlayerObserverClient implementation.
   void GetHasPlayedBefore(GetHasPlayedBeforeCallback callback) override;
@@ -132,10 +134,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // is an error to call this method if no MediaPlayer with |player_id| exists.
   mojo::AssociatedRemote<media::mojom::MediaPlayer>& GetMediaPlayerRemote(
       const MediaPlayerId& player_id);
-  
-#if defined(OHOS_MEDIA_POLICY)
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   bool IsPlayerIdInMediaPlayerRemotesMap(const MediaPlayerId& player_id);
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Creates a new MediaPlayerObserverHostImpl associated to |player_id| if
   // needed, and then passes |player_receiver| to it to establish a
@@ -151,10 +153,16 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // be suspended.
   void SuspendAllMediaPlayers();
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void RequestEnterFullscreen(const MediaPlayerId& player_id);
   void RequestExitFullscreen(const MediaPlayerId& player_id);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool IsMediaPlaying(const MediaPlayerId& player_id);
+  void SetPlaybackRate(double playback_rate, const MediaPlayerId& player_id);
+  void RequestFullScreen(bool enable, const MediaPlayerId& player_id);
+  void RequestDownloadUrl(const MediaPlayerId& player_id);
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
  protected:
   MediaSessionControllersManager* session_controllers_manager() {
@@ -187,6 +195,10 @@ class CONTENT_EXPORT MediaWebContentsObserver
         mojo::PendingAssociatedReceiver<media::mojom::MediaPlayerObserver>
             media_player_observer,
         int32_t player_id) override;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    void RequestVideoAssistantConfig(
+        RequestVideoAssistantConfigCallback callback) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
    private:
     GlobalRenderFrameHostId frame_routing_id_;
@@ -211,7 +223,7 @@ class CONTENT_EXPORT MediaWebContentsObserver
     // media::mojom::MediaPlayerObserver implementation.
     void OnMediaPlaying() override;
     void OnMediaPaused(bool stream_ended) override;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
     void OnMediaPlayerGone() override;
 #endif
     void OnMutedStatusChanged(bool muted) override;
@@ -231,18 +243,36 @@ class CONTENT_EXPORT MediaWebContentsObserver
     void OnRemotePlaybackMetadataChange(
         media_session::mojom::RemotePlaybackMetadataPtr
             remote_playback_metadata) override;
+    void OnVideoVisibilityChanged(bool meets_visibility_threshold) override;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     void UpdateLayerRect(const gfx::Rect& rect) override;
     void FullscreenChanged(bool is_fullscreen) override;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+    void OnGetMediaTitle(const std::string& data) override;
+    void OnGetVideoPoster(const std::string& data) override;
+    void OnInitMediaTitle() override;
+    void OnInitVideoPoster() override;
+#endif  // ARKWEB_MEDIA_AVSESSION
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    void OnVideoPlaying(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
+    void OnUpdateVideoAttributes(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) override;
+    void OnVideoDestroyed() override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
    private:
     PlayerInfo* GetPlayerInfo();
     void NotifyAudioStreamMonitorIfNeeded();
 
+    void OnReceivedMediaDeviceSalt(
+        const std::string& hashed_device_id,
+        const content::MediaDeviceSaltAndOrigin& salt_and_origin);
     void OnReceivedTranslatedDeviceId(
-        const absl::optional<std::string>& translated_id);
+        const std::optional<std::string>& translated_id);
 
     const MediaPlayerId media_player_id_;
     const raw_ptr<MediaWebContentsObserver> media_web_contents_observer_;
@@ -332,8 +362,8 @@ class CONTENT_EXPORT MediaWebContentsObserver
   // Tracking variables and associated wake locks for media playback.
   PlayerInfoMap player_info_map_;
   mojo::Remote<device::mojom::WakeLock> audio_wake_lock_;
-  absl::optional<MediaPlayerId> fullscreen_player_;
-  absl::optional<bool> picture_in_picture_allowed_in_fullscreen_;
+  std::optional<MediaPlayerId> fullscreen_player_;
+  std::optional<bool> picture_in_picture_allowed_in_fullscreen_;
   bool has_audio_wake_lock_for_testing_ = false;
 
   std::unique_ptr<MediaSessionControllersManager> session_controllers_manager_;

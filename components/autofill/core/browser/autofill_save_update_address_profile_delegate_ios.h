@@ -23,9 +23,9 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
   AutofillSaveUpdateAddressProfileDelegateIOS(
       const AutofillProfile& profile,
       const AutofillProfile* original_profile,
-      absl::optional<std::u16string> syncing_user_email,
+      std::optional<std::u16string> user_email,
       const std::string& locale,
-      AutofillClient::SaveAddressProfilePromptOptions options,
+      bool is_migration_to_account,
       AutofillClient::AddressProfileSavePromptCallback callback);
   AutofillSaveUpdateAddressProfileDelegateIOS(
       const AutofillSaveUpdateAddressProfileDelegateIOS&) = delete;
@@ -60,7 +60,7 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
   std::u16string GetMessageActionText() const;
 
   // Returns the data stored in the |profile_| corresponding to |type|.
-  std::u16string GetProfileInfo(ServerFieldType type) const;
+  std::u16string GetProfileInfo(FieldType type) const;
 
   // Returns the profile difference map between |profile_| and
   // |original_profile_|.
@@ -73,8 +73,6 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
   void AutoDecline();
   virtual bool Never();
 
-  // Updates |profile_| |type| value to |value|.
-  void SetProfileInfo(const ServerFieldType& type, const std::u16string& value);
   void SetProfile(AutofillProfile* profile);
 
   const AutofillProfile* GetProfile() const;
@@ -97,19 +95,15 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
 
   bool IsMigrationToAccount() const { return is_migration_to_account_; }
 
-  absl::optional<std::u16string> SyncingUserEmail() const {
-    return syncing_user_email_;
-  }
+  std::optional<std::u16string> UserAccountEmail() const { return user_email_; }
 
-  // Returns true if the profile's source is
-  // `AutofillProfile::Source::kAccount`.
-  bool IsProfileAnAccountProfile() const {
-    return profile_.source() == autofill::AutofillProfile::Source::kAccount;
-  }
+  // Returns true if the profile's record type is
+  // `AutofillProfile::RecordType::kAccount`.
+  bool IsProfileAnAccountProfile() const { return profile_.IsAccountProfile(); }
 
 #if defined(UNIT_TEST)
   // Getter for |user_decision_|. Used for the testing purposes.
-  AutofillClient::SaveAddressProfileOfferUserDecision user_decision() const {
+  AutofillClient::AddressPromptUserDecision user_decision() const {
     return user_decision_;
   }
 #endif
@@ -120,8 +114,7 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
   void RunSaveAddressProfilePromptCallback();
 
   // Sets |user_decision_| based on |user_decision|.
-  void SetUserDecision(
-      AutofillClient::SaveAddressProfileOfferUserDecision user_decision);
+  void SetUserDecision(AutofillClient::AddressPromptUserDecision user_decision);
 
   // The application locale.
   std::string locale_;
@@ -131,7 +124,7 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
 
   // The original profile that will be updated if the user accepts the update
   // prompt. NULL if saving a new profile.
-  absl::optional<AutofillProfile> original_profile_;
+  std::optional<AutofillProfile> original_profile_;
 
   // The callback to run once the user makes a decision.
   AutofillClient::AddressProfileSavePromptCallback
@@ -144,12 +137,12 @@ class AutofillSaveUpdateAddressProfileDelegateIOS
   bool is_migration_to_account_;
 
   // Denotes the email address of the syncing account.
-  absl::optional<std::u16string> syncing_user_email_;
+  std::optional<std::u16string> user_email_;
 
   // Records the last user decision based on the interactions with the
   // banner/modal to be sent with |address_profile_save_prompt_callback_|.
-  AutofillClient::SaveAddressProfileOfferUserDecision user_decision_ =
-      AutofillClient::SaveAddressProfileOfferUserDecision::kIgnored;
+  AutofillClient::AddressPromptUserDecision user_decision_ =
+      AutofillClient::AddressPromptUserDecision::kIgnored;
 };
 
 }  // namespace autofill

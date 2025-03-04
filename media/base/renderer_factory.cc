@@ -11,10 +11,10 @@ RendererFactory::RendererFactory() = default;
 RendererFactory::~RendererFactory() = default;
 
 MediaResource::Type RendererFactory::GetRequiredMediaResourceType() {
-  return MediaResource::Type::STREAM;
+  return MediaResource::Type::kStream;
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 std::unique_ptr<Renderer> RendererFactory::CreateCustomRenderer(
     const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
     const scoped_refptr<base::TaskRunner>& worker_task_runner,
@@ -24,9 +24,9 @@ std::unique_ptr<Renderer> RendererFactory::CreateCustomRenderer(
     const gfx::ColorSpace& target_color_space,
     int player_id) {
   return CreateRenderer(media_task_runner, worker_task_runner,
-            audio_renderer_sink, video_renderer_sink,
-            request_overlay_info_cb, target_color_space);
+                        audio_renderer_sink, video_renderer_sink,
+                        request_overlay_info_cb, target_color_space);
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

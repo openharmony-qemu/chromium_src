@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <string_view>
+
 #include "base/run_loop.h"
 #include "base/test/bind.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
@@ -17,7 +19,6 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "net/dns/mock_host_resolver.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/chrome_debug_urls.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "url/gurl.h"
@@ -559,14 +560,14 @@ IN_PROC_BROWSER_TEST_F(DocumentTokenBrowserTest,
                 old_document_token));
 }
 
-// TODO(https://crbug.com/1362938): Add tests for bfcache navigations and
+// TODO(crbug.com/40238502): Add tests for bfcache navigations and
 // prerender activations.
 
 IN_PROC_BROWSER_TEST_F(DocumentTokenBrowserTest, MismatchedProcessID) {
   RenderFrameHostImpl* main_frame = web_contents()->GetPrimaryMainFrame();
   bool called = false;
   mojo::ReportBadMessageCallback callback =
-      base::BindLambdaForTesting([&called](base::StringPiece reason) {
+      base::BindLambdaForTesting([&called](std::string_view reason) {
         called = true;
         EXPECT_EQ("process ID does not match requested DocumentToken", reason);
       });

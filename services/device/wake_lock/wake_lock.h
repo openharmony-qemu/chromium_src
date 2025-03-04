@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/sequenced_task_runner.h"
@@ -92,7 +93,7 @@ class WakeLock : public mojom::WakeLock {
 #if BUILDFLAG(IS_ANDROID)
   int context_id_;
   WakeLockContextCallback native_view_getter_;
-#elif defined(OHOS_SCREEN_LOCK)
+#elif BUILDFLAG(ARKWEB_SCREEN_LOCK)
   int context_id_;
 #endif
 

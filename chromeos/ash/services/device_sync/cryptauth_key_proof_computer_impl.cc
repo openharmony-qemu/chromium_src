@@ -31,7 +31,6 @@ size_t NumBytesForSymmetricKeyType(cryptauthv2::KeyType key_type) {
       return 32u;
     default:
       NOTREACHED();
-      return 0u;
   }
 }
 
@@ -71,11 +70,11 @@ CryptAuthKeyProofComputerImpl::CryptAuthKeyProofComputerImpl() = default;
 
 CryptAuthKeyProofComputerImpl::~CryptAuthKeyProofComputerImpl() = default;
 
-absl::optional<std::string> CryptAuthKeyProofComputerImpl::ComputeKeyProof(
+std::optional<std::string> CryptAuthKeyProofComputerImpl::ComputeKeyProof(
     const CryptAuthKey& key,
     const std::string& payload,
     const std::string& salt,
-    const absl::optional<std::string>& info) {
+    const std::optional<std::string>& info) {
   if (key.IsAsymmetricKey())
     return ComputeAsymmetricKeyProof(key, payload, salt);
 
@@ -83,7 +82,7 @@ absl::optional<std::string> CryptAuthKeyProofComputerImpl::ComputeKeyProof(
   return ComputeSymmetricKeyProof(key, payload, salt, *info);
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 CryptAuthKeyProofComputerImpl::ComputeSymmetricKeyProof(
     const CryptAuthKey& symmetric_key,
     const std::string& payload,
@@ -102,13 +101,13 @@ CryptAuthKeyProofComputerImpl::ComputeSymmetricKeyProof(
   if (!success) {
     PA_LOG(ERROR) << "Failed to compute symmetric key proof for key handle "
                   << symmetric_key.handle();
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return std::string(signed_payload.begin(), signed_payload.end());
 }
 
-absl::optional<std::string>
+std::optional<std::string>
 CryptAuthKeyProofComputerImpl::ComputeAsymmetricKeyProof(
     const CryptAuthKey& asymmetric_key,
     const std::string& payload,
@@ -117,7 +116,7 @@ CryptAuthKeyProofComputerImpl::ComputeAsymmetricKeyProof(
     PA_LOG(ERROR) << "Failed to compute asymmetric key proof for key handle "
                   << asymmetric_key.handle()
                   << ". Invalid key type: " << asymmetric_key.type();
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   std::unique_ptr<crypto::ECPrivateKey> ec_private_key =
@@ -128,7 +127,7 @@ CryptAuthKeyProofComputerImpl::ComputeAsymmetricKeyProof(
                   << asymmetric_key.handle() << ". "
                   << "Invalid private key material; expect DER-encoded PKCS #8 "
                   << "PrivateKeyInfo format (RFC 5208).";
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   std::unique_ptr<crypto::ECSignatureCreator> ec_signature_creator =
@@ -136,7 +135,7 @@ CryptAuthKeyProofComputerImpl::ComputeAsymmetricKeyProof(
   if (!ec_signature_creator) {
     PA_LOG(ERROR) << "Failed to compute asymmetric key proof for key handle "
                   << asymmetric_key.handle();
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   std::string to_sign = salt + payload;
@@ -146,7 +145,7 @@ CryptAuthKeyProofComputerImpl::ComputeAsymmetricKeyProof(
   if (!success) {
     PA_LOG(ERROR) << "Failed to compute asymmetric key proof for key handle "
                   << asymmetric_key.handle();
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return ByteVectorToString(key_proof);

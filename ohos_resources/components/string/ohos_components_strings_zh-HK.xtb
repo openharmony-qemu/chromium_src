@@ -9,5 +9,6 @@
 <translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">返回</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">繼續存取</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">謹防網路詐騙</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">此網頁疑似含有風險內容</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">此網頁被限制存取</translation>
 </translationbundle>

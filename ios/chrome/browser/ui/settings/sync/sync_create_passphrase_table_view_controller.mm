@@ -6,17 +6,13 @@
 
 #import <UIKit/UIKit.h>
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/strings/grit/components_strings.h"
-#import "components/sync/base/features.h"
 #import "ios/chrome/browser/ui/settings/cells/byo_textfield_item.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using sync_encryption_passphrase::ItemTypeConfirmPassphrase;
 using sync_encryption_passphrase::ItemTypeEnterPassphrase;
@@ -37,14 +33,12 @@ using sync_encryption_passphrase::SectionIdentifierPassphrase;
     self.title =
         l10n_util::GetNSString(IDS_IOS_SYNC_ENCRYPTION_CREATE_PASSPHRASE);
     self.headerMessage = nil;
-    self.footerMessage = l10n_util::GetNSString(
-        base::FeatureList::IsEnabled(syncer::kSyncEnableHistoryDataType)
-            ? IDS_IOS_NEW_SYNC_ENCRYPTION_PASSPHRASE_INFO
-            : IDS_IOS_SYNC_ENCRYPTION_PASSPHRASE_INFO),
+    self.footerMessage =
+        l10n_util::GetNSString(IDS_IOS_NEW_SYNC_ENCRYPTION_PASSPHRASE_INFO_UNO);
     self.processingMessage =
         l10n_util::GetNSString(IDS_IOS_SYNC_PASSPHRASE_ENCRYPTING);
 
-    // TODO(crbug.com/764578): -loadModel should not be called from
+    // TODO(crbug.com/41344225): -loadModel should not be called from
     // initializer. A possible fix is to move this call to -viewDidLoad.
     [self loadModel];
   }

@@ -45,7 +45,7 @@ static const size_t kDataSize = 1024;
 static bool CheckReadOnlySharedMemoryFdPosix(int fd) {
 // Note that the error on Android is EPERM, unlike other platforms where
 // it will be EACCES.
-#if BUILDFLAG(IS_ANDROID) || defined(OHOS_UNITTESTS)
+#if BUILDFLAG(IS_ANDROID)
   const int kExpectedErrno = EPERM;
 #else
   const int kExpectedErrno = EACCES;
@@ -60,8 +60,8 @@ static bool CheckReadOnlySharedMemoryFdPosix(int fd) {
     return false;
   }
   if (errno != kExpectedErrno) {
-    LOG(ERROR) << "Expected mmap() to return " << kExpectedErrno
-               << " but returned " << errno << ": " << strerror(errno) << "\n";
+    PLOG(ERROR) << "Expected mmap() to return " << kExpectedErrno
+                << " but returned";  // PLOG will append the actual errno value.
     return false;
   }
   return true;

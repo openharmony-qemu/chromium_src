@@ -6,6 +6,7 @@
 #import <XCTest/XCTest.h>
 
 #import "base/test/ios/wait_util.h"
+#import "build/branding_buildflags.h"
 #import "ios/chrome/test/earl_grey/chrome_actions.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
@@ -13,10 +14,6 @@
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "net/test/embedded_test_server/embedded_test_server.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::RegularTabGrid;
 using chrome_test_util::ScrollToTop;

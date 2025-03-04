@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/history_fuzzy_provider.h"
 
 #include <vector>
@@ -58,7 +63,6 @@ std::ostream& operator<<(std::ostream& os, const fuzzy::Edit& edit) {
     }
     default: {
       NOTREACHED();
-      break;
     }
   }
   os << "," << edit.at << "," << static_cast<char>(edit.new_char) << "}";

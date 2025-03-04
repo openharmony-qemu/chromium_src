@@ -31,7 +31,7 @@ FocusableBorder::FocusableBorder()
 
 FocusableBorder::~FocusableBorder() = default;
 
-void FocusableBorder::SetColorId(const absl::optional<ui::ColorId>& color_id) {
+void FocusableBorder::SetColorId(const std::optional<ui::ColorId>& color_id) {
   override_color_id_ = color_id;
 }
 
@@ -41,14 +41,14 @@ void FocusableBorder::Paint(const View& view, gfx::Canvas* canvas) {
   flags.setColor(GetCurrentColor(view));
 
   gfx::ScopedCanvas scoped(canvas);
-  float dsf = canvas->UndoDeviceScaleFactor();
+  const float dsf = canvas->UndoDeviceScaleFactor();
 
-  constexpr int kStrokeWidthPx = 1;
-  flags.setStrokeWidth(SkIntToScalar(kStrokeWidthPx));
+  const float kStrokeWidth = dsf;
+  flags.setStrokeWidth(kStrokeWidth);
 
   // Scale the rect and snap to pixel boundaries.
   gfx::RectF rect(gfx::ScaleToEnclosedRect(view.GetLocalBounds(), dsf));
-  rect.Inset(gfx::InsetsF(kStrokeWidthPx / 2.0f));
+  rect.Inset(gfx::InsetsF(kStrokeWidth / 2.0f));
 
   SkPath path;
   flags.setAntiAlias(true);

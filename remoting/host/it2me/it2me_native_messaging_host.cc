@@ -11,12 +11,17 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/json/json_writer.h"
+#include "base/logging.h"
+#include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
+#include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread.h"
 #include "base/time/time.h"
+#include "base/uuid.h"
 #include "base/values.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
@@ -25,6 +30,9 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "remoting/base/auto_thread_task_runner.h"
+#include "remoting/base/errors.h"
+#include "remoting/base/logging.h"
+#include "remoting/base/oauth_token_getter_proxy.h"
 #include "remoting/base/passthrough_oauth_token_getter.h"
 #include "remoting/host/base/host_exit_codes.h"
 #include "remoting/host/chromeos/chromeos_enterprise_params.h"
@@ -38,8 +46,8 @@
 #include "remoting/host/xmpp_register_support_host_request.h"
 #include "remoting/protocol/ice_config.h"
 #include "remoting/signaling/delegating_signal_strategy.h"
-#include "remoting/signaling/ftl_client_uuid_device_id_provider.h"
 #include "remoting/signaling/ftl_signal_strategy.h"
+#include "remoting/signaling/ftl_support_host_device_id_provider.h"
 #include "remoting/signaling/remoting_log_to_server.h"
 #include "remoting/signaling/server_log_entry.h"
 #include "remoting/signaling/xmpp_log_to_server.h"
@@ -105,6 +113,8 @@ ChromeOsEnterpriseParams BuildEnterpriseParams(
               message.FindBool(kTerminateUponInput).value_or(false),
           .curtain_local_user_session =
               message.FindBool(kCurtainLocalUserSession).value_or(false),
+          .show_troubleshooting_tools =
+              message.FindBool(kShowTroubleshootingTools).value_or(false),
           .allow_troubleshooting_tools =
               message.FindBool(kAllowTroubleshootingTools).value_or(false),
           .allow_reconnections =
@@ -113,6 +123,59 @@ ChromeOsEnterpriseParams BuildEnterpriseParams(
               message.FindBool(kAllowFileTransfer).value_or(false)};
 }
 #endif
+
+std::unique_ptr<It2MeHost::DeferredConnectContext>
+CreateDelegatedSignalingDeferredConnectContext(
+    std::unique_ptr<remoting::SignalStrategy> signal_strategy,
+    ChromotingHostContext* context) {
+  auto connection_context =
+      std::make_unique<It2MeHost::DeferredConnectContext>();
+  connection_context->register_request =
+      std::make_unique<XmppRegisterSupportHostRequest>(kDirectoryBotJidValue);
+  connection_context->log_to_server = std::make_unique<XmppLogToServer>(
+      ServerLogEntry::IT2ME, signal_strategy.get(), kDirectoryBotJidValue,
+      context->network_task_runner());
+  connection_context->signal_strategy = std::move(signal_strategy);
+  return connection_context;
+}
+
+std::unique_ptr<It2MeHost::DeferredConnectContext>
+CreateNativeSignalingDeferredConnectContext(
+    scoped_refptr<base::SequencedTaskRunner> oauth_token_getter_task_runner,
+    base::WeakPtr<PassthroughOAuthTokenGetter> signaling_token_getter,
+    base::WeakPtr<PassthroughOAuthTokenGetter> api_token_getter,
+    const std::string& ftl_device_id,
+    ChromotingHostContext* host_context) {
+  std::string device_id =
+      ftl_device_id.empty() ? base::Uuid::GenerateRandomV4().AsLowercaseString()
+                            : ftl_device_id;
+  auto connection_context =
+      std::make_unique<It2MeHost::DeferredConnectContext>();
+  connection_context->use_ftl_signaling = true;
+  connection_context->signal_strategy = std::make_unique<FtlSignalStrategy>(
+      std::make_unique<OAuthTokenGetterProxy>(signaling_token_getter,
+                                              oauth_token_getter_task_runner),
+      host_context->url_loader_factory(),
+      std::make_unique<FtlSupportHostDeviceIdProvider>(device_id));
+  connection_context->ftl_device_id = std::move(device_id);
+  connection_context->register_request =
+      std::make_unique<RemotingRegisterSupportHostRequest>(
+          std::make_unique<OAuthTokenGetterProxy>(
+              api_token_getter, oauth_token_getter_task_runner),
+          host_context->url_loader_factory());
+  connection_context->log_to_server = std::make_unique<RemotingLogToServer>(
+      ServerLogEntry::IT2ME,
+      std::make_unique<OAuthTokenGetterProxy>(api_token_getter,
+                                              oauth_token_getter_task_runner),
+      host_context->url_loader_factory());
+  connection_context->signaling_token_getter =
+      std::make_unique<OAuthTokenGetterProxy>(signaling_token_getter,
+                                              oauth_token_getter_task_runner);
+  connection_context->api_token_getter =
+      std::make_unique<OAuthTokenGetterProxy>(api_token_getter,
+                                              oauth_token_getter_task_runner);
+  return connection_context;
+}
 
 }  // namespace
 
@@ -158,7 +221,7 @@ void It2MeNativeMessagingHost::OnMessage(const std::string& message) {
     return;
   }
 
-  absl::optional<base::Value::Dict> response =
+  std::optional<base::Value::Dict> response =
       CreateNativeMessageResponse(request);
   if (!response.has_value()) {
     SendErrorAndExit(base::Value::Dict(), ErrorCode::INCOMPATIBLE_PROTOCOL);
@@ -173,6 +236,8 @@ void It2MeNativeMessagingHost::OnMessage(const std::string& message) {
     ProcessDisconnect(std::move(request), std::move(*response));
   } else if (type == kIncomingIqMessage) {
     ProcessIncomingIq(std::move(request), std::move(*response));
+  } else if (type == kUpdateAccessTokensMessage) {
+    ProcessUpdateAccessTokens(std::move(request), std::move(*response));
   } else {
     LOG(ERROR) << "Unsupported request type: " << type;
     SendErrorAndExit(std::move(request), ErrorCode::INCOMPATIBLE_PROTOCOL);
@@ -218,6 +283,7 @@ void It2MeNativeMessagingHost::ProcessConnect(base::Value::Dict message,
 
   if (!policy_received_) {
     DCHECK(!pending_connect_);
+    LOG(WARNING) << "Delaying connection request until we receive the policies";
     pending_connect_ =
         base::BindOnce(&It2MeNativeMessagingHost::ProcessConnect, weak_ptr_,
                        std::move(message), std::move(response));
@@ -280,6 +346,20 @@ void It2MeNativeMessagingHost::ProcessConnect(base::Value::Dict message,
     }
   }
 
+  std::optional<ReconnectParams> reconnect_params;
+#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
+  bool is_enterprise_admin_user =
+      message.FindBool(kIsEnterpriseAdminUser).value_or(false);
+  if (is_enterprise_admin_user) {
+    const auto* reconnect_params_ptr = message.FindDict(kReconnectParamsDict);
+    if (reconnect_params_ptr) {
+      CHECK(message.FindBool(kAllowReconnections).value_or(false));
+      reconnect_params.emplace(
+          ReconnectParams::FromDict(*reconnect_params_ptr));
+    }
+  }
+#endif
+
   It2MeHost::CreateDeferredConnectContext create_connection_context;
   if (use_signaling_proxy) {
     if (username.empty()) {
@@ -288,57 +368,43 @@ void It2MeNativeMessagingHost::ProcessConnect(base::Value::Dict message,
     }
     auto signal_strategy = CreateDelegatedSignalStrategy(message);
     if (signal_strategy) {
-      create_connection_context = base::BindOnce(
-          [](std::unique_ptr<remoting::SignalStrategy> signal_strategy,
-             ChromotingHostContext* context) {
-            auto connection_context =
-                std::make_unique<It2MeHost::DeferredConnectContext>();
-            connection_context->register_request =
-                std::make_unique<XmppRegisterSupportHostRequest>(
-                    kDirectoryBotJidValue);
-            connection_context->log_to_server =
-                std::make_unique<XmppLogToServer>(
-                    ServerLogEntry::IT2ME, signal_strategy.get(),
-                    kDirectoryBotJidValue, context->network_task_runner());
-            connection_context->signal_strategy = std::move(signal_strategy);
-            return connection_context;
-          },
-          std::move(signal_strategy));
+      create_connection_context =
+          base::BindOnce(&CreateDelegatedSignalingDeferredConnectContext,
+                         std::move(signal_strategy));
     }
   } else {
     if (!username.empty()) {
-      std::string access_token = ExtractAccessToken(message);
-      create_connection_context = base::BindOnce(
-          [](const std::string& username, const std::string& access_token,
-             ChromotingHostContext* host_context) {
-            auto connection_context =
-                std::make_unique<It2MeHost::DeferredConnectContext>();
-            connection_context->use_ftl_signaling = true;
-            connection_context->signal_strategy =
-                std::make_unique<FtlSignalStrategy>(
-                    std::make_unique<PassthroughOAuthTokenGetter>(username,
-                                                                  access_token),
-                    host_context->url_loader_factory(),
-                    std::make_unique<FtlClientUuidDeviceIdProvider>());
-            connection_context->register_request =
-                std::make_unique<RemotingRegisterSupportHostRequest>(
-                    std::make_unique<PassthroughOAuthTokenGetter>(username,
-                                                                  access_token),
-                    host_context->url_loader_factory());
-            connection_context->log_to_server =
-                std::make_unique<RemotingLogToServer>(
-                    ServerLogEntry::IT2ME,
-                    std::make_unique<PassthroughOAuthTokenGetter>(username,
-                                                                  access_token),
-                    host_context->url_loader_factory());
-            connection_context->oauth_token_getter =
-                std::make_unique<PassthroughOAuthTokenGetter>(username,
-                                                              access_token);
-            return connection_context;
-          },
-          username, access_token);
+      signaling_token_getter_.set_username(username);
+      api_token_getter_.set_username(username);
+      std::string* signaling_access_token =
+          message.FindString(kSignalingAccessToken);
+      std::string* api_access_token = message.FindString(kApiAccessToken);
+      if (signaling_access_token && api_access_token) {
+        signaling_token_getter_.set_access_token(*signaling_access_token);
+        api_token_getter_.set_access_token(*api_access_token);
+      } else if (signaling_access_token || api_access_token) {
+        LOG(ERROR) << "The website did not provide both the signaling access "
+                   << "token and the API access token.";
+        SendErrorAndExit(std::move(response), ErrorCode::INCOMPATIBLE_PROTOCOL);
+        return;
+      } else {
+        HOST_LOG << "The website did not provide signaling and API access "
+                 << "tokens separately. Will use the same access token for "
+                 << "both scenarios.";
+        std::string access_token = ExtractAccessToken(message);
+        signaling_token_getter_.set_access_token(access_token);
+        api_token_getter_.set_access_token(access_token);
+      }
+      std::string ftl_device_id;
+      if (reconnect_params.has_value()) {
+        ftl_device_id = reconnect_params->ftl_device_id;
+      }
+      create_connection_context =
+          base::BindOnce(&CreateNativeSignalingDeferredConnectContext,
+                         task_runner(), signaling_token_getter_.GetWeakPtr(),
+                         api_token_getter_.GetWeakPtr(), ftl_device_id);
     } else {
-      LOG(ERROR) << "'userName' not found in request.";
+      LOG(ERROR) << kUserName << " not found in request.";
     }
   }
   if (!create_connection_context) {
@@ -362,19 +428,20 @@ void It2MeNativeMessagingHost::ProcessConnect(base::Value::Dict message,
     return;
   }
 
-  // Create the It2Me host and start connecting. Note that disabling dialogs is
-  // only supported on ChromeOS.
+  // Create the It2Me host and start connecting.
   it2me_host_ = factory_->CreateIt2MeHost();
   it2me_host_->set_authorized_helper(authorized_helper);
 
   auto dialog_style = It2MeConfirmationDialog::DialogStyle::kConsumer;
 #if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
-  bool is_enterprise_admin_user =
-      message.FindBool(kIsEnterpriseAdminUser).value_or(false);
   if (is_enterprise_admin_user) {
     dialog_style = It2MeConfirmationDialog::DialogStyle::kEnterprise;
     it2me_host_->set_chrome_os_enterprise_params(
         BuildEnterpriseParams(message));
+
+    if (reconnect_params.has_value()) {
+      it2me_host_->set_reconnect_params(std::move(*reconnect_params));
+    }
   }
 #endif
 
@@ -442,6 +509,35 @@ void It2MeNativeMessagingHost::ProcessIncomingIq(base::Value::Dict message,
   SendMessageToClient(std::move(response));
 }
 
+void It2MeNativeMessagingHost::ProcessUpdateAccessTokens(
+    base::Value::Dict message,
+    base::Value::Dict response) {
+  DCHECK(task_runner()->BelongsToCurrentThread());
+
+  const std::string* signaling_access_token =
+      message.FindString(kSignalingAccessToken);
+  if (!signaling_access_token) {
+    LOG(ERROR) << "Cannot find " << kSignalingAccessToken << " in the "
+               << kUpdateAccessTokensMessage << " message.";
+    SendErrorAndExit(std::move(response), ErrorCode::INCOMPATIBLE_PROTOCOL);
+    return;
+  }
+
+  const std::string* api_access_token = message.FindString(kApiAccessToken);
+  if (!api_access_token) {
+    LOG(ERROR) << "Cannot find " << kApiAccessToken << " in the "
+               << kUpdateAccessTokensMessage << " message.";
+    SendErrorAndExit(std::move(response), ErrorCode::INCOMPATIBLE_PROTOCOL);
+    return;
+  }
+
+  signaling_token_getter_.set_access_token(*signaling_access_token);
+  api_token_getter_.set_access_token(*api_access_token);
+
+  HOST_LOG << "OAuth access tokens updated";
+  SendMessageToClient(std::move(response));
+}
+
 void It2MeNativeMessagingHost::SendOutgoingIq(const std::string& iq) {
   base::Value::Dict message;
   message.Set(kMessageType, kSendOutgoingIqMessage);
@@ -492,10 +588,15 @@ void It2MeNativeMessagingHost::OnStateChanged(It2MeHostState state,
                   static_cast<int>(access_code_lifetime_.InSeconds()));
       break;
 
-    case It2MeHostState::kConnected:
+    case It2MeHostState::kConnected: {
       message.Set(kClient, client_username_);
+      auto reconnect_params = it2me_host_->CreateReconnectParams();
+      if (reconnect_params.has_value()) {
+        message.Set(kReconnectParamsDict,
+                    ReconnectParams::ToDict(std::move(*reconnect_params)));
+      }
       break;
-
+    }
     case It2MeHostState::kDisconnected:
       message.Set(kDisconnectReason, ErrorCodeToString(error_code));
       client_username_.clear();
@@ -575,7 +676,7 @@ void It2MeNativeMessagingHost::OnPolicyUpdate(base::Value::Dict policies) {
   }
 }
 
-absl::optional<bool>
+std::optional<bool>
 It2MeNativeMessagingHost::GetAllowElevatedHostPolicyValue() {
   DCHECK(policy_received_);
 #if BUILDFLAG(IS_WIN)
@@ -590,7 +691,7 @@ It2MeNativeMessagingHost::GetAllowElevatedHostPolicyValue() {
   }
 #endif  // BUILDFLAG(IS_WIN)
 
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void It2MeNativeMessagingHost::OnPolicyError() {
@@ -635,25 +736,44 @@ It2MeNativeMessagingHost::CreateDelegatedSignalStrategy(
 
 std::string It2MeNativeMessagingHost::ExtractAccessToken(
     const base::Value::Dict& message) {
+  // TODO(b/309958013): Remove this function, code, and unused constants after
+  // M124 and we no longer need to deal with the kAuthServiceWithToken field.
+  const std::string* access_token = message.FindString(kAccessToken);
+  if (access_token) {
+    if (access_token->empty()) {
+      LOG(ERROR) << "Empty token stored in " << kAccessToken << " field";
+      return {};
+    }
+    return *access_token;
+  }
+
   const std::string* auth_service_with_token =
       message.FindString(kAuthServiceWithToken);
-  if (!auth_service_with_token) {
+  if (!auth_service_with_token || auth_service_with_token->empty()) {
     LOG(ERROR) << "'authServiceWithToken' not found in request.";
     return {};
   }
 
-  // For backward compatibility the webapp still passes OAuth service as part
-  // of the authServiceWithToken field. But auth service part is always
-  // expected to be set to oauth2.
+  // We are migrating away from requiring the oauth2 prefix in the
+  // kAuthServiceWithToken field, however ash-chrome needs to support different
+  // versions of lacros-chrome which may not have been updated. Therefore, we
+  // need to support messages which are prefixed with oauth2: as well as those
+  // which pass a raw access token.
   const char kOAuth2ServicePrefix[] = "oauth2:";
-  if (!base::StartsWith(*auth_service_with_token, kOAuth2ServicePrefix,
-                        base::CompareCase::SENSITIVE)) {
-    LOG(ERROR) << "Invalid 'authServiceWithToken': "
-               << *auth_service_with_token;
-    return {};
+  if (base::StartsWith(*auth_service_with_token, kOAuth2ServicePrefix,
+                       base::CompareCase::SENSITIVE)) {
+    return auth_service_with_token->substr(strlen(kOAuth2ServicePrefix));
   }
 
-  return auth_service_with_token->substr(strlen(kOAuth2ServicePrefix));
+  // Log an error if an access token is provided which does not match the
+  // expected format. Though this prefix is effectively stable, there is are no
+  // guarantees so we shouldn't reject requests based on it.
+  if (!auth_service_with_token->starts_with("ya29.")) {
+    LOG(ERROR) << "Potentially invalid auth_service_with_token value: "
+               << *auth_service_with_token;
+  }
+
+  return *auth_service_with_token;
 }
 
 #if BUILDFLAG(IS_WIN)
@@ -692,7 +812,6 @@ bool It2MeNativeMessagingHost::DelegateToElevatedHost(
 bool It2MeNativeMessagingHost::DelegateToElevatedHost(
     base::Value::Dict message) {
   NOTREACHED();
-  return false;
 }
 
 #endif  // !BUILDFLAG(IS_WIN)

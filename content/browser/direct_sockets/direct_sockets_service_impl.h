@@ -5,6 +5,7 @@
 #ifndef CONTENT_BROWSER_DIRECT_SOCKETS_DIRECT_SOCKETS_SERVICE_IMPL_H_
 #define CONTENT_BROWSER_DIRECT_SOCKETS_DIRECT_SOCKETS_SERVICE_IMPL_H_
 
+#include "base/memory/weak_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/document_service.h"
 #include "content/public/browser/render_frame_host.h"
@@ -77,8 +78,15 @@ class CONTENT_EXPORT DirectSocketsServiceImpl
       OpenTCPSocketCallback,
       int result,
       const net::ResolveErrorInfo&,
-      const absl::optional<net::AddressList>& resolved_addresses,
-      const absl::optional<net::HostResolverEndpointResults>&);
+      const std::optional<net::AddressList>& resolved_addresses,
+      const std::optional<net::HostResolverEndpointResults>&);
+
+  void CreateTCPConnectedSocketImpl(
+      const net::AddressList& resolved_addresses,
+      network::mojom::TCPConnectedSocketOptionsPtr options,
+      mojo::PendingReceiver<network::mojom::TCPConnectedSocket>,
+      mojo::PendingRemote<network::mojom::SocketObserver>,
+      OpenTCPSocketCallback);
 
   void OnResolveCompleteForUDPSocket(
       blink::mojom::DirectConnectedUDPSocketOptionsPtr,
@@ -87,8 +95,17 @@ class CONTENT_EXPORT DirectSocketsServiceImpl
       OpenConnectedUDPSocketCallback,
       int result,
       const net::ResolveErrorInfo&,
-      const absl::optional<net::AddressList>& resolved_addresses,
-      const absl::optional<net::HostResolverEndpointResults>&);
+      const std::optional<net::AddressList>& resolved_addresses,
+      const std::optional<net::HostResolverEndpointResults>&);
+
+  void CreateRestrictedUDPSocketImpl(
+      const net::IPEndPoint& peer_addr,
+      network::mojom::RestrictedUDPSocketMode mode,
+      network::mojom::RestrictedUDPSocketParamsPtr options,
+      mojo::PendingReceiver<network::mojom::RestrictedUDPSocket>,
+      mojo::PendingRemote<network::mojom::UDPSocketListener>,
+      base::OnceCallback<void(int32_t, const std::optional<net::IPEndPoint>&)>
+          callback);
 
   std::unique_ptr<network::SimpleHostResolver> resolver_;
 
@@ -96,6 +113,8 @@ class CONTENT_EXPORT DirectSocketsServiceImpl
   class FirewallHoleDelegate;
   std::unique_ptr<FirewallHoleDelegate> firewall_hole_delegate_;
 #endif  // BUILDFLAG(IS_CHROMEOS)
+
+  base::WeakPtrFactory<DirectSocketsServiceImpl> weak_factory_{this};
 };
 
 }  // namespace content

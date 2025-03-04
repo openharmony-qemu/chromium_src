@@ -4,18 +4,14 @@
 
 #import "ios/chrome/browser/ui/settings/password/password_details/add_password_view_controller.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/ios/ios_util.h"
-#import "base/mac/foundation_util.h"
-#import "base/metrics/histogram_functions.h"
-#import "base/metrics/histogram_macros.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/password_manager/core/browser/password_manager_metrics_util.h"
 #import "components/password_manager/core/common/password_manager_constants.h"
-#import "components/password_manager/core/common/password_manager_features.h"
-#import "components/sync/base/features.h"
-#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/keyboard/ui_bundled/UIKeyCommand+Chrome.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_multi_line_text_edit_item.h"
@@ -25,32 +21,23 @@
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/ui/keyboard/UIKeyCommand+Chrome.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_image_detail_text_item.h"
-#import "ios/chrome/browser/ui/settings/password/password_details/add_password_handler.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/add_password_view_controller_delegate.h"
-#import "ios/chrome/browser/ui/settings/password/password_details/password_details.h"
+#import "ios/chrome/browser/ui/settings/password/password_details/credential_details.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_table_view_constants.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_table_view_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/elements/popover_label_view_controller.h"
-#import "ios/chrome/common/ui/reauthentication/reauthentication_module.h"
+#import "ios/chrome/common/ui/reauthentication/reauthentication_protocol.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
-using base::UmaHistogramEnumeration;
 using password_manager::constants::kMaxPasswordNoteLength;
-using password_manager::metrics_util::LogPasswordSettingsReauthResult;
 using password_manager::metrics_util::PasswordCheckInteraction;
-using password_manager::metrics_util::ReauthResult;
 
 typedef NS_ENUM(NSInteger, SectionIdentifier) {
   SectionIdentifierPassword = kSectionIdentifierEnumZero,
@@ -152,7 +139,7 @@ const int kMinNoteCharAmountForWarning = 901;
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  self.tableView.accessibilityIdentifier = kPasswordDetailsViewControllerId;
+  self.tableView.accessibilityIdentifier = kPasswordDetailsViewControllerID;
   self.tableView.allowsSelectionDuringEditing = YES;
 
   self.navigationItem.title = l10n_util::GetNSString(
@@ -165,7 +152,7 @@ const int kMinNoteCharAmountForWarning = 901;
              target:self
              action:@selector(didTapCancelButton:)];
   self.navigationItem.leftBarButtonItem.accessibilityIdentifier =
-      kPasswordsAddPasswordCancelButtonId;
+      kPasswordsAddPasswordCancelButtonID;
 
   self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
       initWithTitle:l10n_util::GetNSString(
@@ -175,7 +162,7 @@ const int kMinNoteCharAmountForWarning = 901;
              action:@selector(didTapSaveButton:)];
   self.navigationItem.rightBarButtonItem.enabled = NO;
   self.navigationItem.rightBarButtonItem.accessibilityIdentifier =
-      kPasswordsAddPasswordSaveButtonId;
+      kPasswordsAddPasswordSaveButtonID;
 
   password_manager::metrics_util::
       LogUserInteractionsWhenAddingCredentialFromSettings(
@@ -217,12 +204,10 @@ const int kMinNoteCharAmountForWarning = 901;
   [model addItem:self.passwordTextItem
       toSectionWithIdentifier:SectionIdentifierPassword];
 
-  if (base::FeatureList::IsEnabled(syncer::kPasswordNotesWithBackup)) {
-    self.noteTextItem = [self noteItem];
-    [model addItem:self.noteTextItem
-        toSectionWithIdentifier:SectionIdentifierPassword];
-    [model addSectionWithIdentifier:SectionIdentifierNoteFooter];
-  }
+  self.noteTextItem = [self noteItem];
+  [model addItem:self.noteTextItem
+      toSectionWithIdentifier:SectionIdentifierPassword];
+  [model addSectionWithIdentifier:SectionIdentifierNoteFooter];
 
   [model addSectionWithIdentifier:SectionIdentifierFooter];
   [model setFooter:[self footerItem]
@@ -385,7 +370,7 @@ const int kMinNoteCharAmountForWarning = 901;
   if (itemType == ItemTypeNote) {
     UITableViewCell* cell = [self.tableView cellForRowAtIndexPath:indexPath];
     TableViewMultiLineTextEditCell* textFieldCell =
-        base::mac::ObjCCastStrict<TableViewMultiLineTextEditCell>(cell);
+        base::apple::ObjCCastStrict<TableViewMultiLineTextEditCell>(cell);
     [textFieldCell.textView becomeFirstResponder];
     return;
   }
@@ -399,7 +384,9 @@ const int kMinNoteCharAmountForWarning = 901;
           password_manager::metrics_util::
               AddCredentialFromSettingsUserInteractions::
                   kDuplicateCredentialViewed);
-  [self reauthAndShowExistingCredential];
+
+    NSString* usernameTextValue = _usernameTextItem.textFieldValue;
+    [_delegate showExistingCredential:usernameTextValue];
 }
 
 - (UITableViewCellEditingStyle)tableView:(UITableView*)tableView
@@ -460,13 +447,13 @@ const int kMinNoteCharAmountForWarning = 901;
   switch (itemType) {
     case ItemTypeUsername: {
       TableViewTextEditCell* textFieldCell =
-          base::mac::ObjCCastStrict<TableViewTextEditCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextEditCell>(cell);
       textFieldCell.textField.delegate = self;
       break;
     }
     case ItemTypePassword: {
       TableViewTextEditCell* textFieldCell =
-          base::mac::ObjCCastStrict<TableViewTextEditCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextEditCell>(cell);
       textFieldCell.textField.delegate = self;
       [textFieldCell.identifyingIconButton
                  addTarget:self
@@ -476,7 +463,7 @@ const int kMinNoteCharAmountForWarning = 901;
     }
     case ItemTypeWebsite: {
       TableViewTextEditCell* textFieldCell =
-          base::mac::ObjCCastStrict<TableViewTextEditCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextEditCell>(cell);
       textFieldCell.textField.delegate = self;
       break;
     }
@@ -696,6 +683,8 @@ const int kMinNoteCharAmountForWarning = 901;
       LogUserInteractionsWhenAddingCredentialFromSettings(
           password_manager::metrics_util::
               AddCredentialFromSettingsUserInteractions::kCredentialAdded);
+  base::RecordAction(
+      base::UserMetricsAction("MobilePasswordManagerAddPassword"));
   if (self.noteTextItem.text.length != 0) {
     password_manager::metrics_util::LogPasswordNoteActionInSettings(
         password_manager::metrics_util::PasswordNoteAction::
@@ -713,7 +702,7 @@ const int kMinNoteCharAmountForWarning = 901;
   return YES;
 }
 
-#pragma mark - Private
+#pragma mark - AutofillEditTableViewController
 
 - (BOOL)isItemAtIndexPathTextEditCell:(NSIndexPath*)cellPath {
   NSInteger itemType = [self.tableViewModel itemTypeForIndexPath:cellPath];
@@ -729,6 +718,8 @@ const int kMinNoteCharAmountForWarning = 901;
       return NO;
   };
 }
+
+#pragma mark - Private
 
 - (BOOL)checkIfValidSite {
   BOOL siteEmpty = [self.websiteTextItem.textFieldValue length] == 0;
@@ -760,35 +751,6 @@ const int kMinNoteCharAmountForWarning = 901;
     [model removeSectionWithIdentifier:sectionIdentifier];
     [[self tableView] deleteSections:[NSIndexSet indexSetWithIndex:section]
                     withRowAnimation:animation];
-  }
-}
-
-- (void)reauthAndShowExistingCredential {
-  if ([self.reauthModule canAttemptReauth]) {
-    __weak __typeof(self) weakSelf = self;
-    void (^viewExistingPasswordHandler)(ReauthenticationResult) = ^(
-        ReauthenticationResult result) {
-      AddPasswordViewController* strongSelf = weakSelf;
-      if (!strongSelf)
-        return;
-      [strongSelf logPasswordSettingsReauthResult:result];
-
-      if (result == ReauthenticationResult::kFailure) {
-        return;
-      }
-
-      [strongSelf.delegate
-          showExistingCredential:strongSelf.usernameTextItem.textFieldValue];
-    };
-
-    [self.reauthModule
-        attemptReauthWithLocalizedReason:
-            l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORD_REAUTH_REASON_SHOW)
-                    canReusePreviousAuth:YES
-                                 handler:viewExistingPasswordHandler];
-  } else {
-    DCHECK(self.addPasswordHandler);
-    [self.addPasswordHandler showPasscodeDialog];
   }
 }
 
@@ -877,24 +839,6 @@ const int kMinNoteCharAmountForWarning = 901;
   errorInfoPopover.popoverPresentationController.permittedArrowDirections =
       UIPopoverArrowDirectionAny;
   [self presentViewController:errorInfoPopover animated:YES completion:nil];
-}
-
-#pragma mark - Metrics
-
-// Logs metrics for the given reauthentication `result` (success, failure or
-// skipped).
-- (void)logPasswordSettingsReauthResult:(ReauthenticationResult)result {
-  switch (result) {
-    case ReauthenticationResult::kSuccess:
-      LogPasswordSettingsReauthResult(ReauthResult::kSuccess);
-      break;
-    case ReauthenticationResult::kFailure:
-      LogPasswordSettingsReauthResult(ReauthResult::kFailure);
-      break;
-    case ReauthenticationResult::kSkipped:
-      LogPasswordSettingsReauthResult(ReauthResult::kSkipped);
-      break;
-  }
 }
 
 #pragma mark - ForTesting

@@ -32,6 +32,7 @@ declare_args() {
 # See http://gcc.gnu.org/wiki/Visibility
 config("symbol_visibility_hidden") {
   cflags = [ "-fvisibility=hidden" ]
+  rustflags = [ "-Zdefault-visibility=hidden" ]
 
   # Visibility attribute is not supported on AIX.
   if (current_os != "aix") {
@@ -63,7 +64,7 @@ config("symbol_visibility_default") {
 #    configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
 #  }
 config("rpath_for_built_shared_libraries") {
-  if (!is_android && current_os != "aix" && !is_castos && !is_ohos) {
+  if (!is_android && current_os != "aix" && !is_castos) {
     # Note: Android, Aix don't support rpath. Chromecast has its own logic for
     # setting the rpath in //build/config/chromecast.
     if (current_toolchain != default_toolchain || gcc_target_rpath == "") {
@@ -80,7 +81,7 @@ config("rpath_for_built_shared_libraries") {
   }
 }
 
-if (is_component_build && !(is_android || is_ohos)) {
+if (is_component_build && !is_android) {
   # See the rpath_for... config above for why this is necessary for component
   # builds.
   executable_and_shared_library_configs_ =
@@ -93,14 +94,14 @@ if (is_component_build && !(is_android || is_ohos)) {
 config("executable_config") {
   configs = executable_and_shared_library_configs_
   ldflags = [ "-pie" ]
-  if (is_android || is_ohos) {
+  if (is_android) {
     ldflags += [
       "-Bdynamic",
       "-Wl,-z,nocopyreloc",
     ]
   }
 
-  if (!is_android && current_os != "aix" && !is_ohos) {
+  if (!is_android && current_os != "aix") {
     ldflags += [
       # TODO(GYP): Do we need a check on the binutils version here?
       #

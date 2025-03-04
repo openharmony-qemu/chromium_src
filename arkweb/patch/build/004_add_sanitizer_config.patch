@@ -1,0 +1,30 @@
+diff --git a/build/config/sanitizers/BUILD.gn b/build/config/sanitizers/BUILD.gn
+index c45cffedfe035dd1d198f4d435f74c617d37434a..a1bac3f2afae567619d85a0e1af44debbf0cdf49 100644
+--- a/build/config/sanitizers/BUILD.gn
++++ b/build/config/sanitizers/BUILD.gn
+@@ -651,3 +651,25 @@ config("not_fuzzed") {
+     }
+   }
+ }
++
++config("cfi_config") {
++  if (is_ohos) {
++    _cfi_blocklist_path = "//tools/cfi/ignores.txt"
++ 
++    cflags = [
++      "-flto=thin",
++      "-fvisibility=hidden",
++      "-fsanitize=cfi-icall",
++      "-fsanitize-cfi-icall-generalize-pointers",
++      "-fsanitize-blacklist=" +
++          rebase_path(_cfi_blocklist_path, root_build_dir),
++    ]
++ 
++    ldflags = [
++      "-flto=thin",
++      "-fsanitize=cfi-icall",
++      "-fsanitize-cfi-icall-generalize-pointers",
++    ]
++  }
++}
++

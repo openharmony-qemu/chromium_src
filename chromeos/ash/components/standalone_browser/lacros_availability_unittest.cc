@@ -30,8 +30,68 @@ class LacrosAvailabilityTest : public testing::Test {
 };
 
 TEST_F(LacrosAvailabilityTest,
-       DetermineLacrosAvailabilityFromPolicyValueGooglers) {
-  const User* const user = AddRegularUser("user@google.com");
+       DetermineLacrosAvailabilityFromPolicyValueExternal) {
+  const User* const user = AddRegularUser("user@random.com");
+
+  // For non-Googlers, the policy can't be ignored by command line flag.
+  {
+    base::test::ScopedCommandLine command_line;
+    command_line.GetProcessCommandLine()->AppendSwitch(
+        ash::switches::kLacrosAvailabilityIgnore);
+    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
+              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
+  }
+
+  // If there's no policy value, the choice is left to the user.
+  EXPECT_EQ(LacrosAvailability::kUserChoice,
+            DetermineLacrosAvailabilityFromPolicyValue(user, ""));
+
+  // If the policy value is valid and there is no command line flag, the policy
+  // should be respected.
+  EXPECT_EQ(LacrosAvailability::kLacrosOnly,
+            DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
+
+  // If the policy value is invalid, the choice is left to the user.
+  EXPECT_EQ(
+      LacrosAvailability::kUserChoice,
+      DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_tertiary"));
+
+  // Whether LacrosGooglePolicyRollout is enabled or not makes no difference for
+  // normal users.
+  {
+    // Disable LacrosGooglePolicyRollout.
+    base::test::ScopedFeatureList feature_list;
+    feature_list.InitWithFeatures({}, {kLacrosGooglePolicyRollout});
+    EXPECT_EQ(
+        LacrosAvailability::kLacrosDisallowed,
+        DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_disallowed"));
+    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
+              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
+  }
+  {
+    // Enable LacrosGooglePolicyRollout.
+    base::test::ScopedFeatureList feature_list;
+    feature_list.InitWithFeatures({kLacrosGooglePolicyRollout}, {});
+    EXPECT_EQ(
+        LacrosAvailability::kLacrosDisallowed,
+        DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_disallowed"));
+    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
+              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
+  }
+}
+
+struct LacrosAvailabilityInternalParams {
+  std::string test_name;
+  std::string test_account;
+};
+
+class LacrosAvailabilityInternalTest
+    : public LacrosAvailabilityTest,
+      public testing::WithParamInterface<LacrosAvailabilityInternalParams> {};
+
+TEST_P(LacrosAvailabilityInternalTest,
+       DetermineLacrosAvailabilityFromPolicyValueInternal) {
+  const User* const user = AddRegularUser(GetParam().test_account);
 
   // For Googlers, the policy can be ignored by command line flag.
   {
@@ -45,11 +105,6 @@ TEST_F(LacrosAvailabilityTest,
   // If there's no policy value, the choice is left to the user.
   EXPECT_EQ(LacrosAvailability::kUserChoice,
             DetermineLacrosAvailabilityFromPolicyValue(user, ""));
-
-  // If the policy value is valid and there is no command line flag, the policy
-  // should be respected.
-  EXPECT_EQ(LacrosAvailability::kLacrosPrimary,
-            DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_primary"));
 
   // If the policy value is invalid, the choice is left to the user.
   EXPECT_EQ(
@@ -84,55 +139,15 @@ TEST_F(LacrosAvailabilityTest,
   }
 }
 
-TEST_F(LacrosAvailabilityTest,
-       DetermineLacrosAvailabilityFromPolicyValueNonGooglers) {
-  const User* const user = AddRegularUser("user@random.com");
-
-  // For non-Googlers, the policy can't be ignored by command line flag.
-  {
-    base::test::ScopedCommandLine command_line;
-    command_line.GetProcessCommandLine()->AppendSwitch(
-        ash::switches::kLacrosAvailabilityIgnore);
-    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
-              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
-  }
-
-  // If there's no policy value, the choice is left to the user.
-  EXPECT_EQ(LacrosAvailability::kUserChoice,
-            DetermineLacrosAvailabilityFromPolicyValue(user, ""));
-
-  // If the policy value is valid and there is no command line flag, the policy
-  // should be respected.
-  EXPECT_EQ(LacrosAvailability::kLacrosPrimary,
-            DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_primary"));
-
-  // If the policy value is invalid, the choice is left to the user.
-  EXPECT_EQ(
-      LacrosAvailability::kUserChoice,
-      DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_tertiary"));
-
-  // Whether LacrosGooglePolicyRollout is enabled or not makes no difference for
-  // normal users.
-  {
-    // Disable LacrosGooglePolicyRollout.
-    base::test::ScopedFeatureList feature_list;
-    feature_list.InitWithFeatures({}, {kLacrosGooglePolicyRollout});
-    EXPECT_EQ(
-        LacrosAvailability::kLacrosDisallowed,
-        DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_disallowed"));
-    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
-              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
-  }
-  {
-    // Enable LacrosGooglePolicyRollout.
-    base::test::ScopedFeatureList feature_list;
-    feature_list.InitWithFeatures({kLacrosGooglePolicyRollout}, {});
-    EXPECT_EQ(
-        LacrosAvailability::kLacrosDisallowed,
-        DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_disallowed"));
-    EXPECT_EQ(LacrosAvailability::kLacrosOnly,
-              DetermineLacrosAvailabilityFromPolicyValue(user, "lacros_only"));
-  }
-}
+INSTANTIATE_TEST_SUITE_P(
+    LacrosAvailabilityInternalTests,
+    LacrosAvailabilityInternalTest,
+    testing::ValuesIn<LacrosAvailabilityInternalParams>(
+        {{"Google_Internal", "user@google.com"},
+         {"Enterprise", "user@managedchrome.com"},
+         {"Robot_Account", "something@blah.iam.gserviceaccount.com"},
+         {"Auth", "service@blah.apps.googleusercontent.com"}}),
+    [](const testing::TestParamInfo<LacrosAvailabilityInternalTest::ParamType>&
+           info) { return info.param.test_name; });
 
 }  // namespace ash::standalone_browser

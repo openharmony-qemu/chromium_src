@@ -9,13 +9,15 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/types/optional_ref.h"
 #include "cc/base/completion_event.h"
 #include "cc/base/delayed_unique_notifier.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "cc/input/browser_controls_state.h"
-#include "cc/metrics/jank_injector.h"
 #include "cc/scheduler/scheduler.h"
 #include "cc/trees/layer_tree_host_impl.h"
 
@@ -27,8 +29,6 @@ namespace cc {
 class LayerTreeHost;
 class ProxyMain;
 class RenderFrameMetadataObserver;
-
-class JankInjector;
 class ScopedCommitCompletionEvent;
 
 // This class aggregates all the interactions that the main side of the
@@ -48,9 +48,11 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 
   ProxyImpl& operator=(const ProxyImpl&) = delete;
 
-  void UpdateBrowserControlsStateOnImpl(BrowserControlsState constraints,
-                                        BrowserControlsState current,
-                                        bool animate);
+  void UpdateBrowserControlsStateOnImpl(
+      BrowserControlsState constraints,
+      BrowserControlsState current,
+      bool animate,
+      base::optional_ref<const BrowserControlsOffsetTagsInfo> offset_tags_info);
   void InitializeLayerTreeFrameSinkOnImpl(
       LayerTreeFrameSink* layer_tree_frame_sink,
       base::WeakPtr<ProxyMain> proxy_main_frame_sink_bound_weak_ptr);
@@ -69,9 +71,10 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       std::vector<std::unique_ptr<SwapPromise>> swap_promises,
       bool scroll_and_viewport_changes_synced);
   void SetVisibleOnImpl(bool visible);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
   void SetPinchSmoothModeOnImpl(bool isEnable);
 #endif
+  void SetShouldWarmUpOnImpl();
   void ReleaseLayerTreeFrameSinkOnImpl(CompletionEvent* completion);
   void FinishGLOnImpl(CompletionEvent* completion);
   void NotifyReadyToCommitOnImpl(CompletionEvent* completion_event,
@@ -82,11 +85,15 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
                                  bool scroll_and_viewport_changes_synced,
                                  CommitTimestamps* commit_timestamps,
                                  bool commit_timeout = false);
+  void QueueImageDecodeOnImpl(int request_id,
+                              std::unique_ptr<PaintImage> image);
   void SetSourceURL(ukm::SourceId source_id, const GURL& url);
   void SetUkmSmoothnessDestination(
       base::WritableSharedMemoryMapping ukm_smoothness_data);
   void SetRenderFrameObserver(
       std::unique_ptr<RenderFrameMetadataObserver> observer);
+  void DetachInputDelegateAndRenderFrameObserver(
+      CompletionEvent* completion_event);
 
   void MainFrameWillHappenOnImplForTesting(CompletionEvent* completion,
                                            bool* main_frame_will_happen);
@@ -94,12 +101,19 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 
   void ClearHistory() override;
   size_t CommitDurationSampleCountForTesting() const override;
+  const DelayedUniqueNotifier& SmoothnessPriorityExpirationNotifierForTesting()
+      const {
+    return smoothness_priority_expiration_notifier_;
+  }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect) override;
 
   void OnLayerRectVisibilityChange(int id, bool visibility) override;
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
  private:
   // LayerTreeHostImplClient implementation
@@ -114,25 +128,31 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   // LayerTreeHostImpl's SetNeedsRedraw() and SetNeedsOneBeginImplFrame().
   void SetNeedsRedrawOnImplThread() override;
   void SetNeedsOneBeginImplFrameOnImplThread() override;
+  void SetNeedsUpdateDisplayTreeOnImplThread() override;
   void SetNeedsPrepareTilesOnImplThread() override;
   void SetNeedsCommitOnImplThread() override;
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override;
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override;
+#if BUILDFLAG(ARKWEB_WEBGL)
   void SetDeferInvalidationForFastMainFrameFromImpl(
-           bool defer_invalidation_for_fast_main_frame) override;
+      bool defer_invalidation_for_fast_main_frame) override;
+#endif
   bool IsInsideDraw() override;
   void RenewTreePriority() override;
   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
                                             base::TimeDelta delay) override;
   void DidActivateSyncTree() override;
-  void WillPrepareTiles() override;
   void DidPrepareTiles() override;
   void DidCompletePageScaleAnimationOnImplThread() override;
   void OnDrawForLayerTreeFrameSink(bool resourceless_software_draw,
                                    bool skip_draw) override;
-  void NeedsImplSideInvalidation(bool needs_first_draw_on_activation) override;
-  void NotifyImageDecodeRequestFinished() override;
-  void NotifyTransitionRequestFinished(uint32_t sequence_id) override;
+  void SetNeedsImplSideInvalidation(
+      bool needs_first_draw_on_activation) override;
+  void NotifyImageDecodeRequestFinished(int request_id,
+                                        bool decode_succeeded) override;
+  void NotifyTransitionRequestFinished(
+      uint32_t sequence_id,
+      const viz::ViewTransitionElementResourceRects&) override;
   void DidPresentCompositorFrameOnImplThread(
       uint32_t frame_token,
       PresentationTimeCallbackBuffer::PendingCallbacks activated,
@@ -144,6 +164,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       Scheduler::PaintWorkletState state) override;
   void NotifyThroughputTrackerResults(CustomTrackerResults results) override;
   void DidObserveFirstScrollDelay(
+      int source_frame_number,
       base::TimeDelta first_scroll_delay,
       base::TimeTicks first_scroll_timestamp) override;
   bool IsInSynchronousComposite() const override;
@@ -163,6 +184,7 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       const viz::BeginFrameArgs& args) override;
   DrawResult ScheduledActionDrawIfPossible() override;
   DrawResult ScheduledActionDrawForced() override;
+  void ScheduledActionUpdateDisplayTree() override;
   void ScheduledActionCommit() override;
   void ScheduledActionPostCommit() override;
   void ScheduledActionActivateSyncTree() override;
@@ -175,19 +197,16 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       base::TimeTicks time) override;
   void FrameIntervalUpdated(base::TimeDelta interval) override {}
   void OnBeginImplFrameDeadline() override;
-  bool HasInvalidationAnimation() const override;
-#if BUILDFLAG(IS_OHOS)
-  void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
-#endif
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   DrawResult DrawInternal(bool forced_draw);
 
   bool IsImplThread() const;
   bool IsMainThreadBlocked() const;
   base::SingleThreadTaskRunner* MainThreadTaskRunner();
   bool ShouldDeferBeginMainFrame() const;
-
-  void OnHungCommit();
 
   const int layer_tree_host_id_;
 
@@ -224,23 +243,15 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
 
   bool inside_draw_;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
   bool pinch_smooth_ = false;
 #endif
-
-  bool send_compositor_frame_ack_;
-
-  JankInjector jank_injector_;
-
-  TreePriority last_raster_priority_;
 
   raw_ptr<TaskRunnerProvider> task_runner_provider_;
 
   DelayedUniqueNotifier smoothness_priority_expiration_notifier_;
 
   std::unique_ptr<LayerTreeHostImpl> host_impl_;
-
-  bool is_jank_injection_enabled_ = false;
 
   // Used to post tasks to ProxyMain on the main thread.
   base::WeakPtr<ProxyMain> proxy_main_weak_ptr_;
@@ -252,9 +263,6 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
   // Either thread can request deferring BeginMainFrame; keep track of both.
   bool main_wants_defer_begin_main_frame_ = false;
   bool impl_wants_defer_begin_main_frame_ = false;
-
-  // Temporary for production debugging of renderer hang (crbug.com/1159366).
-  base::OneShotTimer hung_commit_timer_;
 };
 
 }  // namespace cc

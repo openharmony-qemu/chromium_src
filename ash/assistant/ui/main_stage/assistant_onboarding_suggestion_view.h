@@ -27,9 +27,9 @@ class AssistantViewDelegate;
 
 class COMPONENT_EXPORT(ASSISTANT_UI) AssistantOnboardingSuggestionView
     : public views::Button {
- public:
-  METADATA_HEADER(AssistantOnboardingSuggestionView);
+  METADATA_HEADER(AssistantOnboardingSuggestionView, views::Button)
 
+ public:
   AssistantOnboardingSuggestionView(
       AssistantViewDelegate* delegate,
       const assistant::AssistantSuggestion& suggestion,
@@ -42,7 +42,8 @@ class COMPONENT_EXPORT(ASSISTANT_UI) AssistantOnboardingSuggestionView
   ~AssistantOnboardingSuggestionView() override;
 
   // views::View:
-  int GetHeightForWidth(int width) const override;
+  gfx::Size CalculatePreferredSize(
+      const views::SizeBounds& available_size) const override;
   void AddLayerToRegion(ui::Layer* layer, views::LayerRegion region) override;
   void RemoveLayerFromRegions(ui::Layer* layer) override;
   void ChildPreferredSizeChanged(views::View* child) override;
@@ -60,17 +61,16 @@ class COMPONENT_EXPORT(ASSISTANT_UI) AssistantOnboardingSuggestionView
 
   void OnButtonPressed();
 
-  const raw_ptr<AssistantViewDelegate, ExperimentalAsh>
+  const raw_ptr<AssistantViewDelegate>
       delegate_;  // Owned by AssistantController.
   const base::UnguessableToken suggestion_id_;
   const int index_;
   GURL url_;
 
   // Owned by view hierarchy.
-  raw_ptr<views::ImageView, ExperimentalAsh> icon_ = nullptr;
-  raw_ptr<views::Label, ExperimentalAsh> label_ = nullptr;
-  raw_ptr<views::InkDropContainerView, ExperimentalAsh> ink_drop_container_ =
-      nullptr;
+  raw_ptr<views::ImageView> icon_ = nullptr;
+  raw_ptr<views::Label> label_ = nullptr;
+  raw_ptr<views::InkDropContainerView> ink_drop_container_ = nullptr;
 
   base::WeakPtrFactory<AssistantOnboardingSuggestionView> weak_factory_{this};
 };

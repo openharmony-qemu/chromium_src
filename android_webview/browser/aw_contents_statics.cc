@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "android_webview/browser/aw_contents_statics.h"
+
 #include "android_webview/browser/aw_browser_process.h"
 #include "android_webview/browser/aw_content_browser_client.h"
 #include "android_webview/browser/aw_contents.h"
 #include "android_webview/browser/aw_contents_io_thread_client.h"
+#include "android_webview/browser/aw_crash_keys.h"
 #include "android_webview/browser/safe_browsing/aw_safe_browsing_allowlist_manager.h"
-#include "android_webview/browser_jni_headers/AwContentsStatics_jni.h"
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
@@ -25,6 +27,9 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/common/url_constants.h"
 #include "net/cert/cert_database.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "android_webview/browser_jni_headers/AwContentsStatics_jni.h"
 
 using base::android::AttachCurrentThread;
 using base::android::ConvertJavaStringToUTF8;
@@ -46,7 +51,7 @@ void ClientCertificatesCleared(const JavaRef<jobject>& callback) {
 
 void NotifyClientCertificatesChanged() {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  net::CertDatabase::GetInstance()->NotifyObserversCertDBChanged();
+  net::CertDatabase::GetInstance()->NotifyObserversClientCertStoreChanged();
 }
 
 void SafeBrowsingAllowlistAssigned(const JavaRef<jobject>& callback,
@@ -57,6 +62,13 @@ void SafeBrowsingAllowlistAssigned(const JavaRef<jobject>& callback,
 }
 
 }  // namespace
+
+net::SocketTag GetDefaultSocketTag() {
+  JNIEnv* env = AttachCurrentThread();
+  uid_t uid = Java_AwContentsStatics_getDefaultTrafficStatsUid(env);
+  int32_t tag = Java_AwContentsStatics_getDefaultTrafficStatsTag(env);
+  return net::SocketTag(uid, tag);
+}
 
 // static
 ScopedJavaLocalRef<jstring>
@@ -112,15 +124,6 @@ void JNI_AwContentsStatics_SetSafeBrowsingAllowlist(
 }
 
 // static
-void JNI_AwContentsStatics_SetServiceWorkerIoThreadClient(
-    JNIEnv* env,
-    const base::android::JavaParamRef<jobject>& io_thread_client,
-    const base::android::JavaParamRef<jobject>& browser_context) {
-  AwContentsIoThreadClient::SetServiceWorkerIoThreadClient(io_thread_client,
-                                                           browser_context);
-}
-
-// static
 void JNI_AwContentsStatics_SetCheckClearTextPermitted(
     JNIEnv* env,
     jboolean permitted) {
@@ -153,8 +156,10 @@ void JNI_AwContentsStatics_LogFlagMetrics(
   for (const auto& jfeature : jfeatures.ReadElements<jstring>()) {
     features.insert(ConvertJavaStringToUTF8(jfeature));
   }
+
   flags_ui::ReportAboutFlagsHistogram("Launch.FlagsAtStartup", switches,
                                       features);
+  SetCrashKeysFromFeaturesAndSwitches(switches, features);
 }
 
 // static

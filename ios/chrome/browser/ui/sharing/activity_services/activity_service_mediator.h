@@ -20,8 +20,9 @@ class BookmarkModel;
 @protocol ChromeActivityItemSource;
 @class ChromeActivityURLSource;
 @class ChromeActivityFileSource;
-@class DefaultBrowserPromoNonModalScheduler;
+@class NonModalDefaultBrowserPromoSchedulerSceneAgent;
 @protocol FindInPageCommands;
+@protocol HelpCommands;
 class PrefService;
 class ReadingListBrowserAgent;
 @protocol QRGenerationCommands;
@@ -33,15 +34,15 @@ class WebNavigationBrowserAgent;
 // Mediator used to generate activities.
 @interface ActivityServiceMediator : NSObject
 
-// Initializes a mediator instance with a `handler` used to execute action, a
-// `bookmarksHandler` to execute Bookmarks actions, a
-// `qrGenerationHandler` to execute QR generation actions, a `prefService` to
-// read settings and policies, and a `bookmarkModel` to retrieve bookmark
-// states.
-// `baseViewController` can be passed to activities which need to present VCs.
+// Initializes a mediator instance with a `helpHandler` used to execute action,
+// a `bookmarksHandler` to execute Bookmarks actions, a `qrGenerationHandler` to
+// execute QR generation actions, a `prefService` to read settings and policies,
+// and a `bookmarkModel` to retrieve bookmark states. `baseViewController` can
+// be passed to activities which need to present VCs.
 - (instancetype)initWithHandler:
                     (id<BrowserCoordinatorCommands, FindInPageCommands>)handler
                bookmarksHandler:(id<BookmarksCommands>)bookmarksHandler
+                    helpHandler:(id<HelpCommands>)helpHandler
             qrGenerationHandler:(id<QRGenerationCommands>)qrGenerationHandler
                     prefService:(PrefService*)prefService
                   bookmarkModel:(bookmarks::BookmarkModel*)bookmarkModel
@@ -53,7 +54,8 @@ class WebNavigationBrowserAgent;
 - (instancetype)init NS_UNAVAILABLE;
 
 // Scheduler to notify about events happening in this activity.
-@property(nonatomic, weak) DefaultBrowserPromoNonModalScheduler* promoScheduler;
+@property(nonatomic, weak)
+    NonModalDefaultBrowserPromoSchedulerSceneAgent* promoScheduler;
 
 // Generates an array of activity items to be shared via an activity view for
 // the given objects in `dataItems`.

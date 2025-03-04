@@ -5,45 +5,58 @@
 #ifndef IOS_CHROME_BROWSER_UI_OMNIBOX_POPUP_REMOTE_SUGGESTIONS_SERVICE_OBSERVER_BRIDGE_H_
 #define IOS_CHROME_BROWSER_UI_OMNIBOX_POPUP_REMOTE_SUGGESTIONS_SERVICE_OBSERVER_BRIDGE_H_
 
-#include "components/omnibox/browser/remote_suggestions_service.h"
+#import "components/omnibox/browser/remote_suggestions_service.h"
 
+#import "base/memory/raw_ptr.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
 
 @protocol RemoteSuggestionsServiceObserver
 - (void)remoteSuggestionsService:(RemoteSuggestionsService*)service
-                 startingRequest:(const network::ResourceRequest*)request
-                uniqueIdentifier:
-                    (const base::UnguessableToken&)requestIdentifier;
+    createdRequestWithIdentifier:
+        (const base::UnguessableToken&)requestIdentifier
+                         request:(const network::ResourceRequest*)request;
+
+- (void)remoteSuggestionsService:(RemoteSuggestionsService*)service
+    startedRequestWithIdentifier:
+        (const base::UnguessableToken&)requestIdentifier
+                     requestBody:(NSString*)requestBody
+                       URLLoader:(network::SimpleURLLoader*)URLLoader;
 
 - (void)remoteSuggestionsService:(RemoteSuggestionsService*)service
     completedRequestWithIdentifier:
         (const base::UnguessableToken&)requestIdentifier
-                  receivedResponse:(NSString*)response;
+                      responseCode:(NSInteger)code
+                      responseBody:(NSString*)responseBody;
 @end
 
 class RemoteSuggestionsServiceObserverBridge
     : public RemoteSuggestionsService::Observer {
  public:
   RemoteSuggestionsServiceObserverBridge(
-      id<RemoteSuggestionsServiceObserver> observer);
+      id<RemoteSuggestionsServiceObserver> observer,
+      RemoteSuggestionsService* remote_suggestions_service);
 
   RemoteSuggestionsServiceObserverBridge(
       const RemoteSuggestionsServiceObserverBridge&) = delete;
   RemoteSuggestionsServiceObserverBridge& operator=(
       const RemoteSuggestionsServiceObserverBridge&) = delete;
 
-  void OnSuggestRequestStarting(
-      const base::UnguessableToken& request_id,
-      const network::ResourceRequest* request) override;
+  void OnRequestCreated(const base::UnguessableToken& request_id,
+                        const network::ResourceRequest* request) override;
 
-  void OnSuggestRequestCompleted(
+  void OnRequestStarted(const base::UnguessableToken& request_id,
+                        network::SimpleURLLoader* loader,
+                        const std::string& request_body) override;
+
+  void OnRequestCompleted(
       const base::UnguessableToken& request_id,
-      const bool response_received,
+      const int response_code,
       const std::unique_ptr<std::string>& response_body) override;
 
  private:
   __weak id<RemoteSuggestionsServiceObserver> observer_;
+  raw_ptr<RemoteSuggestionsService> remote_suggestions_service_;
 };
 
 #endif  // IOS_CHROME_BROWSER_UI_OMNIBOX_POPUP_REMOTE_SUGGESTIONS_SERVICE_OBSERVER_BRIDGE_H_

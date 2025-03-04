@@ -9,6 +9,7 @@
 
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/task/sequenced_task_runner.h"
@@ -19,6 +20,7 @@
 #include "cc/base/switches.h"
 #include "cef/libcef/browser/osr/software_output_device_proxy.h"
 #include "components/viz/common/display/renderer_settings.h"
+#include "components/viz/common/features.h"
 #include "components/viz/common/frame_sinks/begin_frame_source.h"
 #include "components/viz/service/display/display_compositor_memory_and_task_controller.h"
 #include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
@@ -27,6 +29,7 @@
 #include "components/viz/service/display_embedder/software_output_surface.h"
 #include "components/viz/service/gl/gpu_service_impl.h"
 #include "gpu/command_buffer/client/shared_memory_limits.h"
+#include "gpu/command_buffer/service/scheduler.h"
 #include "gpu/command_buffer/service/scheduler_sequence.h"
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/ipc/common/surface_handle.h"
@@ -124,8 +127,7 @@ std::unique_ptr<OutputSurface> OutputSurfaceProviderImpl::CreateOutputSurface(
 #endif  // BUILDFLAG(IS_ANDROID)
 
     if (!output_surface) {
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CASTOS) || \
-    BUILDFLAG(IS_CAST_ANDROID)
+#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CASTOS)
       // GPU compositing is expected to always work on Chrome OS and Cast
       // devices, so we should never encounter fatal context error. This could
       // be an unrecoverable hardware error or a bug.
@@ -167,7 +169,7 @@ OutputSurfaceProviderImpl::CreateSoftwareOutputDeviceForPlatform(
   return std::make_unique<SoftwareOutputDeviceMac>(task_runner_);
 #elif BUILDFLAG(IS_ANDROID)
   // Android does not do software compositing, so we can't get here.
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return nullptr;
 #elif BUILDFLAG(IS_OZONE)
   ui::SurfaceFactoryOzone* factory =
@@ -180,9 +182,21 @@ OutputSurfaceProviderImpl::CreateSoftwareOutputDeviceForPlatform(
   return std::make_unique<SoftwareOutputDeviceOzone>(
       std::move(platform_window_surface), std::move(surface_ozone));
 #else
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return nullptr;
 #endif
+}
+
+gpu::SharedImageManager* OutputSurfaceProviderImpl::GetSharedImageManager() {
+  return gpu_service_impl_->shared_image_manager();
+}
+
+gpu::SyncPointManager* OutputSurfaceProviderImpl::GetSyncPointManager() {
+  return gpu_service_impl_->sync_point_manager();
+}
+
+gpu::Scheduler* OutputSurfaceProviderImpl::GetGpuScheduler() {
+  return gpu_service_impl_->gpu_scheduler();
 }
 
 }  // namespace viz

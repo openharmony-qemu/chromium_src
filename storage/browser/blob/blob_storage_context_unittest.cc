@@ -2,12 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "storage/browser/blob/blob_storage_context.h"
 
 #include <stdint.h>
 
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -34,7 +40,6 @@
 #include "storage/browser/test/fake_blob_data_handle.h"
 #include "storage/browser/test/test_file_system_context.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace storage {
 namespace {
@@ -140,7 +145,7 @@ class BlobStorageContextTest : public testing::Test {
 
   std::vector<FileCreationInfo> files_;
   base::ScopedTempDir temp_dir_;
-  absl::optional<base::ScopedDisallowBlocking> disallow_blocking_;
+  std::optional<base::ScopedDisallowBlocking> disallow_blocking_;
   scoped_refptr<TestSimpleTaskRunner> file_runner_ = new TestSimpleTaskRunner();
   scoped_refptr<FileSystemContext> file_system_context_;
 

@@ -31,7 +31,6 @@ std::string GetHeapName(
       return "partition_alloc";
     case AllocationSubsystem::kManualForTesting:
       NOTREACHED();
-      return {};
   }
 }
 

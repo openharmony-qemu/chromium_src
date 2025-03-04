@@ -39,9 +39,6 @@ class BreadcrumbManagerTest : public PlatformTest {
 
 // Tests that an event is logged and returned.
 TEST_F(BreadcrumbManagerTest, AddEvent) {
-#if defined(OHOS_UNITTESTS)
-  BreadcrumbManager::GetInstance().ResetForTesting();
-#endif
   const std::string event_message = "event";
   AddEvent(event_message);
   const auto& events = BreadcrumbManager::GetInstance().GetEvents();
@@ -52,9 +49,6 @@ TEST_F(BreadcrumbManagerTest, AddEvent) {
 
 // Tests that no more than `kMaxBreadcrumbs` events are stored.
 TEST_F(BreadcrumbManagerTest, MaxEvents) {
-#if defined(OHOS_UNITTESTS)
-  BreadcrumbManager::GetInstance().ResetForTesting();
-#endif
   const auto& events = BreadcrumbManager::GetInstance().GetEvents();
   ASSERT_EQ(0u, events.size());
 
@@ -75,9 +69,6 @@ TEST_F(BreadcrumbManagerTest, MaxEvents) {
 
 // Tests that event timestamps are formatted as expected.
 TEST_F(BreadcrumbManagerTest, EventTimestampsFormatted) {
-#if defined(OHOS_UNITTESTS)
-  BreadcrumbManager::GetInstance().ResetForTesting();
-#endif
   const auto& events = BreadcrumbManager::GetInstance().GetEvents();
   AddEvent("event1");
   EXPECT_EQ("0:00:00 event1", events.back());
@@ -95,9 +86,6 @@ TEST_F(BreadcrumbManagerTest, EventTimestampsFormatted) {
 // Tests that previous session events are inserted at the start of the event
 // log.
 TEST_F(BreadcrumbManagerTest, SetPreviousSessionEvents) {
-#if defined(OHOS_UNITTESTS)
-  BreadcrumbManager::GetInstance().ResetForTesting();
-#endif
   const auto& events = BreadcrumbManager::GetInstance().GetEvents();
   ASSERT_EQ(0u, events.size());
 
@@ -123,9 +111,6 @@ TEST_F(BreadcrumbManagerTest, SetPreviousSessionEvents) {
 // Tests that no more than `kMaxBreadcrumbs` events are stored after previous
 // session events are retrieved.
 TEST_F(BreadcrumbManagerTest, SetPreviousSessionEventsMaxEvents) {
-#if defined(OHOS_UNITTESTS)
-  BreadcrumbManager::GetInstance().ResetForTesting();
-#endif
   const auto& events = BreadcrumbManager::GetInstance().GetEvents();
   AddEvent("current event");
   ASSERT_EQ(1u, events.size());

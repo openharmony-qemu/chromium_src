@@ -22,11 +22,12 @@ namespace ash {
 
 class FeaturePodControllerBase;
 
-// TODO(crbug/1276545): Remove FeaturePodIconButton after the migration.
+// TODO(crbug.com/40808951): Remove FeaturePodIconButton after the migration.
 // A toggle button with an icon used by feature pods and in other places.
 class ASH_EXPORT FeaturePodIconButton : public IconButton {
+  METADATA_HEADER(FeaturePodIconButton, IconButton)
+
  public:
-  METADATA_HEADER(FeaturePodIconButton);
   FeaturePodIconButton(PressedCallback callback, bool is_togglable);
   FeaturePodIconButton(const FeaturePodIconButton&) = delete;
   FeaturePodIconButton& operator=(const FeaturePodIconButton&) = delete;
@@ -35,8 +36,9 @@ class ASH_EXPORT FeaturePodIconButton : public IconButton {
 
 // Button internally used in FeaturePodButton. Should not be used directly.
 class ASH_EXPORT FeaturePodLabelButton : public views::Button {
+  METADATA_HEADER(FeaturePodLabelButton, views::Button)
+
  public:
-  METADATA_HEADER(FeaturePodLabelButton);
   explicit FeaturePodLabelButton(PressedCallback callback);
 
   FeaturePodLabelButton(const FeaturePodLabelButton&) = delete;
@@ -58,24 +60,22 @@ class ASH_EXPORT FeaturePodLabelButton : public views::Button {
   void ShowDetailedViewArrow();
 
   // views::Button:
-  void Layout() override;
-  gfx::Size CalculatePreferredSize() const override;
+  void Layout(PassKey) override;
+  gfx::Size CalculatePreferredSize(
+      const views::SizeBounds& available_size) const override;
   void OnThemeChanged() override;
 
  private:
   // Layout |child| in horizontal center with its vertical origin set to |y|.
   void LayoutInCenter(views::View* child, int y);
 
-  void OnEnabledChanged();
+  // views::Button:
+  void OnEnabledChanged() override;
 
   // Owned by views hierarchy.
-  const raw_ptr<views::Label, ExperimentalAsh> label_;
-  const raw_ptr<views::Label, ExperimentalAsh> sub_label_;
-  const raw_ptr<views::ImageView, ExperimentalAsh> detailed_view_arrow_;
-  base::CallbackListSubscription enabled_changed_subscription_ =
-      AddEnabledChangedCallback(
-          base::BindRepeating(&FeaturePodLabelButton::OnEnabledChanged,
-                              base::Unretained(this)));
+  const raw_ptr<views::Label> label_;
+  const raw_ptr<views::Label> sub_label_;
+  const raw_ptr<views::ImageView> detailed_view_arrow_;
 };
 
 // A button in FeaturePodsView. These buttons are main entry points of features
@@ -85,8 +85,9 @@ class ASH_EXPORT FeaturePodLabelButton : public views::Button {
 // navigates to the appropriate detailed view.
 // See the comment in FeaturePodsView for detail.
 class ASH_EXPORT FeaturePodButton : public views::View {
+  METADATA_HEADER(FeaturePodButton, views::View)
+
  public:
-  METADATA_HEADER(FeaturePodButton);
   explicit FeaturePodButton(FeaturePodControllerBase* controller,
                             bool is_togglable = true);
 
@@ -162,8 +163,8 @@ class ASH_EXPORT FeaturePodButton : public views::View {
   void OnEnabledChanged();
 
   // Owned by views hierarchy.
-  const raw_ptr<FeaturePodIconButton, ExperimentalAsh> icon_button_;
-  const raw_ptr<FeaturePodLabelButton, ExperimentalAsh> label_button_;
+  const raw_ptr<FeaturePodIconButton> icon_button_;
+  const raw_ptr<FeaturePodLabelButton> label_button_;
 
   // If true, it is preferred by the FeaturePodController that the view is
   // visible. Usually, this should match visible(), but in case that the

@@ -7,13 +7,9 @@
 #import "base/test/ios/wait_util.h"
 #import "ios/web_view/test/web_view_inttest_base.h"
 #import "ios/web_view/test/web_view_test_util.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "net/test/embedded_test_server/embedded_test_server.h"
 #import "testing/gtest_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 NSString* const kMessageHandlerCommandName = @"messageHandlerCommand";
@@ -34,7 +30,7 @@ class WebViewScriptMessageHandlerTest : public WebViewInttestBase {
 
   // Uses GetUrlForPageWithHtmlBody() instead of simply using about:blank
   // because it looks __gCrWeb may not be available on about:blank.
-  // TODO(crbug.com/836114): Analyze why.
+  // TODO(crbug.com/40573199): Analyze why.
   void LoadTestPage() {
     NSURL* url = net::NSURLWithGURL(GetUrlForPageWithHtmlBody(""));
     ASSERT_TRUE(test::LoadUrl(web_view_, url));

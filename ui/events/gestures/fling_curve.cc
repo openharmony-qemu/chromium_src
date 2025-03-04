@@ -7,10 +7,11 @@
 #include <algorithm>
 #include <cmath>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "base/system/sys_info.h"
 #endif
 
@@ -19,9 +20,6 @@ namespace {
 const float kDefaultAlpha = -5.70762e+03f;
 const float kDefaultBeta = 1.72e+02f;
 const float kDefaultGamma = 3.7e+00f;
-#if BUILDFLAG(IS_OHOS)
-const int kLowDeviceAdapt = 15;
-#endif
 
 inline double GetPositionAtTime(double t) {
   return kDefaultAlpha * exp(-kDefaultGamma * t) - kDefaultBeta * t -
@@ -51,15 +49,15 @@ FlingCurve::FlingCurve(const gfx::Vector2dF& velocity,
       position_offset_(0) {
   DCHECK(!velocity.IsZero());
   float max_start_velocity = std::max(fabs(velocity.x()), fabs(velocity.y()));
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   if (base::SysInfo::IsLowEndDevice()) {
-    max_start_velocity /= kLowDeviceAdapt;
+    max_start_velocity /= 15;
   }
 #endif
   if (max_start_velocity > GetVelocityAtTime(0))
     max_start_velocity = GetVelocityAtTime(0);
   CHECK_GT(max_start_velocity, 0);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   LOG(DEBUG) << "fling max start velocity: " << max_start_velocity;
 #endif
 

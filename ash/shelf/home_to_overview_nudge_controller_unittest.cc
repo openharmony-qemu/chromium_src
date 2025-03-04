@@ -52,7 +52,7 @@ class HomeToOverviewNudgeControllerWithNudgesDisabledTest : public AshTestBase {
  public:
   HomeToOverviewNudgeControllerWithNudgesDisabledTest() {
     scoped_feature_list_.InitAndDisableFeature(
-        ash::features::kContextualNudges);
+        features::kHideShelfControlsInTabletMode);
   }
   ~HomeToOverviewNudgeControllerWithNudgesDisabledTest() override = default;
 
@@ -70,9 +70,8 @@ class HomeToOverviewNudgeControllerWithNudgesDisabledTest : public AshTestBase {
 class HomeToOverviewNudgeControllerTest : public AshTestBase {
  public:
   HomeToOverviewNudgeControllerTest() {
-    scoped_feature_list_.InitWithFeatures(
-        {features::kContextualNudges, features::kHideShelfControlsInTabletMode},
-        {});
+    scoped_feature_list_.InitAndEnableFeature(
+        features::kHideShelfControlsInTabletMode);
   }
   ~HomeToOverviewNudgeControllerTest() override = default;
 
@@ -611,8 +610,9 @@ TEST_F(HomeToOverviewNudgeControllerTest, NoNudgeAfterSuccessfulGestures) {
         /*num_steps = */ 12,
         base::BindRepeating(
             [](ui::EventType type, const gfx::Vector2dF& offset) {
-              if (type != ui::ET_GESTURE_SCROLL_UPDATE)
+              if (type != ui::EventType::kGestureScrollUpdate) {
                 return;
+              }
 
               // If the swipe home to overview controller started the timer to
               // transition to overview (which happens after swipe moves far
@@ -663,8 +663,9 @@ TEST_F(HomeToOverviewNudgeControllerTest, HomeToOverviewGestureFromNudge) {
       start, start + gfx::Vector2d(0, -100), base::Milliseconds(50),
       /*num_steps = */ 12,
       base::BindRepeating([](ui::EventType type, const gfx::Vector2dF& offset) {
-        if (type != ui::ET_GESTURE_SCROLL_UPDATE)
+        if (type != ui::EventType::kGestureScrollUpdate) {
           return;
+        }
 
         // If the swipe home to overview controller started the timer to
         // transition to overview (which happens after swipe moves far

@@ -4,19 +4,16 @@
 
 #import "ios/chrome/browser/ui/authentication/signin/consistency_promo_signin/consistency_account_chooser/consistency_account_chooser_mediator.h"
 
-#import "ios/chrome/browser/signin/chrome_account_manager_service.h"
-#import "ios/chrome/browser/signin/chrome_account_manager_service_observer_bridge.h"
-#import "ios/chrome/browser/signin/system_identity.h"
+#import "base/memory/raw_ptr.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service.h"
+#import "ios/chrome/browser/signin/model/chrome_account_manager_service_observer_bridge.h"
+#import "ios/chrome/browser/signin/model/system_identity.h"
 #import "ios/chrome/browser/ui/authentication/signin/consistency_promo_signin/consistency_account_chooser/consistency_account_chooser_consumer.h"
 #import "ios/chrome/browser/ui/authentication/signin/consistency_promo_signin/consistency_account_chooser/identity_item_configurator.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface ConsistencyAccountChooserMediator () <
     ChromeAccountManagerServiceObserver> {
-  ChromeAccountManagerService* _accountManagerService;
+  raw_ptr<ChromeAccountManagerService> _accountManagerService;
   std::unique_ptr<ChromeAccountManagerServiceObserverBridge>
       _accountManagerServiceObserver;
 }
@@ -31,7 +28,7 @@
 - (instancetype)initWithSelectedIdentity:(id<SystemIdentity>)selectedIdentity
                    accountManagerService:
                        (ChromeAccountManagerService*)accountManagerService {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     DCHECK(accountManagerService);
     _accountManagerService = accountManagerService;
     _accountManagerServiceObserver =
@@ -115,7 +112,7 @@
   IdentityItemConfigurator* configurator = nil;
   for (IdentityItemConfigurator* cursor in self
            .sortedIdentityItemConfigurators) {
-    if ([cursor.gaiaID isEqual:identity.gaiaID]) {
+    if ([cursor.gaiaID isEqualToString:identity.gaiaID]) {
       configurator = cursor;
     }
   }
@@ -127,6 +124,12 @@
 - (void)identityListChanged {
   [self loadIdentityItemConfigurators];
   [self.consumer reloadAllIdentities];
+}
+
+- (void)onChromeAccountManagerServiceShutdown:
+    (ChromeAccountManagerService*)accountManagerService {
+  // TODO(crbug.com/40284086): Remove `[self disconnect]`.
+  [self disconnect];
 }
 
 #pragma mark - ConsistencyAccountChooserTableViewControllerModelDelegate

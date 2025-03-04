@@ -53,10 +53,6 @@ function workAroundSeveralReportsIssue(audioOutputLevels) {
   if (audioOutputLevels.length == 1) {
     return audioOutputLevels[0];
   }
-
-  console.log("Hit issue where one report batch returns two or more reports " +
-              "with audioReportLevel; got " + audioOutputLevels);
-
   return Math.max(audioOutputLevels[0], audioOutputLevels[1]);
 }
 
@@ -78,11 +74,11 @@ function gatherAudioLevelSamples(peerConnection, callback) {
   // If this times out and never found any audio output levels, the call
   // probably doesn't have an audio stream.
   var lastRunAt = new Date();
-  var gotStats = function(response) {
-    audioOutputLevels = getAudioLevelFromStats_(response);
+  var gotStats = function(report) {
+    audioOutputLevels = getAudioLevelFromStats_(report);
     if (audioOutputLevels.length == 0) {
       // The call probably isn't up yet.
-      peerConnection.getStats(gotStats);
+      peerConnection.getStats().then(gotStats);
       return;
     }
     var outputLevel = workAroundSeveralReportsIssue(audioOutputLevels);
@@ -97,9 +93,9 @@ function gatherAudioLevelSamples(peerConnection, callback) {
       lastRunAt = new Date();
     }
     // Otherwise, continue as fast as we can.
-    peerConnection.getStats(gotStats);
+    peerConnection.getStats().then(gotStats);
   }
-  peerConnection.getStats(gotStats);
+  peerConnection.getStats().then(gotStats);
 }
 
 /**
@@ -149,14 +145,16 @@ function identifySilence_(samples) {
 /**
  * @private
  */
-function getAudioLevelFromStats_(response) {
-  var reports = response.result();
-  var audioOutputLevels = [];
-  for (var i = 0; i < reports.length; ++i) {
-    var report = reports[i];
-    if (report.names().indexOf('audioOutputLevel') != -1) {
-      audioOutputLevels.push(report.stat('audioOutputLevel'));
+function getAudioLevelFromStats_(report) {
+  // var reports = response.result();
+  const audioOutputLevels = [];
+  for (const stats of report.values()) {
+    if (stats.type != 'inbound-rtp' || stats.kind != 'audio' ||
+        stats.audioLevel == undefined) {
+      continue;
     }
+    // Convert from [0,1] range to [0, 32768].
+    audioOutputLevels.push(stats.audioLevel*32768);
   }
   return audioOutputLevels;
 }

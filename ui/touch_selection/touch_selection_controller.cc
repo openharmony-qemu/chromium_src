@@ -8,9 +8,16 @@
 
 #include "base/auto_reset.h"
 #include "base/check_op.h"
-#include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
+#include "ui/touch_selection/touch_selection_metrics.h"
+#if BUILDFLAG(ARKWEB_MENU)
+#include "base/logging.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace ui {
 namespace {
@@ -36,11 +43,12 @@ TouchHandleOrientation ToTouchHandleOrientation(
       return TouchHandleOrientation::RIGHT;
     case gfx::SelectionBound::CENTER:
       return TouchHandleOrientation::CENTER;
+    case gfx::SelectionBound::HIDDEN:
+      return TouchHandleOrientation::UNDEFINED;
     case gfx::SelectionBound::EMPTY:
       return TouchHandleOrientation::UNDEFINED;
   }
   NOTREACHED() << "Invalid selection bound type: " << type;
-  return TouchHandleOrientation::UNDEFINED;
 }
 
 }  // namespace
@@ -69,15 +77,37 @@ TouchSelectionController::~TouchSelectionController() {
 void TouchSelectionController::OnSelectionBoundsChanged(
     const gfx::SelectionBound& start,
     const gfx::SelectionBound& end) {
-  if (start == start_ && end_ == end)
+  if (start == start_ && end_ == end) {
+#if BUILDFLAG(ARKWEB_MENU)
+    reset_selection_temporarily_ = false;
+#endif
     return;
+  }
 
-  if (start.type() == gfx::SelectionBound::EMPTY ||
-      end.type() == gfx::SelectionBound::EMPTY ||
-      !show_touch_handles_) {
+  if (!start.HasHandle() || !end.HasHandle() || !show_touch_handles_) {
+#if BUILDFLAG(ARKWEB_MENU)
+    if (active_status_ == SELECTION_ACTIVE && start_selection_handle_ &&
+        end_selection_handle_ && show_touch_handles_) {
+      if (start_selection_handle_->IsActive() ||
+          end_selection_handle_->IsActive()) {
+        LOG(INFO) << "selection temporarily hide";
+        reset_selection_temporarily_ = true;
+        return;
+      }
+    }
+    if (longpress_drag_selector_.IsDragging()) {
+      LOG(INFO) << "long selection temporarily hide";
+      reset_selection_temporarily_ = true;
+      return;
+    }
+#endif
     HideHandles();
     return;
   }
+
+#if BUILDFLAG(ARKWEB_MENU)
+  reset_selection_temporarily_ = false;
+#endif
 
   // Swap the Handles when the start and end selection points cross each other.
   if (active_status_ == SELECTION_ACTIVE) {
@@ -103,7 +133,7 @@ void TouchSelectionController::OnSelectionBoundsChanged(
                   end_.edge_end() == start.edge_start()) ||
                  (end_selection_handle_->IsActive() &&
                   end.edge_end() == start_.edge_start());
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
     if (!need_swap) {
       need_swap = (end_ == end && end_selection_handle_->IsActive()) ||
                   (start_ == start && start_selection_handle_->IsActive());
@@ -174,7 +204,8 @@ void TouchSelectionController::OnViewportChanged(
 
   // Update handle layout after setting the new Viewport size.
   UpdateHandleLayoutIfNecessary();
-#ifdef OHOS_EX_TOPCONTROLS
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) && BUILDFLAG(ARKWEB_MENU)
   if (client_) {
     client_->OnSelectionEvent(SELECTION_HANDLES_MOVED);
   }
@@ -182,6 +213,8 @@ void TouchSelectionController::OnViewportChanged(
 }
 
 bool TouchSelectionController::WillHandleTouchEvent(const MotionEvent& event) {
+  const bool is_down_event = event.GetAction() == MotionEvent::Action::DOWN;
+  session_metrics_recorder_.OnTouchEvent(is_down_event);
   bool handled = WillHandleTouchEventImpl(event);
   // If Action::DOWN is consumed, the rest of touch sequence should be consumed,
   // too, regardless of value of |handled|.
@@ -189,8 +222,9 @@ bool TouchSelectionController::WillHandleTouchEvent(const MotionEvent& event) {
   // Ideally we should consume until the final Action::UP/Action::CANCEL.
   // But, apparently, we can't reliably determine the final Action::CANCEL in a
   // multi-touch scenario. See https://crbug.com/653212.
-  if (event.GetAction() == MotionEvent::Action::DOWN)
+  if (is_down_event) {
     consume_touch_sequence_ = handled;
+  }
   return handled || consume_touch_sequence_;
 }
 
@@ -206,11 +240,21 @@ void TouchSelectionController::HandleTapEvent(const gfx::PointF& location,
 void TouchSelectionController::HandleLongPressEvent(
     base::TimeTicks event_time,
     const gfx::PointF& location) {
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_VIBRATE)
   is_long_press_ = true;
-#endif
+#endif  // BUILDFLAG(ARKWEB_VIBRATE)
   longpress_drag_selector_.OnLongPressEvent(event_time, location);
   response_pending_input_event_ = LONG_PRESS;
+  drag_selector_initiating_gesture_ = DragSelectorInitiatingGesture::kLongPress;
+}
+
+void TouchSelectionController::HandleDoublePressEvent(
+    base::TimeTicks event_time,
+    const gfx::PointF& location) {
+  longpress_drag_selector_.OnDoublePressEvent(event_time, location);
+  response_pending_input_event_ = LONG_PRESS;
+  drag_selector_initiating_gesture_ =
+      DragSelectorInitiatingGesture::kDoublePress;
 }
 
 void TouchSelectionController::OnScrollBeginEvent() {
@@ -227,6 +271,18 @@ void TouchSelectionController::OnScrollBeginEvent() {
   response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
 }
 
+void TouchSelectionController::OnMenuCommand(bool should_dismiss_handles) {
+  session_metrics_recorder_.OnMenuCommand(should_dismiss_handles);
+  if (should_dismiss_handles) {
+    HideAndDisallowShowingAutomatically();
+  }
+}
+
+void TouchSelectionController::OnSessionEndEvent(const Event& event) {
+  session_metrics_recorder_.OnSessionEndEvent(event);
+  HideAndDisallowShowingAutomatically();
+}
+
 void TouchSelectionController::HideHandles() {
   response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
   DeactivateInsertion();
@@ -238,6 +294,7 @@ void TouchSelectionController::HideHandles() {
 }
 
 void TouchSelectionController::HideAndDisallowShowingAutomatically() {
+  session_metrics_recorder_.ResetMetrics();
   HideHandles();
   show_touch_handles_ = false;
 }
@@ -260,6 +317,11 @@ bool TouchSelectionController::Animate(base::TimeTicks frame_time) {
   }
 
   return false;
+}
+
+const gfx::SelectionBound& TouchSelectionController::GetFocusBound() const {
+  DCHECK_NE(active_status_, INACTIVE);
+  return anchor_drag_to_selection_start_ ? start_ : end_;
 }
 
 gfx::RectF TouchSelectionController::GetRectBetweenBounds() const {
@@ -373,6 +435,16 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
         (event_pos - GetEndPosition()).LengthSquared()) {
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
+
+#if BUILDFLAG(ARKWEB_MENU)
+    if (!end_selection_handle_->GetVisible() &&
+        start_selection_handle_->GetVisible()) {
+      LOG(INFO)
+          << "Handle selection event, start is visible end is not visible.";
+      return start_selection_handle_->WillHandleTouchEvent(event);
+    }
+#endif
+
     return end_selection_handle_->WillHandleTouchEvent(event);
   }
 
@@ -381,7 +453,6 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
 
 void TouchSelectionController::OnSwipeToMoveCursorBegin() {
   if (config_.hide_active_handle) {
-    // Hide the handle when magnifier is showing since it can confuse the user.
     SetTemporarilyHidden(true);
 
     // If the user has typed something, the insertion handle might be hidden.
@@ -391,19 +462,25 @@ void TouchSelectionController::OnSwipeToMoveCursorBegin() {
 }
 
 void TouchSelectionController::OnSwipeToMoveCursorEnd() {
-  // Show the handle at the end if magnifier was showing.
-  if (config_.hide_active_handle)
+  if (config_.hide_active_handle) {
     SetTemporarilyHidden(false);
+  }
+  RecordTouchSelectionDrag(TouchSelectionDragType::kCursorDrag);
 }
 
-#ifdef OHOS_DRAG_DROP
-void TouchSelectionController::ResetResponsePendingInputEvent() {
-  response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
-}
-#endif
+#if BUILDFLAG(ARKWEB_VIBRATE)
 
-#ifdef OHOS_CLIPBOARD
-void  TouchSelectionController::UpdateSelectionChanged(
+bool TouchSelectionController::IsLongPressEvent() {
+  return is_long_press_;
+}
+
+void TouchSelectionController::ResetLongPressEvent() {
+  is_long_press_ = false;
+}
+#endif  // BUILDFLAG(ARKWEB_VIBRATE)
+
+#if BUILDFLAG(ARKWEB_MENU)
+void TouchSelectionController::UpdateSelectionChanged(
     const TouchSelectionDraggable& draggable) {
   if (&draggable != insertion_handle_.get()) {
     client_->OnSelectionEvent(SELECTION_HANDLES_UPDATEMENU);
@@ -414,12 +491,8 @@ bool TouchSelectionController::IsLongPressDragSelectionActive() {
   return longpress_drag_selector_.IsActive();
 }
 
-bool TouchSelectionController::IsLongPressEvent() {
-  return is_long_press_;
-}
-
-void TouchSelectionController::ResetLongPressEvent() {
-  is_long_press_ = false;
+void TouchSelectionController::ResetResponsePendingInputEvent() {
+  response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
 }
 #endif
 
@@ -466,10 +539,12 @@ void TouchSelectionController::OnDragBegin(
     base::RecordAction(base::UserMetricsAction("SelectionChanged"));
   selection_handle_dragged_ = true;
 
-#ifdef OHOS_CLIPBOARD
-  selection_handle_orientation_dragging_ =
-    anchor_drag_to_selection_start_ ? TouchHandleOrientation::LEFT : TouchHandleOrientation::RIGHT;
-#endif
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  selection_handle_orientation_dragging_ = anchor_drag_to_selection_start_
+                                               ? TouchHandleOrientation::LEFT
+                                               : TouchHandleOrientation::RIGHT;
+  reset_selection_temporarily_ = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
   // When moving the handle we want to move only the extent point. Before doing
   // so we must make sure that the base point is set correctly.
@@ -480,21 +555,16 @@ void TouchSelectionController::OnDragBegin(
 void TouchSelectionController::OnDragUpdate(
     const TouchSelectionDraggable& draggable,
     const gfx::PointF& drag_position) {
+#if BUILDFLAG(ARKWEB_MENU)
+  gfx::PointF line_position = drag_position;
+#else
   // As the position corresponds to the bottom left point of the selection
   // bound, offset it to some reasonable point on the current line of text.
   gfx::Vector2dF line_offset = anchor_drag_to_selection_start_
                                    ? GetStartLineOffset()
                                    : GetEndLineOffset();
-#ifdef OHOS_CLIPBOARD
-  gfx::PointF line_position;
-  if (selection_handle_orientation_dragging_ == TouchHandleOrientation::LEFT) {
-    line_position = drag_position - line_offset;
-  } else {
-    line_position = drag_position + line_offset;
-  }
-#else
   gfx::PointF line_position = drag_position + line_offset;
-#endif
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   if (&draggable == insertion_handle_.get())
     client_->MoveCaret(line_position);
   else
@@ -519,22 +589,29 @@ void TouchSelectionController::OnDragUpdate(
 
 void TouchSelectionController::OnDragEnd(
     const TouchSelectionDraggable& draggable) {
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
   selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
-#endif
-  if (&draggable == insertion_handle_.get())
+
+  if (reset_selection_temporarily_) {
+    LOG(INFO) << "reset_selection_temporarily HideHandles";
+    HideHandles();
+  }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (&draggable == insertion_handle_.get()) {
     client_->OnSelectionEvent(INSERTION_HANDLE_DRAG_STOPPED);
-  else {
-#ifdef OHOS_CLIPBOARD
+  } else {
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
     if (&draggable == start_selection_handle_.get()) {
       start_selection_handle_->ResetPositionAfterDragEnd();
     }
     if (&draggable == end_selection_handle_.get()) {
       end_selection_handle_->ResetPositionAfterDragEnd();
     }
-#endif
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
     client_->OnSelectionEvent(SELECTION_HANDLE_DRAG_STOPPED);
   }
+  LogDragType(draggable);
+  drag_selector_initiating_gesture_ = DragSelectorInitiatingGesture::kNone;
 }
 
 bool TouchSelectionController::IsWithinTapSlop(
@@ -585,7 +662,7 @@ void TouchSelectionController::OnInsertionChanged() {
   const bool activated = ActivateInsertionIfNecessary();
 
   const TouchHandle::AnimationStyle animation = GetAnimationStyle(!activated);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   insertion_handle_->SetEdge(start_.edge_start(), start_.edge_end());
 #endif
   insertion_handle_->SetFocus(start_.edge_start(), start_.edge_end());
@@ -603,7 +680,7 @@ void TouchSelectionController::OnSelectionChanged() {
   const bool activated = ActivateSelectionIfNecessary();
 
   const TouchHandle::AnimationStyle animation = GetAnimationStyle(!activated);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   start_selection_handle_->SetEdge(start_.edge_start(), start_.edge_end());
   end_selection_handle_->SetEdge(end_.edge_start(), end_.edge_end());
 #endif
@@ -625,6 +702,7 @@ void TouchSelectionController::OnSelectionChanged() {
 
 bool TouchSelectionController::ActivateInsertionIfNecessary() {
   DCHECK_NE(SELECTION_ACTIVE, active_status_);
+  session_metrics_recorder_.OnCursorActivationEvent();
 
   if (!insertion_handle_) {
     insertion_handle_ = std::make_unique<TouchHandle>(
@@ -653,6 +731,7 @@ void TouchSelectionController::DeactivateInsertion() {
 
 bool TouchSelectionController::ActivateSelectionIfNecessary() {
   DCHECK_NE(INSERTION_ACTIVE, active_status_);
+  session_metrics_recorder_.OnSelectionActivationEvent();
 
   if (!start_selection_handle_) {
     start_selection_handle_ =
@@ -677,13 +756,8 @@ bool TouchSelectionController::ActivateSelectionIfNecessary() {
   if (active_status_ == INACTIVE ||
       response_pending_input_event_ == LONG_PRESS ||
       response_pending_input_event_ == REPEATED_TAP) {
-    if (active_status_ == SELECTION_ACTIVE) {
-      // The active selection session finishes with the start of the new one.
-      LogSelectionEnd();
-    }
     active_status_ = SELECTION_ACTIVE;
     selection_handle_dragged_ = false;
-    selection_start_time_ = base::TimeTicks::Now();
     response_pending_input_event_ = INPUT_EVENT_TYPE_NONE;
     longpress_drag_selector_.OnSelectionActivated();
     return true;
@@ -696,7 +770,6 @@ void TouchSelectionController::DeactivateSelection() {
     return;
   DCHECK(start_selection_handle_);
   DCHECK(end_selection_handle_);
-  LogSelectionEnd();
   longpress_drag_selector_.OnSelectionDeactivated();
   start_selection_handle_->SetEnabled(false);
   end_selection_handle_->SetEnabled(false);
@@ -758,16 +831,19 @@ TouchHandle::AnimationStyle TouchSelectionController::GetAnimationStyle(
              : TouchHandle::ANIMATION_NONE;
 }
 
-void TouchSelectionController::LogSelectionEnd() {
-  // TODO(mfomitchev): Once we are able to tell the difference between
-  // 'successful' and 'unsuccessful' selections - log
-  // Event.TouchSelection.Duration instead and get rid of
-  // Event.TouchSelectionD.WasDraggeduration.
-  if (selection_handle_dragged_) {
-    base::TimeDelta duration = base::TimeTicks::Now() - selection_start_time_;
-    UMA_HISTOGRAM_CUSTOM_TIMES("Event.TouchSelection.WasDraggedDuration",
-                               duration, base::Milliseconds(500),
-                               base::Seconds(60), 60);
+void TouchSelectionController::LogDragType(
+    const TouchSelectionDraggable& draggable) {
+  if (&draggable == insertion_handle_.get()) {
+    RecordTouchSelectionDrag(TouchSelectionDragType::kCursorHandleDrag);
+  } else if (&draggable == start_selection_handle_.get() ||
+             &draggable == end_selection_handle_.get()) {
+    RecordTouchSelectionDrag(TouchSelectionDragType::kSelectionHandleDrag);
+  } else if (drag_selector_initiating_gesture_ ==
+             DragSelectorInitiatingGesture::kLongPress) {
+    RecordTouchSelectionDrag(TouchSelectionDragType::kLongPressDrag);
+  } else if (drag_selector_initiating_gesture_ ==
+             DragSelectorInitiatingGesture::kDoublePress) {
+    RecordTouchSelectionDrag(TouchSelectionDragType::kDoublePressDrag);
   }
 }
 

@@ -4,96 +4,78 @@
 
 #import "ios/chrome/browser/ui/whats_new/whats_new_util.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/ios/ios_util.h"
-#import "base/mac/foundation_util.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/promos_manager/constants.h"
-#import "ios/chrome/browser/promos_manager/features.h"
-#import "ios/chrome/browser/promos_manager/promos_manager.h"
+#import "ios/chrome/browser/promos_manager/model/constants.h"
+#import "ios/chrome/browser/promos_manager/model/features.h"
+#import "ios/chrome/browser/promos_manager/model/promos_manager.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/ui/whats_new/constants.h"
-#import "ios/chrome/browser/ui/whats_new/feature_flags.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-namespace {
-
-// Time interval of 6 days. This is used to calculate 6 days after FRE to
-// trigger What's New Promo.
-const NSTimeInterval kSixDays = 6 * 24 * 60 * 60;
-
-// Returns whether today is the 6th and more day after the FRE. This is used to
-// decide to register What's New promo in the promo manager or not.
-bool IsSixDaysAfterFre() {
-  NSDate* startDate = [[NSUserDefaults standardUserDefaults]
-      objectForKey:kWhatsNewDaysAfterFre];
-  if (!startDate) {
-    [[NSUserDefaults standardUserDefaults] setObject:[NSDate date]
-                                              forKey:kWhatsNewDaysAfterFre];
-    return false;
-  }
-
-  NSDate* sixDaysAgoDate = [NSDate dateWithTimeIntervalSinceNow:-kSixDays];
-  if ([sixDaysAgoDate compare:startDate] == NSOrderedDescending) {
-    return true;
-  }
-  return false;
-}
-
-// Returns whether this launch is the 6th and more launches after the FRE. This
-// is used to decide to register What's New promo in the promo manager or not.
-bool IsSixLaunchAfterFre() {
-  NSInteger num = [[NSUserDefaults standardUserDefaults]
-      integerForKey:kWhatsNewLaunchesAfterFre];
-
-  if (num >= 6) {
-    return true;
-  }
-
-  num++;
-  [[NSUserDefaults standardUserDefaults] setInteger:num
-                                             forKey:kWhatsNewLaunchesAfterFre];
-  return false;
-}
-
-// Returns whether What's New promo has been registered in the promo manager.
-bool IsWhatsNewPromoRegistered() {
-  return [[NSUserDefaults standardUserDefaults]
-      boolForKey:kWhatsNewPromoRegistrationKey];
-}
-
-}  // namespace
-
+// For users who have already viewed What's New M116, the ensures that the promo
+// is not triggered again until the next version of What's New.
+// Note that we no longer write userDefault.
 bool WasWhatsNewUsed() {
-  return
-      [[NSUserDefaults standardUserDefaults] boolForKey:kWhatsNewUsageEntryKey];
+
+  return [[NSUserDefaults standardUserDefaults]
+      boolForKey:kWhatsNewM116UsageEntryKey];
 }
 
-void SetWhatsNewUsed(PromosManager* promosManager) {
-  if (WasWhatsNewUsed()) {
-    return;
-  }
-
-  // Deregister What's New promo.
-  DCHECK(promosManager);
-  promosManager->DeregisterPromo(promos_manager::Promo::WhatsNew);
-
-  [[NSUserDefaults standardUserDefaults] setBool:YES
-                                          forKey:kWhatsNewUsageEntryKey];
-}
-
-bool IsWhatsNewEnabled() {
-  return base::FeatureList::IsEnabled(kWhatsNewIOS);
-}
-
-void setWhatsNewPromoRegistration() {
-  [[NSUserDefaults standardUserDefaults] setBool:YES
-                                          forKey:kWhatsNewPromoRegistrationKey];
-}
-
-bool ShouldRegisterWhatsNewPromo() {
-  return !IsWhatsNewPromoRegistered() &&
-         (IsSixLaunchAfterFre() || IsSixDaysAfterFre());
+// Please do not modify this method. The content is updated by script. For more
+// info, please see `tools/whats_new`.
+const char* WhatsNewTypeToString(WhatsNewType type) {
+  switch (type) {
+    case WhatsNewType::kSearchTabs:
+      return "SearchTabs";
+    case WhatsNewType::kNewOverflowMenu:
+      return "NewOverflowMenu";
+    case WhatsNewType::kSharedHighlighting:
+      return "SharedHighlighting";
+    case WhatsNewType::kAddPasswordManually:
+      return "AddPasswordManually";
+    case WhatsNewType::kUseChromeByDefault:
+      return "UseChromeByDefault";
+    case WhatsNewType::kPasswordsInOtherApps:
+      return "PasswordsInOtherApps";
+    case WhatsNewType::kAutofill:
+      return "Autofill";
+    case WhatsNewType::kIncognitoTabsFromOtherApps:
+      return "IncognitoTabsFromOtherApps";
+    case WhatsNewType::kIncognitoLock:
+      return "IncognitoLock";
+    case WhatsNewType::kCalendarEvent:
+      return "CalendarEvent";
+    case WhatsNewType::kChromeActions:
+      return "ChromeActions";
+    case WhatsNewType::kMiniMaps:
+      return "MiniMaps";
+    case WhatsNewType::kLensSearch:
+      return "LensSearch";
+    case WhatsNewType::kBottomOmnibox:
+      return "BottomOmnibox";
+    case WhatsNewType::kESB:
+      return "ESB";
+    case WhatsNewType::kPWMWidget:
+      return "PWMWidget";
+    case WhatsNewType::kPinnedTabs:
+      return "PinnedTabs";
+    case WhatsNewType::kInactiveTabs:
+      return "InactiveTabs";
+    case WhatsNewType::kPackageTracking:
+      return "PackageTracking";
+    case WhatsNewType::kPasswordSharing:
+      return "PasswordSharing";
+    case WhatsNewType::kCustomizableOverflowMenu:
+      return "CustomizableOverflowMenu";
+    case WhatsNewType::kDockingBling:
+      return "DockingBling";
+    case WhatsNewType::kPriceTracking:
+      return "PriceTracking";
+    case WhatsNewType::kPriceHistory:
+      return "PriceHistory";
+    case WhatsNewType::kOtherBuyingOptions:
+      return "OtherBuyingOptions";
+    case WhatsNewType::kError:
+      return nil;
+  };
 }

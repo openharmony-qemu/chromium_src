@@ -52,7 +52,7 @@ class MEDIA_EXPORT RendererFactory {
   // NOTE: Returns Type::STREAM by default.
   virtual MediaResource::Type GetRequiredMediaResourceType();
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   virtual std::unique_ptr<Renderer> CreateCustomRenderer(
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       const scoped_refptr<base::TaskRunner>& worker_task_runner,
@@ -61,7 +61,7 @@ class MEDIA_EXPORT RendererFactory {
       media::RequestOverlayInfoCB request_overlay_info_cb,
       const gfx::ColorSpace& target_color_space,
       int player_id);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

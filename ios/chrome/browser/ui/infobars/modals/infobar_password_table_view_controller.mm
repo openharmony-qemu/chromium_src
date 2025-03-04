@@ -4,16 +4,16 @@
 
 #import "ios/chrome/browser/ui/infobars/modals/infobar_password_table_view_controller.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/notreached.h"
-#import "ios/chrome/browser/infobars/infobar_metrics_recorder.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_infobar_metrics_recorder.h"
+#import "ios/chrome/browser/infobars/model/infobar_metrics_recorder.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_infobar_metrics_recorder.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_button_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_edit_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_modal_constants.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_password_modal_delegate.h"
@@ -22,10 +22,7 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
+namespace {
 typedef NS_ENUM(NSInteger, SectionIdentifier) {
   SectionIdentifierContent = kSectionIdentifierEnumZero,
 };
@@ -37,6 +34,9 @@ typedef NS_ENUM(NSInteger, ItemType) {
   ItemTypeSaveCredentials,
   ItemTypeCancel,
 };
+
+const CGFloat kSymbolSize = 15;
+}  // namespace
 
 @interface InfobarPasswordTableViewController () <UITextFieldDelegate>
 // Properties backing InfobarPasswordModalConsumer interface.
@@ -93,7 +93,6 @@ typedef NS_ENUM(NSInteger, ItemType) {
         break;
       default:
         NOTREACHED();
-        break;
     }
   }
   return self;
@@ -183,7 +182,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
       l10n_util::GetNSString(IDS_IOS_SHOW_PASSWORD_VIEW_PASSWORD);
   self.passwordItem.textFieldValue = self.maskedPassword;
   self.passwordItem.identifyingIcon =
-      [UIImage imageNamed:@"infobar_reveal_password_icon"];
+      DefaultSymbolWithPointSize(kShowActionSymbol, kSymbolSize);
   self.passwordItem.identifyingIconEnabled = YES;
   self.passwordItem.hideIcon = YES;
   self.passwordItem.identifyingIconAccessibilityLabel = l10n_util::GetNSString(
@@ -227,7 +226,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   switch (itemType) {
     case ItemTypeSaveCredentials: {
       TableViewTextButtonCell* tableViewTextButtonCell =
-          base::mac::ObjCCastStrict<TableViewTextButtonCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextButtonCell>(cell);
       [tableViewTextButtonCell.button
                  addTarget:self
                     action:@selector(saveCredentialsButtonWasPressed:)
@@ -238,7 +237,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCancel: {
       TableViewTextButtonCell* tableViewTextButtonCell =
-          base::mac::ObjCCastStrict<TableViewTextButtonCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextButtonCell>(cell);
       [tableViewTextButtonCell.button
                  addTarget:self
                     action:@selector(neverSaveCredentialsForCurrentSite)
@@ -247,7 +246,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeUsername: {
       TableViewTextEditCell* editCell =
-          base::mac::ObjCCast<TableViewTextEditCell>(cell);
+          base::apple::ObjCCast<TableViewTextEditCell>(cell);
       [editCell.textField addTarget:self
                              action:@selector(usernameEditDidBegin)
                    forControlEvents:UIControlEventEditingDidBegin];
@@ -260,7 +259,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypePassword: {
       TableViewTextEditCell* editCell =
-          base::mac::ObjCCast<TableViewTextEditCell>(cell);
+          base::apple::ObjCCast<TableViewTextEditCell>(cell);
       [editCell.textField addTarget:self
                              action:@selector(updateSaveCredentialsButtonState)
                    forControlEvents:UIControlEventEditingChanged];
@@ -302,8 +301,8 @@ typedef NS_ENUM(NSInteger, ItemType) {
     [self reconfigureCellsForItems:@[ self.saveCredentialsItem ]];
   }
 
-  // TODO(crbug.com/945478):Ideally the InfobarDelegate should update the button
-  // text. Once we have a consumer protocol we should be able to create a
+  // TODO(crbug.com/40619978):Ideally the InfobarDelegate should update the
+  // button text. Once we have a consumer protocol we should be able to create a
   // delegate that asks the InfobarDelegate for the correct text.
   NSString* buttonText =
       [self.usernameItem.textFieldValue isEqualToString:self.originalUsername]
@@ -366,7 +365,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   self.passwordMasked = !self.passwordMasked;
   if (self.passwordMasked) {
     self.passwordItem.identifyingIcon =
-        [UIImage imageNamed:@"infobar_reveal_password_icon"];
+        DefaultSymbolWithPointSize(kShowActionSymbol, kSymbolSize);
     self.passwordItem.textFieldValue = self.maskedPassword;
     self.passwordItem.identifyingIconAccessibilityLabel =
         l10n_util::GetNSString(
@@ -375,7 +374,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
         recordModalEvent:MobileMessagesPasswordsModalEvent::MaskedPassword];
   } else {
     self.passwordItem.identifyingIcon =
-        [UIImage imageNamed:@"infobar_hide_password_icon"];
+        DefaultSymbolWithPointSize(kHideActionSymbol, kSymbolSize);
     self.passwordItem.textFieldValue = self.unmaskedPassword;
     self.passwordItem.identifyingIconAccessibilityLabel =
         l10n_util::GetNSString(

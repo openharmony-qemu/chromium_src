@@ -7,6 +7,10 @@
 
 #import "ios/chrome/browser/shared/coordinator/chrome_coordinator/chrome_coordinator.h"
 
+namespace password_manager {
+enum class PasswordCheckReferrer;
+}  // namespace password_manager
+
 @protocol ApplicationCommands;
 @class SafetyCheckCoordinator;
 
@@ -28,14 +32,31 @@
                                    browser:(Browser*)browser NS_UNAVAILABLE;
 
 // `navigationController`: Handles user movement to check subpages.
-// `browser`: browser state for preferences and password check.
-- (instancetype)initWithBaseNavigationController:
-                    (UINavigationController*)navigationController
-                                         browser:(Browser*)browser
-    NS_DESIGNATED_INITIALIZER;
+// `browser`: profile for preferences and password check.
+// `referrer`: Where in the app the Safety Check is being requested from.
+- (instancetype)
+    initWithBaseNavigationController:
+        (UINavigationController*)navigationController
+                             browser:(Browser*)browser
+                            referrer:(password_manager::PasswordCheckReferrer)
+                                         referrer NS_DESIGNATED_INITIALIZER;
 
 // Start a safety check if it is not currently running.
 - (void)startCheckIfNotRunning;
+
+// Updates the UI to display the appropriate notifications button
+// (either to "Turn on" or "Turn off" notifications) based on the provided
+// `enabled` parameter.
+//
+// If `enabled` is YES, the button will prompt users to "Turn off" notifications
+// and, when tapped, will terminate the ongoing process of sending Safety Check
+// push notifications and may present a toast confirming the change.
+//
+// If 'enabled' is NO, the button will prompt users to "Turn on" notifications
+// and, when tapped, may present an opt-in prompt if the user has not yet
+// granted notification permission. If permission is granted or already exists,
+// it will initiate the process of sending Safety Check push notifications.
+- (void)updateNotificationsButton:(BOOL)enabled;
 
 @end
 

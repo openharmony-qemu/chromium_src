@@ -6,17 +6,19 @@
 
 #include <set>
 #include <utility>
+#include <vector>
 
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
+#include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/observer_list.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/single_thread_task_runner.h"
+#include "components/autofill/core/browser/address_data_manager.h"
 #include "components/autofill/core/browser/address_normalizer.h"
 #include "components/autofill/core/browser/autofill_data_util.h"
 #include "components/autofill/core/browser/data_model/autofill_profile.h"
@@ -92,7 +94,7 @@ PaymentRequestState::PaymentRequestState(
   spec_->AddObserver(this);
 }
 
-PaymentRequestState::~PaymentRequestState() {}
+PaymentRequestState::~PaymentRequestState() = default;
 
 content::WebContents* PaymentRequestState::GetWebContents() {
   auto* rfh = content::RenderFrameHost::FromID(frame_routing_id_);
@@ -163,16 +165,6 @@ bool PaymentRequestState::IsOffTheRecord() const {
 }
 
 void PaymentRequestState::OnPaymentAppCreated(std::unique_ptr<PaymentApp> app) {
-  if (journey_logger_) {
-    if (base::Contains(app->GetAppMethodNames(), methods::kGooglePay) ||
-        base::Contains(app->GetAppMethodNames(), methods::kAndroidPay)) {
-      journey_logger_->SetAvailableMethod(
-          JourneyLogger::PaymentMethodCategory::kGoogle);
-    } else {
-      journey_logger_->SetAvailableMethod(
-          JourneyLogger::PaymentMethodCategory::kOther);
-    }
-  }
   available_apps_.emplace_back(std::move(app));
 }
 
@@ -194,10 +186,8 @@ void PaymentRequestState::OnDoneCreatingPaymentApps() {
     bool has_preferred_app = base::ranges::any_of(
         available_apps_, [](const auto& app) { return app->IsPreferred(); });
     if (has_preferred_app) {
-      available_apps_.erase(
-          std::remove_if(available_apps_.begin(), available_apps_.end(),
-                         [](const auto& app) { return !app->IsPreferred(); }),
-          available_apps_.end());
+      std::erase_if(available_apps_,
+                    [](const auto& app) { return !app->IsPreferred(); });
 
       // By design, only one payment app can be preferred.
       DCHECK_EQ(available_apps_.size(), 1u);
@@ -242,6 +232,15 @@ base::WeakPtr<CSPChecker> PaymentRequestState::GetCSPChecker() {
 void PaymentRequestState::SetOptOutOffered() {
   if (journey_logger_)
     journey_logger_->SetOptOutOffered();
+}
+
+std::optional<base::UnguessableToken>
+PaymentRequestState::GetChromeOSTWAInstanceId() const {
+  if (!payment_request_delegate_) {
+    return std::nullopt;
+  }
+
+  return payment_request_delegate_->GetChromeOSTWAInstanceId();
 }
 
 void PaymentRequestState::OnPaymentResponseReady(
@@ -394,7 +393,8 @@ void PaymentRequestState::OnPaymentAppWindowClosed() {
 void PaymentRequestState::RecordUseStats() {
   if (ShouldShowShippingSection()) {
     DCHECK(selected_shipping_profile_);
-    personal_data_manager_->RecordUseOf(selected_shipping_profile_.get());
+    personal_data_manager_->address_data_manager().RecordUseOf(
+        *selected_shipping_profile_);
   }
 
   if (ShouldShowContactSection()) {
@@ -404,7 +404,8 @@ void PaymentRequestState::RecordUseStats() {
     // should only be updated once.
     if (!ShouldShowShippingSection() || (selected_shipping_profile_->guid() !=
                                          selected_contact_profile_->guid())) {
-      personal_data_manager_->RecordUseOf(selected_contact_profile_.get());
+      personal_data_manager_->address_data_manager().RecordUseOf(
+          *selected_contact_profile_);
     }
   }
 
@@ -416,7 +417,7 @@ void PaymentRequestState::SetAvailablePaymentAppForRetry() {
   if (!selected_app_)
     return;
 
-  base::EraseIf(available_apps_, [this](const auto& payment_app) {
+  std::erase_if(available_apps_, [this](const auto& payment_app) {
     // Remove the app if it is not selected.
     return payment_app.get() != selected_app_.get();
   });
@@ -547,7 +548,7 @@ void PaymentRequestState::SelectDefaultShippingAddressAndNotifyObservers() {
   if (!shipping_profiles().empty() && spec_ &&
       spec_->selected_shipping_option() &&
       profile_comparator()->IsShippingComplete(shipping_profiles_[0])) {
-    selected_shipping_profile_ = shipping_profiles()[0];
+    selected_shipping_profile_ = shipping_profiles()[0].get();
   }
   UpdateIsReadyToPayAndNotifyObservers();
 }
@@ -584,10 +585,11 @@ base::WeakPtr<PaymentRequestState> PaymentRequestState::AsWeakPtr() {
 }
 
 void PaymentRequestState::PopulateProfileCache() {
-  std::vector<autofill::AutofillProfile*> profiles =
-      personal_data_manager_->GetProfilesToSuggest();
+  std::vector<const autofill::AutofillProfile*> profiles =
+      personal_data_manager_->address_data_manager().GetProfilesToSuggest();
 
-  std::vector<autofill::AutofillProfile*> raw_profiles_for_filtering;
+  std::vector<raw_ptr<autofill::AutofillProfile, VectorExperimental>>
+      raw_profiles_for_filtering;
   raw_profiles_for_filtering.reserve(profiles.size());
 
   // PaymentRequest may outlive the Profiles returned by the Data Manager.
@@ -635,7 +637,7 @@ void PaymentRequestState::SetDefaultProfileSelections() {
   // the first one is the best default selection.
   if (!contact_profiles().empty() &&
       profile_comparator()->IsContactInfoComplete(contact_profiles_[0]))
-    selected_contact_profile_ = contact_profiles()[0];
+    selected_contact_profile_ = contact_profiles()[0].get();
 
   // Sort apps.
   PaymentApp::SortApps(&available_apps_);

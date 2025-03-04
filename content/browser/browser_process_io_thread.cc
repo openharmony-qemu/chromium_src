@@ -9,7 +9,6 @@
 #include "base/debug/alias.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
-#include "base/metrics/histogram_macros.h"
 #include "base/threading/hang_watcher.h"
 #include "base/threading/thread_restrictions.h"
 #include "base/trace_event/memory_dump_manager.h"
@@ -18,7 +17,6 @@
 #include "content/browser/browser_child_process_host_impl.h"
 #include "content/browser/browser_thread_impl.h"
 #include "content/browser/child_process_host_impl.h"
-#include "content/browser/notification_service_impl.h"
 #include "content/browser/utility_process_host.h"
 #include "content/public/browser/browser_child_process_host_iterator.h"
 #include "content/public/common/process_type.h"
@@ -32,8 +30,8 @@
 #include "base/win/scoped_com_initializer.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "res_sched_client_adapter.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
@@ -45,11 +43,11 @@ BrowserProcessIOThread::BrowserProcessIOThread()
 }
 
 BrowserProcessIOThread::~BrowserProcessIOThread() {
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-      GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+      ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
+      GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   Stop();
 }
@@ -60,13 +58,6 @@ void BrowserProcessIOThread::RegisterAsBrowserThread() {
   DCHECK(!browser_thread_);
   browser_thread_.reset(
       new BrowserThreadImpl(BrowserThread::IO, task_runner()));
-
-  // Unretained(this) is safe as |this| outlives its underlying thread.
-  task_runner()->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &BrowserProcessIOThread::CompleteInitializationOnBrowserThread,
-          Unretained(this)));
 }
 
 void BrowserProcessIOThread::AllowBlockingForTesting() {
@@ -98,11 +89,11 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
   }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
-      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-      GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+      ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+      GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
   IOThreadRun(run_loop);
@@ -111,17 +102,9 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
 void BrowserProcessIOThread::CleanUp() {
   DCHECK_CALLED_ON_VALID_THREAD(browser_thread_checker_);
 
-  notification_service_.reset();
-
 #if BUILDFLAG(IS_WIN)
   com_initializer_.reset();
 #endif
-}
-
-void BrowserProcessIOThread::CompleteInitializationOnBrowserThread() {
-  DCHECK_CALLED_ON_VALID_THREAD(browser_thread_checker_);
-
-  notification_service_ = std::make_unique<NotificationServiceImpl>();
 }
 
 void BrowserProcessIOThread::IOThreadRun(base::RunLoop* run_loop) {
@@ -134,10 +117,7 @@ void BrowserProcessIOThread::IOThreadRun(base::RunLoop* run_loop) {
   }
 
   Thread::Run(run_loop);
-
-  // Inhibit tail calls of Run and inhibit code folding.
-  const int line_number = __LINE__;
-  base::debug::Alias(&line_number);
+  NO_CODE_FOLDING();
 }
 
 void BrowserProcessIOThread::ProcessHostCleanUp() {
@@ -169,7 +149,6 @@ void BrowserProcessIOThread::ProcessHostCleanUp() {
           base::Seconds(kMaxSecondsToWaitForNetworkProcess), nullptr);
       // Record time spent for the method call.
       base::TimeDelta network_wait_time = base::TimeTicks::Now() - start_time;
-      UMA_HISTOGRAM_TIMES("NetworkService.ShutdownTime", network_wait_time);
       DVLOG(1) << "Waited " << network_wait_time.InMilliseconds()
                << " ms for network service";
     }

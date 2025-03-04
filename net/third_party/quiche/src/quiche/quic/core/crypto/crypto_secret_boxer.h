@@ -13,14 +13,14 @@
 #include "absl/strings/string_view.h"
 #include "quiche/quic/core/crypto/quic_random.h"
 #include "quiche/quic/platform/api/quic_export.h"
-#include "quiche/quic/platform/api/quic_mutex.h"
+#include "quiche/common/platform/api/quiche_mutex.h"
 
 namespace quic {
 
 // CryptoSecretBoxer encrypts small chunks of plaintext (called 'boxing') and
 // then, later, can authenticate+decrypt the resulting boxes. This object is
 // thread-safe.
-class QUIC_EXPORT_PRIVATE CryptoSecretBoxer {
+class QUICHE_EXPORT CryptoSecretBoxer {
  public:
   CryptoSecretBoxer();
   CryptoSecretBoxer(const CryptoSecretBoxer&) = delete;
@@ -55,11 +55,11 @@ class QUIC_EXPORT_PRIVATE CryptoSecretBoxer {
  private:
   struct State;
 
-  mutable QuicMutex lock_;
+  mutable quiche::QuicheMutex lock_;
 
   // state_ is an opaque pointer to whatever additional state the concrete
   // implementation of CryptoSecretBoxer requires.
-  std::unique_ptr<State> state_ QUIC_GUARDED_BY(lock_);
+  std::unique_ptr<State> state_ QUICHE_GUARDED_BY(lock_);
 };
 
 }  // namespace quic

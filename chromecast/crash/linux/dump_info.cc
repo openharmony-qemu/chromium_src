@@ -1,22 +1,24 @@
 // Copyright 2015 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 #include "chromecast/crash/linux/dump_info.h"
 
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
 
+#include <string_view>
+
+#include "base/i18n/time_formatting.h"
 #include "base/logging.h"
-#include "base/strings/stringprintf.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/time/time.h"
 #include "base/values.h"
 
 namespace chromecast {
 
 namespace {
-
-// "%Y-%m-%d %H:%M:%S";
-const char kDumpTimeFormat[] = "%04d-%02d-%02d %02d:%02d:%02d";
 
 const int kNumRequiredParams = 4;
 
@@ -39,11 +41,19 @@ const char kExecNameKey[] = "exec_name";
 const char kSignatureKey[] = "signature";
 const char kExtraInfoKey[] = "extra_info";
 
+// CastLite specific data
+const char kComments[] = "comments";
+const char kJsEngine[] = "js_engine";
+const char kJsBuildLabel[] = "js_build_label";
+const char kJsExceptionCategory[] = "js_exception_category";
+const char kJsExceptionDetails[] = "js_exception_details";
+const char kJsExceptionSignature[] = "js_exception_signature";
+
 // Convenience wrapper around Value::Dict::FindString(), for easier use in if
 // statements. If `key` is a string in `dict`, writes it to `out` and returns
 // true. Leaves `out` alone and returns false otherwise.
 bool FindString(const base::Value::Dict& dict,
-                base::StringPiece key,
+                std::string_view key,
                 std::string& out) {
   const std::string* value = dict.FindString(key);
   if (!value)
@@ -76,15 +86,11 @@ DumpInfo::~DumpInfo() {}
 base::Value DumpInfo::GetAsValue() const {
   base::Value::Dict result;
 
-  base::Time::Exploded ex;
-  dump_time_.LocalExplode(&ex);
-  std::string dump_time =
-      base::StringPrintf(kDumpTimeFormat, ex.year, ex.month, ex.day_of_month,
-                         ex.hour, ex.minute, ex.second);
-  result.Set(kDumpTimeKey, dump_time);
+  result.Set(kDumpTimeKey, base::UnlocalizedTimeFormatWithPattern(
+                               dump_time_, "yyyy-MM-dd HH:mm:ss"));
 
   result.Set(kDumpKey, crashed_process_dump_);
-  std::string uptime = std::to_string(params_.process_uptime);
+  std::string uptime = base::NumberToString(params_.process_uptime);
   result.Set(kUptimeKey, uptime);
   result.Set(kLogfileKey, logfile_);
 
@@ -105,6 +111,12 @@ base::Value DumpInfo::GetAsValue() const {
   result.Set(kSignatureKey, params_.signature);
   result.Set(kExtraInfoKey, params_.extra_info);
   result.Set(kCrashProductNameKey, params_.crash_product_name);
+  result.Set(kComments, params_.comments);
+  result.Set(kJsEngine, params_.js_engine);
+  result.Set(kJsBuildLabel, params_.js_build_label);
+  result.Set(kJsExceptionCategory, params_.js_exception_category);
+  result.Set(kJsExceptionDetails, params_.js_exception_details);
+  result.Set(kJsExceptionSignature, params_.js_exception_signature);
 
   return base::Value(std::move(result));
 }
@@ -177,6 +189,25 @@ bool DumpInfo::ParseEntry(const base::Value* entry) {
     ++num_params;
   if (FindString(*dict, kCrashProductNameKey, params_.crash_product_name))
     ++num_params;
+  if (FindString(*dict, kComments, params_.comments)) {
+    ++num_params;
+  }
+  if (FindString(*dict, kJsEngine, params_.js_engine)) {
+    ++num_params;
+  }
+  if (FindString(*dict, kJsBuildLabel, params_.js_build_label)) {
+    ++num_params;
+  }
+  if (FindString(*dict, kJsExceptionCategory, params_.js_exception_category)) {
+    ++num_params;
+  }
+  if (FindString(*dict, kJsExceptionDetails, params_.js_exception_details)) {
+    ++num_params;
+  }
+  if (FindString(*dict, kJsExceptionSignature,
+                 params_.js_exception_signature)) {
+    ++num_params;
+  }
 
   // Disallow extraneous params
   if (dict->size() != num_params)
@@ -187,14 +218,12 @@ bool DumpInfo::ParseEntry(const base::Value* entry) {
 }
 
 bool DumpInfo::SetDumpTimeFromString(const std::string& timestr) {
-  base::Time::Exploded ex = {0};
-  if (sscanf(timestr.c_str(), kDumpTimeFormat, &ex.year, &ex.month,
-             &ex.day_of_month, &ex.hour, &ex.minute, &ex.second) < 6) {
-    LOG(INFO) << "Failed to convert dump time invalid";
-    return false;
+  if (base::Time::FromString(timestr.c_str(), &dump_time_)) {
+    return true;
   }
 
-  return base::Time::FromLocalExploded(ex, &dump_time_);
+  LOG(INFO) << "Failed to convert dump time invalid";
+  return false;
 }
 
 }  // namespace chromecast

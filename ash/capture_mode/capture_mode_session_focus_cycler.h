@@ -32,7 +32,7 @@ class ScopedA11yOverrideWindowSetter;
 // CaptureModeSessionFocusCycler handles the special focus transitions which
 // happen between the capture session UI items. These include the capture bar
 // buttons, the selection region UI and the capture button.
-// TODO(crbug.com/1182456): The selection region UI are drawn directly on a
+// TODO(crbug.com/40170806): The selection region UI are drawn directly on a
 // layer. We simulate focus by drawing focus rings on the same layer, but this
 // is not compatible with accessibility. Investigate using AxVirtualView or
 // making the dots actual Views.
@@ -40,12 +40,14 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
  public:
   // The different groups which can receive focus during a capture mode session.
   // A group may have multiple items which can receive focus.
-  // TODO(crbug.com/1182456): Investigate removing the groups concept and having
-  // one flat list.
+  // TODO(crbug.com/40170806): Investigate removing the groups concept and
+  // having one flat list.
   enum class FocusGroup {
     kNone = 0,
     // The buttons to select the capture type and source on the capture bar.
     kTypeSource,
+    // The start recording button inside the game capture bar.
+    kStartRecordingButton,
     // In region mode, the UI to adjust a partial region.
     kSelection,
     // The button in the middle of a selection region to capture or record.
@@ -97,16 +99,17 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
     virtual void PseudoBlur();
 
     // Attempt to mimic a click on the associated view. Called by
-    // CaptureModeSession when it receives a space key event, as the button is
-    // not actuallly focused and will do nothing otherwise. Does nothing if the
-    // view is not a subclass of Button.
-    virtual void ClickView();
+    // CaptureModeSession when it receives a space, or enter key events, as the
+    // button is not actuallly focused and will do nothing otherwise. Triggers
+    // the button handler if the view is a subclass of Button, and returns true.
+    // Does nothing otherwise and returns false.
+    virtual bool ClickView();
 
    protected:
     HighlightableView();
     virtual ~HighlightableView();
 
-    // TODO(crbug.com/1182456): This can result in multiple of these objects
+    // TODO(crbug.com/40170806): This can result in multiple of these objects
     // thinking they have focus if CaptureModeSessionFocusCycler does not call
     // PseudoFocus or PseudoBlur properly. Investigate if there is a better
     // approach.
@@ -115,7 +118,7 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
    private:
     // A convenience pointer to the focus ring, which is owned by the views
     // hierarchy.
-    raw_ptr<views::FocusRing, ExperimentalAsh> focus_ring_ = nullptr;
+    raw_ptr<views::FocusRing, DanglingUntriaged> focus_ring_ = nullptr;
 
     // True until a highlight path generator has been installed on the focus
     // ring. The path generator can be refreshed (e.g. to change the shape of
@@ -139,14 +142,14 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
     views::View* GetView() override;
     void PseudoFocus() override;
     void PseudoBlur() override;
-    void ClickView() override;
+    bool ClickView() override;
 
     // aura::WindowObserver:
     void OnWindowDestroying(aura::Window* window) override;
 
    private:
-    const raw_ptr<aura::Window, ExperimentalAsh> window_;
-    const raw_ptr<CaptureModeSession, ExperimentalAsh> session_;
+    const raw_ptr<aura::Window> window_;
+    const raw_ptr<CaptureModeSession> session_;
   };
 
   // Defines a type for a callback that can be called to construct a highlight
@@ -177,7 +180,7 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
         override;
 
    private:
-    const raw_ptr<views::View, ExperimentalAsh> view_;
+    const raw_ptr<views::View> view_;
     HighlightPathGeneratorFactory highlight_path_generator_factory_;
   };
 
@@ -209,10 +212,12 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
   // Returns true if anything has focus.
   bool HasFocus() const;
 
-  // Called when the CaptureModeSession receives a VKEY_SPACE event. Returns
-  // true if the focused view should take the event; when this happens the
+  // Activates the currently focused view (if any) (e.g. by pressing a button if
+  // the focused view is a button). If the given `ignore_view` is the currently
+  // focused view, it does nothing and returns false. Returns true if the
+  // focused view should take the event; when this happens the
   // CaptureModeSession should not handle the event.
-  bool OnSpacePressed();
+  bool MaybeActivateFocusedView(views::View* ignore_view);
 
   // Returns true if the current focus group is associated with the UI used for
   // displaying a region.
@@ -310,6 +315,10 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
   const std::vector<FocusGroup> groups_for_region_;
   const std::vector<FocusGroup> groups_for_window_;
 
+  // Focusable groups for the game capture session that always has `kWindow`
+  // capture source selected. And the selected window is not changeable.
+  const std::vector<FocusGroup> groups_for_game_capture_;
+
   // Highlightable windows of the focus group `kCaptureWindow`. Windows opened
   // after the session starts will not be included.
   std::map<aura::Window*, std::unique_ptr<HighlightableWindow>>
@@ -317,7 +326,7 @@ class ASH_EXPORT CaptureModeSessionFocusCycler : public views::WidgetObserver {
 
   // The session that owns |this|. Guaranteed to be non null for the lifetime of
   // |this|.
-  raw_ptr<CaptureModeSession, ExperimentalAsh> session_;
+  raw_ptr<CaptureModeSession> session_;
 
   // Accessibility features will focus on whatever window is returned by
   // GetA11yOverrideWindow(). Once `this` goes out of scope, the a11y override

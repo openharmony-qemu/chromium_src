@@ -7,6 +7,10 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 
+#if BUILDFLAG(USE_BLINK)
+#include "third_party/blink/public/common/features_generated.h"
+#endif
+
 namespace payments {
 namespace features {
 
@@ -26,7 +30,7 @@ BASE_FEATURE(kWebPaymentsJustInTimePaymentApp,
 
 BASE_FEATURE(kAppStoreBilling,
              "AppStoreBilling",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -36,10 +40,6 @@ BASE_FEATURE(kAppStoreBilling,
 BASE_FEATURE(kAppStoreBillingDebug,
              "AppStoreBillingDebug",
              base::FEATURE_DISABLED_BY_DEFAULT);
-
-BASE_FEATURE(kPaymentHandlerPopUpSizeWindow,
-             "PaymentHandlerPopUpSizeWindow",
-             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kAllowJITInstallationWhenAppIconIsMissing,
              "AllowJITInstallationWhenAppIconIsMissing",
@@ -62,15 +62,35 @@ BASE_FEATURE(kSecurePaymentConfirmationUseCredentialStoreAPIs,
 #endif
 );
 
-// The blink-side feature of the same name is disabled by default, and can be
-// enabled directly or via origin trial.
-BASE_FEATURE(kPaymentHandlerMinimalHeaderUX,
-             "PaymentHandlerMinimalHeaderUX",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
 BASE_FEATURE(kPaymentHandlerRequireLinkHeader,
              "PaymentHandlerRequireLinkHeader",
              base::FEATURE_ENABLED_BY_DEFAULT);
+
+#if BUILDFLAG(USE_BLINK)
+const base::FeatureParam<std::string>
+    kSecurePaymentConfirmationNetworkAndIssuerIconsOptions(
+        &blink::features::kSecurePaymentConfirmationNetworkAndIssuerIcons,
+        /*name=*/"spc_network_and_issuer_icons_option",
+        /*default_value=*/"rows");
+
+SecurePaymentConfirmationNetworkAndIssuerIconsTreatment
+GetNetworkAndIssuerIconsTreatment() {
+  if (!base::FeatureList::IsEnabled(
+          blink::features::kSecurePaymentConfirmationNetworkAndIssuerIcons)) {
+    return SecurePaymentConfirmationNetworkAndIssuerIconsTreatment::kNone;
+  }
+
+  std::string option =
+      kSecurePaymentConfirmationNetworkAndIssuerIconsOptions.Get();
+  if (option == "inline") {
+    return SecurePaymentConfirmationNetworkAndIssuerIconsTreatment::kInline;
+  } else if (option == "rows") {
+    return SecurePaymentConfirmationNetworkAndIssuerIconsTreatment::kRows;
+  }
+
+  NOTREACHED();
+}
+#endif
 
 }  // namespace features
 }  // namespace payments

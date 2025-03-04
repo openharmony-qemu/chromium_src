@@ -17,13 +17,18 @@ import android.os.Build;
 import android.os.ParcelUuid;
 import android.util.SparseArray;
 
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.base.ContextUtils;
 import org.chromium.base.Log;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNIAdditionalImport;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
 import org.chromium.components.location.LocationUtils;
+import org.chromium.device.bluetooth.wrapper.BluetoothAdapterWrapper;
+import org.chromium.device.bluetooth.wrapper.BluetoothDeviceWrapper;
+import org.chromium.device.bluetooth.wrapper.BluetoothLeScannerWrapper;
+import org.chromium.device.bluetooth.wrapper.ScanCallbackWrapper;
+import org.chromium.device.bluetooth.wrapper.ScanResultWrapper;
 
 import java.util.List;
 import java.util.Map;
@@ -36,13 +41,12 @@ import java.util.Map;
  * Lifetime is controlled by device::BluetoothAdapterAndroid.
  */
 @JNINamespace("device")
-@JNIAdditionalImport(Wrappers.class)
 final class ChromeBluetoothAdapter extends BroadcastReceiver {
     private static final String TAG = "Bluetooth";
 
     private long mNativeBluetoothAdapterAndroid;
     // mAdapter is final to ensure registerReceiver is followed by unregisterReceiver.
-    private final Wrappers.BluetoothAdapterWrapper mAdapter;
+    private final BluetoothAdapterWrapper mAdapter;
     private ScanCallback mScanCallback;
 
     // ---------------------------------------------------------------------------------------------
@@ -56,8 +60,8 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
      *                       but may be either null if an adapter is not available
      *                       or a fake for testing.
      */
-    public ChromeBluetoothAdapter(
-            long nativeBluetoothAdapterAndroid, Wrappers.BluetoothAdapterWrapper adapterWrapper) {
+    private ChromeBluetoothAdapter(
+            long nativeBluetoothAdapterAndroid, BluetoothAdapterWrapper adapterWrapper) {
         mNativeBluetoothAdapterAndroid = nativeBluetoothAdapterAndroid;
         mAdapter = adapterWrapper;
         registerBroadcastReceiver();
@@ -68,9 +72,7 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         }
     }
 
-    /**
-     * Handles C++ object being destroyed.
-     */
+    /** Handles C++ object being destroyed. */
     @CalledByNative
     private void onBluetoothAdapterAndroidDestruction() {
         stopScan();
@@ -84,7 +86,7 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
     // Implements BluetoothAdapterAndroid::Create.
     @CalledByNative
     private static ChromeBluetoothAdapter create(
-            long nativeBluetoothAdapterAndroid, Wrappers.BluetoothAdapterWrapper adapterWrapper) {
+            long nativeBluetoothAdapterAndroid, BluetoothAdapterWrapper adapterWrapper) {
         return new ChromeBluetoothAdapter(nativeBluetoothAdapterAndroid, adapterWrapper);
     }
 
@@ -150,7 +152,7 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
      */
     @CalledByNative
     private boolean startScan(List<ScanFilter> filters) {
-        Wrappers.BluetoothLeScannerWrapper scanner = mAdapter.getBluetoothLeScanner();
+        BluetoothLeScannerWrapper scanner = mAdapter.getBluetoothLeScanner();
 
         if (scanner == null) {
             return false;
@@ -192,7 +194,7 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         }
 
         try {
-            Wrappers.BluetoothLeScannerWrapper scanner = mAdapter.getBluetoothLeScanner();
+            BluetoothLeScannerWrapper scanner = mAdapter.getBluetoothLeScanner();
             if (scanner != null) {
                 scanner.stopScan(mScanCallback);
             }
@@ -220,9 +222,9 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Context context = mAdapter.getContext();
             return context.checkCallingOrSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
-                    == PackageManager.PERMISSION_GRANTED
+                            == PackageManager.PERMISSION_GRANTED
                     && context.checkCallingOrSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                    == PackageManager.PERMISSION_GRANTED;
+                            == PackageManager.PERMISSION_GRANTED;
         }
 
         LocationUtils locationUtils = LocationUtils.getInstance();
@@ -235,14 +237,16 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         }
 
         return (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                       == PackageManager.PERMISSION_GRANTED)
+                        == PackageManager.PERMISSION_GRANTED)
                 || (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED);
     }
 
     private void registerBroadcastReceiver() {
         if (mAdapter != null) {
-            ContextUtils.registerProtectedBroadcastReceiver(mAdapter.getContext(), this,
+            ContextUtils.registerProtectedBroadcastReceiver(
+                    mAdapter.getContext(),
+                    this,
                     new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
         }
     }
@@ -257,15 +261,19 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
      * Implements callbacks used during a Low Energy scan by notifying upon
      * devices discovered or detecting a scan failure.
      */
-    private class ScanCallback extends Wrappers.ScanCallbackWrapper {
+    private class ScanCallback implements ScanCallbackWrapper {
         @Override
-        public void onBatchScanResult(List<Wrappers.ScanResultWrapper> results) {
+        public void onBatchScanResult(List<ScanResultWrapper> results) {
             Log.v(TAG, "onBatchScanResults");
         }
 
         @Override
-        public void onScanResult(int callbackType, Wrappers.ScanResultWrapper result) {
-            Log.v(TAG, "onScanResult %d %s %s", callbackType, result.getDevice().getAddress(),
+        public void onScanResult(int callbackType, ScanResultWrapper result) {
+            Log.v(
+                    TAG,
+                    "onScanResult %d %s %s",
+                    callbackType,
+                    result.getDevice().getAddress(),
                     result.getDevice().getName());
 
             String[] uuid_strings;
@@ -314,21 +322,29 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
 
             // Object can be destroyed, but Android keeps calling onScanResult.
             if (mNativeBluetoothAdapterAndroid != 0) {
-                ChromeBluetoothAdapterJni.get().createOrUpdateDeviceOnScan(
-                        mNativeBluetoothAdapterAndroid, ChromeBluetoothAdapter.this,
-                        result.getDevice().getAddress(), result.getDevice(),
-                        result.getScanRecord_getDeviceName(), result.getRssi(), uuid_strings,
-                        result.getScanRecord_getTxPowerLevel(), serviceDataKeys, serviceDataValues,
-                        manufacturerDataKeys, manufacturerDataValues,
-                        result.getScanRecord_getAdvertiseFlags());
+                ChromeBluetoothAdapterJni.get()
+                        .createOrUpdateDeviceOnScan(
+                                mNativeBluetoothAdapterAndroid,
+                                ChromeBluetoothAdapter.this,
+                                result.getDevice().getAddress(),
+                                result.getDevice(),
+                                result.getScanRecord_getDeviceName(),
+                                result.getRssi(),
+                                uuid_strings,
+                                result.getScanRecord_getTxPowerLevel(),
+                                serviceDataKeys,
+                                serviceDataValues,
+                                manufacturerDataKeys,
+                                manufacturerDataValues,
+                                result.getScanRecord_getAdvertiseFlags());
             }
         }
 
         @Override
         public void onScanFailed(int errorCode) {
             Log.w(TAG, "onScanFailed: %d", errorCode);
-            ChromeBluetoothAdapterJni.get().onScanFailed(
-                    mNativeBluetoothAdapterAndroid, ChromeBluetoothAdapter.this);
+            ChromeBluetoothAdapterJni.get()
+                    .onScanFailed(mNativeBluetoothAdapterAndroid, ChromeBluetoothAdapter.this);
         }
     }
 
@@ -339,17 +355,25 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         if (isPresent() && BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
             int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
 
-            Log.w(TAG, "onReceive: BluetoothAdapter.ACTION_STATE_CHANGED: %s",
+            Log.w(
+                    TAG,
+                    "onReceive: BluetoothAdapter.ACTION_STATE_CHANGED: %s",
                     getBluetoothStateString(state));
 
             switch (state) {
                 case BluetoothAdapter.STATE_ON:
-                    ChromeBluetoothAdapterJni.get().onAdapterStateChanged(
-                            mNativeBluetoothAdapterAndroid, ChromeBluetoothAdapter.this, true);
+                    ChromeBluetoothAdapterJni.get()
+                            .onAdapterStateChanged(
+                                    mNativeBluetoothAdapterAndroid,
+                                    ChromeBluetoothAdapter.this,
+                                    true);
                     break;
                 case BluetoothAdapter.STATE_OFF:
-                    ChromeBluetoothAdapterJni.get().onAdapterStateChanged(
-                            mNativeBluetoothAdapterAndroid, ChromeBluetoothAdapter.this, false);
+                    ChromeBluetoothAdapterJni.get()
+                            .onAdapterStateChanged(
+                                    mNativeBluetoothAdapterAndroid,
+                                    ChromeBluetoothAdapter.this,
+                                    false);
                     break;
                 default:
                     // do nothing
@@ -379,12 +403,20 @@ final class ChromeBluetoothAdapter extends BroadcastReceiver {
         void onScanFailed(long nativeBluetoothAdapterAndroid, ChromeBluetoothAdapter caller);
 
         // Binds to BluetoothAdapterAndroid::CreateOrUpdateDeviceOnScan.
-        void createOrUpdateDeviceOnScan(long nativeBluetoothAdapterAndroid,
-                ChromeBluetoothAdapter caller, String address,
-                Wrappers.BluetoothDeviceWrapper deviceWrapper, String localName, int rssi,
-                String[] advertisedUuids, int txPower, String[] serviceDataKeys,
-                Object[] serviceDataValues, int[] manufacturerDataKeys,
-                Object[] manufacturerDataValues, int advertiseFlags);
+        void createOrUpdateDeviceOnScan(
+                long nativeBluetoothAdapterAndroid,
+                ChromeBluetoothAdapter caller,
+                String address,
+                BluetoothDeviceWrapper deviceWrapper,
+                String localName,
+                int rssi,
+                String[] advertisedUuids,
+                int txPower,
+                String[] serviceDataKeys,
+                Object[] serviceDataValues,
+                int[] manufacturerDataKeys,
+                Object[] manufacturerDataValues,
+                int advertiseFlags);
 
         // Binds to BluetoothAdapterAndroid::nativeOnAdapterStateChanged
         void onAdapterStateChanged(

@@ -60,11 +60,7 @@ bool CanSpecifyHostPermission(const Extension* extension,
                               const URLPattern& pattern,
                               const APIPermissionSet& permissions) {
   if (!pattern.match_all_urls() &&
-      (pattern.MatchesScheme(content::kChromeUIScheme)
-#if defined(OHOS_ARKWEB_EXTENSIONS)
-       || pattern.MatchesScheme(content::kArkWebUIScheme)
-#endif
-           )) {
+      pattern.MatchesScheme(content::kChromeUIScheme)) {
     URLPatternSet chrome_scheme_hosts =
         ExtensionsClient::Get()->GetPermittedChromeSchemeHosts(extension,
                                                                permissions);
@@ -162,11 +158,7 @@ void ParseHostPermissions(Extension* extension,
           valid_schemes &= ~URLPattern::SCHEME_FILE;
       }
 
-      if ((pattern.scheme() != content::kChromeUIScheme
-#if defined(OHOS_ARKWEB_EXTENSIONS)
-           || pattern.scheme() != content::kArkWebUIScheme
-#endif
-           ) &&
+      if (pattern.scheme() != content::kChromeUIScheme &&
           !all_urls_includes_chrome_urls) {
         // Keep chrome:// in allowed schemes only if it's explicitly requested
         // or been granted by extension ID. If the extensions_on_chrome_urls
@@ -199,10 +191,13 @@ void ParseHostPermissions(Extension* extension,
 
     // It's probably an unknown API permission. Do not throw an error so
     // extensions can retain backwards compatibility (http://crbug.com/42742).
-    extension->AddInstallWarning(InstallWarning(
-        ErrorUtils::FormatErrorMessage(
-            manifest_errors::kPermissionUnknownOrMalformed, permission_str),
-        key, permission_str));
+    extension->AddInstallWarning(
+        InstallWarning(ErrorUtils::FormatErrorMessage(
+                           extension->manifest_version() >= 3
+                               ? manifest_errors::kPatternMalformed
+                               : manifest_errors::kPermissionUnknownOrMalformed,
+                           permission_str),
+                       key, permission_str));
   }
 }
 
@@ -218,7 +213,7 @@ bool ParseHelper(Extension* extension,
 
   const base::Value* permissions = nullptr;
   if (!extension->manifest()->GetList(key, &permissions)) {
-    *error = base::UTF8ToUTF16(errors::kInvalidPermissions);
+    *error = errors::kInvalidPermissions;
     return false;
   }
 
@@ -292,8 +287,8 @@ bool ParseHelper(Extension* extension,
     // warning for each.
     for (const auto& permission_str : host_data) {
       extension->AddInstallWarning(InstallWarning(
-          ErrorUtils::FormatErrorMessage(
-              manifest_errors::kPermissionUnknownOrMalformed, permission_str),
+          ErrorUtils::FormatErrorMessage(manifest_errors::kPermissionUnknown,
+                                         permission_str),
           key, permission_str));
     }
   }

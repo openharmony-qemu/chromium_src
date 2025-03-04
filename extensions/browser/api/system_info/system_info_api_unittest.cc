@@ -22,6 +22,7 @@
 #include "extensions/browser/test_extensions_browser_client.h"
 #include "extensions/common/api/system_display.h"
 #include "extensions/common/api/system_storage.h"
+#include "extensions/common/extension_id.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace extensions {
@@ -52,7 +53,7 @@ class FakeExtensionsBrowserClient : public TestExtensionsBrowserClient {
   };
 
   // TestExtensionsBrowserClient:
-  bool IsValidContext(content::BrowserContext* context) override {
+  bool IsValidContext(void* context) override {
     return TestExtensionsBrowserClient::IsValidContext(context) ||
            context == second_context_;
   }
@@ -226,14 +227,14 @@ class SystemInfoAPITest : public testing::Test {
 
   void AddEventListener(EventRouter* router,
                         EventType type,
-                        const std::string& extension_id = kFakeExtensionId) {
+                        const ExtensionId& extension_id = kFakeExtensionId) {
     router->AddEventListener(EventTypeToName(type), render_process_host(),
                              extension_id);
   }
 
   void RemoveEventListener(EventRouter* router,
                            EventType type,
-                           const std::string& extension_id = kFakeExtensionId) {
+                           const ExtensionId& extension_id = kFakeExtensionId) {
     router->RemoveEventListener(EventTypeToName(type), render_process_host(),
                                 extension_id);
   }

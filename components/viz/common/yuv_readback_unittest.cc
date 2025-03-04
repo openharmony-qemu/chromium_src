@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <algorithm>
 #include <tuple>
 
@@ -23,7 +28,10 @@
 #include "media/base/video_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "ui/gl/init/gl_factory.h"
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
 
@@ -37,17 +45,13 @@ class YUVReadbackTest : public testing::Test {
  protected:
   YUVReadbackTest() : context_(std::make_unique<gpu::GLInProcessContext>()) {
     gpu::ContextCreationAttribs attributes;
-    attributes.alpha_size = 8;
-    attributes.depth_size = 24;
-    attributes.red_size = 8;
-    attributes.green_size = 8;
-    attributes.blue_size = 8;
-    attributes.stencil_size = 8;
-    attributes.samples = 4;
-    attributes.sample_buffers = 1;
     attributes.bind_generates_resource = false;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
     gl::init::InitializeGLNoExtensionsOneOff(
-      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kLowPower);
+        /*init_bindings=*/true,
+        /*gpu_preference=*/gl::GpuPreference::kLowPower);
+#endif
+
     auto result = context_->Initialize(
         TestGpuServiceHolder::GetInstance()->task_executor(), attributes,
         gpu::SharedMemoryLimits());
@@ -72,10 +76,10 @@ class YUVReadbackTest : public testing::Test {
       std::string* output,
       const scoped_refptr<base::RefCountedString>& json_events_str,
       bool has_more_events) {
-    if (output->size() > 1 && !json_events_str->data().empty()) {
+    if (output->size() > 1 && !json_events_str->as_string().empty()) {
       output->append(",");
     }
-    output->append(json_events_str->data());
+    output->append(json_events_str->as_string());
     if (!has_more_events) {
       std::move(quit_closure).Run();
     }
@@ -100,11 +104,11 @@ class YUVReadbackTest : public testing::Test {
         << json_data;
 
     CHECK(parsed_json->is_list());
-    for (const base::Value& dict : parsed_json->GetList()) {
-      CHECK(dict.is_dict());
-      const std::string* name = dict.FindStringPath("name");
+    for (const base::Value& entry : parsed_json->GetList()) {
+      const auto& dict = entry.GetDict();
+      const std::string* name = dict.FindString("name");
       CHECK(name);
-      const std::string* trace_type = dict.FindStringPath("ph");
+      const std::string* trace_type = dict.FindString("ph");
       CHECK(trace_type);
       // Count all except END traces, as they come in BEGIN/END pairs.
       if (*trace_type != "E" && *trace_type != "e")
@@ -373,12 +377,12 @@ class YUVReadbackTest : public testing::Test {
     };
     yuv_reader->ReadbackYUV(
         src_texture, gfx::Size(xsize, ysize), gfx::Rect(0, 0, xsize, ysize),
-        output_frame->stride(media::VideoFrame::kYPlane),
-        output_frame->writable_data(media::VideoFrame::kYPlane),
-        output_frame->stride(media::VideoFrame::kUPlane),
-        output_frame->writable_data(media::VideoFrame::kUPlane),
-        output_frame->stride(media::VideoFrame::kVPlane),
-        output_frame->writable_data(media::VideoFrame::kVPlane),
+        output_frame->stride(media::VideoFrame::Plane::kY),
+        output_frame->writable_data(media::VideoFrame::Plane::kY),
+        output_frame->stride(media::VideoFrame::Plane::kU),
+        output_frame->writable_data(media::VideoFrame::Plane::kU),
+        output_frame->stride(media::VideoFrame::Plane::kV),
+        output_frame->writable_data(media::VideoFrame::Plane::kV),
         gfx::Point(xmargin, ymargin),
         base::BindOnce(run_quit_closure, run_loop.QuitClosure()));
 
@@ -392,14 +396,14 @@ class YUVReadbackTest : public testing::Test {
     }
 
     unsigned char* Y =
-        truth_frame->GetWritableVisibleData(media::VideoFrame::kYPlane);
+        truth_frame->GetWritableVisibleData(media::VideoFrame::Plane::kY);
     unsigned char* U =
-        truth_frame->GetWritableVisibleData(media::VideoFrame::kUPlane);
+        truth_frame->GetWritableVisibleData(media::VideoFrame::Plane::kU);
     unsigned char* V =
-        truth_frame->GetWritableVisibleData(media::VideoFrame::kVPlane);
-    int32_t y_stride = truth_frame->stride(media::VideoFrame::kYPlane);
-    int32_t u_stride = truth_frame->stride(media::VideoFrame::kUPlane);
-    int32_t v_stride = truth_frame->stride(media::VideoFrame::kVPlane);
+        truth_frame->GetWritableVisibleData(media::VideoFrame::Plane::kV);
+    int32_t y_stride = truth_frame->stride(media::VideoFrame::Plane::kY);
+    int32_t u_stride = truth_frame->stride(media::VideoFrame::Plane::kU);
+    int32_t v_stride = truth_frame->stride(media::VideoFrame::Plane::kV);
     memset(Y, 0x00, y_stride * output_ysize);
     memset(U, 0x80, u_stride * output_ysize / 2);
     memset(V, 0x80, v_stride * output_ysize / 2);
@@ -439,20 +443,36 @@ class YUVReadbackTest : public testing::Test {
       }
     }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
     int maxdiff = 2;
     ComparePlane(
-        Y, y_stride, output_frame->visible_data(media::VideoFrame::kYPlane),
-        output_frame->stride(media::VideoFrame::kYPlane), maxdiff, output_xsize,
+        Y, y_stride, output_frame->visible_data(media::VideoFrame::Plane::kY),
+        output_frame->stride(media::VideoFrame::Plane::kY), maxdiff,
+        output_xsize, output_ysize, &input_pixels, message + " Y plane");
+    ComparePlane(U, u_stride,
+                 output_frame->visible_data(media::VideoFrame::Plane::kU),
+                 output_frame->stride(media::VideoFrame::Plane::kU), maxdiff,
+                 output_xsize / 2, output_ysize / 2, &input_pixels,
+                 message + " U plane");
+    ComparePlane(V, v_stride,
+                 output_frame->visible_data(media::VideoFrame::Plane::kV),
+                 output_frame->stride(media::VideoFrame::Plane::kV), maxdiff,
+                 output_xsize / 2, output_ysize / 2, &input_pixels,
+                 message + " V plane");
+#else
+    ComparePlane(
+        Y, y_stride, output_frame->visible_data(media::VideoFrame::Plane::kY),
+        output_frame->stride(media::VideoFrame::Plane::kY), 2, output_xsize,
         output_ysize, &input_pixels, message + " Y plane");
     ComparePlane(
-        U, u_stride, output_frame->visible_data(media::VideoFrame::kUPlane),
-        output_frame->stride(media::VideoFrame::kUPlane), maxdiff, output_xsize / 2,
+        U, u_stride, output_frame->visible_data(media::VideoFrame::Plane::kU),
+        output_frame->stride(media::VideoFrame::Plane::kU), 2, output_xsize / 2,
         output_ysize / 2, &input_pixels, message + " U plane");
     ComparePlane(
-        V, v_stride, output_frame->visible_data(media::VideoFrame::kVPlane),
-        output_frame->stride(media::VideoFrame::kVPlane), maxdiff, output_xsize / 2,
+        V, v_stride, output_frame->visible_data(media::VideoFrame::Plane::kV),
+        output_frame->stride(media::VideoFrame::Plane::kV), 2, output_xsize / 2,
         output_ysize / 2, &input_pixels, message + " V plane");
-
+#endif
     gl_->DeleteTextures(1, &src_texture);
   }
 
@@ -470,8 +490,13 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
         "gpu.service") "," TRACE_DISABLED_BY_DEFAULT("gpu.decoder"));
 
     // Run a test with no size scaling, just planerization.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
     TestYUVReadback(800, 400, 800, 400, 0, 0, 0, false, use_mrt == 1,
                     gpu::GLHelper::SCALER_QUALITY_FAST);
+#else
+    TestYUVReadback(800, 400, 800, 400, 0, 0, 1, false, use_mrt == 1,
+                    gpu::GLHelper::SCALER_QUALITY_FAST);
+#endif
 
     std::map<std::string, int> event_counts;
     EndTracing(&event_counts);
@@ -480,11 +505,28 @@ TEST_F(YUVReadbackTest, YUVReadbackOptTest) {
     VLOG(1) << "Draw buffer calls: " << draw_buffer_calls;
     VLOG(1) << "DrawArrays calls: " << draw_arrays_calls;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
     // There are three passes for the YUV.
     // glDrawBuffersEXT() should never be called because none of the
     // planerizers should draw multiple outputs.
     EXPECT_EQ(3, draw_arrays_calls);
     EXPECT_EQ(0, draw_buffer_calls);
+#else
+    if (use_mrt) {
+      // When using MRT, the YUV readback code should only execute two
+      // glDrawArrays(). It will call glDrawBuffersEXT() twice for each pass
+      // (once to draw to multiple outputs, and once to restore back to a single
+      // output).
+      EXPECT_EQ(2, draw_arrays_calls);
+      EXPECT_EQ(4, draw_buffer_calls);
+    } else {
+      // When not using MRT, there are three passes for the YUV.
+      // glDrawBuffersEXT() should never be called because none of the
+      // planerizers should draw multiple outputs.
+      EXPECT_EQ(3, draw_arrays_calls);
+      EXPECT_EQ(0, draw_buffer_calls);
+    }
+#endif
   }
 }
 

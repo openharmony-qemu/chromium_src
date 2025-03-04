@@ -80,6 +80,10 @@ struct FeatureEntry {
     // disabled like SINGLE_VALUE.
     ORIGIN_LIST_VALUE,
 
+    // Corresponds to a command line switch where the value is an arbitrary
+    // string. Default state is disabled like SINGLE_VALUE.
+    STRING_VALUE,
+
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     // The below two types are for *platform* features -- that is, those defined
     // and queried via platform2/featured/feature_library.h. Such features
@@ -145,8 +149,7 @@ struct FeatureEntry {
     // get translated. The other parts here use ids for historical reasons and
     // can realistically also be moved to direct description_texts.
     const char* description_text;
-    // This field is not a raw_ptr<> because it was filtered by the rewriter
-    // for: #global-scope, #constexpr-var-initializer
+    // RAW_PTR_EXCLUSION: #global-scope
     RAW_PTR_EXCLUSION const FeatureParam* params;
     int num_params;
     // A variation id number in the format of
@@ -202,7 +205,8 @@ struct FeatureEntry {
       // This describes the options if type is FEATURE_WITH_PARAMS_VALUE.
       // The first variation is the default "Enabled" variation, its
       // description_id is disregarded.
-      base::span<const FeatureVariation> feature_variations;
+      // TODO(367764863) Rewrite to base::raw_span.
+      RAW_PTR_EXCLUSION base::span<const FeatureVariation> feature_variations;
 
       // The name of the FieldTrial in which the selected variation parameters
       // should be registered. This is used if type is
@@ -221,7 +225,8 @@ struct FeatureEntry {
       // PLATFORM_FEATURE_NAME_WITH_PARAMS_VALUE.
       // The first variation is the default "Enabled" variation, its
       // description_id is disregarded.
-      base::span<const FeatureVariation> feature_variations;
+      // TODO(367764863) Rewrite to base::raw_span.
+      RAW_PTR_EXCLUSION base::span<const FeatureVariation> feature_variations;
 
       // The name of the FieldTrial in which the selected variation parameters
       // should be registered. This is used if type is
@@ -230,8 +235,14 @@ struct FeatureEntry {
     } platform_feature_name;
 
     // This describes the options if type is MULTI_VALUE.
-    base::span<const Choice> choices;
+    // TODO(367764863) Rewrite to base::raw_span.
+    RAW_PTR_EXCLUSION base::span<const Choice> choices;
   };
+
+  // This describes the links to be rendered as <a> in the chrome://flags
+  // page.
+  // TODO(367764863) Rewrite to base::raw_span.
+  RAW_PTR_EXCLUSION base::span<const char* const> links;
 
   // Check whether internal |name| matches this FeatureEntry. Depending on the
   // type of entry, this compared it to either |internal_name| or the values

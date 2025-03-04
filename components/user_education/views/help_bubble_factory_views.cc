@@ -10,16 +10,20 @@
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
-#include "components/user_education/common/help_bubble.h"
-#include "components/user_education/common/help_bubble_params.h"
+#include "components/user_education/common/help_bubble/help_bubble.h"
+#include "components/user_education/common/help_bubble/help_bubble_params.h"
 #include "components/user_education/common/user_education_class_properties.h"
+#include "components/user_education/common/user_education_events.h"
 #include "components/user_education/views/help_bubble_delegate.h"
+#include "components/user_education/views/help_bubble_event_relay.h"
 #include "components/user_education/views/help_bubble_view.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "components/user_education/views/toggle_tracked_element_attention_utils.h"
 #include "ui/base/interaction/element_identifier.h"
 #include "ui/base/interaction/element_tracker.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/accessible_pane_view.h"
 #include "ui/views/bubble/bubble_dialog_delegate_view.h"
+#include "ui/views/controls/menu/menu_item_view.h"
 #include "ui/views/interaction/element_tracker_views.h"
 #include "ui/views/view_utils.h"
 
@@ -50,7 +54,7 @@ HelpBubbleViews::HelpBubbleViews(HelpBubbleView* help_bubble_view,
 HelpBubbleViews::~HelpBubbleViews() {
   // Needs to be called here while we still have access to HelpBubbleViews-
   // specific logic.
-  Close();
+  Close(CloseReason::kBubbleDestroyed);
 }
 
 bool HelpBubbleViews::ToggleFocusForAccessibility() {
@@ -72,7 +76,7 @@ bool HelpBubbleViews::ToggleFocusForAccessibility() {
     return false;
 
   bool set_focus = false;
-  if (anchor->IsAccessibilityFocusable()) {
+  if (anchor->GetViewAccessibility().IsAccessibilityFocusable()) {
 #if BUILDFLAG(IS_MAC)
     // Mac does not automatically pass activation on focus, so we have to do it
     // manually.
@@ -144,6 +148,7 @@ void HelpBubbleViews::MaybeResetAnchorView() {
   if (!anchor_view)
     return;
   anchor_view->SetProperty(kHasInProductHelpPromoKey, false);
+  MaybeRemoveAttentionStateFromTrackedElement(anchor_view);
 }
 
 void HelpBubbleViews::CloseBubbleImpl() {
@@ -156,13 +161,14 @@ void HelpBubbleViews::CloseBubbleImpl() {
   // theoretically destroy `this`, so
   auto* const help_bubble_view = help_bubble_view_.get();
   help_bubble_view_ = nullptr;
+  anchor_element_ = nullptr;
   if (help_bubble_view && help_bubble_view->GetWidget()) {
     help_bubble_view->GetWidget()->Close();
   }
 }
 
 void HelpBubbleViews::OnWidgetDestroying(views::Widget* widget) {
-  Close();
+  Close(CloseReason::kBubbleElementDestroyed);
 }
 
 void HelpBubbleViews::OnElementHidden(ui::TrackedElement* element) {
@@ -174,7 +180,7 @@ void HelpBubbleViews::OnElementHidden(ui::TrackedElement* element) {
   anchor_hidden_subscription_ = base::CallbackListSubscription();
   anchor_bounds_changed_subscription_ = base::CallbackListSubscription();
   anchor_element_ = nullptr;
-  Close();
+  Close(CloseReason::kAnchorHidden);
 }
 
 void HelpBubbleViews::OnElementBoundsChanged(ui::TrackedElement* element) {
@@ -197,7 +203,13 @@ std::unique_ptr<HelpBubble> HelpBubbleFactoryViews::CreateBubble(
     HelpBubbleParams params) {
   internal::HelpBubbleAnchorParams anchor;
   anchor.view = element->AsA<views::TrackedElementViews>()->view();
-  return CreateBubbleImpl(element, anchor, std::move(params));
+  std::unique_ptr<HelpBubbleEventRelay> event_relay;
+  if (auto* menu_item = views::AsViewClass<views::MenuItemView>(anchor.view)) {
+    event_relay =
+        std::make_unique<internal::MenuHelpBubbleEventProcessor>(menu_item);
+  }
+  return CreateBubbleImpl(element, anchor, std::move(params),
+                          std::move(event_relay));
 }
 
 bool HelpBubbleFactoryViews::CanBuildBubbleForTrackedElement(
@@ -208,15 +220,21 @@ bool HelpBubbleFactoryViews::CanBuildBubbleForTrackedElement(
 std::unique_ptr<HelpBubble> HelpBubbleFactoryViews::CreateBubbleImpl(
     ui::TrackedElement* element,
     const internal::HelpBubbleAnchorParams& anchor,
-    HelpBubbleParams params) {
+    HelpBubbleParams params,
+    std::unique_ptr<HelpBubbleEventRelay> event_relay) {
   anchor.view->SetProperty(kHasInProductHelpPromoKey, true);
   auto result = base::WrapUnique(new HelpBubbleViews(
-      new HelpBubbleView(delegate_, anchor, std::move(params)), element));
+      new HelpBubbleView(delegate_, anchor, std::move(params),
+                         std::move(event_relay)),
+      element));
   for (const auto& accelerator :
        delegate_->GetPaneNavigationAccelerators(element)) {
     result->bubble_view()->GetFocusManager()->RegisterAccelerator(
         accelerator, ui::AcceleratorManager::HandlerPriority::kNormalPriority,
         result.get());
+  }
+  if (result) {
+    MaybeApplyAttentionStateToTrackedElement(anchor.view);
   }
   return result;
 }

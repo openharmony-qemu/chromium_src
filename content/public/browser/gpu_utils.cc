@@ -5,6 +5,7 @@
 #include "content/public/browser/gpu_utils.h"
 
 #include <string>
+#include <string_view>
 
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -24,8 +25,11 @@
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_switches.h"
 #include "media/base/media_switches.h"
+#include "media/gpu/buildflags.h"
 #include "media/media_buildflags.h"
+#include "third_party/blink/public/common/features.h"
 #include "ui/gfx/switches.h"
+#include "ui/gl/gl_features.h"
 
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
 #include "chromeos/startup/browser_params_proxy.h"
@@ -40,7 +44,7 @@ void KillGpuProcessImpl(content::GpuProcessHost* host) {
 }
 
 bool GetUintFromSwitch(const base::CommandLine* command_line,
-                       const base::StringPiece& switch_string,
+                       const std::string_view& switch_string,
                        uint32_t* value) {
   std::string switch_value(command_line->GetSwitchValueASCII(switch_string));
   return base::StringToUint(switch_value, value);
@@ -51,7 +55,7 @@ bool GetUintFromSwitch(const base::CommandLine* command_line,
 namespace content {
 
 bool ShouldEnableAndroidSurfaceControl(const base::CommandLine& cmd_line) {
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   return false;
 #else
   if (viz::PreferRGB565ResourcesForDisplay())
@@ -79,7 +83,8 @@ const gpu::GpuPreferences GetGpuPreferencesFromCommandLine() {
       !command_line->HasSwitch(switches::kDisableNv12DxgiVideo);
 #endif
   gpu_preferences.disable_software_rasterizer =
-      command_line->HasSwitch(switches::kDisableSoftwareRasterizer);
+      command_line->HasSwitch(switches::kDisableSoftwareRasterizer) ||
+      !features::IsSwiftShaderAllowed(command_line);
   gpu_preferences.log_gpu_control_list_decisions =
       command_line->HasSwitch(switches::kLogGpuControlListDecisions);
   gpu_preferences.gpu_startup_dialog =
@@ -120,36 +125,13 @@ const gpu::GpuPreferences GetGpuPreferencesFromCommandLine() {
       command_line->HasSwitch(switches::kDisableVulkanFallbackToGLForTesting);
 
   gpu_preferences.enable_gpu_benchmarking_extension =
-      command_line->HasSwitch(cc::switches::kEnableGpuBenchmarking);
+      command_line->HasSwitch(switches::kEnableGpuBenchmarking);
 
   gpu_preferences.enable_android_surface_control =
       ShouldEnableAndroidSurfaceControl(*command_line);
 
   gpu_preferences.enable_native_gpu_memory_buffers =
       command_line->HasSwitch(switches::kEnableNativeGpuMemoryBuffers);
-
-#if BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
-  // The direct VideoDecoder is disallowed on some particular SoC/platforms.
-  const bool should_use_direct_video_decoder =
-      !command_line->HasSwitch(
-          switches::kPlatformDisallowsChromeOSDirectVideoDecoder) &&
-      base::FeatureList::IsEnabled(media::kUseChromeOSDirectVideoDecoder);
-
-  // For testing purposes, the following flag allows using the "other" video
-  // decoder implementation.
-  if (base::FeatureList::IsEnabled(
-          media::kUseAlternateVideoDecoderImplementation)) {
-    gpu_preferences.enable_chromeos_direct_video_decoder =
-        !should_use_direct_video_decoder;
-  } else {
-    gpu_preferences.enable_chromeos_direct_video_decoder =
-        should_use_direct_video_decoder;
-  }
-#else   // !BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
-  gpu_preferences.enable_chromeos_direct_video_decoder = false;
-#endif  // BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
-#endif  // BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_ANDROID)
   gpu_preferences.disable_oopr_debug_crash_dump =
@@ -169,13 +151,19 @@ const gpu::GpuPreferences GetGpuPreferencesFromCommandLine() {
       command_line->HasSwitch(
           switches::kForceSeparateEGLDisplayForWebGLTesting);
 
+  gpu_preferences.enable_webgpu_experimental_features =
+      command_line->HasSwitch(
+          switches::kEnableExperimentalWebPlatformFeatures) ||
+      base::FeatureList::IsEnabled(
+          blink::features::kWebGPUExperimentalFeatures);
+
   // Some of these preferences are set or adjusted in
   // GpuDataManagerImplPrivate::AppendGpuCommandLine.
   return gpu_preferences;
 }
 
 void KillGpuProcess() {
-  GpuProcessHost::CallOnIO(FROM_HERE, GPU_PROCESS_KIND_SANDBOXED,
+  GpuProcessHost::CallOnUI(FROM_HERE, GPU_PROCESS_KIND_SANDBOXED,
                            false /* force_create */,
                            base::BindOnce(&KillGpuProcessImpl));
 }
@@ -186,12 +174,17 @@ gpu::GpuChannelEstablishFactory* GetGpuChannelEstablishFactory() {
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 void DumpGpuProfilingData(base::OnceClosure callback) {
-  content::GpuProcessHost::CallOnIO(
+  content::GpuProcessHost::CallOnUI(
       FROM_HERE, content::GPU_PROCESS_KIND_SANDBOXED, false /* force_create */,
       base::BindOnce(
           [](base::OnceClosure callback, content::GpuProcessHost* host) {
-            host->gpu_service()->WriteClangProfilingProfile(
-                std::move(callback));
+            if (host) {
+              host->gpu_service()->WriteClangProfilingProfile(
+                  std::move(callback));
+            } else {
+              LOG(ERROR) << "DumpGpuProfilingData() failed to dump.";
+              std::move(callback).Run();
+            }
           },
           std::move(callback)));
 }

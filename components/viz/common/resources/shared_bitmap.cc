@@ -10,20 +10,16 @@
 #include "base/numerics/safe_math.h"
 #include "base/rand_util.h"
 #include "base/strings/string_number_conversions.h"
-#include "components/viz/common/resources/resource_format_utils.h"
 
 namespace viz {
 
 SharedBitmap::SharedBitmap(uint8_t* pixels) : pixels_(pixels) {}
 
-SharedBitmap::~SharedBitmap() {}
+SharedBitmap::~SharedBitmap() = default;
 
 // static
 SharedBitmapId SharedBitmap::GenerateId() {
-  SharedBitmapId id;
-  // Needs cryptographically-secure random numbers.
-  base::RandBytes(id.name, sizeof(id.name));
-  return id;
+  return SharedBitmapId::Generate();
 }
 
 }  // namespace viz

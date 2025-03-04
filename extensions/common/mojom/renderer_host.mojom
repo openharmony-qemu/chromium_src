@@ -33,4 +33,8 @@ interface RendererHost {
                             url.mojom.Url url,
                             mojo_base.mojom.String16 url_title,
                             int32 call_type);
+
+  // Retrieves the message bundle for an extension from the browser.
+  [Sync]
+  GetMessageBundle(string extension_id) => (map<string, string> message_map);
 };

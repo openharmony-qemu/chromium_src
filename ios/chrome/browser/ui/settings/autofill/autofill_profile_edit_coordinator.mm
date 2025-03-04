@@ -4,30 +4,28 @@
 
 #import "ios/chrome/browser/ui/settings/autofill/autofill_profile_edit_coordinator.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/autofill/core/browser/autofill_data_util.h"
 #import "components/autofill/core/browser/data_model/autofill_profile.h"
 #import "components/autofill/core/browser/personal_data_manager.h"
 #import "components/autofill/ios/browser/personal_data_manager_observer_bridge.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/autofill/personal_data_manager_factory.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/browser.h"
+#import "ios/chrome/browser/autofill/model/personal_data_manager_factory.h"
+#import "ios/chrome/browser/autofill/ui_bundled/address_editor/autofill_country_selection_table_view_controller.h"
+#import "ios/chrome/browser/autofill/ui_bundled/address_editor/autofill_profile_edit_mediator.h"
+#import "ios/chrome/browser/autofill/ui_bundled/address_editor/autofill_profile_edit_mediator_delegate.h"
+#import "ios/chrome/browser/autofill/ui_bundled/address_editor/autofill_profile_edit_table_view_controller.h"
+#import "ios/chrome/browser/autofill/ui_bundled/address_editor/cells/country_item.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
+#import "ios/chrome/browser/shared/public/commands/snackbar_commands.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/sync/sync_setup_service.h"
-#import "ios/chrome/browser/sync/sync_setup_service_factory.h"
-#import "ios/chrome/browser/ui/autofill/autofill_country_selection_table_view_controller.h"
-#import "ios/chrome/browser/ui/autofill/autofill_profile_edit_mediator.h"
-#import "ios/chrome/browser/ui/autofill/autofill_profile_edit_mediator_delegate.h"
-#import "ios/chrome/browser/ui/autofill/autofill_profile_edit_table_view_controller.h"
-#import "ios/chrome/browser/ui/autofill/cells/country_item.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
 #import "ios/chrome/browser/ui/settings/autofill/autofill_settings_profile_edit_table_view_controller.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ios/chrome/browser/ui/settings/settings_navigation_controller.h"
 
 @interface AutofillProfileEditCoordinator () <
     AutofillCountrySelectionTableViewControllerDelegate,
@@ -47,10 +45,13 @@
 // Default NO. Yes when the country selection view has been presented.
 @property(nonatomic, assign) BOOL isCountrySelectorPresented;
 
+// If YES, a button is shown asking the user to migrate the account.
+@property(nonatomic, assign) BOOL showMigrateToAccountButton;
+
 @end
 
 @implementation AutofillProfileEditCoordinator {
-  autofill::AutofillProfile _autofillProfile;
+  std::unique_ptr<autofill::AutofillProfile> _autofillProfile;
 }
 
 @synthesize baseNavigationController = _baseNavigationController;
@@ -59,13 +60,15 @@
     initWithBaseNavigationController:
         (UINavigationController*)navigationController
                              browser:(Browser*)browser
-                             profile:(const autofill::AutofillProfile&)profile {
+                             profile:(const autofill::AutofillProfile&)profile
+              migrateToAccountButton:(BOOL)showMigrateToAccountButton {
   self = [super initWithBaseViewController:navigationController
                                    browser:browser];
   if (self) {
     _baseNavigationController = navigationController;
-    _autofillProfile = profile;
+    _autofillProfile = std::make_unique<autofill::AutofillProfile>(profile);
     _isCountrySelectorPresented = NO;
+    _showMigrateToAccountButton = showMigrateToAccountButton;
   }
   return self;
 }
@@ -76,37 +79,41 @@
   // There is no personal data manager in OTR (incognito). Get the original
   // one so the user can edit the profile.
   autofill::PersonalDataManager* personalDataManager =
-      autofill::PersonalDataManagerFactory::GetForBrowserState(
-          self.browser->GetBrowserState()->GetOriginalChromeBrowserState());
-
-  std::string countryCode = autofill::data_util::GetCountryCodeWithFallback(
-      _autofillProfile, GetApplicationContext()->GetApplicationLocale());
+      autofill::PersonalDataManagerFactory::GetForProfile(
+          self.browser->GetProfile()->GetOriginalProfile());
 
   self.mediator = [[AutofillProfileEditMediator alloc]
          initWithDelegate:self
       personalDataManager:personalDataManager
-          autofillProfile:&_autofillProfile
-              countryCode:base::SysUTF8ToNSString(countryCode)
+          autofillProfile:_autofillProfile.get()
         isMigrationPrompt:NO];
 
   self.viewController = [[AutofillSettingsProfileEditTableViewController alloc]
-      initWithStyle:ChromeTableViewStyle()];
+                      initWithDelegate:self.mediator
+      shouldShowMigrateToAccountButton:self.showMigrateToAccountButton
+                             userEmail:[self userEmail]];
   self.sharedViewController = [[AutofillProfileEditTableViewController alloc]
       initWithDelegate:self.mediator
-             userEmail:[self syncingUserEmail]
+             userEmail:[self userEmail]
             controller:self.viewController
           settingsView:YES];
   self.mediator.consumer = self.sharedViewController;
   self.viewController.handler = self.sharedViewController;
+  self.viewController.snackbarCommandsHandler = HandlerForProtocol(
+      self.browser->GetCommandDispatcher(), SnackbarCommands);
+  if (self.openInEditMode) {
+    [self.viewController editButtonPressed];
+  }
 
-  DCHECK(self.baseNavigationController);
+  CHECK(self.baseNavigationController);
   [self.baseNavigationController pushViewController:self.viewController
                                            animated:YES];
 }
 
 - (void)stop {
-  // Never called because `self.viewController` is pushed out of the stack via
-  // the navigation bar back button.
+  _sharedViewController = nil;
+  _viewController = nil;
+  _mediator = nil;
 }
 
 #pragma mark - AutofillProfileEditMediatorDelegate
@@ -119,9 +126,6 @@
     return;
   }
 
-  self.sharedViewController = nil;
-  self.viewController = nil;
-  self.mediator = nil;
   [self.delegate
       autofillProfileEditCoordinatorTableViewControllerDidFinish:self];
 }
@@ -132,10 +136,11 @@
   AutofillCountrySelectionTableViewController*
       autofillCountrySelectionTableViewController =
           [[AutofillCountrySelectionTableViewController alloc]
-              initWithDelegate:self
-               selectedCountry:country
-                  allCountries:allCountries
-                  settingsView:YES];
+                         initWithDelegate:self
+                          selectedCountry:country
+                             allCountries:allCountries
+                             settingsView:YES
+              previousViewControllerTitle:nil];
   [self.baseNavigationController
       pushViewController:autofillCountrySelectionTableViewController
                 animated:YES];
@@ -154,24 +159,19 @@
   [self.mediator didSelectCountry:selectedCountry];
 }
 
+- (void)dismissCountryViewController {
+  NOTREACHED();
+}
+
 #pragma mark - Private
 
-- (NSString*)syncingUserEmail {
+- (NSString*)userEmail {
   AuthenticationService* authenticationService =
-      AuthenticationServiceFactory::GetForBrowserState(
-          self.browser->GetBrowserState());
-  DCHECK(authenticationService);
+      AuthenticationServiceFactory::GetForProfile(self.browser->GetProfile());
+  CHECK(authenticationService);
   id<SystemIdentity> identity =
-      authenticationService->GetPrimaryIdentity(signin::ConsentLevel::kSync);
-  if (identity) {
-    SyncSetupService* syncSetupService =
-        SyncSetupServiceFactory::GetForBrowserState(
-            self.browser->GetBrowserState());
-    if (syncSetupService->IsDataTypeActive(syncer::AUTOFILL)) {
-      return identity.userEmail;
-    }
-  }
-  return nil;
+      authenticationService->GetPrimaryIdentity(signin::ConsentLevel::kSignin);
+  return identity ? identity.userEmail : nil;
 }
 
 @end

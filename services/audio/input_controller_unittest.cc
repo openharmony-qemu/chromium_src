@@ -5,6 +5,7 @@
 #include "services/audio/input_controller.h"
 
 #include <memory>
+#include <string_view>
 #include <utility>
 
 #include "base/run_loop.h"
@@ -55,14 +56,6 @@ constexpr base::TimeDelta kOnMutePollInterval = base::Milliseconds(1000);
 
 enum class ChromeWideEchoCancellationSetting { kEnabled, kDisabled };
 
-enum class DecreaseFifoSizeSetting {
-  kDisabled,
-  kDecreasedTo10,
-  kDecreasedTo0,
-};
-
-const std::string kFifoSizeParameter = "fifo_size";
-
 }  // namespace
 
 class MockInputControllerEventHandler : public InputController::EventHandler {
@@ -74,7 +67,7 @@ class MockInputControllerEventHandler : public InputController::EventHandler {
   MockInputControllerEventHandler& operator=(
       const MockInputControllerEventHandler&) = delete;
 
-  void OnLog(base::StringPiece) override {}
+  void OnLog(std::string_view) override {}
 
   MOCK_METHOD1(OnCreated, void(bool initially_muted));
   MOCK_METHOD1(OnError, void(InputController::ErrorCode error_code));
@@ -122,7 +115,7 @@ class MockAudioInputStream : public media::AudioInputStream {
     captured_callback_ = callback;
   }
 
-  absl::optional<AudioInputCallback*> captured_callback_;
+  std::optional<AudioInputCallback*> captured_callback_;
 };
 
 enum class AudioManagerType { MOCK, FAKE };
@@ -131,9 +124,7 @@ template <base::test::TaskEnvironment::TimeSource TimeSource =
               base::test::TaskEnvironment::TimeSource::MOCK_TIME,
           AudioManagerType audio_manager_type = AudioManagerType::FAKE>
 class TimeSourceInputControllerTest
-    : public ::testing::TestWithParam<
-          std::tuple<ChromeWideEchoCancellationSetting,
-                     DecreaseFifoSizeSetting>> {
+    : public ::testing::TestWithParam<ChromeWideEchoCancellationSetting> {
  public:
   TimeSourceInputControllerTest()
       : task_environment_(TimeSource),
@@ -163,22 +154,6 @@ class TimeSourceInputControllerTest
       disabled_features.emplace_back(media::kChromeWideEchoCancellation);
     }
 
-    switch (GetDecreaseFifoSizeSetting()) {
-      case DecreaseFifoSizeSetting::kDisabled:
-        disabled_features.emplace_back(media::kDecreaseProcessingAudioFifoSize);
-        break;
-      case DecreaseFifoSizeSetting::kDecreasedTo10:
-        enabled_features.emplace_back(
-            media::kDecreaseProcessingAudioFifoSize,
-            base::FieldTrialParams{{kFifoSizeParameter, "10"}});
-        break;
-      case DecreaseFifoSizeSetting::kDecreasedTo0:
-        enabled_features.emplace_back(
-            media::kDecreaseProcessingAudioFifoSize,
-            base::FieldTrialParams{{kFifoSizeParameter, "0"}});
-        break;
-    }
-
     processing_fifo_feature_.InitWithFeaturesAndParameters(enabled_features,
                                                            disabled_features);
 #endif
@@ -205,17 +180,11 @@ class TimeSourceInputControllerTest
 
   bool IsProcessingFifoEnabled() {
     return GetChromeWideEchoCancellationSetting() ==
-               ChromeWideEchoCancellationSetting::kEnabled &&
-           GetDecreaseFifoSizeSetting() !=
-               DecreaseFifoSizeSetting::kDecreasedTo0;
+           ChromeWideEchoCancellationSetting::kEnabled;
   }
 
   ChromeWideEchoCancellationSetting GetChromeWideEchoCancellationSetting() {
-    return std::get<0>(GetParam());
-  }
-
-  DecreaseFifoSizeSetting GetDecreaseFifoSizeSetting() {
-    return std::get<1>(GetParam());
+    return GetParam();
   }
 
   base::test::TaskEnvironment task_environment_;
@@ -237,18 +206,9 @@ class TimeSourceInputControllerTest
 auto test_name_generator =
     [](const ::testing::TestParamInfo<
         TimeSourceInputControllerTest<>::ParamType>& info) {
-      std::string name_suffix =
-          std::get<0>(info.param) == ChromeWideEchoCancellationSetting::kEnabled
-              ? "CWAECEnabled_"
-              : "CWAECDisabled_";
-      switch (std::get<1>(info.param)) {
-        case DecreaseFifoSizeSetting::kDisabled:
-          return name_suffix + "DecreaseFifoDisabled";
-        case DecreaseFifoSizeSetting::kDecreasedTo10:
-          return name_suffix + "DecreaseFifoTo10";
-        case DecreaseFifoSizeSetting::kDecreasedTo0:
-          return name_suffix + "DecreaseFifoTo0";
-      }
+      return info.param == ChromeWideEchoCancellationSetting::kEnabled
+                 ? "CWAECEnabled"
+                 : "CWAECDisabled";
     };
 
 using SystemTimeInputControllerTest = TimeSourceInputControllerTest<
@@ -403,18 +363,8 @@ TEST_P(InputControllerTest, TestOnmutedCallbackInitiallyMuted) {
 
 auto test_values =
     testing::ValuesIn(std::vector<TimeSourceInputControllerTest<>::ParamType>{
-        {ChromeWideEchoCancellationSetting::kEnabled,
-         DecreaseFifoSizeSetting::kDisabled},
-        {ChromeWideEchoCancellationSetting::kEnabled,
-         DecreaseFifoSizeSetting::kDecreasedTo10},
-        {ChromeWideEchoCancellationSetting::kEnabled,
-         DecreaseFifoSizeSetting::kDecreasedTo0},
-        {ChromeWideEchoCancellationSetting::kDisabled,
-         DecreaseFifoSizeSetting::kDisabled},
-        {ChromeWideEchoCancellationSetting::kDisabled,
-         DecreaseFifoSizeSetting::kDecreasedTo10},
-        {ChromeWideEchoCancellationSetting::kDisabled,
-         DecreaseFifoSizeSetting::kDecreasedTo0}});
+        ChromeWideEchoCancellationSetting::kEnabled,
+        ChromeWideEchoCancellationSetting::kDisabled});
 
 INSTANTIATE_TEST_SUITE_P(InputControllerTest,
                          InputControllerTest,
@@ -504,7 +454,6 @@ class TimeSourceInputControllerTestWithDeviceListener
     settings.high_pass_filter = false;
     settings.multi_channel_capture_processing = false;
     settings.stereo_mirroring = false;
-    settings.force_apm_creation = false;
     switch (audio_processing_type) {
       case AudioProcessingType::kNone:
         break;
@@ -688,19 +637,8 @@ TEST_P(InputControllerTestWithDeviceListener, FifoSize) {
       ChromeWideEchoCancellationSetting::kDisabled) {
     EXPECT_FALSE(helper_->IsUsingProcessingThread());
   } else {
-    switch (GetDecreaseFifoSizeSetting()) {
-      case DecreaseFifoSizeSetting::kDisabled:
-        EXPECT_TRUE(helper_->IsUsingProcessingThread());
-        EXPECT_EQ(helper_->FifoSize(), 110);
-        break;
-      case DecreaseFifoSizeSetting::kDecreasedTo10:
-        EXPECT_TRUE(helper_->IsUsingProcessingThread());
-        EXPECT_EQ(helper_->FifoSize(), 10);
-        break;
-      case DecreaseFifoSizeSetting::kDecreasedTo0:
-        EXPECT_FALSE(helper_->IsUsingProcessingThread());
-        break;
-    }
+    EXPECT_TRUE(helper_->IsUsingProcessingThread());
+    EXPECT_EQ(helper_->FifoSize(), InputController::kProcessingFifoSize);
   }
 
   // InputController should offload processing to its own thread, if enabled.

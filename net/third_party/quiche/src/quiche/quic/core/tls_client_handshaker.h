@@ -23,7 +23,7 @@ namespace quic {
 
 // An implementation of QuicCryptoClientStream::HandshakerInterface which uses
 // TLS 1.3 for the crypto handshake protocol.
-class QUIC_EXPORT_PRIVATE TlsClientHandshaker
+class QUICHE_EXPORT TlsClientHandshaker
     : public TlsHandshaker,
       public QuicCryptoClientStream::HandshakerInterface,
       public TlsClientConnection::Delegate {
@@ -43,6 +43,7 @@ class QUIC_EXPORT_PRIVATE TlsClientHandshaker
   // From QuicCryptoClientStream::HandshakerInterface
   bool CryptoConnect() override;
   int num_sent_client_hellos() const override;
+  bool ResumptionAttempted() const override;
   bool IsResumption() const override;
   bool EarlyDataAccepted() const override;
   ssl_early_data_reason_t EarlyDataReason() const override;
@@ -83,7 +84,6 @@ class QUIC_EXPORT_PRIVATE TlsClientHandshaker
       std::unique_ptr<ApplicationState> application_state) override;
 
   void AllowEmptyAlpnForTests() { allow_empty_alpn_for_tests_ = true; }
-  void AllowInvalidSNIForTests() { allow_invalid_sni_for_tests_ = true; }
 
   // Make the SSL object from BoringSSL publicly accessible.
   using TlsHandshaker::ssl;
@@ -153,7 +153,6 @@ class QUIC_EXPORT_PRIVATE TlsClientHandshaker
       crypto_negotiated_params_;
 
   bool allow_empty_alpn_for_tests_ = false;
-  bool allow_invalid_sni_for_tests_ = false;
 
   const bool has_application_state_;
   // Contains the state for performing a resumption, if one is attempted. This

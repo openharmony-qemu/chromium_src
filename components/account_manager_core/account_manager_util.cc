@@ -4,12 +4,13 @@
 
 #include "components/account_manager_core/account_manager_util.h"
 
+#include <optional>
+
 #include "base/notreached.h"
 #include "components/account_manager_core/account.h"
 #include "components/account_manager_core/account_addition_options.h"
-#include "components/account_manager_core/account_addition_result.h"
+#include "components/account_manager_core/account_upsertion_result.h"
 #include "google_apis/gaia/google_service_auth_error.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace account_manager {
 
@@ -64,7 +65,7 @@ ToMojoInvalidGaiaCredentialsReason(
       return cm::GoogleServiceAuthError::InvalidGaiaCredentialsReason::
           kCredentialsMissing;
     case GoogleServiceAuthError::InvalidGaiaCredentialsReason::NUM_REASONS:
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       return cm::GoogleServiceAuthError::InvalidGaiaCredentialsReason::kUnknown;
   }
 }
@@ -90,74 +91,82 @@ crosapi::mojom::GoogleServiceAuthError::State ToMojoGoogleServiceAuthErrorState(
       return cm::GoogleServiceAuthError::State::kServiceError;
     case GoogleServiceAuthError::State::SCOPE_LIMITED_UNRECOVERABLE_ERROR:
       return cm::GoogleServiceAuthError::State::kScopeLimitedUnrecoverableError;
+    case GoogleServiceAuthError::State::CHALLENGE_RESPONSE_REQUIRED:
+      return cm::GoogleServiceAuthError::State::kChallengeResponseRequired;
     case GoogleServiceAuthError::State::NUM_STATES:
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       return cm::GoogleServiceAuthError::State::kNone;
   }
 }
 
-absl::optional<account_manager::AccountAdditionResult::Status>
+std::optional<account_manager::AccountUpsertionResult::Status>
 FromMojoAccountAdditionStatus(
-    crosapi::mojom::AccountAdditionResult::Status mojo_status) {
+    crosapi::mojom::AccountUpsertionResult::Status mojo_status) {
   switch (mojo_status) {
-    case cm::AccountAdditionResult::Status::kSuccess:
-      return account_manager::AccountAdditionResult::Status::kSuccess;
-    case cm::AccountAdditionResult::Status::kAlreadyInProgress:
-      return account_manager::AccountAdditionResult::Status::kAlreadyInProgress;
-    case cm::AccountAdditionResult::Status::kCancelledByUser:
-      return account_manager::AccountAdditionResult::Status::kCancelledByUser;
-    case cm::AccountAdditionResult::Status::kNetworkError:
-      return account_manager::AccountAdditionResult::Status::kNetworkError;
-    case cm::AccountAdditionResult::Status::kUnexpectedResponse:
-      return account_manager::AccountAdditionResult::Status::
+    case cm::AccountUpsertionResult::Status::kSuccess:
+      return account_manager::AccountUpsertionResult::Status::kSuccess;
+    case cm::AccountUpsertionResult::Status::kAlreadyInProgress:
+      return account_manager::AccountUpsertionResult::Status::
+          kAlreadyInProgress;
+    case cm::AccountUpsertionResult::Status::kCancelledByUser:
+      return account_manager::AccountUpsertionResult::Status::kCancelledByUser;
+    case cm::AccountUpsertionResult::Status::kNetworkError:
+      return account_manager::AccountUpsertionResult::Status::kNetworkError;
+    case cm::AccountUpsertionResult::Status::kUnexpectedResponse:
+      return account_manager::AccountUpsertionResult::Status::
           kUnexpectedResponse;
-    case cm::AccountAdditionResult::Status::kBlockedByPolicy:
-      return account_manager::AccountAdditionResult::Status::kBlockedByPolicy;
+    case cm::AccountUpsertionResult::Status::kBlockedByPolicy:
+      return account_manager::AccountUpsertionResult::Status::kBlockedByPolicy;
     default:
-      LOG(WARNING) << "Unknown crosapi::mojom::AccountAdditionResult::Status: "
+      LOG(WARNING) << "Unknown crosapi::mojom::AccountUpsertionResult::Status: "
                    << mojo_status;
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
-crosapi::mojom::AccountAdditionResult::Status ToMojoAccountAdditionStatus(
-    account_manager::AccountAdditionResult::Status status) {
+crosapi::mojom::AccountUpsertionResult::Status ToMojoAccountAdditionStatus(
+    account_manager::AccountUpsertionResult::Status status) {
   switch (status) {
-    case account_manager::AccountAdditionResult::Status::kSuccess:
-      return cm::AccountAdditionResult::Status::kSuccess;
-    case account_manager::AccountAdditionResult::Status::kAlreadyInProgress:
-      return cm::AccountAdditionResult::Status::kAlreadyInProgress;
-    case account_manager::AccountAdditionResult::Status::kCancelledByUser:
-      return cm::AccountAdditionResult::Status::kCancelledByUser;
-    case account_manager::AccountAdditionResult::Status::kNetworkError:
-      return cm::AccountAdditionResult::Status::kNetworkError;
-    case account_manager::AccountAdditionResult::Status::kUnexpectedResponse:
-      return cm::AccountAdditionResult::Status::kUnexpectedResponse;
-    case account_manager::AccountAdditionResult::Status::kBlockedByPolicy:
-      return cm::AccountAdditionResult::Status::kBlockedByPolicy;
-    case account_manager::AccountAdditionResult::Status::
+    case account_manager::AccountUpsertionResult::Status::kSuccess:
+      return cm::AccountUpsertionResult::Status::kSuccess;
+    case account_manager::AccountUpsertionResult::Status::kAlreadyInProgress:
+      return cm::AccountUpsertionResult::Status::kAlreadyInProgress;
+    case account_manager::AccountUpsertionResult::Status::kCancelledByUser:
+      return cm::AccountUpsertionResult::Status::kCancelledByUser;
+    case account_manager::AccountUpsertionResult::Status::kNetworkError:
+      return cm::AccountUpsertionResult::Status::kNetworkError;
+    case account_manager::AccountUpsertionResult::Status::kUnexpectedResponse:
+      return cm::AccountUpsertionResult::Status::kUnexpectedResponse;
+    case account_manager::AccountUpsertionResult::Status::kBlockedByPolicy:
+      return cm::AccountUpsertionResult::Status::kBlockedByPolicy;
+    case account_manager::AccountUpsertionResult::Status::
         kMojoRemoteDisconnected:
-    case account_manager::AccountAdditionResult::Status::
+    case account_manager::AccountUpsertionResult::Status::
         kIncompatibleMojoVersions:
       // `kMojoRemoteDisconnected` and `kIncompatibleMojoVersions` are generated
       // entirely on the remote side when the receiver can't even be reached.
       // They do not have any Mojo equivalent since they are never passed over
       // the wire in the first place.
-      NOTREACHED() << "These statuses should not be passed over the wire";
+      NOTREACHED_IN_MIGRATION()
+          << "These statuses should not be passed over the wire";
       // Return something to make the compiler happy. This should never happen
       // in production.
-      return cm::AccountAdditionResult::Status::kUnexpectedResponse;
+      return cm::AccountUpsertionResult::Status::kUnexpectedResponse;
   }
 }
 
 }  // namespace
 
-absl::optional<account_manager::Account> FromMojoAccount(
+std::optional<account_manager::Account> FromMojoAccount(
     const crosapi::mojom::AccountPtr& mojom_account) {
-  const absl::optional<account_manager::AccountKey> account_key =
+  if (mojom_account.is_null()) {
+    return std::nullopt;
+  }
+
+  const std::optional<account_manager::AccountKey> account_key =
       FromMojoAccountKey(mojom_account->key);
   if (!account_key.has_value())
-    return absl::nullopt;
+    return std::nullopt;
 
   account_manager::Account account{account_key.value(),
                                    mojom_account->raw_email};
@@ -172,14 +181,18 @@ crosapi::mojom::AccountPtr ToMojoAccount(
   return mojom_account;
 }
 
-absl::optional<account_manager::AccountKey> FromMojoAccountKey(
+std::optional<account_manager::AccountKey> FromMojoAccountKey(
     const crosapi::mojom::AccountKeyPtr& mojom_account_key) {
-  const absl::optional<account_manager::AccountType> account_type =
+  if (mojom_account_key.is_null()) {
+    return std::nullopt;
+  }
+
+  const std::optional<account_manager::AccountType> account_type =
       FromMojoAccountType(mojom_account_key->account_type);
   if (!account_type.has_value())
-    return absl::nullopt;
+    return std::nullopt;
   if (mojom_account_key->id.empty())
-    return absl::nullopt;
+    return std::nullopt;
 
   return account_manager::AccountKey(mojom_account_key->id,
                                      account_type.value());
@@ -195,7 +208,7 @@ crosapi::mojom::AccountKeyPtr ToMojoAccountKey(
   return mojom_account_key;
 }
 
-absl::optional<account_manager::AccountType> FromMojoAccountType(
+std::optional<account_manager::AccountType> FromMojoAccountType(
     const crosapi::mojom::AccountType& account_type) {
   switch (account_type) {
     case crosapi::mojom::AccountType::kGaia:
@@ -213,7 +226,7 @@ absl::optional<account_manager::AccountType> FromMojoAccountType(
       // Don't consider this as as error to preserve forwards compatibility with
       // lacros.
       LOG(WARNING) << "Unknown account type: " << account_type;
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
@@ -227,8 +240,12 @@ crosapi::mojom::AccountType ToMojoAccountType(
   }
 }
 
-absl::optional<GoogleServiceAuthError> FromMojoGoogleServiceAuthError(
+std::optional<GoogleServiceAuthError> FromMojoGoogleServiceAuthError(
     const crosapi::mojom::GoogleServiceAuthErrorPtr& mojo_error) {
+  if (mojo_error.is_null()) {
+    return std::nullopt;
+  }
+
   switch (mojo_error->state) {
     case cm::GoogleServiceAuthError::State::kNone:
       return GoogleServiceAuthError::AuthErrorNone();
@@ -255,12 +272,16 @@ absl::optional<GoogleServiceAuthError> FromMojoGoogleServiceAuthError(
       return GoogleServiceAuthError(
           GoogleServiceAuthError::State::REQUEST_CANCELED);
     case cm::GoogleServiceAuthError::State::kScopeLimitedUnrecoverableError:
-      return GoogleServiceAuthError(
-          GoogleServiceAuthError::State::SCOPE_LIMITED_UNRECOVERABLE_ERROR);
+      return GoogleServiceAuthError::FromScopeLimitedUnrecoverableError(
+          mojo_error->error_message);
+    case cm::GoogleServiceAuthError::State::kChallengeResponseRequired:
+      return GoogleServiceAuthError::FromTokenBindingChallenge(
+          mojo_error->token_binding_challenge.value_or(
+              "MISSING_CHALLENGE_FROM_CROSAPI_MOJOM"));
     default:
       LOG(WARNING) << "Unknown crosapi::mojom::GoogleServiceAuthError::State: "
                    << mojo_error->state;
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
@@ -278,52 +299,62 @@ crosapi::mojom::GoogleServiceAuthErrorPtr ToMojoGoogleServiceAuthError(
         ToMojoInvalidGaiaCredentialsReason(
             error.GetInvalidGaiaCredentialsReason());
   }
+  if (error.state() ==
+      GoogleServiceAuthError::State::CHALLENGE_RESPONSE_REQUIRED) {
+    mojo_result->token_binding_challenge = error.GetTokenBindingChallenge();
+  }
   mojo_result->state = ToMojoGoogleServiceAuthErrorState(error.state());
   return mojo_result;
 }
 
-absl::optional<account_manager::AccountAdditionResult>
-FromMojoAccountAdditionResult(
-    const crosapi::mojom::AccountAdditionResultPtr& mojo_result) {
-  absl::optional<account_manager::AccountAdditionResult::Status> status =
+std::optional<account_manager::AccountUpsertionResult>
+FromMojoAccountUpsertionResult(
+    const crosapi::mojom::AccountUpsertionResultPtr& mojo_result) {
+  if (mojo_result.is_null()) {
+    return std::nullopt;
+  }
+
+  std::optional<account_manager::AccountUpsertionResult::Status> status =
       FromMojoAccountAdditionStatus(mojo_result->status);
   if (!status.has_value())
-    return absl::nullopt;
+    return std::nullopt;
 
   switch (status.value()) {
-    case account_manager::AccountAdditionResult::Status::kSuccess: {
-      absl::optional<account_manager::Account> account =
+    case account_manager::AccountUpsertionResult::Status::kSuccess: {
+      std::optional<account_manager::Account> account =
           FromMojoAccount(mojo_result->account);
       if (!account.has_value())
-        return absl::nullopt;
-      return account_manager::AccountAdditionResult::FromAccount(
+        return std::nullopt;
+      return account_manager::AccountUpsertionResult::FromAccount(
           account.value());
     }
-    case account_manager::AccountAdditionResult::Status::kNetworkError: {
-      absl::optional<GoogleServiceAuthError> net_error =
+    case account_manager::AccountUpsertionResult::Status::kNetworkError: {
+      std::optional<GoogleServiceAuthError> net_error =
           FromMojoGoogleServiceAuthError(mojo_result->error);
       if (!net_error.has_value())
-        return absl::nullopt;
-      return account_manager::AccountAdditionResult::FromError(
+        return std::nullopt;
+      return account_manager::AccountUpsertionResult::FromError(
           net_error.value());
     }
-    case account_manager::AccountAdditionResult::Status::kAlreadyInProgress:
-    case account_manager::AccountAdditionResult::Status::kCancelledByUser:
-    case account_manager::AccountAdditionResult::Status::kUnexpectedResponse:
-    case account_manager::AccountAdditionResult::Status::
+    case account_manager::AccountUpsertionResult::Status::kAlreadyInProgress:
+    case account_manager::AccountUpsertionResult::Status::kCancelledByUser:
+    case account_manager::AccountUpsertionResult::Status::kUnexpectedResponse:
+    case account_manager::AccountUpsertionResult::Status::
         kMojoRemoteDisconnected:
-    case account_manager::AccountAdditionResult::Status::
+    case account_manager::AccountUpsertionResult::Status::
         kIncompatibleMojoVersions:
-      return account_manager::AccountAdditionResult::FromStatus(status.value());
-    case account_manager::AccountAdditionResult::Status::kBlockedByPolicy:
-      return account_manager::AccountAdditionResult::FromStatus(status.value());
+      return account_manager::AccountUpsertionResult::FromStatus(
+          status.value());
+    case account_manager::AccountUpsertionResult::Status::kBlockedByPolicy:
+      return account_manager::AccountUpsertionResult::FromStatus(
+          status.value());
   }
 }
 
-crosapi::mojom::AccountAdditionResultPtr ToMojoAccountAdditionResult(
-    account_manager::AccountAdditionResult result) {
-  crosapi::mojom::AccountAdditionResultPtr mojo_result =
-      crosapi::mojom::AccountAdditionResult::New();
+crosapi::mojom::AccountUpsertionResultPtr ToMojoAccountUpsertionResult(
+    account_manager::AccountUpsertionResult result) {
+  crosapi::mojom::AccountUpsertionResultPtr mojo_result =
+      crosapi::mojom::AccountUpsertionResult::New();
   mojo_result->status = ToMojoAccountAdditionStatus(result.status());
   if (result.account().has_value()) {
     mojo_result->account =
@@ -335,11 +366,12 @@ crosapi::mojom::AccountAdditionResultPtr ToMojoAccountAdditionResult(
   return mojo_result;
 }
 
-absl::optional<account_manager::AccountAdditionOptions>
+std::optional<account_manager::AccountAdditionOptions>
 FromMojoAccountAdditionOptions(
     const crosapi::mojom::AccountAdditionOptionsPtr& mojo_options) {
-  if (!mojo_options)
-    return absl::nullopt;
+  if (mojo_options.is_null()) {
+    return std::nullopt;
+  }
 
   account_manager::AccountAdditionOptions result;
   result.is_available_in_arc = mojo_options->is_available_in_arc;

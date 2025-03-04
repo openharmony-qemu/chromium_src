@@ -4,7 +4,7 @@
 
 #import "components/commerce/core/commerce_feature_list.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_navigation_controller_constants.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey_ui_test_util.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
@@ -12,10 +12,6 @@
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface PriceNotificationsPriceTrackingTestCase : ChromeTestCase
 @end
@@ -26,17 +22,9 @@
   AppLaunchConfiguration config;
   // Feature parameters follow a key/value format to enable or disable
   // parameters.
-  std::string params =
-      ":enable_price_tracking/true/enable_price_notification/true";
-  std::string priceNotificationsFlag =
-      std::string(commerce::kCommercePriceTracking.name) + params;
   std::string shoppingListFlag = std::string("ShoppingList");
-  std::string priceNotificationsSmartSortingFlag =
-      std::string("kSmartSortingPriceTrackingDestination");
 
-  config.additional_args.push_back(
-      "--enable-features=" + priceNotificationsFlag + "," + shoppingListFlag +
-      "," + priceNotificationsSmartSortingFlag);
+  config.additional_args.push_back("--enable-features=" + shoppingListFlag);
 
   return config;
 }
@@ -51,6 +39,8 @@
       assertWithMatcher:grey_notNil()];
 }
 
+// Confirms the Price Tracking carousel destination is not visible when the user
+// is in Incognito.
 - (void)testPriceTrackingIsNotVisibleInIncognito {
   CGFloat const kMenuScrollDisplacement = 150;
   id<GREYAction> scrollRight =
@@ -86,19 +76,9 @@
 - (void)signinPriceTrackingUser {
   FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
   [SigninEarlGrey addFakeIdentity:fakeIdentity];
-
-  [ChromeEarlGreyUI openSettingsMenu];
-  [SigninEarlGreyUI
-      verifySigninPromoVisibleWithMode:SigninPromoViewModeSigninWithAccount];
-  [ChromeEarlGreyUI
-      tapSettingsMenuButton:chrome_test_util::PrimarySignInButton()];
-  [SigninEarlGreyUI tapSigninConfirmationDialog];
-
-  [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity];
-  // Swipe TableView down.
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
-      performAction:grey_swipeFastInDirection(kGREYDirectionDown)];
+  // Price tracking requires "Make Searches and Browsing Better" consent, which
+  // is granted when accepting the history sync opt-in screen.
+  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableHistorySync:YES];
 }
 
 @end

@@ -21,12 +21,7 @@ class WebGL1ConformanceIntegrationTest(
     return 'webgl1_conformance'
 
   def _GetSerialGlobs(self) -> Set[str]:
-    return super()._GetSerialGlobs() | {
-        # Very slow on Windows Debug Vulkan when run in parallel, to the point
-        # where a "Slow" expectation is not sufficient to guarantee stability.
-        # See crbug.com/crbug.com/1364333.
-        'conformance/uniforms/no-over-optimization-on-uniform-array*',
-    }
+    return super()._GetSerialGlobs() | set()
 
   def _GetSerialTests(self) -> Set[str]:
     return super()._GetSerialTests() | set()
@@ -41,15 +36,19 @@ class WebGL1ConformanceIntegrationTest(
     return [
         'ANGLE_instanced_arrays',
         'EXT_blend_minmax',
+        'EXT_clip_control',
         'EXT_color_buffer_half_float',
+        'EXT_depth_clamp',
         'EXT_disjoint_timer_query',
         'EXT_float_blend',
         'EXT_frag_depth',
+        'EXT_polygon_offset_clamp',
         'EXT_shader_texture_lod',
         'EXT_sRGB',
         'EXT_texture_compression_bptc',
         'EXT_texture_compression_rgtc',
         'EXT_texture_filter_anisotropic',
+        'EXT_texture_mirror_clamp_to_edge',
         'KHR_parallel_shader_compile',
         'OES_element_index_uint',
         'OES_fbo_render_mipmap',
@@ -59,6 +58,7 @@ class WebGL1ConformanceIntegrationTest(
         'OES_texture_half_float',
         'OES_texture_half_float_linear',
         'OES_vertex_array_object',
+        'WEBGL_blend_func_extended',
         'WEBGL_color_buffer_float',
         'WEBGL_compressed_texture_astc',
         'WEBGL_compressed_texture_etc',
@@ -72,8 +72,7 @@ class WebGL1ConformanceIntegrationTest(
         'WEBGL_draw_buffers',
         'WEBGL_lose_context',
         'WEBGL_multi_draw',
-        'WEBGL_video_texture',
-        'WEBGL_webcodecs_video_frame',
+        'WEBGL_polygon_mode',
     ]
 
   @classmethod

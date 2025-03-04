@@ -12,7 +12,7 @@
 #include "base/notreached.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
-#include "components/strings/grit/components_chromium_strings.h"
+#include "components/strings/grit/components_branded_strings.h"
 #include "components/strings/grit/components_strings.h"
 #include "components/upload_list/upload_list.h"
 
@@ -65,7 +65,7 @@ std::string UploadInfoStateAsString(UploadList::UploadInfo::State state) {
       return "uploaded";
   }
 
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return "";
 }
 
@@ -88,7 +88,9 @@ void UploadListToValue(UploadList* upload_list, base::Value::List* out_value) {
     }
     crash.Set("local_id", info->local_id);
     crash.Set("state", UploadInfoStateAsString(info->state));
-    crash.Set("file_size", base::UTF16ToUTF8(info->file_size));
+    if (info->file_size.has_value()) {
+      crash.Set("file_size", static_cast<double>(*info->file_size));
+    }
     out_value->Append(std::move(crash));
   }
 }

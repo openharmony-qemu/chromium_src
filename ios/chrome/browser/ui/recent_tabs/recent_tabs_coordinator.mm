@@ -8,18 +8,33 @@
 #import "base/metrics/histogram_functions.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/browser.h"
+#import "components/signin/public/base/signin_metrics.h"
+#import "ios/chrome/browser/favicon/model/ios_chrome_favicon_loader_factory.h"
+#import "ios/chrome/browser/feature_engagement/model/tracker_factory.h"
+#import "ios/chrome/browser/policy/model/policy_util.h"
+#import "ios/chrome/browser/sessions/model/ios_chrome_tab_restore_service_factory.h"
+#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser_list_factory.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
+#import "ios/chrome/browser/shared/public/commands/settings_commands.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_url_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_navigation_controller.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_navigation_controller_constants.h"
-#import "ios/chrome/browser/synced_sessions/distant_session.h"
-#import "ios/chrome/browser/synced_sessions/synced_sessions_util.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
+#import "ios/chrome/browser/sync/model/session_sync_service_factory.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
+#import "ios/chrome/browser/synced_sessions/model/distant_session.h"
+#import "ios/chrome/browser/synced_sessions/model/synced_sessions_util.h"
+#import "ios/chrome/browser/ui/authentication/history_sync/history_sync_coordinator.h"
+#import "ios/chrome/browser/ui/authentication/history_sync/history_sync_popup_coordinator.h"
 #import "ios/chrome/browser/ui/menu/action_factory.h"
 #import "ios/chrome/browser/ui/menu/menu_histograms.h"
 #import "ios/chrome/browser/ui/menu/tab_context_menu_delegate.h"
+#import "ios/chrome/browser/ui/recent_tabs/recent_tabs_coordinator.h"
+#import "ios/chrome/browser/ui/recent_tabs/recent_tabs_coordinator_delegate.h"
 #import "ios/chrome/browser/ui/recent_tabs/recent_tabs_mediator.h"
 #import "ios/chrome/browser/ui/recent_tabs/recent_tabs_menu_helper.h"
 #import "ios/chrome/browser/ui/recent_tabs/recent_tabs_menu_provider.h"
@@ -27,15 +42,12 @@
 #import "ios/chrome/browser/ui/recent_tabs/recent_tabs_table_view_controller.h"
 #import "ios/chrome/browser/ui/sharing/sharing_coordinator.h"
 #import "ios/chrome/browser/ui/sharing/sharing_params.h"
-#import "ios/chrome/browser/url_loading/url_loading_browser_agent.h"
-#import "ios/chrome/browser/url_loading/url_loading_params.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_browser_agent.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_params.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-@interface RecentTabsCoordinator () <TabContextMenuDelegate,
-                                     RecentTabsPresentationDelegate>
+@interface RecentTabsCoordinator () <HistorySyncPopupCoordinatorDelegate,
+                                     RecentTabsPresentationDelegate,
+                                     TabContextMenuDelegate>
 // Completion block called once the recentTabsViewController is dismissed.
 @property(nonatomic, copy) ProceduralBlock completion;
 // Mediator being managed by this Coordinator.
@@ -50,10 +62,11 @@
     RecentTabsContextMenuHelper* recentTabsContextMenuHelper;
 @end
 
-@implementation RecentTabsCoordinator
-@synthesize completion = _completion;
-@synthesize mediator = _mediator;
-@synthesize recentTabsNavigationController = _recentTabsNavigationController;
+@implementation RecentTabsCoordinator {
+  // Coordinator for the history sync opt-in screen that should appear after
+  // sign-in.
+  HistorySyncPopupCoordinator* _historySyncPopupCoordinator;
+}
 
 - (void)start {
   // Initialize and configure RecentTabsTableViewController.
@@ -62,9 +75,12 @@
   self.recentTabsTableViewController.browser = self.browser;
   self.recentTabsTableViewController.loadStrategy = self.loadStrategy;
   CommandDispatcher* dispatcher = self.browser->GetCommandDispatcher();
-  id<ApplicationCommands> handler =
+  id<ApplicationCommands> applicationHandler =
       HandlerForProtocol(dispatcher, ApplicationCommands);
-  self.recentTabsTableViewController.handler = handler;
+  self.recentTabsTableViewController.applicationHandler = applicationHandler;
+  id<SettingsCommands> settingsHandler =
+      HandlerForProtocol(dispatcher, SettingsCommands);
+  self.recentTabsTableViewController.settingsHandler = settingsHandler;
   self.recentTabsTableViewController.presentationDelegate = self;
 
   self.recentTabsContextMenuHelper =
@@ -87,12 +103,35 @@
       dismissButton;
 
   // Initialize and configure RecentTabsMediator. Make sure to use the
-  // OriginalChromeBrowserState since the mediator services need a SignIn
-  // manager which is not present in an OffTheRecord BrowserState.
+  // OriginalProfile since the mediator services need a SignIn
+  // manager which is not present in an OffTheRecord Profile.
   DCHECK(!self.mediator);
-  self.mediator = [[RecentTabsMediator alloc] init];
-  self.mediator.browserState =
-      self.browser->GetBrowserState()->GetOriginalChromeBrowserState();
+  ProfileIOS* profile = self.browser->GetProfile();
+  sync_sessions::SessionSyncService* syncService =
+      SessionSyncServiceFactory::GetForProfile(profile);
+  signin::IdentityManager* identityManager =
+      IdentityManagerFactory::GetForProfile(profile);
+  sessions::TabRestoreService* restoreService =
+      IOSChromeTabRestoreServiceFactory::GetForProfile(profile);
+  FaviconLoader* faviconLoader =
+      IOSChromeFaviconLoaderFactory::GetForProfile(profile);
+  syncer::SyncService* service = SyncServiceFactory::GetForProfile(profile);
+  BrowserList* browserList = BrowserListFactory::GetForProfile(profile);
+  SceneState* currentSceneState = self.browser->GetSceneState();
+  BOOL isDisabled = IsIncognitoModeForced(profile->GetPrefs());
+  self.mediator = [[RecentTabsMediator alloc]
+      initWithSessionSyncService:syncService
+                 identityManager:identityManager
+                  restoreService:restoreService
+                   faviconLoader:faviconLoader
+                     syncService:service
+                     browserList:browserList
+                      sceneState:currentSceneState
+                disabledByPolicy:isDisabled
+               engagementTracker:feature_engagement::TrackerFactory::
+                                     GetForProfile(profile)
+                      modeHolder:nil];
+
   // Set the consumer first before calling [self.mediator initObservers] and
   // then [self.mediator configureConsumer].
   self.mediator.consumer = self.recentTabsTableViewController;
@@ -120,8 +159,14 @@
 }
 
 - (void)stop {
+  _historySyncPopupCoordinator.delegate = nil;
+  [_historySyncPopupCoordinator stop];
+  _historySyncPopupCoordinator = nil;
   [self.recentTabsTableViewController dismissModals];
+  self.recentTabsTableViewController.imageDataSource = nil;
   self.recentTabsTableViewController.browser = nil;
+  self.recentTabsTableViewController.delegate = nil;
+  self.recentTabsTableViewController = nil;
   [self.recentTabsNavigationController
       dismissViewControllerAnimated:YES
                          completion:self.completion];
@@ -134,7 +179,7 @@
 
 - (void)dismissButtonTapped {
   base::RecordAction(base::UserMetricsAction("MobileRecentTabsClose"));
-  [self stop];
+  [self.delegate recentTabsCoordinatorWantsToBeDismissed:self];
 }
 
 #pragma mark - RecentTabsPresentationDelegate
@@ -146,11 +191,12 @@
       "Mobile.RecentTabsManager.TotalTabsFromOtherDevicesOpenAll",
       session->tabs.size());
 
-  BOOL inIncognito = self.browser->GetBrowserState()->IsOffTheRecord();
+  BOOL inIncognito = self.browser->GetProfile()->IsOffTheRecord();
   UrlLoadingBrowserAgent* URLLoader =
       UrlLoadingBrowserAgent::FromBrowser(self.browser);
-  OpenDistantSessionInBackground(session, inIncognito, URLLoader,
-                                 self.loadStrategy);
+  OpenDistantSessionInBackground(session, inIncognito,
+                                 GetDefaultNumberOfTabsToLoadSimultaneously(),
+                                 URLLoader, self.loadStrategy);
 
   [self showActiveRegularTabFromRecentTabs];
 }
@@ -158,7 +204,7 @@
 - (void)showActiveRegularTabFromRecentTabs {
   // Stopping this coordinator reveals the tab UI underneath.
   self.completion = nil;
-  [self stop];
+  [self.delegate recentTabsCoordinatorWantsToBeDismissed:self];
 }
 
 - (void)showHistoryFromRecentTabsFilteredBySearchTerms:(NSString*)searchTerms {
@@ -171,7 +217,29 @@
     [handler showHistory];
     weakSelf.completion = nil;
   };
-  [self stop];
+  [self.delegate recentTabsCoordinatorWantsToBeDismissed:self];
+}
+
+- (void)showHistorySyncOptInAfterDedicatedSignIn:(BOOL)dedicatedSignInDone {
+  // Stop the previous coordinator since the user can tap on the promo button
+  // to open a new History Sync Page while the dismiss animation of the previous
+  // one is in progress.
+  _historySyncPopupCoordinator.delegate = nil;
+  [_historySyncPopupCoordinator stop];
+  _historySyncPopupCoordinator = nil;
+  // Show the History Sync Opt-In screen. The coordinator will dismiss itself
+  // if there is no signed-in account (eg. if sign-in unsuccessful) or if sync
+  // is disabled by policies.
+  _historySyncPopupCoordinator = [[HistorySyncPopupCoordinator alloc]
+      initWithBaseViewController:self.recentTabsTableViewController
+                         browser:self.browser
+                   showUserEmail:!dedicatedSignInDone
+               signOutIfDeclined:dedicatedSignInDone
+                      isOptional:NO
+                     accessPoint:signin_metrics::AccessPoint::
+                                     ACCESS_POINT_RECENT_TABS];
+  _historySyncPopupCoordinator.delegate = self;
+  [_historySyncPopupCoordinator start];
 }
 
 #pragma mark - RecentTabsContextMenuDelegate
@@ -200,6 +268,16 @@
     (NSInteger)sectionIdentifier {
   return [self.recentTabsTableViewController
       sessionForTableSectionWithIdentifier:sectionIdentifier];
+}
+
+#pragma mark - HistorySyncPopupCoordinatorDelegate
+
+- (void)historySyncPopupCoordinator:(HistorySyncPopupCoordinator*)coordinator
+                didFinishWithResult:(SigninCoordinatorResult)result {
+  _historySyncPopupCoordinator.delegate = nil;
+  [_historySyncPopupCoordinator stop];
+  _historySyncPopupCoordinator = nil;
+  [self.mediator refreshSessionsView];
 }
 
 @end

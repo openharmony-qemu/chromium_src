@@ -8,10 +8,10 @@
 
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/download/download_manager_tab_helper.h"
-#import "ios/chrome/browser/snapshots/fake_snapshot_generator_delegate.h"
-#import "ios/chrome/browser/snapshots/snapshot_tab_helper.h"
+#import "ios/chrome/browser/download/model/download_manager_tab_helper.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/snapshots/model/fake_snapshot_generator_delegate.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_tab_helper.h"
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_to_data.h"
 #import "ios/testing/ocmock_complex_type_helper.h"
 #import "ios/web/public/test/fakes/fake_navigation_manager.h"
@@ -24,10 +24,6 @@
 #import "ui/base/test/ios/ui_image_test_utils.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using ui::test::uiimage_utils::UIImagesAreEqual;
 using ui::test::uiimage_utils::UIImageWithSizeAndSolidColorAndScale;
 
@@ -39,7 +35,7 @@ const char16_t kExpectedTitle[] = u"title";
 class ShareToDataBuilderTest : public PlatformTest {
  public:
   ShareToDataBuilderTest() {
-    chrome_browser_state_ = TestChromeBrowserState::Builder().Build();
+    profile_ = TestProfileIOS::Builder().Build();
 
     auto navigation_manager = std::make_unique<web::FakeNavigationManager>();
     navigation_manager->AddItem(GURL(kExpectedUrl), ui::PAGE_TRANSITION_TYPED);
@@ -49,7 +45,7 @@ class ShareToDataBuilderTest : public PlatformTest {
 
     web_state_ = std::make_unique<web::FakeWebState>();
     web_state_->SetNavigationManager(std::move(navigation_manager));
-    web_state_->SetBrowserState(chrome_browser_state_.get());
+    web_state_->SetBrowserState(profile_.get());
     web_state_->SetVisibleURL(GURL(kExpectedUrl));
 
     // Attach SnapshotTabHelper to allow snapshot generation.
@@ -75,7 +71,7 @@ class ShareToDataBuilderTest : public PlatformTest {
  private:
   FakeSnapshotGeneratorDelegate* delegate_ = nil;
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<ChromeBrowserState> chrome_browser_state_;
+  std::unique_ptr<ProfileIOS> profile_;
   std::unique_ptr<web::FakeWebState> web_state_;
 };
 
@@ -92,18 +88,6 @@ TEST_F(ShareToDataBuilderTest, TestSharePageCommandHandlingWithShareUrl) {
   EXPECT_NSEQ(base::SysUTF16ToNSString(kExpectedTitle), actual_data.title);
   EXPECT_TRUE(actual_data.isOriginalTitle);
   EXPECT_FALSE(actual_data.isPagePrintable);
-
-  // TODO(crbug.com/1249831): The binary representation of the thumbnail appears
-  // to have changed in iOS 15, such that UIImagesAreEqual() no longer returns
-  // true.
-  if (@available(iOS 15, *)) {
-  } else {
-    const CGSize size = CGSizeMake(40, 40);
-    EXPECT_TRUE(UIImagesAreEqual(
-        [actual_data.thumbnailGenerator thumbnailWithSize:size],
-        UIImageWithSizeAndSolidColorAndScale(size, [UIColor blueColor],
-                                             /* scale=*/0)));
-  }
 }
 
 // Verifies that ShareToData is constructed properly for a given Tab when the
@@ -118,18 +102,6 @@ TEST_F(ShareToDataBuilderTest, TestSharePageCommandHandlingNoShareUrl) {
   EXPECT_NSEQ(base::SysUTF16ToNSString(kExpectedTitle), actual_data.title);
   EXPECT_TRUE(actual_data.isOriginalTitle);
   EXPECT_FALSE(actual_data.isPagePrintable);
-
-  // TODO(crbug.com/1249831): The binary representation of the thumbnail appears
-  // to have changed in iOS 15, such that UIImagesAreEqual() no longer returns
-  // true.
-  if (@available(iOS 15, *)) {
-  } else {
-    const CGSize size = CGSizeMake(40, 40);
-    EXPECT_TRUE(UIImagesAreEqual(
-        [actual_data.thumbnailGenerator thumbnailWithSize:size],
-        UIImageWithSizeAndSolidColorAndScale(size, [UIColor blueColor],
-                                             /* scale=*/0)));
-  }
 }
 
 // Tests that the ShareToDataForURL function creates a ShareToData instance with

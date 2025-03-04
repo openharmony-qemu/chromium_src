@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
 #include "components/ui_devtools/devtools_base_agent.h"
 #include "components/ui_devtools/devtools_export.h"
@@ -109,9 +110,11 @@ class UI_DEVTOOLS_EXPORT DOMAgent
   void SearchDomTree(const Query& query, std::vector<int>* result_collector);
 
   std::unique_ptr<UIElement> element_root_;
-  std::unordered_map<int, UIElement*> node_id_to_ui_element_;
+  std::unordered_map<int, raw_ptr<UIElement, CtnExperimental>>
+      node_id_to_ui_element_;
 
-  base::ObserverList<DOMAgentObserver>::Unchecked observers_;
+  base::ObserverList<DOMAgentObserver>::UncheckedAndDanglingUntriaged
+      observers_;
 
   using SearchResults = std::unordered_map<std::string, std::vector<int>>;
   SearchResults search_results_;

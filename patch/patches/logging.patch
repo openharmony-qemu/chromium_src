@@ -1,0 +1,238 @@
+diff --git a/src/base/logging.cc b/src/base/logging.cc
+index 3273bcb5011b9..4fa744492d059 100644
+--- a/src/base/logging.cc
++++ b/src/base/logging.cc
+@@ -63,6 +63,7 @@
+ #include "cef/libcef/features/features.h"
+ #include "third_party/abseil-cpp/absl/base/internal/raw_logging.h"
+ #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if !BUILDFLAG(IS_NACL)
+ #include "base/auto_reset.h"
+@@ -95,6 +96,10 @@ typedef HANDLE FileHandle;
+ #include <os/log.h>
+ #endif  // BUILDFLAG(IS_APPLE)
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "hilog_adapter.h"
++#endif
++
+ #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+ #include <errno.h>
+ #include <paths.h>
+@@ -209,7 +214,10 @@ void MaybeInitializeVlogInfo() {
+   }
+ }
+ 
+-const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL"};
++#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
++// #if defined(OHOS_DFX_LOGGING).
++const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
++// #endif
+ static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
+               "Incorrect number of log_severity_names");
+ 
+@@ -218,6 +226,7 @@ const char* log_severity_name(int severity) {
+     return log_severity_names[severity];
+   return "UNKNOWN";
+ }
++#endif
+ 
+ // Specifies the process' logging sink(s), represented as a combination of
+ // LoggingDestination values joined by bitwise OR.
+@@ -269,6 +278,7 @@ base::stack<LogAssertHandlerFunction>& GetLogAssertHandlerStack() {
+ // A log message handler that gets notified of every log message we process.
+ LogMessageHandlerFunction g_log_message_handler = nullptr;
+ 
++#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
+ uint64_t TickCount() {
+ #if BUILDFLAG(IS_WIN)
+   return GetTickCount();
+@@ -292,6 +302,7 @@ uint64_t TickCount() {
+   return absolute_micro;
+ #endif
+ }
++#endif
+ 
+ void DeleteFilePath(const PathString& log_name) {
+ #if BUILDFLAG(IS_WIN)
+@@ -893,24 +904,28 @@ void LogMessage::Flush() {
+     __android_log_write(priority, kAndroidLogTag, str_newline.c_str());
+ #endif
+ #elif BUILDFLAG(IS_OHOS)
+-    auto priority = (severity_ < 0) ? LogLevel::LOG_INFO : LogLevel::LOG_FATAL;
+ 
++    auto priority = (severity_ < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
++                                    : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
+     switch (severity_) {
+       case LOGGING_INFO:
+-        priority = LogLevel::LOG_INFO;
++        priority = OHOS::NWeb::LogLevelAdapter::INFO;
+         break;
+       case LOGGING_WARNING:
+-        priority = LogLevel::LOG_WARN;
++        priority = OHOS::NWeb::LogLevelAdapter::WARN;
+         break;
+       case LOGGING_ERROR:
+-        priority = LogLevel::LOG_ERROR;
++        priority = OHOS::NWeb::LogLevelAdapter::ERROR;
+         break;
+       case LOGGING_FATAL:
+-        priority = LogLevel::LOG_FATAL;
++        priority = OHOS::NWeb::LogLevelAdapter::FATAL;
+         break;
++    // #if defined(OHOS_DFX_LOGGING)
++      case LOGGING_DEBUG:
++        priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
++    // #endif
+     }
+-    const char kOHOSLogTag[] = "chromium";
+-    OH_LOG_Print(LOG_APP, (LogLevel)priority, LOG_DOMAIN, kOHOSLogTag, "%{public}s", str_newline.c_str());
++    OHOS::NWeb::HiLogAdapter::PrintLog(priority, tag_.c_str(), "%{public}s", str_newline.c_str());
+ #elif BUILDFLAG(IS_FUCHSIA)
+     // LogMessage() will silently drop the message if the logger is not valid.
+     // Skip the final character of |str_newline|, since LogMessage() will add
+@@ -974,8 +989,27 @@ std::string LogMessage::BuildCrashString() const {
+ void LogMessage::Init(const char* file, int line) {
+   // Don't let actions from this method affect the system error after returning.
+   base::ScopedClearLastError scoped_clear_last_error;
+-
++#if BUILDFLAG(IS_OHOS)
++  std::string_view filename;
++  std::string_view message(file);
++  size_t tagStart = message.find_first_of('#');
++  if (tagStart == std::string_view::npos) {
++    tag_ = std::string("chromium");
++    filename = message;
++#ifdef OHOS_LOGGER_REPORT
++    ohos_tag_ = std::string("mainprocess");
++#endif
++  } else {
++    tag_ = std::string(message.substr(0, tagStart));
++#ifdef OHOS_LOGGER_REPORT
++    ohos_tag_ = std::string(message.substr(0, tagStart));
++#endif
++    filename = message.substr(tagStart + 1, message.size() - tagStart);
++  }
++#else
+   std::string_view filename(file);
++#endif
++
+   size_t last_slash_pos = filename.find_last_of("\\/");
+   if (last_slash_pos != std::string_view::npos) {
+     filename.remove_prefix(last_slash_pos + 1);
+@@ -991,6 +1025,7 @@ void LogMessage::Init(const char* file, int line) {
+   {
+     // TODO(darin): It might be nice if the columns were fixed width.
+     stream_ << '[';
++#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
+     if (g_log_prefix)
+       stream_ << g_log_prefix << ':';
+     if (g_log_process_id)
+@@ -1040,6 +1075,9 @@ void LogMessage::Init(const char* file, int line) {
+       stream_ << "VERBOSE" << -severity_;
+     }
+     stream_ << ":" << filename << "(" << line << ")] ";
++#else
++    stream_ << filename << ":" << line << "] ";
++#endif
+   }
+   message_start_ = stream_.str().length();
+ }
+diff --git a/src/base/logging.h b/src/base/logging.h
+index f9013f9480314..e4df22525be61 100644
+--- a/src/base/logging.h
++++ b/src/base/logging.h
+@@ -376,8 +376,10 @@ constexpr LogSeverity LOGGING_INFO = 0;
+ constexpr LogSeverity LOGGING_WARNING = 1;
+ constexpr LogSeverity LOGGING_ERROR = 2;
+ constexpr LogSeverity LOGGING_FATAL = 3;
+-constexpr LogSeverity LOGGING_NUM_SEVERITIES = 4;
+-
++// #if defined(OHOS_DFX_LOGGING)
++constexpr LogSeverity LOGGING_DEBUG = 4;
++constexpr LogSeverity LOGGING_NUM_SEVERITIES = 5;
++// #endif
+ // LOGGING_DFATAL is LOGGING_FATAL in DCHECK-enabled builds, ERROR in normal
+ // mode.
+ #if DCHECK_IS_ON()
+@@ -386,30 +388,61 @@ constexpr LogSeverity LOGGING_DFATAL = LOGGING_FATAL;
+ constexpr LogSeverity LOGGING_DFATAL = LOGGING_ERROR;
+ #endif
+ 
++// This block duplicates the above entries to facilitate incremental conversion
++// from LOG_FOO to LOGGING_FOO.
++// TODO(thestig): Convert existing users to LOGGING_FOO and remove this block.
++constexpr LogSeverity LOG_VERBOSE = LOGGING_VERBOSE;
++// commit OHOS_DFX_LOGGING.
++constexpr LogSeverity LOG_DEBUG = LOGGING_DEBUG;
++// #endif
++constexpr LogSeverity LOG_INFO = LOGGING_INFO;
++constexpr LogSeverity LOG_WARNING = LOGGING_WARNING;
++constexpr LogSeverity LOG_ERROR = LOGGING_ERROR;
++constexpr LogSeverity LOG_FATAL = LOGGING_FATAL;
++constexpr LogSeverity LOG_DFATAL = LOGGING_DFATAL;
++#if BUILDFLAG(ARKWEB_DFX_LOGGING)
++#if !defined(LOGGING_TAG)
++#define LOGGING_TAG "chromium#"
++#endif
++#else
++#define LOGGING_TAG
++#endif
+ // A few definitions of macros that don't generate much code. These are used
+ // by LOG() and LOG_IF, etc. Since these are used all over our code, it's
+ // better to have compact code for these operations.
++// #if defined(OHOS_DFX_LOGGING).
++#define COMPACT_GOOGLE_LOG_EX_DEBUG(ClassName, ...)                  \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DEBUG, \
++                       ##__VA_ARGS__)
++// #endif
+ #define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)                  \
+-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_INFO, \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_INFO, \
+                        ##__VA_ARGS__)
+ #define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)                  \
+-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_WARNING, \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_WARNING, \
+                        ##__VA_ARGS__)
+ #define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
+-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_ERROR, \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_ERROR, \
++                       ##__VA_ARGS__)
++#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                  \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+                        ##__VA_ARGS__)
+-#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                         \
+-  ::logging::ClassName##Fatal(__FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+-                              ##__VA_ARGS__)
+ #define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
+-  ::logging::ClassName(__FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
++                       ##__VA_ARGS__)
++#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
++  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
+                        ##__VA_ARGS__)
+ 
++// #if defined(OHOS_DFX_LOGGING).
++#define COMPACT_GOOGLE_LOG_DEBUG COMPACT_GOOGLE_LOG_EX_DEBUG(LogMessage)
++// #endif
+ #define COMPACT_GOOGLE_LOG_INFO COMPACT_GOOGLE_LOG_EX_INFO(LogMessage)
+ #define COMPACT_GOOGLE_LOG_WARNING COMPACT_GOOGLE_LOG_EX_WARNING(LogMessage)
+ #define COMPACT_GOOGLE_LOG_ERROR COMPACT_GOOGLE_LOG_EX_ERROR(LogMessage)
+ #define COMPACT_GOOGLE_LOG_FATAL COMPACT_GOOGLE_LOG_EX_FATAL(LogMessage)
+ #define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_EX_DFATAL(LogMessage)
++#define COMPACT_GOOGLE_LOG_DCHECK COMPACT_GOOGLE_LOG_EX_DCHECK(LogMessage)
+ 
+ #if BUILDFLAG(IS_WIN)
+ // wingdi.h defines ERROR to be 0. When we call LOG(ERROR), it gets
+@@ -638,6 +671,9 @@ class BASE_EXPORT LogMessage {
+   // The file and line information passed in to the constructor.
+   const char* const file_;
+   const int line_;
++#if BUILDFLAG(ARKWEB_DFX_LOGGING)
++  std::string tag_;
++#endif
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+   void InitWithSyslogPrefix(std::string_view filename,

@@ -37,17 +37,16 @@ public class PrintingControllerImpl implements PrintingController, PdfGenerator 
      * onLayout or onWrite, a PDF generation cycle is completed another new one can safely start).
      */
     private static final int PRINTING_STATE_READY = 0;
+
     private static final int PRINTING_STATE_STARTED_FROM_ONWRITE = 1;
+
     /** Printing dialog has been dismissed and cleanup has been done. */
     private static final int PRINTING_STATE_FINISHED = 2;
 
     /** The singleton instance for this class. */
-    @VisibleForTesting
-    protected static PrintingController sInstance;
+    @VisibleForTesting protected static PrintingController sInstance;
 
     private String mErrorMessage;
-
-    private PrintingContext mPrintingContext;
 
     private int mRenderProcessId;
     private int mRenderFrameId;
@@ -143,13 +142,11 @@ public class PrintingControllerImpl implements PrintingController, PdfGenerator 
     }
 
     @Override
-    public void setPrintingContext(final PrintingContext printingContext) {
-        mPrintingContext = printingContext;
-    }
-
-    @Override
-    public void setPendingPrint(final Printable printable, PrintManagerDelegate printManager,
-            int renderProcessId, int renderFrameId) {
+    public void setPendingPrint(
+            final Printable printable,
+            PrintManagerDelegate printManager,
+            int renderProcessId,
+            int renderFrameId) {
         if (mIsBusy) {
             Log.d(TAG, "Pending print can't be set. PrintingController is busy.");
             return;
@@ -191,8 +188,8 @@ public class PrintingControllerImpl implements PrintingController, PdfGenerator 
     @Override
     public void pdfWritingDone(int pageCount) {
         if (mPrintingState == PRINTING_STATE_READY) {
-            assert pageCount
-                    == 0 : "There is no pending printing task, should only be a failure report";
+            assert pageCount == 0
+                    : "There is no pending printing task, should only be a failure report";
         }
 
         if (mPrintingState != PRINTING_STATE_STARTED_FROM_ONWRITE) return;
@@ -287,7 +284,6 @@ public class PrintingControllerImpl implements PrintingController, PdfGenerator 
     @Override
     public void onFinish() {
         mPages = null;
-        mPrintingContext = null;
 
         mRenderProcessId = -1;
         mRenderFrameId = -1;
@@ -333,9 +329,7 @@ public class PrintingControllerImpl implements PrintingController, PdfGenerator 
         return pageRanges;
     }
 
-    /**
-     * Gets an array of page ranges and returns an array of integers with all ranges expanded.
-     */
+    /** Gets an array of page ranges and returns an array of integers with all ranges expanded. */
     private static int[] convertPageRangesToIntegerArray(final PageRange[] ranges) {
         if (ranges.length == 1 && ranges[0].equals(PageRange.ALL_PAGES)) {
             // null corresponds to all pages in Chromium printing logic.

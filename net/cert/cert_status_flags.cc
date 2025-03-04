@@ -10,55 +10,6 @@
 
 namespace net {
 
-CertStatus MapNetErrorToCertStatus(int error) {
-  switch (error) {
-    case ERR_CERT_COMMON_NAME_INVALID:
-      return CERT_STATUS_COMMON_NAME_INVALID;
-    case ERR_CERT_DATE_INVALID:
-      return CERT_STATUS_DATE_INVALID;
-    case ERR_CERT_AUTHORITY_INVALID:
-      return CERT_STATUS_AUTHORITY_INVALID;
-    case ERR_CERT_NO_REVOCATION_MECHANISM:
-      return CERT_STATUS_NO_REVOCATION_MECHANISM;
-    case ERR_CERT_UNABLE_TO_CHECK_REVOCATION:
-      return CERT_STATUS_UNABLE_TO_CHECK_REVOCATION;
-    case ERR_CERTIFICATE_TRANSPARENCY_REQUIRED:
-      return CERT_STATUS_CERTIFICATE_TRANSPARENCY_REQUIRED;
-    case ERR_CERT_REVOKED:
-      return CERT_STATUS_REVOKED;
-    // We added the ERR_CERT_CONTAINS_ERRORS error code when we were using
-    // WinInet, but we never figured out how it differs from ERR_CERT_INVALID.
-    // We should not use ERR_CERT_CONTAINS_ERRORS in new code.
-    case ERR_CERT_CONTAINS_ERRORS:
-      NOTREACHED();
-      [[fallthrough]];
-    case ERR_CERT_INVALID:
-      return CERT_STATUS_INVALID;
-    case ERR_CERT_WEAK_SIGNATURE_ALGORITHM:
-      return CERT_STATUS_WEAK_SIGNATURE_ALGORITHM;
-    case ERR_CERT_NON_UNIQUE_NAME:
-      return CERT_STATUS_NON_UNIQUE_NAME;
-    case ERR_CERT_WEAK_KEY:
-      return CERT_STATUS_WEAK_KEY;
-    case ERR_SSL_PINNED_KEY_NOT_IN_CERT_CHAIN:
-      return CERT_STATUS_PINNED_KEY_MISSING;
-    case ERR_CERT_NAME_CONSTRAINT_VIOLATION:
-      return CERT_STATUS_NAME_CONSTRAINT_VIOLATION;
-    case ERR_CERT_VALIDITY_TOO_LONG:
-      return CERT_STATUS_VALIDITY_TOO_LONG;
-    case ERR_CERT_SYMANTEC_LEGACY:
-      return CERT_STATUS_SYMANTEC_LEGACY;
-    case ERR_CERT_KNOWN_INTERCEPTION_BLOCKED:
-      return (CERT_STATUS_KNOWN_INTERCEPTION_BLOCKED | CERT_STATUS_REVOKED);
-#ifdef OHOS_SSL_AUTH_ALGO
-    case ERR_SSL_OBSOLETE_VERSION_OR_CIPHER:
-      return CERT_STATUS_LEGACY_TLS;
-#endif
-    default:
-      return 0;
-  }
-}
-
 int MapCertStatusToNetError(CertStatus cert_status) {
   // A certificate may have multiple errors.  We report the most
   // serious error.
@@ -82,8 +33,6 @@ int MapCertStatusToNetError(CertStatus cert_status) {
     return ERR_CERTIFICATE_TRANSPARENCY_REQUIRED;
   if (cert_status & CERT_STATUS_SYMANTEC_LEGACY)
     return ERR_CERT_SYMANTEC_LEGACY;
-  // CERT_STATUS_NON_UNIQUE_NAME is intentionally not mapped to an error.
-  // It is treated as just a warning and used to degrade the SSL UI.
   if (cert_status & CERT_STATUS_NAME_CONSTRAINT_VIOLATION)
     return ERR_CERT_NAME_CONSTRAINT_VIOLATION;
   if (cert_status & CERT_STATUS_WEAK_SIGNATURE_ALGORITHM)
@@ -94,22 +43,28 @@ int MapCertStatusToNetError(CertStatus cert_status) {
     return ERR_CERT_DATE_INVALID;
   if (cert_status & CERT_STATUS_VALIDITY_TOO_LONG)
     return ERR_CERT_VALIDITY_TOO_LONG;
+  if (cert_status & CERT_STATUS_NON_UNIQUE_NAME) {
+    return ERR_CERT_NON_UNIQUE_NAME;
+  }
   if (cert_status & CERT_STATUS_UNABLE_TO_CHECK_REVOCATION)
     return ERR_CERT_UNABLE_TO_CHECK_REVOCATION;
   if (cert_status & CERT_STATUS_NO_REVOCATION_MECHANISM)
     return ERR_CERT_NO_REVOCATION_MECHANISM;
+
+#if BUILDFLAG(IS_OHOS)
   if (cert_status & CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT) {
-    return ERR_CERT_AUTHORITY_INVALID;
+    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
   }
-#ifdef OHOS_SSL_AUTH_ALGO
-  if (cert_status & CERT_STATUS_LEGACY_TLS) {
+  if (cert_status & CERT_STATUS_LEGACY_TLS)
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
     return ERR_SSL_OBSOLETE_VERSION_OR_CIPHER;
-  }
+#else
+    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
+#endif
 #endif
 
   // Unknown status. The assumption is 0 (an OK status) won't be used here.
   NOTREACHED();
-  return ERR_UNEXPECTED;
 }
 
 }  // namespace net

@@ -9,25 +9,24 @@ import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.os.Bundle;
 
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.base.ContextUtils;
 import org.chromium.base.Log;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.ui.base.ImmutableWeakReference;
 import org.chromium.ui.base.WindowAndroid;
 
-/**
- * Installs AR DFM and ArCore runtimes.
- */
+/** Installs AR DFM and ArCore runtimes. */
 @JNINamespace("webxr")
 public class ArCoreInstallUtils {
     /**
      * Helper class to store a reference to the ArCoreInstallUtils instance and activity
      * that requested an install of ArCore, and await that activity being resumed.
      */
-    private class InstallRequest implements ActivityLifecycleCallbacks {
+    private static class InstallRequest implements ActivityLifecycleCallbacks {
         private ArCoreInstallUtils mInstallInstance;
         private ImmutableWeakReference<Activity> mWeakActivity;
         private ImmutableWeakReference<Application> mWeakApplication;
@@ -58,7 +57,7 @@ public class ArCoreInstallUtils {
         public void onActivityResumed(Activity activity) {
             if (mWeakActivity.get() != activity || mInstallInstance == null) return;
 
-            mInstallInstance.onArCoreRequestInstallReturned(activity);
+            mInstallInstance.onArCoreRequestInstallReturned();
         }
 
         // Unfortunately, ActivityLifecycleCallbacks force us to implement all of the methods, but
@@ -99,8 +98,9 @@ public class ArCoreInstallUtils {
 
         try {
             sArCoreInstance =
-                    (ArCoreShim) Class.forName("org.chromium.components.webxr.ArCoreShimImpl")
-                            .newInstance();
+                    (ArCoreShim)
+                            Class.forName("org.chromium.components.webxr.ArCoreShimImpl")
+                                    .newInstance();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (InstantiationException e) {
@@ -142,8 +142,7 @@ public class ArCoreInstallUtils {
 
     @CalledByNative
     private static boolean shouldRequestInstallSupportedArCore() {
-        @ArCoreAvailability
-        int availability = getArCoreInstallStatus();
+        @ArCoreAvailability int availability = getArCoreInstallStatus();
         // Skip ARCore installation if we are certain that it is already installed.
         // In all other cases, we might as well try to install it and handle installation failures.
         return availability != ArCoreAvailability.SUPPORTED_INSTALLED;
@@ -192,17 +191,15 @@ public class ArCoreInstallUtils {
         }
     }
 
-    /**
-     * Helper used to notify native code about the result of the request to install ARCore.
-     */
+    /** Helper used to notify native code about the result of the request to install ARCore. */
     private void maybeNotifyNativeOnRequestInstallSupportedArCoreResult(boolean success) {
         if (mNativeArCoreInstallUtils != 0) {
-            ArCoreInstallUtilsJni.get().onRequestInstallSupportedArCoreResult(
-                    mNativeArCoreInstallUtils, success);
+            ArCoreInstallUtilsJni.get()
+                    .onRequestInstallSupportedArCoreResult(mNativeArCoreInstallUtils, success);
         }
     }
 
-    private void onArCoreRequestInstallReturned(Activity activity) {
+    private void onArCoreRequestInstallReturned() {
         assert sInstallRequest != null;
         maybeNotifyNativeOnRequestInstallSupportedArCoreResult(
                 getArCoreInstallStatus() == ArCoreAvailability.SUPPORTED_INSTALLED);

@@ -14,10 +14,6 @@
 #import "ios/web/public/webui/web_ui_ios_data_source.h"
 #import "ui/base/webui/resource_path.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace commerce {
 
 CommerceInternalsUI::CommerceInternalsUI(web::WebUIIOS* web_ui,
@@ -41,7 +37,7 @@ CommerceInternalsUI::CommerceInternalsUI(web::WebUIIOS* web_ui,
   web::WebUIIOSDataSource::Add(browser_state, source);
   web_ui->GetWebState()->GetInterfaceBinderForMainFrame()->AddInterface(
       base::BindRepeating(&CommerceInternalsUI::BindInterface,
-                          base::Unretained(this)));
+                          weak_factory_.GetWeakPtr()));
 }
 
 CommerceInternalsUI::~CommerceInternalsUI() {

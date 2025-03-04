@@ -7,8 +7,8 @@
 #include <utility>
 
 #include "base/containers/contains.h"
+#include "base/memory/raw_ptr.h"
 #include "base/strings/utf_string_conversions.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/accessibility/ax_node_data.h"
 #include "ui/accessibility/platform/ax_unique_id.h"
@@ -25,7 +25,7 @@ AXRootObjWrapper::AXRootObjWrapper(views::AXAuraObjCache::Delegate* delegate,
 AXRootObjWrapper::~AXRootObjWrapper() = default;
 
 bool AXRootObjWrapper::HasChild(views::AXAuraObjWrapper* child) {
-  std::vector<views::AXAuraObjWrapper*> children;
+  std::vector<raw_ptr<views::AXAuraObjWrapper, VectorExperimental>> children;
   GetChildren(&children);
   return base::Contains(children, child);
 }
@@ -35,17 +35,14 @@ views::AXAuraObjWrapper* AXRootObjWrapper::GetParent() {
 }
 
 void AXRootObjWrapper::GetChildren(
-    std::vector<views::AXAuraObjWrapper*>* out_children) {
+    std::vector<raw_ptr<views::AXAuraObjWrapper, VectorExperimental>>*
+        out_children) {
   aura_obj_cache_->GetTopLevelWindows(out_children);
 }
 
 void AXRootObjWrapper::Serialize(ui::AXNodeData* out_node_data) {
   out_node_data->id = unique_id_.Get();
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  out_node_data->role = ax::mojom::Role::kClient;
-#else
   out_node_data->role = ax::mojom::Role::kDesktop;
-#endif
 
   display::Screen* screen = display::Screen::GetScreen();
   if (!screen)

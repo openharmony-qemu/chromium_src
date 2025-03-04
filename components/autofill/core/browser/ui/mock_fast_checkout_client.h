@@ -9,6 +9,8 @@
 
 #include "testing/gmock/include/gmock/gmock.h"
 
+namespace autofill {
+
 class MockFastCheckoutClient : public FastCheckoutClient {
  public:
   MockFastCheckoutClient();
@@ -17,9 +19,9 @@ class MockFastCheckoutClient : public FastCheckoutClient {
   MOCK_METHOD(bool,
               TryToStart,
               (const GURL& url,
-               const autofill::FormData& form,
-               const autofill::FormFieldData& field,
-               base::WeakPtr<autofill::AutofillManager> autofill_manager),
+               const FormData& form,
+               const FormFieldData& field,
+               base::WeakPtr<AutofillManager> autofill_manager),
               (override));
   MOCK_METHOD(void, Stop, (bool allow_further_runs), (override));
   MOCK_METHOD(bool, IsRunning, (), (const override));
@@ -28,13 +30,13 @@ class MockFastCheckoutClient : public FastCheckoutClient {
               OnNavigation,
               (const GURL& url, bool is_cart_or_checkout_url),
               (override));
-  MOCK_METHOD(bool,
-              IsSupported,
-              (const autofill::FormData&,
-               const autofill::FormFieldData&,
-               const autofill::AutofillManager&),
+  MOCK_METHOD(FastCheckoutTriggerOutcome,
+              CanRun,
+              (const FormData&, const FormFieldData&, const AutofillManager&),
               (const override));
   MOCK_METHOD(bool, IsNotShownYet, (), (const override));
 };
+
+}  // namespace autofill
 
 #endif  // COMPONENTS_AUTOFILL_CORE_BROWSER_UI_MOCK_FAST_CHECKOUT_CLIENT_H_

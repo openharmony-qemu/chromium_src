@@ -4,21 +4,22 @@
 
 #import "ios/chrome/browser/ui/infobars/modals/infobar_save_card_table_view_controller.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/feature_list.h"
-#import "base/mac/foundation_util.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "components/autofill/core/common/autofill_features.h"
-#import "ios/chrome/browser/infobars/infobar_metrics_recorder.h"
-#import "ios/chrome/browser/net/crurl.h"
+#import "components/strings/grit/components_strings.h"
+#import "ios/chrome/browser/autofill/model/message/save_card_message_with_links.h"
+#import "ios/chrome/browser/autofill/ui_bundled/cells/target_account_item.h"
+#import "ios/chrome/browser/autofill/ui_bundled/save_card_infobar_metrics_recorder.h"
+#import "ios/chrome/browser/infobars/model/infobar_metrics_recorder.h"
+#import "ios/chrome/browser/net/model/crurl.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_button_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_edit_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_link_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/ui/autofill/cells/target_account_item.h"
-#import "ios/chrome/browser/ui/autofill/save_card_infobar_metrics_recorder.h"
-#import "ios/chrome/browser/ui/autofill/save_card_message_with_links.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_modal_constants.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_save_card_modal_delegate.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
@@ -26,10 +27,6 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 // Number of Months in a year.
@@ -73,8 +70,8 @@ typedef NS_ENUM(NSInteger, ItemType) {
 // Card related Legal Messages to be displayed.
 @property(nonatomic, copy)
     NSMutableArray<SaveCardMessageWithLinks*>* legalMessages;
-// YES if the Card being displayed has been saved.
-@property(nonatomic, assign) BOOL currentCardSaved;
+// YES if the Card being displayed has been accepted to be saved.
+@property(nonatomic, assign) BOOL currentCardSaveAccepted;
 // Set to YES if the Modal should support editing.
 @property(nonatomic, assign) BOOL supportsEditing;
 // The email to identify the account where the card will be saved. Empty if none
@@ -84,6 +81,8 @@ typedef NS_ENUM(NSInteger, ItemType) {
 // should be shown, e.g. if the card won't be saved to any account.
 @property(nonatomic, strong) UIImage* displayedTargetAccountAvatar;
 
+// Item for displaying the last digits of the card to be saved.
+@property(nonatomic, strong) TableViewTextEditItem* cardLastDigitsItem;
 // Item for displaying and editing the cardholder name.
 @property(nonatomic, strong) TableViewTextEditItem* cardholderNameItem;
 // Item for displaying and editing the expiration month.
@@ -119,12 +118,13 @@ typedef NS_ENUM(NSInteger, ItemType) {
       setSeparatorInset:UIEdgeInsetsMake(0, kTableViewHorizontalSpacing, 0, 0)];
 
   // Configure the NavigationBar.
-  UIBarButtonItem* cancelButton = [[UIBarButtonItem alloc]
-      initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                           target:self
-                           action:@selector(dismissInfobarModal)];
-  cancelButton.accessibilityIdentifier = kInfobarModalCancelButton;
-  self.navigationItem.leftBarButtonItem = cancelButton;
+  UIBarButtonItem* closeButton = [[UIBarButtonItem alloc]
+      initWithTitle:l10n_util::GetNSString(IDS_IOS_AUTOFILL_SAVE_CARD_CLOSE)
+              style:UIBarButtonItemStylePlain
+             target:self
+             action:@selector(dismissInfobarModal)];
+  closeButton.accessibilityIdentifier = kInfobarModalCancelButton;
+  self.navigationItem.leftBarButtonItem = closeButton;
   self.navigationController.navigationBar.prefersLargeTitles = NO;
 
   [self loadModel];
@@ -155,13 +155,13 @@ typedef NS_ENUM(NSInteger, ItemType) {
   TableViewModel* model = self.tableViewModel;
   [model addSectionWithIdentifier:SectionIdentifierContent];
 
-  TableViewTextEditItem* cardLastDigitsItem = [self
+  self.cardLastDigitsItem = [self
       textEditItemWithType:ItemTypeCardLastDigits
         fieldNameLabelText:l10n_util::GetNSString(IDS_IOS_AUTOFILL_CARD_NUMBER)
             textFieldValue:self.cardNumber
           textFieldEnabled:NO];
-  cardLastDigitsItem.identifyingIcon = self.cardIssuerIcon;
-  [model addItem:cardLastDigitsItem
+  self.cardLastDigitsItem.identifyingIcon = self.cardIssuerIcon;
+  [model addItem:self.cardLastDigitsItem
       toSectionWithIdentifier:SectionIdentifierContent];
 
   self.cardholderNameItem =
@@ -205,11 +205,11 @@ typedef NS_ENUM(NSInteger, ItemType) {
         toSectionWithIdentifier:SectionIdentifierContent];
   }
   if (shouldShowExtraLegalLineAndAccountInfo) {
-    TableViewTextLinkItem* legalMessageItem =
+    TableViewTextLinkItem* extraLegalMessageItem =
         [[TableViewTextLinkItem alloc] initWithType:ItemTypeCardLegalMessage];
-    legalMessageItem.text =
+    extraLegalMessageItem.text =
         l10n_util::GetNSString(IDS_IOS_CARD_WILL_BE_SAVED_TO_ACCOUNT);
-    [model addItem:legalMessageItem
+    [model addItem:extraLegalMessageItem
         toSectionWithIdentifier:SectionIdentifierContent];
   }
 
@@ -227,7 +227,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   self.saveCardButtonItem.textAlignment = NSTextAlignmentNatural;
   self.saveCardButtonItem.buttonText =
       l10n_util::GetNSString(IDS_IOS_AUTOFILL_SAVE_CARD);
-  self.saveCardButtonItem.enabled = !self.currentCardSaved;
+  self.saveCardButtonItem.enabled = !self.currentCardSaveAccepted;
   self.saveCardButtonItem.disableButtonIntrinsicWidth = YES;
   [model addItem:self.saveCardButtonItem
       toSectionWithIdentifier:SectionIdentifierContent];
@@ -253,7 +253,8 @@ typedef NS_ENUM(NSInteger, ItemType) {
   self.expirationMonth = prefs[kExpirationMonthPrefKey];
   self.expirationYear = prefs[kExpirationYearPrefKey];
   self.legalMessages = prefs[kLegalMessagesPrefKey];
-  self.currentCardSaved = [prefs[kCurrentCardSavedPrefKey] boolValue];
+  self.currentCardSaveAccepted =
+      [prefs[kCurrentCardSaveAcceptedPrefKey] boolValue];
   self.supportsEditing = [prefs[kSupportsEditingPrefKey] boolValue];
   self.displayedTargetAccountEmail = prefs[kDisplayedTargetAccountEmailPrefKey];
   self.displayedTargetAccountAvatar =
@@ -279,7 +280,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCardHolderName: {
       TableViewTextEditCell* editCell =
-          base::mac::ObjCCast<TableViewTextEditCell>(cell);
+          base::apple::ObjCCast<TableViewTextEditCell>(cell);
       [editCell.textField addTarget:self
                              action:@selector(nameEditDidBegin)
                    forControlEvents:UIControlEventEditingDidBegin];
@@ -293,7 +294,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCardExpireMonth: {
       TableViewTextEditCell* editCell =
-          base::mac::ObjCCast<TableViewTextEditCell>(cell);
+          base::apple::ObjCCast<TableViewTextEditCell>(cell);
       [editCell.textField addTarget:self
                              action:@selector(monthEditDidBegin)
                    forControlEvents:UIControlEventEditingDidBegin];
@@ -307,7 +308,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCardExpireYear: {
       TableViewTextEditCell* editCell =
-          base::mac::ObjCCast<TableViewTextEditCell>(cell);
+          base::apple::ObjCCast<TableViewTextEditCell>(cell);
       [editCell.textField addTarget:self
                              action:@selector(yearEditDidBegin)
                    forControlEvents:UIControlEventEditingDidBegin];
@@ -321,7 +322,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCardLegalMessage: {
       TableViewTextLinkCell* linkCell =
-          base::mac::ObjCCast<TableViewTextLinkCell>(cell);
+          base::apple::ObjCCast<TableViewTextLinkCell>(cell);
       linkCell.delegate = self;
       linkCell.separatorInset =
           UIEdgeInsetsMake(0, self.tableView.bounds.size.width, 0, 0);
@@ -329,7 +330,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
     }
     case ItemTypeCardSave: {
       TableViewTextButtonCell* tableViewTextButtonCell =
-          base::mac::ObjCCastStrict<TableViewTextButtonCell>(cell);
+          base::apple::ObjCCastStrict<TableViewTextButtonCell>(cell);
       [tableViewTextButtonCell.button
                  addTarget:self
                     action:@selector(saveCardButtonWasPressed:)
@@ -343,6 +344,50 @@ typedef NS_ENUM(NSInteger, ItemType) {
   }
 
   return cell;
+}
+
+// `uploadCompleted == NO` indicates loading state and `uploadCompleted == YES`
+// indicates confirmation state. For `uploadCompleted == NO`, sets an activity
+// indicator on the button to show card is being uploaded. For `uploadCompleted
+// == YES`, sets a checkmark on the button to show card upload has completed.
+// Also disables the button and hides its text.
+- (void)showProgressWithUploadCompleted:(BOOL)uploadCompleted {
+  self.saveCardButtonItem.buttonText = @"";
+  self.saveCardButtonItem.enabled = NO;
+  self.saveCardButtonItem.showsActivityIndicator = !uploadCompleted;
+  self.saveCardButtonItem.showsCheckmark = uploadCompleted;
+  if (uploadCompleted) {
+    self.saveCardButtonItem.buttonBackgroundColor =
+        [UIColor colorNamed:kBlue100Color];
+    self.saveCardButtonItem.dimBackgroundWhenDisabled = NO;
+    // VoiceOver would only announce button's accessibility label when its
+    // state changes from enabled to disabled. For confirmation state, the
+    // button's state is already disabled from previously showing loading state.
+    // Thus posting accessibility announcement here.
+    UIAccessibilityPostNotification(
+        UIAccessibilityAnnouncementNotification,
+        l10n_util::GetNSString(
+            IDS_AUTOFILL_SAVE_CARD_CONFIRMATION_SUCCESS_ACCESSIBLE_NAME));
+  }
+  // Set the accessibility label on the button that would be read by the
+  // VoiceOver when the button is focused. Also, there's no need to specially
+  // post accessibility announcement for loading, since VoiceOver will announce
+  // the button's accessibility label on its state change from previously
+  // showing enabled state when `Save Card` is offered to disabled state while
+  // loading.
+  self.saveCardButtonItem.buttonAccessibilityLabel =
+      uploadCompleted
+          ? l10n_util::GetNSString(
+                IDS_AUTOFILL_SAVE_CARD_CONFIRMATION_SUCCESS_ACCESSIBLE_NAME)
+          : l10n_util::GetNSString(
+                IDS_AUTOFILL_SAVE_CARD_PROMPT_LOADING_THROBBER_ACCESSIBLE_NAME);
+
+  [self updateItemsInProgressState];
+
+  [self reconfigureCellsForItems:@[
+    self.cardLastDigitsItem, self.cardholderNameItem, self.expirationMonthItem,
+    self.expirationYearItem, self.saveCardButtonItem
+  ]];
 }
 
 #pragma mark - UITableViewDelegate
@@ -449,6 +494,23 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [self.saveCardModalDelegate dismissInfobarModal:self];
 }
 
+// In progress state, disables the text and icon for the items of
+// the type `TableViewTextEditItem`, since those fields are not editable while
+// showing loading or confirmation.
+- (void)updateItemsInProgressState {
+  self.cardLastDigitsItem.identifyingIconEnabled = NO;
+  self.cardLastDigitsItem.textFieldEnabled = NO;
+
+  self.cardholderNameItem.identifyingIconEnabled = NO;
+  self.cardholderNameItem.textFieldEnabled = NO;
+
+  self.expirationMonthItem.identifyingIconEnabled = NO;
+  self.expirationMonthItem.textFieldEnabled = NO;
+
+  self.expirationYearItem.identifyingIconEnabled = NO;
+  self.expirationYearItem.textFieldEnabled = NO;
+}
+
 #pragma mark - Helpers
 
 - (TableViewTextEditItem*)textEditItemWithType:(ItemType)type
@@ -467,7 +529,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 }
 
 // YES if the current values of the Card are valid.
-// TODO(crbug.com/1029067):Ideally the InfobarDelegate should validate
+// TODO(crbug.com/40109422):Ideally the InfobarDelegate should validate
 // the correctness of the input.
 - (BOOL)isCurrentInputValid {
   if (![self isCardholderNameValid:self.cardholderNameItem.textFieldValue])

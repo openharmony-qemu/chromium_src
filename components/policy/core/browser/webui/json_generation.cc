@@ -64,7 +64,7 @@ base::Value::Dict GetChromeMetadataValue(const JsonGenerationParams& params) {
   }
 
   chrome_metadata.Set(kChromeMetadataRevisionKey,
-                      std::string(version_info::GetLastChange()));
+                      version_info::GetLastChange());
 
   return chrome_metadata;
 }

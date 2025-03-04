@@ -4,6 +4,7 @@
 
 #include "components/arc/common/intent_helper/link_handler_model.h"
 
+#include <string_view>
 #include <utility>
 
 #include "base/functional/bind.h"
@@ -28,25 +29,27 @@ namespace {
 constexpr int kMaxValueLen = 2048;
 
 bool GetQueryValue(const GURL& url,
-                   const std::string& key_to_find,
+                   std::string_view key_to_find,
                    std::u16string* out) {
-  const std::string str(url.query());
+  const std::string_view str = url.query_piece();
 
   url::Component query(0, str.length());
   url::Component key;
   url::Component value;
 
-  while (url::ExtractQueryKeyValue(str.c_str(), &query, &key, &value)) {
-    if (value.is_empty())
+  while (url::ExtractQueryKeyValue(str, &query, &key, &value)) {
+    if (value.is_empty()) {
       continue;
+    }
     if (str.substr(key.begin, key.len) == key_to_find) {
-      if (value.len >= kMaxValueLen)
+      if (value.len >= kMaxValueLen) {
         return false;
+      }
       url::RawCanonOutputW<kMaxValueLen> output;
-      url::DecodeURLEscapeSequences(str.c_str() + value.begin, value.len,
+      url::DecodeURLEscapeSequences(str.substr(value.begin, value.len),
                                     url::DecodeURLMode::kUTF8OrIsomorphic,
                                     &output);
-      *out = std::u16string(output.data(), output.length());
+      *out = std::u16string(output.view());
       return true;
     }
   }
@@ -62,8 +65,9 @@ std::unique_ptr<LinkHandlerModel> LinkHandlerModel::Create(
     std::unique_ptr<ArcIntentHelperMojoDelegate> mojo_delegate) {
   CHECK(mojo_delegate);
   auto impl = base::WrapUnique(new LinkHandlerModel(std::move(mojo_delegate)));
-  if (!impl->Init(context, link_url))
+  if (!impl->Init(context, link_url)) {
     return nullptr;
+  }
   return impl;
 }
 
@@ -74,8 +78,9 @@ void LinkHandlerModel::AddObserver(Observer* observer) {
 }
 
 void LinkHandlerModel::OpenLinkWithHandler(uint32_t handler_id) {
-  if (handler_id >= handlers_.size())
+  if (handler_id >= handlers_.size()) {
     return;
+  }
 
   if (!mojo_delegate_->HandleUrl(url_.spec(),
                                  handlers_[handler_id].package_name)) {
@@ -83,7 +88,7 @@ void LinkHandlerModel::OpenLinkWithHandler(uint32_t handler_id) {
   }
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
-  // TODO(crbug.com/1275075): Take metrics in Lacros as well.
+  // TODO(crbug.com/40808069): Take metrics in Lacros as well.
   ArcMetricsService::RecordArcUserInteraction(
       context_, arc::UserInteractionType::APP_STARTED_FROM_LINK_CONTEXT_MENU);
 #endif
@@ -111,8 +116,9 @@ bool LinkHandlerModel::Init(content::BrowserContext* context, const GURL& url) {
 void LinkHandlerModel::OnUrlHandlerList(
     std::vector<ArcIntentHelperMojoDelegate::IntentHandlerInfo> handlers) {
   for (auto& handler : handlers) {
-    if (handler.package_name == kArcIntentHelperPackageName)
+    if (handler.package_name == kArcIntentHelperPackageName) {
       continue;
+    }
     handlers_.push_back(std::move(handler));
   }
 
@@ -162,15 +168,17 @@ void LinkHandlerModel::NotifyObserver(
     const ArcIconCacheDelegate::ActivityName activity(
         handlers_[i].package_name, handlers_[i].activity_name);
     const auto it = icons_.find(activity);
-    if (it != icons_.end())
+    if (it != icons_.end()) {
       icon = it->second.icon16;
+    }
     // Use the handler's index as an ID.
     LinkHandlerInfo handler = {base::UTF8ToUTF16(handlers_[i].name), icon,
                                static_cast<uint32_t>(i)};
     handlers.push_back(handler);
   }
-  for (auto& observer : observer_list_)
+  for (auto& observer : observer_list_) {
     observer.ModelChanged(handlers);
+  }
 }
 
 // static
@@ -188,16 +196,19 @@ GURL LinkHandlerModel::RewriteUrlFromQueryIfAvailable(const GURL& url) {
                                       google_util::ALLOW_NON_STANDARD_PORTS)) {
     return url;
   }
-  if (!url.has_path() || url.path() != kPathToFind)
+  if (!url.has_path() || url.path() != kPathToFind) {
     return url;
+  }
 
   std::u16string value;
-  if (!GetQueryValue(url, kKeyToFind, &value))
+  if (!GetQueryValue(url, kKeyToFind, &value)) {
     return url;
+  }
 
   const GURL new_url(value);
-  if (!new_url.is_valid())
+  if (!new_url.is_valid()) {
     return url;
+  }
   return new_url;
 }
 

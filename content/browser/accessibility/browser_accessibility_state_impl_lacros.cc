@@ -4,7 +4,9 @@
 
 #include "content/browser/accessibility/browser_accessibility_state_impl_lacros.h"
 
-#include "base/no_destructor.h"
+#include <memory>
+
+#include "content/public/browser/scoped_accessibility_mode.h"
 
 namespace content {
 
@@ -20,16 +22,17 @@ BrowserAccessibilityStateImplLacros::~BrowserAccessibilityStateImplLacros() =
 
 void BrowserAccessibilityStateImplLacros::OnSpokenFeedbackPrefChanged(
     base::Value value) {
-  if (value.GetIfBool().value_or(false))
-    AddAccessibilityModeFlags(ui::AXMode::kScreenReader);
-  else
-    RemoveAccessibilityModeFlags(ui::AXMode::kScreenReader);
+  if (!value.GetIfBool().value_or(false)) {
+    screen_reader_mode_.reset();
+  } else if (!screen_reader_mode_) {
+    screen_reader_mode_ = CreateScopedModeForProcess(ui::AXMode::kScreenReader);
+  }
 }
 
 // static
-BrowserAccessibilityStateImpl* BrowserAccessibilityStateImpl::GetInstance() {
-  static base::NoDestructor<BrowserAccessibilityStateImplLacros> instance;
-  return &*instance;
+std::unique_ptr<BrowserAccessibilityStateImpl>
+BrowserAccessibilityStateImpl::Create() {
+  return std::make_unique<BrowserAccessibilityStateImplLacros>();
 }
 
 }  // namespace content

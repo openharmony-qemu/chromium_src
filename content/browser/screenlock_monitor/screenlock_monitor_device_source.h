@@ -14,26 +14,27 @@
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
+
 #include <wtsapi32.h>
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
+#include <optional>
+
 #include "components/session_manager/core/session_manager_observer.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
+#include <optional>
+
 #include "chromeos/crosapi/mojom/login_state.mojom.h"  // nogncheck
 #include "mojo/public/cpp/bindings/receiver.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
 
 #if BUILDFLAG(IS_WIN)
-namespace base {
-namespace win {
-class MessageWindow;
-}
-}  // namespace base
+namespace gfx {
+class SingletonHwndObserver;
+}  // namespace gfx
 #endif  // BUILDFLAG(IS_WIN)
 
 namespace content {
@@ -65,7 +66,7 @@ class CONTENT_EXPORT ScreenlockMonitorDeviceSource
 
  private:
 #if BUILDFLAG(IS_WIN)
-  // Represents a message-only window for screenlock message handling on Win.
+  // Represents a singleton hwnd for screenlock message handling on Win.
   // Only allow ScreenlockMonitor to create it.
   class SessionMessageWindow {
    public:
@@ -81,23 +82,23 @@ class CONTENT_EXPORT ScreenlockMonitorDeviceSource
         WTSUnRegisterSessionNotificationFunction unregister_function);
 
    private:
-    bool OnWndProc(UINT message, WPARAM wparam, LPARAM lparam, LRESULT* result);
+    void OnWndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
     void ProcessWTSSessionLockMessage(WPARAM event_id);
 
     static WTSRegisterSessionNotificationFunction
         register_session_notification_function_;
     static WTSUnRegisterSessionNotificationFunction
         unregister_session_notification_function_;
-    std::unique_ptr<base::win::MessageWindow> window_;
+    std::unique_ptr<gfx::SingletonHwndObserver> singleton_hwnd_observer_;
   };
 
   SessionMessageWindow session_message_window_;
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
   void StartListeningForScreenlock();
   void StopListeningForScreenlock();
-#endif  // BUILDFLAG(IS_MAC)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   class ScreenLockListener : public session_manager::SessionManagerObserver {
@@ -113,7 +114,7 @@ class CONTENT_EXPORT ScreenlockMonitorDeviceSource
     void OnSessionStateChanged() override;
 
    private:
-    absl::optional<ScreenlockEvent> prev_event_;
+    std::optional<ScreenlockEvent> prev_event_;
   };
 
   ScreenLockListener screenlock_listener_;
@@ -134,7 +135,7 @@ class CONTENT_EXPORT ScreenlockMonitorDeviceSource
     void OnSessionStateChanged(crosapi::mojom::SessionState state) override;
 
    private:
-    absl::optional<ScreenlockEvent> prev_event_;
+    std::optional<ScreenlockEvent> prev_event_;
     mojo::Receiver<crosapi::mojom::SessionStateChangedEventObserver> receiver_;
   };
 

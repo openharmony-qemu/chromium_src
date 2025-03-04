@@ -4,6 +4,7 @@
 
 #include "components/viz/service/compositor_frame_fuzzer/fuzzer_software_output_surface_provider.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,7 +13,6 @@
 #include "base/strings/stringprintf.h"
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/service/display_embedder/software_output_surface.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "ui/gfx/codec/png_codec.h"
 
@@ -48,15 +48,14 @@ class PNGSoftwareOutputDevice : public SoftwareOutputDevice {
         break;
     }
 
-    std::vector<unsigned char> output;
-    gfx::PNGCodec::Encode(
+    std::optional<std::vector<uint8_t>> output = gfx::PNGCodec::Encode(
         static_cast<const unsigned char*>(input_pixmap.addr()), color_format,
         gfx::Size(input_pixmap.width(), input_pixmap.height()),
         input_pixmap.rowBytes(),
         /*discard_transparency=*/false,
-        /*comments=*/{}, &output);
+        /*comments=*/{});
 
-    base::WriteFile(NextOutputFilePath(), output);
+    base::WriteFile(NextOutputFilePath(), output.value());
   }
 
  private:
@@ -78,7 +77,7 @@ class PNGSoftwareOutputDevice : public SoftwareOutputDevice {
 }  // namespace
 
 FuzzerSoftwareOutputSurfaceProvider::FuzzerSoftwareOutputSurfaceProvider(
-    absl::optional<base::FilePath> png_dir_path)
+    std::optional<base::FilePath> png_dir_path)
     : png_dir_path_(png_dir_path) {}
 
 FuzzerSoftwareOutputSurfaceProvider::~FuzzerSoftwareOutputSurfaceProvider() =
@@ -104,5 +103,19 @@ FuzzerSoftwareOutputSurfaceProvider::CreateOutputSurface(
                     : std::make_unique<SoftwareOutputDevice>();
   return std::make_unique<SoftwareOutputSurface>(
       std::move(software_output_device));
+}
+
+gpu::SharedImageManager*
+FuzzerSoftwareOutputSurfaceProvider::GetSharedImageManager() {
+  return nullptr;
+}
+
+gpu::SyncPointManager*
+FuzzerSoftwareOutputSurfaceProvider::GetSyncPointManager() {
+  return nullptr;
+}
+
+gpu::Scheduler* FuzzerSoftwareOutputSurfaceProvider::GetGpuScheduler() {
+  return nullptr;
 }
 }  // namespace viz

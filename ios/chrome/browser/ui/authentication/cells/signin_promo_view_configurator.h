@@ -13,8 +13,6 @@
 // Class that configures a SigninPromoView instance.
 @interface SigninPromoViewConfigurator : NSObject
 
-- (instancetype)init NS_UNAVAILABLE;
-
 // Initializes the instance.
 // If `viewMode` is SigninPromoViewModeNoAccounts, then `userEmail`,
 // `userGivenName` and `userImage` have to be nil.
@@ -22,7 +20,7 @@
 // the size of IdentityAvatarSize::SmallSize.
 // `hasSignInSpinner` shows a spinner on top of the primary button, and disables
 // other buttons if set YES.
-// TODO(crbug.com/1328877): Consider adding a parameter for
+// TODO(crbug.com/40842280): Consider adding a parameter for
 // SigninPromoViewStyle.
 - (instancetype)initWithSigninPromoViewMode:(SigninPromoViewMode)viewMode
                                   userEmail:(NSString*)userEmail
@@ -31,6 +29,11 @@
                              hasCloseButton:(BOOL)hasCloseButton
                            hasSignInSpinner:(BOOL)hasSignInSpinner
     NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_UNAVAILABLE;
+
+// Overrides the default primary button title in signin promo. If unset/`nil`
+// the default text is used.
+@property(nonatomic, copy) NSString* primaryButtonTitleOverride;
 
 // Configure `signinPromoView` with the given `promoViewStyle` style.
 - (void)configureSigninPromoView:(SigninPromoView*)signinPromoView

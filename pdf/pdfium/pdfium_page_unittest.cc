@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(UNSAFE_BUFFERS_BUILD)
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "pdf/pdfium/pdfium_page.h"
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -11,23 +17,21 @@
 #include "base/files/file_path.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
-#include "base/test/scoped_feature_list.h"
 #include "base/test/test_discardable_memory_allocator.h"
 #include "build/build_config.h"
 #include "pdf/accessibility_structs.h"
+#include "pdf/buildflags.h"
 #include "pdf/pdfium/pdfium_engine.h"
 #include "pdf/pdfium/pdfium_test_base.h"
 #include "pdf/test/test_client.h"
 #include "pdf/test/test_helpers.h"
 #include "pdf/ui/thumbnail.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/pdfium/public/fpdf_formfill.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "ui/accessibility/accessibility_features.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/size_f.h"
@@ -110,6 +114,27 @@ base::FilePath GetThumbnailTestData(const std::string& expectation_file_prefix,
       .AppendASCII(file_name);
 }
 
+constexpr struct {
+  size_t page_index;
+  float device_pixel_ratio;
+  gfx::Size expected_thumbnail_size;
+} kGenerateThumbnailTestParams[] = {
+    {0, 1, {108, 140}},  // ANSI Letter
+    {1, 1, {108, 152}},  // ISO 216 A4
+    {2, 1, {140, 140}},  // Square
+    {3, 1, {540, 108}},  // Wide
+    {4, 1, {108, 540}},  // Tall
+    {5, 1, {1399, 46}},  // Super wide
+    {6, 1, {46, 1399}},  // Super tall
+    {0, 2, {216, 280}},  // ANSI Letter
+    {1, 2, {214, 303}},  // ISO 216 A4
+    {2, 2, {255, 255}},  // Square
+    {3, 2, {571, 114}},  // Wide
+    {4, 2, {114, 571}},  // Tall
+    {5, 2, {1399, 46}},  // Super wide
+    {6, 2, {46, 1399}},  // Super tall
+};
+
 }  // namespace
 
 using PDFiumPageTest = PDFiumTestBase;
@@ -138,17 +163,17 @@ TEST_P(PDFiumPageTest, IsCharInPageBounds) {
   const gfx::RectF page_bounds = page.GetCroppedRect();
   EXPECT_EQ(page_bounds, gfx::RectF(193.33333f, 129.33333f));
 
-  EXPECT_EQ(page.GetCharAtIndex(0), 'H');
+  EXPECT_EQ(page.GetCharUnicode(0), static_cast<uint32_t>('H'));
   EXPECT_FALSE(page.IsCharInPageBounds(0, page_bounds));
-  EXPECT_EQ(page.GetCharAtIndex(12), '!');
+  EXPECT_EQ(page.GetCharUnicode(12), static_cast<uint32_t>('!'));
   EXPECT_TRUE(page.IsCharInPageBounds(12, page_bounds));
-  EXPECT_EQ(page.GetCharAtIndex(13), '\r');
+  EXPECT_EQ(page.GetCharUnicode(13), static_cast<uint32_t>('\r'));
   EXPECT_TRUE(page.IsCharInPageBounds(13, page_bounds));
-  EXPECT_EQ(page.GetCharAtIndex(14), '\n');
+  EXPECT_EQ(page.GetCharUnicode(14), static_cast<uint32_t>('\n'));
   EXPECT_TRUE(page.IsCharInPageBounds(14, page_bounds));
-  EXPECT_EQ(page.GetCharAtIndex(15), 'G');
+  EXPECT_EQ(page.GetCharUnicode(15), static_cast<uint32_t>('G'));
   EXPECT_FALSE(page.IsCharInPageBounds(15, page_bounds));
-  EXPECT_EQ(page.GetCharAtIndex(29), '!');
+  EXPECT_EQ(page.GetCharUnicode(29), static_cast<uint32_t>('!'));
   EXPECT_FALSE(page.IsCharInPageBounds(29, page_bounds));
 }
 
@@ -520,13 +545,13 @@ TEST_P(PDFiumPageImageTest, ImageAltText) {
 
 INSTANTIATE_TEST_SUITE_P(All, PDFiumPageImageTest, testing::Bool());
 
-class PDFiumPageImageDataTest : public PDFiumPageImageTest {
+class PDFiumPageImageForOcrTest : public PDFiumPageImageTest {
  public:
-  PDFiumPageImageDataTest() : enable_pdf_ocr_({features::kPdfOcr}) {}
-
-  PDFiumPageImageDataTest(const PDFiumPageImageDataTest&) = delete;
-  PDFiumPageImageDataTest& operator=(const PDFiumPageImageDataTest&) = delete;
-  ~PDFiumPageImageDataTest() override = default;
+  PDFiumPageImageForOcrTest() = default;
+  PDFiumPageImageForOcrTest(const PDFiumPageImageForOcrTest&) = delete;
+  PDFiumPageImageForOcrTest& operator=(const PDFiumPageImageForOcrTest&) =
+      delete;
+  ~PDFiumPageImageForOcrTest() override = default;
 
   void SetUp() override {
     PDFiumPageImageTest::SetUp();
@@ -540,11 +565,10 @@ class PDFiumPageImageDataTest : public PDFiumPageImageTest {
   }
 
  private:
-  base::test::ScopedFeatureList enable_pdf_ocr_;
   base::TestDiscardableMemoryAllocator discardable_memory_allocator_;
 };
 
-TEST_P(PDFiumPageImageDataTest, ImageData) {
+TEST_P(PDFiumPageImageForOcrTest, LowResolutionImage) {
   TestClient client;
   std::unique_ptr<PDFiumEngine> engine =
       InitializeEngine(&client, FILE_PATH_LITERAL("text_with_image.pdf"));
@@ -556,16 +580,89 @@ TEST_P(PDFiumPageImageDataTest, ImageData) {
   ASSERT_EQ(3u, page.images_.size());
 
   ASSERT_FALSE(page.images_[0].alt_text.empty());
-  EXPECT_TRUE(page.images_[0].image_data.drawsNothing());
-  EXPECT_EQ(page.images_[0].image_data.width(), 0);
-  EXPECT_EQ(page.images_[0].image_data.height(), 0);
+  SkBitmap image_bitmap = engine->GetImageForOcr(
+      /*page_index=*/0, page.images_[0].page_object_index);
+  EXPECT_FALSE(image_bitmap.drawsNothing());
+  EXPECT_EQ(image_bitmap.width(), 50);
+  EXPECT_EQ(image_bitmap.height(), 50);
 
-  ASSERT_TRUE(page.images_[2].alt_text.empty());
-  EXPECT_EQ(page.images_[1].image_data.width(), 20);
-  EXPECT_EQ(page.images_[1].image_data.height(), 20);
+  ASSERT_TRUE(page.images_[1].alt_text.empty());
+  image_bitmap = engine->GetImageForOcr(/*page_index=*/0,
+                                        page.images_[1].page_object_index);
+  EXPECT_FALSE(image_bitmap.drawsNothing());
+  // While the scaled image size is 20x20, `image_data` has the same size as
+  // the image in the PDF file, which is 50x50, and is not scaled.
+  EXPECT_EQ(image_bitmap.width(), 50);
+  EXPECT_EQ(image_bitmap.height(), 50);
 }
 
-INSTANTIATE_TEST_SUITE_P(All, PDFiumPageImageDataTest, testing::Bool());
+TEST_P(PDFiumPageImageForOcrTest, HighResolutionImage) {
+  TestClient client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("big_image.pdf"));
+  ASSERT_TRUE(engine);
+  ASSERT_EQ(1, engine->GetNumberOfPages());
+
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
+  page.CalculateImages();
+  ASSERT_EQ(1u, page.images_.size());
+
+  SkBitmap image_bitmap = engine->GetImageForOcr(
+      /*page_index=*/0, page.images_[0].page_object_index);
+  EXPECT_FALSE(image_bitmap.drawsNothing());
+  // While the original image is 5000x5000, the returned image is 267x267 as
+  // OCR needs at most 300 DPI.
+  EXPECT_EQ(image_bitmap.width(), 267);
+  EXPECT_EQ(image_bitmap.height(), 267);
+}
+
+TEST_P(PDFiumPageImageForOcrTest, RotatedPage) {
+  TestClient client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("rotated_page.pdf"));
+  ASSERT_TRUE(engine);
+  ASSERT_EQ(1, engine->GetNumberOfPages());
+
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
+  page.CalculateImages();
+  ASSERT_EQ(1u, page.images_.size());
+
+  // This page is rotated, therefore the extracted image size is 25x100 while
+  // the stored image is 100x25.
+  SkBitmap image_bitmap = engine->GetImageForOcr(
+      /*page_index=*/0, page.images_[0].page_object_index);
+  EXPECT_EQ(image_bitmap.width(), 25);
+  EXPECT_EQ(image_bitmap.height(), 100);
+}
+
+TEST_P(PDFiumPageImageForOcrTest, NonImage) {
+  TestClient client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("text_with_image.pdf"));
+  ASSERT_TRUE(engine);
+  ASSERT_EQ(1, engine->GetNumberOfPages());
+
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
+  page.CalculateImages();
+  ASSERT_EQ(3u, page.images_.size());
+  ASSERT_EQ(1, page.images_[0].page_object_index);
+
+  // Existing non-image object.
+  SkBitmap image_bitmap = engine->GetImageForOcr(
+      /*page_index=*/0, /*image_index=*/0);
+  EXPECT_TRUE(image_bitmap.drawsNothing());
+  EXPECT_EQ(image_bitmap.width(), 0);
+  EXPECT_EQ(image_bitmap.height(), 0);
+
+  // Out of range.
+  image_bitmap = engine->GetImageForOcr(
+      /*page_index=*/0, /*image_index=*/1000);
+  EXPECT_TRUE(image_bitmap.drawsNothing());
+  EXPECT_EQ(image_bitmap.width(), 0);
+  EXPECT_EQ(image_bitmap.height(), 0);
+}
+
+INSTANTIATE_TEST_SUITE_P(All, PDFiumPageImageForOcrTest, testing::Bool());
 
 using PDFiumPageTextTest = PDFiumTestBase;
 
@@ -577,19 +674,19 @@ TEST_P(PDFiumPageTextTest, TextRunBounds) {
 
   constexpr int kFirstRunStartIndex = 0;
   constexpr int kFirstRunEndIndex = 20;
-  constexpr int kPageIndex = 0;
-  absl::optional<AccessibilityTextRunInfo> text_run_info_1 =
-      engine->GetTextRunInfo(kPageIndex, kFirstRunStartIndex);
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
+  std::optional<AccessibilityTextRunInfo> text_run_info_1 =
+      page.GetTextRunInfo(kFirstRunStartIndex);
   ASSERT_TRUE(text_run_info_1.has_value());
 
   const auto& actual_text_run_1 = text_run_info_1.value();
   EXPECT_EQ(21u, actual_text_run_1.len);
 
-  EXPECT_TRUE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kFirstRunStartIndex)));
+  EXPECT_TRUE(
+      base::IsUnicodeWhitespace(page.GetCharUnicode(kFirstRunStartIndex)));
   gfx::RectF text_run_bounds = actual_text_run_1.bounds;
-  EXPECT_TRUE(text_run_bounds.Contains(
-      engine->GetCharBounds(kPageIndex, kFirstRunStartIndex)));
+  EXPECT_TRUE(
+      text_run_bounds.Contains(page.GetCharBounds(kFirstRunStartIndex)));
 
   // Last non-space character should fall in the bounding box of the text run.
   // Text run looks like this:
@@ -599,14 +696,13 @@ TEST_P(PDFiumPageTextTest, TextRunBounds) {
   // Finally generated text run: " Hello, world! \r\n \r\n "
   constexpr int kFirstRunLastNonSpaceCharIndex = 13;
   EXPECT_FALSE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kFirstRunLastNonSpaceCharIndex)));
+      page.GetCharUnicode(kFirstRunLastNonSpaceCharIndex)));
   EXPECT_TRUE(text_run_bounds.Contains(
-      engine->GetCharBounds(kPageIndex, kFirstRunLastNonSpaceCharIndex)));
+      page.GetCharBounds(kFirstRunLastNonSpaceCharIndex)));
 
-  EXPECT_TRUE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kFirstRunEndIndex)));
-  gfx::RectF end_char_rect =
-      engine->GetCharBounds(kPageIndex, kFirstRunEndIndex);
+  EXPECT_TRUE(
+      base::IsUnicodeWhitespace(page.GetCharUnicode(kFirstRunEndIndex)));
+  gfx::RectF end_char_rect = page.GetCharBounds(kFirstRunEndIndex);
   EXPECT_FALSE(text_run_bounds.Contains(end_char_rect));
   // Equals to the length of the previous text run.
   constexpr int kSecondRunStartIndex = 21;
@@ -614,18 +710,18 @@ TEST_P(PDFiumPageTextTest, TextRunBounds) {
   // Test the properties of second text run.
   // Note: The leading spaces in second text run are accounted for in the end
   // of first text run. Hence we won't see a space leading the second text run.
-  absl::optional<AccessibilityTextRunInfo> text_run_info_2 =
-      engine->GetTextRunInfo(kPageIndex, kSecondRunStartIndex);
+  std::optional<AccessibilityTextRunInfo> text_run_info_2 =
+      page.GetTextRunInfo(kSecondRunStartIndex);
   ASSERT_TRUE(text_run_info_2.has_value());
 
   const auto& actual_text_run_2 = text_run_info_2.value();
   EXPECT_EQ(16u, actual_text_run_2.len);
 
-  EXPECT_FALSE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kSecondRunStartIndex)));
+  EXPECT_FALSE(
+      base::IsUnicodeWhitespace(page.GetCharUnicode(kSecondRunStartIndex)));
   text_run_bounds = actual_text_run_2.bounds;
-  EXPECT_TRUE(text_run_bounds.Contains(
-      engine->GetCharBounds(kPageIndex, kSecondRunStartIndex)));
+  EXPECT_TRUE(
+      text_run_bounds.Contains(page.GetCharBounds(kSecondRunStartIndex)));
 
   // Last non-space character should fall in the bounding box of the text run.
   // Text run looks like this:
@@ -633,14 +729,14 @@ TEST_P(PDFiumPageTextTest, TextRunBounds) {
   // Finally generated text run: "Goodbye, world! "
   constexpr int kSecondRunLastNonSpaceCharIndex = 35;
   EXPECT_FALSE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kSecondRunLastNonSpaceCharIndex)));
+      page.GetCharUnicode(kSecondRunLastNonSpaceCharIndex)));
   EXPECT_TRUE(text_run_bounds.Contains(
-      engine->GetCharBounds(kPageIndex, kSecondRunLastNonSpaceCharIndex)));
+      page.GetCharBounds(kSecondRunLastNonSpaceCharIndex)));
 
-  EXPECT_TRUE(base::IsUnicodeWhitespace(
-      engine->GetCharUnicode(kPageIndex, kSecondRunEndIndex)));
-  EXPECT_FALSE(text_run_bounds.Contains(
-      engine->GetCharBounds(kPageIndex, kSecondRunEndIndex)));
+  EXPECT_TRUE(
+      base::IsUnicodeWhitespace(page.GetCharUnicode(kSecondRunEndIndex)));
+  EXPECT_FALSE(
+      text_run_bounds.Contains(page.GetCharBounds(kSecondRunEndIndex)));
 }
 
 TEST_P(PDFiumPageTextTest, GetTextRunInfo) {
@@ -695,14 +791,15 @@ TEST_P(PDFiumPageTextTest, GetTextRunInfo) {
   }
 
   // Test negative char index returns nullopt
-  absl::optional<AccessibilityTextRunInfo> text_run_info_result =
-      engine->GetTextRunInfo(0, -1);
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
+  std::optional<AccessibilityTextRunInfo> text_run_info_result =
+      page.GetTextRunInfo(-1);
   ASSERT_FALSE(text_run_info_result.has_value());
 
   // Test valid char index returns expected text run info and expected text
   // style info
   for (const auto& expected_text_run : expected_text_runs) {
-    text_run_info_result = engine->GetTextRunInfo(0, current_char_index);
+    text_run_info_result = page.GetTextRunInfo(current_char_index);
     ASSERT_TRUE(text_run_info_result.has_value());
     const auto& actual_text_run = text_run_info_result.value();
     CompareTextRuns(expected_text_run, actual_text_run);
@@ -710,9 +807,8 @@ TEST_P(PDFiumPageTextTest, GetTextRunInfo) {
   }
 
   // Test char index outside char range returns nullopt
-  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
   EXPECT_EQ(page.GetCharCount(), current_char_index);
-  text_run_info_result = engine->GetTextRunInfo(0, current_char_index);
+  text_run_info_result = page.GetTextRunInfo(current_char_index);
   ASSERT_FALSE(text_run_info_result.has_value());
 }
 
@@ -747,10 +843,11 @@ TEST_P(PDFiumPageTextTest, HighlightTextRunInfo) {
         gfx::RectF(198.66667f, 201.33333f, 21.333328f, 12.000015f);
   }
 
+  PDFiumPage& page = GetPDFiumPageForTest(*engine, 0);
   int current_char_index = 0;
   for (const auto& expected_text_run : expected_text_runs) {
-    absl::optional<AccessibilityTextRunInfo> text_run_info_result =
-        engine->GetTextRunInfo(0, current_char_index);
+    std::optional<AccessibilityTextRunInfo> text_run_info_result =
+        page.GetTextRunInfo(current_char_index);
     ASSERT_TRUE(text_run_info_result.has_value());
     const auto& actual_text_run = text_run_info_result.value();
     CompareTextRuns(expected_text_run, actual_text_run);
@@ -1053,27 +1150,6 @@ TEST_P(PDFiumPageThumbnailTest, GenerateThumbnail) {
       InitializeEngine(&client, FILE_PATH_LITERAL("variable_page_sizes.pdf"));
   ASSERT_EQ(7, engine->GetNumberOfPages());
 
-  static constexpr struct {
-    size_t page_index;
-    float device_pixel_ratio;
-    gfx::Size expected_thumbnail_size;
-  } kGenerateThumbnailTestParams[] = {
-      {0, 1, {108, 140}},  // ANSI Letter
-      {1, 1, {108, 152}},  // ISO 216 A4
-      {2, 1, {140, 140}},  // Square
-      {3, 1, {540, 108}},  // Wide
-      {4, 1, {108, 540}},  // Tall
-      {5, 1, {1399, 46}},  // Super wide
-      {6, 1, {46, 1399}},  // Super tall
-      {0, 2, {216, 280}},  // ANSI Letter
-      {1, 2, {214, 303}},  // ISO 216 A4
-      {2, 2, {255, 255}},  // Square
-      {3, 2, {571, 114}},  // Wide
-      {4, 2, {114, 571}},  // Tall
-      {5, 2, {1399, 46}},  // Super wide
-      {6, 2, {46, 1399}},  // Super tall
-  };
-
 #if defined(ARCH_CPU_ARM64)
   std::string file_name =
       GetParam() ? "variable_page_sizes_arm64" : "variable_page_sizes";
@@ -1098,6 +1174,29 @@ TEST_P(PDFiumPageThumbnailTest, GenerateThumbnailForAnnotation) {
                         /*expected_thumbnail_size=*/{255, 255},
                         "signature_widget");
 }
+
+TEST_P(PDFiumPageThumbnailTest, GenerateThumbnailWithTransparency) {
+  TestClient client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("bug_40216952.pdf"));
+  TestGenerateThumbnail(*engine, /*page_index=*/0, /*device_pixel_ratio=*/1,
+                        /*expected_thumbnail_size=*/{140, 140}, "bug_40216952");
+}
+
+#if BUILDFLAG(ENABLE_PDF_INK2)
+TEST_P(PDFiumPageThumbnailTest, GetThumbnailSize) {
+  TestClient client;
+  std::unique_ptr<PDFiumEngine> engine =
+      InitializeEngine(&client, FILE_PATH_LITERAL("variable_page_sizes.pdf"));
+  ASSERT_EQ(7, engine->GetNumberOfPages());
+
+  for (const auto& params : kGenerateThumbnailTestParams) {
+    EXPECT_EQ(
+        params.expected_thumbnail_size,
+        engine->GetThumbnailSize(params.page_index, params.device_pixel_ratio));
+  }
+}
+#endif  // BUILDFLAG(ENABLE_PDF_INK2)
 
 INSTANTIATE_TEST_SUITE_P(All, PDFiumPageThumbnailTest, testing::Bool());
 

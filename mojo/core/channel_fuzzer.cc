@@ -2,6 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
+#include "mojo/core/channel.h"
+
 #include <stdint.h>
 
 #include "base/functional/callback_helpers.h"
@@ -10,9 +17,9 @@
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_executor.h"
 #include "build/build_config.h"
-#include "mojo/core/channel.h"
 #include "mojo/core/connection_params.h"
 #include "mojo/core/entrypoints.h"
+#include "mojo/core/ipcz_driver/envelope.h"
 #include "mojo/public/cpp/platform/platform_channel.h"
 
 #if BUILDFLAG(IS_WIN)
@@ -28,9 +35,11 @@ class FakeChannelDelegate : public mojo::core::Channel::Delegate {
   FakeChannelDelegate() = default;
   ~FakeChannelDelegate() override = default;
 
-  void OnChannelMessage(const void* payload,
-                        size_t payload_size,
-                        std::vector<mojo::PlatformHandle> handles) override {}
+  void OnChannelMessage(
+      const void* payload,
+      size_t payload_size,
+      std::vector<mojo::PlatformHandle> handles,
+      scoped_refptr<mojo::core::ipcz_driver::Envelope> envelope) override {}
   void OnChannelError(mojo::core::Channel::Error error) override {}
 };
 

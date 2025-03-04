@@ -5,30 +5,33 @@
 #ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_COCOA_H_
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_COCOA_H_
 
-#include <memory>
-
 #import <Accessibility/Accessibility.h>
 #import <Cocoa/Cocoa.h>
 
+#include <utility>
+#include <vector>
+
 #include "base/component_export.h"
-#include "base/mac/scoped_nsobject.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
 
 namespace ui {
-
 class AXPlatformNodeBase;
 class AXPlatformNodeDelegate;
 
-struct AXAnnouncementSpec {
-  AXAnnouncementSpec();
-  ~AXAnnouncementSpec();
+using CocoaActionList = std::vector<std::pair<ax::mojom::Action, NSString*>>;
 
-  base::scoped_nsobject<NSString> announcement;
-  base::scoped_nsobject<NSWindow> window;
-  bool is_polite;
-};
-
+// Returns  the pairings of accessibility actions to their Cocoa equivalents
+// for testing.
+COMPONENT_EXPORT(AX_PLATFORM)
+const CocoaActionList& GetCocoaActionListForTesting();
 }  // namespace ui
+
+COMPONENT_EXPORT(AX_PLATFORM)
+@interface AXAnnouncementSpec : NSObject
+@property(nonatomic, readonly) NSString* announcement;
+@property(nonatomic, readonly) NSWindow* window;
+@property(nonatomic, readonly) BOOL polite;
+@end
 
 COMPONENT_EXPORT(AX_PLATFORM)
 @interface AXPlatformNodeCocoa
@@ -70,22 +73,31 @@ COMPONENT_EXPORT(AX_PLATFORM)
 // the internal accessibility tree as opposed to the platform tree.
 - (ax::mojom::Role)internalRole;
 
+// Returns all accessibility attribute names. This is analogous to the
+// deprecated NSAccessibility accessibilityAttributeNames method, which
+// functions identically when the migration flag is off (see
+// kMacAccessibilityAPIMigration). This is used for ax dump testing that
+// essentially tests the deprecated API.
+- (NSMutableArray*)internalAccessibilityAttributeNames;
+
+// Returns YES if `attribute`'s value is available through the new Cocoa
+// accessibility API.
++ (BOOL)isAttributeAvailableThroughNewAccessibilityAPI:(NSString*)attribute;
+
 @property(nonatomic, readonly) NSRect boundsInScreen;
 @property(nonatomic, readonly) ui::AXPlatformNodeBase* node;
 @property(nonatomic, readonly) ui::AXPlatformNodeDelegate* nodeDelegate;
 
 // Returns the data necessary to queue an NSAccessibility announcement if
-// |eventType| should be announced, or nullptr otherwise.
-- (std::unique_ptr<ui::AXAnnouncementSpec>)announcementForEvent:
-    (ax::mojom::Event)eventType;
+// |eventType| should be announced, or nil otherwise.
+- (AXAnnouncementSpec*)announcementForEvent:(ax::mojom::Event)eventType;
 
 // Ask the system to announce |announcementText|. This is debounced to happen
 // at most every |kLiveRegionDebounceMillis| per node, with only the most
 // recent announcement text read, to account for situations with multiple
 // notifications happening one after another (for example, results for
 // find-in-page updating rapidly as they come in from subframes).
-- (void)scheduleLiveRegionAnnouncement:
-    (std::unique_ptr<ui::AXAnnouncementSpec>)announcement;
+- (void)scheduleLiveRegionAnnouncement:(AXAnnouncementSpec*)announcement;
 
 - (id)AXWindow;
 

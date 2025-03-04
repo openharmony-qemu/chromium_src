@@ -12,6 +12,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/test/scoped_feature_list.h"
 #include "content/browser/renderer_host/back_forward_cache_impl.h"
+#include "content/common/features.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_features.h"
@@ -19,7 +20,7 @@
 namespace content {
 namespace {
 
-// TODO(https://crbug.com/1301867): Remove the default parameters from the
+// TODO(crbug.com/40216768): Remove the default parameters from the
 // kBackForwardCache feature and remove the complex parameter merging code.
 std::vector<base::test::FeatureRefAndParams>
 GetDefaultEnabledBackForwardCacheFeaturesAndParams(
@@ -56,7 +57,7 @@ std::vector<base::test::FeatureRefAndParams> Merge(
         additional_features_and_params) {
   std::vector<base::test::FeatureRefAndParams> final_features_and_params;
 
-  // TODO(https://crbug.com/1301867): Consider move the below logic to
+  // TODO(crbug.com/40216768): Consider move the below logic to
   // base/test/scoped_feature_list.h.
   // Go over the additional features/params - if they match a default feature,
   // make a new featureparam with the combined features, otherwise just add the

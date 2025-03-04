@@ -39,6 +39,11 @@ enum Sandbox {
   // The network service. May be disabled by policy.
   kNetwork,
 
+  // The on-device model execution service. This sandbox is equivalent to the
+  // GPU process's sandbox, but can be used by service processes to host
+  // trustworthy models that may process untrustworthy inputs.
+  kOnDeviceModelExecution,
+
   // Runs with the same rights as the browser. Usually needed to improve
   // stability by hosting code that interacts with third party code in another
   // process.
@@ -59,22 +64,22 @@ enum Sandbox {
   // Like kUtility but allows loading of speech recognition libraries.
   kSpeechRecognition,
 
+  // Like kService but allows loading of the optimization guide library.
+  [EnableIf=is_linux]
+  kVideoEffects,
+
   // Like kUtility but allows loading of screen AI library.
   [EnableIf=enable_screen_ai_service]
   kScreenAI,
 
-  // The PPAPI plugin process.
-  [EnableIf=enable_ppapi]
+  // The PPAPI plugin process. (Unsandboxed on Windows.)
+  [EnableIf=enable_ppapi_sandbox]
   kPpapi,
 
   // Equivalent to no sandbox on all non-Fuchsia platforms.
   // Minimally privileged sandbox on Fuchsia.
   [EnableIf=is_fuchsia]
   kVideoCapture,
-
-  // Used to preload the appropriate DLLs for archive analysis within a sandbox.
-  [EnableIf=is_win]
-  kFileUtil,
 
   // Allows access to file contents and Windows APIs for parsing icons from PE
   // files.
@@ -151,12 +156,21 @@ enum Sandbox {
   [EnableIf=is_mac]
   kMirroring,
 
-  // The NaCl loader process.
-  [EnableIf=is_mac]
-  kNaClLoader,
-
   // Used to prime zygotes before they specialize. The process will receive a
   // new sandbox later in its lifetime.
   [EnableIf=has_zygote]
   kZygoteIntermediateSandbox,
+
+  // Hosts the shared Nearby library for both Nearby Connections and
+  // Nearby Presence.
+  [EnableIf=is_chromeos_ash]
+  kNearby,
+
+  // Hosts On Device Translation service.
+  // Currently the sandboxing of the On Device Translation service needs
+  // a dedicated sandbox type on macOS and Linux.
+  // On Windows the kService sandbox type is used.
+  // TODO(crbug.com/340778819): Implement sandboxing on other platforms.
+  [EnableIf=is_linux_or_mac]
+  kOnDeviceTranslation,
 };

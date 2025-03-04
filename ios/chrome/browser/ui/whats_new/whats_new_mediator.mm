@@ -4,33 +4,28 @@
 
 #import "ios/chrome/browser/ui/whats_new/whats_new_mediator.h"
 
+#import "base/metrics/histogram_functions.h"
 #import "base/metrics/user_metrics.h"
 #import "base/notreached.h"
-#import "ios/chrome/browser/default_browser/utils.h"
+#import "base/strings/strcat.h"
+#import "ios/chrome/browser/default_browser/model/utils.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
+#import "ios/chrome/browser/shared/public/commands/lens_commands.h"
+#import "ios/chrome/browser/shared/public/commands/open_lens_input_selection_command.h"
+#import "ios/chrome/browser/shared/public/commands/settings_commands.h"
+#import "ios/chrome/browser/shared/public/commands/whats_new_commands.h"
+#import "ios/chrome/browser/ui/lens/lens_entrypoint.h"
 #import "ios/chrome/browser/ui/whats_new/data_source/whats_new_data_source.h"
-#import "ios/chrome/browser/ui/whats_new/feature_flags.h"
 #import "ios/chrome/browser/ui/whats_new/whats_new_mediator_consumer.h"
-#import "ios/chrome/browser/url_loading/url_loading_browser_agent.h"
-#import "ios/chrome/browser/url_loading/url_loading_params.h"
+#import "ios/chrome/browser/ui/whats_new/whats_new_util.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_browser_agent.h"
+#import "ios/chrome/browser/url_loading/model/url_loading_params.h"
 #import "ios/public/provider/chrome/browser/password_auto_fill/password_auto_fill_api.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-namespace {
-// The highlighted feature type.
-WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
-}  // namespace
-
 @interface WhatsNewMediator ()
 
-@property(nonatomic, strong) WhatsNewItem* highlightedFeatureEntry;
-@property(nonatomic, strong) NSMutableArray<WhatsNewItem*>* featureShortEntries;
 @property(nonatomic, strong) NSMutableArray<WhatsNewItem*>* chromeTipEntries;
-@property(nonatomic, strong) WhatsNewItem* useChromeByDefaultEntry;
 
 @end
 
@@ -42,25 +37,9 @@ WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
 - (instancetype)init {
   self = [super init];
   if (self) {
-    // Serialize What's New Features
-    self.featureShortEntries = [[NSMutableArray alloc] init];
-    for (WhatsNewItem* item in WhatsNewFeatureEntries(WhatsNewFilePath())) {
-      // Save the highlighted feature entry separately.
-      if (item.type == kHighlightedFeature) {
-        self.highlightedFeatureEntry = item;
-        continue;
-      }
-      [self.featureShortEntries addObject:item];
-    }
-
     // Serialize What's New Chrome Tips
     self.chromeTipEntries = [[NSMutableArray alloc] init];
     for (WhatsNewItem* item in WhatsNewChromeTipEntries(WhatsNewFilePath())) {
-      // Save use chrome by default entry separately.
-      if (item.type == WhatsNewType::kUseChromeByDefault) {
-        self.useChromeByDefaultEntry = item;
-        continue;
-      }
       [self.chromeTipEntries addObject:item];
     }
   }
@@ -69,26 +48,49 @@ WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
 
 #pragma mark - WhatsNewDetailViewActionHandler
 
-- (void)didTapActionButton:(WhatsNewType)type {
-  switch (type) {
-    case WhatsNewType::kAddPasswordManually:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.AddPasswordManually.PrimaryActionTapped"));
-      [self.handler showSettingsFromViewController:self.baseViewController];
-      break;
-    case WhatsNewType::kUseChromeByDefault:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.UseChromeByDefault.PrimaryActionTapped"));
+- (void)didTapActionButton:(WhatsNewType)type
+             primaryAction:(WhatsNewPrimaryAction)primaryAction
+        baseViewController:(UIViewController*)baseViewController {
+  base::UmaHistogramEnumeration("IOS.WhatsNew.PrimaryActionTapped", type);
+
+  switch (primaryAction) {
+    case WhatsNewPrimaryAction::kIOSSettings:
+      // Handles actions that open iOS Settings.
       [self openSettingsURLString];
       break;
-    case WhatsNewType::kPasswordsInOtherApps:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.PasswordsInOtherApps.PrimaryActionTapped"));
+    case WhatsNewPrimaryAction::kPrivacySettings:
+      // Handles actions that open privacy in Chrome settings.
+      [self.applicationHandler
+          showPrivacySettingsFromViewController:baseViewController];
+      break;
+    case WhatsNewPrimaryAction::kChromeSettings:
+      // Handles actions that open Chrome Settings.
+      [self.applicationHandler
+          showSettingsFromViewController:baseViewController];
+      break;
+    case WhatsNewPrimaryAction::kIOSSettingsPasswords:
+      // Handles actions that open Passwords in iOS Settings.
       ios::provider::PasswordsInOtherAppsOpensSettings();
       break;
-    default:
-      NOTREACHED();
+    case WhatsNewPrimaryAction::kLens:
+      // Handles actions that open Lens.
+      // TODO(crbug.com/40943329): Add the Lens promo that contains the
+      // button that triggers the Lens action.
+      [self openLens];
       break;
+    case WhatsNewPrimaryAction::kSafeBrowsingSettings:
+      // Handles actions that open ESB in Chrome settings.
+      [self.applicationHandler
+          showSafeBrowsingSettingsFromViewController:baseViewController];
+      break;
+    case WhatsNewPrimaryAction::kChromePasswordManager:
+      // Handles actions that open Chrome Password Manager.
+      [self.settingsHandler showSavedPasswordsSettingsFromViewController:nil
+                                                        showCancelButton:NO];
+      break;
+    case WhatsNewPrimaryAction::kNoAction:
+    case WhatsNewPrimaryAction::kError:
+      NOTREACHED();
   };
 }
 
@@ -97,42 +99,17 @@ WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
   UrlLoadParams params = UrlLoadParams::InNewTab(learnMoreURL);
   params.web_params.transition_type = ui::PAGE_TRANSITION_AUTO_BOOKMARK;
   self.urlLoadingAgent->Load(params);
-  [self recordLearnMoreInteraction:type];
+  base::UmaHistogramEnumeration("IOS.WhatsNew.LearnMoreTapped", type);
+}
+
+- (void)didTapInstructions:(WhatsNewType)type {
+  base::UmaHistogramEnumeration("IOS.WhatsNew.InstructionsShown", type);
 }
 
 #pragma mark - WhatsNewTableViewActionHandler
 
 - (void)recordWhatsNewInteraction:(WhatsNewItem*)item {
-  switch (item.type) {
-    case WhatsNewType::kSearchTabs:
-      base::RecordAction(base::UserMetricsAction("WhatsNew.SearchTabs"));
-      break;
-    case WhatsNewType::kNewOverflowMenu:
-      base::RecordAction(base::UserMetricsAction("WhatsNew.NewOverflowMenu"));
-      break;
-    case WhatsNewType::kSharedHighlighting:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.SharedHighlighting"));
-      break;
-    case WhatsNewType::kAddPasswordManually:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.AddPasswordManually"));
-      break;
-    case WhatsNewType::kUseChromeByDefault:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.UseChromeByDefault"));
-      break;
-    case WhatsNewType::kPasswordsInOtherApps:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.PasswordsInOtherApps"));
-      break;
-    case WhatsNewType::kAutofill:
-      base::RecordAction(base::UserMetricsAction("WhatsNew.Autofill"));
-      break;
-    default:
-      NOTREACHED();
-      break;
-  };
+  base::UmaHistogramEnumeration("IOS.WhatsNew.Shown", item.type);
 }
 
 #pragma mark - Properties
@@ -145,31 +122,16 @@ WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
 
 #pragma mark Private
 
-// Returns a `WhatsNewItem` representing a highlighted chrome tip. By default,
-// it will be the `WhatsNewType::kUseChromeByDefault` otherwise it will choose a
-// random chrome tip.
+// Returns a `WhatsNewItem` representing a highlighted chrome tip.
 - (WhatsNewItem*)whatsNewChromeTipItem {
-  // Return a random chrome tip if chrome is already the default browser.
-  if (IsChromeLikelyDefaultBrowser()) {
-    int entryIndex = arc4random_uniform(self.chromeTipEntries.count);
-    return self.chromeTipEntries[entryIndex];
-  }
-
-  return self.useChromeByDefaultEntry;
+  // Return a random chrome tip.
+  int entryIndex = arc4random_uniform(self.chromeTipEntries.count);
+  return self.chromeTipEntries[entryIndex];
 }
 
 // Returns an Array of `WhatsNewItem` features.
 - (NSArray<WhatsNewItem*>*)whatsNewFeatureItems {
-  if (IsWhatsNewModuleBasedLayout()) {
-    return self.featureShortEntries;
-  }
-
   return WhatsNewFeatureEntries(WhatsNewFilePath());
-}
-
-// Returns a `WhatsNewItem` representing the highlighted feature.
-- (WhatsNewItem*)whatsNewHighlightedFeatureItem {
-  return self.highlightedFeatureEntry;
 }
 
 // Called to allow the user to go to Chrome's settings.
@@ -180,47 +142,23 @@ WhatsNewType kHighlightedFeature = WhatsNewType::kSearchTabs;
       completionHandler:nil];
 }
 
-// Update the consumer with What's New items and whether to display them as
-// module or cell based.
-- (void)updateConsumer {
-  [self.consumer setWhatsNewProperties:[self whatsNewHighlightedFeatureItem]
-                             chromeTip:[self whatsNewChromeTipItem]
-                          featureItems:[self whatsNewFeatureItems]
-                         isModuleBased:IsWhatsNewModuleBasedLayout()];
+// Called to opens Lens.
+- (void)openLens {
+  // Dismiss the What's New modal since Lens must be displayed in a fullscreen
+  // modal.
+  [self.whatsNewHandler dismissWhatsNew];
+  OpenLensInputSelectionCommand* command = [[OpenLensInputSelectionCommand
+      alloc]
+          initWithEntryPoint:LensEntrypoint::WhatsNewPromo
+           presentationStyle:LensInputSelectionPresentationStyle::SlideFromRight
+      presentationCompletion:nil];
+  [self.lensHandler openLensInputSelection:command];
 }
 
-// Record when a user tap on learn more.
-- (void)recordLearnMoreInteraction:(WhatsNewType)type {
-  switch (type) {
-    case WhatsNewType::kSearchTabs:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.SearchTabs.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kSharedHighlighting:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.SharedHighlighting.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kAddPasswordManually:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.AddPasswordManually.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kUseChromeByDefault:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.UseChromeByDefault.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kPasswordsInOtherApps:
-      base::RecordAction(base::UserMetricsAction(
-          "WhatsNew.PasswordsInOtherApps.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kAutofill:
-      base::RecordAction(
-          base::UserMetricsAction("WhatsNew.Autofill.LearnMoreTapped"));
-      break;
-    case WhatsNewType::kNewOverflowMenu:
-    default:
-      NOTREACHED();
-      break;
-  };
+// Update the consumer with What's New items.
+- (void)updateConsumer {
+  [self.consumer setWhatsNewProperties:[self whatsNewChromeTipItem]
+                          featureItems:[self whatsNewFeatureItems]];
 }
 
 @end

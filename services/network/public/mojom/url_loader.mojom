@@ -11,7 +11,7 @@ import "services/network/public/mojom/request_priority.mojom";
 import "services/network/public/mojom/url_loader_completion_status.mojom";
 import "services/network/public/mojom/url_response_head.mojom";
 import "url/mojom/url.mojom";
-[EnableIf=is_ohos]
+[EnableIf=arkweb_resource_interception]
 import "mojo/public/mojom/base/shared_memory.mojom";
 
 [Native]
@@ -30,8 +30,7 @@ interface URLLoader {
   // description, to notify the service side.
   const uint32 kClientDisconnectReason = 1;
 
-  // If the associated request has |auto_follow_redirects| set to false, then
-  // upon receiving an URLResponse with a non-NULL |redirect_url| field,
+  // Upon receiving a redirect through |URLLoaderClient::OnReceiveRedirect|,
   // |FollowRedirect| may be called to load the URL indicated by the redirect.
   //
   // |removed_headers| can be used to remove existing headers for the redirect.
@@ -86,12 +85,16 @@ interface URLLoaderClient {
   // writing the body, so that the client knows when it is done reading.
   // Optionally, the response can contain cached metadata, such as a V8 code
   // cache.
+  // The client must not discard the data pipe until the OnComplete IPC arrives,
+  // even if it knows the body is empty. Otherwise, the request will be handled
+  // as cancelled.
   OnReceiveResponse(URLResponseHead head,
                     handle<data_pipe_consumer>? body,
                     mojo_base.mojom.BigBuffer? cached_metadata);
-  [EnableIf=is_ohos]
-  OnTransferDataWithSharedMemory(mojo_base.mojom.ReadOnlySharedMemoryRegion region, uint64 buffer_size);
 
+  [EnableIf=arkweb_resource_interception]
+  OnTransferDataWithSharedMemory(mojo_base.mojom.ReadOnlySharedMemoryRegion region, uint64 buffer_size);
+                    
   // Called when the request has been redirected. The receiver is expected to
   // call FollowRedirect or cancel the request.
   OnReceiveRedirect(URLRequestRedirectInfo redirect_info, URLResponseHead head);

@@ -10,22 +10,36 @@
 
 namespace ui {
 
-#ifdef OHOS_SCROLLBAR
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
 constexpr int kOverlayScrollbarStrokeWidth = 0;
 constexpr int kOverlayScrollbarThumbWidthPressed = 28;
 constexpr int kOverlayScrollbarThumbWidthPressedPc = 8;
+constexpr float kOverlayScrollbarIdleThicknessScale = 0.4f;
 constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(500);
-constexpr base::TimeDelta kOverlayScrollbarFadeDuration = base::Milliseconds(80);
+constexpr base::TimeDelta kOverlayScrollbarFadeDuration =
+    base::Milliseconds(80);
 #else
 constexpr int kOverlayScrollbarStrokeWidth = 1;
 constexpr int kOverlayScrollbarThumbWidthPressed = 10;
+constexpr float kOverlayScrollbarIdleThicknessScale = 0.4f;
+
 constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(500);
-constexpr base::TimeDelta kOverlayScrollbarFadeDuration = base::Milliseconds(200);
-#endif // OHOS_SCROLLBAR
+constexpr base::TimeDelta kOverlayScrollbarFadeDuration =
+    base::Milliseconds(200);
+#endif  // ARKWEB_SCROLLBAR
 
 // TODO(bokan): This is still undetermined. crbug.com/652520.
 constexpr base::TimeDelta kOverlayScrollbarThinningDuration =
     base::Milliseconds(200);
+
+// Fluent overlay scrollbar animation times are set to align with the Fluent
+// design language.
+constexpr base::TimeDelta kFluentOverlayScrollbarFadeDelay =
+    base::Milliseconds(750);
+constexpr base::TimeDelta kFluentOverlayScrollbarFadeDuration =
+    base::Milliseconds(100);
+constexpr base::TimeDelta kFluentOverlayScrollbarThinningDuration =
+    base::Milliseconds(100);
 
 }  // namespace ui
 

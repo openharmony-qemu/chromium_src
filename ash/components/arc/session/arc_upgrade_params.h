@@ -71,6 +71,10 @@ struct UpgradeParams {
   // The constructor automatically populates this from command-line.
   bool skip_tts_cache;
 
+  // Option to disable DexOpt cache.
+  // The constructor automatically populates this from command-line.
+  bool skip_dexopt_cache;
+
   // The supervision transition state for this account. Indicates whether
   // child account should become regular, regular account should become child
   // or neither.
@@ -105,6 +109,10 @@ struct UpgradeParams {
   // Comma separated list of high priority apps that would have a delay before
   // considered to be killed.
   std::string priority_app_lmk_delay_list;
+
+  // Flag to enable update for minimum Android process state to be considered to
+  // be killed under perceptible memory pressure
+  bool enable_lmk_perceptible_min_state_update = false;
 };
 
 }  // namespace arc

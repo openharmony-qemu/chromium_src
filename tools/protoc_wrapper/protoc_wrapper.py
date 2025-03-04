@@ -86,6 +86,9 @@ def main(argv):
                       help="Output directory for standard Python generator.")
   parser.add_argument("--js-out-dir",
                       help="Output directory for standard JS generator.")
+  parser.add_argument("--protoc-gen-js",
+                      help="Relative path to javascript compiler.")
+
   parser.add_argument("--plugin-out-dir",
                       help="Output directory for custom generator plugin.")
 
@@ -134,7 +137,8 @@ def main(argv):
   if options.js_out_dir:
     protoc_cmd += [
         "--js_out",
-        "one_output_file_per_input_file,binary:" + options.js_out_dir
+        "one_output_file_per_input_file,binary:" + options.js_out_dir,
+        "--plugin=protoc-gen-js=" + os.path.realpath(options.protoc_gen_js),
     ]
 
   if options.cc_out_dir:
@@ -166,7 +170,11 @@ def main(argv):
 
   protoc_cmd += ["--proto_path", proto_dir]
   for path in options.import_dir:
-    protoc_cmd += ["--proto_path", path]
+    # TODO: crbug.com/1477926 - Do not specify unused `--import-dir`s.
+    # On a remote worker, it shows `warning: directory does not exist` when
+    # there are no dependencies under the directory.
+    if os.path.exists(path):
+      protoc_cmd += ["--proto_path", path]
 
   protoc_cmd += [os.path.join(proto_dir, name) for name in protos]
 
@@ -197,7 +205,6 @@ def main(argv):
 
   if dependency_file_data:
     with open(options.descriptor_set_dependency_file, 'w') as f:
-      f.write(options.descriptor_set_out + ":")
       f.write(dependency_file_data)
 
   if options.include:

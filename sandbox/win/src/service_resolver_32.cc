@@ -10,10 +10,7 @@
 #include <stddef.h>
 #include <winternl.h>
 
-#include <memory>
-
-#include "base/bit_cast.h"
-#include "sandbox/win/src/win_utils.h"
+#include "base/containers/heap_array.h"
 
 namespace {
 #pragma pack(push, 1)
@@ -165,9 +162,10 @@ NTSTATUS ServiceResolverThunk::Setup(const void* target_module,
 
   relative_jump_ = 0;
   size_t thunk_bytes = GetThunkSize();
-  std::unique_ptr<char[]> thunk_buffer(new char[thunk_bytes]);
+  base::HeapArray<char> thunk_buffer =
+      base::HeapArray<char>::Uninit(thunk_bytes);
   ServiceFullThunk* thunk =
-      reinterpret_cast<ServiceFullThunk*>(thunk_buffer.get());
+      reinterpret_cast<ServiceFullThunk*>(thunk_buffer.data());
 
   if (!IsFunctionAService(&thunk->original) &&
       (!relaxed_ || !SaveOriginalFunction(&thunk->original, thunk_storage))) {
@@ -234,7 +232,7 @@ NTSTATUS ServiceResolverThunk::PerformPatch(void* local_thunk,
   intercepted_code.service_id = full_local_thunk->original.service_id;
   intercepted_code.mov_edx = kMovEdx;
   intercepted_code.mov_edx_param =
-      base::bit_cast<ULONG>(&full_remote_thunk->internal_thunk);
+      reinterpret_cast<ULONG>(&full_remote_thunk->internal_thunk);
   intercepted_code.call_edx = kJmpEdx;
   bytes_to_write = kMinServiceSize;
 
@@ -292,8 +290,8 @@ bool ServiceResolverThunk::SaveOriginalFunction(void* local_thunk,
     ULONG relative = function_code.service_id;
 
     // First, fix our copy of their patch.
-    relative +=
-        base::bit_cast<ULONG>(target_) - base::bit_cast<ULONG>(remote_thunk);
+    relative += reinterpret_cast<ULONG>(target_) -
+                reinterpret_cast<ULONG>(remote_thunk);
 
     function_code.service_id = relative;
 
@@ -303,8 +301,8 @@ bool ServiceResolverThunk::SaveOriginalFunction(void* local_thunk,
 
     const ULONG kJmp32Size = 5;
 
-    relative_jump_ = base::bit_cast<ULONG>(&full_thunk->internal_thunk) -
-                     base::bit_cast<ULONG>(target_) - kJmp32Size;
+    relative_jump_ = reinterpret_cast<ULONG>(&full_thunk->internal_thunk) -
+                     reinterpret_cast<ULONG>(target_) - kJmp32Size;
   }
 
   // Save the verified code
@@ -321,8 +319,8 @@ bool ServiceResolverThunk::VerifyJumpTargetForTesting(
     return false;
   }
 
-  ULONG source_addr = base::bit_cast<ULONG>(target_);
-  ULONG target_addr = base::bit_cast<ULONG>(thunk_storage);
+  ULONG source_addr = reinterpret_cast<ULONG>(target_);
+  ULONG target_addr = reinterpret_cast<ULONG>(thunk_storage);
   return target_addr + kMaxServiceSize - kJmp32Size - source_addr ==
          patched->service_id;
 }

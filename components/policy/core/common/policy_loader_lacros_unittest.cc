@@ -66,7 +66,7 @@ std::vector<uint8_t> GetValidPolicyFetchResponseWithAllPolicy() {
 class PolicyLoaderLacrosTest : public PolicyTestBase {
  protected:
   PolicyLoaderLacrosTest() = default;
-  ~PolicyLoaderLacrosTest() override {}
+  ~PolicyLoaderLacrosTest() override = default;
 
   void SetPolicy() {
     std::vector<uint8_t> data = GetValidPolicyFetchResponseWithAllPolicy();
@@ -236,7 +236,6 @@ TEST_F(PolicyLoaderLacrosTest, ChildUsersNoEnterpriseDefaults) {
   per_profile_ = PolicyPerProfileFilter::kFalse;
 
   em::CloudPolicySettings policy_proto;
-  policy_proto.mutable_lacrossecondaryprofilesallowed()->set_value(false);
   const std::vector<uint8_t> data = GetValidPolicyFetchResponse(policy_proto);
 
   // Setup child user session with the policy.
@@ -258,12 +257,6 @@ TEST_F(PolicyLoaderLacrosTest, ChildUsersNoEnterpriseDefaults) {
   // Check that desired policy is set and enterprise defaults are not applied.
   const PolicyMap& policy_map = GetChromePolicyMap(bundle);
   EXPECT_EQ(1u, policy_map.size());
-
-  const PolicyMap::Entry* entry =
-      policy_map.Get(key::kLacrosSecondaryProfilesAllowed);
-  ASSERT_TRUE(entry);
-  EXPECT_FALSE(entry->value(base::Value::Type::BOOLEAN)->GetBool());
-  EXPECT_EQ(policy::POLICY_SOURCE_CLOUD_FROM_ASH, entry->source);
 }
 
 TEST_F(PolicyLoaderLacrosTest, DeviceLocalAccountUsers) {
@@ -273,6 +266,25 @@ TEST_F(PolicyLoaderLacrosTest, DeviceLocalAccountUsers) {
       crosapi::mojom::SessionType::kWebKioskSession);
   SwitchAndCheckLocalDeviceAccountUser(
       crosapi::mojom::SessionType::kAppKioskSession);
+}
+
+TEST_F(PolicyLoaderLacrosTest, DeviceAffiliatedId) {
+  const char kAffiliationId[] = "affiliation-id";
+  auto init_params = crosapi::mojom::BrowserInitParams::New();
+  init_params->device_properties = crosapi::mojom::DeviceProperties::New();
+  init_params->device_properties->device_affiliation_ids = {kAffiliationId};
+  chromeos::BrowserInitParams::SetInitParamsForTests(std::move(init_params));
+  EXPECT_EQ(1u, PolicyLoaderLacros::device_affiliation_ids().size());
+  EXPECT_EQ(kAffiliationId, PolicyLoaderLacros::device_affiliation_ids()[0]);
+}
+
+TEST_F(PolicyLoaderLacrosTest, DeviceDMToken) {
+  const char kDMToken[] = "dm-token";
+  auto init_params = crosapi::mojom::BrowserInitParams::New();
+  init_params->device_properties = crosapi::mojom::DeviceProperties::New();
+  init_params->device_properties->device_dm_token = kDMToken;
+  chromeos::BrowserInitParams::SetInitParamsForTests(std::move(init_params));
+  EXPECT_EQ(kDMToken, PolicyLoaderLacros::device_dm_token());
 }
 
 }  // namespace policy

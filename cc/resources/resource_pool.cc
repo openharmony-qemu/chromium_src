@@ -17,6 +17,7 @@
 #include "base/containers/contains.h"
 #include "base/format_macros.h"
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
@@ -25,17 +26,24 @@
 #include "build/build_config.h"
 #include "cc/base/container_util.h"
 #include "components/viz/client/client_resource_provider.h"
-#include "components/viz/common/gpu/context_provider.h"
+#include "components/viz/common/gpu/raster_context_provider.h"
+#include "components/viz/common/resources/shared_image_format_utils.h"
+#include "gpu/command_buffer/client/client_shared_image.h"
 #include "gpu/command_buffer/client/context_support.h"
-#include "gpu/command_buffer/client/gles2_interface.h"
 #include "gpu/command_buffer/common/capabilities.h"
-#include "gpu/command_buffer/common/gpu_memory_buffer_support.h"
 #include "gpu/command_buffer/common/mailbox.h"
 
 using base::trace_event::MemoryAllocatorDump;
 using base::trace_event::MemoryDumpLevelOfDetail;
 
 namespace cc {
+
+ResourcePool::GpuBacking::GpuBacking() = default;
+ResourcePool::GpuBacking::~GpuBacking() = default;
+
+ResourcePool::SoftwareBacking::SoftwareBacking() = default;
+ResourcePool::SoftwareBacking::~SoftwareBacking() = default;
+
 namespace {
 
 // Process-unique number for each resource pool.
@@ -73,29 +81,15 @@ bool ResourceMeetsSizeRequirements(const gfx::Size& requested_size,
 
 constexpr base::TimeDelta ResourcePool::kDefaultExpirationDelay;
 constexpr base::TimeDelta ResourcePool::kDefaultMaxFlushDelay;
-#ifdef OHOS_NWEB_EX
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 constexpr base::TimeDelta ResourcePool::kDefaultMaxExpirationDelay;
 constexpr size_t ResourcePool::kUnusedResourcesToKeep;
 #endif
-void ResourcePool::GpuBacking::InitOverlayCandidateAndTextureTarget(
-    const viz::SharedImageFormat format,
-    const gpu::Capabilities& caps,
-    bool use_gpu_memory_buffer_resources) {
-  overlay_candidate =
-      use_gpu_memory_buffer_resources && caps.supports_scanout_shared_images &&
-      IsGpuMemoryBufferFormatSupported(format.resource_format());
-  if (overlay_candidate) {
-    texture_target = gpu::GetBufferTextureTarget(
-        gfx::BufferUsage::SCANOUT, BufferFormat(format.resource_format()),
-        caps);
-  } else {
-    texture_target = GL_TEXTURE_2D;
-  }
-}
 
 ResourcePool::ResourcePool(
     viz::ClientResourceProvider* resource_provider,
-    viz::ContextProvider* context_provider,
+    viz::RasterContextProvider* context_provider,
     scoped_refptr<base::SingleThreadTaskRunner> task_runner,
     const base::TimeDelta& expiration_delay,
     bool disallow_non_exact_reuse)
@@ -168,8 +162,7 @@ ResourcePool::PoolResource* ResourcePool::CreateResource(
     const gfx::Size& size,
     viz::SharedImageFormat format,
     const gfx::ColorSpace& color_space) {
-  DCHECK(viz::ResourceSizes::VerifySizeInBytes<size_t>(
-      size, format.resource_format()));
+  DCHECK(format.VerifySizeInBytes(size));
 
   auto pool_resource = std::make_unique<PoolResource>(
       this, next_resource_unique_id_++, size, format, color_space);
@@ -227,10 +220,12 @@ ResourcePool::TryAcquireResourceForPartialRaster(
   for (auto it = unused_resources_.begin(); it != unused_resources_.end();
        ++it) {
     PoolResource* resource = it->get();
-    if (resource->color_space() != raster_color_space)
-      continue;
 
     if (resource->content_id() == previous_content_id) {
+      // Skip the old resource if color space changed.
+      if (resource->color_space() != raster_color_space)
+        continue;
+
       UpdateResourceContentIdAndInvalidation(resource, new_content_id,
                                              new_invalidated_rect);
 
@@ -301,7 +296,7 @@ void ResourcePool::OnResourceReleased(size_t unique_id,
   // while it was still in use by the ResourcePool client. That would prevent
   // the client from being able to use the ResourceId on the InUsePoolResource,
   // which would be problematic!
-  DCHECK(in_use_resources_.find(unique_id) == in_use_resources_.end());
+  DCHECK(!base::Contains(in_use_resources_, unique_id));
 
   // TODO(danakj): Should busy_resources be a map?
   auto busy_it =
@@ -309,7 +304,7 @@ void ResourcePool::OnResourceReleased(size_t unique_id,
   // If the resource isn't busy then we made it available for reuse already
   // somehow, even though it was exported to the ResourceProvider, or we evicted
   // a resource that was still in use by the display compositor.
-  DCHECK(busy_it != busy_resources_.end());
+  CHECK(busy_it != busy_resources_.end(), base::NotFatalUntil::M130);
 
   PoolResource* resource = busy_it->get();
   resource->set_state(PoolResource::kUnused);
@@ -326,7 +321,9 @@ void ResourcePool::OnResourceReleased(size_t unique_id,
   busy_resources_.erase(busy_it);
 }
 
-bool ResourcePool::PrepareForExport(const InUsePoolResource& in_use_resource) {
+bool ResourcePool::PrepareForExport(
+    const InUsePoolResource& in_use_resource,
+    viz::TransferableResource::ResourceSource resource_source) {
   PoolResource* resource = in_use_resource.resource_;
   // Exactly one of gpu or software backing should exist.
   DCHECK(resource->gpu_backing() || resource->software_backing());
@@ -334,7 +331,7 @@ bool ResourcePool::PrepareForExport(const InUsePoolResource& in_use_resource) {
   viz::TransferableResource transferable;
   if (resource->gpu_backing()) {
     GpuBacking* gpu_backing = resource->gpu_backing();
-    if (gpu_backing->mailbox.IsZero()) {
+    if (!gpu_backing->shared_image) {
       // This can happen if we failed to allocate a GpuMemoryBuffer. Avoid
       // sending an invalid resource to the parent in that case, and avoid
       // caching/reusing the resource.
@@ -342,17 +339,26 @@ bool ResourcePool::PrepareForExport(const InUsePoolResource& in_use_resource) {
       resource->mark_avoid_reuse();
       return false;
     }
+    uint32_t texture_target = gpu_backing->shared_image->GetTextureTarget();
     transferable = viz::TransferableResource::MakeGpu(
-        gpu_backing->mailbox, gpu_backing->texture_target,
+        gpu_backing->shared_image->mailbox(), texture_target,
         gpu_backing->mailbox_sync_token, resource->size(), resource->format(),
-        gpu_backing->overlay_candidate);
+        gpu_backing->overlay_candidate, resource_source);
     if (gpu_backing->wait_on_fence_required)
       transferable.synchronization_type =
           viz::TransferableResource::SynchronizationType::kGpuCommandsCompleted;
   } else {
-    transferable = viz::TransferableResource::MakeSoftware(
-        resource->software_backing()->shared_bitmap_id, resource->size(),
-        resource->format());
+    SoftwareBacking* software_backing = resource->software_backing();
+    transferable =
+        software_backing->shared_image
+            ? viz::TransferableResource::MakeSoftwareSharedImage(
+                  software_backing->shared_image,
+                  software_backing->mailbox_sync_token, resource->size(),
+                  resource->format(), resource_source)
+            : viz::TransferableResource::MakeSoftwareSharedBitmap(
+                  software_backing->shared_bitmap_id,
+                  software_backing->mailbox_sync_token, resource->size(),
+                  resource->format(), resource_source);
   }
   transferable.color_space = resource->color_space();
   resource->set_resource_id(resource_provider_->ImportResource(
@@ -548,22 +554,22 @@ void ResourcePool::EvictExpiredResources() {
     // If we still have evictable resources, schedule a call to
     // EvictExpiredResources for either (a) the time when the LRU buffer expires
     // or (b) the deadline to explicitly flush previously evicted resources.
-    base::TimeDelta schedule_evict_expired_resources_time =
+    base::TimeDelta time_from_now =
         std::min(GetUsageTimeForLRUResource() + resource_expiration_delay_,
                  flush_evicted_resources_deadline_) -
         current_time;
-#ifdef OHOS_NWEB_EX
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
     if (delete_unused_resources_delay_enabled_) {
-      base::TimeDelta flush_evicted_resources_delay =
-                  unused_resources_.back()->last_usage() < time_limit
+      base::TimeDelta delay =
+          unused_resources_.back()->last_usage() < time_limit
               ? kDefaultExpirationDelay
               : base::Seconds(0);
-      schedule_evict_expired_resources_time =
-          std::max(schedule_evict_expired_resources_time,
-                   flush_evicted_resources_delay);
+      time_from_now = std::max(time_from_now, delay);
     }
 #endif
-    ScheduleEvictExpiredResourcesIn(schedule_evict_expired_resources_time);
+
+    ScheduleEvictExpiredResourcesIn(time_from_now);
   }
 }
 
@@ -575,7 +581,7 @@ void ResourcePool::EvictResourcesNotUsedSince(base::TimeTicks time_limit) {
     // delays in freeing expired resources.
     if (unused_resources_.back()->last_usage() > time_limit)
       return;
-#ifdef OHOS_NWEB_EX
+#if BUILDFLAG(IS_ARKWEB_EXT)
     if (delete_unused_resources_delay_enabled_ &&
         unused_resources_.size() <= kUnusedResourcesToKeep &&
         unused_resources_.back()->last_usage() + kDefaultMaxExpirationDelay >
@@ -603,15 +609,14 @@ base::TimeTicks ResourcePool::GetUsageTimeForLRUResource() const {
 void ResourcePool::FlushEvictedResources() {
   flush_evicted_resources_deadline_ = base::TimeTicks::Max();
   if (context_provider_) {
-    // Flush any ContextGL work as well as any SharedImageInterface work.
-    context_provider_->ContextGL()->OrderingBarrierCHROMIUM();
+    // Flush any raster + shared image work.
     context_provider_->ContextSupport()->FlushPendingWork();
   }
 }
 
 bool ResourcePool::OnMemoryDump(const base::trace_event::MemoryDumpArgs& args,
                                 base::trace_event::ProcessMemoryDump* pmd) {
-  if (args.level_of_detail == MemoryDumpLevelOfDetail::BACKGROUND) {
+  if (args.level_of_detail == MemoryDumpLevelOfDetail::kBackground) {
     std::string dump_name =
         base::StringPrintf("cc/tile_memory/provider_0x%x", tracing_id_);
     MemoryAllocatorDump* dump = pmd->CreateAllocatorDump(dump_name);
@@ -700,10 +705,10 @@ void ResourcePool::PoolResource::OnMemoryDump(
   dump->AddScalar("busy_size", MemoryAllocatorDump::kUnitsBytes, busy_size);
 }
 
-#ifdef OHOS_NWEB_EX
- void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
-   delete_unused_resources_delay_enabled_ = enable;
- }
+#if BUILDFLAG(IS_ARKWEB_EXT)
+void ResourcePool::EnableDeleteUnusedResourcesDelay(bool enable) {
+  delete_unused_resources_delay_enabled_ = enable;
+}
 #endif
 
 }  // namespace cc

@@ -7,18 +7,24 @@
 
 #include <stdint.h>
 
+#include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "components/services/storage/shared_storage/shared_storage_manager.h"
+#include "content/browser/renderer_host/code_cache_host_impl.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/common/content_export.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "net/base/schemeful_site.h"
+#include "services/network/public/mojom/shared_storage.mojom-forward.h"
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/shared_storage/shared_storage_utils.h"
+#include "third_party/blink/public/mojom/origin_trials/origin_trial_feature.mojom-shared.h"
 #include "third_party/blink/public/mojom/shared_storage/shared_storage.mojom.h"
 #include "third_party/blink/public/mojom/shared_storage/shared_storage_worklet_service.mojom.h"
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-forward.h"
@@ -27,10 +33,12 @@
 namespace content {
 
 class BrowserContext;
+class RenderProcessHost;
 class SharedStorageDocumentServiceImpl;
 class SharedStorageURLLoaderFactoryProxy;
+class SharedStorageCodeCacheHostProxy;
 class SharedStorageWorkletDriver;
-class SharedStorageWorkletHostManager;
+class SharedStorageRuntimeManager;
 class StoragePartitionImpl;
 class PageImpl;
 
@@ -41,7 +49,7 @@ class PageImpl;
 // `SharedStorageWorkletService` (i.e. storage access, console log) which
 // could happen while running those worklet operations.
 //
-// The SharedStorageWorkletHost lives in the `SharedStorageWorkletHostManager`,
+// The SharedStorageWorkletHost lives in the `SharedStorageRuntimeManager`,
 // and the SharedStorageWorkletHost's lifetime is bounded by the earliest of the
 // two timepoints:
 // 1. When the outstanding worklet operations have finished on or after the
@@ -49,7 +57,8 @@ class PageImpl;
 // 2. The keepalive timeout is reached after the worklet's owner document is
 // destroyed.
 class CONTENT_EXPORT SharedStorageWorkletHost
-    : public blink::mojom::SharedStorageWorkletServiceClient {
+    : public blink::mojom::SharedStorageWorkletHost,
+      public blink::mojom::SharedStorageWorkletServiceClient {
  public:
   using BudgetResult = storage::SharedStorageManager::BudgetResult;
 
@@ -61,50 +70,48 @@ class CONTENT_EXPORT SharedStorageWorkletHost
     kInitiated,
   };
 
-  SharedStorageWorkletHost(std::unique_ptr<SharedStorageWorkletDriver> driver,
-                           SharedStorageDocumentServiceImpl& document_service);
+  SharedStorageWorkletHost(
+      SharedStorageDocumentServiceImpl& document_service,
+      const url::Origin& frame_origin,
+      const url::Origin& data_origin,
+      const GURL& script_source_url,
+      network::mojom::CredentialsMode credentials_mode,
+      const std::vector<blink::mojom::OriginTrialFeature>&
+          origin_trial_features,
+      mojo::PendingAssociatedReceiver<blink::mojom::SharedStorageWorkletHost>
+          worklet_host,
+      blink::mojom::SharedStorageDocumentService::CreateWorkletCallback
+          callback);
   ~SharedStorageWorkletHost() override;
 
-  void AddModuleOnWorklet(
-      mojo::PendingRemote<network::mojom::URLLoaderFactory>
-          frame_url_loader_factory,
-      const url::Origin& frame_origin,
-      const GURL& script_source_url,
-      blink::mojom::SharedStorageDocumentService::AddModuleOnWorkletCallback
-          callback);
-  void RunOperationOnWorklet(const std::string& name,
-                             const std::vector<uint8_t>& serialized_data,
-                             bool keep_alive_after_operation,
-                             const absl::optional<std::string>& context_id);
-  void RunURLSelectionOperationOnWorklet(
+  // blink::mojom::SharedStorageWorkletHost.
+  void SelectURL(
       const std::string& name,
       std::vector<blink::mojom::SharedStorageUrlWithMetadataPtr>
           urls_with_metadata,
-      const std::vector<uint8_t>& serialized_data,
+      blink::CloneableMessage serialized_data,
       bool keep_alive_after_operation,
-      const absl::optional<std::string>& context_id,
-      blink::mojom::SharedStorageDocumentService::
-          RunURLSelectionOperationOnWorkletCallback callback);
+      blink::mojom::PrivateAggregationConfigPtr private_aggregation_config,
+      const std::u16string& saved_query_name,
+      SelectURLCallback callback) override;
+  void Run(const std::string& name,
+           blink::CloneableMessage serialized_data,
+           bool keep_alive_after_operation,
+           blink::mojom::PrivateAggregationConfigPtr private_aggregation_config,
+           RunCallback callback) override;
 
   // Whether there are unfinished worklet operations (i.e. `addModule()`,
   // `selectURL()`, or `run()`.
   bool HasPendingOperations();
 
-  // Called by the `SharedStorageWorkletHostManager` for this host to enter
+  // Called by the `SharedStorageRuntimeManager` for this host to enter
   // keep-alive phase.
   void EnterKeepAliveOnDocumentDestroyed(KeepAliveFinishedCallback callback);
 
   // blink::mojom::SharedStorageWorkletServiceClient:
-  void SharedStorageSet(const std::u16string& key,
-                        const std::u16string& value,
-                        bool ignore_if_present,
-                        SharedStorageSetCallback callback) override;
-  void SharedStorageAppend(const std::u16string& key,
-                           const std::u16string& value,
-                           SharedStorageAppendCallback callback) override;
-  void SharedStorageDelete(const std::u16string& key,
-                           SharedStorageDeleteCallback callback) override;
-  void SharedStorageClear(SharedStorageClearCallback callback) override;
+  void SharedStorageUpdate(
+      network::mojom::SharedStorageModifierMethodPtr method,
+      SharedStorageUpdateCallback callback) override;
   void SharedStorageGet(const std::u16string& key,
                         SharedStorageGetCallback callback) override;
   void SharedStorageKeys(
@@ -116,18 +123,33 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   void SharedStorageLength(SharedStorageLengthCallback callback) override;
   void SharedStorageRemainingBudget(
       SharedStorageRemainingBudgetCallback callback) override;
-  void ConsoleLog(const std::string& message) override;
+  void GetInterestGroups(GetInterestGroupsCallback callback) override;
+  void DidAddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
+                              const std::string& message) override;
   void RecordUseCounters(
       const std::vector<blink::mojom::WebFeature>& features) override;
 
-  const url::Origin& shared_storage_origin_for_testing() const {
-    return shared_storage_origin_;
+  void GetLockManager(
+      mojo::PendingReceiver<blink::mojom::LockManager> receiver);
+
+  void ReportNoBinderForInterface(const std::string& error);
+
+  // Returns the process host associated with the worklet. Returns nullptr if
+  // the process has gone (e.g. during shutdown).
+  RenderProcessHost* GetProcessHost() const;
+
+  // Returns the creator frame of the worklet. Returns nullptr if the frame has
+  // gone (e.g. during keep-alive phase).
+  RenderFrameHostImpl* GetFrame();
+
+  const GURL& script_source_url() const {
+    return script_source_url_;
   }
 
  protected:
   // virtual for testing
   virtual void OnAddModuleOnWorkletFinished(
-      blink::mojom::SharedStorageDocumentService::AddModuleOnWorkletCallback
+      blink::mojom::SharedStorageDocumentService::CreateWorkletCallback
           callback,
       bool success,
       const std::string& error_message);
@@ -140,9 +162,12 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   virtual void OnRunURLSelectionOperationOnWorkletFinished(
       const GURL& urn_uuid,
       base::TimeTicks start_time,
+      const std::string& operation_name,
+      const std::u16string& saved_query_name_to_cache,
       bool script_execution_succeeded,
       const std::string& script_execution_error_message,
       uint32_t index,
+      bool use_page_budgets,
       BudgetResult budget_result);
 
   // Called if `keep_alive_after_operation_` is false, `IsInKeepAlivePhase()` is
@@ -160,12 +185,21 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   }
 
  private:
+  class ScopedDevToolsHandle;
+
   void OnRunURLSelectionOperationOnWorkletScriptExecutionFinished(
       const GURL& urn_uuid,
       base::TimeTicks start_time,
+      const std::string& operation_name,
+      const std::u16string& saved_query_name_to_cache,
       bool success,
       const std::string& error_message,
       uint32_t index);
+
+  void OnSelectURLSavedQueryFound(const GURL& urn_uuid,
+                                  base::TimeTicks start_time,
+                                  const std::string& operation_name,
+                                  uint32_t index);
 
   // Run `keep_alive_finished_callback_` to destroy `this`. Called when the last
   // pending operation has finished, or when a timeout is reached after entering
@@ -187,16 +221,31 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   blink::mojom::SharedStorageWorkletService*
   GetAndConnectToSharedStorageWorkletService();
 
-  // Binds a receiver to the `PrivateAggregationManager` and returns the
-  // `PendingRemote`. If there is no `PrivateAggregationManger`, returns an
-  // invalid `PendingRemote`.
-  mojo::PendingRemote<blink::mojom::PrivateAggregationHost>
-  MaybeBindPrivateAggregationHost(
-      const absl::optional<std::string>& context_id);
+  // Constructs a `PrivateAggregationOperationDetails` object, including binding
+  // a receiver to the `PrivateAggregationManager` and returning the
+  // `PendingRemote`. If there is no `PrivateAggregationManger`, returns a null
+  // pointer.
+  blink::mojom::PrivateAggregationOperationDetailsPtr
+  MaybeConstructPrivateAggregationOperationDetails(
+      const blink::mojom::PrivateAggregationConfigPtr&
+          private_aggregation_config);
 
-  bool IsSharedStorageAllowed();
+  bool IsSharedStorageAllowed(
+      std::string* out_debug_message,
+      bool* out_block_is_site_setting_specific = nullptr);
+  bool IsSharedStorageSelectURLAllowed(
+      std::string* out_debug_message,
+      bool* out_block_is_site_setting_specific);
 
-  AddModuleState add_module_state_ = AddModuleState::kNotInitiated;
+  // RAII helper object for talking to `SharedStorageWorkletDevToolsManager`.
+  std::unique_ptr<ScopedDevToolsHandle> devtools_handle_;
+
+  // The URL of the module script. Set when `AddModuleOnWorklet` is invoked.
+  GURL script_source_url_;
+
+  // The origin trial features inherited from the creator document. Set when
+  // `AddModuleOnWorklet` is invoked.
+  std::vector<blink::mojom::OriginTrialFeature> origin_trial_features_;
 
   // Responsible for initializing the `SharedStorageWorkletService`.
   std::unique_ptr<SharedStorageWorkletDriver> driver_;
@@ -224,20 +273,29 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   // destroyed before `shared_storage_manager_` in ~StoragePartition.
   raw_ptr<storage::SharedStorageManager> shared_storage_manager_;
 
-  // The owning `SharedStorageWorkletHostManager`, which will outlive `this`.
-  raw_ptr<SharedStorageWorkletHostManager> shared_storage_worklet_host_manager_;
+  // The owning `SharedStorageRuntimeManager`, which will outlive `this`.
+  raw_ptr<SharedStorageRuntimeManager> shared_storage_runtime_manager_;
 
   // Pointer to the `BrowserContext`, saved to be able to call
   // `IsSharedStorageAllowed()`, and to get the global URLLoaderFactory.
   raw_ptr<BrowserContext> browser_context_;
 
-  // The shared storage owner document's origin.
+  // The shared storage worklet's origin and site for data access and permission
+  // checks.
   url::Origin shared_storage_origin_;
+  net::SchemefulSite shared_storage_site_;
 
   // To avoid race conditions associated with top frame navigations and to be
   // able to call `IsSharedStorageAllowed()` during keep-alive, we need to save
   // the value of the main frame origin in the constructor.
   const url::Origin main_frame_origin_;
+
+  // Whether `shared_storage_origin_` is same origin with the creator context's
+  // origin.
+  bool is_same_origin_worklet_;
+
+  // Whether saved queries are supported.
+  const bool saved_queries_enabled_;
 
   // A map of unresolved URNs to the candidate URL with metadata vector. Inside
   // `RunURLSelectionOperationOnWorklet()` a new URN is generated and is
@@ -252,8 +310,8 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   uint32_t pending_operations_count_ = 0u;
 
   // Whether or not the lifetime of the worklet should be extended beyond when
-  // the `pending_operations_count_` returns to 0u. If false, the worklet will
-  // be closed as soon as the count next reaches 0U after being positive. This
+  // the `pending_operations_count_` returns to 0. If false, the worklet will
+  // be closed as soon as the count next reaches 0 after being positive. This
   // bool is updated with each call to `run()` or `selectURL()`.
   bool keep_alive_after_operation_ = true;
 
@@ -278,6 +336,10 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   // Set when the worklet host enters keep-alive phase.
   KeepAliveFinishedCallback keep_alive_finished_callback_;
 
+  // Receives selectURL() and run() operations.
+  mojo::AssociatedReceiver<blink::mojom::SharedStorageWorkletHost> receiver_{
+      this};
+
   // Both `shared_storage_worklet_service_`
   // and `shared_storage_worklet_service_client_` are bound in
   // GetAndConnectToSharedStorageWorkletService().
@@ -297,6 +359,29 @@ class CONTENT_EXPORT SharedStorageWorkletHost
   // ensure the URL is not modified by a compromised worklet; to enforce the
   // application/javascript request header; to enforce same-origin mode; etc.
   std::unique_ptr<SharedStorageURLLoaderFactoryProxy> url_loader_factory_proxy_;
+
+  // The proxy is used to limit the request that the worklet can make, e.g. to
+  // ensure the URL is not modified by a compromised worklet. This is reset
+  // after the script loading finishes, to prevent leaking the shared storage
+  // data after that.
+  std::unique_ptr<SharedStorageCodeCacheHostProxy> code_cache_host_proxy_;
+
+  // Handles code cache requests after being proxied from
+  // `SharedStorageCodeCacheHostProxy`.
+  std::unique_ptr<CodeCacheHostImpl::ReceiverSet> code_cache_host_receivers_;
+
+  // BrowserInterfaceBroker implementation through which this
+  // SharedStorageWorkletHost exposes Mojo services to the corresponding worklet
+  // in the renderer.
+  //
+  // The interfaces that can be requested from this broker are defined in the
+  // content/browser/browser_interface_binders.cc file, in the functions which
+  // take a `SharedStorageWorkletHost*` parameter.
+  BrowserInterfaceBrokerImpl<SharedStorageWorkletHost,
+                             SharedStorageWorkletHost*>
+      broker_{this};
+  mojo::Receiver<blink::mojom::BrowserInterfaceBroker> broker_receiver_{
+      &broker_};
 
   base::WeakPtrFactory<SharedStorageWorkletHost> weak_ptr_factory_{this};
 };

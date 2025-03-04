@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * Based on proxy_config_service_android.h originally written by
  * Copyright (c) 2012 The Chromium Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
@@ -27,7 +27,7 @@
 #include "base/memory/ref_counted.h"
 #include "net/base/net_export.h"
 #include "net/proxy_resolution/proxy_config_service.h"
-#include "ohos_adapter_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace base {
 class SequencedTaskRunner;
@@ -101,8 +101,8 @@ class NET_EXPORT ProxyConfigServiceOHOS : public ProxyConfigService {
  private:
   // friend class ProxyConfigServiceOHOSTestBase
   class Delegate;
-  friend class NetProxyEventCallback; 
- 
+  friend class NetProxyEventCallback;
+
   // For tests.
   ProxyConfigServiceOHOS(
       const scoped_refptr<base::SequencedTaskRunner>& main_task_runner,
@@ -124,7 +124,10 @@ class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
  public:
   NetProxyEventCallback(ProxyConfigServiceOHOS* service) : service_(service) {}
 
-  void Changed(const std::string& host, const uint16_t& port, const std::string& pacUrl, const std::vector<std::string>& exclusionList) override;
+  void Changed(const std::string& host,
+               const uint16_t& port,
+               const std::string& pacUrl,
+               const std::vector<std::string>& exclusionList) override;
 
  private:
   ProxyConfigServiceOHOS* service_;

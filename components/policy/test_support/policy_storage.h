@@ -129,6 +129,24 @@ class PolicyStorage {
     policy_invalidation_topic_ = policy_invalidation_topic;
   }
 
+  const std::optional<enterprise_management::PolicyData::MarketSegment>
+  market_segment() const {
+    return market_segment_;
+  }
+  void set_market_segment(
+      enterprise_management::PolicyData::MarketSegment segment) {
+    market_segment_ = segment;
+  }
+
+  const std::optional<enterprise_management::PolicyData::MetricsLogSegment>
+  metrics_log_segment() const {
+    return metrics_log_segment_;
+  }
+  void set_metrics_log_segment(
+      enterprise_management::PolicyData::MetricsLogSegment segment) {
+    metrics_log_segment_ = segment;
+  }
+
   base::Time timestamp() const { return timestamp_; }
   void set_timestamp(const base::Time& timestamp) { timestamp_ = timestamp; }
 
@@ -186,6 +204,11 @@ class PolicyStorage {
     return error_detail_;
   }
 
+  bool enrollment_required() const { return enrollment_required_; }
+  void set_enrollment_required(bool enrollment_required) {
+    enrollment_required_ = enrollment_required;
+  }
+
  private:
   // Maps policy keys to a serialized proto representing the policies to be
   // applied for the type (e.g. CloudPolicySettings, ChromeDeviceSettingsProto).
@@ -212,6 +235,11 @@ class PolicyStorage {
 
   std::string policy_invalidation_topic_;
 
+  std::optional<enterprise_management::PolicyData::MarketSegment>
+      market_segment_;
+  std::optional<enterprise_management::PolicyData::MetricsLogSegment>
+      metrics_log_segment_;
+
   base::Time timestamp_;
 
   bool allow_set_device_attributes_ = true;
@@ -221,6 +249,8 @@ class PolicyStorage {
   bool has_kiosk_license_ = true;
 
   bool has_enterprise_license_ = true;
+
+  bool enrollment_required_ = false;
 
   // Maps brand serial ID to PsmEntry.
   base::flat_map<std::string, PsmEntry> psm_entries_;

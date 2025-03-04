@@ -7,7 +7,7 @@
 #include "base/command_line.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/time/time.h"
-#include "components/metrics/call_stack_profile_params.h"
+#include "components/sampling_profiler/process_type.h"
 #include "components/variations/variations_switches.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -103,7 +103,7 @@ TEST(HeapProfilerParametersTest, EnableBenchmarking) {
   base::CommandLine::ForCurrentProcess()->AppendSwitch(
       variations::switches::kEnableBenchmarking);
 
-  using Process = metrics::CallStackProfileParams::Process;
+  using Process = sampling_profiler::ProfilerProcessType;
   EXPECT_FALSE(GetDefaultHeapProfilerParameters().is_supported);
   EXPECT_FALSE(
       GetHeapProfilerParametersForProcess(Process::kBrowser).is_supported);
@@ -156,7 +156,7 @@ TEST(HeapProfilerParametersTest, ApplyParameters) {
                   .collection_interval = base::Minutes(15),
               }));
 
-  using Process = metrics::CallStackProfileParams::Process;
+  using Process = sampling_profiler::ProfilerProcessType;
   EXPECT_THAT(GetHeapProfilerParametersForProcess(Process::kBrowser),
               MatchesParameters({
                   .is_supported = false,
@@ -224,7 +224,7 @@ TEST(HeapProfilerParametersTest, ApplyInvalidParameters) {
 
   EXPECT_FALSE(GetDefaultHeapProfilerParameters().is_supported);
   EXPECT_FALSE(GetHeapProfilerParametersForProcess(
-                   metrics::CallStackProfileParams::Process::kBrowser)
+                   sampling_profiler::ProfilerProcessType::kBrowser)
                    .is_supported);
 }
 

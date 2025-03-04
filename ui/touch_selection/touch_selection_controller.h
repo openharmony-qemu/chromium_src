@@ -5,6 +5,7 @@
 #ifndef UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
 #define UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "ui/gfx/geometry/point.h"
@@ -16,10 +17,12 @@
 #include "ui/touch_selection/selection_event_type.h"
 #include "ui/touch_selection/touch_handle.h"
 #include "ui/touch_selection/touch_handle_orientation.h"
+#include "ui/touch_selection/touch_selection_metrics.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
 
 namespace ui {
 class MotionEvent;
+class Event;
 
 // Interface through which |TouchSelectionController| issues selection-related
 // commands, notifications and requests.
@@ -103,9 +106,20 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   void HandleLongPressEvent(base::TimeTicks event_time,
                                 const gfx::PointF& location);
 
+  // To be called before forwarding a double press event.
+  void HandleDoublePressEvent(base::TimeTicks event_time,
+                              const gfx::PointF& location);
+
   // To be called before forwarding a gesture scroll begin event to prevent
   // long-press drag.
   void OnScrollBeginEvent();
+
+  // To be called when a menu command has been requested, to dismiss touch
+  // handles and record metrics if needed.
+  void OnMenuCommand(bool should_dismiss_handles);
+
+  // To be called when an event occurs to deactivate touch selection.
+  void OnSessionEndEvent(const Event& event);
 
   // Hide the handles and suppress bounds updates until the next explicit
   // showing allowance.
@@ -117,6 +131,12 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   // Ticks an active animation, as requested to the client by |SetNeedsAnimate|.
   // Returns true if an animation is active and requires further ticking.
   bool Animate(base::TimeTicks animate_time);
+
+  // Returns the current focus bound. For an active selection, this is the
+  // selection bound that has most recently been dragged or updated (defaulting
+  // to the end if neither endpoint has moved). For an active insertion it is
+  // the caret bound. Should only be called when touch selection is active.
+  const gfx::SelectionBound& GetFocusBound() const;
 
   // Returns the rect between the two active selection bounds. If just one of
   // the bounds is visible, or both bounds are visible and on the same line,
@@ -149,7 +169,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   const gfx::SelectionBound& start() const { return start_; }
   const gfx::SelectionBound& end() const { return end_; }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_VIBRATE)
+  bool IsLongPressEvent();
+  void ResetLongPressEvent();
+#endif  // BUILDFLAG(ARKWEB_VIBRATE)
+
+  ActiveStatus active_status() const { return active_status_; }
+
+#if BUILDFLAG(ARKWEB_MENU)
   const std::unique_ptr<TouchHandle>& GetInsertHandle() {
     return insertion_handle_;
   }
@@ -161,24 +188,21 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   const std::unique_ptr<TouchHandle>& GetEndSelectionHandle() {
     return end_selection_handle_;
   }
-#endif
 
-#ifdef OHOS_DRAG_DROP
+  void UpdateSelectionChanged(
+      const TouchSelectionDraggable& draggable) override;
+
+  bool IsLongPressDragSelectionActive();
+
   void ResetResponsePendingInputEvent();
 #endif
-
-#ifdef OHOS_CLIPBOARD
-  void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) override;
-  bool IsLongPressDragSelectionActive();
-  bool IsLongPressEvent();
-  void ResetLongPressEvent();
-#endif
-  ActiveStatus active_status() const { return active_status_; }
 
  private:
   friend class TouchSelectionControllerTestApi;
 
   enum InputEventType { TAP, REPEATED_TAP, LONG_PRESS, INPUT_EVENT_TYPE_NONE };
+
+  enum class DragSelectorInitiatingGesture { kNone, kLongPress, kDoublePress };
 
   bool WillHandleTouchEventImpl(const MotionEvent& event);
 
@@ -228,9 +252,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   bool GetEndVisible() const;
   TouchHandle::AnimationStyle GetAnimationStyle(bool was_active) const;
 
-  void LogSelectionEnd();
+  void LogDragType(const TouchSelectionDraggable& draggable);
 
-  const raw_ptr<TouchSelectionControllerClient> client_;
+  const raw_ptr<TouchSelectionControllerClient, DanglingUntriaged> client_;
   const Config config_;
 
   InputEventType response_pending_input_event_;
@@ -258,16 +282,22 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   // between lines.
   bool anchor_drag_to_selection_start_;
 
-#ifdef OHOS_CLIPBOARD
-  TouchHandleOrientation selection_handle_orientation_dragging_ = TouchHandleOrientation::UNDEFINED;
-#endif
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  TouchHandleOrientation selection_handle_orientation_dragging_ =
+      TouchHandleOrientation::UNDEFINED;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
-  // Longpress drag allows direct manipulation of longpress-initiated selection.
+  // Allows the text selection to be adjusted by touch dragging after a long
+  // press or double press initiated selection.
   LongPressDragSelector longpress_drag_selector_;
+
+  // Used to track whether a selection drag gesture was initiated by a long
+  // press or double press.
+  DragSelectorInitiatingGesture drag_selector_initiating_gesture_ =
+      DragSelectorInitiatingGesture::kNone;
 
   gfx::RectF viewport_rect_;
 
-  base::TimeTicks selection_start_time_;
   // Whether a selection handle was dragged during the current 'selection
   // session' - i.e. since the current selection has been activated.
   bool selection_handle_dragged_;
@@ -276,10 +306,14 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
   bool consume_touch_sequence_;
 
   bool show_touch_handles_;
-
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_VIBRATE)
   bool is_long_press_ = false;
-#endif
+#endif  // BUILDFLAG(ARKWEB_VIBRATE)
+
+#if BUILDFLAG(ARKWEB_MENU)
+  bool reset_selection_temporarily_ = false;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+  TouchSelectionSessionMetricsRecorder session_metrics_recorder_;
 };
 
 }  // namespace ui

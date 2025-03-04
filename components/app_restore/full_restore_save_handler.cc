@@ -4,7 +4,6 @@
 
 #include "components/app_restore/full_restore_save_handler.h"
 
-#include "ash/constants/app_types.h"
 #include "base/files/file_path.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -53,6 +52,11 @@ FullRestoreSaveHandler::FullRestoreSaveHandler() {
 }
 
 FullRestoreSaveHandler::~FullRestoreSaveHandler() = default;
+
+void FullRestoreSaveHandler::InsertIgnoreApplicationId(
+    const std::string& app_id) {
+  ignore_applications_ids_.insert(app_id);
+}
 
 void FullRestoreSaveHandler::SetPrimaryProfilePath(
     const base::FilePath& profile_path) {
@@ -105,17 +109,10 @@ void FullRestoreSaveHandler::OnWindowInitialized(aura::Window* window) {
     return;
   }
 
-  if (app_restore::IsLacrosWindow(window)) {
-    observed_windows_.AddObservation(window);
-
-    if (lacros_save_handler_)
-      lacros_save_handler_->OnWindowInitialized(window);
+  const int32_t window_id = window->GetProperty(app_restore::kWindowIdKey);
+  if (!SessionID::IsValidValue(window_id)) {
     return;
   }
-
-  int32_t window_id = window->GetProperty(app_restore::kWindowIdKey);
-  if (!SessionID::IsValidValue(window_id))
-    return;
 
   observed_windows_.AddObservation(window);
 
@@ -139,7 +136,7 @@ void FullRestoreSaveHandler::OnWindowInitialized(aura::Window* window) {
     // true, to call the browser session restore to restore apps for the next
     // system startup.
     if (window->GetProperty(app_restore::kAppTypeBrowser)) {
-      app_launch_info->app_type_browser = true;
+      app_launch_info->browser_extra_info.app_type_browser = true;
 
       std::string* browser_app_name =
           window->GetProperty(app_restore::kBrowserAppNameKey);
@@ -148,13 +145,30 @@ void FullRestoreSaveHandler::OnWindowInitialized(aura::Window* window) {
             app_restore::GetAppIdFromAppName(*browser_app_name);
         auto it =
             profile_path_to_app_registry_cache_.find(active_profile_path_);
-        if (it != profile_path_to_app_registry_cache_.end() && it->second &&
-            it->second->GetAppType(app_id) == apps::AppType::kUnknown) {
-          // If the app doesn't exist in AppRegistryCache, this window is an
-          // extension window, and we don't need to save the launch info for the
-          // extension.
-          return;
+        if (it != profile_path_to_app_registry_cache_.end() && it->second) {
+          if (it->second->GetAppType(app_id) == apps::AppType::kUnknown) {
+            // If the app doesn't exist in AppRegistryCache, this window is an
+            // extension window, and we don't need to save the launch info for
+            // the extension.
+            return;
+          }
+          if (it->second->GetAppType(app_id) == apps::AppType::kWeb ||
+              it->second->GetAppType(app_id) == apps::AppType::kSystemWeb) {
+            // Use the correct app_id instead of the chrome app id for system
+            // web apps. SWAs have app type `kSystemWeb` with Lacros or `kWeb`
+            // otherwise.
+            it->second->ForOneApp(app_id, [&app_launch_info, app_id](
+                                              const apps::AppUpdate& update) {
+              if (update.InstallReason() == apps::InstallReason::kSystem) {
+                app_launch_info->app_id = app_id;
+              }
+            });
+          }
         }
+      }
+
+      if (base::Contains(ignore_applications_ids_, app_launch_info->app_id)) {
+        return;
       }
     }
   }
@@ -171,12 +185,6 @@ void FullRestoreSaveHandler::OnWindowDestroyed(aura::Window* window) {
   if (app_restore::IsArcWindow(window)) {
     if (arc_save_handler_)
       arc_save_handler_->OnWindowDestroyed(window);
-    return;
-  }
-
-  if (app_restore::IsLacrosWindow(window)) {
-    if (lacros_save_handler_)
-      lacros_save_handler_->OnWindowDestroyed(window);
     return;
   }
 
@@ -311,12 +319,6 @@ void FullRestoreSaveHandler::SaveWindowInfo(
     return;
   }
 
-  if (app_restore::IsLacrosWindow(window_info.window)) {
-    if (lacros_save_handler_)
-      lacros_save_handler_->ModifyWindowInfo(window_info);
-    return;
-  }
-
   int32_t window_id =
       window_info.window->GetProperty(app_restore::kWindowIdKey);
 
@@ -355,7 +357,6 @@ void FullRestoreSaveHandler::Flush(const base::FilePath& profile_path) {
     return;
 
   save_running_.insert(profile_path);
-
   BackendTaskRunner(profile_path)
       ->PostTaskAndReply(
           FROM_HERE,
@@ -523,9 +524,6 @@ std::string FullRestoreSaveHandler::GetAppId(aura::Window* window) {
   if (app_restore::IsArcWindow(window)) {
     return arc_save_handler_ ? arc_save_handler_->GetAppId(window)
                              : std::string();
-  } else if (app_restore::IsLacrosWindow(window)) {
-    return lacros_save_handler_ ? lacros_save_handler_->GetAppId(window)
-                                : std::string();
   } else {
     // For other window types (browser, PWAs, SWAs, Chrome apps), get its
     // corresponding app id from |window_id_to_app_restore_info_|.

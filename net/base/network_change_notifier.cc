@@ -5,6 +5,7 @@
 #include "net/base/network_change_notifier.h"
 
 #include <limits>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -28,7 +29,6 @@
 #include "net/dns/dns_config_service.h"
 #include "net/dns/system_dns_config_change_notifier.h"
 #include "net/url_request/url_request.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 
 #if BUILDFLAG(IS_WIN)
@@ -36,8 +36,10 @@
 #elif BUILDFLAG(IS_LINUX)
 #include "net/base/network_change_notifier_linux.h"
 #elif BUILDFLAG(IS_APPLE)
-#include "net/base/network_change_notifier_mac.h"
-#elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#include "net/base/network_change_notifier_apple.h"
+#elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#include "net/base/network_change_notifier_passive.h"
+#elif BUILDFLAG(IS_ARKWEB)
 #include "net/base/network_change_notifier_passive.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "net/base/network_change_notifier_fuchsia.h"
@@ -249,11 +251,6 @@ class NetworkChangeNotifier::ObserverList {
   const scoped_refptr<
       base::ObserverListThreadSafe<DefaultNetworkActiveObserver>>
       default_network_active_observer_list_;
-
-  // Indicates if connection cost observer was added before
-  // network_change_notifier was initialized, if so ConnectionCostObserverAdded
-  // is invoked from constructor.
-  std::atomic_bool connection_cost_observers_added_ = false;
 };
 
 class NetworkChangeNotifier::SystemDnsConfigObserver
@@ -261,7 +258,7 @@ class NetworkChangeNotifier::SystemDnsConfigObserver
  public:
   virtual ~SystemDnsConfigObserver() = default;
 
-  void OnSystemDnsConfigChanged(absl::optional<DnsConfig> config) override {
+  void OnSystemDnsConfigChanged(std::optional<DnsConfig> config) override {
     NotifyObserversOfDNSChange();
   }
 };
@@ -312,7 +309,10 @@ std::unique_ptr<NetworkChangeNotifier> NetworkChangeNotifier::CreateIfNeeded(
       std::make_unique<NetworkChangeNotifierWin>();
   network_change_notifier->WatchForAddressChange();
   return network_change_notifier;
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ARKWEB)
+  return std::make_unique<NetworkChangeNotifierPassive>(initial_type,
+                                                        initial_subtype);
+#elif BUILDFLAG(IS_ANDROID)
   // Fallback to use NetworkChangeNotifierPassive if
   // NetworkChangeNotifierFactory is not set. Currently used for tests and when
   // running network service in a separate process.
@@ -325,7 +325,7 @@ std::unique_ptr<NetworkChangeNotifier> NetworkChangeNotifier::CreateIfNeeded(
   return std::make_unique<NetworkChangeNotifierLinux>(
       std::unordered_set<std::string>());
 #elif BUILDFLAG(IS_APPLE)
-  return std::make_unique<NetworkChangeNotifierMac>();
+  return std::make_unique<NetworkChangeNotifierApple>();
 #elif BUILDFLAG(IS_FUCHSIA)
   return std::make_unique<NetworkChangeNotifierFuchsia>(
       /*require_wlan=*/false);
@@ -446,7 +446,6 @@ double NetworkChangeNotifier::GetMaxBandwidthMbpsForConnectionSubtype(
       return std::numeric_limits<double>::infinity();
   }
   NOTREACHED();
-  return std::numeric_limits<double>::infinity();
 }
 
 // static
@@ -503,24 +502,31 @@ bool NetworkChangeNotifier::IsDefaultNetworkActive() {
 }
 
 // static
-const char* NetworkChangeNotifier::ConnectionTypeToString(
+base::cstring_view NetworkChangeNotifier::ConnectionTypeToString(
     ConnectionType type) {
-  static const char* const kConnectionTypeNames[] = {
-      "CONNECTION_UNKNOWN", "CONNECTION_ETHERNET",  "CONNECTION_WIFI",
-      "CONNECTION_2G",      "CONNECTION_3G",        "CONNECTION_4G",
-      "CONNECTION_NONE",    "CONNECTION_BLUETOOTH", "CONNECTION_5G",
-  };
+  static constexpr auto kConnectionTypeNames =
+      std::to_array<base::cstring_view>({
+          "CONNECTION_UNKNOWN",
+          "CONNECTION_ETHERNET",
+          "CONNECTION_WIFI",
+          "CONNECTION_2G",
+          "CONNECTION_3G",
+          "CONNECTION_4G",
+          "CONNECTION_NONE",
+          "CONNECTION_BLUETOOTH",
+          "CONNECTION_5G",
+      });
   static_assert(std::size(kConnectionTypeNames) ==
                     NetworkChangeNotifier::CONNECTION_LAST + 1,
                 "ConnectionType name count should match");
   if (type < CONNECTION_UNKNOWN || type > CONNECTION_LAST) {
     NOTREACHED();
-    return "CONNECTION_INVALID";
   }
   return kConnectionTypeNames[type];
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(ARKWEB_NETWORK_BASE)
 // static
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwner() {
   return g_network_change_notifier
@@ -699,13 +705,8 @@ void NetworkChangeNotifier::AddNetworkObserver(NetworkObserver* observer) {
 void NetworkChangeNotifier::AddConnectionCostObserver(
     ConnectionCostObserver* observer) {
   DCHECK(!observer->observer_list_);
-  GetObserverList().connection_cost_observers_added_ = true;
   observer->observer_list_ = GetObserverList().connection_cost_observer_list_;
   observer->observer_list_->AddObserver(observer);
-  base::AutoLock auto_lock(NetworkChangeNotifierCreationLock());
-  if (g_network_change_notifier) {
-    g_network_change_notifier->ConnectionCostObserverAdded();
-  }
 }
 
 void NetworkChangeNotifier::AddDefaultNetworkActiveObserver(
@@ -864,9 +865,6 @@ NetworkChangeNotifier::NetworkChangeNotifier(
     g_network_change_notifier = this;
 
     system_dns_config_notifier_->AddObserver(system_dns_config_observer_.get());
-    if (GetObserverList().connection_cost_observers_added_) {
-      g_network_change_notifier->ConnectionCostObserverAdded();
-    }
   }
   if (!omit_observers_in_constructor_for_testing) {
     network_change_calculator_ =
@@ -874,7 +872,8 @@ NetworkChangeNotifier::NetworkChangeNotifier(
   }
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(ARKWEB_NETWORK_BASE)
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwnerInternal() {
   return nullptr;
 }
@@ -1093,12 +1092,10 @@ void NetworkChangeNotifier::NotifyObserversOfDefaultNetworkActiveImpl() {
 
 NetworkChangeNotifier::DisableForTest::DisableForTest()
     : network_change_notifier_(g_network_change_notifier) {
-  DCHECK(g_network_change_notifier);
   g_network_change_notifier = nullptr;
 }
 
 NetworkChangeNotifier::DisableForTest::~DisableForTest() {
-  DCHECK(!g_network_change_notifier);
   g_network_change_notifier = network_change_notifier_;
 }
 
@@ -1107,5 +1104,51 @@ NetworkChangeNotifier::ObserverList& NetworkChangeNotifier::GetObserverList() {
   static base::NoDestructor<NetworkChangeNotifier::ObserverList> observers;
   return *observers;
 }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+// static
+const std::vector<std::string> NetworkChangeNotifier::GetDnsServers() {
+  std::vector<std::string> dns_servers;
+  if (!g_network_change_notifier) {
+    return dns_servers;
+  }
+  dns_servers = g_network_change_notifier->GetCurrentDnsServers();
+  return dns_servers;
+}
+
+const std::vector<std::string> NetworkChangeNotifier::GetCurrentDnsServers() {
+  return std::vector<std::string>();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+// static
+void NetworkChangeNotifier::BindToNetwork(int32_t network_for_dns) {
+  if (g_network_change_notifier) {
+    g_network_change_notifier->BindDnsToNetwork(network_for_dns);
+  } else {
+    LOG(ERROR) << "NetworkChangeNotifier bindDnsToNetwork failed, "
+                  "network_for_dns "
+               << network_for_dns;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "NetworkChangeNotifier bindDnsToNetwork failed, "
+                           "network_for_dns "
+                        << network_for_dns;
+#endif
+  }
+}
+
+void NetworkChangeNotifier::BindDnsToNetwork(int32_t network_for_dns) {
+  LOG(INFO) << "NetworkChangeNotifier bindDnsToNetwork, network_for_dns "
+            << network_for_dns;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO)
+      << "NetworkChangeNotifier bindDnsToNetwork, network_for_dns "
+      << network_for_dns;  
+#endif
+  return;
+}
+#endif
 
 }  // namespace net

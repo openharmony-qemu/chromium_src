@@ -4,7 +4,6 @@
 <translation id="1002108253973310084">Дал келбеген протокол версиясы табылды. Эки компьютерде тең программанын эң акыркы версияcы орнотулганын текшерип, дагы аракет кылып көрүңүз.</translation>
 <translation id="1008557486741366299">Азыр эмес</translation>
 <translation id="1201402288615127009">Кийинки</translation>
-<translation id="1296511125400541222">Copyright 2023 The Chromium Authors. Бардык укуктар корголгон.</translation>
 <translation id="1297009705180977556"><ph name="HOSTNAME" /> башкы түйүнүнө туташууда ката кетти</translation>
 <translation id="1450760146488584666">Суралган нерсе жок.</translation>
 <translation id="1480046233931937785">Насыялар</translation>
@@ -29,7 +28,6 @@
 <translation id="2329392777730037872">Кардардын <ph name="URL" /> дареги ачылбай калды.</translation>
 <translation id="2359808026110333948">Улантуу</translation>
 <translation id="2366718077645204424">Хостко жетүү мүмкүн болбой жатат. Буга колдонулуп жаткан тармактын конфигурациясы тоскоол болуп жатышы мүмкүн.</translation>
-<translation id="2370754117186920852"><ph name="OPTIONAL_OFFLINE_REASON" /> Акыркы жолу онлайнда <ph name="RELATIVE_TIMESTAMP" />.</translation>
 <translation id="2504109125669302160"><ph name="PRODUCT_NAME" /> кызматына "Атайын мүмкүнчүлүктөр" уруксатын берүү</translation>
 <translation id="2509394361235492552"><ph name="HOSTNAME" /> башкы түйүнүнө туташты</translation>
 <translation id="2540992418118313681">Бул компьютерди башка колдонуучу көрүп жана көзөмөлдөгүдөй кылып бөлүшкүңүз келеби?</translation>
@@ -54,7 +52,6 @@
 <translation id="3423542133075182604">Коопсуздук ачкычын алыстан башкаруу процесси</translation>
 <translation id="3581045510967524389">Тармакка туташа алган жок. Түзмөгүңүздүн онлайн абалында турганын текшериңиз.</translation>
 <translation id="3596628256176442606">Бул кызмат Chromoting кардарларынан кирүүчү туташууларды иштетет.</translation>
-<translation id="369442766917958684">Оффлайн.</translation>
 <translation id="3695446226812920698">Үйрөнүп алыңыз</translation>
 <translation id="3776024066357219166">Chrome Алыскы иштакта сеансыңыз аяктады.</translation>
 <translation id="3858860766373142691">Аталышы</translation>
@@ -89,7 +86,6 @@
 <translation id="4808503597364150972"><ph name="HOSTNAME" /> үчүн PIN'иңизди киргизиңиз.</translation>
 <translation id="4812684235631257312">Хост</translation>
 <translation id="4867841927763172006">PrtScn жөнөтүү</translation>
-<translation id="4960795469833295568">Copyright 2023 Google LLC. Бардык укуктар корголгон.</translation>
 <translation id="4974476491460646149"><ph name="HOSTNAME" /> башкы түйүнү менен туташуу аяктады</translation>
 <translation id="4985296110227979402">Алыстан кирүү мүмкүнчүлүгүн алуу үчүн алгач компьютериңизди жөндөп алыңыз</translation>
 <translation id="4987330545941822761">Chrome Алыскы иштакта URL даректерин ачуу үчүн серепчини аныктай алган жок. Аны төмөндөгү тизмеден тандаңыз.</translation>
@@ -107,7 +103,6 @@
 <translation id="5601503069213153581">PIN</translation>
 <translation id="5690427481109656848">Google LLC</translation>
 <translation id="5708869785009007625">Иштактаңыз учурда <ph name="USER" /> менен бөлүшүлүүдө.</translation>
-<translation id="5750083143895808682">Аккаунтка <ph name="EMAIL_ADDRESS" /> менен кирдиңиз.</translation>
 <translation id="579702532610384533">Кайра туташуу</translation>
 <translation id="5810269635982033450">Экранды компьютердин сенсордук тактасы катары иштетүү</translation>
 <translation id="5823554426827907568"><ph name="CLIENT_USERNAME" /> экраныңызды көрүү жана баскычтоп менен чычканды көзөмөлдөөгө уруксат сурады. Бул сурамды күтпөсөңүз, ''<ph name="IDS_SHARE_CONFIRM_DIALOG_DECLINE" />'' баскычын басыңыз. Же болбосо, даяр болгондо туташууга уруксат берүү үчүн ''<ph name="IDS_SHARE_CONFIRM_DIALOG_CONFIRM" />'' баскычын тандаңыз.</translation>
@@ -154,7 +149,8 @@
 <translation id="7693372326588366043">Хосттор тизмесин жаңылоо</translation>
 <translation id="7714222945760997814">Бул тууралуу кабарлоо</translation>
 <translation id="7868137160098754906">Алыскы компьютер үчүн PIN'иңизди киргизиңиз.</translation>
-<translation id="7895403300744144251">Алыстагы компьютердин коопсуздук саясаттарынан улам аккаунтуңуздан туташа албайсыз.</translation>
+<translation id="7881455334687220899">Автордук укук 2024 The Chromium Authors. Бардык укуктар корголгон.</translation>
+<translation id="7895403300744144251">Алыстагы компьютердин коопсуздук эрежелеринен улам аккаунтуңуздан туташа албайсыз.</translation>
 <translation id="7936528439960309876">Оң жакка бекитүү</translation>
 <translation id="7970576581263377361">Аныктыгы текшерилбей калды. Chromium'га кайра кириңиз.</translation>
 <translation id="7981525049612125370">Аралыктагы сеанстын мөөнөтү өтүп кетти.</translation>
@@ -183,8 +179,9 @@
 <translation id="858006550102277544">Жорум</translation>
 <translation id="8743328882720071828">Бул компьютерди <ph name="CLIENT_USERNAME" /> деген колдонуучу көрүп жана көзөмөлдөiүдөй кылып уруксат бересизби?</translation>
 <translation id="8747048596626351634">Сеанс бузулду же башталбай калды. Эгер алыскы компьютерде ~/.chrome-remote-desktop-session сеансы башталган болсо, ал компьютерде иш такта чөйрөсү же терезе башкаргыч сыяктуу маңдайкы фондо көпкө иштеген процесс иштетээрин тактаңыз.</translation>
-<translation id="8804164990146287819">Купуялык саясаты</translation>
+<translation id="8804164990146287819">Купуялык эрежелери</translation>
 <translation id="8906511416443321782">Аудиону жаздырып алып, Chrome Алыскы иш такта кардарына алып ойнотуу үчүн микрофонду колдонууга уруксат берүү керек.</translation>
+<translation id="9042277333359847053">Автордук укук 2024 Google LLC. Бардык укуктар корголгон.</translation>
 <translation id="9111855907838866522">Алыскы түзмөккө туташып турасыз. Экранды төрт манжаңыз менен таптап туруп, менюну ачыңыз.</translation>
 <translation id="9126115402994542723">Бул түзмөктөн ушул хостко туташканда PIN код экинчи суралбасын.</translation>
 <translation id="916856682307586697">Демейки сеансты иштетүү</translation>

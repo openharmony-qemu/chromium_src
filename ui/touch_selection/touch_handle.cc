@@ -39,7 +39,7 @@ bool RectIntersectsCircle(const gfx::RectF& rect,
   DCHECK_GT(circle_radius, 0.f);
   // An intersection occurs if the closest point between the rect and the
   // circle's center is less than the circle's radius.
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   return rect.Contains(circle_center);
 #else
   gfx::PointF closest_point_in_rect(circle_center);
@@ -96,7 +96,8 @@ TouchHandle::TouchHandle(TouchHandleClient* client,
   handle_horizontal_padding_ = drawable_->GetDrawableHorizontalPaddingRatio();
 }
 
-TouchHandle::~TouchHandle() {}
+TouchHandle::~TouchHandle() {
+}
 
 void TouchHandle::SetEnabled(bool enabled) {
   if (enabled_ == enabled)
@@ -137,7 +138,16 @@ void TouchHandle::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom) {
   DCHECK(enabled_);
   if (focus_top_ == top && focus_bottom_ == bottom)
     return;
-
+#if BUILDFLAG(ARKWEB_MENU)
+  if (focus_bottom_.y() < focus_top_.y()) {
+    if (focus_top_ == bottom && focus_bottom_ == top)
+      return;
+    focus_top_ = bottom;
+    focus_bottom_ = top;
+    SetUpdateLayoutRequired();
+    return;
+  }
+#endif
   focus_top_ = top;
   focus_bottom_ = bottom;
   SetUpdateLayoutRequired();
@@ -188,23 +198,23 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       // the drawable area. This makes it easier to interact with the line of
       // text above the drawable.
       if (touch_point.y() < drawable_bounds.y() ||
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius) ||
           !event.FromOverlay()) {
 #else
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius)) {
-#endif  // #ifdef OHOS_CLIPBOARD
+#endif  // #if BUILDFLAG(ARKWEB_MENU)
         EndDrag();
         return false;
       }
       touch_down_position_ = touch_point;
       touch_drag_offset_ = focus_bottom_ - touch_down_position_;
       touch_down_time_ = event.GetEventTime();
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
       if (orientation_ == TouchHandleOrientation::LEFT) {
-        touch_drag_offset_ = focus_bottom_ - touch_down_position_;
+        touch_drag_offset_ = focus_top_ - touch_down_position_;
       }
-#endif
+#endif  // BUILDFLAG(ARKWEB_MENU)
       BeginDrag();
     } break;
 
@@ -212,10 +222,13 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       gfx::PointF touch_move_position(event.GetX(), event.GetY());
       is_drag_within_tap_region_ &=
           client_->IsWithinTapSlop(touch_down_position_ - touch_move_position);
-
+#if BUILDFLAG(ARKWEB_MENU)
+      client_->OnDragUpdate(*this, touch_move_position);
+#else
       // Note that we signal drag update even if we're inside the tap region,
       // as there are cases where characters are narrower than the slop length.
       client_->OnDragUpdate(*this, touch_move_position + touch_drag_offset_);
+#endif // BUILDFLAG(ARKWEB_MENU)
     } break;
 
     case MotionEvent::Action::UP: {
@@ -268,7 +281,7 @@ gfx::RectF TouchHandle::GetVisibleBounds() const {
   return drawable_->GetVisibleBounds();
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
 void TouchHandle::SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) {
   drawable_->SetEdge(top, bottom);
 }
@@ -325,13 +338,13 @@ void TouchHandle::UpdateHandleLayout() {
   }
 
   drawable_->SetOrientation(orientation_, mirror_vertical_, mirror_horizontal_);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_MENU)
   drawable_->SetEdge(focus_top_, focus_bottom_);
 #endif
   drawable_->SetOrigin(ComputeHandleOrigin());
 }
 
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
 void TouchHandle::ResetPositionAfterDragEnd() {
   if (!is_visible_ || !drawable_) {
     return;
@@ -355,8 +368,8 @@ gfx::PointF TouchHandle::ComputeHandleOrigin() const {
   int focal_offset_x = 0;
   int focal_offset_y = mirror_vertical_ ? drawable_bounds.height() : 0;
   switch (orientation_) {
-    case ui::TouchHandleOrientation::LEFT:
-#if BUILDFLAG(IS_OHOS)
+    case TouchHandleOrientation::LEFT:
+#if BUILDFLAG(ARKWEB_MENU)
       focal_offset_x =
           mirror_horizontal_
               ? drawable_width * (1.0f - handle_horizontal_padding_)
@@ -368,14 +381,14 @@ gfx::PointF TouchHandle::ComputeHandleOrigin() const {
               : drawable_width * (1.0f - handle_horizontal_padding_);
 #endif
       break;
-    case ui::TouchHandleOrientation::RIGHT:
+    case TouchHandleOrientation::RIGHT:
       focal_offset_x =
           mirror_horizontal_
               ? drawable_width * (1.0f - handle_horizontal_padding_)
               : drawable_width * handle_horizontal_padding_;
       break;
-    case ui::TouchHandleOrientation::CENTER:
-#if BUILDFLAG(IS_OHOS)
+    case TouchHandleOrientation::CENTER:
+#if BUILDFLAG(ARKWEB_MENU)
       focal_offset_x =
           mirror_horizontal_
               ? drawable_width * (1.0f - handle_horizontal_padding_)
@@ -384,9 +397,8 @@ gfx::PointF TouchHandle::ComputeHandleOrigin() const {
       focal_offset_x = drawable_width * 0.5f;
 #endif
       break;
-    case ui::TouchHandleOrientation::UNDEFINED:
+    case TouchHandleOrientation::UNDEFINED:
       NOTREACHED() << "Invalid touch handle orientation.";
-      break;
   };
 
   return focus - gfx::Vector2dF(focal_offset_x, focal_offset_y);

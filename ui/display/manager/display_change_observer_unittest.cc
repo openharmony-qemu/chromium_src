@@ -6,30 +6,30 @@
 
 #include <cmath>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <tuple>
 
 #include "base/command_line.h"
-#include "base/strings/string_piece_forward.h"
 #include "base/strings/stringprintf.h"
 #include "base/test/gtest_util.h"
 #include "base/test/scoped_command_line.h"
 #include "base/test/scoped_feature_list.h"
-#include "build/chromeos_buildflags.h"
 #include "cc/base/math_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/display/display.h"
 #include "ui/display/display_features.h"
 #include "ui/display/display_switches.h"
-#include "ui/display/fake/fake_display_snapshot.h"
 #include "ui/display/manager/display_configurator.h"
 #include "ui/display/manager/display_manager.h"
-#include "ui/display/manager/display_manager_util.h"
 #include "ui/display/manager/managed_display_info.h"
+#include "ui/display/manager/test/fake_display_snapshot.h"
+#include "ui/display/manager/util/display_manager_util.h"
 #include "ui/display/screen.h"
 #include "ui/display/types/display_constants.h"
 #include "ui/display/types/display_mode.h"
+#include "ui/display/util/display_util.h"
 #include "ui/events/devices/device_data_manager.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_conversions.h"
@@ -53,12 +53,14 @@ float ComputeDeviceScaleFactor(float dpi, const gfx::Size& resolution) {
   return DisplayChangeObserver::FindDeviceScaleFactor(dpi, resolution);
 }
 
-std::unique_ptr<DisplayMode> MakeDisplayMode(int width,
-                                             int height,
-                                             bool is_interlaced,
-                                             float refresh_rate) {
-  return std::make_unique<DisplayMode>(gfx::Size(width, height), is_interlaced,
-                                       refresh_rate);
+std::unique_ptr<DisplayMode> MakeDisplayMode(
+    int width,
+    int height,
+    bool is_interlaced,
+    float refresh_rate,
+    const std::optional<float>& vsync_rate_min = std::nullopt) {
+  return std::make_unique<DisplayMode>(gfx::Size{width, height}, is_interlaced,
+                                       refresh_rate, vsync_rate_min);
 }
 
 }  // namespace
@@ -163,22 +165,19 @@ TEST_F(DisplayChangeObserverPanelRadiiTest, RadiiSpecifiedForInternalDisplay) {
       display_change_observer_.get(), display_snapshot.get(),
       default_display_mode_.get());
 
-  EXPECT_EQ(display_info.rounded_corners_radii(),
+  EXPECT_EQ(display_info.panel_corners_radii(),
             gfx::RoundedCornersF(16, 16, 15, 15));
 }
 
-TEST_F(DisplayChangeObserverPanelRadiiTest, RadiiNotSetForExternalDisplays) {
-  // Specifies radii for connectors that are different from the connector of
-  // the display(snapshot) under test.
+TEST_F(DisplayChangeObserverPanelRadiiTest, IgnoreRadiiIfNotInternalDisplay) {
   command_line_.GetProcessCommandLine()->AppendSwitchASCII(
       switches::kDisplayProperties,
-      "[{\"connector-type\": 14, \"rounded-corners\": {\"bottom-left\": 15, "
+      "[{\"connector-type\": 15, \"rounded-corners\": {\"bottom-left\": 15, "
       "\"bottom-right\": 15, \"top-left\": 16, \"top-right\": 16}}]");
 
   InitializeDisplayChangeObserver();
 
-  // Radii is not specified for the connection protocol
-  // `DisplayConnectionProtocol::k9PinDin` through command line.
+  // The snapshot is of a display that is not a internal display.
   std::unique_ptr<DisplaySnapshot> display_snapshot =
       FakeDisplaySnapshot::Builder()
           .SetId(123)
@@ -190,7 +189,7 @@ TEST_F(DisplayChangeObserverPanelRadiiTest, RadiiNotSetForExternalDisplays) {
       display_change_observer_.get(), display_snapshot.get(),
       default_display_mode_.get());
 
-  EXPECT_TRUE(display_info.rounded_corners_radii().IsEmpty());
+  EXPECT_TRUE(display_info.panel_corners_radii().IsEmpty());
 }
 
 TEST_P(DisplayChangeObserverTest, GetExternalManagedDisplayModeList) {
@@ -299,15 +298,15 @@ TEST_P(DisplayChangeObserverTest, GetExternalManagedDisplayModeList) {
 }
 
 TEST_P(DisplayChangeObserverTest, GetEmptyExternalManagedDisplayModeList) {
+  DisplaySnapshot::ColorInfo color_info;
   FakeDisplaySnapshot display_snapshot(
       /*display_id=*/123, /*port_display_id=*/123, /*edid_display_id=*/456,
       /*connector_index=*/0x0001, gfx::Point(), gfx::Size(),
       DISPLAY_CONNECTION_TYPE_UNKNOWN,
       /*base_connector_id=*/1u, /*path_topology=*/{}, false, false,
-      PrivacyScreenState::kNotSupported, false, false, false, std::string(), {},
-      nullptr, nullptr, 0, gfx::Size(), gfx::ColorSpace(),
-      /*bits_per_channel=*/8u, /*hdr_static_metadata=*/{}, kVrrNotCapable,
-      absl::nullopt, DrmFormatsAndModifiers());
+      PrivacyScreenState::kNotSupported, false, std::string(), base::FilePath(),
+      {}, nullptr, nullptr, 0, gfx::Size(), color_info,
+      VariableRefreshRateState::kVrrNotCapable, DrmFormatsAndModifiers());
 
   ManagedDisplayInfo::ManagedDisplayModeList display_modes =
       DisplayChangeObserver::GetExternalManagedDisplayModeList(
@@ -535,16 +534,16 @@ TEST_P(DisplayChangeObserverTest, WCGDisplayColorSpaces) {
 
   const auto color_space = display_color_spaces.GetRasterColorSpace();
   EXPECT_TRUE(color_space.IsValid());
-  EXPECT_EQ(color_space.GetPrimaryID(), gfx::ColorSpace::PrimaryID::P3);
+  EXPECT_EQ(color_space.GetPrimaryID(), gfx::ColorSpace::PrimaryID::BT709);
   EXPECT_EQ(color_space.GetTransferID(), gfx::ColorSpace::TransferID::SRGB);
 }
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
 TEST_P(DisplayChangeObserverTest, HDRDisplayColorSpaces) {
-  // TODO(crbug.com/1012846): Remove this flag and provision when HDR is fully
+  // TODO(crbug.com/40652358): Remove this flag and provision when HDR is fully
   // supported on ChromeOS.
   base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndEnableFeature(features::kUseHDRTransferFunction);
+  scoped_feature_list.InitAndEnableFeature(
+      features::kEnableExternalDisplayHDR10Mode);
 
   const auto display_color_space = gfx::ColorSpace::CreateHDR10();
   const std::unique_ptr<DisplaySnapshot> display_snapshot =
@@ -554,7 +553,12 @@ TEST_P(DisplayChangeObserverTest, HDRDisplayColorSpaces) {
           .SetNativeMode(MakeDisplayMode(1920, 1080, true, 60))
           .SetColorSpace(display_color_space)
           .SetBitsPerChannel(10u)
-          .SetHDRStaticMetadata({600.0, 500.0, 0.01})
+          .SetHDRStaticMetadata(
+              {609.0, 500.0, 0.01,
+               gfx::HDRStaticMetadata::EotfMask({
+                   gfx::HDRStaticMetadata::Eotf::kGammaSdrRange,
+                   gfx::HDRStaticMetadata::Eotf::kPq,
+               })})
           .Build();
 
   ui::DeviceDataManager::CreateInstance();
@@ -569,33 +573,126 @@ TEST_P(DisplayChangeObserverTest, HDRDisplayColorSpaces) {
   const auto display_color_spaces = display_info.display_color_spaces();
   EXPECT_TRUE(display_color_spaces.SupportsHDR());
 
-  // |display_color_spaces| still supports SDR rendering.
+  // Ensure that all spaces be HDR10, and have headroom of 3x (609/203).
   EXPECT_EQ(
-      DisplaySnapshot::PrimaryFormat(),
+      gfx::BufferFormat::RGBA_1010102,
       display_color_spaces.GetOutputBufferFormat(gfx::ContentColorUsage::kSRGB,
                                                  /*needs_alpha=*/true));
-
-  const auto sdr_color_space =
-      display_color_spaces.GetOutputColorSpace(gfx::ContentColorUsage::kSRGB,
-                                               /*needs_alpha=*/true);
-  EXPECT_TRUE(sdr_color_space.IsValid());
-  EXPECT_EQ(sdr_color_space.GetPrimaryID(), display_color_space.GetPrimaryID());
-  EXPECT_EQ(sdr_color_space.GetTransferID(), gfx::ColorSpace::TransferID::SRGB);
-
   EXPECT_EQ(
+      gfx::ColorSpace::CreateHDR10(),
+      display_color_spaces.GetOutputColorSpace(gfx::ContentColorUsage::kSRGB,
+                                               /*needs_alpha=*/true));
+  EXPECT_EQ(
+      gfx::BufferFormat::RGBA_1010102,
       display_color_spaces.GetOutputBufferFormat(gfx::ContentColorUsage::kHDR,
-                                                 /*needs_alpha=*/true),
-      gfx::BufferFormat::RGBA_1010102);
-
-  const auto hdr_color_space =
+                                                 /*needs_alpha=*/true));
+  EXPECT_EQ(
+      gfx::ColorSpace::CreateHDR10(),
       display_color_spaces.GetOutputColorSpace(gfx::ContentColorUsage::kHDR,
-                                               /*needs_alpha=*/true);
-  EXPECT_TRUE(hdr_color_space.IsValid());
-  EXPECT_EQ(hdr_color_space.GetPrimaryID(), gfx::ColorSpace::PrimaryID::BT2020);
-  EXPECT_EQ(hdr_color_space.GetTransferID(),
-            gfx::ColorSpace::TransferID::PIECEWISE_HDR);
+                                               /*needs_alpha=*/true));
+  EXPECT_EQ(kDefaultHdrMaxLuminanceRelative,
+            display_color_spaces.GetHDRMaxLuminanceRelative());
 }
-#endif
+
+TEST_P(DisplayChangeObserverTest, VSyncRateMin) {
+  ui::DeviceDataManager::CreateInstance();
+  DisplayManager manager(nullptr);
+  DisplayChangeObserver observer(&manager);
+
+  // Verify that vsync_rate_min is absent from DisplayInfo when it is not
+  // present from the DisplayMode.
+  {
+    const std::unique_ptr<DisplaySnapshot> display_snapshot =
+        FakeDisplaySnapshot::Builder()
+            .SetId(123)
+            .SetName("AmazingFakeDisplay")
+            .SetNativeMode(MakeDisplayMode(1920, 1080, true, 60))
+            .Build();
+    const std::unique_ptr<DisplayMode> display_mode =
+        MakeDisplayMode(1920, 1080, true, 60);
+    const ManagedDisplayInfo display_info = CreateManagedDisplayInfo(
+        &observer, display_snapshot.get(), display_mode.get());
+
+    EXPECT_EQ(display_info.vsync_rate_min(), std::nullopt);
+  }
+
+  // Verify that the value of vsync_rate_min is correctly taken from the display
+  // mode.
+  {
+    const std::unique_ptr<DisplaySnapshot> display_snapshot =
+        FakeDisplaySnapshot::Builder()
+            .SetId(123)
+            .SetName("AmazingFakeDisplay")
+            .SetNativeMode(MakeDisplayMode(1920, 1080, true, 60))
+            .Build();
+    const std::unique_ptr<DisplayMode> display_mode =
+        MakeDisplayMode(1920, 1080, true, 60, 48.000488f);
+    const ManagedDisplayInfo display_info = CreateManagedDisplayInfo(
+        &observer, display_snapshot.get(), display_mode.get());
+
+    EXPECT_EQ(display_info.vsync_rate_min(), 48.000488f);
+  }
+}
+
+TEST_P(DisplayChangeObserverTest, DisplayModeNativeCalculation) {
+  ui::DeviceDataManager::CreateInstance();
+  DisplayManager manager(nullptr);
+  DisplayChangeObserver observer(&manager);
+
+  // For external display, verify that native attribute is determined by
+  // comparing current mode with the DisplaySnapshot's native mode. Native is
+  // true when they are the same.
+  {
+    const std::unique_ptr<DisplaySnapshot> display_snapshot =
+        FakeDisplaySnapshot::Builder()
+            .SetId(123)
+            .SetType(DISPLAY_CONNECTION_TYPE_DISPLAYPORT)
+            .SetNativeMode(MakeDisplayMode(1920, 1080, true, 60))
+            .SetCurrentMode(MakeDisplayMode(1920, 1080, true, 60))
+            .Build();
+
+    const DisplayMode* display_mode = display_snapshot->current_mode();
+    const ManagedDisplayInfo display_info = CreateManagedDisplayInfo(
+        &observer, display_snapshot.get(), display_mode);
+
+    EXPECT_TRUE(display_info.native());
+  }
+
+  // For external display, verify that native attribute is determined by
+  // comparing current mode with the DisplaySnapshot's native mode. Native is
+  // false when they are different.
+  {
+    const std::unique_ptr<DisplaySnapshot> display_snapshot =
+        FakeDisplaySnapshot::Builder()
+            .SetId(123)
+            .SetType(DISPLAY_CONNECTION_TYPE_DISPLAYPORT)
+            .SetNativeMode(MakeDisplayMode(3840, 2160, true, 60))
+            .SetCurrentMode(MakeDisplayMode(1920, 1080, true, 60))
+            .Build();
+
+    const DisplayMode* display_mode = display_snapshot->current_mode();
+    const ManagedDisplayInfo display_info = CreateManagedDisplayInfo(
+        &observer, display_snapshot.get(), display_mode);
+
+    EXPECT_FALSE(display_info.native());
+  }
+
+  // For internal display, verify that native attribute is always true.
+  {
+    const std::unique_ptr<DisplaySnapshot> display_snapshot =
+        FakeDisplaySnapshot::Builder()
+            .SetId(123)
+            .SetType(DISPLAY_CONNECTION_TYPE_INTERNAL)
+            .SetCurrentMode(MakeDisplayMode(1920, 1080, true, 60))
+            .Build();
+
+    const DisplayMode* display_mode = display_snapshot->current_mode();
+    const ManagedDisplayInfo display_info = CreateManagedDisplayInfo(
+        &observer, display_snapshot.get(), display_mode);
+
+    EXPECT_TRUE(display_info.native());
+  }
+}
 
 INSTANTIATE_TEST_SUITE_P(All,
                          DisplayChangeObserverTest,

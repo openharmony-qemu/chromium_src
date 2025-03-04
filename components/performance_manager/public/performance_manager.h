@@ -12,9 +12,12 @@
 #include "base/memory/ptr_util.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/sequenced_task_runner.h"
+#include "components/performance_manager/public/browser_child_process_host_id.h"
 #include "components/performance_manager/public/render_process_host_id.h"
+#include "third_party/blink/public/common/tokens/tokens.h"
 
 namespace content {
+class BrowserChildProcessHost;
 class RenderFrameHost;
 class RenderProcessHost;
 class WebContents;
@@ -31,6 +34,7 @@ class PerformanceManagerMainThreadMechanism;
 class PerformanceManagerMainThreadObserver;
 class PerformanceManagerOwned;
 class PerformanceManagerRegistered;
+class WorkerNode;
 
 template <typename DerivedType>
 class PerformanceManagerRegisteredImpl;
@@ -81,15 +85,6 @@ class PerformanceManager {
   static base::WeakPtr<PageNode> GetPrimaryPageNodeForWebContents(
       content::WebContents* wc);
 
-  // Returns a WeakPtr to the PageNode associated with a given RenderFrameHost,
-  // or nullptr if no such page node exists. Valid to call from the main thread
-  // only, the returned WeakPtr should only be dereferenced on the PM sequence
-  // (e.g. it can be used in a CallOnGraph callback). This is equivalent to
-  // calling `GetFrameNodeForRenderFrameHost()` and subsequently calling
-  // `FrameNode::GetPageNode()`.
-  static base::WeakPtr<PageNode> GetPageNodeForRenderFrameHost(
-      content::RenderFrameHost* rfh);
-
   // Returns a WeakPtr to the FrameNode associated with a given
   // RenderFrameHost, or a null WeakPtr if there's no FrameNode for this RFH.
   // (There is a brief window after the RFH is created before the FrameNode is
@@ -98,6 +93,12 @@ class PerformanceManager {
   // CallOnGraph callback).
   static base::WeakPtr<FrameNode> GetFrameNodeForRenderFrameHost(
       content::RenderFrameHost* rfh);
+
+  // Returns a WeakPtr to the ProcessNode associated with the browser process,
+  // or a null WeakPtr if there is none. Valid to call from the main thread
+  // only, the returned WeakPtr should only be dereferenced on the PM sequence
+  // (e.g. it can be used in a CallOnGraph callback).
+  static base::WeakPtr<ProcessNode> GetProcessNodeForBrowserProcess();
 
   // Returns a WeakPtr to the ProcessNode associated with a given
   // RenderProcessHost, or a null WeakPtr if there's no ProcessNode for this
@@ -117,6 +118,30 @@ class PerformanceManager {
   // can be used in a CallOnGraph callback).
   static base::WeakPtr<ProcessNode> GetProcessNodeForRenderProcessHostId(
       RenderProcessHostId id);
+
+  // Returns a WeakPtr to the ProcessNode associated with a given
+  // BrowserChildProcessHost, or a null WeakPtr if there's no ProcessNode for
+  // this BCPH. (There is a brief window after the BCPH is created before the
+  // ProcessNode is added.) Valid to call from the main thread only, the
+  // returned WeakPtr should only be dereferenced on the PM sequence (e.g. it
+  // can be used in a CallOnGraph callback).
+  static base::WeakPtr<ProcessNode> GetProcessNodeForBrowserChildProcessHost(
+      content::BrowserChildProcessHost* bcph);
+
+  // Returns a WeakPtr to the ProcessNode associated with a given
+  // BrowserChildProcessHostId (which must be valid), or a null WeakPtr if
+  // there's no ProcessNode for this ID. (There may be no BCPH for this ID, or
+  // it may be during a brief window after the BCPH is created but before the
+  // ProcessNode is added.) Valid to call from the main thread only, the
+  // returned WeakPtr should only be dereferenced on the PM sequence (e.g. it
+  // can be used in a CallOnGraph callback).
+  static base::WeakPtr<ProcessNode> GetProcessNodeForBrowserChildProcessHostId(
+      BrowserChildProcessHostId id);
+
+  // Returns a WeakPtr to the WorkerNode associated with the given WorkerToken,
+  // or a null WeakPtr if there's no WorkerNode for this token.
+  static base::WeakPtr<WorkerNode> GetWorkerNodeForToken(
+      const blink::WorkerToken& token);
 
   // Adds / removes an observer that is notified of PerformanceManager events
   // that happen on the main thread. Can only be called on the main thread.
@@ -180,6 +205,10 @@ class PerformanceManager {
   // the graph, graphowned objects or other performance manager related objects.
   // In practice it's preferable to use CallOnGraph() whenever possible.
   static scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
+
+  // Logs metrics on Performance Manager's memory usage to UMA. Does nothing
+  // when IsAvailable() returns false. Valid to call from the main thread only.
+  static void RecordMemoryMetrics();
 
  protected:
   PerformanceManager();

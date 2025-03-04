@@ -30,8 +30,13 @@
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/download_save_info.h"
 #include "components/download/public/common/rate_estimator.h"
+#include "components/enterprise/buildflags/buildflags.h"
 #include "components/services/quarantine/public/mojom/quarantine.mojom.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
+
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+#include "components/enterprise/obfuscation/core/download_obfuscator.h"  // nogncheck
+#endif  // BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
 
 namespace download {
 
@@ -71,6 +76,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
       const std::string& client_guid,
       const GURL& source_url,
       const GURL& referrer_url,
+      const std::optional<url::Origin>& request_initiator,
       mojo::PendingRemote<quarantine::mojom::Quarantine> remote_quarantine,
       RenameCompletionCallback callback) override;
   void Detach() override;
@@ -132,9 +138,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
     // DownloadItem/DownloadFile somewhere.
     DownloadInterruptReason GetCompletionStatus() const;
 
-    using CompletionCallback = base::OnceCallback<void(SourceStream*)>;
-    // Register an callback to be called when download completes.
-    void RegisterCompletionCallback(CompletionCallback callback);
+    // Requests that on completion, `StreamSource` invokes
+    // `DownloadFileImpl::OnStreamCompleted` with `this`.
+    void RequestCompletionNotification(
+        base::WeakPtr<DownloadFileImpl> download_file);
 
     InputStream::StreamState Read(scoped_refptr<net::IOBuffer>* data,
                                   size_t* length);
@@ -224,6 +231,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
                         // |new_path|, try to create a unique file by appending
                         // a uniquifier.
     ANNOTATE_WITH_SOURCE_INFORMATION = 1 << 1
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+    ,
+    OVERWRITE = 10 << 1  // Don’t uniquify and annotate.
+#endif                   // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   };
 
   struct RenameParameters {
@@ -237,6 +248,8 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
     std::string client_guid;  // See BaseFile::AnnotateWithSourceInformation()
     GURL source_url;          // See BaseFile::AnnotateWithSourceInformation()
     GURL referrer_url;        // See BaseFile::AnnotateWithSourceInformation()
+    std::optional<url::Origin>
+        request_initiator;  // See BaseFile::AnnotateWithSourceInformation()
     mojo::PendingRemote<quarantine::mojom::Quarantine> remote_quarantine;
     int retries_left;         // RenameWithRetryInternal() will
                               // automatically retry until this
@@ -285,6 +298,13 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 
   // Called when a stream completes.
   void OnStreamCompleted(SourceStream* source_stream);
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+  void OnTimeout(SourceStream* source_stream,
+                 DownloadInterruptReason reason,
+                 InputStream::StreamState stream_state,
+                 bool should_terminate);
+#endif
 
   // Notify |observer_| about the download status.
   void NotifyObserver(SourceStream* source_stream,
@@ -361,6 +381,9 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   base::TimeTicks download_start_;
   RateEstimator rate_estimator_;
   int num_active_streams_;
+#if defined(ARKWEB_EX_DOWNLOAD)
+  std::unique_ptr<base::OneShotTimer> download_job_timer_;
+#endif
 
   // The slices received, this is being updated when new data are written.
   std::vector<DownloadItem::ReceivedSlice> received_slices_;
@@ -383,6 +406,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
   SEQUENCE_CHECKER(sequence_checker_);
+
+#if BUILDFLAG(ENTERPRISE_CONTENT_ANALYSIS)
+  std::unique_ptr<enterprise_obfuscation::DownloadObfuscator> obfuscator_;
+#endif
 
   base::WeakPtr<DownloadDestinationObserver> observer_;
   base::WeakPtrFactory<DownloadFileImpl> weak_factory_{this};

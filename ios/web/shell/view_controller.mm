@@ -11,6 +11,7 @@
 #import <memory>
 #import <utility>
 
+#import "base/memory/raw_ptr.h"
 #import "base/strings/sys_string_conversions.h"
 #import "ios/web/public/navigation/navigation_manager.h"
 #import "ios/web/public/navigation/referrer.h"
@@ -18,12 +19,10 @@
 #import "ios/web/public/web_state.h"
 #import "ios/web/public/web_state_delegate_bridge.h"
 #import "ios/web/public/web_state_observer_bridge.h"
-#import "net/base/mac/url_conversions.h"
+#import "ios/web/shell/shell_browser_state.h"
+#import "ios/web/shell/shell_web_client.h"
+#import "net/base/apple/url_conversions.h"
 #import "ui/base/page_transition_types.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 NSString* const kWebShellBackButtonAccessibilityLabel = @"Back";
 NSString* const kWebShellForwardButtonAccessibilityLabel = @"Forward";
@@ -35,7 +34,7 @@ using web::NavigationManager;
                              CRWWebStateObserver,
                              UITextFieldDelegate,
                              UIToolbarDelegate> {
-  web::BrowserState* _browserState;
+  raw_ptr<web::BrowserState> _browserState;
   std::unique_ptr<web::WebState> _webState;
   std::unique_ptr<web::WebStateObserverBridge> _webStateObserver;
   std::unique_ptr<web::WebStateDelegateBridge> _webStateDelegate;
@@ -49,14 +48,6 @@ using web::NavigationManager;
 @synthesize field = _field;
 @synthesize containerView = _containerView;
 @synthesize toolbarView = _toolbarView;
-
-- (instancetype)initWithBrowserState:(web::BrowserState*)browserState {
-  self = [super initWithNibName:nil bundle:nil];
-  if (self) {
-    _browserState = browserState;
-  }
-  return self;
-}
 
 - (void)dealloc {
   if (_webState) {
@@ -122,6 +113,10 @@ using web::NavigationManager;
   [_toolbarView setItems:@[
     back, forward, [[UIBarButtonItem alloc] initWithCustomView:field]
   ]];
+
+  web::ShellWebClient* client =
+      static_cast<web::ShellWebClient*>(web::GetWebClient());
+  _browserState = client->browser_state();
 
   web::WebState::CreateParams webStateCreateParams(_browserState);
   _webState = web::WebState::Create(webStateCreateParams);

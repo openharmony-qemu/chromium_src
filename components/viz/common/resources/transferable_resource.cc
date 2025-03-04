@@ -4,19 +4,41 @@
 
 #include "components/viz/common/resources/transferable_resource.h"
 #include "components/viz/common/resources/returned_resource.h"
+#include "gpu/command_buffer/client/client_shared_image.h"
 
 namespace viz {
 
 // static
-TransferableResource TransferableResource::MakeSoftware(
+TransferableResource TransferableResource::MakeSoftwareSharedBitmap(
     const SharedBitmapId& id,
+    const gpu::SyncToken& sync_token,
     const gfx::Size& size,
-    SharedImageFormat format) {
+    SharedImageFormat format,
+    ResourceSource source) {
   TransferableResource r;
   r.is_software = true;
-  r.mailbox_holder.mailbox = id;
+  r.memory_buffer_id_ = id;
+  r.sync_token_ = sync_token;
   r.size = size;
   r.format = format;
+  r.resource_source = source;
+  return r;
+}
+
+// static
+TransferableResource TransferableResource::MakeSoftwareSharedImage(
+    const scoped_refptr<gpu::ClientSharedImage>& client_shared_image,
+    const gpu::SyncToken& sync_token,
+    const gfx::Size& size,
+    SharedImageFormat format,
+    ResourceSource source) {
+  TransferableResource r;
+  r.is_software = true;
+  r.memory_buffer_id_ = client_shared_image->mailbox();
+  r.sync_token_ = sync_token;
+  r.size = size;
+  r.format = format;
+  r.resource_source = source;
   return r;
 }
 
@@ -27,16 +49,31 @@ TransferableResource TransferableResource::MakeGpu(
     const gpu::SyncToken& sync_token,
     const gfx::Size& size,
     SharedImageFormat format,
-    bool is_overlay_candidate) {
+    bool is_overlay_candidate,
+    ResourceSource source) {
   TransferableResource r;
   r.is_software = false;
-  r.mailbox_holder.mailbox = mailbox;
-  r.mailbox_holder.texture_target = texture_target;
-  r.mailbox_holder.sync_token = sync_token;
+  r.memory_buffer_id_ = mailbox;
+  r.texture_target_ = texture_target;
+  r.sync_token_ = sync_token;
   r.size = size;
   r.format = format;
   r.is_overlay_candidate = is_overlay_candidate;
+  r.resource_source = source;
   return r;
+}
+
+TransferableResource TransferableResource::MakeGpu(
+    const scoped_refptr<gpu::ClientSharedImage>& client_shared_image,
+    uint32_t texture_target,
+    const gpu::SyncToken& sync_token,
+    const gfx::Size& size,
+    SharedImageFormat format,
+    bool is_overlay_candidate,
+    ResourceSource source) {
+  CHECK(client_shared_image);
+  return MakeGpu(client_shared_image->mailbox(), texture_target, sync_token,
+                 size, format, is_overlay_candidate, source);
 }
 
 TransferableResource::TransferableResource() = default;
@@ -50,7 +87,7 @@ TransferableResource& TransferableResource::operator=(
 ReturnedResource TransferableResource::ToReturnedResource() const {
   ReturnedResource returned;
   returned.id = id;
-  returned.sync_token = mailbox_holder.sync_token;
+  returned.sync_token = sync_token_;
   returned.count = 1;
   return returned;
 }
@@ -63,6 +100,11 @@ std::vector<ReturnedResource> TransferableResource::ReturnResources(
   for (const auto& r : input)
     out.push_back(r.ToReturnedResource());
   return out;
+}
+
+bool TransferableResource::IsSoftwareSharedImage() const {
+  CHECK(is_software);
+  return absl::holds_alternative<gpu::Mailbox>(memory_buffer_id_);
 }
 
 }  // namespace viz

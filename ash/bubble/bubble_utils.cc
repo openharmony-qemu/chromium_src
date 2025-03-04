@@ -5,30 +5,32 @@
 #include "ash/bubble/bubble_utils.h"
 
 #include <memory>
-#include <utility>
 
 #include "ash/capture_mode/capture_mode_util.h"
 #include "ash/public/cpp/shell_window_ids.h"
 #include "ash/root_window_controller.h"
+#include "ash/shelf/hotseat_widget.h"
+#include "ash/shelf/shelf.h"
 #include "ash/style/typography.h"
 #include "base/check.h"
+#include "base/types/cxx23_to_underlying.h"
 #include "chromeos/constants/chromeos_features.h"
 #include "ui/aura/window.h"
 #include "ui/events/event.h"
 #include "ui/events/types/event_type.h"
 #include "ui/views/controls/label.h"
 
-namespace ash {
-namespace bubble_utils {
+namespace ash::bubble_utils {
 
 bool ShouldCloseBubbleForEvent(const ui::LocatedEvent& event) {
-  // Should only be called for "press" type events.
-  DCHECK(event.type() == ui::ET_MOUSE_PRESSED ||
-         event.type() == ui::ET_TOUCH_PRESSED ||
-         event.type() == ui::ET_GESTURE_LONG_PRESS ||
-         event.type() == ui::ET_GESTURE_TAP ||
-         event.type() == ui::ET_GESTURE_TWO_FINGER_TAP)
-      << event.type();
+  // Should only be called for "press" or scroll begin type events.
+  DCHECK(event.type() == ui::EventType::kMousePressed ||
+         event.type() == ui::EventType::kTouchPressed ||
+         event.type() == ui::EventType::kGestureLongPress ||
+         event.type() == ui::EventType::kGestureTap ||
+         event.type() == ui::EventType::kGestureTwoFingerTap ||
+         event.type() == ui::EventType::kGestureScrollBegin)
+      << base::to_underlying(event.type());
 
   // Users in a capture session may be trying to capture the bubble.
   if (capture_mode_util::IsCaptureModeActive())
@@ -61,6 +63,21 @@ bool ShouldCloseBubbleForEvent(const ui::LocatedEvent& event) {
       root_controller->GetContainer(kShellWindowId_SettingBubbleContainer);
   if (settings_bubble_container->Contains(target))
     return false;
+
+  // Ignore clicks in the help bubble container.
+  aura::Window* help_bubble_container =
+      root_controller->GetContainer(kShellWindowId_HelpBubbleContainer);
+  if (help_bubble_container->Contains(target)) {
+    return false;
+  }
+
+  // Ignore clicks in the shelf area containing app icons. This is to ensure
+  // that the bubble is not closed when you click on a shelf arrow.
+  Shelf* shelf = Shelf::ForWindow(target);
+  if (target == shelf->hotseat_widget()->GetNativeWindow() &&
+      shelf->hotseat_widget()->EventTargetsShelfView(event)) {
+    return false;
+  }
 
   return true;
 }
@@ -101,6 +118,10 @@ void ApplyStyle(views::Label* label,
       label->SetFontList(gfx::FontList({"Roboto"}, gfx::Font::NORMAL, 13,
                                        gfx::Font::Weight::MEDIUM));
       break;
+    case TypographyToken::kCrosDisplay7:
+      label->SetFontList(gfx::FontList({"Roboto"}, gfx::Font::NORMAL, 18,
+                                       gfx::Font::Weight::MEDIUM));
+      break;
     case TypographyToken::kCrosHeadline1:
       label->SetFontList(gfx::FontList({"Roboto"}, gfx::Font::NORMAL, 15,
                                        gfx::Font::Weight::MEDIUM));
@@ -115,7 +136,6 @@ void ApplyStyle(views::Label* label,
       break;
     default:
       NOTREACHED();
-      break;
   }
 }
 
@@ -127,5 +147,4 @@ std::unique_ptr<views::Label> CreateLabel(TypographyToken style,
   return label;
 }
 
-}  // namespace bubble_utils
-}  // namespace ash
+}  // namespace ash::bubble_utils

@@ -7,13 +7,14 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 #include "base/containers/span.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "components/unexportable_keys/background_task_impl.h"
+#include "components/unexportable_keys/background_task_priority.h"
 #include "crypto/signature_verifier.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace crypto {
 class UnexportableSigningKey;
@@ -32,6 +33,7 @@ class GenerateKeyTask : public internal::BackgroundTaskImpl<
       std::unique_ptr<crypto::UnexportableKeyProvider> key_provider,
       base::span<const crypto::SignatureVerifier::SignatureAlgorithm>
           acceptable_algorithms,
+      BackgroundTaskPriority priority,
       base::OnceCallback<void(GenerateKeyTask::ReturnType)> callback);
 };
 
@@ -44,15 +46,17 @@ class FromWrappedKeyTask
   FromWrappedKeyTask(
       std::unique_ptr<crypto::UnexportableKeyProvider> key_provider,
       base::span<const uint8_t> wrapped_key,
+      BackgroundTaskPriority priority,
       base::OnceCallback<void(FromWrappedKeyTask::ReturnType)> callback);
 };
 
 // A `BackgroundTask` to sign data with `crypto::UnexportableSigningKey`.
-class SignTask : public internal::BackgroundTaskImpl<
-                     absl::optional<std::vector<uint8_t>>> {
+class SignTask
+    : public internal::BackgroundTaskImpl<std::optional<std::vector<uint8_t>>> {
  public:
   SignTask(scoped_refptr<RefCountedUnexportableSigningKey> signing_key,
            base::span<const uint8_t> data,
+           BackgroundTaskPriority priority,
            base::OnceCallback<void(SignTask::ReturnType)> callback);
 };
 

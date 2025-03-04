@@ -12,11 +12,12 @@
 #import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/open_from_clipboard/clipboard_recent_content.h"
-#import "ios/chrome/browser/default_browser/utils.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
 #import "ios/chrome/browser/shared/public/commands/browser_coordinator_commands.h"
 #import "ios/chrome/browser/shared/public/commands/find_in_page_commands.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
 #import "ios/chrome/browser/shared/public/commands/load_query_commands.h"
 #import "ios/chrome/browser/shared/public/commands/open_new_tab_command.h"
 #import "ios/chrome/browser/shared/public/commands/page_info_commands.h"
@@ -28,15 +29,10 @@
 #import "ios/chrome/browser/ui/popup_menu/popup_menu_action_handler_delegate.h"
 #import "ios/chrome/browser/ui/popup_menu/public/cells/popup_menu_item.h"
 #import "ios/chrome/browser/ui/popup_menu/public/popup_menu_table_view_controller.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
-#import "ios/chrome/browser/web/web_navigation_browser_agent.h"
-#import "ios/chrome/browser/window_activities/window_activity_helpers.h"
+#import "ios/chrome/browser/web/model/web_navigation_browser_agent.h"
+#import "ios/chrome/browser/window_activities/model/window_activity_helpers.h"
 #import "ios/web/public/web_state.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::RecordAction;
 using base::UserMetricsAction;
@@ -81,15 +77,11 @@ using base::UserMetricsAction;
       break;
     case PopupMenuActionPageBookmark: {
       RecordAction(UserMetricsAction("MobileMenuAddToOrEditBookmark"));
-      LogLikelyInterestedDefaultBrowserUserActivity(DefaultPromoTypeAllTabs);
       web::WebState* currentWebState = self.delegate.currentWebState;
       if (!currentWebState) {
         return;
       }
-      BookmarkAddCommand* command =
-          [[BookmarkAddCommand alloc] initWithWebState:currentWebState
-                                  presentFolderChooser:NO];
-      [self.bookmarksCommandsHandler bookmark:command];
+      [self.bookmarksCommandsHandler bookmarkWithWebState:currentWebState];
       break;
     }
     case PopupMenuActionTranslate:
@@ -103,7 +95,8 @@ using base::UserMetricsAction;
     case PopupMenuActionRequestDesktop:
       RecordAction(UserMetricsAction("MobileMenuRequestDesktopSite"));
       self.navigationAgent->RequestDesktopSite();
-      [self.browserCoordinatorCommandsHandler showDefaultSiteViewIPH];
+      [self.helpHandler
+          presentInProductHelpWithType:InProductHelpType::kDefaultSiteView];
       break;
     case PopupMenuActionRequestMobile:
       RecordAction(UserMetricsAction("MobileMenuRequestMobileSite"));
@@ -152,7 +145,6 @@ using base::UserMetricsAction;
       break;
     case PopupMenuActionBookmarks:
       RecordAction(UserMetricsAction("MobileMenuAllBookmarks"));
-      LogLikelyInterestedDefaultBrowserUserActivity(DefaultPromoTypeAllTabs);
       [self.browserCoordinatorCommandsHandler showBookmarksManager];
       break;
     case PopupMenuActionReadingList:
@@ -183,7 +175,6 @@ using base::UserMetricsAction;
       break;
     default:
       NOTREACHED() << "Unexpected identifier";
-      break;
   }
 
   // Close the tools menu.

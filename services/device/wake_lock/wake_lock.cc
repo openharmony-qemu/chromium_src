@@ -9,6 +9,7 @@
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
+#include "services/device/wake_lock/wake_lock_features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "services/device/wake_lock/wake_lock_context.h"
@@ -32,7 +33,7 @@ WakeLock::WakeLock(mojo::PendingReceiver<mojom::WakeLock> receiver,
 #if BUILDFLAG(IS_ANDROID)
       context_id_(context_id),
       native_view_getter_(native_view_getter),
-#elif defined(OHOS_SCREEN_LOCK)
+#elif BUILDFLAG(ARKWEB_SCREEN_LOCK)
       context_id_(context_id),
 #endif
       main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()),
@@ -44,7 +45,16 @@ WakeLock::WakeLock(mojo::PendingReceiver<mojom::WakeLock> receiver,
       &WakeLock::OnConnectionError, base::Unretained(this)));
 }
 
-WakeLock::~WakeLock() = default;
+WakeLock::~WakeLock() {
+  // A race condition may cause the WakeLock to be destroyed before it has been
+  // removed. In this case, it should still be reset and observers notified.
+  if (base::FeatureList::IsEnabled(features::kRemoveWakeLockInDestructor)) {
+    if (wake_lock_) {
+      RemoveWakeLock();
+      CHECK(!wake_lock_);
+    }
+  }
+}
 
 void WakeLock::AddClient(mojo::PendingReceiver<mojom::WakeLock> receiver) {
   DCHECK(main_task_runner_->RunsTasksInCurrentSequence());
@@ -72,7 +82,7 @@ void WakeLock::CancelWakeLock() {
   DCHECK(main_task_runner_->RunsTasksInCurrentSequence());
   DCHECK(receiver_set_.current_context());
 
-  // TODO(crbug.com/935063): Calling CancelWakeLock befoe RequestWakeLock
+  // TODO(crbug.com/41443051): Calling CancelWakeLock befoe RequestWakeLock
   // shouldn't be allowed.
   if (!(*receiver_set_.current_context()))
     return;
@@ -131,10 +141,11 @@ void WakeLock::CreateWakeLock() {
 
   wake_lock_ = std::make_unique<PowerSaveBlocker>(
       type_, reason_, *description_, main_task_runner_, file_task_runner_
-      #if defined(OHOS_SCREEN_LOCK)
-      , context_id_
-      #endif
-      );
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      ,
+      context_id_
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  );
   observer_->OnWakeLockActivated(type_);
 
   if (type_ != mojom::WakeLockType::kPreventDisplaySleep)
@@ -166,10 +177,11 @@ void WakeLock::SwapWakeLock() {
   // created.
   auto new_wake_lock = std::make_unique<PowerSaveBlocker>(
       type_, reason_, *description_, main_task_runner_, file_task_runner_
-      #if defined(OHOS_SCREEN_LOCK)
-      , context_id_
-      #endif
-      );
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      ,
+      context_id_
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  );
   wake_lock_.swap(new_wake_lock);
 }
 

@@ -4,11 +4,11 @@
 
 #include "ui/gl/init/gl_initializer.h"
 
+#include "base/apple/bundle_locations.h"
+#include "base/apple/foundation_util.h"
 #include "base/base_paths.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
-#include "base/mac/bundle_locations.h"
-#include "base/mac/foundation_util.h"
 #include "base/native_library.h"
 #include "base/path_service.h"
 #include "base/threading/thread_restrictions.h"
@@ -21,30 +21,26 @@
 #include "ui/gl/gl_utils.h"
 #include "ui/gl/gpu_switching_manager.h"
 #include "ui/gl/init/gl_display_initializer.h"
-
-#if defined(USE_EGL)
 #include "ui/gl/gl_egl_api_implementation.h"
-#endif  // defined(USE_EGL)
 
 namespace gl {
 namespace init {
 
 namespace {
 
-#if defined(USE_EGL)
 const char kGLESv2ANGLELibraryName[] = "libGLESv2.dylib";
 const char kEGLANGLELibraryName[] = "libEGL.dylib";
 
 bool InitializeStaticEGLInternalFromLibrary(GLImplementation implementation) {
 #if BUILDFLAG(USE_STATIC_ANGLE)
   NOTREACHED();
-#endif
+#else
 
   // Some unit test targets depend on Angle/SwiftShader but aren't built
   // as app bundles. In that case, the .dylib is next to the executable.
   base::FilePath base_dir;
-  if (base::mac::AmIBundled()) {
-    base_dir = base::mac::FrameworkBundlePath().Append("Libraries");
+  if (base::apple::AmIBundled()) {
+    base_dir = base::apple::FrameworkBundlePath().Append("Libraries");
   } else {
     if (!base::PathService::Get(base::FILE_EXE, &base_dir)) {
       LOG(ERROR) << "PathService::Get failed.";
@@ -84,6 +80,7 @@ bool InitializeStaticEGLInternalFromLibrary(GLImplementation implementation) {
   AddGLNativeLibrary(egl_library);
 
   return true;
+#endif
 }
 
 bool InitializeStaticEGLInternal(GLImplementationParts implementation) {
@@ -107,14 +104,12 @@ bool InitializeStaticEGLInternal(GLImplementationParts implementation) {
 
   return true;
 }
-#endif  // defined(USE_EGL)
 
 }  // namespace
 
 GLDisplay* InitializeGLOneOffPlatform(gl::GpuPreference gpu_preference) {
   GLDisplayEGL* display = GetDisplayEGL(gpu_preference);
   switch (GetGLImplementation()) {
-#if defined(USE_EGL)
     case kGLImplementationEGLGLES2:
     case kGLImplementationEGLANGLE:
       if (!InitializeDisplay(display, EGLDisplayPlatform(0))) {
@@ -122,7 +117,7 @@ GLDisplay* InitializeGLOneOffPlatform(gl::GpuPreference gpu_preference) {
         return nullptr;
       }
       break;
-#endif  // defined(USE_EGL)
+
     default:
       break;
   }
@@ -142,11 +137,10 @@ bool InitializeStaticGLBindings(GLImplementationParts implementation) {
   base::ScopedAllowBlocking allow_blocking;
 
   switch (implementation.gl) {
-#if defined(USE_EGL)
     case kGLImplementationEGLGLES2:
     case kGLImplementationEGLANGLE:
       return InitializeStaticEGLInternal(implementation);
-#endif  // #if defined(USE_EGL)
+
     case kGLImplementationMockGL:
     case kGLImplementationStubGL:
       SetGLImplementationParts(implementation);
@@ -155,17 +149,14 @@ bool InitializeStaticGLBindings(GLImplementationParts implementation) {
     default:
       NOTREACHED();
   }
-
-  return false;
 }
 
 void ShutdownGLPlatform(GLDisplay* display) {
   ClearBindingsGL();
-#if defined(USE_EGL)
+
   if (display)
     display->Shutdown();
   ClearBindingsEGL();
-#endif  // defined(USE_EGL)
 }
 
 }  // namespace init

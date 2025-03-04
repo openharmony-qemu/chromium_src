@@ -9,6 +9,7 @@
 #include <iterator>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/no_destructor.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
@@ -30,11 +31,11 @@ const char* const kDefaultSavableSchemes[] = {url::kHttpScheme,
                                               kChromeDevToolsScheme,
                                               kChromeUIScheme,
                                               url::kDataScheme
-#ifdef OHOS_HAP_DECOMPRESSED
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
                                               ,
                                               url::kResourcesScheme
 #endif
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
                                               ,
                                               kArkWebUIScheme
 #endif
@@ -69,7 +70,7 @@ void RegisterContentSchemes(bool should_lock_registry) {
   url::AddStandardScheme(kChromeUIScheme, url::SCHEME_WITH_HOST);
   url::AddStandardScheme(kChromeUIUntrustedScheme, url::SCHEME_WITH_HOST);
   url::AddStandardScheme(kChromeErrorScheme, url::SCHEME_WITH_HOST);
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   url::AddStandardScheme(kArkWebUIScheme, url::SCHEME_WITH_HOST);
 #endif
   for (auto& scheme : schemes.standard_schemes)
@@ -82,7 +83,7 @@ void RegisterContentSchemes(bool should_lock_registry) {
   schemes.secure_schemes.push_back(kChromeUIScheme);
   schemes.secure_schemes.push_back(kChromeUIUntrustedScheme);
   schemes.secure_schemes.push_back(kChromeErrorScheme);
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   schemes.secure_schemes.push_back(kArkWebUIScheme);
 #endif
   for (auto& scheme : schemes.secure_schemes)
@@ -100,7 +101,7 @@ void RegisterContentSchemes(bool should_lock_registry) {
 
   schemes.cors_enabled_schemes.push_back(kChromeUIScheme);
   schemes.cors_enabled_schemes.push_back(kChromeUIUntrustedScheme);
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   schemes.cors_enabled_schemes.push_back(kArkWebUIScheme);
 #endif
   for (auto& scheme : schemes.cors_enabled_schemes)
@@ -119,10 +120,11 @@ void RegisterContentSchemes(bool should_lock_registry) {
     url::EnableNonStandardSchemesForAndroidWebView();
 #endif
 
-#ifdef OHOS_NETWORK_LOAD
-  for (auto& scheme : schemes.custom_schemes)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  for (auto& scheme : schemes.custom_schemes) {
     url::AddCustomScheme(scheme.c_str());
-#endif
+  }
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
   for (auto& [scheme, handler] : schemes.predefined_handler_schemes)
     url::AddPredefinedHandlerScheme(scheme.c_str(), handler.c_str());

@@ -23,8 +23,8 @@
 #include "components/viz/service/display/software_output_device.h"
 #include "components/viz/test/test_context_provider.h"
 #include "components/viz/test/test_gles2_interface.h"
-#include "components/viz/test/test_gpu_memory_buffer_manager.h"
 #include "components/viz/test/test_raster_interface.h"
+#include "gpu/command_buffer/client/test_gpu_memory_buffer_manager.h"
 
 namespace viz {
 class BeginFrameSource;
@@ -45,15 +45,13 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
 
     // Calls a function on both the compositor and worker context.
     template <typename... Args>
-    Builder& AllContexts(
-        void (viz::TestGLES2Interface::*compositor_fn)(Args...),
-        void (viz::TestRasterInterface::*worker_fn)(Args...),
-        Args... args) {
+    Builder& AllContexts(void (viz::TestRasterInterface::*context_fn)(Args...),
+                         Args... args) {
       DCHECK(compositor_context_provider_);
-      (compositor_context_provider_->UnboundTestContextGL()->*compositor_fn)(
+      (compositor_context_provider_->UnboundTestRasterInterface()->*context_fn)(
           std::forward<Args>(args)...);
       DCHECK(worker_context_provider_);
-      (worker_context_provider_->UnboundTestRasterInterface()->*worker_fn)(
+      (worker_context_provider_->UnboundTestRasterInterface()->*context_fn)(
           std::forward<Args>(args)...);
 
       return *this;
@@ -85,17 +83,9 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
         std::move(context_provider), std::move(worker_context_provider)));
   }
 
-  static std::unique_ptr<FakeLayerTreeFrameSink> Create3d(
-      std::unique_ptr<viz::TestGLES2Interface> gl) {
-    return base::WrapUnique(new FakeLayerTreeFrameSink(
-        viz::TestContextProvider::Create(std::move(gl)),
-        viz::TestContextProvider::CreateWorker()));
-  }
-
   static std::unique_ptr<FakeLayerTreeFrameSink> Create3dForGpuRasterization() {
     return Builder()
-        .AllContexts(&viz::TestGLES2Interface::set_gpu_rasterization,
-                     &viz::TestRasterInterface::set_gpu_rasterization, true)
+        .AllContexts(&viz::TestRasterInterface::set_gpu_rasterization, true)
         .Build();
   }
 
@@ -113,10 +103,7 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
   void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
                                const viz::SharedBitmapId& id) override;
   void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override;
-#if defined(OHOS_UNITTESTS)
-  void TriggerVsyncImplTask() override {}
-  void SetHandledTouchEvent(bool handledTouchEvent) override {}
-#endif
+
   viz::CompositorFrame* last_sent_frame() { return last_sent_frame_.get(); }
   size_t num_sent_frames() { return num_sent_frames_; }
 
@@ -142,10 +129,10 @@ class FakeLayerTreeFrameSink : public LayerTreeFrameSink {
 
  protected:
   FakeLayerTreeFrameSink(
-      scoped_refptr<viz::ContextProvider> context_provider,
+      scoped_refptr<viz::RasterContextProvider> context_provider,
       scoped_refptr<viz::RasterContextProvider> worker_context_provider);
 
-  viz::TestGpuMemoryBufferManager test_gpu_memory_buffer_manager_;
+  gpu::TestGpuMemoryBufferManager test_gpu_memory_buffer_manager_;
 
   std::vector<viz::SharedBitmapId> shared_bitmaps_;
   std::unique_ptr<viz::CompositorFrame> last_sent_frame_;

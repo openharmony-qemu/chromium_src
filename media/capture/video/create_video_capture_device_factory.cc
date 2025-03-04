@@ -13,7 +13,7 @@
 #include "media/capture/video/fake_video_capture_device_factory.h"
 #include "media/capture/video/file_video_capture_device_factory.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
 #include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
 #include "media/capture/video/linux/video_capture_device_factory_linux.h"
@@ -23,8 +23,10 @@
 #include "media/capture/video/linux/video_capture_device_factory_linux.h"
 #elif BUILDFLAG(IS_WIN)
 #include "media/capture/video/win/video_capture_device_factory_win.h"
-#elif BUILDFLAG(IS_MAC)
-#include "media/capture/video/mac/video_capture_device_factory_mac.h"
+#elif BUILDFLAG(IS_APPLE)
+#include "media/capture/video/apple/video_capture_device_factory_apple.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "media/capture/video/android/video_capture_device_factory_android.h"
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -58,7 +60,7 @@ CreateFakeVideoCaptureDeviceFactory() {
 std::unique_ptr<VideoCaptureDeviceFactory>
 CreatePlatformSpecificVideoCaptureDeviceFactory(
     scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner) {
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
   return std::make_unique<VideoCaptureDeviceFactoryOHOS>(ui_task_runner);
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
   return std::make_unique<VideoCaptureDeviceFactoryLinux>(ui_task_runner);
@@ -68,8 +70,10 @@ CreatePlatformSpecificVideoCaptureDeviceFactory(
   return std::make_unique<VideoCaptureDeviceFactoryLinux>(ui_task_runner);
 #elif BUILDFLAG(IS_WIN)
   return std::make_unique<VideoCaptureDeviceFactoryWin>();
-#elif BUILDFLAG(IS_MAC)
-  return std::make_unique<VideoCaptureDeviceFactoryMac>();
+#elif BUILDFLAG(IS_APPLE)
+  return std::make_unique<VideoCaptureDeviceFactoryApple>();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<VideoCaptureDeviceFactoryOHOS>();
 #elif BUILDFLAG(IS_ANDROID)
   return std::make_unique<VideoCaptureDeviceFactoryAndroid>();
 #elif BUILDFLAG(IS_FUCHSIA)

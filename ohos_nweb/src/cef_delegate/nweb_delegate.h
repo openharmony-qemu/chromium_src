@@ -78,9 +78,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
           web_app_client_extension_listener) override;
   void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
-  void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
-          accessibility_event_listener) override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -484,10 +481,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
 
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-
-  void ExecuteAction(int64_t accessibilityId, uint32_t action,
-      const std::map<std::string, std::string>& actionArguments) override;
+  bool ExecuteAction(int64_t accessibilityId, uint32_t action,
+       const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
 
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
@@ -671,7 +671,8 @@ void MaximizeResize() override;
   void SendAccessibilityHoverEvent(int x, int y) override;
 
  private:
-  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
+  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  int64_t GetRealAccessibilityId(int64_t accessibilityId) const;
   void AddAccessibilityNodeInfoAttributes(
       std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
@@ -754,8 +755,6 @@ void MaximizeResize() override;
   bool is_discarded_ = false;
   // The number of fingers that trigger the down event
   int  pressing_num_ = 0;
-  std::shared_ptr<NWebAccessibilityEventCallback>
-      accessibility_event_listener_ = nullptr;
   double display_ratio_ = 0.0;
 };
 }  // namespace OHOS::NWeb

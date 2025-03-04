@@ -671,8 +671,17 @@ class NWebImpl : public NWeb {
 #ifdef OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
   void EnableMediaNetworkTrafficPrompt(bool enable);
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
- void PerformAction(int64_t accessibilityId, uint32_t action,
+  void PerformAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool PerformActionV2(
+      int64_t accessibilityId,
+      uint32_t action,
+      const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
   void SetSurfaceDensity(const double& density) override;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);

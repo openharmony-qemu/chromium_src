@@ -1317,10 +1317,12 @@ RenderFrameHostManager::GetFrameHostForNavigation(
             shared_render_process_token);
     if (render_process) {
       dest_site_instance->ReuseExistingProcessIfPossible(render_process);
+#ifdef OHOS_LOGGER_REPORT
       LOG(DEBUG) << "[ReuseExistingProcessIfPossible]"
                  << shared_render_process_token << "[isok]"
                  << (render_process == dest_site_instance->GetProcess())
-                 << request->GetURL();
+                 << " " << url::LogUtils::ConvertUrl(request->GetURL().spec());
+#endif
     } else {
       RenderProcessHostImpl::RegisteProcessForSharedToken(
           shared_render_process_token, dest_site_instance->GetProcess());

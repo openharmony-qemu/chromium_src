@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "cc/trees/throttle_decider.h"
 #include "components/viz/common/quads/compositor_render_pass_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
@@ -61,7 +66,7 @@ TEST_F(ThrottleDeciderTest, BackdropFilter) {
   surface_quad->shared_quad_state = &sqs2;
   surface_quad->material = viz::DrawQuad::Material::kSurfaceContent;
   surface_quad->surface_range = viz::SurfaceRange(
-      absl::nullopt,
+      std::nullopt,
       viz::SurfaceId(frame_sink_id, viz::LocalSurfaceId(
                                         1u, base::UnguessableToken::Create())));
   surface_quad->rect = quad_rect;
@@ -75,7 +80,7 @@ TEST_F(ThrottleDeciderTest, BackdropFilter) {
 
   // Put the backdrop filter within bounds (0,10 50x50).
   render_passes[0]->backdrop_filter_bounds =
-      absl::optional<gfx::RRectF>(gfx::RRectF(0.0f, 10.0f, 50.0f, 50.0f, 1.0f));
+      std::optional<gfx::RRectF>(gfx::RRectF(0.0f, 10.0f, 50.0f, 50.0f, 1.0f));
   // The surface quad (0,0 100x100) is partially behind the backdrop filter on
   // the rpdq (0,10 50x50) so it should not be throttled.
   RunThrottleDecider(render_passes);

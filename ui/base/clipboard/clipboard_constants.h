@@ -5,6 +5,7 @@
 #ifndef UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 #define UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 
@@ -30,6 +31,7 @@ extern const char kMimeTypeDownloadURL[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeMozillaURL[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) extern const char kMimeTypeHTML[];
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) extern const char kMimeTypeHTMLUtf8[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) extern const char kMimeTypeSvg[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) extern const char kMimeTypeRTF[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) extern const char kMimeTypePNG[];
@@ -37,13 +39,6 @@ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeOctetStream[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeWindowDrag[];
-
-// ----- CHROMEOS MIME TYPES -----
-
-#if BUILDFLAG(IS_CHROMEOS)
-COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-extern const char kMimeTypeDataTransferEndpoint[];
-#endif  // BUILDFLAG(IS_CHROMEOS)
 
 // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
 
@@ -55,15 +50,17 @@ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeLinuxString[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeLinuxText[];
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMimeTypeLinuxSourceUrl[];
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA)
+        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
 
 // ----- EVERYTHING EXCEPT FOR APPLE MIME TYPES -----
 
 #if !BUILDFLAG(IS_APPLE)
 // TODO(dcheng): This name is temporary. See crbug.com/106449.
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-extern const char kMimeTypeWebCustomData[];
+extern const char kMimeTypeDataTransferCustomData[];
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeWebkitSmartPaste[];
 #else
@@ -92,13 +89,21 @@ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern NSString* const kUTTypeChromiumPrivilegedInitiatedDrag;
 
 // Data type placed on dragging pasteboards when the drag is initiated from a
-// renderer. There is never any data associated with this type.
+// renderer. If the initiator has a tuple origin (e.g. https://example.com),
+// the data is a string representation (i.e. the result of calling
+// `url::Origin::Serialize()`). Otherwise, the initiator has an opaque origin
+// and the data is the empty string.
+//
+// This format is intentionally chosen for safer backwards compatibility with
+// previous versions of Chrome, which always set an empty string for the data.
+// When newer versions of Chrome attempt to interpret this data as an origin,
+// they will safely treat it as a unique opaque origin.
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern NSString* const kUTTypeChromiumRendererInitiatedDrag;
 
-// A type specifying web custom data. The data is pickled.
+// A type specifying DataTransfer custom data. The data is pickled.
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-extern NSString* const kUTTypeChromiumWebCustomData;
+extern NSString* const kUTTypeChromiumDataTransferCustomData;
 
 // It is the common convention on the Mac and on iOS that password managers tag
 // confidential data with this type. There's no data associated with this
@@ -118,6 +123,10 @@ extern NSString* const kUTTypeWebKitWebSmartPaste;
 // A type used by WebKit to add an array of URLs with titles to the clipboard.
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern NSString* const kUTTypeWebKitWebURLsWithTitles;
+
+// A type used to track the source URL of data put in the clipboard.
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern NSString* const kUTTypeChromiumSourceURL;
 
 #endif  // BUILDFLAG(IS_APPLE)
 
@@ -142,10 +151,11 @@ extern const int kMaxRegisteredClipboardFormats;
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kWebClipboardFormatPrefix[];
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeOHOSCustomData[];
-#endif  // BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 }  // namespace ui
 
 #endif  // UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_

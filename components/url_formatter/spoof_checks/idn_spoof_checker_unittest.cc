@@ -7,7 +7,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "base/strings/string_piece.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/scoped_feature_list.h"
@@ -353,6 +352,8 @@ const IDNTestCase kIdnCases[] = {
     {"xn--j1amdg.com", u"\u043a\u0443\u0440\u0441.com", kSafe},
     // ск.com is a whole-script-confusable.
     {"xn--j1an.com", u"\u0441\u043a.com", kUnsafe},
+    // теѕт.com is a whole-script-confusable.
+    {"xn--e1azb9e.com", u"\u0442\u0435\u0455\u0442.com", kUnsafe},
 
     // The same as above three, but in IDN TLD (рф).
     // 1) ѕсоре.рф with ѕсоре in Cyrillic.
@@ -401,7 +402,7 @@ const IDNTestCase kIdnCases[] = {
     {"xn--q1a0a.com", u"\u0441\u044e.com", kUnsafe},
 
     // Regression test for lowercase letters in whole script confusable
-    // lookalike character lists.
+    // lookalike character lists (аьс.com).
     {"xn--80a8a6a.com", u"\u0430\u044c\u0441.com", kUnsafe},
 
     // googlе.한국 where е is Cyrillic. This tests the generic case when one
@@ -975,6 +976,7 @@ const IDNTestCase kIdnCases[] = {
     {"xn--l-fda.cat", u"\u00b7l.cat", kUnsafe},
     {"xn--l-gda.cat", u"l\u00b7.cat", kUnsafe},
 
+    // CJK ideographs and Kangxi radicals:
     {"xn--googlecom-gk6n.com", u"google\u4e28com.com", kUnsafe},
     {"xn--googlecom-0y6n.com", u"google\u4e5bcom.com", kUnsafe},
     {"xn--googlecom-v85n.com", u"google\u4e03com.com", kUnsafe},
@@ -995,6 +997,55 @@ const IDNTestCase kIdnCases[] = {
     {"xn--googlecom-lg9q.com", u"google\u5de5com.com", kUnsafe},
     {"xn--googlecom-g040a.com", u"google\u8ba0com.com", kUnsafe},
     {"xn--googlecom-b85n.com", u"google\u4e01com.com", kUnsafe},
+
+    // 丶google.com
+    {"xn--google-2x7i.com", u"\u4e36google.com", kUnsafe},
+    // google丶.com
+    {"xn--google-8x7i.com", u"google\u4e36.com", kUnsafe},
+    // google丶example.com
+    {"xn--googleexample-1m1u.com", u"google\u4e36example.com", kUnsafe},
+
+    // ⼅google.com
+    {"xn--google-ve8i.com", u"\u4e85google.com", kUnsafe},
+    // google⼅.com
+    {"xn--google-1e8i.com", u"google\u4e85.com", kUnsafe},
+    // google⼅example.com
+    {"xn--googleexample-nj2u.com", u"google\u4e85example.com", kUnsafe},
+
+    // ⼆google.com
+    {"xn--google-9f8i.com", u"\u4e8cgoogle.com", kUnsafe},
+    // google⼆.com
+    {"xn--google-gg8i.com", u"google\u4e8c.com", kUnsafe},
+    // google⼆example.com
+    {"xn--googleexample-gm2u.com", u"google\u4e8cexample.com", kUnsafe},
+
+    // ⼇google.com
+    {"xn--google-9j8i.com", u"\u4ea0google.com", kUnsafe},
+    // google⼇.com
+    {"xn--google-gk8i.com", u"google\u4ea0.com", kUnsafe},
+    // google⼇example.com
+    {"xn--googleexample-gu2u.com", u"google\u4ea0example.com", kUnsafe},
+
+    // ⼍google.com
+    {"xn--google-vv2j.com", u"\u5196google.com", kUnsafe},
+    // google⼍.com
+    {"xn--google-1v2j.com", u"google\u5196.com", kUnsafe},
+    // google⼍example.com
+    {"xn--googleexample-ni1v.com", u"google\u5196example.com", kUnsafe},
+
+    // ⼧google.com
+    {"xn--google-he7k.com", u"\u5b80google.com", kUnsafe},
+    // google⼧.com
+    {"xn--google-ne7k.com", u"google\u5b80.com", kUnsafe},
+    // google⼧example.com
+    {"xn--googleexample-ui0y.com", u"google\u5b80example.com", kUnsafe},
+
+    // ⼮google.com
+    {"xn--google-2t0l.com", u"\u5ddbgoogle.com", kUnsafe},
+    // google⼮.com
+    {"xn--google-8t0l.com", u"google\u5ddb.com", kUnsafe},
+    // google⼮example.com
+    {"xn--googleexample-1e7y.com", u"google\u5ddbexample.com", kUnsafe},
 
     // Whole-script-confusables. Cyrillic is sufficiently handled in cases above
     // so it's not included here.
@@ -1090,6 +1141,9 @@ const IDNTestCase kIdnCases[] = {
     // Test case for https://crbug.com/1156531 (missed skeleton map)
     {"xn--office65-hts.com", u"office\u0a5c65.com", kUnsafe},
 
+    // Check that ı has multiple skeletons.
+    {"xn--googe-q4a.com", u"goog\u0131e.com", kUnsafe},
+
     // New test cases go ↑↑ above.
 
     // /!\ WARNING: You MUST use tools/security/idn_test_case_generator.py to
@@ -1103,7 +1157,7 @@ const IDNTestCase kIdnCases[] = {
 };
 
 namespace test {
-#include "components/url_formatter/spoof_checks/top_domains/test_domains-trie-inc.cc"
+#include "components/url_formatter/spoof_checks/top_domains/idn_test_domains-trie-inc.cc"
 }
 
 bool IsPunycode(const std::u16string& s) {
@@ -1178,7 +1232,7 @@ INSTANTIATE_TEST_SUITE_P(All,
 // Test that a domain entered as punycode is decoded to unicode if safe,
 // otherwise is left in punycode.
 //
-// TODO(crbug.com/1036523): This should also check if a domain entered as
+// TODO(crbug.com/40664864): This should also check if a domain entered as
 // unicode is properly decoded or not-decoded. This is important in cases where
 // certain unicode characters are canonicalized to other characters.
 // E.g. Mathematical Monospace Small A (U+1D68A) is canonicalized to "a" when
@@ -1254,7 +1308,7 @@ TEST_P(IDNSpoofCheckerTest, GetSimilarTopDomain) {
     const TopDomainEntry entry =
         IDNSpoofChecker().GetSimilarTopDomain(test_case.hostname);
     EXPECT_EQ(test_case.expected_top_domain, entry.domain);
-    EXPECT_FALSE(entry.is_top_500);
+    EXPECT_FALSE(entry.is_top_bucket);
   }
 }
 
@@ -1263,21 +1317,21 @@ TEST_P(IDNSpoofCheckerTest, LookupSkeletonInTopDomains) {
     TopDomainEntry entry =
         IDNSpoofChecker().LookupSkeletonInTopDomains("d4OOO.corn");
     EXPECT_EQ("d4000.com", entry.domain);
-    EXPECT_TRUE(entry.is_top_500);
+    EXPECT_TRUE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kFull);
   }
   {
     TopDomainEntry entry = IDNSpoofChecker().LookupSkeletonInTopDomains(
         "d4OOOcorn", SkeletonType::kSeparatorsRemoved);
     EXPECT_EQ("d4000.com", entry.domain);
-    EXPECT_TRUE(entry.is_top_500);
+    EXPECT_TRUE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kSeparatorsRemoved);
   }
   {
     TopDomainEntry entry =
         IDNSpoofChecker().LookupSkeletonInTopDomains("digklrno68.corn");
     EXPECT_EQ("digklmo68.com", entry.domain);
-    EXPECT_FALSE(entry.is_top_500);
+    EXPECT_FALSE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kFull);
   }
 }
@@ -1288,14 +1342,14 @@ TEST(IDNSpoofCheckerNoFixtureTest, LookupSkeletonInTopDomains) {
     TopDomainEntry entry =
         IDNSpoofChecker().LookupSkeletonInTopDomains("google.corn");
     EXPECT_EQ("google.com", entry.domain);
-    EXPECT_TRUE(entry.is_top_500);
+    EXPECT_TRUE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kFull);
   }
   {
     TopDomainEntry entry = IDNSpoofChecker().LookupSkeletonInTopDomains(
         "googlecorn", SkeletonType::kSeparatorsRemoved);
     EXPECT_EQ("google.com", entry.domain);
-    EXPECT_TRUE(entry.is_top_500);
+    EXPECT_TRUE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kSeparatorsRemoved);
   }
   {
@@ -1304,7 +1358,7 @@ TEST(IDNSpoofCheckerNoFixtureTest, LookupSkeletonInTopDomains) {
     TopDomainEntry entry =
         IDNSpoofChecker().LookupSkeletonInTopDomains("google.sk");
     EXPECT_EQ("google.sk", entry.domain);
-    EXPECT_FALSE(entry.is_top_500);
+    EXPECT_FALSE(entry.is_top_bucket);
     EXPECT_EQ(entry.skeleton_type, SkeletonType::kFull);
   }
 }
@@ -1322,7 +1376,7 @@ TEST(IDNSpoofCheckerNoFixtureTest, UnsafeIDNToUnicodeWithDetails) {
     // The top domain that |punycode| matched to, if any.
     const char* const expected_matching_domain;
     // If true, the matching top domain is expected to be in top 500.
-    const bool expected_is_top_500;
+    const bool expected_is_top_bucket;
     const IDNSpoofChecker::Result expected_spoof_check_result;
   } kTestCases[] = {
       {// An ASCII, top domain.
@@ -1358,8 +1412,8 @@ TEST(IDNSpoofCheckerNoFixtureTest, UnsafeIDNToUnicodeWithDetails) {
     EXPECT_EQ(test_case.expected_has_idn, result.has_idn_component);
     EXPECT_EQ(test_case.expected_matching_domain,
               result.matching_top_domain.domain);
-    EXPECT_EQ(test_case.expected_is_top_500,
-              result.matching_top_domain.is_top_500);
+    EXPECT_EQ(test_case.expected_is_top_bucket,
+              result.matching_top_domain.is_top_bucket);
     EXPECT_EQ(test_case.expected_spoof_check_result, result.spoof_check_result);
   }
 }

@@ -6,6 +6,7 @@
 #define HEADLESS_PUBLIC_HEADLESS_BROWSER_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,7 +15,6 @@
 #include "build/build_config.h"
 #include "headless/public/headless_browser_context.h"
 #include "headless/public/headless_export.h"
-#include "net/base/host_port_pair.h"
 #include "ui/gfx/font_render_params.h"
 #include "ui/gfx/geometry/size.h"
 
@@ -49,11 +49,6 @@ class HEADLESS_EXPORT HeadlessBrowser {
   virtual HeadlessBrowserContext::Builder CreateBrowserContextBuilder() = 0;
 
   virtual std::vector<HeadlessBrowserContext*> GetAllBrowserContexts() = 0;
-
-  // Returns the HeadlessWebContents associated with the
-  // |devtools_agent_host_id| if any.  Otherwise returns null.
-  virtual HeadlessWebContents* GetWebContentsForDevToolsAgentHostId(
-      const std::string& devtools_agent_host_id) = 0;
 
   // Returns HeadlessBrowserContext associated with the given id if any.
   // Otherwise returns null.
@@ -97,9 +92,8 @@ struct HEADLESS_EXPORT HeadlessBrowser::Options {
 
   Options& operator=(Options&& options);
 
-  // Address at which DevTools should listen for connections. Disabled by
-  // default.
-  net::HostPortPair devtools_endpoint;
+  // Port at which DevTools should listen for connections on localhost.
+  std::optional<int> devtools_port;
 
   // Enables remote debug over stdio pipes [in=3, out=4].
   bool devtools_pipe_enabled = false;
@@ -115,12 +109,19 @@ struct HEADLESS_EXPORT HeadlessBrowser::Options {
   std::unique_ptr<net::ProxyConfig> proxy_config;
 
   // Default window size. This is also used to create the window tree host and
-  // as initial screen size. Defaults to 800x600.
+  // as the headless screen size. Defaults to 800x600.
   gfx::Size window_size;
+
+  // Headless screen scale factor.
+  float screen_scale_factor = 1.0;
 
   // Path to user data directory, where browser will look for its state.
   // If empty, default directory (where the binary is located) will be used.
   base::FilePath user_data_dir;
+
+  // Path to disk cache directory. If emppty, 'Cache' subdirectory of the
+  // user data directory will be used.
+  base::FilePath disk_cache_dir;
 
   // Run a browser context in an incognito mode. Enabled by default.
   bool incognito_mode = true;
@@ -137,6 +138,9 @@ struct HEADLESS_EXPORT HeadlessBrowser::Options {
 
   // Whether lazy loading of images and frames is enabled.
   bool lazy_load_enabled = true;
+
+  // Forces each navigation to use a new BrowsingInstance.
+  bool force_new_browsing_instance = false;
 
   // Reminder: when adding a new field here, do not forget to add it to
   // HeadlessBrowserContextOptions (where appropriate).
@@ -155,7 +159,7 @@ class HEADLESS_EXPORT HeadlessBrowser::Options::Builder {
 
   // Browser-wide settings.
 
-  Builder& EnableDevToolsServer(const net::HostPortPair& endpoint);
+  Builder& EnableDevToolsServer(int port);
   Builder& EnableDevToolsPipe();
 
   // Settings that are currently browser-wide, but could be per-context if
@@ -169,12 +173,15 @@ class HEADLESS_EXPORT HeadlessBrowser::Options::Builder {
   Builder& SetUserAgent(const std::string& agent);
   Builder& SetProxyConfig(std::unique_ptr<net::ProxyConfig> config);
   Builder& SetWindowSize(const gfx::Size& size);
+  Builder& SetScreenScaleFactor(float scale_factor);
   Builder& SetUserDataDir(const base::FilePath& dir);
+  Builder& SetDiskCacheDir(const base::FilePath& dir);
   Builder& SetIncognitoMode(bool incognito);
   Builder& SetBlockNewWebContents(bool block);
   Builder& SetCrashReporterEnabled(bool enabled);
   Builder& SetCrashDumpsDir(const base::FilePath& dir);
   Builder& SetFontRenderHinting(gfx::FontRenderParams::Hinting hinting);
+  Builder& SetForceNewBrowsingInstance(bool force);
   Options Build();
 
  private:

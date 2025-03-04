@@ -64,10 +64,22 @@ class WebContentsViewIOS : public WebContentsView,
   void OnCapturerCountChanged() override;
   void FullscreenStateChanged(bool is_fullscreen) override;
   void UpdateWindowControlsOverlay(const gfx::Rect& bounding_rect) override;
+  int GetTopControlsHeight() const override;
+  int GetTopControlsMinHeight() const override;
+  int GetBottomControlsHeight() const override;
+  int GetBottomControlsMinHeight() const override;
+  bool ShouldAnimateBrowserControlsHeightChanges() const override;
+  bool DoBrowserControlsShrinkRendererSize() const override;
+  bool OnlyExpandTopControlsAtPageTop() const override;
+  BackForwardTransitionAnimationManager*
+  GetBackForwardTransitionAnimationManager() override;
+  void DestroyBackForwardTransitionAnimationManager() override;
 
   // RenderViewHostDelegateView:
   void GotFocus(RenderWidgetHostImpl* render_widget_host) override;
   void LostFocus(RenderWidgetHostImpl* render_widget_host) override;
+  void ShowContextMenu(RenderFrameHost& render_frame_host,
+                       const ContextMenuParams& params) override;
 
   void ShowPopupMenu(
       RenderFrameHost* render_frame_host,
@@ -96,6 +108,9 @@ class WebContentsViewIOS : public WebContentsView,
   std::unique_ptr<WebContentsUIViewHolder> ui_view_;
 
   std::unique_ptr<PopupMenuHelper> popup_menu_helper_;
+
+  // Our optional delegate.
+  std::unique_ptr<WebContentsViewDelegate> delegate_;
 };
 
 }  // namespace content

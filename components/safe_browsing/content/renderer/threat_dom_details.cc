@@ -13,7 +13,6 @@
 #include "base/metrics/field_trial_params.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/ranges/algorithm.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
 #include "components/safe_browsing/core/common/features.h"
 #include "content/public/renderer/render_frame.h"
@@ -203,13 +202,12 @@ bool ShouldHandleElement(
     const blink::WebElement& element,
     const std::vector<TagAndAttributesItem>& tag_and_attributes_list) {
   // Fenced frames are always handled.
-  // TODO(https://crbug.com/1428788): Update this to support getting the URL of
+  // TODO(crbug.com/40900693): Update this to support getting the URL of
   // fenced frames loaded with a config.
   if (element.HasHTMLTagName("fencedframe")) {
     return true;
   }
   // Resources with a SRC are always handled.
-  // TODO(1298672): Handle portal elements.
   if ((element.HasHTMLTagName("iframe") || element.HasHTMLTagName("frame") ||
        element.HasHTMLTagName("embed") || element.HasHTMLTagName("script")) &&
       element.HasAttribute("src")) {
@@ -234,7 +232,7 @@ bool ShouldHandleElement(
 
 }  // namespace
 
-TagAndAttributesItem::TagAndAttributesItem() {}
+TagAndAttributesItem::TagAndAttributesItem() = default;
 
 TagAndAttributesItem::TagAndAttributesItem(
     const std::string& tag_name_param,
@@ -244,7 +242,7 @@ TagAndAttributesItem::TagAndAttributesItem(
 TagAndAttributesItem::TagAndAttributesItem(const TagAndAttributesItem& item)
     : tag_name(item.tag_name), attributes(item.attributes) {}
 
-TagAndAttributesItem::~TagAndAttributesItem() {}
+TagAndAttributesItem::~TagAndAttributesItem() = default;
 
 uint32_t ThreatDOMDetails::kMaxNodes = 500;
 uint32_t ThreatDOMDetails::kMaxAttributes = 100;
@@ -274,7 +272,7 @@ ThreatDOMDetails::ThreatDOMDetails(content::RenderFrame* render_frame,
       &ThreatDOMDetails::OnThreatReporterReceiver, base::Unretained(this)));
 }
 
-ThreatDOMDetails::~ThreatDOMDetails() {}
+ThreatDOMDetails::~ThreatDOMDetails() = default;
 
 void ThreatDOMDetails::GetThreatDOMDetails(
     GetThreatDOMDetailsCallback callback) {

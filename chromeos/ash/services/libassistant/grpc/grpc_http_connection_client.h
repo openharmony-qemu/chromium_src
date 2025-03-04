@@ -58,8 +58,7 @@ class GrpcHttpConnectionClient {
   void OnRpcExited(grpc::ClientContext* context, const grpc::Status& status);
 
   // `http_connection_factory_` must outlive this class.
-  base::raw_ptr<assistant_client::HttpConnectionFactory>
-      http_connection_factory_;
+  raw_ptr<assistant_client::HttpConnectionFactory> http_connection_factory_;
 
   // The following section is only accessed by the constructor thread.
   // Thread running the completion queue.  CQ has to be shutdown before we
@@ -93,9 +92,14 @@ class GrpcHttpConnectionClient {
 
   // `http_connection` owns itself and will be deleted when `Close()` is called.
   // When clean up `http_connections_`, will call `Close()` on the elements.
-  base::flat_map<int, assistant_client::HttpConnection*> http_connections_;
+  base::flat_map<int,
+                 raw_ptr<assistant_client::HttpConnection, CtnExperimental>>
+      http_connections_;
   // `delegate` owns itself.
-  base::flat_map<int, assistant_client::HttpConnection::Delegate*> delegates_;
+  base::flat_map<
+      int,
+      raw_ptr<assistant_client::HttpConnection::Delegate, CtnExperimental>>
+      delegates_;
 
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;
   base::WeakPtrFactory<GrpcHttpConnectionClient> weak_factory_{this};

@@ -42,6 +42,7 @@
 
 #include <stddef.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -117,11 +118,11 @@ class BASE_EXPORT SimpleThread : public PlatformThread::Delegate {
   // be called before HasBeenStarted() returns True.
   PlatformThreadId tid();
 
-#if BUILDFLAG(IS_OHOS)
-  // Returns the thread global id, only valid after the thread has started. If the
-  // thread was started using Start(), then this will be valid after the call to
-  // Start(). If StartAsync() was used to start the thread, then this must not
-  // be called before HasBeenStarted() returns True.
+#if BUILDFLAG(IS_ARKWEB)
+  // Returns the thread global id, only valid after the thread has started. If
+  // the thread was started using Start(), then this will be valid after the
+  // call to Start(). If StartAsync() was used to start the thread, then this
+  // must not be called before HasBeenStarted() returns True.
   PlatformThreadId RealTid();
 #endif
 
@@ -158,8 +159,9 @@ class BASE_EXPORT SimpleThread : public PlatformThread::Delegate {
   PlatformThreadHandle thread_;  // PlatformThread handle, reset after Join.
   WaitableEvent event_;          // Signaled if Start() was ever called.
   PlatformThreadId tid_ = kInvalidThreadId;  // The backing thread's id.
-#if BUILDFLAG(IS_OHOS)
-  PlatformThreadId realTid_ = kInvalidThreadId;  // The backing thread's global id.
+#if BUILDFLAG(IS_ARKWEB)
+  PlatformThreadId realTid_ =
+      kInvalidThreadId;  // The backing thread's global id.
 #endif
   bool joined_ = false;                      // True if Join has been called.
   // Set to true when the platform-thread creation has started.
@@ -234,8 +236,8 @@ class BASE_EXPORT DelegateSimpleThreadPool
  private:
   const std::string name_prefix_;
   size_t num_threads_;
-  std::vector<DelegateSimpleThread*> threads_;
-  base::queue<Delegate*> delegates_;
+  std::vector<std::unique_ptr<DelegateSimpleThread>> threads_;
+  base::queue<raw_ptr<Delegate, CtnExperimental>> delegates_;
   base::Lock lock_;            // Locks delegates_
   WaitableEvent dry_;    // Not signaled when there is no work to do.
 };

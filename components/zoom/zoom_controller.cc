@@ -20,6 +20,10 @@
 #include "net/base/url_util.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
 
+#if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 using content::BrowserThread;
 
 namespace zoom {
@@ -60,15 +64,16 @@ ZoomController::~ZoomController() {
 
 bool ZoomController::IsAtDefaultZoom() const {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  return blink::PageZoomValuesEqual(GetZoomLevel(), GetDefaultZoomLevel());
+  return blink::ZoomValuesEqual(GetZoomLevel(), GetDefaultZoomLevel());
 }
 
 ZoomController::RelativeZoom ZoomController::GetZoomRelativeToDefault() const {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   double current_level = GetZoomLevel();
   double default_level = GetDefaultZoomLevel();
-  if (blink::PageZoomValuesEqual(current_level, default_level))
+  if (blink::ZoomValuesEqual(current_level, default_level)) {
     return ZOOM_AT_DEFAULT_ZOOM;
+  }
   if (current_level > default_level)
     return ZOOM_ABOVE_DEFAULT_ZOOM;
   return ZOOM_BELOW_DEFAULT_ZOOM;
@@ -93,7 +98,7 @@ double ZoomController::GetZoomLevel() const {
 
 int ZoomController::GetZoomPercent() const {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  double zoom_factor = blink::PageZoomLevelToZoomFactor(GetZoomLevel());
+  double zoom_factor = blink::ZoomLevelToZoomFactor(GetZoomLevel());
   // Round double for return.
   return static_cast<int>(zoom_factor * 100 + 0.5);
 }
@@ -124,8 +129,9 @@ bool ZoomController::SetZoomLevelByClient(
   // Do not actually rescale the page in manual mode.
   if (zoom_mode_ == ZOOM_MODE_MANUAL) {
     // If the zoom level hasn't changed, early out to avoid sending an event.
-    if (blink::PageZoomValuesEqual(zoom_level_, zoom_level))
+    if (blink::ZoomValuesEqual(zoom_level_, zoom_level)) {
       return true;
+    }
 
     double old_zoom_level = zoom_level_;
     zoom_level_ = zoom_level;
@@ -344,6 +350,12 @@ void ZoomController::RenderFrameHostChanged(
 }
 
 void ZoomController::OnPageScaleFactorChanged(float page_scale_factor) {
+#if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
+  if (base::ohos::IsTabletDevice()) {
+    return;
+  }
+#endif
+
   const bool is_one = page_scale_factor == 1.f;
   if (is_one != last_page_scale_factor_was_one_) {
     // We send a no-op zoom change to inform observers that PageScaleFactorIsOne

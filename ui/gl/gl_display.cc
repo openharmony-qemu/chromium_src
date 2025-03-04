@@ -17,8 +17,10 @@
 #include "base/notreached.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
+#include "base/synchronization/atomic_flag.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
+#include "ui/base/ozone_buildflags.h"
 #include "ui/gl/angle_platform_impl.h"
 #include "ui/gl/egl_util.h"
 #include "ui/gl/gl_bindings.h"
@@ -27,10 +29,6 @@
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_surface.h"
-
-#if BUILDFLAG(IS_OZONE)
-#include "ui/ozone/buildflags.h"
-#endif  // BUILDFLAG(IS_OZONE)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
@@ -129,8 +127,6 @@
 #define EGL_ANGLE_feature_control 1
 #define EGL_FEATURE_NAME_ANGLE 0x3460
 #define EGL_FEATURE_CATEGORY_ANGLE 0x3461
-#define EGL_FEATURE_DESCRIPTION_ANGLE 0x3462
-#define EGL_FEATURE_BUG_ANGLE 0x3463
 #define EGL_FEATURE_STATUS_ANGLE 0x3464
 #define EGL_FEATURE_COUNT_ANGLE 0x3465
 #define EGL_FEATURE_OVERRIDES_ENABLED_ANGLE 0x3466
@@ -144,19 +140,9 @@ namespace gl {
 
 namespace {
 
-void AdjustAngleFeaturesFromChromeFeatures(
-    std::vector<std::string>& enabled_angle_features,
-    std::vector<std::string>& disabled_angle_features) {
-#if BUILDFLAG(IS_MAC)
-  if (base::FeatureList::IsEnabled(features::kWriteMetalShaderCacheToDisk)) {
-    disabled_angle_features.push_back("enableParallelMtlLibraryCompilation");
-    enabled_angle_features.push_back("compileMetalShaders");
-    enabled_angle_features.push_back("disableProgramCaching");
-  }
-  if (base::FeatureList::IsEnabled(features::kUseBuiltInMetalShaderCache)) {
-    enabled_angle_features.push_back("loadMetalShadersFromBlobCache");
-  }
-#endif
+base::AtomicFlag* GetANGLEDebugLayerFlag() {
+  static base::AtomicFlag* const flag = new base::AtomicFlag();
+  return flag;
 }
 
 std::vector<const char*> GetAttribArrayFromStringVector(
@@ -167,14 +153,6 @@ std::vector<const char*> GetAttribArrayFromStringVector(
   }
   attribs.push_back(nullptr);
   return attribs;
-}
-
-std::vector<std::string> GetStringVectorFromCommandLine(
-    const base::CommandLine* command_line,
-    const char switch_name[]) {
-  std::string command_string = command_line->GetSwitchValueASCII(switch_name);
-  return base::SplitString(command_string, ", ;", base::TRIM_WHITESPACE,
-                           base::SPLIT_WANT_NONEMPTY);
 }
 
 EGLDisplay GetPlatformANGLEDisplay(
@@ -253,6 +231,10 @@ EGLDisplay GetPlatformANGLEDisplay(
     }
   }
 
+  display_attribs.push_back(EGL_PLATFORM_ANGLE_DEBUG_LAYERS_ENABLED_ANGLE);
+  display_attribs.push_back(GetANGLEDebugLayerFlag()->IsSet() ? EGL_TRUE
+                                                              : EGL_FALSE);
+
   display_attribs.push_back(EGL_NONE);
 
   // This is an EGL 1.5 function that we know ANGLE supports. It's used to pass
@@ -267,14 +249,9 @@ EGLDisplay GetDisplayFromType(
     EGLDisplayPlatform native_display,
     const std::vector<std::string>& enabled_angle_features,
     const std::vector<std::string>& disabled_angle_features,
-    bool disable_all_angle_features,
     uint64_t system_device_id,
     DisplayKey display_key) {
   std::vector<EGLAttrib> extra_display_attribs;
-  if (disable_all_angle_features) {
-    extra_display_attribs.push_back(EGL_FEATURE_ALL_DISABLED_ANGLE);
-    extra_display_attribs.push_back(EGL_TRUE);
-  }
   if (system_device_id != 0 &&
       g_driver_egl.client_ext.b_EGL_ANGLE_platform_angle_device_id) {
     uint32_t low_part = system_device_id & 0xffffffff;
@@ -376,14 +353,12 @@ EGLDisplay GetDisplayFromType(
       extra_display_attribs.push_back(EGL_PLATFORM_ANGLE_DEVICE_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_DEVICE_TYPE_SWIFTSHADER_ANGLE);
-#if BUILDFLAG(IS_OZONE)
-#if BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(OZONE_PLATFORM_X11)
+#if BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(IS_OZONE_X11)
       extra_display_attribs.push_back(
           EGL_PLATFORM_ANGLE_NATIVE_PLATFORM_TYPE_ANGLE);
       extra_display_attribs.push_back(
           EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE);
-#endif  // BUILDFLAG(OZONE_PLATFORM_X11)
-#endif  // BUILDFLAG(IS_OZONE)
+#endif  // BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(IS_OZONE_X11)
       return GetPlatformANGLEDisplay(
           display, EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE, enabled_angle_features,
           disabled_angle_features, extra_display_attribs);
@@ -400,7 +375,6 @@ EGLDisplay GetDisplayFromType(
           disabled_angle_features, extra_display_attribs);
     default:
       NOTREACHED();
-      return EGL_NO_DISPLAY;
   }
 }
 
@@ -476,7 +450,6 @@ const char* DisplayTypeString(DisplayType display_type) {
       return "MetalNull";
     default:
       NOTREACHED();
-      return "Err";
   }
 }
 
@@ -560,12 +533,9 @@ GLDisplayPlatform* GLDisplay::GetAs() {
   switch (type_) {
     case NONE:
       NOTREACHED();
-      break;
 
     case EGL:
-#if defined(USE_EGL)
       type_checked = std::is_same<GLDisplayPlatform, GLDisplayEGL>::value;
-#endif  // defined(USE_EGL)
       break;
   }
   if (type_checked)
@@ -574,12 +544,9 @@ GLDisplayPlatform* GLDisplay::GetAs() {
   return nullptr;
 }
 
-#if defined(USE_EGL)
 template EXPORT_TEMPLATE_DEFINE(GL_EXPORT)
     GLDisplayEGL* GLDisplay::GetAs<GLDisplayEGL>();
-#endif  // defined(USE_EGL)
 
-#if defined(USE_EGL)
 GLDisplayEGL::EGLGpuSwitchingObserver::EGLGpuSwitchingObserver(
     EGLDisplay display)
     : display_(display) {
@@ -591,12 +558,17 @@ void GLDisplayEGL::EGLGpuSwitchingObserver::OnGpuSwitched(
   eglHandleGPUSwitchANGLE(display_);
 }
 
+// Because on Apple platforms there is a member variable of a type (ObjCStorage)
+// that is defined in gl_display_egl.mm, the constructor/destructor also have to
+// be there. If making changes to this copy, be sure to adjust the other.
+#if !BUILDFLAG(IS_APPLE)
 GLDisplayEGL::GLDisplayEGL(uint64_t system_device_id, DisplayKey display_key)
-    : GLDisplay(system_device_id, display_key, EGL), display_(EGL_NO_DISPLAY) {
+    : GLDisplay(system_device_id, display_key, EGL) {
   ext = std::make_unique<DisplayExtensionsEGL>();
 }
 
 GLDisplayEGL::~GLDisplayEGL() = default;
+#endif
 
 EGLDisplay GLDisplayEGL::GetDisplay() const {
   return display_;
@@ -622,7 +594,7 @@ void GLDisplayEGL::Shutdown() {
   egl_android_native_fence_sync_supported_ = false;
 
 #if BUILDFLAG(IS_APPLE)
-  CleanupMetalSharedEvent();
+  CleanupMetalSharedEventStorage();
 #endif
 }
 
@@ -646,6 +618,11 @@ DisplayType GLDisplayEGL::GetDisplayType() const {
 GLDisplayEGL* GLDisplayEGL::GetDisplayForCurrentContext() {
   GLContext* context = GLContext::GetCurrent();
   return context ? context->GetGLDisplayEGL() : nullptr;
+}
+
+// static
+void GLDisplayEGL::EnableANGLEDebugLayer() {
+  GetANGLEDebugLayerFlag()->Set();
 }
 
 bool GLDisplayEGL::IsEGLSurfacelessContextSupported() {
@@ -737,27 +714,22 @@ bool GLDisplayEGL::InitializeDisplay(bool supports_angle,
     SetEglDebugMessageControl();
   }
 
-  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (g_driver_egl.client_ext.b_EGL_ANGLE_no_error &&
+      !features::IsANGLEValidationEnabled()) {
+    eglSetValidationEnabledANGLE(EGL_FALSE);
+  }
 
-  std::vector<std::string> enabled_angle_features =
-      GetStringVectorFromCommandLine(command_line,
-                                     switches::kEnableANGLEFeatures);
-  std::vector<std::string> disabled_angle_features =
-      GetStringVectorFromCommandLine(command_line,
-                                     switches::kDisableANGLEFeatures);
-
-  AdjustAngleFeaturesFromChromeFeatures(enabled_angle_features,
-                                        disabled_angle_features);
-
-  bool disable_all_angle_features =
-      command_line->HasSwitch(switches::kDisableGpuDriverBugWorkarounds);
+  std::vector<std::string> enabled_angle_features;
+  std::vector<std::string> disabled_angle_features;
+  features::GetANGLEFeaturesFromCommandLineAndFinch(
+      base::CommandLine::ForCurrentProcess(), enabled_angle_features,
+      disabled_angle_features);
 
   for (size_t disp_index = 0; disp_index < init_displays.size(); ++disp_index) {
     DisplayType display_type = init_displays[disp_index];
-    EGLDisplay display =
-        GetDisplayFromType(display_type, native_display, enabled_angle_features,
-                           disabled_angle_features, disable_all_angle_features,
-                           system_device_id_, display_key_);
+    EGLDisplay display = GetDisplayFromType(
+        display_type, native_display, enabled_angle_features,
+        disabled_angle_features, system_device_id_, display_key_);
     if (display == EGL_NO_DISPLAY) {
       // Assume this is not an error, so don't verbosely report it;
       // simply try the next display type.
@@ -777,7 +749,7 @@ bool GLDisplayEGL::InitializeDisplay(bool supports_angle,
 
       // The platform may need to unset its platform specific display env in
       // case of vulkan if the platform doesn't support Vulkan surface.
-      absl::optional<base::ScopedEnvironmentVariableOverride> unset_display;
+      std::optional<base::ScopedEnvironmentVariableOverride> unset_display;
       if (display_type == ANGLE_VULKAN) {
         unset_display = GLDisplayEglUtil::GetInstance()
                             ->MaybeGetScopedDisplayUnsetForVulkan();
@@ -883,7 +855,7 @@ void GLDisplayEGL::InitializeCommon(bool for_testing) {
   // a useless wrapper function. See crbug.com/775707 for details. In short, if
   // the symbol is present and we're on Android N or newer and we are not on
   // Android emulator, assume that it's usable even if the extension wasn't
-  // reported. TODO(https://crbug.com/1086781): Once this is fixed at the
+  // reported. TODO(crbug.com/40132708): Once this is fixed at the
   // Android level, update the heuristic to trust the reported extension from
   // that version onward.
   egl_android_native_fence_sync_supported_ =
@@ -897,6 +869,11 @@ void GLDisplayEGL::InitializeCommon(bool for_testing) {
       base::SysInfo::GetAndroidHardwareEGL() != "emulation") {
     egl_android_native_fence_sync_supported_ = true;
   }
+
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kDisableAndroidNativeFenceSyncForTesting)) {
+    egl_android_native_fence_sync_supported_ = false;
+  }
 #endif  // BUILDFLAG(IS_ANDROID)
 
   if (!for_testing) {
@@ -907,7 +884,10 @@ void GLDisplayEGL::InitializeCommon(bool for_testing) {
           gpu_switching_observer_.get());
     }
   }
+
+#if BUILDFLAG(IS_APPLE)
+  InitMetalSharedEventStorage();
+#endif
 }
-#endif  // defined(USE_EGL)
 
 }  // namespace gl

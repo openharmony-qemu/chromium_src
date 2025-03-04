@@ -38,7 +38,7 @@ void LaunchDateAndTimeSettings() {
 #if BUILDFLAG(IS_ANDROID)
   JNIEnv* env = base::android::AttachCurrentThread();
   Java_DateAndTimeSettingsHelper_openDateAndTimeSettings(env);
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   struct ClockCommand {
     const char* const pathname;
     const char* const argument;
@@ -80,7 +80,6 @@ void LaunchDateAndTimeSettings() {
 
 #elif BUILDFLAG(IS_MAC)
   base::mac::OpenSystemSettingsPane(base::mac::SystemSettingsPane::kDateTime);
-
 #elif BUILDFLAG(IS_WIN)
   base::FilePath path;
   base::PathService::Get(base::DIR_SYSTEM, &path);
@@ -94,8 +93,9 @@ void LaunchDateAndTimeSettings() {
   options.wait = false;
   base::LaunchProcess(command, options);
 
-#elif BUILDFLAG(IS_FUCHSIA)
-  // TODO(crbug.com/1233494): Send to the platform settings.
+#elif BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_OHOS)
+  // TODO(crbug.com/40191566): Send to the platform settings.
+  // The iOS Blink port also need to send the platform settings.
   NOTIMPLEMENTED_LOG_ONCE();
 #else
 #error Unsupported target architecture.

@@ -11,6 +11,7 @@
 #include "media/base/encryption_pattern.h"
 #include "media/base/encryption_scheme.h"
 #include "media/base/limits.h"
+#include "media/base/media_switches.h"
 #include "ui/gfx/ipc/geometry/gfx_param_traits.h"
 #include "ui/gfx/ipc/gfx_param_traits.h"
 
@@ -28,10 +29,6 @@ void ParamTraits<AudioParameters>::Write(base::Pickle* m,
   WriteParam(m, p.frames_per_buffer());
   WriteParam(m, p.channels());
   WriteParam(m, p.effects());
-#if defined(OHOS_MEDIA_POLICY)
-  WriteParam(m, p.render_process_id());
-  WriteParam(m, p.render_frame_id());
-#endif // defined(OHOS_MEDIA_POLICY)
   WriteParam(m, p.mic_positions());
   WriteParam(m, p.latency_tag());
   WriteParam(m, p.hardware_capabilities());
@@ -42,21 +39,16 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
                                         AudioParameters* r) {
   AudioParameters::Format format;
   ChannelLayout channel_layout;
-#if defined(OHOS_MEDIA_POLICY)
-  int sample_rate, frames_per_buffer, channels, effects, render_process_id, render_frame_id;
-#endif // defined(OHOS_MEDIA_POLICY)
+  int sample_rate, frames_per_buffer, channels, effects;
   std::vector<media::Point> mic_positions;
-  AudioLatency::LatencyType latency_tag;
-  absl::optional<media::AudioParameters::HardwareCapabilities>
+  AudioLatency::Type latency_tag;
+  std::optional<media::AudioParameters::HardwareCapabilities>
       hardware_capabilities;
 
   if (!ReadParam(m, iter, &format) || !ReadParam(m, iter, &channel_layout) ||
       !ReadParam(m, iter, &sample_rate) ||
       !ReadParam(m, iter, &frames_per_buffer) ||
       !ReadParam(m, iter, &channels) || !ReadParam(m, iter, &effects) ||
-#if defined(OHOS_MEDIA_POLICY)
-      !ReadParam(m, iter, &render_process_id) || !ReadParam(m, iter, &render_frame_id) ||
-#endif // defined(OHOS_MEDIA_POLICY)
       !ReadParam(m, iter, &mic_positions) ||
       !ReadParam(m, iter, &latency_tag) ||
       !ReadParam(m, iter, &hardware_capabilities)) {
@@ -72,10 +64,6 @@ bool ParamTraits<AudioParameters>::Read(const base::Pickle* m,
   }
 
   r->set_effects(effects);
-#if defined(OHOS_MEDIA_POLICY)
-  r->set_render_process_id(render_process_id);
-  r->set_render_frame_id(render_frame_id);
-#endif // defined(OHOS_MEDIA_POLICY)
   r->set_mic_positions(mic_positions);
   r->set_latency_tag(latency_tag);
 
@@ -94,6 +82,7 @@ void ParamTraits<AudioParameters::HardwareCapabilities>::Write(
   WriteParam(m, p.max_frames_per_buffer);
   WriteParam(m, p.bitstream_formats);
   WriteParam(m, p.require_encapsulation);
+  WriteParam(m, p.require_audio_offload);
 }
 
 bool ParamTraits<AudioParameters::HardwareCapabilities>::Read(
@@ -104,16 +93,25 @@ bool ParamTraits<AudioParameters::HardwareCapabilities>::Read(
   bool require_encapsulation;
   int max_frames_per_buffer;
   int min_frames_per_buffer;
+  bool require_audio_offload;
   if (!ReadParam(m, iter, &min_frames_per_buffer) ||
       !ReadParam(m, iter, &max_frames_per_buffer) ||
       !ReadParam(m, iter, &bitstream_formats) ||
-      !ReadParam(m, iter, &require_encapsulation)) {
+      !ReadParam(m, iter, &require_encapsulation) ||
+      !ReadParam(m, iter, &require_audio_offload)) {
     return false;
   }
+#if BUILDFLAG(IS_WIN)
+  if (require_audio_offload &&
+      !base::FeatureList::IsEnabled(media::kAudioOffload)) {
+    return false;
+  }
+#endif
   r->min_frames_per_buffer = min_frames_per_buffer;
   r->max_frames_per_buffer = max_frames_per_buffer;
   r->bitstream_formats = bitstream_formats;
   r->require_encapsulation = require_encapsulation;
+  r->require_audio_offload = require_audio_offload;
   return true;
 }
 

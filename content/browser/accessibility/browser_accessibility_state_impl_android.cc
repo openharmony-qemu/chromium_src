@@ -4,10 +4,11 @@
 
 #include "content/browser/accessibility/browser_accessibility_state_impl_android.h"
 
+#include <memory>
+
 #include "base/containers/contains.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/no_destructor.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/browser_thread.h"
 #include "ui/accessibility/android/accessibility_state.h"
@@ -43,6 +44,8 @@ const uint32_t kPasswordPackageHashes[] = {
 // below. For example, UMA_EVENT_ANNOUNCEMENT corresponds to
 // ACCESSIBILITYEVENT_TYPE_ANNOUNCEMENT via the macro
 // EVENT_TYPE_HISTOGRAM(event_type_mask, ANNOUNCEMENT).
+//
+// LINT.IfChange
 enum {
   UMA_CAPABILITY_CAN_CONTROL_MAGNIFICATION = 0,
   UMA_CAPABILITY_CAN_PERFORM_GESTURES = 1,
@@ -116,6 +119,7 @@ enum {
   // increase, but none of the other enum values may change.
   UMA_ACCESSIBILITYSERVICEINFO_MAX
 };
+// LINT.ThenChange(/tools/metrics/histograms/metadata/accessibility/enums.xml:AccessibilityAndroidServiceInfoEnum)
 
 // These are constants from
 // android.view.accessibility.AccessibilityEvent in Java.
@@ -249,15 +253,15 @@ enum {
 }  // namespace
 
 BrowserAccessibilityStateImplAndroid::BrowserAccessibilityStateImplAndroid() {
-  ui::AccessibilityState::RegisterObservers();
-  ui::AccessibilityState::RegisterAnimatorDurationScaleDelegate(this);
+  ui::AccessibilityState::RegisterAccessibilityStateDelegate(this);
 }
 
 BrowserAccessibilityStateImplAndroid::~BrowserAccessibilityStateImplAndroid() {
-  ui::AccessibilityState::UnregisterAnimatorDurationScaleDelegate(this);
+  ui::AccessibilityState::UnregisterAccessibilityStateDelegate(this);
 }
 
-void BrowserAccessibilityStateImplAndroid::CollectAccessibilityServiceStats() {
+void BrowserAccessibilityStateImplAndroid::
+    RecordAccessibilityServiceInfoHistograms() {
   int event_type_mask =
       ui::AccessibilityState::GetAccessibilityServiceEventTypeMask();
   int feedback_type_mask =
@@ -400,10 +404,30 @@ void BrowserAccessibilityStateImplAndroid::OnAnimatorDurationScaleChanged() {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
   gfx::Animation::UpdatePrefersReducedMotion();
-  for (content::WebContentsImpl* wc :
-       content::WebContentsImpl::GetAllWebContents()) {
-    wc->OnWebPreferencesChanged();
-  }
+  NotifyWebContentsPreferencesChanged();
+}
+
+void BrowserAccessibilityStateImplAndroid::OnDisplayInversionEnabledChanged(
+    bool enabled) {
+  // We need to call into GetInstanceForWeb on the UI thread,
+  // so ensure that we setup the notification on the correct thread.
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+  ui::NativeTheme* native_theme = ui::NativeTheme::GetInstanceForWeb();
+  native_theme->set_inverted_colors(enabled);
+  native_theme->NotifyOnNativeThemeUpdated();
+}
+
+void BrowserAccessibilityStateImplAndroid::OnContrastLevelChanged(
+    bool highContrastEnabled) {
+  // We need to call into GetInstanceForWeb on the UI thread,
+  // so ensure that we setup the notification on the correct thread.
+  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+  ui::NativeTheme* native_theme = ui::NativeTheme::GetInstanceForWeb();
+  native_theme->SetPreferredContrast(
+      highContrastEnabled ? ui::NativeTheme::PreferredContrast::kMore
+                          : ui::NativeTheme::PreferredContrast::kNoPreference);
+  native_theme->set_prefers_reduced_transparency(highContrastEnabled);
+  native_theme->NotifyOnNativeThemeUpdated();
 }
 
 void BrowserAccessibilityStateImplAndroid::UpdateHistogramsOnOtherThread() {
@@ -429,31 +453,10 @@ void BrowserAccessibilityStateImplAndroid::UpdateUniqueUserHistograms() {
                         mode.has_mode(ui::AXMode::kScreenReader));
 }
 
-void BrowserAccessibilityStateImplAndroid::SetImageLabelsModeForProfile(
-    bool enabled,
-    BrowserContext* profile) {
-  std::vector<WebContentsImpl*> web_contents_vector =
-      WebContentsImpl::GetAllWebContents();
-  for (auto*& web_contents : web_contents_vector) {
-    if (web_contents->GetBrowserContext() != profile) {
-      continue;
-    }
-
-    ui::AXMode ax_mode = web_contents->GetAccessibilityMode();
-    ax_mode.set_mode(ui::AXMode::kLabelImages, enabled);
-    web_contents->SetAccessibilityMode(ax_mode);
-  }
-}
-
-//
-// BrowserAccessibilityStateImpl::GetInstance implementation that constructs
-// this class instead of the base class.
-//
-
 // static
-BrowserAccessibilityStateImpl* BrowserAccessibilityStateImpl::GetInstance() {
-  static base::NoDestructor<BrowserAccessibilityStateImplAndroid> instance;
-  return &*instance;
+std::unique_ptr<BrowserAccessibilityStateImpl>
+BrowserAccessibilityStateImpl::Create() {
+  return std::make_unique<BrowserAccessibilityStateImplAndroid>();
 }
 
 }  // namespace content

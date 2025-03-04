@@ -8,19 +8,20 @@
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/services/screen_ai/buildflags/buildflags.h"
-#include "components/services/screen_ai/public/cpp/utilities.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
+#include "content/utility/sandbox_delegate_data.mojom.h"
 #include "printing/buildflags/buildflags.h"
+#include "sandbox/policy/features.h"
 #include "sandbox/policy/mojom/sandbox.mojom.h"
 #include "sandbox/policy/win/sandbox_win.h"
 #include "sandbox/win/src/app_container.h"
 #include "sandbox/win/src/sandbox_policy.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "services/network/public/mojom/network_service.mojom.h"
+#include "services/screen_ai/buildflags/buildflags.h"
 
 namespace content {
 namespace {
@@ -64,15 +65,6 @@ bool AudioInitializeConfig(sandbox::TargetConfig* config) {
   if (result != sandbox::SBOX_ALL_OK)
     return false;
 
-  // The Audio Service process uses a base::SyncSocket for transmitting audio
-  // data.
-  result = config->AddRule(sandbox::SubSystem::kNamedPipes,
-                           sandbox::Semantics::kNamedPipesAllowAny,
-                           L"\\\\.\\pipe\\chrome.sync.*");
-  if (result != sandbox::SBOX_ALL_OK) {
-    return false;
-  }
-
   config->SetDesktop(sandbox::Desktop::kAlternateWinstation);
 
   return true;
@@ -92,7 +84,7 @@ bool NetworkInitializeConfig(sandbox::TargetConfig* config) {
       GetContentClient()->browser()->GetLPACCapabilityNameForNetworkService();
   if (lpac_capability.empty())
     return false;
-  auto app_container = config->GetAppContainer();
+  auto* app_container = config->GetAppContainer();
   if (!app_container)
     return false;
   app_container->AddCapability(lpac_capability.c_str());
@@ -150,23 +142,21 @@ bool IconReaderInitializeConfig(sandbox::TargetConfig* config) {
   result = config->SetDelayedProcessMitigations(flags);
   if (result != sandbox::SBOX_ALL_OK)
     return false;
+  return true;
+}
 
-  // Allow file read. These should match IconLoader::GroupForFilepath().
-  result =
-      config->AddRule(sandbox::SubSystem::kFiles,
-                      sandbox::Semantics::kFilesAllowReadonly, L"\\??\\*.exe");
-  if (result != sandbox::SBOX_ALL_OK)
+bool OnDeviceModelExecutionInitializeConfig(
+    sandbox::TargetConfig* config,
+    base::CommandLine& cmd_line,
+    sandbox::mojom::Sandbox sandbox_type) {
+  DCHECK(!config->IsConfigured());
+  // USER_RESTRICTED breaks the Direct3D backend, so for now we can only go as
+  // low as USER_LIMITED.
+  sandbox::ResultCode result = config->SetTokenLevel(
+      sandbox::USER_RESTRICTED_SAME_ACCESS, sandbox::USER_LIMITED);
+  if (result != sandbox::SBOX_ALL_OK) {
     return false;
-  result =
-      config->AddRule(sandbox::SubSystem::kFiles,
-                      sandbox::Semantics::kFilesAllowReadonly, L"\\??\\*.dll");
-  if (result != sandbox::SBOX_ALL_OK)
-    return false;
-  result =
-      config->AddRule(sandbox::SubSystem::kFiles,
-                      sandbox::Semantics::kFilesAllowReadonly, L"\\??\\*.ico");
-  if (result != sandbox::SBOX_ALL_OK)
-    return false;
+  }
   return true;
 }
 
@@ -174,7 +164,7 @@ bool XrCompositingInitializeConfig(sandbox::TargetConfig* config,
                                    base::CommandLine& cmd_line,
                                    sandbox::mojom::Sandbox sandbox_type) {
   DCHECK(!config->IsConfigured());
-  // TODO(https://crbug.com/881919): Try to harden the XR Compositor
+  // TODO(crbug.com/41412553): Try to harden the XR Compositor
   // sandbox to use mitigations and restrict the token.
 
   // Unprotected token/job.
@@ -222,20 +212,26 @@ bool ScreenAIInitializeConfig(sandbox::TargetConfig* config,
   if (result != sandbox::SBOX_ALL_OK)
     return false;
 
-  base::FilePath library_binary_path =
-      screen_ai::GetLatestComponentBinaryPath();
-  if (library_binary_path.empty())
-    return false;
-  DCHECK_EQ(library_binary_path.Extension(), FILE_PATH_LITERAL(".dll"));
-
-  // TODO(https://crbug.com/1278249): Preload the binary instead of giving
-  // read permission to the sandbox.
-  result = config->AddRule(sandbox::SubSystem::kFiles,
-                           sandbox::Semantics::kFilesAllowReadonly,
-                           library_binary_path.value().c_str());
-  return result == sandbox::SBOX_ALL_OK;
+  return true;
 }
 #endif  // BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+
+// Adds preload-libraries to the delegate blob for utility_main() to access
+// before lockdown is initialized.
+void AddDelegateData(sandbox::TargetPolicy* policy,
+                     std::vector<base::FilePath>& preload_libraries) {
+  if (preload_libraries.empty()) {
+    return;
+  }
+  auto sandbox_config = content::mojom::sandbox::UtilityConfig::New();
+  for (const auto& library_path : preload_libraries) {
+    sandbox_config->preload_libraries.push_back(library_path);
+  }
+
+  std::vector<uint8_t> blob =
+      content::mojom::sandbox::UtilityConfig::Serialize(&sandbox_config);
+  policy->AddDelegateData(blob);
+}
 
 }  // namespace
 
@@ -246,36 +242,41 @@ std::string UtilitySandboxedProcessLauncherDelegate::GetSandboxTag() {
 
 bool UtilitySandboxedProcessLauncherDelegate::GetAppContainerId(
     std::string* appcontainer_id) {
+  if (app_container_disabled_) {
+    return false;
+  }
   switch (sandbox_type_) {
     case sandbox::mojom::Sandbox::kMediaFoundationCdm:
     case sandbox::mojom::Sandbox::kNetwork:
+    case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
     case sandbox::mojom::Sandbox::kWindowsSystemProxyResolver:
     case sandbox::mojom::Sandbox::kXrCompositing:
       *appcontainer_id = UtilityAppContainerId(cmd_line_);
       return true;
+#if BUILDFLAG(ENABLE_PRINTING)
+    case sandbox::mojom::Sandbox::kPrintCompositor:
+      if (base::FeatureList::IsEnabled(
+              sandbox::policy::features::kPrintCompositorLPAC)) {
+        *appcontainer_id = UtilityAppContainerId(cmd_line_);
+        return true;
+      }
+      return false;
+#endif
     default:
       return false;
   }
 }
 
 bool UtilitySandboxedProcessLauncherDelegate::DisableDefaultPolicy() {
+  std::string app_container_id;
+  // Default policy is always disabled if App Container is enabled.
+  if (GetAppContainerId(&app_container_id)) {
+    return true;
+  }
   switch (sandbox_type_) {
     case sandbox::mojom::Sandbox::kAudio:
       // Default policy is disabled for audio process to allow audio drivers
       // to read device properties (https://crbug.com/883326).
-      return true;
-    case sandbox::mojom::Sandbox::kXrCompositing:
-      return true;
-    case sandbox::mojom::Sandbox::kMediaFoundationCdm:
-      // Default policy is disabled for MF Cdm process to allow the application
-      // of specific LPAC sandbox policies.
-      return true;
-    case sandbox::mojom::Sandbox::kNetwork:
-      // An LPAC specific policy for network service is set elsewhere.
-      return true;
-    case sandbox::mojom::Sandbox::kWindowsSystemProxyResolver:
-      // Default policy is disabled for Windows System Proxy Resolver process to
-      // allow the application of specific LPAC sandbox policies.
       return true;
     default:
       return false;
@@ -302,6 +303,13 @@ bool UtilitySandboxedProcessLauncherDelegate::InitializeConfig(
   }
   if (sandbox_type_ == sandbox::mojom::Sandbox::kIconReader) {
     if (!IconReaderInitializeConfig(config)) {
+      return false;
+    }
+  }
+
+  if (sandbox_type_ == sandbox::mojom::Sandbox::kOnDeviceModelExecution) {
+    if (!OnDeviceModelExecutionInitializeConfig(config, cmd_line_,
+                                                sandbox_type_)) {
       return false;
     }
   }
@@ -333,8 +341,16 @@ bool UtilitySandboxedProcessLauncherDelegate::InitializeConfig(
     }
   }
 
-  if (sandbox_type_ == sandbox::mojom::Sandbox::kMediaFoundationCdm ||
-      sandbox_type_ == sandbox::mojom::Sandbox::kWindowsSystemProxyResolver) {
+  if (sandbox_type_ == sandbox::mojom::Sandbox::kMediaFoundationCdm) {
+    auto result = config->SetTokenLevel(sandbox::USER_UNPROTECTED,
+                                        sandbox::USER_UNPROTECTED);
+    if (result != sandbox::SBOX_ALL_OK) {
+      return false;
+    }
+  }
+
+  if (sandbox_type_ == sandbox::mojom::Sandbox::kWindowsSystemProxyResolver) {
+    // LPAC sandbox is enabled, so do not use a restricted token.
     auto result = config->SetTokenLevel(sandbox::USER_UNPROTECTED,
                                         sandbox::USER_UNPROTECTED);
     if (result != sandbox::SBOX_ALL_OK) {
@@ -343,16 +359,14 @@ bool UtilitySandboxedProcessLauncherDelegate::InitializeConfig(
   }
 
   if (sandbox_type_ == sandbox::mojom::Sandbox::kService ||
-      sandbox_type_ == sandbox::mojom::Sandbox::kServiceWithJit ||
-      sandbox_type_ == sandbox::mojom::Sandbox::kFileUtil) {
+      sandbox_type_ == sandbox::mojom::Sandbox::kServiceWithJit) {
     auto result = sandbox::policy::SandboxWin::AddWin32kLockdownPolicy(config);
     if (result != sandbox::SBOX_ALL_OK) {
       return false;
     }
   }
 
-  if (sandbox_type_ == sandbox::mojom::Sandbox::kService ||
-      sandbox_type_ == sandbox::mojom::Sandbox::kFileUtil) {
+  if (sandbox_type_ == sandbox::mojom::Sandbox::kService) {
     auto delayed_flags = config->GetDelayedProcessMitigations();
     delayed_flags |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
     auto result = config->SetDelayedProcessMitigations(delayed_flags);
@@ -363,6 +377,20 @@ bool UtilitySandboxedProcessLauncherDelegate::InitializeConfig(
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
   if (sandbox_type_ == sandbox::mojom::Sandbox::kPrintBackend) {
     if (!PrintBackendInitializeConfig(config)) {
+      return false;
+    }
+  }
+#endif
+
+#if BUILDFLAG(ENABLE_PRINTING)
+  if (sandbox_type_ == sandbox::mojom::Sandbox::kPrintCompositor &&
+      base::FeatureList::IsEnabled(
+          sandbox::policy::features::kPrintCompositorLPAC) &&
+      !app_container_disabled_) {
+    // LPAC sandbox is enabled, so do not use a restricted token.
+    auto result = config->SetTokenLevel(sandbox::USER_UNPROTECTED,
+                                        sandbox::USER_UNPROTECTED);
+    if (result != sandbox::SBOX_ALL_OK) {
       return false;
     }
   }
@@ -382,7 +410,7 @@ bool UtilitySandboxedProcessLauncherDelegate::ShouldUnsandboxedRunInJob() {
 }
 
 bool UtilitySandboxedProcessLauncherDelegate::CetCompatible() {
-  // TODO(1268074) can remove once v8 is cet-compatible.
+  // TODO(crbug.com/40803284) can remove once v8 is cet-compatible.
   if (sandbox_type_ == sandbox::mojom::Sandbox::kServiceWithJit)
     return false;
   auto utility_sub_type =
@@ -391,11 +419,9 @@ bool UtilitySandboxedProcessLauncherDelegate::CetCompatible() {
       utility_sub_type);
 }
 
-bool UtilitySandboxedProcessLauncherDelegate::AllowWindowsFontsDir() {
-  // New utilities should use a font proxy rather than allowing direct access.
-  if (sandbox_type_ == sandbox::mojom::Sandbox::kPrintCompositor) {
-    return true;
-  }
-  return false;
+bool UtilitySandboxedProcessLauncherDelegate::PreSpawnTarget(
+    sandbox::TargetPolicy* policy) {
+  AddDelegateData(policy, preload_libraries_);
+  return SandboxedProcessLauncherDelegate::PreSpawnTarget(policy);
 }
 }  // namespace content

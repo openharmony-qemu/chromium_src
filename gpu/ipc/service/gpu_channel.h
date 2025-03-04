@@ -9,8 +9,10 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -33,13 +35,13 @@
 #include "ipc/ipc_sync_channel.h"
 #include "mojo/public/cpp/bindings/generic_pending_associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/gfx/gpu_extra_info.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "ui/gl/ohos/native_buffer_utils.h"
 #endif
 
@@ -49,8 +51,10 @@ class WaitableEvent;
 
 namespace gpu {
 class DCOMPTexture;
+class FenceSyncReleaseDelegate;
 class GpuChannelManager;
 class GpuChannelMessageFilter;
+class GpuMemoryBufferFactory;
 class ImageDecodeAcceleratorWorker;
 class Scheduler;
 class SharedImageStub;
@@ -77,7 +81,9 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       int32_t client_id,
       uint64_t client_tracing_id,
       bool is_gpu_host,
-      ImageDecodeAcceleratorWorker* image_decode_accelerator_worker);
+      ImageDecodeAcceleratorWorker* image_decode_accelerator_worker,
+      const gfx::GpuExtraInfo& gpu_extra_info,
+      gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory);
 
   // Init() sets up the underlying IPC channel.  Use a separate method because
   // we don't want to do that in tests.
@@ -87,17 +93,6 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   void InitForTesting(IPC::Channel* channel);
 
   base::WeakPtr<GpuChannel> AsWeakPtr();
-
-  using CommandBufferMediaBinder =
-      base::RepeatingCallback<void(CommandBufferStub*,
-                                   mojo::GenericPendingAssociatedReceiver)>;
-  void set_command_buffer_media_binder(CommandBufferMediaBinder binder) {
-    command_buffer_media_binder_ = std::move(binder);
-  }
-
-  const CommandBufferMediaBinder& command_buffer_media_binder() const {
-    return command_buffer_media_binder_;
-  }
 
   // Get the GpuChannelManager that owns this channel.
   GpuChannelManager* gpu_channel_manager() const {
@@ -140,7 +135,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 
   CommandBufferStub* LookupCommandBuffer(int32_t route_id);
 
-  bool HasActiveWebGLContext() const;
+  bool HasActiveStatefulContext() const;
   void MarkAllContextsLost();
 
   // Called to add a listener for a particular message routing ID.
@@ -150,7 +145,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   // Called to remove a listener for a particular message routing ID.
   void RemoveRoute(int32_t route_id);
 
-  absl::optional<gpu::GpuDiskCacheHandle> GetCacheHandleForType(
+  std::optional<gpu::GpuDiskCacheHandle> GetCacheHandleForType(
       gpu::GpuDiskCacheType type);
   void RegisterCacheHandle(const gpu::GpuDiskCacheHandle& handle);
   void CacheBlob(gpu::GpuDiskCacheType type,
@@ -161,7 +156,11 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 
   // Executes a DeferredRequest that was previously received and has now been
   // scheduled by the scheduler.
-  void ExecuteDeferredRequest(mojom::DeferredRequestParamsPtr params);
+  void ExecuteDeferredRequest(mojom::DeferredRequestParamsPtr params,
+                              FenceSyncReleaseDelegate* release_delegate);
+  void GetGpuMemoryBufferHandleInfo(
+      const gpu::Mailbox& mailbox,
+      mojom::GpuChannel::GetGpuMemoryBufferHandleInfoCallback callback);
   void PerformImmediateCleanup();
 
   void WaitForTokenInRange(
@@ -205,7 +204,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       const gpu::Mailbox& mailbox);
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   int32_t CreateNativeTexture(
       int32_t native_id,
       gl::ohos::TextureOwnerMode texture_owner_mode,
@@ -233,7 +232,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 #if BUILDFLAG(IS_FUCHSIA)
   void RegisterSysmemBufferCollection(mojo::PlatformHandle service_handle,
                                       mojo::PlatformHandle sysmem_token,
-                                      gfx::BufferFormat format,
+                                      const viz::SharedImageFormat& format,
                                       gfx::BufferUsage usage,
                                       bool register_with_image_pipe);
 #endif  // BUILDFLAG(IS_FUCHSIA)
@@ -250,22 +249,20 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
              int32_t client_id,
              uint64_t client_tracing_id,
              bool is_gpu_host,
-             ImageDecodeAcceleratorWorker* image_decode_accelerator_worker);
+             ImageDecodeAcceleratorWorker* image_decode_accelerator_worker,
+             const gfx::GpuExtraInfo& gpu_extra_info,
+             gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory);
 
   void OnDestroyCommandBuffer(int32_t route_id);
 
   // Message handlers for control messages.
-  bool CreateSharedImageStub();
+  bool CreateSharedImageStub(const gfx::GpuExtraInfo& gpu_extra_info);
 
   std::unique_ptr<IPC::SyncChannel> sync_channel_;  // nullptr in tests.
   raw_ptr<IPC::Sender>
       channel_;  // Same as sync_channel_.get() except in tests.
 
   base::ProcessId client_pid_ = base::kNullProcessId;
-
-  // An optional binder to handle associated interface requests from the Media
-  // stack, targeting a specific CommandBuffer.
-  CommandBufferMediaBinder command_buffer_media_binder_;
 
   // Map of routing id to command buffer stub.
   base::flat_map<int32_t, std::unique_ptr<CommandBufferStub>> stubs_;
@@ -315,7 +312,7 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   base::flat_map<int32_t, scoped_refptr<DCOMPTexture>> dcomp_textures_;
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   // Set of active NativeTextures.
   base::flat_map<int32_t, scoped_refptr<StreamTexture>> native_textures_;
 #endif

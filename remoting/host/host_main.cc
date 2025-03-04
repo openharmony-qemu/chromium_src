@@ -18,9 +18,9 @@
 #include "base/strings/stringize_macros.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
+#include "mojo/core/embedder/embedder.h"
 #include "remoting/base/breakpad.h"
 #include "remoting/base/logging.h"
-#include "remoting/base/mojo_util.h"
 #include "remoting/host/base/host_exit_codes.h"
 #include "remoting/host/base/switches.h"
 #include "remoting/host/evaluate_capability.h"
@@ -29,7 +29,7 @@
 #include "remoting/host/usage_stats_consent.h"
 
 #if BUILDFLAG(IS_APPLE)
-#include "base/mac/scoped_nsautorelease_pool.h"
+#include "base/apple/scoped_nsautorelease_pool.h"
 #endif  // BUILDFLAG(IS_APPLE)
 
 #if BUILDFLAG(IS_WIN)
@@ -170,7 +170,7 @@ MainRoutineFn SelectMainRoutine(const std::string& process_type) {
 int HostMain(int argc, char** argv) {
 #if BUILDFLAG(IS_APPLE)
   // Needed so we don't leak objects when threads are created.
-  base::mac::ScopedNSAutoreleasePool pool;
+  base::apple::ScopedNSAutoreleasePool pool;
 #endif
 
   base::CommandLine::Init(argc, argv);
@@ -222,7 +222,18 @@ int HostMain(int argc, char** argv) {
   // be initialized first, so that the preference for crash-reporting can be
   // looked up in the config file.
   if (IsUsageStatsAllowed()) {
+#if BUILDFLAG(IS_LINUX)
     InitializeCrashReporting();
+#elif BUILDFLAG(IS_WIN)
+    // TODO: joedow - Enable crash reporting for the RDP process.
+    if (process_type == kProcessTypeDesktop ||
+        process_type == kProcessTypeDaemon) {
+      InitializeCrashReporting();
+    } else if (command_line->HasSwitch(kCrashServerPipeHandle)) {
+      InitializeOopCrashClient(
+          command_line->GetSwitchValueASCII(kCrashServerPipeHandle));
+    }
+#endif
   }
 #endif  // defined(REMOTING_ENABLE_BREAKPAD)
 
@@ -247,7 +258,16 @@ int HostMain(int argc, char** argv) {
 
   remoting::LoadResources("");
 
-  InitializeMojo({.is_broker_process = main_routine == &HostProcessMain});
+  mojo::core::Init({
+#if BUILDFLAG(IS_WIN)
+      .is_broker_process = main_routine == &DaemonProcessMain
+#elif BUILDFLAG(IS_MAC)
+      // The broker process on Mac is the agent process broker.
+      .is_broker_process = false
+#else
+      .is_broker_process = main_routine == &HostProcessMain
+#endif
+  });
 
   // Invoke the entry point.
   int exit_code = main_routine();

@@ -14,10 +14,12 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "content/browser/font_access/font_enumeration_data_source_win.h"
-#elif BUILDFLAG(IS_MAC)
+#elif BUILDFLAG(IS_APPLE)
 #include "content/browser/font_access/font_enumeration_data_source_mac.h"
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include "content/browser/font_access/font_enumeration_data_source_linux.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "content/browser/font_access/font_enumeration_data_source_ohos.h"
 #endif  // BUILDFLAG(IS_WIN)
 
 namespace content {
@@ -59,10 +61,12 @@ class FontEnumerationDataSourceNull : public FontEnumerationDataSource {
 std::unique_ptr<FontEnumerationDataSource> FontEnumerationDataSource::Create() {
 #if BUILDFLAG(IS_WIN)
   return std::make_unique<FontEnumerationDataSourceWin>();
-#elif BUILDFLAG(IS_MAC)
+#elif BUILDFLAG(IS_APPLE)
   return std::make_unique<FontEnumerationDataSourceMac>();
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   return std::make_unique<FontEnumerationDataSourceLinux>();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<FontEnumerationDataSourceOHOS>();
 #else
   return std::make_unique<FontEnumerationDataSourceNull>();
 #endif  // BUILDFLAG(IS_WIN)
@@ -74,9 +78,11 @@ bool FontEnumerationDataSource::IsOsSupported() {
 
 #if BUILDFLAG(IS_WIN)
   return true;
-#elif BUILDFLAG(IS_MAC)
+#elif BUILDFLAG(IS_APPLE)
   return true;
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+  return true;
+#elif BUILDFLAG(IS_OHOS)
   return true;
 #else
   return false;

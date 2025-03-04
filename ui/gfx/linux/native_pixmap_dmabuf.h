@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/scoped_file.h"
 #include "ui/gfx/client_native_pixmap.h"
 #include "ui/gfx/geometry/size.h"
@@ -17,19 +18,16 @@
 namespace gfx {
 
 // This class converts a gfx::NativePixmapHandle to a gfx::NativePixmap.
-// It is useful because gpu::GLImageNativePixmap::Initialize only takes
-// a gfx::NativePixmap as input.
-class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
+class COMPONENT_EXPORT(GFX) NativePixmapDmaBuf : public gfx::NativePixmap {
  public:
   NativePixmapDmaBuf(const gfx::Size& size,
                      gfx::BufferFormat format,
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                      gfx::NativePixmapHandle handle,
                      void* window_buffer = nullptr);
 #else
                      gfx::NativePixmapHandle handle);
 #endif
-
 
   NativePixmapDmaBuf(const NativePixmapDmaBuf&) = delete;
   NativePixmapDmaBuf& operator=(const NativePixmapDmaBuf&) = delete;
@@ -50,9 +48,9 @@ class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
                             const gfx::OverlayPlaneData& overlay_plane_data,
                             std::vector<gfx::GpuFence> acquire_fences,
                             std::vector<gfx::GpuFence> release_fences) override;
-  gfx::NativePixmapHandle ExportHandle() override;
+  gfx::NativePixmapHandle ExportHandle() const override;
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   void* GetWindowBuffer() override { return native_window_buffer_; }
 #endif
 
@@ -63,7 +61,7 @@ class GFX_EXPORT NativePixmapDmaBuf : public gfx::NativePixmap {
   gfx::Size size_;
   gfx::BufferFormat format_;
   gfx::NativePixmapHandle handle_;
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   void* native_window_buffer_;
 #endif
 };

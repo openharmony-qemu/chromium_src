@@ -43,8 +43,8 @@ class GpuHostImplTestApi {
     void DidInitialize(
         const gpu::GPUInfo& gpu_info,
         const gpu::GpuFeatureInfo& gpu_feature_info,
-        const absl::optional<gpu::GPUInfo>& gpu_info_for_hardware_gpu,
-        const absl::optional<gpu::GpuFeatureInfo>&
+        const std::optional<gpu::GPUInfo>& gpu_info_for_hardware_gpu,
+        const std::optional<gpu::GpuFeatureInfo>&
             gpu_feature_info_for_hardware_gpu,
         const gfx::GpuExtraInfo& gpu_extra_info) override;
     void DidFailInitialize() override;
@@ -92,7 +92,7 @@ class GpuHostImplTestApi {
   void FlushRemoteForTesting();
   void SetGpuService(mojo::Remote<mojom::GpuService> gpu_service);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   std::string GetSurfaceId(int32_t native_embed_id);
 #endif
 

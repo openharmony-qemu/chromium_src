@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
 #define COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
 
+#include "arkweb/build/features/features.h"
 #include "components/viz/service/viz_service_export.h"
 
 namespace viz {
@@ -43,27 +44,38 @@ class VIZ_SERVICE_EXPORT SurfaceObserver {
   //
   // |ack.sequence_number| is only valid if called in response to a BeginFrame.
   // Should return true if this causes a Display to be damaged.
+  enum class HandleInteraction {
+    // Surface is damaged due to user interaction (e.g., a frame activation with
+    // scrolling).
+    kYes,
+    // Surface is no longer interactive (e.g. `DidNotProduceFrame` or frame
+    // activation with no scrolling).
+    kNo,
+    // No change to the interaction state (e.g. `CopyOutputRequest` submission).
+    kNoChange,
+  };
   virtual bool OnSurfaceDamaged(const SurfaceId& surface_id,
                                 const BeginFrameAck& ack,
-                                bool is_actively_scrolling);
+                                HandleInteraction handle_interaction);
 
   // Called when a Surface's CompositorFrame producer has received a BeginFrame
   // and, thus, is expected to produce damage soon.
-  virtual bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
-                                       const BeginFrameArgs& args) { return false; }
+  virtual void OnSurfaceDamageExpected(const SurfaceId& surface_id,
+                                       const BeginFrameArgs& args) {}
 
   // Called whenever |surface| will be drawn in the next display frame.
   virtual void OnSurfaceWillBeDrawn(Surface* surface) {}
 
   // Called whenever the surface reference from the surface that has |parent_id|
   // to the surface that has |child_id| is added.
+  // A matching `OnRemovedSurfaceReference` can be added if there are use cases.
   virtual void OnAddedSurfaceReference(const SurfaceId& parent_id,
                                        const SurfaceId& child_id) {}
-
-  // Called whenever the surface reference from the surface that has |parent_id|
-  // to the surface that has |child_id| is removed.
-  virtual void OnRemovedSurfaceReference(const SurfaceId& parent_id,
-                                         const SurfaceId& child_id) {}
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void ReenableSwapCheck(const SurfaceId& surface_id,
+                                 int width,
+                                 int height) {}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

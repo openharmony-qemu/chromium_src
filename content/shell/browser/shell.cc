@@ -24,7 +24,9 @@
 #include "components/custom_handlers/protocol_handler_registry.h"
 #include "components/custom_handlers/simple_protocol_handler_registry_factory.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/color_chooser.h"
 #include "content/public/browser/devtools_agent_host.h"
+#include "content/public/browser/document_picture_in_picture_window_controller.h"
 #include "content/public/browser/file_select_listener.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
@@ -276,7 +278,7 @@ void Shell::LoadDataWithBaseURLInternal(const GURL& url,
   DCHECK(!load_as_string);  // Only supported on Android.
 #endif
 
-  NavigationController::LoadURLParams params(GURL::EmptyGURL());
+  NavigationController::LoadURLParams params{GURL()};
   const std::string data_url_header = "data:text/html;charset=utf-8,";
   if (load_as_string) {
     params.url = GURL(data_url_header);
@@ -291,21 +293,35 @@ void Shell::LoadDataWithBaseURLInternal(const GURL& url,
 
   params.load_type = NavigationController::LOAD_TYPE_DATA;
   params.base_url_for_data_url = base_url;
-  params.virtual_url_for_data_url = url;
+  params.virtual_url_for_special_cases = url;
   params.override_user_agent = NavigationController::UA_OVERRIDE_FALSE;
   web_contents_->GetController().LoadURLWithParams(params);
 }
 
-void Shell::AddNewContents(WebContents* source,
-                           std::unique_ptr<WebContents> new_contents,
-                           const GURL& target_url,
-                           WindowOpenDisposition disposition,
-                           const blink::mojom::WindowFeatures& window_features,
-                           bool user_gesture,
-                           bool* was_blocked) {
+WebContents* Shell::AddNewContents(
+    WebContents* source,
+    std::unique_ptr<WebContents> new_contents,
+    const GURL& target_url,
+    WindowOpenDisposition disposition,
+    const blink::mojom::WindowFeatures& window_features,
+    bool user_gesture,
+    bool* was_blocked) {
+#if !BUILDFLAG(IS_ANDROID)
+  // If the shell is opening a document picture-in-picture window, it needs to
+  // inform the DocumentPictureInPictureWindowController.
+  if (disposition == WindowOpenDisposition::NEW_PICTURE_IN_PICTURE) {
+    DocumentPictureInPictureWindowController* controller =
+        PictureInPictureWindowController::
+            GetOrCreateDocumentPictureInPictureController(source);
+    controller->SetChildWebContents(new_contents.get());
+    controller->Show();
+  }
+#endif  // !BUILDFLAG(IS_ANDROID)
+
   CreateShell(
       std::move(new_contents), AdjustWindowSize(window_features.bounds.size()),
       !delay_popup_contents_delegate_for_testing_ /* should_set_delegate */);
+  return nullptr;
 }
 
 void Shell::GoBackOrForward(int offset) {
@@ -359,7 +375,7 @@ void Shell::ResizeWebContentForTests(const gfx::Size& content_size) {
 
 gfx::NativeView Shell::GetContentView() {
   if (!web_contents_)
-    return nullptr;
+    return gfx::NativeView();
   return web_contents_->GetNativeView();
 }
 
@@ -397,8 +413,11 @@ void Shell::URLEntered(const std::string& url_string) {
 }
 #endif
 
-WebContents* Shell::OpenURLFromTab(WebContents* source,
-                                   const OpenURLParams& params) {
+WebContents* Shell::OpenURLFromTab(
+    WebContents* source,
+    const OpenURLParams& params,
+    base::OnceCallback<void(content::NavigationHandle&)>
+        navigation_handle_callback) {
   WebContents* target = nullptr;
   switch (params.disposition) {
     case WindowOpenDisposition::CURRENT_TAB:
@@ -441,8 +460,14 @@ WebContents* Shell::OpenURLFromTab(WebContents* source,
       return nullptr;
   }
 
-  target->GetController().LoadURLWithParams(
-      NavigationController::LoadURLParams(params));
+  base::WeakPtr<NavigationHandle> navigation_handle =
+      target->GetController().LoadURLWithParams(
+          NavigationController::LoadURLParams(params));
+
+  if (navigation_handle_callback && navigation_handle) {
+    std::move(navigation_handle_callback).Run(*navigation_handle);
+  }
+
   return target;
 }
 
@@ -551,14 +576,14 @@ void Shell::RegisterProtocolHandler(RenderFrameHost* requesting_frame,
 }
 #endif
 
-void Shell::RequestToLockMouse(WebContents* web_contents,
+void Shell::RequestPointerLock(WebContents* web_contents,
                                bool user_gesture,
                                bool last_unlocked_by_target) {
   // Give the platform a chance to handle the lock request, if it doesn't
   // indicate it handled it, allow the request.
-  if (!g_platform->HandleRequestToLockMouse(this, web_contents, user_gesture,
+  if (!g_platform->HandlePointerLockRequest(this, web_contents, user_gesture,
                                             last_unlocked_by_target)) {
-    web_contents->GotResponseToLockMouseRequest(
+    web_contents->GotResponseToPointerLockRequest(
         blink::mojom::PointerLockResult::kSuccess);
   }
 }
@@ -604,7 +629,7 @@ void Shell::PrimaryPageChanged(Page& page) {
 }
 
 bool Shell::HandleKeyboardEvent(WebContents* source,
-                                const NativeWebKeyboardEvent& event) {
+                                const input::NativeWebKeyboardEvent& event) {
   return g_platform->HandleKeyboardEvent(this, source, event);
 }
 #endif
@@ -617,16 +642,12 @@ bool Shell::DidAddMessageToConsole(WebContents* source,
   return switches::IsRunWebTestsSwitchPresent();
 }
 
-void Shell::PortalWebContentsCreated(WebContents* portal_web_contents) {
-  g_platform->DidCreateOrAttachWebContents(this, portal_web_contents);
-}
-
 void Shell::RendererUnresponsive(WebContents* source,
                                  RenderWidgetHost* render_widget_host,
                                  base::RepeatingClosure hang_monitor_restarter
-#if defined(OHOS_RENDERER_ANR_DUMP)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
                                  ,
-                                 RenderProcessNotRespondingReason reason
+                                 RendererIsUnresponsiveReason reason
 #endif
 ) {
   LOG(WARNING) << "renderer unresponsive";
@@ -644,6 +665,15 @@ void Shell::ActivateContents(WebContents* contents) {
   g_platform->ActivateContents(this, contents);
 #endif
 }
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+std::unique_ptr<ColorChooser> Shell::OpenColorChooser(
+    WebContents* web_contents,
+    SkColor color,
+    const std::vector<blink::mojom::ColorSuggestionPtr>& suggestions) {
+  return g_platform->OpenColorChooser(web_contents, color, suggestions);
+}
+#endif
 
 void Shell::RunFileChooser(RenderFrameHost* render_frame_host,
                            scoped_refptr<FileSelectListener> listener,
@@ -667,25 +697,12 @@ void Shell::EnumerateDirectory(WebContents* web_contents,
   }
 }
 
-bool Shell::IsBackForwardCacheSupported() {
+bool Shell::IsBackForwardCacheSupported(WebContents& web_contents) {
   return true;
 }
 
 PreloadingEligibility Shell::IsPrerender2Supported(WebContents& web_contents) {
   return PreloadingEligibility::kEligible;
-}
-
-std::unique_ptr<WebContents> Shell::ActivatePortalWebContents(
-    WebContents* predecessor_contents,
-    std::unique_ptr<WebContents> portal_contents) {
-  DCHECK_EQ(predecessor_contents, web_contents_.get());
-  portal_contents->SetDelegate(this);
-  web_contents_->SetDelegate(nullptr);
-  std::swap(web_contents_, portal_contents);
-  g_platform->SetContents(this);
-  g_platform->SetAddressBarURL(this, web_contents_->GetVisibleURL());
-  LoadingStateChanged(web_contents_.get(), true);
-  return portal_contents;
 }
 
 namespace {
@@ -700,19 +717,6 @@ class PendingCallback : public base::RefCounted<PendingCallback> {
   base::OnceCallback<void()> callback_;
 };
 }  // namespace
-
-void Shell::UpdateInspectedWebContentsIfNecessary(
-    WebContents* old_contents,
-    WebContents* new_contents,
-    base::OnceCallback<void()> callback) {
-  scoped_refptr<PendingCallback> pending_callback =
-      base::MakeRefCounted<PendingCallback>(std::move(callback));
-  for (auto* shell_devtools_bindings :
-       ShellDevToolsBindings::GetInstancesForWebContents(old_contents)) {
-    shell_devtools_bindings->UpdateInspectedWebContents(
-        new_contents, base::DoNothingWithBoundArgs(pending_callback));
-  }
-}
 
 bool Shell::ShouldAllowRunningInsecureContent(WebContents* web_contents,
                                               bool allowed_per_prefs,

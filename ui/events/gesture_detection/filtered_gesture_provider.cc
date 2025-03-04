@@ -7,7 +7,7 @@
 #include "base/auto_reset.h"
 #include "base/check.h"
 #include "base/notreached.h"
-#include "ui/events/gesture_detection/motion_event.h"
+#include "ui/events/velocity_tracker/motion_event.h"
 
 namespace ui {
 
@@ -63,7 +63,7 @@ void FilteredGestureProvider::OnTouchEventAck(
     uint32_t unique_event_id,
     bool event_consumed,
     bool is_source_touch_event_set_blocking,
-    const absl::optional<EventLatencyMetadata>& event_latency_metadata) {
+    const std::optional<EventLatencyMetadata>& event_latency_metadata) {
   gesture_filter_.OnTouchEventAck(unique_event_id, event_consumed,
                                   is_source_touch_event_set_blocking,
                                   event_latency_metadata);
@@ -77,15 +77,9 @@ void FilteredGestureProvider::SendSynthesizedEndEvents() {
   gesture_provider_->SendSynthesizedEndEvents();
 }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 void FilteredGestureProvider::ResetDetection(bool is_lost_focus) {
   gesture_provider_->ResetDetection(is_lost_focus);
-}
-#endif
-
-#ifdef OHOS_AI
-void FilteredGestureProvider::OnAITextSelected() {
-  gesture_provider_->OnAITextSelected();
 }
 #endif
 
@@ -106,19 +100,16 @@ void FilteredGestureProvider::SetDoubleTapSupportForPlatformEnabled(
 void FilteredGestureProvider::SetDoubleTapSupportForPageEnabled(bool enabled) {
   gesture_provider_->SetDoubleTapSupportForPageEnabled(enabled);
 }
-#if BUILDFLAG(IS_OHOS)
-void FilteredGestureProvider::SetNativeEmbedEnabled(bool enabled) {
-  gesture_provider_->SetNativeEmbedEnabled(enabled);
-}
-#endif
+
 const ui::MotionEvent* FilteredGestureProvider::GetCurrentDownEvent() const {
   return gesture_provider_->current_down_event();
 }
 
 void FilteredGestureProvider::OnGestureEvent(const GestureEventData& event) {
   if (handling_event_) {
-    if (event.details.type() == ui::ET_GESTURE_SCROLL_BEGIN)
+    if (event.details.type() == ui::EventType::kGestureScrollBegin) {
       any_touch_moved_beyond_slop_region_ = true;
+    }
 
     pending_gesture_packet_.Push(event);
     return;
@@ -136,5 +127,11 @@ void FilteredGestureProvider::ForwardGestureEvent(
     const GestureEventData& event) {
   client_->OnGestureEvent(event);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void FilteredGestureProvider::OnAITextSelected() {
+  gesture_provider_->OnAITextSelected();
+}
+#endif
 
 }  // namespace ui

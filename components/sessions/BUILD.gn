@@ -40,7 +40,6 @@ if (!is_ios) {
 
     deps = [
       "//base",
-      "//base/third_party/dynamic_annotations",
       "//content/public/common",
       "//ui/base",
       "//url",
@@ -48,7 +47,6 @@ if (!is_ios) {
   }
 } else {
   source_set("sessions") {
-    configs += [ "//build/config/compiler:enable_arc" ]
     sources = [
       "ios/ios_live_tab.h",
       "ios/ios_live_tab.mm",
@@ -64,13 +62,15 @@ if (!is_ios) {
 
     public_deps = [
       ":shared",
-      "//ios/web",
+      "//ios/web/public",
+      "//ios/web/public/session/proto",
     ]
 
     deps = [
       "//base",
       "//ios/web/common",
       "//ios/web/public/session",
+      "//ios/web/public/session/proto:proto_util",
     ]
   }
 }
@@ -120,7 +120,6 @@ source_set("shared") {
     "core/session_service_commands.h",
     "core/session_types.cc",
     "core/session_types.h",
-    "core/tab_restore_service.cc",
     "core/tab_restore_service.h",
     "core/tab_restore_service_client.cc",
     "core/tab_restore_service_client.h",
@@ -129,6 +128,8 @@ source_set("shared") {
     "core/tab_restore_service_impl.cc",
     "core/tab_restore_service_impl.h",
     "core/tab_restore_service_observer.h",
+    "core/tab_restore_types.cc",
+    "core/tab_restore_types.h",
   ]
 
   configs += [ ":implementation" ]
@@ -207,7 +208,6 @@ source_set("unit_tests") {
       "ios/ios_serialized_navigation_builder_unittest.mm",
       "ios/ios_serialized_navigation_driver_unittest.cc",
     ]
-    configs += [ "//build/config/compiler:enable_arc" ]
   }
 
   public_deps = [ ":sessions" ]

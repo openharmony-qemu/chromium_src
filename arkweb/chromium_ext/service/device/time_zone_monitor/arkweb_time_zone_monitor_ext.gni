@@ -1,0 +1,12 @@
+# Copyright 2024 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+ 
+import("//arkweb/build/features/features.gni")
+arkweb_time_zone_monitor_sources = []
+ 
+if (arkweb_time_zone) {
+arkweb_time_zone_monitor_sources += [
+  "//arkweb/chromium_ext/service/device/time_zone_monitor/time_zone_monitor_ohos.cc",
+]
+}

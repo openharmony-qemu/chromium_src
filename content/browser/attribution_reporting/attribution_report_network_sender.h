@@ -17,7 +17,6 @@
 class GURL;
 
 namespace net {
-class HttpRequestHeaders;
 class HttpResponseHeaders;
 }  // namespace net
 
@@ -25,6 +24,10 @@ namespace network {
 class SharedURLLoaderFactory;
 class SimpleURLLoader;
 }  // namespace network
+
+namespace url {
+class Origin;
+}  // namespace url
 
 namespace content {
 
@@ -54,6 +57,10 @@ class CONTENT_EXPORT AttributionReportNetworkSender
   void SendReport(AttributionDebugReport report,
                   DebugReportSentCallback) override;
 
+  void SendReport(AggregatableDebugReport,
+                  base::Value::Dict report_body,
+                  AggregatableDebugReportSentCallback) override;
+
  private:
   // This is a std::list so that iterators remain valid during modifications.
   using UrlLoaderList = std::list<std::unique_ptr<network::SimpleURLLoader>>;
@@ -63,8 +70,8 @@ class CONTENT_EXPORT AttributionReportNetworkSender
                               scoped_refptr<net::HttpResponseHeaders>)>;
 
   void SendReport(GURL url,
-                  const std::string& body,
-                  net::HttpRequestHeaders headers,
+                  url::Origin origin,
+                  std::string body,
                   UrlLoaderCallback callback);
 
   // Called when headers are available for a sent report.
@@ -79,6 +86,11 @@ class CONTENT_EXPORT AttributionReportNetworkSender
       base::OnceCallback<void(int status)> callback,
       UrlLoaderList::iterator it,
       scoped_refptr<net::HttpResponseHeaders> headers);
+
+  void OnAggregatableDebugReportSent(
+      base::OnceCallback<void(int status)> callback,
+      UrlLoaderList::iterator,
+      scoped_refptr<net::HttpResponseHeaders>);
 
   // Reports that are actively being sent.
   UrlLoaderList loaders_in_progress_;

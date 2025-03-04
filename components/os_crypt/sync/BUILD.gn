@@ -2,34 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromecast_build.gni")
-import("//build/config/chromeos/ui_mode.gni")
+import("//build/config/cast.gni")
 import("//build/config/features.gni")
-import("//build/config/linux/pkg_config.gni")
 import("//build/config/ui.gni")
 import("//components/os_crypt/sync/features.gni")
-
-if (use_gnome_keyring) {
-  # Gnome-keyring is normally dynamically loaded. The gnome_keyring config
-  # will set this up.
-  pkg_config("gnome_keyring") {
-    packages = [ "gnome-keyring-1" ]
-    defines = [ "USE_GNOME_KEYRING" ]
-    ignore_libs = true
-  }
-
-  # If you want to link gnome-keyring directly (use only for unit tests)
-  # ADDITIONALLY add this config on top of ":gnome_keyring". pkg-config is a
-  # bit slow, so prefer not to run it again. In practice, gnome-keyring's libs
-  # are just itself and common gnome ones we link already, so we can get away
-  # with additionally just coding the library name here.
-  # TODO(cfroussios): This is only used by
-  # chrome/browser/password_manager/native_backend_gnome_x_unittest.cc
-  # We should deprecate both.
-  config("gnome_keyring_direct") {
-    libs = [ "gnome-keyring" ]
-  }
-}
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 # Wrapper component to allow dependencies to depend on //components/os_crypt/sync directly.
 group("sync") {
@@ -39,18 +17,11 @@ group("sync") {
 component("os_crypt") {
   sources = [
     "os_crypt.h",
+    "os_crypt_metrics.cc",
+    "os_crypt_metrics.h",
     "os_crypt_switches.cc",
     "os_crypt_switches.h",
   ]
-
-  if (defined(ohos_encrypt) && ohos_encrypt) {
-    sources += [
-      "ohos_crypto.cc",
-      "ohos_crypto.h",
-      "ohos_keystore.cc",
-      "ohos_keystore.h",
-    ]
-  }
 
   deps = [
     "//base",
@@ -60,17 +31,23 @@ component("os_crypt") {
     "//components/prefs",
     "//crypto",
   ]
+  deps += [
+    "//arkweb/build/features",
+  ]
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   defines = [ "IS_OS_CRYPT_IMPL" ]
+
+  if (arkweb_encrypt) {
+    sources += arkweb_components_os_crpty_sync_source
+  }
 
   if (allow_runtime_configurable_key_storage) {
     defines += [ "ALLOW_RUNTIME_CONFIGURABLE_KEY_STORAGE" ]
   }
 
-  # TODO(crbug.com/1339022): Provide a Fuchsia-specific implementation.
-  if ((is_posix && !is_apple && !((is_linux || is_ohos) && !is_castos)) ||
-      is_fuchsia) {
+
+  if ((is_posix && !is_apple && !(is_linux && !is_castos) && !is_arkweb) || is_fuchsia) {
     sources += [ "os_crypt_posix.cc" ]
   }
 
@@ -80,6 +57,7 @@ component("os_crypt") {
       "keychain_password_mac.mm",
       "os_crypt_mac.mm",
     ]
+    deps += [ "//crypto:mock_apple_keychain" ]
   }
 
   if (is_win) {
@@ -88,7 +66,25 @@ component("os_crypt") {
     libs = [ "crypt32.lib" ]
   }
 
-  if ((is_linux || is_ohos) && !is_castos) {
+  if (is_arkweb) {
+    sources += [
+      "ohos_huks_crypto.cc",
+      "ohos_huks_crypto.h",
+      "key_storage_config_linux.cc",
+      "key_storage_config_linux.h",
+      "key_storage_linux.cc",
+      "key_storage_linux.h",
+      "key_storage_util_linux.cc",
+      "key_storage_util_linux.h",
+      "os_crypt_linux.cc",
+    ]
+
+    libs = [
+      "huks_ndk.z"
+    ]
+  }
+
+  if (is_linux && !is_castos) {
     sources += [
       "key_storage_config_linux.cc",
       "key_storage_config_linux.h",
@@ -99,17 +95,7 @@ component("os_crypt") {
       "os_crypt_linux.cc",
     ]
 
-    if (use_gnome_keyring) {
-      sources += [
-        "key_storage_keyring.cc",
-        "key_storage_keyring.h",
-        "keyring_util_linux.cc",
-        "keyring_util_linux.h",
-      ]
-      configs += [ ":gnome_keyring" ]
-      defines += [ "USE_KEYRING" ]
-    }
-    if (use_glib) {
+    if (use_glib && use_dbus) {
       sources += [
         "key_storage_libsecret.cc",
         "key_storage_libsecret.h",
@@ -150,9 +136,6 @@ static_library("test_support") {
       "os_crypt_mocker_linux.h",
     ]
     defines = []
-    if (use_gnome_keyring) {
-      defines += [ "USE_KEYRING" ]
-    }
     if (use_glib) {
       defines += [ "USE_LIBSECRET" ]
     }
@@ -176,10 +159,18 @@ source_set("unit_tests") {
     "//crypto",
     "//testing/gmock",
     "//testing/gtest",
+    "//ui/base",
   ]
 
   if (is_apple) {
     sources += [ "keychain_password_mac_unittest.mm" ]
+    deps += [ "//crypto:mock_apple_keychain" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto_unittest.cc",
+    ]
   }
 
   if (is_linux && !is_castos) {
@@ -190,12 +181,6 @@ source_set("unit_tests") {
     ]
     defines = []
 
-    if (use_gnome_keyring) {
-      sources += [ "key_storage_keyring_unittest.cc" ]
-      configs += [ ":gnome_keyring" ]
-      deps += [ "//base/test:test_support" ]
-      defines += [ "USE_KEYRING" ]
-    }
     if (use_glib) {
       sources += [ "key_storage_libsecret_unittest.cc" ]
       deps += [ "//third_party/libsecret" ]

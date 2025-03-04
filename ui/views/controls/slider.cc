@@ -30,6 +30,7 @@
 #include "ui/gfx/canvas.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/rect.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/widget/widget.h"
 
 namespace views {
@@ -73,7 +74,6 @@ float GetNearestAllowedValue(const base::flat_set<float>& allowed_values,
 Slider::Slider(SliderListener* listener) : listener_(listener) {
   highlight_animation_.SetSlideDuration(base::Milliseconds(150));
   SetFlipCanvasOnPaintForRTLUI(true);
-  SetAccessibilityProperties(ax::mojom::Role::kSlider);
 
 #if BUILDFLAG(IS_MAC)
   SetFocusBehavior(FocusBehavior::ACCESSIBLE_ONLY);
@@ -82,6 +82,9 @@ Slider::Slider(SliderListener* listener) : listener_(listener) {
 #endif
 
   SchedulePaint();
+  GetViewAccessibility().SetRole(ax::mojom::Role::kSlider);
+  GetViewAccessibility().AddAction(ax::mojom::Action::kIncrement);
+  GetViewAccessibility().AddAction(ax::mojom::Action::kDecrement);
 }
 
 Slider::~Slider() = default;
@@ -204,9 +207,9 @@ void Slider::SetValueInternal(float value, SliderChangeReason reason) {
   }
 
   if (accessibility_events_enabled_) {
-    if (GetWidget() && GetWidget()->IsVisible()) {
+    if (GetWidget() && GetWidget()->IsVisible() && GetVisible()) {
       DCHECK(!pending_accessibility_value_change_);
-      NotifyAccessibilityEvent(ax::mojom::Event::kValueChanged, true);
+      UpdateAccessibleValue();
     } else {
       pending_accessibility_value_change_ = true;
     }
@@ -251,11 +254,13 @@ void Slider::OnSliderDragEnded() {
     listener_->SliderDragEnded(this);
 }
 
-gfx::Size Slider::CalculatePreferredSize() const {
+gfx::Size Slider::CalculatePreferredSize(
+    const SizeBounds& available_size) const {
   constexpr int kSizeMajor = 200;
   constexpr int kSizeMinor = 40;
 
-  return gfx::Size(std::max(width(), kSizeMajor), kSizeMinor);
+  return gfx::Size(std::max(available_size.width().value_or(0), kSizeMajor),
+                   kSizeMinor);
 }
 
 bool Slider::OnMousePressed(const ui::MouseEvent& event) {
@@ -319,14 +324,6 @@ bool Slider::OnKeyPressed(const ui::KeyEvent& event) {
     }
   }
   return true;
-}
-
-void Slider::GetAccessibleNodeData(ui::AXNodeData* node_data) {
-  View::GetAccessibleNodeData(node_data);
-  node_data->SetValue(base::UTF8ToUTF16(
-      base::StringPrintf("%d%%", static_cast<int>(value_ * 100 + 0.5))));
-  node_data->AddAction(ax::mojom::Action::kIncrement);
-  node_data->AddAction(ax::mojom::Action::kDecrement);
 }
 
 bool Slider::HandleAccessibleAction(const ui::AXActionData& action_data) {
@@ -401,37 +398,39 @@ void Slider::OnBlur() {
 }
 
 void Slider::VisibilityChanged(View* starting_from, bool is_visible) {
-  if (is_visible)
-    NotifyPendingAccessibilityValueChanged();
+  if (is_visible && GetWidget() && GetWidget()->IsVisible() && GetVisible()) {
+    ApplyPendingAccessibleValueUpdate();
+  }
 }
 
 void Slider::AddedToWidget() {
-  if (GetWidget()->IsVisible())
-    NotifyPendingAccessibilityValueChanged();
+  if (GetWidget()->IsVisible() && GetVisible()) {
+    ApplyPendingAccessibleValueUpdate();
+  }
 }
 
-void Slider::NotifyPendingAccessibilityValueChanged() {
+void Slider::ApplyPendingAccessibleValueUpdate() {
   if (!pending_accessibility_value_change_)
     return;
 
-  NotifyAccessibilityEvent(ax::mojom::Event::kValueChanged, true);
+  UpdateAccessibleValue();
   pending_accessibility_value_change_ = false;
 }
 
 void Slider::OnGestureEvent(ui::GestureEvent* event) {
   switch (event->type()) {
     // In a multi point gesture only the touch point will generate
-    // an ET_GESTURE_TAP_DOWN event.
-    case ui::ET_GESTURE_TAP_DOWN:
+    // an EventType::kGestureTapDown event.
+    case ui::EventType::kGestureTapDown:
       OnSliderDragStarted();
       PrepareForMove(event->location().x());
       [[fallthrough]];
-    case ui::ET_GESTURE_SCROLL_BEGIN:
-    case ui::ET_GESTURE_SCROLL_UPDATE:
+    case ui::EventType::kGestureScrollBegin:
+    case ui::EventType::kGestureScrollUpdate:
       MoveButtonTo(event->location());
       event->SetHandled();
       break;
-    case ui::ET_GESTURE_END:
+    case ui::EventType::kGestureEnd:
       MoveButtonTo(event->location());
       event->SetHandled();
       if (event->details().touch_points() <= 1)
@@ -471,7 +470,12 @@ int Slider::GetSliderExtraPadding() const {
   }
 }
 
-BEGIN_METADATA(Slider, View)
+void Slider::UpdateAccessibleValue() {
+  GetViewAccessibility().SetValue(base::UTF8ToUTF16(
+      base::StringPrintf("%d%%", static_cast<int>(value_ * 100 + 0.5))));
+}
+
+BEGIN_METADATA(Slider)
 ADD_PROPERTY_METADATA(float, Value)
 ADD_PROPERTY_METADATA(bool, EnableAccessibilityEvents)
 ADD_PROPERTY_METADATA(float, ValueIndicatorRadius)

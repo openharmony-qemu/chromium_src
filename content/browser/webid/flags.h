@@ -5,48 +5,64 @@
 #ifndef CONTENT_BROWSER_WEBID_FLAGS_H_
 #define CONTENT_BROWSER_WEBID_FLAGS_H_
 
+#include <optional>
+
 // Flags to control WebID for testing/debugging.
 
 namespace content {
 
 // IDP IdpSigninStatus API modes.
-enum class FedCmIdpSigninStatusMode { DISABLED, METRICS_ONLY, ENABLED };
+enum class FedCmIdpSigninStatusMode { METRICS_ONLY, ENABLED };
 
-// Whether the AuthZ is enabled or not.
-bool IsFedCmAuthzEnabled();
+// Whether the authz flags has been overridden. If it has been overridden
+// to false, we should not let it be enabled using an origin trial.
+std::optional<bool> IsFedCmAuthzOverridden();
 
-// Whether FedCM auto re-authentication is enabled.
-bool IsFedCmAutoReauthnEnabled();
-
-// Whether FedCM IDP sign-out is enabled.
-bool IsFedCmIdpSignoutEnabled();
+// Whether the AuthZ flag is enabled or not.
+bool IsFedCmAuthzFlagEnabled();
 
 // Whether multiple identity providers are enabled.
 bool IsFedCmMultipleIdentityProvidersEnabled();
 
 // Returns the IdpSigninStatus API mode.
-FedCmIdpSigninStatusMode GetFedCmIdpSigninStatusMode();
+// Most callers should use webid::GetIdpSigninStatusMode() in webid_utils.h
+// instead, as that version takes origin trial status into account.
+FedCmIdpSigninStatusMode GetFedCmIdpSigninStatusFlag();
 
 // Whether metrics endpoint is enabled.
 bool IsFedCmMetricsEndpointEnabled();
 
-// Whether the Relying Party Context API is enabled.
-bool IsFedCmRpContextEnabled();
-
-// Whether the UserInfo API is enabled.
-bool IsFedCmUserInfoEnabled();
-
 // Whether the Selective Disclosure API is enabled.
 bool IsFedCmSelectiveDisclosureEnabled();
 
-// Whether the login hint parameter is enabled.
-bool IsFedCmLoginHintEnabled();
+// Whether we should only send SameSite=None cookies for credentialed requests.
+// (only affects non-CORS requests, because CORS already only sends
+// SameSite=None)
+bool IsFedCmSameSiteNoneEnabled();
 
 // Whether the IdP Registration API is enabled.
 bool IsFedCmIdPRegistrationEnabled();
 
-// Whether the Web Identity MDocs API is enabled.
-bool IsWebIdentityMDocsEnabled();
+// Whether the well-known enforcement is bypassed.
+bool IsFedCmWithoutWellKnownEnforcementEnabled();
+
+// Whether the Web Identity Digital Credentials API is enabled.
+bool IsWebIdentityDigitalCredentialsEnabled();
+
+// Whether "Use Other Account" is enabled.
+bool IsFedCmUseOtherAccountEnabled();
+
+// Whether the ActiveMode feature is enabled.
+bool IsFedCmActiveModeEnabled();
+
+// Whether sending of SameSite=Lax cookies is enabled.
+bool IsFedCmSameSiteLaxEnabled();
+
+// Whether specifying a subset of the default fields is enabled.
+bool IsFedCmFlexibleFieldsEnabled();
+
+// Whether showing filtered accounts is enabled.
+bool IsFedCmShowFilteredAccountsEnabled();
 
 }  // namespace content
 

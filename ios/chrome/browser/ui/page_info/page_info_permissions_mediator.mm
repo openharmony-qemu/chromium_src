@@ -4,18 +4,14 @@
 
 #import "ios/chrome/browser/ui/page_info/page_info_permissions_mediator.h"
 
-#import "ios/chrome/browser/ui/permissions/permission_info.h"
-#import "ios/chrome/browser/ui/permissions/permission_metrics_util.h"
-#import "ios/chrome/browser/ui/permissions/permissions_consumer.h"
+#import "ios/chrome/browser/permissions/ui_bundled/permission_info.h"
+#import "ios/chrome/browser/permissions/ui_bundled/permission_metrics_util.h"
+#import "ios/chrome/browser/permissions/ui_bundled/permissions_consumer.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/public/permissions/permissions.h"
 #import "ios/web/public/web_state.h"
 #import "ios/web/public/web_state_observer_bridge.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface PageInfoPermissionsMediator () <CRWWebStateObserver> {
   std::unique_ptr<web::WebStateObserverBridge> _observer;
@@ -66,6 +62,14 @@
   [self.consumer permissionStateChanged:permissionsDescription];
 }
 
+- (void)webStateDestroyed:(web::WebState*)webState {
+  if (_webState && _observer) {
+    _webState->RemoveObserver(_observer.get());
+    _observer.reset();
+    _webState = nullptr;
+  }
+}
+
 #pragma mark - PermissionsDelegate
 
 - (void)updateStateForPermission:(PermissionInfo*)permissionDescription {
@@ -82,8 +86,8 @@
 // Helper that creates and dispatches initial permissions information to the
 // InfobarModal.
 - (void)dispatchInitialPermissionsInfo {
-  NSMutableArray<PermissionInfo*>* permissionsinfo =
-      [[NSMutableArray alloc] init];
+  NSMutableDictionary<NSNumber*, NSNumber*>* permissionsInfo =
+      [[NSMutableDictionary alloc] init];
 
   NSDictionary<NSNumber*, NSNumber*>* statesForAllPermissions =
       self.webState->GetStatesForAllPermissions();
@@ -91,13 +95,10 @@
     web::PermissionState state =
         (web::PermissionState)statesForAllPermissions[key].unsignedIntValue;
     if (state != web::PermissionStateNotAccessible) {
-      PermissionInfo* permissionInfo = [[PermissionInfo alloc] init];
-      permissionInfo.permission = (web::Permission)key.unsignedIntValue;
-      permissionInfo.state = state;
-      [permissionsinfo addObject:permissionInfo];
+      [permissionsInfo setObject:statesForAllPermissions[key] forKey:key];
     }
   }
-  [self.consumer setPermissionsInfo:permissionsinfo];
+  [self.consumer setPermissionsInfo:permissionsInfo];
 }
 
 @end

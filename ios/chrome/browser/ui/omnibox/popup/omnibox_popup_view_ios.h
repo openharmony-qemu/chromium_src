@@ -7,12 +7,15 @@
 
 #import <UIKit/UIKit.h>
 
-#include "components/omnibox/browser/omnibox_popup_view.h"
-#import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_mediator.h"
-#include "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_provider.h"
+#include <string>
 
-class OmniboxEditModel;
+#import "base/memory/raw_ptr.h"
+#import "components/omnibox/browser/omnibox_popup_view.h"
+#import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_mediator.h"
+#import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_provider.h"
+
 @class OmniboxPopupMediator;
+class OmniboxController;
 class OmniboxPopupViewSuggestionsDelegate;
 struct AutocompleteMatch;
 
@@ -21,12 +24,9 @@ class OmniboxPopupViewIOS : public OmniboxPopupView,
                             public OmniboxPopupMediatorDelegate,
                             public OmniboxPopupProvider {
  public:
-  OmniboxPopupViewIOS(OmniboxEditModel* edit_model,
+  OmniboxPopupViewIOS(OmniboxController* controller,
                       OmniboxPopupViewSuggestionsDelegate* delegate);
   ~OmniboxPopupViewIOS() override;
-
-  // Model used for this.
-  OmniboxEditModel* model() const;
 
   // OmniboxPopupView implementation.
   bool IsOpen() const override;
@@ -35,12 +35,16 @@ class OmniboxPopupViewIOS : public OmniboxPopupView,
   void ProvideButtonFocusHint(size_t line) override {}
   void OnMatchIconUpdated(size_t match_index) override {}
   void OnDragCanceled() override {}
+  void GetPopupAccessibleNodeData(ui::AXNodeData* node_data) override {}
+  void AddPopupAccessibleNodeData(ui::AXNodeData* node_data) override {}
+  std::u16string GetAccessibleButtonTextForResult(size_t line) override;
 
   // OmniboxPopupProvider implemetation.
   void SetTextAlignment(NSTextAlignment alignment) override;
   void SetSemanticContentAttribute(
       UISemanticContentAttribute semanticContentAttribute) override;
   bool IsPopupOpen() override;
+  void SetHasThumbnail(bool has_thumbnail) override;
 
   // OmniboxPopupViewControllerDelegate implementation.
   bool IsStarredMatch(const AutocompleteMatch& match) const override;
@@ -52,12 +56,12 @@ class OmniboxPopupViewIOS : public OmniboxPopupView,
   void OnMatchSelectedForAppending(const AutocompleteMatch& match) override;
   void OnMatchSelectedForDeletion(const AutocompleteMatch& match) override;
   void OnScroll() override;
+  void OnCallActionTap() override;
 
   void SetMediator(OmniboxPopupMediator* mediator) { mediator_ = mediator; }
 
  private:
-  OmniboxEditModel* edit_model_;
-  OmniboxPopupViewSuggestionsDelegate* delegate_;  // weak
+  raw_ptr<OmniboxPopupViewSuggestionsDelegate> delegate_;  // weak
   OmniboxPopupMediator* mediator_;
 };
 

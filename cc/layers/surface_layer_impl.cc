@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/trace_event/traced_value.h"
@@ -18,6 +19,7 @@
 #include "cc/trees/occlusion.h"
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
+#include "ui/gfx/geometry/vector2d_conversions.h"
 
 namespace cc {
 
@@ -59,6 +61,10 @@ SurfaceLayerImpl::~SurfaceLayerImpl() {
   // the right thing already.
 }
 
+mojom::LayerType SurfaceLayerImpl::GetLayerType() const {
+  return mojom::LayerType::kSurface;
+}
+
 std::unique_ptr<LayerImpl> SurfaceLayerImpl::CreateLayerImpl(
     LayerTreeImpl* tree_impl) const {
   return SurfaceLayerImpl::Create(tree_impl, id(),
@@ -66,7 +72,7 @@ std::unique_ptr<LayerImpl> SurfaceLayerImpl::CreateLayerImpl(
 }
 
 void SurfaceLayerImpl::SetRange(const viz::SurfaceRange& surface_range,
-                                absl::optional<uint32_t> deadline_in_frames) {
+                                std::optional<uint32_t> deadline_in_frames) {
   if (surface_range_ == surface_range &&
       deadline_in_frames_ == deadline_in_frames) {
     return;
@@ -120,6 +126,11 @@ void SurfaceLayerImpl::SetIsReflection(bool is_reflection) {
   NoteLayerPropertyChanged();
 }
 
+void SurfaceLayerImpl::ResetStateForUpdateSubmissionStateCallback() {
+  will_draw_needs_reset_ = true;
+  NoteLayerPropertyChanged();
+}
+
 void SurfaceLayerImpl::PushPropertiesTo(LayerImpl* layer) {
   LayerImpl::PushPropertiesTo(layer);
   SurfaceLayerImpl* layer_impl = static_cast<SurfaceLayerImpl*>(layer);
@@ -131,6 +142,11 @@ void SurfaceLayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer_impl->SetSurfaceHitTestable(surface_hit_testable_);
   layer_impl->SetHasPointerEventsNone(has_pointer_events_none_);
   layer_impl->SetIsReflection(is_reflection_);
+
+  if (layer_impl->IsActive() && will_draw_needs_reset_) {
+    layer_impl->will_draw_ = false;
+    will_draw_needs_reset_ = false;
+  }
 }
 
 bool SurfaceLayerImpl::WillDraw(
@@ -211,15 +227,30 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   // Unless the client explicitly specifies otherwise, don't block on
   // |surface_range_| more than once.
   deadline_in_frames_ = 0u;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  OnLayerBoundsUpdate(visible_quad_rect);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-   visible_quad_rect.set_origin(
-        ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  OnLayerRectUpdate(visible_quad_rect);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+  if (!base::FeatureList::IsEnabled(
+          features::kAlignSurfaceLayerImplToPixelGrid)) {
+    return;
   }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+
+  // Don't allow DrawQuads to align on non-pixel boundaries.
+  gfx::Vector2dF quad_rect_offset = quad_rect.OffsetFromOrigin();
+  gfx::PointF rect_offset_in_target =
+      shared_quad_state->quad_to_target_transform.MapPoint(
+          gfx::PointF(quad_rect_offset.x(), quad_rect_offset.x()));
+  gfx::Vector2dF adjustment =
+      gfx::Vector2dF(rect_offset_in_target.x(), rect_offset_in_target.y()) -
+      gfx::Vector2dF(gfx::ToRoundedVector2d(gfx::Vector2dF(
+          rect_offset_in_target.x(), rect_offset_in_target.y())));
+  if (!adjustment.IsZero()) {
+    shared_quad_state->quad_to_target_transform.PostTranslate(-adjustment);
+  }
 }
 
 bool SurfaceLayerImpl::is_surface_layer() const {
@@ -252,15 +283,14 @@ void SurfaceLayerImpl::AppendRainbowDebugBorder(
   float border_width = DebugColors::SurfaceLayerBorderWidth(
       layer_tree_impl() ? layer_tree_impl()->device_scale_factor() : 1);
 
-  SkColor4f colors[] = {
-      {1.0f, 0.0f, 0.0f, 0.5f},     // Red.
-      {1.0f, 0.65f, 0.0f, 0.5f},    // Orange.
-      {1.0f, 1.0f, 0.0f, 0.5f},     // Yellow.
-      {0.0f, 0.5f, 0.0f, 0.5f},     // Green.
-      {0.0f, 0.0f, 1.0f, 0.50f},    // Blue.
-      {0.93f, 0.51f, 0.93f, 0.5f},  // Violet.
-  };
-  const int kNumColors = std::size(colors);
+  auto colors = std::to_array<SkColor4f>({
+      SkColor4f(1.0f, 0.0f, 0.0f, 0.5f),     // Red.
+      SkColor4f(1.0f, 0.65f, 0.0f, 0.5f),    // Orange.
+      SkColor4f(1.0f, 1.0f, 0.0f, 0.5f),     // Yellow.
+      SkColor4f(0.0f, 0.5f, 0.0f, 0.5f),     // Green.
+      SkColor4f(0.0f, 0.0f, 1.0f, 0.50f),    // Blue.
+      SkColor4f(0.93f, 0.51f, 0.93f, 0.5f),  // Violet.
+  });
 
   const int kStripeWidth = 300;
   const int kStripeHeight = 300;
@@ -286,13 +316,13 @@ void SurfaceLayerImpl::AppendRainbowDebugBorder(
       bool force_anti_aliasing_off = false;
       auto* top_quad =
           render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
-      top_quad->SetNew(shared_quad_state, top, top, colors[i % kNumColors],
+      top_quad->SetNew(shared_quad_state, top, top, colors[i % colors.size()],
                        force_anti_aliasing_off);
 
       auto* bottom_quad =
           render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
       bottom_quad->SetNew(shared_quad_state, bottom, bottom,
-                          colors[kNumColors - 1 - (i % kNumColors)],
+                          colors[colors.size() - 1 - (i % colors.size())],
                           force_anti_aliasing_off);
 
       if (contents_opaque()) {
@@ -302,7 +332,7 @@ void SurfaceLayerImpl::AppendRainbowDebugBorder(
             render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
         // The inner fill is more transparent then the border.
         static const float kFillOpacity = 0.1f;
-        SkColor4f fill_color = colors[i % kNumColors];
+        SkColor4f fill_color = colors[i % colors.size()];
         fill_color.fA *= kFillOpacity;
         gfx::Rect fill_rect(x, 0, width, bounds().height());
         solid_quad->SetNew(shared_quad_state, fill_rect, fill_rect, fill_color,
@@ -314,13 +344,13 @@ void SurfaceLayerImpl::AppendRainbowDebugBorder(
       auto* left_quad =
           render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
       left_quad->SetNew(shared_quad_state, left, left,
-                        colors[kNumColors - 1 - (i % kNumColors)],
+                        colors[colors.size() - 1 - (i % colors.size())],
                         force_anti_aliasing_off);
 
       auto* right_quad =
           render_pass->CreateAndAppendDrawQuad<viz::SolidColorDrawQuad>();
       right_quad->SetNew(shared_quad_state, right, right,
-                         colors[i % kNumColors], force_anti_aliasing_off);
+                         colors[i % colors.size()], force_anti_aliasing_off);
     }
   }
 }
@@ -330,8 +360,24 @@ void SurfaceLayerImpl::AsValueInto(base::trace_event::TracedValue* dict) const {
   dict->SetString("surface_range", surface_range_.ToString());
 }
 
-const char* SurfaceLayerImpl::LayerTypeAsString() const {
-  return "cc::SurfaceLayerImpl";
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
+  gfx::Rect layer_bounds = ScreenSpaceTransform().MapRect(visible_quad_rect);
+  if (!layer_bounds_.ApproximatelyEqual(layer_bounds, 1)) {
+    layer_bounds_ = layer_bounds;
+    layer_tree_impl()->OnLayerBoundsUpdate(id(), layer_bounds);
+  }
 }
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayerImpl::OnLayerRectUpdate(gfx::Rect visible_quad_rect) {
+  visible_quad_rect.set_origin(
+      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
+    visible_quad_rect_ = visible_quad_rect;
+    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
+  }
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }  // namespace cc

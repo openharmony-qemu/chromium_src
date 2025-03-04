@@ -10,6 +10,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -39,7 +40,6 @@
 #include "gpu/command_buffer/common/context_creation_attribs.h"
 #include "gpu/command_buffer/common/context_result.h"
 #include "gpu/command_buffer/common/debug_marker_manager.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace gpu {
 
@@ -194,6 +194,8 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
   GLint GetProgramResourceLocationHelper(
       GLuint program, GLenum program_interface, const char* name);
 
+  const GLCapabilities& gl_capabilities() const { return gl_capabilities_; }
+
   const scoped_refptr<ShareGroup>& share_group() const { return share_group_; }
 
   GpuControl* gpu_control() {
@@ -345,12 +347,16 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
 
   // Prevents problematic reentrancy during error callbacks.
   class DeferErrorCallbacks {
+    STACK_ALLOCATED();
+
    public:
     explicit DeferErrorCallbacks(GLES2Implementation* gles2_implementation);
     ~DeferErrorCallbacks();
 
    private:
-    raw_ptr<GLES2Implementation> gles2_implementation_;
+    // not using raw_ptr<> here for performance reasons. A CHECK() in
+    // ~GLES2Implementation() assures lifetime invariants instead.
+    GLES2Implementation& gles2_implementation_;
   };
 
   struct DeferredErrorCallback {
@@ -668,6 +674,8 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
   void RemoveMappedBufferRangeByTarget(GLenum target);
   void RemoveMappedBufferRangeById(GLuint buffer);
   void ClearMappedBufferRangeMap();
+  void ClearMappedBufferMap();
+  void ClearMappedTextureMap();
 
   void DrawElementsImpl(GLenum mode, GLsizei count, GLenum type,
                         const void* indices, const char* func_name);
@@ -688,6 +696,9 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
 
   GLStaticState static_state_;
   ClientContextState state_;
+
+  // GLES specific capabilities.
+  GLCapabilities gl_capabilities_;
 
   // pack alignment as last set by glPixelStorei
   GLint pack_alignment_;
@@ -809,8 +820,8 @@ class GLES2_IMPL_EXPORT GLES2Implementation : public GLES2Interface,
   std::unique_ptr<BufferTracker> buffer_tracker_;
   std::unique_ptr<ReadbackBufferShadowTracker> readback_buffer_shadow_tracker_;
 
-  absl::optional<ScopedMappedMemoryPtr> font_mapped_buffer_;
-  absl::optional<ScopedTransferBufferPtr> raster_mapped_buffer_;
+  std::optional<ScopedMappedMemoryPtr> font_mapped_buffer_;
+  std::optional<ScopedTransferBufferPtr> raster_mapped_buffer_;
 
   base::RepeatingCallback<void(const char*, int32_t)> error_message_callback_;
   bool deferring_error_callbacks_ = false;

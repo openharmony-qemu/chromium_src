@@ -4,6 +4,7 @@
 
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_web_state_observer.h"
 
+#import "base/memory/raw_ptr.h"
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_model.h"
 #import "ios/chrome/browser/ui/fullscreen/test/fullscreen_model_test_util.h"
 #import "ios/chrome/browser/ui/fullscreen/test/test_fullscreen_controller.h"
@@ -14,10 +15,6 @@
 #import "ios/web/public/test/fakes/fake_navigation_manager.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
 #import "testing/platform_test.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 class FullscreenWebStateObserverTest : public PlatformTest {
  public:
@@ -52,7 +49,7 @@ class FullscreenWebStateObserverTest : public PlatformTest {
   TestFullscreenController controller_;
   TestFullscreenMediator mediator_;
   web::FakeWebState web_state_;
-  web::FakeNavigationManager* navigation_manager_;
+  raw_ptr<web::FakeNavigationManager> navigation_manager_;
   FullscreenWebStateObserver observer_;
 };
 

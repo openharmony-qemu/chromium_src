@@ -4,9 +4,10 @@
 
 #include "ash/system/accessibility/dictation_button_tray.h"
 
-#include "ash/accessibility/accessibility_controller_impl.h"
+#include "ash/accessibility/accessibility_controller.h"
 #include "ash/constants/ash_pref_names.h"
 #include "ash/constants/tray_background_view_catalog.h"
+#include "ash/display/window_tree_host_manager.h"
 #include "ash/metrics/user_metrics_recorder.h"
 #include "ash/public/cpp/accessibility_controller_enums.h"
 #include "ash/public/cpp/shelf_config.h"
@@ -19,6 +20,7 @@
 #include "ash/system/tray/tray_constants.h"
 #include "ash/system/tray/tray_container.h"
 #include "ash/system/tray/tray_utils.h"
+#include "chromeos/constants/chromeos_features.h"
 #include "components/prefs/pref_service.h"
 #include "ui/accessibility/accessibility_features.h"
 #include "ui/base/ime/text_input_client.h"
@@ -40,8 +42,17 @@ namespace {
 // |enabled| indicates whether the tray button is enabled, i.e. clickable.
 // A secondary color is used to indicate the icon is not enabled.
 ui::ImageModel GetIconImage(bool active, bool enabled) {
-  const ui::ColorId color_id =
-      enabled ? kColorAshIconColorPrimary : kColorAshIconColorSecondary;
+  ui::ColorId color_id;
+  if (chromeos::features::IsJellyEnabled()) {
+    // For Jelly: the color will change based on whether this tray is active or
+    // not.
+    color_id = enabled ? (active ? cros_tokens::kCrosSysSystemOnPrimaryContainer
+                                 : cros_tokens::kCrosSysOnSurface)
+                       : cros_tokens::kCrosSysSecondary;
+  } else {
+    color_id =
+        enabled ? kColorAshIconColorPrimary : kColorAshIconColorSecondary;
+  }
   return active
              ? ui::ImageModel::FromVectorIcon(kDictationOnNewuiIcon, color_id)
              : ui::ImageModel::FromVectorIcon(kDictationOffNewuiIcon, color_id);
@@ -53,7 +64,7 @@ DictationButtonTray::DictationButtonTray(
     Shelf* shelf,
     TrayBackgroundViewCatalogName catalog_name)
     : TrayBackgroundView(shelf, catalog_name), download_progress_(0) {
-  SetPressedCallback(base::BindRepeating(
+  SetCallback(base::BindRepeating(
       &DictationButtonTray::OnDictationButtonPressed, base::Unretained(this)));
 
   Shell* shell = Shell::Get();
@@ -128,7 +139,15 @@ void DictationButtonTray::Initialize() {
   UpdateVisibility();
 }
 
-void DictationButtonTray::ClickedOutsideBubble() {}
+void DictationButtonTray::ClickedOutsideBubble(const ui::LocatedEvent& event) {}
+
+void DictationButtonTray::UpdateTrayItemColor(bool is_active) {
+  if (progress_indicator_) {
+    progress_indicator_->SetColorId(
+        is_active ? cros_tokens::kCrosSysSystemOnPrimaryContainer
+                  : cros_tokens::kCrosSysPrimary);
+  }
+}
 
 std::u16string DictationButtonTray::GetAccessibleNameForTray() {
   return l10n_util::GetStringUTF16(IDS_ASH_DICTATION_BUTTON_ACCESSIBLE_NAME);
@@ -150,9 +169,13 @@ void DictationButtonTray::OnThemeChanged() {
     progress_indicator_->InvalidateLayer();
 }
 
-void DictationButtonTray::Layout() {
-  TrayBackgroundView::Layout();
+void DictationButtonTray::Layout(PassKey) {
+  LayoutSuperclass<TrayBackgroundView>(this);
   UpdateProgressIndicatorBounds();
+}
+
+void DictationButtonTray::HideBubble(const TrayBubbleView* bubble_view) {
+  // This class has no bubbles to hide.
 }
 
 void DictationButtonTray::OnCaretBoundsChanged(
@@ -185,7 +208,7 @@ void DictationButtonTray::UpdateOnSpeechRecognitionDownloadChanged(
     // changed events.
     progress_indicator_ =
         ProgressIndicator::CreateDefaultInstance(base::BindRepeating(
-            [](DictationButtonTray* tray) -> absl::optional<float> {
+            [](DictationButtonTray* tray) -> std::optional<float> {
               // If download is in-progress, return the progress as a decimal.
               // Otherwise, the progress indicator shouldn't be painted.
               const int progress = tray->download_progress();
@@ -195,8 +218,13 @@ void DictationButtonTray::UpdateOnSpeechRecognitionDownloadChanged(
             },
             base::Unretained(this)));
     progress_indicator_->SetInnerIconVisible(false);
-    layer()->Add(progress_indicator_->CreateLayer());
+    layer()->Add(progress_indicator_->CreateLayer(base::BindRepeating(
+        [](const DictationButtonTray* self, ui::ColorId color_id) {
+          return self->GetColorProvider()->GetColor(color_id);
+        },
+        base::Unretained(this))));
     UpdateProgressIndicatorBounds();
+    UpdateTrayItemColor(is_active());
   }
   progress_indicator_->InvalidateLayer();
 }
@@ -235,7 +263,7 @@ void DictationButtonTray::TextInputChanged(const ui::TextInputClient* client) {
   CheckDictationStatusAndUpdateIcon();
 }
 
-BEGIN_METADATA(DictationButtonTray, TrayBackgroundView)
+BEGIN_METADATA(DictationButtonTray)
 END_METADATA
 
 }  // namespace ash

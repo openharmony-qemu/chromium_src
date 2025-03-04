@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/renderer/v8_value_converter_impl.h"
 
 #include <stddef.h>
@@ -10,13 +15,14 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "base/containers/span.h"
-#include "base/functional/bind.h"
-#include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
+#include "base/ranges/algorithm.h"
 #include "base/values.h"
 #include "v8/include/v8-array-buffer.h"
 #include "v8/include/v8-container.h"
@@ -38,7 +44,6 @@ bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
   return false;
 }
 
-#if BUILDFLAG(IS_OHOS)
 bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
                                               std::unique_ptr<base::Value>* out,
                                               v8::Isolate* isolate,
@@ -46,7 +51,6 @@ bool V8ValueConverter::Strategy::FromV8Object(v8::Local<v8::Object> value,
                                               bool is_promise) {
   return false;
 }
-#endif
 
 bool V8ValueConverter::Strategy::FromV8Array(v8::Local<v8::Array> value,
                                              std::unique_ptr<base::Value>* out,
@@ -93,7 +97,7 @@ class V8ValueConverterImpl::FromV8ValueState {
     }
 
    private:
-    FromV8ValueState* state_;
+    raw_ptr<FromV8ValueState> state_;
   };
 
   explicit FromV8ValueState(bool avoid_identity_hash_for_testing)
@@ -186,7 +190,7 @@ class V8ValueConverterImpl::ScopedUniquenessGuard {
 
  private:
   typedef std::multimap<int, v8::Local<v8::Object> > HashToHandleMap;
-  V8ValueConverterImpl::FromV8ValueState* state_;
+  raw_ptr<V8ValueConverterImpl::FromV8ValueState> state_;
   v8::Local<v8::Object> value_;
   bool is_valid_;
 };
@@ -199,14 +203,11 @@ V8ValueConverterImpl::V8ValueConverterImpl()
     : date_allowed_(false),
       reg_exp_allowed_(false),
       function_allowed_(false),
-#if BUILDFLAG(IS_OHOS)
       promise_allowed_(false),
-#endif
       strip_null_from_objects_(false),
       convert_negative_zero_to_int_(false),
       avoid_identity_hash_for_testing_(false),
-      strategy_(nullptr) {
-}
+      strategy_(nullptr) {}
 
 void V8ValueConverterImpl::SetDateAllowed(bool val) {
   date_allowed_ = val;
@@ -220,11 +221,9 @@ void V8ValueConverterImpl::SetFunctionAllowed(bool val) {
   function_allowed_ = val;
 }
 
-#if BUILDFLAG(IS_OHOS)
 void V8ValueConverterImpl::SetPromiseAllowed(bool val) {
   promise_allowed_ = val;
 }
-#endif
 
 void V8ValueConverterImpl::SetStripNullFromObjects(bool val) {
   strip_null_from_objects_ = val;
@@ -261,67 +260,41 @@ v8::Local<v8::Value> V8ValueConverterImpl::ToV8ValueImpl(
     v8::Local<v8::Object> creation_context,
     base::ValueView value) const {
   struct Visitor {
-    const V8ValueConverterImpl* converter;
-    v8::Isolate* isolate;
+    raw_ptr<const V8ValueConverterImpl> converter;
+    raw_ptr<v8::Isolate> isolate;
     v8::Local<v8::Object> creation_context;
 
     v8::Local<v8::Value> operator()(absl::monostate value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::NONE";
-#endif
       return v8::Null(isolate);
     }
 
     v8::Local<v8::Value> operator()(bool value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::BOOLEAN bool = " << value;
-#endif
       return v8::Boolean::New(isolate, value);
     }
 
     v8::Local<v8::Value> operator()(int value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::INTEGER integer = "
-                 << value;
-#endif
       return v8::Integer::New(isolate, value);
     }
 
     v8::Local<v8::Value> operator()(double value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::DOUBLE double = "
-                 << value;
-#endif
       return v8::Number::New(isolate, value);
     }
 
-    v8::Local<v8::Value> operator()(base::StringPiece value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::STRING";
-#endif
+    v8::Local<v8::Value> operator()(std::string_view value) {
       return v8::String::NewFromUtf8(isolate, value.data(),
                                      v8::NewStringType::kNormal, value.length())
           .ToLocalChecked();
     }
 
     v8::Local<v8::Value> operator()(const base::Value::BlobStorage& value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::BlobStorage";
-#endif
       return converter->ToArrayBuffer(isolate, creation_context, value);
     }
 
     v8::Local<v8::Value> operator()(const base::Value::Dict& value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::Dict";
-#endif
       return converter->ToV8Object(isolate, creation_context, value);
     }
 
     v8::Local<v8::Value> operator()(const base::Value::List& value) {
-#if BUILDFLAG(IS_OHOS)
-      LOG(DEBUG) << "ToV8ValueImpl base::Value::Type::LIST";
-#endif
       return converter->ToV8Array(isolate, creation_context, value);
     }
   };
@@ -387,11 +360,12 @@ v8::Local<v8::Value> V8ValueConverterImpl::ToArrayBuffer(
     v8::Isolate* isolate,
     v8::Local<v8::Object> creation_context,
     const base::Value::BlobStorage& value) const {
-  DCHECK(creation_context->GetCreationContextChecked() ==
+  DCHECK(creation_context->GetCreationContextChecked(isolate) ==
          isolate->GetCurrentContext());
   v8::Local<v8::ArrayBuffer> buffer =
       v8::ArrayBuffer::New(isolate, value.size());
-  memcpy(buffer->GetBackingStore()->Data(), value.data(), value.size());
+  base::ranges::copy(value,
+                     static_cast<uint8_t*>(buffer->GetBackingStore()->Data()));
   return buffer;
 }
 
@@ -464,63 +438,30 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8ValueImpl(
   }
 
   // v8::Value doesn't have a ToArray() method for some reason.
-  if (val->IsArray()) {
-#if BUILDFLAG(IS_OHOS)
-    LOG(DEBUG) << "FromV8ValueImpl IsArray";
-#endif
+  if (val->IsArray())
     return FromV8Array(val.As<v8::Array>(), state, isolate);
-  }
 
   if (val->IsFunction()) {
     if (!function_allowed_)
       // JSON.stringify refuses to convert function(){}.
       return nullptr;
-#if BUILDFLAG(IS_OHOS)
     LOG(DEBUG) << "FromV8ValueImpl IsFunction";
     return FromV8Object(val.As<v8::Object>(), state, isolate, true, false);
-#else
-    return FromV8Object(val.As<v8::Object>(), state, isolate);
-#endif
   }
 
-#if BUILDFLAG(IS_OHOS)
   if (val->IsPromise()) {
-    if (!promise_allowed_)
+    if (!promise_allowed_) {
       return nullptr;
+    }
     LOG(DEBUG) << "FromV8ValueImpl IsPromise";
     return FromV8Object(val.As<v8::Object>(), state, isolate, false, true);
   }
-#endif
+
   if (val->IsArrayBuffer() || val->IsArrayBufferView())
     return FromV8ArrayBuffer(val.As<v8::Object>(), isolate);
 
-#if BUILDFLAG(IS_OHOS)
-  if (val->IsExternal())
-    LOG(DEBUG) << "FromV8ValueImpl IsExternal";
-  if (val->IsNativeError())
-    LOG(DEBUG) << "FromV8ValueImpl IsNativeError";
-  if (val->IsUint32())
-    LOG(DEBUG) << "FromV8ValueImpl IsUint32";
-  if (val->IsGeneratorObject())
-    LOG(DEBUG) << "FromV8ValueImpl IsGeneratorObject";
-  if (val->IsModuleNamespaceObject())
-    LOG(DEBUG) << "FromV8ValueImpl IsModuleNamespaceObject";
-  if (val->IsName())
-    LOG(DEBUG) << "FromV8ValueImpl IsName";
-  if (val->IsSymbol())
-    LOG(DEBUG) << "FromV8ValueImpl IsSymbol";
-  if (val->IsBigInt())
-    LOG(DEBUG) << "FromV8ValueImpl IsBigInt";
-  if (val->IsProxy())
-    LOG(DEBUG) << "FromV8ValueImpl IsProxy";
-#endif
-
-  if (val->IsObject()) {
-#if BUILDFLAG(IS_OHOS)
-    LOG(DEBUG) << "FromV8ValueImpl IsObject";
-#endif
+  if (val->IsObject())
     return FromV8Object(val.As<v8::Object>(), state, isolate);
-  }
 
   LOG(ERROR) << "Unexpected v8 value type encountered.";
   return nullptr;
@@ -538,9 +479,10 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Array(
   // If val was created in a different context than our current one, change to
   // that context, but change back after val is converted.
   v8::Local<v8::Context> creation_context;
-  if (val->GetCreationContext().ToLocal(&creation_context) &&
-      creation_context != isolate->GetCurrentContext())
+  if (val->GetCreationContext(isolate).ToLocal(&creation_context) &&
+      creation_context != isolate->GetCurrentContext()) {
     scope = std::make_unique<v8::Context::Scope>(creation_context);
+  }
 
   if (strategy_) {
     std::unique_ptr<base::Value> out;
@@ -590,10 +532,11 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8ArrayBuffer(
   }
 
   if (val->IsArrayBuffer()) {
-    auto backing_store = val.As<v8::ArrayBuffer>()->GetBackingStore();
-    const auto* data = static_cast<const uint8_t*>(backing_store->Data());
+    auto array_buffer = val.As<v8::ArrayBuffer>();
+    const auto* data = static_cast<const uint8_t*>(array_buffer->Data());
+    const size_t byte_length = array_buffer->ByteLength();
     return base::Value::ToUniquePtrValue(
-        base::Value(base::make_span(data, backing_store->ByteLength())));
+        base::Value(base::make_span(data, byte_length)));
   }
   if (val->IsArrayBufferView()) {
     v8::Local<v8::ArrayBufferView> view = val.As<v8::ArrayBufferView>();
@@ -604,16 +547,12 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8ArrayBuffer(
   }
 
   NOTREACHED() << "Only ArrayBuffer and ArrayBufferView should get here.";
-  return nullptr;
 }
 
-#if BUILDFLAG(IS_OHOS)
 std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
     v8::Local<v8::Object> val,
     FromV8ValueState* state,
-    v8::Isolate* isolate,
-    bool is_function,
-    bool is_promise) const {
+    v8::Isolate* isolate) const {
   ScopedUniquenessGuard uniqueness_guard(state, val);
   if (!uniqueness_guard.is_valid())
     return std::make_unique<base::Value>();
@@ -622,15 +561,14 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
   // If val was created in a different context than our current one, change to
   // that context, but change back after val is converted.
   v8::Local<v8::Context> creation_context;
-  if (val->GetCreationContext().ToLocal(&creation_context) &&
-      creation_context != isolate->GetCurrentContext())
+  if (val->GetCreationContext(isolate).ToLocal(&creation_context) &&
+      creation_context != isolate->GetCurrentContext()) {
     scope = std::make_unique<v8::Context::Scope>(creation_context);
+  }
 
   if (strategy_) {
     std::unique_ptr<base::Value> out;
-    LOG(DEBUG) << "FromV8Object is_function = " << is_function
-               << ", is_promise = " << is_promise;
-    if (strategy_->FromV8Object(val, &out, isolate, is_function, is_promise))
+    if (strategy_->FromV8Object(val, &out, isolate))
       return out;
   }
 
@@ -649,7 +587,7 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
   // See also http://crbug.com/330559.
   base::Value::Dict result;
 
-  if (val->InternalFieldCount())
+  if (val->IsApiWrapper())
     return std::make_unique<base::Value>(std::move(result));
 
   v8::Local<v8::Array> property_names;
@@ -663,11 +601,11 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
         property_names->Get(isolate->GetCurrentContext(), i).ToLocalChecked();
 
     // Extend this test to cover more types as necessary and if sensible.
-    if (!key->IsString() && !key->IsNumber()) {
+    if (!key->IsString() &&
+        !key->IsNumber()) {
       NOTREACHED() << "Key \"" << *v8::String::Utf8Value(isolate, key)
                    << "\" "
                       "is neither a string nor a number";
-      continue;
     }
 
     v8::String::Utf8Value name_utf8(isolate, key);
@@ -709,8 +647,9 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
     // there *is* a "windowId" property, but since it should be an int, code
     // on the browser which doesn't additionally check for null will fail.
     // We can avoid all bugs related to this by stripping null.
-    if (strip_null_from_objects_ && child->is_none())
+    if (strip_null_from_objects_ && child->is_none()) {
       continue;
+    }
 
     result.Set(std::string(*name_utf8, name_utf8.length()),
                base::Value::FromUniquePtrValue(std::move(child)));
@@ -718,28 +657,34 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
 
   return std::make_unique<base::Value>(std::move(result));
 }
-#endif
 
 std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
     v8::Local<v8::Object> val,
     FromV8ValueState* state,
-    v8::Isolate* isolate) const {
+    v8::Isolate* isolate,
+    bool is_function,
+    bool is_promise) const {
   ScopedUniquenessGuard uniqueness_guard(state, val);
-  if (!uniqueness_guard.is_valid())
+  if (!uniqueness_guard.is_valid()) {
     return std::make_unique<base::Value>();
+  }
 
   std::unique_ptr<v8::Context::Scope> scope;
   // If val was created in a different context than our current one, change to
   // that context, but change back after val is converted.
   v8::Local<v8::Context> creation_context;
   if (val->GetCreationContext().ToLocal(&creation_context) &&
-      creation_context != isolate->GetCurrentContext())
+      creation_context != isolate->GetCurrentContext()) {
     scope = std::make_unique<v8::Context::Scope>(creation_context);
+  }
 
   if (strategy_) {
     std::unique_ptr<base::Value> out;
-    if (strategy_->FromV8Object(val, &out, isolate))
+    LOG(DEBUG) << "FromV8Object is_function = " << is_function
+               << ", is_promise = " << is_promise;
+    if (strategy_->FromV8Object(val, &out, isolate, is_function, is_promise)) {
       return out;
+    }
   }
 
   // Don't consider DOM objects. This check matches isHostObject() in Blink's
@@ -757,8 +702,9 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
   // See also http://crbug.com/330559.
   base::Value::Dict result;
 
-  if (val->InternalFieldCount())
+  if (val->InternalFieldCount()) {
     return std::make_unique<base::Value>(std::move(result));
+  }
 
   v8::Local<v8::Array> property_names;
   if (!val->GetOwnPropertyNames(isolate->GetCurrentContext())
@@ -771,8 +717,7 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
         property_names->Get(isolate->GetCurrentContext(), i).ToLocalChecked();
 
     // Extend this test to cover more types as necessary and if sensible.
-    if (!key->IsString() &&
-        !key->IsNumber()) {
+    if (!key->IsString() && !key->IsNumber()) {
       NOTREACHED() << "Key \"" << *v8::String::Utf8Value(isolate, key)
                    << "\" "
                       "is neither a string nor a number";
@@ -793,10 +738,11 @@ std::unique_ptr<base::Value> V8ValueConverterImpl::FromV8Object(
 
     std::unique_ptr<base::Value> child =
         FromV8ValueImpl(state, child_v8, isolate);
-    if (!child)
+    if (!child) {
       // JSON.stringify skips properties whose values don't serialize, for
       // example undefined and functions. Emulate that behavior.
       continue;
+    }
 
     // Strip null if asked (and since undefined is turned into null, undefined
     // too). The use case for supporting this is JSON-schema support,

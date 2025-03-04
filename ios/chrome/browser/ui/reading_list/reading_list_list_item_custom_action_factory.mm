@@ -12,10 +12,6 @@
 #import "ui/base/l10n/l10n_util.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 #pragma mark - ReadingListCustomAction
 
 // A custom item subclass that holds a reference to its ListItem.
@@ -41,7 +37,7 @@
                       target:(id)target
                     selector:(SEL)selector
                         item:(id<ReadingListListItem>)item {
-  if (self = [super initWithName:name target:target selector:selector]) {
+  if ((self = [super initWithName:name target:target selector:selector])) {
     _item = item;
   }
   return self;
@@ -56,6 +52,9 @@
 
 - (NSArray<UIAccessibilityCustomAction*>*)customActionsForItem:
     (id<ReadingListListItem>)item {
+  if ([self.accessibilityDelegate isEditing]) {
+    return nil;
+  }
   ReadingListCustomAction* toggleReadStatus = nil;
   if ([self.accessibilityDelegate isItemRead:item]) {
     toggleReadStatus = [[ReadingListCustomAction alloc]

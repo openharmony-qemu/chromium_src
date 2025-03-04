@@ -6,7 +6,9 @@
 
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "services/viz/public/cpp/crash_keys.h"
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
 #include "ui/gfx/geometry/mojom/geometry_mojom_traits.h"
+#endif
 
 namespace mojo {
 
@@ -24,7 +26,6 @@ EnumTraits<viz::mojom::BeginFrameArgsType,
       return viz::mojom::BeginFrameArgsType::MISSED;
   }
   NOTREACHED();
-  return viz::mojom::BeginFrameArgsType::INVALID;
 }
 
 // static
@@ -51,7 +52,9 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
     Read(viz::mojom::BeginFrameArgsDataView data, viz::BeginFrameArgs* out) {
   if (!data.ReadFrameTime(&out->frame_time) ||
       !data.ReadDeadline(&out->deadline) ||
-      !data.ReadInterval(&out->interval) || !data.ReadType(&out->type)) {
+      !data.ReadInterval(&out->interval) || !data.ReadType(&out->type) ||
+      !data.ReadDispatchTime(&out->dispatch_time) ||
+      !data.ReadClientArrivalTime(&out->client_arrival_time)) {
     return false;
   }
   out->frame_id.source_id = data.source_id();
@@ -60,8 +63,10 @@ bool StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs>::
   out->trace_id = data.trace_id();
   out->on_critical_path = data.on_critical_path();
   out->animate_only = data.animate_only();
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   out->internal_frame = data.internal_frame();
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
   if (!data.ReadDrawRect(&out->draw_rect)) {
     return false;
   }
@@ -82,6 +87,15 @@ bool StructTraits<viz::mojom::BeginFrameAckDataView, viz::BeginFrameAck>::Read(
   out->frame_id.sequence_number = data.sequence_number();
   out->trace_id = data.trace_id();
   out->has_damage = data.has_damage();
+
+  if (!data.ReadPreferredFrameInterval(&out->preferred_frame_interval)) {
+    return false;
+  }
+  // Preferred_frame_interval must be nullopt or non-negative.
+  if (out->preferred_frame_interval &&
+      out->preferred_frame_interval->is_negative()) {
+    return false;
+  }
   return true;
 }
 

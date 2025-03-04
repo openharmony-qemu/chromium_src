@@ -32,6 +32,8 @@ namespace {
 constexpr char kSharedBufferIsValidMetricName[] = "Tracing.SharedBufferIsValid";
 }  // namespace
 
+using ShmemMode = perfetto::SharedMemoryArbiter::ShmemMode;
+
 namespace tracing {
 
 ProducerClient::ProducerClient(base::tracing::PerfettoTaskRunner* task_runner)
@@ -167,7 +169,7 @@ void ProducerClient::NewDataSourceAdded(
 
 bool ProducerClient::IsTracingActive() {
   base::AutoLock lock(lock_);
-  return data_sources_tracing_ > 0 || IsStartupTracingActive();
+  return data_sources_tracing_ > 0;
 }
 
 void ProducerClient::OnTracingStart() {
@@ -196,15 +198,13 @@ void ProducerClient::StartDataSource(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   // TODO(oysteine): Support concurrent tracing sessions.
-  for (auto* data_source : PerfettoTracedProcess::Get()->data_sources()) {
+  for (PerfettoTracedProcess::DataSourceBase* data_source :
+       PerfettoTracedProcess::Get()->data_sources()) {
     if (data_source->name() == data_source_config.name()) {
       {
         base::AutoLock lock(lock_);
         ++data_sources_tracing_;
       }
-      // Now that a data source is active, mark the startup tracing session as
-      // taken over by the service.
-      OnStartupTracingComplete();
       // ProducerClient should never be denied permission to start, but it will
       // only start tracing once the callback passed below is called.
       bool result = PerfettoTracedProcess::Get()->CanStartTracing(
@@ -239,7 +239,8 @@ void ProducerClient::StopDataSource(uint64_t id,
                                     StopDataSourceCallback callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  for (auto* data_source : PerfettoTracedProcess::Get()->data_sources()) {
+  for (PerfettoTracedProcess::DataSourceBase* data_source :
+       PerfettoTracedProcess::Get()->data_sources()) {
     if (data_source->data_source_id() == id &&
         data_source->producer() == this) {
       data_source->StopTracing(base::BindOnce(
@@ -263,7 +264,7 @@ void ProducerClient::StopDataSource(uint64_t id,
     }
   }
 
-  LOG(DFATAL) << "Invalid data source ID.";
+  DLOG(ERROR) << "Invalid data source ID.";
 }
 
 void ProducerClient::Flush(uint64_t flush_request_id,
@@ -272,7 +273,8 @@ void ProducerClient::Flush(uint64_t flush_request_id,
                                        data_source_ids.size()};
 
   // N^2, optimize once there's more than a couple of possible data sources.
-  for (auto* data_source : PerfettoTracedProcess::Get()->data_sources()) {
+  for (PerfettoTracedProcess::DataSourceBase* data_source :
+       PerfettoTracedProcess::Get()->data_sources()) {
     if (base::Contains(data_source_ids, data_source->data_source_id())) {
       data_source->Flush(base::BindRepeating(
           [](base::WeakPtr<ProducerClient> weak_ptr, uint64_t id) {
@@ -286,7 +288,8 @@ void ProducerClient::Flush(uint64_t flush_request_id,
 }
 
 void ProducerClient::ClearIncrementalState() {
-  for (auto* data_source : PerfettoTracedProcess::Get()->data_sources()) {
+  for (PerfettoTracedProcess::DataSourceBase* data_source :
+       PerfettoTracedProcess::Get()->data_sources()) {
     data_source->ClearIncrementalState();
   }
 }
@@ -331,7 +334,6 @@ void ProducerClient::UnregisterTraceWriter(uint32_t writer_id) {
 
 perfetto::SharedMemory* ProducerClient::shared_memory() const {
   NOTREACHED();
-  return nullptr;
 }
 
 void ProducerClient::NotifyFlushComplete(perfetto::FlushRequestID id) {
@@ -366,12 +368,10 @@ void ProducerClient::ActivateTriggers(const std::vector<std::string>&) {
 
 size_t ProducerClient::shared_buffer_page_size_kb() const {
   NOTREACHED();
-  return 0;
 }
 
 bool ProducerClient::IsShmemProvidedByProducer() const {
   NOTREACHED();
-  return false;
 }
 
 void ProducerClient::Sync(std::function<void()>) {
@@ -407,8 +407,8 @@ bool ProducerClient::InitSharedMemoryIfNeeded() {
   shared_memory_ =
       std::make_unique<ChromeBaseSharedMemory>(GetPreferredSmbSizeBytes());
 
-  // TODO(crbug/1057614): We see shared memory region creation fail on windows
-  // in the field. Investigate why this can happen. Gather statistics on
+  // TODO(crbug.com/40677516): We see shared memory region creation fail on
+  // windows in the field. Investigate why this can happen. Gather statistics on
   // failure rates.
   bool valid = shared_memory_->region().IsValid();
   base::UmaHistogramBoolean(kSharedBufferIsValidMetricName, valid);
@@ -420,7 +420,7 @@ bool ProducerClient::InitSharedMemoryIfNeeded() {
   }
 
   shared_memory_arbiter_ = perfetto::SharedMemoryArbiter::CreateUnboundInstance(
-      shared_memory_.get(), kSMBPageSizeBytes);
+      shared_memory_.get(), kSMBPageSizeBytes, ShmemMode::kDefault);
   shared_memory_arbiter_->SetDirectSMBPatchingSupportedByService();
   shared_memory_arbiter_->EnableDirectSMBPatching();
   shared_memory_arbiter_->SetBatchCommitsDuration(
@@ -458,7 +458,8 @@ void ProducerClient::BindClientAndHostPipesOnSequence(
   // the MetadataSource first to ensure that it's also ready. Once the
   // Perfetto Observer interface is ready, we can remove this.
   const auto& data_sources = PerfettoTracedProcess::Get()->data_sources();
-  for (const auto* data_source : base::Reversed(data_sources)) {
+  for (const PerfettoTracedProcess::DataSourceBase* data_source :
+       base::Reversed(data_sources)) {
     NewDataSourceAdded(data_source);
   }
 }

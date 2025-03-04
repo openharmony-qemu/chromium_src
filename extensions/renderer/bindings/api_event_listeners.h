@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
 #include "base/values.h"
 #include "extensions/common/mojom/event_dispatcher.mojom-forward.h"
 #include "extensions/renderer/bindings/api_binding_types.h"
@@ -38,7 +39,7 @@ class APIEventListeners {
   // to associate multiple listeners from different v8::Contexts with the same
   // owner (e.g., extension). This is used lazily, when listeners are first
   // added.
-  // TODO(https://crbug.com/877658): Ideally, we'd just pass in the context
+  // TODO(crbug.com/41410015): Ideally, we'd just pass in the context
   // owner to the event directly. However, this led to https://crbug.com/877401,
   // presumably because of https://crbug.com/877658. If we can fix that, we can
   // simplify this again.
@@ -71,7 +72,7 @@ class APIEventListeners {
   virtual size_t GetNumListeners() = 0;
 
   // Returns the listeners that should be notified for the given |filter|.
-  virtual std::vector<v8::Local<v8::Function>> GetListeners(
+  virtual v8::LocalVector<v8::Function> GetListeners(
       mojom::EventFilteringInfoPtr filter,
       v8::Local<v8::Context> context) = 0;
 
@@ -106,7 +107,7 @@ class UnfilteredEventListeners final : public APIEventListeners {
                       v8::Local<v8::Context> context) override;
   bool HasListener(v8::Local<v8::Function> listener) override;
   size_t GetNumListeners() override;
-  std::vector<v8::Local<v8::Function>> GetListeners(
+  v8::LocalVector<v8::Function> GetListeners(
       mojom::EventFilteringInfoPtr filter,
       v8::Local<v8::Context> context) override;
   void Invalidate(v8::Local<v8::Context> context) override;
@@ -152,7 +153,7 @@ class UnfilteredEventListeners final : public APIEventListeners {
   // The listener tracker to notify of added or removed listeners. This may be
   // null if this is a set of listeners for an unmanaged event. If
   // non-null, required to outlive this object.
-  ListenerTracker* listener_tracker_ = nullptr;
+  raw_ptr<ListenerTracker, DanglingUntriaged> listener_tracker_ = nullptr;
 };
 
 // A listener list implementation that supports filtering. Events should only
@@ -181,7 +182,7 @@ class FilteredEventListeners final : public APIEventListeners {
                       v8::Local<v8::Context> context) override;
   bool HasListener(v8::Local<v8::Function> listener) override;
   size_t GetNumListeners() override;
-  std::vector<v8::Local<v8::Function>> GetListeners(
+  v8::LocalVector<v8::Function> GetListeners(
       mojom::EventFilteringInfoPtr filter,
       v8::Local<v8::Context> context) override;
   void Invalidate(v8::Local<v8::Context> context) override;
@@ -220,7 +221,7 @@ class FilteredEventListeners final : public APIEventListeners {
 
   // The listener tracker to notify of added or removed listeners. Required to
   // outlive this object. Must be non-null.
-  ListenerTracker* listener_tracker_ = nullptr;
+  raw_ptr<ListenerTracker> listener_tracker_ = nullptr;
 };
 
 }  // namespace extensions

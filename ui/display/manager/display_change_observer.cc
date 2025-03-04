@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/display/manager/display_change_observer.h"
 
 #include <algorithm>
@@ -16,9 +21,9 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/json/json_reader.h"
+#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/values.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/user_activity/user_activity_detector.h"
 #include "ui/display/display.h"
@@ -27,9 +32,9 @@
 #include "ui/display/display_switches.h"
 #include "ui/display/manager/display_layout_store.h"
 #include "ui/display/manager/display_manager.h"
-#include "ui/display/manager/display_manager_utilities.h"
 #include "ui/display/manager/display_properties_parser.h"
 #include "ui/display/manager/touch_device_manager.h"
+#include "ui/display/manager/util/display_manager_util.h"
 #include "ui/display/types/display_constants.h"
 #include "ui/display/types/display_mode.h"
 #include "ui/display/types/display_snapshot.h"
@@ -51,7 +56,7 @@ struct DeviceScaleFactorDPIThreshold {
 };
 
 // Update the list of zoom levels whenever a new device scale factor is added
-// here. See zoom level list in /ui/display/manager/display_manager_util.cc
+// here. See zoom level list in /ui/display/manager/util/display_manager_util.cc
 const DeviceScaleFactorDPIThreshold kThresholdTableForInternal[] = {
     {310.f, kDsf_2_666}, {270.0f, 2.4f},  {230.0f, 2.0f}, {220.0f, kDsf_1_777},
     {180.0f, 1.6f},      {150.0f, 1.25f}, {0.0f, 1.0f},
@@ -82,18 +87,18 @@ ManagedDisplayInfo::ManagedDisplayModeList GetModeListWithAllRefreshRates(
   return display_mode_list;
 }
 
-absl::optional<gfx::RoundedCornersF> ParsePanelRadiiFromCommandLine() {
+std::optional<gfx::RoundedCornersF> ParsePanelRadiiFromCommandLine() {
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kDisplayProperties)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
-  absl::optional<base::Value> display_switch_value = base::JSONReader::Read(
+  std::optional<base::Value> display_switch_value = base::JSONReader::Read(
       base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
           switches::kDisplayProperties));
 
   if (!display_switch_value.has_value()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return ParseDisplayPanelRadii(&display_switch_value.value());
@@ -166,7 +171,7 @@ DisplayChangeObserver::GetExternalManagedDisplayModeList(
     const gfx::Size size = native_mode.size();
 
     auto it = display_mode_map.find(size);
-    DCHECK(it != display_mode_map.end())
+    CHECK(it != display_mode_map.end(), base::NotFatalUntil::M130)
         << "Native mode must be part of the mode list.";
 
     // If the native mode was replaced (e.g. by a mode with similar size but
@@ -213,7 +218,7 @@ bool DisplayChangeObserver::GetSelectedModeForDisplayId(
   return display_manager_->GetSelectedModeForDisplayId(display_id, out_mode);
 }
 
-void DisplayChangeObserver::OnDisplayModeChanged(
+void DisplayChangeObserver::OnDisplayConfigurationChanged(
     const DisplayConfigurator::DisplayStateList& display_states) {
   UpdateInternalDisplay(display_states);
 
@@ -232,20 +237,17 @@ void DisplayChangeObserver::OnDisplayModeChanged(
 
   // For the purposes of user activity detection, ignore synthetic mouse events
   // that are triggered by screen resizes: http://crbug.com/360634
-  ui::UserActivityDetector* user_activity_detector =
-      ui::UserActivityDetector::Get();
-  if (user_activity_detector)
-    user_activity_detector->OnDisplayPowerChanging();
+  ui::UserActivityDetector::Get()->OnDisplayPowerChanging();
 }
 
-void DisplayChangeObserver::OnDisplayModeChangeFailed(
+void DisplayChangeObserver::OnDisplayConfigurationChangeFailed(
     const DisplayConfigurator::DisplayStateList& displays,
     MultipleDisplayState failed_new_state) {
   // If display configuration failed during startup, simply update the display
   // manager with detected displays. If no display is detected, it will
   // create a pseudo display.
   if (display_manager_->GetNumDisplays() == 0)
-    OnDisplayModeChanged(displays);
+    OnDisplayConfigurationChanged(displays);
 }
 
 void DisplayChangeObserver::OnInputDeviceConfigurationChanged(
@@ -259,7 +261,7 @@ void DisplayChangeObserver::OnInputDeviceConfigurationChanged(
     const auto& cached_displays =
         display_manager_->configurator()->cached_displays();
     if (!cached_displays.empty())
-      OnDisplayModeChanged(cached_displays);
+      OnDisplayConfigurationChanged(cached_displays);
   }
 }
 
@@ -272,6 +274,8 @@ float DisplayChangeObserver::FindDeviceScaleFactor(
   // Keep the Chell's scale factor 2.252 until we make decision.
   constexpr gfx::Size k2DisplaySizeHackChell(3200, 1800);
   constexpr gfx::Size k18DisplaySizeHackCoachZ(2160, 1440);
+  // Only change the OLED display scale factor for Xol device.
+  constexpr gfx::Size k12DisplaySizeHackXol(1920, 1080);
 
   if (size_in_pixels == k225DisplaySizeHackNocturne) {
     return kDsf_2_252;
@@ -282,6 +286,12 @@ float DisplayChangeObserver::FindDeviceScaleFactor(
   if (size_in_pixels == k18DisplaySizeHackCoachZ) {
     return kDsf_1_8;
   }
+
+  if (display::features::IsOledScaleFactorEnabled() &&
+      size_in_pixels == k12DisplaySizeHackXol) {
+    return 1.2f;
+  }
+
   for (size_t i = 0; i < std::size(kThresholdTableForInternal); ++i) {
     if (dpi >= kThresholdTableForInternal[i].dpi) {
       return kThresholdTableForInternal[i].device_scale_factor;
@@ -333,7 +343,7 @@ ManagedDisplayInfo DisplayChangeObserver::CreateManagedDisplayInfo(
   if (dpi)
     new_info.set_device_dpi(dpi);
 
-  // TODO(crbug.com/1012846): Remove kEnableUseHDRTransferFunction usage when
+  // TODO(crbug.com/40652358): Remove kEnableUseHDRTransferFunction usage when
   // HDR is fully supported on ChromeOS.
   const bool allow_high_bit_depth =
       base::FeatureList::IsEnabled(features::kUseHDRTransferFunction);
@@ -347,6 +357,11 @@ ManagedDisplayInfo DisplayChangeObserver::CreateManagedDisplayInfo(
 
   new_info.set_refresh_rate(mode_info->refresh_rate());
   new_info.set_is_interlaced(mode_info->is_interlaced());
+  new_info.set_vsync_rate_min(mode_info->vsync_rate_min());
+  new_info.set_variable_refresh_rate_state(
+      snapshot->variable_refresh_rate_state());
+  new_info.set_connection_type(snapshot->type());
+  new_info.set_physical_size(snapshot->physical_size());
 
   ManagedDisplayInfo::ManagedDisplayModeList display_modes =
       (snapshot->type() == DISPLAY_CONNECTION_TYPE_INTERNAL)
@@ -356,13 +371,9 @@ ManagedDisplayInfo DisplayChangeObserver::CreateManagedDisplayInfo(
 
   new_info.set_maximum_cursor_size(snapshot->maximum_cursor_size());
 
-  new_info.set_rounded_corners_radii(panel_radii);
+  new_info.set_panel_corners_radii(panel_radii);
 
   new_info.SetDRMFormatsAndModifiers(snapshot->GetDRMFormatsAndModifiers());
-
-  new_info.set_variable_refresh_rate_state(
-      snapshot->variable_refresh_rate_state());
-  new_info.set_vsync_rate_min(snapshot->vsync_rate_min());
 
   return new_info;
 }
@@ -371,7 +382,7 @@ void DisplayChangeObserver::UpdateInternalDisplay(
     const DisplayConfigurator::DisplayStateList& display_states) {
   bool force_first_display_internal = ForceFirstDisplayInternal();
 
-  for (auto* state : display_states) {
+  for (display::DisplaySnapshot* state : display_states) {
     if (state->type() == DISPLAY_CONNECTION_TYPE_INTERNAL ||
         (force_first_display_internal &&
          (!HasInternalDisplay() || IsInternalDisplayId(state->display_id())))) {
@@ -412,12 +423,14 @@ ManagedDisplayInfo DisplayChangeObserver::CreateManagedDisplayInfoInternal(
     native = true;
     device_scale_factor = FindDeviceScaleFactor(dpi, mode_info->size());
   } else {
-    ManagedDisplayMode mode;
-    if (display_manager_->GetSelectedModeForDisplayId(snapshot->display_id(),
-                                                      &mode)) {
-      device_scale_factor = mode.device_scale_factor();
-      native = mode.native();
-    }
+    // DisplaySnapshot stores the native_mode info. For external display, use it
+    // to determine if current mode_info is native or not.
+    const DisplayMode* native_mode = snapshot->native_mode();
+    native = *mode_info == *native_mode;
+
+    // External display scale factor is always 1.
+    CHECK(snapshot->type() != DISPLAY_CONNECTION_TYPE_INTERNAL);
+    device_scale_factor = 1.0f;
   }
   std::string name = (snapshot->type() == DISPLAY_CONNECTION_TYPE_INTERNAL)
                          ? l10n_util::GetStringUTF8(IDS_DISPLAY_NAME_INTERNAL)

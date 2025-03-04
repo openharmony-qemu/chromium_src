@@ -23,11 +23,6 @@ const int InfoBarDelegate::kNoIconID = 0;
 InfoBarDelegate::~InfoBarDelegate() {
 }
 
-InfoBarDelegate::InfoBarAutomationType
-    InfoBarDelegate::GetInfoBarAutomationType() const {
-  return UNKNOWN_INFOBAR;
-}
-
 int InfoBarDelegate::GetIconId() const {
   return kNoIconID;
 }
@@ -106,10 +101,12 @@ ThemeInstalledInfoBarDelegate*
   return nullptr;
 }
 
+#if BUILDFLAG(IS_IOS)
 translate::TranslateInfoBarDelegate*
     InfoBarDelegate::AsTranslateInfoBarDelegate() {
   return nullptr;
 }
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 offline_pages::OfflinePageInfoBarDelegate*

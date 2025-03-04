@@ -24,7 +24,6 @@ EnumTraits<blink::mojom::CredentialType, password_manager::CredentialType>::
   }
 
   NOTREACHED();
-  return blink::mojom::CredentialType::EMPTY;
 }
 
 // static
@@ -45,7 +44,6 @@ bool EnumTraits<blink::mojom::CredentialType,
   }
 
   NOTREACHED();
-  return false;
 }
 
 // static
@@ -65,7 +63,6 @@ EnumTraits<blink::mojom::CredentialManagerError,
   }
 
   NOTREACHED();
-  return blink::mojom::CredentialManagerError::UNKNOWN;
 }
 
 // static
@@ -90,7 +87,6 @@ bool EnumTraits<blink::mojom::CredentialManagerError,
   }
 
   NOTREACHED();
-  return false;
 }
 
 // static
@@ -108,7 +104,6 @@ EnumTraits<blink::mojom::CredentialMediationRequirement,
   }
 
   NOTREACHED();
-  return blink::mojom::CredentialMediationRequirement::kOptional;
 }
 
 // static
@@ -129,7 +124,6 @@ bool EnumTraits<blink::mojom::CredentialMediationRequirement,
   }
 
   NOTREACHED();
-  return false;
 }
 
 // static

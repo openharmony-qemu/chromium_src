@@ -37,10 +37,10 @@ enum OptionFlag : ubyte (bit_flags) {
 enum ActivationType : ubyte (bit_flags) {
   DOCUMENT,       // Disable all rules on the page.
   GENERIC_BLOCK,  // Disable generic URL rules on the page.
-  // #ifdef OHOS_ARKWEB_ADBLOCK
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
   ELEMHIDE, // - Disable all element hiding on the page.
   GENERIC_HIDE, // - Disable generic element hiding on the page.
-  // #endif // OHOS_ARKWEB_ADBLOCK
+  // #endif
 }
 
 // The types of subresource requests that a URL rule should be applied to.
@@ -51,7 +51,7 @@ enum ElementType : ushort (bit_flags) {
   STYLESHEET,
   OBJECT,
   XMLHTTPREQUEST,
-  // TODO(crbug.com/713774): Remove OBJECT_SUBREQUEST type once
+  // TODO(crbug.com/40516600): Remove OBJECT_SUBREQUEST type once
   // url_pattern_index no longer has a dependency on proto::UrlRule.
   OBJECT_SUBREQUEST,
   SUBDOCUMENT,

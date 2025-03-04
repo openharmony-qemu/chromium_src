@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "services/network/http_cache_data_counter.h"
 
 #include <algorithm>
@@ -12,7 +17,7 @@
 
 #include "base/files/scoped_temp_dir.h"
 #include "base/functional/bind.h"
-#include "base/memory/raw_ptr_exclusion.h"
+#include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
 #include "base/test/bind.h"
 #include "base/test/task_environment.h"
@@ -27,6 +32,7 @@
 #include "net/http/http_network_session.h"
 #include "net/http/http_server_properties_manager.h"
 #include "net/http/http_transaction_factory.h"
+#include "net/http/mock_http_cache.h"
 #include "net/url_request/url_request_context.h"
 #include "services/network/network_context.h"
 #include "services/network/network_service.h"
@@ -84,9 +90,12 @@ class HttpCacheDataCounterTest : public testing::Test {
                                 ->GetCache();
     ASSERT_TRUE(cache);
     {
-      net::TestCompletionCallback callback;
-      int rv = cache->GetBackend(&backend_, callback.callback());
-      ASSERT_EQ(net::OK, callback.GetResult(rv));
+      net::TestGetBackendCompletionCallback callback;
+      net::HttpCache::GetBackendResult result =
+          cache->GetBackend(callback.callback());
+      result = callback.GetResult(result);
+      ASSERT_EQ(net::OK, result.first);
+      backend_ = result.second;
       ASSERT_TRUE(backend_);
     }
 
@@ -100,7 +109,8 @@ class HttpCacheDataCounterTest : public testing::Test {
       disk_cache::Entry* entry = result.ReleaseEntry();
       ASSERT_TRUE(entry);
 
-      auto io_buf = base::MakeRefCounted<net::IOBuffer>(test_entry.size);
+      auto io_buf =
+          base::MakeRefCounted<net::IOBufferWithSize>(test_entry.size);
       std::fill(io_buf->data(), io_buf->data() + test_entry.size, 0);
 
       net::TestCompletionCallback write_data_callback;
@@ -185,7 +195,7 @@ class HttpCacheDataCounterTest : public testing::Test {
   void InitNetworkContext() {
     mojom::NetworkContextParamsPtr context_params = CreateContextParams();
     context_params->http_cache_enabled = true;
-    context_params->http_cache_directory = cache_dir_.GetPath();
+    context_params->file_paths->http_cache_directory = cache_dir_.GetPath();
 
     network_context_ = std::make_unique<NetworkContext>(
         network_service_.get(),
@@ -201,9 +211,8 @@ class HttpCacheDataCounterTest : public testing::Test {
   // Stores the mojo::Remote<mojom::NetworkContext> of the most recently created
   // NetworkContext.
   mojo::Remote<mojom::NetworkContext> network_context_remote_;
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #addr-of
-  RAW_PTR_EXCLUSION disk_cache::Backend* backend_ = nullptr;
+
+  raw_ptr<disk_cache::Backend> backend_ = nullptr;
 };
 
 TEST_F(HttpCacheDataCounterTest, Basic) {

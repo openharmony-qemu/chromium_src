@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.VisibleForTesting;
 
 import org.chromium.ui.UiUtils;
 
@@ -17,7 +18,8 @@ import org.chromium.ui.UiUtils;
  * This view is used to obscure content and bring focus to a foreground view (i.e. the bottom sheet
  * or the omnibox suggestions).
  */
-class ScrimView extends View {
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
+public class ScrimView extends View {
     /** The view that the scrim should exist in. */
     private final ViewGroup mParent;
 
@@ -32,7 +34,10 @@ class ScrimView extends View {
      * @param parent The {@link ViewGroup} the scrim should exist in.
      * @param eventDelegate A means of passing motion events back to the mediator for processing.
      */
-    public ScrimView(Context context, ViewGroup parent, @ColorInt int defaultColor,
+    public ScrimView(
+            Context context,
+            ViewGroup parent,
+            @ColorInt int defaultColor,
             ScrimCoordinator.TouchEventDelegate eventDelegate) {
         super(context);
         mParent = parent;
@@ -44,8 +49,9 @@ class ScrimView extends View {
         setAlpha(0.0f);
         setVisibility(View.GONE);
         setBackgroundColor(mDefaultBackgroundColor);
-        setLayoutParams(new ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setLayoutParams(
+                new ViewGroup.MarginLayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     /**

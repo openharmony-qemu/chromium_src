@@ -8,8 +8,10 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/default_tick_clock.h"
@@ -21,7 +23,6 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace media {
 
@@ -38,7 +39,7 @@ class VideoRendererSink;
 // connected and passed in the constructor. Then Initialize() will be called on
 // the |task_runner| and starting from that point this class is bound to the
 // |task_runner|*. That means all Renderer and RendererClient methods will be
-// called/dispached on the |task_runner|. The only exception is GetMediaTime(),
+// called/dispatched on the |task_runner|. The only exception is GetMediaTime(),
 // which can be called on any thread.
 class MojoRenderer : public Renderer, public mojom::RendererClient {
  public:
@@ -57,7 +58,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
                   media::RendererClient* client,
                   PipelineStatusCallback init_cb) override;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
-  void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
+  void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
   void StartPlayingFrom(base::TimeDelta time) override;
   void SetPlaybackRate(double playback_rate) override;
@@ -65,23 +66,23 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   base::TimeDelta GetMediaTime() override;
   RendererType GetRendererType() override;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
   void SetMediaPlayerState(bool is_suspend, int suspend_type) override;
   void SetMediaSourceList(
       const std::vector<MediaSourceInfo>& source_infos) override;
   void SetMediaControls(bool show_media_controls,
-      const std::vector<std::string>& controls_list) override;
+                        const std::vector<std::string>& controls_list) override;
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       base::flat_map<std::string, std::string> attributes) override;
   void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
   void SetPlaybackRateWithReason(double playback_rate,
-      ActionReason reason) override;
+                                 ActionReason reason) override;
   bool IsAudio();
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   // mojom::RendererClient implementation, dispatched on the |task_runner_|.
@@ -136,7 +137,10 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
 
   // Video frame overlays are rendered onto this sink.
   // Rendering of a new overlay is only needed when video natural size changes.
-  raw_ptr<VideoRendererSink> video_renderer_sink_ = nullptr;
+  // TODO(crbug.com/41490899) Investigate dangling pointer.
+  raw_ptr<VideoRendererSink,
+          FlakyDanglingUntriaged | AcrossTasksDanglingUntriaged>
+      video_renderer_sink_ = nullptr;
 
   // Provider of audio/video DemuxerStreams. Must be valid throughout the
   // lifetime of |this|.
@@ -177,9 +181,9 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   mutable base::Lock lock_;
   media::TimeDeltaInterpolator media_time_interpolator_;
 
-  absl::optional<PipelineStatistics> pending_stats_;
+  std::optional<PipelineStatistics> pending_stats_;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   std::vector<mojom::MediaSourceInfoPtr> source_infos_;
   bool show_media_controls_ = false;
   std::vector<std::string> controls_list_;
@@ -188,7 +192,7 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   std::string referrer_;
   bool is_audio_ = false;
   bool muted_ = false;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

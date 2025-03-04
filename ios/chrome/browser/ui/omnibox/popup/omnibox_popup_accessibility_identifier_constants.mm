@@ -6,15 +6,17 @@
 
 #import "ios/chrome/browser/ui/omnibox/popup/omnibox_popup_accessibility_identifier_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 NSString* const kOmniboxPopupRowSwitchTabAccessibilityIdentifier =
     @"OmniboxPopupRowSwitchTabAccessibilityIdentifier";
 
 NSString* const kOmniboxPopupRowAppendAccessibilityIdentifier =
     @"OmniboxPopupRowAppendAccessibilityIdentifier";
+
+NSString* const kOmniboxPopupRowPrimaryTextAccessibilityIdentifier =
+    @"OmniboxPopupRowPrimaryTextAccessibilityIdentifier";
+
+NSString* const kOmniboxPopupRowSecondaryTextAccessibilityIdentifier =
+    @"OmniboxPopupRowSecondaryTextAccessibilityIdentifier";
 
 NSString* const kOmniboxPopupTableViewAccessibilityIdentifier =
     @"OmniboxPopupTableViewAccessibilityIdentifier";
@@ -24,6 +26,21 @@ NSString* const kOmniboxCarouselCellAccessibilityIdentifier =
 
 NSString* const kOmniboxCarouselControlLabelAccessibilityIdentifier =
     @"OmniboxCarouselControlLabelAccessibilityIdentifier";
+
+NSString* const kDirectionsActionHighlightedIdentifier =
+    @"kDirectionsActionHighlightedIdentifier";
+
+NSString* const kDirectionsActionIdentifier = @"kDirectionsActionIdentifier";
+
+NSString* const kCallActionHighlightedIdentifier =
+    @"kCallActionHighlightedIdentifier";
+
+NSString* const kCallActionIdentifier = @"kCallActionIdentifier";
+
+NSString* const kReviewsActionHighlightedIdentifier =
+    @"kReviewsActionHighlightedIdentifier";
+
+NSString* const kReviewsActionIdentifier = @"kReviewsActionIdentifier";
 
 @implementation OmniboxPopupAccessibilityIdentifierHelper
 

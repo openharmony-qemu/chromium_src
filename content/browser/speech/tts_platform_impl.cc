@@ -31,7 +31,6 @@ TtsPlatform* TtsPlatform::GetInstance() {
   // is not provided, that's probably not intended. It's not important
   // if this is hit in something like a content-only unit test.
   NOTREACHED();
-  return nullptr;
 #else
   return TtsPlatformImpl::GetInstance();
 #endif

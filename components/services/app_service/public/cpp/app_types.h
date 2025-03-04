@@ -5,19 +5,11 @@
 #ifndef COMPONENTS_SERVICES_APP_SERVICE_PUBLIC_CPP_APP_TYPES_H_
 #define COMPONENTS_SERVICES_APP_SERVICE_PUBLIC_CPP_APP_TYPES_H_
 
-#include <string>
-#include <utility>
-#include <vector>
+#include <optional>
 
 #include "base/component_export.h"
-#include "base/time/time.h"
-#include "components/services/app_service/public/cpp/icon_types.h"
-#include "components/services/app_service/public/cpp/intent_filter.h"
 #include "components/services/app_service/public/cpp/macros.h"
-#include "components/services/app_service/public/cpp/permission.h"
-#include "components/services/app_service/public/cpp/run_on_os_login_types.h"
 #include "components/services/app_service/public/protos/app_types.pb.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace apps {
 
@@ -25,6 +17,10 @@ namespace apps {
 // //components/services/app_service/public/cpp/macros.h
 // macros if necessary, as well as the ApplicationType enum in
 // //components/services/app_service/public/protos/app_types.proto.
+//
+// This is used for metrics and should not be reordered or removed and email
+// chromeos-data-team@google.com to request a corresponding change to backend
+// enums.
 ENUM(AppType,
      kUnknown,
      kArc,                         // Android app.
@@ -32,7 +28,6 @@ ENUM(AppType,
      kCrostini,                    // Linux (via Crostini) app.
      kChromeApp,                   // Chrome app.
      kWeb,                         // Web app.
-     kMacOs,                       // Mac OS app.
      kPluginVm,                    // Plugin VM app, see go/pluginvm.
      kStandaloneBrowser,           // Lacros browser app, see //docs/lacros.md.
      kRemote,                      // Remote app.
@@ -43,6 +38,24 @@ ENUM(AppType,
      kStandaloneBrowserExtension,  // Extension hosted in Lacros.
      kBruschetta                   // Bruschetta app, see go/bruschetta.
 )
+
+// When updating the enum below, update
+// //components/services/app_service/public/cpp/macros.h
+// macros if necessary.
+//
+// Used by PackageId mapping closely to corresponding values in AppType but
+// can contain other non-app values e.g. app shortcuts.
+ENUM(PackageType,
+     kUnknown,
+     kArc,
+     kBorealis,
+     kChromeApp,
+     kGeForceNow,
+     kSystem,
+     kWeb,
+     // A shortcut to a particular website that's intended to open in a browser,
+     // not install as an app.
+     kWebsite)
 
 // Whether an app is ready to launch, i.e. installed.
 // Note the enumeration is used in UMA histogram so entries should not be
@@ -61,12 +74,17 @@ ENUM(Readiness,
      // removing it.
      kRemoved,
      // This is used for all non-user initiated uninstallation.
-     kUninstalledByNonUser)
+     kUninstalledByNonUser,
+     kDisabledByLocalSettings  // Disabled by local settings.
+)
 
 // How the app was installed.
 // This should be kept in sync with histograms.xml, InstallReason in
 // enums.xml as well as ApplicationInstallReason in
 // //components/services/app_service/public/protos/app_types.proto.
+//
+// Email chromeos-data-team@google.com to request a corresponding change to
+// backend enums.
 //
 // Note the enumeration is used in UMA histogram so entries should not be
 // re-ordered or removed. New entries should be added at the bottom.
@@ -80,13 +98,16 @@ ENUM(InstallReason,
      kUser,     // Installed by user action.
      kSubApp,   // Installed by the SubApp API call.
      kKiosk,    // Installed by Kiosk on Chrome OS.
-     kCommandLine  // Installed by command line argument.
+     kCommandLine  // Deprecated, no longer used.
 )
 
 // Where the app was installed from.
 // This should be kept in sync with histograms.xml, InstallSource in
 // enums.xml as well as ApplicationInstallSource in
 // //components/services/app_service/public/protos/app_types.proto.
+//
+// Email chromeos-data-team@google.com to request a corresponding change to
+// backend enums.
 //
 // Note the enumeration is used in UMA histogram so entries should not be
 // re-ordered or removed. New entries should be added at the bottom.
@@ -105,6 +126,9 @@ ENUM(InstallSource,
 // //components/services/app_service/public/protos/app_types.proto, so entries
 // should not be re-ordered or removed. New entries should be added at the
 // bottom.
+//
+// Email chromeos-data-team@google.com to request a corresponding change to
+// backend enums.
 ENUM(UninstallSource,
      kUnknown,
      kAppList,        // Uninstall by the user from the App List (Launcher)
@@ -123,109 +147,14 @@ ENUM(WindowMode,
      // Opens in a tabbed app window
      kTabbedWindow)
 
-// Information about an app. See components/services/app_service/README.md.
-struct COMPONENT_EXPORT(APP_TYPES) App {
-  App(AppType app_type, const std::string& app_id);
-
-  App(const App&) = delete;
-  App& operator=(const App&) = delete;
-
-  ~App();
-
-  std::unique_ptr<App> Clone() const;
-
-  AppType app_type;
-  std::string app_id;
-
-  Readiness readiness = Readiness::kUnknown;
-  absl::optional<std::string> name;
-  absl::optional<std::string> short_name;
-
-  // An optional, publisher-specific ID for this app, e.g. for Android apps,
-  // this field contains the Android package name, and for web apps, it
-  // contains the start URL.
-  absl::optional<std::string> publisher_id;
-
-  absl::optional<std::string> description;
-  absl::optional<std::string> version;
-  std::vector<std::string> additional_search_terms;
-
-  absl::optional<IconKey> icon_key;
-
-  absl::optional<base::Time> last_launch_time;
-  absl::optional<base::Time> install_time;
-
-  // This vector must be treated atomically, if there is a permission
-  // change, the publisher must send through the entire list of permissions.
-  // Should contain no duplicate IDs.
-  // If empty during updates, Subscriber can assume no changes.
-  // There is no guarantee that this is sorted by any criteria.
-  Permissions permissions;
-
-  // Whether the app was installed by sync, policy or as a default app.
-  InstallReason install_reason = InstallReason::kUnknown;
-
-  // Where the app was installed from, e.g. from Play Store, from Chrome Web
-  // Store, etc.
-  InstallSource install_source = InstallSource::kUnknown;
-
-  // IDs used for policy to identify the app.
-  // For web apps, it contains the install URL(s).
-  std::vector<std::string> policy_ids;
-
-  // Whether the app is an extensions::Extensions where is_platform_app()
-  // returns true.
-  absl::optional<bool> is_platform_app;
-
-  absl::optional<bool> recommendable;
-  absl::optional<bool> searchable;
-  absl::optional<bool> show_in_launcher;
-  absl::optional<bool> show_in_shelf;
-  absl::optional<bool> show_in_search;
-  absl::optional<bool> show_in_management;
-
-  // True if the app is able to handle intents and should be shown in intent
-  // surfaces.
-  absl::optional<bool> handles_intents;
-
-  // Whether the app publisher allows the app to be uninstalled.
-  absl::optional<bool> allow_uninstall;
-
-  // Whether the app icon should add the notification badging.
-  absl::optional<bool> has_badge;
-
-  // Paused apps cannot be launched, and any running apps that become paused
-  // will be stopped. This is independent of whether or not the app is ready to
-  // be launched (defined by the Readiness field).
-  absl::optional<bool> paused;
-
-  // This vector stores all the intent filters defined in this app. Each
-  // intent filter defines a matching criteria for whether an intent can
-  // be handled by this app. One app can have multiple intent filters.
-  IntentFilters intent_filters;
-
-  // Whether the app can be free resized. If this is true, various resizing
-  // operations will be restricted.
-  absl::optional<bool> resize_locked;
-
-  // Whether the app's display mode is in the browser or otherwise.
-  WindowMode window_mode = WindowMode::kUnknown;
-
-  // Whether the app runs on os login in a new window or not.
-  absl::optional<RunOnOsLogin> run_on_os_login;
-
-  // Storage space size for app and associated data.
-  absl::optional<uint64_t> app_size_in_bytes;
-  absl::optional<uint64_t> data_size_in_bytes;
-
-  // When adding new fields to the App type, the `Clone` function and the
-  // `AppUpdate` class should also be updated.
-};
-
-using AppPtr = std::unique_ptr<App>;
-
 COMPONENT_EXPORT(APP_TYPES)
 ApplicationType ConvertAppTypeToProtoApplicationType(AppType app_type);
+
+COMPONENT_EXPORT(APP_TYPES)
+std::optional<AppType> ConvertPackageTypeToAppType(PackageType package_type);
+
+COMPONENT_EXPORT(APP_TYPES)
+std::optional<PackageType> ConvertAppTypeToPackageType(AppType app_type);
 
 COMPONENT_EXPORT(APP_TYPES)
 ApplicationInstallReason ConvertInstallReasonToProtoApplicationInstallReason(

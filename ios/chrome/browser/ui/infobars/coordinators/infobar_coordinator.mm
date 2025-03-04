@@ -5,12 +5,15 @@
 #import "ios/chrome/browser/ui/infobars/coordinators/infobar_coordinator.h"
 #import "ios/chrome/browser/ui/infobars/coordinators/infobar_coordinator+subclassing.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/timer/timer.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/shared/ui/util/named_guide.h"
+#import "ios/chrome/browser/shared/coordinator/layout_guide/layout_guide_util.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/ui/util/layout_guide_names.h"
+#import "ios/chrome/browser/shared/ui/util/util_swift.h"
 #import "ios/chrome/browser/ui/fullscreen/animated_scoped_fullscreen_disabler.h"
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_controller.h"
 #import "ios/chrome/browser/ui/infobars/banners/infobar_banner_accessibility_util.h"
@@ -22,10 +25,6 @@
 #import "ios/chrome/browser/ui/infobars/presentation/infobar_banner_transition_driver.h"
 #import "ios/chrome/browser/ui/infobars/presentation/infobar_modal_positioner.h"
 #import "ios/chrome/browser/ui/infobars/presentation/infobar_modal_transition_driver.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface InfobarCoordinator () <InfobarCoordinatorImplementation,
                                   InfobarBannerPositioner,
@@ -81,7 +80,6 @@
   // Cancel any scheduled automatic dismissal block.
   _autoDismissBannerTimer.Stop();
   _animatedFullscreenDisabler = nullptr;
-  _badgeDelegate = nil;
   _infobarDelegate = nil;
 }
 
@@ -112,7 +110,8 @@
   if ([self.bannerViewController
           conformsToProtocol:@protocol(InfobarBannerInteractable)]) {
     UIViewController<InfobarBannerInteractable>* interactableBanner =
-        base::mac::ObjCCastStrict<UIViewController<InfobarBannerInteractable>>(
+        base::apple::ObjCCastStrict<
+            UIViewController<InfobarBannerInteractable>>(
             self.bannerViewController);
     interactableBanner.interactionDelegate = self.bannerTransitionDriver;
   }
@@ -146,40 +145,12 @@
         self.highPriorityPresentation
             ? kInfobarBannerLongPresentationDuration
             : kInfobarBannerDefaultPresentationDuration;
-
     // Calling base::OneShotTimer::Start() will cancel any previously scheduled
     // timer, so there is no need to call base::OneShotTimer::Stop() first.
     __weak InfobarCoordinator* weakSelf = self;
     _autoDismissBannerTimer.Start(FROM_HERE, timeDelta, base::BindOnce(^{
                                     [weakSelf dismissInfobarBannerIfReady];
                                   }));
-  }
-}
-
-- (void)presentInfobarModal {
-  DCHECK(self.started);
-  ProceduralBlock modalPresentation = ^{
-    DCHECK(self.infobarBannerState !=
-           InfobarBannerPresentationState::Presented);
-    DCHECK(self.baseViewController);
-    self.modalTransitionDriver = [[InfobarModalTransitionDriver alloc]
-        initWithTransitionMode:InfobarModalTransitionBase];
-    self.modalTransitionDriver.modalPositioner = self;
-    __weak __typeof(self) weakSelf = self;
-    [self presentInfobarModalFrom:self.baseViewController
-                           driver:self.modalTransitionDriver
-                       completion:^{
-                         [weakSelf infobarModalPresentedFromBanner:NO];
-                       }];
-  };
-
-  // Dismiss InfobarBanner first if being presented.
-  if (self.baseViewController.presentedViewController &&
-      self.baseViewController.presentedViewController ==
-          self.bannerViewController) {
-    [self dismissInfobarBannerAnimated:NO completion:modalPresentation];
-  } else {
-    modalPresentation();
   }
 }
 
@@ -230,13 +201,24 @@
 #pragma mark InfobarBannerPositioner
 
 - (CGFloat)bannerYPosition {
-  NamedGuide* omniboxGuide =
-      [NamedGuide guideWithName:kOmniboxGuide
-                           view:self.baseViewController.view];
-  UIView* omniboxView = omniboxGuide.owningView;
-  CGRect omniboxFrame = [omniboxView convertRect:omniboxGuide.layoutFrame
-                                          toView:omniboxView.window];
-  return CGRectGetMaxY(omniboxFrame);
+  LayoutGuideCenter* layoutGuideCenter =
+      LayoutGuideCenterForBrowser(self.browser);
+  UIView* topOmnibox =
+      [layoutGuideCenter referencedViewUnderName:kTopOmniboxGuide];
+  CGRect omniboxFrame = [topOmnibox convertRect:topOmnibox.bounds toView:nil];
+  CGFloat omniboxMaxY = CGRectGetMaxY(omniboxFrame);
+
+  // Use the top toolbar's layout guide when the omnibox is at the bottom.
+  if (topOmnibox.hidden) {
+    UIView* topToolbar =
+        [layoutGuideCenter referencedViewUnderName:kPrimaryToolbarGuide];
+    CGRect topToolbarFrame = [topToolbar convertRect:topToolbar.bounds
+                                              toView:nil];
+    CGFloat topToolbarMaxY =
+        CGRectGetMaxY(topToolbarFrame) + kInfobarTopPaddingBottomOmnibox;
+    return topToolbarMaxY;
+  }
+  return omniboxMaxY;
 }
 
 - (UIView*)bannerView {
@@ -276,17 +258,14 @@
 
 - (BOOL)configureModalViewController {
   NOTREACHED() << "Subclass must implement.";
-  return NO;
 }
 
 - (BOOL)isInfobarAccepted {
   NOTREACHED() << "Subclass must implement.";
-  return NO;
 }
 
 - (BOOL)infobarBannerActionWillPresentModal {
   NOTREACHED() << "Subclass must implement.";
-  return NO;
 }
 
 - (void)infobarBannerWasPresented {
@@ -303,7 +282,6 @@
 
 - (BOOL)infobarActionInProgress {
   NOTREACHED() << "Subclass must implement.";
-  return NO;
 }
 
 - (void)performInfobarAction {
@@ -320,7 +298,6 @@
 
 - (CGFloat)infobarModalHeightForWidth:(CGFloat)width {
   NOTREACHED() << "Subclass must implement.";
-  return 0;
 }
 
 #pragma mark - Private

@@ -4,9 +4,10 @@
 
 #include "base/files/scoped_file.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "build/build_config.h"
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "base/logging.h"
 #endif
 
@@ -17,18 +18,19 @@
 #include "base/posix/eintr_wrapper.h"
 #endif
 
-namespace base {
-namespace internal {
+namespace base::internal {
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 // static
 void ScopedFDCloseTraits::Free(int fd) {
-  // It's important to crash here.
+  // It's important to crash here if something goes wrong.
+  //
   // There are security implications to not closing a file descriptor
   // properly. As file descriptors are "capabilities", keeping them open
   // would make the current process keep access to a resource. Much of
   // Chrome relies on being able to "drop" such access.
+  //
   // It's especially problematic on Linux with the setuid sandbox, where
   // a single open directory would bypass the entire security model.
   int ret = IGNORE_EINTR(close(fd));
@@ -39,13 +41,14 @@ void ScopedFDCloseTraits::Free(int fd) {
   // filesystems such as NFS and Linux input devices. On Linux, macOS, and
   // Fuchsia's POSIX layer, errors from close other than EBADF do not indicate
   // failure to actually close the fd.
-  if (ret != 0 && errno != EBADF)
+  if (ret != 0 && errno != EBADF) {
     ret = 0;
+  }
 #endif
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
   if (ret != 0) {
     LOG(ERROR) << "bad fd found!!! fd:" << fd;
-  }  
+  }
 #endif
 
   PCHECK(0 == ret);
@@ -53,5 +56,4 @@ void ScopedFDCloseTraits::Free(int fd) {
 
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
-}  // namespace internal
-}  // namespace base
+}  // namespace base::internal

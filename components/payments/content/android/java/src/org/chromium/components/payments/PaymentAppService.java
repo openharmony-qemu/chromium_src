@@ -5,7 +5,6 @@
 package org.chromium.components.payments;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,16 +30,17 @@ public class PaymentAppService implements PaymentAppFactoryInterface {
 
     private PaymentAppService() {}
 
-    // TODO(crbug.com/1142846): Remove this method after tests and clank switch to use
+    // TODO(crbug.com/40727972): Remove this method after tests and clank switch to use
     // addUniqueFactory.
-    /** @param factory The factory to add. */
+    /**
+     * @param factory The factory to add.
+     */
     public void addFactory(PaymentAppFactoryInterface factory) {
-        String id = UNTRACKED_FACTORY_ID_PREFIX + (mIdMax++);
+        String id = UNTRACKED_FACTORY_ID_PREFIX + mIdMax++;
         mFactories.put(id, factory);
     }
 
     /** Resets the instance, used by //clank tests. */
-    @VisibleForTesting
     public void resetForTest() {
         sInstance = null;
     }
@@ -50,7 +50,7 @@ public class PaymentAppService implements PaymentAppFactoryInterface {
     public void create(PaymentAppFactoryDelegate delegate) {
         Collector collector = new Collector(new HashSet<>(mFactories.values()), delegate);
         for (PaymentAppFactoryInterface factory : mFactories.values()) {
-            factory.create(/*delegate=*/collector);
+            factory.create(/* delegate= */ collector);
         }
     }
 

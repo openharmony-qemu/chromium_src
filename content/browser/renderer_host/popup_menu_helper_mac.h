@@ -12,22 +12,13 @@
 #include "base/memory/weak_ptr.h"
 #include "base/scoped_observation.h"
 #include "content/common/content_export.h"
+#include "content/common/render_widget_host_ns_view.mojom.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/render_widget_host_observer.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/choosers/popup_menu.mojom.h"
 #include "ui/gfx/geometry/rect.h"
-
-#ifdef __OBJC__
-@class WebMenuRunner;
-#else
-class WebMenuRunner;
-#endif
-
-namespace base {
-class ScopedPumpMessagesInPrivateModes;
-}
 
 namespace content {
 
@@ -75,6 +66,8 @@ class PopupMenuHelper : public RenderWidgetHostObserver {
                                          bool became_visible) override;
   void RenderWidgetHostDestroyed(RenderWidgetHost* widget_host) override;
 
+  void PopupMenuClosed(std::optional<uint32_t> selected_item);
+
   RenderWidgetHostViewMac* GetRenderWidgetHostView() const;
 
   raw_ptr<Delegate> delegate_;  // Weak. Owns |this|.
@@ -83,11 +76,10 @@ class PopupMenuHelper : public RenderWidgetHostObserver {
       observation_{this};
   base::WeakPtr<RenderFrameHostImpl> render_frame_host_;
   mojo::Remote<blink::mojom::PopupMenuClient> popup_client_;
-  WebMenuRunner* menu_runner_ = nil;
+
   bool popup_was_hidden_ = false;
 
-  // Controls whether messages can be pumped during the menu fade.
-  std::unique_ptr<base::ScopedPumpMessagesInPrivateModes> pump_in_fade_;
+  mojo::Remote<remote_cocoa::mojom::PopupMenuRunner> remote_runner_;
 
   base::WeakPtrFactory<PopupMenuHelper> weak_ptr_factory_{this};
 };

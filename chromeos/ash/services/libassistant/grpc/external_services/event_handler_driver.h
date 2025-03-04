@@ -136,7 +136,7 @@ class EventHandlerDriver : public AsyncServiceDriver {
 
   typename THandlerInterface::AsyncService service_;
 
-  raw_ptr<GrpcLibassistantClient, ExperimentalAsh> libassistant_client_;
+  raw_ptr<GrpcLibassistantClient> libassistant_client_;
   const std::string assistant_service_address_;
 
   base::ObserverList<EventObserverType> observers_;
@@ -153,4 +153,4 @@ class EventHandlerDriver : public AsyncServiceDriver {
 
 }  // namespace ash::libassistant
 
-#endif  // CHROMEOS_ASH_SERVICES_LIBASSISTANT_GRPC_EXTERNAL_SERVICES_EVENT_HANDLER_DRIVER_H_i
+#endif  // CHROMEOS_ASH_SERVICES_LIBASSISTANT_GRPC_EXTERNAL_SERVICES_EVENT_HANDLER_DRIVER_H_

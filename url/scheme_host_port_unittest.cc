@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/350788890): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "url/scheme_host_port.h"
 
 #include <stddef.h>
@@ -63,6 +68,9 @@ TEST_F(SchemeHostPortTest, Invalid) {
       "about:srcdoc#ref", "about:srcdoc?query=123", "data:text/html,Hello!",
       "javascript:alert(1)",
 
+      // Non-special URLs which don't have an opaque path.
+      "git:/", "git://", "git:///", "git://host/", "git://host/path",
+
       // GURLs where GURL::is_valid returns false translate into an invalid
       // SchemeHostPort.
       "file://example.com:443/etc/passwd", "#!^%!$!&*",
@@ -74,11 +82,8 @@ TEST_F(SchemeHostPortTest, Invalid) {
       // blob schemes not being standard, and filesystem schemes having type
       // SCHEME_WITHOUT_AUTHORITY. If conditions change such that the implicit
       // checks no longer hold, this policy should be made explicit.
-#ifndef OHOS_UNITTESTS
       "blob:https://example.com/uuid-goes-here",
-      "filesystem:https://example.com/temporary/yay.png"
-#endif
-      };
+      "filesystem:https://example.com/temporary/yay.png"};
 
   for (auto* test : urls) {
     SCOPED_TRACE(test);
@@ -130,11 +135,12 @@ TEST_F(SchemeHostPortTest, InvalidConstruction) {
     uint16_t port;
   } cases[] = {{"", "", 0},
                {"data", "", 0},
-#ifndef OHOS_UNITTESTS
                {"blob", "", 0},
                {"filesystem", "", 0},
                {"http", "", 80},
                {"data", "example.com", 80},
+               {"git", "", 0},
+               {"git", "example.com", 80},
                {"http", "☃.net", 80},
                {"http\nmore", "example.com", 80},
                {"http\rmore", "example.com", 80},
@@ -144,9 +150,7 @@ TEST_F(SchemeHostPortTest, InvalidConstruction) {
                {"http", "example.com\rnot-example.com", 80},
                {"http", "example.com\n", 80},
                {"http", "example.com\r", 80},
-               {"file", "", 80} // Can''t have a port for file: scheme.
- #endif
-               };
+               {"file", "", 80}};  // Can''t have a port for file: scheme.
 
   for (const auto& test : cases) {
     SCOPED_TRACE(testing::Message() << test.scheme << "://" << test.host << ":"
@@ -168,16 +172,12 @@ TEST_F(SchemeHostPortTest, InvalidConstructionWithEmbeddedNulls) {
     const char* host;
     size_t host_length;
     uint16_t port;
-  } cases[] = {
-#ifndef OHOS_UNITTESTS
-               {"http\0more", 9, "example.com", 11, 80},
+  } cases[] = {{"http\0more", 9, "example.com", 11, 80},
                {"http\0", 5, "example.com", 11, 80},
                {"\0http", 5, "example.com", 11, 80},
                {"http", 4, "example.com\0not-example.com", 27, 80},
                {"http", 4, "example.com\0", 12, 80},
-               {"http", 4, "\0example.com", 12, 80}
-#endif
-               };
+               {"http", 4, "\0example.com", 12, 80}};
 
   for (const auto& test : cases) {
     SCOPED_TRACE(testing::Message() << test.scheme << "://" << test.host << ":"

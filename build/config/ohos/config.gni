@@ -1,4 +1,4 @@
-# Copyright 2022 The Huawei Authors. All rights reserved.
+# Copyright 2024 The Huawei Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,14 +6,19 @@ if (is_ohos) {
   import("//build/config/dcheck_always_on.gni")
   import("//build_overrides/build.gni")
   import("abi.gni")
+  import("//ohos_sdk/ohos_sdk.gni")
 
   declare_args() {
     use_ohos_sdk_sysroot = false
 
     # enable ohos bytrace, false by default
     enable_ohos_bytrace = true
+
     # Enable ohos_nweb_hap build target.
     enable_ohos_nweb_hap = false
+
+    # Is release build.
+    is_release_build = false
   }
 
   declare_args() {
@@ -48,80 +53,14 @@ if (is_ohos) {
   }
 
   # config dependent paths
-  if (build_chromium_with_ohos_src) {
-    ohos_ndk_root = "//../../../prebuilts"
-    ohos_build_root = "//../../.."
+   # config dependent paths
     if (use_musl) {
-      ohos_toolchain_root = "$ohos_ndk_root/clang/ohos/linux-x86_64/llvm"
-      ohos_sysroot = "$ohos_build_root/out/rk3568/obj/third_party/musl"
-    } else {
-      ohos_toolchain_root = "$ohos_ndk_root/clang/host/linux-x86/clang-r353983c"
-      if (current_cpu == "arm") {
-        ohos_sysroot = "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm"
-      } else if (current_cpu == "arm64") {
-        ohos_sysroot = "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm64"
-      } else {
-        assert(false, "Unsupport target cpu")
-      }
-    }
-
-    # ohos include and libs dependencies
-    ohos_src_includes = [ "$ohos_build_root/base/web/webview/ohos_adapter/interfaces" ]
-    if (use_musl) {
-      if (current_cpu == "arm") {
-        ohos_libs_root = "$ohos_build_root/out/rk3568/packages/phone/system/lib"
-      } else if (current_cpu == "arm64") {
-        ohos_libs_root =
-            "$ohos_build_root/out/rk3568/packages/phone/system/lib64"
-      }
-    } else {
-      if (current_cpu == "arm") {
-        ohos_libs_root =
-            "$ohos_build_root/out/ohos-arm-release/packages/phone/system/lib"
-      } else if (current_cpu == "arm64") {
-        ohos_libs_root = "$ohos_build_root/out/ohos-arm64-release/packages/phone/system/lib64"
-      }
-    }
-
-    ohos_libs_dir = [
-      "$ohos_libs_root",
-      "$ohos_libs_root/chipset-pub-sdk",
-      "$ohos_libs_root/platformsdk",
-    ]
-  } else {
-    if (use_musl) {
-      ohos_build_root = "//third_party/ohos_ndk"
-      ohos_ndk_root = "//third_party/ohos_ndk"
-      ohos_toolchain_root = "$ohos_ndk_root/toolchains/llvm"
-      ohos_sysroot = "$ohos_ndk_root/sysroot"
-    } else {
-      ohos_build_root = "//ohos_ndk_aosp"
-      ohos_ndk_root = "//ohos_ndk_aosp"
-      ohos_toolchain_root = "$ohos_ndk_root/toolchains/clang-r353983c"
-      if (current_cpu == "arm") {
-        ohos_sysroot = "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm"
-      } else if (current_cpu == "arm64") {
-        ohos_sysroot = "$ohos_ndk_root/aosp_prebuilt_libs/asdk_libs/ndk/platforms/current/arch-arm64"
-      } else {
-        assert(false, "Unsupport target cpu")
-      }
-    }
-
-    if (use_ohos_sdk_sysroot) {
-      import("//ohos_sdk/ohos_sdk.gni")
       ohos_sdk_root = "//ohos_sdk"
       ohos_sysroot = "$ohos_sdk_root/native/$ohos_sdk_version/sysroot/"
-    }
-
-    # ohos include and libs dependencies, corresponding to gen_ohos_ndk.sh
-    ohos_src_includes = [ "$ohos_build_root/includes/ohos_adapter" ]
-
-    if (current_cpu == "arm") {
-      ohos_libs_dir = [ "$ohos_build_root/libs" ]
-    } else if (current_cpu == "arm64") {
-      ohos_libs_dir = [ "$ohos_build_root/libs64" ]
-    } else if (current_cpu == "x64") {
-      ohos_libs_dir = [ "$ohos_build_root/libs_x86" ]
-    }
+      ohos_toolchain_root = "$ohos_sdk_root/native/$ohos_sdk_version/llvm/"
+  } else {
+    assert(false, "Unsupport Non-musl target!")
   }
+
+  ohos_src_includes = [ "//third_party/ohos_ndk/includes/ohos_adapter", "$ohos_sdk_root/../../deps_code/webview/ohos_interface/include/ohos_adapter" ]
 }

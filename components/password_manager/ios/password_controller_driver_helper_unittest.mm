@@ -4,6 +4,7 @@
 
 #import "components/password_manager/ios/password_controller_driver_helper.h"
 
+#import "base/memory/raw_ptr.h"
 #import "components/password_manager/core/browser/password_generation_frame_helper.h"
 #import "components/password_manager/core/browser/password_manager.h"
 #import "components/password_manager/core/browser/password_manager_client.h"
@@ -16,10 +17,6 @@
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using password_manager::PasswordManager;
 using testing::Return;
@@ -53,7 +50,7 @@ class PasswordControllerDriverHelperTest : public PlatformTest {
   web::FakeWebState web_state_;
   id password_controller_;
   PasswordControllerDriverHelper* password_controller_helper_;
-  web::FakeWebFramesManager* web_frames_manager_;
+  raw_ptr<web::FakeWebFramesManager> web_frames_manager_;
   testing::StrictMock<MockPasswordManagerClient> password_manager_client_;
   PasswordManager password_manager_ =
       PasswordManager(&password_manager_client_);

@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "net/dns/address_info.h"
 
 #include <memory>
+#include <optional>
 
 #include "base/logging.h"
 #include "base/notreached.h"
@@ -14,9 +20,22 @@
 #include "net/base/net_errors.h"
 #include "net/base/sys_addrinfo.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "net/android/network_library.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#include <dlfcn.h>
+#include <netdb.h>
+
+#include "base/files/file.h"
+#include "base/native_library.h"
+#include "net/base/network_handle.h"
+#endif
 
 namespace net {
 
@@ -26,7 +45,77 @@ const addrinfo* Next(const addrinfo* ai) {
   return ai->ai_next;
 }
 
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+using OHGetAddrInfoForNetwork = int32_t (*)(char* host,
+                                            char* serv,
+                                            struct addrinfo* hints,
+                                            struct addrinfo** res,
+                                            int32_t net_id);
+
+using OHFreeDnsResult = int32_t (*)(struct addrinfo* res);
+
+OHGetAddrInfoForNetwork GetOHGetAddrInfoForNetwork() {
+#if defined(ARKWEB_ARM64)
+  base::FilePath file("/system/lib64/ndk/libnet_connection.so");
+#else
+  base::FilePath file("/system/lib/ndk/libnet_connection.so");
+#endif
+  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
+  return dl == nullptr ? nullptr
+                       : reinterpret_cast<OHGetAddrInfoForNetwork>(
+                             dlsym(dl, "OH_NetConn_GetAddrInfo"));
+}
+
+OHFreeDnsResult GetOHFreeDnsResult() {
+#if defined(ARKWEB_ARM64)
+  base::FilePath file("/system/lib64/ndk/libnet_connection.so");
+#else
+  base::FilePath file("/system/lib/ndk/libnet_connection.so");
+#endif
+  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
+  return dl == nullptr ? nullptr
+                       : reinterpret_cast<OHFreeDnsResult>(
+                             dlsym(dl, "OH_NetConn_FreeDnsResult"));
+}
+#endif
+
 }  // namespace
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+namespace ohos {
+
+NO_SANITIZE("cfi-icall")
+int GetAddrInfoForNetwork(char* host,
+                          char* serv,
+                          struct addrinfo* hints,
+                          struct addrinfo** res,
+                          int32_t network) {
+  if (network == handles::kInvalidNetworkHandle) {
+    errno = EINVAL;
+    return EAI_SYSTEM;
+  }
+
+  static OHGetAddrInfoForNetwork get_addrinfo_for_network =
+      GetOHGetAddrInfoForNetwork();
+  if (!get_addrinfo_for_network) {
+    errno = ENOSYS;
+    return EAI_SYSTEM;
+  }
+
+  return get_addrinfo_for_network(host, serv, hints, res, network);
+}
+
+NO_SANITIZE("cfi-icall") int FreeDnsResult(struct addrinfo* res) {
+  static OHFreeDnsResult free_dns_result = GetOHFreeDnsResult();
+  if (!free_dns_result) {
+    errno = ENOSYS;
+    return EAI_SYSTEM;
+  }
+
+  return free_dns_result(res);
+}
+}  // namespace ohos
+#endif
 
 //// iterator
 
@@ -82,12 +171,12 @@ AddressInfo::AddressInfoAndResult AddressInfo::Get(
       err = ERR_NAME_RESOLUTION_FAILED;
 #endif
 
-    return AddressInfoAndResult(absl::optional<AddressInfo>(), err, os_error);
+    return AddressInfoAndResult(std::optional<AddressInfo>(), err, os_error);
   }
 
-  return AddressInfoAndResult(absl::optional<AddressInfo>(AddressInfo(
-                                  std::move(ai), std::move(getter))),
-                              OK, 0);
+  return AddressInfoAndResult(
+      std::optional<AddressInfo>(AddressInfo(std::move(ai), std::move(getter))),
+      OK, 0);
 }
 
 AddressInfo::AddressInfo(AddressInfo&& other) = default;
@@ -106,10 +195,10 @@ AddressInfo::const_iterator AddressInfo::end() const {
   return const_iterator(nullptr);
 }
 
-absl::optional<std::string> AddressInfo::GetCanonicalName() const {
+std::optional<std::string> AddressInfo::GetCanonicalName() const {
   return (ai_->ai_canonname != nullptr)
-             ? absl::optional<std::string>(std::string(ai_->ai_canonname))
-             : absl::optional<std::string>();
+             ? std::optional<std::string>(std::string(ai_->ai_canonname))
+             : std::optional<std::string>();
 }
 
 bool AddressInfo::IsAllLocalhostOfOneFamily() const {
@@ -138,7 +227,6 @@ bool AddressInfo::IsAllLocalhostOfOneFamily() const {
         break;
       }
       default:
-        NOTREACHED();
         return false;
     }
   }
@@ -148,9 +236,9 @@ bool AddressInfo::IsAllLocalhostOfOneFamily() const {
 
 AddressList AddressInfo::CreateAddressList() const {
   AddressList list;
-  auto canonical_name = GetCanonicalName();
+  std::optional<std::string> canonical_name = GetCanonicalName();
   if (canonical_name) {
-    std::vector<std::string> aliases({*canonical_name});
+    std::vector<std::string> aliases({*std::move(canonical_name)});
     list.SetDnsAliases(std::move(aliases));
   }
   for (auto&& ai : *this) {
@@ -185,6 +273,12 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
   // a different signature for it.
   FreeAddrInfoFunc deleter = [](addrinfo* ai) { ::freeaddrinfo(ai); };
 
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  if (network != handles::kInvalidNetworkHandle) {
+    deleter = [](addrinfo* ai) { ohos::FreeDnsResult(ai); };
+  }
+#endif
+
   std::unique_ptr<addrinfo, FreeAddrInfoFunc> rv = {nullptr, deleter};
 
   if (network != handles::kInvalidNetworkHandle) {
@@ -195,6 +289,9 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
 #elif BUILDFLAG(IS_WIN)
     *out_os_error = WSAEOPNOTSUPP;
     return rv;
+#elif BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+    *out_os_error = ohos::GetAddrInfoForNetwork((char*)host.c_str(), nullptr,
+                                                (addrinfo*)hints, &ai, network);
 #else
     errno = ENOSYS;
     *out_os_error = EAI_SYSTEM;
@@ -208,9 +305,10 @@ std::unique_ptr<addrinfo, FreeAddrInfoFunc> AddrInfoGetter::getaddrinfo(
 #if BUILDFLAG(IS_WIN)
     *out_os_error = WSAGetLastError();
 #endif
-#ifdef OHOS_NETWORK_LOAD
-    LOG(ERROR) << "get address info failed, out_os_error is: " << *out_os_error << " host: " << host.c_str();
-#endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    LOG(ERROR) << "get address info failed, out_os_error is: " << *out_os_error
+               << " host: " << host.c_str();
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
     return rv;
   }
 

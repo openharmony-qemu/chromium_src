@@ -7,8 +7,10 @@
 
 #include <memory>
 
+#include "content/browser/preloading/preloading_confidence.h"
 #include "content/browser/preloading/prerender/prerender_attributes.h"
 #include "content/common/frame.mojom-forward.h"
+#include "content/public/browser/prerender_web_contents_delegate.h"
 #include "content/public/browser/render_frame_host.h"
 
 namespace content {
@@ -41,8 +43,11 @@ class PrerenderNewTabHandle {
 
   // Starts prerendering in `web_contents_`. Returns the root FrameTreeNode id
   // of the prerendered page, which can be used as the id of PrerenderHost, on
-  // success. Returns RenderFrameHost::kNoFrameTreeNodeId on failure.
-  int StartPrerendering();
+  // success. Returns an invalid FrameTreeNodeId on failure.
+  FrameTreeNodeId StartPrerendering(
+      const PreloadingPredictor& creating_predictor,
+      const PreloadingPredictor& enacting_predictor,
+      PreloadingConfidence confidence);
 
   // Cancels prerendering started in `web_contents_`.
   void CancelPrerendering(const PrerenderCancellationReason& reason);
@@ -53,11 +58,15 @@ class PrerenderNewTabHandle {
       const mojom::CreateNewWindowParams& create_new_window_params,
       const WebContents::CreateParams& web_contents_create_params);
 
-  // Returns PrerenderHost that `web_contents_` is hosting.
-  PrerenderHost* GetPrerenderHostForTesting();
+  // Returns PreloadingTriggerType.
+  PreloadingTriggerType trigger_type() const {
+    return attributes_.trigger_type;
+  }
 
-  // Returns PrerenderTriggerType.
-  PrerenderTriggerType trigger_type() const { return attributes_.trigger_type; }
+  // Returns SpeculationEagerness.
+  std::optional<blink::mojom::SpeculationEagerness> eagerness() const {
+    return attributes_.eagerness;
+  }
 
  private:
   PrerenderHostRegistry& GetPrerenderHostRegistry();
@@ -80,10 +89,9 @@ class PrerenderNewTabHandle {
   // for `web_contents_`. This is because WebContentsDelegate can be specific to
   // a tab, and `web_contents_` will be placed in a different tab from the
   // initiator's tab.
-  class WebContentsDelegateImpl;
-  std::unique_ptr<WebContentsDelegateImpl> web_contents_delegate_;
+  std::unique_ptr<PrerenderWebContentsDelegate> web_contents_delegate_;
 
-  int prerender_host_id_ = RenderFrameHost::kNoFrameTreeNodeId;
+  FrameTreeNodeId prerender_host_id_;
 };
 
 }  // namespace content

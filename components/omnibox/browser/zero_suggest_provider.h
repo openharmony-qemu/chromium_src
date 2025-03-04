@@ -13,8 +13,8 @@
 #include <string>
 
 #include "base/gtest_prod_util.h"
+#include "components/omnibox/browser/autocomplete_provider_debouncer.h"
 #include "components/omnibox/browser/base_search_provider.h"
-#include "components/omnibox/browser/search_provider.h"
 
 class AutocompleteProviderListener;
 class PrefRegistrySimple;
@@ -49,15 +49,6 @@ class ZeroSuggestProvider : public BaseSearchProvider {
     kRemoteSendURL = 2,
   };
 
-  // Returns the type of results that should be generated for the given context;
-  // however, it does not check whether or not a suggest request can be made.
-  // Those checks must be done using
-  // BaseSearchProvider::CanSendZeroSuggestRequest() for the kRemoteNoURL
-  // variant and BaseSearchProvider::CanSendSuggestRequestWithURL() for the
-  // kRemoteSendURL variant.
-  // This method is static to avoid depending on the provider state.
-  static ResultType ResultTypeToRun(const AutocompleteInput& input);
-
   // Creates and returns an instance of this provider.
   static ZeroSuggestProvider* Create(AutocompleteProviderClient* client,
                                      AutocompleteProviderListener* listener);
@@ -65,11 +56,10 @@ class ZeroSuggestProvider : public BaseSearchProvider {
   // Registers a preference used to cache the zero suggest response.
   static void RegisterProfilePrefs(PrefRegistrySimple* registry);
 
-  // Called in Start() or StartPrefetch(), confirms whether zero-prefix
-  // suggestions are allowed in the given context and logs eligibility UMA
-  // metrics. Must be called exactly once. Otherwise the meaning of the the
-  // metrics it logs would change. This method is virtual to mock for testing.
-  virtual bool AllowZeroPrefixSuggestions(
+  // Returns the type of results that should be generated for the given context
+  // and their eligibility.
+  // This method is static to avoid depending on the provider state.
+  static std::pair<ResultType, bool> GetResultTypeAndEligibility(
       const AutocompleteProviderClient* client,
       const AutocompleteInput& input);
 
@@ -113,7 +103,7 @@ class ZeroSuggestProvider : public BaseSearchProvider {
   void OnURLLoadComplete(const AutocompleteInput& input,
                          const ResultType result_type,
                          const network::SimpleURLLoader* source,
-                         const bool response_received,
+                         const int response_code,
                          std::unique_ptr<std::string> response_body);
   // Called when the prefetch network request has completed.
   // `input` and `result_type` are bound to this callback. The former is the
@@ -122,8 +112,12 @@ class ZeroSuggestProvider : public BaseSearchProvider {
   void OnPrefetchURLLoadComplete(const AutocompleteInput& input,
                                  const ResultType result_type,
                                  const network::SimpleURLLoader* source,
-                                 const bool response_received,
+                                 const int response_code,
                                  std::unique_ptr<std::string> response_body);
+
+  // Called by `debouncer_`.
+  void RunZeroSuggestPrefetch(const AutocompleteInput& input,
+                              const ResultType result_type);
 
   // Returns an AutocompleteMatch for a navigational suggestion |navigation|.
   AutocompleteMatch NavigationToMatch(
@@ -148,8 +142,15 @@ class ZeroSuggestProvider : public BaseSearchProvider {
   // Loader used to retrieve results for non-prefetch requests.
   std::unique_ptr<network::SimpleURLLoader> loader_;
 
-  // Loader used to retrieve results for prefetch requests.
-  std::unique_ptr<network::SimpleURLLoader> prefetch_loader_;
+  // Loader used to retrieve results for ZPS prefetch requests on NTP.
+  std::unique_ptr<network::SimpleURLLoader> ntp_prefetch_loader_;
+
+  // Loader used to retrieve results for ZPS prefetch requests on SRP/Web.
+  std::unique_ptr<network::SimpleURLLoader> srp_web_prefetch_loader_;
+
+  // Debouncer used to throttle the frequency of ZPS prefetch requests (to
+  // minimize the performance impact on the remote Suggest service).
+  std::unique_ptr<AutocompleteProviderDebouncer> debouncer_;
 
   // The list of experiment stats corresponding to |matches_|.
   SearchSuggestionParser::ExperimentStatsV2s experiment_stats_v2s_;

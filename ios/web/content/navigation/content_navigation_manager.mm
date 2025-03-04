@@ -19,10 +19,6 @@
 #import "net/http/http_request_headers.h"
 #import "net/http/http_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 namespace {
@@ -50,19 +46,6 @@ network::mojom::ReferrerPolicy ToContentReferrerPolicy(ReferrerPolicy policy) {
     default:
       NOTREACHED();
   }
-  return network::mojom::ReferrerPolicy::kDefault;
-}
-
-content::ReloadType ToContentReloadType(ReloadType reload_type) {
-  switch (reload_type) {
-    case ReloadType::NORMAL:
-      return content::ReloadType::NORMAL;
-    case ReloadType::ORIGINAL_REQUEST_URL:
-      return content::ReloadType::ORIGINAL_REQUEST_URL;
-    default:
-      NOTREACHED();
-  }
-  return content::ReloadType::NORMAL;
 }
 
 }  // namespace
@@ -86,20 +69,20 @@ WebState* ContentNavigationManager::GetWebState() const {
 }
 
 NavigationItem* ContentNavigationManager::GetVisibleItem() const {
-  return ContentNavigationItem::GetOrCreate(controller_.GetVisibleEntry());
+  return ContentNavigationItem::GetOrCreate(controller_->GetVisibleEntry());
 }
 
 NavigationItem* ContentNavigationManager::GetLastCommittedItem() const {
   return ContentNavigationItem::GetOrCreate(
-      controller_.GetLastCommittedEntry());
+      controller_->GetLastCommittedEntry());
 }
 
 NavigationItem* ContentNavigationManager::GetPendingItem() const {
-  return ContentNavigationItem::GetOrCreate(controller_.GetPendingEntry());
+  return ContentNavigationItem::GetOrCreate(controller_->GetPendingEntry());
 }
 
 void ContentNavigationManager::DiscardNonCommittedItems() {
-  controller_.DiscardNonCommittedEntries();
+  controller_->DiscardNonCommittedEntries();
 }
 
 void ContentNavigationManager::LoadURLWithParams(
@@ -133,25 +116,26 @@ void ContentNavigationManager::LoadURLWithParams(
   }
 
   // We are not setting the virtual URL for data URL here.
-  controller_.LoadURLWithParams(params);
+  controller_->LoadURLWithParams(params);
 }
 
 void ContentNavigationManager::LoadIfNecessary() {
-  controller_.LoadIfNecessary();
+  controller_->LoadIfNecessary();
 }
 
 void ContentNavigationManager::AddTransientURLRewriter(
     BrowserURLRewriter::URLRewriter rewriter) {
-  // TODO(crbug.com/1419001)
+  // TODO(crbug.com/40257932)
   NOTIMPLEMENTED();
 }
 
 int ContentNavigationManager::GetItemCount() const {
-  return controller_.GetEntryCount();
+  return controller_->GetEntryCount();
 }
 
 NavigationItem* ContentNavigationManager::GetItemAtIndex(size_t index) const {
-  return ContentNavigationItem::GetOrCreate(controller_.GetEntryAtIndex(index));
+  return ContentNavigationItem::GetOrCreate(
+      controller_->GetEntryAtIndex(index));
 }
 
 int ContentNavigationManager::GetIndexOfItem(const NavigationItem* item) const {
@@ -164,45 +148,49 @@ int ContentNavigationManager::GetIndexOfItem(const NavigationItem* item) const {
 }
 
 int ContentNavigationManager::GetPendingItemIndex() const {
-  return controller_.GetPendingEntryIndex();
+  return controller_->GetPendingEntryIndex();
 }
 
 int ContentNavigationManager::GetLastCommittedItemIndex() const {
-  return controller_.GetLastCommittedEntryIndex();
+  return controller_->GetLastCommittedEntryIndex();
 }
 
 bool ContentNavigationManager::CanGoBack() const {
-  return controller_.CanGoBack();
+  return controller_->CanGoBack();
 }
 
 bool ContentNavigationManager::CanGoForward() const {
-  return controller_.CanGoForward();
+  return controller_->CanGoForward();
 }
 
 bool ContentNavigationManager::CanGoToOffset(int offset) const {
-  return controller_.CanGoToOffset(offset);
+  return controller_->CanGoToOffset(offset);
 }
 
 void ContentNavigationManager::GoBack() {
-  controller_.GoBack();
+  controller_->GoBack();
 }
 
 void ContentNavigationManager::GoForward() {
-  controller_.GoForward();
+  controller_->GoForward();
 }
 
 void ContentNavigationManager::GoToIndex(int index) {
-  controller_.GoToIndex(index);
+  controller_->GoToIndex(index);
 }
 
 void ContentNavigationManager::Reload(ReloadType reload_type,
                                       bool check_for_reposts) {
-  controller_.Reload(ToContentReloadType(reload_type), check_for_reposts);
+  if (reload_type == ReloadType::ORIGINAL_REQUEST_URL) {
+    controller_->LoadOriginalRequestURL();
+  } else {
+    controller_->Reload(content::ReloadType::NORMAL, check_for_reposts);
+  }
 }
 
 void ContentNavigationManager::ReloadWithUserAgentType(
     UserAgentType user_agent_type) {
-  // TODO(crbug.com/1419001)
+  // TODO(crbug.com/40257932)
   NOTIMPLEMENTED();
 }
 
@@ -229,17 +217,7 @@ std::vector<NavigationItem*> ContentNavigationManager::GetForwardItems() const {
 void ContentNavigationManager::Restore(
     int last_committed_item_index,
     std::vector<std::unique_ptr<NavigationItem>> items) {
-  // TODO(crbug.com/1419001)
-  NOTIMPLEMENTED();
-}
-
-bool ContentNavigationManager::IsRestoreSessionInProgress() const {
-  return false;
-}
-
-void ContentNavigationManager::AddRestoreCompletionCallback(
-    base::OnceClosure callback) {
-  // TODO(crbug.com/1419001)
+  // TODO(crbug.com/40257932)
   NOTIMPLEMENTED();
 }
 

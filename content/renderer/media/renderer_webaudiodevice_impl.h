@@ -10,6 +10,8 @@
 #include <memory>
 #include <string>
 
+#include "base/gtest_prod_util.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/threading/thread_checker.h"
 #include "content/common/content_export.h"
@@ -26,6 +28,7 @@ class SingleThreadTaskRunner;
 
 namespace media {
 class SilentSinkSuspender;
+class SpeechRecognitionClient;
 }
 
 namespace content {
@@ -44,7 +47,6 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
 
   static std::unique_ptr<RendererWebAudioDeviceImpl> Create(
       const blink::WebAudioSinkDescriptor& sink_descriptor,
-      media::ChannelLayout layout,
       int number_of_output_channels,
       const blink::WebAudioLatencyHint& latency_hint,
       media::AudioRendererSink::RenderCallback* webaudio_callback);
@@ -68,7 +70,14 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
              const media::AudioGlitchInfo& glitch_info,
              media::AudioBus* dest) override;
 
+  // This callback method may be called in two different scenarios:
+  // 1) When the constructor's audio device activation fails. (main thread)
+  // 2) When the audio infra reports an device/render error. (audio thread)
   void OnRenderError() override;
+
+  // Notifies the client (e.g. Blink WebAudio) of device/renderer-related
+  // errors. Intended to be executed via a task runner asynchronously.
+  void NotifyRenderError();
 
   void SetSilentSinkTaskRunnerForTesting(
       scoped_refptr<base::SingleThreadTaskRunner> task_runner);
@@ -77,9 +86,9 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
     return current_sink_params_;
   }
 
-  // Creates a new sink and return its device status. If the status is OK,
-  // replace the existing sink with the new one.
-  media::OutputDeviceStatus CreateSinkAndGetDeviceStatus() override;
+  // Creates a new sink if one hasn't been created yet, and returns the sink
+  // status.
+  media::OutputDeviceStatus MaybeCreateSinkAndGetStatus() override;
 
  protected:
   // Callback to get output device params (for tests).
@@ -93,8 +102,7 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
 
   RendererWebAudioDeviceImpl(
       const blink::WebAudioSinkDescriptor& sink_descriptor,
-      media::ChannelLayout layout,
-      int number_of_output_channels,
+      media::ChannelLayoutConfig layout_config,
       const blink::WebAudioLatencyHint& latency_hint,
       media::AudioRendererSink::RenderCallback* webaudio_callback,
       OutputDeviceParamsCallback device_params_cb,
@@ -122,7 +130,7 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
   const blink::WebAudioLatencyHint latency_hint_;
 
   // The WebAudio renderer's callback; directs to `AudioDestination::Render()`.
-  media::AudioRendererSink::RenderCallback* const webaudio_callback_;
+  const raw_ptr<media::AudioRendererSink::RenderCallback> webaudio_callback_;
 
   // To avoid the need for locking, ensure the control methods of the
   // blink::WebAudioDevice implementation are called on the same thread.
@@ -140,6 +148,9 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
   // sink.
   scoped_refptr<base::SingleThreadTaskRunner> silent_sink_task_runner_;
 
+  // Mainly to bubble up the OnRenderError to the Blink WebAudio module.
+  scoped_refptr<base::SingleThreadTaskRunner> main_thread_task_runner_;
+
   // Used to trigger one single textlog indicating that rendering started as
   // intended. Set to true once in the first call to the Render callback.
   bool is_rendering_ = false;
@@ -148,6 +159,10 @@ class CONTENT_EXPORT RendererWebAudioDeviceImpl
 
   // Used to indicate if device is stopped.
   bool is_stopped_ = true;
+
+  std::unique_ptr<media::SpeechRecognitionClient> speech_recognition_client_;
+
+  base::WeakPtrFactory<RendererWebAudioDeviceImpl> weak_ptr_factory_{this};
 
   FRIEND_TEST_ALL_PREFIXES(RendererWebAudioDeviceImplTest,
                            CreateSinkAndGetDeviceStatus_HealthyDevice);

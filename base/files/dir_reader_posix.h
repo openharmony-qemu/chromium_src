@@ -5,6 +5,7 @@
 #ifndef BASE_FILES_DIR_READER_POSIX_H_
 #define BASE_FILES_DIR_READER_POSIX_H_
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 // This header provides a class, DirReaderPosix, which allows one to open and
@@ -18,7 +19,7 @@
 // probably never implement this on the Mac.
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+    BUILDFLAG(ARKWEB_CRASHPAD)
 #include "base/files/dir_reader_linux.h"
 #else
 #include "base/files/dir_reader_fallback.h"
@@ -27,7 +28,7 @@
 namespace base {
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+    BUILDFLAG(ARKWEB_CRASHPAD)
 typedef DirReaderLinux DirReaderPosix;
 #else
 typedef DirReaderFallback DirReaderPosix;

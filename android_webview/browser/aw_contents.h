@@ -20,10 +20,14 @@
 #include "android_webview/browser/permission/permission_callback.h"
 #include "android_webview/browser/permission/permission_request_handler_client.h"
 #include "android_webview/browser/renderer_host/aw_render_view_host_ext.h"
+#include "android_webview/browser/safe_browsing/aw_safe_browsing_allowlist_manager.h"
 #include "android_webview/browser/safe_browsing/aw_safe_browsing_ui_manager.h"
 #include "base/android/jni_weak_ref.h"
 #include "base/android/scoped_java_ref.h"
 #include "base/functional/callback_forward.h"
+#include "base/memory/scoped_refptr.h"
+#include "base/memory/weak_ptr.h"
+#include "components/content_relationship_verification/digital_asset_links_handler.h"
 #include "components/js_injection/browser/js_communication_host.h"
 #include "content/public/browser/web_contents_observer.h"
 
@@ -31,10 +35,11 @@ class SkBitmap;
 
 namespace content {
 class WebContents;
-#if defined(OHOS_RENDERER_ANR_DUMP)
-enum class RenderProcessNotRespondingReason;
-#endif
 }
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
 
 namespace android_webview {
 
@@ -53,6 +58,8 @@ class PermissionRequestHandler;
 // construction. A native instance is only bound to at most one Java peer over
 // its entire lifetime - see Init() and SetPendingWebContentsForPopup() for the
 // construction points, and SetJavaPeers() where these paths join.
+//
+// Lifetime: WebView
 class AwContents : public FindHelper::Listener,
                    public IconHelper::Listener,
                    public AwRenderViewHostExtClient,
@@ -62,7 +69,8 @@ class AwContents : public FindHelper::Listener,
                    public AwRenderProcessGoneDelegate,
                    public content::WebContentsObserver,
                    public AwSafeBrowsingUIManager::UIManagerClient,
-                   public VisibilityMetricsLogger::Client {
+                   public VisibilityMetricsLogger::Client,
+                   public AwSafeBrowsingAllowlistSetObserver {
  public:
   // Returns the AwContents instance associated with |web_contents|, or NULL.
   static AwContents* FromWebContents(content::WebContents* web_contents);
@@ -100,11 +108,12 @@ class AwContents : public FindHelper::Listener,
       const base::android::JavaParamRef<jobject>&
           intercept_navigation_delegate);
   void InitializeAndroidAutofill(JNIEnv* env);
+  void InitSensitiveContentClient(JNIEnv* env);
   base::android::ScopedJavaLocalRef<jobject> GetWebContents(JNIEnv* env);
   base::android::ScopedJavaLocalRef<jobject> GetBrowserContext(JNIEnv* env);
   void SetCompositorFrameConsumer(JNIEnv* env, jlong compositor_frame_consumer);
   base::android::ScopedJavaLocalRef<jobject> GetRenderProcess(JNIEnv* env);
-
+  base::android::ScopedJavaLocalRef<jobject> GetJavaObject();
   void Destroy(JNIEnv* env);
   void DocumentHasImages(JNIEnv* env,
                          const base::android::JavaParamRef<jobject>& message);
@@ -118,10 +127,6 @@ class AwContents : public FindHelper::Listener,
       JNIEnv* env,
       const base::android::JavaParamRef<jobjectArray>& jvisited_links);
   base::android::ScopedJavaLocalRef<jbyteArray> GetCertificate(JNIEnv* env);
-  void RequestNewHitTestDataAt(JNIEnv* env,
-                               jfloat x,
-                               jfloat y,
-                               jfloat touch_major);
   void UpdateLastHitTestData(JNIEnv* env);
   void OnSizeChanged(JNIEnv* env, int w, int h, int ow, int oh);
   void OnConfigurationChanged(JNIEnv* env);
@@ -150,6 +155,7 @@ class AwContents : public FindHelper::Listener,
               jint visible_right,
               jint visible_bottom,
               jboolean force_auxiliary_bitmap_rendering);
+  jfloat GetVelocityInPixelsPerSecond(JNIEnv* env);
   bool NeedToDrawBackgroundColor(JNIEnv* env);
   jlong CapturePicture(JNIEnv* env, int width, int height);
   void EnableOnNewPicture(JNIEnv* env, jboolean enabled);
@@ -189,9 +195,15 @@ class AwContents : public FindHelper::Listener,
       JNIEnv* env,
       const base::android::JavaParamRef<jstring>& js_object_name);
 
-  base::android::ScopedJavaLocalRef<jobjectArray> GetJsObjectsInfo(
-      JNIEnv* env,
-      const base::android::JavaParamRef<jclass>& clazz);
+  std::vector<jni_zero::ScopedJavaLocalRef<jobject>> GetWebMessageListenerInfos(
+      JNIEnv* env);
+
+  std::vector<jni_zero::ScopedJavaLocalRef<jobject>>
+  GetDocumentStartupJavascripts(JNIEnv* env);
+
+  void FlushBackForwardCache(JNIEnv* env, jint reason);
+
+  void CancelAllPrerendering(JNIEnv* env);
 
   bool GetViewTreeForceDarkState() { return view_tree_force_dark_state_; }
 
@@ -221,6 +233,8 @@ class AwContents : public FindHelper::Listener,
   void RequestMIDISysexPermission(const GURL& origin,
                                   PermissionCallback callback) override;
   void CancelMIDISysexPermissionRequests(const GURL& origin) override;
+  void RequestStorageAccess(const url::Origin& top_level_origin,
+                            PermissionCallback callback) override;
 
   // Find-in-page API and related methods.
   void FindAllAsync(JNIEnv* env,
@@ -255,6 +269,8 @@ class AwContents : public FindHelper::Listener,
   gfx::Point GetLocationOnScreen() override;
   void OnViewTreeForceDarkStateChanged(
       bool view_tree_force_dark_state) override;
+  void SetPreferredFrameInterval(
+      base::TimeDelta preferred_frame_interval) override;
 
   // |new_value| is in physical pixel scale.
   void ScrollContainerViewTo(const gfx::Point& new_value) override;
@@ -285,10 +301,6 @@ class AwContents : public FindHelper::Listener,
   void SetDipScale(JNIEnv* env, jfloat dip_scale);
   base::android::ScopedJavaLocalRef<jstring> GetScheme(JNIEnv* env);
   void OnInputEvent(JNIEnv* env);
-  void SetSaveFormData(bool enabled);
-
-  // Sets the java client
-  void SetAwAutofillClient(const base::android::JavaRef<jobject>& client);
 
   void SetJsOnlineProperty(JNIEnv* env, jboolean network_up);
   void TrimMemory(JNIEnv* env, jint level, jboolean visible);
@@ -298,17 +310,22 @@ class AwContents : public FindHelper::Listener,
   void ResumeLoadingCreatedPopupWebContents(JNIEnv* env);
 
   void RendererUnresponsive(content::RenderProcessHost* render_process_host
-#if defined(OHOS_RENDERER_ANR_DUMP)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
                             ,
                             RenderProcessNotRespondingReason reason
 #endif
   );
   void RendererResponsive(content::RenderProcessHost* render_process_host);
 
+  bool UseLegacyGeolocationPermissionAPI();
+
   // content::WebContentsObserver overrides
   void PrimaryPageChanged(content::Page& page) override;
   void DidFinishNavigation(
       content::NavigationHandle* navigation_handle) override;
+  void ReadyToCommitNavigation(
+      content::NavigationHandle* navigation_handle) override;
+  void RenderViewReady() override;
 
   // AwSafeBrowsingUIManager::UIManagerClient implementation
   bool CanShowInterstitial() override;
@@ -321,14 +338,23 @@ class AwContents : public FindHelper::Listener,
   RenderProcessGoneResult OnRenderProcessGone(int child_process_id,
                                               bool crashed) override;
 
- private:
-  void InitAutofillIfNecessary(bool autocomplete_enabled);
+  // AwSafeBrowsingAllowlistSetObserver overrides
+  void OnSafeBrowsingAllowListSet() override;
 
+ private:
   // Geolocation API support
   void ShowGeolocationPrompt(const GURL& origin, PermissionCallback);
   void HideGeolocationPrompt(const GURL& origin);
 
   void SetDipScaleInternal(float dip_scale);
+
+  // Callback for RequestStorageAccess to continue once the app_domain_list has
+  // been loaded.
+  void GrantRequestStorageAccessIfOriginIsAppDefined(
+      const url::Origin top_level_origin,
+      base::TimeTicks time_requested,
+      PermissionCallback callback,
+      bool is_app_defined);
 
   JavaObjectWeakGlobalRef java_ref_;
   BrowserViewRenderer browser_view_renderer_;  // Must outlive |web_contents_|.
@@ -344,6 +370,10 @@ class AwContents : public FindHelper::Listener,
   std::unique_ptr<AwPdfExporter> pdf_exporter_;
   std::unique_ptr<PermissionRequestHandler> permission_request_handler_;
   std::unique_ptr<js_injection::JsCommunicationHost> js_communication_host_;
+  scoped_refptr<network::SharedURLLoaderFactory>
+      storage_access_url_loader_factory_;
+  std::unique_ptr<content_relationship_verification::DigitalAssetLinksHandler>
+      asset_link_handler_;
 
   bool view_tree_force_dark_state_ = false;
   std::string scheme_;
@@ -354,6 +384,10 @@ class AwContents : public FindHelper::Listener,
   typedef std::pair<const GURL, PermissionCallback> OriginCallback;
   // The first element in the list is always the currently pending request.
   std::list<OriginCallback> pending_geolocation_prompts_;
+
+  base::TimeDelta preferred_frame_interval_;
+
+  base::WeakPtrFactory<AwContents> weak_ptr_factory_{this};
 };
 
 }  // namespace android_webview

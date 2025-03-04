@@ -32,8 +32,9 @@
 namespace views::examples {
 
 class InkDropView : public View {
+  METADATA_HEADER(InkDropView, View)
+
  public:
-  METADATA_HEADER(InkDropView);
   InkDropView() = default;
   InkDropView(const InkDropView&) = delete;
   InkDropView& operator=(const InkDropView&) = delete;
@@ -47,7 +48,7 @@ class InkDropView : public View {
   }
 };
 
-BEGIN_METADATA(InkDropView, View)
+BEGIN_METADATA(InkDropView)
 END_METADATA
 
 BEGIN_VIEW_BUILDER(, InkDropView, View)
@@ -145,7 +146,7 @@ void InkDropExample::CreateInkDrop() {
 
 void InkDropExample::SetInkDropState(InkDropState state) {
   ui::MouseEvent event(
-      ui::ET_MOUSE_PRESSED,
+      ui::EventType::kMousePressed,
       gfx::PointF(ink_drop_view_->GetLocalBounds().CenterPoint()),
       gfx::PointF(ink_drop_view_->origin()), base::TimeTicks(), 0, 0);
   ui::ScopedAnimationDurationScaleMode scale(

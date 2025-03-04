@@ -25,6 +25,7 @@ extern const char kParamOAuthToken[];
 extern const char kParamPlatform[];
 extern const char kParamRequest[];
 extern const char kParamRetry[];
+extern const char kParamProfileID[];
 
 // Policy constants used in authorization header.
 extern const char kAuthHeader[];
@@ -32,6 +33,9 @@ extern const char kServiceTokenAuthHeaderPrefix[];
 extern const char kDMTokenAuthHeaderPrefix[];
 extern const char kEnrollmentTokenAuthHeaderPrefix[];
 extern const char kOAuthTokenHeaderPrefix[];
+extern const char kOidcAuthHeaderPrefix[];
+extern const char kOidcAuthTokenHeaderPrefix[];
+extern const char kOidcIdTokenHeaderPrefix[];
 
 // String extern constants for the device and app type we report to the server.
 extern const char kValueAppType[];
@@ -42,6 +46,7 @@ extern const char kValueRequestPsmHasDeviceState[];
 extern const char kValueCheckUserAccount[];
 extern const char kValueRequestPolicy[];
 extern const char kValueRequestRegister[];
+extern const char kValueRequestRegisterProfile[];
 extern const char kValueRequestApiAuthorization[];
 extern const char kValueRequestUnregister[];
 extern const char kValueRequestUploadCertificate[];
@@ -54,10 +59,12 @@ extern const char kValueRequestDeviceAttributeUpdate[];
 extern const char kValueRequestGcmIdUpdate[];
 extern const char kValueRequestCheckAndroidManagement[];
 extern const char kValueRequestCertBasedRegister[];
+extern const char kValueRequestTokenBasedRegister[];
 extern const char kValueRequestActiveDirectoryEnrollPlayUser[];
 extern const char kValueRequestActiveDirectoryPlayActivity[];
 extern const char kValueRequestAppInstallReport[];
-extern const char kValueRequestTokenEnrollment[];
+extern const char kValueRequestRegisterBrowser[];
+extern const char kValueRequestRegisterPolicyAgent[];
 extern const char kValueRequestChromeDesktopReport[];
 extern const char kValueRequestInitialEnrollmentStateRetrieval[];
 extern const char kValueRequestUploadPolicyValidationReport[];
@@ -65,6 +72,7 @@ extern const char kValueRequestPublicSamlUser[];
 extern const char kValueRequestChromeOsUserReport[];
 extern const char kValueRequestCertProvisioningRequest[];
 extern const char kValueRequestChromeProfileReport[];
+extern const char kValueRequestFmRegistrationTokenUpload[];
 
 // Policy type strings for the policy_type field in PolicyFetchRequest.
 extern const char kChromeDevicePolicyType[];
@@ -73,10 +81,20 @@ extern const char kChromePublicAccountPolicyType[];
 extern const char kChromeExtensionPolicyType[];
 extern const char kChromeSigninExtensionPolicyType[];
 extern const char kChromeMachineLevelUserCloudPolicyType[];
-extern const char kChromeMachineLevelUserCloudPolicyAndroidType[];
-extern const char kChromeMachineLevelUserCloudPolicyIOSType[];
 extern const char kChromeMachineLevelExtensionCloudPolicyType[];
 extern const char kChromeRemoteCommandPolicyType[];
+extern const char kGoogleUpdateMachineLevelAppsPolicyType[];
+extern const char kGoogleUpdateMachineLevelOmahaPolicyType[];
+
+// Remote command type for `type` field in DeviceRemoteCommandRequest.
+// Command for Chrome OS Ash user.
+extern const char kChromeAshUserRemoteCommandType[];
+// Command for Chrome OS device.
+extern const char kChromeDeviceRemoteCommandType[];
+// Command for CBCM device on non-CrOS
+extern const char kChromeBrowserRemoteCommandType[];
+// Command for browser profile.
+extern const char kChromeUserRemoteCommandType[];
 
 extern const char kChromeMachineLevelUserCloudPolicyTypeBase64[];
 
@@ -152,28 +170,44 @@ enum DeviceManagementStatus {
   // Service error: Illegal account for packaged EDU license.
   DM_STATUS_SERVICE_ILLEGAL_ACCOUNT_FOR_PACKAGED_EDU_LICENSE = 908,
   // Service error: Packaged license device can't enroll KIOSK.
-  DM_STATUS_SERVICE_INVALID_PACKAGED_DEVICE_FOR_KIOSK = 909,
+  DM_STATUS_SERVICE_INVALID_PACKAGED_DEVICE_FOR_KIOSK = 909
 };
 
-// List of modes that the device can be locked into.
+// List of modes that the device can be locked into. Some IDs are skipped
+// because they have been used in the past but got deprecated and deleted.
 enum DeviceMode {
-  DEVICE_MODE_PENDING,        // The device mode is not yet available.
-  DEVICE_MODE_NOT_SET,        // The device is not yet enrolled or owned.
-  DEVICE_MODE_CONSUMER,       // The device is locally owned as consumer
-                              // device.
-  DEVICE_MODE_ENTERPRISE,     // The device is enrolled as an enterprise
-                              // device.
-  DEVICE_MODE_ENTERPRISE_AD,  // The device has joined AD.
-  DEPRECATED_DEVICE_MODE_LEGACY_RETAIL_MODE,  // The device is enrolled as a
-                                              // retail kiosk device. This is
-                                              // deprecated.
-  DEVICE_MODE_CONSUMER_KIOSK_AUTOLAUNCH,      // The device is locally owned as
-                                          // consumer kiosk with ability to auto
-                                          // launch a kiosk webapp.
-  DEVICE_MODE_DEMO,  // The device is in demo mode. It was
-                     // either enrolled online or setup
-                     // offline into demo mode domain -
-                     // see kDemoModeDomain.
+  DEVICE_MODE_PENDING = 0,     // The device mode is not yet available.
+  DEVICE_MODE_NOT_SET = 1,     // The device is not yet enrolled or owned.
+  DEVICE_MODE_CONSUMER = 2,    // The device is locally owned as consumer
+                               // device.
+  DEVICE_MODE_ENTERPRISE = 3,  // The device is enrolled as an enterprise
+                               // device.
+  DEPRECATED_DEVICE_MODE_LEGACY_RETAIL_MODE = 5,  // The device is enrolled as a
+                                                  // retail kiosk device. This
+                                                  // is deprecated.
+  DEPRECATED_DEVICE_MODE_CONSUMER_KIOSK_AUTOLAUNCH = 6,  // The device is
+                                                         // locally owned as
+                                                         // consumer kiosk with
+                                                         // ability to auto
+                                                         // launch a kiosk
+                                                         // webapp. This is
+                                                         // deprecated.
+  DEVICE_MODE_DEMO = 7,  // The device is in demo mode. It was
+                         // either enrolled online or setup
+                         // offline into demo mode domain -
+                         // see kDemoModeDomain.
+};
+
+// List of modes of OIDC management.
+enum ThirdPartyIdentityType {
+  NO_THIRD_PARTY_MANAGEMENT =
+      0,  // The device mode is not managed by a third party identity.
+  OIDC_MANAGEMENT_DASHER_BASED =
+      1,  // The device mode is managed by a third party identity that is
+          // sync-ed to Google.
+  OIDC_MANAGEMENT_DASHERLESS =
+      2,  // The device mode is managed by a third party identity that is
+          // notsync-ed to Google.
 };
 
 // Domain that demo mode devices are enrolled into: cros-demo-mode.com
@@ -194,7 +228,7 @@ enum class MarketSegment {
 
 // Sender ID of FCM (Firebase Cloud Messaging)
 // Policy Invalidation sender coming from the Firebase console.
-extern const char kPolicyFCMInvalidationSenderID[];
+inline constexpr char kPolicyFCMInvalidationSenderID[] = "1013309121859";
 
 // Kiosk SKU name. This is the constant of the enrollment license type that
 // exists on the server side.

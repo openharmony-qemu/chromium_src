@@ -4,12 +4,15 @@
 
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 
+#include "arkweb/build/features/features.h"
+#include "base/check.h"
 #include "base/check_op.h"
+#include "base/not_fatal_until.h"
 #include "base/numerics/safe_conversions.h"
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 #include "base/logging.h"
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
 namespace subresource_filter {
 
@@ -42,21 +45,22 @@ UnindexedRulesetWriter::UnindexedRulesetWriter(
     : coded_stream_(stream), max_rules_per_chunk_(max_rules_per_chunk) {}
 
 UnindexedRulesetWriter::~UnindexedRulesetWriter() {
-  DCHECK_EQ(pending_chunk_.url_rules_size(), 0);
-  DCHECK_EQ(pending_chunk_.css_rules_size(), 0);
+  CHECK_EQ(pending_chunk_.url_rules_size(), 0, base::NotFatalUntil::M129);
+  CHECK_EQ(pending_chunk_.css_rules_size(), 0, base::NotFatalUntil::M129);
 }
 
 bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
-  DCHECK(!had_error());
+  CHECK(!had_error(), base::NotFatalUntil::M129);
   pending_chunk_.add_url_rules()->CopyFrom(rule);
   if (pending_chunk_.url_rules_size() >= max_rules_per_chunk_) {
-    DCHECK_EQ(pending_chunk_.url_rules_size(), max_rules_per_chunk_);
+    CHECK_EQ(pending_chunk_.url_rules_size(), max_rules_per_chunk_,
+             base::NotFatalUntil::M129);
     return WritePendingChunk();
   }
   return true;
 }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 bool UnindexedRulesetWriter::AddCssRule(const proto::CssRule& rule) {
   DCHECK(!had_error());
   pending_chunk_.add_css_rules()->CopyFrom(rule);
@@ -70,8 +74,8 @@ bool UnindexedRulesetWriter::AddCssRule(const proto::CssRule& rule) {
 #endif
 
 bool UnindexedRulesetWriter::Finish() {
-  DCHECK(!had_error());
-#ifdef OHOS_ARKWEB_ADBLOCK
+  CHECK(!had_error(), base::NotFatalUntil::M129);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   const bool success =
       (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||
       WritePendingChunk();
@@ -85,12 +89,13 @@ bool UnindexedRulesetWriter::Finish() {
 }
 
 bool UnindexedRulesetWriter::WritePendingChunk() {
-  DCHECK(!had_error());
-#ifdef OHOS_ARKWEB_ADBLOCK
-  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
-  #else
-  DCHECK_GT(pending_chunk_.url_rules_size(), 0);
-  #endif
+  CHECK(!had_error(), base::NotFatalUntil::M129);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(),
+            0);
+#else
+  CHECK_GT(pending_chunk_.url_rules_size(), 0, base::NotFatalUntil::M129);
+#endif
 
   proto::FilteringRules chunk;
   chunk.Swap(&pending_chunk_);

@@ -12,12 +12,12 @@
 #include "media/mojo/mojom/content_decryption_module.mojom.h"
 #include "media/mojo/mojom/renderer.mojom.h"
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
-#include "third_party/blink/public/common/browser_interface_broker_proxy.h"
+#include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
 namespace content {
 
 MediaInterfaceFactory::MediaInterfaceFactory(
-    blink::BrowserInterfaceBrokerProxy* interface_broker)
+    const blink::BrowserInterfaceBrokerProxy* interface_broker)
     : interface_broker_(interface_broker) {
   task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   weak_this_ = weak_factory_.GetWeakPtr();
@@ -72,6 +72,24 @@ void MediaInterfaceFactory::CreateVideoDecoder(
                                                  /*dst_video_decoder=*/{});
 }
 
+#if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+void MediaInterfaceFactory::CreateStableVideoDecoder(
+    mojo::PendingReceiver<media::stable::mojom::StableVideoDecoder>
+        video_decoder) {
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaInterfaceFactory::CreateStableVideoDecoder,
+                       weak_this_, std::move(video_decoder)));
+    return;
+  }
+
+  DVLOG(1) << __func__;
+  GetMediaInterfaceFactory()->CreateStableVideoDecoder(
+      std::move(video_decoder));
+}
+#endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+
 void MediaInterfaceFactory::CreateAudioEncoder(
     mojo::PendingReceiver<media::mojom::AudioEncoder> receiver) {
   if (!task_runner_->BelongsToCurrentThread()) {
@@ -119,7 +137,7 @@ void MediaInterfaceFactory::CreateCastRenderer(
 }
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 void MediaInterfaceFactory::CreateMediaPlayerRenderer(
     mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
         client_extension_remote,
@@ -141,9 +159,9 @@ void MediaInterfaceFactory::CreateMediaPlayerRenderer(
       std::move(client_extension_remote), std::move(receiver),
       std::move(renderer_extension_receiver));
 }
-#endif  // defined(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MediaInterfaceFactory::CreateCustomMediaPlayerRenderer(
     mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
         client_extension_remote,
@@ -157,8 +175,7 @@ void MediaInterfaceFactory::CreateCustomMediaPlayerRenderer(
         base::BindOnce(&MediaInterfaceFactory::CreateCustomMediaPlayerRenderer,
                        weak_this_, std::move(client_extension_remote),
                        std::move(receiver),
-                       std::move(renderer_extension_receiver),
-                       player_id));
+                       std::move(renderer_extension_receiver), player_id));
     return;
   }
 
@@ -167,9 +184,9 @@ void MediaInterfaceFactory::CreateCustomMediaPlayerRenderer(
       std::move(client_extension_remote), std::move(receiver),
       std::move(renderer_extension_receiver), player_id);
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
-#if defined(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
 void MediaInterfaceFactory::CreateFlingingRenderer(
     const std::string& presentation_id,
     mojo::PendingRemote<media::mojom::FlingingRendererClientExtension>

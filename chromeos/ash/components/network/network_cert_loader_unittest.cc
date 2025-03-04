@@ -42,7 +42,6 @@ class FakePolicyCertificateProvider : public PolicyCertificateProvider {
       const chromeos::onc::CertificateScope& scope) const override {
     // NetworkCertLoader does not call this.
     NOTREACHED();
-    return net::CertificateList();
   }
 
   net::CertificateList GetAllAuthorityCertificates(
@@ -57,21 +56,18 @@ class FakePolicyCertificateProvider : public PolicyCertificateProvider {
       const chromeos::onc::CertificateScope& scope) const override {
     // NetworkCertLoader does not call this.
     NOTREACHED();
-    return net::CertificateList();
   }
 
   net::CertificateList GetCertificatesWithoutWebTrust(
       const chromeos::onc::CertificateScope& scope) const override {
     // NetworkCertLoader does not call this.
     NOTREACHED();
-    return net::CertificateList();
   }
 
   const std::set<std::string>& GetExtensionIdsWithPolicyCertificates()
       const override {
     // NetworkCertLoader does not call this.
     NOTREACHED();
-    return kNoExtensions;
   }
 
   void SetAuthorityCertificates(
@@ -137,8 +133,8 @@ class TestNSSCertDatabase : public net::NSSCertDatabaseChromeOS {
   ~TestNSSCertDatabase() override = default;
 
   // Make this method visible in the public interface.
-  void NotifyObserversCertDBChanged() {
-    NSSCertDatabaseChromeOS::NotifyObserversCertDBChanged();
+  void NotifyObserversClientCertStoreChanged() {
+    NSSCertDatabaseChromeOS::NotifyObserversClientCertStoreChanged();
   }
 };
 
@@ -255,7 +251,7 @@ class NetworkCertLoaderTest : public testing::Test,
     net::ImportClientCertAndKeyFromFile(
         net::GetTestCertsDirectory(), test_cert.cert_pem_filename,
         test_cert.key_pk8_filename, slot_to_use, &client_cert);
-    database_to_notify->NotifyObserversCertDBChanged();
+    database_to_notify->NotifyObserversClientCertStoreChanged();
     return client_cert;
   }
 
@@ -284,7 +280,7 @@ class NetworkCertLoaderTest : public testing::Test,
 
   base::test::TaskEnvironment task_environment_;
 
-  raw_ptr<NetworkCertLoader, ExperimentalAsh> cert_loader_;
+  raw_ptr<NetworkCertLoader, DanglingUntriaged> cert_loader_;
 
   // The NSSCertDatabse and underlying slots for the primary user (because
   // NetworkCertLoader uses device-wide certs and primary user's certs).

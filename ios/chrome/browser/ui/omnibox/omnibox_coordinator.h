@@ -5,30 +5,52 @@
 #ifndef IOS_CHROME_BROWSER_UI_OMNIBOX_OMNIBOX_COORDINATOR_H_
 #define IOS_CHROME_BROWSER_UI_OMNIBOX_OMNIBOX_COORDINATOR_H_
 
+#import <memory>
+
 #import "ios/chrome/browser/shared/coordinator/chrome_coordinator/chrome_coordinator.h"
 
-class WebOmniboxEditModelDelegate;
+class OmniboxClient;
 @protocol EditViewAnimatee;
 @class OmniboxPopupCoordinator;
-@class OmniboxTextFieldIOS;
 @protocol LocationBarOffsetProvider;
 @protocol OmniboxPopupPresenterDelegate;
+@protocol TextFieldViewContaining;
+@protocol ToolbarOmniboxConsumer;
+@protocol OmniboxFocusDelegate;
 
 // The coordinator for the omnibox.
 @interface OmniboxCoordinator : ChromeCoordinator
+
+- (instancetype)initWithBaseViewController:(UIViewController*)viewController
+                                   browser:(Browser*)browser
+                             omniboxClient:
+                                 (std::unique_ptr<OmniboxClient>)client
+                             isLensOverlay:(BOOL)isLensOverlay
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithBaseViewController:(UIViewController*)viewController
+                                   browser:(Browser*)browser NS_UNAVAILABLE;
 
 // Returns a popup coordinator created by this coordinator.
 // Created and started at `start` and stopped & destroyed at `stop`.
 @property(nonatomic, strong, readonly)
     OmniboxPopupCoordinator* popupCoordinator;
-// The edit controller interfacing the `textField` and the omnibox components
-// code. Needs to be set before the coordinator is started.
-@property(nonatomic, assign) WebOmniboxEditModelDelegate* editModelDelegate;
 // Returns the animatee for the omnibox focus orchestrator.
 @property(nonatomic, strong, readonly) id<EditViewAnimatee> animatee;
 
 /// Positioner for the popup. Has to be configured before calling `start`.
 @property(nonatomic, weak) id<OmniboxPopupPresenterDelegate> presenterDelegate;
+
+/// Delegate for responding to focusing events.
+@property(nonatomic, weak) id<OmniboxFocusDelegate> focusDelegate;
+
+/// The edit view, which contains a text field.
+@property(nonatomic, readonly) UIView<TextFieldViewContaining>* editView;
+
+/// Controls the UI configuration of the omnibox to reflect search-only mode.
+/// Actual navigation limitations are managed by the `OmniboxClient`. Has to be
+/// configured before calling `start`. Defaults to `NO`.
+@property(nonatomic, assign) BOOL isSearchOnlyUI;
 
 // The view controller managed by this coordinator. The parent of this
 // coordinator is expected to add it to the responder chain.
@@ -38,7 +60,7 @@ class WebOmniboxEditModelDelegate;
 - (id<LocationBarOffsetProvider>)offsetProvider;
 
 // Start this coordinator. When it starts, it expects to have `textField` and
-// `editModelDelegate`.
+// `locationBar`.
 - (void)start;
 // Stop this coordinator.
 - (void)stop;
@@ -62,6 +84,12 @@ class WebOmniboxEditModelDelegate;
 // Use this method to resign `textField` as the first responder.
 - (void)endEditing;
 
+/// Sets the thumbnail image used for image search. Set to`nil` to hide the
+/// thumbnail.
+- (void)setThumbnailImage:(UIImage*)image;
+
+// Returns the toolbar omnibox consumer.
+- (id<ToolbarOmniboxConsumer>)toolbarOmniboxConsumer;
 @end
 
 #endif  // IOS_CHROME_BROWSER_UI_OMNIBOX_OMNIBOX_COORDINATOR_H_

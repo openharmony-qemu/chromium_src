@@ -8,7 +8,7 @@
 #import "base/ios/ios_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
-#import "ios/chrome/browser/search_engines/search_engines_app_interface.h"
+#import "ios/chrome/browser/search_engines/model/search_engines_app_interface.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/ui/browser_container/edit_menu_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_actions.h"
@@ -21,10 +21,6 @@
 #import "net/test/embedded_test_server/embedded_test_server.h"
 #import "net/test/embedded_test_server/http_request.h"
 #import "net/test/embedded_test_server/http_response.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -124,7 +120,7 @@ void LongPressElement(const char* element_id) {
 }
 
 // Convenient function to trigger the Edit Menu on `kElementToLongPress`.
-// TODO(crbug.com/1434686): extract this function and have all edit menu
+// TODO(crbug.com/40264849): extract this function and have all edit menu
 // tests use it.
 void TriggerEditMenu() {
   [[EarlGrey selectElementWithMatcher:[EditMenuAppInterface editMenuMatcher]]
@@ -153,12 +149,6 @@ void TriggerEditMenu() {
 @end
 
 @implementation SearchWithMediatorTestCase
-- (AppLaunchConfiguration)appConfigurationForTestCase {
-  AppLaunchConfiguration config;
-  config.features_enabled.push_back(kIOSEditMenuSearchWith);
-  config.features_enabled.push_back(kIOSCustomBrowserEditMenu);
-  return config;
-}
 
 - (void)setUp {
   [super setUp];
@@ -174,10 +164,10 @@ void TriggerEditMenu() {
                    setDefault:YES];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [SearchEnginesAppInterface setSearchEngineTo:self.defaultSearchEngine];
   [SearchEnginesAppInterface removeSearchEngineWithName:@"test"];
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 // Conveniently load a page that has "text" in a selectable field.

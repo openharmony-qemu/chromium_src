@@ -67,18 +67,11 @@ class TestAnimation : public LinearAnimation {
 class AnimationContainerTest: public testing::Test {
  protected:
   AnimationContainerTest()
-#if defined(OHOS_UNITTESTS)
-      : task_environment_() {}
-#else
       : task_environment_(
             base::test::SingleThreadTaskEnvironment::MainThreadType::UI) {}
-#endif
+
  private:
-#if defined(OHOS_UNITTESTS)
-  base::test::SingleThreadTaskEnvironment task_environment_ {};
-#else
   base::test::SingleThreadTaskEnvironment task_environment_;
-#endif
 };
 
 // Makes sure the animation ups the ref count of the container and releases it
@@ -99,8 +92,12 @@ TEST_F(AnimationContainerTest, Ownership) {
 
 // Makes sure multiple animations are managed correctly.
 TEST_F(AnimationContainerTest, Multi) {
+  base::RunLoop loop1;
   TestAnimationDelegate delegate1;
   TestAnimationDelegate delegate2;
+
+  delegate1.set_quit_closure(loop1.QuitWhenIdleClosure());
+  delegate2.set_quit_closure(loop1.QuitWhenIdleClosure());
 
   scoped_refptr<AnimationContainer> container(new AnimationContainer());
   TestAnimation animation1(&delegate1);
@@ -115,7 +112,7 @@ TEST_F(AnimationContainerTest, Multi) {
   EXPECT_TRUE(container->is_running());
 
   // Run the message loop the delegate quits the message loop when notified.
-  base::RunLoop().Run();
+  loop1.Run();
 
   // Both timers should have finished.
   EXPECT_TRUE(delegate1.finished());
@@ -127,9 +124,10 @@ TEST_F(AnimationContainerTest, Multi) {
 
 // Makes sure observer is notified appropriately.
 TEST_F(AnimationContainerTest, Observer) {
+  base::RunLoop loop;
   FakeAnimationContainerObserver observer;
   TestAnimationDelegate delegate1;
-
+  delegate1.set_quit_closure(loop.QuitWhenIdleClosure());
   scoped_refptr<AnimationContainer> container(new AnimationContainer());
   container->set_observer(&observer);
   TestAnimation animation1(&delegate1);
@@ -140,7 +138,7 @@ TEST_F(AnimationContainerTest, Observer) {
   EXPECT_TRUE(container->is_running());
 
   // Run the message loop. The delegate quits the message loop when notified.
-  base::RunLoop().Run();
+  loop.Run();
 
   EXPECT_EQ(1, observer.progressed_count());
 

@@ -8,10 +8,6 @@
 #import "ios/web/navigation/navigation_item_impl.h"
 #import "ios/web/navigation/navigation_manager_impl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 NavigationItemImpl* GetItemWithUniqueID(
@@ -22,8 +18,7 @@ NavigationItemImpl* GetItemWithUniqueID(
     return context->GetItem();
 
   int unique_id = context->GetNavigationItemUniqueID();
-  NavigationItemImpl* pending_item =
-      navigation_manager->GetPendingItemInCurrentOrRestoredSession();
+  NavigationItemImpl* pending_item = navigation_manager->GetPendingItemImpl();
   if (pending_item && pending_item->GetUniqueID() == unique_id)
     return pending_item;
 

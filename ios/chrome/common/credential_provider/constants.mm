@@ -6,13 +6,10 @@
 
 #import <ostream>
 
+#import "base/apple/bundle_locations.h"
 #import "base/check.h"
 #import "ios/chrome/common/app_group/app_group_constants.h"
 #import "ios/chrome/common/ios_app_bundle_id_prefix_buildflags.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using app_group::ApplicationGroup;
 
@@ -39,20 +36,31 @@ NSString* const kUserDefaultsCredentialProviderManagedUserEmail =
 NSString* const kUserDefaultsCredentialProviderNewCredentials =
     @"kUserDefaultsCredentialProviderNewCredentials";
 
-// Used to generate the key for the app group user defaults containg whether
+// Used to generate the key for the app group user defaults containing whether
 // saving passwords is currently enabled.
 NSString* const kUserDefaulsCredentialProviderSavingPasswordsEnabled =
     @"kUserDefaulsCredentialProviderSavingPasswordsEnabled";
 
+// Used to generate the key for the app group user defaults containing whether
+// saving passwords is currently managed by enterprise policy.
+NSString* const kUserDefaultsCredentialProviderSavingPasswordsManaged =
+    @"kUserDefaultsCredentialProviderSavingPasswordsManaged";
+
+// Used to generate the key for the app group user defaults containing whether
+// syncing passwords is currently enabled.
+NSString* const kUserDefaultsCredentialProviderPasswordSyncSetting =
+    @"kUserDefaultsCredentialProviderPasswordSyncSetting";
+
 // Used to generate a unique AppGroupPrefix to differentiate between different
 // versions of Chrome running in the same device.
 NSString* AppGroupPrefix() {
-  NSDictionary* infoDictionary = [NSBundle mainBundle].infoDictionary;
+  NSBundle* bundle = base::apple::FrameworkBundle();
+  NSDictionary* infoDictionary = bundle.infoDictionary;
   NSString* prefix = infoDictionary[@"MainAppBundleID"];
   if (prefix) {
     return prefix;
   }
-  return [NSBundle mainBundle].bundleIdentifier;
+  return bundle.bundleIdentifier;
 }
 
 }  // namespace
@@ -64,11 +72,16 @@ NSURL* CredentialProviderSharedArchivableStoreURL() {
   // As of 2021Q4, Earl Grey build don't support security groups in their
   // entitlements.
   if (!groupURL) {
+    NSBundle* bundle = base::apple::FrameworkBundle();
     NSNumber* isEarlGreyTest =
-        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CRIsEarlGreyTest"];
+        [bundle objectForInfoDictionaryKey:@"CRIsEarlGreyTest"];
     if ([isEarlGreyTest boolValue])
       groupURL = [NSURL fileURLWithPath:NSTemporaryDirectory()];
   }
+
+  // Outside of Earl Grey tests,
+  // containerURLForSecurityApplicationGroupIdentifier: should not return nil.
+  CHECK(groupURL);
 
   NSURL* credentialProviderURL =
       [groupURL URLByAppendingPathComponent:kCredentialProviderContainer];
@@ -96,4 +109,16 @@ NSString* AppGroupUserDefaulsCredentialProviderSavingPasswordsEnabled() {
   return [AppGroupPrefix()
       stringByAppendingString:
           kUserDefaulsCredentialProviderSavingPasswordsEnabled];
+}
+
+NSString* AppGroupUserDefaulsCredentialProviderSavingPasswordsManaged() {
+  return [AppGroupPrefix()
+      stringByAppendingString:
+          kUserDefaultsCredentialProviderSavingPasswordsManaged];
+}
+
+NSString* AppGroupUserDefaultsCredentialProviderPasswordSyncSetting() {
+  return
+      [AppGroupPrefix() stringByAppendingString:
+                            kUserDefaultsCredentialProviderPasswordSyncSetting];
 }

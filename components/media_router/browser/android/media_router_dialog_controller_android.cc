@@ -12,7 +12,6 @@
 #include "base/android/jni_string.h"
 #include "base/functional/bind.h"
 #include "base/strings/utf_string_conversions.h"
-#include "components/media_router/browser/android/jni_headers/BrowserMediaRouterDialogController_jni.h"
 #include "components/media_router/browser/android/media_router_android.h"
 #include "components/media_router/browser/media_router.h"
 #include "components/media_router/browser/media_router_factory.h"
@@ -25,6 +24,9 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "third_party/blink/public/mojom/presentation/presentation.mojom.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "components/media_router/browser/android/jni_headers/BrowserMediaRouterDialogController_jni.h"
 
 using base::android::ConvertJavaStringToUTF8;
 using base::android::JavaParamRef;
@@ -71,7 +73,7 @@ void MediaRouterDialogControllerAndroid::OnSinkSelected(
       presentation_request.frame_origin, initiator(),
       base::BindOnce(&StartPresentationContext::HandleRouteResponse,
                      std::move(start_presentation_context)),
-      base::TimeDelta(), browser_context->IsOffTheRecord());
+      base::TimeDelta());
   MediaRouterMetrics::RecordMediaRouterAndroidDialogAction(
       MediaRouterAndroidDialogAction::kStartRoute);
 }
@@ -130,7 +132,8 @@ MediaRouterDialogControllerAndroid::MediaRouterDialogControllerAndroid(
       env, reinterpret_cast<jlong>(this), web_contents->GetJavaWebContents()));
 }
 
-MediaRouterDialogControllerAndroid::~MediaRouterDialogControllerAndroid() {}
+MediaRouterDialogControllerAndroid::~MediaRouterDialogControllerAndroid() =
+    default;
 
 void MediaRouterDialogControllerAndroid::CreateMediaRouterDialog(
     MediaRouterDialogActivationLocation activation_location) {
@@ -144,8 +147,9 @@ void MediaRouterDialogControllerAndroid::CreateMediaRouterDialog(
   // If it's a single route with the same source, show the controller dialog
   // instead of the device picker.
   // TODO(avayvod): maybe this logic should be in
-  // PresentationServiceDelegateImpl: if the route exists for the same frame
-  // and tab, show the route controller dialog, if not, show the device picker.
+  // ControllerPresentationServiceDelegateImpl: if the route exists for the same
+  // frame and tab, show the route controller dialog, if not, show the device
+  // picker.
   MediaRouterAndroid* router = static_cast<MediaRouterAndroid*>(
       MediaRouterFactory::GetApiForBrowserContext(
           initiator()->GetBrowserContext()));

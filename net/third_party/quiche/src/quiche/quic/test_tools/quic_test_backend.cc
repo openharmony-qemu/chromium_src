@@ -6,6 +6,9 @@
 
 #include <cstring>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -13,6 +16,7 @@
 #include "quiche/quic/core/web_transport_interface.h"
 #include "quiche/quic/test_tools/web_transport_resets_backend.h"
 #include "quiche/quic/tools/web_transport_test_visitors.h"
+#include "quiche/common/platform/api/quiche_googleurl.h"
 
 namespace quic {
 namespace test {
@@ -23,12 +27,13 @@ namespace {
 // sends a unidirectional stream of format "code message" to this endpoint, it
 // will close the session with the corresponding error code and error message.
 // For instance, sending "42 test error" will cause it to be closed with code 42
-// and message "test error".
+// and message "test error".  As a special case, sending "DRAIN" would result in
+// a DRAIN_WEBTRANSPORT_SESSION capsule being sent.
 class SessionCloseVisitor : public WebTransportVisitor {
  public:
   SessionCloseVisitor(WebTransportSession* session) : session_(session) {}
 
-  void OnSessionReady(const spdy::Http2HeaderBlock& /*headers*/) override {}
+  void OnSessionReady() override {}
   void OnSessionClosed(WebTransportSessionError /*error_code*/,
                        const std::string& /*error_message*/) override {}
 
@@ -41,6 +46,10 @@ class SessionCloseVisitor : public WebTransportVisitor {
     stream->SetVisitor(
         std::make_unique<WebTransportUnidirectionalEchoReadVisitor>(
             stream, [this](const std::string& data) {
+              if (data == "DRAIN") {
+                session_->NotifySessionDraining();
+                return;
+              }
               std::pair<absl::string_view, absl::string_view> parsed =
                   absl::StrSplit(data, absl::MaxSplits(' ', 1));
               WebTransportSessionError error_code = 0;
@@ -64,7 +73,7 @@ class SessionCloseVisitor : public WebTransportVisitor {
 
 QuicSimpleServerBackend::WebTransportResponse
 QuicTestBackend::ProcessWebTransportRequest(
-    const spdy::Http2HeaderBlock& request_headers,
+    const quiche::HttpHeaderBlock& request_headers,
     WebTransportSession* session) {
   if (!SupportsWebTransport()) {
     return QuicSimpleServerBackend::ProcessWebTransportRequest(request_headers,

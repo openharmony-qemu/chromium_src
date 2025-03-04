@@ -7,26 +7,29 @@
 
 #import <Foundation/Foundation.h>
 
-namespace {
 // Pref keys passed through setupModalViewControllerWithPrefs:.
-NSString* kCardholderNamePrefKey = @"cardholderName";
-NSString* kCardIssuerIconNamePrefKey = @"cardIssuerIconName";
-NSString* kCardNumberPrefKey = @"cardNumber";
-NSString* kExpirationMonthPrefKey = @"expirationMonth";
-NSString* kExpirationYearPrefKey = @"expirationYear";
-NSString* kLegalMessagesPrefKey = @"legalMessages";
-NSString* kCurrentCardSavedPrefKey = @"currentCardSaved";
-NSString* kSupportsEditingPrefKey = @"supportsEditing";
-NSString* kDisplayedTargetAccountEmailPrefKey = @"displayedTargetAccountEmail";
-NSString* kDisplayedTargetAccountAvatarPrefKey =
-    @"displayedTargetAccountAvatar";
-}  // namespace
+extern NSString* const kCardholderNamePrefKey;
+extern NSString* const kCardIssuerIconNamePrefKey;
+extern NSString* const kCardNumberPrefKey;
+extern NSString* const kExpirationMonthPrefKey;
+extern NSString* const kExpirationYearPrefKey;
+extern NSString* const kLegalMessagesPrefKey;
+extern NSString* const kCurrentCardSaveAcceptedPrefKey;
+extern NSString* const kSupportsEditingPrefKey;
+extern NSString* const kDisplayedTargetAccountEmailPrefKey;
+extern NSString* const kDisplayedTargetAccountAvatarPrefKey;
 
 // Consumer for model to push configurations to the SaveCard UI.
 @protocol InfobarSaveCardModalConsumer <NSObject>
 
 // Informs the consumer of the current state of important prefs.
 - (void)setupModalViewControllerWithPrefs:(NSDictionary*)prefs;
+
+// Updates modal to show progress of card upload. With `uploadCompleted` as
+// `NO`, informs the consumer to show loading state after save card button is
+// pressed. With `uploadCompleted` as `YES`, informs the consumer to show card
+// upload success.
+- (void)showProgressWithUploadCompleted:(BOOL)uploadCompleted;
 
 @end
 

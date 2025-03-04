@@ -4,31 +4,27 @@
 
 #import "ios/chrome/browser/ui/settings/tabs/inactive_tabs/inactive_tabs_settings_mediator.h"
 
+#import "base/memory/raw_ptr.h"
 #import "components/prefs/ios/pref_observer_bridge.h"
 #import "components/prefs/pref_change_registrar.h"
 #import "components/prefs/pref_service.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/main/browser_list.h"
-#import "ios/chrome/browser/main/browser_list_factory.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state_browser_agent.h"
-#import "ios/chrome/browser/tabs/inactive_tabs/features.h"
-#import "ios/chrome/browser/tabs/inactive_tabs/utils.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser_list.h"
+#import "ios/chrome/browser/shared/model/browser/browser_list_factory.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/utils.h"
 #import "ios/chrome/browser/ui/settings/tabs/inactive_tabs/inactive_tabs_settings_consumer.h"
 #import "ios/chrome/browser/ui/settings/tabs/inactive_tabs/inactive_tabs_settings_table_view_controller.h"
 #import "ios/chrome/browser/ui/settings/tabs/inactive_tabs/inactive_tabs_settings_table_view_controller_delegate.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface InactiveTabsSettingsMediator () <PrefObserverDelegate>
 @end
 
 @implementation InactiveTabsSettingsMediator {
   // Preference service from the application context.
-  PrefService* _prefs;
+  raw_ptr<PrefService> _prefs;
   // The consumer that will be notified when the data change.
   __weak id<InactiveTabsSettingsConsumer> _consumer;
   // Pref observer to track changes to prefs.
@@ -36,7 +32,7 @@
   // Registrar for pref changes notifications.
   PrefChangeRegistrar _prefChangeRegistrar;
   // The current browser.
-  Browser* _browser;
+  raw_ptr<Browser> _browser;
 }
 
 - (instancetype)initWithUserLocalPrefService:(PrefService*)localPrefService
@@ -59,8 +55,8 @@
         prefs::kInactiveTabsTimeThreshold, &_prefChangeRegistrar);
 
     // Use InactiveTabsTimeThreshold() instead of reading the pref value
-    // directly as this function also manage flag and default value.
-    int currentThreshold = IsInactiveTabsExplictlyDisabledByUser()
+    // directly as this function also manages the flag and the default value.
+    int currentThreshold = IsInactiveTabsExplicitlyDisabledByUser()
                                ? kInactiveTabsDisabledByUser
                                : InactiveTabsTimeThreshold().InDays();
     [_consumer updateCheckedStateWithDaysThreshold:currentThreshold];

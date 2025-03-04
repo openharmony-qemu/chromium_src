@@ -86,7 +86,7 @@ void GpuArcVideoDecoder::Initialize(
   init_callback_ = std::move(callback);
   video_frame_pool_ = std::make_unique<GpuArcVideoFramePool>(
       std::move(video_frame_pool),
-      base::BindRepeating(&GpuArcVideoDecoder::OnRequestVideoFrames,
+      base::BindRepeating(&GpuArcVideoDecoder::ReleaseClientVideoFrames,
                           weak_this_),
       protected_buffer_manager_);
 
@@ -102,16 +102,14 @@ void GpuArcVideoDecoder::Initialize(
     return;
   }
 
-  decoder_ = media::VideoDecoderPipeline::Create(
+  decoder_ = media::VideoDecoderPipeline::CreateForARC(
       // TODO(b/238684141): Wire a meaningful GpuDriverBugWorkarounds or remove
       // its use.
       gpu::GpuDriverBugWorkarounds(), client_task_runner_,
       std::make_unique<media::VdaVideoFramePool>(video_frame_pool_->WeakThis(),
                                                  client_task_runner_),
-      /*frame_converter=*/nullptr,
       media::VideoDecoderPipeline::DefaultPreferredRenderableFourccs(),
-      std::make_unique<media::NullMediaLog>(),
-      /*oop_video_decoder=*/{});
+      std::make_unique<media::NullMediaLog>());
 
   if (!decoder_) {
     VLOGF(1) << "Failed to create video decoder";
@@ -267,7 +265,7 @@ void GpuArcVideoDecoder::OnFrameReady(scoped_refptr<media::VideoFrame> frame) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(frame);
 
-  absl::optional<int32_t> video_frame_id =
+  std::optional<int32_t> video_frame_id =
       video_frame_pool_->GetVideoFrameId(frame.get());
   if (!video_frame_id) {
     VLOGF(1) << "Failed to get video frame id.";
@@ -303,16 +301,15 @@ void GpuArcVideoDecoder::OnResetDone() {
     return;
   }
 
+  CHECK(video_frame_pool_);
+  video_frame_pool_->OnDecoderResetDone();
   std::move(reset_callback_).Run();
   HandleRequests();
 }
 
-void GpuArcVideoDecoder::OnRequestVideoFrames() {
+void GpuArcVideoDecoder::ReleaseClientVideoFrames() {
   DVLOGF(4);
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-  // Clear the list of video frames currently in use by the client, as new video
-  // frames will be added to the pool using the same ids.
   client_video_frames_.clear();
 }
 
@@ -325,6 +322,8 @@ void GpuArcVideoDecoder::OnError(media::DecoderStatus status) {
   }
 
   if (reset_callback_) {
+    CHECK(video_frame_pool_);
+    video_frame_pool_->OnDecoderResetDone();
     std::move(reset_callback_).Run();
   }
 
@@ -393,6 +392,12 @@ void GpuArcVideoDecoder::HandleResetRequest(ResetCallback callback) {
     OnError(media::DecoderStatus::Codes::kInvalidArgument);
     return;
   }
+
+  // HandleResetRequest() doesn't run if there's an unfinished Reset(). See
+  // HandleRequests().
+  CHECK(!reset_callback_);
+  CHECK(video_frame_pool_);
+  video_frame_pool_->WillResetDecoder();
 
   reset_callback_ = std::move(std::move(callback));
   decoder_->Reset(base::BindOnce(&GpuArcVideoDecoder::OnResetDone, weak_this_));

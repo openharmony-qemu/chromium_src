@@ -5,6 +5,7 @@
 #include "mojo/public/cpp/bindings/receiver_set.h"
 
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "base/check.h"
@@ -12,6 +13,7 @@
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/weak_ptr.h"
+#include "base/not_fatal_until.h"
 #include "mojo/public/cpp/bindings/message.h"
 
 namespace mojo {
@@ -40,7 +42,7 @@ class ReceiverSetState::Entry::DispatchFilter : public MessageFilter {
       nested_filter_->DidDispatchOrReject(message, accepted);
   }
 
-  // `entry_` is not a raw_ref<...> as that leads to a binary size increase.
+  // RAW_PTR_EXCLUSION: Binary size increase.
   RAW_PTR_EXCLUSION Entry& entry_;
   std::unique_ptr<MessageFilter> nested_filter_;
 };
@@ -92,7 +94,7 @@ ReportBadMessageCallback ReceiverSetState::GetBadMessageCallback() {
   return base::BindOnce(
       [](ReportBadMessageCallback error_callback,
          base::WeakPtr<ReceiverSetState> receiver_set, ReceiverId receiver_id,
-         base::StringPiece error) {
+         std::string_view error) {
         std::move(error_callback).Run(error);
         if (receiver_set)
           receiver_set->Remove(receiver_id);
@@ -103,11 +105,10 @@ ReportBadMessageCallback ReceiverSetState::GetBadMessageCallback() {
 
 ReceiverId ReceiverSetState::Add(std::unique_ptr<ReceiverState> receiver,
                                  std::unique_ptr<MessageFilter> filter) {
-  ReceiverId id = next_receiver_id_++;
-  auto result = entries_.emplace(
-      id, std::make_unique<Entry>(*this, id, std::move(receiver),
-                                  std::move(filter)));
-  CHECK(result.second) << "ReceiverId overflow with collision";
+  ReceiverId id = ++next_receiver_id_;
+  CHECK_NE(0u, id) << "ReceiverId overflow";
+  entries_.insert({id, std::make_unique<Entry>(*this, id, std::move(receiver),
+                                               std::move(filter))});
   return id;
 }
 
@@ -160,7 +161,7 @@ void ReceiverSetState::OnDisconnect(ReceiverId id,
                                     uint32_t custom_reason_code,
                                     const std::string& description) {
   auto it = entries_.find(id);
-  DCHECK(it != entries_.end());
+  CHECK(it != entries_.end(), base::NotFatalUntil::M130);
 
   // We keep the Entry alive throughout error dispatch.
   std::unique_ptr<Entry> entry = std::move(it->second);

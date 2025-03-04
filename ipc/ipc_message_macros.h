@@ -198,6 +198,7 @@
 
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/export_template.h"
 #include "base/hash/md5_constexpr.h"
 #include "base/notreached.h"
@@ -350,22 +351,23 @@
       ipc_message__.set_dispatch_error();                        \
   } break;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 #define IPC_MESSAGE_FORWARD_PARAM(msg_class, obj, member_func)         \
-  case msg_class::ID: {                                          \
-    IPC_TASK_ANNOTATOR_CONTEXT(msg_class)                        \
+  case msg_class::ID: {                                                \
+    IPC_TASK_ANNOTATOR_CONTEXT(msg_class)                              \
     if (!msg_class::Dispatch_Param(&ipc_message__, obj, this, param__, \
-                             &member_func))                      \
-      ipc_message__.set_dispatch_error();                        \
+                                   &member_func))                      \
+      ipc_message__.set_dispatch_error();                              \
   } break;
 #endif
 
 #define IPC_MESSAGE_HANDLER(msg_class, member_func) \
   IPC_MESSAGE_FORWARD(msg_class, this, _IpcMessageHandlerClass::member_func)
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 #define IPC_MESSAGE_HANDLER_PARAM(msg_class, member_func) \
-  IPC_MESSAGE_FORWARD_PARAM(msg_class, this, _IpcMessageHandlerClass::member_func)
+  IPC_MESSAGE_FORWARD_PARAM(msg_class, this,              \
+                            _IpcMessageHandlerClass::member_func)
 #endif
 
 #define IPC_MESSAGE_FORWARD_DELAY_REPLY(msg_class, obj, member_func) \
@@ -410,11 +412,6 @@
         code;                                                                  \
       }                                                                        \
       break;
-
-#define IPC_MESSAGE_UNHANDLED_ERROR() \
-  IPC_MESSAGE_UNHANDLED(NOTREACHED() << \
-                              "Invalid message with type = " << \
-                              ipc_message__.type())
 
 #define IPC_END_MESSAGE_MAP() \
   } \
@@ -540,6 +537,8 @@
   IPC_SYNC_MESSAGE_ROUTED(msg, (a, b, c), (d, e, f))
 #define IPC_SYNC_MESSAGE_ROUTED3_4(msg, a, b, c, d, e, f, g) \
   IPC_SYNC_MESSAGE_ROUTED(msg, (a, b, c), (d, e, f, g))
+#define IPC_SYNC_MESSAGE_ROUTED3_5(msg, a, b, c, d, e, f, g, h) \
+  IPC_SYNC_MESSAGE_ROUTED(msg, (a, b, c), (d, e, f, g, h))
 #define IPC_SYNC_MESSAGE_ROUTED4_0(msg, a, b, c, d) \
   IPC_SYNC_MESSAGE_ROUTED(msg, (a, b, c, d), ())
 #define IPC_SYNC_MESSAGE_ROUTED4_1(msg, a, b, c, d, e) \

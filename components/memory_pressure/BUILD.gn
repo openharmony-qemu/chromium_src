@@ -12,8 +12,11 @@ source_set("memory_pressure") {
     "memory_pressure_voter.h",
     "multi_source_memory_pressure_monitor.cc",
     "multi_source_memory_pressure_monitor.h",
+    "reclaim_target.h",
     "system_memory_pressure_evaluator.cc",
     "system_memory_pressure_evaluator.h",
+    "unnecessary_discard_monitor.cc",
+    "unnecessary_discard_monitor.h",
   ]
 
   deps = [
@@ -46,10 +49,10 @@ source_set("memory_pressure") {
     ]
   }
 
-  if (is_linux || is_chromeos_lacros) {
+  if (is_ohos) {
     sources += [
-      "system_memory_pressure_evaluator_linux.cc",
-      "system_memory_pressure_evaluator_linux.h",
+      "system_memory_pressure_evaluator_ohos.cc",
+      "system_memory_pressure_evaluator_ohos.h",
     ]
   }
 }
@@ -61,6 +64,7 @@ source_set("unit_tests") {
     "memory_pressure_level_reporter_unittest.cc",
     "memory_pressure_voter_unittest.cc",
     "multi_source_memory_pressure_monitor_unittest.cc",
+    "unnecessary_discard_monitor_unittest.cc",
   ]
 
   deps = [
@@ -82,10 +86,6 @@ source_set("unit_tests") {
   if (is_fuchsia) {
     deps += [ "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.memorypressure:fuchsia.memorypressure_hlcpp" ]
     sources += [ "system_memory_pressure_evaluator_fuchsia_unittest.cc" ]
-  }
-
-  if (is_linux || is_chromeos_lacros) {
-    sources += [ "system_memory_pressure_evaluator_linux_unittest.cc" ]
   }
 }
 

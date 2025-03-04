@@ -8,9 +8,11 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <string_view>
 
 #include "base/check_op.h"
 #include "base/command_line.h"
+#include "base/containers/fixed_flat_set.h"
 #include "base/files/file_path.h"
 #include "base/i18n/base_i18n_switches.h"
 #include "base/logging.h"
@@ -28,6 +30,7 @@
 #include "base/debug/crash_logging.h"
 #include "base/ios/ios_util.h"
 #endif
+#include "arkweb/build/features/features.h"
 
 namespace {
 
@@ -93,8 +96,7 @@ base::i18n::TextDirection GetCharacterDirection(UChar32 character) {
 
 }  // namespace
 
-namespace base {
-namespace i18n {
+namespace base::i18n {
 
 // Represents the locale-specific ICU text direction.
 static TextDirection g_icu_text_direction = UNKNOWN_DIRECTION;
@@ -202,22 +204,21 @@ TextDirection GetTextDirectionForLocaleInStartUp(const char* locale_name) {
   if (forced_direction != UNKNOWN_DIRECTION)
     return forced_direction;
 
-  // This list needs to be updated in alphabetical order if we add more RTL
-  // locales.
-#ifdef OHOS_I18N
-  static const char kRTLLanguageCodes[][3] = {"ar", "fa", "he",
-                                              "iw", "ug", "ur"};
+  CHECK(locale_name && locale_name[0]);
+
+#if BUILDFLAG(ARKWEB_I18N)
+  static constexpr auto kRtlLanguageCodes =
+      base::MakeFixedFlatSet<std::string_view>(
+          {"ar", "fa", "he", "iw", "ug", "ur"});
 #else
-  static const char kRTLLanguageCodes[][3] = {"ar", "fa", "he", "iw", "ur"};
+  static constexpr auto kRtlLanguageCodes =
+      base::MakeFixedFlatSet<std::string_view>({"ar", "fa", "he", "iw", "ur"});
 #endif
-  std::vector<StringPiece> locale_split =
+  std::vector<std::string_view> locale_split =
       SplitStringPiece(locale_name, "-_", KEEP_WHITESPACE, SPLIT_WANT_ALL);
-  const StringPiece& language_code = locale_split[0];
-  if (std::binary_search(kRTLLanguageCodes,
-                         kRTLLanguageCodes + std::size(kRTLLanguageCodes),
-                         language_code))
-    return RIGHT_TO_LEFT;
-  return LEFT_TO_RIGHT;
+  std::string_view language_code = locale_split[0];
+  return kRtlLanguageCodes.contains(language_code) ? RIGHT_TO_LEFT
+                                                   : LEFT_TO_RIGHT;
 }
 
 TextDirection GetTextDirectionForLocale(const char* locale_name) {
@@ -240,7 +241,8 @@ TextDirection GetFirstStrongCharacterDirection(const std::u16string& text) {
   while (position < length) {
     UChar32 character;
     size_t next_position = position;
-    U16_NEXT(string, next_position, length, character);
+    // SAFETY: `next_position` is guaranteed to be smaller than `length`.
+    UNSAFE_BUFFERS(U16_NEXT(string, next_position, length, character));
     TextDirection direction = GetCharacterDirection(character);
     if (direction != UNKNOWN_DIRECTION)
       return direction;
@@ -255,7 +257,9 @@ TextDirection GetLastStrongCharacterDirection(const std::u16string& text) {
   while (position > 0) {
     UChar32 character;
     size_t prev_position = position;
-    U16_PREV(string, 0, prev_position, character);
+    // SAFETY: `prev_position` is guaranteed to be >0 and within the bounds of
+    // `string`.
+    UNSAFE_BUFFERS(U16_PREV(string, 0, prev_position, character));
     TextDirection direction = GetCharacterDirection(character);
     if (direction != UNKNOWN_DIRECTION)
       return direction;
@@ -273,7 +277,8 @@ TextDirection GetStringDirection(const std::u16string& text) {
   while (position < length) {
     UChar32 character;
     size_t next_position = position;
-    U16_NEXT(string, next_position, length, character);
+    // SAFETY: `next_position` is guaranteed to be smaller than `length`.
+    UNSAFE_BUFFERS(U16_NEXT(string, next_position, length, character));
     TextDirection direction = GetCharacterDirection(character);
     if (direction != UNKNOWN_DIRECTION) {
       if (result != UNKNOWN_DIRECTION && result != direction)
@@ -421,7 +426,8 @@ bool StringContainsStrongRTLChars(const std::u16string& text) {
   while (position < length) {
     UChar32 character;
     size_t next_position = position;
-    U16_NEXT(string, next_position, length, character);
+    // SAFETY: `next_position` is guaranteed to be smaller than `length`.
+    UNSAFE_BUFFERS(U16_NEXT(string, next_position, length, character));
 
     // Now that we have the character, we use ICU in order to query for the
     // appropriate Unicode BiDi character type.
@@ -504,5 +510,4 @@ std::u16string StripWrappingBidiControlCharacters(const std::u16string& text) {
   return text.substr(begin_index, end_index - begin_index + 1);
 }
 
-}  // namespace i18n
-}  // namespace base
+}  // namespace base::i18n

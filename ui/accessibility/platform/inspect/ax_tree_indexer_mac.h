@@ -10,14 +10,13 @@
 
 namespace ui {
 
-//
 // NSAccessibilityElement or AXUIElement accessible node comparator.
 struct AXNodeComparator {
   constexpr bool operator()(const gfx::NativeViewAccessible& lhs,
                             const gfx::NativeViewAccessible& rhs) const {
     if (AXElementWrapper::IsAXUIElement(lhs)) {
       DCHECK(AXElementWrapper::IsAXUIElement(rhs));
-      return CFHash(lhs) < CFHash(rhs);
+      return CFHash((__bridge CFTypeRef)lhs) < CFHash((__bridge CFTypeRef)rhs);
     }
     DCHECK(AXElementWrapper::IsNSAccessibilityElement(lhs));
     DCHECK(AXElementWrapper::IsNSAccessibilityElement(rhs));
@@ -25,13 +24,24 @@ struct AXNodeComparator {
   }
 };
 
+using AXTreeIndexerMacBase = AXTreeIndexer<const gfx::NativeViewAccessible,
+                                           AXElementWrapper::DOMIdOf,
+                                           NSArray*,
+                                           AXElementWrapper::ChildrenOf,
+                                           AXNodeComparator>;
+
 //
 // NSAccessibility tree indexer.
-using AXTreeIndexerMac = AXTreeIndexer<const gfx::NativeViewAccessible,
-                                       AXElementWrapper::DOMIdOf,
-                                       NSArray*,
-                                       AXElementWrapper::ChildrenOf,
-                                       AXNodeComparator>;
+class AXTreeIndexerMac : public AXTreeIndexerMacBase {
+ public:
+  explicit AXTreeIndexerMac(const gfx::NativeViewAccessible node)
+      : AXTreeIndexer(node), type_(AXElementWrapper::TypeOf(node)) {}
+
+  std::string IndexBy(const gfx::NativeViewAccessible node) const override;
+
+ private:
+  AXElementWrapper::AXType type_;
+};
 
 }  // namespace ui
 

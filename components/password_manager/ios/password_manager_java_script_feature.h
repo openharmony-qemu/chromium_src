@@ -57,7 +57,7 @@ class PasswordManagerJavaScriptFeature : public web::JavaScriptFeature {
                         BOOL fill_username,
                         const std::string& username,
                         const std::string& password,
-                        base::OnceCallback<void(BOOL)> callback);
+                        base::OnceCallback<void(const base::Value*)> callback);
 
   // Fills new password field for (optional) |new_password_identifier| and for
   // (optional) confirm password field |confirm_password_identifier| in the form
@@ -82,7 +82,7 @@ class PasswordManagerJavaScriptFeature : public web::JavaScriptFeature {
       const PasswordManagerJavaScriptFeature&) = delete;
 
   // web::JavaScriptFeature
-  absl::optional<std::string> GetScriptMessageHandlerName() const override;
+  std::optional<std::string> GetScriptMessageHandlerName() const override;
   void ScriptMessageReceived(web::WebState* web_state,
                              const web::ScriptMessage& message) override;
 
@@ -92,7 +92,7 @@ class PasswordManagerJavaScriptFeature : public web::JavaScriptFeature {
                         std::unique_ptr<base::Value> form_value,
                         const std::string& username,
                         const std::string& password,
-                        base::OnceCallback<void(BOOL)> callback);
+                        base::OnceCallback<void(base::Value*)> callback);
 };
 
 }  // namespace password_manager

@@ -6,6 +6,7 @@
 #define CC_PAINT_PAINT_SHADER_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "base/gtest_prod_util.h"
@@ -15,7 +16,6 @@
 #include "cc/paint/paint_flags.h"
 #include "cc/paint/paint_image.h"
 #include "cc/paint/paint_record.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkScalar.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
@@ -56,7 +56,7 @@ class CC_PAINT_EXPORT PaintShader : public SkRefCnt {
 
   static sk_sp<PaintShader> MakeColor(SkColor4f color);
 
-  // TODO(crbug.com/1155544) SkMatrix is deprecated in favor of SkM44.
+  // TODO(crbug.com/40735471) SkMatrix is deprecated in favor of SkM44.
   static sk_sp<PaintShader> MakeLinearGradient(
       const SkPoint* points,
       const SkColor4f colors[],
@@ -139,7 +139,11 @@ class CC_PAINT_EXPORT PaintShader : public SkRefCnt {
     return image_analysis_state_;
   }
 
-  bool has_discardable_images() const;
+  // If `content_color_usage` is not null, the function should update
+  // `*content_color_usage` to be
+  // max(*content_color_usage, max_content_color_usage_of_the_flags).
+  bool HasDiscardableImages(
+      gfx::ContentColorUsage* content_color_usage = nullptr) const;
 
   SkMatrix GetLocalMatrix() const {
     return local_matrix_ ? *local_matrix_ : SkMatrix::I();
@@ -256,7 +260,7 @@ class CC_PAINT_EXPORT PaintShader : public SkRefCnt {
   SkColor4f fallback_color_ = SkColors::kTransparent;
   ScalingBehavior scaling_behavior_ = ScalingBehavior::kRasterAtScale;
 
-  absl::optional<SkMatrix> local_matrix_;
+  std::optional<SkMatrix> local_matrix_;
   SkPoint center_ = SkPoint::Make(0, 0);
   SkRect tile_ = SkRect::MakeEmpty();
 
@@ -267,12 +271,12 @@ class CC_PAINT_EXPORT PaintShader : public SkRefCnt {
   SkScalar end_degrees_ = 0;
 
   PaintImage image_;
-  absl::optional<PaintRecord> record_;
+  std::optional<PaintRecord> record_;
   RecordShaderId id_ = kInvalidRecordShaderId;
 
   // For decoded PaintRecord shaders, specifies the scale at which the record
   // will be rasterized.
-  absl::optional<gfx::SizeF> tile_scale_;
+  std::optional<gfx::SizeF> tile_scale_;
 
   std::vector<SkColor4f> colors_;
   std::vector<SkScalar> positions_;

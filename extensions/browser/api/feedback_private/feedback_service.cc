@@ -9,8 +9,10 @@
 #include <utility>
 
 #include "base/barrier_closure.h"
+#include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback_forward.h"
 #include "base/logging.h"
 #include "base/memory/ref_counted.h"
 #include "base/metrics/histogram_functions.h"
@@ -31,10 +33,14 @@
 #include "extensions/browser/blob_reader.h"
 #include "net/base/network_change_notifier.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 #include "ash/public/cpp/assistant/controller/assistant_controller.h"
+#include "chromeos/ash/components/cryptohome/cryptohome_parameters.h"
 #include "chromeos/ash/services/assistant/public/cpp/assistant_service.h"
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#include "components/account_id/account_id.h"
+#include "components/user_manager/user_manager.h"
+#include "third_party/cros_system_api/dbus/debugd/dbus-constants.h"
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 namespace extensions {
 
@@ -44,45 +50,60 @@ using system_logs::SystemLogsResponse;
 
 namespace {
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
+// The paths are relative to "/var/log/" by default, which can be overwritten
+// for testing purpose.
 constexpr base::FilePath::CharType kBluetoothLogsFilePath[] =
-    FILE_PATH_LITERAL("/var/log/bluetooth/log.bz2");
+    FILE_PATH_LITERAL("bluetooth/log.bz2");
 constexpr base::FilePath::CharType kBluetoothLogsFilePathOld[] =
-    FILE_PATH_LITERAL("/var/log/bluetooth/log.bz2.old");
+    FILE_PATH_LITERAL("bluetooth/log.bz2.old");
 constexpr base::FilePath::CharType kBluetoothQualityReportFilePath[] =
-    FILE_PATH_LITERAL("/var/log/bluetooth/bluetooth_quality_report");
+    FILE_PATH_LITERAL("bluetooth/bluetooth_quality_report");
 
 constexpr char kBluetoothLogsAttachmentName[] = "bluetooth_logs.bz2";
 constexpr char kBluetoothLogsAttachmentNameOld[] = "bluetooth_logs.old.bz2";
 constexpr char kBluetoothQualityReportAttachmentName[] =
     "bluetooth_quality_report";
 
-constexpr char kLacrosHistogramsFilename[] = "lacros_histograms.zip";
+void AddAttachment(scoped_refptr<feedback::FeedbackData> feedback_data,
+                   const base::FilePath& root_path,
+                   const std::string& file_path,
+                   const std::string& attachment_name) {
+  std::string temp_log_content;
+  if (base::ReadFileToString(root_path.Append(file_path), &temp_log_content)) {
+    feedback_data->AddFile(attachment_name, std::move(temp_log_content));
+  } else {
+    LOG(WARNING) << "failed to add attachment " << attachment_name
+                 << ": could not read file: " << file_path << " in "
+                 << root_path.value();
+  }
+}
 
-void LoadBluetoothLogs(scoped_refptr<feedback::FeedbackData> feedback_data) {
-  std::string bluetooth_logs;
-  if (base::ReadFileToString(base::FilePath(kBluetoothLogsFilePath),
-                             &bluetooth_logs)) {
-    feedback_data->AddFile(kBluetoothLogsAttachmentName,
-                           std::move(bluetooth_logs));
-  }
-  if (base::ReadFileToString(base::FilePath(kBluetoothLogsFilePathOld),
-                             &bluetooth_logs)) {
-    feedback_data->AddFile(kBluetoothLogsAttachmentNameOld,
-                           std::move(bluetooth_logs));
-  }
-  if (base::ReadFileToString(base::FilePath(kBluetoothQualityReportFilePath),
-                             &bluetooth_logs)) {
-    feedback_data->AddFile(kBluetoothQualityReportAttachmentName,
-                           std::move(bluetooth_logs));
+void AttachBluetoothLogs(scoped_refptr<feedback::FeedbackData> feedback_data,
+                         const base::FilePath& root_path) {
+  AddAttachment(feedback_data, root_path, kBluetoothLogsFilePath,
+                kBluetoothLogsAttachmentName);
+  AddAttachment(feedback_data, root_path, kBluetoothLogsFilePathOld,
+                kBluetoothLogsAttachmentNameOld);
+  AddAttachment(feedback_data, root_path, kBluetoothQualityReportFilePath,
+                kBluetoothQualityReportAttachmentName);
+}
+
+// A new case must be added for every new log type. Otherwise the code should
+// not compile.
+std::string_view GetAttachmentName(debugd::FeedbackBinaryLogType log_type) {
+  switch (log_type) {
+    case debugd::WIFI_FIRMWARE_DUMP:
+      return "wifi_firmware_dumps.tar.zst";
+    case debugd::BLUETOOTH_FIRMWARE_DUMP:
+      return "bluetooth_firmware_dumps.tar.zst";
   }
 }
 #endif
 
-constexpr char kLacrosLogEntryPrefix[] = "Lacros ";
-
 void RedactFeedbackData(scoped_refptr<feedback::FeedbackData> feedback_data) {
   redaction::RedactionTool redactor(nullptr);
+  redactor.EnableCreditCardRedaction(true);
   feedback_data->RedactDescription(redactor);
 }
 
@@ -109,6 +130,13 @@ void FeedbackService::RedactThenSendFeedback(
       base::BindOnce(&FeedbackService::SendFeedback, this, params,
                      feedback_data, std::move(callback)));
 }
+
+#if BUILDFLAG(IS_CHROMEOS)
+void FeedbackService::SetLogFilesRootPathForTesting(
+    const base::FilePath& log_file_root) {
+  log_file_root_ = log_file_root;
+}
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 // After the attached file and screenshot if available are fetched, the callback
 // will be invoked. Other further processing will be done in background. The
@@ -139,28 +167,28 @@ void FeedbackService::FetchAttachedFileAndScreenshot(
   if (must_attach_file) {
     auto populate_attached_file = base::BindOnce(
         [](scoped_refptr<feedback::FeedbackData> feedback_data,
-           std::unique_ptr<std::string> data, int64_t length) {
+           std::string data, int64_t /*length*/) {
           feedback_data->set_attached_file_uuid(std::string());
-          if (data)
-            feedback_data->AttachAndCompressFileData(std::move(*data));
+          feedback_data->AttachAndCompressFileData(std::move(data));
         },
         feedback_data);
 
-    BlobReader::Read(browser_context_, feedback_data->attached_file_uuid(),
-                     std::move(populate_attached_file).Then(barrier_closure));
+    BlobReader::Read(
+        browser_context_->GetBlobRemote(feedback_data->attached_file_uuid()),
+        std::move(populate_attached_file).Then(barrier_closure));
   }
 
   if (must_attach_screenshot) {
     auto populate_screenshot = base::BindOnce(
         [](scoped_refptr<feedback::FeedbackData> feedback_data,
-           std::unique_ptr<std::string> data, int64_t length) {
+           std::string data, int64_t /*length*/) {
           feedback_data->set_screenshot_uuid(std::string());
-          if (data)
-            feedback_data->set_image(std::move(*data));
+          feedback_data->set_image(std::move(data));
         },
         feedback_data);
-    BlobReader::Read(browser_context_, feedback_data->screenshot_uuid(),
-                     std::move(populate_screenshot).Then(barrier_closure));
+    BlobReader::Read(
+        browser_context_->GetBlobRemote(feedback_data->screenshot_uuid()),
+        std::move(populate_screenshot).Then(barrier_closure));
   }
 }
 
@@ -173,7 +201,7 @@ void FeedbackService::OnAttachedFileAndScreenshotFetched(
     // will be loaded in the background without blocking the client.
     FetchSystemInformation(params, feedback_data);
   } else {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     if (feedback_data->sys_info()->size() > 0) {
       // The user has chosen to send system logs which has been loaded from the
       // client side. On ash, extra logs need to be fetched.
@@ -184,7 +212,7 @@ void FeedbackService::OnAttachedFileAndScreenshotFetched(
     }
 #else
     OnAllLogsFetched(params, feedback_data);
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
   }
 
   base::UmaHistogramMediumTimes(
@@ -227,14 +255,14 @@ void FeedbackService::OnSystemInformationFetched(
         feedback_data->AddLog(std::move(itr.first), std::move(itr.second));
     }
   }
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   FetchExtraLogs(params, feedback_data);
 #else
   OnAllLogsFetched(params, feedback_data);
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 }
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 void FeedbackService::FetchExtraLogs(
     const FeedbackParams& params,
     scoped_refptr<feedback::FeedbackData> feedback_data) {
@@ -246,30 +274,54 @@ void FeedbackService::FetchExtraLogs(
 void FeedbackService::OnExtraLogsFetched(
     const FeedbackParams& params,
     scoped_refptr<feedback::FeedbackData> feedback_data) {
-  delegate_->GetLacrosHistograms(
-      base::BindOnce(&FeedbackService::OnLacrosHistogramsFetched, this, params,
-                     feedback_data));
-}
+  auto barrier_closure =
+      base::BarrierClosure((params.send_bluetooth_logs ? 2 : 0) +
+                               (params.send_wifi_debug_logs ? 1 : 0),
+                           base::BindOnce(&FeedbackService::OnAllLogsFetched,
+                                          this, params, feedback_data));
+  const user_manager::User* user =
+      user_manager::UserManager::Get()->GetActiveUser();
+  const auto account_identifier =
+      cryptohome::CreateAccountIdentifierFromAccountId(
+          user ? user->GetAccountId() : EmptyAccountId());
 
-void FeedbackService::OnLacrosHistogramsFetched(
-    const FeedbackParams& params,
-    scoped_refptr<feedback::FeedbackData> feedback_data,
-    const std::string& compressed_histograms) {
-  if (!compressed_histograms.empty()) {
-    feedback_data->AddFile(kLacrosHistogramsFilename,
-                           std::move(compressed_histograms));
-  }
+  // If bluetooth logs are requested, invoke AttachBluetoothLogs to add
+  // them in a separate thread to avoid blocking the UI thread.
   if (params.send_bluetooth_logs) {
     base::ThreadPool::PostTaskAndReply(
         FROM_HERE, {base::MayBlock()},
-        base::BindOnce(&LoadBluetoothLogs, feedback_data),
-        base::BindOnce(&FeedbackService::OnAllLogsFetched, this, params,
-                       feedback_data));
-  } else {
-    OnAllLogsFetched(params, feedback_data);
+        base::BindOnce(&AttachBluetoothLogs, feedback_data, log_file_root_),
+        barrier_closure);
+
+    binary_log_files_reader_.GetFeedbackBinaryLogs(
+        account_identifier,
+        debugd::FeedbackBinaryLogType::BLUETOOTH_FIRMWARE_DUMP,
+        base::BindOnce(&FeedbackService::OnBinaryLogFilesFetched, this, params,
+                       feedback_data, barrier_closure));
+  }
+
+  if (params.send_wifi_debug_logs) {
+    binary_log_files_reader_.GetFeedbackBinaryLogs(
+        account_identifier, debugd::FeedbackBinaryLogType::WIFI_FIRMWARE_DUMP,
+        base::BindOnce(&FeedbackService::OnBinaryLogFilesFetched, this, params,
+                       feedback_data, barrier_closure));
   }
 }
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+
+void FeedbackService::OnBinaryLogFilesFetched(
+    const FeedbackParams& params,
+    scoped_refptr<feedback::FeedbackData> feedback_data,
+    base::RepeatingClosure barrier_closure_callback,
+    feedback::BinaryLogFilesReader::BinaryLogsResponse binary_logs_response) {
+  if (binary_logs_response) {
+    for (auto& item : *binary_logs_response) {
+      feedback_data->AddFile(GetAttachmentName(item.first).data(),
+                             std::move(item.second));
+    }
+  }
+  std::move(barrier_closure_callback).Run();
+}
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 void FeedbackService::OnAllLogsFetched(
     const FeedbackParams& params,
@@ -277,10 +329,6 @@ void FeedbackService::OnAllLogsFetched(
   if (!params.send_tab_titles) {
     feedback_data->RemoveLog(
         feedback::FeedbackReport::kMemUsageWithTabTitlesKey);
-    // On Lacros, the key has a prefix "Lacros ".
-    feedback_data->RemoveLog(
-        base::StrCat({kLacrosLogEntryPrefix,
-                      feedback::FeedbackReport::kMemUsageWithTabTitlesKey}));
   }
   feedback_data->CompressSystemInfo();
 
@@ -297,7 +345,7 @@ void FeedbackService::OnAllLogsFetched(
   DCHECK(feedback_data->attached_file_uuid().empty());
   DCHECK(feedback_data->screenshot_uuid().empty());
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // Send feedback to Assistant server if triggered from Google Assistant.
   if (feedback_data->from_assistant()) {
     ash::AssistantController::Get()->SendAssistantFeedback(

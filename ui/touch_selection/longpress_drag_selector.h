@@ -25,8 +25,8 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelectorClient
   virtual gfx::PointF GetSelectionEnd() const = 0;
 };
 
-// Supports text selection via touch dragging after a longpress-initiated
-// selection.
+// Supports text selection via touch dragging after a longpress- or
+// doublepress-initiated selection.
 class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
     : public TouchSelectionDraggable {
  public:
@@ -37,9 +37,17 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
   bool WillHandleTouchEvent(const MotionEvent& event) override;
   bool IsActive() const override;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool IsDragging() const override { return state_ == DRAGGING; }
+#endif
+
   // Called just prior to a longpress event being handled.
   void OnLongPressEvent(base::TimeTicks event_time,
                         const gfx::PointF& position);
+
+  // Called just prior to a double press event being handled.
+  void OnDoublePressEvent(base::TimeTicks event_time,
+                          const gfx::PointF& position);
 
   // Called when a scroll is going to happen to cancel longpress-drag gesture.
   void OnScrollBeginEvent();
@@ -51,7 +59,7 @@ class UI_TOUCH_SELECTION_EXPORT LongPressDragSelector
  private:
   enum SelectionState {
     INACTIVE,
-    LONGPRESS_PENDING,
+    INITIATING_GESTURE_PENDING,
     SELECTION_PENDING,
     DRAG_PENDING,
     DRAGGING

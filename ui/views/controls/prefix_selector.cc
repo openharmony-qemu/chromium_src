@@ -10,7 +10,6 @@
 #include "base/i18n/case_conversion.h"
 #include "base/time/default_tick_clock.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/ime/input_method.h"
 #include "ui/base/ime/text_input_type.h"
 #include "ui/gfx/range/range.h"
@@ -39,6 +38,10 @@ bool PrefixSelector::ShouldContinueSelection() const {
   const base::TimeTicks now(tick_clock_->NowTicks());
   constexpr auto kTimeBeforeClearing = base::Seconds(1);
   return (now - time_of_last_key_) < kTimeBeforeClearing;
+}
+
+base::WeakPtr<ui::TextInputClient> PrefixSelector::AsWeakPtr() {
+  return weak_ptr_factory_.GetWeakPtr();
 }
 
 void PrefixSelector::SetCompositionText(
@@ -92,6 +95,21 @@ gfx::Rect PrefixSelector::GetSelectionBoundingBox() const {
   NOTIMPLEMENTED_LOG_ONCE();
   return gfx::Rect();
 }
+
+#if BUILDFLAG(IS_WIN)
+std::optional<gfx::Rect> PrefixSelector::GetProximateCharacterBounds(
+    const gfx::Range& range) const {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return std::nullopt;
+}
+
+std::optional<size_t> PrefixSelector::GetProximateCharacterIndexFromPoint(
+    const gfx::Point& point,
+    ui::IndexFromPointFlags flags) const {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return std::nullopt;
+}
+#endif  // BUILDFLAG(IS_WIN)
 
 bool PrefixSelector::GetCompositionCharacterBounds(size_t index,
                                                    gfx::Rect* rect) const {
@@ -178,7 +196,7 @@ bool PrefixSelector::ShouldDoLearning() {
 bool PrefixSelector::SetCompositionFromExistingText(
     const gfx::Range& range,
     const std::vector<ui::ImeTextSpan>& ui_ime_text_spans) {
-  // TODO(https://crbug.com/952757): Implement this method.
+  // TODO(crbug.com/40623107): Implement this method.
   NOTIMPLEMENTED_LOG_ONCE();
   return false;
 }
@@ -196,7 +214,7 @@ gfx::Rect PrefixSelector::GetAutocorrectCharacterBounds() const {
 }
 
 bool PrefixSelector::SetAutocorrectRange(const gfx::Range& range) {
-  // TODO(crbug.com/1091088): Implement SetAutocorrectRange.
+  // TODO(crbug.com/40134032): Implement SetAutocorrectRange.
   NOTIMPLEMENTED_LOG_ONCE();
   return false;
 }
@@ -211,8 +229,8 @@ void PrefixSelector::SetActiveCompositionForAccessibility(
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
 void PrefixSelector::GetActiveTextInputControlLayoutBounds(
-    absl::optional<gfx::Rect>* control_bounds,
-    absl::optional<gfx::Rect>* selection_bounds) {}
+    std::optional<gfx::Rect>* control_bounds,
+    std::optional<gfx::Rect>* selection_bounds) {}
 #endif
 
 void PrefixSelector::OnTextInput(const std::u16string& text) {

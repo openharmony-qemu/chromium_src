@@ -4,6 +4,7 @@
 
 #import "ios/chrome/browser/ui/omnibox/omnibox_app_interface.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/files/file_util.h"
 #import "base/no_destructor.h"
 #import "base/path_service.h"
@@ -11,21 +12,22 @@
 #import "base/strings/sys_string_conversions.h"
 #import "components/google/core/common/google_util.h"
 #import "components/history/core/browser/top_sites.h"
+#import "components/omnibox/browser/shortcuts_backend.h"
 #import "components/search_engines/template_url_service.h"
 #import "components/variations/variations_ids_provider.h"
-#import "ios/chrome/browser/autocomplete/remote_suggestions_service_factory.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/history/top_sites_factory.h"
-#import "ios/chrome/browser/search_engines/template_url_service_factory.h"
+#import "ios/chrome/browser/autocomplete/model/remote_suggestions_service_factory.h"
+#import "ios/chrome/browser/autocomplete/model/shortcuts_backend_factory.h"
+#import "ios/chrome/browser/history/model/top_sites_factory.h"
+#import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/ui/omnibox/omnibox_text_field_ios.h"
 #import "ios/chrome/browser/ui/omnibox/test_fake_suggestions_service.h"
 #import "ios/chrome/test/app/chrome_test_util.h"
 #import "ios/chrome/test/app/tab_test_util.h"
+#import "ios/testing/earl_grey/earl_grey_app.h"
+#import "ios/testing/nserror_util.h"
 #import "ios/web/public/navigation/navigation_manager.h"
 #import "ios/web/public/web_state.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -49,7 +51,7 @@ bool GoogleToLocalhostURLRewriter(GURL* url, web::BrowserState* browser_state) {
 const base::FilePath& GetTestDataDir() {
   static base::NoDestructor<base::FilePath> dir([]() {
     base::FilePath dir;
-    base::PathService::Get(base::DIR_SOURCE_ROOT, &dir);
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &dir);
     return dir.AppendASCII("ios")
         .AppendASCII("chrome")
         .AppendASCII("test")
@@ -78,8 +80,8 @@ const base::FilePath& GetTestDataDir() {
 
 + (void)blockURLFromTopSites:(NSString*)URL {
   scoped_refptr<history::TopSites> top_sites =
-      ios::TopSitesFactory::GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState());
+      ios::TopSitesFactory::GetForProfile(
+          chrome_test_util::GetOriginalProfile());
   if (top_sites) {
     top_sites->AddBlockedUrl(GURL(base::SysNSStringToUTF8(URL)));
   }
@@ -87,12 +89,12 @@ const base::FilePath& GetTestDataDir() {
 
 + (void)setUpFakeSuggestionsService:(NSString*)filename {
   RemoteSuggestionsService* remoteSuggestionsService =
-      RemoteSuggestionsServiceFactory::GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState(), YES);
+      RemoteSuggestionsServiceFactory::GetForProfile(
+          chrome_test_util::GetOriginalProfile(), YES);
 
   TemplateURLService* templateURLService =
-      ios::TemplateURLServiceFactory::GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState());
+      ios::TemplateURLServiceFactory::GetForProfile(
+          chrome_test_util::GetOriginalProfile());
 
   base::FilePath filePath =
       GetTestDataDir().AppendASCII(base::SysNSStringToUTF8(filename));
@@ -102,14 +104,70 @@ const base::FilePath& GetTestDataDir() {
 
 + (void)tearDownFakeSuggestionsService {
   RemoteSuggestionsService* remoteSuggestionsService =
-      RemoteSuggestionsServiceFactory::GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState(), YES);
+      RemoteSuggestionsServiceFactory::GetForProfile(
+          chrome_test_util::GetOriginalProfile(), YES);
 
   network::mojom::URLLoaderFactory* urlLoaderFactory =
-      chrome_test_util::GetOriginalBrowserState()->GetURLLoaderFactory();
+      chrome_test_util::GetOriginalProfile()->GetURLLoaderFactory();
 
   TestFakeSuggestionsService::GetInstance()->TearDown(remoteSuggestionsService,
                                                       urlLoaderFactory);
+}
+
++ (BOOL)shortcutsBackendInitialized {
+  scoped_refptr<ShortcutsBackend> shortcuts_backend =
+      ios::ShortcutsBackendFactory::GetForProfileIfExists(
+          chrome_test_util::GetOriginalProfile());
+  if (shortcuts_backend) {
+    return shortcuts_backend->initialized();
+  }
+  return NO;
+}
+
++ (NSInteger)numberOfShortcutsInDatabase {
+  scoped_refptr<ShortcutsBackend> shortcuts_backend =
+      ios::ShortcutsBackendFactory::GetForProfileIfExists(
+          chrome_test_util::GetOriginalProfile());
+  if (shortcuts_backend && shortcuts_backend->initialized()) {
+    return static_cast<NSInteger>(shortcuts_backend->shortcuts_map().size());
+  }
+  return 0;
+}
+
++ (BOOL)isElementURL:(id)element {
+  NSString* string = nil;
+  if ([element isKindOfClass:[NSString class]]) {
+    string = reinterpret_cast<NSString*>(element);
+  } else if ([element respondsToSelector:@selector(text)]) {
+    string = base::apple::ObjCCast<NSString>(
+        [element performSelector:@selector(text)]);
+  }
+  if (!string) {
+    return NO;
+  }
+
+  std::string UTFString = base::SysNSStringToUTF8(string);
+  return GURL(UTFString).is_valid() || GURL("http://" + UTFString).is_valid();
+}
+
++ (id<GREYAssertion>)displaysInlineAutocompleteText:
+    (BOOL)shouldHaveAutocompleteText {
+  NSString* name =
+      [NSString stringWithFormat:@"Omnibox hasAutocompleteText == %d",
+                                 shouldHaveAutocompleteText];
+
+  return [[GREYAssertionBlock alloc]
+                 initWithName:name
+      assertionBlockWithError:^BOOL(id element, __strong NSError** errorOrNil) {
+        if (![element isKindOfClass:OmniboxTextFieldIOS.class]) {
+          *errorOrNil = testing::NSErrorWithLocalizedDescription(
+              @"Element should be of class OmniboxTextFieldIOS.");
+          return NO;
+        }
+        OmniboxTextFieldIOS* textField =
+            base::apple::ObjCCastStrict<OmniboxTextFieldIOS>(element);
+        return textField.hasAutocompleteText == shouldHaveAutocompleteText;
+      }];
 }
 
 @end

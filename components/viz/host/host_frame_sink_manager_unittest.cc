@@ -2,13 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if defined(OHOS_UNITTESTS)
-#define private public
-#endif // OHOS_UNITTESTS
 #include "components/viz/host/host_frame_sink_manager.h"
-#if defined(OHOS_UNITTESTS)
-#undef private
-#endif // OHOS_UNITTESTS
 
 #include <memory>
 #include <utility>
@@ -78,11 +72,12 @@ class MockFrameSinkManagerImpl : public TestFrameSinkManagerImpl {
   MOCK_METHOD2(SetFrameSinkDebugLabel,
                void(const FrameSinkId& frame_sink_id,
                     const std::string& debug_label));
-  MOCK_METHOD4(CreateCompositorFrameSink,
+  MOCK_METHOD5(CreateCompositorFrameSink,
                void(const FrameSinkId&,
-                    const absl::optional<FrameSinkBundleId>&,
+                    const std::optional<FrameSinkBundleId>&,
                     mojo::PendingReceiver<mojom::CompositorFrameSink>,
-                    mojo::PendingRemote<mojom::CompositorFrameSinkClient>));
+                    mojo::PendingRemote<mojom::CompositorFrameSinkClient>,
+                    input::mojom::RenderInputRouterConfigPtr));
   void CreateRootCompositorFrameSink(
       mojom::RootCompositorFrameSinkParamsPtr params) override {
     MockCreateRootCompositorFrameSink(params->frame_sink_id);
@@ -105,12 +100,6 @@ class MockFrameSinkManagerImpl : public TestFrameSinkManagerImpl {
               Throttle,
               (const std::vector<FrameSinkId>& ids, base::TimeDelta interval),
               (override));
-#if defined(OHOS_UNITTESTS)
-  MOCK_METHOD2(UpdateVSyncFrequency,
-              void(const FrameSinkId& frame_sink_id, uint32_t client_id));
-  MOCK_METHOD1(ResetVSyncFrequency,
-              void(const FrameSinkId& frame_sink_id));
-#endif // OHOS_UNITTESTS
 };
 
 }  // namespace
@@ -137,7 +126,7 @@ class HostFrameSinkManagerTest : public testing::Test {
 
   bool IsBoundToFrameSinkManager() {
     return host_manager_.frame_sink_manager_remote_.is_bound() ||
-           host_manager_.receiver_.is_bound();
+           host_manager_.frame_sink_manager_client_receiver_.is_bound();
   }
 
   bool DisplayHitTestQueryExists(const FrameSinkId& frame_sink_id) {
@@ -164,7 +153,7 @@ class HostFrameSinkManagerTest : public testing::Test {
     DCHECK(!manager_impl_);
 
     manager_impl_ =
-        std::make_unique<testing::NiceMock<MockFrameSinkManagerImpl>>();
+        std::make_unique<testing::StrictMock<MockFrameSinkManagerImpl>>();
 
     mojo::PendingRemote<mojom::FrameSinkManager> frame_sink_manager;
     mojo::PendingReceiver<mojom::FrameSinkManager> frame_sink_manager_receiver =
@@ -185,211 +174,10 @@ class HostFrameSinkManagerTest : public testing::Test {
  protected:
   FakeHostFrameSinkClient host_client_;  // Must outlive `host_manager_`
   HostFrameSinkManager host_manager_;
-  std::unique_ptr<testing::NiceMock<MockFrameSinkManagerImpl>> manager_impl_;
+  // We use a StrictMock because tests rely on it to ensure no unexpected API
+  // calls are made.
+  std::unique_ptr<testing::StrictMock<MockFrameSinkManagerImpl>> manager_impl_;
 };
-
-#if defined(OHOS_UNITTESTS)
-TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency001) {
-  uint32_t mock_client_id = 0;
-  uint32_t mock_sink_id = 0;
-  FrameSinkId id(mock_client_id, mock_sink_id);
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-  
-  host_manager_.UpdateVSyncFrequency(id);
-  EXPECT_EQ(iter_id,iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency002) {
-  uint32_t mock_client_id = 1;
-  uint32_t mock_sink_id = 1;
-  uint32_t mock_client_id2 = 2;
-  uint32_t mock_sink_id2 = 2;
-  FrameSinkId id1(mock_client_id,mock_sink_id);
-  FrameSinkId id2(mock_client_id2,mock_sink_id2);
-  HostFrameSinkManager::FrameSinkData data1;
-  HostFrameSinkManager::FrameSinkData data2;
-  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-
-  host_manager_.UpdateVSyncFrequency(id1);
-  EXPECT_NE(iter_id, iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency003) {
-  uint32_t mock_client_id = 1;
-  uint32_t mock_sink_id = 1;
-  uint32_t mock_client_id2 = 2;
-  uint32_t mock_sink_id2 = 2;
-  FrameSinkId id1(mock_client_id,mock_sink_id);
-  FrameSinkId id2(mock_client_id2,mock_sink_id2);
-  HostFrameSinkManager::FrameSinkData data1;
-  HostFrameSinkManager::FrameSinkData data2;
-  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
-  auto mock_children = iter_id->second.children;
-  uint32_t expect_size = 0;
-
-  host_manager_.UpdateVSyncFrequency(id1);
-  EXPECT_EQ(expect_size,mock_children.size());
-  EXPECT_EQ(mock_children.begin(),mock_children.end());
-}
-
-TEST_F(HostFrameSinkManagerTest, UpdateVSyncFrequency004) {
-  uint32_t mock_client_id = 1;
-  uint32_t mock_sink_id = 1;
-  uint32_t mock_client_id2 = 2;
-  uint32_t mock_sink_id2 = 1;
-  uint32_t mock_client_id3 = 3;
-  uint32_t mock_sink_id3 = 1;
-  FrameSinkId id1(mock_client_id,mock_sink_id);
-  FrameSinkId id2(mock_client_id2,mock_sink_id2);
-  FrameSinkId id3(mock_client_id3,mock_sink_id3);
-  HostFrameSinkManager::FrameSinkData data1;
-  HostFrameSinkManager::FrameSinkData data2;
-  HostFrameSinkManager::FrameSinkData data3;
-  host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-  host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-  host_manager_.frame_sink_data_map_.emplace(std::move(id3), std::move(data3));
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id1);
-  iter_id->second.children.push_back(id2);
-  iter_id->second.children.push_back(id3);
-  auto mock_children = iter_id->second.children;
-  uint32_t expect_size = 2;
-
-  host_manager_.UpdateVSyncFrequency(id1);
-  EXPECT_EQ(expect_size,mock_children.size());
-  EXPECT_NE(mock_children.begin(),mock_children.end());
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsync001) {
-  uint32_t mock_client_id = 0;
-  uint32_t mock_sink_id = 0;
-  FrameSinkId id(mock_client_id, mock_sink_id);
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-
-  host_manager_.OnVsync(mock_client_id,mock_sink_id);
-  EXPECT_EQ(iter_id,iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsync002) {
-  uint32_t mock_client_id = 0;
-  uint32_t mock_sink_id = 0;
-  FrameSinkId id(mock_client_id, mock_sink_id);
-  host_manager_.frame_sink_data_map_.emplace();
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-
-  host_manager_.OnVsync(mock_client_id,mock_sink_id);
-  EXPECT_NE(iter_id,iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsync003) {
-    uint32_t mock_client_id = 1;
-    uint32_t mock_sink_id = 1;
-    uint32_t mock_client_id2 = 2;
-    uint32_t mock_sink_id2 = 2;
-    FrameSinkId id1(mock_client_id,mock_sink_id);
-    FrameSinkId id2(mock_client_id2,mock_sink_id2);
-    HostFrameSinkManager::FrameSinkData data1;
-    HostFrameSinkManager::FrameSinkData data2;
-    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-    auto iter = host_manager_.frame_sink_data_map_.find(id1);
-    iter->second.client = nullptr;
-    const HostFrameSinkManager::FrameSinkData& data = iter->second;
-    
-    host_manager_.OnVsync(mock_client_id,mock_sink_id);
-    EXPECT_EQ(nullptr,data.client);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsync004){
-    uint32_t mock_client_id = 1;
-    uint32_t mock_sink_id = 1;
-    uint32_t mock_client_id2 = 2;
-    uint32_t mock_sink_id2 = 2;
-    FrameSinkId id1(mock_client_id,mock_sink_id);
-    FrameSinkId id2(mock_client_id2,mock_sink_id2);
-    HostFrameSinkManager::FrameSinkData data1;
-    HostFrameSinkManager::FrameSinkData data2;
-    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-    auto iter = host_manager_.frame_sink_data_map_.find(id1);
-    FakeHostFrameSinkClient mock_client;
-    iter->second.client = &mock_client;
-    const HostFrameSinkManager::FrameSinkData& data = iter->second;
-
-    host_manager_.OnVsync(mock_client_id,mock_sink_id);
-    EXPECT_NE(data.client,nullptr);
-
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsyncReceived001) {
-  uint32_t mock_client_id = 0;
-  uint32_t mock_sink_id = 0;
-  FrameSinkId id(mock_client_id, mock_sink_id);
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-  
-  host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
-  EXPECT_EQ(iter_id,iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsyncReceived002) {
-  uint32_t mock_client_id = 0;
-  uint32_t mock_sink_id = 0;
-  FrameSinkId id(mock_client_id, mock_sink_id);
-  host_manager_.frame_sink_data_map_.emplace();
-  auto iter_id = host_manager_.frame_sink_data_map_.find(id);
-  auto iter_end = host_manager_.frame_sink_data_map_.end();
-
-  host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
-  EXPECT_NE(iter_id,iter_end);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsyncReceived003) {
-    uint32_t mock_client_id = 1;
-    uint32_t mock_sink_id = 1;
-    uint32_t mock_client_id2 = 2;
-    uint32_t mock_sink_id2 = 2;
-    FrameSinkId id1(mock_client_id,mock_sink_id);
-    FrameSinkId id2(mock_client_id2,mock_sink_id2);
-    HostFrameSinkManager::FrameSinkData data1;
-    HostFrameSinkManager::FrameSinkData data2;
-    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-    auto iter = host_manager_.frame_sink_data_map_.find(id1);
-    iter->second.client = nullptr;
-    const HostFrameSinkManager::FrameSinkData& data = iter->second;
-    
-    host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
-    EXPECT_EQ(data.client,nullptr);
-}
-
-TEST_F(HostFrameSinkManagerTest, OnVsyncReceived004){
-    uint32_t mock_client_id = 1;
-    uint32_t mock_sink_id = 1;
-    uint32_t mock_client_id2 = 2;
-    uint32_t mock_sink_id2 = 2;
-    FrameSinkId id1(mock_client_id,mock_sink_id);
-    FrameSinkId id2(mock_client_id2,mock_sink_id2);
-    HostFrameSinkManager::FrameSinkData data1;
-    HostFrameSinkManager::FrameSinkData data2;
-    host_manager_.frame_sink_data_map_.emplace(std::move(id1), std::move(data1));
-    host_manager_.frame_sink_data_map_.emplace(std::move(id2), std::move(data2));
-    auto iter = host_manager_.frame_sink_data_map_.find(id1);
-    FakeHostFrameSinkClient mock_client;
-    iter->second.client = &mock_client;
-    const HostFrameSinkManager::FrameSinkData& data = iter->second;
-
-    host_manager_.OnVsyncReceived(mock_client_id,mock_sink_id);
-    EXPECT_NE(data.client,nullptr);
-}
-#endif // OHOS_UNITTESTS
 
 // Verify that registering and destroying multiple CompositorFrameSinks works
 // correctly when one of the CompositorFrameSinks hasn't been created.
@@ -403,7 +191,7 @@ TEST_F(HostFrameSinkManagerTest, CreateCompositorFrameSinks) {
 
   MockCompositorFrameSinkClient compositor_frame_sink_client;
   mojo::Remote<mojom::CompositorFrameSink> compositor_frame_sink;
-  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _));
+  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _, _));
   host().CreateCompositorFrameSink(
       kFrameSinkChild1, compositor_frame_sink.BindNewPipeAndPassReceiver(),
       compositor_frame_sink_client.BindInterfaceRemote());
@@ -412,6 +200,8 @@ TEST_F(HostFrameSinkManagerTest, CreateCompositorFrameSinks) {
   // Register but don't actually create CompositorFrameSink for parent.
   RegisterFrameSinkIdWithFakeClient(kFrameSinkParent1,
                                     ReportFirstSurfaceActivation::kYes);
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkParent1,
+                                          true /* report_activation */));
 
   // Register should call through to FrameSinkManagerImpl and should work even
   // though |kFrameSinkParent1| was not created yet.
@@ -421,7 +211,7 @@ TEST_F(HostFrameSinkManagerTest, CreateCompositorFrameSinks) {
 
   // Destroy the CompositorFrameSink.
   EXPECT_CALL(impl(), InvalidateFrameSinkId(kFrameSinkChild1));
-  host().InvalidateFrameSinkId(kFrameSinkChild1);
+  host().InvalidateFrameSinkId(kFrameSinkChild1, &host_client_);
   FlushHostAndVerifyExpectations();
 
   // Unregister should work after the CompositorFrameSink is destroyed.
@@ -436,16 +226,23 @@ TEST_F(HostFrameSinkManagerTest, CreateCompositorFrameSinks) {
 
 // Verify that that creating two RootCompositorFrameSinks works.
 TEST_F(HostFrameSinkManagerTest, CreateRootCompositorFrameSinks) {
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkChild1,
+                                          true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(kFrameSinkChild1,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data1;
+
+  EXPECT_CALL(impl(), MockCreateRootCompositorFrameSink(kFrameSinkChild1));
   host().CreateRootCompositorFrameSink(
       root_data1.BuildParams(kFrameSinkChild1));
   EXPECT_TRUE(FrameSinkDataExists(kFrameSinkChild1));
 
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkParent1,
+                                          true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(kFrameSinkParent1,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data2;
+  EXPECT_CALL(impl(), MockCreateRootCompositorFrameSink(kFrameSinkParent1));
   host().CreateRootCompositorFrameSink(
       root_data2.BuildParams(kFrameSinkParent1));
   EXPECT_TRUE(FrameSinkDataExists(kFrameSinkParent1));
@@ -465,13 +262,13 @@ TEST_F(HostFrameSinkManagerTest, CreateRootCompositorFrameSinks) {
 
   // Data for |kFrameSinkChild1| should be deleted when everything is destroyed.
   EXPECT_CALL(impl(), InvalidateFrameSinkId(kFrameSinkChild1));
-  host().InvalidateFrameSinkId(kFrameSinkChild1);
+  host().InvalidateFrameSinkId(kFrameSinkChild1, &host_client_);
   EXPECT_FALSE(FrameSinkDataExists(kFrameSinkChild1));
 
   // Data for |kFrameSinkParent1| should be deleted when everything is
   // destroyed.
   EXPECT_CALL(impl(), InvalidateFrameSinkId(kFrameSinkParent1));
-  host().InvalidateFrameSinkId(kFrameSinkParent1);
+  host().InvalidateFrameSinkId(kFrameSinkParent1, &host_client_);
   EXPECT_FALSE(FrameSinkDataExists(kFrameSinkParent1));
   FlushHostAndVerifyExpectations();
 }
@@ -480,22 +277,31 @@ TEST_F(HostFrameSinkManagerTest, CreateRootCompositorFrameSinks) {
 TEST_F(HostFrameSinkManagerTest, HierarchyMultipleParents) {
   // Register two parent and child CompositorFrameSink.
   const FrameSinkId& id_parent1 = kFrameSinkParent1;
+  EXPECT_CALL(impl(),
+              RegisterFrameSinkId(id_parent1, true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(id_parent1,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data1;
+  EXPECT_CALL(impl(), MockCreateRootCompositorFrameSink(id_parent1));
   host().CreateRootCompositorFrameSink(root_data1.BuildParams(id_parent1));
 
   const FrameSinkId& id_parent2 = kFrameSinkChild1;
+  EXPECT_CALL(impl(),
+              RegisterFrameSinkId(id_parent2, true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(id_parent2,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data2;
+  EXPECT_CALL(impl(), MockCreateRootCompositorFrameSink(id_parent2));
   host().CreateRootCompositorFrameSink(root_data2.BuildParams(id_parent2));
 
   const FrameSinkId& id_child = kFrameSinkParent2;
+  EXPECT_CALL(impl(),
+              RegisterFrameSinkId(id_child, true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(id_child,
                                     ReportFirstSurfaceActivation::kYes);
   MockCompositorFrameSinkClient compositor_frame_sink_client;
   mojo::Remote<mojom::CompositorFrameSink> compositor_frame_sink;
+  EXPECT_CALL(impl(), CreateCompositorFrameSink(id_child, _, _, _, _));
   host().CreateCompositorFrameSink(
       id_child, compositor_frame_sink.BindNewPipeAndPassReceiver(),
       compositor_frame_sink_client.BindInterfaceRemote());
@@ -543,7 +349,7 @@ TEST_F(HostFrameSinkManagerTest, RestartOnGpuCrash) {
 
   MockCompositorFrameSinkClient compositor_frame_sink_client;
   mojo::Remote<mojom::CompositorFrameSink> compositor_frame_sink;
-  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _));
+  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _, _));
   host().CreateCompositorFrameSink(
       kFrameSinkChild1, compositor_frame_sink.BindNewPipeAndPassReceiver(),
       compositor_frame_sink_client.BindInterfaceRemote());
@@ -583,6 +389,8 @@ TEST_F(HostFrameSinkManagerTest, RestartOnGpuCrash) {
 TEST_F(HostFrameSinkManagerTest, DeletedHitTestQuery) {
   // Register a FrameSinkId, and create a RootCompositorFrameSink, which should
   // create a HitTestQuery.
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkParent1,
+                                          true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(kFrameSinkParent1,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data;
@@ -600,7 +408,7 @@ TEST_F(HostFrameSinkManagerTest, DeletedHitTestQuery) {
   // Continue to send hit-test data to HitTestQuery associated with
   // kFrameSinkChild1.
 
-  host().InvalidateFrameSinkId(kFrameSinkParent1);
+  host().InvalidateFrameSinkId(kFrameSinkParent1, &host_client_);
   // Invalidating kFrameSinkChild1 would delete the corresponding HitTestQuery,
   // so further msgs to that HitTestQuery should be dropped.
   EXPECT_FALSE(DisplayHitTestQueryExists(kFrameSinkParent1));
@@ -611,6 +419,8 @@ TEST_F(HostFrameSinkManagerTest, DeletedHitTestQuery) {
 // Verify that on lost context a RootCompositorFrameSink can be recreated.
 TEST_F(HostFrameSinkManagerTest, ContextLossRecreateRoot) {
   // Register a FrameSinkId, and create a RootCompositorFrameSink.
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkParent1,
+                                          true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(kFrameSinkParent1,
                                     ReportFirstSurfaceActivation::kYes);
   RootCompositorFrameSinkData root_data1;
@@ -636,6 +446,8 @@ TEST_F(HostFrameSinkManagerTest, ContextLossRecreateRoot) {
 // Verify that on lost context a CompositorFrameSink can be recreated.
 TEST_F(HostFrameSinkManagerTest, ContextLossRecreateNonRoot) {
   // Register a FrameSinkId and create a CompositorFrameSink.
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkChild1,
+                                          true /* report_activation */));
   RegisterFrameSinkIdWithFakeClient(kFrameSinkChild1,
                                     ReportFirstSurfaceActivation::kYes);
   MockCompositorFrameSinkClient compositor_frame_sink_client1;
@@ -645,7 +457,7 @@ TEST_F(HostFrameSinkManagerTest, ContextLossRecreateNonRoot) {
       compositor_frame_sink_client1.BindInterfaceRemote());
 
   // Verify CompositorFrameSink was created on other end of message pipe.
-  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _));
+  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _, _));
   FlushHostAndVerifyExpectations();
 
   // Create a new CompositorFrameSink and try to connect it with the same
@@ -658,7 +470,7 @@ TEST_F(HostFrameSinkManagerTest, ContextLossRecreateNonRoot) {
 
   // Verify CompositorFrameSink is destroyed and then recreated.
   EXPECT_CALL(impl(), MockDestroyCompositorFrameSink(kFrameSinkChild1));
-  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _));
+  EXPECT_CALL(impl(), CreateCompositorFrameSink(kFrameSinkChild1, _, _, _, _));
   FlushHostAndVerifyExpectations();
 }
 
@@ -671,4 +483,26 @@ TEST_F(HostFrameSinkManagerTest, ThrottleFramePainting) {
 
   FlushHostAndVerifyExpectations();
 }
+
+TEST_F(HostFrameSinkManagerTest, RegisterWithExistingClient) {
+  // Register the first client, bound immediately.
+  EXPECT_CALL(impl(), RegisterFrameSinkId(kFrameSinkChild1,
+                                          true /* report_activation */));
+  RegisterFrameSinkIdWithFakeClient(kFrameSinkChild1,
+                                    ReportFirstSurfaceActivation::kYes);
+  FlushHostAndVerifyExpectations();
+
+  // Register a new client, bound immediately but no notification sent to the
+  // service side.
+  FakeHostFrameSinkClient new_client_;
+  host().RegisterFrameSinkId(kFrameSinkChild1, &new_client_,
+                             ReportFirstSurfaceActivation::kYes);
+  FlushHostAndVerifyExpectations();
+
+  // Invalidate the new client. The associated frame sink is now destroyed.
+  EXPECT_CALL(impl(), InvalidateFrameSinkId(kFrameSinkChild1));
+  host().InvalidateFrameSinkId(kFrameSinkChild1, &new_client_);
+  FlushHostAndVerifyExpectations();
+}
+
 }  // namespace viz

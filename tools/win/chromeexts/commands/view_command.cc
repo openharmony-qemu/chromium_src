@@ -4,8 +4,9 @@
 
 #include "tools/win/chromeexts/commands/view_command.h"
 
-#include <dbgeng.h>
 #include <windows.h>
+
+#include <dbgeng.h>
 #include <wrl/client.h>
 
 #include <ostream>
@@ -157,7 +158,7 @@ class VirtualViewDebugWrapper : public views::debug::ViewDebugWrapper {
     return buffer;
   }
 
-  absl::optional<intptr_t> GetAddress() override {
+  std::optional<intptr_t> GetAddress() override {
     return view_block_.address();
   }
 

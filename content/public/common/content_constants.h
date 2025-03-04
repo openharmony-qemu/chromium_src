@@ -11,29 +11,25 @@
 
 #include <string>
 
-#include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
 
 namespace content {
 
-// The name of the directory under BrowserContext::GetPath where the AppCache is
-// put.
-CONTENT_EXPORT extern const base::FilePath::CharType kAppCacheDirname[];
-// The name of the directory under BrowserContext::GetPath where Pepper plugin
-// data is put.
-CONTENT_EXPORT extern const base::FilePath::CharType kPepperDataDirname[];
-
 // The MIME type used for the browser plugin.
 CONTENT_EXPORT extern const char kBrowserPluginMimeType[];
 
-// The maximum number of characters in the URL that we're willing to accept
-// in the browser process. It is set low enough to avoid damage to the browser
-// but high enough that a web site can abuse location.hash for a little storage.
-// We have different values for "max accepted" and "max displayed" because
-// a data: URI may be legitimately massive, but the full URI would kill all
-// known operating systems if you dropped it into a UI control.
-CONTENT_EXPORT extern const size_t kMaxURLChars;
+// The maximum number of characters in the URL that we're willing to accept or
+// display in the browser process. It is set low enough to avoid damage to the
+// browser but high enough that a web site can abuse location.hash for a little
+// storage.
+//
+// We have different values for "max accepted" and "max displayed" because a
+// data: URI may be legitimately massive, but the full URI would kill all known
+// operating systems if you dropped it into a UI control.
+//
+// "Max accepted" used to be kMaxURLChars here but is now declared elsewhere as
+// url::kMaxURLChars. "Max displayed" is still kMaxURLDisplayChars here.
 CONTENT_EXPORT extern const size_t kMaxURLDisplayChars;
 
 extern const char kStatsFilename[];
@@ -63,7 +59,7 @@ CONTENT_EXPORT std::string GetCorsExemptRequestedWithHeaderName();
 // any kind, including the values returned by RenderProcessHost::GetID().
 static constexpr int kInvalidChildProcessUniqueId = -1;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // The OOM score adj constants
 // The highest and lowest assigned OOM score adjustment (oom_score_adj) for
 // renderers and extensions used by the OomPriority Manager.
@@ -74,6 +70,12 @@ CONTENT_EXPORT extern const int kZygoteOomScore;
 CONTENT_EXPORT extern const int kMiscOomScore;
 CONTENT_EXPORT extern const int kPluginOomScore;
 
+#endif
+
+#if BUILDFLAG(IS_ANDROID)
+// Minimum screen size in dp to be considered a tablet. Matches the value used
+// by res/ directories. E.g.: res/values-sw600dp/values.xml
+CONTENT_EXPORT extern const int kAndroidMinimumTabletWidthDp;
 #endif
 
 }  // namespace content

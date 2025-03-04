@@ -31,6 +31,7 @@ class AutofillProfile;
         (UINavigationController*)navigationController
                              browser:(Browser*)browser
                              profile:(const autofill::AutofillProfile&)profile
+              migrateToAccountButton:(BOOL)showMigrateToAccountButton
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithBaseViewController:(UIViewController*)viewController
@@ -38,6 +39,9 @@ class AutofillProfile;
 
 // Delegate.
 @property(nonatomic, weak) id<AutofillProfileEditCoordinatorDelegate> delegate;
+
+// Whether the coordinator's view controller should be opened in edit mode.
+@property(nonatomic, assign) BOOL openInEditMode;
 
 @end
 

@@ -5,14 +5,17 @@
 #ifndef MEDIA_BASE_MEDIA_URL_PARAMS_H_
 #define MEDIA_BASE_MEDIA_URL_PARAMS_H_
 
+#include "arkweb/build/features/features.h"
+#include "base/containers/flat_map.h"
 #include "media/base/media_export.h"
 #include "net/cookies/site_for_cookies.h"
+#include "net/storage_access_api/status.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
-#include "media/base/custom_media_url_params.h"
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/base/custom_media_url_params.h"
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace media {
 
@@ -23,7 +26,7 @@ struct MEDIA_EXPORT MediaUrlParams {
   MediaUrlParams(const GURL& media_url,
                  const net::SiteForCookies& site_for_cookies,
                  const url::Origin& top_frame_origin,
-                 bool has_storage_access,
+                 net::StorageAccessApiStatus storage_access_api_status,
                  bool allow_credentials,
                  bool is_hls);
   MediaUrlParams(const MediaUrlParams& other);
@@ -42,7 +45,7 @@ struct MEDIA_EXPORT MediaUrlParams {
   url::Origin top_frame_origin;
 
   // Used to check for cookie access.
-  bool has_storage_access;
+  net::StorageAccessApiStatus storage_access_api_status;
 
   // True when the crossorigin mode is unspecified or set to "use-credentials",
   // false when it's "anonymous".
@@ -58,9 +61,12 @@ struct MEDIA_EXPORT MediaUrlParams {
   // detected to be HLS. Used only for metrics.
   bool is_hls;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  // HTTP Request Headers
+  base::flat_map<std::string, std::string> headers;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   CustomMediaUrlParams custom_media_url_params;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

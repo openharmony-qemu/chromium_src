@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file.h"
 #include "base/files/memory_mapped_file.h"
 #include "build/build_config.h"
@@ -30,7 +31,7 @@ class GIN_EXPORT V8Initializer {
  public:
   // This should be called by IsolateHolder::Initialize().
   static void Initialize(IsolateHolder::ScriptMode mode,
-                         const std::string js_command_line_flags = {},
+                         const std::string& js_command_line_flags = {},
                          v8::OOMErrorCallback oom_error_callback = nullptr);
 
   // Get address and size information for currently loaded snapshot.
@@ -45,7 +46,7 @@ class GIN_EXPORT V8Initializer {
   static void LoadV8Snapshot(
       V8SnapshotFileType snapshot_file_type = V8SnapshotFileType::kDefault);
 
-#ifdef OHOS_HAP_DECOMPRESSED
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
   static int LoadV8SnapshotFromFileByHap(V8SnapshotFileType snapshot_file_type);
 #endif
 

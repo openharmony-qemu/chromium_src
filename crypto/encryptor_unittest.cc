@@ -2,183 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if defined(OHOS_UNITTESTS)
-#define private public
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "crypto/encryptor.h"
-#include "crypto/symmetric_key.h"
-#undef private
-#include "crypto/encryptor.cc"
-#else // OHOS_UNITTESTS
-#include "crypto/encryptor.h"
-#include "crypto/symmetric_key.h"
-#endif // OHOS_UNITTESTS
 
 #include <stddef.h>
 
 #include <memory>
 #include <string>
 
+#include "base/containers/heap_array.h"
 #include "base/containers/span.h"
 #include "base/strings/string_number_conversions.h"
+#include "crypto/symmetric_key.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
-#if defined(OHOS_UNITTESTS)
-TEST(EncryptorTest, Init001) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = static_cast<crypto::Encryptor::Mode>(-1);
-  EXPECT_EQ(true, encryptor.Init(key.get(), mode, iv));
-}
-
-TEST(EncryptorTest, Init002) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  auto iv = base::span<const uint8_t>();
-  auto mode = crypto::Encryptor::CBC;
-  EXPECT_EQ(false, encryptor.Init(key.get(), mode, iv));
-}
-
-TEST(EncryptorTest, Init003) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  auto iv = base::span<const uint8_t>();
-  auto mode = crypto::Encryptor::CTR;
-  EXPECT_EQ(true, encryptor.Init(key.get(), mode, iv));
-}
-
-TEST(EncryptorTest, Init004) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  auto iv = base::span<const uint8_t>();
-  auto mode = crypto::Encryptor::GCM;
-  EXPECT_EQ(false, encryptor.Init(key.get(), mode, iv));
-}
-
-TEST(EncryptorTest, Init005) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  EXPECT_EQ(true, encryptor.Init(key.get(), mode, iv));
-}
-
-TEST(EncryptorTest, CryptString001) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  encryptor.Init(key.get(), mode, iv);
-  bool do_encrypt = true;
-  base::StringPiece input;
-  std::string output("the iv: 12 b");
-  EXPECT_EQ(false, encryptor.CryptString(do_encrypt, input, &output));
-}
-
-TEST(EncryptorTest, CryptString002) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  encryptor.Init(key.get(), mode, iv);
-  bool do_encrypt = false;
-  base::StringPiece input;
-  std::string output("the iv: 12 b");
-  EXPECT_EQ(false, encryptor.CryptString(do_encrypt, input, &output));
-}
-
-TEST(EncryptorTest, CryptString003) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  auto is_init = encryptor.Init(key.get(), mode, iv);
-  EXPECT_EQ(true, is_init);
-  bool do_encrypt = false;
-  std::string long_string("This is a very long string");
-  base::StringPiece input(long_string.data(), long_string.length());
-  std::string output("the input.length > 16");
-  EXPECT_EQ(false, encryptor.CryptString(do_encrypt, input, &output));
-}
-
-TEST(EncryptorTest, CryptString004) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  auto is_init = encryptor.Init(key.get(), mode, iv);
-  EXPECT_EQ(true, is_init);
-  bool do_encrypt = true;
-  std::string long_string("This is string");
-  base::StringPiece input(long_string.data(), long_string.length());
-  std::string output("this is ouput string");
-  EXPECT_EQ(true, encryptor.CryptString(do_encrypt, input, &output));
-}
-
-TEST(EncryptorTest, MaxOutput001) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  auto is_init = encryptor.Init(key.get(), mode, iv);
-  EXPECT_EQ(true, is_init);
-  size_t length_ = 12;
-  bool do_encrypt = true;
-  auto result = encryptor.MaxOutput(do_encrypt, length_);
-  auto lhs_result = length_ + 12;
-  EXPECT_EQ(lhs_result, result);
-}
-
-TEST(EncryptorTest, MaxOutput002) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(12, 0x03);
-  auto mode = crypto::Encryptor::GCM;
-  auto is_init = encryptor.Init(key.get(), mode, iv);
-  EXPECT_EQ(true, is_init);
-  size_t length_ = 12;
-  bool do_encrypt = false;
-  auto result = encryptor.MaxOutput(do_encrypt, length_);
-  EXPECT_EQ(length_, result);
-}
-
-TEST(EncryptorTest, MaxOutput003) {
-  std::unique_ptr<crypto::SymmetricKey> key(
-      crypto::SymmetricKey::DeriveKeyFromPasswordUsingPbkdf2(
-          crypto::SymmetricKey::AES, "password", "saltiest", 1000, 256));
-  crypto::Encryptor encryptor;
-  std::vector<uint8_t> iv(0, 0x03);
-  auto mode = crypto::Encryptor::CTR;
-  auto is_init = encryptor.Init(key.get(), mode, iv);
-  EXPECT_EQ(true, is_init);
-  size_t length_ = 12;
-  bool do_encrypt = false;
-  auto result = encryptor.MaxOutput(do_encrypt, length_);
-  EXPECT_EQ(length_, result);
-}
-#endif // OHOS_UNITTESTS
 
 TEST(EncryptorTest, EncryptDecrypt) {
   std::unique_ptr<crypto::SymmetricKey> key(
@@ -368,10 +208,10 @@ void TestAESCTREncrypt(
   crypto::Encryptor encryptor;
   EXPECT_TRUE(encryptor.Init(sym_key.get(), crypto::Encryptor::CTR, ""));
 
-  base::StringPiece init_counter_str(
-      reinterpret_cast<const char*>(init_counter), init_counter_size);
-  base::StringPiece plaintext_str(
-      reinterpret_cast<const char*>(plaintext), plaintext_size);
+  std::string_view init_counter_str(reinterpret_cast<const char*>(init_counter),
+                                    init_counter_size);
+  std::string_view plaintext_str(reinterpret_cast<const char*>(plaintext),
+                                 plaintext_size);
 
   EXPECT_TRUE(encryptor.SetCounter(init_counter_str));
   std::string encrypted;
@@ -419,7 +259,7 @@ void TestAESCTRMultipleDecrypt(
   EXPECT_TRUE(encryptor.Init(sym_key.get(), crypto::Encryptor::CTR, ""));
 
   // Counter is set only once.
-  EXPECT_TRUE(encryptor.SetCounter(base::StringPiece(
+  EXPECT_TRUE(encryptor.SetCounter(std::string_view(
       reinterpret_cast<const char*>(init_counter), init_counter_size)));
 
   std::string ciphertext_str(reinterpret_cast<const char*>(ciphertext),
@@ -598,8 +438,7 @@ TEST(EncryptorTest, EncryptAES128CBCRegression) {
 
   std::string ciphertext;
   EXPECT_TRUE(encryptor.Encrypt(plaintext, &ciphertext));
-  EXPECT_EQ(expected_ciphertext_hex, base::HexEncode(ciphertext.data(),
-                                                     ciphertext.size()));
+  EXPECT_EQ(expected_ciphertext_hex, base::HexEncode(ciphertext));
 
   std::string decrypted;
   EXPECT_TRUE(encryptor.Decrypt(ciphertext, &decrypted));
@@ -650,8 +489,7 @@ TEST(EncryptorTest, EmptyEncryptCBC) {
 
   std::string ciphertext;
   EXPECT_TRUE(encryptor.Encrypt(plaintext, &ciphertext));
-  EXPECT_EQ(expected_ciphertext_hex, base::HexEncode(ciphertext.data(),
-                                                     ciphertext.size()));
+  EXPECT_EQ(expected_ciphertext_hex, base::HexEncode(ciphertext));
 
   std::string decrypted;
   EXPECT_TRUE(encryptor.Decrypt(ciphertext, &decrypted));
@@ -731,49 +569,9 @@ TEST(EncryptorTest, CipherTextNotMultipleOfBlockSize) {
   // Otherwise when using std::string as the other tests do, accesses several
   // bytes off the end of the buffer may fall inside the reservation of
   // the string and not be detected.
-  std::unique_ptr<char[]> ciphertext(new char[1]);
+  auto ciphertext = base::HeapArray<char>::Uninit(1);
 
   std::string plaintext;
   EXPECT_FALSE(
-      encryptor.Decrypt(base::StringPiece(ciphertext.get(), 1), &plaintext));
+      encryptor.Decrypt(base::as_string_view(ciphertext), &plaintext));
 }
-
-TEST(EncryptorTest, EncryptGCM) {
-  std::string key = "128=SixteenBytes";
-  std::string iv = "121212121212";
-  crypto::Encryptor encryptor;
-  const uint8_t in_data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-  uint8_t out_data[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-  base::span<const uint8_t> input = in_data;
-  base::span<uint8_t> output = out_data;
-  std::string myString;
-  myString.assign("Hello, World!");
-  std::unique_ptr<crypto::SymmetricKey> sym_key(
-      crypto::SymmetricKey::Import(crypto::SymmetricKey::AES, key));
-  ASSERT_TRUE(sym_key.get());
-  EXPECT_TRUE(encryptor.Init(sym_key.get(), crypto::Encryptor::GCM, iv));
-  EXPECT_NE(encryptor.EncryptGCM(input, output, &myString), absl::nullopt);
-}
-
-#if defined(OHOS_UNITTESTS)
-TEST(EncryptorTest, GetCipherForKeyGCM_Case16) {
-  auto key = crypto::SymmetricKey::Import(crypto::SymmetricKey::AES,
-                                          "0123456789abcdef");
-  const EVP_CIPHER* cipher = crypto::GetCipherForKeyGCM(key.get());
-  EXPECT_EQ(cipher, EVP_aes_128_gcm());
-}
-
-TEST(EncryptorTest, GetCipherForKeyGCM_Case32) {
-  auto key = crypto::SymmetricKey::Import(crypto::SymmetricKey::AES,
-                                          "0123456789abcdef0123456789abcdef");
-  const EVP_CIPHER* cipher = crypto::GetCipherForKeyGCM(key.get());
-  EXPECT_EQ(cipher, EVP_aes_256_gcm());
-}
-
-TEST(EncryptorTest, GetCipherForKeyGCM_Default) {
-  auto key = std::make_shared<crypto::SymmetricKey>();
-  key->key_ = "12356465416";
-  const EVP_CIPHER* cipher = crypto::GetCipherForKeyGCM(key.get());
-  EXPECT_EQ(cipher, nullptr);
-}
-#endif // OHOS_UNITTESTS

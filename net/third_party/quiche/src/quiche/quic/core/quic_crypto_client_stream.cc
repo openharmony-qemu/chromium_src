@@ -66,6 +66,10 @@ int QuicCryptoClientStream::num_sent_client_hellos() const {
   return handshaker_->num_sent_client_hellos();
 }
 
+bool QuicCryptoClientStream::ResumptionAttempted() const {
+  return handshaker_->ResumptionAttempted();
+}
+
 bool QuicCryptoClientStream::IsResumption() const {
   return handshaker_->IsResumption();
 }
@@ -141,9 +145,9 @@ void QuicCryptoClientStream::OnHandshakePacketSent() {
   handshaker_->OnHandshakePacketSent();
 }
 
-void QuicCryptoClientStream::OnConnectionClosed(QuicErrorCode error,
-                                                ConnectionCloseSource source) {
-  handshaker_->OnConnectionClosed(error, source);
+void QuicCryptoClientStream::OnConnectionClosed(
+    const QuicConnectionCloseFrame& frame, ConnectionCloseSource source) {
+  handshaker_->OnConnectionClosed(frame.quic_error_code, source);
 }
 
 void QuicCryptoClientStream::OnHandshakeDoneReceived() {

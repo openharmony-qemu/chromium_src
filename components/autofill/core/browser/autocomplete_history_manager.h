@@ -11,11 +11,9 @@
 #include "base/functional/callback.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/weak_ptr.h"
-#include "components/autofill/core/browser/autofill_subject.h"
-#include "components/autofill/core/browser/single_field_form_filler.h"
+#include "components/autofill/core/browser/single_field_fill_router.h"
 #include "components/autofill/core/browser/ui/suggestion.h"
-#include "components/autofill/core/browser/webdata/autofill_entry.h"
+#include "components/autofill/core/browser/webdata/autocomplete/autocomplete_entry.h"
 #include "components/autofill/core/browser/webdata/autofill_webdata_service.h"
 #include "components/autofill/core/common/form_data.h"
 #include "components/autofill/core/common/unique_ids.h"
@@ -26,15 +24,11 @@
 
 namespace autofill {
 
-struct SuggestionsContext;
-
 // Per-profile Autocomplete history manager. Handles receiving form data
 // from the renderers and the storing and retrieving of form data
 // through WebDataServiceBase.
-class AutocompleteHistoryManager : public SingleFieldFormFiller,
-                                   public KeyedService,
-                                   public WebDataServiceConsumer,
-                                   public AutofillSubject {
+class AutocompleteHistoryManager : public KeyedService,
+                                   public WebDataServiceConsumer {
  public:
   AutocompleteHistoryManager();
 
@@ -44,21 +38,29 @@ class AutocompleteHistoryManager : public SingleFieldFormFiller,
 
   ~AutocompleteHistoryManager() override;
 
-  // SingleFieldFormFiller overrides:
-  [[nodiscard]] bool OnGetSingleFieldSuggestions(
-      AutoselectFirstSuggestion autoselect_first_suggestion,
+  // Returns true iff it consumes `on_suggestions_returned`.
+  [[nodiscard]] virtual bool OnGetSingleFieldSuggestions(
       const FormFieldData& field,
       const AutofillClient& client,
-      base::WeakPtr<SuggestionsHandler> handler,
-      const SuggestionsContext& context) override;
-  void OnWillSubmitFormWithFields(const std::vector<FormFieldData>& fields,
-                                  bool is_autocomplete_enabled) override;
-  void CancelPendingQueries(const SuggestionsHandler* handler) override;
-  void OnRemoveCurrentSingleFieldSuggestion(const std::u16string& field_name,
-                                            const std::u16string& value,
-                                            int frontend_id) override;
-  void OnSingleFieldSuggestionSelected(const std::u16string& value,
-                                       int frontend_id) override;
+      SingleFieldFillRouter::OnSuggestionsReturnedCallback&
+          on_suggestions_returned);
+
+  // Saves the `fields` that are eligible to be saved as new or updated
+  // Autocomplete entries, which can then be served in the future as
+  // suggestions. This update is dependent on whether we are running in
+  // incognito and if Autocomplete is enabled or not. `fields` may be empty.
+  virtual void OnWillSubmitFormWithFields(
+      const std::vector<FormFieldData>& fields,
+      bool is_autocomplete_enabled);
+
+  virtual void CancelPendingQueries();
+
+  virtual void OnRemoveCurrentSingleFieldSuggestion(
+      const std::u16string& field_name,
+      const std::u16string& value,
+      SuggestionType type);
+
+  virtual void OnSingleFieldSuggestionSelected(const Suggestion& suggestion);
 
   // Initializes the instance with the given parameters.
   // |profile_database_| is a profile-scope DB used to access autocomplete data.
@@ -68,9 +70,6 @@ class AutocompleteHistoryManager : public SingleFieldFormFiller,
             PrefService* pref_service,
             bool is_off_the_record);
 
-  // Returns a weak pointer to the current AutocompleteHistoryManager instance.
-  base::WeakPtr<AutocompleteHistoryManager> GetWeakPtr();
-
   // WebDataServiceConsumer implementation.
   void OnWebDataServiceRequestDone(
       WebDataServiceBase::Handle h,
@@ -79,19 +78,36 @@ class AutocompleteHistoryManager : public SingleFieldFormFiller,
  private:
   friend class AutocompleteHistoryManagerTest;
 
-  // Sends the autocomplete |suggestions| to the |query_handler|'s handler for
-  // display in the associated Autofill popup. The parameter may be empty if
-  // there are no new autocomplete additions.
-  void SendSuggestions(const std::vector<AutofillEntry>& entries,
-                       const QueryHandler& query_handler);
+  // Internal data object used to keep a request's context to associate it
+  // with the appropriate response.
+  struct QueryHandler {
+    QueryHandler(FieldGlobalId field_id,
+                 std::u16string prefix,
+                 SingleFieldFillRouter::OnSuggestionsReturnedCallback
+                     on_suggestions_returned);
+    QueryHandler(const QueryHandler&) = delete;
+    QueryHandler(QueryHandler&&);
+    ~QueryHandler();
+
+    // The queried field ID.
+    FieldGlobalId field_id_;
+
+    // Prefix used to search suggestions, submitted by the handler.
+    std::u16string prefix_;
+
+    // Callback to-be-executed once a response from the DB is available.
+    SingleFieldFillRouter::OnSuggestionsReturnedCallback
+        on_suggestions_returned_;
+  };
+
+  // Sends the autocomplete `entries` to the `query_handler` for display in the
+  // associated Autofill popup. The parameter may be empty if there are no new
+  // autocomplete additions.
+  void SendSuggestions(const std::vector<AutocompleteEntry>& entries,
+                       QueryHandler query_handler);
 
   // Cancels all outstanding queries and clears out the |pending_queries_| map.
   void CancelAllPendingQueries();
-
-  // Cleans-up the dictionary of |pending_queries_| by checking
-  // - If any handler instance was destroyed (known via WeakPtr)
-  // - If the given |handler| pointer is associated with a query.
-  void CleanupEntries(const SuggestionsHandler* handler);
 
   // Function handling WebDataService responses of type AUTOFILL_VALUE_RESULT.
   // |current_handle| is the DB query handle, and is used to retrieve the
@@ -115,13 +131,6 @@ class AutocompleteHistoryManager : public SingleFieldFormFiller,
   // Must outlive this object.
   scoped_refptr<AutofillWebDataService> profile_database_;
 
-  // Map used to store WebDataService response callbacks, associating a
-  // response's WDResultType to the appropriate callback.
-  std::map<WDResultType,
-           base::RepeatingCallback<void(WebDataServiceBase::Handle,
-                                        std::unique_ptr<WDTypedResult>)>>
-      request_callbacks_;
-
   // The PrefService that this instance uses. Must outlive this instance.
   raw_ptr<PrefService> pref_service_;
 
@@ -134,13 +143,11 @@ class AutocompleteHistoryManager : public SingleFieldFormFiller,
 
   // Cached results of the last batch of autocomplete suggestions.
   // Key are the suggestions' values, and values are the associated
-  // AutofillEntry.
-  std::map<std::u16string, AutofillEntry> last_entries_;
+  // AutocompletEntry.
+  std::map<std::u16string, AutocompleteEntry> last_entries_;
 
   // Whether the service is associated with an off-the-record browser context.
   bool is_off_the_record_ = false;
-
-  base::WeakPtrFactory<AutocompleteHistoryManager> weak_ptr_factory_{this};
 };
 
 }  // namespace autofill

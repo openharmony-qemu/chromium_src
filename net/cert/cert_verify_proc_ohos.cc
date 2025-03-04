@@ -8,14 +8,18 @@
 // found in the LICENSE file.
 
 #include "net/cert/cert_verify_proc_ohos.h"
+
 #include <openssl/bio.h>
 #include <openssl/pem.h>
+
 #include <set>
 #include <string>
 #include <vector>
 
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
+#include "base/files/file_enumerator.h"
+#include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "content/public/common/content_switches.h"
@@ -25,20 +29,17 @@
 #include "net/cert/cert_verify_result.h"
 #include "net/cert/crl_set.h"
 #include "net/cert/known_roots.h"
-#include "net/cert/pki/cert_errors.h"
-#include "net/cert/pki/parsed_certificate.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
-#include "ohos_adapter_helper.h"
 #include "openssl/err.h"
 #include "openssl/ossl_typ.h"
 #include "openssl/x509.h"
 #include "openssl/x509_vfy.h"
 #include "third_party/boringssl/src/crypto/x509/internal.h"
+#include "third_party/boringssl/src/pki/cert_errors.h"
+#include "third_party/boringssl/src/pki/parsed_certificate.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "url/gurl.h"
-
-#include "base/files/file_util.h"
-#include "base/files/file_enumerator.h"
 
 #define ROOT_CERT_PATH "/system/etc/security/certificates/"
 #define MIN_CERT_NUM 1
@@ -243,7 +244,7 @@ int32_t GetApplicationApiVersion() {
   return std::stoi(apiVersion);
 }
 
-void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
+void AddAppCert(const std::string_view& hostname, X509_STORE* ca_store) {
   auto RootCertDataAdapter =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetRootCertDataAdapter();
   if (!RootCertDataAdapter || !ca_store) {
@@ -252,7 +253,8 @@ void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
     return;
   }
 
-  X509_LOOKUP* ca_look_up = X509_STORE_add_lookup(ca_store, X509_LOOKUP_hash_dir());
+  X509_LOOKUP* ca_look_up =
+      X509_STORE_add_lookup(ca_store, X509_LOOKUP_hash_dir());
   if (ca_look_up == nullptr) {
     LOG(ERROR) << "Create X509 LOOKUP failed";
     return;
@@ -265,11 +267,13 @@ void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
   std::vector<std::string> app_certs_path;
   std::string host(hostname.data(), hostname.size());
   if (RootCertDataAdapter->GetTrustAnchorsForHostName(host, app_certs_path)) {
-    for (size_t cert_index = 0; cert_index < app_certs_path.size(); cert_index++) {
-      int ret = X509_LOOKUP_add_dir(ca_look_up, app_certs_path[cert_index].c_str(), X509_FILETYPE_PEM);
+    for (size_t cert_index = 0; cert_index < app_certs_path.size();
+         cert_index++) {
+      int ret = X509_LOOKUP_add_dir(
+          ca_look_up, app_certs_path[cert_index].c_str(), X509_FILETYPE_PEM);
       if (ret == 0) {
-        LOG(WARNING) << "Add app cert failed, path:" << app_certs_path[cert_index]
-          << " ret:" << ret;
+        LOG(WARNING) << "Add app cert failed, path:"
+                     << app_certs_path[cert_index] << " ret:" << ret;
       }
     }
   } else {
@@ -281,7 +285,7 @@ void AddAppCert(const base::StringPiece &hostname, X509_STORE* ca_store) {
 
 int CertVerify(const std::vector<std::string>& cert_bytes,
                std::vector<std::string>* verified_chain,
-               base::StringPiece hostname) {
+               std::string_view hostname) {
   uint32_t server_cert_sum;
   const unsigned char* der_encoded_tmp = nullptr;
   uint32_t i;
@@ -359,15 +363,15 @@ int CertVerify(const std::vector<std::string>& cert_bytes,
 // TODO(estark): when searching for an issuer, this always uses the first
 // encountered issuer in |certs|, and does not handle the situation where
 // |certs| contains more than one issuer for a given certificate.
-std::shared_ptr<const ParsedCertificate> FindLastCertWithUnknownIssuer(
-    const ParsedCertificateList& certs,
-    const std::shared_ptr<const ParsedCertificate>& start) {
+std::shared_ptr<const bssl::ParsedCertificate> FindLastCertWithUnknownIssuer(
+    const bssl::ParsedCertificateList& certs,
+    const std::shared_ptr<const bssl::ParsedCertificate>& start) {
   DCHECK_GE(certs.size(), 1u);
-  std::set<std::shared_ptr<const ParsedCertificate>> used_in_path;
-  std::shared_ptr<const ParsedCertificate> last = start;
+  std::set<std::shared_ptr<const bssl::ParsedCertificate>> used_in_path;
+  std::shared_ptr<const bssl::ParsedCertificate> last = start;
   while (true) {
     used_in_path.insert(last);
-    std::shared_ptr<const ParsedCertificate> last_issuer;
+    std::shared_ptr<const bssl::ParsedCertificate> last_issuer;
     // Find an issuer for |last| (which might be |last| itself if self-signed).
     for (const auto& cert : certs) {
       if (cert->normalized_subject() == last->normalized_issuer()) {
@@ -400,9 +404,10 @@ std::shared_ptr<const ParsedCertificate> FindLastCertWithUnknownIssuer(
 // certificate is parsed and added to |cert_list|. Returns true if the fetch was
 // successful and the result could be parsed as a certificate, and false
 // otherwise.
-bool PerformAIAFetchAndAddResultToVector(scoped_refptr<CertNetFetcher> fetcher,
-                                         std::string_view uri,
-                                         ParsedCertificateList* cert_list) {
+bool PerformAIAFetchAndAddResultToVector(
+    scoped_refptr<CertNetFetcher> fetcher,
+    std::string_view uri,
+    bssl::ParsedCertificateList* cert_list) {
   GURL url(uri);
   if (!url.is_valid()) {
     LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalied";
@@ -416,19 +421,21 @@ bool PerformAIAFetchAndAddResultToVector(scoped_refptr<CertNetFetcher> fetcher,
   request->WaitForResult(&error, &aia_fetch_bytes);
 
   if (error != OK) {
-    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: Wait for result failed, uri: " << uri;
+    LOG(ERROR)
+        << "PerformAIAFetchAndAddResultToVector: Wait for result failed, uri: "
+        << uri;
     return false;
   }
 
-  CertErrors errors;
-  return ParsedCertificate::CreateAndAddToVector(
+  bssl::CertErrors errors;
+  return bssl::ParsedCertificate::CreateAndAddToVector(
       x509_util::CreateCryptoBuffer(aia_fetch_bytes),
       x509_util::DefaultParseCertificateOptions(), cert_list, &errors);
 }
 
 void X509CertChainVerify(const std::vector<std::string>& cert_chain,
-                         base::StringPiece auth_type,
-                         base::StringPiece host,
+                         std::string_view auth_type,
+                         std::string_view host,
                          int* status,
                          bool* is_issued_by_known_root,
                          std::vector<std::string>* verified_chain) {
@@ -441,7 +448,7 @@ void X509CertChainVerify(const std::vector<std::string>& cert_chain,
 // |hostname| and returns the verification status. If the verification was
 // successful, this function populates |verify_result| and |verified_chain|;
 // otherwise it leaves them untouched.
-int AttemptVerificationAfterAIAFetch(const ParsedCertificateList& certs,
+int AttemptVerificationAfterAIAFetch(const bssl::ParsedCertificateList& certs,
                                      const std::string& hostname,
                                      CertVerifyResult* verify_result,
                                      std::vector<std::string>* verified_chain) {
@@ -474,10 +481,10 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
 
   // Convert the certificates into ParsedCertificates for ease of pulling out
   // AIA URLs.
-  CertErrors errors;
-  ParsedCertificateList certs;
+  bssl::CertErrors errors;
+  bssl::ParsedCertificateList certs;
   for (const auto& cert : cert_bytes) {
-    if (!ParsedCertificate::CreateAndAddToVector(
+    if (!bssl::ParsedCertificate::CreateAndAddToVector(
             x509_util::CreateCryptoBuffer(cert),
             x509_util::DefaultParseCertificateOptions(), &certs, &errors)) {
       LOG(ERROR) << "TryVerifyWithAIAFetching: Parse cert error";
@@ -492,12 +499,13 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
 
   // Build a chain as far as possible from the target certificate at index 0,
   // using the initially provided certificates.
-  std::shared_ptr<const ParsedCertificate> last_cert_with_unknown_issuer =
+  std::shared_ptr<const bssl::ParsedCertificate> last_cert_with_unknown_issuer =
       FindLastCertWithUnknownIssuer(certs, certs[0]);
   if (!last_cert_with_unknown_issuer) {
     // |certs| either contains a loop, or contains a full chain to a self-signed
     // certificate. Do not attempt AIA fetches for such a chain.
-    LOG(ERROR) << "TryVerifyWithAIAFetching: Cert chain is full, do not attempt AIA fetche";
+    LOG(ERROR) << "TryVerifyWithAIAFetching: Cert chain is full, do not "
+                  "attempt AIA fetche";
     return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
   }
 
@@ -520,12 +528,14 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
     for (const auto& uri : last_cert_with_unknown_issuer->ca_issuers_uris()) {
       num_aia_fetches++;
       if (num_aia_fetches > kMaxAIAFetches) {
-        LOG(ERROR) << "TryVerifyWithAIAFetching: Reach the maximum count of AIA fetche cert";
+        LOG(ERROR) << "TryVerifyWithAIAFetching: Reach the maximum count of "
+                      "AIA fetche cert";
         return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
       }
 
-      if (!PerformAIAFetchAndAddResultToVector(cert_net_fetcher, uri, &certs))
+      if (!PerformAIAFetchAndAddResultToVector(cert_net_fetcher, uri, &certs)) {
         continue;
+      }
       int status = AttemptVerificationAfterAIAFetch(
           certs, hostname, verify_result, verified_chain);
       if (status == X509_V_OK) {
@@ -535,8 +545,9 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
 
     // If verification still failed but the path expanded, continue to attempt
     // AIA fetches.
-    std::shared_ptr<const ParsedCertificate> new_last_cert_with_unknown_issuer =
-        FindLastCertWithUnknownIssuer(certs, last_cert_with_unknown_issuer);
+    std::shared_ptr<const bssl::ParsedCertificate>
+        new_last_cert_with_unknown_issuer =
+            FindLastCertWithUnknownIssuer(certs, last_cert_with_unknown_issuer);
     if (!new_last_cert_with_unknown_issuer ||
         new_last_cert_with_unknown_issuer == last_cert_with_unknown_issuer) {
       // The last round of AIA fetches (if there were any) didn't expand the
@@ -545,7 +556,8 @@ int TryVerifyWithAIAFetching(const std::vector<std::string>& cert_bytes,
       //
       // TODO(estark): As above, it would be more robust to go back one
       // certificate and attempt an AIA fetch from that point.
-      LOG(ERROR) << "TryVerifyWithAIAFetching: No need continue to attempt AIA fetche cert";
+      LOG(ERROR) << "TryVerifyWithAIAFetching: No need continue to attempt AIA "
+                    "fetche cert";
       return X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY;
     }
     last_cert_with_unknown_issuer = new_last_cert_with_unknown_issuer;
@@ -571,7 +583,8 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
   // error,
   //  then fetch intermediates and retry.
   if (status == X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY) {
-    LOG(INFO) << "VerifyFromOhosTrustManager: Cert is not trusted, try AIA fetche";
+    LOG(INFO)
+        << "VerifyFromOhosTrustManager: Cert is not trusted, try AIA fetche";
     status = TryVerifyWithAIAFetching(cert_bytes, hostname,
                                       std::move(cert_net_fetcher),
                                       verify_result, &verified_chain);
@@ -600,16 +613,17 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
 
   // Save the verified chain.
   if (!verified_chain.empty()) {
-    std::vector<base::StringPiece> verified_chain_pieces(verified_chain.size());
+    std::vector<std::string_view> verified_chain_pieces(verified_chain.size());
     for (size_t i = 0; i < verified_chain.size(); i++) {
-      verified_chain_pieces[i] = base::StringPiece(verified_chain[i]);
+      verified_chain_pieces[i] = std::string_view(verified_chain[i]);
     }
     scoped_refptr<X509Certificate> verified_cert =
         X509Certificate::CreateFromDERCertChain(verified_chain_pieces);
-    if (verified_cert.get())
+    if (verified_cert.get()) {
       verify_result->verified_cert = std::move(verified_cert);
-    else {
-      LOG(ERROR) << "VerifyFromOhosTrustManager: Verified cert create from der cert chain failed";
+    } else {
+      LOG(ERROR) << "VerifyFromOhosTrustManager: Verified cert create from der "
+                    "cert chain failed";
       verify_result->cert_status |= CERT_STATUS_INVALID;
     }
   }
@@ -618,9 +632,10 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
   // roots. Walk from the end of the chain (root) to leaf, to optimize for
   // known root checks.
   for (const auto& cert : base::Reversed(verified_chain)) {
-    base::StringPiece spki_bytes;
+    std::string_view spki_bytes;
     if (!asn1::ExtractSPKIFromDERCert(cert, &spki_bytes)) {
-      LOG(ERROR) << "VerifyFromOhosTrustManager: Extract SPKI from der cert failed";
+      LOG(ERROR)
+          << "VerifyFromOhosTrustManager: Extract SPKI from der cert failed";
       verify_result->cert_status |= CERT_STATUS_INVALID;
       continue;
     }
@@ -652,26 +667,19 @@ CertVerifyProcOHOS::CertVerifyProcOHOS(
 
 CertVerifyProcOHOS::~CertVerifyProcOHOS() {}
 
-bool CertVerifyProcOHOS::SupportsAdditionalTrustAnchors() const {
-  return false;
-}
-
-int CertVerifyProcOHOS::VerifyInternal(
-    X509Certificate* cert,
-    const std::string& hostname,
-    const std::string& ocsp_response,
-    const std::string& sct_list,
-    int flags,
-    const CertificateList& additional_trust_anchors,
-    CertVerifyResult* verify_result,
-    const NetLogWithSource& net_log) {
+int CertVerifyProcOHOS::VerifyInternal(X509Certificate* cert,
+                                       const std::string& hostname,
+                                       const std::string& ocsp_response,
+                                       const std::string& sct_list,
+                                       int flags,
+                                       CertVerifyResult* verify_result,
+                                       const NetLogWithSource& net_log) {
   std::vector<std::string> cert_bytes;
   GetChainDEREncodedBytes(cert, &cert_bytes);
 
   if (!VerifyFromOhosTrustManager(cert_bytes, hostname, cert_net_fetcher_,
                                   verify_result)) {
-    LOG(ERROR)
-        << "VerifyInternal: Trust manager verify cert failed";
+    LOG(ERROR) << "VerifyInternal: Trust manager verify cert failed";
     NOTREACHED();
     return ERR_FAILED;
   }

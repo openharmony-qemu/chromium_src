@@ -17,10 +17,6 @@
 #include "base/test/test_timeouts.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "content/browser/scheduler/browser_io_thread_delegate.h"
-#include "content/browser/scheduler/browser_task_executor.h"
-#include "content/browser/scheduler/browser_task_priority.h"
-#include "content/browser/scheduler/browser_ui_thread_scheduler.h"
 #include "media/audio/audio_device_info_accessor_for_tests.h"
 #include "media/audio/audio_features.h"
 #include "media/audio/audio_io.h"
@@ -32,11 +28,8 @@
 #include "media/base/media_switches.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "media/audio/ohos/ohos_audio_manager.h"
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
+#include "media/audio/android/aaudio_stream_wrapper.h"
 #include "media/audio/android/audio_manager_android.h"
 #endif
 
@@ -49,33 +42,16 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
         AudioManager::CreateForTesting(std::make_unique<TestAudioThread>());
     audio_manager_device_info_ =
         std::make_unique<AudioDeviceInfoAccessorForTests>(audio_manager_.get());
-
-#if defined(OHOS_UNITTESTS)
-    auto ui_sequence_manager_ =
-        base::sequence_manager::CreateUnboundSequenceManager(
-            base::sequence_manager::SequenceManager::Settings::Builder()
-            .SetPrioritySettings(content::internal::CreateBrowserTaskPrioritySettings())
-            .Build());
-    auto browser_ui_thread_scheduler =
-        content::BrowserUIThreadScheduler::CreateForTesting(ui_sequence_manager_.get());
-    content::BrowserTaskExecutor::CreateForTesting(
-        std::move(browser_ui_thread_scheduler),
-        std::make_unique<content::BrowserIOThreadDelegate>());
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
     // The only parameter is used to enable/disable AAudio.
     should_use_aaudio_ = GetParam();
     if (should_use_aaudio_) {
       features_.InitAndEnableFeature(features::kUseAAudioDriver);
 
-      aaudio_is_supported_ =
-          reinterpret_cast<AudioManagerAndroid*>(audio_manager_.get())
-              ->IsUsingAAudioForTesting();
+      if (__builtin_available(android AAUDIO_MIN_API, *)) {
+        aaudio_is_supported_ = true;
+      }
     }
-#endif
-#if BUILDFLAG(IS_OHOS)
-    should_use_aaudio_ = GetParam();
 #endif
     base::RunLoop().RunUntilIdle();
   }
@@ -86,8 +62,10 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
   }
 
   void CreateWithDefaultParameters() {
-    stream_params_ =
-        audio_manager_device_info_->GetDefaultOutputStreamParameters();
+    std::string default_device_id =
+        audio_manager_device_info_->GetDefaultOutputDeviceID();
+    stream_params_ = audio_manager_device_info_->GetOutputStreamParameters(
+        default_device_id);
     stream_ = audio_manager_->MakeAudioOutputStream(
         stream_params_, std::string(), AudioManager::LogCallback());
   }
@@ -106,7 +84,7 @@ class AudioOutputTest : public testing::TestWithParam<bool> {
   std::unique_ptr<AudioManager> audio_manager_;
   std::unique_ptr<AudioDeviceInfoAccessorForTests> audio_manager_device_info_;
   AudioParameters stream_params_;
-  raw_ptr<AudioOutputStream> stream_ = nullptr;
+  raw_ptr<AudioOutputStream, DanglingUntriaged> stream_ = nullptr;
   bool should_use_aaudio_ = false;
   bool aaudio_is_supported_ = false;
 #if BUILDFLAG(IS_ANDROID)
@@ -163,14 +141,23 @@ TEST_P(AudioOutputTest, StopTwice) {
 }
 
 // This test produces actual audio for .25 seconds on the default device.
-TEST_P(AudioOutputTest, Play200HzTone) {
+#if BUILDFLAG(IS_IOS)
+// TODO(crbug.com/40283968): audio output unit startup fails with partition
+// alloc.
+#define MAYBE_Play200HzTone DISABLED_Play200HzTone
+#else
+#define MAYBE_Play200HzTone Play200HzTone
+#endif
+TEST_P(AudioOutputTest, MAYBE_Play200HzTone) {
   if (should_use_aaudio_ && !aaudio_is_supported_)
     return;
 
   ABORT_AUDIO_TEST_IF_NOT(audio_manager_device_info_->HasAudioOutputDevices());
 
+  std::string default_device_id =
+      audio_manager_device_info_->GetDefaultOutputDeviceID();
   stream_params_ =
-      audio_manager_device_info_->GetDefaultOutputStreamParameters();
+      audio_manager_device_info_->GetOutputStreamParameters(default_device_id);
   stream_ = audio_manager_->MakeAudioOutputStream(stream_params_, std::string(),
                                                   AudioManager::LogCallback());
   ASSERT_TRUE(stream_);
@@ -232,11 +219,7 @@ TEST_P(AudioOutputTest, VolumeControl) {
 
 // The test parameter is only relevant on Android. It controls whether or not we
 // allow the use of AAudio.
-#if BUILDFLAG(IS_OHOS)
-INSTANTIATE_TEST_SUITE_P(Base, AudioOutputTest, testing::Values(true));
-#else
 INSTANTIATE_TEST_SUITE_P(Base, AudioOutputTest, testing::Values(false));
-#endif
 
 #if BUILDFLAG(IS_ANDROID)
 // Run tests with AAudio enabled. On Android P and below, these tests should not

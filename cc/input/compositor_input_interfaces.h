@@ -7,8 +7,11 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
+#include "base/types/optional_ref.h"
 #include "cc/input/actively_scrolling_type.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "cc/input/browser_controls_state.h"
 #include "cc/paint/element_id.h"
 #include "ui/gfx/geometry/size.h"
@@ -72,7 +75,7 @@ class InputDelegateForCompositor {
 
   // Called to let the input handler know that a scroll offset animation has
   // completed.
-  virtual void ScrollOffsetAnimationFinished() = 0;
+  virtual void ScrollOffsetAnimationFinished(ElementId element_id) = 0;
 
   // Called to inform the input handler when prefers-reduced-motion changes.
   virtual void SetPrefersReducedMotion(bool prefers_reduced_motion) = 0;
@@ -93,19 +96,23 @@ class InputDelegateForCompositor {
   // but will never receive a ScrollUpdate.
   virtual ActivelyScrollingType GetActivelyScrollingType() const = 0;
 
+  // Returns true if the user is currently touching the device.
+  virtual bool IsHandlingTouchSequence() const = 0;
+
   // Returns true if we're currently scrolling and the scroll must be realized
   // on the main thread (see ScrollTree::CanRealizeScrollsOnCompositor).
   // TODO(skobes): Combine IsCurrentlyScrolling, GetActivelyScrollingType, and
   // IsCurrentScrollMainRepainted into a single method returning everything.
   virtual bool IsCurrentScrollMainRepainted() const = 0;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   // Returns true if there are input events queued to be dispatched at the start
   // of the next frame.
   virtual bool HasQueuedInput() const = 0;
-
-#if BUILDFLAG(IS_OHOS)
-  virtual void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}
-#endif
 };
 
 // This is the interface that's exposed by the LayerTreeHostImpl to the input
@@ -137,9 +144,12 @@ class CompositorDelegateForInput {
   virtual float PageScaleFactor() const = 0;
   virtual gfx::Size VisualDeviceViewportSize() const = 0;
   virtual const LayerTreeSettings& GetSettings() const = 0;
-  virtual void UpdateBrowserControlsState(BrowserControlsState constraints,
-                                          BrowserControlsState current,
-                                          bool animate) = 0;
+  virtual void UpdateBrowserControlsState(
+      BrowserControlsState constraints,
+      BrowserControlsState current,
+      bool animate,
+      base::optional_ref<const BrowserControlsOffsetTagsInfo>
+          offset_tags_info) = 0;
   virtual bool HasScrollLinkedAnimation(ElementId for_scroller) const = 0;
 
   // TODO(bokan): Temporary escape hatch for code that hasn't yet been

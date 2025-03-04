@@ -5,12 +5,12 @@
 #include "components/storage_monitor/volume_mount_watcher_win.h"
 
 #include <windows.h>
-#include <stddef.h>
-#include <stdint.h>
 
 #include <dbt.h>
 #include <fileapi.h>
 #include <shlobj.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <winioctl.h>
 
 #include <algorithm>
@@ -20,9 +20,10 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/strings/cstring_view.h"
+#include "base/strings/strcat_win.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
-#include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/system/sys_info.h"
 #include "base/task/sequenced_task_runner.h"
@@ -55,7 +56,7 @@ enum DeviceType {
 // on either floppy or removable volumes. The DRIVE_CDROM type is handled
 // as a floppy, as are DRIVE_UNKNOWN and DRIVE_NO_ROOT_DIR, as there are
 // reports that some floppy drives don't report as DRIVE_REMOVABLE.
-DeviceType GetDeviceType(const std::wstring& mount_point) {
+DeviceType GetDeviceType(base::wcstring_view mount_point) {
   UINT drive_type = GetDriveType(mount_point.c_str());
   if (drive_type == DRIVE_FIXED || drive_type == DRIVE_REMOTE ||
       drive_type == DRIVE_RAMDISK) {
@@ -66,9 +67,9 @@ DeviceType GetDeviceType(const std::wstring& mount_point) {
 
   // Check device strings of the form "X:" and "\\.\X:"
   // For floppy drives, these will return strings like "/Device/Floppy0"
-  std::wstring device = mount_point;
+  auto device = std::wstring(mount_point);
   if (base::EndsWith(mount_point, L"\\", base::CompareCase::INSENSITIVE_ASCII))
-    device = mount_point.substr(0, mount_point.length() - 1);
+    device.resize(device.size() - 1u);
   std::wstring device_path;
   std::wstring device_path_slash;
   DWORD dos_device = QueryDosDevice(
@@ -220,7 +221,6 @@ void EjectDeviceInThreadPool(
     base::OnceCallback<void(StorageMonitor::EjectStatus)> callback,
     scoped_refptr<base::SequencedTaskRunner> task_runner,
     int iteration) {
-  base::FilePath::StringType volume_name;
   base::FilePath::CharType drive_letter = device.value()[0];
   // Don't try to eject if the path isn't a simple one -- we're not
   // sure how to do that yet. Need to figure out how to eject volumes mounted
@@ -232,7 +232,8 @@ void EjectDeviceInThreadPool(
         base::BindOnce(std::move(callback), StorageMonitor::EJECT_FAILURE));
     return;
   }
-  base::SStringPrintf(&volume_name, L"\\\\.\\%lc:", drive_letter);
+  std::wstring volume_name =
+      base::StrCat({L"\\\\.\\", std::wstring(1, drive_letter), L":"});
 
   base::win::ScopedHandle volume_handle(CreateFile(
       volume_name.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,

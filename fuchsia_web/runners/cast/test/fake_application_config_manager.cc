@@ -6,19 +6,20 @@
 
 #include <fuchsia/web/cpp/fidl.h>
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "base/fuchsia/fuchsia_logging.h"
 #include "base/logging.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 constexpr char FakeApplicationConfigManager::kFakeAgentUrl[] =
     "fuchsia-pkg://fuchsia.com/fake_agent#meta/fake_agent.cmx";
 
 // static
 chromium::cast::ApplicationConfig FakeApplicationConfigManager::CreateConfig(
-    base::StringPiece id,
+    std::string_view id,
     const GURL& url) {
   chromium::cast::ApplicationConfig app_config;
   app_config.set_id(std::string(id));
@@ -43,7 +44,7 @@ void FakeApplicationConfigManager::AddAppConfig(
   id_to_config_[app_config.id()] = std::move(app_config);
 }
 
-void FakeApplicationConfigManager::AddApp(base::StringPiece id,
+void FakeApplicationConfigManager::AddApp(std::string_view id,
                                           const GURL& url) {
   AddAppConfig(CreateConfig(id, url));
 }
@@ -60,7 +61,7 @@ void FakeApplicationConfigManager::GetConfig(std::string id,
   // ContextDirectoryProviders contain move-only fuchsia.io.Directory resources,
   // so if those are present then remove them, manually clone them, then
   // put them back.
-  absl::optional<std::vector<fuchsia::web::ContentDirectoryProvider>>
+  std::optional<std::vector<fuchsia::web::ContentDirectoryProvider>>
       content_directories;
   chromium::cast::ApplicationConfig& config = it->second;
   if (config.has_content_directories_for_isolated_application()) {

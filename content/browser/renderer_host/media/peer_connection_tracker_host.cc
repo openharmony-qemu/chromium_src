@@ -75,10 +75,11 @@ PeerConnectionTrackerHost::PeerConnectionTrackerHost(RenderFrameHost* frame)
       peer_pid_(frame->GetProcess()->GetProcess().Pid()) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   RegisterHost(this);
-  base::PowerMonitor::AddPowerSuspendObserver(this);
+  auto* power_monitor = base::PowerMonitor::GetInstance();
+  power_monitor->AddPowerSuspendObserver(this);
   // Ensure that the initial thermal state is known by the |tracker_|.
   base::PowerThermalObserver::DeviceThermalState initial_thermal_state =
-      base::PowerMonitor::AddPowerStateObserverAndReturnPowerThermalState(this);
+      power_monitor->AddPowerStateObserverAndReturnPowerThermalState(this);
 
   frame->GetRemoteInterfaces()->GetInterface(
       tracker_.BindNewPipeAndPassReceiver());
@@ -91,8 +92,9 @@ PeerConnectionTrackerHost::PeerConnectionTrackerHost(RenderFrameHost* frame)
 PeerConnectionTrackerHost::~PeerConnectionTrackerHost() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   RemoveHost(this);
-  base::PowerMonitor::RemovePowerSuspendObserver(this);
-  base::PowerMonitor::RemovePowerThermalObserver(this);
+  auto* power_monitor = base::PowerMonitor::GetInstance();
+  power_monitor->RemovePowerSuspendObserver(this);
+  power_monitor->RemovePowerThermalObserver(this);
 }
 
 void PeerConnectionTrackerHost::AddPeerConnection(
@@ -100,11 +102,11 @@ void PeerConnectionTrackerHost::AddPeerConnection(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   const std::string& url =
-      (info->url == absl::nullopt) ? std::string() : *info->url;
+      (info->url == std::nullopt) ? std::string() : *info->url;
 
   for (auto& observer : GetObserverList()) {
     observer.OnPeerConnectionAdded(frame_id_, info->lid, peer_pid_, url,
-                                   info->rtc_configuration, info->constraints);
+                                   info->rtc_configuration);
   }
 }
 
@@ -276,9 +278,9 @@ void PeerConnectionTrackerHost::GetStandardStats() {
   tracker_->GetStandardStats();
 }
 
-void PeerConnectionTrackerHost::GetLegacyStats() {
+void PeerConnectionTrackerHost::GetCurrentState() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  tracker_->GetLegacyStats();
+  tracker_->GetCurrentState();
 }
 
 void PeerConnectionTrackerHost::BindReceiver(

@@ -14,9 +14,9 @@ import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
 import org.chromium.base.PiiElider;
 import org.chromium.base.StrictModeContext;
-import org.chromium.build.annotations.MainDex;
+import org.chromium.base.version_info.VersionInfo;
+import org.chromium.build.BuildConfig;
 import org.chromium.components.minidump_uploader.CrashFileManager;
-import org.chromium.components.version_info.VersionInfo;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
  *
  * This class is written in pure Java, so it can handle exception happens before native is loaded.
  */
-@MainDex
 public abstract class PureJavaExceptionReporter
         implements PureJavaExceptionHandler.JavaExceptionReporter {
     // report fields, please keep the name sync with MIME blocks in breakpad_linux.cc
@@ -126,15 +125,18 @@ public abstract class PureJavaExceptionReporter
         // SDK should be maintained for potential custom monitoring.
         mReportContent.put(SDK, String.valueOf(Build.VERSION.SDK_INT));
         mReportContent.put(ANDROID_SDK_INT, String.valueOf(Build.VERSION.SDK_INT));
-        mReportContent.put(GMS_CORE_VERSION, buildInfo.gmsVersionCode);
+        mReportContent.put(GMS_CORE_VERSION, buildInfo.getGmsVersionCode());
         mReportContent.put(INSTALLER_PACKAGE_NAME, buildInfo.installerPackageName);
         mReportContent.put(ABI_NAME, buildInfo.abiString);
-        mReportContent.put(EXCEPTION_INFO,
+        mReportContent.put(
+                EXCEPTION_INFO,
                 PiiElider.sanitizeStacktrace(Log.getStackTraceString(javaException)));
         mReportContent.put(EARLY_JAVA_EXCEPTION, "true");
-        mReportContent.put(PACKAGE,
-                String.format("%s v%s (%s)", BuildInfo.getFirebaseAppId(), buildInfo.versionCode,
-                        buildInfo.versionName));
+        mReportContent.put(
+                PACKAGE,
+                String.format(
+                        "%s v%s (%s)",
+                        buildInfo.packageName, BuildConfig.VERSION_CODE, buildInfo.versionName));
         mReportContent.put(CUSTOM_THEMES, buildInfo.customThemes);
         mReportContent.put(RESOURCES_VERSION, buildInfo.resourcesVersion);
 
@@ -151,11 +153,13 @@ public abstract class PureJavaExceptionReporter
             File minidumpDir = new File(getCrashFilesDirectory(), CrashFileManager.CRASH_DUMP_DIR);
             // Tests disable minidump uploading by not creating the minidump directory.
             mUpload = minidumpDir.exists();
-            String overrideMinidumpDirPath =
-                    CommandLine.getInstance().getSwitchValue(DUMP_LOCATION_SWITCH);
-            if (overrideMinidumpDirPath != null) {
-                minidumpDir = new File(overrideMinidumpDirPath);
-                minidumpDir.mkdirs();
+            if (CommandLine.isInitialized()) {
+                String overrideMinidumpDirPath =
+                        CommandLine.getInstance().getSwitchValue(DUMP_LOCATION_SWITCH);
+                if (overrideMinidumpDirPath != null) {
+                    minidumpDir = new File(overrideMinidumpDirPath);
+                    minidumpDir.mkdirs();
+                }
             }
             mMinidumpFile = new File(minidumpDir, minidumpFileName);
             mMinidumpFileStream = new FileOutputStream(mMinidumpFile);
@@ -205,15 +209,14 @@ public abstract class PureJavaExceptionReporter
         if (mMinidumpFile == null || !mUpload) return;
         if (mAttachLogcat) {
             LogcatCrashExtractor logcatExtractor = new LogcatCrashExtractor();
-            mMinidumpFile = logcatExtractor.attachLogcatToMinidump(
-                    mMinidumpFile, new CrashFileManager(getCrashFilesDirectory()));
+            mMinidumpFile =
+                    logcatExtractor.attachLogcatToMinidump(
+                            mMinidumpFile, new CrashFileManager(getCrashFilesDirectory()));
         }
         uploadMinidump(mMinidumpFile);
     }
 
-    /**
-     * @return the product name to be used in the crash report.
-     */
+    /** @return the product name to be used in the crash report. */
     protected abstract String getProductName();
 
     /**
@@ -223,13 +226,9 @@ public abstract class PureJavaExceptionReporter
      */
     protected abstract void uploadMinidump(File minidump);
 
-    /**
-     * @return prefix to be added before the minidump file name.
-     */
+    /** @return prefix to be added before the minidump file name. */
     protected abstract String getMinidumpPrefix();
 
-    /**
-     * @return The top level directory where all crash related files are stored.
-     */
+    /** @return The top level directory where all crash related files are stored. */
     protected abstract File getCrashFilesDirectory();
 }

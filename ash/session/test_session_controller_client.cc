@@ -73,6 +73,7 @@ void TestSessionControllerClient::Reset() {
   session_info_.should_lock_screen_automatically = false;
   session_info_.add_user_session_policy = AddUserSessionPolicy::ALLOWED;
   session_info_.state = session_manager::SessionState::LOGIN_PRIMARY;
+  first_session_ready_fired_ = false;
 
   controller_->ClearUserSessionsForTest();
   controller_->SetSessionInfo(session_info_);
@@ -102,6 +103,8 @@ void TestSessionControllerClient::SetSessionState(
     session_manager::SessionState state) {
   session_info_.state = state;
   controller_->SetSessionInfo(session_info_);
+
+  MaybeNotifyFirstSessionReady();
 }
 
 void TestSessionControllerClient::SetIsRunningInAppMode(bool app_mode) {
@@ -138,12 +141,13 @@ void TestSessionControllerClient::AddUserSession(
     user_manager::UserType user_type,
     bool provide_pref_service,
     bool is_new_profile,
-    const std::string& given_name) {
+    const std::string& given_name,
+    bool is_account_managed) {
   auto account_id = AccountId::FromUserEmail(
       use_lower_case_user_id_ ? GetUserIdFromEmail(display_email)
                               : display_email);
   AddUserSession(account_id, display_email, user_type, provide_pref_service,
-                 is_new_profile, given_name);
+                 is_new_profile, given_name, is_account_managed);
 }
 
 void TestSessionControllerClient::AddUserSession(
@@ -152,11 +156,12 @@ void TestSessionControllerClient::AddUserSession(
     user_manager::UserType user_type,
     bool provide_pref_service,
     bool is_new_profile,
-    const std::string& given_name) {
+    const std::string& given_name,
+    bool is_account_managed) {
   // Set is_ephemeral in user_info to true if the user type is guest or public
   // account.
-  bool is_ephemeral = user_type == user_manager::USER_TYPE_GUEST ||
-                      user_type == user_manager::USER_TYPE_PUBLIC_ACCOUNT;
+  bool is_ephemeral = user_type == user_manager::UserType::kGuest ||
+                      user_type == user_manager::UserType::kPublicAccount;
 
   UserSession session;
   session.session_id = ++fake_session_id_;
@@ -167,12 +172,18 @@ void TestSessionControllerClient::AddUserSession(
   session.user_info.is_ephemeral = is_ephemeral;
   session.user_info.is_new_profile = is_new_profile;
   session.user_info.given_name = given_name;
+  session.user_info.has_gaia_account =
+      account_id.GetAccountType() == AccountType::GOOGLE &&
+      !account_id.GetGaiaId().empty();
+  session.user_info.is_managed = is_account_managed;
   controller_->UpdateUserSession(std::move(session));
 
   if (provide_pref_service && prefs_provider_ &&
       !controller_->GetUserPrefServiceForUser(account_id)) {
     ProvidePrefServiceForUser(account_id);
   }
+
+  MaybeNotifyFirstSessionReady();
 }
 
 void TestSessionControllerClient::ProvidePrefServiceForUser(
@@ -287,7 +298,6 @@ void TestSessionControllerClient::CycleActiveUser(
       });
   if (it == sessions.end()) {
     NOTREACHED();
-    return;
   }
 
   SwitchActiveUser((*it)->user_info.account_id);
@@ -296,8 +306,8 @@ void TestSessionControllerClient::CycleActiveUser(
 void TestSessionControllerClient::ShowMultiProfileLogin() {
   SetSessionState(session_manager::SessionState::LOGIN_SECONDARY);
 
-  views::Widget::InitParams params;
-  params.ownership = views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
+  views::Widget::InitParams params(
+      views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET);
   params.bounds = gfx::Rect(0, 0, 400, 300);
   params.context = Shell::GetPrimaryRootWindow();
 
@@ -317,11 +327,17 @@ PrefService* TestSessionControllerClient::GetUserPrefService(
   return prefs_provider_ ? prefs_provider_->GetUserPrefs(account_id) : nullptr;
 }
 
-bool TestSessionControllerClient::IsEnterpriseManaged() const {
-  return is_enterprise_managed_;
+base::FilePath TestSessionControllerClient::GetProfilePath(
+    const AccountId& account_id) {
+  return base::FilePath("/profile/path").Append(account_id.GetUserEmail());
 }
 
-absl::optional<int> TestSessionControllerClient::GetExistingUsersCount() const {
+std::tuple<bool, bool> TestSessionControllerClient::IsEligibleForSeaPen(
+    const AccountId& account_id) {
+  return is_eligible_for_background_replace_;
+}
+
+std::optional<int> TestSessionControllerClient::GetExistingUsersCount() const {
   return existing_users_count_;
 }
 
@@ -342,6 +358,15 @@ void TestSessionControllerClient::DoSwitchUser(const AccountId& account_id,
   }
 
   controller_->SetUserSessionOrder(session_order);
+}
+
+void TestSessionControllerClient::MaybeNotifyFirstSessionReady() {
+  if (!first_session_ready_fired_ &&
+      controller_->IsActiveUserSessionStarted() &&
+      session_info_.state == session_manager::SessionState::ACTIVE) {
+    first_session_ready_fired_ = true;
+    controller_->NotifyFirstSessionReady();
+  }
 }
 
 }  // namespace ash

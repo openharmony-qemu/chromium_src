@@ -21,7 +21,6 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "services/viz/public/mojom/compositing/frame_sink_bundle.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace viz {
 
@@ -67,14 +66,15 @@ class FrameSinkBundleImpl : public mojom::FrameSinkBundle {
       uint32_t sink_id,
       mojom::CompositorFrameSinkType type) override;
   void SetNeedsBeginFrame(uint32_t sink_id, bool needs_begin_frame) override;
+  void SetWantsBeginFrameAcks(uint32_t sink_id) override;
   void Submit(
       std::vector<mojom::BundledFrameSubmissionPtr> submissions) override;
   void DidAllocateSharedBitmap(uint32_t sink_id,
                                base::ReadOnlySharedMemoryRegion region,
-                               const gpu::Mailbox& id) override;
+                               const SharedBitmapId& id) override;
 #if BUILDFLAG(IS_ANDROID)
-  void SetThreadIds(uint32_t sink_id,
-                    const std::vector<int32_t>& thread_ids) override;
+  void SetThreads(uint32_t sink_id,
+                  const std::vector<Thread>& threads) override;
 #endif
 
   // Helpers used by each CompositorFrameSinkImpl to proxy their client messages

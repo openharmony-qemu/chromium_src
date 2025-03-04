@@ -5,6 +5,7 @@
 #ifndef CONTENT_BROWSER_WAKE_LOCK_WAKE_LOCK_CONTEXT_HOST_H_
 #define CONTENT_BROWSER_WAKE_LOCK_WAKE_LOCK_CONTEXT_HOST_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "content/public/browser/web_contents.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -36,9 +37,9 @@ class WakeLockContextHost {
     return wake_lock_context_ ? wake_lock_context_.get() : nullptr;
   }
 
-#if defined(OHOS_SCREEN_LOCK)
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   void SetWakeLockHandler(int32_t windowId, const SetKeepScreenOn& handler);
-#endif
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 
  private:
   // This instance's ID.
@@ -50,9 +51,9 @@ class WakeLockContextHost {
   // The WakeLockContext instance that is connected to this instance.
   mojo::Remote<device::mojom::WakeLockContext> wake_lock_context_;
 
-#if defined(OHOS_SCREEN_LOCK)
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
   int32_t window_id_ = -1;
-#endif
+#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
 };
 
 }  // namespace content

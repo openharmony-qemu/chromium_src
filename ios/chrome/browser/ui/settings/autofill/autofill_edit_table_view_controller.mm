@@ -4,17 +4,13 @@
 
 #import "ios/chrome/browser/ui/settings/autofill/autofill_edit_table_view_controller.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/check.h"
-#import "base/mac/foundation_util.h"
+#import "base/notreached.h"
+#import "ios/chrome/browser/autofill/ui_bundled/cells/autofill_credit_card_edit_item.h"
+#import "ios/chrome/browser/autofill/ui_bundled/form_input_accessory/form_input_accessory_chromium_text_data.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/ui/autofill/cells/autofill_edit_item.h"
-#import "ios/chrome/browser/ui/autofill/form_input_accessory/form_input_accessory_chromium_text_data.h"
-#import "ios/chrome/browser/ui/settings/autofill/autofill_edit_table_view_controller+protected.h"
 #import "ios/chrome/common/ui/elements/form_input_accessory_view.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface AutofillEditTableViewController () <FormInputAccessoryViewDelegate> {
   TableViewTextEditCell* _currentEditingCell;
@@ -44,6 +40,14 @@
                                  navigationDelegate:self];
   [self setShouldHideDoneButton:YES];
   [self updateUIForEditState];
+
+  if (@available(iOS 17, *)) {
+    NSArray<UITrait>* traits =
+        TraitCollectionSetForTraits(@[ UITraitVerticalSizeClass.class ]);
+    [self registerForTraitChanges:traits
+                       withAction:@selector
+                       (hideFormInputAccessoryViewOnTraitChange)];
+  }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -63,11 +67,16 @@
               object:nil];
 }
 
+#if !defined(__IPHONE_17_0) || __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_17_0
 - (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
   [super traitCollectionDidChange:previousTraitCollection];
+  if (@available(iOS 17, *)) {
+    return;
+  }
 
-  self.formInputAccessoryView.hidden = IsCompactHeight(self);
+  [self hideFormInputAccessoryViewOnTraitChange];
 }
+#endif
 
 #pragma mark - SettingsRootTableViewController
 
@@ -133,6 +142,11 @@
   return ChromiumAccessoryViewTextData();
 }
 
+- (void)fromInputAccessoryViewDidTapOmniboxTypingShield:
+    (FormInputAccessoryView*)sender {
+  NOTREACHED() << "The typing shield should only be present on web";
+}
+
 #pragma mark - Helper methods
 
 // Returns the cell containing `textField`.
@@ -140,7 +154,7 @@
   TableViewTextEditCell* settingsCell = nil;
   for (UIView* view = textField; view; view = [view superview]) {
     TableViewTextEditCell* cell =
-        base::mac::ObjCCast<TableViewTextEditCell>(view);
+        base::apple::ObjCCast<TableViewTextEditCell>(view);
     if (cell) {
       settingsCell = cell;
       break;
@@ -191,7 +205,7 @@
 }
 
 - (BOOL)isItemAtIndexPathTextEditCell:(NSIndexPath*)cellPath {
-  return YES;
+  NOTREACHED();
 }
 
 - (void)moveToAnotherTextFieldWithOffset:(NSInteger)offset {
@@ -203,7 +217,7 @@
 
   if (nextCellPath) {
     TableViewTextEditCell* nextCell =
-        base::mac::ObjCCastStrict<TableViewTextEditCell>(
+        base::apple::ObjCCastStrict<TableViewTextEditCell>(
             [self.tableView cellForRowAtIndexPath:nextCellPath]);
     [nextCell.textField becomeFirstResponder];
   } else {
@@ -227,6 +241,12 @@
       nextPath && [[self.tableView cellForRowAtIndexPath:nextPath]
                       isKindOfClass:TableViewTextEditCell.class];
   self.formInputAccessoryView.nextButton.enabled = isValidNextPath;
+}
+
+// Hides the `formInputAccessoryView` when the UITraitVerticalSizeClass changes
+// on device and the height is deemed to be compact.
+- (void)hideFormInputAccessoryViewOnTraitChange {
+  self.formInputAccessoryView.hidden = IsCompactHeight(self);
 }
 
 #pragma mark - Keyboard handling

@@ -64,62 +64,34 @@ TEST(AXRolePropertiesTest, TestSupportsToggle) {
   }
 }
 
-TEST(AXRolePropertiesTest, IsControlOnOHOS) {
-  auto result = IsControlOnOHOS(ax::mojom::Role::kSplitter, true);
-  EXPECT_EQ(result, true);
+TEST(AXRolePropertiesTest, TestIsTableWithColumns) {
+  // Test for iterating through all roles and validate if a role is
+  // considered a table which supports multiple columns.
+  std::unordered_set<ax::mojom::Role> roles_expected_is_table_with_columns = {
+      ax::mojom::Role::kGrid, ax::mojom::Role::kListGrid,
+      ax::mojom::Role::kTable, ax::mojom::Role::kTreeGrid};
 
-  result = IsControlOnOHOS(ax::mojom::Role::kSplitter, false);
-  EXPECT_EQ(result, false);
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+  roles_expected_is_table_with_columns.insert(ax::mojom::Role::kLayoutTable);
+#endif
 
-  result = IsControlOnOHOS(ax::mojom::Role::kDate, false);
-  EXPECT_EQ(result, true);
+  for (int role_idx = static_cast<int>(ax::mojom::Role::kMinValue);
+       role_idx <= static_cast<int>(ax::mojom::Role::kMaxValue); role_idx++) {
+    ax::mojom::Role role = static_cast<ax::mojom::Role>(role_idx);
+    bool is_table_with_columns = IsTableLike(role);
 
-  result = IsControlOnOHOS(ax::mojom::Role::kDateTime, false);
-  EXPECT_EQ(result, true);
+    SCOPED_TRACE(testing::Message()
+                 << "ax::mojom::Role=" << ToString(role)
+                 << ", Actual: isTableWithColumns=" << is_table_with_columns
+                 << ", Expected: isTableWithColumns="
+                 << !is_table_with_columns);
 
-  result = IsControlOnOHOS(ax::mojom::Role::kDocBackLink, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kDocBiblioRef, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kDocGlossRef, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kDocNoteRef, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kInputTime, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kLink, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kTreeItem, false);
-  EXPECT_EQ(result, true);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kAlert, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kDialog, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kMenu, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kMenuBar, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kTree, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kUnknown, false);
-  EXPECT_EQ(result, false);
-
-  result = IsControlOnOHOS(ax::mojom::Role::kButton, false);
-  EXPECT_EQ(result, IsControl(ax::mojom::Role::kButton));
-
-  result = IsControlOnOHOS(ax::mojom::Role::kCheckBox, false);
-  EXPECT_EQ(result, IsControl(ax::mojom::Role::kCheckBox));
+    if (roles_expected_is_table_with_columns.find(role) !=
+        roles_expected_is_table_with_columns.end()) {
+      EXPECT_TRUE(is_table_with_columns);
+    } else {
+      EXPECT_FALSE(is_table_with_columns);
+    }
+  }
 }
 }  // namespace ui

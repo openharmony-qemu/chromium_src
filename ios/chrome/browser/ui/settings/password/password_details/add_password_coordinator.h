@@ -8,21 +8,20 @@
 #import "ios/chrome/browser/shared/coordinator/chrome_coordinator/chrome_coordinator.h"
 
 @protocol AddPasswordCoordinatorDelegate;
-@class ReauthenticationModule;
+@protocol ReauthenticationProtocol;
 
 // This coordinator presents add password sheet for the user.
 @interface AddPasswordCoordinator : ChromeCoordinator
 
-- (instancetype)initWithBaseViewController:(UIViewController*)viewController
-                                   browser:(Browser*)browser
-                              reauthModule:(ReauthenticationModule*)reauthModule
-    NS_DESIGNATED_INITIALIZER;
-
-- (instancetype)initWithBaseViewController:(UIViewController*)viewController
-                                   browser:(Browser*)browser NS_UNAVAILABLE;
-
 // Delegate.
 @property(nonatomic, weak) id<AddPasswordCoordinatorDelegate> delegate;
+
+// Stops the coordinator.
+// - shouldDismissUI: Whether stopping also dismisses the presented
+// UIViewController. Use NO when dismissing the whole Password Manager UI in one
+// animation instead of a cascade of animations (i.e. Add Password is dismissed
+// and then the Password Manager).
+- (void)stopWithUIDismissal:(BOOL)shouldDismissUI;
 
 @end
 

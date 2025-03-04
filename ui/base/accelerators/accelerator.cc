@@ -5,6 +5,7 @@
 #include "ui/base/accelerators/accelerator.h"
 
 #include <stdint.h>
+
 #include <tuple>
 
 #include "base/check_op.h"
@@ -12,8 +13,8 @@
 #include "base/notreached.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/types/cxx23_to_underlying.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_code_conversion.h"
@@ -32,53 +33,13 @@
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS)
+#include "ui/base/accelerators/ash/right_alt_event_property.h"
 #include "ui/base/ui_base_features.h"
 #endif
 
 namespace ui {
 
 namespace {
-
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-template <DomKey::Base T>
-using DomKeyConst = typename ui::DomKey::Constant<T>;
-
-// ChromeOS has several shortcuts that uses ASCII punctuation key as a main key
-// to triger them (e.g. ctrl+shift+alt+/). However, many of these keys have
-// different VKEY on different keyboard layouts, (some require shift or altgr
-// to type in), so using these keys combined with shift may not work well on
-// non-US layouts.  Instead of using VKEY, the new mapping uses DomKey as a key
-// to trigger and maps to VKEY+modifier that would have generated the same key
-// on US-keyboard.  See crbug.com/1067269 for more details.
-struct {
-  KeyboardCode vkey;
-  const DomKey::Base dom_key;
-  const DomKey::Base shifted_dom_key;
-} kAccelConversionMap[] = {
-    {VKEY_1, DomKeyConst<'1'>::Character, DomKeyConst<'!'>::Character},
-    {VKEY_2, DomKeyConst<'2'>::Character, DomKeyConst<'@'>::Character},
-    {VKEY_3, DomKeyConst<'3'>::Character, DomKeyConst<'#'>::Character},
-    {VKEY_4, DomKeyConst<'4'>::Character, DomKeyConst<'$'>::Character},
-    {VKEY_5, DomKeyConst<'5'>::Character, DomKeyConst<'%'>::Character},
-    {VKEY_6, DomKeyConst<'6'>::Character, DomKeyConst<'&'>::Character},
-    {VKEY_7, DomKeyConst<'7'>::Character, DomKeyConst<'^'>::Character},
-    {VKEY_8, DomKeyConst<'8'>::Character, DomKeyConst<'*'>::Character},
-    {VKEY_9, DomKeyConst<'9'>::Character, DomKeyConst<'('>::Character},
-    {VKEY_0, DomKeyConst<'0'>::Character, DomKeyConst<')'>::Character},
-    {VKEY_OEM_MINUS, DomKeyConst<'-'>::Character, DomKeyConst<'_'>::Character},
-    {VKEY_OEM_PLUS, DomKeyConst<'='>::Character, DomKeyConst<'+'>::Character},
-    {VKEY_OEM_4, DomKeyConst<'['>::Character, DomKeyConst<'{'>::Character},
-    {VKEY_OEM_6, DomKeyConst<']'>::Character, DomKeyConst<'}'>::Character},
-    {VKEY_OEM_5, DomKeyConst<'\\'>::Character, DomKeyConst<'|'>::Character},
-    {VKEY_OEM_1, DomKeyConst<';'>::Character, DomKeyConst<':'>::Character},
-    {VKEY_OEM_7, DomKeyConst<'\''>::Character, DomKeyConst<'\"'>::Character},
-    {VKEY_OEM_3, DomKeyConst<'`'>::Character, DomKeyConst<'~'>::Character},
-    {VKEY_OEM_COMMA, DomKeyConst<','>::Character, DomKeyConst<'<'>::Character},
-    {VKEY_OEM_PERIOD, DomKeyConst<'.'>::Character, DomKeyConst<'>'>::Character},
-    {VKEY_OEM_2, DomKeyConst<'/'>::Character, DomKeyConst<'?'>::Character},
-};
-
-#endif
 
 const int kModifierMask = EF_SHIFT_DOWN | EF_CONTROL_DOWN | EF_ALT_DOWN |
                           EF_COMMAND_DOWN | EF_FUNCTION_DOWN | EF_ALTGR_DOWN;
@@ -124,8 +85,9 @@ Accelerator::Accelerator(KeyboardCode key_code,
 
 Accelerator::Accelerator(const KeyEvent& key_event)
     : key_code_(key_event.key_code()),
-      key_state_(key_event.type() == ET_KEY_PRESSED ? KeyState::PRESSED
-                                                    : KeyState::RELEASED),
+      key_state_(key_event.type() == EventType::kKeyPressed
+                     ? KeyState::PRESSED
+                     : KeyState::RELEASED),
       // |modifiers_| may include the repeat flag.
       modifiers_(key_event.flags() & kInterestingFlagsMask),
       time_stamp_(key_event.time_stamp()),
@@ -135,27 +97,11 @@ Accelerator::Accelerator(const KeyEvent& key_event)
   if (features::IsImprovedKeyboardShortcutsEnabled()) {
     code_ = key_event.code();
   }
-#endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-  if (features::IsNewShortcutMappingEnabled()) {
-    DCHECK(!features::IsImprovedKeyboardShortcutsEnabled());
-    DomKey dom_key = key_event.GetDomKey();
-    if (!dom_key.IsCharacter())
-      return;
-    for (auto entry : kAccelConversionMap) {
-      // ALTGR is always canceled because it's not required on US Keyboard.
-      if (entry.dom_key == dom_key) {
-        // No shift punctuation key on US keyboard.
-        key_code_ = entry.vkey;
-        modifiers_ &= ~(ui::EF_SHIFT_DOWN | ui::EF_ALTGR_DOWN);
-      }
-      if (entry.shifted_dom_key == dom_key) {
-        // Punctuation key with shift on US keyboard.
-        key_code_ = entry.vkey;
-        modifiers_ = (modifiers_ | ui::EF_SHIFT_DOWN) & ~ui::EF_ALTGR_DOWN;
-      }
-    }
+  // Rewrite to Right Alt based on the presence of the property.
+  if (key_event.key_code() == VKEY_ASSISTANT &&
+      HasRightAltProperty(key_event)) {
+    key_code_ = VKEY_RIGHT_ALT;
   }
 #endif
 }
@@ -173,8 +119,8 @@ int Accelerator::MaskOutKeyEventFlags(int flags) {
 
 KeyEvent Accelerator::ToKeyEvent() const {
   return KeyEvent(key_state() == Accelerator::KeyState::PRESSED
-                      ? ET_KEY_PRESSED
-                      : ET_KEY_RELEASED,
+                      ? EventType::kKeyPressed
+                      : EventType::kKeyReleased,
                   key_code(),
 #if BUILDFLAG(IS_CHROMEOS)
                   code(),
@@ -198,6 +144,10 @@ bool Accelerator::operator==(const Accelerator& rhs) const {
 
 bool Accelerator::operator!=(const Accelerator& rhs) const {
   return !(*this == rhs);
+}
+
+bool Accelerator::IsEmpty() const {
+  return key_code_ == VKEY_UNKNOWN && modifiers_ == EF_NONE;
 }
 
 bool Accelerator::IsShiftDown() const {
@@ -246,10 +196,11 @@ std::u16string Accelerator::GetShortcutText() const {
     // accent' for '0'). For display in the menu (e.g. Ctrl-0 for the
     // default zoom level), we leave VK_[0-9] alone without translation.
     wchar_t key;
-    if (base::IsAsciiDigit(key_code_))
+    if (base::IsAsciiDigit(base::to_underlying(key_code_))) {
       key = static_cast<wchar_t>(key_code_);
-    else
+    } else {
       key = LOWORD(::MapVirtualKeyW(key_code_, MAPVK_VK_TO_CHAR));
+    }
     // If there is no translation for the given |key_code_| (e.g.
     // VKEY_UNKNOWN), |::MapVirtualKeyW| returns 0.
     if (key != 0)
@@ -296,7 +247,7 @@ std::u16string Accelerator::GetShortcutText() const {
   // RTL context because the punctuation no longer appears at the end of the
   // string.
   //
-  // TODO(crbug.com/1194340): This hack of doing the RTL adjustment here was
+  // TODO(crbug.com/40175605): This hack of doing the RTL adjustment here was
   // intended to be removed when the menu system moved to MenuItemView. That was
   // crbug.com/2822, closed in 2010. Can we finally remove all of this?
   if (adjust_shortcut_for_rtl) {
@@ -463,6 +414,8 @@ std::u16string Accelerator::ApplyLongFormModifiers(
     result = ApplyModifierToAcceleratorString(result, IDS_APP_SEARCH_KEY);
 #elif BUILDFLAG(IS_WIN)
     result = ApplyModifierToAcceleratorString(result, IDS_APP_WINDOWS_KEY);
+#elif BUILDFLAG(IS_LINUX)
+    result = ApplyModifierToAcceleratorString(result, IDS_APP_SUPER_KEY);
 #else
     NOTREACHED();
 #endif
@@ -476,14 +429,21 @@ std::u16string Accelerator::ApplyShortFormModifiers(
   std::u16string result;
   result.reserve(6);
 
-  if (IsCtrlDown())
+  // Add modifiers in the order that matches how they are displayed in native
+  // menus.
+  if (IsCtrlDown()) {
     result.push_back(u'⌃');  // U+2303, UP ARROWHEAD
-  if (IsAltDown())
+  }
+  if (IsAltDown()) {
     result.push_back(u'⌥');  // U+2325, OPTION KEY
-  if (IsShiftDown())
+  }
+  if (IsShiftDown()) {
     result.push_back(u'⇧');  // U+21E7, UPWARDS WHITE ARROW
-  if (IsCmdDown())
+  }
+  if (IsCmdDown()) {
     result.push_back(u'⌘');  // U+2318, PLACE OF INTEREST SIGN
+  }
+
   if (IsFunctionDown()) {
     // The real "fn" used by menus is actually U+E23E in the Private Use Area in
     // the keyboard font obtained with CTFontCreateUIFontForLanguage, with key
@@ -504,8 +464,8 @@ std::u16string Accelerator::ApplyShortFormModifiers(
     // -[NSKeyboardShortcut localizedModifierMaskDisplayName] for an example of
     // this.
     //
-    // TODO(https://crbug.com/1263737): Implement all of this when text-style
-    // presentations are implemented for Views in https://crbug.com/1099591.
+    // TODO(http://crbug.com/40800376): Implement all of this when text-style
+    // presentations are implemented for Views in https://crbug.com/40137571.
     result.append(u"(fn) ");
   }
 

@@ -25,6 +25,7 @@ const char kServiceSandboxType[] = "service-sandbox-type";
 const char kNoneSandbox[] = "none";
 const char kNoneSandboxAndElevatedPrivileges[] = "none_and_elevated";
 const char kNetworkSandbox[] = "network";
+const char kOnDeviceModelExecutionSandbox[] = "on_device_model_execution";
 const char kPpapiSandbox[] = "ppapi";
 const char kUtilitySandbox[] = "utility";
 const char kCdmSandbox[] = "cdm";
@@ -38,6 +39,7 @@ const char kServiceSandboxWithJit[] = "service_with_jit";
 #if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
 const char kScreenAISandbox[] = "screen_ai";
 #endif
+const char kVideoEffectsSandbox[] = "video_effects";
 const char kSpeechRecognitionSandbox[] = "speech_recognition";
 const char kVideoCaptureSandbox[] = "video_capture";
 
@@ -47,27 +49,31 @@ const char kXrCompositingSandbox[] = "xr_compositing";
 const char kIconReaderSandbox[] = "icon_reader";
 const char kMediaFoundationCdmSandbox[] = "mf_cdm";
 const char kWindowsSystemProxyResolverSandbox[] = "proxy_resolver_win";
-const char kFileUtilSandbox[] = "file_util";
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_MAC)
 const char kMirroringSandbox[] = "mirroring";
 #endif  // BUILDFLAG(IS_MAC)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
 const char kHardwareVideoDecodingSandbox[] = "hardware_video_decoding";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 const char kHardwareVideoEncodingSandbox[] = "hardware_video_encoding";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 const char kImeSandbox[] = "ime";
 const char kTtsSandbox[] = "tts";
+const char kNearbySandbox[] = "nearby";
 #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 const char kLibassistantSandbox[] = "libassistant";
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
+const char kOnDeviceTranslationSandbox[] = "on_device_translation";
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC)
 
 // Flags owned by the service manager sandbox.
 
@@ -96,7 +102,7 @@ const char kGpuSandboxFailuresFatal[] = "gpu-sandbox-failures-fatal";
 // Meant to be used as a browser-level switch for testing purposes only.
 const char kNoSandbox[] = "no-sandbox";
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // Instructs the zygote to launch without a sandbox. Processes forked from this
 // type of zygote will apply their own custom sandboxes later.
 const char kNoZygoteSandbox[] = "no-zygote-sandbox";
@@ -127,13 +133,13 @@ const char kDisableMetalShaderCache[] = "disable-metal-shader-cache";
 // Flags spied upon from other layers.
 const char kProcessType[] = "type";
 const char kGpuProcess[] = "gpu-process";
-const char kNaClBrokerProcess[] = "nacl-broker";
 const char kNaClLoaderProcess[] = "nacl-loader";
 const char kPpapiPluginProcess[] = "ppapi";
 const char kRendererProcess[] = "renderer";
 const char kUtilityProcess[] = "utility";
 const char kZygoteProcessType[] = "zygote";
 const char kRelauncherProcessType[] = "relauncher";
+const char kCodeSignCloneCleanupProcessType[] = "code-sign-clone-cleanup";
 
 }  // namespace switches
 }  // namespace policy

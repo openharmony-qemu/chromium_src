@@ -40,3 +40,5 @@ if (visual_studio_path == "") {
   assert(windows_sdk_version != "",
          "You must set the windows_sdk_version if you set the path")
 }
+
+visual_studio_version_logs = [ "windows_sdk_version=${windows_sdk_version}" ]

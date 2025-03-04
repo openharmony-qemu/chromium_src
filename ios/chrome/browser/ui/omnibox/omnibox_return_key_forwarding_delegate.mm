@@ -4,13 +4,11 @@
 
 #import "ios/chrome/browser/ui/omnibox/omnibox_return_key_forwarding_delegate.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "base/memory/raw_ptr.h"
 
 @implementation ForwardingReturnDelegate {
   // Weak, acts as a delegate
-  OmniboxTextAcceptDelegate* _delegate;
+  raw_ptr<OmniboxTextAcceptDelegate> _delegate;
 }
 
 - (void)setAcceptDelegate:(OmniboxTextAcceptDelegate*)delegate {

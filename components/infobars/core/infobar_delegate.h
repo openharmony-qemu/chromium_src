@@ -56,13 +56,6 @@ class InfoBarDelegate {
     PAGE_ACTION_TYPE,
   };
 
-  enum InfoBarAutomationType {
-    CONFIRM_INFOBAR,
-    PASSWORD_INFOBAR,
-    RPH_INFOBAR,
-    UNKNOWN_INFOBAR,
-  };
-
   // Unique identifier for every InfoBarDelegate subclass.  Use suffixes to mark
   // infobars specific to particular OSes/platforms.
   // KEEP IN SYNC WITH THE InfoBarIdentifier ENUM IN enums.xml.
@@ -99,7 +92,7 @@ class InfoBarDelegate {
     // Removed: GENERATED_PASSWORD_SAVED_INFOBAR_DELEGATE_ANDROID = 25,
     SAVE_PASSWORD_INFOBAR_DELEGATE_MOBILE = 26,
     // Removed: PEPPER_BROKER_INFOBAR_DELEGATE = 27,
-    PERMISSION_UPDATE_INFOBAR_DELEGATE_ANDROID = 28,
+    // Removed: PERMISSION_UPDATE_INFOBAR_DELEGATE_ANDROID = 28,
     // Removed: DURABLE_STORAGE_PERMISSION_INFOBAR_DELEGATE_ANDROID = 29,
     // Removed: NPAPI_REMOVAL_INFOBAR_DELEGATE = 30,
     // Removed: OUTDATED_PLUGIN_INFOBAR_DELEGATE = 31,
@@ -136,8 +129,8 @@ class InfoBarDelegate {
     // Removed: DESKTOP_SEARCH_REDIRECTION_INFOBAR_DELEGATE = 62,
     // Removed: UPDATE_PASSWORD_INFOBAR_DELEGATE_MOBILE = 63,
     // Removed: DATA_REDUCTION_PROMO_INFOBAR_DELEGATE_ANDROID = 64,
-    AUTOFILL_CREDIT_CARD_FILLING_INFOBAR_DELEGATE_ANDROID = 65,
-    ADS_BLOCKED_INFOBAR_DELEGATE_ANDROID = 66,
+    // Removed: AUTOFILL_CREDIT_CARD_FILLING_INFOBAR_DELEGATE_ANDROID = 65,
+    // Removed: ADS_BLOCKED_INFOBAR_DELEGATE_ANDROID = 66,
     // Removed: INSTANT_APPS_INFOBAR_DELEGATE_ANDROID = 67,
     // Removed: DATA_REDUCTION_PROXY_PREVIEW_INFOBAR_DELEGATE = 68,
     // Removed: SCREEN_CAPTURE_INFOBAR_DELEGATE_ANDROID = 69,
@@ -176,15 +169,24 @@ class InfoBarDelegate {
     // Removed: EXPERIMENTAL_INFOBAR_DELEGATE_LACROS = 102,
     // Removed: ROSETTA_REQUIRED_INFOBAR_DELEGATE = 103,
     // Removed: WEBID_PERMISSION_INFOBAR_DELEGATE = 104,
-    AUTOFILL_OFFER_NOTIFICATION_INFOBAR_DELEGATE = 105,
+    // Removed: AUTOFILL_OFFER_NOTIFICATION_INFOBAR_DELEGATE = 105,
     AUTOFILL_ADDRESS_PROFILE_INFOBAR_DELEGATE_IOS = 106,
     ADD_TO_READING_LIST_IOS = 107,
     IOS_PERMISSIONS_INFOBAR_DELEGATE = 108,
-    SUPPORTED_LINKS_INFOBAR_DELEGATE_CHROMEOS = 109,
+    // Removed: SUPPORTED_LINKS_INFOBAR_DELEGATE_CHROMEOS = 109,
     AUTOFILL_VIRTUAL_CARD_ENROLLMENT_INFOBAR_DELEGATE_MOBILE = 110,
     TAILORED_SECURITY_SERVICE_INFOBAR_DELEGATE = 111,
     CHROME_FOR_TESTING_INFOBAR_DELEGATE = 112,
     EXTENSIONS_WEB_AUTH_FLOW_INFOBAR_DELEGATE = 113,
+    TAB_PICKUP_INFOBAR_DELEGATE = 114,
+    LOCAL_TEST_POLICIES_APPLIED_INFOBAR = 115,
+    BIDDING_AND_AUCTION_CONSENTED_DEBUGGING_DELEGATE = 116,
+    PARCEL_TRACKING_INFOBAR_DELEGATE = 117,
+    TEST_THIRD_PARTY_COOKIE_PHASEOUT_DELEGATE = 118,
+    ENABLE_LINK_CAPTURING_INFOBAR_DELEGATE = 119,
+    DEV_TOOLS_SHARED_PROCESS_DELEGATE = 120,
+    ENHANCED_SAFE_BROWSING_INFOBAR_DELEGATE = 121,
+    CREDENTIAL_PROVIDER_INFOBAR_DELEGATE_IOS = 122,
   };
 
   // Describes navigation events, used to decide whether infobars should be
@@ -198,8 +200,13 @@ class InfoBarDelegate {
     bool did_replace_entry;
     bool is_reload;
     bool is_redirect;
+#if BUILDFLAG(IS_IOS)
     // True if the navigation was caused by a form submission.
-    bool is_form_submission = false;
+    bool is_form_submission;
+    // True if the navigation was caused by a user gesture, e.g. reload or load
+    // new content from the omnibox.
+    bool has_user_gesture;
+#endif  // BUILDFLAG(IS_IOS)
   };
 
   // Value to use when the InfoBar has no icon to show.
@@ -216,8 +223,6 @@ class InfoBarDelegate {
   // New implementers must append a new value to the InfoBarIdentifier enum here
   // and in histograms/enums.xml.
   virtual InfoBarIdentifier GetIdentifier() const = 0;
-
-  virtual InfoBarAutomationType GetInfoBarAutomationType() const;
 
   // Returns the resource ID of the icon to be shown for this InfoBar.  If the
   // value is equal to |kNoIconID|, GetIcon() will not show an icon by default.
@@ -282,7 +287,9 @@ class InfoBarDelegate {
   virtual blocked_content::PopupBlockedInfoBarDelegate*
   AsPopupBlockedInfoBarDelegate();
   virtual ThemeInstalledInfoBarDelegate* AsThemePreviewInfobarDelegate();
+#if BUILDFLAG(IS_IOS)
   virtual translate::TranslateInfoBarDelegate* AsTranslateInfoBarDelegate();
+#endif
 #if BUILDFLAG(IS_ANDROID)
   virtual offline_pages::OfflinePageInfoBarDelegate*
   AsOfflinePageInfoBarDelegate();
@@ -290,11 +297,14 @@ class InfoBarDelegate {
 
   void set_infobar(InfoBar* infobar) { infobar_ = infobar; }
   void set_nav_entry_id(int nav_entry_id) { nav_entry_id_ = nav_entry_id; }
+  void set_dark_mode(bool dark_mode) { dark_mode_ = dark_mode; }
 
  protected:
   InfoBarDelegate();
 
   InfoBar* infobar() { return infobar_; }
+
+  bool dark_mode() const { return dark_mode_; }
 
  private:
   // The InfoBar associated with us.
@@ -302,6 +312,12 @@ class InfoBarDelegate {
 
   // The ID of the active navigation entry at the time we became owned.
   int nav_entry_id_ = 0;
+
+  // Whether the background of the InfoBar is dark. Normally, this is a UI-level
+  // concern that delegates need not worry about. However, some delegates need
+  // to change their behavior in this case, e.g. by returning a different icon
+  // entirely, not just one with a different color.
+  bool dark_mode_ = false;
 };
 
 }  // namespace infobars

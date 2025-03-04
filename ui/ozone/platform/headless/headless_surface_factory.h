@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
@@ -39,8 +40,8 @@ class HeadlessSurfaceFactory : public SurfaceFactoryOzone {
       gfx::Size size,
       gfx::BufferFormat format,
       gfx::BufferUsage usage,
-      absl::optional<gfx::Size> framebuffer_size = absl::nullopt) override;
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+      std::optional<gfx::Size> framebuffer_size = std::nullopt) override;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   scoped_refptr<gfx::NativePixmap> CreateNativePixmapFromHandle(
       gfx::AcceleratedWidget widget,
       gfx::Size size,

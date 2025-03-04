@@ -12,7 +12,6 @@
 #include <wrl/client.h>
 
 #include <algorithm>
-#include <codecvt>
 #include <locale>
 #include <string>
 
@@ -24,6 +23,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/single_thread_task_runner_thread_mode.h"
+#include "base/threading/scoped_thread_priority.h"
 #include "base/win/com_init_util.h"
 #include "base/win/core_winrt_util.h"
 #include "base/win/scoped_co_mem.h"
@@ -110,12 +110,12 @@ class BackgroundHelper {
       const std::string& lang_tag);
 
   // Records metrics about spell check support for the user's Chrome locales.
-  void RecordChromeLocalesStats(const std::vector<std::string> chrome_locales);
+  void RecordChromeLocalesStats(std::vector<std::string> chrome_locales);
 
   // Records metrics about spell check support for the user's enabled spell
   // check locales.
   void RecordSpellcheckLocalesStats(
-      const std::vector<std::string> spellcheck_locales);
+      std::vector<std::string> spellcheck_locales);
 
   // Retrieve language tags for registered Windows OS
   // spellcheckers on the system.
@@ -157,6 +157,9 @@ void BackgroundHelper::CreateSpellCheckerFactory() {
   DCHECK(background_task_runner_->RunsTasksInCurrentSequence());
   base::win::AssertComApartmentType(base::win::ComApartmentType::STA);
 
+  // Mitigate the issues caused by loading DLLs on a background thread
+  // (https://issues.chromium.org/issues/41464781).
+  SCOPED_MAY_LOAD_LIBRARY_AT_BACKGROUND_PRIORITY_REPEATEDLY();
   if (FAILED(::CoCreateInstance(__uuidof(::SpellCheckerFactory), nullptr,
                                 (CLSCTX_INPROC_SERVER | CLSCTX_LOCAL_SERVER),
                                 IID_PPV_ARGS(&spell_checker_factory_)))) {
@@ -451,7 +454,7 @@ Microsoft::WRL::ComPtr<ISpellChecker> BackgroundHelper::GetSpellChecker(
 }
 
 void BackgroundHelper::RecordChromeLocalesStats(
-    const std::vector<std::string> chrome_locales) {
+    std::vector<std::string> chrome_locales) {
   DCHECK(background_task_runner_->RunsTasksInCurrentSequence());
 
   if (!IsSpellCheckerFactoryInitialized()) {
@@ -464,7 +467,7 @@ void BackgroundHelper::RecordChromeLocalesStats(
 }
 
 void BackgroundHelper::RecordSpellcheckLocalesStats(
-    const std::vector<std::string> spellcheck_locales) {
+    std::vector<std::string> spellcheck_locales) {
   DCHECK(background_task_runner_->RunsTasksInCurrentSequence());
 
   if (!IsSpellCheckerFactoryInitialized()) {
@@ -568,7 +571,7 @@ void WindowsSpellChecker::IgnoreWordForAllLanguages(
 }
 
 void WindowsSpellChecker::RecordChromeLocalesStats(
-    const std::vector<std::string> chrome_locales) {
+    std::vector<std::string> chrome_locales) {
   background_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
@@ -578,7 +581,7 @@ void WindowsSpellChecker::RecordChromeLocalesStats(
 }
 
 void WindowsSpellChecker::RecordSpellcheckLocalesStats(
-    const std::vector<std::string> spellcheck_locales) {
+    std::vector<std::string> spellcheck_locales) {
   background_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&windows_spell_checker::BackgroundHelper::
                                     RecordSpellcheckLocalesStats,

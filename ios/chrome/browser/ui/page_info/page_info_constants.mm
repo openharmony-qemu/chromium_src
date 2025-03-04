@@ -4,9 +4,20 @@
 
 #import "ios/chrome/browser/ui/page_info/page_info_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 NSString* const kPageInfoViewAccessibilityIdentifier =
     @"PageInfoViewAccessibilityIdentifier";
+
+NSString* const kPageInfoSecurityViewAccessibilityIdentifier =
+    @"PageInfoSecurityViewAccessibilityIdentifier";
+
+NSString* const kPageInfoViewNavigationBarAccessibilityIdentifier =
+    @"PageInfoViewNavigationBarAccessibilityIdentifier";
+
+NSString* const kPageInfoSecurityViewNavigationBarAccessibilityIdentifier =
+    @"PageInfoSecurityViewNavigationBarAccessibilityIdentifier";
+
+const CGFloat kPageInfoTableViewSeparatorInset = 16.0f;
+
+const CGFloat kPageInfoTableViewSeparatorInsetWithIcon = 60.0f;
+
+const CGFloat kPageInfoSymbolPointSize = 18.0f;

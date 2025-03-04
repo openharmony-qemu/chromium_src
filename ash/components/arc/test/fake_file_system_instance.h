@@ -98,7 +98,7 @@ class FakeFileSystemInstance : public mojom::FileSystemInstance {
     Seekable seekable;
 
     // Override of |content| length in bytes.
-    absl::optional<int64_t> size_override;
+    std::optional<int64_t> size_override;
 
     // The thumbnail of a file, which can be read by OpenThumbnail().
     std::string thumbnail_content;
@@ -142,7 +142,7 @@ class FakeFileSystemInstance : public mojom::FileSystemInstance {
     int64_t size;
 
     // Last modified time in milliseconds from the UNIX epoch.
-    // TODO(crbug.com/672737): Use base::Time once the corresponding field
+    // TODO(crbug.com/40497368): Use base::Time once the corresponding field
     // in file_system.mojom stops using uint64.
     uint64_t last_modified;
 

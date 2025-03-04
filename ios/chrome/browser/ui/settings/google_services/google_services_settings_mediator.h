@@ -37,10 +37,13 @@ class IdentityManager;
 // Identity manager;
 @property(nonatomic, assign) signin::IdentityManager* identityManager;
 
-// Designated initializer. All the paramters should not be null.
-// `userPrefService`: preference service from the browser state.
+// Designated initializer. All the parameters should not be null.
+// `identityManager`: identity manager from the profile.
+// `userPrefService`: preference service from the profile.
 // `localPrefService`: preference service from the application context.
-- (instancetype)initWithUserPrefService:(PrefService*)userPrefService
+- (instancetype)initWithIdentityManager:
+                    (signin::IdentityManager*)identityManager
+                        userPrefService:(PrefService*)userPrefService
                        localPrefService:(PrefService*)localPrefService
     NS_DESIGNATED_INITIALIZER;
 

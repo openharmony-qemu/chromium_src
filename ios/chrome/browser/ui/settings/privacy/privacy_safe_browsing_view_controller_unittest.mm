@@ -4,31 +4,30 @@
 
 #import "ios/chrome/browser/ui/settings/privacy/privacy_safe_browsing_view_controller.h"
 
+#import "build/branding_buildflags.h"
 #import "components/prefs/testing_pref_service.h"
 #import "components/safe_browsing/core/common/features.h"
+#import "components/safe_browsing/core/common/hashprefix_realtime/hash_realtime_utils.h"
 #import "components/safe_browsing/core/common/safe_browsing_prefs.h"
 #import "components/sync_preferences/testing_pref_service_syncable.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/prefs/browser_prefs.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
+#import "ios/chrome/browser/shared/model/prefs/browser_prefs.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/ui/settings/privacy/privacy_safe_browsing_mediator.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/public/test/web_task_environment.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 class PrivacySafeBrowsingViewControllerTest
-    : public ChromeTableViewControllerTest {
+    : public LegacyChromeTableViewControllerTest {
  protected:
   void SetUp() override {
-    ChromeTableViewControllerTest::SetUp();
-    TestChromeBrowserState::Builder test_cbs_builder;
-    test_cbs_builder.SetPrefService(CreatePrefService());
-    chrome_browser_state_ = test_cbs_builder.Build();
+    LegacyChromeTableViewControllerTest::SetUp();
+    TestProfileIOS::Builder builder;
+    builder.SetPrefService(CreatePrefService());
+    profile_ = std::move(builder).Build();
   }
 
   // Makes a PrefService to be used by the test.
@@ -36,13 +35,13 @@ class PrivacySafeBrowsingViewControllerTest
     auto prefs =
         std::make_unique<sync_preferences::TestingPrefServiceSyncable>();
     user_prefs::PrefRegistrySyncable* registry = prefs->registry();
-    RegisterBrowserStatePrefs(registry);
+    RegisterProfilePrefs(registry);
     return prefs;
   }
 
-  ChromeTableViewController* InstantiateController() override {
+  LegacyChromeTableViewController* InstantiateController() override {
     mediator_ = [[PrivacySafeBrowsingMediator alloc]
-        initWithUserPrefService:chrome_browser_state_->GetPrefs()];
+        initWithUserPrefService:profile_->GetPrefs()];
     PrivacySafeBrowsingViewController* view_controller =
         [[PrivacySafeBrowsingViewController alloc]
             initWithStyle:ChromeTableViewStyle()];
@@ -51,7 +50,7 @@ class PrivacySafeBrowsingViewControllerTest
   }
 
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> chrome_browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   PrivacySafeBrowsingMediator* mediator_;
 };
 
@@ -66,17 +65,30 @@ TEST_F(PrivacySafeBrowsingViewControllerTest, TestModel) {
       l10n_util::GetNSString(
           IDS_IOS_PRIVACY_SAFE_BROWSING_ENHANCED_PROTECTION_TITLE),
       l10n_util::GetNSString(
-          IDS_IOS_PRIVACY_SAFE_BROWSING_ENHANCED_PROTECTION_SUMMARY),
+          IDS_IOS_PRIVACY_SAFE_BROWSING_ENHANCED_PROTECTION_FRIENDLIER_SUMMARY),
       0, 0);
+
+  NSInteger standard_protection_summary = 0;
+#if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+  if (safe_browsing::hash_realtime_utils::
+          IsHashRealTimeLookupEligibleInSession()) {
+    standard_protection_summary =
+        IDS_IOS_PRIVACY_SAFE_BROWSING_STANDARD_PROTECTION_FRIENDLIER_SUMMARY_PROXY;
+  }
+#endif
+
+  if (!standard_protection_summary) {
+    standard_protection_summary =
+        IDS_IOS_PRIVACY_SAFE_BROWSING_STANDARD_PROTECTION_FRIENDLIER_SUMMARY;
+  }
+
   CheckTextCellTextAndDetailText(
       l10n_util::GetNSString(
           IDS_IOS_PRIVACY_SAFE_BROWSING_STANDARD_PROTECTION_TITLE),
-      l10n_util::GetNSString(
-          IDS_IOS_PRIVACY_SAFE_BROWSING_STANDARD_PROTECTION_SUMMARY),
-      0, 1);
+      l10n_util::GetNSString(standard_protection_summary), 0, 1);
   CheckTextCellTextAndDetailText(
       l10n_util::GetNSString(IDS_IOS_PRIVACY_SAFE_BROWSING_NO_PROTECTION_TITLE),
       l10n_util::GetNSString(
-          IDS_IOS_PRIVACY_SAFE_BROWSING_NO_PROTECTION_SUMMARY),
+          IDS_IOS_PRIVACY_SAFE_BROWSING_NO_PROTECTION_FRIENDLIER_SUMMARY),
       0, 2);
 }

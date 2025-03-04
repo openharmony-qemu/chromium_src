@@ -19,32 +19,35 @@
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "components/url_formatter/url_formatter.h"
+#include "components/viz/host/host_frame_sink_manager.h"
 #include "content/browser/child_process_security_policy_impl.h"
+#include "content/browser/compositor/surface_utils.h"
 #include "content/browser/renderer_host/frame_tree_node.h"
 #include "content/browser/renderer_host/navigation_controller_impl.h"
 #include "content/browser/renderer_host/navigation_entry_restore_context_impl.h"
 #include "content/browser/renderer_host/navigation_request.h"
-#include "content/browser/web_package/subresource_web_bundle_navigation_info.h"
 #include "content/common/content_constants_internal.h"
 #include "content/public/browser/reload_type.h"
 #include "content/public/common/content_constants.h"
 #include "content/public/common/url_constants.h"
+#include "net/storage_access_api/status.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "services/network/public/mojom/fetch_api.mojom.h"
+#include "third_party/blink/public/common/navigation/navigation_params.h"
 #include "third_party/blink/public/common/page_state/page_state_serialization.h"
 #include "third_party/blink/public/mojom/frame/frame.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
 #include "third_party/blink/public/mojom/navigation/prefetched_signed_exchange_info.mojom.h"
-#include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature_state.mojom.h"
+#include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature.mojom.h"
 #include "ui/gfx/text_elider.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/content_uri_utils.h"
 #endif
 
-#ifdef OHOS_HAP_DECOMPRESSED
-#include <locale>
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 #include <codecvt>
+#include <locale>
 #endif
 
 using base::UTF16ToUTF8;
@@ -63,7 +66,7 @@ int CreateUniqueEntryID() {
 void RecursivelyGenerateFrameEntries(
     NavigationEntryRestoreContextImpl* context,
     const blink::ExplodedFrameState& state,
-    const std::vector<absl::optional<std::u16string>>& referenced_files,
+    const std::vector<std::optional<std::u16string>>& referenced_files,
     NavigationEntryImpl::TreeNode* node) {
   DCHECK(context);
   // Set a single-frame PageState on the entry.
@@ -93,15 +96,14 @@ void RecursivelyGenerateFrameEntries(
       state.target ? base::UTF16ToUTF8(*state.target) : "", state_url);
 
   if (!entry) {
-    absl::optional<GURL> initiator_base_url;
-    if (blink::features::IsNewBaseUrlInheritanceBehaviorEnabled() &&
-        state.initiator_base_url_string) {
+    std::optional<GURL> initiator_base_url;
+    if (state.initiator_base_url_string) {
       GURL initiator_base_url_from_state =
           GURL(UTF16ToUTF8(state.initiator_base_url_string.value()));
+      // If `state.initiator_base_url_string` has a value, it should be
+      // non-empty. But it's easiest and safest to just check, as opposed to
+      // using a CHECK.
       if (!initiator_base_url_from_state.is_empty()) {
-        // TODO(crbug.com/1356658): refactor the uses of
-        // `state.initiator_base_url_string` so they store nullopt instead of
-        // empty strings.
         initiator_base_url = initiator_base_url_from_state;
       }
     }
@@ -112,14 +114,13 @@ void RecursivelyGenerateFrameEntries(
         nullptr, nullptr, state_url,
         // TODO(nasko): Supply valid origin once the value is persisted across
         // session restore.
-        absl::nullopt /* origin */,
+        std::nullopt /* origin */,
         Referrer(GURL(state.referrer.value_or(std::u16string())),
                  state.referrer_policy),
         state.initiator_origin, initiator_base_url, std::vector<GURL>(),
         blink::PageState::CreateFromEncodedData(data), "GET", -1,
         nullptr /* blob_url_loader_factory */,
-        nullptr /* subresource_web_bundle_navigation_info */,
-        // TODO(https://crbug.com/1140393): We should restore the policy
+        // TODO(crbug.com/40053667): We should restore the policy
         // container.
         nullptr /* policy_container_policies */,
         state.protect_url_in_navigation_api);
@@ -130,7 +131,7 @@ void RecursivelyGenerateFrameEntries(
   // Don't pass the file list to subframes, since that would result in multiple
   // copies of it ending up in the combined list in GetPageState (via
   // RecursivelyGenerateFrameState).
-  std::vector<absl::optional<std::u16string>> empty_file_list;
+  std::vector<std::optional<std::u16string>> empty_file_list;
 
   for (const blink::ExplodedFrameState& child_state : state.children) {
     node->children.push_back(
@@ -140,22 +141,22 @@ void RecursivelyGenerateFrameEntries(
   }
 }
 
-absl::optional<std::u16string> UrlToOptionalString16(const GURL& url) {
+std::optional<std::u16string> UrlToOptionalString16(const GURL& url) {
   if (!url.is_valid())
-    return absl::nullopt;
+    return std::nullopt;
   return base::UTF8ToUTF16(url.spec());
 }
 
 void RecursivelyGenerateFrameState(
     NavigationEntryImpl::TreeNode* node,
     blink::ExplodedFrameState* state,
-    std::vector<absl::optional<std::u16string>>* referenced_files) {
+    std::vector<std::optional<std::u16string>>* referenced_files) {
   // The FrameNavigationEntry's PageState contains just the ExplodedFrameState
   // for that particular frame.
   blink::ExplodedPageState exploded_page_state;
   if (!blink::DecodePageState(node->frame_entry->page_state().ToEncodedData(),
                               &exploded_page_state)) {
-    NOTREACHED();
+    DUMP_WILL_BE_NOTREACHED();
     return;
   }
   blink::ExplodedFrameState frame_state = exploded_page_state.top;
@@ -190,8 +191,9 @@ void RecursivelyGenerateFrameState(
   state->document_sequence_number =
       node->frame_entry->document_sequence_number();
   state->initiator_origin = node->frame_entry->initiator_origin();
+  // Note: If UrlToOptionalString16 receives an empty GURL, it returns nullopt.
   state->initiator_base_url_string = UrlToOptionalString16(
-      node->frame_entry->initiator_base_url().value_or(GURL::EmptyGURL()));
+      node->frame_entry->initiator_base_url().value_or(GURL()));
 
   // protect_url_in_navigation_api is not generated by the renderer, it is only
   // stored on FrameNavigationEntry.
@@ -385,8 +387,8 @@ NavigationEntryImpl::NavigationEntryImpl()
     : NavigationEntryImpl(nullptr,
                           GURL(),
                           Referrer(),
-                          /* initiator_origin= */ absl::nullopt,
-                          /* initiator_base_url= */ absl::nullopt,
+                          /* initiator_origin= */ std::nullopt,
+                          /* initiator_base_url= */ std::nullopt,
                           std::u16string(),
                           ui::PAGE_TRANSITION_LINK,
                           false,
@@ -397,8 +399,8 @@ NavigationEntryImpl::NavigationEntryImpl(
     scoped_refptr<SiteInstanceImpl> instance,
     const GURL& url,
     const Referrer& referrer,
-    const absl::optional<url::Origin>& initiator_origin,
-    const absl::optional<GURL>& initiator_base_url,
+    const std::optional<url::Origin>& initiator_origin,
+    const std::optional<GURL>& initiator_base_url,
     const std::u16string& title,
     ui::PageTransition transition_type,
     bool is_renderer_initiated,
@@ -414,7 +416,7 @@ NavigationEntryImpl::NavigationEntryImpl(
               std::move(instance),
               nullptr,
               url,
-              absl::nullopt /* origin */,
+              std::nullopt /* origin */,
               referrer,
               initiator_origin,
               initiator_base_url,
@@ -423,7 +425,6 @@ NavigationEntryImpl::NavigationEntryImpl(
               "GET",
               -1,
               std::move(blob_url_loader_factory),
-              nullptr /* subresource_web_bundle_navigation_info */,
               nullptr /* policy_container_policies */,
               false /* protect_url_in_navigation_api */))),
       unique_id_(CreateUniqueEntryID()),
@@ -437,7 +438,6 @@ NavigationEntryImpl::NavigationEntryImpl(
       is_renderer_initiated_(is_renderer_initiated),
       should_clear_history_list_(false),
       can_load_local_resources_(false),
-      frame_tree_node_id_(FrameTreeNode::kFrameTreeNodeInvalidId),
       has_user_gesture_(false),
       reload_type_(ReloadType::NONE),
       started_from_context_menu_(false),
@@ -448,7 +448,23 @@ NavigationEntryImpl::NavigationEntryImpl(
               ? InitialNavigationEntryState::kInitialNotForSynchronousAboutBlank
               : InitialNavigationEntryState::kNonInitial) {}
 
-NavigationEntryImpl::~NavigationEntryImpl() {}
+NavigationEntryImpl::~NavigationEntryImpl() {
+  if (navigation_transition_data_
+          .same_document_navigation_entry_screenshot_token()
+          .has_value()) {
+    // We get here if:
+    // - `DidCommitSameDocumentNavigation` sets the token, promising a
+    //    screenshot was supposed to arrive.
+    // - However the navigation entry was destroyed before the screenshot could
+    //   arrive.
+    viz::HostFrameSinkManager* manager = GetHostFrameSinkManager();
+    CHECK(manager);
+    manager->InvalidateCopyOutputReadyCallback(
+        navigation_transition_data_
+            .same_document_navigation_entry_screenshot_token()
+            .value());
+  }
+}
 
 int NavigationEntryImpl::GetUniqueID() {
   return unique_id_;
@@ -475,12 +491,12 @@ const GURL& NavigationEntryImpl::GetBaseURLForDataURL() {
   return base_url_for_data_url_;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 void NavigationEntryImpl::SetDataURLAsString(
     scoped_refptr<base::RefCountedString> data_url) {
   if (data_url) {
     // A quick check that it's actually a data URL.
-    DCHECK(base::StartsWith(data_url->front_as<char>(), url::kDataScheme,
+    DCHECK(base::StartsWith(base::as_string_view(*data_url), url::kDataScheme,
                             base::CompareCase::SENSITIVE));
   }
   data_url_as_string_ = std::move(data_url);
@@ -509,13 +525,21 @@ const GURL& NavigationEntryImpl::GetVirtualURL() {
   return virtual_url_.is_empty() ? GetURL() : virtual_url_;
 }
 
-void NavigationEntryImpl::SetTitle(const std::u16string& title) {
-  title_ = title;
+void NavigationEntryImpl::SetTitle(std::u16string title) {
+  title_ = std::move(title);
   cached_display_title_.clear();
 }
 
 const std::u16string& NavigationEntryImpl::GetTitle() {
   return title_;
+}
+
+void NavigationEntryImpl::SetAppTitle(const std::u16string& app_title) {
+  app_title_ = app_title;
+}
+
+const std::optional<std::u16string>& NavigationEntryImpl::GetAppTitle() {
+  return app_title_;
 }
 
 void NavigationEntryImpl::SetPageState(const blink::PageState& state,
@@ -564,12 +588,6 @@ blink::PageState NavigationEntryImpl::GetPageState() {
   std::string encoded_data;
   blink::EncodePageState(exploded_state, &encoded_data);
   return blink::PageState::CreateFromEncodedData(encoded_data);
-}
-
-void NavigationEntryImpl::set_site_instance(
-    scoped_refptr<SiteInstanceImpl> site_instance) {
-  // TODO(creis): Update all callers and remove this method.
-  frame_tree_->frame_entry->set_site_instance(std::move(site_instance));
 }
 
 const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
@@ -634,18 +652,18 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
   }
 #endif
 
-#ifdef OHOS_HAP_DECOMPRESSED
-if (GetURL().SchemeIs(url::kResourcesScheme)) {
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  if (GetURL().SchemeIs(url::kResourcesScheme)) {
     std::string fileName = GetURL().ExtractFileName();
     if (fileName == "") {
       title = u"";
     } else {
-      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+          converter;
       title = converter.from_bytes(fileName);
     }
   }
 #endif
-
   gfx::ElideString(title, blink::mojom::kMaxTitleChars, &cached_display_title_);
   return cached_display_title_;
 }
@@ -741,7 +759,7 @@ const std::vector<GURL>& NavigationEntryImpl::GetRedirectChain() {
   return root_node()->frame_entry->redirect_chain();
 }
 
-const absl::optional<ReplacedNavigationEntryData>&
+const std::optional<ReplacedNavigationEntryData>&
 NavigationEntryImpl::GetReplacedEntryData() {
   return replaced_entry_data_;
 }
@@ -842,7 +860,7 @@ NavigationEntryImpl::CloneAndReplaceInternal(
   // ResetForCommit: post_data_
   copy->extra_headers_ = extra_headers_;
   copy->base_url_for_data_url_ = base_url_for_data_url_;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   copy->data_url_as_string_ = data_url_as_string_;
 #endif
   // ResetForCommit: is_renderer_initiated_
@@ -856,6 +874,16 @@ NavigationEntryImpl::CloneAndReplaceInternal(
   copy->replaced_entry_data_ = replaced_entry_data_;
   copy->should_skip_on_back_forward_ui_ = should_skip_on_back_forward_ui_;
   copy->initial_navigation_entry_state_ = initial_navigation_entry_state_;
+
+  if (navigation_transition_data().cache_hit_or_miss_reason() ==
+      NavigationTransitionData::CacheHitOrMissReason::kCacheHit) {
+    copy->navigation_transition_data().set_cache_hit_or_miss_reason(
+        NavigationTransitionData::CacheHitOrMissReason::
+            kCacheMissClonedNavigationEntry);
+  } else {
+    copy->navigation_transition_data().set_cache_hit_or_miss_reason(
+        navigation_transition_data().cache_hit_or_miss_reason());
+  }
 
   return copy;
 }
@@ -879,10 +907,10 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
   // propagate initiator_base_url.
   // TODO(creis): Look into how this case can be avoided so that dest_url
   // doesn't diverge from other parameters in frame_entry.
-  const absl::optional<GURL> initiator_base_url =
+  const std::optional<GURL> initiator_base_url =
       (dest_url.IsAboutBlank() || dest_url.IsAboutSrcdoc())
           ? frame_entry.initiator_base_url()
-          : absl::nullopt;
+          : std::nullopt;
   return blink::mojom::CommonNavigationParams::New(
       dest_url, frame_entry.initiator_origin(), initiator_base_url,
       std::move(dest_referrer), GetTransitionType(), navigation_type,
@@ -898,7 +926,11 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       has_user_gesture(), false /* has_text_fragment_token */,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kEmpty, "");
+#else
       network::mojom::RequestDestination::kEmpty);
+#endif
 }
 
 blink::mojom::CommitNavigationParamsPtr
@@ -913,14 +945,15 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
     int current_history_list_length,
     const blink::FramePolicy& frame_policy,
     bool ancestor_or_self_has_cspee,
-    absl::optional<blink::scheduler::TaskAttributionId>
+    blink::mojom::SystemEntropy system_entropy_at_navigation_start,
+    std::optional<blink::scheduler::TaskAttributionId>
         soft_navigation_heuristics_task_id) {
   // Set the redirect chain to the navigation's redirects, unless returning to a
   // completed navigation (whose previous redirects don't apply).
   // Note that this is actually does not work as intended right now because
   // we're only copying the redirect URLs into the new CommitNavigationParams,
   // keeping redirect_response and redirect_infos as empty.
-  // TODO(https://crbug.com/1171225): Save redirect_response & redirect_infos in
+  // TODO(crbug.com/40166073): Save redirect_response & redirect_infos in
   // FNE and copy them too?
   std::vector<GURL> redirects;
   if (ui::PageTransitionIsNewNavigation(GetTransitionType())) {
@@ -941,11 +974,11 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
 
   blink::mojom::CommitNavigationParamsPtr commit_params =
       blink::mojom::CommitNavigationParams::New(
-          absl::nullopt,
-          // The correct storage key and session storage key will be computed
-          // before committing the navigation.
-          blink::StorageKey(), blink::StorageKey(), GetIsOverridingUserAgent(),
-          redirects, std::vector<network::mojom::URLResponseHeadPtr>(),
+          std::nullopt,
+          // The correct storage key will be computed before committing the
+          // navigation.
+          blink::StorageKey(), GetIsOverridingUserAgent(), redirects,
+          std::vector<network::mojom::URLResponseHeadPtr>(),
           std::vector<net::RedirectInfo>(), std::string(), original_url,
           original_method, GetCanLoadLocalResources(),
           frame_entry.page_state().ToEncodedData(), GetUniqueID(),
@@ -956,10 +989,10 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           blink::mojom::WasActivatedOption::kUnknown,
           base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           std::string(),
 #endif
-          false /* is_browser_initiated */,
+          false /* is_browser_initiated */, false /*has_ua_visual_transition*/,
           ukm::kInvalidSourceId /* document_ukm_source_id */, frame_policy,
           std::vector<std::string>() /* force_enabled_origin_trials */,
           false /* origin_agent_cluster */,
@@ -977,28 +1010,38 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           std::string() /* reduced_accept_language */,
           /*navigation_delivery_type=*/
           network::mojom::NavigationDeliveryType::kDefault,
-          /*view_transition_state=*/absl::nullopt,
+          /*view_transition_state=*/std::nullopt,
           soft_navigation_heuristics_task_id,
           /*modified_runtime_features=*/
-          base::flat_map<::blink::mojom::RuntimeFeatureState, bool>(),
-          /*fenced_frame_properties=*/absl::nullopt,
+          base::flat_map<::blink::mojom::RuntimeFeature, bool>(),
+          /*fenced_frame_properties=*/std::nullopt,
           /*not_restored_reasons=*/nullptr,
-          /*load_with_storage_access=*/false
-#ifdef OHOS_ARKWEB_ADBLOCK
-          ,
-          false /* site_adblock_enabled */
-#endif          // OHOS_ARKWEB_ADBLOCK
-      );
+          /*load_with_storage_access=*/
+          net::StorageAccessApiStatus::kNone,
+          /*browsing_context_group_info=*/std::nullopt,
+          /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
+          /*cookie_deprecation_label=*/std::nullopt,
+          /*visited_link_salt=*/std::nullopt,
+          /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
+          /*initial_permission_statuses=*/std::nullopt);
 #if BUILDFLAG(IS_ANDROID)
   // `data_url_as_string` is saved in NavigationEntry but should only be used by
   // main frames, because loadData* navigations can only happen on the main
   // frame.
   bool is_for_main_frame = (root_node()->frame_entry == &frame_entry);
+  scoped_refptr<const base::RefCountedString> string = GetDataURLAsString();
   if (is_for_main_frame &&
-      NavigationControllerImpl::ValidateDataURLAsString(GetDataURLAsString())) {
-    commit_params->data_url_as_string = GetDataURLAsString()->data();
+      NavigationControllerImpl::ValidateDataURLAsString(string)) {
+    commit_params->data_url_as_string = string->as_string();
   }
 #endif
+
+  commit_params->navigation_timing->system_entropy_at_navigation_start =
+      system_entropy_at_navigation_start;
+
   return commit_params;
 }
 
@@ -1010,7 +1053,7 @@ void NavigationEntryImpl::ResetForCommit(FrameNavigationEntry* frame_entry) {
   set_is_renderer_initiated(false);
 
   set_should_clear_history_list(false);
-  set_frame_tree_node_id(FrameTreeNode::kFrameTreeNodeInvalidId);
+  set_frame_tree_node_id(FrameTreeNodeId());
   set_reload_type(ReloadType::NONE);
 
   if (frame_entry) {
@@ -1046,17 +1089,15 @@ void NavigationEntryImpl::AddOrUpdateFrameEntry(
     SiteInstanceImpl* site_instance,
     scoped_refptr<SiteInstanceImpl> source_site_instance,
     const GURL& url,
-    const absl::optional<url::Origin>& origin,
+    const std::optional<url::Origin>& origin,
     const Referrer& referrer,
-    const absl::optional<url::Origin>& initiator_origin,
-    const absl::optional<GURL>& initiator_base_url,
+    const std::optional<url::Origin>& initiator_origin,
+    const std::optional<GURL>& initiator_base_url,
     const std::vector<GURL>& redirect_chain,
     const blink::PageState& page_state,
     const std::string& method,
     int64_t post_id,
     scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-    std::unique_ptr<SubresourceWebBundleNavigationInfo>
-        subresource_web_bundle_navigation_info,
     std::unique_ptr<PolicyContainerPolicies> policy_container_policies) {
   bool protect_url_in_navigation_api =
       policy_container_policies &&
@@ -1087,7 +1128,6 @@ void NavigationEntryImpl::AddOrUpdateFrameEntry(
         std::move(source_site_instance), url, origin, referrer,
         initiator_origin, initiator_base_url, redirect_chain, page_state,
         method, post_id, std::move(blob_url_loader_factory),
-        std::move(subresource_web_bundle_navigation_info),
         std::move(policy_container_policies), protect_url_in_navigation_api);
     return;
   }
@@ -1123,7 +1163,6 @@ void NavigationEntryImpl::AddOrUpdateFrameEntry(
           url, origin, referrer, initiator_origin, initiator_base_url,
           redirect_chain, page_state, method, post_id,
           std::move(blob_url_loader_factory),
-          std::move(subresource_web_bundle_navigation_info),
           std::move(policy_container_policies), protect_url_in_navigation_api);
       return;
     }
@@ -1137,7 +1176,6 @@ void NavigationEntryImpl::AddOrUpdateFrameEntry(
       navigation_api_key, site_instance, std::move(source_site_instance), url,
       origin, referrer, initiator_origin, initiator_base_url, redirect_chain,
       page_state, method, post_id, std::move(blob_url_loader_factory),
-      std::move(subresource_web_bundle_navigation_info),
       std::move(policy_container_policies), protect_url_in_navigation_api);
   parent_node->children.push_back(
       std::make_unique<NavigationEntryImpl::TreeNode>(parent_node,

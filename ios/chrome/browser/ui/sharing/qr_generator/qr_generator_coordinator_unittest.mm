@@ -4,37 +4,30 @@
 
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_coordinator.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/test/task_environment.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/main/test_browser.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state_browser_agent.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
 #import "ios/chrome/browser/shared/public/commands/qr_generation_commands.h"
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_view_controller.h"
 #import "ios/chrome/common/ui/confirmation_alert/confirmation_alert_action_handler.h"
 #import "ios/chrome/common/ui/elements/popover_label_view_controller.h"
 #import "ios/chrome/test/scoped_key_window.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 class QRGeneratorCoordinatorTest : public PlatformTest {
  protected:
   QRGeneratorCoordinatorTest() {
-    browser_state_ = TestChromeBrowserState::Builder().Build();
-    browser_ = std::make_unique<TestBrowser>(browser_state_.get());
-    scene_state_ = [[SceneState alloc] initWithAppState:nil];
+    profile_ = TestProfileIOS::Builder().Build();
+    browser_ = std::make_unique<TestBrowser>(profile_.get());
     base_view_controller_ = [[UIViewController alloc] init];
     [scoped_key_window_.Get() setRootViewController:base_view_controller_];
-    SceneStateBrowserAgent::CreateForBrowser(browser_.get(), scene_state_);
   }
 
   void SetUp() override {
@@ -45,6 +38,9 @@ class QRGeneratorCoordinatorTest : public PlatformTest {
         startDispatchingToTarget:OCMStrictProtocolMock(
                                      @protocol(BookmarksCommands))
                      forProtocol:@protocol(BookmarksCommands)];
+    [browser_->GetCommandDispatcher()
+        startDispatchingToTarget:OCMStrictProtocolMock(@protocol(HelpCommands))
+                     forProtocol:@protocol(HelpCommands)];
 
     coordinator_ = [[QRGeneratorCoordinator alloc]
         initWithBaseViewController:base_view_controller_
@@ -56,13 +52,11 @@ class QRGeneratorCoordinatorTest : public PlatformTest {
   }
 
   base::test::TaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   std::unique_ptr<TestBrowser> browser_;
   id mock_qr_generation_commands_handler_;
   ScopedKeyWindow scoped_key_window_;
   UIViewController* base_view_controller_;
-  SceneState* scene_state_;
-
   QRGeneratorCoordinator* coordinator_;
 };
 
@@ -83,7 +77,7 @@ TEST_F(QRGeneratorCoordinatorTest, Done_DispatchesCommand) {
       isKindOfClass:[QRGeneratorViewController class]]);
 
   QRGeneratorViewController* viewController =
-      base::mac::ObjCCastStrict<QRGeneratorViewController>(
+      base::apple::ObjCCastStrict<QRGeneratorViewController>(
           base_view_controller_.presentedViewController);
 
   // Mimick click on done button.
@@ -109,7 +103,7 @@ TEST_F(QRGeneratorCoordinatorTest, ShareAction) {
   [coordinator_ start];
 
   QRGeneratorViewController* viewController =
-      base::mac::ObjCCastStrict<QRGeneratorViewController>(
+      base::apple::ObjCCastStrict<QRGeneratorViewController>(
           base_view_controller_.presentedViewController);
 
   id vcPartialMock = OCMPartialMock(viewController);
@@ -133,7 +127,7 @@ TEST_F(QRGeneratorCoordinatorTest, LearnMore) {
   [coordinator_ start];
 
   QRGeneratorViewController* viewController =
-      base::mac::ObjCCastStrict<QRGeneratorViewController>(
+      base::apple::ObjCCastStrict<QRGeneratorViewController>(
           base_view_controller_.presentedViewController);
 
   __block PopoverLabelViewController* popoverViewController;
@@ -143,7 +137,7 @@ TEST_F(QRGeneratorCoordinatorTest, LearnMore) {
                                         UIViewController* givenVC) {
         if ([givenVC isKindOfClass:[PopoverLabelViewController class]]) {
           popoverViewController =
-              base::mac::ObjCCastStrict<PopoverLabelViewController>(givenVC);
+              base::apple::ObjCCastStrict<PopoverLabelViewController>(givenVC);
           return YES;
         }
         return NO;

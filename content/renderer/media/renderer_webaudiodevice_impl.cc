@@ -9,27 +9,36 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/notreached.h"
 #include "base/strings/stringprintf.h"
+#include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
+#include "content/public/renderer/render_frame.h"
 #include "media/audio/null_audio_sink.h"
 #include "media/base/audio_glitch_info.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "media/base/limits.h"
+#include "media/base/media_switches.h"
 #include "media/base/output_device_info.h"
 #include "media/base/silent_sink_suspender.h"
+#include "media/base/speech_recognition_client.h"
+#include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/platform/audio/web_audio_device_source_type.h"
 #include "third_party/blink/public/platform/modules/webrtc/webrtc_logging.h"
+#include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/public/web/modules/media/audio/audio_device_factory.h"
 #include "third_party/blink/public/web/web_local_frame.h"
+#include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/public/web/web_view.h"
 
 using blink::AudioDeviceFactory;
@@ -58,11 +67,10 @@ blink::WebAudioDeviceSourceType GetLatencyHintSourceType(
       NOTREACHED();
   }
   NOTREACHED();
-  return blink::WebAudioDeviceSourceType::kWebAudioInteractive;
 }
 
 int GetOutputBufferSize(const blink::WebAudioLatencyHint& latency_hint,
-                        media::AudioLatency::LatencyType latency,
+                        media::AudioLatency::Type latency,
                         const media::AudioParameters& hardware_params) {
   media::AudioParameters::HardwareCapabilities hardware_capabilities =
       hardware_params.hardware_capabilities().value_or(
@@ -70,16 +78,16 @@ int GetOutputBufferSize(const blink::WebAudioLatencyHint& latency_hint,
 
   // Adjust output buffer size according to the latency requirement.
   switch (latency) {
-    case media::AudioLatency::LATENCY_INTERACTIVE:
+    case media::AudioLatency::Type::kInteractive:
       return media::AudioLatency::GetInteractiveBufferSize(
           hardware_params.frames_per_buffer());
-    case media::AudioLatency::LATENCY_RTC:
+    case media::AudioLatency::Type::kRtc:
       return media::AudioLatency::GetRtcBufferSize(
           hardware_params.sample_rate(), hardware_params.frames_per_buffer());
-    case media::AudioLatency::LATENCY_PLAYBACK:
+    case media::AudioLatency::Type::kPlayback:
       return media::AudioLatency::GetHighLatencyBufferSize(
           hardware_params.sample_rate(), hardware_params.frames_per_buffer());
-    case media::AudioLatency::LATENCY_EXACT_MS:
+    case media::AudioLatency::Type::kExactMS:
       return media::AudioLatency::GetExactBufferSize(
           base::Seconds(latency_hint.Seconds()), hardware_params.sample_rate(),
           hardware_params.frames_per_buffer(),
@@ -89,7 +97,6 @@ int GetOutputBufferSize(const blink::WebAudioLatencyHint& latency_hint,
     default:
       NOTREACHED();
   }
-  return 0;
 }
 
 media::AudioParameters GetOutputDeviceParameters(
@@ -110,21 +117,30 @@ scoped_refptr<media::AudioRendererSink> GetNullAudioSink(
 
 std::unique_ptr<RendererWebAudioDeviceImpl> RendererWebAudioDeviceImpl::Create(
     const WebAudioSinkDescriptor& sink_descriptor,
-    media::ChannelLayout layout,
     int number_of_output_channels,
     const blink::WebAudioLatencyHint& latency_hint,
     media::AudioRendererSink::RenderCallback* callback) {
+  // The `number_of_output_channels` does not manifest the actual channel
+  // layout of the audio output device. We use the best guess to the channel
+  // layout based on the number of channels.
+  media::ChannelLayout layout =
+      media::GuessChannelLayout(number_of_output_channels);
+
+  // Use "discrete" channel layout when the best guess was not successful.
+  if (layout == media::CHANNEL_LAYOUT_UNSUPPORTED) {
+    layout = media::CHANNEL_LAYOUT_DISCRETE;
+  }
+
   return std::unique_ptr<RendererWebAudioDeviceImpl>(
       new RendererWebAudioDeviceImpl(
-          sink_descriptor, layout, number_of_output_channels, latency_hint,
+          sink_descriptor, {layout, number_of_output_channels}, latency_hint,
           callback, base::BindOnce(&GetOutputDeviceParameters),
           base::BindRepeating(&GetNullAudioSink)));
 }
 
 RendererWebAudioDeviceImpl::RendererWebAudioDeviceImpl(
     const WebAudioSinkDescriptor& sink_descriptor,
-    media::ChannelLayout layout,
-    int number_of_output_channels,
+    media::ChannelLayoutConfig layout_config,
     const blink::WebAudioLatencyHint& latency_hint,
     media::AudioRendererSink::RenderCallback* callback,
     OutputDeviceParamsCallback device_params_cb,
@@ -133,6 +149,8 @@ RendererWebAudioDeviceImpl::RendererWebAudioDeviceImpl(
       latency_hint_(latency_hint),
       webaudio_callback_(callback),
       frame_token_(sink_descriptor.Token()),
+      main_thread_task_runner_(
+          base::SingleThreadTaskRunner::GetCurrentDefault()),
       create_silent_sink_cb_(std::move(create_silent_sink_cb)) {
   TRACE_EVENT0("webaudio",
                "RendererWebAudioDeviceImpl::RendererWebAudioDeviceImpl");
@@ -156,15 +174,29 @@ RendererWebAudioDeviceImpl::RendererWebAudioDeviceImpl(
   // On systems without audio hardware the returned parameters may be invalid.
   // In which case just choose whatever we want for the fake device.
   if (!original_sink_params_.IsValid()) {
+    SendLogMessage(base::StringPrintf(
+        "%s => (original_sink_params_ is invalid =[original_sink_params_=%s])",
+        __func__, original_sink_params_.AsHumanReadableString().c_str()));
     original_sink_params_.Reset(media::AudioParameters::AUDIO_FAKE,
                                 media::ChannelLayoutConfig::Stereo(), 48000,
                                 480);
+
+    // Inform the Blink client (e.g. AudioContext) that we have invalid device
+    // parameters.
+    if (base::FeatureList::IsEnabled(blink::features::kAudioContextOnError)) {
+      // Post a task on the same thread, and the posted task will be executed
+      // once the construction sequence is finished.
+      main_thread_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(&RendererWebAudioDeviceImpl::NotifyRenderError,
+                         weak_ptr_factory_.GetWeakPtr()));
+    }
   }
   SendLogMessage(base::StringPrintf(
       "%s => (hardware_params=[%s])", __func__,
       original_sink_params_.AsHumanReadableString().c_str()));
 
-  const media::AudioLatency::LatencyType latency =
+  const media::AudioLatency::Type latency =
       AudioDeviceFactory::GetSourceLatencyType(
           GetLatencyHintSourceType(latency_hint_.Category()));
 
@@ -172,15 +204,26 @@ RendererWebAudioDeviceImpl::RendererWebAudioDeviceImpl(
       GetOutputBufferSize(latency_hint_, latency, original_sink_params_);
   DCHECK_NE(0, output_buffer_size);
 
-  current_sink_params_.Reset(
-      original_sink_params_.format(), {layout, number_of_output_channels},
-      original_sink_params_.sample_rate(), output_buffer_size);
+  current_sink_params_.Reset(original_sink_params_.format(), layout_config,
+                             original_sink_params_.sample_rate(),
+                             output_buffer_size);
 
   // Specify the latency info to be passed to the browser side.
   current_sink_params_.set_latency_tag(latency);
   SendLogMessage(
       base::StringPrintf("%s => (sink_params=[%s])", __func__,
                          current_sink_params_.AsHumanReadableString().c_str()));
+
+  if (base::FeatureList::IsEnabled(media::kLiveCaptionWebAudio)) {
+    auto* web_local_frame = WebLocalFrame::FromFrameToken(frame_token_);
+    if (web_local_frame) {
+      speech_recognition_client_ =
+          web_local_frame->Client()->CreateSpeechRecognitionClient();
+      if (speech_recognition_client_) {
+        speech_recognition_client_->Reconfigure(current_sink_params_);
+      }
+    }
+  }
 }
 
 RendererWebAudioDeviceImpl::~RendererWebAudioDeviceImpl() {
@@ -268,11 +311,35 @@ int RendererWebAudioDeviceImpl::Render(
     is_rendering_ = true;
   }
 
-  return webaudio_callback_->Render(delay, delay_timestamp, glitch_info, dest);
+  int frames_filled =
+      webaudio_callback_->Render(delay, delay_timestamp, glitch_info, dest);
+  if (speech_recognition_client_) {
+    speech_recognition_client_->AddAudio(*dest);
+  }
+
+  return frames_filled;
 }
 
 void RendererWebAudioDeviceImpl::OnRenderError() {
-  DCHECK(webaudio_callback_);
+  if (!base::FeatureList::IsEnabled(blink::features::kAudioContextOnError)) {
+    return;
+  }
+
+  // This function gets called from the audio infra, non-main thread, so this
+  // posts a cross-thread task to the main thread task runner.
+  main_thread_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&RendererWebAudioDeviceImpl::NotifyRenderError,
+                       weak_ptr_factory_.GetWeakPtr()));
+}
+
+void RendererWebAudioDeviceImpl::NotifyRenderError() {
+  if (!base::FeatureList::IsEnabled(blink::features::kAudioContextOnError)) {
+    return;
+  }
+
+  DCHECK(thread_checker_.CalledOnValidThread());
+  SendLogMessage(base::StringPrintf("%s", __func__));
 
   webaudio_callback_->OnRenderError();
 }
@@ -312,7 +379,7 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
       // Use a task runner instead of the render thread for fake Render() calls
       // since it has special connotations for Blink and garbage collection.
       // Timeout value chosen to be highly unlikely in the normal case.
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
       silent_sink_suspender_ = std::make_unique<media::SilentSinkSuspender>(
           this, base::Seconds(0), current_sink_params_, sink_,
           GetSilentSinkTaskRunner());
@@ -331,9 +398,11 @@ void RendererWebAudioDeviceImpl::CreateAudioRendererSink() {
 }
 
 media::OutputDeviceStatus
-RendererWebAudioDeviceImpl::CreateSinkAndGetDeviceStatus() {
+RendererWebAudioDeviceImpl::MaybeCreateSinkAndGetStatus() {
   DCHECK(thread_checker_.CalledOnValidThread());
-  CreateAudioRendererSink();
+  if (!sink_) {
+    CreateAudioRendererSink();
+  }
 
   // The device status of a silent sink is always OK.
   bool is_silent_sink =

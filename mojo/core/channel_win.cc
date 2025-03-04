@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/channel.h"
 
-#include <stdint.h>
 #include <windows.h>
+
+#include <stdint.h>
 
 #include <algorithm>
 #include <limits>
@@ -69,7 +75,7 @@ class ChannelWin : public Channel,
         io_task_runner_(io_task_runner) {
     handle_ =
         connection_params.TakeEndpoint().TakePlatformHandle().TakeHandle();
-    CHECK(handle_.IsValid());
+    CHECK(handle_.is_valid());
   }
 
   ChannelWin(const ChannelWin&) = delete;
@@ -176,7 +182,10 @@ class ChannelWin : public Channel,
 
   void StartOnIOThread() {
     base::CurrentThread::Get()->AddDestructionObserver(this);
-    base::CurrentIOThread::Get()->RegisterIOHandler(handle_.Get(), this);
+    if (!base::CurrentIOThread::Get()->RegisterIOHandler(handle_.get(), this)) {
+      OnError(Error::kConnectionFailed);
+      return;
+    }
 
     // Now that we have registered our IOHandler, we can start writing.
     {
@@ -196,14 +205,21 @@ class ChannelWin : public Channel,
   void ShutDownOnIOThread() {
     base::CurrentThread::Get()->RemoveDestructionObserver(this);
 
-    // TODO(https://crbug.com/583525): This function is expected to be called
+    {
+      // Prevent attempts to write if we've closed the handle.
+      base::AutoLock lock(write_lock_);
+      reject_writes_ = true;
+    }
+
+    // TODO(crbug.com/40455076): This function is expected to be called
     // once, and |handle_| should be valid at this point.
-    CHECK(handle_.IsValid());
-    CancelIo(handle_.Get());
-    if (leak_handle_)
+    CHECK(handle_.is_valid());
+    CancelIo(handle_.get());
+    if (leak_handle_) {
       std::ignore = handle_.Take();
-    else
+    } else {
       handle_.Close();
+    }
 
     // Allow |this| to be destroyed as soon as no IO is pending.
     self_ = nullptr;
@@ -287,7 +303,7 @@ class ChannelWin : public Channel,
     DCHECK_GT(buffer_capacity, 0u);
 
     BOOL ok =
-        ::ReadFile(handle_.Get(), buffer, static_cast<DWORD>(buffer_capacity),
+        ::ReadFile(handle_.get(), buffer, static_cast<DWORD>(buffer_capacity),
                    NULL, &read_context_.overlapped);
     if (ok || GetLastError() == ERROR_IO_PENDING) {
       is_read_pending_ = true;
@@ -315,7 +331,8 @@ class ChannelWin : public Channel,
     for (auto& handle : handles)
       handle.CompleteTransit();
 
-    BOOL ok = WriteFile(handle_.Get(), message->data(),
+    DCHECK(handle_.is_valid());
+    BOOL ok = WriteFile(handle_.get(), message->data(),
                         static_cast<DWORD>(message->data_num_bytes()), NULL,
                         &write_context_.overlapped);
     if (ok || GetLastError() == ERROR_IO_PENDING) {
@@ -327,8 +344,12 @@ class ChannelWin : public Channel,
   }
 
   bool WriteNextNoLock() {
-    if (outgoing_messages_.IsEmpty())
+    if (outgoing_messages_.IsEmpty()) {
       return true;
+    }
+    if (reject_writes_) {
+      return false;
+    }
     return WriteNoLock(outgoing_messages_.GetFirst());
   }
 

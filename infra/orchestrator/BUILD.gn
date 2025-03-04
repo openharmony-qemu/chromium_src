@@ -1,6 +1,7 @@
 # Copyright 2022 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+import("//build/config/chromeos/args.gni")
 import("//build/config/coverage/coverage.gni")
 import("//build/config/python.gni")
 
@@ -43,9 +44,17 @@ group("orchestrator_all") {
   }
 
   if (use_jacoco_coverage) {
-    data += [ "//third_party/jacoco/lib/jacococli.jar" ]
+    data += [ "//third_party/jacoco/cipd/lib/jacococli.jar" ]
     data_deps += [ "//third_party/jdk:java_data" ]
   }
+
+  if (is_skylab) {
+    data += [
+      "//third_party/chromite/",
+      "//chromeos/CHROMEOS_LKGM",
+    ]
+  }
+
   write_runtime_deps = "$root_out_dir/orchestrator_all.runtime_deps"
 }
 

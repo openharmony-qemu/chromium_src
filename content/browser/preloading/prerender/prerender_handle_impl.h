@@ -6,9 +6,11 @@
 #define CONTENT_BROWSER_PRELOADING_PRERENDER_PRERENDER_HANDLE_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
+#include "content/public/browser/frame_tree_node_id.h"
 #include "content/public/browser/preloading.h"
 #include "content/public/browser/prerender_handle.h"
-#include "url/gurl.h"
+
+class GURL;
 
 namespace content {
 
@@ -18,23 +20,25 @@ class PrerenderHandleImpl final : public PrerenderHandle {
  public:
   PrerenderHandleImpl(
       base::WeakPtr<PrerenderHostRegistry> prerender_host_registry,
-      int frame_tree_node_id,
+      FrameTreeNodeId frame_tree_node_id,
       const GURL& url);
   ~PrerenderHandleImpl() override;
 
   // PrerenderHandle:
-  GURL GetInitialPrerenderingUrl() override;
+  const GURL& GetInitialPrerenderingUrl() const override;
   base::WeakPtr<PrerenderHandle> GetWeakPtr() override;
   void SetPreloadingAttemptFailureReason(
       PreloadingFailureReason reason) override;
 
-  int frame_tree_node_id_for_testing() const { return frame_tree_node_id_; }
+  FrameTreeNodeId frame_tree_node_id_for_testing() const {
+    return frame_tree_node_id_;
+  }
 
  private:
   base::WeakPtr<PrerenderHostRegistry> prerender_host_registry_;
   // `frame_tree_node_id_` is the root FrameTreeNode id of the prerendered
   // page.
-  const int frame_tree_node_id_;
+  const FrameTreeNodeId frame_tree_node_id_;
 
   const GURL prerendering_url_;
 

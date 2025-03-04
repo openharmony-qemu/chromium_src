@@ -4,6 +4,8 @@
 
 #include "content/browser/renderer_host/navigation_throttle_runner.h"
 
+#include <optional>
+
 #include "base/functional/bind.h"
 #include "base/metrics/metrics_hashes.h"
 #include "components/ukm/test_ukm_recorder.h"
@@ -13,7 +15,6 @@
 #include "content/public/test/test_navigation_throttle.h"
 #include "content/public/test/test_renderer_host.h"
 #include "services/metrics/public/cpp/ukm_builders.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace content {
 
@@ -76,7 +77,7 @@ class NavigationThrottleRunnerTest : public RenderViewHostTestHarness,
   void SimulateEvent(NavigationThrottleRunner::Event event) {
     was_delegate_notified_ = false;
     delegate_result_ = NavigationThrottle::DEFER;
-    observer_last_event_ = NavigationThrottleRunner::Event::NoEvent;
+    observer_last_event_ = NavigationThrottleRunner::Event::kNoEvent;
     runner_->ProcessNavigationEvent(event);
   }
 
@@ -109,35 +110,35 @@ class NavigationThrottleRunnerTest : public RenderViewHostTestHarness,
 
   void CheckNotifiedOfEvent(TestNavigationThrottle* throttle,
                             NavigationThrottleRunner::Event event) {
-    if (event == NavigationThrottleRunner::Event::WillStartRequest) {
+    if (event == NavigationThrottleRunner::Event::kWillStartRequest) {
       CHECK_EQ(1, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_START_REQUEST));
     } else {
       CHECK_EQ(0, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_START_REQUEST));
     }
-    if (event == NavigationThrottleRunner::Event::WillRedirectRequest) {
+    if (event == NavigationThrottleRunner::Event::kWillRedirectRequest) {
       CHECK_EQ(1, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_REDIRECT_REQUEST));
     } else {
       CHECK_EQ(0, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_REDIRECT_REQUEST));
     }
-    if (event == NavigationThrottleRunner::Event::WillFailRequest) {
+    if (event == NavigationThrottleRunner::Event::kWillFailRequest) {
       CHECK_EQ(
           1, throttle->GetCallCount(TestNavigationThrottle::WILL_FAIL_REQUEST));
     } else {
       CHECK_EQ(
           0, throttle->GetCallCount(TestNavigationThrottle::WILL_FAIL_REQUEST));
     }
-    if (event == NavigationThrottleRunner::Event::WillProcessResponse) {
+    if (event == NavigationThrottleRunner::Event::kWillProcessResponse) {
       CHECK_EQ(1, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_PROCESS_RESPONSE));
     } else {
       CHECK_EQ(0, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_PROCESS_RESPONSE));
     }
-    if (event == NavigationThrottleRunner::Event::WillCommitWithoutUrlLoader) {
+    if (event == NavigationThrottleRunner::Event::kWillCommitWithoutUrlLoader) {
       CHECK_EQ(1, throttle->GetCallCount(
                       TestNavigationThrottle::WILL_COMMIT_WITHOUT_URL_LOADER));
     } else {
@@ -200,7 +201,7 @@ class NavigationThrottleRunnerTest : public RenderViewHostTestHarness,
   std::unique_ptr<NavigationThrottleRunner> runner_;
   MockNavigationHandle handle_;
   NavigationThrottleRunner::Event observer_last_event_ =
-      NavigationThrottleRunner::Event::NoEvent;
+      NavigationThrottleRunner::Event::kNoEvent;
   bool was_delegate_notified_ = false;
   NavigationThrottle::ThrottleCheckResult delegate_result_;
   ukm::TestAutoSetUkmRecorder test_ukm_recorder_;
@@ -278,11 +279,11 @@ INSTANTIATE_TEST_SUITE_P(
     AllEvents,
     NavigationThrottleRunnerTestWithEvent,
     ::testing::Values(
-        NavigationThrottleRunner::Event::WillStartRequest,
-        NavigationThrottleRunner::Event::WillRedirectRequest,
-        NavigationThrottleRunner::Event::WillFailRequest,
-        NavigationThrottleRunner::Event::WillProcessResponse,
-        NavigationThrottleRunner::Event::WillCommitWithoutUrlLoader));
+        NavigationThrottleRunner::Event::kWillStartRequest,
+        NavigationThrottleRunner::Event::kWillRedirectRequest,
+        NavigationThrottleRunner::Event::kWillFailRequest,
+        NavigationThrottleRunner::Event::kWillProcessResponse,
+        NavigationThrottleRunner::Event::kWillCommitWithoutUrlLoader));
 
 class NavigationThrottleRunnerTestWithEventAndAction
     : public NavigationThrottleRunnerTest,
@@ -409,7 +410,7 @@ TEST_P(NavigationThrottleRunnerTestWithEventAndAction, DeferRecordsUKM) {
   const auto& entries = test_ukm_recorder().GetEntriesByName(
       ukm::builders::NavigationThrottleDeferredTime::kEntryName);
   EXPECT_EQ(1u, entries.size());
-  for (auto* entry : entries) {
+  for (const ukm::mojom::UkmEntry* entry : entries) {
     EXPECT_EQ(*ukm::TestUkmRecorder::GetEntryMetric(
                   entry, ukm::builders::NavigationThrottleDeferredTime::
                              kNavigationThrottleEventTypeName),
@@ -427,11 +428,11 @@ INSTANTIATE_TEST_SUITE_P(
     NavigationThrottleRunnerTestWithEventAndAction,
     ::testing::Combine(
         ::testing::Values(
-            NavigationThrottleRunner::Event::WillStartRequest,
-            NavigationThrottleRunner::Event::WillRedirectRequest,
-            NavigationThrottleRunner::Event::WillFailRequest,
-            NavigationThrottleRunner::Event::WillProcessResponse,
-            NavigationThrottleRunner::Event::WillCommitWithoutUrlLoader),
+            NavigationThrottleRunner::Event::kWillStartRequest,
+            NavigationThrottleRunner::Event::kWillRedirectRequest,
+            NavigationThrottleRunner::Event::kWillFailRequest,
+            NavigationThrottleRunner::Event::kWillProcessResponse,
+            NavigationThrottleRunner::Event::kWillCommitWithoutUrlLoader),
         ::testing::Values(NavigationThrottle::PROCEED,
                           NavigationThrottle::CANCEL,
                           NavigationThrottle::CANCEL_AND_IGNORE,
@@ -444,7 +445,7 @@ class NavigationThrottleRunnerTestWithEventAndError
       public testing::WithParamInterface<
           std::tuple<NavigationThrottleRunner::Event,
                      net::Error,
-                     absl::optional<std::string>>> {
+                     std::optional<std::string>>> {
  public:
   NavigationThrottleRunnerTestWithEventAndError()
       : NavigationThrottleRunnerTest() {}
@@ -455,7 +456,7 @@ class NavigationThrottleRunnerTestWithEventAndError
   }
   NavigationThrottleRunner::Event event() const { return event_; }
   net::Error error() const { return error_; }
-  const absl::optional<std::string>& custom_error_page() const {
+  const std::optional<std::string>& custom_error_page() const {
     return custom_error_page_;
   }
 
@@ -466,7 +467,7 @@ class NavigationThrottleRunnerTestWithEventAndError
  private:
   NavigationThrottleRunner::Event event_;
   net::Error error_;
-  absl::optional<std::string> custom_error_page_ = absl::nullopt;
+  std::optional<std::string> custom_error_page_ = std::nullopt;
 };
 
 // Checks that the NavigationThrottleRunner correctly propagates a
@@ -508,12 +509,12 @@ INSTANTIATE_TEST_SUITE_P(
     NavigationThrottleRunnerTestWithEventAndError,
     ::testing::Combine(
         ::testing::Values(
-            NavigationThrottleRunner::Event::WillStartRequest,
-            NavigationThrottleRunner::Event::WillRedirectRequest,
-            NavigationThrottleRunner::Event::WillFailRequest,
-            NavigationThrottleRunner::Event::WillProcessResponse,
-            NavigationThrottleRunner::Event::WillCommitWithoutUrlLoader),
+            NavigationThrottleRunner::Event::kWillStartRequest,
+            NavigationThrottleRunner::Event::kWillRedirectRequest,
+            NavigationThrottleRunner::Event::kWillFailRequest,
+            NavigationThrottleRunner::Event::kWillProcessResponse,
+            NavigationThrottleRunner::Event::kWillCommitWithoutUrlLoader),
         ::testing::Values(net::ERR_BLOCKED_BY_ADMINISTRATOR, net::ERR_ABORTED),
-        ::testing::Values(absl::nullopt, "<html><body>test</body></html>")));
+        ::testing::Values(std::nullopt, "<html><body>test</body></html>")));
 
 }  // namespace content

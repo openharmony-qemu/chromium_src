@@ -8,7 +8,7 @@
 
 #include "base/check.h"
 #include "base/memory/raw_ptr.h"
-#include "third_party/libei/include/libei.h"
+#include "third_party/libei/cipd/include/libei.h"
 
 namespace remoting {
 
@@ -84,6 +84,13 @@ gboolean EiEventWatcherGlib::WatchSourceDispatch(GSource* source,
       static_cast<GLibEiSource*>(source)->event_watcher.get();
   event_watcher_glib->Dispatch();
   return TRUE;
+}
+
+void EiEventWatcherGlib::WatchSourceFinalize(GSource* source) {
+  auto* src = static_cast<GLibEiSource*>(source);
+  // This is needed to ensure raw_ptr releases the pointers it holds upon the
+  // GSource destruction.
+  src->event_watcher = nullptr;
 }
 
 bool EiEventWatcherGlib::Prepare() {

@@ -7,7 +7,9 @@
 #include <algorithm>
 #include <string>
 
+#include "base/containers/span.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/pickle.h"
 #include "base/strings/utf_string_conversions.h"
@@ -129,7 +131,7 @@ BookmarkNodeData::BookmarkNodeData(const BookmarkNode* node) {
 }
 
 BookmarkNodeData::BookmarkNodeData(
-    const std::vector<const BookmarkNode*>& nodes) {
+    const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>& nodes) {
   ReadFromVector(nodes);
 }
 
@@ -140,7 +142,7 @@ BookmarkNodeData::~BookmarkNodeData() {
 // static
 bool BookmarkNodeData::ClipboardContainsBookmarks() {
   ui::DataTransferEndpoint data_dst = ui::DataTransferEndpoint(
-      ui::EndpointType::kDefault, /*notify_if_restricted=*/false);
+      ui::EndpointType::kDefault, {.notify_if_restricted = false});
   return ui::Clipboard::GetForCurrentThread()->IsFormatAvailable(
       ui::ClipboardFormatType::GetType(kClipboardFormatString),
       ui::ClipboardBuffer::kCopyPaste, &data_dst);
@@ -148,7 +150,7 @@ bool BookmarkNodeData::ClipboardContainsBookmarks() {
 #endif
 
 bool BookmarkNodeData::ReadFromVector(
-    const std::vector<const BookmarkNode*>& nodes) {
+    const std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>& nodes) {
   Clear();
 
   if (nodes.empty())
@@ -178,8 +180,13 @@ bool BookmarkNodeData::ReadFromTuple(const GURL& url,
 }
 
 #if !BUILDFLAG(IS_APPLE)
-void BookmarkNodeData::WriteToClipboard() {
+void BookmarkNodeData::WriteToClipboard(bool is_off_the_record) {
   ui::ScopedClipboardWriter scw(ui::ClipboardBuffer::kCopyPaste);
+
+  if (is_off_the_record) {
+    // Data is copied from an incognito window, so mark it as off the record.
+    scw.MarkAsOffTheRecord();
+  }
 
 #if BUILDFLAG(IS_WIN)
   const std::u16string kEOL(u"\r\n");
@@ -228,7 +235,8 @@ bool BookmarkNodeData::ReadFromClipboard(ui::ClipboardBuffer buffer) {
                       /* data_dst = */ nullptr, &data);
 
   if (!data.empty()) {
-    base::Pickle pickle(data.data(), static_cast<int>(data.size()));
+    base::Pickle pickle =
+        base::Pickle::WithUnownedBuffer(base::as_byte_span(data));
     if (ReadFromPickle(&pickle))
       return true;
   }
@@ -289,10 +297,10 @@ bool BookmarkNodeData::ReadFromPickle(base::Pickle* pickle) {
 
 #endif  // BUILDFLAG(IS_APPLE)
 
-std::vector<const BookmarkNode*> BookmarkNodeData::GetNodes(
-    BookmarkModel* model,
-    const base::FilePath& profile_path) const {
-  std::vector<const BookmarkNode*> nodes;
+std::vector<raw_ptr<const BookmarkNode, VectorExperimental>>
+BookmarkNodeData::GetNodes(BookmarkModel* model,
+                           const base::FilePath& profile_path) const {
+  std::vector<raw_ptr<const BookmarkNode, VectorExperimental>> nodes;
 
   if (!IsFromProfilePath(profile_path))
     return nodes;
@@ -311,7 +319,8 @@ std::vector<const BookmarkNode*> BookmarkNodeData::GetNodes(
 const BookmarkNode* BookmarkNodeData::GetFirstNode(
     BookmarkModel* model,
     const base::FilePath& profile_path) const {
-  std::vector<const BookmarkNode*> nodes = GetNodes(model, profile_path);
+  std::vector<raw_ptr<const BookmarkNode, VectorExperimental>> nodes =
+      GetNodes(model, profile_path);
   return nodes.size() == 1 ? nodes[0] : nullptr;
 }
 

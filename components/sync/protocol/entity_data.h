@@ -12,13 +12,14 @@
 #include "base/time/time.h"
 #include "base/values.h"
 #include "components/sync/base/client_tag_hash.h"
+#include "components/sync/protocol/deletion_origin.pb.h"
 #include "components/sync/protocol/entity_specifics.pb.h"
 
 namespace syncer {
 
 // A light-weight container for sync entity data which represents either
 // local data created on the local model side or remote data created on
-// ModelTypeWorker.
+// DataTypeWorker.
 // EntityData is supposed to be wrapped and passed by reference.
 struct EntityData {
  public:
@@ -36,7 +37,7 @@ struct EntityData {
   // a temporary client sync ID.
   std::string id;
 
-  // A hash based on the client tag and model type.
+  // A hash based on the client tag and data type.
   // Used for various map lookups. Should always be available for all data types
   // except bookmarks (for bookmarks it depends on the version of the client
   // that originally created the bookmark).
@@ -61,7 +62,7 @@ struct EntityData {
   // Entity name, used mostly for Debug purposes.
   std::string name;
 
-  // Model type specific sync data.
+  // Data type specific sync data.
   sync_pb::EntitySpecifics specifics;
 
   // Entity creation and modification timestamps.
@@ -75,16 +76,28 @@ struct EntityData {
   // components/sync_bookmarks/parent_guid_preprocessing.cc.
   std::string legacy_parent_id;
 
+  // Recipient's Public Key used for cross-user sharing data types. Used for
+  // only outgoing password sharing invitations (created locally).
+  sync_pb::CrossUserSharingPublicKey recipient_public_key;
+
   // Indicate whether bookmark's |unique_position| was missing in the original
   // specifics during GetUpdates. If the |unique_position| in specifics was
   // evaluated by AdaptUniquePositionForBookmark(), this field will be set to
   // true. Relevant only for bookmarks.
   bool is_bookmark_unique_position_in_specifics_preprocessed = false;
 
+  // Collaboration with which the current entity is associated. Empty for
+  // non-shared types.
+  std::string collaboration_id;
+
   // True if EntityData represents deleted entity; otherwise false.
   // Note that EntityData would be considered to represent a deletion if its
   // specifics hasn't been set.
   bool is_deleted() const { return specifics.ByteSize() == 0; }
+
+  // Optionally populated for outgoing deletions. See corresponding field in
+  // SyncEntity for details.
+  std::optional<sync_pb::DeletionOrigin> deletion_origin;
 
   // Dumps all info into a base::Value::Dict and returns it.
   base::Value::Dict ToDictionaryValue() const;

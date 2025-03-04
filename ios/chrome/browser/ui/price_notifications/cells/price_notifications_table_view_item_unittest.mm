@@ -6,17 +6,13 @@
 
 #import <UIKit/UIKit.h>
 
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/ui/price_notifications/cells/price_notifications_price_chip_view.h"
 #import "ios/chrome/browser/ui/price_notifications/cells/price_notifications_track_button_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "url/gurl.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using PriceNotificationsTableViewItemTest = PlatformTest;
 // Ensures that the PriceNotificationTableViewCell's track button is visible

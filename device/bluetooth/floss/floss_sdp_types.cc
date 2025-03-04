@@ -4,6 +4,8 @@
 
 #include "device/bluetooth/floss/floss_sdp_types.h"
 
+#include "base/containers/contains.h"
+
 namespace floss {
 
 BtSdpHeaderOverlay::BtSdpHeaderOverlay() = default;
@@ -51,7 +53,7 @@ constexpr char kSdpDipRecordPropProduct[] = "product";
 constexpr char kSdpDipRecordPropVersion[] = "version";
 constexpr char kSdpDipRecordPropPrimaryRecord[] = "primary_record";
 
-absl::optional<floss::BtSdpHeaderOverlay> GetHeaderOverlayFromSdpRecord(
+std::optional<floss::BtSdpHeaderOverlay> GetHeaderOverlayFromSdpRecord(
     const floss::BtSdpRecord& record) {
   if (absl::holds_alternative<floss::BtSdpHeaderOverlay>(record)) {
     return absl::get<floss::BtSdpHeaderOverlay>(record);
@@ -70,16 +72,16 @@ absl::optional<floss::BtSdpHeaderOverlay> GetHeaderOverlayFromSdpRecord(
   } else if (absl::holds_alternative<floss::BtSdpDipRecord>(record)) {
     return absl::get<floss::BtSdpDipRecord>(record).hdr;
   } else {
-    return absl::nullopt;
+    return std::nullopt;
   }
 }
 
-absl::optional<device::BluetoothUUID> GetUUIDFromSdpRecord(
+std::optional<device::BluetoothUUID> GetUUIDFromSdpRecord(
     const floss::BtSdpRecord& record) {
-  absl::optional<floss::BtSdpHeaderOverlay> header =
+  std::optional<floss::BtSdpHeaderOverlay> header =
       GetHeaderOverlayFromSdpRecord(record);
   if (!header.has_value()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   return header->uuid;
 }
@@ -421,12 +423,12 @@ bool FlossDBusClient::ReadDBusParam(dbus::MessageReader* reader,
     unparsed_args[key] = std::move(entry_reader);
   }
 
-  if (!unparsed_args.contains(kTypeKey)) {
+  if (!base::Contains(unparsed_args, kTypeKey)) {
     LOG(ERROR) << "BtSdpRecord did not contain type identifier";
     return false;
   }
 
-  if (!unparsed_args.contains(kVariantValueKey)) {
+  if (!base::Contains(unparsed_args, kVariantValueKey)) {
     LOG(ERROR) << "BtSdpRecord did not contain argument #0";
     return false;
   }

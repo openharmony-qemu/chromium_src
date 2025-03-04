@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "sandbox/linux/seccomp-bpf/sandbox_bpf.h"
 
 #include <errno.h>
@@ -101,12 +106,6 @@ bool KernelSupportsSeccompTsync() {
   return KernelSupportsSeccompFlags(SECCOMP_FILTER_FLAG_TSYNC);
 }
 
-// Check if the kernel supports SECCOMP_FILTER_FLAG_LOG to
-// add auxiliary debugging information.
-bool KernelSupportsSeccompLog() {
-  return KernelSupportsSeccompFlags(SECCOMP_FILTER_FLAG_LOG);
-}
-
 #if BUILDFLAG(DISABLE_SECCOMP_SSBD)
 // Check if the kernel supports seccomp-filter via the seccomp system call and
 // without spec flaw mitigation.
@@ -148,7 +147,6 @@ bool SandboxBPF::SupportsSeccompSandbox(SeccompLevel level) {
       return KernelSupportsSeccompTsync();
   }
   NOTREACHED();
-  return false;
 }
 
 bool SandboxBPF::StartSandbox(SeccompLevel seccomp_level, bool enable_ibpb) {
@@ -241,7 +239,12 @@ void SandboxBPF::InstallFilter(bool must_sync_threads, bool enable_ibpb) {
   // in system calls to things like munmap() or brk().
   CodeGen::Program program = AssembleFilter();
 
+// Silence clang's warning about allocating on the stack because we have no
+// other choice.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wvla-extension"
   struct sock_filter bpf[program.size()];
+#pragma clang diagnostic pop
   const struct sock_fprog prog = {static_cast<unsigned short>(program.size()),
                                   bpf};
   memcpy(bpf, &program[0], sizeof(bpf));
@@ -261,9 +264,6 @@ void SandboxBPF::InstallFilter(bool must_sync_threads, bool enable_ibpb) {
   // has the seccomp system call. Otherwise, fall back on prctl, which requires
   // the process to be single-threaded.
   unsigned int seccomp_filter_flags = 0;
-  if (KernelSupportsSeccompLog()) {
-    seccomp_filter_flags |= SECCOMP_FILTER_FLAG_LOG;
-  }
   if (must_sync_threads) {
     seccomp_filter_flags |= SECCOMP_FILTER_FLAG_TSYNC;
 #if BUILDFLAG(DISABLE_SECCOMP_SSBD)

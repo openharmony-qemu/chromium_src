@@ -35,9 +35,9 @@ class TestFakeSuggestionsService : public RemoteSuggestionsService::Observer {
   void TearDown(RemoteSuggestionsService* remote_suggestions_service,
                 network::mojom::URLLoaderFactory* url_loader_factory);
 
-  void OnSuggestRequestStarting(
-      const base::UnguessableToken& request_id,
-      const network::ResourceRequest* request) override;
+  // RemoteSuggestionsService::Observer:
+  void OnRequestCreated(const base::UnguessableToken& request_id,
+                        const network::ResourceRequest* request) override;
 
  private:
   friend class base::NoDestructor<TestFakeSuggestionsService>;

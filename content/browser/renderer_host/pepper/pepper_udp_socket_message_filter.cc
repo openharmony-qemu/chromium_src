@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "base/compiler_specific.h"
+#include "base/containers/to_vector.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
@@ -306,7 +307,6 @@ int32_t PepperUDPSocketMessageFilter::OnMsgSetOption(
     }
     default: {
       NOTREACHED();
-      return PP_ERROR_BADARGUMENT;
     }
   }
 }
@@ -448,7 +448,6 @@ int32_t PepperUDPSocketMessageFilter::OnMsgSendTo(
           static_cast<size_t>(UDPSocketResourceConstants::kMaxWriteSize)) {
     // Size of |data| is checked on the plugin side.
     NOTREACHED();
-    return PP_ERROR_BADARGUMENT;
   }
 
   net::IPAddressBytes address;
@@ -457,9 +456,7 @@ int32_t PepperUDPSocketMessageFilter::OnMsgSendTo(
     return PP_ERROR_ADDRESS_INVALID;
   }
 
-  const uint8_t* data_ptr = reinterpret_cast<const uint8_t*>(data.data());
-  std::vector<uint8_t> data_vector(data_ptr, data_ptr + num_bytes);
-
+  std::vector<uint8_t> data_vector = base::ToVector(base::as_byte_span(data));
   pending_sends_.push(PendingSend(net::IPAddress(address), port,
                                   std::move(data_vector),
                                   context->MakeReplyMessageContext()));
@@ -550,7 +547,7 @@ void PepperUDPSocketMessageFilter::DoBindCallback(
     mojo::PendingReceiver<network::mojom::UDPSocketListener> listener_receiver,
     const ppapi::host::ReplyMessageContext& context,
     int result,
-    const absl::optional<net::IPEndPoint>& local_addr_out) {
+    const std::optional<net::IPEndPoint>& local_addr_out) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
   if (result != net::OK) {
@@ -633,8 +630,8 @@ void PepperUDPSocketMessageFilter::Close() {
 
 void PepperUDPSocketMessageFilter::OnReceived(
     int result,
-    const absl::optional<net::IPEndPoint>& src_addr,
-    absl::optional<base::span<const uint8_t>> data) {
+    const std::optional<net::IPEndPoint>& src_addr,
+    std::optional<base::span<const uint8_t>> data) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   DCHECK(!closed_);
 
@@ -695,9 +692,6 @@ void PepperUDPSocketMessageFilter::SendBindReply(
     const ppapi::host::ReplyMessageContext& context,
     int32_t result,
     const PP_NetAddress_Private& addr) {
-  UMA_HISTOGRAM_BOOLEAN("Pepper.PluginContextSecurity.UDPBind",
-                        is_potentially_secure_plugin_context_);
-
   ppapi::host::ReplyMessageContext reply_context(context);
   reply_context.params.set_result(result);
   SendReply(reply_context, PpapiPluginMsg_UDPSocket_BindReply(addr));

@@ -6,6 +6,7 @@
 
 #include <map>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -31,7 +32,7 @@ TranslateInternalsHandler::TranslateInternalsHandler() {
   translate::TranslateLanguageList* language_list =
       translate::TranslateDownloadManager::GetInstance()->language_list();
   if (!language_list) {
-    NOTREACHED();
+    NOTREACHED_IN_MIGRATION();
     return;
   }
 
@@ -92,7 +93,7 @@ void TranslateInternalsHandler::AddLanguageDetectionDetails(
     const translate::LanguageDetectionDetails& details) {
   base::Value::Dict dict;
   dict.Set("has_run_lang_detection", details.has_run_lang_detection);
-  dict.Set("time", details.time.ToJsTime());
+  dict.Set("time", details.time.InMillisecondsFSinceUnixEpoch());
   dict.Set("url", details.url.spec());
   dict.Set("content_language", details.content_language);
   dict.Set("model_detected_language", details.model_detected_language);
@@ -109,7 +110,7 @@ void TranslateInternalsHandler::AddLanguageDetectionDetails(
 void TranslateInternalsHandler::OnTranslateError(
     const translate::TranslateErrorDetails& details) {
   base::Value::Dict dict;
-  dict.Set("time", details.time.ToJsTime());
+  dict.Set("time", details.time.InMillisecondsFSinceUnixEpoch());
   dict.Set("url", details.url.spec());
   dict.Set("error", base::to_underlying(details.error));
   SendMessageToJs("translateErrorDetailsAdded", dict);
@@ -120,7 +121,7 @@ void TranslateInternalsHandler::OnTranslateInit(
   if (!GetTranslateClient()->IsTranslatableURL(details.url))
     return;
   base::Value::Dict dict;
-  dict.Set("time", details.time.ToJsTime());
+  dict.Set("time", details.time.InMillisecondsFSinceUnixEpoch());
   dict.Set("url", details.url.spec());
 
   dict.Set("page_language_code", details.page_language_code);
@@ -152,7 +153,7 @@ void TranslateInternalsHandler::OnTranslateInit(
 void TranslateInternalsHandler::OnTranslateEvent(
     const translate::TranslateEventDetails& details) {
   base::Value::Dict dict;
-  dict.Set("time", details.time.ToJsTime());
+  dict.Set("time", details.time.InMillisecondsFSinceUnixEpoch());
   dict.Set("filename", details.filename);
   dict.Set("line", details.line);
   dict.Set("message", details.message);
@@ -184,8 +185,7 @@ void TranslateInternalsHandler::OnRemovePrefItem(
     if (!args[2].is_string())
       return;
     const std::string& from = args[1].GetString();
-    const std::string& to = args[2].GetString();
-    translate_prefs->RemoveLanguagePairFromAlwaysTranslateList(from, to);
+    translate_prefs->RemoveLanguagePairFromAlwaysTranslateList(from);
   } else {
     return;
   }
@@ -225,7 +225,7 @@ void TranslateInternalsHandler::OnRequestInfo(
 }
 
 void TranslateInternalsHandler::SendMessageToJs(
-    base::StringPiece message,
+    std::string_view message,
     const base::Value::Dict& value) {
   const char func[] = "cr.webUIListenerCallback";
   base::Value message_data(message);
@@ -277,7 +277,7 @@ void TranslateInternalsHandler::SendSupportedLanguagesToJs() {
 
   base::Value::Dict dict;
   dict.Set("languages", std::move(languages_list));
-  dict.Set("last_updated", last_updated.ToJsTime());
+  dict.Set("last_updated", last_updated.InMillisecondsFSinceUnixEpoch());
   SendMessageToJs("supportedLanguagesUpdated", dict);
 }
 

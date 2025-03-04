@@ -7,11 +7,15 @@
 
 #include <memory>
 
+#include "base/feature_list.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/sequence_checker.h"
+#include "base/system/system_monitor.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "media/media_buildflags.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
@@ -24,9 +28,17 @@
 #include "services/video_capture/ash/video_capture_device_factory_ash.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
 #include "services/viz/public/cpp/gpu/gpu.h"
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
+
+#if BUILDFLAG(IS_MAC)
+#include "media/device_monitors/device_monitor_mac.h"
+#endif
+
+#if BUILDFLAG(IS_WIN)
+#include "media/device_monitors/system_message_window_win.h"
+#endif
 
 namespace video_capture {
 
@@ -37,7 +49,8 @@ class VideoCaptureServiceImpl : public mojom::VideoCaptureService {
  public:
   VideoCaptureServiceImpl(
       mojo::PendingReceiver<mojom::VideoCaptureService> receiver,
-      scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner);
+      scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner,
+      bool create_system_monitor);
 
   VideoCaptureServiceImpl(const VideoCaptureServiceImpl&) = delete;
   VideoCaptureServiceImpl& operator=(const VideoCaptureServiceImpl&) = delete;
@@ -62,9 +75,9 @@ class VideoCaptureServiceImpl : public mojom::VideoCaptureService {
 #if BUILDFLAG(IS_WIN)
   void OnGpuInfoUpdate(const CHROME_LUID& luid) override;
 #endif
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
   void SetVizGpu(std::unique_ptr<viz::Gpu> viz_gpu);
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
  private:
   class GpuDependenciesContext;
 
@@ -72,8 +85,27 @@ class VideoCaptureServiceImpl : public mojom::VideoCaptureService {
   void LazyInitializeDeviceFactory();
   void LazyInitializeVideoSourceProvider();
   void OnLastSourceProviderClientDisconnected();
+  // Initializes a platform-specific device monitor for device-change
+  // notifications. If the client uses the DeviceNotifier interface to get
+  // notifications this function should be called before the DeviceMonitor is
+  // created. If the client uses base::SystemMonitor to get notifications,
+  // this function should be called on service startup.
+  void InitializeDeviceMonitor();
+
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+  void OnDisconnectedFromVCDFactoryAsh();
+#endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
+
+#if BUILDFLAG(IS_MAC)
+  std::unique_ptr<media::DeviceMonitorMac> video_capture_device_monitor_mac_;
+#endif
+#if BUILDFLAG(IS_WIN)
+  std::unique_ptr<media::SystemMessageWindowWin>
+      video_capture_system_message_window_win_;
+#endif
 
   mojo::Receiver<mojom::VideoCaptureService> receiver_;
+  std::unique_ptr<base::SystemMonitor> system_monitor_;
   std::unique_ptr<VirtualDeviceEnabledDeviceFactory> device_factory_;
   std::unique_ptr<VideoSourceProviderImpl> video_source_provider_;
   std::unique_ptr<GpuDependenciesContext> gpu_dependencies_context_;
@@ -87,13 +119,15 @@ class VideoCaptureServiceImpl : public mojom::VideoCaptureService {
       factory_receivers_ash_;
 #endif
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
   class VizGpuContextProvider;
   std::unique_ptr<VizGpuContextProvider> viz_gpu_context_provider_;
   std::unique_ptr<viz::Gpu> viz_gpu_;
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(ENABLE_GPU_CHANNEL_MEDIA_CAPTURE)
 
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
+
+  SEQUENCE_CHECKER(sequence_checker_);
 };
 
 }  // namespace video_capture

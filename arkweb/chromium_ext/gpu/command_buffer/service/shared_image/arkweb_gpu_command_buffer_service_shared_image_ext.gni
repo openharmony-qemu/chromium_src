@@ -1,0 +1,16 @@
+arkweb_gpu_command_buffer_service_shared_image_sources = [
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/gl_texture_ohos_image_representation.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/gl_texture_ohos_image_representation.h",
+
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/gl_texture_passthrough_ohos_image_representation.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/gl_texture_passthrough_ohos_image_representation.h",
+
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.h",
+
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing.h",
+
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.cc",
+    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h",
+]

@@ -25,8 +25,10 @@
 namespace {
 base::FilePath GetHunspellDirectory() {
   base::FilePath hunspell_directory;
-  if (!base::PathService::Get(base::DIR_SOURCE_ROOT, &hunspell_directory))
+  if (!base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT,
+                              &hunspell_directory)) {
     return base::FilePath();
+  }
 
   hunspell_directory = hunspell_directory.AppendASCII("third_party");
   hunspell_directory = hunspell_directory.AppendASCII("hunspell_dictionaries");
@@ -42,7 +44,7 @@ FakeTextCheckingCompletion::FakeTextCheckingCompletion(
     FakeTextCheckingResult* result)
     : result_(result) {}
 
-FakeTextCheckingCompletion::~FakeTextCheckingCompletion() {}
+FakeTextCheckingCompletion::~FakeTextCheckingCompletion() = default;
 
 void FakeTextCheckingCompletion::DidFinishCheckingText(
     const blink::WebVector<blink::WebTextCheckingResult>& results) {
@@ -103,14 +105,16 @@ size_t FakeSpellCheck::EnabledLanguageCount() {
 
 TestingSpellCheckProvider::TestingSpellCheckProvider(
     service_manager::LocalInterfaceProvider* embedder_provider)
-    : SpellCheckProvider(nullptr,
-                         new FakeSpellCheck(embedder_provider),
-                         embedder_provider) {}
+    : SpellCheckProvider(nullptr, new FakeSpellCheck(embedder_provider)) {
+  SetSpellCheckHostForTesting(receiver_.BindNewPipeAndPassRemote());
+}
 
 TestingSpellCheckProvider::TestingSpellCheckProvider(
     SpellCheck* spellcheck,
     service_manager::LocalInterfaceProvider* embedder_provider)
-    : SpellCheckProvider(nullptr, spellcheck, embedder_provider) {}
+    : SpellCheckProvider(nullptr, spellcheck) {
+  SetSpellCheckHostForTesting(receiver_.BindNewPipeAndPassRemote());
+}
 
 TestingSpellCheckProvider::~TestingSpellCheckProvider() {
   receiver_.reset();
@@ -122,13 +126,9 @@ TestingSpellCheckProvider::~TestingSpellCheckProvider() {
 void TestingSpellCheckProvider::RequestTextChecking(
     const std::u16string& text,
     std::unique_ptr<blink::WebTextCheckingCompletion> completion) {
-  if (!receiver_.is_bound())
-    SetSpellCheckHostForTesting(receiver_.BindNewPipeAndPassRemote());
   SpellCheckProvider::RequestTextChecking(text, std::move(completion));
   base::RunLoop().RunUntilIdle();
 }
-
-void TestingSpellCheckProvider::RequestDictionary() {}
 
 void TestingSpellCheckProvider::NotifyChecked(const std::u16string& word,
                                               bool misspelled) {}
@@ -169,21 +169,21 @@ void TestingSpellCheckProvider::ResetResult() {
 #if BUILDFLAG(USE_BROWSER_SPELLCHECKER)
 void TestingSpellCheckProvider::RequestTextCheck(
     const std::u16string& text,
-    int,
     RequestTextCheckCallback callback) {
   text_check_requests_.push_back(std::make_pair(text, std::move(callback)));
 }
 
+#if BUILDFLAG(ENABLE_SPELLING_SERVICE)
 void TestingSpellCheckProvider::CheckSpelling(const std::u16string&,
-                                              int,
                                               CheckSpellingCallback) {
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 }
 
 void TestingSpellCheckProvider::FillSuggestionList(const std::u16string&,
                                                    FillSuggestionListCallback) {
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 }
+#endif  // BUILDFLAG(ENABLE_SPELLING_SERVICE)
 
 #if BUILDFLAG(IS_WIN)
 void TestingSpellCheckProvider::InitializeDictionaries(
@@ -195,14 +195,14 @@ void TestingSpellCheckProvider::InitializeDictionaries(
     return;
   }
 
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 }
 #endif  // BUILDFLAG(IS_WIN)
 #endif  // BUILDFLAG(USE_BROWSER_SPELLCHECKER)
 
 #if BUILDFLAG(IS_ANDROID)
 void TestingSpellCheckProvider::DisconnectSessionBridge() {
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 }
 #endif
 
@@ -238,6 +238,10 @@ void TestingSpellCheckProvider::OnRespondTextCheck(
 }
 #endif  // BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
 
+base::WeakPtr<SpellCheckProvider> TestingSpellCheckProvider::GetWeakPtr() {
+  return weak_factory_.GetWeakPtr();
+}
+
 SpellCheckProviderTest::SpellCheckProviderTest()
     : provider_(&embedder_provider_) {}
-SpellCheckProviderTest::~SpellCheckProviderTest() {}
+SpellCheckProviderTest::~SpellCheckProviderTest() = default;

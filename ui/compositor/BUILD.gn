@@ -4,6 +4,7 @@
 
 import("//build/config/ui.gni")
 import("//testing/test.gni")
+import("//arkweb/build/features/features.gni")
 
 component("compositor") {
   sources = [
@@ -31,6 +32,8 @@ component("compositor") {
     "debug_utils.h",
     "float_animation_curve_adapter.cc",
     "float_animation_curve_adapter.h",
+    "host_begin_frame_observer.cc",
+    "host_begin_frame_observer.h",
     "layer.cc",
     "layer.h",
     "layer_animation_delegate.h",
@@ -92,8 +95,6 @@ component("compositor") {
   public_deps = [ "//cc" ]
   deps = [
     "//base",
-    "//base/third_party/dynamic_annotations",
-    "//build:chromeos_buildflags",
     "//cc/animation",
     "//cc/paint",
     "//components/viz/host",
@@ -101,6 +102,7 @@ component("compositor") {
     "//services/viz/privileged/mojom/compositing",
     "//skia",
     "//ui/base",
+    "//ui/base:ozone_buildflags",
     "//ui/display",
     "//ui/events",
     "//ui/gfx",
@@ -126,6 +128,8 @@ static_library("test_support") {
   sources = [
     "test/animation_throughput_reporter_test_base.cc",
     "test/animation_throughput_reporter_test_base.h",
+    "test/begin_main_frame_waiter.cc",
+    "test/begin_main_frame_waiter.h",
     "test/direct_layer_tree_frame_sink.cc",
     "test/direct_layer_tree_frame_sink.h",
     "test/draw_waiter_for_test.cc",
@@ -161,12 +165,6 @@ static_library("test_support") {
     "test/throughput_report_checker.h",
   ]
 
-  if (ohos_unittests) {
-    sources += [
-      "//ohos_nweb/src/sysevent/event_reporter.cc",
-    ]
-  }
-
   if (is_android) {
     sources += [ "test/test_compositor_host_android.cc" ]
   }
@@ -183,16 +181,9 @@ static_library("test_support") {
     sources += [ "test/test_compositor_host_win.cc" ]
   }
 
-  if (ohos_unittests) {
-    sources += [
-      "test/test_compositor_host_ohos.cc",
-    ]
-  }
-
   public_deps = [ ":compositor" ]
   deps = [
     "//base/test:test_support",
-    "//build:chromeos_buildflags",
     "//cc",
     "//cc:test_support",
     "//components/viz/host",
@@ -219,7 +210,7 @@ static_library("test_support") {
     ]
   }
 
-  if (use_ozone && !ohos_unittests) {
+  if (use_ozone) {
     sources += [
       "test/test_compositor_host_ozone.cc",
       "test/test_compositor_host_ozone.h",
@@ -233,10 +224,12 @@ static_library("test_support") {
 }
 
 test("compositor_unittests") {
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+  }
   use_xvfb = use_xvfb_in_this_config
 
   sources = [
-    "animation_throughput_reporter_unittest.cc",
     "callback_layer_animation_observer_unittest.cc",
     "canvas_painter_unittest.cc",
     "compositor_lock_unittest.cc",
@@ -249,21 +242,11 @@ test("compositor_unittests") {
     "presentation_time_recorder_unittest.cc",
     "run_all_unittests.cc",
     "throughput_tracker_unittest.cc",
-    "total_animation_throughput_reporter_unittest.cc",
     "transform_animation_curve_adapter_unittest.cc",
-    "compositor_unittests.cc",
   ]
 
-  if (ohos_unittests) {
-    sources += [
-      "//cef/libcef/common/soc_perf_util.cc",
-      "//content/browser/browser_thread_impl.cc",
-      "//content/browser/scheduler/browser_task_executor.cc",
-      "//content/public/common/content_features.cc",
-      "//content/public/common/content_switches.cc",
-      "//content/renderer/render_remote_proxy_ohos.cc",
-      "//content/renderer/render_remote_proxy_ohos.h"
-    ]
+  if (arkweb_unittests) {
+    sources += arkweb_ui_compositor_test_sources
   }
 
   data = [ "//ui/gfx/test/data/compositor/" ]
@@ -273,7 +256,6 @@ test("compositor_unittests") {
     ":test_support",
     "//base",
     "//base/test:test_support",
-    "//build:chromeos_buildflags",
     "//cc",
     "//cc:test_support",
     "//components/viz/common",
@@ -283,6 +265,7 @@ test("compositor_unittests") {
     "//testing/gmock",
     "//testing/gtest",
     "//ui/base",
+    "//ui/display",
     "//ui/gfx",
     "//ui/gfx:test_support",
     "//ui/gfx/geometry",
@@ -290,17 +273,33 @@ test("compositor_unittests") {
     "//ui/resources",
   ]
 
-  data_deps = [ "//testing/buildbot/filters:compositor_unittests_filters" ]
+  if (is_ios) {
+    bundle_deps = [
+      "//testing/buildbot/filters:compositor_unittests_filters_bundle_data",
+    ]
+  } else {
+    data_deps = [ "//testing/buildbot/filters:compositor_unittests_filters" ]
+  }
 
   if (is_linux || is_chromeos) {
-    deps += [ "//third_party/mesa_headers" ]
+    deps += [ "//third_party/angle:includes" ]
+  }
+
+  if (is_chromeos) {
+    sources += [
+      "animation_throughput_reporter_unittest.cc",
+      "total_animation_throughput_reporter_unittest.cc",
+    ]
   }
 
   if (is_fuchsia) {
-    # TODO(https://crbug.com/1185811): Investigate removing the requirement for
-    # job_policy_ambient_mark_vmo_exec for the sake of V8's allocator in tests.
+    # TODO(crbug.com/42050042): Some of these tests use SwiftShader,
+    # which requires ambient VMEX.
     test_runner_shard = "//build/config/fuchsia/test/elf_test_ambient_exec_runner.shard.test-cml"
+
     additional_manifest_fragments = [
+      # TODO(crbug.com/40055105): Investigate removing the requirement
+      # for VmexResource.
       "//build/config/fuchsia/test/mark_vmo_executable.shard.test-cml",
       "//build/config/fuchsia/test/present_view.shard.test-cml",
       "//third_party/fuchsia-sdk/sdk/pkg/vulkan/client.shard.cml",
@@ -308,6 +307,10 @@ test("compositor_unittests") {
   }
 
   if (is_ios) {
-    public_deps = [ "//ui/gfx:unit_tests_bundle_data" ]
+    public_deps = [ "//ui/gfx:compositor_tests_bundle_data" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
   }
 }

@@ -6,29 +6,25 @@
 
 #import "base/ios/ios_util.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
-#import "ios/chrome/browser/shared/ui/elements/instruction_view.h"
+#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_in_other_apps/constants.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_in_other_apps/passwords_in_other_apps_view_controller_delegate.h"
 #import "ios/chrome/browser/ui/settings/settings_navigation_controller.h"
 #import "ios/chrome/browser/ui/settings/utils/password_auto_fill_status_manager.h"
-#import "ios/chrome/common/button_configuration_util.h"
 #import "ios/chrome/common/string_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/elements/highlight_button.h"
+#import "ios/chrome/common/ui/instruction_view/instruction_view.h"
 #import "ios/chrome/common/ui/util/button_util.h"
 #import "ios/chrome/common/ui/util/image_util.h"
 #import "ios/chrome/common/ui/util/pointer_interaction_util.h"
 #import "ios/chrome/common/ui/util/text_view_util.h"
-#import "ios/chrome/grit/ios_google_chrome_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/public/provider/chrome/browser/password_auto_fill/password_auto_fill_api.h"
 #import "ui/base/device_form_factor.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 CGFloat const kCaptionTextViewOffset = 16;
@@ -105,7 +101,11 @@ CGFloat const kContentOptimalWidth = 327;
           IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SUBTITLE_IPHONE);
     }
 
-    _bannerName = @"settings_passwords_in_other_apps_banner";
+#if BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
+    _bannerName = kGoogleSettingsPasswordsInOtherAppsBannerImage;
+#else
+    _bannerName = kChromiumSettingsPasswordsInOtherAppsBannerImage;
+#endif
 
     self.bannerStyle = UIUserInterfaceStyleUnspecified;
   }
@@ -266,16 +266,6 @@ CGFloat const kContentOptimalWidth = 327;
                              forBarMetrics:UIBarMetricsDefault];
     self.navigationBar.shadowImage = nil;
     self.navigationBar.translucent = NO;
-
-    // Revert navigation bar style for iOS 14 and under to workaround bug that
-    // navigation bar height not adjusting consistently across subviews. Should
-    // be removed once iOS 14 is deprecated.
-    if (!base::ios::IsRunningOnIOS15OrLater()) {
-      self.navigationBar.standardAppearance = self.defaultAppearance;
-      self.navigationBar.compactAppearance = self.defaultAppearance;
-      self.navigationBar.scrollEdgeAppearance = self.defaultAppearance;
-    }
-
     self.navigationBar = nil;
   }
 }
@@ -291,20 +281,6 @@ CGFloat const kContentOptimalWidth = 327;
     self.navigationItem.rightBarButtonItem = doneButton;
 
     self.navigationBar = self.navigationController.navigationBar;
-
-    // Set navigation bar to transparent for iOS 14 and under to workaround bug
-    // that navigation bar height not adjusting consistently across subviews.
-    // Should be removed once iOS 14 is deprecated.
-    if (!base::ios::IsRunningOnIOS15OrLater()) {
-      UINavigationBarAppearance* transparentAppearance =
-          [[UINavigationBarAppearance alloc] init];
-      [transparentAppearance configureWithTransparentBackground];
-      self.defaultAppearance = self.navigationBar.standardAppearance;
-      self.navigationBar.standardAppearance = transparentAppearance;
-      self.navigationBar.compactAppearance = transparentAppearance;
-      self.navigationBar.scrollEdgeAppearance = transparentAppearance;
-    }
-
     [self.navigationBar setBackgroundImage:[[UIImage alloc] init]
                              forBarMetrics:UIBarMetricsDefault];
     self.navigationBar.shadowImage = [[UIImage alloc] init];
@@ -435,47 +411,31 @@ CGFloat const kContentOptimalWidth = 327;
   if (!_actionButton) {
     _actionButton = [[HighlightButton alloc] initWithFrame:CGRectZero];
 
-    // TODO(crbug.com/1418068): Simplify after minimum version required is >=
-    // iOS 15.
-    if (base::ios::IsRunningOnIOS15OrLater() &&
-        IsUIButtonConfigurationEnabled()) {
-      if (@available(iOS 15, *)) {
-        UIButtonConfiguration* buttonConfiguration =
-            [UIButtonConfiguration plainButtonConfiguration];
-        buttonConfiguration.contentInsets = NSDirectionalEdgeInsetsMake(
-            kButtonVerticalInsets, kButtonHorizontalMargin,
-            kButtonVerticalInsets, kButtonHorizontalMargin);
-        _actionButton.configuration = buttonConfiguration;
-      }
-    } else {
-      UIEdgeInsets contentEdgeInsets =
-          UIEdgeInsetsMake(kButtonVerticalInsets, 0, kButtonVerticalInsets, 0);
-      UIEdgeInsets titleEdgeInsets = UIEdgeInsetsMake(
-          0, kButtonHorizontalMargin, 0, kButtonHorizontalMargin);
-      SetContentEdgeInsets(_actionButton, contentEdgeInsets);
-      SetTitleEdgeInsets(_actionButton, titleEdgeInsets);
-    }
+    UIButtonConfiguration* buttonConfiguration =
+        [UIButtonConfiguration plainButtonConfiguration];
+    buttonConfiguration.contentInsets = NSDirectionalEdgeInsetsMake(
+        kButtonVerticalInsets, kButtonHorizontalMargin, kButtonVerticalInsets,
+        kButtonHorizontalMargin);
+    buttonConfiguration.background.backgroundColor =
+        [UIColor colorNamed:kGroupedSecondaryBackgroundColor];
+    buttonConfiguration.baseForegroundColor = [UIColor colorNamed:kBlueColor];
 
-    [_actionButton
-        setBackgroundColor:[UIColor
-                               colorNamed:kGroupedSecondaryBackgroundColor]];
-    UIColor* titleColor = [UIColor colorNamed:kBlueColor];
-    [_actionButton setTitleColor:titleColor forState:UIControlStateNormal];
-    _actionButton.titleLabel.font =
-        [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
+    UIFont* font = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
+    NSAttributedString* attributedTitle = [[NSAttributedString alloc]
+        initWithString:self.actionString
+            attributes:@{NSFontAttributeName : font}];
+    buttonConfiguration.attributedTitle = attributedTitle;
+    buttonConfiguration.titleLineBreakMode = NSLineBreakByTruncatingTail;
+    _actionButton.configuration = buttonConfiguration;
+
     _actionButton.layer.cornerRadius = kPrimaryButtonCornerRadius;
     _actionButton.translatesAutoresizingMaskIntoConstraints = NO;
-
     _actionButton.pointerInteractionEnabled = YES;
     _actionButton.pointerStyleProvider =
         CreateOpaqueButtonPointerStyleProvider();
-
-    [_actionButton setTitle:self.actionString forState:UIControlStateNormal];
-    _actionButton.titleLabel.adjustsFontForContentSizeCategory = YES;
     _actionButton.accessibilityIdentifier =
         kPasswordsInOtherAppsActionAccessibilityIdentifier;
 
-    _actionButton.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     [_actionButton addTarget:self
                       action:@selector(didTapActionButton)
             forControlEvents:UIControlEventTouchUpInside];
@@ -657,16 +617,10 @@ CGFloat const kContentOptimalWidth = 327;
 }
 
 - (NSArray<NSString*>*)steps {
-  BOOL isIOS16AndAbove = NO;
-  if (@available(iOS 16, *)) {
-    isIOS16AndAbove = YES;
-  }
   if (self.useShortInstruction) {
     return @[
       l10n_util::GetNSString(
-          isIOS16AndAbove
-              ? IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1_IOS16
-              : IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1),
+          IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_1_IOS16),
       l10n_util::GetNSString(
           IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_SHORTENED_STEP_2)
     ];
@@ -679,8 +633,7 @@ CGFloat const kContentOptimalWidth = 327;
               IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_1_IPHONE),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_2),
     l10n_util::GetNSString(
-        isIOS16AndAbove ? IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16
-                        : IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3),
+        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_3_IOS16),
     l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_STEP_4)
   ];
 }
@@ -707,13 +660,8 @@ CGFloat const kContentOptimalWidth = 327;
 // Returns caption text that shows below the subtitle in turnOffInstructions.
 - (UITextView*)drawCaptionTextView {
   NSString* text;
-  if (@available(iOS 16, *)) {
-    text = l10n_util::GetNSString(
-        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_CAPTION_IOS16);
-  } else {
-    text = l10n_util::GetNSString(
-        IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_CAPTION);
-  }
+  text = l10n_util::GetNSString(
+      IDS_IOS_SETTINGS_PASSWORDS_IN_OTHER_APPS_CAPTION_IOS16);
   NSDictionary* textAttributes = @{
     NSForegroundColorAttributeName : [UIColor colorNamed:kGrey600Color],
     NSFontAttributeName :

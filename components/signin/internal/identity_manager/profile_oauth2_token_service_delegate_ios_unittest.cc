@@ -4,11 +4,15 @@
 
 #include "components/signin/internal/identity_manager/profile_oauth2_token_service_delegate_ios.h"
 
+#include "base/functional/callback_helpers.h"
 #include "base/memory/ptr_util.h"
 #include "base/run_loop.h"
+#include "base/scoped_observation.h"
+#include "base/test/gmock_callback_support.h"
 #include "base/test/task_environment.h"
 #include "components/prefs/testing_pref_service.h"
 #include "components/signin/internal/identity_manager/account_tracker_service.h"
+#include "components/signin/internal/identity_manager/mock_profile_oauth2_token_service_observer.h"
 #include "components/signin/internal/identity_manager/profile_oauth2_token_service_observer.h"
 #include "components/signin/public/base/test_signin_client.h"
 #include "components/signin/public/identity_manager/ios/fake_device_accounts_provider.h"
@@ -20,6 +24,10 @@
 #include "testing/platform_test.h"
 
 using ProviderAccount = DeviceAccountsProvider::AccountInfo;
+
+namespace {
+constexpr char kNoBindingChallenge[] = "";
+}
 
 class ProfileOAuth2TokenServiceIOSDelegateTest
     : public PlatformTest,
@@ -43,13 +51,11 @@ class ProfileOAuth2TokenServiceIOSDelegateTest
     fake_provider_ = new FakeDeviceAccountsProvider();
     oauth2_delegate_.reset(new ProfileOAuth2TokenServiceIOSDelegate(
         &client_, base::WrapUnique(fake_provider_), &account_tracker_));
-    oauth2_delegate_->AddObserver(this);
+    oauth2_delegate_->SetOnRefreshTokenRevokedNotified(base::DoNothing());
+    token_service_observation_.Observe(oauth2_delegate_.get());
   }
 
-  void TearDown() override {
-    oauth2_delegate_->RemoveObserver(this);
-    oauth2_delegate_->Shutdown();
-  }
+  void TearDown() override { oauth2_delegate_->Shutdown(); }
 
   // OAuth2AccessTokenConsumer implementation.
   void OnGetTokenSuccess(
@@ -74,8 +80,10 @@ class ProfileOAuth2TokenServiceIOSDelegateTest
     ++token_revoked_count_;
   }
   void OnRefreshTokensLoaded() override { ++tokens_loaded_count_; }
-  void OnAuthErrorChanged(const CoreAccountId& account_id,
-                          const GoogleServiceAuthError& error) override {
+  void OnAuthErrorChanged(
+      const CoreAccountId& account_id,
+      const GoogleServiceAuthError& error,
+      signin_metrics::SourceForRefreshTokenOperation source) override {
     ++auth_error_changed_count_;
   }
 
@@ -108,6 +116,9 @@ class ProfileOAuth2TokenServiceIOSDelegateTest
   int access_token_failure_;
   int auth_error_changed_count_;
   GoogleServiceAuthError last_access_token_error_;
+  base::ScopedObservation<ProfileOAuth2TokenServiceIOSDelegate,
+                          ProfileOAuth2TokenServiceObserver>
+      token_service_observation_{this};
 };
 
 TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest,
@@ -255,8 +266,8 @@ TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest, StartRequestSuccess) {
   scopes.push_back("scope");
   std::unique_ptr<OAuth2AccessTokenFetcher> fetcher1(
       oauth2_delegate_->CreateAccessTokenFetcher(
-          GetAccountId(account1), oauth2_delegate_->GetURLLoaderFactory(),
-          this));
+          GetAccountId(account1), oauth2_delegate_->GetURLLoaderFactory(), this,
+          kNoBindingChallenge));
   fetcher1->Start("foo", "bar", scopes);
   EXPECT_EQ(0, access_token_success_);
   EXPECT_EQ(0, access_token_failure_);
@@ -280,8 +291,8 @@ TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest, StartRequestFailure) {
   scopes.push_back("scope");
   std::unique_ptr<OAuth2AccessTokenFetcher> fetcher1(
       oauth2_delegate_->CreateAccessTokenFetcher(
-          GetAccountId(account1), oauth2_delegate_->GetURLLoaderFactory(),
-          this));
+          GetAccountId(account1), oauth2_delegate_->GetURLLoaderFactory(), this,
+          kNoBindingChallenge));
   fetcher1->Start("foo", "bar", scopes);
   EXPECT_EQ(0, access_token_success_);
   EXPECT_EQ(0, access_token_failure_);
@@ -333,4 +344,61 @@ TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest, GetAuthError) {
   EXPECT_EQ(
       GoogleServiceAuthError::AuthErrorNone(),
       oauth2_delegate_->GetAuthError(CoreAccountId::FromGaiaId("gaia_2")));
+}
+
+TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest,
+       OnAuthErrorChangedAfterUpdatingCredentials) {
+  // Initialize delegate with an empty list of accounts.
+  oauth2_delegate_->LoadCredentials(CoreAccountId(), /*is_syncing=*/false);
+  ProviderAccount account1 = fake_provider_->AddAccount("gaia_1", "email_1@x");
+  CoreAccountId account_id = GetAccountId(account1);
+  testing::StrictMock<signin::MockProfileOAuth2TokenServiceObserver> observer(
+      oauth2_delegate_.get());
+
+  {
+    testing::InSequence in_sequence;
+    base::RunLoop run_loop;
+    // `OnAuthErrorChanged()` is called *before* `OnRefreshTokenAvailable()`
+    // after adding a new account on iOS.
+    EXPECT_CALL(
+        observer,
+        OnAuthErrorChanged(account_id, GoogleServiceAuthError::AuthErrorNone(),
+                           testing::_));
+    EXPECT_CALL(observer, OnRefreshTokenAvailable(account_id))
+        .WillOnce(base::test::RunClosure(run_loop.QuitClosure()));
+    EXPECT_CALL(observer, OnEndBatchChanges());
+    oauth2_delegate_->ReloadAllAccountsFromSystemWithPrimaryAccount(
+        std::nullopt);
+    run_loop.Run();
+    testing::Mock::VerifyAndClearExpectations(&observer);
+  }
+
+  {
+    testing::InSequence in_sequence;
+    // No observer methods are called when a token is updated without changing
+    // its error state.
+    EXPECT_CALL(observer, OnAuthErrorChanged).Times(0);
+    EXPECT_CALL(observer, OnRefreshTokenAvailable).Times(0);
+    EXPECT_CALL(observer, OnEndBatchChanges).Times(0);
+    oauth2_delegate_->AddOrUpdateAccount(account_id);
+    testing::Mock::VerifyAndClearExpectations(&observer);
+  }
+}
+
+// Tests that ProfileOAuth2TokenServiceIOSDelegate loads credentials when there
+// is no primary account.
+TEST_F(ProfileOAuth2TokenServiceIOSDelegateTest, LoadCredentialWhenSignedOut) {
+  ProviderAccount account1 = fake_provider_->AddAccount("gaia_1", "email_1@x");
+  ProviderAccount account2 = fake_provider_->AddAccount("gaia_2", "email_2@x");
+  oauth2_delegate_->LoadCredentials(CoreAccountId(), /*is_syncing=*/false);
+  base::RunLoop().RunUntilIdle();
+
+  EXPECT_EQ(2, token_available_count_);
+  EXPECT_EQ(1, tokens_loaded_count_);
+  EXPECT_EQ(0, token_revoked_count_);
+  EXPECT_EQ(2U, oauth2_delegate_->GetAccounts().size());
+  EXPECT_TRUE(
+      oauth2_delegate_->RefreshTokenIsAvailable(GetAccountId(account1)));
+  EXPECT_TRUE(
+      oauth2_delegate_->RefreshTokenIsAvailable(GetAccountId(account2)));
 }

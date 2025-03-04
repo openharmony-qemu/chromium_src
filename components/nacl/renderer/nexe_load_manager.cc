@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/nacl/renderer/nexe_load_manager.h"
 
 #include <stddef.h>
@@ -345,7 +350,11 @@ bool NexeLoadManager::RequestNaClManifest(const std::string& url) {
     const GURL& resolved_url = plugin_base_url_.Resolve(url);
     if (resolved_url.is_valid()) {
       manifest_base_url_ = resolved_url;
-      is_installed_ = manifest_base_url_.SchemeIs("chrome-extension");
+      is_installed_ = manifest_base_url_.SchemeIs("chrome-extension")
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || manifest_base_url_.SchemeIs("arkweb-extension")
+#endif
+      ;
       HistogramEnumerateManifestIsDataURI(
           manifest_base_url_.SchemeIs("data"));
       set_nacl_ready_state(PP_NACL_READY_STATE_OPENED);
@@ -365,8 +374,13 @@ void NexeLoadManager::ProcessNaClManifest(const std::string& program_url) {
   program_url_ = program_url;
   GURL gurl(program_url);
   DCHECK(gurl.is_valid());
-  if (gurl.is_valid())
-    is_installed_ = gurl.SchemeIs("chrome-extension");
+  if (gurl.is_valid()) {
+    is_installed_ = gurl.SchemeIs("chrome-extension")
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || gurl.SchemeIs("arkweb-extension")
+#endif
+    ;
+  }
   set_nacl_ready_state(PP_NACL_READY_STATE_LOADING);
   DispatchProgressEvent(pp_instance_, ProgressEvent(PP_NACL_EVENT_PROGRESS));
 }

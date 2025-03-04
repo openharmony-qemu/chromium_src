@@ -9,6 +9,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/synchronization/waitable_event.h"
+#include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
 #include "build/chromeos_buildflags.h"
 #include "cc/animation/animation_host.h"
@@ -35,7 +36,6 @@ class TestCustomMetricsRecorder : public CustomMetricRecorder {
   ~TestCustomMetricsRecorder() override = default;
 
   // CustomMetricRecorder:
-  void ReportPercentDroppedFramesInOneSecondWindow(double percent) override {}
   void ReportPercentDroppedFramesInOneSecondWindow2(double percent) override {
     ++report_count_;
     last_percent_dropped_frames_ = percent;
@@ -274,7 +274,7 @@ class DroppedFrameCounterMainDropsNoSmoothness
   }
 };
 
-// TODO(crbug.com/1115376) Disabled for flakiness.
+// TODO(crbug.com/40144326) Disabled for flakiness.
 // MULTI_THREAD_TEST_F(DroppedFrameCounterMainDropsNoSmoothness);
 
 class DroppedFrameCounterMainDropsSmoothnessTest
@@ -292,7 +292,7 @@ class DroppedFrameCounterMainDropsSmoothnessTest
   }
 };
 
-// TODO(crbug.com/1115376) Disabled for flakiness.
+// TODO(crbug.com/40144326) Disabled for flakiness.
 // MULTI_THREAD_TEST_F(DroppedFrameCounterMainDropsSmoothnessTest);
 
 class DroppedFrameCounterTest : public testing::Test {

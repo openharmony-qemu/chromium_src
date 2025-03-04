@@ -18,6 +18,7 @@
 #include "ash/public/cpp/shelf_types.h"
 #include "ash/public/cpp/shell_window_ids.h"
 #include "ash/root_window_controller.h"
+#include "ash/shelf/desk_button_widget.h"
 #include "ash/shelf/hotseat_widget.h"
 #include "ash/shelf/login_shelf_widget.h"
 #include "ash/shelf/scrollable_shelf_view.h"
@@ -129,13 +130,12 @@ class HotseatWidgetAnimationMetricsReporter {
         break;
       case HotseatState::kNone:
         NOTREACHED();
-        break;
     }
   }
 
   metrics_util::ReportCallback GetReportCallback(HotseatState target_state) {
     DCHECK_NE(target_state, HotseatState::kNone);
-    return metrics_util::ForSmoothness(base::BindRepeating(
+    return metrics_util::ForSmoothnessV3(base::BindRepeating(
         &HotseatWidgetAnimationMetricsReporter::ReportSmoothness,
         weak_ptr_factory_.GetWeakPtr(), target_state));
   }
@@ -183,14 +183,13 @@ class ASH_EXPORT NavigationWidgetAnimationMetricsReporter {
         break;
       case HotseatState::kNone:
         NOTREACHED();
-        break;
     }
   }
 
   metrics_util::ReportCallback GetReportCallback(
       HotseatState target_hotseat_state) {
     DCHECK_NE(target_hotseat_state, HotseatState::kNone);
-    return metrics_util::ForSmoothness(base::BindRepeating(
+    return metrics_util::ForSmoothnessV3(base::BindRepeating(
         &NavigationWidgetAnimationMetricsReporter::ReportSmoothness,
         weak_ptr_factory_.GetWeakPtr(), target_hotseat_state));
   }
@@ -239,17 +238,17 @@ class Shelf::AutoHideEventHandler : public ui::EventHandler {
     // state to give the shelf a chance to handle the touch event before it
     // being hidden.
     ShelfLayoutManager* shelf_layout_manager = shelf_->shelf_layout_manager();
-    if (event->type() == ui::ET_TOUCH_PRESSED && shelf_->IsVisible()) {
+    if (event->type() == ui::EventType::kTouchPressed && shelf_->IsVisible()) {
       shelf_layout_manager->LockAutoHideState(true);
-    } else if (event->type() == ui::ET_TOUCH_RELEASED ||
-               event->type() == ui::ET_TOUCH_CANCELLED) {
+    } else if (event->type() == ui::EventType::kTouchReleased ||
+               event->type() == ui::EventType::kTouchCancelled) {
       // Unlock auto hide (and eventually recompute auto hide state).
       shelf_layout_manager->LockAutoHideState(false);
     }
   }
 
  private:
-  raw_ptr<Shelf, ExperimentalAsh> shelf_;
+  raw_ptr<Shelf> shelf_;
 };
 
 // Shelf::AutoDimEventHandler -----------------------------------------------
@@ -323,7 +322,7 @@ class Shelf::AutoDimEventHandler : public ui::EventHandler,
 
  private:
   // Unowned pointer to the shelf that owns this event handler.
-  raw_ptr<Shelf, ExperimentalAsh> shelf_;
+  raw_ptr<Shelf> shelf_;
   // OneShotTimer that dims shelf due to inactivity.
   base::OneShotTimer dim_shelf_timer_;
   // An observer that notifies the AutoDimHandler that shelf visibility has
@@ -399,14 +398,14 @@ void Shelf::ActivateShelfItemOnDisplay(int item_index, int64_t display_id) {
   const ShelfItem& item = shelf_model->items()[item_index];
   ShelfItemDelegate* item_delegate = shelf_model->GetShelfItemDelegate(item.id);
   std::unique_ptr<ui::Event> event = std::make_unique<ui::KeyEvent>(
-      ui::ET_KEY_RELEASED, ui::VKEY_UNKNOWN, ui::EF_NONE);
+      ui::EventType::kKeyReleased, ui::VKEY_UNKNOWN, ui::EF_NONE);
   item_delegate->ItemSelected(std::move(event), display_id, LAUNCH_FROM_SHELF,
                               base::DoNothing(), base::NullCallback());
 }
 
 // static
 void Shelf::UpdateShelfVisibility() {
-  for (auto* root : Shell::Get()->GetAllRootWindows()) {
+  for (aura::Window* root : Shell::Get()->GetAllRootWindows()) {
     Shelf::ForWindow(root)->UpdateVisibilityState();
   }
 }
@@ -419,6 +418,15 @@ void Shelf::CreateNavigationWidget(aura::Window* container) {
   navigation_widget_->Initialize(container);
   navigation_widget_metrics_reporter_ =
       std::make_unique<NavigationWidgetAnimationMetricsReporter>();
+}
+
+void Shelf::CreateDeskButtonWidget(aura::Window* container) {
+  CHECK(container);
+  CHECK(!desk_button_widget_);
+  CHECK(ash::features::IsDeskButtonEnabled());
+
+  desk_button_widget_ = std::make_unique<DeskButtonWidget>(this);
+  desk_button_widget_->Initialize(container);
 }
 
 void Shelf::CreateHotseatWidget(aura::Window* container) {
@@ -457,10 +465,11 @@ void Shelf::CreateShelfWidget(aura::Window* root) {
   // Create the various shelf components.
   CreateHotseatWidget(shelf_container);
   CreateNavigationWidget(shelf_container);
-  if (features::IsUseLoginShelfWidgetEnabled()) {
-    login_shelf_widget_ =
-        std::make_unique<LoginShelfWidget>(/*shelf=*/this, shelf_container);
+  if (ash::features::IsDeskButtonEnabled()) {
+    CreateDeskButtonWidget(shelf_container);
   }
+  login_shelf_widget_ =
+      std::make_unique<LoginShelfWidget>(/*shelf=*/this, shelf_container);
 
   // Must occur after |shelf_widget_| is constructed because the system tray
   // constructors call back into Shelf::shelf_widget().
@@ -471,6 +480,11 @@ void Shelf::CreateShelfWidget(aura::Window* root) {
 
   // The Hotseat should be above everything in the shelf.
   hotseat_widget()->StackAtTop();
+
+  // Some accessibility properties of the HotseatWidget depends on other widgets
+  // instantiated later on, thus why we call it towards the end of this
+  // function.
+  hotseat_widget()->InitializeAccessibilityProperties();
 }
 
 void Shelf::ShutdownShelfWidget() {
@@ -543,7 +557,6 @@ bool IsHorizontalAlignment(ShelfAlignment alignment) {
       return false;
   }
   NOTREACHED();
-  return true;
 }
 
 bool Shelf::IsHorizontalAlignment() const {
@@ -571,8 +584,8 @@ void Shelf::UpdateAutoHideState() {
 }
 
 ShelfBackgroundType Shelf::GetBackgroundType() const {
-  return shelf_widget_ ? shelf_widget_->GetBackgroundType()
-                       : ShelfBackgroundType::kDefaultBg;
+  return shelf_layout_manager_ ? shelf_layout_manager_->shelf_background_type()
+                               : ShelfBackgroundType::kDefaultBg;
 }
 
 void Shelf::UpdateVisibilityState() {
@@ -624,8 +637,9 @@ void Shelf::ProcessMouseEvent(const ui::MouseEvent& event) {
 }
 
 void Shelf::ProcessScrollEvent(ui::ScrollEvent* event) {
-  if (event->finger_count() != 2 || event->type() != ui::ET_SCROLL)
+  if (event->finger_count() != 2 || event->type() != ui::EventType::kScroll) {
     return;
+  }
 
   if (!shelf_layout_manager_->is_active_session_state())
     return;
@@ -691,7 +705,6 @@ gfx::Rect Shelf::GetSystemTrayAnchorRect() const {
                        work_area.bottom() - kShelfDisplayOffset, 0, 0);
   }
   NOTREACHED();
-  return gfx::Rect();
 }
 
 bool Shelf::ShouldHideOnSecondaryDisplay(session_manager::SessionState state) {
@@ -776,9 +789,6 @@ void Shelf::OnAutoHideStateChanged(ShelfAutoHideState new_state) {
 
 void Shelf::OnBackgroundUpdated(ShelfBackgroundType background_type,
                                 AnimationChangeType change_type) {
-  if (background_type == GetBackgroundType())
-    return;
-
   // Shelf should undim when transitioning to show app list.
   if (auto_dim_event_handler_ && IsAppListBackground(background_type))
     UndimShelf();

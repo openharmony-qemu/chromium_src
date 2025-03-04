@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "sandbox/linux/seccomp-bpf/trap.h"
 
 #include <errno.h>
@@ -30,8 +35,7 @@
 namespace {
 
 struct arch_sigsys {
-  // This is not raw_ptr because it is a pointer to a code address given to us
-  // by the kernel.
+  // RAW_PTR_EXCLUSION: Points to a code address given to us by the kernel.
   RAW_PTR_EXCLUSION void* ip;
   int nr;
   unsigned int arch;
@@ -81,6 +85,12 @@ bool IsDefaultSignalAction(const struct sigaction& sa) {
 namespace sandbox {
 
 Trap::Trap() {
+// trap.cc is the normal startup process in the renderer sandbox. The sigaction
+// system capability called by sys_sigaction. oh currently only supports the
+// SIGINFO option. The return value is inconsistent with Linux.
+// IsDefaultSignalAction is false, which in turn causes
+// the debug mode fatal log to cause a crash.
+#if !BUILDFLAG(IS_OHOS)
   // Set new SIGSYS handler
   struct sigaction sa = {};
   // In some toolchain, sa_sigaction is not declared in struct sigaction.
@@ -98,12 +108,13 @@ Trap::Trap() {
         "Existing signal handler when trying to install SIGSYS. SIGSYS needs "
         "to be reserved for seccomp-bpf.";
     DLOG(FATAL) << kExistingSIGSYSMsg;
-#ifdef BUILDFLAG(IS_OHOS)
+#ifdef BUILDFLAG(IS_ARKWEB)
     LOG(WARNING) << kExistingSIGSYSMsg;
 #else
     LOG(ERROR) << kExistingSIGSYSMsg;
 #endif
   }
+#endif
 
   // Unmask SIGSYS
   sigset_t mask;

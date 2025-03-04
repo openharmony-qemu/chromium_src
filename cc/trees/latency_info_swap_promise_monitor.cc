@@ -5,9 +5,11 @@
 #include "cc/trees/latency_info_swap_promise_monitor.h"
 
 #include <stdint.h>
+
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "cc/trees/latency_info_swap_promise.h"
 #include "cc/trees/layer_tree_host_impl.h"
 #include "cc/trees/layer_tree_impl.h"
@@ -23,10 +25,12 @@ bool AddRenderingScheduledComponent(ui::LatencyInfo* latency_info,
   if (latency_info->FindLatency(type, nullptr))
     return false;
   latency_info->AddLatencyNumber(type);
-  std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency_info->source_event_type())) +
-      " ,step: " + "INPUT_EVENT_LATENCY_RENDERING_SCHEDULED_IMPL_COMPONENT";
-  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                    std::to_string(latency_info->trace_id()), "trace_content", trace_content_);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id", std::to_string(latency_info->trace_id()),
+                    "step",
+                    "INPUT_EVENT_LATENCY_RENDERING_SCHEDULED_IMPL_COMPONENT");
+#endif
   return true;
 }
 

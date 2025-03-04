@@ -21,7 +21,6 @@ import android.widget.TextView;
 import androidx.annotation.ColorRes;
 import androidx.annotation.StringRes;
 
-import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.Callback;
 import org.chromium.ui.text.NoUnderlineClickableSpan;
 
@@ -38,16 +37,21 @@ public class InfoBarCompactLayout extends LinearLayout implements View.OnClickLi
 
     /**
      * Constructs a compat layout for the specified infobar.
+     *
      * @param context The context used to render.
      * @param infoBar {@link InfoBarInteractionHandler} that listens to events.
      * @param iconResourceId Resource ID of the icon to use for the infobar.
      * @param iconTintId The {@link ColorRes} used as tint for {@code iconResourceId}.
      * @param iconBitmap Bitmap for the icon to use, if {@code iconResourceId} is not set.
      */
-    // TODO(crbug/1056346): ctor is made public to allow access from InfoBar. Once
+    // TODO(crbug.com/40120294): ctor is made public to allow access from InfoBar. Once
     // InfoBar is modularized, restore access to package private.
-    public InfoBarCompactLayout(Context context, InfoBarInteractionHandler infoBar,
-            int iconResourceId, @ColorRes int iconTintId, Bitmap iconBitmap) {
+    public InfoBarCompactLayout(
+            Context context,
+            InfoBarInteractionHandler infoBar,
+            int iconResourceId,
+            @ColorRes int iconTintId,
+            Bitmap iconBitmap) {
         super(context);
         mInfoBar = infoBar;
         mCompactInfoBarSize =
@@ -72,10 +76,11 @@ public class InfoBarCompactLayout extends LinearLayout implements View.OnClickLi
 
     /**
      * Inserts a view before the close button.
-     * @param view   View to insert.
+     *
+     * @param view View to insert.
      * @param weight Weight to assign to it.
      */
-    // TODO(crbug/1056346): addContent is made public to allow access from InfoBar. Once
+    // TODO(crbug.com/40120294): addContent is made public to allow access from InfoBar. Once
     // InfoBar is modularized, restore access to protected.
     public void addContent(View view, float weight) {
         LinearLayout.LayoutParams params;
@@ -149,7 +154,10 @@ public class InfoBarCompactLayout extends LinearLayout implements View.OnClickLi
 
             final Context context = mLayout.getContext();
             SpannableString link = new SpannableString(label);
-            link.setSpan(new NoUnderlineClickableSpan(context, onTapCallback), 0, label.length(),
+            link.setSpan(
+                    new NoUnderlineClickableSpan(context, onTapCallback),
+                    0,
+                    label.length(),
                     Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
             mLink = link;
 
@@ -182,16 +190,17 @@ public class InfoBarCompactLayout extends LinearLayout implements View.OnClickLi
 
             assert mMessage != null;
 
-            final int messagePadding = mLayout.getResources().getDimensionPixelOffset(
-                    R.dimen.infobar_compact_message_vertical_padding);
+            final int messagePadding =
+                    mLayout.getResources()
+                            .getDimensionPixelOffset(
+                                    R.dimen.infobar_compact_message_vertical_padding);
 
             SpannableStringBuilder builder = new SpannableStringBuilder();
             builder.append(mMessage);
             if (mLink != null) builder.append(" ").append(mLink);
 
             TextView prompt = new InfoBarMessageView(mLayout.getContext());
-            ApiCompatibilityUtils.setTextAppearance(
-                    prompt, R.style.TextAppearance_TextMedium_Primary);
+            prompt.setTextAppearance(R.style.TextAppearance_TextMedium_Primary);
             prompt.setText(builder);
             prompt.setGravity(Gravity.CENTER_VERTICAL);
             prompt.setPadding(0, messagePadding, 0, messagePadding);

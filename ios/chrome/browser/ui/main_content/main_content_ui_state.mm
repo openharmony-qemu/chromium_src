@@ -8,10 +8,6 @@
 
 #import "base/check_op.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface MainContentUIState ()
 // Redefine broadcast properties as readwrite.
 @property(nonatomic, assign) CGSize scrollViewSize;
@@ -67,7 +63,7 @@
 
 @interface MainContentUIStateUpdater ()
 // The pan gesture driving the current scroll event.
-// TODO(crbug.com/785508): Use this gesture recognizer to broadcast the scroll
+// TODO(crbug.com/41355675): Use this gesture recognizer to broadcast the scroll
 // touch location.
 @property(nonatomic, weak) UIPanGestureRecognizer* panGesture;
 @end
@@ -77,7 +73,7 @@
 @synthesize panGesture = _panGesture;
 
 - (instancetype)initWithState:(MainContentUIState*)state {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _state = state;
     DCHECK(_state);
   }

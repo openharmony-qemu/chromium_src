@@ -5,7 +5,6 @@
 // gpu/config/gpu_info.h
 module gpu.mojom;
 
-import "gpu/ipc/common/dx_diag_node.mojom";
 [EnableIf=is_win]
 import "gpu/ipc/common/luid.mojom";
 import "mojo/public/mojom/base/time.mojom";
@@ -29,7 +28,6 @@ struct GpuDevice {
   string device_string;
   string driver_vendor;
   string driver_version;
-  int32 cuda_compute_capability_major;
   [EnableIf=is_win]
   Luid luid;
   gl.mojom.GpuPreference gpu_preference;
@@ -58,8 +56,8 @@ enum VideoCodecProfile {
   HEVCPROFILE_MAIN10,
   HEVCPROFILE_MAIN_STILL_PICTURE,
   DOLBYVISION_PROFILE0,
-  DOLBYVISION_PROFILE4,
-  DOLBYVISION_PROFILE5,
+  // Deprecated: DOLBYVISION_PROFILE4 = 20,
+  DOLBYVISION_PROFILE5 = 21,
   DOLBYVISION_PROFILE7,
   THEORAPROFILE_ANY,
   AV1PROFILE_PROFILE_MAIN,
@@ -75,6 +73,21 @@ enum VideoCodecProfile {
   HEVCPROFILE_SCREEN_EXTENDED,
   HEVCPROFILE_SCALABLE_REXT,
   HEVCPROFILE_HIGH_THROUGHPUT_SCREEN_EXTENDED,
+  VVCPROFILE_MAIN10,
+  VVCPROFILE_MAIN12,
+  VVCPROFILE_MAIN12_INTRA,
+  VVCPROIFLE_MULTILAYER_MAIN10,
+  VVCPROFILE_MAIN10_444,
+  VVCPROFILE_MAIN12_444,
+  VVCPROFILE_MAIN16_444,
+  VVCPROFILE_MAIN12_444_INTRA,
+  VVCPROFILE_MAIN16_444_INTRA,
+  VVCPROFILE_MULTILAYER_MAIN10_444,
+  VVCPROFILE_MAIN10_STILL_PICTURE,
+  VVCPROFILE_MAIN12_STILL_PICTURE,
+  VVCPROFILE_MAIN10_444_STILL_PICTURE,
+  VVCPROFILE_MAIN12_444_STILL_PICTURE,
+  VVCPROFILE_MAIN16_444_STILL_PICTURE,
 };
 
 // gpu::VideoDecodeAcceleratorSupportedProfile
@@ -104,7 +117,7 @@ struct VideoEncodeAcceleratorSupportedProfile {
 enum ImageDecodeAcceleratorType {
   kJpeg,
   kWebP,
-  [EnableIf=enable_heif_decoder]
+  [EnableIf=arkweb_heif_support]
   kHeif,
   kUnknown,
 };
@@ -142,6 +155,7 @@ struct OverlayInfo {
   OverlaySupport nv12_overlay_support;
   OverlaySupport bgra8_overlay_support;
   OverlaySupport rgb10a2_overlay_support;
+  OverlaySupport p010_overlay_support;
 };
 
 // Corresponds to |gpu::GPUInfo| in gpu/config/gpu_info.h
@@ -151,6 +165,7 @@ struct GpuInfo {
   bool amd_switchable;
   GpuDevice gpu;
   array<GpuDevice> secondary_gpus;
+  array<GpuDevice> npus;
   string pixel_shader_version;
   string vertex_shader_version;
   string max_msaa_samples;
@@ -172,11 +187,8 @@ struct GpuInfo {
   bool passthrough_cmd_decoder;
   bool can_support_threaded_texture_mailbox;
 
-  [EnableIf=is_mac]
-  uint32 macos_specific_texture_target;
-
   [EnableIf=is_win]
-  DxDiagNode dx_diagnostics;
+  uint32 directml_feature_level;
   [EnableIf=is_win]
   uint32 d3d12_feature_level;
   [EnableIf=is_win]
@@ -197,6 +209,9 @@ struct GpuInfo {
 
   bool subpixel_font_rendering;
   uint32 visibility_callback_call_count;
+
+  [EnableIf=supports_vulkan]
+  bool hardware_supports_vulkan;
 
   [EnableIf=supports_vulkan]
   VulkanInfo? vulkan_info;

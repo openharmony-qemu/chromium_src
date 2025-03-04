@@ -10,6 +10,7 @@
 #include "ash/detachable_base/detachable_base_observer.h"
 #include "ash/detachable_base/detachable_base_pairing_status.h"
 #include "ash/public/cpp/session/user_info.h"
+#include "ash/session/session_controller_impl.h"
 #include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
 #include "base/test/task_environment.h"
@@ -132,8 +133,9 @@ class DetachableBaseHandlerTest : public testing::Test {
     handler_->AddObserver(&detachable_base_observer_);
   }
 
-  raw_ptr<FakeHammerdClient, ExperimentalAsh> hammerd_client_ = nullptr;
+  raw_ptr<FakeHammerdClient> hammerd_client_ = nullptr;
 
+  SessionControllerImpl session_controller_;
   TestBaseObserver detachable_base_observer_;
 
   std::unique_ptr<DetachableBaseHandler> handler_;
@@ -522,7 +524,8 @@ TEST_F(DetachableBaseHandlerTest, RemoveUserData) {
 
   // Remove the data for user_2, and verify that the paired base is reported
   // as authenticated when the paired base changes again.
-  handler_->RemoveUserData(second_user);
+  // This is triggered when the user is removed from the device.
+  session_controller_.NotifyUserToBeRemoved(second_user.account_id);
   ChangePairedBase({0x07, 0x08, 0x09});
 
   EXPECT_EQ(DetachableBasePairingStatus::kAuthenticated,

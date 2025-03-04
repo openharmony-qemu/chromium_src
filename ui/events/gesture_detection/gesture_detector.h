@@ -7,11 +7,12 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
 #include "ui/events/gesture_detection/gesture_detection_export.h"
-#include "ui/events/gesture_detection/velocity_tracker_state.h"
+#include "ui/events/velocity_tracker/velocity_tracker_state.h"
 
 namespace ui {
 
@@ -40,10 +41,10 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 
     base::TimeDelta shortpress_timeout = base::Milliseconds(400);
     base::TimeDelta longpress_timeout = base::Milliseconds(500);
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
     base::TimeDelta draglongpress_timeout = base::Milliseconds(1500);
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
     base::TimeDelta createoverlay_timeout = base::Milliseconds(50);
 #endif
     base::TimeDelta showpress_timeout = base::Milliseconds(180);
@@ -99,7 +100,7 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 
     // Whether a longpress should be generated immediately when a stylus button
     // is pressed, given that the longpress timeout is still active.
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     bool stylus_button_accelerated_longpress_enabled = true;
 #else
     bool stylus_button_accelerated_longpress_enabled = false;
@@ -148,16 +149,19 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
     press_and_hold_enabled_ = enabled;
   }
   void set_showpress_enabled(bool enabled) { showpress_enabled_ = enabled; }
-#ifdef OHOS_DRAG_DROP
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void set_draglongpress_enabled(bool enabled) {
     draglongpress_enabled_ = enabled;
   }
   void StopDragLongPressGesture();
 #endif
-#ifdef OHOS_AI
+
+#if BUILDFLAG(ARKWEB_AI)
   void StopCreateOverlayGesture();
   void OnAITextSelected();
 #endif
+
   // Returns the event storing the initial position of the pointer with given
   // pointer ID. This returns nullptr if the source event isn't
   // current_down_event_ or secondary_pointer_down_event_.
@@ -171,13 +175,13 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   void OnShowPressTimeout();
   void OnShortPressTimeout();
   void OnLongPressTimeout();
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void OnDragLongPressTimeout();
   void Cancel(bool is_lost_focus);
   void CancelTaps(bool is_lost_focus);
   void ActivateLongPressKeepDragTimeout(const MotionEvent& ev);
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
   void OnCreateOverlayTimeout();
 #endif
   void OnTapTimeout();
@@ -250,9 +254,10 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   bool showpress_enabled_ = true;
   bool swipe_enabled_ = false;
   bool two_finger_tap_enabled_ = false;
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool draglongpress_enabled_ = true;
 #endif
+
   // Determines speed during touch scrolling.
   VelocityTrackerState velocity_tracker_;
 };

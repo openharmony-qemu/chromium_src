@@ -2,7 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromecast_build.gni")
+import("//arkweb/build/features/features.gni")
+import("//build/config/cast.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
@@ -47,7 +48,6 @@ target(link_target_type, "gpu_sources") {
 
   deps = [
     "//base",
-    "//base/third_party/dynamic_annotations",
     "//build:branding_buildflags",
     "//build:chromeos_buildflags",
     "//components/viz/service",
@@ -76,7 +76,7 @@ target(link_target_type, "gpu_sources") {
     "//services/service_manager/public/mojom",
     "//services/tracing/public/cpp",
     "//services/viz/privileged/mojom",
-    "//services/webnn",
+    "//services/webnn:webnn_service",
     "//services/webnn/public/mojom",
     "//skia",
     "//third_party/angle:angle_gpu_info_util",
@@ -86,22 +86,15 @@ target(link_target_type, "gpu_sources") {
     "//ui/latency/ipc",
   ]
 
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
   if (!is_chromeos_ash || !is_chrome_branded) {
     deps += [
       "//services/shape_detection:lib",
       "//services/shape_detection/public/mojom",
     ]
-  }
-
-  if (is_linux || is_chromeos) {
-    sources += [
-      "gpu_sandbox_hook_linux.cc",
-      "gpu_sandbox_hook_linux.h",
-    ]
-
-    if (use_v4l2_codec) {
-      deps += [ "//media/gpu/v4l2" ]
-    }
   }
 
   if (is_chromeos_ash) {
@@ -122,7 +115,7 @@ target(link_target_type, "gpu_sources") {
     deps += [ "//media/mojo/services" ]
   }
 
-  if (is_linux || is_chromeos || is_mac || is_win) {
+  if (is_linux || is_chromeos || is_mac || is_win || is_ohos) {
     deps += [ "//sandbox" ]
   }
 

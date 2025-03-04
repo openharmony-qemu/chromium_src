@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stdlib.h>
 
 #include "base/command_line.h"
@@ -77,43 +82,33 @@ class ScreenOrientationBrowserTest : public ContentBrowserTest  {
   }
 
   int GetOrientationAngle() {
-    int angle =
-        ExecuteScriptAndGetValue(shell()->web_contents()->GetPrimaryMainFrame(),
-                                 "screen.orientation.angle")
-            .GetInt();
-    return angle;
+    return EvalJs(shell()->web_contents()->GetPrimaryMainFrame(),
+                  "screen.orientation.angle")
+        .ExtractInt();
   }
 
   std::string GetOrientationType() {
-    std::string type =
-        ExecuteScriptAndGetValue(shell()->web_contents()->GetPrimaryMainFrame(),
-                                 "screen.orientation.type")
-            .GetString();
-    return type;
+    return EvalJs(shell()->web_contents()->GetPrimaryMainFrame(),
+                  "screen.orientation.type")
+        .ExtractString();
   }
 
   bool ScreenOrientationSupported() {
-    bool support =
-        ExecuteScriptAndGetValue(shell()->web_contents()->GetPrimaryMainFrame(),
-                                 "'orientation' in screen")
-            .GetBool();
-    return support;
+    return EvalJs(shell()->web_contents()->GetPrimaryMainFrame(),
+                  "'orientation' in screen")
+        .ExtractBool();
   }
 
   bool WindowOrientationSupported() {
-    bool support =
-        ExecuteScriptAndGetValue(shell()->web_contents()->GetPrimaryMainFrame(),
-                                 "'orientation' in window")
-            .GetBool();
-    return support;
+    return EvalJs(shell()->web_contents()->GetPrimaryMainFrame(),
+                  "'orientation' in window")
+        .ExtractBool();
   }
 
   int GetWindowOrientationAngle() {
-    int angle =
-        ExecuteScriptAndGetValue(shell()->web_contents()->GetPrimaryMainFrame(),
-                                 "window.orientation")
-            .GetInt();
-    return angle;
+    return EvalJs(shell()->web_contents()->GetPrimaryMainFrame(),
+                  "window.orientation")
+        .ExtractInt();
   }
 };
 
@@ -358,7 +353,7 @@ IN_PROC_BROWSER_TEST_F(ScreenOrientationOOPIFBrowserTest,
   GURL second_url(embedded_test_server()->GetURL("b.com", "/title1.html"));
   TestNavigationManager delayer(shell()->web_contents(), second_url);
   shell()->LoadURL(second_url);
-  EXPECT_TRUE(delayer.WaitForRequestStart());
+  delayer.WaitForSpeculativeRenderFrameHostCreation();
 
   FrameTreeNode* root = web_contents()->GetPrimaryFrameTree().root();
   RenderFrameHostImpl* pending_rfh =
@@ -432,7 +427,7 @@ class ScreenOrientationLockForPrerenderBrowserTest
 
   // ScreenOrientationBrowserTest:
   void SetUp() override {
-    prerender_helper_.SetUp(embedded_test_server());
+    prerender_helper_.RegisterServerRequestMonitor(embedded_test_server());
     ScreenOrientationBrowserTest::SetUp();
   }
 
@@ -488,8 +483,9 @@ IN_PROC_BROWSER_TEST_F(ScreenOrientationLockForPrerenderBrowserTest,
   GURL initial_url = embedded_test_server()->GetURL("/empty.html");
   NavigateToURLBlockUntilNavigationsComplete(shell(), initial_url, 1);
 
-  EXPECT_TRUE(ExecuteScript(web_contents()->GetPrimaryMainFrame(),
-                            "screen.orientation.lock('portrait')"));
+  EXPECT_TRUE(ExecJs(web_contents()->GetPrimaryMainFrame(),
+                     "screen.orientation.lock('portrait')",
+                     EXECUTE_SCRIPT_NO_RESOLVE_PROMISES));
 
   // Delegate did apply lock once.
   EXPECT_EQ(1, delegate.lock_count());
@@ -528,8 +524,8 @@ IN_PROC_BROWSER_TEST_F(ScreenOrientationLockForPrerenderBrowserTest,
 
   // Start a prerender.
   const GURL prerender_url = embedded_test_server()->GetURL("/title1.html");
-  int host_id = prerender_helper_.AddPrerender(prerender_url);
-  ASSERT_NE(host_id, content::RenderFrameHost::kNoFrameTreeNodeId);
+  FrameTreeNodeId host_id = prerender_helper_.AddPrerender(prerender_url);
+  ASSERT_TRUE(host_id);
 
   // Shut down the prerendered page. It shouldn't trigger orientation unlock.
   test::PrerenderHostObserver prerender_observer(*web_contents(), host_id);

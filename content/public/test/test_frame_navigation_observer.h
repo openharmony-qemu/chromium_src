@@ -52,7 +52,7 @@ class TestFrameNavigationObserver : public WebContentsObserver {
   void DidStopLoading() override;
 
   // The id of the FrameTreeNode in which navigations are peformed.
-  int frame_tree_node_id_;
+  FrameTreeNodeId frame_tree_node_id_;
 
   // If true the navigation has started.
   bool navigation_started_ = false;
@@ -71,7 +71,7 @@ class TestFrameNavigationObserver : public WebContentsObserver {
   net::Error last_net_error_code_ = net::OK;
 
   // Saved parameters from NavigationHandle.
-  absl::optional<ui::PageTransition> transition_type_;
+  std::optional<ui::PageTransition> transition_type_;
   GURL last_committed_url_;
 
   // The RunLoop used to spin the message loop.

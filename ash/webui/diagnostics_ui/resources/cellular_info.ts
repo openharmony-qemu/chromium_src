@@ -5,8 +5,8 @@
 import './data_point.js';
 import './diagnostics_shared.css.js';
 
-import {I18nMixin} from 'chrome://resources/cr_elements/i18n_mixin.js';
-import {assert, assertNotReached} from 'chrome://resources/js/assert_ts.js';
+import {I18nMixin} from 'chrome://resources/ash/common/cr_elements/i18n_mixin.js';
+import {assert, assertNotReached} from 'chrome://resources/js/assert.js';
 import {PolymerElementProperties} from 'chrome://resources/polymer/v3_0/polymer/interfaces.js';
 import {PolymerElement} from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
 
@@ -23,8 +23,8 @@ import {LockType, Network, RoamingState} from './network_health_provider.mojom-w
 const CellularInfoElementBase = I18nMixin(PolymerElement);
 
 export class CellularInfoElement extends CellularInfoElementBase {
-  static get is(): string {
-    return 'cellular-info';
+  static get is(): 'cellular-info' {
+    return 'cellular-info' as const;
   }
 
   static get template(): HTMLTemplateElement {
@@ -121,7 +121,7 @@ export class CellularInfoElement extends CellularInfoElementBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'cellular-info': CellularInfoElement;
+    [CellularInfoElement.is]: CellularInfoElement;
   }
 }
 

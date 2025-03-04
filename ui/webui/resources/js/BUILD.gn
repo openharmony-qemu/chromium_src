@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromeos/ui_mode.gni")
 import("../tools/build_webui.gni")
 
 include_polymer = !is_android && !is_ios
@@ -12,9 +11,10 @@ build_webui("build") {
 
   non_web_component_files = [
     "action_link.ts",
-    "assert_ts.ts",
+    "assert.ts",
     "color_utils.ts",
     "cr.ts",
+    "cr_router.ts",
     "custom_element.ts",
     "drag_wrapper.ts",
     "event_tracker.ts",
@@ -35,10 +35,10 @@ build_webui("build") {
     "promise_resolver.ts",
     "search_highlight_utils.ts",
     "static_types.ts",
-    "store_ts.ts",
+    "store.ts",
     "test_loader.ts",
     "test_loader_util.ts",
-    "util_ts.ts",
+    "util.ts",
   ]
 
   if (is_chromeos) {
@@ -52,7 +52,7 @@ build_webui("build") {
     ]
   }
 
-  if (is_chromeos_ash || is_ios) {
+  if (is_chromeos || is_ios) {
     # Used by ChromeOS UIs and ios inspect and omaha UIs
     non_web_component_files += [ "util_deprecated.js" ]
   }
@@ -79,6 +79,7 @@ build_webui("build") {
     "//tools/typescript/definitions/chrome_send.d.ts",
     "//tools/typescript/definitions/chrome_timeticks.d.ts",
   ]
+  webui_context_type = "relative"
   generate_grdp = true
   grd_resource_path_prefix = rebase_path(".", "//ui/webui/resources")
 }

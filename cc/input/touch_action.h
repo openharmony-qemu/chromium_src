@@ -210,7 +210,6 @@ inline const char* TouchActionToString(TouchAction touch_action) {
       return "AUTO";
   }
   NOTREACHED();
-  return "";
 }
 
 }  // namespace cc

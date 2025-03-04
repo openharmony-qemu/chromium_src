@@ -4,8 +4,9 @@
 
 #import "ios/chrome/browser/ui/settings/voice_search_table_view_controller.h"
 
+#import "base/apple/foundation_util.h"
 #import "base/check_op.h"
-#import "base/mac/foundation_util.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
@@ -18,15 +19,11 @@
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_cell.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
-#import "ios/chrome/browser/voice/speech_input_locale_config.h"
-#import "ios/chrome/browser/voice/voice_search_prefs.h"
+#import "ios/chrome/browser/voice/model/speech_input_locale_config.h"
+#import "ios/chrome/browser/voice/model/voice_search_prefs.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -43,7 +40,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 }  // namespace
 
 @interface VoiceSearchTableViewController () <PrefObserverDelegate> {
-  PrefService* _prefs;  // weak
+  raw_ptr<PrefService> _prefs;  // weak
   StringPrefMember _selectedLanguage;
   BooleanPrefMember _ttsEnabled;
 
@@ -89,7 +86,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [self loadModel];
 }
 
-#pragma mark - ChromeTableViewController
+#pragma mark - LegacyChromeTableViewController
 
 - (void)loadModel {
   [super loadModel];
@@ -163,7 +160,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   if (itemType == ItemTypeTTSEnabled) {
     // Have the switch send a message on UIControlEventValueChanged.
     TableViewSwitchCell* switchCell =
-        base::mac::ObjCCastStrict<TableViewSwitchCell>(cell);
+        base::apple::ObjCCastStrict<TableViewSwitchCell>(cell);
     switchCell.selectionStyle = UITableViewCellSelectionStyleNone;
     [switchCell.switchView addTarget:self
                               action:@selector(ttsToggled:)
@@ -210,10 +207,10 @@ typedef NS_ENUM(NSInteger, ItemType) {
                               sectionIdentifier:SectionIdentifierTTS];
 
   TableViewSwitchItem* switchItem =
-      base::mac::ObjCCastStrict<TableViewSwitchItem>(
+      base::apple::ObjCCastStrict<TableViewSwitchItem>(
           [self.tableViewModel itemAtIndexPath:switchPath]);
   TableViewSwitchCell* switchCell =
-      base::mac::ObjCCastStrict<TableViewSwitchCell>(
+      base::apple::ObjCCastStrict<TableViewSwitchCell>(
           [self.tableView cellForRowAtIndexPath:switchPath]);
 
   // Update the model and the preference with the current value of the switch.
@@ -268,7 +265,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
                                             : UITableViewCellAccessoryNone;
 
     TableViewDetailTextItem* textItem =
-        base::mac::ObjCCastStrict<TableViewDetailTextItem>(
+        base::apple::ObjCCastStrict<TableViewDetailTextItem>(
             [languageItems objectAtIndex:ii]);
     if (textItem.accessoryType != type) {
       textItem.accessoryType = type;
@@ -295,29 +292,18 @@ typedef NS_ENUM(NSInteger, ItemType) {
   NSIndexPath* switchPath =
       [self.tableViewModel indexPathForItemType:ItemTypeTTSEnabled
                               sectionIdentifier:SectionIdentifierTTS];
-  TableViewSwitchCell* switchCell =
-      base::mac::ObjCCastStrict<TableViewSwitchCell>(
-          [self.tableView cellForRowAtIndexPath:switchPath]);
-
   // Some languages do not support TTS.  Disable the switch for those
   // languages.
   BOOL enabled = [self currentLanguageSupportsTTS];
   BOOL on = enabled && _ttsEnabled.GetValue();
 
-  UISwitch* switchView = switchCell.switchView;
-  switchView.enabled = enabled;
-  switchCell.textLabel.textColor =
-      [TableViewSwitchCell defaultTextColorForState:switchView.state];
-  if (on != switchView.isOn) {
-    [switchView setOn:on animated:YES];
-  }
-
-  // Also update the switch item.
   TableViewSwitchItem* switchItem =
-      base::mac::ObjCCastStrict<TableViewSwitchItem>(
+      base::apple::ObjCCastStrict<TableViewSwitchItem>(
           [self.tableViewModel itemAtIndexPath:switchPath]);
   switchItem.enabled = enabled;
   switchItem.on = on;
+
+  [self reconfigureCellsForItems:@[ switchItem ]];
 }
 
 @end

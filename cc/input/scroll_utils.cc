@@ -24,11 +24,13 @@ gfx::Vector2dF ScrollUtils::ResolveScrollPercentageToPixels(
 
   // Resolve and clamp horizontal scroll
   if (delta_x > 0)
-    delta_x = delta_x * std::min(scroller.width(), viewport.width());
+    delta_x =
+        std::max(1.0f, delta_x * std::min(scroller.width(), viewport.width()));
 
   // Resolve and clamps vertical scroll.
   if (delta_y > 0)
-    delta_y = delta_y * std::min(scroller.height(), viewport.height());
+    delta_y = std::max(
+        1.0f, delta_y * std::min(scroller.height(), viewport.height()));
 
   return gfx::Vector2dF(std::copysign(delta_x, sign_x),
                         std::copysign(delta_y, sign_y));

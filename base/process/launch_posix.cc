@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "base/process/launch.h"
 
 #include <dirent.h>
@@ -25,6 +30,7 @@
 #include <memory>
 #include <set>
 
+#include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/debug/debugger.h"
@@ -34,8 +40,6 @@
 #include "base/files/scoped_file.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr_exclusion.h"
-#include "base/metrics/histogram_macros.h"
-#include "base/posix/eintr_wrapper.h"
 #include "base/process/environment_internal.h"
 #include "base/process/process.h"
 #include "base/process/process_metrics.h"
@@ -43,7 +47,6 @@
 #include "base/threading/platform_thread.h"
 #include "base/threading/platform_thread_internal_posix.h"
 #include "base/threading/scoped_blocking_call.h"
-#include "base/time/time.h"
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
@@ -68,6 +71,18 @@ extern char** environ;
 
 namespace base {
 
+// Ensure PTHREAD_STACK_MIN_CONST is sufficiently large.
+// In some implementations of libc, PTHREAD_STACK_MIN is already
+// constant in which case we don't need to bother checking
+void CheckPThreadStackMinIsSafe() {
+  if constexpr (!__builtin_constant_p(PTHREAD_STACK_MIN)) {
+    [[maybe_unused]] static const bool dummy = [] {
+      CHECK_GE(PTHREAD_STACK_MIN_CONST, PTHREAD_STACK_MIN);
+      return false;
+    }();
+  }
+}
+
 namespace {
 
 // Get the process's "environment" (i.e. the thing that setenv/getenv
@@ -86,7 +101,7 @@ void SetEnvironment(char** env) {
 // the previous signal mask.
 sigset_t SetSignalMask(const sigset_t& new_sigmask) {
   sigset_t old_sigmask;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
   // POSIX says pthread_sigmask() must be used in multi-threaded processes,
   // but Android's pthread_sigmask() was broken until 4.1:
   // https://code.google.com/p/android/issues/detail?id=15337
@@ -295,7 +310,7 @@ Process LaunchProcess(const std::vector<std::string>& argv,
     argv_cstr.push_back(const_cast<char*>(arg.c_str()));
   argv_cstr.push_back(nullptr);
 
-  std::unique_ptr<char* []> new_environ;
+  base::HeapArray<char*> new_environ;
   char* const empty_environ = nullptr;
   char* const* old_environ = GetEnvironment();
   if (options.clear_environment)
@@ -313,7 +328,6 @@ Process LaunchProcess(const std::vector<std::string>& argv,
   }
 
   pid_t pid;
-  base::TimeTicks before_fork = TimeTicks::Now();
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
     BUILDFLAG(IS_OHOS)
   if (options.clone_flags) {
@@ -341,11 +355,7 @@ Process LaunchProcess(const std::vector<std::string>& argv,
 
   // Always restore the original signal mask in the parent.
   if (pid != 0) {
-    base::TimeTicks after_fork = TimeTicks::Now();
     SetSignalMask(orig_sigmask);
-
-    base::TimeDelta fork_time = after_fork - before_fork;
-    UMA_HISTOGRAM_TIMES("MPArch.ForkTime", fork_time);
   }
 
   if (pid < 0) {
@@ -368,6 +378,19 @@ Process LaunchProcess(const std::vector<std::string>& argv,
     // See comments on the ResetFDOwnership() declaration in
     // base/files/scoped_file.h regarding why this is called early here.
     subtle::ResetFDOwnership();
+
+    // The parent process might set FD_CLOEXEC flag on certain file
+    // descriptors to prevent them leaking into child processes of the
+    // embedder application. Remove the flag from the file descriptors
+    // which meant to be inherited by the child process.
+    //
+    // Cannot use STL iterators here, since debug iterators use locks.
+    // NOLINTNEXTLINE(modernize-loop-convert)
+    for (size_t i = 0; i < options.fds_to_remove_cloexec.size(); ++i) {
+      if (!RemoveCloseOnExec(options.fds_to_remove_cloexec[i])) {
+        RAW_LOG(WARNING, "Failed to remove FD_CLOEXEC flag");
+      }
+    }
 #endif
 
     {
@@ -447,7 +470,7 @@ Process LaunchProcess(const std::vector<std::string>& argv,
     }
 
     if (!options.environment.empty() || options.clear_environment)
-      SetEnvironment(new_environ.get());
+      SetEnvironment(new_environ.data());
 
     // fd_shuffle1 is mutated by this call because it cannot malloc.
     if (!ShuffleFileDescriptors(&fd_shuffle1))
@@ -455,16 +478,18 @@ Process LaunchProcess(const std::vector<std::string>& argv,
 
     CloseSuperfluousFds(fd_shuffle2);
 
-    // Set NO_NEW_PRIVS by default. Since NO_NEW_PRIVS only exists in kernel
-    // 3.5+, do not check the return value of prctl here.
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
 #ifndef PR_SET_NO_NEW_PRIVS
 #define PR_SET_NO_NEW_PRIVS 38
 #endif
     if (!options.allow_new_privs) {
-      if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) && errno != EINVAL) {
-        // Only log if the error is not EINVAL (i.e. not supported).
-        RAW_LOG(FATAL, "prctl(PR_SET_NO_NEW_PRIVS) failed");
+      if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+        // EINVAL means PR_SET_NO_NEW_PRIVS is unsupported (kernel < 3.5)
+        // EPERM indicates a problem with the environment out of our
+        // control (e.g. a system-imposed seccomp bpf sandbox)
+        if (errno != EINVAL && errno != EPERM) {
+          RAW_LOG(FATAL, "prctl(PR_SET_NO_NEW_PRIVS) failed");
+        }
       }
     }
 
@@ -715,10 +740,10 @@ NOINLINE pid_t CloneAndLongjmpInChild(int flags,
   // internal pid cache. The libc interface unfortunately requires
   // specifying a new stack, so we use setjmp/longjmp to emulate
   // fork-like behavior.
-  alignas(16) char stack_buf[PTHREAD_STACK_MIN];
-#if defined(ARCH_CPU_X86_FAMILY) || defined(ARCH_CPU_ARM_FAMILY) ||   \
-    defined(ARCH_CPU_MIPS_FAMILY) || defined(ARCH_CPU_S390_FAMILY) || \
-    defined(ARCH_CPU_PPC64_FAMILY) || defined(ARCH_CPU_LOONG_FAMILY) || \
+  alignas(16) char stack_buf[PTHREAD_STACK_MIN_CONST];
+#if defined(ARCH_CPU_X86_FAMILY) || defined(ARCH_CPU_ARM_FAMILY) ||         \
+    defined(ARCH_CPU_MIPS_FAMILY) || defined(ARCH_CPU_S390_FAMILY) ||       \
+    defined(ARCH_CPU_PPC64_FAMILY) || defined(ARCH_CPU_LOONGARCH_FAMILY) || \
     defined(ARCH_CPU_RISCV_FAMILY)
   // The stack grows downward.
   void* stack = stack_buf + sizeof(stack_buf);

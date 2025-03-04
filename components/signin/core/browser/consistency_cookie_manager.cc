@@ -4,9 +4,10 @@
 
 #include "components/signin/core/browser/consistency_cookie_manager.h"
 
+#include <vector>
+
 #include "base/check.h"
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
@@ -100,7 +101,7 @@ void ConsistencyCookieManager::RemoveExtraCookieManager(
     network::mojom::CookieManager* manager) {
   DCHECK(manager);
   DCHECK(base::Contains(extra_cookie_managers_, manager));
-  base::Erase(extra_cookie_managers_, manager);
+  std::erase(extra_cookie_managers_, manager);
 }
 
 // static
@@ -115,13 +116,13 @@ ConsistencyCookieManager::CreateConsistencyCookie(const std::string& value) {
       /*path=*/"/", /*creation=*/now, /*expiration=*/expiry,
       /*last_access=*/now, /*secure=*/true, /*httponly=*/false,
       net::CookieSameSite::STRICT_MODE, net::COOKIE_PRIORITY_DEFAULT,
-      /*same_party=*/false, /*partition_key=*/absl::nullopt);
+      /*partition_key=*/std::nullopt, /*status=*/nullptr);
 }
 
 // static
 bool ConsistencyCookieManager::IsConsistencyCookie(
     const net::CanonicalCookie& cookie) {
-  return cookie.IsSecure() && cookie.Path() == "/" &&
+  return cookie.SecureAttribute() && cookie.Path() == "/" &&
          cookie.DomainWithoutDot() ==
              GaiaUrls::GetInstance()->gaia_url().host() &&
          cookie.Name() == kCookieName;
@@ -156,7 +157,6 @@ void ConsistencyCookieManager::SetCookieValue(
       break;
     case CookieValue::kInvalid:
       NOTREACHED();
-      break;
   }
   DCHECK(!cookie_value_string.empty());
 
@@ -186,12 +186,12 @@ void ConsistencyCookieManager::OnStateChanged(
   UpdateCookieIfNeeded(force_creation);
 }
 
-absl::optional<ConsistencyCookieManager::CookieValue>
+std::optional<ConsistencyCookieManager::CookieValue>
 ConsistencyCookieManager::CalculateCookieValue() const {
   // Only update the cookie when the reconcilor is active.
   if (account_reconcilor_state_ ==
       signin_metrics::AccountReconcilorState::kInactive) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   // If there is a live `ScopedAccountUpdate`, return `kStateUpdating`.
@@ -211,12 +211,11 @@ ConsistencyCookieManager::CalculateCookieValue() const {
     case signin_metrics::AccountReconcilorState::kInactive:
       // This case is already handled at the top of the function.
       NOTREACHED();
-      return absl::nullopt;
   }
 }
 
 void ConsistencyCookieManager::UpdateCookieIfNeeded(bool force_creation) {
-  absl::optional<CookieValue> cookie_value = CalculateCookieValue();
+  std::optional<CookieValue> cookie_value = CalculateCookieValue();
   if (!cookie_value.has_value())
     return;
 
@@ -224,10 +223,12 @@ void ConsistencyCookieManager::UpdateCookieIfNeeded(bool force_creation) {
   if (force_creation) {
     cookie_value_ = cookie_value;
     // Cancel any ongoing operation and set the cookie immediately.
-    pending_cookie_update_ = absl::nullopt;
+    pending_cookie_update_ = std::nullopt;
     SetCookieValue(signin_client_->GetCookieManager(), cookie_value_.value());
-    for (auto* extra_manager : extra_cookie_managers_)
+    for (network::mojom::CookieManager* extra_manager :
+         extra_cookie_managers_) {
       SetCookieValue(extra_manager, cookie_value_.value());
+    }
     return;
   }
 
@@ -235,7 +236,7 @@ void ConsistencyCookieManager::UpdateCookieIfNeeded(bool force_creation) {
   // desired value or if it is missing, based on the last-known value. This is
   // an optimisation to avoid querying the cookie repeatedly.
   if (!cookie_value_ || cookie_value_ == cookie_value) {
-    pending_cookie_update_ = absl::nullopt;
+    pending_cookie_update_ = std::nullopt;
     return;
   }
 
@@ -271,14 +272,14 @@ void ConsistencyCookieManager::UpdateCookieIfExists(
       cookie_list, [](const net::CookieWithAccessResult& result) {
         return IsConsistencyCookie(result.cookie);
       });
-  absl::optional<CookieValue> current_value =
+  std::optional<CookieValue> current_value =
       (it == cookie_list.cend())
-          ? absl::nullopt
-          : absl::make_optional(ParseCookieValue(it->cookie.Value()));
+          ? std::nullopt
+          : std::make_optional(ParseCookieValue(it->cookie.Value()));
 
   CookieValue target_value = pending_cookie_update_.value();
   DCHECK_NE(target_value, CookieValue::kInvalid);
-  pending_cookie_update_ = absl::nullopt;
+  pending_cookie_update_ = std::nullopt;
   if (!current_value || current_value.value() == target_value) {
     // The cookie does not exist or already matches.
     cookie_value_ = current_value;
@@ -286,8 +287,9 @@ void ConsistencyCookieManager::UpdateCookieIfExists(
   }
   cookie_value_ = target_value;
   SetCookieValue(signin_client_->GetCookieManager(), target_value);
-  for (auto* extra_manager : extra_cookie_managers_)
+  for (network::mojom::CookieManager* extra_manager : extra_cookie_managers_) {
     SetCookieValue(extra_manager, target_value);
+  }
 }
 
 }  // namespace signin

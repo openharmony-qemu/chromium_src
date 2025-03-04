@@ -9,6 +9,7 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
@@ -20,21 +21,27 @@
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
 #include "base/timer/timer.h"
+#include "build/android_buildflags.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/media/media_stream_provider.h"
 #include "content/browser/renderer_host/media/video_capture_controller_event_handler.h"
 #include "content/browser/renderer_host/media/video_capture_device_launch_observer.h"
 #include "content/browser/renderer_host/media/video_capture_provider.h"
 #include "content/common/content_export.h"
+#include "content/public/browser/browser_context.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/screenlock_observer.h"
 #include "media/base/video_facing.h"
+#include "media/capture/mojom/video_capture_types.mojom.h"
+#include "media/capture/mojom/video_effects_manager.mojom-forward.h"
 #include "media/capture/video/video_capture_device.h"
 #include "media/capture/video/video_capture_device_info.h"
 #include "media/capture/video_capture_types.h"
+#include "mojo/public/cpp/bindings/remote.h"
+#include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #include "ui/gfx/native_widget_types.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
 #include "base/android/application_status_listener.h"
 #endif
 
@@ -85,24 +92,28 @@ class CONTENT_EXPORT VideoCaptureManager
   base::UnguessableToken Open(const blink::MediaStreamDevice& device) override;
   void Close(const base::UnguessableToken& capture_session_id) override;
 
-  // Start/stop cropping the video track.
+  // Start/stop cropping/restricting the video track.
   //
-  // Non-empty |crop_id| sets (or changes) the crop-target.
-  // Empty |crop_id| reverts the capture to its original, uncropped state.
+  // Non-empty |target| sets (or changes) the sub-capture target.
+  // Empty |target| reverts the capture to its original state.
   //
-  // |crop_version| must be incremented by at least one for each call.
-  // By including it in frame's metadata, Viz informs Blink what was the
-  // latest invocation of cropTo() before a given frame was produced.
+  // |sub_capture_target_version| must be incremented by at least one for each
+  // call. By including it in frame's metadata, Viz informs Blink what was the
+  // latest invocation of cropTo() or restrictTo() before a given frame was
+  // produced.
   //
   // The callback reports success/failure.
-  void Crop(const base::UnguessableToken& session_id,
-            const base::Token& crop_id,
-            uint32_t crop_version,
-            base::OnceCallback<void(media::mojom::CropRequestResult)> callback);
+  void ApplySubCaptureTarget(
+      const base::UnguessableToken& session_id,
+      media::mojom::SubCaptureTargetType type,
+      const base::Token& target,
+      uint32_t sub_capture_target_version,
+      base::OnceCallback<void(media::mojom::ApplySubCaptureTargetResult)>
+          callback);
 
-  // Called by VideoCaptureHost to locate a capture device for |capture_params|,
+  // Called by VideoCaptureHost to locate a capture device for `capture_params`,
   // adding the Host as a client of the device's controller if successful. The
-  // value of |session_id| controls which device is selected;
+  // value of `session_id` controls which device is selected;
   // this value should be a session id previously returned by Open().
   //
   // If the device is not already started (i.e., no other client is currently
@@ -111,13 +122,20 @@ class CONTENT_EXPORT VideoCaptureManager
   //
   // On success, the controller is returned via calling |done_cb|, indicating
   // that the client was successfully added. A NULL controller is passed to
-  // the callback on failure. |done_cb| is not allowed to synchronously call
+  // the callback on failure. `done_cb` is not allowed to synchronously call
   // StopCaptureForClient().
+  //
+  // `browser_context` is used to access the `MediaEffectsService` and pass a
+  // `VideoEffectsProcessor` remote for this device to the
+  // `VideoCaptureDeviceClient`. If the `browser_context` is nullptr then the
+  // device won't get an effects processor.
   void ConnectClient(const media::VideoCaptureSessionId& session_id,
                      const media::VideoCaptureParams& capture_params,
                      VideoCaptureControllerID client_id,
                      VideoCaptureControllerEventHandler* client_handler,
-                     DoneCB done_cb);
+                     std::optional<url::Origin> origin,
+                     DoneCB done_cb,
+                     BrowserContext* browser_context);
 
   // Called by VideoCaptureHost to remove |client_handler|. If this is the last
   // client of the device, the |controller| and its VideoCaptureDevice may be
@@ -174,17 +192,18 @@ class CONTENT_EXPORT VideoCaptureManager
   bool GetDeviceFormatsInUse(
       const media::VideoCaptureSessionId& capture_session_id,
       media::VideoCaptureFormats* formats_in_use);
-  // Retrieves the format currently in use.  Returns absl::nullopt if the
+  // Retrieves the format currently in use.  Returns std::nullopt if the
   // |stream_type|, |device_id| pair is not found. Returns in-use format of the
   // device otherwise.
-  absl::optional<media::VideoCaptureFormat> GetDeviceFormatInUse(
+  std::optional<media::VideoCaptureFormat> GetDeviceFormatInUse(
       blink::mojom::MediaStreamType stream_type,
       const std::string& device_id);
 
   // If there is a capture session associated with |session_id|, and the
-  // captured entity a tab, return the GlobalRoutingID of the captured tab.
-  // Otherwise, returns an empty GlobalRoutingID.
-  GlobalRoutingID GetGlobalRoutingID(
+  // captured entity a tab, return the GlobalRenderFrameHostId of
+  // the captured tab.
+  // Otherwise, returns an empty GlobalRenderFrameHostId.
+  GlobalRenderFrameHostId GetGlobalRenderFrameHostId(
       const base::UnguessableToken& session_id) const;
 
   // Sets the platform-dependent window ID for the desktop capture notification
@@ -200,7 +219,7 @@ class CONTENT_EXPORT VideoCaptureManager
   void TakePhoto(const base::UnguessableToken& session_id,
                  VideoCaptureDevice::TakePhotoCallback callback);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
   // Some devices had troubles when stopped and restarted quickly, so the device
   // is only stopped when Chrome is sent to background and not when, e.g., a tab
   // is hidden, see http://crbug.com/582295.
@@ -221,6 +240,15 @@ class CONTENT_EXPORT VideoCaptureManager
   void OnDeviceLaunchAborted() override;
   void OnDeviceConnectionLost(VideoCaptureController* controller) override;
 
+  void OpenNativeScreenCapturePicker(
+      DesktopMediaID::Type type,
+      base::OnceCallback<void(DesktopMediaID::Id)> created_callback,
+      base::OnceCallback<void(webrtc::DesktopCapturer::Source)> picker_callback,
+      base::OnceCallback<void()> cancel_callback,
+      base::OnceCallback<void()> error_callback);
+
+  void CloseNativeScreenCapturePicker(DesktopMediaID device_id);
+
   bool is_idle_close_timer_running_for_testing() const {
     return idle_close_timer_.IsRunning();
   }
@@ -233,13 +261,19 @@ class CONTENT_EXPORT VideoCaptureManager
     set_desktop_capture_window_id_callback_for_testing_ = callback;
   }
 
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera(int nWebId) const;
   void StopCamera(int nWebId) const;
   void CloseCamera(int nWebId) const;
   void BindSessionIdToNWebId(media::VideoCaptureSessionId sessionId,
                              int nWebId);
-#endif  // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  void StopScreenCapture(const std::string& session_id);
+  void ScreenCaptureOpened(const std::string& session_id);
+  void OnScreenCaptureOpened(const std::string& session_id);
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
  private:
   class CaptureDeviceStartRequest;
@@ -249,9 +283,9 @@ class CONTENT_EXPORT VideoCaptureManager
   using DeviceStartQueue = base::circular_deque<CaptureDeviceStartRequest>;
   using VideoCaptureDeviceDescriptor = media::VideoCaptureDeviceDescriptor;
   using VideoCaptureDeviceDescriptors = media::VideoCaptureDeviceDescriptors;
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   using NWebIdMap = std::map<media::VideoCaptureSessionId, int>;
-#endif  // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   ~VideoCaptureManager() override;
 
@@ -292,7 +326,7 @@ class CONTENT_EXPORT VideoCaptureManager
   // Finds a VideoCaptureController for the indicated |capture_session_id|,
   // creating a fresh one if necessary. Returns nullptr if said
   // |capture_session_id| is invalid.
-  VideoCaptureController* GetOrCreateController(
+  scoped_refptr<VideoCaptureController> GetOrCreateController(
       const media::VideoCaptureSessionId& capture_session_id,
       const media::VideoCaptureParams& params);
 
@@ -300,12 +334,14 @@ class CONTENT_EXPORT VideoCaptureManager
   // To avoid multiple unnecessary start/stop commands to the OS, each start
   // request is queued in |device_start_request_queue_|.
   // QueueStartDevice creates a new entry in |device_start_request_queue_| and
-  // posts a
-  // request to start the device on the device thread unless there is
+  // posts a request to start the device on the device thread unless there is
   // another request pending start.
-  void QueueStartDevice(const media::VideoCaptureSessionId& session_id,
-                        VideoCaptureController* controller,
-                        const media::VideoCaptureParams& params);
+  void QueueStartDevice(
+      const media::VideoCaptureSessionId& session_id,
+      scoped_refptr<VideoCaptureController> controller,
+      const media::VideoCaptureParams& params,
+      mojo::PendingRemote<video_effects::mojom::VideoEffectsProcessor>
+          video_effects_processor);
   void DoStopDevice(VideoCaptureController* controller);
   void ProcessDeviceStartRequestQueue();
 
@@ -315,7 +351,7 @@ class CONTENT_EXPORT VideoCaptureManager
   void ReleaseDevices();
   void ResumeDevices();
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
   std::unique_ptr<base::android::ApplicationStatusListener>
       app_status_listener_;
   bool application_state_has_running_activities_;
@@ -328,7 +364,8 @@ class CONTENT_EXPORT VideoCaptureManager
   void EmitLogMessage(const std::string& message, int verbose_log_level);
 
   // Only accessed on Browser::IO thread.
-  base::ObserverList<MediaStreamProviderListener>::Unchecked listeners_;
+  base::ObserverList<MediaStreamProviderListener>::UncheckedAndDanglingUntriaged
+      listeners_;
 
   // An entry is kept in this map for every session that has been created via
   // the Open() entry point. The keys are session_id's. This map is used to
@@ -356,7 +393,8 @@ class CONTENT_EXPORT VideoCaptureManager
   const std::unique_ptr<VideoCaptureProvider> video_capture_provider_;
   base::RepeatingCallback<void(const std::string&)> emit_log_message_cb_;
 
-  base::ObserverList<media::VideoCaptureObserver>::Unchecked capture_observers_;
+  base::ObserverList<media::VideoCaptureObserver>::UncheckedAndDanglingUntriaged
+      capture_observers_;
 
   // Local cache of the enumerated DeviceInfos. GetDeviceSupportedFormats() will
   // use this list if the device is not started, otherwise it will retrieve the
@@ -375,10 +413,10 @@ class CONTENT_EXPORT VideoCaptureManager
   SetDesktopCaptureWindowIdCallback
       set_desktop_capture_window_id_callback_for_testing_;
 
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   NWebIdMap nWebId_;
   mutable std::mutex NWebIdMutex_;
-#endif  // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 };
 
 }  // namespace content

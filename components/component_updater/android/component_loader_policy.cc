@@ -5,11 +5,12 @@
 #include "components/component_updater/android/component_loader_policy.h"
 
 #include <jni.h>
+#include <stddef.h>
 #include <stdio.h>
 
-#include <stddef.h>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,39 +32,52 @@
 #include "base/sequence_checker.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
+#include "base/strings/stringprintf.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
 #include "base/values.h"
 #include "base/version.h"
 #include "components/component_updater/android/component_loader_policy_forward.h"
 #include "components/component_updater/android/components_info_holder.h"
-#include "components/component_updater/android/embedded_component_loader_jni_headers/ComponentLoaderPolicyBridge_jni.h"
+#include "components/component_updater/component_updater_service.h"
+#include "components/crash/core/common/crash_key.h"
+#include "components/metrics/component_metrics_provider.h"
 #include "components/update_client/utils.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/metrics_proto/system_profile.pb.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "components/component_updater/android/embedded_component_loader_jni_headers/ComponentLoaderPolicyBridge_jni.h"
 
 namespace component_updater {
 namespace {
 
 constexpr char kManifestFileName[] = "manifest.json";
 
-absl::optional<base::Value::Dict> ReadManifest(
+// Size of the "crx-components" crash key in bytes. Each entry is of the form
+// "COMPONENT_NAME-123.456.789," and the longest component name is 39 bytes so
+// the maximum size of an entry is 52 bytes. Currently there are 5 components
+// registered for WebView, 512 bytes should be able to hold about 10 entries.
+constexpr size_t kComponentsKeySize = 512;
+
+std::optional<base::Value::Dict> ReadManifest(
     const std::string& manifest_content) {
   JSONStringValueDeserializer deserializer(manifest_content);
   std::string error;
   std::unique_ptr<base::Value> root = deserializer.Deserialize(nullptr, &error);
-  if (root && root->is_dict())
+  if (root && root->is_dict()) {
     return std::move(*root).TakeDict();
+  }
 
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<base::Value::Dict> ReadManifestFromFd(int fd) {
+std::optional<base::Value::Dict> ReadManifestFromFd(int fd) {
   std::string content;
   base::ScopedFILE file_stream(
       base::FileToFILE(base::File(std::move(fd)), "r"));
   return base::ReadStreamToString(file_stream.get(), &content)
              ? ReadManifest(content)
-             : absl::nullopt;
+             : std::nullopt;
 }
 
 void RecordComponentLoadStatusHistogram(const std::string& suffix,
@@ -73,6 +87,29 @@ void RecordComponentLoadStatusHistogram(const std::string& suffix,
       base::StrCat(
           {"ComponentUpdater.AndroidComponentLoader.LoadStatus.", suffix}),
       status);
+}
+
+std::string ComponentToString(const ComponentInfo& component) {
+  const auto id =
+      metrics::ComponentMetricsProvider::CrxIdToComponentId(component.id);
+  if (id == metrics::SystemProfileProto_ComponentId_UNKNOWN) {
+    return std::string();
+  }
+  return base::StringPrintf("%s-%s",
+                            SystemProfileProto_ComponentId_Name(id).c_str(),
+                            component.version.GetString().c_str());
+}
+
+void UpdateCrashKeys() {
+  std::vector<std::string> components_crash_key_values;
+  for (const ComponentInfo& component :
+       ComponentsInfoHolder::GetInstance()->GetComponents()) {
+    components_crash_key_values.push_back(ComponentToString(component));
+  }
+
+  static ::crash_reporter::CrashKeyString<kComponentsKeySize>
+      components_crash_key("crx-components");
+  components_crash_key.Set(base::JoinString(components_crash_key_values, ","));
 }
 
 }  // namespace
@@ -156,7 +193,7 @@ AndroidComponentLoaderPolicy::GetComponentId(JNIEnv* env) {
 
 void AndroidComponentLoaderPolicy::NotifyNewVersion(
     base::flat_map<std::string, base::ScopedFD>& fd_map,
-    absl::optional<base::Value::Dict> manifest) {
+    std::optional<base::Value::Dict> manifest) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!manifest) {
@@ -165,8 +202,9 @@ void AndroidComponentLoaderPolicy::NotifyNewVersion(
   }
   std::string version_ascii;
   if (const std::string* ptr = manifest->FindString("version")) {
-    if (base::IsStringASCII(*ptr))
+    if (base::IsStringASCII(*ptr)) {
       version_ascii = *ptr;
+    }
   }
   base::Version version(version_ascii);
   if (!version.IsValid()) {
@@ -178,6 +216,7 @@ void AndroidComponentLoaderPolicy::NotifyNewVersion(
                                      ComponentLoadResult::kComponentLoaded);
   ComponentsInfoHolder::GetInstance()->AddComponent(GetComponentId(), version);
   loader_policy_->ComponentLoaded(version, fd_map, std::move(*manifest));
+  UpdateCrashKeys();
 }
 
 void AndroidComponentLoaderPolicy::ComponentLoadFailedInternal(

@@ -8,10 +8,6 @@
 #include "base/no_destructor.h"
 #import "ios/web/public/js_messaging/java_script_feature.h"
 
-namespace web {
-class WebFrame;
-}  // namespace web
-
 namespace autofill {
 
 // Communicates with the JavaScript file, fill.js, which contains form util
@@ -21,10 +17,6 @@ class FormUtilJavaScriptFeature : public web::JavaScriptFeature {
   // This feature holds no state, so only a single static instance is ever
   // needed.
   static FormUtilJavaScriptFeature* GetInstance();
-
-  // Sets up the next available unique ID value in a document.
-  void SetUpForUniqueIDsWithInitialState(web::WebFrame* frame,
-                                         uint32_t next_available_id);
 
  private:
   friend class base::NoDestructor<FormUtilJavaScriptFeature>;

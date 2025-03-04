@@ -4,20 +4,15 @@
 
 #include "components/download/public/common/download_features.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 namespace download {
 namespace features {
 
-BASE_FEATURE(kUseDownloadOfflineContentProvider,
-             "UseDownloadOfflineContentProvider",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
 BASE_FEATURE(kParallelDownloading,
              "ParallelDownloading",
-#if BUILDFLAG(IS_ANDROID)
-             base::FEATURE_ENABLED_BY_DEFAULT
-#elif BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -33,6 +28,19 @@ BASE_FEATURE(kRefreshExpirationDate,
              "RefreshExpirationDate",
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
+
+BASE_FEATURE(kDownloadsMigrateToJobsAPI,
+             "DownloadsMigrateToJobsAPI",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kDownloadNotificationServiceUnifiedAPI,
+             "DownloadNotificationServiceUnifiedAPI",
+#if BUILDFLAG(IS_ANDROID)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 BASE_FEATURE(kUseInProgressDownloadManagerForDownloadService,
              "UseInProgressDownloadManagerForDownloadService",
@@ -67,8 +75,9 @@ BASE_FEATURE(kAllowFileBufferSizeControl,
              "AllowFileBufferSizeControl",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-BASE_FEATURE(kDownloadRange, "DownloadRange", base::FEATURE_ENABLED_BY_DEFAULT);
-
+BASE_FEATURE(kAllowedMixedContentInlinePdf,
+             "AllowedMixedContentInlinePdf",
+             base::FEATURE_ENABLED_BY_DEFAULT);
 }  // namespace features
 
 }  // namespace download

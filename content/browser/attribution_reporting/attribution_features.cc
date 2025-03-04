@@ -8,8 +8,8 @@
 
 namespace content {
 
-BASE_FEATURE(kAttributionVerboseDebugReporting,
-             "AttributionVerboseDebugReporting",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(kAttributionReportDeliveryThirdRetryAttempt,
+             "AttributionReportDeliveryThirdRetryAttempt",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 }  // namespace content

@@ -48,7 +48,10 @@ class ZWPTextInputWrapperV1 : public ZWPTextInputWrapper {
 
   void SetCursorRect(const gfx::Rect& rect) override;
   void SetSurroundingText(const std::string& text,
+                          const gfx::Range& preedit_range,
                           const gfx::Range& selection_range) override;
+  bool HasAdvancedSurroundingTextSupport() const override;
+  void SetSurroundingTextOffsetUtf16(uint32_t offset_utf16) override;
   void SetContentType(TextInputType type,
                       TextInputMode mode,
                       uint32_t flags,
@@ -64,7 +67,7 @@ class ZWPTextInputWrapperV1 : public ZWPTextInputWrapper {
   void FinalizeVirtualKeyboardChanges();
   bool SupportsFinalizeVirtualKeyboardChanges();
 
-  // zwp_text_input_v1_listener
+  // zwp_text_input_v1_listener callbacks:
   static void OnEnter(void* data,
                       struct zwp_text_input_v1* text_input,
                       struct wl_surface* surface);
@@ -116,7 +119,7 @@ class ZWPTextInputWrapperV1 : public ZWPTextInputWrapper {
                               uint32_t serial,
                               uint32_t direction);
 
-  // zcr_extended_text_input_v1_listener
+  // zcr_extended_text_input_v1_listener callbacks:
   static void OnSetPreeditRegion(
       void* data,
       struct zcr_extended_text_input_v1* extended_text_input,
@@ -145,6 +148,21 @@ class ZWPTextInputWrapperV1 : public ZWPTextInputWrapper {
       int32_t y,
       int32_t width,
       int32_t height);
+  static void OnConfirmPreedit(
+      void* data,
+      struct zcr_extended_text_input_v1* extended_text_input,
+      uint32_t selection_behavior);
+  static void OnInsertImage(
+      void* data,
+      struct zcr_extended_text_input_v1* extended_text_input,
+      const char* src);
+  static void OnInsertImageWithLargeURL(
+      void* data,
+      struct zcr_extended_text_input_v1* extended_text_input,
+      const char* mime_type,
+      const char* charset,
+      const int32_t raw_fd,
+      const uint32_t size);
 
   const raw_ptr<WaylandConnection> connection_;
   wl::Object<zwp_text_input_v1> obj_;

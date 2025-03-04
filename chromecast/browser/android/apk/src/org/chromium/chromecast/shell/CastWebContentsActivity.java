@@ -120,9 +120,6 @@ public class CastWebContentsActivity extends Activity {
             });
         });
         createdAndNotTestingState.subscribe(Observer.onOpen(x -> {
-            // Do this in onCreate() only if not testing.
-            CastBrowserHelper.initializeBrowser(getApplicationContext());
-
             setContentView(R.layout.cast_web_contents_activity);
 
             mSurfaceHelperState.set(new CastWebContentsSurfaceHelper(
@@ -178,6 +175,20 @@ public class CastWebContentsActivity extends Activity {
                     isDocked.set(Unit.unit());
                 } else {
                     isDocked.reset();
+                }
+            });
+        });
+
+        mCreatedState.subscribe(x -> {
+            IntentFilter filter = new IntentFilter(Intent.ACTION_USER_PRESENT);
+            return new BroadcastReceiverScope(filter, (Intent intent) -> {
+                if (DEBUG) {
+                    Log.d(TAG, "ACTION_USER_PRESENT received. canUsePictureInPicture: "
+                            + canUsePictureInPicture() + " mAllowPictureInPicture: "
+                            + mAllowPictureInPicture);
+                }
+                if (canUsePictureInPicture() && mAllowPictureInPicture) {
+                    enterPictureInPictureMode(new PictureInPictureParams.Builder().build());
                 }
             });
         });

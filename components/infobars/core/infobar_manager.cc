@@ -6,12 +6,31 @@
 
 #include <utility>
 
+#include "base/command_line.h"
 #include "base/observer_list.h"
 #include "base/ranges/algorithm.h"
+#include "build/branding_buildflags.h"
+#include "components/infobars/core/confirm_infobar_delegate.h"
 #include "components/infobars/core/infobar.h"
+#include "components/infobars/core/infobars_switches.h"
+#include "ui/gfx/switches.h"
 
 namespace infobars {
 
+namespace {
+
+bool DisableInfoBars() {
+  const auto* const command_line = base::CommandLine::ForCurrentProcess();
+  // Infobars can only be disabled when Chrome is running in headless mode and
+  // in Chrome for Testing.
+  return command_line->HasSwitch(::switches::kDisableInfoBars)
+#if !BUILDFLAG(CHROME_FOR_TESTING)
+         && command_line->HasSwitch(::switches::kHeadless)
+#endif
+      ;
+}
+
+}  // namespace
 
 // InfoBarManager::Observer ---------------------------------------------------
 
@@ -35,20 +54,23 @@ void InfoBarManager::Observer::OnManagerShuttingDown(InfoBarManager* manager) {
 
 // InfoBarManager --------------------------------------------------------------
 
-InfoBar* InfoBarManager::AddInfoBar(std::unique_ptr<InfoBar> infobar,
+InfoBar* InfoBarManager::AddInfoBar(std::unique_ptr<InfoBar> new_infobar,
                                     bool replace_existing) {
-  DCHECK(infobar);
+  DCHECK(new_infobar);
 
-  for (InfoBars::const_iterator i(infobars_.begin()); i != infobars_.end();
-       ++i) {
-    if ((*i)->delegate()->EqualsDelegate(infobar->delegate())) {
-      DCHECK_NE((*i)->delegate(), infobar->delegate());
-      return replace_existing ? ReplaceInfoBar(*i, std::move(infobar))
+  for (infobars::InfoBar* infobar : infobars_) {
+    if (infobar->delegate()->EqualsDelegate(new_infobar->delegate())) {
+      DCHECK_NE(infobar->delegate(), new_infobar->delegate());
+      return replace_existing ? ReplaceInfoBar(infobar, std::move(new_infobar))
                               : nullptr;
     }
   }
 
-  InfoBar* infobar_ptr = infobar.release();
+  if (!ShouldShowInfoBar(new_infobar.get())) {
+    return nullptr;
+  }
+
+  InfoBar* infobar_ptr = new_infobar.release();
   infobars_.push_back(infobar_ptr);
   infobar_ptr->SetOwner(this);
 
@@ -72,8 +94,13 @@ InfoBar* InfoBarManager::ReplaceInfoBar(InfoBar* old_infobar,
   DCHECK(old_infobar);
   DCHECK(new_infobar);
 
+  if (!ShouldShowInfoBar(new_infobar.get())) {
+    RemoveInfoBar(old_infobar);
+    return nullptr;
+  }
+
   auto i = base::ranges::find(infobars_, old_infobar);
-  DCHECK(i != infobars_.end());
+  CHECK(i != infobars_.end());
 
   InfoBar* new_infobar_ptr = new_infobar.release();
   i = infobars_.insert(i, new_infobar_ptr);
@@ -98,7 +125,7 @@ void InfoBarManager::RemoveObserver(Observer* obs) {
   observer_list_.RemoveObserver(obs);
 }
 
-InfoBarManager::InfoBarManager() = default;
+InfoBarManager::InfoBarManager() : infobars_enabled_(!DisableInfoBars()) {}
 
 InfoBarManager::~InfoBarManager() = default;
 
@@ -141,6 +168,21 @@ void InfoBarManager::RemoveInfoBarInternal(InfoBar* infobar, bool animate) {
     observer.OnInfoBarRemoved(infobar, animate);
 
   infobar->CloseSoon();
+}
+
+bool InfoBarManager::ShouldShowInfoBar(const InfoBar* infobar) const {
+  DCHECK(infobar);
+
+  if (infobars_enabled_) {
+    return true;
+  }
+
+  // Only buttonless infobars should be disabled. The ones with buttons are
+  // semantically message boxes and must be shown because certain functionality
+  // depends on them, see crbug.com/333945848 and crbug.com/341947684.
+  const auto* const delegate = infobar->delegate()->AsConfirmInfoBarDelegate();
+  return delegate &&
+         delegate->GetButtons() != ConfirmInfoBarDelegate::BUTTON_NONE;
 }
 
 }  // namespace infobars

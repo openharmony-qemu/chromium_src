@@ -5,6 +5,7 @@
 #ifndef CONTENT_BROWSER_SSL_SSL_ERROR_HANDLER_H_
 #define CONTENT_BROWSER_SSL_SSL_ERROR_HANDLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "content/public/browser/browser_thread.h"
@@ -48,12 +49,12 @@ class SSLErrorHandler {
                   int net_error,
                   const net::SSLInfo& ssl_info,
                   bool fatal
-#ifdef OHOS_NETWORK_LOAD
-,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                  ,
                   const GURL& origin_url,
                   const std::string& referrer
 #endif
-                  );
+  );
 
   SSLErrorHandler(const SSLErrorHandler&) = delete;
   SSLErrorHandler& operator=(const SSLErrorHandler&) = delete;
@@ -74,7 +75,7 @@ class SSLErrorHandler {
 
   bool fatal() const { return fatal_; }
 
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   const GURL& origin_url() const { return origin_url_; }
   const std::string& referrer() const { return referrer_; }
 #endif
@@ -110,7 +111,7 @@ class SSLErrorHandler {
   // True if the error is from a host requiring certificate errors to be fatal.
   const bool fatal_;
 
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   // original request url
   const GURL origin_url_;
 

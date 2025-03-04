@@ -155,7 +155,6 @@ std::string MCSClient::GetStateString() const {
       return "CONNECTED";
   }
   NOTREACHED();
-  return std::string();
 }
 
 MCSClient::MCSClient(const std::string& version_string,
@@ -522,7 +521,6 @@ void MCSClient::SendHeartbeat() {
 
 void MCSClient::OnGCMUpdateFinished(bool success) {
   LOG_IF(ERROR, !success) << "GCM Update failed!";
-  UMA_HISTOGRAM_BOOLEAN("GCM.StoreUpdateSucceeded", success);
   // TODO(zea): Rebuild the store from scratch in case of persistence failure?
 }
 

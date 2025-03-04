@@ -89,8 +89,6 @@ class NavigationSimulator {
   static RenderFrameHost* GoBackAndFail(WebContents* web_contents,
                                         int net_error_code);
 
-  // TODO(clamy, ahemery): Add GoForwardAndFail() if it becomes needed.
-
   // Simulates a failed offset navigation. Returns the RenderFrameHost that
   // committed the error page for the navigation, or nullptr if the navigation
   // error did not result in an error page.
@@ -247,7 +245,7 @@ class NavigationSimulator {
   // renderer-initiated navigations. For now this frame must belong to the same
   // process as the frame that is navigating.
   //
-  // TODO(https://crbug.com/1072790): Support cross-process initiators here by
+  // TODO(crbug.com/40127276): Support cross-process initiators here by
   // using NavigationRequest::CreateBrowserInitiated() (like
   // RenderFrameProxyHost does) for the navigation.
   virtual void SetInitiatorFrame(RenderFrameHost* initiator_frame_host) = 0;
@@ -255,6 +253,7 @@ class NavigationSimulator {
   virtual void SetHasUserGesture(bool has_user_gesture) = 0;
   virtual void SetNavigationInputStart(
       base::TimeTicks navigation_input_start) = 0;
+  virtual void SetNavigationStart(base::TimeTicks navigation_start) = 0;
   // Note: ReloadType should only be specified for browser-initiated
   // navigations.
   virtual void SetReloadType(ReloadType reload_type) = 0;

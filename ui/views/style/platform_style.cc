@@ -5,7 +5,6 @@
 #include "ui/views/style/platform_style.h"
 
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/gfx/range/range.h"
 #include "ui/gfx/utf16_indexing.h"
@@ -57,11 +56,12 @@ const bool PlatformStyle::kAdjustBubbleIfOffscreen =
 #endif
 
 // static
-std::unique_ptr<ScrollBar> PlatformStyle::CreateScrollBar(bool is_horizontal) {
+std::unique_ptr<ScrollBar> PlatformStyle::CreateScrollBar(
+    ScrollBar::Orientation orientation) {
 #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
-  return std::make_unique<OverlayScrollBar>(is_horizontal);
+  return std::make_unique<OverlayScrollBar>(orientation);
 #else
-  return std::make_unique<ScrollBarViews>(is_horizontal);
+  return std::make_unique<ScrollBarViews>(orientation);
 #endif
 }
 

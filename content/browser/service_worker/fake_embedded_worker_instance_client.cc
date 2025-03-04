@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
@@ -66,7 +67,7 @@ class FakeEmbeddedWorkerInstanceClient::LoaderClient final
   void OnReceiveResponse(
       network::mojom::URLResponseHeadPtr response_head,
       mojo::ScopedDataPipeConsumerHandle body,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override {}
+      std::optional<mojo_base::BigBuffer> cached_metadata) override {}
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
       network::mojom::URLResponseHeadPtr response_head) override {}
@@ -82,9 +83,12 @@ class FakeEmbeddedWorkerInstanceClient::LoaderClient final
     std::move(callback).Run();
     // Do not add code after that, the object is deleted.
   }
-#if defined(OHOS_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
-#endif // OHOS_UNITTESTS
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override{};
+#endif
+
  private:
   mojo::Receiver<network::mojom::URLLoaderClient> receiver_;
   base::OnceClosure callback_;
@@ -226,7 +230,8 @@ void FakeEmbeddedWorkerInstanceClient::EvaluateScript() {
   host_->OnScriptEvaluationStart();
   host_->OnStarted(blink::mojom::ServiceWorkerStartStatus::kNormalCompletion,
                    blink::mojom::ServiceWorkerFetchHandlerType::kNotSkippable,
-                   helper_->GetNextThreadId(),
+                   /*has_hid_event_handlers=*/false,
+                   /*has_usb_event_handlers=*/false, helper_->GetNextThreadId(),
                    blink::mojom::EmbeddedWorkerStartTiming::New());
 }
 
@@ -309,7 +314,6 @@ void DelayedFakeEmbeddedWorkerInstanceClient::StartWorker(
     case State::kCompleted:
     case State::kBlocked:
       NOTREACHED();
-      break;
   }
   if (quit_closure_for_start_worker_)
     std::move(quit_closure_for_start_worker_).Run();
@@ -330,7 +334,6 @@ void DelayedFakeEmbeddedWorkerInstanceClient::StopWorker() {
       break;
     case State::kCompleted:
       NOTREACHED();
-      break;
   }
   if (quit_closure_for_stop_worker_)
     std::move(quit_closure_for_stop_worker_).Run();

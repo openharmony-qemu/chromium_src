@@ -11,15 +11,17 @@
 #include "components/crx_file/id_util.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/child_process_security_policy.h"
-#include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/site_instance.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/storage_partition_config.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/extension_registry.h"
+#include "extensions/browser/extension_util.h"
 #include "extensions/browser/extensions_browser_client.h"
+#include "extensions/browser/script_injection_tracker.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/common/extension.h"
+#include "extensions/common/extension_id.h"
 #include "extensions/common/features/feature.h"
 #include "extensions/common/manifest.h"
 #include "extensions/common/manifest_handlers/incognito_info.h"
@@ -31,7 +33,13 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "url/gurl.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
+#include "chromeos/constants/chromeos_features.h"
+#include "chromeos/constants/pref_names.h"
+#include "components/prefs/pref_service.h"
+#endif
+
+#if BUILDFLAG(IS_CHROMEOS)
 #include "base/system/sys_info.h"
 #endif
 
@@ -40,7 +48,7 @@ namespace util {
 
 namespace {
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 bool IsSigninProfileTestExtensionOnTestImage(const Extension* extension) {
   if (extension->id() != extension_misc::kSigninProfileTestExtensionId)
     return false;
@@ -60,8 +68,8 @@ bool CanBeIncognitoEnabled(const Extension* extension) {
 bool IsIncognitoEnabled(const ExtensionId& extension_id,
                         content::BrowserContext* context) {
   const Extension* extension =
-      ExtensionRegistry::Get(context)->GetExtensionById(
-          extension_id, ExtensionRegistry::ENABLED);
+      ExtensionRegistry::Get(context)->enabled_extensions().GetByID(
+          extension_id);
   if (extension) {
     if (!CanBeIncognitoEnabled(extension))
       return false;
@@ -71,11 +79,27 @@ bool IsIncognitoEnabled(const ExtensionId& extension_id,
       return true;
     if (extension->is_login_screen_extension())
       return true;
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     if (IsSigninProfileTestExtensionOnTestImage(extension))
       return true;
 #endif
   }
+#if BUILDFLAG(IS_CHROMEOS)
+  // An OTR Profile is used for captive portal signin to hide PII from
+  // captive portals (which require HTTP redirects to function).
+  // However, for captive portal signin we do not want want to disable
+  // extensions by default. (Proxies are explicitly disabled elsewhere).
+  // See b/261727502 for details.
+  PrefService* prefs =
+      ExtensionsBrowserClient::Get()->GetPrefServiceForContext(context);
+  if (prefs) {
+    const PrefService::Preference* captive_portal_pref =
+        prefs->FindPreference(chromeos::prefs::kCaptivePortalSignin);
+    if (captive_portal_pref && captive_portal_pref->GetValue()->GetBool()) {
+      return true;
+    }
+  }
+#endif
   return ExtensionPrefs::Get(context)->IsIncognitoEnabled(extension_id);
 }
 
@@ -152,7 +176,11 @@ bool MapUrlToLocalFilePath(const ExtensionSet* extensions,
   // (GetFilePath()), so that this can be called on the non blocking threads. It
   // only handles a subset of the urls.
   if (!use_blocking_api) {
-    if (file_url.SchemeIs(extensions::kExtensionScheme)) {
+    if (file_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || file_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+    ) {
       std::string path = file_url.path();
       base::TrimString(path, "/", &path);  // Remove first slash
       *file_path = extension->path().AppendASCII(path);
@@ -214,10 +242,8 @@ bool CanWithholdPermissionsFromExtension(const ExtensionId& extension_id,
          !PermissionsData::CanExecuteScriptEverywhere(extension_id, location);
 }
 
-// The below functionality maps a context to a unique id by increasing a static
-// counter.
 int GetBrowserContextId(content::BrowserContext* context) {
-  using ContextIdMap = std::map<content::BrowserContext*, int>;
+  using ContextIdMap = std::map<std::string, int>;
 
   static int next_id = 0;
   static base::NoDestructor<ContextIdMap> context_map;
@@ -225,17 +251,15 @@ int GetBrowserContextId(content::BrowserContext* context) {
   // we need to get the original context to make sure we take the right context.
   content::BrowserContext* original_context =
       ExtensionsBrowserClient::Get()->GetOriginalContext(context);
-  auto iter = context_map->find(original_context);
+  const std::string& context_id = original_context->UniqueId();
+  auto iter = context_map->find(context_id);
   if (iter == context_map->end()) {
-    iter =
-        context_map->insert(std::make_pair(original_context, next_id++)).first;
+    iter = context_map->insert(std::make_pair(context_id, next_id++)).first;
   }
   DCHECK(iter->second != kUnspecifiedContextId);
   return iter->second;
 }
 
-// Returns whether the |extension| should be loaded in the given
-// |browser_context|.
 bool IsExtensionVisibleToContext(const Extension& extension,
                                  content::BrowserContext* browser_context) {
   // Renderers don't need to know about themes.
@@ -251,10 +275,9 @@ bool IsExtensionVisibleToContext(const Extension& extension,
          IsIncognitoEnabled(extension.id(), browser_context);
 }
 
-// Initializes file scheme access if the extension has such permission.
 void InitializeFileSchemeAccessForExtension(
     int render_process_id,
-    const std::string& extension_id,
+    const ExtensionId& extension_id,
     content::BrowserContext* browser_context) {
   ExtensionPrefs* prefs = ExtensionPrefs::Get(browser_context);
   // TODO(karandeepb): This should probably use
@@ -284,7 +307,11 @@ ExtensionId GetExtensionIdForSiteInstance(
   // This works for both apps and extensions because the site has been
   // normalized to the extension URL for hosted apps.
   const GURL& site_url = site_instance.GetSiteURL();
-  if (!site_url.SchemeIs(kExtensionScheme))
+  if (!site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return ExtensionId();
 
   // Navigating to a disabled (or uninstalled or not-yet-installed) extension
@@ -305,21 +332,122 @@ ExtensionId GetExtensionIdForSiteInstance(
 std::string GetExtensionIdFromFrame(
     content::RenderFrameHost* render_frame_host) {
   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
-  if (!site.SchemeIs(kExtensionScheme))
+  if (!site.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return std::string();
 
   return site.host();
 }
 
 bool CanRendererHostExtensionOrigin(int render_process_id,
-                                    const ExtensionId& extension_id) {
+                                    const ExtensionId& extension_id,
+                                    bool is_sandboxed) {
   url::Origin extension_origin =
       Extension::CreateOriginFromExtensionId(extension_id);
+  if (is_sandboxed) {
+    // If the extension frame is sandboxed, the corresponding process is only
+    // allowed to host opaque origins, per crbug.com/325410297. Therefore,
+    // convert the origin into an opaque origin, and note that HostsOrigin()
+    // will still validate the extension ID in the origin's precursor.
+    extension_origin = extension_origin.DeriveNewOpaqueOrigin();
+  }
   auto* policy = content::ChildProcessSecurityPolicy::GetInstance();
-  return policy->CanAccessDataForOrigin(render_process_id, extension_origin);
+  return policy->HostsOrigin(render_process_id, extension_origin);
 }
 
-bool IsChromeApp(const std::string& extension_id,
+bool CanRendererActOnBehalfOfExtension(
+    const ExtensionId& extension_id,
+    content::RenderFrameHost* render_frame_host,
+    content::RenderProcessHost& render_process_host,
+    bool include_user_scripts) {
+  // TODO(lukasza): Some of the checks below can be restricted to specific
+  // context types (e.g. an empty `extension_id` should not happen in an
+  // extension context;  and the SiteInstance-based check should only be needed
+  // for hosted apps).  Consider leveraging ProcessMap::GetMostLikelyContextType
+  // to implement this kind of restrictions.  Note that
+  // ExtensionFunctionDispatcher::CreateExtensionFunction already calls
+  // GetMostLikelyContextType - some refactoring might be needed to avoid
+  // duplicating the work.
+
+  // Allow empty extension id (it seems okay to assume that no
+  // extension-specific special powers will be granted without an extension id).
+  // For instance, WebUI pages may call private APIs like developerPrivate,
+  // settingsPrivate, metricsPrivate, and others. In these cases, there is no
+  // associated extension ID.
+  //
+  // TODO(lukasza): Investigate if the exception below can be avoided if
+  // `render_process_host` hosts HTTP origins (i.e. if the exception can be
+  // restricted to NTP, and/or chrome://... cases.
+  if (extension_id.empty()) {
+    return true;
+  }
+
+  // Did `render_process_id` run a content script or user script from
+  // `extension_id`?
+  // TODO(crbug.com/40055126): Ideally, we'd only check content script/
+  // user script status if the renderer claimed to be acting on behalf of the
+  // corresponding type (e.g. mojom::ContextType::kContentScript). We evaluate
+  // this later in ProcessMap::CanProcessHostContextType(), but we could be
+  // stricter by including it here.
+  if (ScriptInjectionTracker::DidProcessRunContentScriptFromExtension(
+          render_process_host, extension_id) ||
+      (ScriptInjectionTracker::DidProcessRunUserScriptFromExtension(
+           render_process_host, extension_id) &&
+       include_user_scripts)) {
+    return true;
+  }
+
+  // CanRendererHostExtensionOrigin() needs to know if the extension is
+  // sandboxed, so check the sandbox flags if this request is for an extension
+  // frame. Note that extension workers cannot be sandboxed since workers aren't
+  // supported in opaque origins.
+  bool is_sandboxed =
+      render_frame_host &&
+      render_frame_host->IsSandboxed(network::mojom::WebSandboxFlags::kOrigin);
+
+  // Can `render_process_id` host a chrome-extension:// origin (frame, worker,
+  // etc.)?
+  if (CanRendererHostExtensionOrigin(render_process_host.GetID(), extension_id,
+                                     is_sandboxed)) {
+    return true;
+  }
+
+  if (render_frame_host) {
+    DCHECK_EQ(render_process_host.GetID(),
+              render_frame_host->GetProcess()->GetID());
+    content::SiteInstance& site_instance =
+        *render_frame_host->GetSiteInstance();
+
+    // Chrome Extension APIs can be accessed from some hosted apps.
+    //
+    // Today this is mostly needed by the Chrome Web Store's hosted app, but the
+    // code below doesn't make this assumption and allows *all* hosted apps
+    // based on the trustworthy, Browser-side information from the SiteInstance
+    // / SiteURL.  This way the code is resilient to future changes + there are
+    // concerns that `chrome.test.sendMessage` might already be exposed to
+    // hosted apps (but maybe not covered by tests).
+    //
+    // Note that the condition below allows all extensions (i.e. not just hosted
+    // apps), but hosted apps aren't covered by the
+    // `CanRendererHostExtensionOrigin` call above (because the process lock of
+    // hosted apps is based on a https://, rather than chrome-extension:// url).
+    //
+    // GuestView is explicitly excluded, because we don't want to allow
+    // GuestViews to spoof the extension id of their host.
+    if (!site_instance.IsGuest() &&
+        extension_id == util::GetExtensionIdForSiteInstance(site_instance)) {
+      return true;
+    }
+  }
+
+  // Disallow any other cases.
+  return false;
+}
+
+bool IsChromeApp(const ExtensionId& extension_id,
                  content::BrowserContext* context) {
   const Extension* extension =
       ExtensionRegistry::Get(context)->enabled_extensions().GetByID(
@@ -327,17 +455,17 @@ bool IsChromeApp(const std::string& extension_id,
   return extension->is_platform_app();
 }
 
-bool IsAppLaunchable(const std::string& extension_id,
+bool IsAppLaunchable(const ExtensionId& extension_id,
                      content::BrowserContext* context) {
   int reason = ExtensionPrefs::Get(context)->GetDisableReasons(extension_id);
   return !((reason & disable_reason::DISABLE_UNSUPPORTED_REQUIREMENT) ||
            (reason & disable_reason::DISABLE_CORRUPTED));
 }
 
-bool IsAppLaunchableWithoutEnabling(const std::string& extension_id,
+bool IsAppLaunchableWithoutEnabling(const ExtensionId& extension_id,
                                     content::BrowserContext* context) {
-  return ExtensionRegistry::Get(context)->GetExtensionById(
-             extension_id, ExtensionRegistry::ENABLED) != nullptr;
+  return ExtensionRegistry::Get(context)->enabled_extensions().Contains(
+      extension_id);
 }
 
 }  // namespace util

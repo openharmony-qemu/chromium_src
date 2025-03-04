@@ -30,9 +30,11 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
       continue;
     }
     auto pasteCustomData = recordVector->GetCustomData();
-    if (pasteCustomData != nullptr && pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end()) {
+    if (pasteCustomData != nullptr &&
+        pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end()) {
       std::vector<uint8_t> customData = (*pasteCustomData)[SPAN_STRING_TAG];
-      LOG(DEBUG) << "get paste custom data success, the length is " <<  customData.size();
+      LOG(DEBUG) << "get paste custom data success, the length is "
+                 << customData.size();
       if (convert_html_callback_ == nullptr) {
         LOG(ERROR) << "the convert_html_callback is null";
       } else {
@@ -66,7 +68,8 @@ std::shared_ptr<std::string> ClipboardOhosReadData::ReadHtml() {
   return html_;
 }
 
-std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> ClipboardOhosReadData::convert_html_callback_ = nullptr;
+std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback>
+    ClipboardOhosReadData::convert_html_callback_ = nullptr;
 // static
 void ClipboardOhosReadData::SetConvertHtmlCallback(
     std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback) {

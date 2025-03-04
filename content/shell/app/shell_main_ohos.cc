@@ -1,0 +1,19 @@
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "build/build_config.h"
+#include "content/public/app/content_main.h"
+#include "content/shell/app/shell_main_delegate.h"
+
+extern "C" {
+int __attribute__((visibility("default")))
+ContentMain(int argc, const char** argv) {
+  content::ShellMainDelegate delegate;
+  content::ContentMainParams params(&delegate);
+  params.argc = argc;
+  params.argv = argv;
+  return content::ContentMain(std::move(params));
+}
+}
+ 

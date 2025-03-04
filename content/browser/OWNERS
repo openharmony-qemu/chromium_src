@@ -36,6 +36,8 @@ per-file utility_process_sandbox_browsertest.cc=file://sandbox/linux/OWNERS
 # Utility sandbox delegate requires security review.
 per-file utility_sandbox_delegate.*=set noparent
 per-file utility_sandbox_delegate.*=file://sandbox/OWNERS
+per-file utility_sandbox_delegate_unittest.*=set noparent
+per-file utility_sandbox_delegate_unittest.*=file://sandbox/OWNERS
 per-file utility_sandbox_delegate_win.*=set noparent
 per-file utility_sandbox_delegate_win.*=file://sandbox/win/OWNERS
 
@@ -54,7 +56,6 @@ per-file storage_service*=file://components/services/storage/OWNERS
 per-file field_trial_synchronizer.*=file://base/metrics/OWNERS
 
 # Cross origin opener policy.
-per-file cross_origin_opener_policy*=ahemery@chromium.org
 per-file cross_origin_opener_policy*=pmeuleman@chromium.org
 
 # Network Service.
@@ -66,3 +67,6 @@ per-file network_sandbox*=file://services/network/OWNERS
 # (BrowserThread, BrowserMainLoop, BrowserMainRunner, etc.)
 per-file browser_main*=gab@chromium.org
 per-file browser_thread*=gab@chromium.org
+
+# Performance metrics.
+per-file largest_contentful_paint*=file://components/page_load_metrics/OWNERS

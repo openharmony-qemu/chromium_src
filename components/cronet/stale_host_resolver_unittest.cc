@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/cronet/stale_host_resolver.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -47,7 +53,6 @@
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace cronet {
 
@@ -268,7 +273,7 @@ class StaleHostResolverTest : public testing::Test {
     EXPECT_TRUE(stale.is_stale());
   }
 
-  void Resolve(const absl::optional<StaleHostResolver::ResolveHostParameters>&
+  void Resolve(const std::optional<StaleHostResolver::ResolveHostParameters>&
                    optional_parameters) {
     DCHECK(resolver_);
     EXPECT_FALSE(resolve_pending_);
@@ -318,7 +323,7 @@ class StaleHostResolverTest : public testing::Test {
     // returns |kNetworkAddress|.
     while (resolve_error() != net::OK ||
            resolve_addresses()[0].ToStringWithoutPort() != kNetworkAddress) {
-      Resolve(absl::nullopt);
+      Resolve(std::nullopt);
       WaitForResolve();
     }
   }
@@ -388,7 +393,7 @@ TEST_F(StaleHostResolverTest, Create) {
 TEST_F(StaleHostResolverTest, Network) {
   CreateResolver();
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -400,7 +405,7 @@ TEST_F(StaleHostResolverTest, Network) {
 TEST_F(StaleHostResolverTest, Hosts) {
   CreateResolverWithDnsClient(CreateMockDnsClientForHosts());
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -413,7 +418,7 @@ TEST_F(StaleHostResolverTest, FreshCache) {
   CreateResolver();
   CreateCacheEntry(kAgeFreshSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
 
   EXPECT_TRUE(resolve_complete());
   EXPECT_EQ(net::OK, resolve_error());
@@ -434,7 +439,7 @@ TEST_F(StaleHostResolverTest, MAYBE_StaleCache) {
   CreateResolver();
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -450,7 +455,7 @@ TEST_F(StaleHostResolverTest, StaleCache_DestroyedResolver) {
   CreateResolverWithDnsClient(CreateHangingMockDnsClient());
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   DestroyResolver();
   WaitForResolve();
 
@@ -466,7 +471,7 @@ TEST_F(StaleHostResolverTest, StaleCacheNameNotResolvedEnabled) {
   CreateResolver();
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -483,7 +488,7 @@ TEST_F(StaleHostResolverTest, StaleCacheNameNotResolvedDisabled) {
   CreateResolver();
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -495,7 +500,7 @@ TEST_F(StaleHostResolverTest, NetworkWithStaleCache) {
   CreateResolver();
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   WaitForResolve();
 
   EXPECT_TRUE(resolve_complete());
@@ -508,7 +513,7 @@ TEST_F(StaleHostResolverTest, CancelWithNoCache) {
   SetStaleDelay(kNoStaleDelaySec);
   CreateResolver();
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
 
   Cancel();
 
@@ -523,7 +528,7 @@ TEST_F(StaleHostResolverTest, CancelWithStaleCache) {
   CreateResolver();
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
 
   Cancel();
 
@@ -636,7 +641,7 @@ TEST_F(StaleHostResolverTest, MAYBE_StaleUsability) {
       LookupStale();
 
     AdvanceTickClock(base::Milliseconds(1));
-    Resolve(absl::nullopt);
+    Resolve(std::nullopt);
     WaitForResolve();
     EXPECT_TRUE(resolve_complete()) << i;
 
@@ -673,8 +678,6 @@ TEST_F(StaleHostResolverTest, CreatedByContext) {
       URLRequestContextConfig::CreateURLRequestContextConfig(
           // Enable QUIC.
           true,
-          // QUIC User Agent ID.
-          "Default QUIC User Agent ID",
           // Enable SPDY.
           true,
           // Enable Brotli.
@@ -705,7 +708,7 @@ TEST_F(StaleHostResolverTest, CreatedByContext) {
           // Enable Public Key Pinning bypass for local trust anchors.
           true,
           // Optional network thread priority.
-          absl::optional<double>());
+          std::nullopt);
 
   net::URLRequestContextBuilder builder;
   config->ConfigureURLRequestContextBuilder(&builder);
@@ -721,7 +724,7 @@ TEST_F(StaleHostResolverTest, CreatedByContext) {
   // Note: Experimental config above sets 0ms stale delay.
   CreateCacheEntry(kAgeExpiredSec, net::OK);
 
-  Resolve(absl::nullopt);
+  Resolve(std::nullopt);
   EXPECT_FALSE(resolve_complete());
   WaitForResolve();
 

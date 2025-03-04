@@ -4,8 +4,10 @@
 
 #include "extensions/browser/api/web_contents_capture_client.h"
 
+#include <optional>
+
 #include "base/base64.h"
-#include "base/strings/stringprintf.h"
+#include "base/strings/strcat.h"
 #include "base/syslog_logging.h"
 #include "build/chromeos_buildflags.h"
 #include "content/public/browser/render_widget_host.h"
@@ -29,7 +31,7 @@ WebContentsCaptureClient::CaptureResult WebContentsCaptureClient::CaptureAsync(
     WebContents* web_contents,
     const ImageDetails* image_details,
     base::OnceCallback<void(const SkBitmap&)> callback) {
-  // TODO(crbug/419878): Account for fullscreen render widget?
+  // TODO(crbug.com/41135213): Account for fullscreen render widget?
   RenderWidgetHostView* const view =
       web_contents ? web_contents->GetRenderWidgetHostView() : nullptr;
   if (!view)
@@ -62,7 +64,7 @@ WebContentsCaptureClient::CaptureResult WebContentsCaptureClient::CaptureAsync(
                         gfx::Size(),  // Result contains device-level detail.
                         std::move(callback));
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   SYSLOG(INFO) << "Screenshot taken";
 #endif
 
@@ -77,39 +79,30 @@ void WebContentsCaptureClient::CopyFromSurfaceComplete(const SkBitmap& bitmap) {
   }
 }
 
-// TODO(wjmaclean) can this be static?
-bool WebContentsCaptureClient::EncodeBitmap(const SkBitmap& bitmap,
-                                            std::string* base64_result) {
-  DCHECK(base64_result);
-  std::vector<unsigned char> data;
+std::optional<std::string> WebContentsCaptureClient::EncodeBitmap(
+    const SkBitmap& bitmap) {
   const bool should_discard_alpha = !ClientAllowsTransparency();
-  bool encoded = false;
+  std::optional<std::vector<uint8_t>> data;
   std::string mime_type;
   switch (image_format_) {
     case api::extension_types::ImageFormat::kJpeg:
-      encoded = gfx::JPEGCodec::Encode(bitmap, image_quality_, &data);
+      data = gfx::JPEGCodec::Encode(bitmap, image_quality_);
       mime_type = kMimeTypeJpeg;
       break;
     case api::extension_types::ImageFormat::kPng:
-      encoded = gfx::PNGCodec::EncodeBGRASkBitmap(bitmap, should_discard_alpha,
-                                                  &data);
+      data = gfx::PNGCodec::EncodeBGRASkBitmap(bitmap, should_discard_alpha);
       mime_type = kMimeTypePng;
       break;
     default:
       NOTREACHED() << "Invalid image format.";
   }
 
-  if (!encoded)
-    return false;
+  if (!data) {
+    return std::nullopt;
+  }
 
-  base::StringPiece stream_as_string(reinterpret_cast<const char*>(data.data()),
-                                     data.size());
-
-  base::Base64Encode(stream_as_string, base64_result);
-  base64_result->insert(
-      0, base::StringPrintf("data:%s;base64,", mime_type.c_str()));
-
-  return true;
+  return base::StrCat(
+      {"data:", mime_type, ";base64,", base::Base64Encode(data.value())});
 }
 
 }  // namespace extensions

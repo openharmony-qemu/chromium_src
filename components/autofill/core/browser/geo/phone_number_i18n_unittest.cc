@@ -8,13 +8,17 @@
 
 #include <string>
 
+#include "base/feature_list.h"
+#include "base/strings/strcat.h"
 #include "base/strings/utf_string_conversions.h"
 #include "components/autofill/core/browser/data_model/autofill_profile.h"
 #include "components/autofill/core/browser/field_types.h"
+#include "components/autofill/core/common/autofill_features.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/libphonenumber/phonenumber_api.h"
 
 namespace autofill {
+namespace {
 
 using i18n::ConstructPhoneNumber;
 using i18n::NormalizePhoneNumber;
@@ -53,14 +57,10 @@ struct ParseNumberTestCase {
   std::string deduced_region;
 };
 
-namespace {
-
 // Returns a string which is too long to be considered a phone number.
 std::u16string GenerateTooLongString() {
   return std::u16string(i18n::kMaxPhoneNumberSize + 1, u'7');
 }
-
-}  // namespace
 
 class ParseNumberTest : public testing::TestWithParam<ParseNumberTestCase> {};
 
@@ -176,33 +176,31 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST(PhoneNumberI18NTest, ConstructPhoneNumber) {
   std::u16string number;
-  EXPECT_TRUE(ConstructPhoneNumber(u"1", u"650", u"2345678", "US", &number));
+  EXPECT_TRUE(ConstructPhoneNumber(u"16502345678", "US", &number));
   EXPECT_EQ(u"1 650-234-5678", number);
-  EXPECT_TRUE(ConstructPhoneNumber(std::u16string(), u"650", u"2345678", "US",
-                                   &number));
-  EXPECT_EQ(u"(650) 234-5678", number);
-  EXPECT_TRUE(ConstructPhoneNumber(u"1", std::u16string(), u"6502345678", "US",
-                                   &number));
-  EXPECT_EQ(u"1 650-234-5678", number);
-  EXPECT_TRUE(ConstructPhoneNumber(std::u16string(), std::u16string(),
-                                   u"6502345678", "US", &number));
+  EXPECT_TRUE(ConstructPhoneNumber(u"6502345678", "US", &number));
   EXPECT_EQ(u"(650) 234-5678", number);
 
-  EXPECT_FALSE(ConstructPhoneNumber(std::u16string(), u"650", u"234567890",
-                                    "US", &number));
+  // Invalid number, too long.
+  EXPECT_FALSE(ConstructPhoneNumber(u"650234567890", "US", &number));
   EXPECT_EQ(std::u16string(), number);
   // Italian number
-  EXPECT_TRUE(ConstructPhoneNumber(u"39", u"347", u"2345678", "IT", &number));
+  EXPECT_TRUE(ConstructPhoneNumber(base::StrCat({u"39", u"347", u"2345678"}),
+                                   "IT", &number));
   EXPECT_EQ(u"+39 347 234 5678", number);
-  EXPECT_TRUE(ConstructPhoneNumber(std::u16string(), u"347", u"2345678", "IT",
-                                   &number));
+  EXPECT_TRUE(ConstructPhoneNumber(u"39 347 2345678", "IT", &number));
+  EXPECT_EQ(u"+39 347 234 5678", number);
+  EXPECT_TRUE(
+      ConstructPhoneNumber(base::StrCat({u"347", u"2345678"}), "IT", &number));
   EXPECT_EQ(u"347 234 5678", number);
   // German number.
-  EXPECT_TRUE(
-      ConstructPhoneNumber(u"49", u"024", u"2345678901", "DE", &number));
-  EXPECT_EQ(u"+49 2423 45678901", number);
-  EXPECT_TRUE(ConstructPhoneNumber(std::u16string(), u"024", u"2345678901",
+  // Not a strictly correct number, because the zero trunk prefix in 024 does
+  // not belong there.
+  EXPECT_TRUE(ConstructPhoneNumber(base::StrCat({u"49", u"024", u"2345678901"}),
                                    "DE", &number));
+  EXPECT_EQ(u"+49 2423 45678901", number);
+  EXPECT_TRUE(ConstructPhoneNumber(base::StrCat({u"024", u"2345678901"}), "DE",
+                                   &number));
   EXPECT_EQ(u"02423 45678901", number);
 }
 
@@ -320,9 +318,9 @@ class GetFormattedPhoneNumberForDisplayTest
 
 TEST_P(GetFormattedPhoneNumberForDisplayTest,
        GetFormattedPhoneNumberForDisplay) {
-  AutofillProfile profile;
+  AutofillProfile profile(
+      AddressCountryCode(base::UTF16ToUTF8(GetParam().country)));
   profile.SetRawInfo(PHONE_HOME_WHOLE_NUMBER, GetParam().phone);
-  profile.SetRawInfo(ADDRESS_HOME_COUNTRY, GetParam().country);
   EXPECT_EQ(GetParam().expected_format, i18n::GetFormattedPhoneNumberForDisplay(
                                             profile, GetParam().locale));
 }
@@ -366,8 +364,14 @@ INSTANTIATE_TEST_SUITE_P(
         // country, if it's valid.
         PhoneNumberFormatCase(u"2 9374 4000", u"AU", u"+61 2 9374 4000"),
         // Without a country code, formatting returns the number as entered by
-        // user, if it's invalid.
-        PhoneNumberFormatCase(u"415-555-5555", u"AU", u"4155555555"),
+        // user, if it's invalid, unless AutofillInferCountryCallingCode is
+        // enabled.
+        PhoneNumberFormatCase(u"415-555-5555",
+                              u"AU",
+                              base::FeatureList::IsEnabled(
+                                  features::kAutofillInferCountryCallingCode)
+                                  ? u"+614155555555"
+                                  : u"4155555555"),
 
         //////////////////////////
         // US phone in MX.
@@ -406,8 +410,13 @@ INSTANTIATE_TEST_SUITE_P(
         // country.
         // This local AU number is associated with US profile, the number is
         // not a valid US number, therefore formatting will just return what
-        // user entered.
-        PhoneNumberFormatCase(u"02 9374 4000", u"US", u"0293744000"),
+        // user entered, unless AutofillInferCountryCallingCode is.
+        PhoneNumberFormatCase(u"02 9374 4000",
+                              u"US",
+                              base::FeatureList::IsEnabled(
+                                  features::kAutofillInferCountryCallingCode)
+                                  ? u"+10293744000"
+                                  : u"0293744000"),
         // This local GR(Greece) number is formatted as an US number, if it's
         // valid US number.
         PhoneNumberFormatCase(u"22 6800 0090", u"US", u"+1 226-800-0090"),
@@ -431,8 +440,15 @@ INSTANTIATE_TEST_SUITE_P(
         // number.
         PhoneNumberFormatCase(u"+52 55 5342 8400", u"US", u"+52 55 5342 8400"),
         PhoneNumberFormatCase(u"52 55 5342 8400", u"US", u"+52 55 5342 8400"),
-        // This number is not a valid US number, we won't try to format.
-        PhoneNumberFormatCase(u"55 5342 8400", u"US", u"5553428400")));
+        // This number is not a valid US number, we won't try to format. If
+        // AutofillInferCountryCallingCode is enabled, we just add the inferred
+        // code.
+        PhoneNumberFormatCase(u"55 5342 8400",
+                              u"US",
+                              base::FeatureList::IsEnabled(
+                                  features::kAutofillInferCountryCallingCode)
+                                  ? u"+15553428400"
+                                  : u"5553428400")));
 
 INSTANTIATE_TEST_SUITE_P(
     GetFormattedPhoneNumberForDisplay_EdgeCases,
@@ -478,4 +494,5 @@ INSTANTIATE_TEST_SUITE_P(
         // If no country code is found, formats for US.
         PhoneNumberFormatCase(u"415-555-5555", u"", u"+1 415-555-5555")));
 
+}  // namespace
 }  // namespace autofill

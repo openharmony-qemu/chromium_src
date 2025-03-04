@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "components/download/public/common/download_stats.h"
 #include "components/download/public/common/download_url_parameters.h"
@@ -44,7 +45,6 @@ mojom::NetworkRequestStatus ConvertInterruptReasonToMojoNetworkRequestStatus(
       return mojom::NetworkRequestStatus::NETWORK_FAILED;
     default:
       NOTREACHED();
-      return mojom::NetworkRequestStatus::NETWORK_FAILED;
   }
 }
 
@@ -103,7 +103,7 @@ void DownloadResponseHandler::OnReceiveEarlyHints(
 void DownloadResponseHandler::OnReceiveResponse(
     network::mojom::URLResponseHeadPtr head,
     mojo::ScopedDataPipeConsumerHandle body,
-    absl::optional<mojo_base::BigBuffer> cached_metadata) {
+    std::optional<mojo_base::BigBuffer> cached_metadata) {
   create_info_ = CreateDownloadCreateInfo(*head);
   cert_status_ = head->cert_status;
 
@@ -241,11 +241,9 @@ void DownloadResponseHandler::OnTransferSizeUpdated(
 
 void DownloadResponseHandler::OnComplete(
     const network::URLLoaderCompletionStatus& status) {
-#if defined(OHOS_EX_DOWNLOAD)
-  LOG(INFO) << "oncomplete " << status.error_code;
-  if (status.abort_due_to_cef_browser_destroyed)
-    return;
-#endif  //  OHOS_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  LOG(INFO) << "on compelte " << status.error_code;
+#endif  //  ARKWEB_EX_DOWNLOAD
   if (completed_)
     return;
 

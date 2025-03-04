@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "storage/browser/file_system/external_mount_points.h"
 
 #include <stddef.h>
@@ -249,8 +254,6 @@ TEST(ExternalMountPointsTest, HandlesFileSystemMountType) {
   EXPECT_FALSE(mount_points->HandlesFileSystemMountType(kFileSystemTypeTest));
   // Not even if it's external subtype.
   EXPECT_FALSE(mount_points->HandlesFileSystemMountType(kFileSystemTypeLocal));
-  EXPECT_FALSE(
-      mount_points->HandlesFileSystemMountType(kFileSystemTypeRestrictedLocal));
   EXPECT_FALSE(
       mount_points->HandlesFileSystemMountType(kFileSystemTypeDriveFs));
   EXPECT_FALSE(

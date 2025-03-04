@@ -16,13 +16,32 @@ const NO_END_TAGS_NODE_NAMES = new Set([
 ]);
 
 /**
+ * Returns count of <chrome_annotation>s.
+ */
+function countAnnotations(): number {
+  let nodes = document.querySelectorAll("chrome_annotation");
+  return nodes.length;
+}
+
+/**
  * Simulate clicking annotation at given `index`.
  */
-function clickAnnotation(index: number): boolean {
+function clickAnnotation(index: number, viewport: boolean): boolean {
   let nodes = document.querySelectorAll("chrome_annotation");
-  let decoration = nodes[index];
+  const decoration = nodes[index];
   if (decoration && decoration instanceof HTMLElement) {
-    decoration.click();
+    if (viewport) {
+      const rect = decoration.getBoundingClientRect();
+      const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: rect.x + 1,
+        clientY: rect.y + 1
+      });
+      decoration.parentElement!.dispatchEvent(event);
+    } else {
+      decoration.click();
+    }
     return true;
   }
   return false;
@@ -39,7 +58,8 @@ function clickAnnotation(index: number): boolean {
     if (length >= maxChars) return;
     if (node.nodeType === Node.ELEMENT_NODE) {
       // Reject non-text nodes such as scripts.
-      if (NON_TEXT_NODE_NAMES.has(node.nodeName)) {
+      if (NON_TEXT_NODE_NAMES.has(node.nodeName) &&
+          node.nodeName !== 'CHROME_ANNOTATION') {
         return;
       }
       const element = node as Element;
@@ -73,5 +93,6 @@ function clickAnnotation(index: number): boolean {
 
 gCrWeb.annotationsTest = {
   getPageTaggedText,
+  countAnnotations,
   clickAnnotation,
 };

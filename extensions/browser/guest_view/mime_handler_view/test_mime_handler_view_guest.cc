@@ -6,7 +6,7 @@
 
 #include "base/functional/bind.h"
 #include "base/task/single_thread_task_runner.h"
-#include "base/test/test_timeouts.h"
+#include "base/test/run_until.h"
 #include "base/time/time.h"
 #include "components/guest_view/browser/test_guest_view_manager.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -18,8 +18,8 @@ using guest_view::GuestViewBase;
 namespace extensions {
 
 TestMimeHandlerViewGuest::TestMimeHandlerViewGuest(
-    content::WebContents* owner_web_contents)
-    : MimeHandlerViewGuest(owner_web_contents) {}
+    content::RenderFrameHost* owner_rfh)
+    : MimeHandlerViewGuest(owner_rfh) {}
 
 TestMimeHandlerViewGuest::~TestMimeHandlerViewGuest() = default;
 
@@ -34,8 +34,8 @@ void TestMimeHandlerViewGuest::RegisterTestGuestViewType(
 
 // static
 std::unique_ptr<GuestViewBase> TestMimeHandlerViewGuest::Create(
-    content::WebContents* owner_web_contents) {
-  return base::WrapUnique(new TestMimeHandlerViewGuest(owner_web_contents));
+    content::RenderFrameHost* owner_rfh) {
+  return base::WrapUnique(new TestMimeHandlerViewGuest(owner_rfh));
 }
 
 // static
@@ -44,22 +44,23 @@ void TestMimeHandlerViewGuest::DelayNextCreateWebContents(int delay) {
 }
 
 void TestMimeHandlerViewGuest::WaitForGuestAttached() {
-  if (attached())
+  if (attached()) {
     return;
+  }
   created_message_loop_runner_ = new content::MessageLoopRunner;
   created_message_loop_runner_->Run();
 }
 
-void TestMimeHandlerViewGuest::CreateWebContents(
+void TestMimeHandlerViewGuest::CreateInnerPage(
     std::unique_ptr<GuestViewBase> owned_this,
     const base::Value::Dict& create_params,
-    WebContentsCreatedCallback callback) {
+    GuestPageCreatedCallback callback) {
   // Delay the creation of the guest's WebContents if |delay_| is set.
   if (delay_) {
     auto delta = base::Milliseconds(delay_);
     content::GetUIThreadTaskRunner({})->PostDelayedTask(
         FROM_HERE,
-        base::BindOnce(&TestMimeHandlerViewGuest::CallBaseCreateWebContents,
+        base::BindOnce(&TestMimeHandlerViewGuest::CallBaseCreateInnerPage,
                        weak_ptr_factory_.GetWeakPtr(), std::move(owned_this),
                        create_params.Clone(), std::move(callback)),
         delta);
@@ -69,8 +70,8 @@ void TestMimeHandlerViewGuest::CreateWebContents(
     return;
   }
 
-  MimeHandlerViewGuest::CreateWebContents(std::move(owned_this), create_params,
-                                          std::move(callback));
+  MimeHandlerViewGuest::CreateInnerPage(std::move(owned_this), create_params,
+                                        std::move(callback));
 }
 
 void TestMimeHandlerViewGuest::DidAttachToEmbedder() {
@@ -82,25 +83,21 @@ void TestMimeHandlerViewGuest::DidAttachToEmbedder() {
 void TestMimeHandlerViewGuest::WaitForGuestLoadStartThenStop(
     GuestViewBase* guest_view) {
   auto* guest_contents = guest_view->web_contents();
-
-  while (!guest_contents->IsLoading() &&
-         !guest_view->GetController().GetLastCommittedEntry()) {
-    base::RunLoop run_loop;
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
-        FROM_HERE, run_loop.QuitClosure(), TestTimeouts::tiny_timeout());
-    run_loop.Run();
-  }
-
+  // Wait for loading to start.
+  EXPECT_TRUE(base::test::RunUntil([&]() {
+    return guest_contents->IsLoading() ||
+           guest_view->GetController().GetLastCommittedEntry();
+  }));
   ASSERT_TRUE(content::WaitForLoadStop(guest_contents));
 }
 
-void TestMimeHandlerViewGuest::CallBaseCreateWebContents(
+void TestMimeHandlerViewGuest::CallBaseCreateInnerPage(
     std::unique_ptr<GuestViewBase> owned_this,
     base::Value::Dict create_params,
-    WebContentsCreatedCallback callback) {
+    GuestPageCreatedCallback callback) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-  MimeHandlerViewGuest::CreateWebContents(std::move(owned_this), create_params,
-                                          std::move(callback));
+  MimeHandlerViewGuest::CreateInnerPage(std::move(owned_this), create_params,
+                                        std::move(callback));
 }
 
 // static

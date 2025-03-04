@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "base/check.h"
+#include "base/compiler_specific.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cc/paint/paint_flags.h"
@@ -23,6 +24,7 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/metadata/metadata_header_macros.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
 #include "ui/color/color_id.h"
 #include "ui/color/color_provider.h"
 #include "ui/events/event.h"
@@ -33,6 +35,7 @@
 #include "ui/gfx/geometry/insets.h"
 #include "ui/native_theme/native_theme.h"
 #include "ui/strings/grit/ui_strings.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/background.h"
 #include "ui/views/border.h"
 #include "ui/views/color_chooser/color_chooser_listener.h"
@@ -73,8 +76,9 @@ bool GetColorFromText(const std::u16string& text, SkColor* result) {
 // A view that processes mouse events and gesture events using a common
 // interface.
 class LocatedEventHandlerView : public views::View {
+  METADATA_HEADER(LocatedEventHandlerView, views::View)
+
  public:
-  METADATA_HEADER(LocatedEventHandlerView);
   LocatedEventHandlerView(const LocatedEventHandlerView&) = delete;
   LocatedEventHandlerView& operator=(const LocatedEventHandlerView&) = delete;
   ~LocatedEventHandlerView() override = default;
@@ -97,8 +101,8 @@ class LocatedEventHandlerView : public views::View {
   }
 
   void OnGestureEvent(ui::GestureEvent* event) override {
-    if (event->type() == ui::ET_GESTURE_TAP ||
-        event->type() == ui::ET_GESTURE_TAP_DOWN ||
+    if (event->type() == ui::EventType::kGestureTap ||
+        event->type() == ui::EventType::kGestureTapDown ||
         event->IsScrollGestureEvent()) {
       ProcessEventAtLocation(event->location());
       event->SetHandled();
@@ -106,7 +110,7 @@ class LocatedEventHandlerView : public views::View {
   }
 };
 
-BEGIN_METADATA(LocatedEventHandlerView, views::View)
+BEGIN_METADATA(LocatedEventHandlerView)
 END_METADATA
 
 void DrawGradientRect(const gfx::Rect& rect,
@@ -114,7 +118,7 @@ void DrawGradientRect(const gfx::Rect& rect,
                       SkColor end_color,
                       bool is_horizontal,
                       gfx::Canvas* canvas) {
-  // TODO(crbug/1308932): Remove FromColor and make all SkColor4f.
+  // TODO(crbug.com/40219248): Remove FromColor and make all SkColor4f.
   SkColor4f colors[2] = {SkColor4f::FromColor(start_color),
                          SkColor4f::FromColor(end_color)};
   SkPoint points[2];
@@ -139,9 +143,9 @@ namespace views {
 // The class to choose the hue of the color.  It draws a vertical bar and
 // the indicator for the currently selected hue.
 class HueView : public LocatedEventHandlerView {
- public:
-  METADATA_HEADER(HueView);
+  METADATA_HEADER(HueView, LocatedEventHandlerView)
 
+ public:
   using HueChangedCallback = base::RepeatingCallback<void(SkScalar)>;
   explicit HueView(const HueChangedCallback& changed_callback);
   HueView(const HueView&) = delete;
@@ -158,7 +162,8 @@ class HueView : public LocatedEventHandlerView {
   void ProcessEventAtLocation(const gfx::Point& point) override;
 
   // views::View
-  gfx::Size CalculatePreferredSize() const override;
+  gfx::Size CalculatePreferredSize(
+      const SizeBounds& /*available_size*/) const override;
   void OnPaint(gfx::Canvas* canvas) override;
 
   HueChangedCallback changed_callback_;
@@ -197,7 +202,8 @@ void HueView::ProcessEventAtLocation(const gfx::Point& point) {
   SchedulePaint();
 }
 
-gfx::Size HueView::CalculatePreferredSize() const {
+gfx::Size HueView::CalculatePreferredSize(
+    const SizeBounds& /*available_size*/) const {
   // We put indicators on the both sides of the hue bar.
   return gfx::Size(kHueBarWidth + kHueIndicatorSize * 2 + kBorderWidth * 2,
                    kSaturationValueSize + kBorderWidth * 2);
@@ -247,7 +253,7 @@ void HueView::OnPaint(gfx::Canvas* canvas) {
   canvas->DrawPath(right_indicator_path, indicator_flags);
 }
 
-BEGIN_METADATA(HueView, LocatedEventHandlerView)
+BEGIN_METADATA(HueView)
 END_METADATA
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -257,9 +263,9 @@ END_METADATA
 // a square area and the indicator for the currently selected saturation and
 // value.
 class SaturationValueView : public LocatedEventHandlerView {
- public:
-  METADATA_HEADER(SaturationValueView);
+  METADATA_HEADER(SaturationValueView, LocatedEventHandlerView)
 
+ public:
   using SaturationValueChangedCallback =
       base::RepeatingCallback<void(SkScalar, SkScalar)>;
   explicit SaturationValueView(
@@ -279,7 +285,8 @@ class SaturationValueView : public LocatedEventHandlerView {
   void ProcessEventAtLocation(const gfx::Point& point) override;
 
   // views::View
-  gfx::Size CalculatePreferredSize() const override;
+  gfx::Size CalculatePreferredSize(
+      const SizeBounds& /*available_size*/) const override;
   void OnPaint(gfx::Canvas* canvas) override;
 
   void UpdateMarkerColor();
@@ -346,7 +353,8 @@ void SaturationValueView::ProcessEventAtLocation(const gfx::Point& point) {
   changed_callback_.Run(saturation, value);
 }
 
-gfx::Size SaturationValueView::CalculatePreferredSize() const {
+gfx::Size SaturationValueView::CalculatePreferredSize(
+    const SizeBounds& /*available_size*/) const {
   return gfx::Size(kSaturationValueSize + kBorderWidth * 2,
                    kSaturationValueSize + kBorderWidth * 2);
 }
@@ -386,7 +394,7 @@ void SaturationValueView::UpdateMarkerColor() {
   marker_color_ = color_utils::GetColorWithMaxContrast(SkHSVToColor(hsv));
 }
 
-BEGIN_METADATA(SaturationValueView, LocatedEventHandlerView)
+BEGIN_METADATA(SaturationValueView)
 END_METADATA
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -394,8 +402,9 @@ END_METADATA
 //
 // A view to simply show the selected color in a rectangle.
 class SelectedColorPatchView : public views::View {
+  METADATA_HEADER(SelectedColorPatchView, views::View)
+
  public:
-  METADATA_HEADER(SelectedColorPatchView);
   SelectedColorPatchView();
   SelectedColorPatchView(const SelectedColorPatchView&) = delete;
   SelectedColorPatchView& operator=(const SelectedColorPatchView&) = delete;
@@ -418,7 +427,7 @@ void SelectedColorPatchView::SetColor(SkColor color) {
   SchedulePaint();
 }
 
-BEGIN_METADATA(SelectedColorPatchView, views::View)
+BEGIN_METADATA(SelectedColorPatchView)
 END_METADATA
 
 std::unique_ptr<View> ColorChooser::BuildView() {
@@ -432,11 +441,12 @@ std::unique_ptr<View> ColorChooser::BuildView() {
   auto container = std::make_unique<View>();
   container->SetLayoutManager(std::make_unique<BoxLayout>(
       BoxLayout::Orientation::kHorizontal, gfx::Insets(), kMarginWidth));
-  saturation_value_ = container->AddChildView(
-      std::make_unique<SaturationValueView>(base::BindRepeating(
-          &ColorChooser::OnSaturationValueChosen, this->AsWeakPtr())));
-  hue_ = container->AddChildView(std::make_unique<HueView>(
-      base::BindRepeating(&ColorChooser::OnHueChosen, this->AsWeakPtr())));
+  saturation_value_ =
+      container->AddChildView(std::make_unique<SaturationValueView>(
+          base::BindRepeating(&ColorChooser::OnSaturationValueChosen,
+                              weak_ptr_factory_.GetWeakPtr())));
+  hue_ = container->AddChildView(std::make_unique<HueView>(base::BindRepeating(
+      &ColorChooser::OnHueChosen, weak_ptr_factory_.GetWeakPtr())));
   view->AddChildView(std::move(container));
 
   auto container2 = std::make_unique<View>();
@@ -446,7 +456,7 @@ std::unique_ptr<View> ColorChooser::BuildView() {
   auto textfield = std::make_unique<Textfield>();
   textfield->set_controller(this);
   textfield->SetDefaultWidthInChars(kTextfieldLengthInChars);
-  textfield->SetAccessibleName(
+  textfield->GetViewAccessibility().SetName(
       l10n_util::GetStringUTF16(IDS_APP_ACCNAME_COLOR_CHOOSER_HEX_INPUT));
   textfield_ = container2->AddChildView(std::move(textfield));
   selected_color_patch_ =
@@ -524,10 +534,11 @@ bool ColorChooser::HandleKeyEvent(Textfield* sender,
                                   const ui::KeyEvent& key_event) {
   DCHECK(IsViewAttached());
 
-  if (key_event.type() != ui::ET_KEY_PRESSED ||
+  if (key_event.type() != ui::EventType::kKeyPressed ||
       (key_event.key_code() != ui::VKEY_RETURN &&
-       key_event.key_code() != ui::VKEY_ESCAPE))
+       key_event.key_code() != ui::VKEY_ESCAPE)) {
     return false;
+  }
 
   tracker_.view()->GetWidget()->Close();
   return true;
@@ -540,10 +551,9 @@ std::unique_ptr<WidgetDelegate> ColorChooser::MakeWidgetDelegate() {
   delegate->SetCanMinimize(false);
   delegate->SetContentsView(BuildView());
   delegate->SetInitiallyFocusedView(textfield_);
-  delegate->SetModalType(ui::MODAL_TYPE_WINDOW);
-  delegate->SetOwnedByWidget(true);
-  delegate->RegisterWindowClosingCallback(
-      base::BindOnce(&ColorChooser::OnViewClosing, this->AsWeakPtr()));
+  delegate->SetModalType(ui::mojom::ModalType::kWindow);
+  delegate->RegisterWindowClosingCallback(base::BindOnce(
+      &ColorChooser::OnViewClosing, weak_ptr_factory_.GetWeakPtr()));
 
   return delegate;
 }
@@ -551,10 +561,12 @@ std::unique_ptr<WidgetDelegate> ColorChooser::MakeWidgetDelegate() {
 ColorChooser::ColorChooser(ColorChooserListener* listener, SkColor initial)
     : listener_(listener), initial_color_(initial) {}
 
-ColorChooser::~ColorChooser() = default;
+ColorChooser::~ColorChooser() {
+  textfield_->set_controller(nullptr);
+}
 
 void ColorChooser::SetColor(SkColor color) {
-  SkColorToHSV(color, hsv_);
+  UNSAFE_TODO(SkColorToHSV(color, hsv_.data()));
   listener_->OnColorChosen(GetColor());
 }
 
@@ -570,7 +582,7 @@ void ColorChooser::SetSaturationValue(SkScalar saturation, SkScalar value) {
 }
 
 SkColor ColorChooser::GetColor() const {
-  return SkHSVToColor(255, hsv_);
+  UNSAFE_TODO(return SkHSVToColor(255, hsv_.data()));
 }
 
 void ColorChooser::OnViewClosing() {

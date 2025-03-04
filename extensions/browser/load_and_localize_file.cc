@@ -34,15 +34,16 @@ void MaybeLocalizeInBackground(
     std::string* data) {
   bool needs_message_substituion =
       data->find(extensions::MessageBundle::kMessageBegin) != std::string::npos;
-  if (!needs_message_substituion)
+  if (!needs_message_substituion) {
     return;
+  }
 
   base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
                                                 base::BlockingType::MAY_BLOCK);
-  std::unique_ptr<MessageBundle::SubstitutionMap> localization_messages(
+  std::unique_ptr<MessageBundle::SubstitutionMap> localization_messages =
       l10n_file_util::LoadMessageBundleSubstitutionMap(
           extension_path, extension_id, extension_default_locale,
-          gzip_permission));
+          gzip_permission);
 
   std::string error;
   MessageBundle::ReplaceMessagesWithExternalDictionary(*localization_messages,
@@ -133,12 +134,12 @@ void LoadAndLocalizeResources(const Extension& extension,
     if (!localize_file) {
       base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
           FROM_HERE,
-          base::BindOnce(std::move(callback), std::move(data), absl::nullopt));
+          base::BindOnce(std::move(callback), std::move(data), std::nullopt));
     } else {
       auto callback_adapter =
           [](LoadAndLocalizeResourcesCallback callback,
              std::vector<std::unique_ptr<std::string>> data) {
-            std::move(callback).Run(std::move(data), absl::nullopt);
+            std::move(callback).Run(std::move(data), std::nullopt);
           };
       base::ThreadPool::PostTaskAndReplyWithResult(
           FROM_HERE,

@@ -210,7 +210,7 @@ PATH_SPECIFIC_ALLOWLISTED_LICENSES = {
     ],
 
     # http://crbug.com/333508
-    'buildtools/clang_format/script': [
+    'third_party/clang-format/script': [
         'UNKNOWN',
     ],
     'third_party/devscripts': [
@@ -475,10 +475,6 @@ PATH_SPECIFIC_ALLOWLISTED_LICENSES = {
         'UNKNOWN',
     ],
 
-    'third_party/minizip': [
-        'UNKNOWN',
-    ],
-
     # BSD License. http://bugzilla.maptools.org/show_bug.cgi?id=2532
     'third_party/pdfium/third_party/libtiff/tif_ojpeg.c': [
         'UNKNOWN',
@@ -531,9 +527,6 @@ PATH_SPECIFIC_ALLOWLISTED_LICENSES = {
     'tools/python/google/__init__.py': [
         'UNKNOWN',
     ],
-    'tools/stats_viewer/Properties/AssemblyInfo.cs': [
-        'UNKNOWN',
-    ],
     'tools/symsrc/pefile.py': [
         'UNKNOWN',
     ],
@@ -573,9 +566,6 @@ PATH_SPECIFIC_ALLOWLISTED_LICENSES = {
 EXCLUDED_PATHS = [
     # Don't check generated files
     re.compile('^out/'),
-
-    # Don't check downloaded goma client binaries
-    re.compile('^build/goma/client/'),
 
     # Don't check sysroot directories
     re.compile('^build/linux/.+-sysroot/'),

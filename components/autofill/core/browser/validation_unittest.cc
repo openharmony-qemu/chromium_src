@@ -9,12 +9,12 @@
 #include <string>
 
 #include "base/strings/utf_string_conversions.h"
+#include "base/test/scoped_feature_list.h"
 #include "base/time/time.h"
-#include "components/autofill/core/browser/data_model/credit_card.h"
-#include "components/autofill/core/browser/field_types.h"
+#include "components/autofill/core/common/autofill_payments_features.h"
+#include "components/autofill/core/common/credit_card_network_identifiers.h"
 #include "components/strings/grit/components_strings.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "ui/base/l10n/l10n_util.h"
 
 namespace autofill {
 namespace {
@@ -34,27 +34,6 @@ struct SecurityCodeCardTypePair {
   const char* card_network;
 };
 
-// From
-// https://www.paypalobjects.com/en_US/vhelp/paypalmanager_help/credit_card_numbers.htm
-const char16_t* const kValidNumbers[] = {
-    u"378282246310005",     u"3714 4963 5398 431",  u"3787-3449-3671-000",
-    u"5610591081018250",    u"3056 9309 0259 04",   u"3852-0000-0232-37",
-    u"6011111111111117",    u"6011 0009 9013 9424", u"3530-1113-3330-0000",
-    u"3566002020360505",
-    u"5555 5555 5555 4444",  // Mastercard.
-    u"5105-1051-0510-5100",
-    u"4111111111111111",  // Visa.
-    u"4012 8888 8888 1881", u"4222-2222-2222-2",    u"5019717010103742",
-    u"6331101999990016",    u"6247130048162403",
-    u"4532261615476013542",  // Visa, 19 digits.
-    u"5067071446391278",     // Elo.
-};
-const char16_t* const kInvalidNumbers[] = {
-    u"4111 1111 112",        /* too short */
-    u"41111111111111111115", /* too long */
-    u"4111-1111-1111-1110",  /* wrong Luhn checksum */
-    u"3056 9309 0259 04aa",  /* non-digit characters */
-};
 const char kCurrentDate[] = "1 May 2013";
 const IntExpirationDate kValidCreditCardIntExpirationDate[] = {
     {2013, 5},   // Valid month in current year.
@@ -94,44 +73,6 @@ const char16_t* const kUnplausibleCreditCardCVCNumbers[] = {u"abc", u"21",
                                                             u"11111", u"21a1"};
 const char16_t* const kPlausibleCreditCardCVCNumbers[] = {u"1234", u"2099",
                                                           u"111", u"982"};
-}  // namespace
-
-TEST(AutofillValidation, IsValidCreditCardNumber) {
-  for (const char16_t* valid_number : kValidNumbers) {
-    SCOPED_TRACE(base::UTF16ToUTF8(valid_number));
-    EXPECT_TRUE(IsValidCreditCardNumber(valid_number));
-  }
-  for (const char16_t* invalid_number : kInvalidNumbers) {
-    SCOPED_TRACE(base::UTF16ToUTF8(invalid_number));
-    EXPECT_FALSE(IsValidCreditCardNumber(invalid_number));
-  }
-}
-
-// Tests the plausibility of the length of the supplied credit card number.
-TEST(AutofillValidation, IsValidCreditCardNumberLength) {
-  for (const char16_t* valid_number : kValidNumbers) {
-    SCOPED_TRACE(base::UTF16ToUTF8(valid_number));
-    EXPECT_TRUE(HasCorrectLength(CreditCard::StripSeparators(valid_number)));
-  }
-  // Only the first 2 invalid numbers in kInvalidNumbers have a bad length.
-  for (size_t i = 0; i < 2; ++i) {
-    const char16_t* invalid_number = kInvalidNumbers[i];
-    SCOPED_TRACE(base::UTF16ToUTF8(invalid_number));
-    EXPECT_FALSE(HasCorrectLength(CreditCard::StripSeparators(invalid_number)));
-  }
-}
-
-// Tests the validation of credit card numbers using the Luhn check.
-TEST(AutofillValidation, CreditCardNumberLuhnTest) {
-  for (const char16_t* valid_number : kValidNumbers) {
-    SCOPED_TRACE(base::UTF16ToUTF8(valid_number));
-    EXPECT_TRUE(PassesLuhnCheck(CreditCard::StripSeparators(valid_number)));
-  }
-
-  const char16_t* invalid_luhn_number = kInvalidNumbers[2];
-  SCOPED_TRACE(base::UTF16ToUTF8(invalid_luhn_number));
-  EXPECT_FALSE(PassesLuhnCheck(invalid_luhn_number));
-}
 
 // Tests the plausibility of supplied credit card expiration years.
 TEST(AutofillValidation, IsPlausibleCreditCardExparationYear) {
@@ -217,267 +158,6 @@ TEST(AutofillValidation, IsValidEmailAddress) {
     EXPECT_FALSE(IsValidEmailAddress(invalid_email));
   }
 }
-
-struct ValidationCase {
-  ValidationCase(const char16_t* value,
-                 ServerFieldType field_type,
-                 bool expected_valid,
-                 int expected_error_id)
-      : value(value),
-        field_type(field_type),
-        expected_valid(expected_valid),
-        expected_error_id(expected_error_id) {}
-  ~ValidationCase() {}
-
-  const char16_t* const value;
-  const ServerFieldType field_type;
-  const bool expected_valid;
-  const int expected_error_id;
-};
-
-class AutofillTypeValidationTest
-    : public testing::TestWithParam<ValidationCase> {};
-
-TEST_P(AutofillTypeValidationTest, IsValidForType) {
-  std::u16string error_message;
-  EXPECT_EQ(
-      GetParam().expected_valid,
-      IsValidForType(GetParam().value, GetParam().field_type, &error_message))
-      << "Failed to validate " << base::UTF16ToUTF8(GetParam().value)
-      << " (type " << GetParam().field_type << ")";
-  if (!GetParam().expected_valid) {
-    EXPECT_EQ(l10n_util::GetStringUTF16(GetParam().expected_error_id),
-              error_message);
-  }
-}
-
-INSTANTIATE_TEST_SUITE_P(
-    CreditCardExpDate,
-    AutofillTypeValidationTest,
-    testing::Values(
-        ValidationCase(u"05/2087", CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR, true, 0),
-        ValidationCase(u"05-2087", CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR, true, 0),
-        ValidationCase(u"052087", CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR, true, 0),
-        ValidationCase(u"05|2087", CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR, true, 0),
-
-        ValidationCase(u"05/2012",
-                       CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED),
-        ValidationCase(u"MM/2012",
-                       CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_CARD_EXPIRATION_INVALID_VALIDATION_MESSAGE),
-        ValidationCase(u"05/12",
-                       CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_CARD_EXPIRATION_INVALID_VALIDATION_MESSAGE),
-        ValidationCase(u"05/45",
-                       CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_CARD_EXPIRATION_INVALID_VALIDATION_MESSAGE),
-        ValidationCase(u"05/1987",
-                       CREDIT_CARD_EXP_DATE_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_CARD_EXPIRATION_INVALID_VALIDATION_MESSAGE),
-
-        ValidationCase(u"05/87", CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR, true, 0),
-        ValidationCase(u"05-87", CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR, true, 0),
-        ValidationCase(u"0587", CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR, true, 0),
-        ValidationCase(u"05|87", CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR, true, 0),
-        ValidationCase(u"05/1987",
-                       CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_CARD_EXPIRATION_INVALID_VALIDATION_MESSAGE),
-        ValidationCase(u"05/12",
-                       CREDIT_CARD_EXP_DATE_2_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED)));
-
-INSTANTIATE_TEST_SUITE_P(
-    CreditCardMonth,
-    AutofillTypeValidationTest,
-    testing::Values(
-        ValidationCase(u"01", CREDIT_CARD_EXP_MONTH, true, 0),
-        ValidationCase(u"1", CREDIT_CARD_EXP_MONTH, true, 0),
-        ValidationCase(u"12", CREDIT_CARD_EXP_MONTH, true, 0),
-        ValidationCase(
-            u"0",
-            CREDIT_CARD_EXP_MONTH,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_MONTH),
-        ValidationCase(
-            u"-1",
-            CREDIT_CARD_EXP_MONTH,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_MONTH),
-        ValidationCase(
-            u"13",
-            CREDIT_CARD_EXP_MONTH,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_MONTH)));
-
-INSTANTIATE_TEST_SUITE_P(
-    CreditCardYear,
-    AutofillTypeValidationTest,
-    testing::Values(
-        /* 2-digit year */
-        ValidationCase(u"87", CREDIT_CARD_EXP_2_DIGIT_YEAR, true, 0),
-        // These are considered expired in the context of this millennium.
-        ValidationCase(u"02",
-                       CREDIT_CARD_EXP_2_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED),
-        ValidationCase(u"15",
-                       CREDIT_CARD_EXP_2_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED),
-        // Invalid formats.
-        ValidationCase(
-            u"1",
-            CREDIT_CARD_EXP_2_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR),
-        ValidationCase(
-            u"123",
-            CREDIT_CARD_EXP_2_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR),
-        ValidationCase(
-            u"2087",
-            CREDIT_CARD_EXP_2_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR),
-
-        /* 4-digit year */
-        ValidationCase(u"2087", CREDIT_CARD_EXP_4_DIGIT_YEAR, true, 0),
-        // Expired.
-        ValidationCase(u"2000",
-                       CREDIT_CARD_EXP_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED),
-        ValidationCase(u"2015",
-                       CREDIT_CARD_EXP_4_DIGIT_YEAR,
-                       false,
-                       IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRED),
-        // Invalid formats.
-        ValidationCase(
-            u"00",
-            CREDIT_CARD_EXP_4_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR),
-        ValidationCase(
-            u"123",
-            CREDIT_CARD_EXP_4_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR),
-        ValidationCase(
-            u"87",
-            CREDIT_CARD_EXP_4_DIGIT_YEAR,
-            false,
-            IDS_PAYMENTS_VALIDATION_INVALID_CREDIT_CARD_EXPIRATION_YEAR)));
-
-struct CCNumberCase {
-  CCNumberCase(const char16_t* value,
-               const std::set<std::string> supported_basic_card_networks,
-               bool expected_valid,
-               int expected_error_id)
-      : value(value),
-        supported_basic_card_networks(supported_basic_card_networks),
-        expected_valid(expected_valid),
-        expected_error_id(expected_error_id) {}
-  ~CCNumberCase() {}
-
-  const char16_t* const value;
-  const std::set<std::string> supported_basic_card_networks;
-  const bool expected_valid;
-  const int expected_error_id;
-};
-
-class AutofillCCNumberValidationTest
-    : public testing::TestWithParam<CCNumberCase> {};
-
-TEST_P(AutofillCCNumberValidationTest, IsValidCreditCardNumber) {
-  std::u16string error_message;
-  EXPECT_EQ(GetParam().expected_valid,
-            IsValidCreditCardNumberForBasicCardNetworks(
-                GetParam().value, GetParam().supported_basic_card_networks,
-                &error_message))
-      << "Failed to validate CC number " << base::UTF16ToUTF8(GetParam().value);
-  if (!GetParam().expected_valid) {
-    EXPECT_EQ(l10n_util::GetStringUTF16(GetParam().expected_error_id),
-              error_message);
-  }
-}
-
-static const std::set<std::string> kAllBasicCardNetworks{
-    "amex",       "discover", "diners", "elo",      "jcb",
-    "mastercard", "mir",      "troy",   "unionpay", "visa"};
-
-INSTANTIATE_TEST_SUITE_P(
-    CreditCardNumber,
-    AutofillCCNumberValidationTest,
-    testing::Values(
-        CCNumberCase(kValidNumbers[0], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[1], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[2], kAllBasicCardNetworks, true, 0),
-        // Generic card not supported.
-        CCNumberCase(kValidNumbers[3],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_VALIDATION_UNSUPPORTED_CREDIT_CARD_TYPE),
-
-        CCNumberCase(kValidNumbers[4], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[5], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[6], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[7], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[8], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[9], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[10], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[11], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[12], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[13], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[14], kAllBasicCardNetworks, true, 0),
-        // Generic cards not supported.
-        CCNumberCase(kValidNumbers[15],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_VALIDATION_UNSUPPORTED_CREDIT_CARD_TYPE),
-        CCNumberCase(kValidNumbers[16],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_VALIDATION_UNSUPPORTED_CREDIT_CARD_TYPE),
-
-        CCNumberCase(kValidNumbers[17], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[18], kAllBasicCardNetworks, true, 0),
-        CCNumberCase(kValidNumbers[19], kAllBasicCardNetworks, true, 0),
-
-        CCNumberCase(kInvalidNumbers[0],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_CARD_NUMBER_INVALID_VALIDATION_MESSAGE),
-        CCNumberCase(kInvalidNumbers[1],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_CARD_NUMBER_INVALID_VALIDATION_MESSAGE),
-        CCNumberCase(kInvalidNumbers[2],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_CARD_NUMBER_INVALID_VALIDATION_MESSAGE),
-        CCNumberCase(kInvalidNumbers[3],
-                     kAllBasicCardNetworks,
-                     false,
-                     IDS_PAYMENTS_CARD_NUMBER_INVALID_VALIDATION_MESSAGE),
-
-        // Valid numbers can still be invalid if the type is not supported.
-        CCNumberCase(kValidNumbers[10],  // Mastercard number.
-                     {"visa"},
-                     false,
-                     IDS_PAYMENTS_VALIDATION_UNSUPPORTED_CREDIT_CARD_TYPE),
-        CCNumberCase(kValidNumbers[12],  // Visa number.
-                     {"jcb", "diners", "unionpay", "mastercard"},
-                     false,
-                     IDS_PAYMENTS_VALIDATION_UNSUPPORTED_CREDIT_CARD_TYPE)));
 
 struct GetCvcLengthForCardTypeCase {
   GetCvcLengthForCardTypeCase(const char* card_network,
@@ -589,8 +269,7 @@ INSTANTIATE_TEST_SUITE_P(InternationalBankAccountNumber,
 
 TEST_P(AutofillIsInternationalBankAccountNumber,
        IsInternationalBankAccountNumber) {
-  EXPECT_TRUE(IsInternationalBankAccountNumber(GetParam()))
-      << base::StringPiece16(GetParam());
+  EXPECT_TRUE(IsInternationalBankAccountNumber(GetParam())) << GetParam();
   EXPECT_TRUE(IsInternationalBankAccountNumber(u" " + GetParam() + u" "));
   EXPECT_FALSE(IsInternationalBankAccountNumber(u"DE" + GetParam()));
   EXPECT_FALSE(IsInternationalBankAccountNumber(GetParam() + u"."));
@@ -598,4 +277,5 @@ TEST_P(AutofillIsInternationalBankAccountNumber,
       GetParam() + u"0000000000000000000000000000000000000"));
 }
 
+}  // namespace
 }  // namespace autofill

@@ -2,10 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+
 static_library("renderer") {
   sources = [
-    "ad_resource_tracker.cc",
-    "ad_resource_tracker.h",
     "subresource_filter_agent.cc",
     "subresource_filter_agent.h",
     "unverified_ruleset_dealer.cc",
@@ -14,8 +14,7 @@ static_library("renderer") {
     "web_document_subresource_filter_impl.h",
   ]
 
-  #ifdef OHOS_ARKWEB_ADBLOCK
-  if (defined(ohos_arkweb_adblock) && ohos_arkweb_adblock) {
+  if (defined(arkweb_adblock) && arkweb_adblock) {
     sources += [
       "user_subresource_filter_agent.cc",
       "user_subresource_filter_agent.h",
@@ -23,21 +22,28 @@ static_library("renderer") {
       "user_unverified_ruleset_dealer.h"
     ]
   }
-  #endif
 
-  deps = [
+  configs += [ "//build/config/compiler:wexit_time_destructors" ]
+  public_deps = [
     "//base",
-    "//components/subresource_filter/content/common",
     "//components/subresource_filter/content/mojom",
     "//components/subresource_filter/core/common",
     "//components/subresource_filter/core/mojom",
-    "//content/public/common",
+    "//components/url_pattern_index/proto:url_pattern_index",
     "//content/public/renderer",
-    "//third_party/blink/public:blink",
-    "//third_party/blink/public/common",
+    "//mojo/public/cpp/bindings",
     "//url",
   ]
-  public_deps = [ "//ipc" ]
+  deps = [
+    "//components/subresource_filter/content/shared/common",
+    "//components/subresource_filter/content/shared/renderer",
+    "//components/subresource_filter/core/browser",
+    "//content/public/common",
+    "//ipc",
+    "//third_party/blink/public:blink",
+    "//third_party/blink/public:blink_headers",
+    "//third_party/blink/public/common",
+  ]
 }
 
 source_set("unit_tests") {
@@ -47,7 +53,6 @@ source_set("unit_tests") {
     ":renderer",
     "//base",
     "//base/test:test_support",
-    "//components/subresource_filter/content/common",
     "//components/subresource_filter/content/mojom",
     "//components/subresource_filter/core/common",
     "//components/subresource_filter/core/common:test_support",
@@ -56,4 +61,7 @@ source_set("unit_tests") {
     "//third_party/blink/public:blink",
     "//url",
   ]
+  if (is_ios) {
+    deps += [ "//components/test:subresource_filter_test_bundle_data" ]
+  }
 }

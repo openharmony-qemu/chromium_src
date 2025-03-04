@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -25,19 +26,23 @@
 #include "components/download/public/common/download_interrupt_reasons.h"
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/download_job.h"
+#include "components/download/public/common/download_target_info.h"
 #include "components/download/public/common/download_url_parameters.h"
 #include "components/download/public/common/resume_mode.h"
 #include "components/download/public/common/url_loader_factory_provider.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "services/network/public/mojom/fetch_api.mojom-shared.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if defined(OHOS_EX_DOWNLOAD)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/supports_user_data.h"
-#endif  //  OHOS_EX_DOWNLOAD
+#endif
 
 namespace download {
 class DownloadFile;
@@ -59,7 +64,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
                 const std::string& serialized_embedder_download_data,
                 const GURL& tab_url,
                 const GURL& tab_referrer_url,
-                const absl::optional<url::Origin>& request_initiator,
+                const std::optional<url::Origin>& request_initiator,
                 const std::string& suggested_filename,
                 const base::FilePath& forced_file_path,
                 ui::PageTransition transition_type,
@@ -67,11 +72,11 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
                 const std::string& remote_address,
                 base::Time start_time,
                 ::network::mojom::CredentialsMode credentials_mode,
-                const absl::optional<net::IsolationInfo>& isolation_info,
+                const std::optional<net::IsolationInfo>& isolation_info,
                 int64_t range_request_from,
                 int64_t range_request_to);
     RequestInfo();
-    explicit RequestInfo(const RequestInfo& other);
+    RequestInfo(const RequestInfo& other);
     explicit RequestInfo(const GURL& url);
     ~RequestInfo();
 
@@ -94,7 +99,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     GURL tab_referrer_url;
 
     // The origin of the requester that originally initiated the download.
-    absl::optional<url::Origin> request_initiator;
+    std::optional<url::Origin> request_initiator;
 
     // Filename suggestion from DownloadSaveInfo. It could, among others, be the
     // suggested filename in 'download' attribute of an anchor. Details:
@@ -105,7 +110,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     // the target path.
     base::FilePath forced_file_path;
 
-    // Page transition that triggerred the download.
+    // Page transition that triggered the download.
     ui::PageTransition transition_type = ui::PAGE_TRANSITION_LINK;
 
     // Whether the download was triggered with a user gesture.
@@ -122,7 +127,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
         ::network::mojom::CredentialsMode::kInclude;
 
     // Isolation info for the request.
-    absl::optional<net::IsolationInfo> isolation_info;
+    std::optional<net::IsolationInfo> isolation_info;
 
     // Range request offsets. Used only for explicitly download part of the
     // content.
@@ -140,7 +145,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
                     base::Time end_time);
     DestinationInfo();
     explicit DestinationInfo(TargetDisposition target_disposition);
-    explicit DestinationInfo(const DestinationInfo& other);
+    DestinationInfo(const DestinationInfo& other);
     ~DestinationInfo();
 
     // Whether the target should be overwritten, uniquified or prompted for.
@@ -162,6 +167,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     // Current received bytes.
     int64_t received_bytes = 0;
 
+    // Current uploaded bytes. Used only when the downloaded file is to be save
+    // in the cloud.
+    int64_t uploaded_bytes = 0;
+
     // True if we've saved all the data for the download. If true, then the file
     // at |current_path| contains |received_bytes|, which constitute the
     // entirety of what we expect to save there. A digest of its contents can be
@@ -180,19 +189,21 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
     base::Time end_time;
   };
 
-#if defined(OHOS_EX_DOWNLOAD)
-struct COMPONENTS_DOWNLOAD_EXPORT RequestMethodData : public base::SupportsUserData::Data {
-  std::string request_method_;
-  RequestMethodData(std::string request_method) {
-    request_method_ = request_method;
-  }
-};
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  struct COMPONENTS_DOWNLOAD_EXPORT RequestMethodData
+      : public base::SupportsUserData::Data {
+    std::string request_method_;
+    RequestMethodData(std::string request_method) {
+      request_method_ = request_method;
+    }
+  };
 
-struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Data {
-  int nweb_id_;
-  NWebIdData(int nweb_id) { nweb_id_ = nweb_id; }
-};
-#endif  //  OHOS_EX_DOWNLOAD
+  struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData
+      : public base::SupportsUserData::Data {
+    int nweb_id_;
+    NWebIdData(int nweb_id) { nweb_id_ = nweb_id; }
+  };
+#endif  //  BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   // The maximum number of attempts we will make to resume automatically.
   static const int kMaxAutoResumeAttempts;
 
@@ -213,7 +224,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
       const std::string& serialized_embedder_download_data,
       const GURL& tab_url,
       const GURL& tab_referrer_url,
-      const absl::optional<url::Origin>& request_initiator,
+      const std::optional<url::Origin>& request_initiator,
       const std::string& mime_type,
       const std::string& original_mime_type,
       base::Time start_time,
@@ -263,8 +274,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   void UpdateObservers() override;
   void ValidateDangerousDownload() override;
   void ValidateInsecureDownload() override;
-  void StealDangerousDownload(bool need_removal,
-                              AcquireFileCallback callback) override;
+  void CopyDownload(AcquireFileCallback callback) override;
   void Pause() override;
   void Resume(bool user_resume) override;
   void Cancel(bool user_cancel) override;
@@ -284,7 +294,6 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   bool IsDone() const override;
   int64_t GetBytesWasted() const override;
   int32_t GetAutoResumeCount() const override;
-  bool IsOffTheRecord() const override;
   const GURL& GetURL() const override;
   const std::vector<GURL>& GetUrlChain() const override;
   const GURL& GetOriginalUrl() const override;
@@ -292,7 +301,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   const std::string& GetSerializedEmbedderDownloadData() const override;
   const GURL& GetTabUrl() const override;
   const GURL& GetTabReferrerUrl() const override;
-  const absl::optional<url::Origin>& GetRequestInitiator() const override;
+  const std::optional<url::Origin>& GetRequestInitiator() const override;
   std::string GetSuggestedFilename() const override;
   const scoped_refptr<const net::HttpResponseHeaders>& GetResponseHeaders()
       const override;
@@ -316,6 +325,11 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   bool GetFileExternallyRemoved() const override;
   void DeleteFile(base::OnceCallback<void(bool)> callback) override;
   DownloadFile* GetDownloadFile() override;
+  DownloadItemRenameHandler* GetRenameHandler() override;
+#if BUILDFLAG(IS_ANDROID)
+  bool IsFromExternalApp() override;
+  bool IsMustDownload() override;
+#endif  // BUILDFLAG(IS_ANDROID)
   bool IsDangerous() const override;
   bool IsInsecure() const override;
   DownloadDangerType GetDangerType() const override;
@@ -328,6 +342,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   int64_t GetReceivedBytes() const override;
   const std::vector<DownloadItem::ReceivedSlice>& GetReceivedSlices()
       const override;
+  int64_t GetUploadedBytes() const override;
   base::Time GetStartTime() const override;
   base::Time GetEndTime() const override;
   bool CanShowInFolder() override;
@@ -343,7 +358,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   bool IsParallelDownload() const override;
   DownloadCreationType GetDownloadCreationType() const override;
   ::network::mojom::CredentialsMode GetCredentialsMode() const override;
-  const absl::optional<net::IsolationInfo>& GetIsolationInfo() const override;
+  const std::optional<net::IsolationInfo>& GetIsolationInfo() const override;
   void OnContentCheckCompleted(DownloadDangerType danger_type,
                                DownloadInterruptReason reason) override;
   void OnAsyncScanningCompleted(DownloadDangerType danger_type) override;
@@ -353,9 +368,9 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   void SetDisplayName(const base::FilePath& name) override;
   std::string DebugString(bool verbose) const override;
   void SimulateErrorForTesting(DownloadInterruptReason reason) override;
-#if defined(OHOS_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   const std::string& GetRequestMethod() const;
-#endif 
+#endif
 
   // All remaining public interfaces virtual to allow for DownloadItemImpl
   // mocks.
@@ -416,6 +431,12 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
 
   void SetDownloadId(uint32_t download_id);
 
+#if BUILDFLAG(IS_ANDROID)
+  void set_is_from_external_app(bool is_from_external_app) {
+    is_from_external_app_ = is_from_external_app;
+  }
+#endif  // BUILDFLAG(IS_ANDROID)
+
   const DownloadUrlParameters::RequestHeadersType& request_headers() const {
     return request_headers_;
   }
@@ -427,9 +448,11 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   void SetAutoResumeCountForTesting(int32_t auto_resume_count);
 
   std::pair<int64_t, int64_t> GetRangeRequestOffset() const;
-#if defined(OHOS_EX_DOWNLOAD)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   bool IsBeforeInProgress() const;
-#endif  //  OHOS_EX_DOWNLOAD
+#endif
+
  private:
   // Fine grained states of a download.
   //
@@ -476,7 +499,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
 
     // Embedder is in the process of determining the target of the download, and
     // the download is in an interrupted state. The interrupted state is not
-    // exposed to the emedder until target determination is complete.
+    // exposed to the embedder until target determination is complete.
     //
     // Transitions to (regular):
     //   INTERRUPTED_INTERNAL:    Once the target is determined, the download
@@ -601,22 +624,8 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   // to be called when the target information is available.
   void DetermineDownloadTarget();
 
-  // Called when the target path has been determined. |target_path| is the
-  // suggested target path. |disposition| indicates how the target path should
-  // be used (see TargetDisposition). |danger_type| is the danger level of
-  // |target_path| as determined by the caller. |intermediate_path| is the path
-  // to use to store the download until OnDownloadCompleting() is called.
-  // If |display_name| is empty, the download should keep its current display
-  // name. Otherwise, the new display name should be used.
-  virtual void OnDownloadTargetDetermined(
-      const base::FilePath& target_path,
-      TargetDisposition disposition,
-      DownloadDangerType danger_type,
-      InsecureDownloadStatus insecure_download_status,
-      const base::FilePath& intermediate_path,
-      const base::FilePath& display_name,
-      const std::string& mime_type,
-      DownloadInterruptReason interrupt_reason);
+  // Called when the target path has been determined.
+  virtual void OnDownloadTargetDetermined(DownloadTargetInfo target_info);
 
   void OnDownloadRenamedToIntermediateName(DownloadInterruptReason reason,
                                            const base::FilePath& full_path);
@@ -632,6 +641,9 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   // This may perform final rename if necessary and will eventually call
   // DownloadItem::Completed().
   void OnDownloadCompleting();
+
+  void OnRenameAndAnnotateDone(DownloadInterruptReason reason,
+                               const base::FilePath& full_path);
 
   void OnDownloadRenamedToFinalName(DownloadInterruptReason reason,
                                     const base::FilePath& full_path);
@@ -651,8 +663,8 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   // be restarted.
   void InterruptAndDiscardPartialState(DownloadInterruptReason reason);
 
-  // Indiates that an error has occurred on the download. The |bytes_so_far| and
-  // |hash_state| should correspond to the state of the DownloadFile. If the
+  // Indicates that an error has occurred on the download. The |bytes_so_far|
+  // and |hash_state| should correspond to the state of the DownloadFile. If the
   // interrupt reason allows, this partial state may be allowed to continue the
   // interrupted download upon resumption.
   void InterruptWithPartialState(int64_t bytes_so_far,
@@ -692,10 +704,11 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
 
   void AutoResumeIfValid();
 
-#ifdef OHOS_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   void AutoResume();
   bool CheckIsNeedAutoResume(DownloadInterruptReason reason);
-#endif // OHOS_EX_DOWNLOAD
+  bool IsAllowedAutoResume();
+#endif
 
   enum class ResumptionRequestSource { AUTOMATIC, USER };
   void ResumeInterruptedDownload(ResumptionRequestSource source);
@@ -739,6 +752,8 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   static bool IsValidStateTransition(DownloadInternalState from,
                                      DownloadInternalState to);
 
+  void UpdateRenameProgress(int64_t bytes_so_far, int64_t bytes_per_sec);
+
   RequestInfo request_info_;
 
   // GUID to identify the download, generated by
@@ -775,6 +790,12 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   // which may look at the file extension and first few bytes of the file.
   std::string original_mime_type_;
 
+#if BUILDFLAG(IS_MAC)
+  // A list of tags specified by the user to be set on the file upon the
+  // completion of it being written to disk.
+  std::vector<std::string> file_tags_;
+#endif
+
   // Total bytes expected.
   int64_t total_bytes_ = 0;
 
@@ -791,7 +812,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   DownloadDangerType danger_type_ = DOWNLOAD_DANGER_TYPE_NOT_DANGEROUS;
 
   // The views of this item in the download shelf and download contents.
-  base::ObserverList<Observer>::Unchecked observers_;
+  base::ObserverList<Observer> observers_;
 
   // Our delegate.
   raw_ptr<DownloadItemImplDelegate> delegate_ = nullptr;
@@ -810,7 +831,7 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   // True if the item was downloaded temporarily.
   bool is_temporary_ = false;
 
-  // True if the item was explicity paused by the user. This should be checked
+  // True if the item was explicitly paused by the user. This should be checked
   // in conjunction with the download state to determine whether the download
   // was truly paused.
   bool paused_ = false;
@@ -905,8 +926,19 @@ struct COMPONENTS_DOWNLOAD_EXPORT NWebIdData : public base::SupportsUserData::Da
   InsecureDownloadStatus insecure_download_status_ =
       InsecureDownloadStatus::UNKNOWN;
 
-#if defined(OHOS_EX_DOWNLOAD)
-  std::string download_request_method_;
+  // A handler for renaming and helping with displaying the item.
+  std::unique_ptr<DownloadItemRenameHandler> rename_handler_;
+
+  // Whether renaming is in progress.
+  bool renaming_ = false;
+
+#if BUILDFLAG(IS_ANDROID)
+  bool is_from_external_app_ = false;
+  bool is_must_download_ = false;
+#endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  std::string request_method_;
 #endif
 
   THREAD_CHECKER(thread_checker_);

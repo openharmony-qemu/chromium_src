@@ -360,7 +360,6 @@ bool WtsSessionProcessDelegate::Core::OnMessageReceived(
     const IPC::Message& message) {
   DCHECK(caller_task_runner_->BelongsToCurrentThread());
   NOTREACHED() << "Received unexpected IPC type: " << message.type();
-  return false;
 }
 
 void WtsSessionProcessDelegate::Core::OnChannelConnected(int32_t peer_pid) {
@@ -416,7 +415,7 @@ void WtsSessionProcessDelegate::Core::DoLaunchProcess() {
   }
 
   std::string mojo_pipe_token = base::NumberToString(base::RandUint64());
-  std::unique_ptr<IPC::ChannelProxy> channel = IPC::ChannelProxy::Create(
+  channel_ = IPC::ChannelProxy::Create(
       mojo_invitation_.AttachMessagePipe(mojo_pipe_token).release(),
       IPC::Channel::MODE_SERVER, this, io_task_runner_,
       base::SingleThreadTaskRunner::GetCurrentDefault());
@@ -465,8 +464,6 @@ void WtsSessionProcessDelegate::Core::DoLaunchProcess() {
     ReportFatalError();
     return;
   }
-
-  channel_ = std::move(channel);
 
   if (launch_elevated_) {
     // When launching an elevated worker process, an intermediate launcher

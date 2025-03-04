@@ -20,10 +20,6 @@
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/strings/grit/ui_strings.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using chrome_test_util::ButtonWithAccessibilityLabel;
 using chrome_test_util::ButtonWithAccessibilityLabelId;
 using chrome_test_util::SettingsMenuBackButton;
@@ -40,8 +36,8 @@ NSString* const kEnglishLabel = @"English";
 NSString* const kTurkishLabel = @"Turkish";
 NSString* const kTurkishNativeLabel = @"Türkçe";
 NSString* const kAragoneseLabel = @"Aragonese";
-NSString* const kNeverTranslateLabel = @"Never Translate";
-NSString* const kOfferToTranslateLabel = @"Offer to Translate";
+NSString* const kNeverTranslateLabel = @"Never translate";
+NSString* const kOfferToTranslateLabel = @"Offer to translate";
 
 // Matcher for the Language Settings's main page table view.
 id<GREYMatcher> LanguageSettingsTableView() {
@@ -151,10 +147,10 @@ id<GREYMatcher> SettingToolbarEditButton() {
   [LanguageSettingsAppInterface addLanguage:@"en"];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [ChromeEarlGrey dismissSettings];
 
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 #pragma mark - Test Cases

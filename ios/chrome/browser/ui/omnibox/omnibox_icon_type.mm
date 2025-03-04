@@ -7,21 +7,20 @@
 #import "base/notreached.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 NSString* GetLocationBarSecuritySymbolName(
     LocationBarSecurityIconType iconType) {
   switch (iconType) {
-    case INFO:
+    case LocationBarSecurityIconType::NONE:
+      return nil;
+    case LocationBarSecurityIconType::INFO:
       return kInfoCircleSymbol;
-    case SECURE:
+    case LocationBarSecurityIconType::SECURE:
       return kSecureLocationBarSymbol;
-    case NOT_SECURE_WARNING:
+    case LocationBarSecurityIconType::NOT_SECURE_WARNING:
       return kWarningFillSymbol;
-    case LOCATION_BAR_SECURITY_ICON_TYPE_COUNT:
+    case LocationBarSecurityIconType::DANGEROUS:
+      return kDangerousOmniboxSymbol;
+    case LocationBarSecurityIconType::LOCATION_BAR_SECURITY_ICON_TYPE_COUNT:
       NOTREACHED();
-      return kInfoCircleSymbol;
   }
 }

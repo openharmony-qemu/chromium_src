@@ -10,6 +10,7 @@
 #include "content/public/browser/web_contents.h"
 
 namespace content {
+class BrowserContext;
 class RenderFrameHost;
 struct ContextMenuParams;
 }  // namespace content
@@ -31,10 +32,6 @@ class MimeHandlerViewGuestDelegate {
   virtual void OverrideWebContentsCreateParams(
       content::WebContents::CreateParams* params) {}
 
-  // Called when a guest is attached or detached.
-  virtual void OnGuestAttached() {}
-  virtual void OnGuestDetached() {}
-
   // Handles context menu, or returns false if unhandled.
   //
   // The `render_frame_host` represents the frame that requests the context menu
@@ -44,7 +41,8 @@ class MimeHandlerViewGuestDelegate {
                                  const content::ContextMenuParams& params);
   // Called when MimeHandlerViewGuest has an associated embedder frame.
   virtual void RecordLoadMetric(bool is_full_page,
-                                const std::string& mime_type);
+                                const std::string& mime_type,
+                                content::BrowserContext* browser_context);
 };
 
 }  // namespace extensions

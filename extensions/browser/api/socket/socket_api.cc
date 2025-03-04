@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/browser/api/socket/socket_api.h"
 
 #include <memory>
@@ -22,6 +27,7 @@
 #include "extensions/browser/api/socket/tcp_socket.h"
 #include "extensions/browser/api/socket/tls_socket.h"
 #include "extensions/browser/api/socket/udp_socket.h"
+#include "extensions/browser/api/socket/write_quota_checker.h"
 #include "extensions/browser/extension_system.h"
 #include "extensions/common/api/sockets/sockets_manifest_data.h"
 #include "extensions/common/extension.h"
@@ -47,9 +53,9 @@ using extensions::mojom::APIPermissionID;
 
 namespace extensions {
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 const char kCrOSTerminal[] = "chrome-untrusted://terminal";
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 namespace {
 
@@ -85,6 +91,17 @@ bool IsPortValid(int port) {
 
 using content::BrowserThread;
 using content::SocketPermissionRequest;
+
+SocketApiFunction::ScopedWriteQuota::ScopedWriteQuota(SocketApiFunction* owner,
+                                                      size_t bytes_used)
+    : owner_(owner), bytes_used_(bytes_used) {
+  DCHECK(owner_);
+}
+
+SocketApiFunction::ScopedWriteQuota::~ScopedWriteQuota() {
+  WriteQuotaChecker::Get(owner_->browser_context())
+      ->ReturnBytes(owner_->GetOriginId(), bytes_used_);
+}
 
 SocketApiFunction::SocketApiFunction() = default;
 
@@ -124,8 +141,6 @@ void SocketApiFunction::OpenFirewallHole(const std::string& address,
     net::IPEndPoint local_address;
     if (!socket->GetLocalAddress(&local_address)) {
       NOTREACHED() << "Cannot get address of recently bound socket.";
-      Respond(ErrorWithCode(-1, kFirewallFailure));
-      return;
     }
 
     AppFirewallHoleManager* manager =
@@ -160,7 +175,7 @@ ExtensionFunction::ResponseValue SocketApiFunction::ErrorWithCode(
 }
 
 std::string SocketApiFunction::GetOriginId() const {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // Terminal app is the only non-extension to use sockets (crbug.com/1350479).
   if (!extension()) {
     auto origin = url::Origin::Create(source_url()).Serialize();
@@ -173,7 +188,7 @@ std::string SocketApiFunction::GetOriginId() const {
 
 bool SocketApiFunction::CheckPermission(
     const APIPermission::CheckParam& param) const {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // Terminal app is the only non-extension to use sockets (crbug.com/1350479).
   if (!extension()) {
     CHECK_EQ(url::Origin::Create(source_url()).Serialize(), kCrOSTerminal);
@@ -186,7 +201,7 @@ bool SocketApiFunction::CheckPermission(
 
 bool SocketApiFunction::CheckRequest(
     const content::SocketPermissionRequest& param) const {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // Terminal app is the only non-extension to use sockets (crbug.com/1350479).
   if (!extension()) {
     CHECK_EQ(url::Origin::Create(source_url()).Serialize(), kCrOSTerminal);
@@ -194,6 +209,21 @@ bool SocketApiFunction::CheckRequest(
   }
 #endif
   return SocketsManifestData::CheckRequest(extension(), param);
+}
+
+bool SocketApiFunction::TakeWriteQuota(size_t bytes_to_write) {
+  if (!WriteQuotaChecker::Get(browser_context())
+           ->TakeBytes(GetOriginId(), bytes_to_write)) {
+    return false;
+  }
+
+  DCHECK(!write_quota_used_.has_value());
+  write_quota_used_.emplace(this, bytes_to_write);
+  return true;
+}
+
+void SocketApiFunction::ReturnWriteQuota() {
+  write_quota_used_.reset();
 }
 
 SocketExtensionWithDnsLookupFunction::SocketExtensionWithDnsLookupFunction() =
@@ -211,7 +241,7 @@ void SocketExtensionWithDnsLookupFunction::StartDnsLookup(
       ->GetDefaultStoragePartition()
       ->GetNetworkContext()
       ->CreateHostResolver(
-          absl::nullopt,
+          std::nullopt,
           pending_host_resolver_.InitWithNewPipeAndPassReceiver());
   DCHECK(pending_host_resolver_);
 
@@ -229,8 +259,8 @@ void SocketExtensionWithDnsLookupFunction::StartDnsLookup(
   receiver_.set_disconnect_handler(base::BindOnce(
       &SocketExtensionWithDnsLookupFunction::OnComplete, base::Unretained(this),
       net::ERR_NAME_NOT_RESOLVED, net::ResolveErrorInfo(net::ERR_FAILED),
-      /*resolved_addresses=*/absl::nullopt,
-      /*endpoint_results_with_metadata=*/absl::nullopt));
+      /*resolved_addresses=*/std::nullopt,
+      /*endpoint_results_with_metadata=*/std::nullopt));
 
   // Balanced in OnComplete().
   AddRef();
@@ -239,8 +269,8 @@ void SocketExtensionWithDnsLookupFunction::StartDnsLookup(
 void SocketExtensionWithDnsLookupFunction::OnComplete(
     int result,
     const net::ResolveErrorInfo& resolve_error_info,
-    const absl::optional<net::AddressList>& resolved_addresses,
-    const absl::optional<net::HostResolverEndpointResults>&
+    const std::optional<net::AddressList>& resolved_addresses,
+    const std::optional<net::HostResolverEndpointResults>&
         endpoint_results_with_metadata) {
   host_resolver_.reset();
   receiver_.reset();
@@ -258,7 +288,7 @@ SocketCreateFunction::SocketCreateFunction() = default;
 SocketCreateFunction::~SocketCreateFunction() = default;
 
 ExtensionFunction::ResponseAction SocketCreateFunction::Work() {
-  absl::optional<api::socket::Create::Params> params =
+  std::optional<api::socket::Create::Params> params =
       api::socket::Create::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -286,7 +316,6 @@ ExtensionFunction::ResponseAction SocketCreateFunction::Work() {
     }
     case extensions::api::socket::SocketType::kNone:
       NOTREACHED();
-      return RespondNow(NoArguments());
   }
 
   DCHECK(socket);
@@ -342,8 +371,6 @@ ExtensionFunction::ResponseAction SocketConnectFunction::Work() {
       break;
     default:
       NOTREACHED() << "Unknown socket type.";
-      operation_type = SocketPermissionRequest::NONE;
-      break;
   }
 
   SocketPermission::CheckParam param(operation_type, hostname_, port_);
@@ -504,7 +531,7 @@ SocketAcceptFunction::SocketAcceptFunction() = default;
 SocketAcceptFunction::~SocketAcceptFunction() = default;
 
 ExtensionFunction::ResponseAction SocketAcceptFunction::Work() {
-  absl::optional<api::socket::Accept::Params> params =
+  std::optional<api::socket::Accept::Params> params =
       api::socket::Accept::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -523,7 +550,7 @@ ExtensionFunction::ResponseAction SocketAcceptFunction::Work() {
 void SocketAcceptFunction::OnAccept(
     int result_code,
     mojo::PendingRemote<network::mojom::TCPConnectedSocket> socket,
-    const absl::optional<net::IPEndPoint>& remote_addr,
+    const std::optional<net::IPEndPoint>& remote_addr,
     mojo::ScopedDataPipeConsumerHandle receive_pipe_handle,
     mojo::ScopedDataPipeProducerHandle send_pipe_handle) {
   base::Value::Dict result;
@@ -542,7 +569,7 @@ SocketReadFunction::SocketReadFunction() = default;
 SocketReadFunction::~SocketReadFunction() = default;
 
 ExtensionFunction::ResponseAction SocketReadFunction::Work() {
-  absl::optional<api::socket::Read::Params> params =
+  std::optional<api::socket::Read::Params> params =
       api::socket::Read::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -586,9 +613,12 @@ ExtensionFunction::ResponseAction SocketWriteFunction::Work() {
 
   int socket_id = socket_id_value.GetInt();
   size_t io_buffer_size = data_value.GetBlob().size();
+  if (!TakeWriteQuota(io_buffer_size)) {
+    return RespondNow(Error(kExceedWriteQuotaError));
+  }
 
-  scoped_refptr<net::IOBuffer> io_buffer =
-      base::MakeRefCounted<net::IOBuffer>(data_value.GetBlob().size());
+  auto io_buffer =
+      base::MakeRefCounted<net::IOBufferWithSize>(data_value.GetBlob().size());
   base::ranges::copy(data_value.GetBlob(), io_buffer->data());
 
   Socket* socket = GetSocket(socket_id);
@@ -605,6 +635,8 @@ ExtensionFunction::ResponseAction SocketWriteFunction::Work() {
 }
 
 void SocketWriteFunction::OnCompleted(int bytes_written) {
+  ReturnWriteQuota();
+
   base::Value::Dict result;
   result.Set(kBytesWrittenKey, bytes_written);
   Respond(WithArguments(std::move(result)));
@@ -615,7 +647,7 @@ SocketRecvFromFunction::SocketRecvFromFunction() = default;
 SocketRecvFromFunction::~SocketRecvFromFunction() = default;
 
 ExtensionFunction::ResponseAction SocketRecvFromFunction::Work() {
-  absl::optional<api::socket::RecvFrom::Params> params =
+  std::optional<api::socket::RecvFrom::Params> params =
       api::socket::RecvFrom::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -675,8 +707,8 @@ ExtensionFunction::ResponseAction SocketSendToFunction::Work() {
   hostname_ = hostname_value.GetString();
 
   io_buffer_size_ = data_value.GetBlob().size();
-
-  io_buffer_ = base::MakeRefCounted<net::IOBuffer>(data_value.GetBlob().size());
+  io_buffer_ =
+      base::MakeRefCounted<net::IOBufferWithSize>(data_value.GetBlob().size());
   base::ranges::copy(data_value.GetBlob(), io_buffer_->data());
 
   Socket* socket = GetSocket(socket_id_);
@@ -712,11 +744,18 @@ void SocketSendToFunction::StartSendTo() {
     return;
   }
 
+  if (!TakeWriteQuota(io_buffer_size_)) {
+    Respond(Error(kExceedWriteQuotaError));
+    return;
+  }
+
   socket->SendTo(io_buffer_, io_buffer_size_, addresses_.front(),
                  base::BindOnce(&SocketSendToFunction::OnCompleted, this));
 }
 
 void SocketSendToFunction::OnCompleted(int bytes_written) {
+  ReturnWriteQuota();
+
   api::socket::WriteInfo info;
   info.bytes_written = bytes_written;
   Respond(ArgumentList(api::socket::SendTo::Results::Create(info)));
@@ -727,7 +766,7 @@ SocketSetKeepAliveFunction::SocketSetKeepAliveFunction() = default;
 SocketSetKeepAliveFunction::~SocketSetKeepAliveFunction() = default;
 
 ExtensionFunction::ResponseAction SocketSetKeepAliveFunction::Work() {
-  absl::optional<api::socket::SetKeepAlive::Params> params =
+  std::optional<api::socket::SetKeepAlive::Params> params =
       api::socket::SetKeepAlive::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -738,8 +777,9 @@ ExtensionFunction::ResponseAction SocketSetKeepAliveFunction::Work() {
                            kSocketNotFoundError));
   }
   int delay = 0;
-  if (params->delay)
+  if (params->delay) {
     delay = *params->delay;
+  }
   socket->SetKeepAlive(
       params->enable, delay,
       base::BindOnce(&SocketSetKeepAliveFunction::OnCompleted, this));
@@ -755,7 +795,7 @@ SocketSetNoDelayFunction::SocketSetNoDelayFunction() = default;
 SocketSetNoDelayFunction::~SocketSetNoDelayFunction() = default;
 
 ExtensionFunction::ResponseAction SocketSetNoDelayFunction::Work() {
-  absl::optional<api::socket::SetNoDelay::Params> params =
+  std::optional<api::socket::SetNoDelay::Params> params =
       api::socket::SetNoDelay::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -779,7 +819,7 @@ SocketGetInfoFunction::SocketGetInfoFunction() = default;
 SocketGetInfoFunction::~SocketGetInfoFunction() = default;
 
 ExtensionFunction::ResponseAction SocketGetInfoFunction::Work() {
-  absl::optional<api::socket::GetInfo::Params> params =
+  std::optional<api::socket::GetInfo::Params> params =
       api::socket::GetInfo::Params::Create(args());
 
   Socket* socket = GetSocket(params->socket_id);
@@ -790,10 +830,11 @@ ExtensionFunction::ResponseAction SocketGetInfoFunction::Work() {
   api::socket::SocketInfo info;
   // This represents what we know about the socket, and does not call through
   // to the system.
-  if (socket->GetSocketType() == Socket::TYPE_TCP)
+  if (socket->GetSocketType() == Socket::TYPE_TCP) {
     info.socket_type = extensions::api::socket::SocketType::kTcp;
-  else
+  } else {
     info.socket_type = extensions::api::socket::SocketType::kUdp;
+  }
   info.connected = socket->IsConnected();
 
   // Grab the peer address as known by the OS. This and the call below will
@@ -824,7 +865,7 @@ ExtensionFunction::ResponseAction SocketGetNetworkListFunction::Run() {
 }
 
 void SocketGetNetworkListFunction::GotNetworkList(
-    const absl::optional<net::NetworkInterfaceList>& interface_list) {
+    const std::optional<net::NetworkInterfaceList>& interface_list) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (!interface_list.has_value()) {
     Respond(Error(kNetworkListError));
@@ -850,7 +891,7 @@ SocketJoinGroupFunction::SocketJoinGroupFunction() = default;
 SocketJoinGroupFunction::~SocketJoinGroupFunction() = default;
 
 ExtensionFunction::ResponseAction SocketJoinGroupFunction::Work() {
-  absl::optional<api::socket::JoinGroup::Params> params =
+  std::optional<api::socket::JoinGroup::Params> params =
       api::socket::JoinGroup::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -890,7 +931,7 @@ SocketLeaveGroupFunction::SocketLeaveGroupFunction() = default;
 SocketLeaveGroupFunction::~SocketLeaveGroupFunction() = default;
 
 ExtensionFunction::ResponseAction SocketLeaveGroupFunction::Work() {
-  absl::optional<api::socket::LeaveGroup::Params> params =
+  std::optional<api::socket::LeaveGroup::Params> params =
       api::socket::LeaveGroup::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -932,7 +973,7 @@ SocketSetMulticastTimeToLiveFunction::~SocketSetMulticastTimeToLiveFunction() =
     default;
 
 ExtensionFunction::ResponseAction SocketSetMulticastTimeToLiveFunction::Work() {
-  absl::optional<api::socket::SetMulticastTimeToLive::Params> params =
+  std::optional<api::socket::SetMulticastTimeToLive::Params> params =
       api::socket::SetMulticastTimeToLive::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -962,7 +1003,7 @@ SocketSetMulticastLoopbackModeFunction::
 
 ExtensionFunction::ResponseAction
 SocketSetMulticastLoopbackModeFunction::Work() {
-  absl::optional<api::socket::SetMulticastLoopbackMode::Params> params =
+  std::optional<api::socket::SetMulticastLoopbackMode::Params> params =
       api::socket::SetMulticastLoopbackMode::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 
@@ -989,7 +1030,7 @@ SocketGetJoinedGroupsFunction::SocketGetJoinedGroupsFunction() = default;
 SocketGetJoinedGroupsFunction::~SocketGetJoinedGroupsFunction() = default;
 
 ExtensionFunction::ResponseAction SocketGetJoinedGroupsFunction::Work() {
-  absl::optional<api::socket::GetJoinedGroups::Params> params =
+  std::optional<api::socket::GetJoinedGroups::Params> params =
       api::socket::GetJoinedGroups::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
 

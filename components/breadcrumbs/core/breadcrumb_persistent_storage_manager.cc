@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/breadcrumbs/core/breadcrumb_persistent_storage_manager.h"
 
 #include <string.h>
@@ -37,20 +42,17 @@ void DoWriteEventsToFile(const base::FilePath& file_path,
   const base::MemoryMappedFile::Region region = {0, kPersistedFilesizeInBytes};
   base::MemoryMappedFile file;
   int flags = base::File::FLAG_READ | base::File::FLAG_WRITE;
-  if (append) {
-    flags |= base::File::FLAG_OPEN_ALWAYS;
-  } else {
-    flags |= base::File::FLAG_CREATE_ALWAYS;
+  flags |=
+      append ? base::File::FLAG_OPEN_ALWAYS : base::File::FLAG_CREATE_ALWAYS;
+  if (!file.Initialize(base::File(file_path, flags), region,
+                       base::MemoryMappedFile::READ_WRITE_EXTEND)) {
+    return;
   }
-  const bool file_valid =
-      file.Initialize(base::File(file_path, flags), region,
-                      base::MemoryMappedFile::READ_WRITE_EXTEND);
 
-  if (file_valid) {
-    char* data = reinterpret_cast<char*>(file.data());
-    base::strlcpy(&data[position], events.c_str(),
-                  kPersistedFilesizeInBytes - position);
-  }
+  CHECK(position + events.length() <= kPersistedFilesizeInBytes);
+  char* data = reinterpret_cast<char*>(file.data());
+  base::strlcpy(&data[position], events.c_str(),
+                kPersistedFilesizeInBytes - position);
 }
 
 // Returns breadcrumb events stored at |file_path|.

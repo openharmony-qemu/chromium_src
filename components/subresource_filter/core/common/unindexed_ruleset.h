@@ -23,6 +23,7 @@
 #ifndef COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_UNINDEXED_RULESET_H_
 #define COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_UNINDEXED_RULESET_H_
 
+#include "arkweb/build/features/features.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 #include "third_party/protobuf/src/google/protobuf/io/coded_stream.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream.h"
@@ -82,7 +83,7 @@ class UnindexedRulesetWriter {
   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
   // TODO(pkalinnikov): Implement AddCssRule when needed.
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
 #endif
 

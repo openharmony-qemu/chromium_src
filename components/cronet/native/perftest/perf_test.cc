@@ -12,6 +12,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/run_loop.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/task_environment.h"
@@ -61,7 +62,7 @@ std::string GetConfigString(const char* key) {
 
 // Return an int configuration option.
 int GetConfigInt(const char* key) {
-  absl::optional<int> config = g_options->FindInt(key);
+  std::optional<int> config = g_options->FindInt(key);
   CHECK(config) << "Cannot find key: " << key;
   return *config;
 }
@@ -84,7 +85,8 @@ std::string BuildBenchmarkName(ExecutorType executor,
       name += "Q_";
       break;
   }
-  name += std::to_string(iterations) + "_" + std::to_string(concurrency) + "_";
+  name += base::NumberToString(iterations) + "_" +
+          base::NumberToString(concurrency) + "_";
   switch (executor) {
     case EXECUTOR_DIRECT:
       name += "ExDir";
@@ -303,8 +305,8 @@ class Benchmark {
         port = GetConfigInt("QUIC_PORT");
         break;
     }
-    std::string url =
-        scheme + "://" + host + ":" + std::to_string(port) + "/" + resource;
+    std::string url = scheme + "://" + host + ":" + base::NumberToString(port) +
+                      "/" + resource;
     size_t buffer_size = length > (size_t)GetConfigInt("MAX_BUFFER_SIZE")
                              ? GetConfigInt("MAX_BUFFER_SIZE")
                              : length;
@@ -412,7 +414,7 @@ void PerfTest(const char* json_args) {
 
   // Parse benchmark options into |g_options|.
   std::string benchmark_options = json_args;
-  absl::optional<base::Value> options_value =
+  std::optional<base::Value> options_value =
       base::JSONReader::Read(benchmark_options);
   CHECK(options_value) << "Parsing benchmark options failed: "
                        << benchmark_options;

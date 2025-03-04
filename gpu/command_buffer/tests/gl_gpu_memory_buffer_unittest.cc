@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <GLES2/gl2.h>
 #include <GLES2/gl2chromium.h>
 #include <GLES2/gl2ext.h>
@@ -124,7 +129,6 @@ uint32_t BufferFormatToFourCC(gfx::BufferFormat format) {
       return libyuv::FOURCC_ANY;
   }
   NOTREACHED();
-  return libyuv::FOURCC_ANY;
 }
 
 }  // namespace

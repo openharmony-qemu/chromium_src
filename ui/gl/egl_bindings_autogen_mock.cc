@@ -24,6 +24,13 @@ void MakeEglMockFunctionUnique(const char* func_name) {
 
 namespace gl {
 
+void GL_BINDING_CALL
+MockEGLInterface::Mock_eglAcquireExternalContextANGLE(EGLDisplay dpy,
+                                                      EGLSurface readAndDraw) {
+  MakeEglMockFunctionUnique("eglAcquireExternalContextANGLE");
+  interface_->AcquireExternalContextANGLE(dpy, readAndDraw);
+}
+
 EGLBoolean GL_BINDING_CALL MockEGLInterface::Mock_eglBindAPI(EGLenum api) {
   MakeEglMockFunctionUnique("eglBindAPI");
   return interface_->BindAPI(api);
@@ -632,6 +639,12 @@ MockEGLInterface::Mock_eglReacquireHighPowerGPUANGLE(EGLDisplay dpy,
 }
 
 void GL_BINDING_CALL
+MockEGLInterface::Mock_eglReleaseExternalContextANGLE(EGLDisplay dpy) {
+  MakeEglMockFunctionUnique("eglReleaseExternalContextANGLE");
+  interface_->ReleaseExternalContextANGLE(dpy);
+}
+
+void GL_BINDING_CALL
 MockEGLInterface::Mock_eglReleaseHighPowerGPUANGLE(EGLDisplay dpy,
                                                    EGLContext ctx) {
   MakeEglMockFunctionUnique("eglReleaseHighPowerGPUANGLE");
@@ -657,6 +670,12 @@ MockEGLInterface::Mock_eglSetBlobCacheFuncsANDROID(EGLDisplay dpy,
                                                    EGLGetBlobFuncANDROID get) {
   MakeEglMockFunctionUnique("eglSetBlobCacheFuncsANDROID");
   interface_->SetBlobCacheFuncsANDROID(dpy, set, get);
+}
+
+void GL_BINDING_CALL MockEGLInterface::Mock_eglSetValidationEnabledANGLE(
+    EGLBoolean validationState) {
+  MakeEglMockFunctionUnique("eglSetValidationEnabledANGLE");
+  interface_->SetValidationEnabledANGLE(validationState);
 }
 
 EGLBoolean GL_BINDING_CALL
@@ -786,6 +805,9 @@ static void MockEglInvalidFunction() {
 
 GLFunctionPointerType GL_BINDING_CALL
 MockEGLInterface::GetGLProcAddress(const char* name) {
+  if (strcmp(name, "eglAcquireExternalContextANGLE") == 0)
+    return reinterpret_cast<GLFunctionPointerType>(
+        Mock_eglAcquireExternalContextANGLE);
   if (strcmp(name, "eglBindAPI") == 0)
     return reinterpret_cast<GLFunctionPointerType>(Mock_eglBindAPI);
   if (strcmp(name, "eglBindTexImage") == 0)
@@ -961,6 +983,9 @@ MockEGLInterface::GetGLProcAddress(const char* name) {
   if (strcmp(name, "eglReacquireHighPowerGPUANGLE") == 0)
     return reinterpret_cast<GLFunctionPointerType>(
         Mock_eglReacquireHighPowerGPUANGLE);
+  if (strcmp(name, "eglReleaseExternalContextANGLE") == 0)
+    return reinterpret_cast<GLFunctionPointerType>(
+        Mock_eglReleaseExternalContextANGLE);
   if (strcmp(name, "eglReleaseHighPowerGPUANGLE") == 0)
     return reinterpret_cast<GLFunctionPointerType>(
         Mock_eglReleaseHighPowerGPUANGLE);
@@ -971,6 +996,9 @@ MockEGLInterface::GetGLProcAddress(const char* name) {
   if (strcmp(name, "eglSetBlobCacheFuncsANDROID") == 0)
     return reinterpret_cast<GLFunctionPointerType>(
         Mock_eglSetBlobCacheFuncsANDROID);
+  if (strcmp(name, "eglSetValidationEnabledANGLE") == 0)
+    return reinterpret_cast<GLFunctionPointerType>(
+        Mock_eglSetValidationEnabledANGLE);
   if (strcmp(name, "eglStreamAttribKHR") == 0)
     return reinterpret_cast<GLFunctionPointerType>(Mock_eglStreamAttribKHR);
   if (strcmp(name, "eglStreamConsumerAcquireKHR") == 0)

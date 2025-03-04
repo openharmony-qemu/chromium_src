@@ -6,7 +6,9 @@
 
 #include <utility>
 
+#include "base/containers/contains.h"
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/values.h"
 #include "extensions/common/mojom/event_dispatcher.mojom.h"
 #include "extensions/renderer/bindings/api_binding_hooks.h"
@@ -112,7 +114,7 @@ void APIBindingsSystem::InitializeType(const std::string& type_name) {
   std::string api_name = type_name.substr(0, dot);
   // If we've already instantiated the binding, the type should have been in
   // there.
-  DCHECK(api_bindings_.find(api_name) == api_bindings_.end()) << api_name;
+  DCHECK(!base::Contains(api_bindings_, api_name)) << api_name;
 
   api_bindings_[api_name] = CreateNewAPIBinding(api_name);
 }
@@ -149,7 +151,7 @@ void APIBindingsSystem::RegisterHooksDelegate(
 
 void APIBindingsSystem::RegisterCustomType(const std::string& type_name,
                                            CustomTypeHandler function) {
-  DCHECK(custom_types_.find(type_name) == custom_types_.end())
+  DCHECK(!base::Contains(custom_types_, type_name))
       << "Custom type already registered: " << type_name;
   custom_types_[type_name] = std::move(function);
 }
@@ -166,7 +168,8 @@ v8::Local<v8::Object> APIBindingsSystem::CreateCustomType(
     const std::string& property_name,
     const base::Value::List* property_values) {
   auto iter = custom_types_.find(type_name);
-  DCHECK(iter != custom_types_.end()) << "Custom type not found: " << type_name;
+  CHECK(iter != custom_types_.end(), base::NotFatalUntil::M130)
+      << "Custom type not found: " << type_name;
   return iter->second.Run(isolate, property_name, property_values,
                           &request_handler_, &event_handler_,
                           &type_reference_map_, &access_checker_);

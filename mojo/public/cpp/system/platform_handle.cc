@@ -52,7 +52,6 @@ ScopedSharedBufferHandle WrapPlatformSharedMemoryRegion(
       break;
     default:
       NOTREACHED();
-      return ScopedSharedBufferHandle();
   }
 
   base::subtle::ScopedPlatformSharedMemoryHandle handle =
@@ -173,7 +172,7 @@ base::subtle::PlatformSharedMemoryRegion UnwrapPlatformSharedMemoryRegion(
       return base::subtle::PlatformSharedMemoryRegion();
   }
 
-  absl::optional<base::UnguessableToken> guid =
+  std::optional<base::UnguessableToken> guid =
       internal::PlatformHandleInternal::UnmarshalUnguessableToken(&mojo_guid);
   if (!guid.has_value()) {
     return base::subtle::PlatformSharedMemoryRegion();

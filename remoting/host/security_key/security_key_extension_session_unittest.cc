@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "remoting/host/security_key/security_key_extension_session.h"
 
 #include <stddef.h>
@@ -70,6 +75,7 @@ class TestClientStub : public protocol::ClientStub {
   void DeliverHostMessage(const protocol::ExtensionMessage& message) override;
   void SetVideoLayout(const protocol::VideoLayout& layout) override;
   void SetTransportInfo(const protocol::TransportInfo& transport_info) override;
+  void SetActiveDisplay(const protocol::ActiveDisplay& active_display) override;
 
   // protocol::ClipboardStub implementation.
   void InjectClipboardEvent(const protocol::ClipboardEvent& event) override;
@@ -109,6 +115,9 @@ void TestClientStub::SetVideoLayout(const protocol::VideoLayout& layout) {}
 
 void TestClientStub::SetTransportInfo(
     const protocol::TransportInfo& transport_info) {}
+
+void TestClientStub::SetActiveDisplay(
+    const protocol::ActiveDisplay& active_display) {}
 
 void TestClientStub::InjectClipboardEvent(
     const protocol::ClipboardEvent& event) {}

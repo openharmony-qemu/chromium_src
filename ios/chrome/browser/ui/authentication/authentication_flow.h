@@ -7,12 +7,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import "ios/chrome/browser/signin/constants.h"
+#import "components/signin/public/base/signin_metrics.h"
+#import "ios/chrome/browser/signin/model/constants.h"
 #import "ios/chrome/browser/ui/authentication/authentication_flow_performer_delegate.h"
+#import "ios/chrome/browser/ui/authentication/signin/signin_constants.h"
 
 @class AuthenticationFlowPerformer;
 class Browser;
-@protocol BrowsingDataCommands;
 @class UIViewController;
 @protocol SystemIdentity;
 
@@ -33,15 +34,21 @@ class Browser;
 // needs to be signed in.
 @interface AuthenticationFlow : NSObject<AuthenticationFlowPerformerDelegate>
 
+// Callback to execute when there we know the user won’t have any more
+// opportunity to cancel.
+@property(nonatomic, strong) void (^userDecisionCompletion)();
+
 // Designated initializer.
 // * `browser` is the current browser where the authentication flow is being
 //   presented.
-// * `postSignInAction` represents the action to be taken once `identity` is
+// * `accessPoint` is the sign-in access point
+// * `postSignInActions` represents the actions to be taken once `identity` is
 //   signed in.
 // * `presentingViewController` is the top presented view controller.
 - (instancetype)initWithBrowser:(Browser*)browser
                        identity:(id<SystemIdentity>)identity
-               postSignInAction:(PostSignInAction)postSignInAction
+                    accessPoint:(signin_metrics::AccessPoint)accessPoint
+              postSignInActions:(PostSignInActionSet)postSignInActions
        presentingViewController:(UIViewController*)presentingViewController
     NS_DESIGNATED_INITIALIZER;
 
@@ -52,22 +59,29 @@ class Browser;
 // sync.
 // It is safe to destroy this authentication flow when `completion` is called.
 // `completion` must not be nil.
-- (void)startSignInWithCompletion:(signin_ui::CompletionCallback)completion;
+- (void)startSignInWithCompletion:
+    (signin_ui::SigninCompletionCallback)completion;
 
-// Cancels the current sign-in operation (if any) and dismiss any UI presented
-// by this authentication flow with animation if `animated`. Calls the
-// completion callback with the sign-in flag set to NO. Does nothing if the sign
-// in flow is already done.
-- (void)cancelAndDismissAnimated:(BOOL)animated;
-
-// The dispatcher used to clear browsing data.
-@property(nonatomic, weak) id<BrowsingDataCommands> dispatcher;
+// * Interrupts the current sign-in operation (if any).
+// * Dismiss any UI presented accordingly to `action`.
+// * Calls synchronously the completion callback from
+// `startSignInWithCompletion` with the sign-in flag set to no.
+//
+// Does noting if the sign-in flow is already done
+- (void)interruptWithAction:(SigninCoordinatorInterrupt)action;
 
 // The delegate.
 @property(nonatomic, weak) id<AuthenticationFlowDelegate> delegate;
 
 // Identity to sign-in.
 @property(nonatomic, strong, readonly) id<SystemIdentity> identity;
+
+// Sign-in access point
+@property(nonatomic, assign, readonly) signin_metrics::AccessPoint accessPoint;
+
+// Whether the History Sync Opt-In screen follows after authentication flow
+// completes with success.
+@property(nonatomic, assign) BOOL precedingHistorySync;
 
 @end
 

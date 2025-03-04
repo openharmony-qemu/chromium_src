@@ -6,14 +6,14 @@
 
 #include <cstdio>
 
+#include "base/files/file_util.h"
 #include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
 #include "build/build_config.h"
 #include "cc/base/switches.h"
 #include "components/viz/common/switches.h"
 #include "content/public/common/content_switches.h"
 #include "headless/public/switches.h"
-#include "net/base/host_port_pair.h"
-#include "net/base/ip_address.h"
 #include "net/http/http_util.h"
 #include "net/proxy_resolution/proxy_config.h"
 #include "third_party/blink/public/common/switches.h"
@@ -23,9 +23,6 @@
 namespace headless {
 
 namespace {
-
-// By default listen to incoming DevTools connections on localhost.
-const char kLocalHost[] = "localhost";
 
 void HandleDeterministicModeSwitch(base::CommandLine& command_line) {
   DCHECK(command_line.HasSwitch(switches::kDeterministicMode));
@@ -40,25 +37,14 @@ void HandleDeterministicModeSwitch(base::CommandLine& command_line) {
   command_line.AppendSwitch(blink::switches::kDisableImageAnimationResync);
 
   // Renderer flags
-  command_line.AppendSwitch(cc::switches::kDisableThreadedAnimation);
-  command_line.AppendSwitch(blink::switches::kDisableThreadedScrolling);
-  command_line.AppendSwitch(cc::switches::kDisableCheckerImaging);
+  command_line.AppendSwitch(::switches::kDisableThreadedAnimation);
+  command_line.AppendSwitch(::switches::kDisableCheckerImaging);
 }
 
 bool HandleRemoteDebuggingPort(base::CommandLine& command_line,
                                HeadlessBrowser::Options::Builder& builder) {
   DCHECK(command_line.HasSwitch(::switches::kRemoteDebuggingPort));
 
-  net::IPAddress address;
-  std::string address_str = kLocalHost;
-  if (command_line.HasSwitch(switches::kRemoteDebuggingAddress)) {
-    address_str =
-        command_line.GetSwitchValueASCII(switches::kRemoteDebuggingAddress);
-    if (!address.AssignFromIPLiteral(address_str)) {
-      LOG(ERROR) << "Invalid devtools server address: " << address_str;
-      return false;
-    }
-  }
   int port;
   std::string port_str =
       command_line.GetSwitchValueASCII(::switches::kRemoteDebuggingPort);
@@ -67,9 +53,7 @@ bool HandleRemoteDebuggingPort(base::CommandLine& command_line,
     LOG(ERROR) << "Invalid devtools server port: " << port_str;
     return false;
   }
-  const net::HostPortPair endpoint(address_str,
-                                   base::checked_cast<uint16_t>(port));
-  builder.EnableDevToolsServer(endpoint);
+  builder.EnableDevToolsServer(base::checked_cast<uint16_t>(port));
   return true;
 }
 
@@ -108,6 +92,24 @@ bool HandleWindowSize(base::CommandLine& command_line,
   return true;
 }
 
+bool HandleScreenScaleFactor(base::CommandLine& command_line,
+                             HeadlessBrowser::Options::Builder& builder) {
+  DCHECK(command_line.HasSwitch(switches::kScreenScaleFactor));
+
+  const std::string switch_value =
+      command_line.GetSwitchValueASCII(switches::kScreenScaleFactor);
+
+  double scale_factor;
+  if (!base::StringToDouble(switch_value, &scale_factor) ||
+      scale_factor < 0.5) {
+    LOG(ERROR) << "Invalid screen scale factor: " << switch_value;
+    return false;
+  }
+
+  builder.SetScreenScaleFactor(static_cast<float>(scale_factor));
+  return true;
+}
+
 bool HandleFontRenderHinting(base::CommandLine& command_line,
                              HeadlessBrowser::Options::Builder& builder) {
   std::string switch_value =
@@ -130,6 +132,26 @@ bool HandleFontRenderHinting(base::CommandLine& command_line,
 
   builder.SetFontRenderHinting(font_render_hinting);
   return true;
+}
+
+base::FilePath EnsureDirectoryExists(const base::FilePath& file_path) {
+  if (!base::DirectoryExists(file_path) && !base::CreateDirectory(file_path)) {
+    PLOG(ERROR) << "Could not create directory " << file_path;
+    return base::FilePath();
+  }
+
+  if (file_path.IsAbsolute()) {
+    return file_path;
+  }
+
+  const base::FilePath absolute_file_path =
+      base::MakeAbsoluteFilePath(file_path);
+  if (absolute_file_path.empty()) {
+    PLOG(ERROR) << "Invalid directory path " << file_path;
+    return base::FilePath();
+  }
+
+  return absolute_file_path;
 }
 
 }  // namespace
@@ -158,15 +180,35 @@ bool HandleCommandLineSwitches(base::CommandLine& command_line,
   }
 
   if (command_line.HasSwitch(switches::kUserDataDir)) {
-    builder.SetUserDataDir(
+    const base::FilePath dir = EnsureDirectoryExists(
         command_line.GetSwitchValuePath(switches::kUserDataDir));
+    if (dir.empty()) {
+      return false;
+    }
+    builder.SetUserDataDir(dir);
+
     if (!command_line.HasSwitch(switches::kIncognito)) {
       builder.SetIncognitoMode(false);
     }
   }
 
+  if (command_line.HasSwitch(switches::kDiskCacheDir)) {
+    const base::FilePath dir = EnsureDirectoryExists(
+        command_line.GetSwitchValuePath(switches::kDiskCacheDir));
+    if (dir.empty()) {
+      return false;
+    }
+    builder.SetDiskCacheDir(dir);
+  }
+
   if (command_line.HasSwitch(switches::kWindowSize)) {
     if (!HandleWindowSize(command_line, builder)) {
+      return false;
+    }
+  }
+
+  if (command_line.HasSwitch(switches::kScreenScaleFactor)) {
+    if (!HandleScreenScaleFactor(command_line, builder)) {
       return false;
     }
   }
@@ -196,6 +238,10 @@ bool HandleCommandLineSwitches(base::CommandLine& command_line,
 
   if (command_line.HasSwitch(switches::kDisableLazyLoading)) {
     builder.SetEnableLazyLoading(false);
+  }
+
+  if (command_line.HasSwitch(switches::kForceNewBrowsingInstance)) {
+    builder.SetForceNewBrowsingInstance(true);
   }
 
   return true;

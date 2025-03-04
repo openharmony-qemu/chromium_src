@@ -4,6 +4,7 @@
 
 #include "content/browser/ssl/ssl_error_handler.h"
 
+#include "arkweb/build/features/features.h"
 #include "content/browser/renderer_host/navigation_controller_impl.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -21,8 +22,8 @@ SSLErrorHandler::SSLErrorHandler(WebContents* web_contents,
                                  int net_error,
                                  const net::SSLInfo& ssl_info,
                                  bool fatal
-#ifdef OHOS_NETWORK_LOAD
-,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                                 ,
                                  const GURL& origin_url,
                                  const std::string& referrer
 #endif
@@ -33,7 +34,7 @@ SSLErrorHandler::SSLErrorHandler(WebContents* web_contents,
       ssl_info_(ssl_info),
       cert_error_(net_error),
       fatal_(fatal),
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       origin_url_(origin_url),
       referrer_(referrer),
 #endif

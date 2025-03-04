@@ -4,6 +4,7 @@
 
 #include "services/network/resolve_host_request.h"
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -17,7 +18,6 @@
 #include "net/base/url_util.h"
 #include "net/log/net_log.h"
 #include "net/log/net_log_with_source.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "url/url_canon.h"
 
 namespace network {
@@ -41,7 +41,7 @@ ResolveHostRequest::ResolveHostRequest(
     net::HostResolver* resolver,
     mojom::HostResolverHostPtr host,
     const net::NetworkAnonymizationKey& network_anonymization_key,
-    const absl::optional<net::HostResolver::ResolveHostParameters>&
+    const std::optional<net::HostResolver::ResolveHostParameters>&
         optional_parameters,
     net::NetLog* net_log) {
   DCHECK(resolver);
@@ -71,8 +71,8 @@ ResolveHostRequest::~ResolveHostRequest() {
   if (response_client_.is_bound()) {
     response_client_->OnComplete(
         net::ERR_NAME_NOT_RESOLVED, net::ResolveErrorInfo(net::ERR_FAILED),
-        /*resolved_addresses=*/absl::nullopt,
-        /*endpoint_results_with_metadata=*/absl::nullopt);
+        /*resolved_addresses=*/std::nullopt,
+        /*endpoint_results_with_metadata=*/std::nullopt);
     response_client_.reset();
   }
 }
@@ -159,18 +159,18 @@ const net::AddressList* ResolveHostRequest::GetAddressResults() const {
   return internal_request_->GetAddressResults();
 }
 
-absl::optional<net::HostResolverEndpointResults>
+std::optional<net::HostResolverEndpointResults>
 ResolveHostRequest::GetEndpointResultsWithMetadata() const {
   if (cancelled_) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   DCHECK(internal_request_);
   const net::HostResolverEndpointResults* endpoint_results =
       internal_request_->GetEndpointResults();
 
-  if (!endpoint_results || endpoint_results->size() <= 1) {
-    return absl::nullopt;
+  if (!endpoint_results) {
+    return std::nullopt;
   }
 
   net::HostResolverEndpointResults endpoint_results_with_metadata;
@@ -189,18 +189,20 @@ ResolveHostRequest::GetEndpointResultsWithMetadata() const {
 }
 
 void ResolveHostRequest::SignalNonAddressResults() {
-  if (cancelled_)
+  if (cancelled_) {
     return;
+  }
   DCHECK(internal_request_);
 
-  if (internal_request_->GetTextResults()) {
-    response_client_->OnTextResults(
-        internal_request_->GetTextResults().value());
+  if (internal_request_->GetTextResults() &&
+      !internal_request_->GetTextResults()->empty()) {
+    response_client_->OnTextResults(*internal_request_->GetTextResults());
   }
 
-  if (internal_request_->GetHostnameResults()) {
+  if (internal_request_->GetHostnameResults() &&
+      !internal_request_->GetHostnameResults()->empty()) {
     response_client_->OnHostnameResults(
-        internal_request_->GetHostnameResults().value());
+        *internal_request_->GetHostnameResults());
   }
 }
 

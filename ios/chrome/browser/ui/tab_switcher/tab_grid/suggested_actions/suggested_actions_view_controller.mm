@@ -6,24 +6,21 @@
 
 #import <utility>
 
+#import "base/apple/foundation_util.h"
 #import "base/check_op.h"
-#import "base/mac/foundation_util.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_image_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_tabs_search_suggested_history_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_url_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_styler.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_styler.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_constants.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/suggested_actions/suggested_actions_delegate.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 const CGFloat kEstimatedRowMaxHeight = 150;
@@ -121,16 +118,18 @@ typedef NS_ENUM(NSInteger, ItemType) {
   [model addItem:searchWebItem
       toSectionWithIdentifier:kSectionIdentifierSuggestedActions];
 
-  TableViewImageItem* searchRecentTabsItem = [[TableViewImageItem alloc]
-      initWithType:ItemTypeSuggestedActionSearchRecentTabs];
-  searchRecentTabsItem.title = l10n_util::GetNSString(
-      IDS_IOS_TABS_SEARCH_SUGGESTED_ACTION_SEARCH_RECENT_TABS);
-  searchRecentTabsItem.image =
-      [[UIImage imageNamed:@"suggested_action_recent_tabs"]
-          imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-  searchRecentTabsItem.textColor = actionsTextColor;
-  [model addItem:searchRecentTabsItem
-      toSectionWithIdentifier:kSectionIdentifierSuggestedActions];
+  if (!IsTabGroupSyncEnabled()) {
+    TableViewImageItem* searchRecentTabsItem = [[TableViewImageItem alloc]
+        initWithType:ItemTypeSuggestedActionSearchRecentTabs];
+    searchRecentTabsItem.title = l10n_util::GetNSString(
+        IDS_IOS_TABS_SEARCH_SUGGESTED_ACTION_SEARCH_RECENT_TABS);
+    searchRecentTabsItem.image =
+        [[UIImage imageNamed:@"suggested_action_recent_tabs"]
+            imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    searchRecentTabsItem.textColor = actionsTextColor;
+    [model addItem:searchRecentTabsItem
+        toSectionWithIdentifier:kSectionIdentifierSuggestedActions];
+  }
 
   TableViewTabsSearchSuggestedHistoryItem* searchHistoryItem =
       [[TableViewTabsSearchSuggestedHistoryItem alloc]
@@ -153,7 +152,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   if (itemType == ItemTypeSuggestedActionSearchHistory &&
       self.searchText.length) {
     __weak TableViewTabsSearchSuggestedHistoryCell* weakCell =
-        base::mac::ObjCCastStrict<TableViewTabsSearchSuggestedHistoryCell>(
+        base::apple::ObjCCastStrict<TableViewTabsSearchSuggestedHistoryCell>(
             cell);
     NSString* currentSearchText = self.searchText;
     weakCell.searchTerm = currentSearchText;

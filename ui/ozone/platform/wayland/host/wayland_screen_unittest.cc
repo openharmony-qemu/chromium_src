@@ -14,7 +14,6 @@
 #include "ui/display/display.h"
 #include "ui/display/display_observer.h"
 #include "ui/display/display_switches.h"
-#include "ui/display/types/display_constants.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
@@ -71,30 +70,36 @@ class TestDisplayObserver : public display::DisplayObserver {
     display_ = new_display;
   }
 
-  void OnDisplayRemoved(const display::Display& old_display) override {
-    removed_display_ = old_display;
-  }
-
-  void OnDidRemoveDisplays() override {
-    if (did_remove_display_closure_)
-      did_remove_display_closure_.Run();
+  void OnDisplaysRemoved(const display::Displays& removed_displays) override {
+    removed_display_ = removed_displays.back();
+    if (displays_removed_closure_) {
+      displays_removed_closure_.Run();
+    }
   }
 
   void OnDisplayMetricsChanged(const display::Display& display,
                                uint32_t changed_metrics) override {
     changed_metrics_ = changed_metrics;
     display_ = display;
+    if (display_metrics_changed_closure_) {
+      display_metrics_changed_closure_.Run();
+    }
   }
 
-  void set_did_remove_display_closure(base::RepeatingClosure closure) {
-    did_remove_display_closure_ = std::move(closure);
+  void set_displays_removed_closure(base::RepeatingClosure closure) {
+    displays_removed_closure_ = std::move(closure);
+  }
+
+  void set_display_metrics_changed_closure(base::RepeatingClosure closure) {
+    display_metrics_changed_closure_ = std::move(closure);
   }
 
  private:
   uint32_t changed_metrics_ = 0;
   display::Display display_;
   display::Display removed_display_;
-  base::RepeatingClosure did_remove_display_closure_{};
+  base::RepeatingClosure displays_removed_closure_;
+  base::RepeatingClosure display_metrics_changed_closure_;
 };
 
 }  // namespace
@@ -142,6 +147,23 @@ class WaylandScreenTest : public WaylandTest {
     display::Display display_for_widget =
         platform_screen_->GetDisplayForAcceleratedWidget(widget);
     EXPECT_EQ(display_for_widget.id(), expected_display_id);
+  }
+
+  WaylandOutput::Metrics MakeMetrics(const display::Display& display) const {
+    return WaylandOutput::Metrics{
+        WaylandOutput::Id(display.id()),
+        display.id(),
+        display.bounds().origin(),
+        display.size(),
+        display.GetSizeInPixel(),
+        display.GetWorkAreaInsets(),
+        /*physical_overscan_insets=*/gfx::Insets(),
+        display.device_scale_factor(),
+        // Display rotation and output transform go opposite directions.
+        (4 - display.panel_rotation()) % 4,
+        (4 - display.rotation()) % 4,
+        /*description=*/"",
+    };
   }
 
   raw_ptr<wl::TestOutput> output_ = nullptr;
@@ -303,6 +325,10 @@ TEST_P(WaylandScreenTest, MultipleOutputsAddedAndRemoved) {
   int64_t removed_display_id = observer.GetRemovedDisplay().id();
   EXPECT_EQ(added_display_id, removed_display_id);
 
+  // Ensure that |WaylandScreen| has forgotten about the removed display.
+  EXPECT_EQ(platform_screen_->GetOutputIdForDisplayId(removed_display_id),
+            WaylandOutput::Id(0));
+
   // Create another display again. Updates rect again.
   PostToServerAndWait(
       [&output2, &output1](wl::TestWaylandServerThread* server) {
@@ -359,13 +385,14 @@ TEST_P(WaylandScreenTest, OutputPropertyChangesMissingLogicalSize) {
   const wl_output_transform panel_transform = WL_OUTPUT_TRANSFORM_90;
   const wl_output_transform logical_transform = WL_OUTPUT_TRANSFORM_NORMAL;
   const gfx::Insets insets = gfx::Insets::TLBR(10, 20, 30, 40);
+  const gfx::Insets overscan_insets = gfx::Insets();
   const float scale = 2;
 
   // Test with missing logical size. Should fall back to calculating from
   // physical size.
   platform_screen_->OnOutputAddedOrUpdated(
-      {output_id, display_id, origin, gfx::Size(), physical_size, insets, scale,
-       panel_transform, logical_transform, "display"});
+      {output_id, display_id, origin, gfx::Size(), physical_size, insets,
+       overscan_insets, scale, panel_transform, logical_transform, "display"});
 
   const display::Display new_display(observer.GetDisplay());
   EXPECT_EQ(output_id, platform_screen_->GetOutputIdForDisplayId(display_id));
@@ -390,16 +417,8 @@ TEST_P(WaylandScreenTest, OutputPropertyChangesPrimaryDisplayChanged) {
   display::Display display1(1, gfx::Rect(0, 0, 800, 600));
   display::Display display2(2, gfx::Rect(800, 0, 700, 500));
 
-  platform_screen_->OnOutputAddedOrUpdated(
-      {static_cast<uint32_t>(display1.id()), display1.id(),
-       display1.bounds().origin(), display1.size(), display1.GetSizeInPixel(),
-       display1.GetWorkAreaInsets(), display1.device_scale_factor(),
-       WL_OUTPUT_TRANSFORM_NORMAL, WL_OUTPUT_TRANSFORM_NORMAL, std::string()});
-  platform_screen_->OnOutputAddedOrUpdated(
-      {static_cast<uint32_t>(display2.id()), display2.id(),
-       display2.bounds().origin(), display2.size(), display2.GetSizeInPixel(),
-       display2.GetWorkAreaInsets(), display2.device_scale_factor(),
-       WL_OUTPUT_TRANSFORM_NORMAL, WL_OUTPUT_TRANSFORM_NORMAL, std::string()});
+  platform_screen_->OnOutputAddedOrUpdated(MakeMetrics(display1));
+  platform_screen_->OnOutputAddedOrUpdated(MakeMetrics(display2));
 
   EXPECT_EQ(platform_screen_->GetPrimaryDisplay(), display1);
 
@@ -407,20 +426,63 @@ TEST_P(WaylandScreenTest, OutputPropertyChangesPrimaryDisplayChanged) {
   // shifting display1 to its left.
   display1.set_bounds(gfx::Rect(-800, 0, 800, 600));
   display2.set_bounds(gfx::Rect(0, 0, 700, 500));
+  display2.set_native_origin(gfx::Point(0, 0));
 
   // Purposely send the output metrics out of order.
-  platform_screen_->OnOutputAddedOrUpdated(
-      {static_cast<uint32_t>(display2.id()), display2.id(),
-       display2.bounds().origin(), display2.size(), display2.GetSizeInPixel(),
-       display2.GetWorkAreaInsets(), display2.device_scale_factor(),
-       WL_OUTPUT_TRANSFORM_NORMAL, WL_OUTPUT_TRANSFORM_NORMAL, std::string()});
-  platform_screen_->OnOutputAddedOrUpdated(
-      {static_cast<uint32_t>(display1.id()), display1.id(),
-       display1.bounds().origin(), display1.size(), display1.GetSizeInPixel(),
-       display1.GetWorkAreaInsets(), display1.device_scale_factor(),
-       WL_OUTPUT_TRANSFORM_NORMAL, WL_OUTPUT_TRANSFORM_NORMAL, std::string()});
+  platform_screen_->OnOutputAddedOrUpdated(MakeMetrics(display2));
+  platform_screen_->OnOutputAddedOrUpdated(MakeMetrics(display1));
 
   EXPECT_EQ(platform_screen_->GetPrimaryDisplay(), display2);
+
+  platform_screen_->RemoveObserver(&observer);
+}
+
+TEST_P(WaylandScreenTest, OutputPropertyChangesOverscanInsets) {
+  TestDisplayObserver observer;
+  platform_screen_->AddObserver(&observer);
+
+  {
+    display::Display display(123, gfx::Rect(0, 0, 800, 600));
+    auto metrics = MakeMetrics(display);
+    metrics.physical_overscan_insets = gfx::Insets::TLBR(10, 20, 30, 40);
+
+    platform_screen_->OnOutputAddedOrUpdated(metrics);
+
+    display::Display expected_display = display;
+    expected_display.set_size_in_pixels(gfx::Size(740, 560));
+    EXPECT_EQ(platform_screen_->GetPrimaryDisplay(), expected_display);
+  }
+
+  {
+    // Display with scaling
+    display::Display display(123, gfx::Rect(0, 0, 800, 600));
+    display.set_device_scale_factor(2.0);
+    auto metrics = MakeMetrics(display);
+    metrics.physical_overscan_insets = gfx::Insets::TLBR(10, 20, 30, 40);
+
+    platform_screen_->OnOutputAddedOrUpdated(metrics);
+
+    display::Display expected_display = display;
+    // Overscan inset is in pixels, so should not scale with scale factor.
+    expected_display.set_size_in_pixels(gfx::Size(740, 560));
+    EXPECT_EQ(platform_screen_->GetPrimaryDisplay(), expected_display);
+  }
+
+  {
+    // Display with rotations.
+    display::Display display(123, gfx::Rect(0, 0, 800, 600));
+    display.set_panel_rotation(display::Display::Rotation::ROTATE_90);
+    display.set_rotation(display::Display::Rotation::ROTATE_180);
+    auto metrics = MakeMetrics(display);
+    metrics.physical_overscan_insets = gfx::Insets::TLBR(10, 20, 30, 40);
+
+    platform_screen_->OnOutputAddedOrUpdated(metrics);
+
+    display::Display expected_display = display;
+    // Overscan inset is applied after accounting for panel rotation.
+    expected_display.set_size_in_pixels(gfx::Size(540, 760));
+    EXPECT_EQ(platform_screen_->GetPrimaryDisplay(), expected_display);
+  }
 
   platform_screen_->RemoveObserver(&observer);
 }
@@ -615,7 +677,7 @@ TEST_P(WaylandScreenTest, GetPrimaryDisplayAfterRemoval) {
 
   // This results in an ASAN error unless GetPrimaryDisplay() is correctly
   // implemented for empty display list. More details in the crbug above.
-  observer.set_did_remove_display_closure(base::BindLambdaForTesting([&]() {
+  observer.set_displays_removed_closure(base::BindLambdaForTesting([&]() {
     ASSERT_EQ(0u, platform_screen_->GetAllDisplays().size());
     auto display = platform_screen_->GetPrimaryDisplay();
     EXPECT_EQ(display::kDefaultDisplayId, display.id());
@@ -923,7 +985,6 @@ TEST_P(WaylandScreenTest, SetWindowScale) {
   });
 
   EXPECT_EQ(window_->applied_state().window_scale, kTripleScale);
-  EXPECT_EQ(window_->ui_scale_, kTripleScale);
 
   // Now simulate the --force-device-scale-factor=1.5
   const float kForcedUIScale = 1.5;
@@ -945,10 +1006,12 @@ TEST_P(WaylandScreenTest, SetWindowScale) {
   });
 
   EXPECT_EQ(window_->applied_state().window_scale, kDoubleScale);
-  EXPECT_EQ(window_->ui_scale_, kForcedUIScale);
 
   display::Display::ResetForceDeviceScaleFactorForTesting();
 }
+
+// Lacros uses screen coordinates so this test doesn't make any sense there.
+#if !BUILDFLAG(IS_CHROMEOS_LACROS)
 
 // Regression test for https://crbug.com/1346534.
 //
@@ -985,8 +1048,9 @@ TEST_P(WaylandScreenTest, SetWindowScaleWithoutEnteredOutput) {
   });
 
   EXPECT_EQ(window_->applied_state().window_scale, 2);
-  EXPECT_EQ(window_->ui_scale(), 2);
 }
+
+#endif  // !BUILDFLAG(IS_CHROMEOS_LACROS)
 
 // Checks that output transform is properly translated into Display orientation.
 // The first one is counter-clockwise, while the latter is clockwise.
@@ -1057,15 +1121,49 @@ TEST_P(WaylandScreenTest, DualOutput) {
   EXPECT_EQ(3u, platform_screen_->GetAllDisplays().size());
 }
 
-class WaylandAuraShellScreenTest : public WaylandScreenTest {
- public:
-  void SetUp() override {
-    WaylandScreenTest::SetUp();
-    // Submit surfaces in pixel coordinates when aura_shell is used.
-    // TODO(oshima): Do this in all tests with ash_shell.
-    connection_->set_surface_submission_in_pixel_coordinates(true);
-  }
-};
+// Regression test for crbug.com/1408304. Ensures that the WaylandScreen's
+// internal output state is consistent when propagating change notifications to
+// clients.
+TEST_P(WaylandScreenTest, OutputStateIsConsistentWhenNotifyingObservers) {
+  // This has to be stored on the client thread, but must be used only on the
+  // server thread.
+  wl::TestOutput* output1 = nullptr;
+  wl::TestOutput* output2 = nullptr;
+
+  // Test to ensure that WaylandScreen output state remains consistent as
+  // metrics changed notifications are propagated.
+  TestDisplayObserver observer;
+  observer.set_display_metrics_changed_closure(
+      base::BindLambdaForTesting([&]() {
+        EXPECT_TRUE(platform_screen_->VerifyOutputStateConsistentForTesting());
+      }));
+  platform_screen_->AddObserver(&observer);
+
+  PostToServerAndWait([&output1](wl::TestWaylandServerThread* server) {
+    output1 = server->output();
+  });
+  ASSERT_FALSE(output1->GetPhysicalSize().IsEmpty());
+
+  // Add a second display. The second display is located to the right of first
+  // display like | || |.
+  PostToServerAndWait(
+      [&output2, &output1](wl::TestWaylandServerThread* server) {
+        output2 = server->CreateAndInitializeOutput(
+            wl::TestOutputMetrics({GetRightX(output1), 0, 800, 600}));
+        ASSERT_TRUE(output2);
+      });
+  WaitForAllDisplaysReady();
+
+  // Destroy primary display.
+  PostToServerAndWait([&output1](wl::TestWaylandServerThread* server) {
+    output1->DestroyGlobal();
+    output1 = nullptr;
+  });
+}
+
+#if BUILDFLAG(IS_CHROMEOS_LACROS)
+
+using WaylandAuraShellScreenTest = WaylandScreenTest;
 
 TEST_P(WaylandAuraShellScreenTest, OutputPropertyChanges) {
   TestDisplayObserver observer;
@@ -1255,9 +1353,6 @@ TEST_P(WaylandAuraShellScreenTest,
 }
 
 TEST_P(WaylandAuraShellScreenTest, UseCorrectScreenBeforeEnterEvent) {
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(features::kWaylandScreenCoordinatesEnabled);
-
   // These have to be stored on the client thread, but must be used only on the
   // server thread.
   wl::TestOutput* output1 = nullptr;
@@ -1295,29 +1390,29 @@ TEST_P(WaylandAuraShellScreenTest, UseCorrectScreenBeforeEnterEvent) {
   // Make sure that entered output is zero but the scale factor is correctly
   // set based on the bounds.
   EXPECT_EQ(window_->root_surface()->entered_outputs().size(), 0u);
-  EXPECT_EQ(2.f, window_->ui_scale());
 }
 
+#endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
+
+#if !BUILDFLAG(IS_CHROMEOS_LACROS)
 INSTANTIATE_TEST_SUITE_P(XdgVersionStableTest,
                          WaylandScreenTest,
                          Values(wl::ServerConfig{}));
 
+#else
+
 INSTANTIATE_TEST_SUITE_P(
     XdgVersionStableTestWithAuraShell,
     WaylandScreenTest,
-    Values(wl::ServerConfig{.enable_aura_shell =
-                                wl::EnableAuraShellProtocol::kEnabled},
-           wl::ServerConfig{
-               .enable_aura_shell = wl::EnableAuraShellProtocol::kEnabled,
-               .use_aura_output_manager = true}));
+    Values(wl::ServerConfig{
+        .enable_aura_shell = wl::EnableAuraShellProtocol::kEnabled}));
 
 INSTANTIATE_TEST_SUITE_P(
     XdgVersionStableTest,
     WaylandAuraShellScreenTest,
-    Values(wl::ServerConfig{.enable_aura_shell =
-                                wl::EnableAuraShellProtocol::kEnabled},
-           wl::ServerConfig{
-               .enable_aura_shell = wl::EnableAuraShellProtocol::kEnabled,
-               .use_aura_output_manager = true}));
+    Values(wl::ServerConfig{
+        .enable_aura_shell = wl::EnableAuraShellProtocol::kEnabled}));
+
+#endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
 
 }  // namespace ui

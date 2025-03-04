@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "media/base/demuxer_stream.h"
 #include "media/base/media_export.h"
@@ -22,9 +23,9 @@ namespace media {
 // associated with their type, and return a null/empty value for other getters.
 class MEDIA_EXPORT MediaResource {
  public:
-  enum Type {
-    STREAM,  // Indicates GetAllStreams() or GetFirstStream() should be used
-    URL,     // Indicates GetUrl() should be used
+  enum class Type {
+    kStream,  // Indicates GetAllStreams() or GetFirstStream() should be used
+    KUrl,     // Indicates GetUrl() should be used
   };
 
   MediaResource();
@@ -65,12 +66,16 @@ class MEDIA_EXPORT MediaResource {
   // Demuxer* it is dealing with.
   virtual void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration);
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+  // This method is only used with the MediaUrlDemuxer, to set headers coming
+  // from media url params.
+  virtual void SetHeaders(base::flat_map<std::string, std::string> headers);
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
       base::TimeDelta buffered_time) {}
   virtual void SetPreloadType(uint32_t preload_type) {}
   virtual void SetMediaSourceType(uint32_t media_source_type) {}
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

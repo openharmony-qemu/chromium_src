@@ -3,6 +3,11 @@
 // found in the LICENSE file.
 
 #include "components/signin/internal/identity_manager/account_capabilities_fetcher.h"
+
+#include <optional>
+#include <string_view>
+
+#include "account_capabilities_fetcher.h"
 #include "base/notreached.h"
 #include "base/strings/stringprintf.h"
 #include "base/test/metrics/histogram_tester.h"
@@ -16,7 +21,6 @@
 #include "google_apis/gaia/core_account_id.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include <jni.h>
@@ -25,7 +29,7 @@
 #include "components/signin/internal/identity_manager/account_capabilities_fetcher_android.h"
 #include "components/signin/public/android/test_support_jni_headers/AccountCapabilitiesFetcherTestUtil_jni.h"
 #else
-#include "base/strings/string_piece.h"
+
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "components/prefs/testing_pref_service.h"
@@ -79,9 +83,10 @@ class TestSupportAndroid {
 
   std::unique_ptr<AccountCapabilitiesFetcher> CreateFetcher(
       const CoreAccountInfo& account_info,
+      AccountCapabilitiesFetcher::FetchPriority fetch_priority,
       AccountCapabilitiesFetcher::OnCompleteCallback callback) {
     return std::make_unique<AccountCapabilitiesFetcherAndroid>(
-        account_info, std::move(callback));
+        account_info, fetch_priority, std::move(callback));
   }
 
   void ReturnAccountCapabilitiesFetchSuccess(
@@ -143,10 +148,10 @@ std::string GenerateValidAccountCapabilitiesResponse(bool capability_value) {
 
 void VerifyAccountCapabilitiesRequest(const network::ResourceRequest& request) {
   EXPECT_EQ(request.method, "POST");
-  base::StringPiece request_string = request.request_body->elements()
-                                         ->at(0)
-                                         .As<network::DataElementBytes>()
-                                         .AsStringPiece();
+  std::string_view request_string = request.request_body->elements()
+                                        ->at(0)
+                                        .As<network::DataElementBytes>()
+                                        .AsStringPiece();
   // The request body should look like:
   // "names=Name1&names=Name2&names=Name3"
   std::vector<std::string> requested_capabilities = base::SplitString(
@@ -174,11 +179,12 @@ class TestSupportGaia {
 
   std::unique_ptr<AccountCapabilitiesFetcher> CreateFetcher(
       const CoreAccountInfo& account_info,
+      AccountCapabilitiesFetcher::FetchPriority fetch_priority,
       AccountCapabilitiesFetcher::OnCompleteCallback callback) {
     return std::make_unique<AccountCapabilitiesFetcherGaia>(
         &fake_oauth2_token_service_,
         test_url_loader_factory_.GetSafeWeakWrapper(), account_info,
-        std::move(callback));
+        fetch_priority, std::move(callback));
   }
 
   void ReturnAccountCapabilitiesFetchSuccess(
@@ -247,8 +253,11 @@ class AccountCapabilitiesFetcherTest : public ::testing::Test {
   void SetUp() override { test_support_.AddAccount(account_info()); }
 
   std::unique_ptr<AccountCapabilitiesFetcher> CreateFetcher(
-      AccountCapabilitiesFetcher::OnCompleteCallback callback) {
-    return test_support_.CreateFetcher(account_info(), std::move(callback));
+      AccountCapabilitiesFetcher::OnCompleteCallback callback,
+      AccountCapabilitiesFetcher::FetchPriority priority =
+          AccountCapabilitiesFetcher::FetchPriority::kForeground) {
+    return test_support_.CreateFetcher(account_info(), priority,
+                                       std::move(callback));
   }
 
   void ReturnAccountCapabilitiesFetchSuccess(bool capability_value) {
@@ -288,12 +297,37 @@ TEST_F(AccountCapabilitiesFetcherTest, Success_True) {
   ReturnAccountCapabilitiesFetchSuccess(true);
 
 #if !BUILDFLAG(IS_ANDROID)
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Success",
-                          1);
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Failure",
-                          0);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Success", 1);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Failure", 0);
   tester.ExpectUniqueSample(
-      "Signin.AccountCapabilities.FetchResult",
+      "Signin.AccountCapabilities.Foreground.FetchResult",
+      AccountCapabilitiesFetcherGaia::FetchResult::kSuccess, 1);
+#endif  // !BUILDFLAG(IS_ANDROID)
+}
+
+TEST_F(AccountCapabilitiesFetcherTest, Success_True_Background) {
+  base::MockCallback<AccountCapabilitiesFetcher::OnCompleteCallback> callback;
+  std::unique_ptr<AccountCapabilitiesFetcher> fetcher = CreateFetcher(
+      callback.Get(), AccountCapabilitiesFetcher::FetchPriority::kBackground);
+  AccountCapabilities expected_capabilities;
+  AccountCapabilitiesTestMutator mutator(&expected_capabilities);
+  mutator.SetAllSupportedCapabilities(true);
+  base::HistogramTester tester;
+
+  fetcher->Start();
+  EXPECT_CALL(callback,
+              Run(account_id(), ::testing::Optional(expected_capabilities)));
+  ReturnAccountCapabilitiesFetchSuccess(true);
+
+#if !BUILDFLAG(IS_ANDROID)
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Background.FetchDuration.Success", 1);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Background.FetchDuration.Failure", 0);
+  tester.ExpectUniqueSample(
+      "Signin.AccountCapabilities.Background.FetchResult",
       AccountCapabilitiesFetcherGaia::FetchResult::kSuccess, 1);
 #endif  // !BUILDFLAG(IS_ANDROID)
 }
@@ -319,9 +353,9 @@ TEST_F(AccountCapabilitiesFetcherTest, FetchFailure) {
   base::HistogramTester tester;
 
   fetcher->Start();
-  absl::optional<AccountCapabilities> expected_capabilities;
+  std::optional<AccountCapabilities> expected_capabilities;
 #if BUILDFLAG(IS_ANDROID)
-  // Android never returns absl::nullopt even if the fetcher has failed to get
+  // Android never returns std::nullopt even if the fetcher has failed to get
   // all capabilities.
   expected_capabilities = AccountCapabilities();
 #endif
@@ -329,12 +363,12 @@ TEST_F(AccountCapabilitiesFetcherTest, FetchFailure) {
   ReturnAccountCapabilitiesFetchFailure();
 
 #if !BUILDFLAG(IS_ANDROID)
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Success",
-                          0);
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Failure",
-                          1);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Success", 0);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Failure", 1);
   tester.ExpectUniqueSample(
-      "Signin.AccountCapabilities.FetchResult",
+      "Signin.AccountCapabilities.Foreground.FetchResult",
       AccountCapabilitiesFetcherGaia::FetchResult::kOAuthError, 1);
 #endif  // !BUILDFLAG(IS_ANDROID)
 }
@@ -349,15 +383,15 @@ TEST_F(AccountCapabilitiesFetcherTest, TokenFailure) {
   base::HistogramTester tester;
 
   fetcher->Start();
-  EXPECT_CALL(callback, Run(account_id(), Eq(absl::nullopt)));
+  EXPECT_CALL(callback, Run(account_id(), Eq(std::nullopt)));
   SimulateIssueAccessTokenPersistentError();
 
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Success",
-                          0);
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Failure",
-                          1);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Success", 0);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Failure", 1);
   tester.ExpectUniqueSample(
-      "Signin.AccountCapabilities.FetchResult",
+      "Signin.AccountCapabilities.Foreground.FetchResult",
       AccountCapabilitiesFetcherGaia::FetchResult::kGetTokenFailure, 1);
 }
 #endif  // !BUILDFLAG(IS_ANDROID)
@@ -373,12 +407,12 @@ TEST_F(AccountCapabilitiesFetcherTest, Cancelled) {
   fetcher.reset();
 
 #if !BUILDFLAG(IS_ANDROID)
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Success",
-                          0);
-  tester.ExpectTotalCount("Signin.AccountCapabilities.FetchDuration.Failure",
-                          1);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Success", 0);
+  tester.ExpectTotalCount(
+      "Signin.AccountCapabilities.Foreground.FetchDuration.Failure", 1);
   tester.ExpectUniqueSample(
-      "Signin.AccountCapabilities.FetchResult",
+      "Signin.AccountCapabilities.Foreground.FetchResult",
       AccountCapabilitiesFetcherGaia::FetchResult::kCancelled, 1);
 #endif  // !BUILDFLAG(IS_ANDROID)
 }

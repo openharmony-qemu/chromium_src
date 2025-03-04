@@ -28,6 +28,8 @@
 #include "services/device/hid/hid_service_fuchsia.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+
 namespace device {
 
 namespace {
@@ -74,7 +76,7 @@ std::unique_ptr<HidService> HidService::Create() {
   return std::make_unique<HidServiceWin>();
 #elif BUILDFLAG(IS_FUCHSIA)
   return std::make_unique<HidServiceFuchsia>();
-#elif BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   // OHOS platform functions is not implemented.
   return nullptr;
 #else
@@ -197,7 +199,7 @@ void HidService::FirstEnumerationComplete() {
   }
 }
 
-absl::optional<std::string> HidService::FindDeviceGuidInDeviceMap(
+std::optional<std::string> HidService::FindDeviceGuidInDeviceMap(
     const HidPlatformDeviceId& platform_device_id) {
   for (const auto& device_entry : devices_) {
     const auto& platform_device_map =
@@ -207,7 +209,7 @@ absl::optional<std::string> HidService::FindDeviceGuidInDeviceMap(
         return device_entry.first;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 scoped_refptr<HidDeviceInfo> HidService::FindSiblingDevice(

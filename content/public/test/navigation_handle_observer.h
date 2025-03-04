@@ -6,6 +6,7 @@
 #define CONTENT_PUBLIC_TEST_NAVIGATION_HANDLE_OBSERVER_H_
 
 #include <cstdint>
+
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "content/public/browser/navigation_handle_timing.h"
@@ -17,6 +18,7 @@
 #include "net/dns/public/resolve_error_info.h"
 #include "net/http/http_response_headers.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
+#include "third_party/blink/public/mojom/navigation/renderer_content_settings.mojom.h"
 #include "url/gurl.h"
 
 namespace content {
@@ -42,14 +44,14 @@ class NavigationHandleObserver : public WebContentsObserver {
   bool is_renderer_initiated() { return is_renderer_initiated_; }
   bool is_same_document() { return is_same_document_; }
   bool was_redirected() { return was_redirected_; }
-  int frame_tree_node_id() { return frame_tree_node_id_; }
+  FrameTreeNodeId frame_tree_node_id() { return frame_tree_node_id_; }
   const GURL& last_committed_url() { return last_committed_url_; }
   ui::PageTransition page_transition() { return page_transition_; }
   net::Error net_error_code() { return net_error_code_; }
   int64_t navigation_id() { return navigation_id_; }
   bool is_download() { return is_download_; }
   ukm::SourceId next_page_ukm_source_id() { return next_page_ukm_source_id_; }
-  absl::optional<net::AuthChallengeInfo> auth_challenge_info() {
+  std::optional<net::AuthChallengeInfo> auth_challenge_info() {
     return auth_challenge_info_;
   }
   const net::ResolveErrorInfo& resolve_error_info() {
@@ -61,6 +63,9 @@ class NavigationHandleObserver : public WebContentsObserver {
   }
   ReloadType reload_type() { return reload_type_; }
   std::string GetNormalizedResponseHeader(const std::string& key) const;
+  blink::mojom::RendererContentSettingsPtr& content_settings() {
+    return content_settings_;
+  }
 
  private:
   // A reference to the NavigationHandle so this class will track only
@@ -73,7 +78,7 @@ class NavigationHandleObserver : public WebContentsObserver {
   bool is_renderer_initiated_ = true;
   bool is_same_document_ = false;
   bool was_redirected_ = false;
-  int frame_tree_node_id_ = RenderFrameHost::kNoFrameTreeNodeId;
+  FrameTreeNodeId frame_tree_node_id_;
   ui::PageTransition page_transition_ = ui::PAGE_TRANSITION_LINK;
   GURL expected_start_url_;
   GURL last_committed_url_;
@@ -81,12 +86,13 @@ class NavigationHandleObserver : public WebContentsObserver {
   int64_t navigation_id_ = -1;
   bool is_download_ = false;
   ukm::SourceId next_page_ukm_source_id_ = ukm::kInvalidSourceId;
-  absl::optional<net::AuthChallengeInfo> auth_challenge_info_;
+  std::optional<net::AuthChallengeInfo> auth_challenge_info_;
   net::ResolveErrorInfo resolve_error_info_;
   base::TimeTicks navigation_start_;
   NavigationHandleTiming navigation_handle_timing_;
   ReloadType reload_type_ = ReloadType::NONE;
   scoped_refptr<const net::HttpResponseHeaders> response_headers_;
+  blink::mojom::RendererContentSettingsPtr content_settings_;
 };
 
 }  // namespace content

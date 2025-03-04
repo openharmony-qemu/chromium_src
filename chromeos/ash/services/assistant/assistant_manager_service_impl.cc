@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "ash/constants/ash_features.h"
@@ -16,6 +17,7 @@
 #include "base/barrier_closure.h"
 #include "base/check.h"
 #include "base/command_line.h"
+#include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/i18n/rtl.h"
@@ -48,7 +50,6 @@
 #include "chromeos/strings/grit/chromeos_strings.h"
 #include "chromeos/version/version_loader.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/accessibility/mojom/ax_assistant_structure.mojom.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "url/gurl.h"
@@ -64,7 +65,7 @@ static bool is_first_init = true;
 constexpr char kAndroidSettingsAppPackage[] = "com.android.settings";
 
 std::vector<libassistant::mojom::AuthenticationTokenPtr> ToAuthenticationTokens(
-    const absl::optional<AssistantManagerService::UserInfo>& user) {
+    const std::optional<AssistantManagerService::UserInfo>& user) {
   std::vector<libassistant::mojom::AuthenticationTokenPtr> result;
 
   if (user.has_value()) {
@@ -79,8 +80,8 @@ std::vector<libassistant::mojom::AuthenticationTokenPtr> ToAuthenticationTokens(
 }
 
 libassistant::mojom::BootupConfigPtr CreateBootupConfig(
-    const absl::optional<std::string>& s3_server_uri_override,
-    const absl::optional<std::string>& device_id_override) {
+    const std::optional<std::string>& s3_server_uri_override,
+    const std::optional<std::string>& device_id_override) {
   auto result = libassistant::mojom::BootupConfig::New();
   result->s3_server_uri_override = s3_server_uri_override;
   result->device_id_override = device_id_override;
@@ -147,8 +148,7 @@ class SpeechRecognitionObserverWrapper
 
  private:
   // Owned by our parent, |AssistantManagerServiceImpl|.
-  const raw_ref<const base::ObserverList<AssistantInteractionSubscriber>,
-                ExperimentalAsh>
+  const raw_ref<const base::ObserverList<AssistantInteractionSubscriber>>
       interaction_subscribers_;
 
   mojo::Receiver<libassistant::mojom::SpeechRecognitionObserver> receiver_{
@@ -176,8 +176,8 @@ AssistantManagerServiceImpl::AssistantManagerServiceImpl(
     ServiceContext* context,
     std::unique_ptr<network::PendingSharedURLLoaderFactory>
         pending_url_loader_factory,
-    absl::optional<std::string> s3_server_uri_override,
-    absl::optional<std::string> device_id_override,
+    std::optional<std::string> s3_server_uri_override,
+    std::optional<std::string> device_id_override,
     std::unique_ptr<LibassistantServiceHost> libassistant_service_host)
     : assistant_settings_(std::make_unique<AssistantSettingsImpl>(context)),
       assistant_host_(std::make_unique<AssistantHost>(this)),
@@ -213,7 +213,7 @@ AssistantManagerServiceImpl::~AssistantManagerServiceImpl() {
   assistant_host_ = nullptr;
 }
 
-void AssistantManagerServiceImpl::Start(const absl::optional<UserInfo>& user,
+void AssistantManagerServiceImpl::Start(const std::optional<UserInfo>& user,
                                         bool enable_hotword) {
   DCHECK(!IsServiceStarted());
   DCHECK(GetState() == State::STOPPED || GetState() == State::DISCONNECTED);
@@ -259,8 +259,7 @@ AssistantManagerService::State AssistantManagerServiceImpl::GetState() const {
   return state_;
 }
 
-void AssistantManagerServiceImpl::SetUser(
-    const absl::optional<UserInfo>& user) {
+void AssistantManagerServiceImpl::SetUser(const std::optional<UserInfo>& user) {
   if (!IsServiceStarted())
     return;
 
@@ -476,7 +475,7 @@ void AssistantManagerServiceImpl::Initialize() {
 }
 
 void AssistantManagerServiceImpl::InitAssistant(
-    const absl::optional<UserInfo>& user) {
+    const std::optional<UserInfo>& user) {
   DCHECK(!IsServiceStarted());
 
   auto bootup_config = bootup_config_.Clone();
@@ -696,8 +695,7 @@ AssistantQueryResponseType AssistantManagerServiceImpl::GetQueryResponseType()
   if (device_settings_host_->has_setting_changed()) {
     return AssistantQueryResponseType::kDeviceAction;
   } else if (!receive_url_response_.empty()) {
-    if (receive_url_response_.find("www.google.com/search?") !=
-        std::string::npos) {
+    if (base::Contains(receive_url_response_, "www.google.com/search?")) {
       return AssistantQueryResponseType::kSearchFallback;
     } else {
       return AssistantQueryResponseType::kTargetedAction;
@@ -784,6 +782,8 @@ void AssistantManagerServiceImpl::ClearAfterStop() {
   scoped_app_list_event_subscriber_.Reset();
   interaction_subscribers_.Clear();
   state_observers_.Clear();
+
+  is_first_init = true;
 }
 
 }  // namespace ash::assistant

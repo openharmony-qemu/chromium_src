@@ -13,12 +13,11 @@
 #include <ios>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "base/allocator/partition_allocator/partition_root.h"
-#include "base/allocator/partition_allocator/thread_cache.h"
 #include "base/check_op.h"
 #include "base/debug/proc_maps_linux.h"
 #include "base/files/file.h"
@@ -30,7 +29,8 @@
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "partition_alloc/partition_root.h"
+#include "partition_alloc/thread_cache.h"
 #include "tools/memory/partition_allocator/inspect_utils.h"
 
 namespace partition_alloc::tools {
@@ -70,7 +70,7 @@ void DisplayPerBucketData(
 
     {
       const auto i =
-          BucketIndexLookup::GetIndexForDefaultBuckets(requested_size);
+          BucketIndexLookup::GetIndexForNeutralBuckets(requested_size);
       alloc_size[i] += requested_size;
       alloc_nums[i]++;
     }
@@ -100,8 +100,7 @@ void DisplayPerBucketData(
     std::string written = base::StringPrintf(
         "%zu,%lu,%zu,%zu,%zu,%zu\n", i, bucket_size, alloc_nums[i],
         alloc_size[i], alt_alloc_nums[i], alt_alloc_size[i]);
-    if (f.WriteAtCurrentPos(written.data(), written.size()) !=
-        static_cast<int>(written.size())) {
+    if (!f.WriteAtCurrentPosAndCheck(base::as_byte_span(written))) {
       std::cerr << "WARNING: Unable to write to temp file, data will be "
                    "stale/missing.\n";
       return;

@@ -9,22 +9,22 @@
 #import "components/omnibox/browser/actions/omnibox_pedal.h"
 #import "components/omnibox/browser/actions/omnibox_pedal_concepts.h"
 #import "components/omnibox/browser/autocomplete_match.h"
-#import "ios/chrome/browser/default_browser/promo_source.h"
+#import "components/password_manager/core/browser/ui/password_check_referrer.h"
+#import "ios/chrome/browser/default_browser/model/promo_source.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/omnibox_commands.h"
 #import "ios/chrome/browser/shared/public/commands/open_new_tab_command.h"
+#import "ios/chrome/browser/shared/public/commands/quick_delete_commands.h"
+#import "ios/chrome/browser/shared/public/commands/settings_commands.h"
 #import "ios/chrome/browser/shared/ui/symbols/colorful_background_symbol_view.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/ui/omnibox/popup/popup_swift.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
+#import "ios/chrome/browser/ui/settings/clear_browsing_data/features.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/image_util.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -37,8 +37,7 @@ const CGFloat kSymbolSize = 18;
 
 @implementation OmniboxPedalAnnotator
 
-- (OmniboxPedalData*)pedalForMatch:(const AutocompleteMatch&)match
-                         incognito:(BOOL)incognito {
+- (OmniboxPedalData*)pedalForMatch:(const AutocompleteMatch&)match {
   // Currently this logic takes only pedal type actions, but it could
   // be expanded to support other kinds of actions by changing the
   // predicate or iterating through `match.actions`. In that case,
@@ -51,8 +50,10 @@ const CGFloat kSymbolSize = 18;
   if (!omniboxPedal) {
     return nil;
   }
-  __weak id<ApplicationCommands> pedalsEndpoint = self.pedalsEndpoint;
-  __weak id<OmniboxCommands> omniboxCommandHandler = self.omniboxCommandHandler;
+  __weak id<ApplicationCommands> applicationHandler = self.applicationHandler;
+  __weak id<SettingsCommands> settingsHandler = self.settingsHandler;
+  __weak id<OmniboxCommands> omniboxHandler = self.omniboxHandler;
+  __weak id<QuickDeleteCommands> quickDeleteHandler = self.quickDeleteHandler;
 
   NSString* hint =
       base::SysUTF16ToNSString(omniboxPedal->GetLabelStrings().hint);
@@ -61,23 +62,9 @@ const CGFloat kSymbolSize = 18;
   NSInteger pedalType = static_cast<NSInteger>(omniboxPedal->GetMetricsId());
   OmniboxPedalId pedalId = omniboxPedal->PedalId();
 
-  UIImage* image;
-
-  // Dark mode is set explicitly if incognito is enabled.
-  UITraitCollection* traitCollection =
-      [UITraitCollection traitCollectionWithUserInterfaceStyle:
-                             incognito ? UIUserInterfaceStyleDark
-                                       : UIUserInterfaceStyleUnspecified];
-
   switch (pedalId) {
     case OmniboxPedalId::PLAY_CHROME_DINO_GAME: {
-      if (UseSymbolsInOmnibox()) {
-        image = CustomSymbolWithPointSize(kDinoSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_dino"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image = CustomSymbolWithPointSize(kDinoSymbol, kSymbolSize);
       NSString* urlStr = [NSString
           stringWithFormat:@"%s://%s", kChromeUIScheme, kChromeUIDinoHost];
       GURL url(base::SysNSStringToUTF8(urlStr));
@@ -94,17 +81,12 @@ const CGFloat kSymbolSize = 18;
                        OpenNewTabCommand* command =
                            [OpenNewTabCommand commandWithURLFromChrome:url
                                                            inIncognito:NO];
-                       [pedalsEndpoint openURLInNewTab:command];
+                       [applicationHandler openURLInNewTab:command];
                      }];
     }
     case OmniboxPedalId::CLEAR_BROWSING_DATA: {
-      if (UseSymbolsInOmnibox()) {
-        image = DefaultSymbolTemplateWithPointSize(kTrashSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_clear_browsing_data"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image =
+          DefaultSymbolTemplateWithPointSize(kTrashSymbol, kSymbolSize);
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
                    subtitle:
@@ -117,31 +99,30 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint showClearBrowsingDataSettings];
+                       [omniboxHandler cancelOmniboxEdit];
+                       if (IsIosQuickDeleteEnabled()) {
+                         [quickDeleteHandler
+                             showQuickDeleteAndCanPerformTabsClosureAnimation:
+                                 YES];
+                       } else {
+                         [settingsHandler showClearBrowsingDataSettings];
+                       }
                      }];
     }
     case OmniboxPedalId::SET_CHROME_AS_DEFAULT_BROWSER: {
-      if (UseSymbolsInOmnibox()) {
 #if BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
-        image = MakeSymbolMulticolor(
-            CustomSymbolWithPointSize(kChromeSymbol, kSymbolSize));
+      UIImage* image = MakeSymbolMulticolor(
+          CustomSymbolWithPointSize(kMulticolorChromeballSymbol, kSymbolSize));
 #else
-        image = DefaultSymbolTemplateWithPointSize(kDefaultBrowserSymbol,
-                                                   kSymbolSize);
+      UIImage* image = DefaultSymbolTemplateWithPointSize(kDefaultBrowserSymbol,
+                                                          kSymbolSize);
 #endif  // BUILDFLAG(IOS_USE_BRANDED_SYMBOLS)
-      } else {
-        image = [UIImage imageNamed:@"pedal_default_browser"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      DefaultBrowserSettingsPageSource source =
+          DefaultBrowserSettingsPageSource::kOmnibox;
       ProceduralBlock action = ^{
-        [omniboxCommandHandler cancelOmniboxEdit];
-        [pedalsEndpoint
-            showDefaultBrowserSettingsFromViewController:nil
-                                            sourceForUMA:
-                                                DefaultBrowserPromoSource::
-                                                    kOmnibox];
+        [omniboxHandler cancelOmniboxEdit];
+        [settingsHandler showDefaultBrowserSettingsFromViewController:nil
+                                                         sourceForUMA:source];
       };
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
@@ -162,13 +143,7 @@ const CGFloat kSymbolSize = 18;
                      action:action];
     }
     case OmniboxPedalId::MANAGE_PASSWORDS: {
-      if (UseSymbolsInOmnibox()) {
-        image = CustomSymbolWithPointSize(kPasswordSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_passwords"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image = CustomSymbolWithPointSize(kPasswordSymbol, kSymbolSize);
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
                    subtitle:l10n_util::GetNSString(
@@ -180,22 +155,15 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint
+                       [omniboxHandler cancelOmniboxEdit];
+                       [settingsHandler
                            showSavedPasswordsSettingsFromViewController:nil
-                                                       showCancelButton:NO
-                                                     startPasswordCheck:NO];
+                                                       showCancelButton:NO];
                      }];
     }
     case OmniboxPedalId::UPDATE_CREDIT_CARD: {
-      if (UseSymbolsInOmnibox()) {
-        image =
-            DefaultSymbolTemplateWithPointSize(kCreditCardSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_payments"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image =
+          DefaultSymbolTemplateWithPointSize(kCreditCardSymbol, kSymbolSize);
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
                    subtitle:
@@ -208,18 +176,12 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint showCreditCardSettings];
+                       [omniboxHandler cancelOmniboxEdit];
+                       [settingsHandler showCreditCardSettings];
                      }];
     }
     case OmniboxPedalId::LAUNCH_INCOGNITO: {
-      if (UseSymbolsInOmnibox()) {
-        image = CustomSymbolWithPointSize(kIncognitoSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_incognito"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image = CustomSymbolWithPointSize(kIncognitoSymbol, kSymbolSize);
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
                    subtitle:l10n_util::GetNSString(
@@ -231,20 +193,15 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint
+                       [omniboxHandler cancelOmniboxEdit];
+                       [applicationHandler
                            openURLInNewTab:[OpenNewTabCommand
                                                incognitoTabCommand]];
                      }];
     }
     case OmniboxPedalId::RUN_CHROME_SAFETY_CHECK: {
-      if (UseSymbolsInOmnibox()) {
-        image = CustomSymbolWithPointSize(kSafetyCheckSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_safety_check"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image =
+          CustomSymbolWithPointSize(kSafetyCheckSymbol, kSymbolSize);
       NSString* subtitle = l10n_util::GetNSString(
           IDS_IOS_OMNIBOX_PEDAL_SUBTITLE_RUN_CHROME_SAFETY_CHECK);
       return [[OmniboxPedalData alloc]
@@ -257,20 +214,16 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint
-                           showSafetyCheckSettingsAndStartSafetyCheck];
+                       [omniboxHandler cancelOmniboxEdit];
+                       [settingsHandler
+                           showAndStartSafetyCheckForReferrer:
+                               password_manager::PasswordCheckReferrer::
+                                   kSafetyCheck];
                      }];
     }
     case OmniboxPedalId::MANAGE_CHROME_SETTINGS: {
-      if (UseSymbolsInOmnibox()) {
-        image =
-            DefaultSymbolTemplateWithPointSize(kSettingsSymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_settings"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image =
+          DefaultSymbolTemplateWithPointSize(kSettingsSymbol, kSymbolSize);
       NSString* subtitle = l10n_util::GetNSString(
           IDS_IOS_OMNIBOX_PEDAL_SUBTITLE_MANAGE_CHROME_SETTINGS);
       return [[OmniboxPedalData alloc]
@@ -283,18 +236,13 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint showSettingsFromViewController:nil];
+                       [omniboxHandler cancelOmniboxEdit];
+                       [applicationHandler showSettingsFromViewController:nil];
                      }];
     }
     case OmniboxPedalId::VIEW_CHROME_HISTORY: {
-      if (UseSymbolsInOmnibox()) {
-        image = DefaultSymbolTemplateWithPointSize(kHistorySymbol, kSymbolSize);
-      } else {
-        image = [UIImage imageNamed:@"pedal_history"
-                                 inBundle:nil
-            compatibleWithTraitCollection:traitCollection];
-      }
+      UIImage* image =
+          DefaultSymbolTemplateWithPointSize(kHistorySymbol, kSymbolSize);
       return [[OmniboxPedalData alloc]
               initWithTitle:hint
                    subtitle:
@@ -307,8 +255,8 @@ const CGFloat kSymbolSize = 18;
            imageBorderColor:nil
                        type:pedalType
                      action:^{
-                       [omniboxCommandHandler cancelOmniboxEdit];
-                       [pedalsEndpoint showHistory];
+                       [omniboxHandler cancelOmniboxEdit];
+                       [applicationHandler showHistory];
                      }];
     }
       // If a new case is added here, make sure to update the method returning

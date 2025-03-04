@@ -7,11 +7,13 @@
 #include <memory>
 
 #include "ash/components/arc/compat_mode/test/compat_mode_test_base.h"
+#include "ash/style/ash_color_provider.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "base/test/bind.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/aura/client/aura_constants.h"
+#include "ui/base/mojom/window_show_state.mojom.h"
 #include "ui/views/controls/button/md_text_button.h"
 #include "ui/views/widget/widget.h"
 
@@ -64,8 +66,9 @@ class ArcSplashScreenDialogViewTest : public CompatModeTestBase {
   views::Widget* parent_widget() { return parent_widget_.get(); }
 
  private:
+  ash::AshColorProvider ash_color_provider_;
   std::unique_ptr<views::Widget> parent_widget_;
-  raw_ptr<views::View, ExperimentalAsh> anchor_{nullptr};
+  raw_ptr<views::View, DanglingUntriaged> anchor_{nullptr};
 };
 
 TEST_F(ArcSplashScreenDialogViewTest, TestCloseButton) {
@@ -96,7 +99,8 @@ TEST_F(ArcSplashScreenDialogViewTest, TestEscKey) {
         anchor()->GetIndexOf(dialog_view_test.highlight_border()).has_value());
 
     // Simulates esc key event to close the dialog.
-    ui::KeyEvent event(ui::ET_KEY_PRESSED, ui::VKEY_ESCAPE, ui::EF_NONE);
+    ui::KeyEvent event(ui::EventType::kKeyPressed, ui::VKEY_ESCAPE,
+                       ui::EF_NONE);
     bubble->OnKeyEvent(&event);
 
     EXPECT_TRUE(on_close_callback_called);
@@ -139,8 +143,8 @@ TEST_F(ArcSplashScreenDialogViewTest, TestAnchorDestroy) {
 TEST_F(ArcSplashScreenDialogViewTest,
        TestSplashScreenInFullscreenOrMaximinzedWindow) {
   for (const bool is_for_unresizable : {true, false}) {
-    for (const auto state :
-         {ui::SHOW_STATE_FULLSCREEN, ui::SHOW_STATE_MAXIMIZED}) {
+    for (const auto state : {ui::mojom::WindowShowState::kFullscreen,
+                             ui::mojom::WindowShowState::kMaximized}) {
       bool on_close_callback_called = false;
       auto dialog_view = std::make_unique<ArcSplashScreenDialogView>(
           base::BindLambdaForTesting(

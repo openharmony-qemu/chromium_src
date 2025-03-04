@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "android_webview/nonembedded/net/network_impl.h"
-#include "android_webview/nonembedded/nonembedded_jni_headers/NetworkFetcherTask_jni.h"
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/check.h"
@@ -25,6 +24,9 @@
 #include "url/android/gurl_android.h"
 #include "url/gurl.h"
 
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "android_webview/nonembedded/nonembedded_jni_headers/NetworkFetcherTask_jni.h"
+
 namespace android_webview {
 
 namespace {
@@ -37,7 +39,7 @@ void InvokePostRequest(
     const std::string& post_data,
     const std::string& content_type,
     const base::flat_map<std::string, std::string>& post_additional_headers) {
-  JNIEnv* env = base::android::AttachCurrentThread();
+  JNIEnv* env = jni_zero::AttachCurrentThread();
 
   std::vector<std::string> keys, values;
   for (auto const& header : post_additional_headers) {
@@ -59,7 +61,7 @@ void InvokeDownload(TaskWeakPtr weak_ptr,
                     scoped_refptr<base::SequencedTaskRunner> task_runner,
                     const GURL& url,
                     const base::FilePath& file_path) {
-  JNIEnv* env = base::android::AttachCurrentThread();
+  JNIEnv* env = jni_zero::AttachCurrentThread();
   Java_NetworkFetcherTask_download(
       env, reinterpret_cast<intptr_t>(&weak_ptr),
       reinterpret_cast<intptr_t>(task_runner.get()),

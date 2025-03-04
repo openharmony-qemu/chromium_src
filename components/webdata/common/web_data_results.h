@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "base/functional/callback.h"
+#include "build/blink_buildflags.h"
 #include "build/build_config.h"
 #include "components/webdata/common/webdata_export.h"
 
@@ -29,8 +30,7 @@ typedef enum {
   AUTOFILL_VALUE_RESULT,         // WDResult<std::vector<AutofillEntry>>
   AUTOFILL_CLEANUP_RESULT,       // WDResult<size_t>
   AUTOFILL_CHANGES,              // WDResult<std::vector<AutofillChange>>
-  AUTOFILL_PROFILES_RESULT,      // WDResult<std::vector<
-                                 //     std::unique_ptr<AutofillProfile>>>
+  AUTOFILL_PROFILES_RESULT,      // WDResult<std::vector<AutofillProfile>>
   AUTOFILL_CLOUDTOKEN_RESULT,    // WDResult<std::vector<std::unique_ptr<
                                  //     CreditCardCloudTokenData>>>
   AUTOFILL_CREDITCARDS_RESULT,   // WDResult<std::vector<
@@ -41,16 +41,21 @@ typedef enum {
                                  //     PaymentsCustomerData>>
   AUTOFILL_OFFER_DATA,           // WDResult<std::vector<std::unique_ptr<
                                  //     AutofillOfferData>>>
-  AUTOFILL_VIRTUAL_CARD_USAGE_DATA,  // WDResult<std::vector<std::unique_ptr<
-                                     //     VirtualCardUsageData>>>
-  AUTOFILL_UPI_RESULT,           // WDResult<std::string>
-#if !BUILDFLAG(IS_IOS)           //
+  AUTOFILL_VIRTUAL_CARD_USAGE_DATA,  // WDResult<std::vector<
+                                     //     VirtualCardUsageData>>
+  CREDIT_CARD_BENEFIT_RESULT,        // WDResult<std::vector<std::unique_ptr<
+                                     //     CreditCardBenefit>>>
+  MASKED_BANK_ACCOUNTS_RESULT,       // WDResult<std::vector<BankAccount>>
+  PAYMENT_INSTRUMENT_RESULT,         // WDResult<std::vector<
+                                     //     sync_pb::PaymentInstrument>>
+#if BUILDFLAG(USE_BLINK)         //
   PAYMENT_WEB_APP_MANIFEST,      // WDResult<std::vector<
                                  //     mojom::WebAppManifestSectionPtr>>
   PAYMENT_METHOD_MANIFEST,       // WDResult<std::vector<std::string>>
   SECURE_PAYMENT_CONFIRMATION,   // WDResult<std::vector<std::unique_ptr<
                                  //     SecurePaymentConfirmationInstrument>>>
-#endif
+#endif                           //
+  PLUS_ADDRESS_RESULT,           // WDResult<std::vector<PlusProfile>>
 } WDResultType;
 
 //
@@ -61,7 +66,7 @@ class WEBDATA_EXPORT WDTypedResult {
   WDTypedResult(const WDTypedResult&) = delete;
   WDTypedResult& operator=(const WDTypedResult&) = delete;
 
-  virtual ~WDTypedResult() {}
+  virtual ~WDTypedResult() = default;
 
   // Return the result type.
   WDResultType GetType() const { return type_; }
@@ -84,7 +89,7 @@ class WDResult : public WDTypedResult {
   WDResult(const WDResult&) = delete;
   WDResult& operator=(const WDResult&) = delete;
 
-  ~WDResult() override {}
+  ~WDResult() override = default;
 
   // Return a single value result.
   const T& GetValue() const { return value_; }

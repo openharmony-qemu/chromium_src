@@ -24,12 +24,7 @@ XDGSurfaceWrapperImpl::~XDGSurfaceWrapperImpl() {
 bool XDGSurfaceWrapperImpl::Initialize() {
   if (!connection_->shell()) {
     NOTREACHED() << "Wrong shell protocol";
-    return false;
   }
-
-  static constexpr xdg_surface_listener xdg_surface_listener = {
-      &Configure,
-  };
 
   xdg_surface_.reset(xdg_wm_base_get_xdg_surface(
       connection_->shell(), wayland_window_->root_surface()->surface()));
@@ -38,7 +33,11 @@ bool XDGSurfaceWrapperImpl::Initialize() {
     return false;
   }
 
-  xdg_surface_add_listener(xdg_surface_.get(), &xdg_surface_listener, this);
+  static constexpr xdg_surface_listener kXdgSurfaceListener = {
+      .configure = &OnConfigure,
+  };
+  xdg_surface_add_listener(xdg_surface_.get(), &kXdgSurfaceListener, this);
+
   connection_->Flush();
   return true;
 }
@@ -75,21 +74,21 @@ XDGSurfaceWrapperImpl* XDGSurfaceWrapperImpl::AsXDGSurfaceWrapper() {
   return this;
 }
 
-xdg_surface* XDGSurfaceWrapperImpl::xdg_surface() const {
+struct xdg_surface* XDGSurfaceWrapperImpl::xdg_surface() const {
   DCHECK(xdg_surface_);
   return xdg_surface_.get();
 }
 
 // static
-void XDGSurfaceWrapperImpl::Configure(void* data,
-                                      struct xdg_surface* xdg_surface,
-                                      uint32_t serial) {
-  auto* surface = static_cast<XDGSurfaceWrapperImpl*>(data);
-  DCHECK(surface);
+void XDGSurfaceWrapperImpl::OnConfigure(void* data,
+                                        struct xdg_surface* surface,
+                                        uint32_t serial) {
+  auto* self = static_cast<XDGSurfaceWrapperImpl*>(data);
+  DCHECK(self);
 
   // Calls to HandleSurfaceConfigure() might end up hiding the enclosing
   // toplevel window, and deleting this object.
-  auto weak_window = surface->wayland_window_->AsWeakPtr();
+  auto weak_window = self->wayland_window_->AsWeakPtr();
   weak_window->HandleSurfaceConfigure(serial);
 
   if (!weak_window)

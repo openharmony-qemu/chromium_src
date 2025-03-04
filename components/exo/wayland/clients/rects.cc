@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 // Implementation of a client that produces output in the form of RGBA
 // buffers when receiving pointer/touch events. RGB contains the lower
 // 24 bits of the event timestamp and A is 0xff.
@@ -23,6 +28,7 @@
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/message_loop/message_pump_type.h"
+#include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "base/scoped_generic.h"
 #include "base/strings/string_number_conversions.h"
@@ -30,11 +36,12 @@
 #include "base/time/time.h"
 #include "components/exo/wayland/clients/client_base.h"
 #include "components/exo/wayland/clients/client_helper.h"
+#include "skia/ext/font_utils.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
 #include "ui/gl/gl_bindings.h"
 
 namespace exo {
@@ -147,7 +154,7 @@ void FrameCallback(void* data, wl_callback* callback, uint32_t time) {
 }
 
 struct Frame {
-  raw_ptr<ClientBase::Buffer, ExperimentalAsh> buffer = nullptr;
+  raw_ptr<ClientBase::Buffer> buffer = nullptr;
   base::TimeDelta wall_time;
   base::TimeDelta cpu_time;
   std::vector<base::TimeTicks> event_times;
@@ -204,7 +211,7 @@ void FeedbackDiscarded(void* data,
   auto it = base::ranges::find(
       presentation->scheduled_frames, presentation_feedback,
       [](std::unique_ptr<Frame>& frame) { return frame->feedback.get(); });
-  DCHECK(it != presentation->scheduled_frames.end());
+  CHECK(it != presentation->scheduled_frames.end(), base::NotFatalUntil::M130);
   presentation->scheduled_frames.erase(it);
   LOG(WARNING) << "Frame discarded";
 }
@@ -229,7 +236,7 @@ void InputTimestamp(void* data,
 
 class RectsClient : public ClientBase {
  public:
-  RectsClient() {}
+  RectsClient() = default;
 
   RectsClient(const RectsClient&) = delete;
   RectsClient& operator=(const RectsClient&) = delete;
@@ -315,7 +322,7 @@ int RectsClient::Run(const ClientBase::InitParams& params,
   wp_presentation_feedback_listener feedback_listener = {
       FeedbackSyncOutput, FeedbackPresented, FeedbackDiscarded};
 
-  SkFont font;
+  SkFont font = skia::DefaultFont();
   font.setSize(32);
   font.setEdging(SkFont::Edging::kAlias);
   SkPaint text_paint;

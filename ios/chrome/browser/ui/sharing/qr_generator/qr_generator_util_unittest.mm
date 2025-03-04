@@ -4,12 +4,9 @@
 
 #import "ios/chrome/browser/ui/sharing/qr_generator/qr_generator_util.h"
 
+#import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 class QRGeneratorUtilTest : public PlatformTest {
  public:
@@ -37,7 +34,7 @@ class QRGeneratorUtilTest : public PlatformTest {
 };
 
 // Tests that the GenerateQRCode utility function creates a valid QR code image.
-// TODO(crbug.com/1214776): reenable this test.
+// TODO(crbug.com/40769543): reenable this test.
 TEST_F(QRGeneratorUtilTest, DISABLED_GenerateQRCode_ValidData) {
   NSData* qrData = [sampleUrl_ dataUsingEncoding:NSUTF8StringEncoding];
 
@@ -51,7 +48,7 @@ TEST_F(QRGeneratorUtilTest, DISABLED_GenerateQRCode_ValidData) {
   ASSERT_EQ(1U, [features count]);
 
   CIQRCodeFeature* qrCodeFeature = (CIQRCodeFeature*)features[0];
-  EXPECT_TRUE([sampleUrl_ isEqualToString:[qrCodeFeature messageString]]);
+  EXPECT_NSEQ(sampleUrl_, [qrCodeFeature messageString]);
 }
 
 // Tests that GenerateQRCode utility function creates a QR code image of the

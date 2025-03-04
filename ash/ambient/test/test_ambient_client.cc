@@ -49,7 +49,6 @@ class FakeSharedURLLoaderFactory : public network::SharedURLLoaderFactory {
   // network::SharedURLLoaderFactory implementation:
   std::unique_ptr<network::PendingSharedURLLoaderFactory> Clone() override {
     NOTREACHED();
-    return nullptr;
   }
 
   network::TestURLLoaderFactory& test_url_loader_factory() {
@@ -96,6 +95,11 @@ void TestAmbientClient::DownloadImage(
 
 scoped_refptr<network::SharedURLLoaderFactory>
 TestAmbientClient::GetURLLoaderFactory() {
+  return url_loader_factory_;
+}
+
+scoped_refptr<network::SharedURLLoaderFactory>
+TestAmbientClient::GetSigninURLLoaderFactory() {
   return url_loader_factory_;
 }
 

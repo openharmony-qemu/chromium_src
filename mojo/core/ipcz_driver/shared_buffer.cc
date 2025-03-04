@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/ipcz_driver/shared_buffer.h"
 
 #include <cstdint>
@@ -136,7 +141,7 @@ scoped_refptr<SharedBuffer> SharedBuffer::CreateForMojoWrapper(
       return nullptr;
   }
 
-  absl::optional<base::UnguessableToken> guid =
+  std::optional<base::UnguessableToken> guid =
       base::UnguessableToken::Deserialize(mojo_guid.high, mojo_guid.low);
   if (!guid.has_value()) {
     return nullptr;
@@ -261,7 +266,7 @@ scoped_refptr<SharedBuffer> SharedBuffer::Deserialize(
       return nullptr;
   }
 
-  absl::optional<base::UnguessableToken> guid =
+  std::optional<base::UnguessableToken> guid =
       base::UnguessableToken::Deserialize(header.guid_high, header.guid_low);
   if (!guid.has_value()) {
     return nullptr;

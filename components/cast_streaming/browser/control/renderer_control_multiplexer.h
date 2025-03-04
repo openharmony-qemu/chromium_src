@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/weak_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "media/mojo/mojom/renderer.mojom.h"
@@ -42,17 +43,34 @@ class RendererControlMultiplexer : public media::mojom::Renderer {
   void StartPlayingFrom(::base::TimeDelta time) override;
   void SetPlaybackRate(double playback_rate) override;
   void SetVolume(float volume) override;
-  void SetCdm(const absl::optional<::base::UnguessableToken>& cdm_id,
+  void SetCdm(const std::optional<::base::UnguessableToken>& cdm_id,
               SetCdmCallback callback) override;
+  void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void Initialize(
       mojo::PendingAssociatedRemote<media::mojom::RendererClient> client,
-      absl::optional<
+      std::optional<
           std::vector<::mojo::PendingRemote<::media::mojom::DemuxerStream>>>
           streams,
       media::mojom::MediaUrlParamsPtr media_url_params,
       InitializeCallback callback) override;
   void Flush(FlushCallback callback) override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetMuted(bool muted) override {}
+  void SetSurfaceId(int32_t surface_id, const ::gfx::Rect& rect) override {}
+  void SetMediaPlayerState(bool is_suspend, int32_t suspend_type) override {}
+  void SetMediaSourceList(
+      std::vector<media::mojom::MediaSourceInfoPtr> source_infos) override {}
+  void SetMediaControls(
+      bool show_media_controls,
+      const std::vector<std::string>& controls_list) override {}
+  void SetPoster(const std::string& poster_url) override {}
+  void SetAttributes(
+      const base::flat_map<std::string, std::string>& attributes) override {}
+  void SetReferrer(const std::string& referrer) override {}
+  void SetIsAudio(bool is_audio) override {}
+  void SetPlaybackRateWithReason(double playback_rate,
+                                 media::mojom::ActionReason reason) override {}
+#endif
  private:
   void OnMojoDisconnect();
 

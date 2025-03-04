@@ -16,13 +16,9 @@
 #import "base/task/sequenced_task_runner.h"
 #include "base/task/sequenced_task_runner.h"
 #import "components/open_from_clipboard/clipboard_recent_content_impl_ios.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #include "url/gurl.h"
 #include "url/url_constants.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -64,7 +60,7 @@ ClipboardContentType ClipboardContentTypeFromContentType(ContentType type) {
   } else if ([type isEqualToString:ContentTypeImage]) {
     return ClipboardContentType::Image;
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return ClipboardContentType::Text;
 }
 
@@ -99,21 +95,21 @@ ClipboardRecentContentIOS::ClipboardRecentContentIOS(
   implementation_ = implementation;
 }
 
-absl::optional<GURL> ClipboardRecentContentIOS::GetRecentURLFromClipboard() {
+std::optional<GURL> ClipboardRecentContentIOS::GetRecentURLFromClipboard() {
   NSURL* url_from_pasteboard = [implementation_ recentURLFromClipboard];
   GURL converted_url = net::GURLWithNSURL(url_from_pasteboard);
   if (!converted_url.is_valid()) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return converted_url;
 }
 
-absl::optional<std::u16string>
+std::optional<std::u16string>
 ClipboardRecentContentIOS::GetRecentTextFromClipboard() {
   NSString* text_from_pasteboard = [implementation_ recentTextFromClipboard];
   if (!text_from_pasteboard) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return base::SysNSStringToUTF16(text_from_pasteboard);
@@ -157,12 +153,12 @@ void ClipboardRecentContentIOS::HasRecentContentFromClipboard(
 // pasteboardDidChange notification. It may also be nullopt if the app decides
 // it should not return the value of the clipboard, for example if the current
 // clipboard contents are too old.
-absl::optional<std::set<ClipboardContentType>>
+std::optional<std::set<ClipboardContentType>>
 ClipboardRecentContentIOS::GetCachedClipboardContentTypes() {
   NSSet<ContentType>* current_content_types =
       [implementation_ cachedClipboardContentTypes];
   if (!current_content_types) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   std::set<ClipboardContentType> current_content_types_ios;
 
@@ -186,7 +182,7 @@ void ClipboardRecentContentIOS::GetRecentURLFromClipboard(
     GURL converted_url = net::GURLWithNSURL(url);
     if (!converted_url.is_valid()) {
       task_runner->PostTask(FROM_HERE, base::BindOnce(^{
-                              std::move(callback_for_block).Run(absl::nullopt);
+                              std::move(callback_for_block).Run(std::nullopt);
                             }));
       return;
     }
@@ -208,7 +204,7 @@ void ClipboardRecentContentIOS::GetRecentTextFromClipboard(
   [implementation_ recentTextFromClipboardAsync:^(NSString* text) {
     if (!text) {
       task_runner->PostTask(FROM_HERE, base::BindOnce(^{
-                              std::move(callback_for_block).Run(absl::nullopt);
+                              std::move(callback_for_block).Run(std::nullopt);
                             }));
       return;
     }
@@ -231,7 +227,7 @@ void ClipboardRecentContentIOS::GetRecentImageFromClipboard(
   [implementation_ recentImageFromClipboardAsync:^(UIImage* image) {
     if (!image) {
       task_runner->PostTask(FROM_HERE, base::BindOnce(^{
-                              std::move(callback_for_block).Run(absl::nullopt);
+                              std::move(callback_for_block).Run(std::nullopt);
                             }));
       return;
     }
@@ -242,7 +238,7 @@ void ClipboardRecentContentIOS::GetRecentImageFromClipboard(
   }];
 }
 
-ClipboardRecentContentIOS::~ClipboardRecentContentIOS() {}
+ClipboardRecentContentIOS::~ClipboardRecentContentIOS() = default;
 
 base::TimeDelta ClipboardRecentContentIOS::GetClipboardContentAge() const {
   return base::Seconds(
@@ -258,11 +254,11 @@ void ClipboardRecentContentIOS::ClearClipboardContent() {
   return;
 }
 
-absl::optional<gfx::Image>
+std::optional<gfx::Image>
 ClipboardRecentContentIOS::GetRecentImageFromClipboardInternal() {
   UIImage* image_from_pasteboard = [implementation_ recentImageFromClipboard];
   if (!image_from_pasteboard) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   return gfx::Image(image_from_pasteboard);

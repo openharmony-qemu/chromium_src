@@ -13,6 +13,7 @@
 #import "components/sessions/core/session_id.h"
 #import "ios/web/common/crw_content_view.h"
 #import "ios/web/js_messaging/web_frames_manager_impl.h"
+#import "ios/web/public/download/crw_web_view_download.h"
 #import "ios/web/public/js_messaging/web_frame.h"
 #import "ios/web/public/navigation/web_state_policy_decider.h"
 #import "ios/web/public/session/crw_navigation_item_storage.h"
@@ -21,11 +22,6 @@
 #import "ios/web/public/test/fakes/crw_fake_find_interaction.h"
 #import "ios/web/session/session_certificate_policy_cache_impl.h"
 #import "ios/web/web_state/policy_decision_state_tracker.h"
-#import "ui/gfx/image/image.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace web {
 
@@ -41,11 +37,13 @@ void FakeWebState::CloseWebState() {
   is_closed_ = true;
 }
 
-FakeWebState::FakeWebState()
+FakeWebState::FakeWebState() : FakeWebState(WebStateID::NewUnique()) {}
+
+FakeWebState::FakeWebState(WebStateID unique_identifier)
     : stable_identifier_([[NSUUID UUID] UUIDString]),
-      unique_identifier_(SessionID::NewUnique()) {
+      unique_identifier_(unique_identifier) {
   DCHECK(stable_identifier_.length);
-  DCHECK(unique_identifier_.is_valid());
+  DCHECK(unique_identifier_.valid());
 }
 
 FakeWebState::~FakeWebState() {
@@ -57,11 +55,20 @@ FakeWebState::~FakeWebState() {
     observer.ResetWebState();
 }
 
+void FakeWebState::SerializeToProto(proto::WebStateStorage& storage) const {}
+
+void FakeWebState::SerializeMetadataToProto(
+    proto::WebStateMetadataStorage& storage) const {}
+
 WebStateDelegate* FakeWebState::GetDelegate() {
   return nil;
 }
 
 void FakeWebState::SetDelegate(WebStateDelegate* delegate) {}
+
+std::unique_ptr<WebState> FakeWebState::Clone() const {
+  return std::make_unique<FakeWebState>();
+}
 
 bool FakeWebState::IsRealized() const {
   return is_realized_;
@@ -173,14 +180,15 @@ FakeWebState::GetSessionCertificatePolicyCache() {
   return nullptr;
 }
 
-CRWSessionStorage* FakeWebState::BuildSessionStorage() {
+CRWSessionStorage* FakeWebState::BuildSessionStorage() const {
   CRWSessionStorage* session_storage = [[CRWSessionStorage alloc] init];
-  session_storage.userData =
-      web::SerializableUserDataManager::FromWebState(this)
-          ->GetUserDataForSession();
   session_storage.itemStorages = @[ [[CRWNavigationItemStorage alloc] init] ];
   session_storage.stableIdentifier = stable_identifier_;
   session_storage.uniqueIdentifier = unique_identifier_;
+  if (const SerializableUserDataManager* manager =
+          SerializableUserDataManager::FromWebState(this)) {
+    session_storage.userData = manager->GetUserDataForSession();
+  }
   return session_storage;
 }
 
@@ -235,7 +243,7 @@ NSString* FakeWebState::GetStableIdentifier() const {
   return stable_identifier_;
 }
 
-SessionID FakeWebState::GetUniqueIdentifier() const {
+WebStateID FakeWebState::GetUniqueIdentifier() const {
   return unique_identifier_;
 }
 
@@ -259,10 +267,7 @@ const GURL& FakeWebState::GetLastCommittedURL() const {
   return url_;
 }
 
-GURL FakeWebState::GetCurrentURL(URLVerificationTrustLevel* trust_level) const {
-  if (trust_level) {
-    *trust_level = trust_level_;
-  }
+std::optional<GURL> FakeWebState::GetLastCommittedURLIfTrusted() const {
   return url_;
 }
 
@@ -288,6 +293,16 @@ void FakeWebState::SetContentsMimeType(const std::string& mime_type) {
 
 void FakeWebState::SetTitle(const std::u16string& title) {
   title_ = title;
+  for (auto& observer : observers_) {
+    observer.TitleWasSet(this);
+  }
+}
+
+void FakeWebState::SetUnderPageBackgroundColor(UIColor* color) {
+  under_page_background_color_ = color;
+  for (auto& observer : observers_) {
+    observer.UnderPageBackgroundColorChanged(this);
+  }
 }
 
 const std::u16string& FakeWebState::GetTitle() const {
@@ -384,15 +399,11 @@ void FakeWebState::OnVisibleSecurityStateChanged() {
   }
 }
 
-void FakeWebState::OnWebFrameDidBecomeAvailable(WebFrame* frame) {
-  for (auto& observer : observers_) {
-    observer.WebFrameDidBecomeAvailable(this, frame);
-  }
-}
-
-void FakeWebState::OnWebFrameWillBecomeUnavailable(WebFrame* frame) {
-  for (auto& observer : observers_) {
-    observer.WebFrameWillBecomeUnavailable(this, frame);
+void FakeWebState::OnDownloadFinished(NSError* error) {
+  if (error) {
+    [download_delegate_ downloadDidFailWithError:error];
+  } else {
+    [download_delegate_ downloadDidFinish];
   }
 }
 
@@ -464,10 +475,6 @@ void FakeWebState::SetVisibleURL(const GURL& url) {
   url_ = url;
 }
 
-void FakeWebState::SetTrustLevel(URLVerificationTrustLevel trust_level) {
-  trust_level_ = trust_level;
-}
-
 void FakeWebState::SetCanTakeSnapshot(bool can_take_snapshot) {
   can_take_snapshot_ = can_take_snapshot;
 }
@@ -475,6 +482,11 @@ void FakeWebState::SetCanTakeSnapshot(bool can_take_snapshot) {
 void FakeWebState::SetFindInteraction(id<CRWFindInteraction> find_interaction)
     API_AVAILABLE(ios(16)) {
   find_interaction_ = find_interaction;
+}
+
+void FakeWebState::SetWebViewDownload(
+    id<CRWWebViewDownload> web_view_download) {
+  web_view_download_ = web_view_download;
 }
 
 CRWWebViewProxyType FakeWebState::GetWebViewProxy() const {
@@ -505,9 +517,8 @@ bool FakeWebState::CanTakeSnapshot() const {
   return can_take_snapshot_;
 }
 
-void FakeWebState::TakeSnapshot(const gfx::RectF& rect,
-                                SnapshotCallback callback) {
-  std::move(callback).Run(gfx::Image([[UIImage alloc] init]));
+void FakeWebState::TakeSnapshot(const CGRect rect, SnapshotCallback callback) {
+  std::move(callback).Run([[UIImage alloc] init]);
 }
 
 void FakeWebState::CreateFullPagePdf(
@@ -571,7 +582,10 @@ NSDictionary<NSNumber*, NSNumber*>* FakeWebState::GetStatesForAllPermissions()
 void FakeWebState::DownloadCurrentPage(
     NSString* destination_file,
     id<CRWWebViewDownloadDelegate> delegate,
-    void (^handler)(id<CRWWebViewDownload>)) {}
+    void (^handler)(id<CRWWebViewDownload>)) {
+  download_delegate_ = delegate;
+  handler(web_view_download_);
+}
 
 bool FakeWebState::IsFindInteractionSupported() {
   return true;
@@ -592,6 +606,14 @@ id<CRWFindInteraction> FakeWebState::GetFindInteraction()
 
 id FakeWebState::GetActivityItem() API_AVAILABLE(ios(16.4)) {
   return nil;
+}
+
+UIColor* FakeWebState::GetThemeColor() {
+  return nil;
+}
+
+UIColor* FakeWebState::GetUnderPageBackgroundColor() {
+  return under_page_background_color_;
 }
 
 FakeWebStateWithPolicyCache::FakeWebStateWithPolicyCache(

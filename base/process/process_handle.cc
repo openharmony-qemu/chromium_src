@@ -8,6 +8,7 @@
 
 #include <ostream>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "build/build_config.h"
 
@@ -27,15 +28,14 @@ UniqueProcId GetUniqueIdForProcess() {
   // into it.
   return (g_pid_outside_of_namespace != kNullProcessId)
              ? UniqueProcId(g_pid_outside_of_namespace)
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
              : UniqueProcId(GetCurrentRealPid());
 #else
              : UniqueProcId(GetCurrentProcId());
 #endif
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
 
 void InitUniqueIdForProcessInPidNamespace(ProcessId pid_outside_of_namespace) {
   DCHECK(pid_outside_of_namespace != kNullProcessId);

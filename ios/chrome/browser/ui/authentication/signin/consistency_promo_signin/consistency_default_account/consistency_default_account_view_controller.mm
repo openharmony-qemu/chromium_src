@@ -4,9 +4,14 @@
 
 #import "ios/chrome/browser/ui/authentication/signin/consistency_promo_signin/consistency_default_account/consistency_default_account_view_controller.h"
 
+#import "base/check.h"
+#import "base/metrics/user_metrics.h"
+#import "base/metrics/user_metrics_action.h"
+#import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/signin/public/base/signin_metrics.h"
 #import "components/strings/grit/components_strings.h"
+#import "ios/chrome/browser/keyboard/ui_bundled/UIKeyCommand+Chrome.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/authentication/signin/consistency_promo_signin/consistency_layout_delegate.h"
 #import "ios/chrome/browser/ui/authentication/signin/signin_constants.h"
@@ -16,13 +21,9 @@
 #import "ios/chrome/common/ui/util/button_util.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/common/ui/util/pointer_interaction_util.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -30,8 +31,23 @@ namespace {
 constexpr CGFloat kContentMargin = 16.;
 // Space between elements in `self.contentView`.
 constexpr CGFloat kContentSpacing = 16.;
+// Vertical insets of primary button.
+constexpr CGFloat kPrimaryButtonVerticalInsets = 15.5;
 
+// Returns font to use for the navigation bar title.
+UIFont* GetNavigationBarTitleFont() {
+  UITraitCollection* large_trait_collection =
+      [UITraitCollection traitCollectionWithPreferredContentSizeCategory:
+                             UIContentSizeCategoryLarge];
+  UIFontDescriptor* font_descriptor = [UIFontDescriptor
+      preferredFontDescriptorWithTextStyle:UIFontTextStyleBody
+             compatibleWithTraitCollection:large_trait_collection];
+  UIFont* font = [UIFont systemFontOfSize:font_descriptor.pointSize
+                                   weight:UIFontWeightBold];
+  return [[UIFontMetrics defaultMetrics] scaledFontForFont:font];
 }
+
+}  // namespace
 
 @interface ConsistencyDefaultAccountViewController ()
 
@@ -49,20 +65,14 @@ constexpr CGFloat kContentSpacing = 16.;
 @property(nonatomic, strong) NSString* continueAsTitle;
 // Activity indicator on top of `self.primaryButton`.
 @property(nonatomic, strong) UIActivityIndicatorView* activityIndicatorView;
-// The access point that triggered sign-in.
-@property(nonatomic, assign, readonly) signin_metrics::AccessPoint accessPoint;
+// Label text, or nil if there's supposed to be none.
+@property(nonatomic, assign, readwrite) NSString* labelText;
+// Text in the button that aborts the flow. Must be set before displaying.
+@property(nonatomic, assign, readwrite) NSString* skipButtonText;
 
 @end
 
 @implementation ConsistencyDefaultAccountViewController
-
-- (instancetype)initWithAccessPoint:(signin_metrics::AccessPoint)accessPoint {
-  self = [super init];
-  if (self) {
-    _accessPoint = accessPoint;
-  }
-  return self;
-}
 
 - (void)startSpinner {
   // Add spinner.
@@ -76,7 +86,12 @@ constexpr CGFloat kContentSpacing = 16.;
   // Disable buttons.
   self.identityButtonControl.enabled = NO;
   self.primaryButton.enabled = NO;
-  [self.primaryButton setTitle:@"" forState:UIControlStateNormal];
+  // Text should not be empty, otherwise the top and bottom can’t apply to the
+  // text buttom and top line anymore.
+  SetConfigurationTitle(self.primaryButton, @" ");
+  // Set accessibility label so that VoiceOver won't use the empty string.
+  self.primaryButton.accessibilityLabel = l10n_util::GetNSString(
+      IDS_IOS_SIGNIN_PROMO_CONTINUE_AS_TAPPED_ACCESSIBILITY_TITLE);
 }
 
 - (void)stopSpinner {
@@ -90,8 +105,8 @@ constexpr CGFloat kContentSpacing = 16.;
   self.identityButtonControl.enabled = YES;
   self.primaryButton.enabled = YES;
   DCHECK(self.continueAsTitle);
-  [self.primaryButton setTitle:self.continueAsTitle
-                      forState:UIControlStateNormal];
+  SetConfigurationTitle(self.primaryButton, self.continueAsTitle);
+  self.primaryButton.accessibilityLabel = nil;
 }
 
 #pragma mark - UIViewController
@@ -106,34 +121,34 @@ constexpr CGFloat kContentSpacing = 16.;
   // Set the navigation title in the left bar button item to have left
   // alignment.
   UILabel* titleLabel = [[UILabel alloc] init];
-  titleLabel.font = [UIFont preferredFontForTextStyle:UIFontTextStyleHeadline];
+  titleLabel.adjustsFontForContentSizeCategory = YES;
+  titleLabel.font = GetNavigationBarTitleFont();
   titleLabel.text =
       l10n_util::GetNSString(IDS_IOS_CONSISTENCY_PROMO_DEFAULT_ACCOUNT_TITLE);
   titleLabel.textAlignment = NSTextAlignmentLeft;
   titleLabel.adjustsFontSizeToFitWidth = YES;
   titleLabel.minimumScaleFactor = 0.1;
+  titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+
+  // Add the title label to the navigation bar.
   UIBarButtonItem* leftItem =
       [[UIBarButtonItem alloc] initWithCustomView:titleLabel];
   self.navigationItem.leftBarButtonItem = leftItem;
-
-  NSString* skipButtonTitle;
-  if (self.accessPoint ==
-      signin_metrics::AccessPoint::ACCESS_POINT_SEND_TAB_TO_SELF_PROMO) {
-    skipButtonTitle = l10n_util::GetNSString(IDS_CANCEL);
-  } else if (self.accessPoint == signin_metrics::AccessPoint::
-                                     ACCESS_POINT_NTP_FEED_CARD_MENU_PROMO) {
-    skipButtonTitle = l10n_util::GetNSString(IDS_CLOSE);
-  } else {
-    skipButtonTitle = l10n_util::GetNSString(IDS_IOS_CONSISTENCY_PROMO_SKIP);
-  }
-  UIBarButtonItem* skipButton =
-      [[UIBarButtonItem alloc] initWithTitle:skipButtonTitle
+  self.navigationController.navigationBar.minimumContentSizeCategory =
+      UIContentSizeCategoryLarge;
+  self.navigationController.navigationBar.maximumContentSizeCategory =
+      UIContentSizeCategoryExtraExtraLarge;
+  // Create the skip button.
+  CHECK(self.skipButtonText);
+  UIBarButtonItem* rightItem =
+      [[UIBarButtonItem alloc] initWithTitle:self.skipButtonText
                                        style:UIBarButtonItemStylePlain
                                       target:self
                                       action:@selector(skipButtonAction:)];
-  skipButton.accessibilityIdentifier =
+  rightItem.accessibilityIdentifier =
       kWebSigninSkipButtonAccessibilityIdentifier;
-  self.navigationItem.rightBarButtonItem = skipButton;
+  self.navigationItem.rightBarButtonItem = rightItem;
+
   // Replace the controller view by the scroll view.
   UIScrollView* scrollView = [[UIScrollView alloc] init];
   scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -146,6 +161,7 @@ constexpr CGFloat kContentSpacing = 16.;
     [scrollView.trailingAnchor
         constraintEqualToAnchor:self.view.trailingAnchor],
   ]];
+
   // Create content view.
   self.contentView = [[UIStackView alloc] init];
   self.contentView.axis = UILayoutConstraintAxisVertical;
@@ -170,27 +186,20 @@ constexpr CGFloat kContentSpacing = 16.;
         constraintEqualToAnchor:self.contentView.trailingAnchor
                        constant:kContentMargin],
   ]];
+
   // Add the label.
-  UILabel* label = [[UILabel alloc] init];
-  if (self.accessPoint ==
-      signin_metrics::AccessPoint::ACCESS_POINT_SEND_TAB_TO_SELF_PROMO) {
-    label.text =
-        l10n_util::GetNSString(IDS_SEND_TAB_TO_SELF_SIGN_IN_PROMO_LABEL);
-  } else if (self.accessPoint == signin_metrics::AccessPoint::
-                                     ACCESS_POINT_NTP_FEED_CARD_MENU_PROMO) {
-    label.text =
-        l10n_util::GetNSString(IDS_IOS_FEED_CARD_SIGN_IN_ONLY_PROMO_LABEL);
-  } else {
-    label.text =
-        l10n_util::GetNSString(IDS_IOS_CONSISTENCY_PROMO_DEFAULT_ACCOUNT_LABEL);
+  if (self.labelText) {
+    UILabel* label = [[UILabel alloc] init];
+    label.adjustsFontForContentSizeCategory = YES;
+    label.text = self.labelText;
+    label.textColor = [UIColor colorNamed:kGrey700Color];
+    label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    label.numberOfLines = 0;
+    [self.contentView addArrangedSubview:label];
+    [label.widthAnchor constraintEqualToAnchor:self.contentView.widthAnchor]
+        .active = YES;
   }
 
-  label.textColor = [UIColor colorNamed:kGrey700Color];
-  label.font = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
-  label.numberOfLines = 0;
-  [self.contentView addArrangedSubview:label];
-  [label.widthAnchor constraintEqualToAnchor:self.contentView.widthAnchor]
-      .active = YES;
   // Add IdentityButtonControl for the default identity.
   self.identityButtonControl =
       [[IdentityButtonControl alloc] initWithFrame:CGRectZero];
@@ -208,6 +217,11 @@ constexpr CGFloat kContentSpacing = 16.;
   // Add the primary button (the "Continue as"/"Sign in" button).
   self.primaryButton =
       PrimaryActionButton(/* pointer_interaction_enabled */ YES);
+  UIButtonConfiguration* buttonConfiguration = self.primaryButton.configuration;
+  buttonConfiguration.contentInsets = NSDirectionalEdgeInsetsMake(
+      kPrimaryButtonVerticalInsets, 0, kPrimaryButtonVerticalInsets, 0);
+  self.primaryButton.configuration = buttonConfiguration;
+
   self.primaryButton.accessibilityIdentifier =
       kWebSigninPrimaryButtonAccessibilityIdentifier;
   self.primaryButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -224,7 +238,7 @@ constexpr CGFloat kContentSpacing = 16.;
   // Adjust the identity button control rounded corners to the same value than
   // the "continue as" button.
   self.identityButtonControl.layer.cornerRadius =
-      self.primaryButton.layer.cornerRadius;
+      self.primaryButton.configuration.background.cornerRadius;
 
   // Ensure that keyboard is hidden.
   UIResponder* firstResponder = GetFirstResponder();
@@ -300,8 +314,7 @@ constexpr CGFloat kContentSpacing = 16.;
 
   // If spinner is active, delay UI updates until stopSpinner() is called.
   if (!self.activityIndicatorView) {
-    [self.primaryButton setTitle:self.continueAsTitle
-                        forState:UIControlStateNormal];
+    SetConfigurationTitle(self.primaryButton, self.continueAsTitle);
     self.identityButtonControl.hidden = NO;
   }
 }
@@ -314,9 +327,26 @@ constexpr CGFloat kContentSpacing = 16.;
   // Hide the IdentityButtonControl, and update the primary button to serve as
   // a "Sign in…" button.
   self.identityButtonControl.hidden = YES;
-  [self.primaryButton
-      setTitle:l10n_util::GetNSString(IDS_IOS_CONSISTENCY_PROMO_SIGN_IN)
-      forState:UIControlStateNormal];
+  SetConfigurationTitle(
+      self.primaryButton,
+      l10n_util::GetNSString(IDS_IOS_CONSISTENCY_PROMO_SIGN_IN));
+}
+
+#pragma mark - UIResponder
+
+// To always be able to register key commands via -keyCommands, the VC must be
+// able to become first responder.
+- (BOOL)canBecomeFirstResponder {
+  return YES;
+}
+
+- (NSArray*)keyCommands {
+  return @[ UIKeyCommand.cr_close ];
+}
+
+- (void)keyCommand_close {
+  base::RecordAction(base::UserMetricsAction("MobileKeyCommandClose"));
+  [self.actionDelegate consistencyDefaultAccountViewControllerSkip:self];
 }
 
 @end

@@ -56,6 +56,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
   int Start(const net::HttpRequestInfo* request,
             net::CompletionOnceCallback callback,
             const net::NetLogWithSource& net_log) override;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int RestartWithSecureDnsOnly(net::CompletionOnceCallback callback) override;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartIgnoringLastError(net::CompletionOnceCallback callback) override;
   int RestartWithCertificate(
       scoped_refptr<net::X509Certificate> client_cert,
@@ -71,6 +74,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
   void StopCaching() override;
   int64_t GetTotalReceivedBytes() const override;
   int64_t GetTotalSentBytes() const override;
+  int64_t GetReceivedBodyBytes() const override;
   void DoneReading() override;
   const net::HttpResponseInfo* GetResponseInfo() const override;
   net::LoadState GetLoadState() const override;
@@ -89,9 +93,15 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
       net::ResponseHeadersCallback callback) override;
   void SetEarlyResponseHeadersCallback(
       net::ResponseHeadersCallback callback) override;
+  void SetModifyRequestHeadersCallback(
+      base::RepeatingCallback<void(net::HttpRequestHeaders*)> callback)
+      override;
+  void SetIsSharedDictionaryReadAllowedCallback(
+      base::RepeatingCallback<bool()> callback) override;
   int ResumeNetworkStart() override;
   net::ConnectionAttempts GetConnectionAttempts() const override;
   void CloseConnectionOnDestruction() override;
+  bool IsMdlMatchForMetrics() const override;
 
  protected:
   friend class ThrottlingControllerTestHelper;
@@ -122,11 +132,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ThrottlingNetworkTransaction
   // User callback.
   net::CompletionOnceCallback callback_;
 
-  // TODO(https://crbug.com/1427078): Prevent this pointer from dangling.
-  raw_ptr<const net::HttpRequestInfo, DanglingUntriaged> request_;
+  // True if Start was already invoked.
+  bool started_ = false;
 
   // True if Fail was already invoked.
-  bool failed_;
+  bool failed_ = false;
 };
 
 }  // namespace network

@@ -9,12 +9,16 @@
 #include "content/services/auction_worklet/public/mojom/auction_shared_storage_host.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
+#include "services/network/public/mojom/shared_storage.mojom-forward.h"
+#include "url/origin.h"
 
 namespace storage {
 class SharedStorageManager;
 }  // namespace storage
 
 namespace content {
+
+class RenderFrameHostImpl;
 
 // Implements the mojo interface used by the auction worklets, to receive
 // shared storage requests and then pass them on to `SharedStorageManager` to
@@ -32,17 +36,16 @@ class CONTENT_EXPORT AuctionSharedStorageHost
   // Binds a new pending receiver for a worklet, allowing messages to be sent
   // and processed.
   void BindNewReceiver(
+      RenderFrameHostImpl* auction_runner_rfh,
       const url::Origin& worklet_origin,
       mojo::PendingReceiver<auction_worklet::mojom::AuctionSharedStorageHost>
           receiver);
 
   // auction_worklet::mojom::AuctionSharedStorageHost:
-  void Set(const std::u16string& key,
-           const std::u16string& value,
-           bool ignore_if_present) override;
-  void Append(const std::u16string& key, const std::u16string& value) override;
-  void Delete(const std::u16string& key) override;
-  void Clear() override;
+  void SharedStorageUpdate(
+      network::mojom::SharedStorageModifierMethodPtr method,
+      auction_worklet::mojom::AuctionWorkletFunction
+          source_auction_worklet_function) override;
 
  private:
   struct ReceiverContext;

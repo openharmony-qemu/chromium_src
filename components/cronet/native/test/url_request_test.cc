@@ -126,16 +126,16 @@ int64_t DateToMillis(Cronet_DateTimePtr date_time) {
   return value;
 }
 
-// Sanity check that the date isn't wildly off, somehow (perhaps due to read of
-// used memory, wild pointer, etc.).
+// Verification check that the date isn't wildly off, somehow (perhaps due to
+// read of used memory, wild pointer, etc.).
 //
 // Interpreted as milliseconds after the UNIX timestamp, this timestamp occurs
 // at 37,648 C.E.
 constexpr int64_t kDateOverrunThreshold = 1LL << 50;
 
-// Basic sanity checking of all Cronet_Metrics fields. For optional fields, we
-// allow the field to be non-present. Start/end pairs should be monotonic (end
-// not less than start).
+// Basic verification checking of all Cronet_Metrics fields. For optional
+// fields, we allow the field to be non-present. Start/end pairs should be
+// monotonic (end not less than start).
 //
 // Ordering of events is also checked.
 void VerifyRequestMetrics(Cronet_MetricsPtr metrics) {
@@ -254,7 +254,7 @@ Cronet_RequestFinishedInfo_FINISHED_REASON MapFinishedReason(
   }
 }
 
-// Basic sanity checking of all Cronet_RequestFinishedInfo,
+// Basic verification checking of all Cronet_RequestFinishedInfo,
 // Cronet_UrlResponseInfoPtr, and Cronet_ErrorPtr fields passed to
 // RequestFinishedInfoListener.OnRequestFinished().
 //
@@ -287,8 +287,8 @@ class UrlRequestTest : public ::testing::TestWithParam<
   UrlRequestTest& operator=(const UrlRequestTest&) = delete;
 
  protected:
-  UrlRequestTest() {}
-  ~UrlRequestTest() override {}
+  UrlRequestTest() = default;
+  ~UrlRequestTest() override = default;
 
   void SetUp() override { EXPECT_TRUE(cronet::TestServer::Start()); }
 
@@ -444,7 +444,7 @@ class UrlRequestTest : public ::testing::TestWithParam<
             engine, request_finished_listener_, executor);
         break;
       default:
-        NOTREACHED();
+        NOTREACHED_IN_MIGRATION();
     }
   }
 
@@ -1083,7 +1083,7 @@ TEST_P(UrlRequestTest, UploadFailsWithoutInitializingStream) {
   EXPECT_TRUE(callback->on_error_called_);
 }
 
-// TODO(https://crbug.com/954372): Flakes in AssertClosed().
+// TODO(crbug.com/41453771): Flakes in AssertClosed().
 TEST_P(UrlRequestTest, DISABLED_UploadCancelReadSync) {
   auto callback =
       std::make_unique<TestUrlRequestCallback>(GetDirectExecutorParam());
@@ -1125,7 +1125,7 @@ TEST_P(UrlRequestTest, UploadCancelReadAsync) {
   EXPECT_TRUE(callback->on_canceled_called_);
 }
 
-// TODO(https://crbug.com/954372): Flakes in AssertClosed().
+// TODO(crbug.com/41453771): Flakes in AssertClosed().
 TEST_P(UrlRequestTest, DISABLED_UploadCancelRewindSync) {
   auto callback =
       std::make_unique<TestUrlRequestCallback>(GetDirectExecutorParam());

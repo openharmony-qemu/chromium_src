@@ -22,7 +22,6 @@ void EventTarget::ConvertEventToTarget(const EventTarget* target,
 gfx::PointF EventTarget::GetScreenLocationF(
     const ui::LocatedEvent& event) const {
   NOTREACHED();
-  return event.root_location_f();
 }
 
 gfx::Point EventTarget::GetScreenLocation(const ui::LocatedEvent& event) const {

@@ -50,7 +50,7 @@ struct ActivationState {
   // Whether or not to log messages in the devtools console.
   bool enable_logging = false;
 
-  // #ifdef OHOS_ARKWEB_ADBLOCK
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
   // Whether or not to replace the official subresource filter.
   bool user_subresource_filter_replace = false;
   // #endif
@@ -70,10 +70,10 @@ struct DocumentLoadStatistics {
   int32 num_loads_matching_rules = 0;
   int32 num_loads_disallowed = 0;
 
-  // #ifdef OHOS_ARKWEB_ADBLOCK
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
   // key: disallow url; value:url type;
   map<string, int32> loads_disallowed_url_map;
-  // #endif // OHOS_ARKWEB_ADBLOCK
+  // #endif
 
   // Total time spent in GetLoadPolicy() calls evaluating subresource loads.
   mojo_base.mojom.TimeDelta evaluation_total_wall_duration;
@@ -88,9 +88,9 @@ interface SubresourceFilterRulesetObserver {
   SetRulesetForProcess(mojo_base.mojom.File ruleset_file);
 };
 
-// #ifdef OHOS_ARKWEB_ADBLOCK
+// #if BUILDFLAG(ARKWEB_ADBLOCK)
 // User Subresource filter implemented by the renderer.
-[EnableIf=ohos_arkweb_adblock]
+[EnableIf=arkweb_adblock]
 interface UserSubresourceFilterRulesetObserver {
   // Sends a read-only mode file handle with the ruleset data to a renderer
   // process, containing the subresource filtering rules to be consulted for all

@@ -8,13 +8,14 @@
 #include <stdint.h>
 
 #include <memory>
+#include <utility>
 
 #include "base/gtest_prod_util.h"
 #include "build/build_config.h"
 #include "cc/paint/paint_canvas.h"
 #include "printing/common/metafile_utils.h"
 #include "printing/metafile.h"
-#include "printing/mojom/print.mojom-forward.h"
+#include "printing/mojom/print.mojom.h"
 #include "skia/ext/platform_canvas.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "ui/accessibility/ax_tree_update.h"
@@ -86,9 +87,9 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafileSkia : public Metafile {
   bool SaveTo(base::File* file) const override;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if defined(OHOS_PRINT)
+#if BUILDFLAG(ARKWEB_PRINT)
   bool OhosFinishDocument(std::function<bool()> checkCancel) override;
-#endif // defined(OHOS_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   // Unlike FinishPage() or FinishDocument(), this is for out-of-process
   // subframe printing. It will just serialize the content into SkPicture
@@ -129,15 +130,24 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafileSkia : public Metafile {
   }
   ui::AXTreeUpdate& accessibility_tree() { return accessibility_tree_; }
 
- private:
-  FRIEND_TEST_ALL_PREFIXES(MetafileSkiaTest, TestFrameContent);
-  FRIEND_TEST_ALL_PREFIXES(MetafileSkiaTest, TestMultiPictureDocumentTypefaces);
+  void set_generate_document_outline(
+      mojom::GenerateDocumentOutline generate_document_outline) {
+    generate_document_outline_ = generate_document_outline;
+  }
 
-  // The following three functions are used for tests only.
+  void set_title(std::string title) { title_ = std::move(title); }
+
+ private:
+  FRIEND_TEST_ALL_PREFIXES(MetafileSkiaTest, FrameContent);
+  FRIEND_TEST_ALL_PREFIXES(MetafileSkiaTest, GetPageBounds);
+  FRIEND_TEST_ALL_PREFIXES(MetafileSkiaTest, MultiPictureDocumentTypefaces);
+
   void AppendPage(const SkSize& page_size, cc::PaintRecord record);
   void AppendSubframeInfo(uint32_t content_id,
                           const base::UnguessableToken& proxy_token,
                           sk_sp<SkPicture> subframe_pic_holder);
+
+  // This is used for tests only.
   SkStreamAsset* GetPdfData() const;
 
   // Callback function used during page content drawing to replace a custom
@@ -147,6 +157,9 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafileSkia : public Metafile {
   std::unique_ptr<MetafileSkiaData> data_;
 
   ui::AXTreeUpdate accessibility_tree_;
+  mojom::GenerateDocumentOutline generate_document_outline_ =
+      mojom::GenerateDocumentOutline::kNone;
+  std::string title_;
 };
 
 }  // namespace printing

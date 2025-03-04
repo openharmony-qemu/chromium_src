@@ -29,6 +29,44 @@
 
 namespace content {
 
+// An observer that waits for the service worker to be running.
+class WorkerRunningStatusObserver : public ServiceWorkerContextObserver {
+ public:
+  explicit WorkerRunningStatusObserver(ServiceWorkerContext* context) {
+    scoped_context_observation_.Observe(context);
+  }
+
+  WorkerRunningStatusObserver(const WorkerRunningStatusObserver&) = delete;
+  WorkerRunningStatusObserver& operator=(const WorkerRunningStatusObserver&) =
+      delete;
+
+  ~WorkerRunningStatusObserver() override = default;
+
+  int64_t version_id() { return version_id_; }
+
+  void WaitUntilRunning() {
+    if (version_id_ == blink::mojom::kInvalidServiceWorkerVersionId) {
+      run_loop_.Run();
+    }
+  }
+
+  void OnVersionStartedRunning(
+      int64_t version_id,
+      const ServiceWorkerRunningInfo& running_info) override {
+    version_id_ = version_id;
+
+    if (run_loop_.running()) {
+      run_loop_.Quit();
+    }
+  }
+
+ private:
+  base::RunLoop run_loop_;
+  base::ScopedObservation<ServiceWorkerContext, ServiceWorkerContextObserver>
+      scoped_context_observation_{this};
+  int64_t version_id_ = blink::mojom::kInvalidServiceWorkerVersionId;
+};
+
 class ServiceWorkerProcessBrowserTest
     : public ContentBrowserTest,
       public ::testing::WithParamInterface<bool> {
@@ -108,6 +146,7 @@ class ServiceWorkerProcessBrowserTest
   }
 
   ServiceWorkerContextWrapper* wrapper() { return wrapper_.get(); }
+  ServiceWorkerContext* public_context() { return wrapper(); }
 
   WebContentsImpl* web_contents() {
     return static_cast<WebContentsImpl*>(shell()->web_contents());
@@ -125,7 +164,10 @@ class ServiceWorkerProcessBrowserTest
 // Tests that a service worker started due to a navigation shares the same
 // process as the navigation.
 // Flaky on Android; see https://crbug.com/1320972.
-#if BUILDFLAG(IS_ANDROID)
+// Flaky on TSan Linux; see https://crbug.com/349316554.
+#if BUILDFLAG(IS_ANDROID) ||                            \
+    ((BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && \
+     defined(THREAD_SANITIZER))
 #define MAYBE_ServiceWorkerAndPageShareProcess \
   DISABLED_ServiceWorkerAndPageShareProcess
 #else
@@ -137,8 +179,10 @@ IN_PROC_BROWSER_TEST_P(ServiceWorkerProcessBrowserTest,
   RegisterServiceWorker();
 
   // Navigate to a page in the service worker's scope.
+  WorkerRunningStatusObserver observer(public_context());
   ASSERT_TRUE(NavigateToURL(
       shell(), embedded_test_server()->GetURL("/service_worker/empty.html")));
+  observer.WaitUntilRunning();
 
   // The page and service worker should be in the same process.
   int page_process_id = current_frame_host()->GetProcess()->GetID();

@@ -6,44 +6,93 @@
 
 #import "base/test/ios/wait_util.h"
 #import "components/signin/public/base/consent_level.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey_app_interface.h"
 #import "ios/chrome/browser/ui/settings/settings_table_view_controller_constants.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
+#import "net/base/apple/url_conversions.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "url/gurl.h"
 
 using base::test::ios::WaitUntilConditionOrTimeout;
 
 @implementation SigninEarlGreyImpl
 
 - (void)addFakeIdentity:(FakeSystemIdentity*)fakeIdentity {
-  [SigninEarlGreyAppInterface addFakeIdentity:fakeIdentity];
+  [self addFakeIdentity:fakeIdentity withUnknownCapabilities:NO];
+}
+
+- (void)addFakeIdentity:(FakeSystemIdentity*)fakeIdentity
+    withUnknownCapabilities:(BOOL)usingUnknownCapabilities {
+  [SigninEarlGreyAppInterface addFakeIdentity:fakeIdentity
+                      withUnknownCapabilities:usingUnknownCapabilities];
+}
+
+- (void)addFakeIdentity:(FakeSystemIdentity*)fakeIdentity
+       withCapabilities:(NSDictionary<NSString*, NSNumber*>*)capabilities {
+  [SigninEarlGreyAppInterface addFakeIdentity:fakeIdentity
+                             withCapabilities:capabilities];
 }
 
 - (void)addFakeIdentityForSSOAuthAddAccountFlow:
     (FakeSystemIdentity*)fakeIdentity {
-  [SigninEarlGreyAppInterface
-      addFakeIdentityForSSOAuthAddAccountFlow:fakeIdentity];
+  [self addFakeIdentityForSSOAuthAddAccountFlow:fakeIdentity
+                        withUnknownCapabilities:NO];
 }
 
-- (void)setCapabilities:(ios::CapabilitiesDict*)capabilities
-            forIdentity:(FakeSystemIdentity*)fakeIdentity {
-  [SigninEarlGreyAppInterface setCapabilities:capabilities
-                                  forIdentity:fakeIdentity];
+- (void)addFakeIdentityForSSOAuthAddAccountFlow:
+            (FakeSystemIdentity*)fakeIdentity
+                        withUnknownCapabilities:(BOOL)usingUnknownCapabilities {
+  [SigninEarlGreyAppInterface
+      addFakeIdentityForSSOAuthAddAccountFlow:fakeIdentity
+                      withUnknownCapabilities:usingUnknownCapabilities];
 }
 
 - (void)forgetFakeIdentity:(FakeSystemIdentity*)fakeIdentity {
   [SigninEarlGreyAppInterface forgetFakeIdentity:fakeIdentity];
 }
 
+- (BOOL)isIdentityAdded:(FakeSystemIdentity*)fakeIdentity {
+  return [SigninEarlGreyAppInterface isIdentityAdded:fakeIdentity];
+}
+
+- (NSString*)primaryAccountGaiaID {
+  return [SigninEarlGreyAppInterface primaryAccountGaiaID];
+}
+
+- (BOOL)isSignedOut {
+  return [SigninEarlGreyAppInterface isSignedOut];
+}
+
 - (void)signOut {
   [SigninEarlGreyAppInterface signOut];
   [self verifySignedOut];
+}
+
+- (void)signinWithFakeIdentity:(FakeSystemIdentity*)identity {
+  [SigninEarlGreyAppInterface signinWithFakeIdentity:identity];
+  [self verifySignedInWithFakeIdentity:identity];
+}
+
+- (void)signinAndEnableLegacySyncFeature:(FakeSystemIdentity*)identity {
+  [SigninEarlGreyAppInterface signinAndEnableLegacySyncFeature:identity];
+  [self verifyPrimaryAccountWithEmail:identity.userEmail
+                              consent:signin::ConsentLevel::kSync];
+}
+
+- (void)signInWithoutHistorySyncWithFakeIdentity:(FakeSystemIdentity*)identity {
+  [SigninEarlGreyAppInterface
+      signInWithoutHistorySyncWithFakeIdentity:identity];
+}
+
+- (void)triggerReauthDialogWithFakeIdentity:(FakeSystemIdentity*)identity {
+  [SigninEarlGreyAppInterface triggerReauthDialogWithFakeIdentity:identity];
+}
+
+- (void)triggerConsistencyPromoSigninDialogWithURL:(GURL)url {
+  [SigninEarlGreyAppInterface
+      triggerConsistencyPromoSigninDialogWithURL:net::NSURLWithGURL(url)];
 }
 
 - (void)verifySignedInWithFakeIdentity:(FakeSystemIdentity*)fakeIdentity {
@@ -97,7 +146,8 @@ using base::test::ios::WaitUntilConditionOrTimeout;
   NSString* errorStr = [NSString
       stringWithFormat:@"Unexpected email of the signed in user [expected = "
                        @"\"%@\", actual = \"%@\", consent %d]",
-                       expectedEmail, primaryAccountEmail, consent];
+                       expectedEmail, primaryAccountEmail,
+                       static_cast<int>(consent)];
   EG_TEST_HELPER_ASSERT_TRUE(
       [expectedEmail isEqualToString:primaryAccountEmail], errorStr);
 }
@@ -141,6 +191,14 @@ using base::test::ios::WaitUntilConditionOrTimeout;
   [[EarlGrey
       selectElementWithMatcher:getSettingsGoogleSyncAndServicesCellMatcher]
       assertWithMatcher:grey_nil()];
+}
+
+- (void)setSelectedType:(syncer::UserSelectableType)type enabled:(BOOL)enabled {
+  [SigninEarlGreyAppInterface setSelectedType:type enabled:enabled];
+}
+
+- (BOOL)isSelectedTypeEnabled:(syncer::UserSelectableType)type {
+  return [SigninEarlGreyAppInterface isSelectedTypeEnabled:type];
 }
 
 @end

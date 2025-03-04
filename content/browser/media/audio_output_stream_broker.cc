@@ -9,16 +9,13 @@
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/trace_event/trace_event.h"
+#include "content/browser/media/audio_stream_broker_helper.h"
 #include "content/browser/media/media_internals.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/media_observer.h"
 #include "content/public/common/content_client.h"
 #include "media/audio/audio_logging.h"
 #include "media/mojo/mojom/audio_data_pipe.mojom.h"
-
-#if BUILDFLAG(IS_OHOS)
-#include "base/logging.h"
-#endif
 
 namespace content {
 
@@ -79,12 +76,6 @@ AudioOutputStreamBroker::AudioOutputStreamBroker(
       client_(std::move(client)),
       observer_(render_process_id, render_frame_id, stream_id),
       observer_receiver_(&observer_) {
-#if defined(OHOS_MEDIA_POLICY)
-  media::AudioParameters preParams = params;
-  preParams.set_render_process_id(render_process_id);
-  preParams.set_render_frame_id(render_frame_id);
-  params_ = preParams;
-#endif // defined(OHOS_MEDIA_POLICY)
   DCHECK(client_);
   DCHECK(deleter_);
   DCHECK(group_id_);
@@ -101,10 +92,16 @@ AudioOutputStreamBroker::AudioOutputStreamBroker(
   client_.set_disconnect_handler(
       base::BindOnce(&AudioOutputStreamBroker::Cleanup, base::Unretained(this),
                      DisconnectReason::kTerminatedByClient));
+
+  NotifyFrameHostOfAudioStreamStarted(render_process_id, render_frame_id,
+                                      /*is_capturing=*/false);
 }
 
 AudioOutputStreamBroker::~AudioOutputStreamBroker() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(owning_sequence_);
+
+  NotifyFrameHostOfAudioStreamStopped(render_process_id(), render_frame_id(),
+                                      /*is_capturing=*/false);
 
   const StreamBrokerDisconnectReason reason =
       GetDisconnectReason(disconnect_reason_, AwaitingCreated());
@@ -145,7 +142,7 @@ void AudioOutputStreamBroker::CreateStream(
   factory->CreateOutputStream(
       std::move(stream_receiver), std::move(observer),
       MediaInternals::GetInstance()->CreateMojoAudioLog(
-          media::AudioLogFactory::AudioComponent::AUDIO_OUTPUT_CONTROLLER,
+          media::AudioLogFactory::AudioComponent::kAudioOuputController,
           log_component_id, render_process_id(), render_frame_id()),
       output_device_id_, params_, group_id_,
       base::BindOnce(&AudioOutputStreamBroker::StreamCreated,
@@ -177,12 +174,13 @@ void AudioOutputStreamBroker::ObserverBindingLost(
   DCHECK_CALLED_ON_VALID_SEQUENCE(owning_sequence_);
   TRACE_EVENT_NESTABLE_ASYNC_INSTANT1("audio", "ObserverBindingLost", this,
                                       "reset reason", reason);
-  if (reason > static_cast<uint32_t>(DisconnectReason::kMaxValue))
+  if (reason > static_cast<uint32_t>(DisconnectReason::kMaxValue)) {
     NOTREACHED() << "Invalid reason: " << reason;
+  }
 
   DisconnectReason reason_enum = static_cast<DisconnectReason>(reason);
 
-  // TODO(https://crbug.com/787806): Don't propagate errors if we can retry
+  // TODO(crbug.com/40551225): Don't propagate errors if we can retry
   // instead.
   client_.ResetWithReason(
       static_cast<uint32_t>(DisconnectReason::kPlatformError), std::string());

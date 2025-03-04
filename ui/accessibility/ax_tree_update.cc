@@ -4,15 +4,22 @@
 
 #include "ui/accessibility/ax_tree_update.h"
 
-#include "ui/accessibility/ax_tree_data.h"
 #include "base/strings/string_number_conversions.h"
 #include "ui/accessibility/ax_enum_util.h"
+#include "ui/accessibility/ax_tree_checks.h"
+#include "ui/accessibility/ax_tree_data.h"
 
 namespace ui {
 
 AXTreeUpdate::AXTreeUpdate() = default;
 
-AXTreeUpdate::AXTreeUpdate(const ui::AXTreeUpdate& other) = default;
+AXTreeUpdate::AXTreeUpdate(AXTreeUpdate&& other) = default;
+
+AXTreeUpdate& AXTreeUpdate::operator=(AXTreeUpdate&& other) = default;
+
+AXTreeUpdate::AXTreeUpdate(const AXTreeUpdate& other) = default;
+
+AXTreeUpdate& AXTreeUpdate::operator=(const AXTreeUpdate& other) = default;
 
 AXTreeUpdate::~AXTreeUpdate() = default;
 
@@ -61,6 +68,23 @@ std::string AXTreeUpdate::ToString(bool verbose) const {
   }
 
   return result;
+}
+
+size_t AXTreeUpdate::ByteSize() const {
+  size_t total_size = sizeof(AXTreeUpdate);
+  for (auto& node : nodes) {
+    total_size += node.ByteSize();
+  }
+  total_size += event_intents.size() * sizeof(AXEventIntent);
+
+  return total_size;
+}
+
+void AXTreeUpdate::AccumulateSize(
+    AXNodeData::AXNodeDataSize& node_data_size) const {
+  for (const auto& node : nodes) {
+    node.AccumulateSize(node_data_size);
+  }
 }
 
 }  // namespace ui

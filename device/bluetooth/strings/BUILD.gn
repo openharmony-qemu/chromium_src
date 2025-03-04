@@ -9,8 +9,8 @@ import("//tools/grit/repack.gni")
 grit("strings") {
   source = "../bluetooth_strings.grd"
 
-  #ifdef ohos_i18n
-  if (is_ohos && ohos_i18n) {
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
     all_chrome_locales += extra_locales
   }
 

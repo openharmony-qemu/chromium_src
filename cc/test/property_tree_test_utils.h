@@ -63,12 +63,13 @@ EffectNode& CreateEffectNode(PropertyTrees*,
 // This creates a scroll node that looks like a scroller that wasn't composited
 // (isn't connected to a Layer). This function will also create a matching
 // transform node that is a child of the parent's transform node.
-ScrollNode& CreateScrollNodeForUncompositedScroller(
+ScrollNode& CreateScrollNodeForNonCompositedScroller(
     PropertyTrees* property_trees,
     int parent_id,
     ElementId element_id,
     const gfx::Size& bounds,
-    const gfx::Size& scroll_container_bounds);
+    const gfx::Size& scroll_container_bounds,
+    const gfx::Point& scroll_container_origin = gfx::Point());
 
 void SetupMaskProperties(LayerImpl* masked_layer, PictureLayerImpl* mask_layer);
 void SetupMaskProperties(Layer* masked_layer, PictureLayer* mask_layer);

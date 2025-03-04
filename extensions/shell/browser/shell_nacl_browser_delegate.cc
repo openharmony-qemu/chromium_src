@@ -52,12 +52,7 @@ bool ShellNaClBrowserDelegate::DialogsAreSuppressed() {
 
 bool ShellNaClBrowserDelegate::GetCacheDirectory(base::FilePath* cache_dir) {
   // Just use the general cache directory, not a subdirectory like Chrome does.
-#if BUILDFLAG(IS_POSIX)
   return base::PathService::Get(base::DIR_CACHE, cache_dir);
-#elif BUILDFLAG(IS_WIN)
-  // TODO(yoz): Find an appropriate persistent directory to use here.
-  return base::PathService::Get(base::DIR_TEMP, cache_dir);
-#endif
 }
 
 bool ShellNaClBrowserDelegate::GetPluginDirectory(base::FilePath* plugin_dir) {
@@ -128,7 +123,11 @@ ShellNaClBrowserDelegate::GetMapUrlToLocalFilePathCallback(
         // (GetFilePath()), so that this can be called on the IO thread. It only
         // handles a subset of the urls.
         if (!use_blocking_api) {
-          if (file_url.SchemeIs(kExtensionScheme)) {
+          if (file_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+              || file_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+          ) {
             std::string path = file_url.path();
             base::TrimString(path, "/", &path);  // Remove first slash
             *file_path = extension->path().AppendASCII(path);

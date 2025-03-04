@@ -38,7 +38,7 @@ int RotationToDegrees(display::Display::Rotation rotation) {
 }  // namespace
 
 DisplayInfoProvider::DisplayInfoProvider(display::Screen* screen)
-    : screen_(screen ? screen : display::Screen::GetScreen()) {
+    : provided_screen_(screen) {
   // Do not use/call on the screen object in this constructor yet because a
   // subclass may pass not-yet-initialized screen instance.
 }
@@ -58,8 +58,9 @@ DisplayInfoProvider* DisplayInfoProvider::Get() {
 // static
 void DisplayInfoProvider::InitializeForTesting(
     DisplayInfoProvider* display_info_provider) {
-  if (g_display_info_provider)
+  if (g_display_info_provider) {
     delete g_display_info_provider;
+  }
   g_display_info_provider = display_info_provider;
 }
 
@@ -79,6 +80,9 @@ api::system_display::DisplayUnitInfo DisplayInfoProvider::CreateDisplayUnitInfo(
   unit.id = base::NumberToString(display.id());
   unit.is_primary = (display.id() == primary_display_id);
   unit.is_internal = display.IsInternal();
+  unit.active_state = display.detected()
+                          ? api::system_display::ActiveState::kActive
+                          : api::system_display::ActiveState::kInactive;
   unit.is_enabled = true;
   unit.is_unified = false;
   unit.rotation = RotationToDegrees(display.rotation());
@@ -130,9 +134,10 @@ DisplayInfoProvider::GetAllDisplaysInfoList(
 void DisplayInfoProvider::GetAllDisplaysInfo(
     bool /* single_unified*/,
     base::OnceCallback<void(DisplayUnitInfoList result)> callback) {
-  int64_t primary_id = screen_->GetPrimaryDisplay().id();
-  std::vector<display::Display> displays = screen_->GetAllDisplays();
-  DisplayUnitInfoList all_displays;
+  const display::Screen* screen =
+      provided_screen_ ? provided_screen_.get() : display::Screen::GetScreen();
+  int64_t primary_id = screen->GetPrimaryDisplay().id();
+  std::vector<display::Display> displays = screen->GetAllDisplays();
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE,
       base::BindOnce(&DisplayInfoProvider::GetAllDisplaysInfoList,
@@ -144,8 +149,6 @@ void DisplayInfoProvider::GetAllDisplaysInfo(
 void DisplayInfoProvider::GetDisplayLayout(
     base::OnceCallback<void(DisplayLayoutList result)> callback) {
   NOTREACHED();  // Implemented on Chrome OS only in override.
-  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(std::move(callback), DisplayLayoutList()));
 }
 
 void DisplayInfoProvider::StartObserving() {
@@ -181,27 +184,22 @@ void DisplayInfoProvider::ShowNativeTouchCalibration(const std::string& id,
 
 bool DisplayInfoProvider::StartCustomTouchCalibration(const std::string& id) {
   NOTREACHED();  // Implemented on Chrome OS only in override.
-  return false;
 }
 
 bool DisplayInfoProvider::CompleteCustomTouchCalibration(
     const api::system_display::TouchCalibrationPairQuad& pairs,
     const api::system_display::Bounds& bounds) {
   NOTREACHED();  // Implemented on Chrome OS only in override.
-  return false;
 }
 
 bool DisplayInfoProvider::ClearTouchCalibration(const std::string& id) {
   NOTREACHED();  // Implemented on Chrome OS only in override.
-  return false;
 }
 
 void DisplayInfoProvider::SetMirrorMode(
     const api::system_display::MirrorModeInfo& info,
     ErrorCallback callback) {
   NOTREACHED();  // Implemented on Chrome OS only in override.
-  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(std::move(callback), "Not supported"));
 }
 
 void DisplayInfoProvider::DispatchOnDisplayChangedEvent() {
@@ -227,8 +225,8 @@ void DisplayInfoProvider::OnDisplayAdded(const display::Display& new_display) {
   DispatchOnDisplayChangedEvent();
 }
 
-void DisplayInfoProvider::OnDisplayRemoved(
-    const display::Display& old_display) {
+void DisplayInfoProvider::OnDisplaysRemoved(
+    const display::Displays& removed_displays) {
   DispatchOnDisplayChangedEvent();
 }
 

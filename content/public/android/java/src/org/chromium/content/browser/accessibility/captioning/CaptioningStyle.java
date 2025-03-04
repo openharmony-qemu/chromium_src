@@ -8,12 +8,11 @@ import android.graphics.Typeface;
 import android.view.accessibility.CaptioningManager.CaptionStyle;
 
 /**
- * This is an internal representation of the captioning. This class follows
- * the paradigm that was introduced in KitKat while not using that API directly so that it can be
- * used everywhere.
+ * This is an internal representation of the captioning. This class follows the paradigm that was
+ * introduced in KitKat while not using that API directly so that it can be used everywhere.
  *
- * For information on CaptionStyle, introduced in KitKat, see:
- * @link https://developer.android.com/reference/android/view/accessibility/CaptioningManager.CaptionStyle.html
+ * <p>For information on CaptionStyle, introduced in KitKat, see: {@link}
+ * https://developer.android.com/reference/android/view/accessibility/CaptioningManager.CaptionStyle.html
  */
 public class CaptioningStyle {
     private Integer mBackgroundColor;
@@ -33,8 +32,13 @@ public class CaptioningStyle {
      * @param windowColor window color of the CaptioningStyle
      * @param typeFace Typeface of the CaptioningStyle
      */
-    public CaptioningStyle(Integer backgroundColor, Integer edgeColor, Integer edgeType,
-            Integer foregroundColor, Integer windowColor, Typeface typeface) {
+    public CaptioningStyle(
+            Integer backgroundColor,
+            Integer edgeColor,
+            Integer edgeType,
+            Integer foregroundColor,
+            Integer windowColor,
+            Typeface typeface) {
         mBackgroundColor = backgroundColor;
         mEdgeColor = edgeColor;
         mEdgeType = edgeType;
@@ -127,7 +131,12 @@ public class CaptioningStyle {
             windowColor = Integer.valueOf(captionStyle.windowColor);
         }
 
-        return new CaptioningStyle(backgroundColor, edgeColor, edgeType, foregroundColor,
-                windowColor, captionStyle.getTypeface());
+        return new CaptioningStyle(
+                backgroundColor,
+                edgeColor,
+                edgeType,
+                foregroundColor,
+                windowColor,
+                captionStyle.getTypeface());
     }
 }

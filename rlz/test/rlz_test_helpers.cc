@@ -4,6 +4,11 @@
 //
 // Main entry point for all unit tests.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "rlz_test_helpers.h"
 
 #include <stddef.h>
@@ -133,7 +138,7 @@ void RlzLibTestNoMachineStateHelper::SetUp() {
   ASSERT_NO_FATAL_FAILURE(
       InitializeRegistryOverridesForTesting(&override_manager_));
 #elif BUILDFLAG(IS_APPLE)
-  base::mac::ScopedNSAutoreleasePool pool;
+  base::apple::ScopedNSAutoreleasePool pool;
 #endif  // BUILDFLAG(IS_WIN)
 #if BUILDFLAG(IS_POSIX)
   ASSERT_TRUE(temp_dir_.CreateUniqueTempDir());

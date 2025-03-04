@@ -7,12 +7,14 @@
 
 #include <memory>
 #include <set>
+#include <string>
 
 #include "base/memory/raw_ptr.h"
 #include "components/keyed_service/core/keyed_service.h"
 #include "components/security_interstitials/core/https_only_mode_allowlist.h"
 #include "components/security_interstitials/core/https_only_mode_enforcelist.h"
 #include "content/public/browser/ssl_host_state_delegate.h"
+#include "url/gurl.h"
 
 class HostContentSettingsMap;
 class PrefService;
@@ -26,7 +28,7 @@ class FilePath;
 namespace content {
 class BrowserContext;
 class StoragePartition;
-}
+}  // namespace content
 
 namespace user_prefs {
 class PrefRegistrySyncable;
@@ -67,12 +69,14 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
       const net::X509Certificate& cert,
       int error,
       content::StoragePartition* storage_partition) override;
+
   void HostRanInsecureContent(const std::string& host,
                               int child_id,
                               InsecureContentType content_type) override;
   bool DidHostRunInsecureContent(const std::string& host,
                                  int child_id,
                                  InsecureContentType content_type) override;
+
   void AllowHttpForHost(const std::string& host,
                         content::StoragePartition* storage_partition) override;
   bool IsHttpAllowedForHost(
@@ -81,14 +85,25 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
   void RevokeUserAllowExceptions(const std::string& host) override;
   bool HasAllowException(const std::string& host,
                          content::StoragePartition* storage_partition) override;
+  // Returns true if the user has allowed a certificate error exception or HTTP
+  // exception for any host.
+  bool HasAllowExceptionForAnyHost(
+      content::StoragePartition* storage_partition) override;
 
   void SetHttpsEnforcementForHost(
       const std::string& host,
       bool enforced,
       content::StoragePartition* storage_partition) override;
-  bool IsHttpsEnforcedForHost(
-      const std::string& host,
+  bool IsHttpsEnforcedForUrl(
+      const GURL& url,
       content::StoragePartition* storage_partition) override;
+  std::set<GURL> GetHttpsEnforcedHosts(
+      content::StoragePartition* storage_partition) const;
+
+  // Clears all entries from the HTTP allowlist.
+  void ClearHttpsOnlyModeAllowlist();
+  // Clear all entries from the HTTPS enforcelist.
+  void ClearHttpsEnforcelist();
 
   // RevokeUserAllowExceptionsHard is the same as RevokeUserAllowExceptions but
   // additionally may close idle connections in the process. This should be used
@@ -110,6 +125,9 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
 
   void ResetRecurrentErrorCountForTesting();
 
+  bool HttpsFirstBalancedModeSuppressedForTesting();
+  void SetHttpsFirstBalancedModeSuppressedForTesting(bool suppressed);
+
   // SetClockForTesting takes ownership of the passed in clock.
   void SetClockForTesting(std::unique_ptr<base::Clock> clock);
 
@@ -122,6 +140,15 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
   int GetRecurrentInterstitialThreshold() const;
   int GetRecurrentInterstitialResetTime() const;
 
+  // Returns whether the user has allowed a certificate error exception for
+  // |host|.
+  bool HasCertAllowException(const std::string& host,
+                             content::StoragePartition* storage_partition);
+
+  // Returns whether the user has allowed an HTTP exception for |host|.
+  bool HasHttpAllowException(const std::string& host,
+                             content::StoragePartition* storage_partition);
+
  private:
   // Used to specify whether new content setting entries should be created if
   // they don't already exist when querying the user's settings.
@@ -129,11 +156,6 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
     CREATE_DICTIONARY_ENTRIES,
     DO_NOT_CREATE_DICTIONARY_ENTRIES
   };
-
-  // Returns whether the user has allowed a certificate error exception for
-  // |host|.
-  bool HasCertAllowException(const std::string& host,
-                             content::StoragePartition* storage_partition);
 
   // Returns a dictionary of certificate fingerprints and errors that have been
   // allowed as exceptions by the user.
@@ -149,6 +171,10 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
   base::Value::Dict* GetValidCertDecisionsDict(
       CreateDictionaryEntriesDisposition create_entries,
       base::Value::Dict& dict);
+
+  bool HasCertAllowExceptionForAnyHost(
+      content::StoragePartition* storage_partition);
+  bool IsHttpAllowedForAnyHost(content::StoragePartition* storage_partition);
 
   std::unique_ptr<base::Clock> clock_;
   raw_ptr<content::BrowserContext> browser_context_;
@@ -200,6 +226,8 @@ class StatefulSSLHostStateDelegate : public content::SSLHostStateDelegate,
   int recurrent_interstitial_threshold_for_testing;
   enum RecurrentInterstitialMode recurrent_interstitial_mode_for_testing;
   int recurrent_interstitial_reset_time_for_testing;
+
+  bool https_first_balanced_mode_suppressed_for_testing;
 };
 
 #endif  // COMPONENTS_SECURITY_INTERSTITIALS_CONTENT_STATEFUL_SSL_HOST_STATE_DELEGATE_H_

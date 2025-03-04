@@ -8,8 +8,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <compare>
 #include <iosfwd>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "build/build_config.h"
 
@@ -66,29 +68,8 @@ class UniqueProcId {
   // valid within the current process sandbox.
   ProcessId GetUnsafeValue() const { return value_; }
 
-  bool operator==(const UniqueProcId& other) const {
-    return value_ == other.value_;
-  }
-
-  bool operator!=(const UniqueProcId& other) const {
-    return value_ != other.value_;
-  }
-
-  bool operator<(const UniqueProcId& other) const {
-    return value_ < other.value_;
-  }
-
-  bool operator<=(const UniqueProcId& other) const {
-    return value_ <= other.value_;
-  }
-
-  bool operator>(const UniqueProcId& other) const {
-    return value_ > other.value_;
-  }
-
-  bool operator>=(const UniqueProcId& other) const {
-    return value_ >= other.value_;
-  }
+  friend bool operator==(const UniqueProcId&, const UniqueProcId&) = default;
+  friend auto operator<=>(const UniqueProcId&, const UniqueProcId&) = default;
 
  private:
   ProcessId value_;
@@ -101,7 +82,7 @@ std::ostream& operator<<(std::ostream& os, const UniqueProcId& obj);
 // processes (use GetUniqueIdForProcess if uniqueness is required).
 BASE_EXPORT ProcessId GetCurrentProcId();
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
 // Returns the global id of the current process.
 BASE_EXPORT ProcessId GetCurrentRealPid();
 #endif
@@ -111,7 +92,7 @@ BASE_EXPORT ProcessId GetCurrentRealPid();
 // processes may be reused.
 BASE_EXPORT UniqueProcId GetUniqueIdForProcess();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // When a process is started in a different PID namespace from the browser
 // process, this function must be called with the process's PID in the browser's
 // PID namespace in order to initialize its unique ID. Not thread safe.

@@ -36,7 +36,8 @@ CrosBluetoothConfig::CrosBluetoothConfig(
       system_properties_provider_(
           std::make_unique<SystemPropertiesProviderImpl>(
               adapter_state_controller_.get(),
-              device_cache_.get())),
+              device_cache_.get(),
+              fast_pair_delegate)),
       bluetooth_device_status_notifier_(
           initializer.CreateBluetoothDeviceStatusNotifier(bluetooth_adapter,
                                                           device_cache_.get())),
@@ -101,8 +102,8 @@ void CrosBluetoothConfig::SetBluetoothEnabledState(bool enabled) {
   bluetooth_power_controller_->SetBluetoothEnabledState(enabled);
 }
 
-void CrosBluetoothConfig::SetBluetoothHidDetectionActive() {
-  bluetooth_power_controller_->SetBluetoothHidDetectionActive();
+void CrosBluetoothConfig::SetBluetoothEnabledWithoutPersistence() {
+  bluetooth_power_controller_->SetBluetoothEnabledWithoutPersistence();
 }
 
 void CrosBluetoothConfig::SetBluetoothHidDetectionInactive(

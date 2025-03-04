@@ -12,11 +12,13 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/memory/ptr_util.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "remoting/base/auto_thread_task_runner.h"
+#include "remoting/base/session_policies.h"
 #include "remoting/host/chromoting_host_context.h"
 #include "remoting/host/host_extension.h"
 #include "remoting/protocol/pairing_registry.h"
@@ -91,10 +93,10 @@ void It2MeStandaloneHost::Connect() {
   options.set_enable_user_interface(false);
   session_ = std::make_unique<ClientSession>(
       &handler_, std::unique_ptr<protocol::ConnectionToClient>(&connection_),
-      &factory_, options, base::TimeDelta(),
-      scoped_refptr<protocol::PairingRegistry>(),
-      std::vector<HostExtension*>());
-  session_->OnConnectionAuthenticated();
+      &factory_, options, scoped_refptr<protocol::PairingRegistry>(),
+      std::vector<raw_ptr<HostExtension, VectorExperimental>>(),
+      &local_session_policies_provider_);
+  session_->OnConnectionAuthenticated(nullptr);
   session_->OnConnectionChannelsConnected();
   session_->CreateMediaStreams();
 }

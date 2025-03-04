@@ -9,7 +9,6 @@
 
 #include "base/memory/weak_ptr.h"
 #include "components/subresource_filter/content/mojom/subresource_filter.mojom.h"
-#include "components/subresource_filter/content/renderer/ad_resource_tracker.h"
 #include "components/subresource_filter/core/mojom/subresource_filter.mojom.h"
 #include "content/public/renderer/render_frame_observer.h"
 #include "content/public/renderer/render_frame_observer_tracker.h"
@@ -34,16 +33,13 @@ class WebDocumentSubresourceFilterImpl;
 class UserSubresourceFilterAgent
     : public content::RenderFrameObserver,
       public content::RenderFrameObserverTracker<UserSubresourceFilterAgent>,
-      public mojom::UserSubresourceFilterAgent,
-      public base::SupportsWeakPtr<UserSubresourceFilterAgent> {
+      public mojom::UserSubresourceFilterAgent {
  public:
   // The |ruleset_dealer| must not be null and must outlive this instance. The
-  // |render_frame| may be null in unittests. The |ad_resource_tracker| may be
-  // null.
+  // |render_frame| may be null in unittests.
   explicit UserSubresourceFilterAgent(
       content::RenderFrame* render_frame,
-      UserUnverifiedRulesetDealer* ruleset_dealer,
-      std::unique_ptr<AdResourceTracker> ad_resource_tracker);
+      UserUnverifiedRulesetDealer* ruleset_dealer);
 
   UserSubresourceFilterAgent(const UserSubresourceFilterAgent&) = delete;
   UserSubresourceFilterAgent& operator=(const UserSubresourceFilterAgent&) =
@@ -99,13 +95,13 @@ class UserSubresourceFilterAgent
   // True if the frame has been heuristically determined to be an ad frame.
   virtual bool IsAdFrame();
 
-  virtual const absl::optional<blink::FrameAdEvidence>& AdEvidence();
+  virtual const std::optional<blink::FrameAdEvidence>& AdEvidence();
   virtual void SetAdEvidence(const blink::FrameAdEvidence& ad_evidence);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   virtual void SendStatisticsAfterDocumentLoad(
       const mojom::DocumentLoadStatistics& statistics);
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // The browser will not inform the renderer of the (sub)frame's ad status and
   // evidence in the case of an initial synchronous commit to about:blank. We
@@ -117,13 +113,13 @@ class UserSubresourceFilterAgent
   // mojom::UserSubresourceFilterAgent:
   void ActivateForNextCommittedLoad(
       mojom::ActivationStatePtr activation_state,
-      const absl::optional<blink::FrameAdEvidence>& ad_evidence) override;
+      const std::optional<blink::FrameAdEvidence>& ad_evidence) override;
 
  private:
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   void CalcElementHidingTypeOption(content::RenderFrame* render_frame);
   void DidSubresourceFiltered() override;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 
   // Returns the activation state for the `render_frame` to inherit. Root frames
   // inherit from their opener frames, and child frames inherit from their
@@ -164,9 +160,6 @@ class UserSubresourceFilterAgent
 
   mojom::ActivationState activation_state_for_next_document_;
 
-  // Tracks all ad resource observers.
-  std::unique_ptr<AdResourceTracker> ad_resource_tracker_;
-
   // Use associated interface to make sure mojo messages are ordered with regard
   // to legacy IPC messages.
   mojo::AssociatedRemote<mojom::UserSubresourceFilterHost>
@@ -177,7 +170,9 @@ class UserSubresourceFilterAgent
   base::WeakPtr<WebDocumentSubresourceFilterImpl>
       filter_for_last_created_document_;
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+  base::WeakPtrFactory<UserSubresourceFilterAgent> weak_ptr_factory_{this};
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   bool did_load_finished_ = false;
 #endif
 };

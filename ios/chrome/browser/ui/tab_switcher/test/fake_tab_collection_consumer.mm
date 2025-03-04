@@ -4,59 +4,122 @@
 
 #import "ios/chrome/browser/ui/tab_switcher/test/fake_tab_collection_consumer.h"
 
+#import "base/check.h"
+#import "base/notreached.h"
+#import "ios/chrome/browser/shared/model/web_state_list/tab_group.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_item_identifier.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_group_item.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_switcher_item.h"
+#import "ios/web/public/web_state_id.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+@implementation FakeTabCollectionConsumer {
+  std::vector<web::WebStateID> _items;
+  std::vector<const TabGroup*> _groups;
+}
 
-@implementation FakeTabCollectionConsumer
+- (void)setTabGridMode:(TabGridMode)mode {
+  self.mode = mode;
+}
 
-@synthesize items = _items;
-@synthesize selectedItemID = _selectedItemID;
+- (const std::vector<web::WebStateID>&)items {
+  return _items;
+}
+
+- (const std::vector<const TabGroup*>&)groups {
+  return _groups;
+}
 
 - (void)setItemsRequireAuthentication:(BOOL)require {
   // No-op.
 }
 
-- (void)populateItems:(NSArray<TabSwitcherItem*>*)items
-       selectedItemID:(NSString*)selectedItemID {
-  self.selectedItemID = selectedItemID;
-  self.items = [NSMutableArray array];
-  for (TabSwitcherItem* item in items) {
-    [self.items addObject:item.identifier];
+- (void)populateItems:(NSArray<GridItemIdentifier*>*)items
+    selectedItemIdentifier:(GridItemIdentifier*)selectedItemIdentifier {
+  _selectedItem = selectedItemIdentifier;
+  _items.clear();
+  for (GridItemIdentifier* item in items) {
+    switch (item.type) {
+      case GridItemType::kInactiveTabsButton:
+        NOTREACHED();
+      case GridItemType::kTab:
+        _items.push_back(item.tabSwitcherItem.identifier);
+        break;
+      case GridItemType::kGroup:
+        _groups.push_back(item.tabGroupItem.tabGroup);
+        break;
+      case GridItemType::kSuggestedActions:
+        NOTREACHED();
+      case GridItemType::kActivitySummary:
+        NOTREACHED();
+    }
   }
 }
 
-- (void)insertItem:(TabSwitcherItem*)item
-           atIndex:(NSUInteger)index
-    selectedItemID:(NSString*)selectedItemID {
-  [self.items insertObject:item.identifier atIndex:index];
-  self.selectedItemID = selectedItemID;
+- (void)insertItem:(GridItemIdentifier*)item
+              beforeItemID:(GridItemIdentifier*)nextItemIdentifier
+    selectedItemIdentifier:(GridItemIdentifier*)selectedItemIdentifier {
+  _items.insert(std::find(std::begin(_items), std::end(_items),
+                          nextItemIdentifier.tabSwitcherItem.identifier),
+                item.tabSwitcherItem.identifier);
+  _selectedItem = selectedItemIdentifier;
 }
 
-- (void)removeItemWithID:(NSString*)removedItemID
-          selectedItemID:(NSString*)selectedItemID {
-  [self.items removeObject:removedItemID];
-  self.selectedItemID = selectedItemID;
+- (void)removeItemWithIdentifier:(GridItemIdentifier*)removedItem
+          selectedItemIdentifier:(GridItemIdentifier*)selectedItemIdentifier {
+  auto it = std::remove(_items.begin(), _items.end(),
+                        removedItem.tabSwitcherItem.identifier);
+  _items.erase(it, _items.end());
+  _selectedItem = selectedItemIdentifier;
 }
 
-- (void)selectItemWithID:(NSString*)selectedItemID {
-  self.selectedItemID = selectedItemID;
+- (void)selectItemWithIdentifier:(GridItemIdentifier*)selectedItemIdentifier {
+  _selectedItem = selectedItemIdentifier;
 }
 
-- (void)replaceItemID:(NSString*)itemID withItem:(TabSwitcherItem*)item {
-  NSUInteger index = [self.items indexOfObject:itemID];
-  self.items[index] = item.identifier;
+- (void)replaceItem:(GridItemIdentifier*)item
+    withReplacementItem:(GridItemIdentifier*)replacementItem {
+  auto it =
+      std::find(_items.begin(), _items.end(), item.tabSwitcherItem.identifier);
+  if (it != _items.end()) {
+    *it = replacementItem.tabSwitcherItem.identifier;
+  }
 }
 
-- (void)moveItemWithID:(NSString*)itemID toIndex:(NSUInteger)toIndex {
-  [self.items removeObject:itemID];
-  [self.items insertObject:itemID atIndex:toIndex];
+- (void)moveItem:(GridItemIdentifier*)item
+      beforeItem:(GridItemIdentifier*)nextItemIdentifier {
+  web::WebStateID moved_id = item.tabSwitcherItem.identifier;
+  auto it = std::remove(_items.begin(), _items.end(), moved_id);
+  _items.erase(it, _items.end());
+  if (nextItemIdentifier) {
+    _items.insert(std::find(std::begin(_items), std::end(_items),
+                            nextItemIdentifier.tabSwitcherItem.identifier),
+                  moved_id);
+  } else {
+    _items.push_back(moved_id);
+  }
+}
+
+- (void)bringItemIntoView:(GridItemIdentifier*)item animated:(BOOL)animated {
+  // No-op.
 }
 
 - (void)dismissModals {
   // No-op.
+}
+
+- (void)willCloseAll {
+}
+
+- (void)didCloseAll {
+}
+
+- (void)willUndoCloseAll {
+}
+
+- (void)didUndoCloseAll {
+}
+
+- (void)reload {
 }
 
 @end

@@ -41,10 +41,9 @@ message Study {
   // Ex: PERMANENT
   optional Consistency consistency = 7 [default = SESSION];
 
-  // Optionally specifies which layer the study is a part of, which will
-  // ensure only one study per layer is enabled for a client. A study must
-  // specify both the ID of the layer and the ID of the LayerMember within
-  // that layer that the study should be associated with.
+  // Optionally specifies which layer the study is a part of. A study must
+  // specify both the ID of the layer and the ID(s) of the layer member(s)
+  // within that layer that the study should be constrained to.
   optional LayerMemberReference layer = 16;
 
   // Name of the experiment that gets the default experience. This experiment
@@ -107,8 +106,7 @@ message Study {
     // trigger experiment ids are visible to Google web properties.
     optional GoogleWebVisibility google_web_visibility = 16;
 
-    // Optional id used to uniquely identify this experiment for Chrome Sync.
-    optional uint64 chrome_sync_experiment_id = 10;
+    reserved 10;
 
     // Optional id used to uniquely identify this experiment when activating
     // integrations with the Android Google App.
@@ -232,6 +230,7 @@ message Study {
     PLATFORM_FUCHSIA = 7;
     PLATFORM_ANDROID_WEBLAYER = 8;
     PLATFORM_CHROMEOS_LACROS = 9;
+    PLATFORM_OHOS = 10;
   }
 
   // Possible form factors Chrome is running on.
@@ -246,6 +245,12 @@ message Study {
     KIOSK = 3;
     // Chrome OS running on Meet Hardware devices e.g. Chromebox For Meetings.
     MEET_DEVICE = 4;
+    // Chrome running on Android TV.
+    TV = 5;
+    // Chrome running on Android Auto.
+    AUTOMOTIVE = 6;
+    // Chrome running on Android Foldable.
+    FOLDABLE = 7;
   }
 
   // Possible CPU architectures Chrome is running on. Only supported on M90+.

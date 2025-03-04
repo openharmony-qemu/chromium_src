@@ -7,7 +7,9 @@
 #include <errno.h>
 
 #include <memory>
+#include <ostream>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "quiche/quic/core/crypto/crypto_protocol.h"
@@ -377,7 +379,7 @@ bool QuicTimeWaitListManager::WriteToWire(QueuedPacket* queued_packet) {
   WriteResult result = writer_->WritePacket(
       queued_packet->packet()->data(), queued_packet->packet()->length(),
       queued_packet->self_address().host(), queued_packet->peer_address(),
-      nullptr);
+      nullptr, QuicPacketWriterParams());
 
   // If using a batch writer and the packet is buffered, flush it.
   if (writer_->IsBatchMode() && result.status == WRITE_STATUS_OK &&

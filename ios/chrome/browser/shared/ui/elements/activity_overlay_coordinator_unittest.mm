@@ -5,16 +5,12 @@
 #import "ios/chrome/browser/shared/ui/elements/activity_overlay_coordinator.h"
 
 #import "base/test/task_environment.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/main/test_browser.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/ui/elements/activity_overlay_view_controller.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using ActivityOverlayCoordinatorTest = PlatformTest;
 
@@ -25,10 +21,9 @@ TEST_F(ActivityOverlayCoordinatorTest, StartAndStop) {
   __weak UIView* overlay_view;
   @autoreleasepool {
     UIViewController* base_view_controller = [[UIViewController alloc] init];
-    std::unique_ptr<TestChromeBrowserState> browser_state =
-        TestChromeBrowserState::Builder().Build();
+    std::unique_ptr<TestProfileIOS> profile = TestProfileIOS::Builder().Build();
     std::unique_ptr<Browser> browser =
-        std::make_unique<TestBrowser>(browser_state.get());
+        std::make_unique<TestBrowser>(profile.get());
     ActivityOverlayCoordinator* coordinator =
         [[ActivityOverlayCoordinator alloc]
             initWithBaseViewController:base_view_controller

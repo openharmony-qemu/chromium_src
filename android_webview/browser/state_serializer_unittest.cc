@@ -52,7 +52,7 @@ std::unique_ptr<content::NavigationEntry> CreateNavigationEntry() {
   entry->SetBaseURLForDataURL(base_url_for_data_url);
   {
     scoped_refptr<base::RefCountedString> s = new base::RefCountedString();
-    s->data().assign(data_url_as_string);
+    s->as_string() = data_url_as_string;
     entry->SetDataURLAsString(s);
   }
   entry->SetIsOverridingUserAgent(is_overriding_user_agent);
@@ -138,8 +138,8 @@ TEST_F(AndroidWebViewStateSerializerTest, TestNavigationEntrySerialization) {
   EXPECT_EQ(entry->GetHasPostData(), copy->GetHasPostData());
   EXPECT_EQ(entry->GetOriginalRequestURL(), copy->GetOriginalRequestURL());
   EXPECT_EQ(entry->GetBaseURLForDataURL(), copy->GetBaseURLForDataURL());
-  EXPECT_EQ(entry->GetDataURLAsString()->data(),
-            copy->GetDataURLAsString()->data());
+  EXPECT_EQ(entry->GetDataURLAsString()->as_string(),
+            copy->GetDataURLAsString()->as_string());
   EXPECT_EQ(entry->GetIsOverridingUserAgent(),
             copy->GetIsOverridingUserAgent());
   EXPECT_EQ(entry->GetTimestamp(), copy->GetTimestamp());
@@ -184,7 +184,7 @@ TEST_F(AndroidWebViewStateSerializerTest,
 // is able to safely restore entries that were serialized with an empty
 // PageState.
 TEST_F(AndroidWebViewStateSerializerTest,
-       TestDeserialization_20151204_EmptyPageState) {
+       TestDeserialization20151204EmptyPageState) {
   // Test data.
   GURL url("data:text/html,main_url");
   GURL virtual_url("https://example.com/virtual_url");
@@ -278,7 +278,7 @@ TEST_F(AndroidWebViewStateSerializerTest, TestHugeDataURLSerialization) {
   huge_data_url.replace(0, strlen(url::kDataScheme), url::kDataScheme);
   {
     scoped_refptr<base::RefCountedString> s = new base::RefCountedString();
-    s->data().assign(huge_data_url);
+    s->as_string().assign(huge_data_url);
     entry->SetDataURLAsString(s);
   }
 
@@ -293,7 +293,7 @@ TEST_F(AndroidWebViewStateSerializerTest, TestHugeDataURLSerialization) {
   bool result = internal::RestoreNavigationEntryFromPickle(
       &iterator, copy.get(), context.get());
   EXPECT_TRUE(result);
-  EXPECT_EQ(huge_data_url, copy->GetDataURLAsString()->data());
+  EXPECT_EQ(huge_data_url, copy->GetDataURLAsString()->as_string());
 }
 
 }  // namespace android_webview

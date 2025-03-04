@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "base/posix/unix_domain_socket.h"
 
 #include <errno.h>
@@ -79,6 +84,8 @@ bool UnixDomainSocket::SendMsg(int fd,
     msg.msg_control = control_buffer;
 #if BUILDFLAG(IS_APPLE)
     msg.msg_controllen = checked_cast<socklen_t>(control_len);
+#elif BUILDFLAG(IS_OHOS)
+    msg.msg_controllen = static_cast<socklen_t>(control_len);
 #else
     msg.msg_controllen = control_len;
 #endif
@@ -87,6 +94,8 @@ bool UnixDomainSocket::SendMsg(int fd,
     cmsg->cmsg_type = SCM_RIGHTS;
 #if BUILDFLAG(IS_APPLE)
     cmsg->cmsg_len = checked_cast<u_int>(CMSG_LEN(sizeof(int) * fds.size()));
+#elif BUILDFLAG(IS_OHOS)
+    cmsg->cmsg_len = static_cast<socklen_t>(CMSG_LEN(sizeof(int) * fds.size()));
 #else
     cmsg->cmsg_len = CMSG_LEN(sizeof(int) * fds.size());
 #endif
@@ -275,7 +284,6 @@ ssize_t UnixDomainSocket::SendRecvMsgWithFlags(int fd,
   // that as an error.
   if (recv_fds.size() > (result_fd != nullptr ? 1 : 0)) {
     NOTREACHED();
-    return -1;
   }
 
   if (result_fd)

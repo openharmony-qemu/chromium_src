@@ -8,19 +8,20 @@
 
 #import "content/public/browser/native_event_processor_mac.h"
 
-namespace content {
-namespace responsiveness {
+namespace content::responsiveness {
 
 void NativeEventObserver::RegisterObserver() {
-  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)])
+  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)]) {
     return;
+  }
   id<NativeEventProcessor> processor =
       static_cast<id<NativeEventProcessor>>(NSApp);
   [processor addNativeEventProcessorObserver:this];
 }
 void NativeEventObserver::DeregisterObserver() {
-  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)])
+  if (![NSApp conformsToProtocol:@protocol(NativeEventProcessor)]) {
     return;
+  }
   id<NativeEventProcessor> processor =
       static_cast<id<NativeEventProcessor>>(NSApp);
   [processor removeNativeEventProcessorObserver:this];
@@ -33,5 +34,4 @@ void NativeEventObserver::DidRunNativeEvent(const void* opaque_identifier) {
   did_run_event_callback_.Run(opaque_identifier);
 }
 
-}  // namespace responsiveness
-}  // namespace content
+}  // namespace content::responsiveness

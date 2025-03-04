@@ -39,14 +39,14 @@ class GpuControlListEntryTest : public testing::Test {
   }
 
   const Entry& GetEntry(size_t index) {
-    EXPECT_LT(index, kGpuControlListTestingEntryCount);
-    EXPECT_EQ(index + 1, kGpuControlListTestingEntries[index].id);
-    return kGpuControlListTestingEntries[index];
+    EXPECT_LT(index, GetGpuControlListTestingEntries().size());
+    EXPECT_EQ(index + 1, GetGpuControlListTestingEntries()[index].id);
+    return GetGpuControlListTestingEntries()[index];
   }
 
   size_t CountFeature(const Entry& entry, int feature) {
     size_t count = 0;
-    for (size_t ii = 0; ii < entry.feature_size; ++ii) {
+    for (size_t ii = 0; ii < entry.features.size(); ++ii) {
       if (entry.features[ii] == feature) {
         ++count;
       }
@@ -73,14 +73,14 @@ TEST_F(GpuControlListEntryTest, DetailedEntry) {
   const Entry& entry = GetEntry(kGpuControlListEntryTest_DetailedEntry);
   EXPECT_EQ(kOsMacosx, entry.conditions.os_type);
   EXPECT_STREQ("GpuControlListEntryTest.DetailedEntry", entry.description);
-  EXPECT_EQ(2u, entry.cr_bug_size);
+  EXPECT_EQ(2u, entry.cr_bugs.size());
   EXPECT_EQ(1024u, entry.cr_bugs[0]);
   EXPECT_EQ(678u, entry.cr_bugs[1]);
-  EXPECT_EQ(1u, entry.feature_size);
+  EXPECT_EQ(1u, entry.features.size());
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_0));
   EXPECT_FALSE(entry.NeedsMoreInfo(gpu_info(), true));
   EXPECT_TRUE(entry.Contains(kOsMacosx, "10.6.4", gpu_info()));
-  EXPECT_EQ(2u, entry.disabled_extension_size);
+  EXPECT_EQ(2u, entry.disabled_extensions.size());
   EXPECT_STREQ("test_extension1", entry.disabled_extensions[0]);
   EXPECT_STREQ("test_extension2", entry.disabled_extensions[1]);
 }
@@ -106,10 +106,11 @@ TEST_F(GpuControlListEntryTest, AllExceptNVidiaOnLinuxEntry) {
   const Entry& entry =
       GetEntry(kGpuControlListEntryTest_AllExceptNVidiaOnLinuxEntry);
   EXPECT_EQ(kOsLinux, entry.conditions.os_type);
-  const GpuControlList::OsType os_type[] = {kOsMacosx, kOsWin, kOsLinux,
-                                            kOsChromeOS, kOsAndroid};
-  for (size_t i = 0; i < std::size(os_type); ++i)
-    EXPECT_FALSE(entry.Contains(os_type[i], "10.6", gpu_info()));
+  const GpuControlList::OsType os_types[] = {kOsMacosx, kOsWin, kOsLinux,
+                                             kOsChromeOS, kOsAndroid};
+  for (auto os_type : os_types) {
+    EXPECT_FALSE(entry.Contains(os_type, "10.6", gpu_info()));
+  }
 }
 
 TEST_F(GpuControlListEntryTest, AllExceptIntelOnLinuxEntry) {
@@ -231,13 +232,15 @@ TEST_F(GpuControlListEntryTest, GlRendererCaseInsensitive) {
 TEST_F(GpuControlListEntryTest, GlExtensionsEndWith) {
   const Entry& entry = GetEntry(kGpuControlListEntryTest_GlExtensionsEndWith);
   GPUInfo gpu_info;
-  gpu_info.gl_extensions = "GL_SGIS_generate_mipmap "
-                           "GL_SGIX_shadow "
-                           "GL_SUN_slice_accum";
+  gpu_info.gl_extensions =
+      "GL_SGIS_generate_mipmap "
+      "GL_SGIX_shadow "
+      "GL_SUN_slice_accum";
   EXPECT_TRUE(entry.Contains(kOsMacosx, "10.9", gpu_info));
-  gpu_info.gl_extensions = "GL_SGIS_generate_mipmap "
-                           "GL_SUN_slice_accum "
-                           "GL_SGIX_shadow";
+  gpu_info.gl_extensions =
+      "GL_SGIS_generate_mipmap "
+      "GL_SUN_slice_accum "
+      "GL_SGIX_shadow";
   EXPECT_FALSE(entry.Contains(kOsMacosx, "10.9", gpu_info));
 }
 
@@ -326,7 +329,7 @@ TEST_F(GpuControlListEntryTest, NeedsMoreInfoForGlVersionEntry) {
 TEST_F(GpuControlListEntryTest, FeatureTypeAllEntry) {
   const Entry& entry = GetEntry(kGpuControlListEntryTest_FeatureTypeAllEntry);
 
-  EXPECT_EQ(3u, entry.feature_size);
+  EXPECT_EQ(3u, entry.features.size());
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_0));
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_1));
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_2));
@@ -335,7 +338,7 @@ TEST_F(GpuControlListEntryTest, FeatureTypeAllEntry) {
 TEST_F(GpuControlListEntryTest, FeatureTypeAllEntryWithExceptions) {
   const Entry& entry =
       GetEntry(kGpuControlListEntryTest_FeatureTypeAllEntryWithExceptions);
-  EXPECT_EQ(2u, entry.feature_size);
+  EXPECT_EQ(2u, entry.features.size());
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_1));
   EXPECT_EQ(1u, CountFeature(entry, TEST_FEATURE_2));
 }
@@ -669,7 +672,6 @@ TEST_F(GpuControlListEntryTest, DirectRendering) {
   // Indirect rendering does not match.
   gpu_info.direct_rendering_version = "1";
   EXPECT_FALSE(entry.Contains(kOsLinux, "7.0", gpu_info));
-
   gpu_info.direct_rendering_version = "2";
   EXPECT_TRUE(entry.Contains(kOsLinux, "7.0", gpu_info));
   gpu_info.direct_rendering_version = "2.3";
@@ -1152,6 +1154,19 @@ TEST_F(GpuControlListEntryTest, IntelDriverVersionEntry) {
   EXPECT_FALSE(entry.Contains(kOsWin, "", gpu_info));
   gpu_info.gpu.driver_version = "25.20.100.7000";
   EXPECT_TRUE(entry.Contains(kOsWin, "", gpu_info));
+}
+
+TEST_F(GpuControlListEntryTest, NativeAngleRenderer) {
+  const Entry& entry = GetEntry(kGpuControlListEntryTest_NativeAngleRenderer);
+  GPUInfo gpu_info;
+  gpu_info.gl_renderer =
+      "ANGLE (Samsung Electronics Co. Ltd., "
+      "ANGLE (Samsung Xclipse 920) on Vulkan 1.1.179, "
+      "OpenGL ES 3.2 ANGLE git hash: 41a335098084)";
+  EXPECT_TRUE(entry.Contains(kOsAndroid, "4.4.2", gpu_info));
+
+  gpu_info.gl_renderer = "ANGLE (Samsung Xclipse 920) on Vulkan 1.1.179";
+  EXPECT_TRUE(entry.Contains(kOsAndroid, "4.4.2", gpu_info));
 }
 
 #if BUILDFLAG(IS_WIN)

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "chromecast/media/cma/backend/mixer/stream_mixer.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -28,7 +30,8 @@
 #include "chromecast/media/cma/backend/mixer/mock_mixer_source.h"
 #include "chromecast/media/cma/backend/mixer/mock_post_processor_factory.h"
 #include "chromecast/media/cma/backend/mixer/mock_redirected_audio_output.h"
-#include "chromecast/media/cma/backend/mixer/stream_mixer.h"
+#include "chromecast/media/cma/base/decoder_config_adapter.h"
+#include "chromecast/public/media/decoder_config.h"
 #include "chromecast/public/media/mixer_output_stream.h"
 #include "chromecast/public/volume_control.h"
 #include "media/audio/audio_device_description.h"
@@ -365,7 +368,7 @@ int64_t FramesToDelayUs(int64_t frames) {
 
 std::string DeathRegex(const std::string& regex) {
 // String arguments aren't passed to CHECK() in official builds.
-#if defined(OFFICIAL_BUILD) && defined(NDEBUG)
+#if BUILDFLAG(IS_ANDROID) || (defined(OFFICIAL_BUILD) && defined(NDEBUG))
   return "";
 #else
   return regex;
@@ -627,9 +630,13 @@ TEST_F(StreamMixerTest, OneStreamStereoInput6ChannelOutput) {
   auto expected = GetMixedAudioData(&input);
 
   // Upmix stereo input to 5.1 before comparing.
+  ::media::ChannelLayout input_layout =
+      DecoderConfigAdapter::ToMediaChannelLayout(ChannelLayout::STEREO);
+  ::media::ChannelLayout output_layout =
+      DecoderConfigAdapter::ToMediaChannelLayout(ChannelLayout::SURROUND_5_1);
   ::media::ChannelMixer channel_mixer(
-      ::media::ChannelLayout::CHANNEL_LAYOUT_STEREO,
-      ::media::ChannelLayout::CHANNEL_LAYOUT_5_1);
+      input_layout, ::media::ChannelLayoutToChannelCount(input_layout),
+      output_layout, ::media::ChannelLayoutToChannelCount(output_layout));
   auto expected_5_1 = ::media::AudioBus::Create(6, expected->frames());
   channel_mixer.Transform(expected.get(), expected_5_1.get());
   CompareAudioData(*expected_5_1, *actual);
@@ -681,9 +688,13 @@ TEST_F(StreamMixerTest, OneStreamStereoInput6ChannelFilters) {
   auto expected = GetMixedAudioData(&input);
 
   // Upmix stereo input to 5.1 before comparing.
+  ::media::ChannelLayout input_layout =
+      DecoderConfigAdapter::ToMediaChannelLayout(ChannelLayout::STEREO);
+  ::media::ChannelLayout output_layout =
+      DecoderConfigAdapter::ToMediaChannelLayout(ChannelLayout::SURROUND_5_1);
   ::media::ChannelMixer channel_mixer(
-      ::media::ChannelLayout::CHANNEL_LAYOUT_STEREO,
-      ::media::ChannelLayout::CHANNEL_LAYOUT_5_1);
+      input_layout, ::media::ChannelLayoutToChannelCount(input_layout),
+      output_layout, ::media::ChannelLayoutToChannelCount(output_layout));
   auto expected_5_1 = ::media::AudioBus::Create(6, expected->frames());
   channel_mixer.Transform(expected.get(), expected_5_1.get());
   CompareAudioData(*expected_5_1, *actual);
@@ -1656,7 +1667,7 @@ TEST_F(StreamMixerDeathTest, InvalidStreamTypeCrashes) {
 }
 )json";
 
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   EXPECT_DEATH(mixer_->ResetPostProcessorsForTest(
                    std::make_unique<MockPostProcessorFactory>(), json),
                DeathRegex("foobar is not a stream type"));
@@ -1664,7 +1675,7 @@ TEST_F(StreamMixerDeathTest, InvalidStreamTypeCrashes) {
 
 TEST_F(StreamMixerDeathTest, BadJsonCrashes) {
   const std::string json("{{");
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   EXPECT_DEATH(mixer_->ResetPostProcessorsForTest(
                    std::make_unique<MockPostProcessorFactory>(), json),
                DeathRegex("Invalid JSON"));

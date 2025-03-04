@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "printing/emf_win.h"
 
 #include <stdint.h>
@@ -10,6 +15,7 @@
 #include <memory>
 
 #include "base/check_op.h"
+#include "base/compiler_specific.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/notreached.h"
@@ -109,7 +115,6 @@ bool Emf::SafePlayback(HDC context) const {
   XFORM base_matrix;
   if (!GetWorldTransform(context, &base_matrix)) {
     NOTREACHED();
-    return false;
   }
   Emf::EnumerationContext playback_context;
   playback_context.base_matrix = &base_matrix;
@@ -127,7 +132,6 @@ gfx::Rect Emf::GetPageBounds(unsigned int page_number) const {
   ENHMETAHEADER header;
   if (GetEnhMetaFileHeader(emf_, sizeof(header), &header) != sizeof(header)) {
     NOTREACHED();
-    return gfx::Rect();
   }
   // Add 1 to right and bottom because it's inclusive rectangle.
   // See ENHMETAHEADER.
@@ -183,6 +187,31 @@ int CALLBACK Emf::SafePlaybackProc(HDC hdc,
   bool success = record_instance.SafePlayback(context);
   DCHECK(success);
   return 1;
+}
+
+PostScriptMetaFile::PostScriptMetaFile() = default;
+
+PostScriptMetaFile::~PostScriptMetaFile() = default;
+
+mojom::MetafileDataType PostScriptMetaFile::GetDataType() const {
+  return mojom::MetafileDataType::kPostScriptEmf;
+}
+
+bool PostScriptMetaFile::SafePlayback(HDC hdc) const {
+  Emf::Enumerator emf_enum(*this, nullptr, nullptr);
+  for (const Emf::Record& record : emf_enum) {
+    auto* emf_record = record.record();
+    if (emf_record->iType != EMR_GDICOMMENT) {
+      continue;
+    }
+
+    auto* comment = reinterpret_cast<const EMRGDICOMMENT*>(emf_record);
+    const char* data = reinterpret_cast<const char*>(comment->Data);
+    const uint16_t* ptr = reinterpret_cast<const uint16_t*>(data);
+    int ret = ExtEscape(hdc, PASSTHROUGH, 2 + *ptr, data, 0, nullptr);
+    DCHECK_EQ(*ptr, ret);
+  }
+  return true;
 }
 
 Emf::EnumerationContext::EnumerationContext() {
@@ -255,37 +284,36 @@ bool Emf::Record::SafePlayback(Emf::EnumerationContext* context) const {
       bool play_normally = true;
       res = false;
       HDC hdc = context->hdc;
-      std::unique_ptr<SkBitmap> bitmap;
+      SkBitmap bitmap;
       if (bmih->biCompression == BI_JPEG) {
         if (!DIBFormatNativelySupported(hdc, CHECKJPEGFORMAT, bits,
                                         bmih->biSizeImage)) {
           play_normally = false;
-          bitmap = gfx::JPEGCodec::Decode(bits, bmih->biSizeImage);
-          DCHECK(bitmap);
-          DCHECK(!bitmap->isNull());
+          // SAFETY: This interfaces with a system-generated metafile.
+          bitmap = gfx::JPEGCodec::Decode(
+              UNSAFE_BUFFERS(base::span(bits, bmih->biSizeImage)));
+          DCHECK(!bitmap.isNull());
         }
       } else if (bmih->biCompression == BI_PNG) {
         if (!DIBFormatNativelySupported(hdc, CHECKPNGFORMAT, bits,
                                         bmih->biSizeImage)) {
           play_normally = false;
-          bitmap = std::make_unique<SkBitmap>();
-          bool png_ok =
-              gfx::PNGCodec::Decode(bits, bmih->biSizeImage, &*bitmap);
-          DCHECK(png_ok);
-          DCHECK(!bitmap->isNull());
+          // SAFETY: This interfaces with a system-generated metafile.
+          bitmap = gfx::PNGCodec::Decode(
+              UNSAFE_BUFFERS(base::span(bits, bmih->biSizeImage)));
+          DCHECK(!bitmap.isNull());
         }
       }
       if (play_normally) {
         res = Play(context);
       } else {
         const uint32_t* pixels =
-            static_cast<const uint32_t*>(bitmap->getPixels());
+            static_cast<const uint32_t*>(bitmap.getPixels());
         if (!pixels) {
           NOTREACHED();
-          return false;
         }
         BITMAPINFOHEADER bmi = {0};
-        skia::CreateBitmapHeaderForN32SkBitmap(*bitmap, &bmi);
+        skia::CreateBitmapHeaderForN32SkBitmap(bitmap, &bmi);
         res =
             (0 != StretchDIBits(hdc, sdib_record->xDest, sdib_record->yDest,
                                 sdib_record->cxDest, sdib_record->cyDest,
@@ -366,7 +394,6 @@ Emf::Enumerator::Enumerator(const Emf& emf, HDC context, const RECT* rect) {
   if (!EnumEnhMetaFile(context, emf.emf(), &Emf::Enumerator::EnhMetaFileProc,
                        reinterpret_cast<void*>(this), rect)) {
     NOTREACHED();
-    items_.clear();
   }
   DCHECK_EQ(context_.hdc, context);
 }

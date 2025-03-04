@@ -66,14 +66,15 @@ class MojoRendererFactory final : public RendererFactory {
       VideoRendererSink* video_renderer_sink);
 #endif  // BUILDFLAG(ENABLE_CAST_RENDERER)
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
   std::unique_ptr<MojoRenderer> CreateFlingingRenderer(
       const std::string& presentation_id,
       mojo::PendingRemote<mojom::FlingingRendererClientExtension>
           client_extenion_ptr,
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       VideoRendererSink* video_renderer_sink);
-
+#endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
   std::unique_ptr<MojoRenderer> CreateMediaPlayerRenderer(
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
@@ -81,9 +82,9 @@ class MojoRendererFactory final : public RendererFactory {
           client_extension_remote,
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       VideoRendererSink* video_renderer_sink);
-#endif  // defined (OS_ANDROID) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   std::unique_ptr<MojoRenderer> CreateCustomMediaPlayerRenderer(
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
@@ -92,7 +93,7 @@ class MojoRendererFactory final : public RendererFactory {
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
       VideoRendererSink* video_renderer_sink,
       int player_id);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  private:
   // InterfaceFactory or InterfaceProvider used to create or connect to remote

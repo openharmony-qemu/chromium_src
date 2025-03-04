@@ -5,6 +5,7 @@
 #ifndef UI_ACCESSIBILITY_PLATFORM_CHILD_ITERATOR_H_
 #define UI_ACCESSIBILITY_PLATFORM_CHILD_ITERATOR_H_
 
+#include "base/component_export.h"
 #include "ui/accessibility/platform/ax_platform_node_delegate.h"
 
 namespace ui {
@@ -25,7 +26,7 @@ class COMPONENT_EXPORT(AX_PLATFORM) ChildIterator {
   virtual ChildIterator& operator++() = 0;
   virtual ChildIterator& operator--() = 0;
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() const = 0;
-  virtual absl::optional<size_t> GetIndexInParent() const = 0;
+  virtual std::optional<size_t> GetIndexInParent() const = 0;
   virtual AXPlatformNodeDelegate* get() const = 0;
   virtual AXPlatformNodeDelegate& operator*() const = 0;
   virtual AXPlatformNodeDelegate* operator->() const = 0;

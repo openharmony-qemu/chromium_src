@@ -5,6 +5,7 @@
 #ifndef UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 #define UI_ACCESSIBILITY_AX_ROLE_PROPERTIES_H_
 
+#include "arkweb/build/features/features.h"
 #include "ui/accessibility/ax_base_export.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
 
@@ -39,11 +40,6 @@ AX_BASE_EXPORT bool IsButton(const ax::mojom::Role role);
 
 // Returns true if the provided role belongs to a cell or a table header.
 AX_BASE_EXPORT bool IsCellOrTableHeader(const ax::mojom::Role role);
-
-// Returns true if the role is expected to be the parent of a child tree.
-// Can return false for a child tree owner if an ARIA role was used, e.g.
-// <iframe role="region">.
-AX_BASE_EXPORT bool IsChildTreeOwner(const ax::mojom::Role role);
 
 // Returns true if the provided role belongs to an object on which a click
 // handler is commonly attached, or to an object that carries out an action when
@@ -85,14 +81,24 @@ AX_BASE_EXPORT bool IsControlOnAndroid(const ax::mojom::Role role,
                                        bool isFocusable);
 
 // Returns true if the provided role is a control on the OHOS platform.
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 AX_BASE_EXPORT bool IsControlOnOHOS(const ax::mojom::Role role,
-                                       bool isFocusable);
+                                    bool isFocusable);
+#endif
 
 // Returns true for an <input> used for a date or time.
 AX_BASE_EXPORT bool IsDateOrTimeInput(const ax::mojom::Role role);
 
 // Returns true if the provided role represents a dialog.
 AX_BASE_EXPORT bool IsDialog(const ax::mojom::Role role);
+
+// Returns true if the role represents an HTML embedding element, i.e. an
+// element that can embed content from another source such as an <iframe> or a
+// <embed>.
+//
+// Can return false for an embedding element if an ARIA role was used, e.g.
+// <iframe role="region">.
+AX_BASE_EXPORT bool IsEmbeddingElement(const ax::mojom::Role role);
 
 // Returns true if the provided role is a form.
 AX_BASE_EXPORT bool IsForm(const ax::mojom::Role role);
@@ -162,9 +168,9 @@ AX_BASE_EXPORT bool IsRangeValueSupported(const ax::mojom::Role role);
 
 // Returns true if this object supports readonly.
 //
-// Note: This returns false for table cells and headers, it is up to the
-//       caller to make sure that they are included IFF they are within an
-//       ARIA-1.1+ role='grid' or 'treegrid', and not role='table'.
+// Note: This returns false for table headers, it is up to the caller to make
+//       sure that they are included IFF they are within an ARIA-1.1+
+//       role='grid' or 'treegrid', and not role='table'.
 AX_BASE_EXPORT bool IsReadOnlySupported(const ax::mojom::Role role);
 
 // Returns true if the provided role is at the root of a window-like container,
@@ -225,6 +231,9 @@ AX_BASE_EXPORT bool IsTableLike(const ax::mojom::Role role);
 // Returns true if the provided role belongs to a table or grid row, and the
 // table is not used for layout purposes.
 AX_BASE_EXPORT bool IsTableRow(ax::mojom::Role role);
+
+// Returns true if the provided role belongs to a table, a grid, or a treegrid.
+AX_BASE_EXPORT bool IsTableWithColumns(ax::mojom::Role role);
 
 // Returns true if the provided role is text-related, e.g., static text, line
 // break, or inline text box.

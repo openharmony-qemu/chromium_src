@@ -2,18 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/compositor/debug_utils.h"
 
 #include <stddef.h>
 
 #include <iomanip>
+#include <optional>
 #include <ostream>
 #include <string>
 
 #include "base/logging.h"
-#include "base/numerics/math_constants.h"
+#include "base/numerics/angle_conversions.h"
 #include "cc/trees/layer_tree_host.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/compositor/layer.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/point_conversions.h"
@@ -27,7 +32,8 @@ namespace {
 void PrintLayerHierarchyImp(const Layer* layer,
                             int indent,
                             const gfx::Point& mouse_location,
-                            std::ostringstream* out) {
+                            std::ostringstream* out,
+                            DebugLayerChildCallback child_cb) {
   std::string indent_str(indent, ' ');
 
   gfx::Point transformed_mouse_location = layer->transform()
@@ -88,6 +94,17 @@ void PrintLayerHierarchyImp(const Layer* layer,
     }
   }
 
+  const auto clip_rect = layer->clip_rect();
+  if (!clip_rect.IsEmpty()) {
+    *out << " clip_rect:" << clip_rect.ToString();
+  }
+
+  if (!layer->rounded_corner_radii().IsEmpty()) {
+    *out << "\n" << property_indent_str;
+    *out << "rounded-corners-radii: "
+         << layer->rounded_corner_radii().ToString();
+  }
+
   const ui::Layer* mask = const_cast<ui::Layer*>(layer)->layer_mask_layer();
 
   if (mask) {
@@ -102,7 +119,7 @@ void PrintLayerHierarchyImp(const Layer* layer,
   }
 
   if (!layer->transform().IsIdentity()) {
-    if (absl::optional<gfx::DecomposedTransform> decomp =
+    if (std::optional<gfx::DecomposedTransform> decomp =
             layer->transform().Decompose()) {
       *out << '\n' << property_indent_str;
       *out << "translation: " << std::fixed << decomp->translate[0];
@@ -110,7 +127,7 @@ void PrintLayerHierarchyImp(const Layer* layer,
 
       *out << '\n' << property_indent_str;
       *out << "rotation: ";
-      *out << std::acos(decomp->quaternion.w()) * 360.0 / base::kPiDouble;
+      *out << base::RadToDeg(std::acos(decomp->quaternion.w()) * 2);
 
       *out << '\n' << property_indent_str;
       *out << "scale: " << decomp->scale[0];
@@ -120,8 +137,12 @@ void PrintLayerHierarchyImp(const Layer* layer,
 
   *out << '\n';
 
-  for (ui::Layer* child : layer->children())
-    PrintLayerHierarchyImp(child, indent + 3, mouse_location_in_layer, out);
+  std::vector<raw_ptr<ui::Layer, VectorExperimental>> children =
+      child_cb ? child_cb.Run(layer) : layer->children();
+  for (ui::Layer* child : children) {
+    PrintLayerHierarchyImp(child, indent + 3, mouse_location_in_layer, out,
+                           child_cb);
+  }
 }
 
 }  // namespace
@@ -135,9 +156,10 @@ void PrintLayerHierarchy(const Layer* layer, const gfx::Point& mouse_location) {
 
 void PrintLayerHierarchy(const Layer* layer,
                          const gfx::Point& mouse_location,
-                         std::ostringstream* out) {
+                         std::ostringstream* out,
+                         DebugLayerChildCallback child_cb) {
   *out << "Layer hierarchy:\n";
-  PrintLayerHierarchyImp(layer, 0, mouse_location, out);
+  PrintLayerHierarchyImp(layer, 0, mouse_location, out, child_cb);
 }
 
 }  // namespace ui

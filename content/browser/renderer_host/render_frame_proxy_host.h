@@ -22,7 +22,6 @@
 #include "ipc/ipc_sender.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
-#include "third_party/blink/public/common/metrics/post_message_counter.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/mojom/frame/frame.mojom.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-forward.h"
@@ -111,7 +110,7 @@ class CONTENT_EXPORT RenderFrameProxyHost
       const blink::RemoteFrameToken& frame_token);
   static bool IsFrameTokenInUse(const blink::RemoteFrameToken& frame_token);
 
-  RenderFrameProxyHost(SiteInstanceImpl* site_instance,
+  RenderFrameProxyHost(SiteInstanceGroup* site_instance_group,
                        scoped_refptr<RenderViewHostImpl> render_view_host,
                        FrameTreeNode* frame_tree_node,
                        const blink::RemoteFrameToken& frame_token);
@@ -137,14 +136,11 @@ class CONTENT_EXPORT RenderFrameProxyHost
 
   // Each RenderFrameProxyHost belongs to a SiteInstanceGroup, where it is a
   // placeholder for a frame in a different SiteInstanceGroup.
-  // TODO(crbug.com/1195535): Remove GetSiteInstance() in favor of
-  // site_instance_group().
-  SiteInstanceImpl* GetSiteInstance() const { return site_instance_.get(); }
   SiteInstanceGroup* site_instance_group() const {
     return site_instance_group_.get();
   }
 
-  // TODO(https://crbug.com/1179502): FrameTree and FrameTreeNode are not const
+  // TODO(crbug.com/40169570): FrameTree and FrameTreeNode are not const
   // as with prerenderer activation the page needs to move between
   // FrameTreeNodes and FrameTrees. Note that FrameTreeNode can only change for
   // root nodes. As it's hard to make sure that all places handle this
@@ -162,7 +158,8 @@ class CONTENT_EXPORT RenderFrameProxyHost
   // receives its size from the parent via FrameHostMsg_UpdateResizeParams
   // before it begins parsing the content.
   void SetChildRWHView(RenderWidgetHostViewChildFrame* view,
-                       const gfx::Size* initial_frame_size);
+                       const gfx::Size* initial_frame_size,
+                       bool allow_paint_holding);
 
   RenderViewHostImpl* GetRenderViewHost();
 
@@ -224,13 +221,13 @@ class CONTENT_EXPORT RenderFrameProxyHost
       const gfx::Rect& clip_rect,
       const base::UnguessableToken& guid) override;
   void SetIsInert(bool inert) override;
-  void DidChangeOpener(const absl::optional<blink::LocalFrameToken>&
-                           opener_frame_token) override;
+  void DidChangeOpener(
+      const std::optional<blink::LocalFrameToken>& opener_frame_token) override;
   void AdvanceFocus(blink::mojom::FocusType focus_type,
                     const blink::LocalFrameToken& source_frame_token) override;
   void RouteMessageEvent(
-      const absl::optional<blink::LocalFrameToken>& source_frame_token,
-      const std::u16string& source_origin,
+      const std::optional<blink::LocalFrameToken>& source_frame_token,
+      const url::Origin& source_origin,
       const std::u16string& target_origin,
       blink::TransferableMessage message) override;
   void PrintCrossProcessSubframe(const gfx::Rect& rect,
@@ -238,7 +235,7 @@ class CONTENT_EXPORT RenderFrameProxyHost
   void Detach() override;
   void UpdateViewportIntersection(
       blink::mojom::ViewportIntersectionStatePtr intersection_state,
-      const absl::optional<blink::FrameVisualProperties>& visual_properties)
+      const std::optional<blink::FrameVisualProperties>& visual_properties)
       override;
   void SynchronizeVisualProperties(
       const blink::FrameVisualProperties& frame_visual_properties) override;
@@ -306,7 +303,8 @@ class CONTENT_EXPORT RenderFrameProxyHost
   base::SafeRef<RenderFrameProxyHost> GetSafeRef();
 
  private:
-  // These interceptor need access to frame_host_receiver_for_testing().
+  // These interceptors need access to frame_host_receiver_for_testing().
+  friend class InitiatorClosingOpenURLInterceptor;
   friend class RemoteFrameHostInterceptor;
   friend class UpdateViewportIntersectionMessageFilter;
   friend class SynchronizeVisualPropertiesInterceptor;
@@ -314,6 +312,12 @@ class CONTENT_EXPORT RenderFrameProxyHost
   // Helper to retrieve the |AgentSchedulingGroup| this proxy host is associated
   // with.
   AgentSchedulingGroupHost& GetAgentSchedulingGroup();
+
+  // Helper to compute the serialized source origin from an actual source origin
+  // for postMessage. This will ultimately be exposed to JavaScript via the
+  // message's event.origin field.
+  std::u16string SerializePostMessageSourceOrigin(
+      const url::Origin& source_origin);
 
   // Needed for tests to be able to swap the implementation and intercept calls.
   mojo::AssociatedReceiver<blink::mojom::RemoteFrameHost>&
@@ -324,16 +328,12 @@ class CONTENT_EXPORT RenderFrameProxyHost
   // This RenderFrameProxyHost's routing id.
   int routing_id_;
 
-  // The SiteInstance this proxy is associated with.
-  // TODO(crbug.com/1195535): Remove this in favor of site_instance_group_.
-  scoped_refptr<SiteInstanceImpl> site_instance_;
-
   // The SiteInstanceGroup this RenderFrameProxyHost belongs to, where it is a
   // placeholder for a frame in a different SiteInstanceGroup.
   scoped_refptr<SiteInstanceGroup> site_instance_group_;
 
   // The renderer process this RenderFrameProxyHost is associated with. It is
-  // equivalent to the result of site_instance_->GetProcess(), but that
+  // equivalent to the result of site_instance_group_->GetProcess(), but that
   // method has the side effect of creating the process if it doesn't exist.
   // Cache a pointer to avoid unnecessary process creation.
   raw_ptr<RenderProcessHost> process_;
@@ -376,10 +376,6 @@ class CONTENT_EXPORT RenderFrameProxyHost
       remote_main_frame_host_receiver_{this};
 
   blink::RemoteFrameToken frame_token_;
-
-  // Tracks metrics related to postMessage usage.
-  // TODO(crbug.com/1159586): Remove when no longer needed.
-  blink::PostMessageCounter post_message_counter_;
 
   base::WeakPtrFactory<RenderFrameProxyHost> weak_factory_{this};
 };

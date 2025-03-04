@@ -10,7 +10,6 @@
 -All/NavigationPageLoadMetricsBrowserTest.FirstInputDelay/0
 -All/NavigationPageLoadMetricsBrowserTest.FirstInputDelay/1
 -All/NavigationPageLoadMetricsBrowserTest.FirstInputDelay/2
--All/MediaHistoryBrowserTest.DoNotRecordWatchtime_Muted/0
 -All/PageLoadMetricsBackForwardCacheBrowserTest.LogsBasicPageForegroundDuration/BFCacheEnabled
 -All/PageLoadMetricsBackForwardCacheBrowserTest.LogsPageEndReasons/BFCacheEnabled
 -All/SearchPrefetchServiceEnabledBrowserTest.HungRequestCanBeServed/0
@@ -62,7 +61,7 @@
 -CrSettingsPrivacyGuidePageTest.CompletionFragmentPrivacySandboxRestricted
 -CrSettingsReviewNotificationPermissionsTest.All
 -ComponentCloudPolicyTest.InstallNewExtension
--CookieControlsBubbleViewTest.InvokeUi_CookiesBlocked
+-OldCookieControlsBubbleViewTest.InvokeUi_CookiesBlocked
 -DeclarativeNetRequestApiFencedFrameTest/DeclarativeNetRequestApiFencedFrameTest.Load/0
 -DeclarativeNetRequestApiFencedFrameTest/DeclarativeNetRequestApiFencedFrameTest.Load/1
 -DevToolsNetInfoTest.EmulateNetworkConditions
@@ -106,7 +105,6 @@
 -InteractiveBrowserTestBrowsertest.CheckResult
 -IntentChipButtonSkipIntentPickerBrowserTest.ShowsIntentChipCollapsed
 -LiveCaptionControllerTest.OnAudioStreamEnd
--ManagementUITest.ManagementStateChange
 -MaybeSetMetadata/V4SafeBrowsingServiceMetadataTest.MalwareIFrame/2
 -MediaEngagementBrowserTest.SessionMultipleTabsClosingParent
 -MediaGalleriesGalleryWatchApiTest.SetupGalleryWatchWithoutListeners
@@ -157,7 +155,6 @@
 -ProfilePickerCreationFlowBrowserTest.OpenProfile_Guest
 -ProfileWindowBrowserTest.GuestIsOffTheRecord
 -ReaderModeIconViewBrowserTest.NonSecurePagesNotDistillable
--RealboxSearchPreloadBrowserTest.SearchPreloadSuccess
 -RegionCaptureClonesBrowserTest.CannotUncropTrackThatHasClone
 -RestoreOnStartupPolicyTestInstance/RestoreOnStartupPolicyTest.RunTest/3
 -SaveAsMhtml/SavePageOriginalVsSavedComparisonTest.NestedFrames/0
@@ -197,5 +194,3 @@
 -WelcomeWelcomeAppTest.All
 -WorkerDevToolsTest.PauseInSharedWorkerInitialization
 -V4SafeBrowsingServiceTest.CheckDownloadUrlRedirects
--VariationsSafeModeEndToEndBrowserTest.ExtendedNullSeedEndToEnd
--VariationsSafeModeEndToEndBrowserTest.ExtendedSafeSeedEndToEnd

@@ -18,9 +18,17 @@
 #include "printing/print_job_constants.h"
 #include "printing/units.h"
 
+#if BUILDFLAG(ENABLE_OOP_PRINTING_NO_OOP_BASIC_PRINT_DIALOG)
+#include "printing/printing_features.h"
+#endif
+
 // Avoid using LinuxUi on Fuchsia.
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 #include "ui/linux/linux_ui.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/print/ohos_print_adapter.h"
 #endif
 
 namespace printing {
@@ -28,17 +36,13 @@ namespace printing {
 // static
 std::unique_ptr<PrintingContext> PrintingContext::CreateImpl(
     Delegate* delegate,
-    bool skip_system_calls) {
-  auto context = std::make_unique<PrintingContextLinux>(delegate);
-#if BUILDFLAG(ENABLE_OOP_PRINTING)
-  if (skip_system_calls)
-    context->set_skip_system_calls();
-#endif
-  return context;
+    ProcessBehavior process_behavior) {
+  return std::make_unique<PrintingContextLinux>(delegate, process_behavior);
 }
 
-PrintingContextLinux::PrintingContextLinux(Delegate* delegate)
-    : PrintingContext(delegate), print_dialog_(nullptr) {}
+PrintingContextLinux::PrintingContextLinux(Delegate* delegate,
+                                           ProcessBehavior process_behavior)
+    : PrintingContext(delegate, process_behavior), print_dialog_(nullptr) {}
 
 PrintingContextLinux::~PrintingContextLinux() {
   ReleaseContext();
@@ -55,8 +59,6 @@ void PrintingContextLinux::AskUserForSettings(int max_pages,
     // Can only get here if the renderer is sending bad messages.
     // http://crbug.com/341777
     NOTREACHED();
-    std::move(callback).Run(mojom::ResultCode::kFailed);
-    return;
   }
 
   print_dialog_->ShowDialog(delegate_->GetParentView(), has_selection,
@@ -68,12 +70,21 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 
   ResetSettings();
 
-#if BUILDFLAG(IS_LINUX)
-  if (!ui::PrintingContextLinuxDelegate::instance())
+#if BUILDFLAG(IS_OHOS)
+  if (!print_dialog_) {
+    ohos::adapter::print::PrintAdapter::GetInstance().PrintPdfFile();
     return mojom::ResultCode::kSuccess;
+  }
+#endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+  if (!ui::PrintingContextLinuxDelegate::instance()) {
+    return mojom::ResultCode::kSuccess;
+  }
 
   if (!print_dialog_)
-    print_dialog_ = ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
+    print_dialog_ =
+        ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
 
   if (print_dialog_) {
     print_dialog_->UseDefaultSettings();
@@ -84,9 +95,10 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 }
 
 gfx::Size PrintingContextLinux::GetPdfPaperSizeDeviceUnits() {
-#if BUILDFLAG(IS_LINUX)
-  if (ui::PrintingContextLinuxDelegate::instance())
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+  if (ui::PrintingContextLinuxDelegate::instance()) {
     return ui::PrintingContextLinuxDelegate::instance()->GetPdfPaperSize(this);
+  }
 #endif
 
   return gfx::Size();
@@ -97,12 +109,14 @@ mojom::ResultCode PrintingContextLinux::UpdatePrinterSettings(
   DCHECK(!printer_settings.show_system_dialog);
   DCHECK(!in_print_job_);
 
-#if BUILDFLAG(IS_LINUX)
-  if (!ui::PrintingContextLinuxDelegate::instance())
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+  if (!ui::PrintingContextLinuxDelegate::instance()) {
     return mojom::ResultCode::kSuccess;
+  }
 
   if (!print_dialog_)
-    print_dialog_ = ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
+    print_dialog_ =
+        ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
 
   if (print_dialog_) {
     // PrintDialogGtk::UpdateSettings() calls InitWithSettings() so settings_ will
@@ -127,10 +141,25 @@ mojom::ResultCode PrintingContextLinux::NewDocument(
   DCHECK(!in_print_job_);
   in_print_job_ = true;
 
-  // If this implementation is expanded to include system calls then such calls
-  // should be gated upon `skip_system_calls()`.
-
   document_name_ = document_name;
+
+#if BUILDFLAG(ENABLE_OOP_PRINTING_NO_OOP_BASIC_PRINT_DIALOG)
+  if (process_behavior() == ProcessBehavior::kOopEnabledSkipSystemCalls) {
+    return mojom::ResultCode::kSuccess;
+  }
+
+  if (process_behavior() == ProcessBehavior::kOopEnabledPerformSystemCalls &&
+      !settings_->system_print_dialog_data().empty()) {
+    // Take the settings captured by the browser process from the system print
+    // dialog and apply them to this printing context in the PrintBackend
+    // service.
+    if (!print_dialog_) {
+      CHECK(ui::LinuxUi::instance());
+      print_dialog_ = ui::LinuxUi::instance()->CreatePrintDialog(this);
+    }
+    print_dialog_->LoadPrintSettings(*settings_);
+  }
+#endif
 
   return mojom::ResultCode::kSuccess;
 }
@@ -145,7 +174,7 @@ mojom::ResultCode PrintingContextLinux::PrintDocument(
   if (!print_dialog_) {
     return mojom::ResultCode::kFailed;
   }
-  // TODO(crbug.com/1252685)  Plumb error code back from
+  // TODO(crbug.com/40198881)  Plumb error code back from
   // `PrintDialogLinuxInterface`.
   print_dialog_->PrintDocument(metafile, document_name_);
   return mojom::ResultCode::kSuccess;

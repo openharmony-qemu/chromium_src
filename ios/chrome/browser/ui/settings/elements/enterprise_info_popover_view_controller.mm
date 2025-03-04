@@ -4,23 +4,30 @@
 
 #import "ios/chrome/browser/ui/settings/elements/enterprise_info_popover_view_controller.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/strings/sys_string_conversions.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
+#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/ui/settings/elements/elements_constants.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
 #import "ios/chrome/common/string_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
-NSString* const kEnterpriseIconName = @"enterprise_icon";
+// Returns a tinted version of the enterprise building icon.
+UIImage* GetEnterpriseIcon() {
+  UIColor* color = [UIColor colorNamed:kTextSecondaryColor];
+  return SymbolWithPalette(
+      CustomSymbolWithConfiguration(
+          kEnterpriseSymbol,
+          [UIImageSymbolConfiguration
+              configurationWithFont:
+                  [UIFont preferredFontForTextStyle:UIFontTextStyleFootnote]]),
+      @[ color ]);
+}
 
 NSAttributedString* PrimaryMessage(NSString* fullText) {
   DCHECK(fullText);
@@ -101,12 +108,12 @@ NSAttributedString* SecondaryMessage(NSString* enterpriseName,
                  enterpriseName:(NSString*)enterpriseName
          isPresentingFromButton:(BOOL)isPresentingFromButton
                addLearnMoreLink:(BOOL)addLearnMoreLink {
-  return [super
-      initWithPrimaryAttributedString:PrimaryMessage(message)
-            secondaryAttributedString:SecondaryMessage(enterpriseName,
-                                                       addLearnMoreLink)
-                                 icon:[UIImage imageNamed:kEnterpriseIconName]
-               isPresentingFromButton:isPresentingFromButton];
+  return
+      [super initWithPrimaryAttributedString:PrimaryMessage(message)
+                   secondaryAttributedString:SecondaryMessage(enterpriseName,
+                                                              addLearnMoreLink)
+                                        icon:GetEnterpriseIcon()
+                      isPresentingFromButton:isPresentingFromButton];
 }
 
 #pragma mark - UIViewController

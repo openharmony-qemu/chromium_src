@@ -137,7 +137,7 @@ class WebThreadTaskExecutor {
   scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunner(
       WebThread::ID identifier,
       const base::TaskTraits& traits) const {
-    // //TODO(crbug.com/1304248): Unlike content, iOS never honored
+    // //TODO(crbug.com/40217644): Unlike content, iOS never honored
     // `traits.priority()`... but this is where it could.
     // Ref. content::BaseBrowserTaskExecutor::GetTaskRunner()
     switch (identifier) {
@@ -147,7 +147,6 @@ class WebThreadTaskExecutor {
         return io_thread_task_runner_;
       case WebThread::ID_COUNT:
         NOTREACHED();
-        return nullptr;
     }
   }
 
@@ -274,7 +273,7 @@ bool WebThreadImpl::CurrentlyOn(ID identifier) {
 }
 
 // static
-std::string WebThreadImpl::GetDCheckCurrentlyOnErrorMessage(ID expected) {
+std::string WebThreadImpl::GetCurrentlyOnErrorMessage(ID expected) {
   std::string actual_name = base::PlatformThread::GetName();
   if (actual_name.empty())
     actual_name = "Unknown Thread";

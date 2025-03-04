@@ -11,19 +11,17 @@
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/values.h"
-#import "components/bookmarks/browser/bookmark_model.h"
 #import "components/bookmarks/browser/bookmark_node.h"
 #import "components/bookmarks/test/bookmark_test_helpers.h"
-#import "ios/chrome/browser/bookmarks/bookmark_ios_unit_test_support.h"
-#import "ios/chrome/browser/bookmarks/local_or_syncable_bookmark_model_factory.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/test_browser.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_state_browser_agent.h"
-#import "ios/chrome/browser/shared/public/commands/bookmark_add_command.h"
+#import "ios/chrome/browser/bookmarks/model/bookmark_ios_unit_test_support.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_opener.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
 #import "ios/chrome/browser/shared/public/commands/generate_qr_code_command.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
 #import "ios/chrome/browser/shared/public/commands/qr_generation_commands.h"
 #import "ios/chrome/browser/shared/public/commands/snackbar_commands.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_navigation_controller.h"
@@ -31,8 +29,6 @@
 #import "ios/chrome/browser/ui/sharing/activity_services/canonical_url_retriever.h"
 #import "ios/chrome/browser/ui/sharing/sharing_params.h"
 #import "ios/chrome/browser/ui/sharing/sharing_positioner.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_opener.h"
 #import "ios/chrome/test/scoped_key_window.h"
 #import "ios/web/public/test/fakes/fake_navigation_manager.h"
 #import "ios/web/public/test/fakes/fake_web_frame.h"
@@ -48,13 +44,8 @@
 #import "third_party/ocmock/gtest_support.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::test::ios::kWaitForActionTimeout;
 using base::test::ios::WaitUntilConditionOrTimeout;
-using bookmarks::BookmarkModel;
 using bookmarks::BookmarkNode;
 
 // Test fixture for testing SharingCoordinator.
@@ -63,8 +54,7 @@ class SharingCoordinatorTest : public BookmarkIOSUnitTestSupport {
   SharingCoordinatorTest()
       : base_view_controller_([[UIViewController alloc] init]),
         fake_origin_view_([[UIView alloc] init]),
-        test_scenario_(SharingScenario::TabShareButton),
-        scene_state_([[SceneState alloc] initWithAppState:nil]) {
+        test_scenario_(SharingScenario::TabShareButton) {
     [scoped_key_window_.Get() setRootViewController:base_view_controller_];
   }
 
@@ -79,14 +69,15 @@ class SharingCoordinatorTest : public BookmarkIOSUnitTestSupport {
         startDispatchingToTarget:OCMStrictProtocolMock(
                                      @protocol(BookmarksCommands))
                      forProtocol:@protocol(BookmarksCommands)];
-
-    SceneStateBrowserAgent::CreateForBrowser(browser_.get(), scene_state_);
+    [browser_->GetCommandDispatcher()
+        startDispatchingToTarget:OCMStrictProtocolMock(@protocol(HelpCommands))
+                     forProtocol:@protocol(HelpCommands)];
   }
 
   void AppendNewWebState(std::unique_ptr<web::FakeWebState> web_state) {
     browser_->GetWebStateList()->InsertWebState(
-        WebStateList::kInvalidIndex, std::move(web_state),
-        WebStateList::INSERT_ACTIVATE, WebStateOpener());
+        std::move(web_state),
+        WebStateList::InsertionParams::Automatic().Activate());
   }
 
   ScopedKeyWindow scoped_key_window_;
@@ -94,7 +85,6 @@ class SharingCoordinatorTest : public BookmarkIOSUnitTestSupport {
   UIView* fake_origin_view_;
   id snackbar_handler_;
   SharingScenario test_scenario_;
-  SceneState* scene_state_;
 };
 
 // Tests that the start method shares the current page and ends up presenting
@@ -107,7 +97,7 @@ TEST_F(SharingCoordinatorTest, Start_ShareCurrentPage) {
   test_web_state->SetNavigationManager(
       std::make_unique<web::FakeNavigationManager>());
   test_web_state->SetCurrentURL(test_url);
-  test_web_state->SetBrowserState(browser_->GetBrowserState());
+  test_web_state->SetBrowserState(browser_->GetProfile());
 
   auto frames_manager = std::make_unique<web::FakeWebFramesManager>();
   web::FakeWebFramesManager* frames_manager_ptr = frames_manager.get();
@@ -163,6 +153,7 @@ TEST_F(SharingCoordinatorTest, Start_ShareCurrentPage) {
   [activityHandler activityServiceDidEndPresenting];
 
   [vc_partial_mock verify];
+  [coordinator stop];
 }
 
 // Tests that the coordinator handles the QRGenerationCommands protocol.
@@ -192,6 +183,7 @@ TEST_F(SharingCoordinatorTest, GenerateQRCode) {
   [handler hideQRCode];
 
   [vc_partial_mock verify];
+  [coordinator stop];
 }
 
 // Tests that the start method shares the given URL and ends up presenting
@@ -223,4 +215,10 @@ TEST_F(SharingCoordinatorTest, Start_ShareURL) {
   [coordinator start];
 
   [vc_partial_mock verify];
+
+  // Make sure share sheet finishes it's init (which means calling
+  // canPerformWithActivityItems and reading prefs) before the
+  // WebTaskEnvironment is shut down.
+  base::RunLoop().RunUntilIdle();
+  [coordinator stop];
 }

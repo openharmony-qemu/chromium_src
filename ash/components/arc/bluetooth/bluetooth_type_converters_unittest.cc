@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ash/components/arc/bluetooth/bluetooth_type_converters.h"
 
 #include <algorithm>
@@ -230,7 +235,7 @@ TEST(BluetoothTypeConverterTest, ConvertMojoSequenceAttributeToBlueZAttribute) {
     sequence_mojo->sequence.push_back(std::move(value_channel));
   }
   sequence_mojo->type_size = sequence_mojo->sequence.size();
-  sequence_mojo->value = absl::nullopt;
+  sequence_mojo->value = std::nullopt;
 
   auto sequence_blue_z =
       sequence_mojo.To<bluez::BluetoothServiceAttributeValueBlueZ>();
@@ -264,7 +269,7 @@ TEST(BluetoothTypeConverterTest,
   auto mojo = arc::mojom::BluetoothSdpAttribute::New();
   mojo->type = bluez::BluetoothServiceAttributeValueBlueZ::UINT;
   mojo->type_size = static_cast<uint32_t>(sizeof(uint32_t));
-  mojo->value = absl::nullopt;
+  mojo->value = std::nullopt;
 
   auto blue_z = mojo.To<bluez::BluetoothServiceAttributeValueBlueZ>();
 
@@ -280,7 +285,7 @@ TEST(BluetoothTypeConverterTest,
   auto mojo = arc::mojom::BluetoothSdpAttribute::New();
   mojo->type = bluez::BluetoothServiceAttributeValueBlueZ::SEQUENCE;
   mojo->type_size = 0;
-  mojo->value = absl::nullopt;
+  mojo->value = std::nullopt;
 
   auto blue_z = mojo.To<bluez::BluetoothServiceAttributeValueBlueZ>();
 

@@ -5,10 +5,14 @@
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_table_view_controller.h"
 
 #import <UIKit/UIKit.h>
-#import "base/mac/foundation_util.h"
-#import "components/password_manager/core/common/password_manager_features.h"
+#import "base/apple/foundation_util.h"
+#import "base/metrics/user_metrics.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_metrics.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_utils.h"
+#import "ios/chrome/browser/shared/ui/table_view/cells/table_view_multi_detail_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/table_view_favicon_data_source.h"
+#import "ios/chrome/browser/shared/ui/table_view/table_view_utils.h"
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issue_content_item.h"
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_consumer.h"
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_presenter.h"
@@ -18,11 +22,7 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-using password_manager::features::IsPasswordCheckupEnabled;
+using password_manager::WarningType;
 
 namespace {
 
@@ -31,7 +31,6 @@ constexpr CGFloat kVerticalSpacingBetweenItems = 8;
 
 typedef NS_ENUM(NSInteger, SectionIdentifier) {
   SectionIdentifierHeader = kSectionIdentifierEnumZero,
-  SectionIdentifierContent,
   SectionIdentifierDismissedCredentialsButton,
   // Identifier of the section containing the first password issue when Password
   // Checkup is enabled. Subsequent password issues use incremental section
@@ -63,20 +62,34 @@ typedef NS_ENUM(NSInteger, ItemType) {
   // with a text header on top of the first password issue in the group. All
   // other types of issues are displayed in the same group without header.
   NSArray<PasswordIssueGroup*>* _passwordGroups;
-  // Text displayed in the button for presenting dismissed compromised
-  // credential warnings. When nil, no button is displayed.
-  NSString* _dismissedWarningsButtonText;
+  // Number in the button for presenting dismissed compromised
+  // credential warnings. When zero, no button is displayed.
+  NSInteger _dismissedWarningsCount;
+  // Type of insecure credentials displayed in the page.
+  WarningType _warningType;
+  // Whether Settings have been dismissed.
+  BOOL _settingsAreDismissed;
 }
 
 @end
 
 @implementation PasswordIssuesTableViewController
 
+- (instancetype)initWithWarningType:(WarningType)warningType {
+  self = [super initWithStyle:ChromeTableViewStyle()];
+
+  if (self) {
+    _warningType = warningType;
+  }
+
+  return self;
+}
+
 #pragma mark - UIViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  self.tableView.accessibilityIdentifier = kPasswordIssuesTableViewId;
+  self.tableView.accessibilityIdentifier = kPasswordIssuesTableViewID;
 
   [self loadModel];
 }
@@ -88,15 +101,10 @@ typedef NS_ENUM(NSInteger, ItemType) {
   }
 }
 
-#pragma mark - ChromeTableViewController
+#pragma mark - LegacyChromeTableViewController
 
 - (void)loadModel {
   [super loadModel];
-
-  if (!IsPasswordCheckupEnabled()) {
-    [self loadModelLegacy];
-    return;
-  }
 
   TableViewModel* model = self.tableViewModel;
 
@@ -140,31 +148,13 @@ typedef NS_ENUM(NSInteger, ItemType) {
         }];
   }
 
-  TableViewTextItem* dismissedWarningsItem = [self dismissedWarningsItem];
+  TableViewMultiDetailTextItem* dismissedWarningsItem =
+      [self dismissedWarningsItem];
   if (dismissedWarningsItem) {
     [model
         addSectionWithIdentifier:SectionIdentifierDismissedCredentialsButton];
     [model addItem:dismissedWarningsItem
         toSectionWithIdentifier:SectionIdentifierDismissedCredentialsButton];
-  }
-}
-
-// Legacy loadModel logic used when Password Checkup Feature is not enabled.
-- (void)loadModelLegacy {
-  CHECK(!IsPasswordCheckupEnabled());
-
-  TableViewModel* model = self.tableViewModel;
-  [model addSectionWithIdentifier:SectionIdentifierContent];
-  TableViewLinkHeaderFooterItem* headerItem = [self headerItem];
-
-  if (headerItem) {
-    [model setHeader:headerItem
-        forSectionWithIdentifier:SectionIdentifierContent];
-  }
-
-  for (PasswordIssue* password in _passwordGroups.firstObject.passwordIssues) {
-    [model addItem:[self passwordIssueItem:password]
-        toSectionWithIdentifier:SectionIdentifierContent];
   }
 }
 
@@ -217,21 +207,26 @@ typedef NS_ENUM(NSInteger, ItemType) {
 }
 
 // Creates the item acting as a button for presenting dismissed compromised
-// credential warnings. Returns nil when `_dismissedWarningsButtonText` is nil.
-- (TableViewTextItem*)dismissedWarningsItem {
+// credential warnings. Returns nil when `_dismissedWarningsCount` is zero.
+- (TableViewMultiDetailTextItem*)dismissedWarningsItem {
   // The button is not visible either because there aren't dismissed compromised
   // credentials or because the view controller is not showing compromised
   // credentials.
-  if (!_dismissedWarningsButtonText) {
+  if (_dismissedWarningsCount == 0) {
     return nil;
   }
 
-  TableViewTextItem* dismissedWarningsItem = [[TableViewTextItem alloc]
-      initWithType:ItemTypeDismissedCredentialsButton];
-  dismissedWarningsItem.text = _dismissedWarningsButtonText;
+  TableViewMultiDetailTextItem* dismissedWarningsItem =
+      [[TableViewMultiDetailTextItem alloc]
+          initWithType:ItemTypeDismissedCredentialsButton];
+  dismissedWarningsItem.text = l10n_util::GetNSString(
+      IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DISMISSED_WARNINGS_BUTTON_TITLE);
+  dismissedWarningsItem.trailingDetailText =
+      [@(_dismissedWarningsCount) stringValue];
   dismissedWarningsItem.accessibilityTraits = UIAccessibilityTraitButton;
   dismissedWarningsItem.accessoryType =
       UITableViewCellAccessoryDisclosureIndicator;
+  dismissedWarningsItem.accessibilityIdentifier = kDismissedWarningsCellID;
   return dismissedWarningsItem;
 }
 
@@ -251,16 +246,21 @@ typedef NS_ENUM(NSInteger, ItemType) {
       break;
     case ItemTypePassword: {
       PasswordIssueContentItem* passwordIssue =
-          base::mac::ObjCCastStrict<PasswordIssueContentItem>(
+          base::apple::ObjCCastStrict<PasswordIssueContentItem>(
               [model itemAtIndexPath:indexPath]);
+      base::RecordAction(
+          base::UserMetricsAction("MobilePasswordIssuesOpenPasswordDetails"));
       [self.presenter presentPasswordIssueDetails:passwordIssue.password];
       break;
     }
     case ItemTypeDismissedCredentialsButton:
+      password_manager::LogOpenPasswordIssuesList(
+          WarningType::kDismissedWarningsWarning);
       [self.presenter presentDismissedCompromisedCredentials];
       break;
 
     case ItemTypeChangePassword:
+      password_manager::LogChangePasswordOnWebsite(_warningType);
       CrURL* changePasswordURL =
           [self changePasswordURLForPasswordInSection:indexPath.section];
       [self.presenter dismissAndOpenURL:changePasswordURL];
@@ -277,7 +277,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   switch ([self.tableViewModel itemTypeForIndexPath:indexPath]) {
     case ItemTypePassword: {
       TableViewURLCell* urlCell =
-          base::mac::ObjCCastStrict<TableViewURLCell>(cell);
+          base::apple::ObjCCastStrict<TableViewURLCell>(cell);
       urlCell.textLabel.lineBreakMode = NSLineBreakByTruncatingHead;
       // Load the favicon from cache.
       [self loadFaviconAtIndexPath:indexPath forCell:cell];
@@ -294,7 +294,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   if (section == 0 && [self.tableViewModel headerForSectionIndex:0]) {
     // Attach self as delegate to handle clicks in page header.
     TableViewLinkHeaderFooterView* headerView =
-        base::mac::ObjCCastStrict<TableViewLinkHeaderFooterView>(view);
+        base::apple::ObjCCastStrict<TableViewLinkHeaderFooterView>(view);
     headerView.delegate = self;
   }
 
@@ -318,11 +318,6 @@ typedef NS_ENUM(NSInteger, ItemType) {
       // 8pt header or an actual header that has a 8pt top padding) achieves the
       // desired 24pt spacing between the table view header and the next element
       // below it.
-      return kVerticalSpacingBetweenItems;
-
-    case SectionIdentifierContent:
-      // Vertical spacing between the last item and its container in the legacy
-      // layout.
       return kVerticalSpacingBetweenItems;
 
     case SectionIdentifierDismissedCredentialsButton:
@@ -363,11 +358,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   switch (sectionIdentifier) {
     case SectionIdentifierHeader:
       // This section always has a header.
-      NOTREACHED_NORETURN();
-
-    case SectionIdentifierContent:
-      // Keep legacy spacing when no header.
-      return [super tableView:tableView heightForHeaderInSection:section];
+      NOTREACHED();
 
     case SectionIdentifierDismissedCredentialsButton:
       // Spacing to last password issue.
@@ -391,8 +382,10 @@ typedef NS_ENUM(NSInteger, ItemType) {
   DCHECK(item);
   DCHECK(cell);
 
-  TableViewURLItem* URLItem = base::mac::ObjCCastStrict<TableViewURLItem>(item);
-  TableViewURLCell* URLCell = base::mac::ObjCCastStrict<TableViewURLCell>(cell);
+  TableViewURLItem* URLItem =
+      base::apple::ObjCCastStrict<TableViewURLItem>(item);
+  TableViewURLCell* URLCell =
+      base::apple::ObjCCastStrict<TableViewURLCell>(cell);
 
   NSString* itemIdentifier = URLItem.uniqueIdentifier;
   [self.imageDataSource
@@ -407,18 +400,35 @@ typedef NS_ENUM(NSInteger, ItemType) {
              }];
 }
 
+#pragma mark - SettingsControllerProtocol
+
+- (void)reportDismissalUserAction {
+  base::RecordAction(
+      base::UserMetricsAction("MobilePasswordIssuesSettingsClose"));
+}
+
+- (void)reportBackUserAction {
+  base::RecordAction(
+      base::UserMetricsAction("MobilePasswordIssuesSettingsBack"));
+}
+
+- (void)settingsWillBeDismissed {
+  DCHECK(!_settingsAreDismissed);
+
+  _settingsAreDismissed = YES;
+}
+
 #pragma mark - PasswordIssuesConsumer
 
 - (void)setPasswordIssues:(NSArray<PasswordIssueGroup*>*)passwordGroups
-    dismissedWarningsButtonText:(NSString*)buttonText {
+    dismissedWarningsCount:(NSInteger)dismissedWarnings {
   _passwordGroups = passwordGroups;
-  _dismissedWarningsButtonText = buttonText;
+  _dismissedWarningsCount = dismissedWarnings;
   [self reloadData];
 
   // User removed/resolved all issues, dismiss the vc and go back to the
   // previous screen.
-  if (IsPasswordCheckupEnabled() && passwordGroups.count == 0 &&
-      buttonText == nullptr) {
+  if (passwordGroups.count == 0 && dismissedWarnings == 0) {
     [self.presenter dismissAfterAllIssuesGone];
   }
 }
@@ -446,7 +456,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
 // item in the given tableView section.
 - (CrURL*)changePasswordURLForPasswordInSection:(NSInteger)section {
   PasswordIssueContentItem* passwordIssueItem =
-      base::mac::ObjCCastStrict<PasswordIssueContentItem>([self.tableViewModel
+      base::apple::ObjCCastStrict<PasswordIssueContentItem>([self.tableViewModel
           itemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:section]]);
 
   CHECK(passwordIssueItem.password.changePasswordURL.has_value());

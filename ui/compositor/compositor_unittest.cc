@@ -20,25 +20,36 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/ui_base_features.h"
-#if defined(OHOS_UNITTESTS)
+#if defined(ARKWEB_UNITTESTS)
 #define private public
-#endif  // OHOS_UNITTESTS
+#endif  // ARKWEB_UNITTESTS
 #include "ui/compositor/compositor.h"
-#if defined(OHOS_UNITTESTS)
+#if defined(ARKWEB_UNITTESTS)
 #undef private
 #include "cc/test/fake_layer_tree_frame_sink.h"
-#endif  // OHOS_UNITTESTS
+#endif  // ARKWEB_UNITTESTS
 #include "ui/compositor/layer.h"
 #include "ui/compositor/layer_delegate.h"
 #include "ui/compositor/test/draw_waiter_for_test.h"
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/compositor/test/test_context_factories.h"
+#include "ui/display/types/display_constants.h"
 
 using testing::_;
+#if defined(ARKWEB_UNITTESTS)
 using testing::Mock;
+#endif  // ARKWEB_UNITTESTS
 
 namespace ui {
 namespace {
+
+class MockCompositorObserver : public CompositorObserver {
+ public:
+  MOCK_METHOD2(OnCompositorVisibilityChanging,
+               void(Compositor* compositor, bool visible));
+  MOCK_METHOD2(OnCompositorVisibilityChanged,
+               void(Compositor* compositor, bool visible));
+};
 
 class CompositorTest : public testing::Test {
  public:
@@ -98,19 +109,15 @@ class CompositorTestWithMockedTime : public CompositorTest {
   base::test::ScopedPowerMonitorTestSource test_power_monitor_source_;
 
  private:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI,
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
-#endif
 };
 
 // For tests that run on a real MessageLoop with real time.
 class CompositorTestWithMessageLoop : public CompositorTest {
  public:
-#if defined(OHOS_UNITTESTS)
+#if defined(ARKWEB_UNITTESTS)
   CompositorTestWithMessageLoop() : task_environment_() {}
 #else
   CompositorTestWithMessageLoop()
@@ -127,11 +134,7 @@ class CompositorTestWithMessageLoop : public CompositorTest {
   base::SequencedTaskRunner* task_runner() { return task_runner_.get(); }
 
  private:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_;
-#endif
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
@@ -232,11 +235,12 @@ TEST_F(CompositorTestWithMessageLoop, ShouldUpdateDisplayProperties) {
   display_color_spaces.SetSDRMaxLuminanceNits(1.f);
   base::TimeTicks vsync_timebase(base::TimeTicks::Now());
   base::TimeDelta vsync_interval(base::Milliseconds(250));
-  base::TimeDelta max_vrr_interval(base::Milliseconds(500));
+  base::TimeDelta max_vsync_interval(base::Milliseconds(500));
   compositor()->SetDisplayColorMatrix(color_matrix);
   compositor()->SetDisplayColorSpaces(display_color_spaces);
   compositor()->SetDisplayVSyncParameters(vsync_timebase, vsync_interval);
-  compositor()->SetMaxVrrInterval(max_vrr_interval);
+  compositor()->SetMaxVSyncAndVrr(
+      max_vsync_interval, display::VariableRefreshRateState::kVrrEnabled);
 
   InProcessContextFactory* context_factory =
       static_cast<InProcessContextFactory*>(compositor()->context_factory());
@@ -249,7 +253,10 @@ TEST_F(CompositorTestWithMessageLoop, ShouldUpdateDisplayProperties) {
             context_factory->GetDisplayVSyncTimeBase(compositor()));
   EXPECT_EQ(vsync_interval,
             context_factory->GetDisplayVSyncTimeInterval(compositor()));
-  EXPECT_EQ(max_vrr_interval, context_factory->GetMaxVrrInterval(compositor()));
+  EXPECT_EQ(max_vsync_interval,
+            context_factory->GetMaxVSyncInterval(compositor()));
+  EXPECT_EQ(display::VariableRefreshRateState::kVrrEnabled,
+            context_factory->GetVrrState(compositor()));
 
   // Simulate a lost context by releasing the output surface and setting it on
   // the compositor again. Expect that the same color matrix, color space, sdr
@@ -270,7 +277,11 @@ TEST_F(CompositorTestWithMessageLoop, ShouldUpdateDisplayProperties) {
             context_factory->GetDisplayVSyncTimeBase(compositor()));
   EXPECT_EQ(vsync_interval,
             context_factory->GetDisplayVSyncTimeInterval(compositor()));
-  EXPECT_EQ(max_vrr_interval, context_factory->GetMaxVrrInterval(compositor()));
+  EXPECT_EQ(max_vsync_interval,
+            context_factory->GetMaxVSyncInterval(compositor()));
+  EXPECT_EQ(display::VariableRefreshRateState::kVrrEnabled,
+            context_factory->GetVrrState(compositor()));
+
   compositor()->SetRootLayer(nullptr);
 }
 
@@ -348,6 +359,8 @@ TEST_F(CompositorTestWithMessageLoop, MoveThroughputTracker) {
   }
 }
 
+#if BUILDFLAG(IS_CHROMEOS)
+// ui::ThroughputTracker is only supported on ChromeOS
 TEST_F(CompositorTestWithMessageLoop, ThroughputTracker) {
   auto root_layer = std::make_unique<Layer>(ui::LAYER_SOLID_COLOR);
   viz::ParentLocalSurfaceIdAllocator allocator;
@@ -363,8 +376,8 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTracker) {
   base::RunLoop run_loop;
   tracker.Start(base::BindLambdaForTesting(
       [&](const cc::FrameSequenceMetrics::CustomReportData& data) {
-        EXPECT_GT(data.frames_expected, 0u);
-        EXPECT_GT(data.frames_produced, 0u);
+        EXPECT_GT(data.frames_expected_v3, 0u);
+        EXPECT_GT(data.frames_expected_v3 - data.frames_dropped_v3, 0u);
         run_loop.Quit();
       }));
 
@@ -476,9 +489,10 @@ TEST_F(CompositorTestWithMessageLoop, ThroughputTrackerInvoluntaryReport) {
   // Stop() fails but no DCHECK or crash.
   EXPECT_FALSE(tracker.Stop());
 }
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_WIN)
-// TODO(crbug.com/608436): Flaky on windows trybots
+// TODO(crbug.com/40467610): Flaky on windows trybots
 #define MAYBE_CreateAndReleaseOutputSurface \
   DISABLED_CreateAndReleaseOutputSurface
 #else
@@ -508,7 +522,7 @@ TEST_F(CompositorTestWithMessageLoop, MAYBE_CreateAndReleaseOutputSurface) {
 class LayerDelegateThatAddsDuringUpdateVisualState : public LayerDelegate {
  public:
   explicit LayerDelegateThatAddsDuringUpdateVisualState(Layer* parent)
-      : parent_(parent) {}
+      : parent_(*parent) {}
 
   bool update_visual_state_called() const {
     return update_visual_state_called_;
@@ -525,7 +539,7 @@ class LayerDelegateThatAddsDuringUpdateVisualState : public LayerDelegate {
                                   float new_device_scale_factor) override {}
 
  private:
-  raw_ptr<Layer> parent_;
+  const raw_ref<Layer> parent_;
   std::vector<std::unique_ptr<Layer>> added_layers_;
   bool update_visual_state_called_ = false;
 };
@@ -554,12 +568,38 @@ TEST_F(CompositorTestWithMessageLoop, AddLayerDuringUpdateVisualState) {
   DrawWaiterForTest::WaitForCompositingEnded(compositor());
   EXPECT_TRUE(child_layer_delegate.update_visual_state_called());
   compositor()->SetRootLayer(nullptr);
-  child_layer2.reset();
-  child_layer.reset();
-  root_layer.reset();
 }
 
-#if defined(OHOS_UNITTESTS)
+TEST_F(CompositorTestWithMessageLoop, CompositorVisibilityChanges) {
+  testing::StrictMock<MockCompositorObserver> observer;
+  compositor()->AddObserver(&observer);
+
+  EXPECT_CALL(observer, OnCompositorVisibilityChanging(compositor(), false))
+      .Times(1);
+  EXPECT_CALL(observer, OnCompositorVisibilityChanged(compositor(), false))
+      .Times(1);
+  compositor()->SetVisible(false);
+  ::testing::Mock::VerifyAndClearExpectations(&observer);
+
+  EXPECT_CALL(observer, OnCompositorVisibilityChanging(compositor(), true))
+      .Times(1);
+  EXPECT_CALL(observer, OnCompositorVisibilityChanged(compositor(), true))
+      .Times(1);
+  compositor()->SetVisible(true);
+  ::testing::Mock::VerifyAndClearExpectations(&observer);
+
+  // Verify no calls if visibility isn't changed.
+  EXPECT_CALL(observer, OnCompositorVisibilityChanging(compositor(), _))
+      .Times(0);
+  EXPECT_CALL(observer, OnCompositorVisibilityChanged(compositor(), _))
+      .Times(0);
+  compositor()->SetVisible(true);
+  ::testing::Mock::VerifyAndClearExpectations(&observer);
+
+  compositor()->RemoveObserver(&observer);
+}
+
+#if defined(ARKWEB_UNITTESTS)
 TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId1) {
   testing::internal::CaptureStderr();
   const viz::FrameSinkId id;
@@ -608,6 +648,6 @@ TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
   compositor()->SetDrawRect(rect);
   EXPECT_FALSE(compositor()->display_private_);
 }
-#endif  // OHOS_UNITTESTS
+#endif  // ARKWEB_UNITTESTS
 
 }  // namespace ui

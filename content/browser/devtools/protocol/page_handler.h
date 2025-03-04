@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/scoped_observation.h"
 #include "build/build_config.h"
@@ -42,10 +43,6 @@ namespace gfx {
 class Image;
 }  // namespace gfx
 
-namespace blink {
-struct DeviceEmulationParams;
-}
-
 namespace content {
 
 class BackForwardCacheCanStoreDocumentResult;
@@ -69,7 +66,7 @@ class PageHandler : public DevToolsDomainHandler,
               BrowserHandler* browser_handler,
               bool allow_unsafe_operations,
               bool is_trusted,
-              absl::optional<url::Origin> navigation_initiator_origin,
+              std::optional<url::Origin> navigation_initiator_origin,
               bool may_read_local_files);
 
   PageHandler(const PageHandler&) = delete;
@@ -103,12 +100,15 @@ class PageHandler : public DevToolsDomainHandler,
   void DownloadWillBegin(FrameTreeNode* ftn, download::DownloadItem* item);
 
   void OnFrameDetached(const base::UnguessableToken& frame_id);
+  void DidChangeFrameLoadingState(const FrameTreeNode& ftn);
 
   bool ShouldBypassCSP();
   void BackForwardCacheNotUsed(
       const NavigationRequest* nav_request,
       const BackForwardCacheCanStoreDocumentResult* result,
       const BackForwardCacheCanStoreTreeResult* tree_result);
+
+  void IsPrerenderingAllowed(bool& is_allowed);
 
   Response Enable() override;
   Response Disable() override;
@@ -117,6 +117,7 @@ class PageHandler : public DevToolsDomainHandler,
   Response Close() override;
   void Reload(Maybe<bool> bypassCache,
               Maybe<std::string> script_to_evaluate_on_load,
+              Maybe<std::string> loader_id,
               std::unique_ptr<ReloadCallback> callback) override;
   void Navigate(const std::string& url,
                 Maybe<std::string> referrer,
@@ -161,6 +162,7 @@ class PageHandler : public DevToolsDomainHandler,
                                Maybe<std::string> download_path) override;
 
   void GetAppManifest(
+      protocol::Maybe<std::string> manifest_id,
       std::unique_ptr<GetAppManifestCallback> callback) override;
 
   Response SetWebLifecycleState(const std::string& state) override;
@@ -176,12 +178,16 @@ class PageHandler : public DevToolsDomainHandler,
   Response AddCompilationCache(const std::string& url,
                                const Binary& data) override;
 
+  Response SetPrerenderingAllowed(bool is_allowed) override;
+
   Response AssureTopLevelActiveFrame();
 
  private:
+  struct PendingScreenshotRequest;
+
   using BitmapEncoder =
-      base::RepeatingCallback<bool(const SkBitmap& bitmap,
-                                   std::vector<uint8_t>& output)>;
+      base::RepeatingCallback<std::optional<std::vector<uint8_t>>(
+          const SkBitmap& bitmap)>;
 
   void CaptureFullPageScreenshot(
       Maybe<std::string> format,
@@ -197,21 +203,10 @@ class PageHandler : public DevToolsDomainHandler,
       const SkBitmap& bitmap);
   void ScreencastFrameEncoded(
       std::unique_ptr<Page::ScreencastFrameMetadata> metadata,
-      std::vector<uint8_t> data);
+      std::optional<std::vector<uint8_t>> data);
 
-  void ScreenshotCaptured(
-      std::unique_ptr<CaptureScreenshotCallback> callback,
-      BitmapEncoder encoder,
-      const gfx::Size& original_view_size,
-      const gfx::Size& requested_image_size,
-      const blink::DeviceEmulationParams& original_params,
-      const absl::optional<blink::web_pref::WebPreferences>& original_web_prefs,
-      const gfx::Image& image);
-
-  void GotManifest(std::unique_ptr<GetAppManifestCallback> callback,
-                   const GURL& manifest_url,
-                   ::blink::mojom::ManifestPtr parsed_manifest,
-                   blink::mojom::ManifestDebugInfoPtr debug_info);
+  void ScreenshotCaptured(std::unique_ptr<PendingScreenshotRequest> request,
+                          const gfx::Image& image);
 
   // RenderWidgetHostObserver overrides.
   void RenderWidgetHostVisibilityChanged(RenderWidgetHost* widget_host,
@@ -229,7 +224,7 @@ class PageHandler : public DevToolsDomainHandler,
 
   const bool allow_unsafe_operations_;
   const bool is_trusted_;
-  const absl::optional<url::Origin> navigation_initiator_origin_;
+  const std::optional<url::Origin> navigation_initiator_origin_;
   const bool may_read_local_files_;
 
   bool enabled_;
@@ -252,9 +247,9 @@ class PageHandler : public DevToolsDomainHandler,
   // to be requested. This changes due to window resizing.
   gfx::Size last_surface_size_;
 
-  RenderFrameHostImpl* host_;
-  EmulationHandler* emulation_handler_;
-  BrowserHandler* browser_handler_;
+  raw_ptr<RenderFrameHostImpl> host_;
+  raw_ptr<EmulationHandler> emulation_handler_;
+  raw_ptr<BrowserHandler> browser_handler_;
 
   std::unique_ptr<Page::Frontend> frontend_;
 
@@ -264,7 +259,10 @@ class PageHandler : public DevToolsDomainHandler,
   // Maps DevTools navigation tokens to pending NavigateCallbacks.
   base::flat_map<base::UnguessableToken, std::unique_ptr<NavigateCallback>>
       navigate_callbacks_;
-  base::flat_set<download::DownloadItem*> pending_downloads_;
+  base::flat_set<raw_ptr<download::DownloadItem, CtnExperimental>>
+      pending_downloads_;
+
+  bool is_prerendering_allowed_ = true;
 
   base::WeakPtrFactory<PageHandler> weak_factory_{this};
 };

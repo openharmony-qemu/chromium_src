@@ -146,7 +146,7 @@ class PaymentManifestDownloader {
 
     Download();
     ~Download();
-    
+
     // Returns true if this download is an HTTP HEAD request for a payment
     // manifest.
     bool IsLinkHeaderDownload() const;

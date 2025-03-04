@@ -4,14 +4,10 @@
 
 #import "ios/chrome/browser/ui/sharing/activity_services/data/share_image_data.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @implementation ShareImageData
 
 - (instancetype)initWithImage:(UIImage*)image title:(NSString*)title {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _image = image;
     _title = title;
   }

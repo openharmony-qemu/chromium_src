@@ -4,12 +4,16 @@
 
 package org.chromium.components.browser_ui.bottomsheet;
 
+import android.content.Context;
 import android.view.View;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.chromium.base.supplier.ObservableSupplierImpl;
+import org.chromium.components.browser_ui.styles.SemanticColorUtils;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,11 +33,13 @@ public interface BottomSheetContent {
          * exception that uses the feature's toolbar height.
          */
         int DEFAULT = 0;
+
         /**
          * The sheet will set its height so the content is completely visible. This mode cannot
          * be used for the peek state.
          */
         int WRAP_CONTENT = -1;
+
         /**
          * The state this mode is used for will be disabled. For example, disabling the peek state
          * would cause the sheet to automatically expand when triggered.
@@ -56,24 +62,32 @@ public interface BottomSheetContent {
     }
 
     /**
-     * Gets the {@link View} that holds the content to be displayed in the Chrome Home bottom
-     * sheet.
+     * Gets the {@link View} that holds the content to be displayed in the Chrome Home bottom sheet.
+     *
      * @return The content view.
      */
     View getContentView();
 
     /**
-     * Get the {@link View} that contains the toolbar specific to the content being
-     * displayed. If null is returned, the omnibox is used.
+     * Gets the background color for the bottom sheet content, defaulting to the semantic default
+     * background color if no background color is specified by the content. This should return null
+     * if the sheet content is showing tab content / a page preview.
+     */
+    @ColorInt
+    default Integer getBackgroundColor() {
+        return SemanticColorUtils.getDefaultBgColor(getContentView().getContext());
+    }
+
+    /**
+     * Get the {@link View} that contains the toolbar specific to the content being displayed. If
+     * null is returned, the omnibox is used.
      *
      * @return The toolbar view.
      */
     @Nullable
     View getToolbarView();
 
-    /**
-     * @return The vertical scroll offset of the content view.
-     */
+    /** @return The vertical scroll offset of the content view. */
     int getVerticalScrollOffset();
 
     /**
@@ -85,23 +99,18 @@ public interface BottomSheetContent {
      */
     void destroy();
 
-    /**
-     * @return The priority of this content.
-     */
+    /** @return The priority of this content. */
     @ContentPriority
     int getPriority();
 
-    /**
-     * @return Whether swiping the sheet down hard enough will cause the sheet to be dismissed.
-     */
+    /** @return Whether swiping the sheet down hard enough will cause the sheet to be dismissed. */
     boolean swipeToDismissEnabled();
 
-    /**
-     * @return Whether the sheet will always skip the half state once it was fully extended.
-     */
+    /** @return Whether the sheet will always skip the half state once it was fully extended. */
     default boolean skipHalfStateOnScrollingDown() {
         return true;
-    };
+    }
+    ;
 
     /**
      * @return Whether this content owns its lifecycle. If false, the content will be dismissed
@@ -164,7 +173,7 @@ public interface BottomSheetContent {
     }
 
     /**
-     * @return Whether the sheet should be hidden when it is in the PEEK state and the user
+     * @return Whether the sheet should be hidden when it is in the PEEK/HALF state and the user
      *         scrolls down the page.
      */
     default boolean hideOnScroll() {
@@ -199,15 +208,16 @@ public interface BottomSheetContent {
     default void onBackPressed() {}
 
     /**
-     * @return The resource id of the content description for the bottom sheet. This is
-     *         generally the name of the feature/content that is showing. 'Swipe down to close.'
-     *         will be automatically appended after the content description.
+     * Returns the content description for the bottom sheet. This is generally the name of the
+     * feature/content that is showing. It can be a dynamic string. 'Swipe down to close.' will be
+     * automatically appended after the content description.
      */
-    int getSheetContentDescriptionStringId();
+    @NonNull
+    String getSheetContentDescription(Context context);
 
     /**
-     * @return The resource id of the string announced when the sheet is opened at half height.
-     *         This is typically the name of your feature followed by 'opened at half height'.
+     * @return The resource id of the string announced when the sheet is opened at half height. This
+     *     is typically the name of your feature followed by 'opened at half height'.
      */
     int getSheetHalfHeightAccessibilityStringId();
 
@@ -222,4 +232,26 @@ public interface BottomSheetContent {
      *         typically the name of your feature followed by 'closed'.
      */
     int getSheetClosedAccessibilityStringId();
+
+    /**
+     * @return True if this content should hide when higher-priority content is requested to be
+     *     shown, even if the sheet is expanded. Otherwise the new content will only be shown after
+     *     the sheet is dismissed. If returning true here, this content's priority should be LOW.
+     */
+    default boolean canSuppressInAnyState() {
+        return false;
+    }
+
+    /**
+     * Whether long press gestures should move the bottom sheet.
+     *
+     * <p>Should NOT be overridden to return `true` if the bottom sheet contains any UI that
+     * responds to long presses. Otherwise bugs will occur when long press is used. See
+     * crbug.com/41384419.
+     *
+     * @return True if long press should move the bottom sheet.
+     */
+    default boolean shouldLongPressMoveSheet() {
+        return false;
+    }
 }

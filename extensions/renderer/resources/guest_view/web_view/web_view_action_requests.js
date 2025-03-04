@@ -16,10 +16,11 @@ var PERMISSION_TYPES = ['media',
                         'download',
                         'loadplugin',
                         'filesystem',
-                        'fullscreen'];
+                        'fullscreen',
+                        'hid'];
 
 // The browser will kill us if we send it a bad instance ID.
-// TODO(780728): Remove once the cause of the bad ID is known.
+// TODO(crbug.com/41353094): Remove once the cause of the bad ID is known.
 function CrashIfInvalidInstanceId(instanceId, culpritFunction) {
   logging.CHECK(
       instanceId > 0,
@@ -183,8 +184,10 @@ NewWindow.prototype.getInterfaceObject = function() {
   return {
     attach: $Function.bind(function(webview) {
       this.validateCall();
-      if (!webview || !webview.tagName || webview.tagName != 'WEBVIEW') {
-        throw new Error(ERROR_MSG_WEBVIEW_EXPECTED);
+      if (!webview || !webview.tagName ||
+          (webview.tagName != 'WEBVIEW' &&
+           webview.tagName != 'CONTROLLEDFRAME')) {
+        throw new Error('Cannot attach to invalid container element.');
       }
 
       var webViewImpl = privates(webview).internal;

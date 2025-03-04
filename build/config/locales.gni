@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/chromeos/ui_mode.gni")
+import("//arkweb/build/features/features.gni")
 
 # This file creates |platform_pak_locales| which is the set of packed locales
 # based on the current platform. Locales in this list are formatted based on
@@ -22,7 +23,7 @@ pseudolocales = [
   "en-XA",
 ]
 
-# ifdef OHOS_I18N
+# ifdef arkweb_i18n
 extra_locales = [
   "bo-CN",
   "ug",
@@ -178,7 +179,7 @@ if (is_android) {
   extended_locales -= _non_android_locales
 } else {
   platform_pak_locales -= extended_locales
-  if (is_ohos && defined(ohos_i18n)) {
+  if (arkweb_i18n) {
     platform_pak_locales += [ "zh-HK" ]
   }
 }
@@ -247,8 +248,8 @@ if (is_android) {
 locales_without_pseudolocales = platform_pak_locales - pseudolocales
 locales_with_pseudolocales = platform_pak_locales
 
-#ifdef OHOS_I18N
-if (ohos_i18n) {
+#ifdef arkweb_i18n
+if (arkweb_i18n) {
   locales_for_ohos = locales_without_pseudolocales
   locales_for_ohos += extra_locales
 }
@@ -265,8 +266,8 @@ if (!enable_pseudolocales) {
   platform_pak_locales -= pseudolocales
 }
 
-#ifdef OHOS_I18N
-if (ohos_i18n) {
+#ifdef arkweb_i18n
+if (arkweb_i18n) {
   ohos_platform_pak_locales = all_chrome_locales + extra_locales
 }
 

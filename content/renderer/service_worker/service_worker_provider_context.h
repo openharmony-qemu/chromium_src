@@ -40,15 +40,15 @@ class SingleThreadTaskRunner;
 }  // namespace base
 
 namespace network {
+namespace mojom {
+class URLLoaderFactory;
+}  // namespace mojom
+
 class SharedURLLoaderFactory;
 class WeakWrapperSharedURLLoaderFactory;
 }  // namespace network
 
 namespace content {
-
-namespace mojom {
-class URLLoaderFactory;
-}  // namespace mojom
 
 namespace service_worker_provider_context_unittest {
 class ServiceWorkerProviderContextTest;
@@ -157,7 +157,7 @@ class CONTENT_EXPORT ServiceWorkerProviderContext
   // ServiceWorkerClient from the system (thus allowing unregistration/update to
   // occur and ensuring the Clients API doesn't return the client).
   //
-  // TODO(https://crbug.com/931497): Remove this weird partially destroyed
+  // TODO(crbug.com/41441021): Remove this weird partially destroyed
   // state.
   void OnNetworkProviderDestroyed();
 
@@ -192,6 +192,8 @@ class CONTENT_EXPORT ServiceWorkerProviderContext
       const override;
   blink::mojom::ServiceWorkerFetchHandlerType GetFetchHandlerType()
       const override;
+  blink::mojom::ServiceWorkerFetchHandlerBypassOption
+  GetFetchHandlerBypassOption() const override;
   const blink::WebString client_id() const override;
 
  private:
@@ -229,7 +231,17 @@ class CONTENT_EXPORT ServiceWorkerProviderContext
   bool CanCreateSubresourceLoaderFactory() const;
 
   // Returns URLLoaderFactory for loading subresources with the controller
-  // ServiceWorker, or nullptr if no controller is attached.
+  // ServiceWorker, or nullptr.
+  //
+  // If the router evaluation is needed, this function always returns
+  // URLLoaderFactory for subresources. the URLLoaderFactory can be created
+  // without the controller ServiceWorker if |remote_controller_| is null, that
+  // happens when there is no fetch handler. This behavior is needed because the
+  // router evaluation is done in the ServiceWorkerSubresourceLoader.
+  //
+  // If the router evaluation is not needed, this function returns nullptr if no
+  // controller is attached (e.g. no fetch handler), or the fetch handler
+  // is no-op.
   network::mojom::URLLoaderFactory* GetSubresourceLoaderFactoryInternal();
 
   const blink::mojom::ServiceWorkerContainerType container_type_;
@@ -282,14 +294,23 @@ class CONTENT_EXPORT ServiceWorkerProviderContext
 
   blink::mojom::ServiceWorkerFetchHandlerType fetch_handler_type_ =
       blink::mojom::ServiceWorkerFetchHandlerType::kNoHandler;
-  blink::mojom::ServiceWorkerFetchHandlerType effective_fetch_handler_type_ =
-      blink::mojom::ServiceWorkerFetchHandlerType::kNoHandler;
+  bool need_router_evaluate_ = false;
 
   blink::mojom::ServiceWorkerFetchHandlerBypassOption
       fetch_handler_bypass_option_ =
           blink::mojom::ServiceWorkerFetchHandlerBypassOption::kDefault;
 
-  absl::optional<std::string> sha256_script_checksum_;
+  std::optional<std::string> sha256_script_checksum_;
+
+  std::optional<blink::ServiceWorkerRouterRules> router_rules_;
+  // TODO(crbug.com/40941292): It may be better to make this an optional, so it
+  // is possible to distinguish between unset and kStopped, which are not really
+  // equivalent.
+  blink::EmbeddedWorkerStatus initial_running_status_ =
+      blink::EmbeddedWorkerStatus::kStopped;
+  mojo::PendingRemote<blink::mojom::CacheStorage> remote_cache_storage_;
+  mojo::PendingReceiver<blink::mojom::ServiceWorkerRunningStatusCallback>
+      running_status_receiver_;
 
   // Tracks feature usage for UseCounter.
   std::set<blink::mojom::WebFeature> used_features_;

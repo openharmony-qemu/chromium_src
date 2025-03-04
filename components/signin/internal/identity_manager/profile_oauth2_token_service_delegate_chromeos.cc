@@ -147,7 +147,9 @@ ProfileOAuth2TokenServiceDelegateChromeOS::
 
 ProfileOAuth2TokenServiceDelegateChromeOS::
     ~ProfileOAuth2TokenServiceDelegateChromeOS() {
-  account_manager_facade_->RemoveObserver(this);
+  if (account_manager_facade_) {
+    account_manager_facade_->RemoveObserver(this);
+  }
   network_connection_tracker_->RemoveNetworkConnectionObserver(this);
 }
 
@@ -155,7 +157,8 @@ std::unique_ptr<OAuth2AccessTokenFetcher>
 ProfileOAuth2TokenServiceDelegateChromeOS::CreateAccessTokenFetcher(
     const CoreAccountId& account_id,
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-    OAuth2AccessTokenConsumer* consumer) {
+    OAuth2AccessTokenConsumer* consumer,
+    const std::string& token_binding_challenge) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK_EQ(
       signin::LoadCredentialsState::LOAD_CREDENTIALS_FINISHED_WITH_SUCCESS,
@@ -224,7 +227,7 @@ ProfileOAuth2TokenServiceDelegateChromeOS::GetAccounts() const {
                                            account_tracker_service_);
 }
 
-void ProfileOAuth2TokenServiceDelegateChromeOS::LoadCredentials(
+void ProfileOAuth2TokenServiceDelegateChromeOS::LoadCredentialsInternal(
     const CoreAccountId& primary_account_id,
     bool is_syncing) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -271,24 +274,12 @@ void ProfileOAuth2TokenServiceDelegateChromeOS::LoadCredentials(
                      weak_factory_.GetWeakPtr()));
 }
 
-void ProfileOAuth2TokenServiceDelegateChromeOS::UpdateCredentials(
+void ProfileOAuth2TokenServiceDelegateChromeOS::UpdateCredentialsInternal(
     const CoreAccountId& account_id,
     const std::string& refresh_token) {
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  NOTREACHED()
-      << "If you're seeing this error in a browser_test, consider "
-         "disabling the test while we set up the testing "
-         "infrastructure to talk to Ash in a browser_test. Also, please add a "
-         "comment / CL ref. to crbug.com/1197201 if you disable your test.";
-  // TODO(sinhak): We need a way to write accounts to Account Manager in
-  // browser_tests and lacros_chrome_browsertests. For browser_tests, the
-  // solution may be to build Account Manager in Lacros. For
-  // lacros_chrome_browsertests, we will need to talk to EngProd.
-#else
   // UpdateCredentials should not be called on Chrome OS. Credentials should be
   // updated through Chrome OS Account Manager.
   NOTREACHED();
-#endif
 }
 
 scoped_refptr<network::SharedURLLoaderFactory>
@@ -490,7 +481,7 @@ void ProfileOAuth2TokenServiceDelegateChromeOS::OnAuthErrorChanged(
   ProfileOAuth2TokenServiceDelegate::UpdateAuthError(account_id, error);
 }
 
-void ProfileOAuth2TokenServiceDelegateChromeOS::RevokeCredentials(
+void ProfileOAuth2TokenServiceDelegateChromeOS::RevokeCredentialsInternal(
     const CoreAccountId& account_id) {
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   ScopedBatchChange batch(this);
@@ -499,13 +490,15 @@ void ProfileOAuth2TokenServiceDelegateChromeOS::RevokeCredentials(
   DCHECK(!account_info.IsEmpty());
   signin_client_->RemoveAccount(account_manager::AccountKey{
       account_info.gaia, account_manager::AccountType::kGaia});
+  ClearAuthError(account_id);
 #else
   // Signing out of Chrome is not possible on Chrome OS Ash / Lacros.
   NOTREACHED();
 #endif
 }
 
-void ProfileOAuth2TokenServiceDelegateChromeOS::RevokeAllCredentials() {
+void ProfileOAuth2TokenServiceDelegateChromeOS::RevokeAllCredentialsInternal(
+    signin_metrics::SourceForRefreshTokenOperation source) {
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
   DCHECK(!signin_client_->GetInitialPrimaryAccount().has_value());
   ScopedBatchChange batch(this);
@@ -522,6 +515,13 @@ void ProfileOAuth2TokenServiceDelegateChromeOS::UpdateAuthError(
     bool fire_auth_error_changed) {
   ProfileOAuth2TokenServiceDelegate::UpdateAuthError(account_id, error,
                                                      fire_auth_error_changed);
+  if (!RefreshTokenIsAvailable(account_id)) {
+    // Account has been removed.
+    DCHECK_EQ(error, GoogleServiceAuthError(
+                         GoogleServiceAuthError::USER_NOT_SIGNED_UP));
+    return;
+  }
+
   AccountInfo account_info =
       account_tracker_service_->GetAccountInfo(account_id);
   DCHECK(!account_info.IsEmpty());

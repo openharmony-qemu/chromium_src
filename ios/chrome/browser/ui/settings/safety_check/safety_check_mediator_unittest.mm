@@ -7,52 +7,59 @@
 #import <memory>
 
 #import "base/memory/ptr_util.h"
-#import "base/strings/string_piece.h"
+#import "base/memory/raw_ptr.h"
 #import "base/strings/string_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/strings/utf_string_conversions.h"
+#import "base/test/bind.h"
 #import "base/test/ios/wait_util.h"
+#import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
+#import "components/affiliations/core/browser/fake_affiliation_service.h"
 #import "components/keyed_service/core/service_access_type.h"
 #import "components/password_manager/core/browser/password_form.h"
 #import "components/password_manager/core/browser/password_manager_test_utils.h"
-#import "components/password_manager/core/browser/test_password_store.h"
-#import "components/password_manager/core/common/password_manager_features.h"
+#import "components/password_manager/core/browser/password_store/test_password_store.h"
+#import "components/password_manager/core/browser/ui/password_check_referrer.h"
 #import "components/prefs/pref_service.h"
 #import "components/prefs/testing_pref_service.h"
 #import "components/safe_browsing/core/common/features.h"
 #import "components/safe_browsing/core/common/safe_browsing_prefs.h"
+#import "components/safety_check/safety_check.h"
 #import "components/strings/grit/components_strings.h"
+#import "components/sync/test/mock_sync_service.h"
 #import "components/sync_preferences/pref_service_mock_factory.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/main/test_browser.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager_factory.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_store_factory.h"
-#import "ios/chrome/browser/passwords/password_check_observer_bridge.h"
+#import "ios/chrome/browser/affiliations/model/ios_chrome_affiliation_service_factory.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager_factory.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_profile_password_store_factory.h"
+#import "ios/chrome/browser/passwords/model/password_check_observer_bridge.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_backed_boolean.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_manager_ios.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_text_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/signin/authentication_service_factory.h"
-#import "ios/chrome/browser/signin/fake_authentication_service_delegate.h"
-#import "ios/chrome/browser/sync/sync_setup_service_factory.h"
-#import "ios/chrome/browser/sync/sync_setup_service_mock.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
+#import "ios/chrome/browser/signin/model/authentication_service_factory.h"
+#import "ios/chrome/browser/signin/model/fake_authentication_service_delegate.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
 #import "ios/chrome/browser/ui/settings/cells/settings_check_item.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_constants.h"
 #import "ios/chrome/browser/ui/settings/safety_check/safety_check_consumer.h"
-#import "ios/chrome/browser/ui/settings/safety_check/safety_check_mediator+private.h"
-#import "ios/chrome/browser/ui/settings/utils/pref_backed_boolean.h"
-#import "ios/chrome/browser/upgrade/upgrade_constants.h"
-#import "ios/chrome/browser/upgrade/upgrade_recommended_details.h"
+#import "ios/chrome/browser/ui/settings/safety_check/safety_check_mediator+Testing.h"
+#import "ios/chrome/browser/upgrade/model/upgrade_constants.h"
+#import "ios/chrome/browser/upgrade/model/upgrade_recommended_details.h"
 #import "ios/chrome/common/string_util.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
+#import "ios/chrome/test/testing_application_context.h"
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/gmock/include/gmock/gmock.h"
 #import "testing/gtest/include/gtest/gtest.h"
@@ -61,17 +68,11 @@
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/base/l10n/time_format.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 using l10n_util::GetNSString;
-using password_manager::InsecureCredential;
 using password_manager::InsecureType;
 using password_manager::TestPasswordStore;
-using password_manager::features::IsPasswordCheckupEnabled;
 
 typedef NS_ENUM(NSInteger, SafetyCheckItemType) {
   // CheckTypes section.
@@ -104,21 +105,18 @@ UIImage* SafeImage() {
 
 // The image when the state is unsafe.
 UIImage* UnsafeImage() {
-  return DefaultSymbolTemplateWithPointSize(
-      IsPasswordCheckupEnabled() ? kErrorCircleFillSymbol : kWarningFillSymbol,
-      kTrailingSymbolImagePointSize);
+  return DefaultSymbolTemplateWithPointSize(kErrorCircleFillSymbol,
+                                            kTrailingSymbolImagePointSize);
 }
 
 // The color when the state is safe.
 UIColor* GreenColor() {
-  return [UIColor
-      colorNamed:IsPasswordCheckupEnabled() ? kGreen500Color : kGreenColor];
+  return [UIColor colorNamed:kGreen500Color];
 }
 
 // The color when the state is unsafe.
 UIColor* RedColor() {
-  return [UIColor
-      colorNamed:IsPasswordCheckupEnabled() ? kRed500Color : kRedColor];
+  return [UIColor colorNamed:kRed500Color];
 }
 
 }  // namespace
@@ -126,46 +124,58 @@ UIColor* RedColor() {
 class SafetyCheckMediatorTest : public PlatformTest {
  public:
   SafetyCheckMediatorTest() {
-    TestChromeBrowserState::Builder test_cbs_builder;
-    test_cbs_builder.AddTestingFactory(
+    TestProfileIOS::Builder builder;
+    builder.AddTestingFactory(
         AuthenticationServiceFactory::GetInstance(),
-        AuthenticationServiceFactory::GetDefaultFactory());
-    test_cbs_builder.AddTestingFactory(
-        SyncSetupServiceFactory::GetInstance(),
-        base::BindRepeating(&SyncSetupServiceMock::CreateKeyedService));
-    test_cbs_builder.AddTestingFactory(
-        IOSChromePasswordStoreFactory::GetInstance(),
+        AuthenticationServiceFactory::GetFactoryWithDelegate(
+            std::make_unique<FakeAuthenticationServiceDelegate>()));
+    builder.AddTestingFactory(
+        SyncServiceFactory::GetInstance(),
+        base::BindRepeating(
+            [](web::BrowserState*) -> std::unique_ptr<KeyedService> {
+              return std::make_unique<syncer::MockSyncService>();
+            }));
+    builder.AddTestingFactory(
+        IOSChromeProfilePasswordStoreFactory::GetInstance(),
         base::BindRepeating(
             &password_manager::BuildPasswordStore<web::BrowserState,
                                                   TestPasswordStore>));
-    browser_state_ = test_cbs_builder.Build();
-    AuthenticationServiceFactory::CreateAndInitializeForBrowserState(
-        browser_state_.get(),
-        std::make_unique<FakeAuthenticationServiceDelegate>());
-    auth_service_ = static_cast<AuthenticationService*>(
-        AuthenticationServiceFactory::GetInstance()->GetForBrowserState(
-            browser_state_.get()));
+    builder.AddTestingFactory(
+        IOSChromeAffiliationServiceFactory::GetInstance(),
+        base::BindRepeating(base::BindLambdaForTesting([](web::BrowserState*) {
+          return std::unique_ptr<KeyedService>(
+              std::make_unique<affiliations::FakeAffiliationService>());
+        })));
+
+    profile_ = profile_manager_.AddProfileWithBuilder(std::move(builder));
+
+    auth_service_ = AuthenticationServiceFactory::GetForProfile(profile_.get());
 
     store_ =
         base::WrapRefCounted(static_cast<password_manager::TestPasswordStore*>(
-            IOSChromePasswordStoreFactory::GetForBrowserState(
-                browser_state_.get(), ServiceAccessType::EXPLICIT_ACCESS)
+            IOSChromeProfilePasswordStoreFactory::GetForProfile(
+                profile_.get(), ServiceAccessType::EXPLICIT_ACCESS)
                 .get()));
 
-    password_check_ = IOSChromePasswordCheckManagerFactory::GetForBrowserState(
-        browser_state_.get());
+    password_check_ =
+        IOSChromePasswordCheckManagerFactory::GetForProfile(profile_.get());
 
     pref_service_ = SetPrefService();
+    local_pref_service_ =
+        TestingApplicationContext::GetGlobal()->GetLocalState();
 
-    mediator_ =
-        [[SafetyCheckMediator alloc] initWithUserPrefService:pref_service_
-                                        passwordCheckManager:password_check_
-                                                 authService:auth_service_
-                                                 syncService:syncService()];
+    mediator_ = [[SafetyCheckMediator alloc]
+        initWithUserPrefService:pref_service_
+               localPrefService:local_pref_service_
+           passwordCheckManager:password_check_
+                    authService:auth_service_
+                    syncService:syncService()
+                       referrer:password_manager::PasswordCheckReferrer::
+                                    kSafetyCheck];
   }
 
-  SyncSetupService* syncService() {
-    return SyncSetupServiceFactory::GetForBrowserState(browser_state_.get());
+  syncer::SyncService* syncService() {
+    return SyncServiceFactory::GetForProfile(profile_.get());
   }
 
   void RunUntilIdle() { environment_.RunUntilIdle(); }
@@ -175,12 +185,16 @@ class SafetyCheckMediatorTest : public PlatformTest {
     RunUntilIdle();
   }
 
-  void resetNSUserDefaultsForTesting() {
+  void ResetNSUserDefaultsForTesting() {
     NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
     [defaults removeObjectForKey:kTimestampOfLastIssueFoundKey];
     [defaults removeObjectForKey:kIOSChromeUpToDateKey];
-    [defaults removeObjectForKey:kIOSChromeNextVersionKey];
-    [defaults removeObjectForKey:kIOSChromeUpgradeURLKey];
+  }
+
+  void ResetLocalPrefsForTesting() {
+    local_pref_service_->ClearPref(prefs::kIosSettingsSafetyCheckLastRunTime);
+    local_pref_service_->ClearPref(kIOSChromeNextVersionKey);
+    local_pref_service_->ClearPref(kIOSChromeUpgradeURLKey);
   }
 
   // Creates a form.
@@ -192,7 +206,7 @@ class SafetyCheckMediatorTest : public PlatformTest {
     form->username_element = u"Email";
     form->username_value = u"test@egmail.com";
     form->password_element = u"Passwd";
-    form->password_value = u"test";
+    form->password_value = u"fnlsr4@cm^mdls@fkspnsg3d";
     form->submit_element = u"signIn";
     form->signon_realm = signon_realm;
     form->scheme = password_manager::PasswordForm::Scheme::kHtml;
@@ -223,20 +237,40 @@ class SafetyCheckMediatorTest : public PlatformTest {
 
   TestPasswordStore& GetTestStore() {
     return *static_cast<TestPasswordStore*>(
-        IOSChromePasswordStoreFactory::GetForBrowserState(
-            browser_state_.get(), ServiceAccessType::EXPLICIT_ACCESS)
+        IOSChromeProfilePasswordStoreFactory::GetForProfile(
+            profile_.get(), ServiceAccessType::EXPLICIT_ACCESS)
             .get());
   }
 
+  // Tests that only having a leaked password results in an umuted compromised
+  // password row state.
+  void CheckCompromisedRowState() {
+    base::HistogramTester histogram_tester;
+
+    AddSavedInsecureForm(InsecureType::kLeaked);
+    mediator_.currentPasswordCheckState = PasswordCheckState::kRunning;
+    [mediator_ passwordCheckStateDidChange:PasswordCheckState::kIdle];
+
+    histogram_tester.ExpectUniqueSample(
+        kSafetyCheckMetricsPasswords,
+        safety_check::PasswordsStatus::kCompromisedExist, 1);
+
+    EXPECT_EQ(mediator_.passwordCheckRowState,
+              PasswordCheckRowStateUnmutedCompromisedPasswords);
+  }
+
  protected:
+  base::test::ScopedFeatureList feature_list_;
   web::WebTaskEnvironment environment_;
   IOSChromeScopedTestingLocalState scoped_testing_local_state_;
-  std::unique_ptr<TestChromeBrowserState> browser_state_;
+  raw_ptr<ProfileIOS> profile_;
   scoped_refptr<TestPasswordStore> store_;
-  AuthenticationService* auth_service_;
+  raw_ptr<AuthenticationService> auth_service_;
   scoped_refptr<IOSChromePasswordCheckManager> password_check_;
+  TestProfileManagerIOS profile_manager_;
   SafetyCheckMediator* mediator_;
-  PrefService* pref_service_;
+  raw_ptr<PrefService> pref_service_;
+  raw_ptr<PrefService> local_pref_service_;
   PrefBackedBoolean* safe_browsing_preference_;
 };
 
@@ -294,13 +328,13 @@ TEST_F(SafetyCheckMediatorTest, TimestampSetIfIssueFound) {
       PasswordCheckRowStateUnmutedCompromisedPasswords;
   [mediator_ resetsCheckStartItemIfNeeded];
 
-  base::Time lastCompletedCheck =
-      base::Time::FromDoubleT([[NSUserDefaults standardUserDefaults]
+  base::Time lastCompletedCheck = base::Time::FromSecondsSinceUnixEpoch(
+      [[NSUserDefaults standardUserDefaults]
           doubleForKey:kTimestampOfLastIssueFoundKey]);
   EXPECT_GE(lastCompletedCheck, base::Time::Now() - base::Seconds(1));
   EXPECT_LE(lastCompletedCheck, base::Time::Now() + base::Seconds(1));
 
-  resetNSUserDefaultsForTesting();
+  ResetNSUserDefaultsForTesting();
 }
 
 TEST_F(SafetyCheckMediatorTest, TimestampResetIfNoIssuesInCheck) {
@@ -309,8 +343,8 @@ TEST_F(SafetyCheckMediatorTest, TimestampResetIfNoIssuesInCheck) {
       PasswordCheckRowStateUnmutedCompromisedPasswords;
   [mediator_ resetsCheckStartItemIfNeeded];
 
-  base::Time lastCompletedCheck =
-      base::Time::FromDoubleT([[NSUserDefaults standardUserDefaults]
+  base::Time lastCompletedCheck = base::Time::FromSecondsSinceUnixEpoch(
+      [[NSUserDefaults standardUserDefaults]
           doubleForKey:kTimestampOfLastIssueFoundKey]);
   EXPECT_GE(lastCompletedCheck, base::Time::Now() - base::Seconds(1));
   EXPECT_LE(lastCompletedCheck, base::Time::Now() + base::Seconds(1));
@@ -319,12 +353,31 @@ TEST_F(SafetyCheckMediatorTest, TimestampResetIfNoIssuesInCheck) {
   mediator_.passwordCheckRowState = PasswordCheckRowStateSafe;
   [mediator_ resetsCheckStartItemIfNeeded];
 
-  lastCompletedCheck =
-      base::Time::FromDoubleT([[NSUserDefaults standardUserDefaults]
+  lastCompletedCheck = base::Time::FromSecondsSinceUnixEpoch(
+      [[NSUserDefaults standardUserDefaults]
           doubleForKey:kTimestampOfLastIssueFoundKey]);
   EXPECT_EQ(base::Time(), lastCompletedCheck);
 
-  resetNSUserDefaultsForTesting();
+  ResetNSUserDefaultsForTesting();
+}
+
+// Checks the timestamp of the latest run is set after the Safety Check
+// completes its run.
+TEST_F(SafetyCheckMediatorTest, TimestampSetForLatestRun) {
+  mediator_.checkDidRun = true;
+
+  mediator_.passwordCheckRowState =
+      PasswordCheckRowStateUnmutedCompromisedPasswords;
+
+  [mediator_ resetsCheckStartItemIfNeeded];
+
+  base::Time lastRunTime =
+      local_pref_service_->GetTime(prefs::kIosSettingsSafetyCheckLastRunTime);
+
+  EXPECT_GE(lastRunTime, base::Time::Now() - base::Seconds(1));
+  EXPECT_LE(lastRunTime, base::Time::Now() + base::Seconds(1));
+
+  ResetLocalPrefsForTesting();
 }
 
 #pragma mark - Safe Browsing check tests
@@ -435,32 +488,8 @@ TEST_F(SafetyCheckMediatorTest, PasswordCheckSafeCheck) {
 }
 
 // Tests that the content of the `passwordCheckItem` is as expected when in safe
-// state and when the kIOSPasswordCheckup feature is disabled.
-TEST_F(SafetyCheckMediatorTest, PasswordCheckSafeUIWithoutKIOSPasswordCheckup) {
-  // Disable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndDisableFeature(
-      password_manager::features::kIOSPasswordCheckup);
-
-  mediator_.passwordCheckRowState = PasswordCheckRowStateSafe;
-  [mediator_ reconfigurePasswordCheckItem];
-  EXPECT_NSEQ(mediator_.passwordCheckItem.detailText,
-              base::SysUTF16ToNSString(l10n_util::GetPluralStringFUTF16(
-                  IDS_IOS_PASSWORD_CHECKUP_COMPROMISED_COUNT, 0)));
-  EXPECT_EQ(mediator_.passwordCheckItem.trailingImage, SafeImage());
-  EXPECT_TRUE([mediator_.passwordCheckItem.trailingImageTintColor
-      isEqual:GreenColor()]);
-  EXPECT_EQ(mediator_.passwordCheckItem.accessoryType,
-            UITableViewCellAccessoryNone);
-}
-
-// Tests that the content of the `passwordCheckItem` is as expected when in safe
-// state and when the kIOSPasswordCheckup feature is enabled.
-TEST_F(SafetyCheckMediatorTest, PasswordCheckSafeUIWithKIOSPasswordCheckup) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
+// state.
+TEST_F(SafetyCheckMediatorTest, PasswordCheckSafeUI) {
   mediator_.passwordCheckRowState = PasswordCheckRowStateSafe;
   [mediator_ reconfigurePasswordCheckItem];
   EXPECT_NSEQ(mediator_.passwordCheckItem.detailText,
@@ -476,44 +505,12 @@ TEST_F(SafetyCheckMediatorTest, PasswordCheckSafeUIWithKIOSPasswordCheckup) {
 // Tests that only having a leaked password results in an umuted compromised
 // password row state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckUnmutedCompromisedPasswordsCheck) {
-  AddSavedInsecureForm(InsecureType::kLeaked);
-  mediator_.currentPasswordCheckState = PasswordCheckState::kRunning;
-  [mediator_ passwordCheckStateDidChange:PasswordCheckState::kIdle];
-  EXPECT_EQ(mediator_.passwordCheckRowState,
-            PasswordCheckRowStateUnmutedCompromisedPasswords);
+  CheckCompromisedRowState();
 }
 
 // Tests that the content of the `passwordCheckItem` is as expected when in
-// compromised state and when the kIOSPasswordCheckup feature is disabled.
-TEST_F(SafetyCheckMediatorTest,
-       PasswordCheckUnmutedCompromisedPasswordsUIWithoutKIOSPasswordCheckup) {
-  // Disable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndDisableFeature(
-      password_manager::features::kIOSPasswordCheckup);
-
-  AddSavedInsecureForm(InsecureType::kLeaked);
-  mediator_.passwordCheckRowState =
-      PasswordCheckRowStateUnmutedCompromisedPasswords;
-  [mediator_ reconfigurePasswordCheckItem];
-  EXPECT_NSEQ(mediator_.passwordCheckItem.detailText,
-              base::SysUTF16ToNSString(l10n_util::GetPluralStringFUTF16(
-                  IDS_IOS_CHECK_PASSWORDS_COMPROMISED_COUNT, 1)));
-  EXPECT_EQ(mediator_.passwordCheckItem.trailingImage, UnsafeImage());
-  EXPECT_TRUE(
-      [mediator_.passwordCheckItem.trailingImageTintColor isEqual:RedColor()]);
-  EXPECT_EQ(mediator_.passwordCheckItem.accessoryType,
-            UITableViewCellAccessoryDisclosureIndicator);
-}
-
-// Tests that the content of the `passwordCheckItem` is as expected when in
-// compromised state and when the kIOSPasswordCheckup feature is enabled.
-TEST_F(SafetyCheckMediatorTest,
-       PasswordCheckUnmutedCompromisedPasswordsUIWithKIOSPasswordCheckup) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
+// compromised state.
+TEST_F(SafetyCheckMediatorTest, PasswordCheckUnmutedCompromisedPasswordsUI) {
   AddSavedInsecureForm(InsecureType::kLeaked);
   mediator_.passwordCheckRowState =
       PasswordCheckRowStateUnmutedCompromisedPasswords;
@@ -529,28 +526,27 @@ TEST_F(SafetyCheckMediatorTest,
 }
 
 // Tests that only having a reused password results in a reused password row
-// state. kIOSPasswordCheckup feature needs to be enabled for this test.
+// state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckReusedPasswordsCheck) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
+  base::HistogramTester histogram_tester;
 
   AddSavedInsecureForm(InsecureType::kReused);
   AddSavedInsecureForm(InsecureType::kReused, /*is_muted=*/false,
                        /*signon_realm=*/"http://www.example1.com/");
   mediator_.currentPasswordCheckState = PasswordCheckState::kRunning;
   [mediator_ passwordCheckStateDidChange:PasswordCheckState::kIdle];
+
+  histogram_tester.ExpectUniqueSample(
+      kSafetyCheckMetricsPasswords,
+      safety_check::PasswordsStatus::kReusedPasswordsExist, 1);
+
   EXPECT_EQ(mediator_.passwordCheckRowState,
             PasswordCheckRowStateReusedPasswords);
 }
 
 // Tests that the content of the `passwordCheckItem` is as expected when in
-// reused state. kIOSPasswordCheckup feature needs to be enabled for this test.
+// reused state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckReusedPasswordsUI) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   AddSavedInsecureForm(InsecureType::kReused);
   AddSavedInsecureForm(InsecureType::kReused, /*is_muted=*/false,
                        /*signon_realm=*/"http://www.example1.com/");
@@ -565,26 +561,24 @@ TEST_F(SafetyCheckMediatorTest, PasswordCheckReusedPasswordsUI) {
 }
 
 // Tests that only having a weak password results in a weak password row state.
-// kIOSPasswordCheckup feature needs to be enabled for this test.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckWeakPasswordsCheck) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
+  base::HistogramTester histogram_tester;
 
   AddSavedInsecureForm(InsecureType::kWeak);
   mediator_.currentPasswordCheckState = PasswordCheckState::kRunning;
   [mediator_ passwordCheckStateDidChange:PasswordCheckState::kIdle];
+
+  histogram_tester.ExpectUniqueSample(
+      kSafetyCheckMetricsPasswords,
+      safety_check::PasswordsStatus::kWeakPasswordsExist, 1);
+
   EXPECT_EQ(mediator_.passwordCheckRowState,
             PasswordCheckRowStateWeakPasswords);
 }
 
 // Tests that the content of the `passwordCheckItem` is as expected when in weak
-// state. kIOSPasswordCheckup feature needs to be enabled for this test.
+// state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckWeakPasswordsUI) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   AddSavedInsecureForm(InsecureType::kWeak);
   mediator_.passwordCheckRowState = PasswordCheckRowStateWeakPasswords;
   [mediator_ reconfigurePasswordCheckItem];
@@ -597,28 +591,25 @@ TEST_F(SafetyCheckMediatorTest, PasswordCheckWeakPasswordsUI) {
 }
 
 // Tests that only having a dismissed compromsied warning results in a dismissed
-// warning row state. kIOSPasswordCheckup feature needs to be enabled for this
-// test.
+// warning row state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckDismissedWarningsCheck) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
+  base::HistogramTester histogram_tester;
 
   AddSavedInsecureForm(InsecureType::kLeaked, /*is_muted=*/true);
   mediator_.currentPasswordCheckState = PasswordCheckState::kRunning;
   [mediator_ passwordCheckStateDidChange:PasswordCheckState::kIdle];
+
+  histogram_tester.ExpectUniqueSample(
+      kSafetyCheckMetricsPasswords,
+      safety_check::PasswordsStatus::kMutedCompromisedExist, 1);
+
   EXPECT_EQ(mediator_.passwordCheckRowState,
             PasswordCheckRowStateDismissedWarnings);
 }
 
 // Tests that the content of the `passwordCheckItem` is as expected when in
-// dismissed warning state. kIOSPasswordCheckup feature needs to be enabled for
-// this test.
+// dismissed warning state.
 TEST_F(SafetyCheckMediatorTest, PasswordCheckDismissedWarningsUI) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   AddSavedInsecureForm(InsecureType::kLeaked, /*is_muted=*/true);
   mediator_.passwordCheckRowState = PasswordCheckRowStateDismissedWarnings;
   [mediator_ reconfigurePasswordCheckItem];
@@ -660,7 +651,7 @@ TEST_F(SafetyCheckMediatorTest, OmahaRespondsUpToDate) {
   details.upgrade_url = GURL("http://foobar.org");
   [mediator_ handleOmahaResponse:details];
   EXPECT_EQ(mediator_.updateCheckRowState, UpdateCheckRowStateUpToDate);
-  resetNSUserDefaultsForTesting();
+  ResetNSUserDefaultsForTesting();
 }
 
 TEST_F(SafetyCheckMediatorTest, UpdateCheckUpToDateUI) {
@@ -683,11 +674,13 @@ TEST_F(SafetyCheckMediatorTest, OmahaRespondsOutOfDateAndUpdatesInfobarTime) {
   [mediator_ handleOmahaResponse:details];
   EXPECT_EQ(mediator_.updateCheckRowState, UpdateCheckRowStateOutOfDate);
 
-  NSDate* lastDisplay = [[NSUserDefaults standardUserDefaults]
-      objectForKey:kLastInfobarDisplayTimeKey];
-  EXPECT_GE([lastDisplay timeIntervalSinceNow], -1);
-  EXPECT_LE([lastDisplay timeIntervalSinceNow], 1);
-  resetNSUserDefaultsForTesting();
+  PrefService* pref_service = GetApplicationContext()->GetLocalState();
+  const base::Time last_display =
+      pref_service->GetTime(kLastInfobarDisplayTimeKey);
+  EXPECT_GE((base::Time::Now() - last_display).InSeconds(), -1);
+  EXPECT_LE((base::Time::Now() - last_display).InSeconds(), 1);
+  ResetNSUserDefaultsForTesting();
+  ResetLocalPrefsForTesting();
 }
 
 TEST_F(SafetyCheckMediatorTest, UpdateCheckOutOfDateUI) {
@@ -771,28 +764,8 @@ TEST_F(SafetyCheckMediatorTest, PasswordClickableUnmutedCompromisedPasswords) {
   EXPECT_TRUE([mediator_ isItemClickable:passwordItem]);
 }
 
-// When in safe state, the password check item is non clickable when the
-// kIOSPasswordCheckup feature is disabled.
-TEST_F(SafetyCheckMediatorTest, PasswordNonclickableSafe) {
-  // Disable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndDisableFeature(
-      password_manager::features::kIOSPasswordCheckup);
-
-  mediator_.passwordCheckRowState = PasswordCheckRowStateSafe;
-  [mediator_ reconfigurePasswordCheckItem];
-  TableViewItem* passwordItem = [[TableViewItem alloc]
-      initWithType:SafetyCheckItemType::PasswordItemType];
-  EXPECT_FALSE([mediator_ isItemClickable:passwordItem]);
-}
-
-// When in safe state, the password check item is clickable when the
-// kIOSPasswordCheckup feature is enabled.
+// When in safe state, the password check item is clickable.
 TEST_F(SafetyCheckMediatorTest, PasswordClickableSafe) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   mediator_.passwordCheckRowState = PasswordCheckRowStateSafe;
   [mediator_ reconfigurePasswordCheckItem];
   TableViewItem* passwordItem = [[TableViewItem alloc]
@@ -800,13 +773,8 @@ TEST_F(SafetyCheckMediatorTest, PasswordClickableSafe) {
   EXPECT_TRUE([mediator_ isItemClickable:passwordItem]);
 }
 
-// Reused passwords are only available when the kIOSPasswordCheckup feature is
-// enabled.
+// When in reused state, the password check item is clickable.
 TEST_F(SafetyCheckMediatorTest, PasswordClickableReusedPasswords) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   mediator_.passwordCheckRowState = PasswordCheckRowStateReusedPasswords;
   [mediator_ reconfigurePasswordCheckItem];
   TableViewItem* passwordItem = [[TableViewItem alloc]
@@ -814,13 +782,8 @@ TEST_F(SafetyCheckMediatorTest, PasswordClickableReusedPasswords) {
   EXPECT_TRUE([mediator_ isItemClickable:passwordItem]);
 }
 
-// Weak passwords are only available when the kIOSPasswordCheckup feature is
-// enabled.
+// When in weak state, the password check item is clickable.
 TEST_F(SafetyCheckMediatorTest, PasswordClickableWeakPasswords) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   mediator_.passwordCheckRowState = PasswordCheckRowStateWeakPasswords;
   [mediator_ reconfigurePasswordCheckItem];
   TableViewItem* passwordItem = [[TableViewItem alloc]
@@ -828,13 +791,8 @@ TEST_F(SafetyCheckMediatorTest, PasswordClickableWeakPasswords) {
   EXPECT_TRUE([mediator_ isItemClickable:passwordItem]);
 }
 
-// Dismissed warnings are only available when the kIOSPasswordCheckup feature is
-// enabled.
+// When in dismissed warnings state, the password check item is clickable.
 TEST_F(SafetyCheckMediatorTest, PasswordClickableDismissedWarnings) {
-  // Enable Password Checkup feature.
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   mediator_.passwordCheckRowState = PasswordCheckRowStateDismissedWarnings;
   [mediator_ reconfigurePasswordCheckItem];
   TableViewItem* passwordItem = [[TableViewItem alloc]
@@ -860,4 +818,48 @@ TEST_F(SafetyCheckMediatorTest, CheckNowClickableAll) {
   mediator_.checkStartState = CheckStartStateDefault;
   [mediator_ reconfigureCheckStartSection];
   EXPECT_TRUE([mediator_ isItemClickable:checkStartItem]);
+}
+
+// Tests that the notifications opt-in button correctly displays the "Turn Off"
+// notifications prompt when notifications are currently enabled.
+TEST_F(SafetyCheckMediatorTest, NotificationsOptInButtonPromptsTurnOff) {
+  feature_list_.InitWithFeatures({kSafetyCheckNotifications}, {});
+
+  mediator_ = [[SafetyCheckMediator alloc]
+      initWithUserPrefService:pref_service_
+             localPrefService:local_pref_service_
+         passwordCheckManager:password_check_
+                  authService:auth_service_
+                  syncService:syncService()
+                     referrer:password_manager::PasswordCheckReferrer::
+                                  kSafetyCheck];
+
+  [mediator_ reconfigureNotificationsSection:YES];
+
+  EXPECT_NSEQ(
+      mediator_.notificationsOptInItem.text,
+      GetNSString(
+          IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_OFF_NOTIFICATIONS_ELLIPSIS));
+}
+
+// Tests that the notifications opt-in button correctly displays the "Turn On"
+// notifications prompt when notifications are currently disabled.
+TEST_F(SafetyCheckMediatorTest, NotificationsOptInButtonPromptsTurnOn) {
+  feature_list_.InitWithFeatures({kSafetyCheckNotifications}, {});
+
+  mediator_ = [[SafetyCheckMediator alloc]
+      initWithUserPrefService:pref_service_
+             localPrefService:local_pref_service_
+         passwordCheckManager:password_check_
+                  authService:auth_service_
+                  syncService:syncService()
+                     referrer:password_manager::PasswordCheckReferrer::
+                                  kSafetyCheck];
+
+  [mediator_ reconfigureNotificationsSection:NO];
+
+  EXPECT_NSEQ(
+      mediator_.notificationsOptInItem.text,
+      GetNSString(
+          IDS_IOS_SAFETY_CHECK_NOTIFICATIONS_TURN_ON_NOTIFICATIONS_ELLIPSIS));
 }

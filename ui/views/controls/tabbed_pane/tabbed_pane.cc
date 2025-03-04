@@ -14,7 +14,6 @@
 #include "cc/paint/paint_flags.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "ui/accessibility/ax_action_data.h"
-#include "ui/accessibility/ax_node_data.h"
 #include "ui/base/default_style.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/base/resource/resource_bundle.h"
@@ -71,9 +70,15 @@ TabbedPaneTab::TabbedPaneTab(TabbedPane* tabbed_pane,
 
   // Use leaf so that name is spoken by screen reader without exposing the
   // children.
-  GetViewAccessibility().OverrideIsLeaf(true);
+  GetViewAccessibility().SetIsLeaf(true);
+  GetViewAccessibility().SetRole(ax::mojom::Role::kTab);
+  UpdateAccessibleName();
 
   OnStateChanged();
+
+  title_text_changed_callback_ =
+      title_->AddTextChangedCallback(base::BindRepeating(
+          &TabbedPaneTab::UpdateAccessibleName, base::Unretained(this)));
 }
 
 TabbedPaneTab::~TabbedPaneTab() = default;
@@ -116,12 +121,12 @@ void TabbedPaneTab::OnMouseExited(const ui::MouseEvent& event) {
 
 void TabbedPaneTab::OnGestureEvent(ui::GestureEvent* event) {
   switch (event->type()) {
-    case ui::ET_GESTURE_TAP_DOWN:
-    case ui::ET_GESTURE_TAP:
+    case ui::EventType::kGestureTapDown:
+    case ui::EventType::kGestureTap:
       // SelectTab also sets the right tab color.
       tabbed_pane_->SelectTab(this);
       break;
-    case ui::ET_GESTURE_TAP_CANCEL:
+    case ui::EventType::kGestureTapCancel:
       SetState(selected() ? State::kActive : State::kInactive);
       break;
     default:
@@ -130,19 +135,14 @@ void TabbedPaneTab::OnGestureEvent(ui::GestureEvent* event) {
   event->SetHandled();
 }
 
-gfx::Size TabbedPaneTab::CalculatePreferredSize() const {
+gfx::Size TabbedPaneTab::CalculatePreferredSize(
+    const SizeBounds& available_size) const {
   int width = preferred_title_width_ + GetInsets().width();
   if (tabbed_pane_->GetStyle() == TabbedPane::TabStripStyle::kHighlight &&
-      tabbed_pane_->GetOrientation() == TabbedPane::Orientation::kVertical)
+      tabbed_pane_->GetOrientation() == TabbedPane::Orientation::kVertical) {
     width = std::max(width, 192);
+  }
   return gfx::Size(width, 32);
-}
-
-void TabbedPaneTab::GetAccessibleNodeData(ui::AXNodeData* data) {
-  data->role = ax::mojom::Role::kTab;
-  data->SetName(title_->GetText());
-  data->SetNameFrom(ax::mojom::NameFrom::kContents);
-  data->AddBoolAttribute(ax::mojom::BoolAttribute::kSelected, selected());
 }
 
 bool TabbedPaneTab::HandleAccessibleAction(
@@ -180,8 +180,12 @@ bool TabbedPaneTab::OnKeyPressed(const ui::KeyEvent& event) {
   const ui::KeyboardCode key = event.key_code();
   if (tabbed_pane_->GetOrientation() == TabbedPane::Orientation::kHorizontal) {
     // Use left and right arrows to navigate tabs in horizontal orientation.
+    int delta = key == ui::VKEY_RIGHT ? 1 : -1;
+    if (base::i18n::IsRTL()) {
+      delta = key == ui::VKEY_RIGHT ? -1 : 1;
+    }
     return (key == ui::VKEY_LEFT || key == ui::VKEY_RIGHT) &&
-           tabbed_pane_->MoveSelectionBy(key == ui::VKEY_RIGHT ? 1 : -1);
+           tabbed_pane_->MoveSelectionBy(delta);
   }
   // Use up and down arrows to navigate tabs in vertical orientation.
   return (key == ui::VKEY_UP || key == ui::VKEY_DOWN) &&
@@ -194,8 +198,9 @@ void TabbedPaneTab::OnThemeChanged() {
 }
 
 void TabbedPaneTab::SetState(State state) {
-  if (state == state_)
+  if (state == state_) {
     return;
+  }
   state_ = state;
   OnStateChanged();
   SchedulePaint();
@@ -203,37 +208,39 @@ void TabbedPaneTab::SetState(State state) {
 
 void TabbedPaneTab::OnStateChanged() {
   // Update colors that depend on state if present in a Widget hierarchy.
-  if (GetWidget())
+  if (GetWidget()) {
     UpdateTitleColor();
+  }
 
-    // TabbedPaneTab design spec dictates special handling of font weight for
-    // the windows platform when dealing with border style tabs.
-#if BUILDFLAG(IS_WIN)
-  gfx::Font::Weight font_weight = gfx::Font::Weight::BOLD;
-#else
-  gfx::Font::Weight font_weight = gfx::Font::Weight::MEDIUM;
-#endif
-  int font_size_delta = ui::kLabelFontSizeDelta;
-
+  // TabbedPaneTab design spec dictates special handling of font weight for
+  // the windows platform when dealing with border style tabs.
   if (tabbed_pane_->GetStyle() == TabbedPane::TabStripStyle::kHighlight) {
     // Notify assistive tools to update this tab's selected status. The way
     // ChromeOS accessibility is implemented right now, firing almost any event
     // will work, we just need to trigger its state to be refreshed.
-    if (state_ == State::kInactive)
+    if (state_ == State::kInactive) {
+      // TODO(crbug.com/325137417): This view doesn't set the AXCheckedState, it
+      // only sets the kSelected attribute. Investigate why this is and whether
+      // we should fire another type of event automatically from the
+      // accessibility cache.
       NotifyAccessibilityEvent(ax::mojom::Event::kCheckedStateChanged, true);
+    }
 
     // Style the tab text according to the spec for highlight style tabs. We no
     // longer have windows specific bolding of text in this case.
-    font_size_delta = 1;
-    if (state_ == State::kActive)
-      font_weight = gfx::Font::Weight::BOLD;
-    else
-      font_weight = gfx::Font::Weight::MEDIUM;
+    int font_size_delta = 1;
+    gfx::Font::Weight font_weight = (state_ == State::kActive)
+                                        ? font_weight = gfx::Font::Weight::BOLD
+                                        : gfx::Font::Weight::MEDIUM;
+    ui::ResourceBundle& rb = ui::ResourceBundle::GetSharedInstance();
+    title_->SetFontList(
+        rb.GetFontListForDetails(ui::ResourceBundle::FontDetails(
+            std::string(), font_size_delta, font_weight)));
+  } else {
+    title_->SetTextStyle(views::style::STYLE_BODY_3_EMPHASIS);
   }
 
-  ui::ResourceBundle& rb = ui::ResourceBundle::GetSharedInstance();
-  title_->SetFontList(rb.GetFontListForDetails(ui::ResourceBundle::FontDetails(
-      std::string(), font_size_delta, font_weight)));
+  UpdateAccessibleSelection();
 }
 
 void TabbedPaneTab::OnPaint(gfx::Canvas* canvas) {
@@ -267,10 +274,10 @@ void TabbedPaneTab::UpdatePreferredTitleWidth() {
   // and reserve that amount of space.
   const State old_state = state_;
   SetState(State::kActive);
-  preferred_title_width_ = title_->GetPreferredSize().width();
+  preferred_title_width_ = title_->GetPreferredSize({}).width();
   SetState(State::kInactive);
   preferred_title_width_ =
-      std::max(preferred_title_width_, title_->GetPreferredSize().width());
+      std::max(preferred_title_width_, title_->GetPreferredSize({}).width());
   SetState(old_state);
 }
 
@@ -282,14 +289,29 @@ void TabbedPaneTab::UpdateTitleColor() {
   title_->SetEnabledColor(font_color);
 }
 
-BEGIN_METADATA(TabbedPaneTab, View)
+void TabbedPaneTab::UpdateAccessibleName() {
+  if (title_->GetText().empty()) {
+    GetViewAccessibility().SetName(
+        std::string(), ax::mojom::NameFrom::kAttributeExplicitlyEmpty);
+  } else {
+    GetViewAccessibility().SetName(title_->GetText(),
+                                   ax::mojom::NameFrom::kContents);
+  }
+  tabbed_pane_->UpdateAccessibleName();
+}
+
+void TabbedPaneTab::UpdateAccessibleSelection() {
+  GetViewAccessibility().SetIsSelected(selected());
+}
+
+BEGIN_METADATA(TabbedPaneTab)
 END_METADATA
 
 // static
-constexpr size_t TabStrip::kNoSelectedTab;
+constexpr size_t TabbedPaneTabStrip::kNoSelectedTab;
 
-TabStrip::TabStrip(TabbedPane::Orientation orientation,
-                   TabbedPane::TabStripStyle style)
+TabbedPaneTabStrip::TabbedPaneTabStrip(TabbedPane::Orientation orientation,
+                                       TabbedPane::TabStripStyle style)
     : orientation_(orientation), style_(style) {
   std::unique_ptr<BoxLayout> layout;
   if (orientation == TabbedPane::Orientation::kHorizontal) {
@@ -308,7 +330,7 @@ TabStrip::TabStrip(TabbedPane::Orientation orientation,
   }
   SetLayoutManager(std::move(layout));
 
-  GetViewAccessibility().OverrideRole(ax::mojom::Role::kNone);
+  GetViewAccessibility().SetRole(ax::mojom::Role::kNone);
 
   // These durations are taken from the Paper Tabs source:
   // https://github.com/PolymerElements/paper-tabs/blob/master/paper-tabs.html
@@ -317,24 +339,26 @@ TabStrip::TabStrip(TabbedPane::Orientation orientation,
   contract_animation_->SetDuration(base::Milliseconds(180));
 }
 
-TabStrip::~TabStrip() = default;
+TabbedPaneTabStrip::~TabbedPaneTabStrip() = default;
 
-void TabStrip::AnimationProgressed(const gfx::Animation* animation) {
+void TabbedPaneTabStrip::AnimationProgressed(const gfx::Animation* animation) {
   SchedulePaint();
 }
 
-void TabStrip::AnimationEnded(const gfx::Animation* animation) {
-  if (animation == expand_animation_.get())
+void TabbedPaneTabStrip::AnimationEnded(const gfx::Animation* animation) {
+  if (animation == expand_animation_.get()) {
     contract_animation_->Start();
+  }
 }
 
-void TabStrip::OnSelectedTabChanged(TabbedPaneTab* from_tab,
-                                    TabbedPaneTab* to_tab,
-                                    bool animate) {
+void TabbedPaneTabStrip::OnSelectedTabChanged(TabbedPaneTab* from_tab,
+                                              TabbedPaneTab* to_tab,
+                                              bool animate) {
   DCHECK(!from_tab->selected());
   DCHECK(to_tab->selected());
-  if (!animate || !GetWidget())
+  if (!animate || !GetWidget()) {
     return;
+  }
 
   if (GetOrientation() == TabbedPane::Orientation::kHorizontal) {
     animating_from_ = {from_tab->GetMirroredX(),
@@ -352,12 +376,12 @@ void TabStrip::OnSelectedTabChanged(TabbedPaneTab* from_tab,
   expand_animation_->Start();
 }
 
-TabbedPaneTab* TabStrip::GetSelectedTab() const {
+TabbedPaneTab* TabbedPaneTabStrip::GetSelectedTab() const {
   size_t index = GetSelectedTabIndex();
   return index == kNoSelectedTab ? nullptr : GetTabAtIndex(index);
 }
 
-TabbedPaneTab* TabStrip::GetTabAtDeltaFromSelected(int delta) const {
+TabbedPaneTab* TabbedPaneTabStrip::GetTabAtDeltaFromSelected(int delta) const {
   const size_t selected_tab_index = GetSelectedTabIndex();
   DCHECK_NE(kNoSelectedTab, selected_tab_index);
   const size_t num_children = children().size();
@@ -369,45 +393,32 @@ TabbedPaneTab* TabStrip::GetTabAtDeltaFromSelected(int delta) const {
                        num_children);
 }
 
-TabbedPaneTab* TabStrip::GetTabAtIndex(size_t index) const {
+TabbedPaneTab* TabbedPaneTabStrip::GetTabAtIndex(size_t index) const {
   DCHECK_LT(index, children().size());
   return static_cast<TabbedPaneTab*>(children()[index]);
 }
 
-size_t TabStrip::GetSelectedTabIndex() const {
+size_t TabbedPaneTabStrip::GetSelectedTabIndex() const {
   for (size_t i = 0; i < children().size(); ++i)
-    if (GetTabAtIndex(i)->selected())
+    if (GetTabAtIndex(i)->selected()) {
       return i;
+    }
   return kNoSelectedTab;
 }
 
-TabbedPane::Orientation TabStrip::GetOrientation() const {
+TabbedPane::Orientation TabbedPaneTabStrip::GetOrientation() const {
   return orientation_;
 }
 
-TabbedPane::TabStripStyle TabStrip::GetStyle() const {
+TabbedPane::TabStripStyle TabbedPaneTabStrip::GetStyle() const {
   return style_;
 }
 
-gfx::Size TabStrip::CalculatePreferredSize() const {
-  // In horizontal mode, use the preferred size as determined by the largest
-  // child or the minimum size necessary to display the tab titles, whichever is
-  // larger.
-  if (GetOrientation() == TabbedPane::Orientation::kHorizontal) {
-    return GetLayoutManager()->GetPreferredSize(this);
-  }
-
-  // In vertical mode, Tabstrips don't require any minimum space along their
-  // main axis, and can shrink all the way to zero size.  Only the cross axis
-  // thickness matters.
-  const gfx::Size size = GetLayoutManager()->GetPreferredSize(this);
-  return gfx::Size(size.width(), 0);
-}
-
-void TabStrip::OnPaintBorder(gfx::Canvas* canvas) {
+void TabbedPaneTabStrip::OnPaintBorder(gfx::Canvas* canvas) {
   // Do not draw border line in kHighlight mode.
-  if (GetStyle() == TabbedPane::TabStripStyle::kHighlight)
+  if (GetStyle() == TabbedPane::TabStripStyle::kHighlight) {
     return;
+  }
 
   // First, draw the unselected border across the TabStrip's entire width or
   // height, depending on the orientation of the tab alignment. The area
@@ -430,8 +441,9 @@ void TabStrip::OnPaintBorder(gfx::Canvas* canvas) {
                    GetColorProvider()->GetColor(ui::kColorTabContentSeparator));
 
   TabbedPaneTab* tab = GetSelectedTab();
-  if (!tab)
+  if (!tab) {
     return;
+  }
 
   // Now, figure out the range to draw the selection marker underneath. There
   // are three states here:
@@ -483,13 +495,14 @@ void TabStrip::OnPaintBorder(gfx::Canvas* canvas) {
   constexpr int kSelectedBorderThickness = 2;
   rect = gfx::Rect(min_main_axis, max_cross_axis - kSelectedBorderThickness,
                    max_main_axis - min_main_axis, kSelectedBorderThickness);
-  if (!is_horizontal)
+  if (!is_horizontal) {
     rect.Transpose();
+  }
   canvas->FillRect(rect,
                    GetColorProvider()->GetColor(ui::kColorTabBorderSelected));
 }
 
-BEGIN_METADATA(TabStrip, View)
+BEGIN_METADATA(TabbedPaneTabStrip)
 ADD_READONLY_PROPERTY_METADATA(size_t, SelectedTabIndex)
 ADD_READONLY_PROPERTY_METADATA(TabbedPane::Orientation, Orientation)
 ADD_READONLY_PROPERTY_METADATA(TabbedPane::TabStripStyle, Style)
@@ -500,11 +513,10 @@ TabbedPane::TabbedPane(TabbedPane::Orientation orientation,
                        bool scrollable) {
   DCHECK(orientation != TabbedPane::Orientation::kHorizontal ||
          style != TabbedPane::TabStripStyle::kHighlight);
-  auto* layout = SetLayoutManager(std::make_unique<views::FlexLayout>());
   if (orientation == TabbedPane::Orientation::kHorizontal)
-    layout->SetOrientation(views::LayoutOrientation::kVertical);
+    SetOrientation(views::LayoutOrientation::kVertical);
 
-  auto tab_strip = std::make_unique<TabStrip>(orientation, style);
+  auto tab_strip = std::make_unique<TabbedPaneTabStrip>(orientation, style);
   if (scrollable) {
     scroll_view_ = AddChildView(
         std::make_unique<ScrollView>(ScrollView::ScrollWithLayers::kEnabled));
@@ -525,6 +537,8 @@ TabbedPane::TabbedPane(TabbedPane::Orientation orientation,
   AddAccelerator(
       ui::Accelerator(ui::VKEY_TAB, ui::EF_CONTROL_DOWN | ui::EF_SHIFT_DOWN));
   AddAccelerator(ui::Accelerator(ui::VKEY_TAB, ui::EF_CONTROL_DOWN));
+  GetViewAccessibility().SetRole(ax::mojom::Role::kTabList);
+  UpdateAccessibleName();
 }
 
 TabbedPane::~TabbedPane() = default;
@@ -543,36 +557,41 @@ void TabbedPane::AddTabInternal(size_t index,
                                 std::unique_ptr<View> contents) {
   DCHECK_LE(index, GetTabCount());
   contents->SetVisible(false);
-  contents->GetViewAccessibility().OverrideRole(ax::mojom::Role::kTabPanel);
-  if (!title.empty())
-    contents->GetViewAccessibility().OverrideName(title);
+  contents->GetViewAccessibility().SetRole(ax::mojom::Role::kTabPanel);
+  if (!title.empty()) {
+    contents->GetViewAccessibility().SetName(title,
+                                             ax::mojom::NameFrom::kAttribute);
+  }
 
   tab_strip_->AddChildViewAt(
       std::make_unique<TabbedPaneTab>(this, title, contents.get()), index);
   contents_->AddChildViewAt(std::move(contents), index);
-  if (!GetSelectedTab())
+  if (!GetSelectedTab()) {
     SelectTabAt(index);
+  }
 
   PreferredSizeChanged();
 }
 
 void TabbedPane::SelectTab(TabbedPaneTab* new_selected_tab, bool animate) {
   TabbedPaneTab* old_selected_tab = tab_strip_->GetSelectedTab();
-  if (old_selected_tab == new_selected_tab)
+  if (old_selected_tab == new_selected_tab) {
     return;
+  }
 
   new_selected_tab->SetSelected(true);
   if (old_selected_tab) {
-    if (old_selected_tab->HasFocus())
+    if (old_selected_tab->HasFocus()) {
       new_selected_tab->RequestFocus();
+    }
     old_selected_tab->SetSelected(false);
     tab_strip_->OnSelectedTabChanged(old_selected_tab, new_selected_tab,
                                      animate);
 
-    new_selected_tab->NotifyAccessibilityEvent(ax::mojom::Event::kSelection,
-                                               true);
     NotifyAccessibilityEvent(ax::mojom::Event::kSelectedChildrenChanged, true);
   }
+
+  UpdateAccessibleName();
   tab_strip_->SchedulePaint();
 
   FocusManager* focus_manager = new_selected_tab->contents()->GetFocusManager();
@@ -591,8 +610,9 @@ void TabbedPane::SelectTab(TabbedPaneTab* new_selected_tab, bool animate) {
 
 void TabbedPane::SelectTabAt(size_t index, bool animate) {
   TabbedPaneTab* tab = tab_strip_->GetTabAtIndex(index);
-  if (tab)
+  if (tab) {
     SelectTab(tab, animate);
+  }
 }
 
 ScrollView* TabbedPane::GetScrollView() {
@@ -620,10 +640,27 @@ View* TabbedPane::GetSelectedTabContentView() {
 }
 
 bool TabbedPane::MoveSelectionBy(int delta) {
-  if (contents_->children().size() <= 1)
+  if (contents_->children().size() <= 1) {
     return false;
+  }
   SelectTab(tab_strip_->GetTabAtDeltaFromSelected(delta));
   return true;
+}
+
+gfx::Size TabbedPane::CalculatePreferredSize(
+    const SizeBounds& available_size) const {
+  // In horizontal mode, use the preferred size as determined by the largest
+  // child or the minimum size necessary to display the tab titles, whichever is
+  // larger.
+  if (GetOrientation() == TabbedPane::Orientation::kHorizontal) {
+    return FlexLayoutView::CalculatePreferredSize(available_size);
+  }
+
+  // In vertical mode, Tabstrips don't require any minimum space along their
+  // main axis, and can shrink all the way to zero size.
+  const gfx::Size size =
+      GetLayoutManager()->GetPreferredSize(this, available_size);
+  return gfx::Size(size.width(), contents_->GetHeightForWidth(size.width()));
 }
 
 bool TabbedPane::AcceleratorPressed(const ui::Accelerator& accelerator) {
@@ -632,14 +669,17 @@ bool TabbedPane::AcceleratorPressed(const ui::Accelerator& accelerator) {
   return MoveSelectionBy(accelerator.IsShiftDown() ? -1 : 1);
 }
 
-void TabbedPane::GetAccessibleNodeData(ui::AXNodeData* node_data) {
-  node_data->role = ax::mojom::Role::kTabList;
+void TabbedPane::UpdateAccessibleName() {
   const TabbedPaneTab* const selected_tab = GetSelectedTab();
-  if (selected_tab)
-    node_data->SetName(selected_tab->GetTitleText());
+
+  if (selected_tab) {
+    GetViewAccessibility().SetName(selected_tab->GetTitleText());
+  } else {
+    GetViewAccessibility().RemoveName();
+  }
 }
 
-BEGIN_METADATA(TabbedPane, View)
+BEGIN_METADATA(TabbedPane)
 END_METADATA
 
 }  // namespace views

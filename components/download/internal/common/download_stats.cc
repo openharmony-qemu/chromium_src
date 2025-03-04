@@ -18,9 +18,9 @@
 #include "net/http/http_content_disposition.h"
 #include "net/http/http_util.h"
 
-// TODO(crbug/1056278): Launch this on Fuchsia. We should also consider serving
-// an empty FileTypePolicies to platforms without Safe Browsing to remove the
-// BUILDFLAGs and nogncheck here.
+// TODO(crbug.com/40120259): Launch this on Fuchsia. We should also consider
+// serving an empty FileTypePolicies to platforms without Safe Browsing to
+// remove the BUILDFLAGs and nogncheck here.
 #if (BUILDFLAG(FULL_SAFE_BROWSING) || BUILDFLAG(SAFE_BROWSING_DB_REMOTE)) && \
     !BUILDFLAG(IS_FUCHSIA)
 #include "components/safe_browsing/content/common/file_type_policies.h"  // nogncheck
@@ -119,6 +119,9 @@ std::string CreateHistogramNameWithSuffix(const std::string& name,
     case DownloadSource::RETRY_FROM_BUBBLE:
       suffix = "RetryFromBubble";
       break;
+    case DownloadSource::TOOLBAR_MENU:
+      suffix = "ToolbarMenu";
+      break;
   }
 
   return name + "." + suffix;
@@ -174,9 +177,6 @@ void RecordDownloadCompleted(
     UMA_HISTOGRAM_CUSTOM_COUNTS("Download.DownloadSize.Parallelizable",
                                 download_len, 1, max, 256);
   }
-
-  RecordConnectionType("Download.NetworkConnectionType.Complete",
-                       connection_type, download_source);
 }
 
 void RecordDownloadInterrupted(DownloadInterruptReason reason,
@@ -232,17 +232,6 @@ void RecordDangerousDownloadAccept(DownloadDangerType danger_type,
                                    const base::FilePath& file_path) {
   UMA_HISTOGRAM_ENUMERATION("Download.UserValidatedDangerousDownload",
                             danger_type, DOWNLOAD_DANGER_TYPE_MAX);
-#if (BUILDFLAG(FULL_SAFE_BROWSING) || BUILDFLAG(SAFE_BROWSING_DB_REMOTE)) && \
-    !BUILDFLAG(IS_FUCHSIA)
-  // This can only be recorded for certain platforms, since the enum used for
-  // file types is provided by safe_browsing::FileTypePolicies.
-  if (danger_type == DOWNLOAD_DANGER_TYPE_DANGEROUS_FILE) {
-    base::UmaHistogramSparse(
-        "Download.DangerousFile.DownloadValidatedByType",
-        safe_browsing::FileTypePolicies::GetInstance()->UmaValueForFile(
-            file_path));
-  }
-#endif
 }
 
 namespace {
@@ -486,7 +475,6 @@ const char* GetDownloadValidationMetricName(
       NOTREACHED();
   }
   NOTREACHED();
-  return nullptr;
 }
 
 }  // namespace
@@ -531,19 +519,32 @@ DownloadContent DownloadContentFromMimeType(const std::string& mime_type_string,
   return download_content;
 }
 
-void RecordDownloadMimeType(const std::string& mime_type_string) {
+void RecordDownloadMimeType(const std::string& mime_type_string,
+                            bool is_transient) {
   DownloadContent download_content =
       DownloadContentFromMimeType(mime_type_string, true);
-  UMA_HISTOGRAM_ENUMERATION("Download.Start.ContentType", download_content,
-                            DownloadContent::MAX);
+  base::UmaHistogramEnumeration("Download.Start.ContentType", download_content,
+                                DownloadContent::MAX);
+#if BUILDFLAG(IS_ANDROID)
+  base::UmaHistogramEnumeration(
+      base::StrCat({"Download.Start.ContentType.",
+                    is_transient ? "Transient" : "NonTransient"}),
+      download_content, DownloadContent::MAX);
+#endif  // BUILDFLAG(IS_ANDROID)
 }
 
-void RecordDownloadMimeTypeForNormalProfile(
-    const std::string& mime_type_string) {
-  UMA_HISTOGRAM_ENUMERATION(
-      "Download.Start.ContentType.NormalProfile",
-      DownloadContentFromMimeType(mime_type_string, false),
-      DownloadContent::MAX);
+void RecordDownloadMimeTypeForNormalProfile(const std::string& mime_type_string,
+                                            bool is_transient) {
+  DownloadContent download_content =
+      DownloadContentFromMimeType(mime_type_string, false);
+  base::UmaHistogramEnumeration("Download.Start.ContentType.NormalProfile",
+                                download_content, DownloadContent::MAX);
+#if BUILDFLAG(IS_ANDROID)
+  base::UmaHistogramEnumeration(
+      base::StrCat({"Download.Start.ContentType.NormalProfile.",
+                    is_transient ? "Transient" : "NonTransient"}),
+      download_content, DownloadContent::MAX);
+#endif  // BUILDFLAG(IS_ANDROID)
 }
 
 void RecordFileBandwidth(size_t length,
@@ -563,19 +564,20 @@ void RecordParallelizableDownloadCount(DownloadCountTypes type,
                                 DOWNLOAD_COUNT_TYPES_LAST_ENTRY);
 }
 
-void RecordParallelDownloadRequestCount(int request_count) {
-  UMA_HISTOGRAM_CUSTOM_COUNTS("Download.ParallelDownloadRequestCount",
-                              request_count, 1, 10, 11);
+namespace {
+int g_parallel_download_creation_failure_count_ = 0;
 }
 
 void RecordParallelRequestCreationFailure(DownloadInterruptReason reason) {
-  base::UmaHistogramSparse("Download.ParallelDownload.CreationFailureReason",
-                           reason);
+  // This used to log a metric; however there is a test that checks how many
+  // times that metric (and thus this method) was called. Ultimately that should
+  // be refactored; but for now instead of logging the metric, just increment
+  // a counter.
+  g_parallel_download_creation_failure_count_++;
 }
 
-void RecordSavePackageEvent(SavePackageEvent event) {
-  UMA_HISTOGRAM_ENUMERATION("Download.SavePackage", event,
-                            SAVE_PACKAGE_LAST_ENTRY);
+int GetParallelRequestCreationFailureCountForTesting() {
+  return g_parallel_download_creation_failure_count_;
 }
 
 DownloadConnectionSecurity CheckDownloadConnectionSecurity(
@@ -633,14 +635,6 @@ void RecordDownloadHttpResponseCode(int response_code,
   }
 }
 
-void RecordInProgressDBCount(InProgressDBCountTypes type) {
-  UMA_HISTOGRAM_ENUMERATION("Download.InProgressDB.Counts", type);
-}
-
-void RecordDownloadLaterEvent(DownloadLaterEvent event) {
-  base::UmaHistogramEnumeration("Download.Later.Events", event);
-}
-
 void RecordInputStreamReadError(MojoResult mojo_result) {
   InputStreamReadError error = InputStreamReadError::kUnknown;
   switch (mojo_result) {
@@ -659,9 +653,11 @@ void RecordInputStreamReadError(MojoResult mojo_result) {
   base::UmaHistogramEnumeration("Download.InputStreamReadError", error);
 }
 
-#if BUILDFLAG(IS_WIN)
-void RecordWinFileMoveError(int os_error) {
-  base::UmaHistogramSparse("Download.WinFileMoveError", os_error);
+#if BUILDFLAG(IS_ANDROID)
+void RecordDuplicatePdfDownloadTriggered(bool open_inline) {
+  base::UmaHistogramBoolean("Download.DuplicatePdfDownloadTriggered",
+                            open_inline);
 }
-#endif  // BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_ANDROID)
+
 }  // namespace download

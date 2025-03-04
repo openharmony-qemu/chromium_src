@@ -4,28 +4,24 @@
 
 #import "ios/chrome/browser/ui/reading_list/reading_list_app_interface.h"
 
+#import "base/location.h"
 #import "base/memory/singleton.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/time/time.h"
 #import "components/reading_list/core/reading_list_model.h"
-#import "ios/chrome/browser/reading_list/reading_list_model_factory.h"
+#import "ios/chrome/browser/reading_list/model/reading_list_model_factory.h"
 #import "ios/chrome/test/app/chrome_test_util.h"
 #import "ios/chrome/test/app/tab_test_util.h"
 #import "ios/testing/nserror_util.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "net/base/network_change_notifier.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 // Returns the reading list model.
 ReadingListModel* GetReadingListModel(NSError** error) {
-  ReadingListModel* model =
-      ReadingListModelFactory::GetInstance()->GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState());
+  ReadingListModel* model = ReadingListModelFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile());
   if (!base::test::ios::WaitUntilConditionOrTimeout(base::Seconds(2), ^{
         return model->loaded();
       })) {
@@ -91,7 +87,7 @@ class ConnectionTypeOverrider {
     return error;
   }
   for (const GURL& url : model->GetKeys()) {
-    model->RemoveEntryByURL(url);
+    model->RemoveEntryByURL(url, FROM_HERE);
   }
   return nil;
 }

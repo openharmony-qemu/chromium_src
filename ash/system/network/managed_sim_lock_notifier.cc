@@ -4,6 +4,7 @@
 
 #include "ash/system/network/managed_sim_lock_notifier.h"
 
+#include "ash/ash_element_identifiers.h"
 #include "ash/public/cpp/network_config_service.h"
 #include "ash/public/cpp/notification_utils.h"
 #include "ash/public/cpp/system_tray_client.h"
@@ -161,9 +162,8 @@ void ManagedSimLockNotifier::Close(bool by_user) {
   }
 }
 
-void ManagedSimLockNotifier::Click(
-    const absl::optional<int>& button_index,
-    const absl::optional<std::u16string>& reply) {
+void ManagedSimLockNotifier::Click(const std::optional<int>& button_index,
+                                   const std::optional<std::u16string>& reply) {
   CellularMetricsLogger::RecordSimLockNotificationEvent(
       CellularMetricsLogger::SimLockNotificationEvent::kClicked);
 
@@ -196,6 +196,8 @@ void ManagedSimLockNotifier::ShowNotification() {
               weak_ptr_factory_.GetWeakPtr()),
           /*small_image=*/gfx::VectorIcon(),
           message_center::SystemNotificationWarningLevel::WARNING);
+  notification->set_host_view_element_id(
+      kCellularManagedSimLockNotificationElementId);
 
   message_center::MessageCenter* message_center =
       message_center::MessageCenter::Get();

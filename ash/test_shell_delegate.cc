@@ -7,21 +7,37 @@
 #include <memory>
 #include <string>
 
+#include "ash/accelerators/test_accelerator_prefs_delegate.h"
 #include "ash/accessibility/default_accessibility_delegate.h"
+#include "ash/api/tasks/tasks_delegate.h"
+#include "ash/api/tasks/test_tasks_delegate.h"
 #include "ash/capture_mode/test_capture_mode_delegate.h"
+#include "ash/clipboard/test_support/test_clipboard_history_controller_delegate_impl.h"
 #include "ash/game_dashboard/test_game_dashboard_delegate.h"
-#include "ash/glanceables/test_glanceables_delegate.h"
+#include "ash/public/cpp/desk_profiles_delegate.h"
+#include "ash/public/cpp/tab_strip_delegate.h"
+#include "ash/public/cpp/test/test_coral_delegate.h"
+#include "ash/public/cpp/test/test_desk_profiles_delegate.h"
 #include "ash/public/cpp/test/test_nearby_share_delegate.h"
 #include "ash/public/cpp/test/test_saved_desk_delegate.h"
+#include "ash/public/cpp/test/test_tab_strip_delegate.h"
+#include "ash/scanner/fake_scanner_delegate.h"
+#include "ash/system/focus_mode/test/test_focus_mode_delegate.h"
 #include "ash/system/geolocation/test_geolocation_url_loader_factory.h"
 #include "ash/system/test_system_sounds_delegate.h"
+#include "ash/user_education/mock_user_education_delegate.h"
 #include "ash/user_education/user_education_delegate.h"
 #include "ash/wm/gestures/back_gesture/test_back_gesture_contextual_nudge_delegate.h"
+#include "ash/wm/overview/overview_controller.h"
+#include "ash/wm/overview/overview_metrics.h"
+#include "testing/gmock/include/gmock/gmock.h"
 #include "url/gurl.h"
 
 namespace ash {
 
-TestShellDelegate::TestShellDelegate() = default;
+TestShellDelegate::TestShellDelegate()
+    : url_loader_factory_(
+          base::MakeRefCounted<network::TestSharedURLLoaderFactory>()) {}
 
 TestShellDelegate::~TestShellDelegate() = default;
 
@@ -34,15 +50,23 @@ TestShellDelegate::CreateCaptureModeDelegate() const {
   return std::make_unique<TestCaptureModeDelegate>();
 }
 
+std::unique_ptr<ClipboardHistoryControllerDelegate>
+TestShellDelegate::CreateClipboardHistoryControllerDelegate() const {
+  return std::make_unique<TestClipboardHistoryControllerDelegateImpl>();
+}
+
+std::unique_ptr<CoralDelegate> TestShellDelegate::CreateCoralDelegate() const {
+  return std::make_unique<TestCoralDelegate>();
+}
+
 std::unique_ptr<GameDashboardDelegate>
 TestShellDelegate::CreateGameDashboardDelegate() const {
   return std::make_unique<TestGameDashboardDelegate>();
 }
 
-std::unique_ptr<GlanceablesDelegate>
-TestShellDelegate::CreateGlanceablesDelegate(
-    GlanceablesController* controller) const {
-  return std::make_unique<TestGlanceablesDelegate>();
+std::unique_ptr<AcceleratorPrefsDelegate>
+TestShellDelegate::CreateAcceleratorPrefsDelegate() const {
+  return std::make_unique<TestAcceleratorPrefsDelegate>();
 }
 
 AccessibilityDelegate* TestShellDelegate::CreateAccessibilityDelegate() {
@@ -76,17 +100,36 @@ TestShellDelegate::CreateSystemSoundsDelegate() const {
   return std::make_unique<TestSystemSoundsDelegate>();
 }
 
+std::unique_ptr<api::TasksDelegate> TestShellDelegate::CreateTasksDelegate()
+    const {
+  return std::make_unique<api::TestTasksDelegate>();
+}
+
+std::unique_ptr<TabStripDelegate> TestShellDelegate::CreateTabStripDelegate()
+    const {
+  return std::make_unique<TestTabStripDelegate>();
+}
+
+std::unique_ptr<FocusModeDelegate> TestShellDelegate::CreateFocusModeDelegate()
+    const {
+  return std::make_unique<TestFocusModeDelegate>();
+}
+
 std::unique_ptr<UserEducationDelegate>
 TestShellDelegate::CreateUserEducationDelegate() const {
   return user_education_delegate_factory_
              ? user_education_delegate_factory_.Run()
-             : nullptr;
+             : std::make_unique<testing::NiceMock<MockUserEducationDelegate>>();
+}
+
+std::unique_ptr<ScannerDelegate> TestShellDelegate::CreateScannerDelegate()
+    const {
+  return std::make_unique<FakeScannerDelegate>();
 }
 
 scoped_refptr<network::SharedURLLoaderFactory>
-TestShellDelegate::GetGeolocationUrlLoaderFactory() const {
-  return static_cast<scoped_refptr<network::SharedURLLoaderFactory>>(
-      base::MakeRefCounted<TestGeolocationUrlLoaderFactory>());
+TestShellDelegate::GetBrowserProcessUrlLoaderFactory() const {
+  return url_loader_factory_;
 }
 
 bool TestShellDelegate::CanGoBack(gfx::NativeWindow window) const {
@@ -108,6 +151,19 @@ bool TestShellDelegate::ShouldWaitForTouchPressAck(gfx::NativeWindow window) {
 
 int TestShellDelegate::GetBrowserWebUITabStripHeight() {
   return 0;
+}
+
+DeskProfilesDelegate* TestShellDelegate::GetDeskProfilesDelegate() {
+  if (!test_desk_profiles_delegate_) {
+    test_desk_profiles_delegate_ = std::make_unique<TestDeskProfilesDelegate>();
+  }
+  return test_desk_profiles_delegate_.get();
+}
+
+void TestShellDelegate::OpenMultitaskingSettings() {
+  // Opening the settings page will cause a window activation and end overview.
+  // Call `EndOverview()` to simulate opening the settings page.
+  OverviewController::Get()->EndOverview(OverviewEndAction::kTests);
 }
 
 void TestShellDelegate::BindMultiDeviceSetup(
@@ -149,6 +205,13 @@ bool TestShellDelegate::IsLoggingRedirectDisabled() const {
 
 base::FilePath TestShellDelegate::GetPrimaryUserDownloadsFolder() const {
   return base::FilePath();
+}
+
+void TestShellDelegate::OpenFeedbackDialog(
+    ShellDelegate::FeedbackSource source,
+    const std::string& description_template,
+    const std::string& category_tag) {
+  ++open_feedback_dialog_call_count_;
 }
 
 const GURL& TestShellDelegate::GetLastCommittedURLForWindowIfAny(

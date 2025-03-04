@@ -11,9 +11,14 @@
 
 #include "base/ios/block_types.h"
 
-@class AlertCoordinator;
 @class ActionSheetCoordinator;
+@class AlertCoordinator;
 class Browser;
+class PrefService;
+
+namespace signin_metrics {
+enum class AccessPoint;
+}  // namespace signin_metrics
 
 // Sign-out result, related to SignoutActionSheetCoordinator().
 typedef NS_ENUM(NSUInteger, SignoutActionSheetCoordinatorResult) {
@@ -53,5 +58,28 @@ NSString* DialogMessageFromError(NSError* error);
 AlertCoordinator* ErrorCoordinatorNoItem(NSError* error,
                                          UIViewController* viewController,
                                          Browser* browser);
+
+// Returns a string for the view controller presentation status. This string
+// can only be used for class description for debug purposes.
+// `view_controller` can be nil.
+NSString* ViewControllerPresentationStatusDescription(
+    UIViewController* view_controller);
+
+// Returns an alert coordinator asking the user whether they accept to switch to
+// a managed account.
+AlertCoordinator* ManagedConfirmationDialogContentForHostedDomain(
+    NSString* hosted_domain,
+    Browser* browser,
+    UIViewController* view_controller,
+    ProceduralBlock accept_block,
+    ProceduralBlock cancel_block);
+
+// Returns YES if the managed confirmation dialog should be shown for the
+// hosted domain.
+BOOL ShouldShowManagedConfirmationForHostedDomain(
+    NSString* hosted_domain,
+    signin_metrics::AccessPoint access_point,
+    NSString* gaia_ID,
+    PrefService* prefs);
 
 #endif  // IOS_CHROME_BROWSER_UI_AUTHENTICATION_AUTHENTICATION_UI_UTIL_H_

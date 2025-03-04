@@ -7,10 +7,8 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
-#if BUILDFLAG(IS_OHOS)
-#include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
-#endif
 
 namespace viz {
 
@@ -25,14 +23,11 @@ class HostFrameSinkClient {
   // Called when a CompositorFrame with a new frame token is provided.
   virtual void OnFrameTokenChanged(uint32_t frame_token,
                                    base::TimeTicks activation_time) = 0;
-
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
-  virtual void OnVsync() {}
-  virtual void OnVsyncReceived() {}
-#endif
-
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit() {}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
  protected:
-  virtual ~HostFrameSinkClient() {}
+  virtual ~HostFrameSinkClient() = default;
 };
 
 }  // namespace viz

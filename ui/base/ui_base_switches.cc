@@ -14,9 +14,6 @@ const char kDisableOverscrollEdgeEffect[] = "disable-overscroll-edge-effect";
 
 // Disable the pull-to-refresh effect when vertically overscrolling content.
 const char kDisablePullToRefreshEffect[] = "disable-pull-to-refresh-effect";
-
-// Use Toat manager for managing/queuing Android toast UIs.
-const char kUseToastManager[] = "use-toast-manager";
 #endif
 
 #if BUILDFLAG(IS_MAC)
@@ -27,15 +24,18 @@ const char kDisableModalAnimations[] = "disable-modal-animations";
 const char kShowMacOverlayBorders[] = "show-mac-overlay-borders";
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS)
-// Enable resources file sharing with ash-chrome.
-// This flag is enabled when feature::kLacrosResourcesFileSharing is set and
-// ash-side operation is successfully done.
-const char kEnableResourcesFileSharing[] = "enable-resources-file-sharing";
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+// Specifies system font family name. Improves determenism when rendering
+// pages in headless mode.
+const char kSystemFontFamily[] = "system-font-family";
 #endif
 
-// Disables layer-edge anti-aliasing in the compositor.
-const char kDisableCompositedAntialiasing[] = "disable-composited-antialiasing";
+#if BUILDFLAG(IS_LINUX)
+// Specify the toolkit used to construct the Linux GUI.
+const char kUiToolkitFlag[] = "ui-toolkit";
+// Disables GTK IME integration.
+const char kDisableGtkIme[] = "disable-gtk-ime";
+#endif
 
 // Disables touch event based drag and drop.
 const char kDisableTouchDragDrop[] = "disable-touch-drag-drop";
@@ -65,6 +65,8 @@ const char kForceHighContrast[] = "force-high-contrast";
 
 // The language file that we want to try to open. Of the form
 // language[-country] where language is the 2 letter code from ISO-639.
+// On Linux, this flag does not work; use the LC_*/LANG environment variables
+// instead.
 const char kLang[] = "lang";
 
 // Transform localized strings to be longer, with beginning and end markers to

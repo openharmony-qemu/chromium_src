@@ -21,7 +21,7 @@
 #include "third_party/perfetto/include/perfetto/tracing/tracing.h"
 #include "third_party/perfetto/protos/perfetto/common/commit_data_request.pb.h"
 
-// TODO(crbug.com/961066): Fix memory leaks in tests and re-enable on LSAN.
+// TODO(crbug.com/41457644): Fix memory leaks in tests and re-enable on LSAN.
 #ifdef LEAK_SANITIZER
 #define MAYBE_DifferentSharedMemoryBuffersForDifferentAgents \
   DISABLED_DifferentSharedMemoryBuffersForDifferentAgents
@@ -174,6 +174,68 @@ TEST_F(PerfettoIntegrationTest, PacketsEndToEndConsumerFirst) {
   no_more_packets_runloop.Run();
 
   EXPECT_EQ(kNumPackets, consumer.received_test_packets());
+}
+
+TEST_F(PerfettoIntegrationTest, CloneSession) {
+  const size_t kNumPackets = 100;
+  data_source_->set_send_packet_count(kNumPackets);
+
+  perfetto::TraceConfig trace_config;
+  auto uuid = base::UnguessableToken::Create();
+  trace_config.set_unique_session_name(uuid.ToString());
+  trace_config.add_buffers()->set_size_kb(1024 * 32);
+  {
+    auto* ds_config = trace_config.add_data_sources()->mutable_config();
+    ds_config->set_name(kPerfettoTestDataSourceName);
+    ds_config->set_target_buffer(0);
+  }
+
+  MockConsumer consumer(
+      {kPerfettoTestDataSourceName}, perfetto_service()->GetService(),
+      [](bool has_more) {}, trace_config);
+
+  base::RunLoop client_enabled_callback;
+  std::unique_ptr<MockProducerClient::Handle> client =
+      MockProducerClient::Create(
+          /* num_data_sources = */ 1, client_enabled_callback.QuitClosure());
+
+  auto new_producer = std::make_unique<MockProducerHost>(
+      GetPerfettoProducerName(), kPerfettoTestDataSourceName,
+      perfetto_service(), **client);
+
+  client_enabled_callback.Run();
+
+  class ClonedConsumer : public MockConsumerBase {
+   public:
+    ClonedConsumer(perfetto::TracingService* service,
+                   PacketReceivedCallback packet_received_callback)
+        : MockConsumerBase(service, std::move(packet_received_callback)) {}
+
+    // perfetto::Consumer implementation
+    void OnSessionCloned(const OnSessionClonedArgs& args) override {
+      on_session_cloned_runloop_.Quit();
+    }
+
+    void WaitForSessionCloned() { on_session_cloned_runloop_.Run(); }
+
+   private:
+    base::RunLoop on_session_cloned_runloop_;
+  };
+
+  base::RunLoop no_more_packets_runloop;
+  ClonedConsumer cloned_consumer(perfetto_service()->GetService(),
+                                 [&no_more_packets_runloop](bool has_more) {
+                                   if (!has_more) {
+                                     no_more_packets_runloop.Quit();
+                                   }
+                                 });
+  cloned_consumer.CloneSession(uuid.ToString());
+  cloned_consumer.WaitForSessionCloned();
+  cloned_consumer.ReadBuffers();
+  no_more_packets_runloop.Run();
+  EXPECT_EQ(kNumPackets, cloned_consumer.received_test_packets());
+
+  consumer.StopTracing();
 }
 
 TEST_F(PerfettoIntegrationTest, CommitDataRequestIsMaybeComplete) {

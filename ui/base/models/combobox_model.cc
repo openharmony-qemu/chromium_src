@@ -12,12 +12,8 @@ namespace ui {
 ComboboxModel::ComboboxModel() = default;
 
 ComboboxModel::~ComboboxModel() {
-  for (auto& observer : observers_)
-    observer.OnComboboxModelDestroying(this);
-}
-
-std::u16string ComboboxModel::GetDropDownTextAt(size_t index) const {
-  return GetItemAt(index);
+  observers_.Notify(&ui::ComboboxModelObserver::OnComboboxModelDestroying,
+                    this);
 }
 
 std::u16string ComboboxModel::GetDropDownSecondaryTextAt(size_t index) const {
@@ -36,7 +32,7 @@ bool ComboboxModel::IsItemSeparatorAt(size_t index) const {
   return false;
 }
 
-absl::optional<size_t> ComboboxModel::GetDefaultIndex() const {
+std::optional<size_t> ComboboxModel::GetDefaultIndex() const {
   return size_t{0};
 }
 
@@ -52,27 +48,19 @@ void ComboboxModel::RemoveObserver(ComboboxModelObserver* observer) {
   observers_.RemoveObserver(observer);
 }
 
-absl::optional<ui::ColorId> ComboboxModel::GetDropdownForegroundColorIdAt(
+std::optional<ui::ColorId> ComboboxModel::GetDropdownForegroundColorIdAt(
     size_t index) const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<ui::ColorId> ComboboxModel::GetDropdownBackgroundColorIdAt(
+std::optional<ui::ColorId> ComboboxModel::GetDropdownBackgroundColorIdAt(
     size_t index) const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<ui::ColorId>
+std::optional<ui::ColorId>
 ComboboxModel::GetDropdownSelectedBackgroundColorIdAt(size_t index) const {
-  return absl::nullopt;
-}
-
-std::vector<std::string> ComboboxModel::GetLabelFontNameAt(size_t index) {
-  return std::vector<std::string>();
-}
-
-absl::optional<int> ComboboxModel::GetLabelFontSize() {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace ui

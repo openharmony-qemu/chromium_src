@@ -15,6 +15,7 @@
 #include "ui/display/display_export.h"
 #include "ui/display/screen.h"
 #include "ui/display/win/color_profile_reader.h"
+#include "ui/display/win/screen_win_display.h"
 #include "ui/display/win/uwp_text_scale_factor.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/mojom/dxgi_info.mojom.h"
@@ -155,13 +156,19 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
   // unrecognized id was specified or if this was called during a screen update.
   static ScreenWinDisplay GetScreenWinDisplayWithDisplayId(int64_t id);
 
-  // Returns the device id for the given `device_name`.
-  static int64_t DeviceIdFromDeviceName(const wchar_t* device_name);
+  // Returns the display id for the given monitor info.
+  static int64_t DisplayIdFromMonitorInfo(const MONITORINFOEX& monitor);
 
   // Updates the display infos to make sure they have the right scale factors.
   // This is called before handling WM_DPICHANGED messages, to be sure that we
   // have the right scale factors for the screens.
   static void UpdateDisplayInfos();
+
+  // Updates the display infos if it appears that Windows state has changed
+  // in a way that requires the display infos to be updated. This currently
+  // only detects when the primary monitor changes, which it does when a monitor
+  // is added or removed.
+  static void UpdateDisplayInfosIfNeeded();
 
   // Returns the HWND associated with the NativeWindow.
   virtual HWND GetHWNDFromNativeWindow(gfx::NativeWindow view) const;
@@ -174,10 +181,13 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
 
   // Returns the cached on_current_workspace() value for the NativeWindow's
   // host.
-  virtual absl::optional<bool> IsWindowOnCurrentVirtualDesktop(
+  virtual std::optional<bool> IsWindowOnCurrentVirtualDesktop(
       gfx::NativeWindow window) const;
 
  protected:
+  FRIEND_TEST_ALL_PREFIXES(ScreenWinTestSingleDisplay1x,
+                           DisconnectPrimaryDisplay);
+
   // `initialize_from_system` is true if the ScreenWin should be initialized
   // from the Windows desktop environment, e.g., the monitor information and
   // configuration. It is false in unit tests, true in Chrome and browser
@@ -212,12 +222,13 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
       const std::vector<internal::DisplayInfo>& display_infos);
 
   // Virtual to support mocking by unit tests.
-  virtual MONITORINFOEX MonitorInfoFromScreenPoint(
+  virtual std::optional<MONITORINFOEX> MonitorInfoFromScreenPoint(
       const gfx::Point& screen_point) const;
-  virtual MONITORINFOEX MonitorInfoFromScreenRect(const gfx::Rect& screen_rect)
-      const;
-  virtual MONITORINFOEX MonitorInfoFromWindow(HWND hwnd, DWORD default_options)
-      const;
+  virtual std::optional<MONITORINFOEX> MonitorInfoFromScreenRect(
+      const gfx::Rect& screen_rect) const;
+  virtual std::optional<MONITORINFOEX> MonitorInfoFromWindow(
+      HWND hwnd,
+      DWORD default_options) const;
   virtual HWND GetRootWindow(HWND hwnd) const;
   virtual int GetSystemMetrics(int metric) const;
 
@@ -225,6 +236,7 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
   void Initialize();
   void OnWndProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
   void UpdateAllDisplaysAndNotify();
+  void UpdateAllDisplaysIfPrimaryMonitorChanged();
 
   // Returns the ScreenWinDisplay closest to or enclosing |hwnd|.
   ScreenWinDisplay GetScreenWinDisplayNearestHWND(HWND hwnd) const;
@@ -248,7 +260,8 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
   // Returns the ScreenWinDisplay corresponding to the primary monitor.
   ScreenWinDisplay GetPrimaryScreenWinDisplay() const;
 
-  ScreenWinDisplay GetScreenWinDisplay(const MONITORINFOEX& monitor_info) const;
+  ScreenWinDisplay GetScreenWinDisplay(
+      std::optional<MONITORINFOEX> monitor_info) const;
 
   // Returns the result of calling |getter| with |value| on the global
   // ScreenWin if it exists, otherwise return the default ScreenWinDisplay.
@@ -259,8 +272,6 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
   // Returns the result of GetSystemMetrics for |metric| scaled to the specified
   // |scale_factor|.
   int GetSystemMetricsForScaleFactor(float scale_factor, int metric) const;
-
-  void RecordDisplayScaleFactors() const;
 
   //-----------------------------------------------------------------
   // UwpTextScaleFactor::Observer:
@@ -301,6 +312,11 @@ class DISPLAY_EXPORT ScreenWin : public Screen,
 
   // Used to avoid calling GetSystemMetricsForDpi in unit tests.
   bool per_process_dpi_awareness_disabled_for_testing_ = false;
+
+  // Used to track if primary_monitor_ changes, which is used as a signal that
+  // screen_win_displays_ needs to be updated. This should be updated when
+  // screen_win_displays_ is updated.
+  HMONITOR primary_monitor_ = nullptr;
 };
 
 }  // namespace win

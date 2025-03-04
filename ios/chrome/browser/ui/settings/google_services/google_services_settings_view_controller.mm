@@ -4,25 +4,24 @@
 
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_view_controller.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
-#import "ios/chrome/browser/net/crurl.h"
+#import "ios/chrome/browser/net/model/crurl.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_info_button_cell.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_cell.h"
+#import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/settings/cells/sync_switch_item.h"
 #import "ios/chrome/browser/ui/settings/elements/enterprise_info_popover_view_controller.h"
+#import "ios/chrome/browser/ui/settings/elements/info_popover_view_controller.h"
+#import "ios/chrome/browser/ui/settings/elements/supervised_user_info_popover_view_controller.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_service_delegate.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_view_controller_model_delegate.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface GoogleServicesSettingsViewController () <
     PopoverLabelViewControllerDelegate> {
@@ -30,8 +29,7 @@
   BOOL _settingsAreDismissed;
 }
 
-@property(nonatomic, strong)
-    EnterpriseInfoPopoverViewController* bubbleViewController;
+@property(nonatomic, strong) InfoPopoverViewController* bubbleViewController;
 
 @end
 
@@ -42,21 +40,25 @@
   self.tableView.accessibilityIdentifier =
       kGoogleServicesSettingsViewIdentifier;
   self.title = l10n_util::GetNSString(IDS_IOS_GOOGLE_SERVICES_SETTINGS_TITLE);
-}
 
-- (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
-  [super traitCollectionDidChange:previousTraitCollection];
-
-  // Close popover when font size changed for accessibility because it does not
-  // resize properly and the arrow is not aligned.
-  if (self.bubbleViewController) {
-    [self.bubbleViewController dismissViewControllerAnimated:YES
-                                                  completion:nil];
-    UIButton* buttonView = base::mac::ObjCCastStrict<UIButton>(
-        self.bubbleViewController.popoverPresentationController.sourceView);
-    buttonView.enabled = YES;
+  if (@available(iOS 17, *)) {
+    NSArray<UITrait>* traits = TraitCollectionSetForTraits(
+        @[ UITraitPreferredContentSizeCategory.class ]);
+    [self registerForTraitChanges:traits
+                       withAction:@selector(closePopoverOnTraitChange)];
   }
 }
+
+#if !defined(__IPHONE_17_0) || __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_17_0
+- (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
+  [super traitCollectionDidChange:previousTraitCollection];
+  if (@available(iOS 17, *)) {
+    return;
+  }
+
+  [self closePopoverOnTraitChange];
+}
+#endif
 
 #pragma mark - Private
 
@@ -71,14 +73,20 @@
                               targetRect:targetRect];
 }
 
-// Shows an enterprise info popover anchored on  `buttonView` giving `message`.
-// A default message is used when `message` is nil.
-- (void)showEntepriseInfoPopoverOnButton:(UIButton*)buttonView
-                             withMessage:(NSString*)message {
-  if (message) {
-    self.bubbleViewController =
-        [[EnterpriseInfoPopoverViewController alloc] initWithMessage:message
-                                                      enterpriseName:nil];
+// Shows an info popover anchored on `buttonView` depending on the signed-in
+// policy.
+- (void)showManagedInfoPopoverOnButton:(UIButton*)buttonView
+                 isForcedSigninEnabled:(BOOL)isForcedSigninEnabled {
+  if (self.modelDelegate.isViewControllerSubjectToParentalControls) {
+    self.bubbleViewController = [[SupervisedUserInfoPopoverViewController alloc]
+        initWithMessage:
+            l10n_util::GetNSString(
+                IDS_IOS_SUPERVISED_USER_UNAVAILABLE_SETTING_MESSAGE)];
+  } else if (isForcedSigninEnabled) {
+    self.bubbleViewController = [[EnterpriseInfoPopoverViewController alloc]
+        initWithMessage:l10n_util::GetNSString(
+                            IDS_IOS_ENTERPRISE_FORCED_SIGNIN_MESSAGE)
+         enterpriseName:nil];
   } else {
     self.bubbleViewController = [[EnterpriseInfoPopoverViewController alloc]
         initWithEnterpriseName:nil];
@@ -101,6 +109,19 @@
                    completion:nil];
 }
 
+// Close popover when font size changed for accessibility. The font does not
+// resize properly and the arrow is not aligned.
+- (void)closePopoverOnTraitChange {
+  if (!self.bubbleViewController) {
+    return;
+  }
+
+  [self.bubbleViewController dismissViewControllerAnimated:YES completion:nil];
+  UIButton* buttonView = base::apple::ObjCCastStrict<UIButton>(
+      self.bubbleViewController.popoverPresentationController.sourceView);
+  buttonView.enabled = YES;
+}
+
 #pragma mark - UITableViewDataSource
 
 - (UITableViewCell*)tableView:(UITableView*)tableView
@@ -111,7 +132,7 @@
     return cell;
   if ([cell isKindOfClass:[TableViewSwitchCell class]]) {
     TableViewSwitchCell* switchCell =
-        base::mac::ObjCCastStrict<TableViewSwitchCell>(cell);
+        base::apple::ObjCCastStrict<TableViewSwitchCell>(cell);
     [switchCell.switchView addTarget:self
                               action:@selector(switchAction:)
                     forControlEvents:UIControlEventValueChanged];
@@ -119,7 +140,7 @@
     switchCell.switchView.tag = item.type;
   } else if ([cell isKindOfClass:[TableViewInfoButtonCell class]]) {
     TableViewInfoButtonCell* managedCell =
-        base::mac::ObjCCastStrict<TableViewInfoButtonCell>(cell);
+        base::apple::ObjCCastStrict<TableViewInfoButtonCell>(cell);
     if ([self.modelDelegate
             isAllowChromeSigninItem:[self.tableViewModel
                                         itemAtIndexPath:indexPath]
@@ -140,6 +161,13 @@
     }
   }
   return cell;
+}
+
+- (void)tableView:(UITableView*)tableView
+    didSelectRowAtIndexPath:(NSIndexPath*)indexPath {
+  [self.modelDelegate
+      googleServicesSettingsViewControllerDidSelectItemAtIndexPath:indexPath];
+  [self.tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 #pragma mark - SettingsControllerProtocol
@@ -234,19 +262,16 @@
 #pragma mark - Actions
 
 // Called when the user clicks on the information button of the managed
-// setting's UI. Shows a textual bubble with the information of the enterprise.
+// setting's UI. Shows a textual bubble with management information.
 - (void)didTapManagedUIInfoButton:(UIButton*)buttonView {
-  [self showEntepriseInfoPopoverOnButton:buttonView withMessage:nil];
+  [self showManagedInfoPopoverOnButton:buttonView isForcedSigninEnabled:NO];
 }
 
 // Called when the user taps on the information button of the allow sign-in
 // item while forced sign-in is enabled. Shows a textual bubble with
 // information about the forced sign-in policy.
 - (void)didTapForcedSigninUIInfoButton:(UIButton*)buttonView {
-  [self showEntepriseInfoPopoverOnButton:buttonView
-                             withMessage:
-                                 l10n_util::GetNSString(
-                                     IDS_IOS_ENTERPRISE_FORCED_SIGNIN_MESSAGE)];
+  [self showManagedInfoPopoverOnButton:buttonView isForcedSigninEnabled:YES];
 }
 
 #pragma mark - PopoverLabelViewControllerDelegate

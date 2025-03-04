@@ -23,12 +23,11 @@ namespace leveldb_proto {
 namespace {
 
 const std::string kDefaultClientName = "client";
-const std::string kDefaultClientName2 = "client_2";
 
 // Example struct defined by clients that can be used instead of protos.
 struct ClientStruct {
  public:
-  ClientStruct() {}
+  ClientStruct() = default;
   ClientStruct(ClientStruct&& other) {
     id_ = std::move(other.id_);
     data_ = std::move(other.data_);
@@ -100,7 +99,7 @@ class TestSharedProtoDatabase : public SharedProtoDatabase {
   }
 
  private:
-  ~TestSharedProtoDatabase() override {}
+  ~TestSharedProtoDatabase() override = default;
 
   Enums::InitStatus use_status_;
 };

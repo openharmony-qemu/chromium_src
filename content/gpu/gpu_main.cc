@@ -9,6 +9,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/check.h"
 #include "base/command_line.h"
@@ -24,6 +25,7 @@
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/system/sys_info.h"
+#include "base/task/current_thread.h"
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/platform_thread.h"
@@ -36,9 +38,11 @@
 #include "content/child/child_process.h"
 #include "content/common/content_constants_internal.h"
 #include "content/common/content_switches_internal.h"
+#include "content/common/features.h"
 #include "content/common/skia_utils.h"
 #include "content/gpu/gpu_child_thread.h"
 #include "content/public/common/content_client.h"
+#include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/main_function_params.h"
 #include "content/public/common/result_codes.h"
@@ -55,6 +59,7 @@
 #include "gpu/ipc/service/gpu_init.h"
 #include "gpu/ipc/service/gpu_watchdog_thread.h"
 #include "media/gpu/buildflags.h"
+#include "mojo/public/cpp/bindings/interface_endpoint_client.h"
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "third_party/angle/src/gpu_info_util/SystemInfo.h"
@@ -70,8 +75,9 @@
 #include "ui/gl/init/gl_factory.h"
 
 #if BUILDFLAG(IS_WIN)
-#include <dwmapi.h>
 #include <windows.h>
+
+#include <dwmapi.h>
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -86,21 +92,21 @@
 #include "base/win/win_util.h"
 #include "base/win/windows_version.h"
 #include "media/base/win/mf_initializer.h"
-#include "media/gpu/windows/dxva_video_decode_accelerator_win.h"
+#include "sandbox/policy/win/sandbox_warmup.h"
 #include "sandbox/win/src/sandbox.h"
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-#include "content/gpu/gpu_sandbox_hook_linux.h"
+#include "content/child/sandboxed_process_thread_type_handler.h"
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 #include "sandbox/policy/sandbox_type.h"
 #endif
 
 #if BUILDFLAG(IS_MAC)
-#include "base/message_loop/message_pump_mac.h"
+#include "base/message_loop/message_pump_apple.h"
 #include "components/metal_util/device_removal.h"
 #include "gpu/ipc/service/built_in_shader_cache_loader.h"
-#include "media/gpu/mac/vt_video_decode_accelerator_mac.h"
 #include "sandbox/mac/seatbelt.h"
 #endif
 
@@ -109,11 +115,19 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
+#include "sandbox/policy/linux/sandbox_linux.h"
+#include "sandbox/policy/sandbox_type.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include <dirent.h>
+
+#include <fstream>
+
 #include "base/trace_event/trace_event_ohos.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include <fstream>
-#include <dirent.h>
-#include "res_sched_client_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
@@ -126,12 +140,14 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
                        const gpu::GpuPreferences&);
 #elif BUILDFLAG(IS_WIN)
 bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
+#elif BUILDFLAG(IS_OHOS)
+bool StartSandboxOHOS(gpu::GpuWatchdogThread*);
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
 bool LoadStringFromFile(const std::string& file_path, std::string& content);
-const int MAX_FILE_LENGTH = 32* 1024 * 1024;
+const int MAX_FILE_LENGTH = 32 * 1024 * 1024;
 #endif
 
 class ContentSandboxHelper : public gpu::GpuSandboxHelper {
@@ -157,7 +173,11 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
       TRACE_EVENT0("gpu", "Warm up rand");
       // Warm up the random subsystem, which needs to be done pre-sandbox on all
       // platforms.
+#if BUILDFLAG(IS_WIN)
+      sandbox::policy::WarmupRandomnessInfrastructure();
+#else
       std::ignore = base::RandUint64();
+#endif  // BUILDFLAG(IS_WIN)
     }
 
 #if BUILDFLAG(USE_VAAPI)
@@ -169,16 +189,7 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
 #endif
 #endif  // BUILDFLAG(USE_VAAPI)
 #if BUILDFLAG(IS_WIN)
-    if (media::PreSandboxMediaFoundationInitialization()) {
-      media::DXVAVideoDecodeAccelerator::PreSandboxInitialization();
-    }
-#endif
-
-#if BUILDFLAG(IS_MAC)
-    {
-      TRACE_EVENT0("gpu", "Initialize VideoToolbox");
-      media::InitializeVideoToolbox();
-    }
+    media::PreSandboxMediaFoundationInitialization();
 #endif
 
     // On Linux, reading system memory doesn't work through the GPU sandbox.
@@ -195,6 +206,12 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
     return StartSandboxWindows(sandbox_info_);
 #elif BUILDFLAG(IS_MAC)
     return sandbox::Seatbelt::IsSandboxed();
+#elif BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+    return false;
+#else
+    return StartSandboxOHOS(watchdog_thread);
+#endif
 #else
     return false;
 #endif
@@ -217,9 +234,6 @@ void LoadMetalShaderCacheIfNecessary() {
 
 // Main function for starting the Gpu process.
 int GpuMain(MainFunctionParams parameters) {
-#if BUILDFLAG(IS_OHOS)
-  StartObserveTraceEnable();
-#endif
   TRACE_EVENT0("gpu", "GpuMain");
   base::CurrentProcess::GetInstance().SetProcessType(
       base::CurrentProcessType::PROCESS_GPU);
@@ -254,7 +268,6 @@ int GpuMain(MainFunctionParams parameters) {
 
 #if BUILDFLAG(IS_WIN)
   base::win::EnableHighDPISupport();
-  base::trace_event::TraceEventETWExport::EnableETWExport();
 
   // Prevent Windows from displaying a modal dialog on failures like not being
   // able to load a DLL.
@@ -267,8 +280,9 @@ int GpuMain(MainFunctionParams parameters) {
   base::win::ScopedCOMInitializer com_initializer(
       base::win::ScopedCOMInitializer::kMTA);
 
-  if (base::FeatureList::IsEnabled(features::kGpuProcessHighPriorityWin))
-    ::SetPriorityClass(::GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
+  // A higher priority class is used for the GPU process so that it remains at
+  // a higher priority than renderer processes.
+  ::SetPriorityClass(::GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 #endif
 
   // Installs a base::LogMessageHandlerFunction which ensures messages are sent
@@ -284,9 +298,17 @@ int GpuMain(MainFunctionParams parameters) {
   std::unique_ptr<base::SingleThreadTaskExecutor> main_thread_task_executor;
   std::unique_ptr<ui::PlatformEventSource> event_source;
   if (command_line.HasSwitch(switches::kHeadless)) {
+#if BUILDFLAG(IS_MAC)
+    // CADisplayLink (Mac HW VSync) callback only works with NS_RUNLOOP.
+    main_thread_task_executor =
+        std::make_unique<base::SingleThreadTaskExecutor>(
+            base::MessagePumpType::NS_RUNLOOP);
+    main_thread_task_executor->SetWorkBatchSize(2);
+#else
     main_thread_task_executor =
         std::make_unique<base::SingleThreadTaskExecutor>(
             base::MessagePumpType::DEFAULT);
+#endif
   } else {
 #if BUILDFLAG(IS_WIN)
     // The GpuMain thread should not be pumping Windows messages because no UI
@@ -308,12 +330,14 @@ int GpuMain(MainFunctionParams parameters) {
     // Cross-process CoreAnimation requires a CFRunLoop to function at all, and
     // requires a NSRunLoop to not starve under heavy load. See:
     // https://crbug.com/312462#c51 and https://crbug.com/783298
+    // CADisplayLink (Mac HW VSync) callback only works with NS_RUNLOOP. DEFAULT
+    // type does not support NSObject.
     main_thread_task_executor =
         std::make_unique<base::SingleThreadTaskExecutor>(
             base::MessagePumpType::NS_RUNLOOP);
     // As part of the migration to DoWork(), this policy is required to keep
     // previous behavior and avoid regressions.
-    // TODO(crbug.com/1041853): Consider updating the policy.
+    // TODO(crbug.com/40668161): Consider updating the policy.
     main_thread_task_executor->SetWorkBatchSize(2);
 #else
     main_thread_task_executor =
@@ -323,11 +347,24 @@ int GpuMain(MainFunctionParams parameters) {
   }
 
   base::PlatformThread::SetName("CrGpuMain");
+  mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics("GpuMain");
 
-  // Set thread priority before sandbox initialization.
-  if (!features::IsGpuMainThreadForcedToNormalPriorityDrDc()) {
-    base::PlatformThread::SetCurrentThreadType(base::ThreadType::kCompositing);
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+  // Thread type delegate of the process should be registered before
+  // thread type change below for the main thread and for thread pool in
+  // ChildProcess constructor.
+  // It also needs to be registered before the process has multiple threads,
+  // which may race with application of the sandbox. InitializeAndStartSandbox()
+  // sandboxes the process and starts threads so this has to happen first.
+  if (base::FeatureList::IsEnabled(
+          features::kHandleChildThreadTypeChangesInBrowser) ||
+      base::FeatureList::IsEnabled(features::kSchedQoSOnResourcedForChrome)) {
+    SandboxedProcessThreadTypeHandler::Create();
   }
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+  base::PlatformThread::SetCurrentThreadType(
+      base::ThreadType::kDisplayCritical);
 
   auto gpu_init = std::make_unique<gpu::GpuInit>();
   ContentSandboxHelper sandbox_helper;
@@ -357,6 +394,9 @@ int GpuMain(MainFunctionParams parameters) {
   // message from the browser (through mojom::VizMain::CreateGpuService()).
   const bool init_success = gpu_init->InitializeAndStartSandbox(
       const_cast<base::CommandLine*>(&command_line), gpu_preferences);
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  LOG(WARNING) << "gpu initialization completed init_success:" << init_success;
+#endif
   const bool dead_on_arrival = !init_success;
 
   auto* client = GetContentClient()->gpu();
@@ -366,13 +406,7 @@ int GpuMain(MainFunctionParams parameters) {
 
   GetContentClient()->SetGpuInfo(gpu_init->gpu_info());
 
-  base::ThreadType io_thread_type = base::ThreadType::kCompositing;
-#if BUILDFLAG(IS_MAC)
-  // Increase the thread priority to get more reliable values in performance
-  // test of mac_os.
-  if (command_line.HasSwitch(switches::kUseHighGPUThreadPriorityForPerfTests))
-    io_thread_type = base::ThreadType::kRealtimeAudio;
-#endif
+  base::ThreadType io_thread_type = base::ThreadType::kDisplayCritical;
   // ChildProcess will start the ThreadPoolInstance now that the sandbox is
   // initialized.
   ChildProcess gpu_process(io_thread_type);
@@ -425,7 +459,7 @@ int GpuMain(MainFunctionParams parameters) {
   base::allocator::PartitionAllocSupport::Get()->ReconfigureAfterTaskRunnerInit(
       switches::kGpuProcess);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   using namespace OHOS::NWeb;
 
   auto pid = base::GetCurrentProcId();
@@ -433,21 +467,30 @@ int GpuMain(MainFunctionParams parameters) {
   if (tid < 0) {
     tid = GetTidListByName(pid, "mali-cmar-backe");
   }
-  if(tid > 0) {
+  if (tid > 0) {
     auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-      switches::kProcessType);
+        switches::kProcessType);
     if (type == switches::kGpuProcess) {
       NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(), tid,
+          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     } else {
       ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        tid, ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(), tid,
+          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     }
   }
-#endif
+#endif  //! BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   base::HighResolutionTimerManager hi_res_timer_manager;
+
+  // Adds support of wall-time based TimerKeeper metrics for the main GPU thread
+  // when command-line flag is set. CrGpuMain will be used as suffix for each
+  // metric.
+  if (command_line.HasSwitch(switches::kEnableGpuMainTimeKeeperMetrics)) {
+    base::CurrentThread::Get()->EnableMessagePumpTimeKeeperMetrics(
+        "CrGpuMain",
+        /*wall_time_based_metrics_enabled_for_testing=*/true);
+  }
 
   {
     TRACE_EVENT0("gpu", "Run Message Loop");
@@ -499,7 +542,7 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
   sandbox_options.accelerated_video_encode_enabled =
       !gpu_prefs.disable_accelerated_video_encode;
 
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
   // Video decoding of many video streams can use thousands of FDs as well as
   // Exo clients like Lacros.
   // See https://crbug.com/1417237
@@ -514,12 +557,10 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
   bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
       sandbox::policy::SandboxTypeFromCommandLine(
           *base::CommandLine::ForCurrentProcess()),
-      base::BindOnce(GpuProcessPreSandboxHook), sandbox_options);
+      base::BindOnce(GpuPreSandboxHook), sandbox_options);
 
   if (watchdog_thread) {
-    base::Thread::Options thread_options;
-    thread_options.timer_slack = base::TIMER_SLACK_MAXIMUM;
-    watchdog_thread->StartWithOptions(std::move(thread_options));
+    watchdog_thread->Start();
   }
 
   return res;
@@ -544,43 +585,70 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo* sandbox_info) {
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_OHOS)
-int32_t GetTidListByName(int32_t pid, const std::string& thread_name)
-{
+bool StartSandboxOHOS(gpu::GpuWatchdogThread* watchdog_thread) {
+  TRACE_EVENT0("gpu,startup", "Initialize sandbox");
+
+  if (watchdog_thread) {
+    // SandboxLinux needs to be able to ensure that the thread
+    // has really been stopped.
+    sandbox::policy::SandboxLinux::GetInstance()->StopThread(watchdog_thread);
+  }
+
+  // SandboxLinux::InitializeSandbox() must always be called
+  // with only one thread.
+  sandbox::policy::SandboxLinux::Options sandbox_options;
+
+  bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
+      sandbox::policy::SandboxTypeFromCommandLine(
+          *base::CommandLine::ForCurrentProcess()),
+      base::BindOnce(GpuPreSandboxHook), sandbox_options);
+
+  if (watchdog_thread) {
+    watchdog_thread->Start();
+  }
+
+  return res;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+int32_t GetTidListByName(int32_t pid, const std::string& thread_name) {
   int32_t tid = -1;
   if (pid <= 0) {
     return tid;
   }
 
-  std::string path_name = std::string("/proc/").append(std::to_string(pid)).append("/task");
-  DIR *dir = opendir(path_name.c_str());
+  std::string path_name =
+      std::string("/proc/").append(std::to_string(pid)).append("/task");
+  DIR* dir = opendir(path_name.c_str());
   if (!dir) {
-    LOG(ERROR) << "opendir " << path_name <<" failed, errno: " << errno;
+    LOG(ERROR) << "opendir " << path_name << " failed, errno: " << errno;
     return tid;
   }
 
-  struct dirent *de = nullptr;
+  struct dirent* de = nullptr;
   while ((de = readdir(dir))) {
     if (!(de->d_type & DT_DIR) || !isdigit(de->d_name[0])) {
-        continue;
+      continue;
     }
-    std::string comm_path = path_name + std::string("/").append(de->d_name).append("/comm");
+    std::string comm_path =
+        path_name + std::string("/").append(de->d_name).append("/comm");
     std::string comm;
     if (!LoadStringFromFile(comm_path, comm)) {
-        continue;
+      continue;
     }
     if (tid < 0 && comm.find(thread_name) != std::string::npos) {
-        tid = atoi(de->d_name);
-        if (tid >= 0) {
-            break;
-        }
+      tid = atoi(de->d_name);
+      if (tid >= 0) {
+        break;
+      }
     }
   }
   closedir(dir);
   return tid;
 }
 
-bool LoadStringFromFile(const std::string& file_path, std::string& content)
-{
+bool LoadStringFromFile(const std::string& file_path, std::string& content) {
   std::ifstream file(file_path.c_str());
   if (!file.is_open()) {
     LOG(ERROR) << "open file failed! file path: " << file_path;
@@ -595,11 +663,11 @@ bool LoadStringFromFile(const std::string& file_path, std::string& content)
   }
   content.clear();
   file.seekg(0, std::ios::beg);
-  std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), std::back_inserter(content));
+  std::copy(std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>(), std::back_inserter(content));
   return true;
 }
-#endif
-
+#endif  // !BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 }  // namespace.
 

@@ -48,8 +48,10 @@ class ASH_EXPORT ShelfNavigationWidget : public ShelfComponent,
 
     views::BoundsAnimator* GetBoundsAnimator();
 
+    views::View* GetWidgetDelegateView();
+
    private:
-    raw_ptr<ShelfNavigationWidget, ExperimentalAsh> navigation_widget_;
+    raw_ptr<ShelfNavigationWidget> navigation_widget_;
   };
 
   ShelfNavigationWidget(Shelf* shelf, ShelfView* shelf_view);
@@ -121,8 +123,8 @@ class ASH_EXPORT ShelfNavigationWidget : public ShelfComponent,
   // Returns the number of visible control buttons.
   int CalculateButtonCount() const;
 
-  raw_ptr<Shelf, ExperimentalAsh> shelf_ = nullptr;
-  raw_ptr<Delegate, ExperimentalAsh> delegate_ = nullptr;
+  raw_ptr<Shelf> shelf_ = nullptr;
+  raw_ptr<Delegate> delegate_ = nullptr;
 
   // In tablet mode with hotseat enabled, `clip_rect_after_rtl_` is used to hide
   // the invisible widget part. We try best to avoid changing the widget's

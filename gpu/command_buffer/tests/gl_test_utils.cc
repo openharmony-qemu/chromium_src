@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "gpu/command_buffer/tests/gl_test_utils.h"
 
 #include <GLES2/gl2extchromium.h>
@@ -12,6 +17,8 @@
 #include <string>
 
 #include "base/command_line.h"
+#include "base/containers/contains.h"
+#include "base/containers/heap_array.h"
 #include "base/logging.h"
 #include "build/build_config.h"
 #include "gpu/command_buffer/common/gles2_cmd_utils.h"
@@ -39,12 +46,11 @@ gl::GLDisplay* GLTestHelper::InitializeGL(gl::GLImplementation gl_impl) {
         /*gpu_preference=*/gl::GpuPreference::kDefault);
   } else {
     if (!gl::init::InitializeStaticGLBindingsImplementation(
-            gl::GLImplementationParts(gl_impl),
-            /*fallback_to_software_gl=*/false))
+            gl::GLImplementationParts(gl_impl))) {
       return nullptr;
+    }
 
     display = gl::init::InitializeGLOneOffPlatformImplementation(
-        /*fallback_to_software_gl=*/false,
         /*disable_gl_drawing=*/false,
         /*init_extensions=*/false,
         /*gpu_preference=*/gl::GpuPreference::kDefault);
@@ -79,7 +85,7 @@ bool GLTestHelper::HasExtension(const char* extension) {
       std::string(reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS))) +
       " ";
   std::string extension_padded = std::string(extension) + " ";
-  return extensions.find(extension_padded) != std::string::npos;
+  return base::Contains(extensions, extension_padded);
 }
 
 bool GLTestHelper::CheckGLError(const char* msg, int line) {
@@ -305,16 +311,15 @@ bool GLTestHelper::SaveBackbufferAsBMP(
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   int num_pixels = width * height;
   int size = num_pixels * 4;
-  std::unique_ptr<uint8_t[]> data(new uint8_t[size]);
-  uint8_t* pixels = data.get();
-  glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+  auto data = base::HeapArray<uint8_t>::WithSize(size);
+  glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 
   // RGBA to BGRA
   for (int ii = 0; ii < num_pixels; ++ii) {
     int offset = ii * 4;
-    uint8_t t = pixels[offset + 0];
-    pixels[offset + 0] = pixels[offset + 2];
-    pixels[offset + 2] = t;
+    uint8_t t = data[offset + 0];
+    data[offset + 0] = data[offset + 2];
+    data[offset + 2] = t;
   }
 
   BitmapHeaderFile bhf;
@@ -339,7 +344,7 @@ bool GLTestHelper::SaveBackbufferAsBMP(
 
   fwrite(&bhf, sizeof(bhf), 1, fp);
   fwrite(&bih, sizeof(bih), 1, fp);
-  fwrite(pixels, size, 1, fp);
+  fwrite(data.data(), size, 1, fp);
   fclose(fp);
   return true;
 }
@@ -392,7 +397,7 @@ bool GpuCommandBufferTestEGL::InitializeEGL(int width, int height) {
                                   &gpu_info);
     // See crbug.com/822716, the ATI proprietary driver has eglGetProcAddress
     // but eglInitialize crashes with x11.
-    if (gpu_info.gl_vendor.find("ATI Technologies Inc.") != std::string::npos) {
+    if (base::Contains(gpu_info.gl_vendor, "ATI Technologies Inc.")) {
       LOG(INFO) << "Skip test, ATI proprietary driver crashes with egl/x11";
       return false;
     }

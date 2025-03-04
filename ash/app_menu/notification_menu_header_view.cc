@@ -7,6 +7,7 @@
 #include "ash/public/cpp/app_menu_constants.h"
 #include "base/strings/string_number_conversions.h"
 #include "ui/base/l10n/l10n_util.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/strings/grit/ui_strings.h"
 #include "ui/views/border.h"
 #include "ui/views/controls/label.h"
@@ -56,25 +57,29 @@ void NotificationMenuHeaderView::UpdateCounter(int number_of_notifications) {
   counter_->SetText(base::NumberToString16(number_of_notifications_));
 }
 
-gfx::Size NotificationMenuHeaderView::CalculatePreferredSize() const {
-  return gfx::Size(
-      views::MenuConfig::instance().touchable_menu_min_width,
-      GetInsets().height() + notification_title_->GetPreferredSize().height());
+gfx::Size NotificationMenuHeaderView::CalculatePreferredSize(
+    const views::SizeBounds& available_size) const {
+  return gfx::Size(views::MenuConfig::instance().touchable_menu_min_width,
+                   GetInsets().height() +
+                       notification_title_->GetPreferredSize({}).height());
 }
 
-void NotificationMenuHeaderView::Layout() {
+void NotificationMenuHeaderView::Layout(PassKey) {
   const gfx::Insets insets = GetInsets();
 
   const gfx::Size notification_title_preferred_size =
-      notification_title_->GetPreferredSize();
+      notification_title_->GetPreferredSize({});
   notification_title_->SetBounds(insets.left(), insets.top(),
                                  notification_title_preferred_size.width(),
                                  notification_title_preferred_size.height());
 
-  const gfx::Size counter_preferred_size = counter_->GetPreferredSize();
+  const gfx::Size counter_preferred_size = counter_->GetPreferredSize({});
   counter_->SetBounds(width() - counter_preferred_size.width() - insets.right(),
                       insets.top(), counter_preferred_size.width(),
                       counter_preferred_size.height());
 }
+
+BEGIN_METADATA(NotificationMenuHeaderView)
+END_METADATA
 
 }  // namespace ash

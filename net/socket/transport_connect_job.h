@@ -6,6 +6,7 @@
 #define NET_SOCKET_TRANSPORT_CONNECT_JOB_H_
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -25,9 +26,12 @@
 #include "net/dns/public/secure_dns_policy.h"
 #include "net/socket/connect_job.h"
 #include "net/socket/connection_attempts.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/scheme_host_port.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -44,10 +48,10 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   // transport parameters.
   using Endpoint = absl::variant<url::SchemeHostPort, HostPortPair>;
 
-  // |host_resolution_callback| will be invoked after the the hostname is
-  // resolved. |network_anonymization_key| is passed to the HostResolver to
-  // prevent cross-NIK leaks. If |host_resolution_callback| does not return OK,
-  // then the connection will be aborted with that value. |supported_alpns|
+  // `host_resolution_callback` will be invoked after the the hostname is
+  // resolved. `network_anonymization_key` is passed to the HostResolver to
+  // prevent cross-NAK leaks. If `host_resolution_callback` does not return OK,
+  // then the connection will be aborted with that value. `supported_alpns`
   // specifies ALPN protocols for selecting HTTPS/SVCB records. If empty,
   // addresses from HTTPS/SVCB records will be ignored and only A/AAAA will be
   // used.
@@ -55,7 +59,12 @@ class NET_EXPORT_PRIVATE TransportSocketParams
                         NetworkAnonymizationKey network_anonymization_key,
                         SecureDnsPolicy secure_dns_policy,
                         OnHostResolutionCallback host_resolution_callback,
-                        base::flat_set<std::string> supported_alpns);
+                        base::flat_set<std::string> supported_alpns
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+                        ,
+                        bool secure_dns_only = false
+#endif
+  );
 
   TransportSocketParams(const TransportSocketParams&) = delete;
   TransportSocketParams& operator=(const TransportSocketParams&) = delete;
@@ -71,6 +80,9 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const base::flat_set<std::string>& supported_alpns() const {
     return supported_alpns_;
   }
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool secure_dns_only() const { return secure_dns_only_; }
+#endif
 
  private:
   friend class base::RefCounted<TransportSocketParams>;
@@ -81,6 +93,9 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const SecureDnsPolicy secure_dns_policy_;
   const OnHostResolutionCallback host_resolution_callback_;
   const base::flat_set<std::string> supported_alpns_;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  const bool secure_dns_only_;
+#endif
 };
 
 // TransportConnectJob handles the host resolution necessary for socket creation
@@ -93,6 +108,10 @@ class NET_EXPORT_PRIVATE TransportSocketParams
 // a headstart) and return the one that completes first to the socket pool.
 class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
  public:
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  static const int kMaxMultiSocketNum = 15;
+#endif
+
   class NET_EXPORT_PRIVATE Factory {
    public:
     Factory() = default;
@@ -135,8 +154,8 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
                       const scoped_refptr<TransportSocketParams>& params,
                       Delegate* delegate,
                       const NetLogWithSource* net_log,
-                      absl::optional<EndpointResultOverride>
-                          endpoint_result_override = absl::nullopt);
+                      std::optional<EndpointResultOverride>
+                          endpoint_result_override = std::nullopt);
 
   TransportConnectJob(const TransportConnectJob&) = delete;
   TransportConnectJob& operator=(const TransportConnectJob&) = delete;
@@ -148,16 +167,11 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
   bool HasEstablishedConnection() const override;
   ConnectionAttempts GetConnectionAttempts() const override;
   ResolveErrorInfo GetResolveErrorInfo() const override;
-  absl::optional<HostResolverEndpointResult> GetHostResolverEndpointResult()
+  std::optional<HostResolverEndpointResult> GetHostResolverEndpointResult()
       const override;
 
   static base::TimeDelta ConnectionTimeout();
-
-#if BUILDFLAG(IS_OHOS)
-  void SetFromPreload(bool from_preload) override;
-#endif
-
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void SetConnectTimeout(int timeout_override) override;
 #endif
  private:
@@ -174,7 +188,15 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   // Although it is not strictly necessary, it makes the code simpler if each
   // subjob knows what type it is.
-  enum SubJobType { SUB_JOB_IPV4, SUB_JOB_IPV6 };
+  enum SubJobType {
+    SUB_JOB_IPV4,
+    SUB_JOB_IPV6
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+    ,
+    SUB_MULTI_JOB,
+    SUB_MULTI_FALLBACK_JOB,
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  };
 
   void OnIOComplete(int result);
   int DoLoop(int result);
@@ -197,6 +219,18 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   // Called from |fallback_timer_|.
   void StartIPv4JobAsync();
+
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  void ClearMultiJobsAndStopTimers();
+  void WillDoMultiConnect();
+  void StartMultiConnectJobs();
+  void WillDoMultiConnectFallback();
+  void StartMultiConnectFallbackJobs();
+  void NeedReportSuccessIp(const IPEndPoint& address, SubJobType type);
+  void ReportSuccessIp(int success_index,
+                       int ip_addresses_num,
+                       SubJobType type);
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 
   // Begins the host resolution and the TCP connect.  Returns OK on success
   // and ERR_IO_PENDING if it cannot immediately service the request.
@@ -239,6 +273,16 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   ResolveErrorInfo resolve_error_info_;
   ConnectionAttempts connection_attempts_;
+
+#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+  base::RepeatingTimer multi_connect_timer_;
+  base::RepeatingTimer multi_connect_fallback_timer_;
+  std::vector<IPEndPoint> multi_connect_ip_addresses_;
+  std::vector<IPEndPoint> multi_connect_fallback_ip_addresses_;
+  std::vector<std::unique_ptr<TransportConnectSubJob>> multi_connect_jobs_;
+  std::vector<std::unique_ptr<TransportConnectSubJob>>
+      multi_connect_fallback_jobs_;
+#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 
   base::WeakPtrFactory<TransportConnectJob> weak_ptr_factory_{this};
 };

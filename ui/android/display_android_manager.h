@@ -7,6 +7,8 @@
 
 #include <jni.h>
 
+#include <optional>
+
 #include "base/android/jni_android.h"
 #include "ui/display/screen_base.h"
 #include "ui/gfx/geometry/size.h"
@@ -31,6 +33,8 @@ class DisplayAndroidManager : public display::ScreenBase {
       const gfx::Point& point) const override;
   display::Display GetDisplayMatching(
       const gfx::Rect& match_rect) const override;
+  std::optional<float> GetPreferredScaleFactorForView(
+      gfx::NativeView view) const override;
 
   // Methods called from Java.
 
@@ -44,6 +48,7 @@ class DisplayAndroidManager : public display::ScreenBase {
                      jint bitsPerPixel,
                      jint bitsPerComponent,
                      jboolean isWideColorGamut,
+                     jboolean isHdr,
                      jfloat hdrMaxLuminanceRatio);
   void RemoveDisplay(JNIEnv* env,
                      const base::android::JavaParamRef<jobject>& jobject,
@@ -63,8 +68,9 @@ class DisplayAndroidManager : public display::ScreenBase {
                               int rotationDegrees,
                               int bitsPerPixel,
                               int bitsPerComponent,
-                              jfloat hdrMaxLuminanceRatio,
-                              bool isWideColorGamut);
+                              bool isWideColorGamut,
+                              bool isHdr,
+                              jfloat hdrMaxLuminanceRatio);
 
   const bool use_display_wide_color_gamut_;
   int primary_display_id_ = 0;

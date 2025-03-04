@@ -2,11 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
+#include "content/browser/devtools/devtools_http_handler.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <memory>
+#include <optional>
+#include <string_view>
 #include <utility>
 
 #include "base/command_line.h"
@@ -17,6 +26,7 @@
 #include "base/json/json_writer.h"
 #include "base/location.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted_memory.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/metrics/histogram_macros.h"
@@ -31,7 +41,6 @@
 #include "base/values.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
-#include "content/browser/devtools/devtools_http_handler.h"
 #include "content/browser/devtools/devtools_manager.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
@@ -54,7 +63,6 @@
 #include "net/server/http_server_response_info.h"
 #include "net/socket/server_socket.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "v8/include/v8-version-string.h"
 
 #if BUILDFLAG(IS_ANDROID)
@@ -252,18 +260,12 @@ void ServerStartedOnUI(base::WeakPtr<DevToolsHttpHandler> handler,
                        std::unique_ptr<net::IPEndPoint> ip_address) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (handler && thread && server_wrapper) {
-#if BUILDFLAG(IS_OHOS)
-    LOG(INFO) << "Domain Socket Server Started.";
-#endif
     handler->ServerStarted(
         std::unique_ptr<base::Thread>(thread),
         std::unique_ptr<ServerWrapper>(server_wrapper),
         std::unique_ptr<DevToolsSocketFactory>(socket_factory),
         std::move(ip_address));
   } else {
-#if BUILDFLAG(IS_OHOS)
-    LOG(INFO) << "Domain Socket Server Terminate On UI.";
-#endif
     TerminateOnUI(std::unique_ptr<base::Thread>(thread),
                   std::unique_ptr<ServerWrapper>(server_wrapper),
                   std::unique_ptr<DevToolsSocketFactory>(socket_factory));
@@ -299,7 +301,6 @@ void StartServerOnHandlerThread(
         browser_guid.c_str());
     fprintf(stderr, "%s", message.c_str());
     fflush(stderr);
-    LOG(INFO) << "start devtools listening ok, " << message;
 
     // Write this port to a well-known file in the profile directory
     // so Telemetry, ChromeDriver, etc. can pick it up.
@@ -389,7 +390,7 @@ class DevToolsAgentHostClientImpl : public DevToolsAgentHostClient {
 
  private:
   const scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-  ServerWrapper* const server_wrapper_;
+  const raw_ptr<ServerWrapper> server_wrapper_;
   const int connection_id_;
   scoped_refptr<DevToolsAgentHost> agent_host_;
 };
@@ -424,6 +425,8 @@ static std::string GetMimeType(const std::string& filename) {
                             base::CompareCase::INSENSITIVE_ASCII)) {
     return "text/css";
   } else if (base::EndsWith(filename, ".js",
+                            base::CompareCase::INSENSITIVE_ASCII) ||
+             base::EndsWith(filename, ".mjs",
                             base::CompareCase::INSENSITIVE_ASCII)) {
     return "text/javascript";
   } else if (base::EndsWith(filename, ".png",
@@ -586,7 +589,7 @@ void DevToolsHttpHandler::OnJsonRequest(
   std::string command;
   std::string target_id;
   if (!ParseJsonPath(path, &command, &target_id)) {
-    SendJson(connection_id, net::HTTP_NOT_FOUND, absl::nullopt,
+    SendJson(connection_id, net::HTTP_NOT_FOUND, std::nullopt,
              "Malformed query: " + info.path);
     return;
   }
@@ -614,14 +617,21 @@ void DevToolsHttpHandler::OnJsonRequest(
     DecompressAndSendJsonProtocol(connection_id);
     return;
   }
+  std::vector<std::string_view> query_components = base::SplitStringPiece(
+      query, "&", base::KEEP_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
+
+  bool for_tab = base::Contains(query_components, "for_tab");
 
   if (command == "list") {
     DevToolsManager* manager = DevToolsManager::GetInstance();
     DevToolsAgentHost::List list =
-        manager->delegate() ? manager->delegate()->RemoteDebuggingTargets()
-                            : DevToolsAgentHost::GetOrCreateAll();
+        manager->delegate() ? manager->delegate()->RemoteDebuggingTargets(
+                                  for_tab ? DevToolsManagerDelegate::kTab
+                                          : DevToolsManagerDelegate::kFrame)
+            : DevToolsAgentHost::GetOrCreateAll();
+
     RespondToJsonList(connection_id, info.GetHeaderValue("host"),
-                      std::move(list));
+                      std::move(list), for_tab);
     return;
   }
 
@@ -629,16 +639,14 @@ void DevToolsHttpHandler::OnJsonRequest(
     if (!base::EqualsCaseInsensitiveASCII(
             info.method, net::HttpRequestHeaders::kPutMethod)) {
       SendJson(
-          connection_id, net::HTTP_METHOD_NOT_ALLOWED, absl::nullopt,
+          connection_id, net::HTTP_METHOD_NOT_ALLOWED, std::nullopt,
           base::StringPrintf("Using unsafe HTTP verb %s to invoke /json/new. "
                              "This action supports only PUT verb.",
                              info.method.c_str()));
       return;
     }
 
-    std::vector<base::StringPiece> query_components = base::SplitStringPiece(
-        query, "&", base::KEEP_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
-    base::StringPiece escaped_url =
+    std::string_view escaped_url =
         query_components.empty() ? "" : query_components[0];
     GURL url(base::UnescapeBinaryURLComponent(escaped_url));
     if (!url.is_valid())
@@ -646,9 +654,10 @@ void DevToolsHttpHandler::OnJsonRequest(
     // TODO(dsv): Remove for "for_tab" support once DevTools Frontend
     // no longer needs it for e2e tests
     scoped_refptr<DevToolsAgentHost> agent_host = delegate_->CreateNewTarget(
-        url, query_components.size() > 1 && query_components[1] == "for_tab");
+        url, for_tab ? DevToolsManagerDelegate::kTab
+                     : DevToolsManagerDelegate::kFrame);
     if (!agent_host) {
-      SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, absl::nullopt,
+      SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, std::nullopt,
                "Could not create new page");
       return;
     }
@@ -662,17 +671,16 @@ void DevToolsHttpHandler::OnJsonRequest(
     scoped_refptr<DevToolsAgentHost> agent_host =
         DevToolsAgentHost::GetForId(target_id);
     if (!agent_host) {
-      SendJson(connection_id, net::HTTP_NOT_FOUND, absl::nullopt,
+      SendJson(connection_id, net::HTTP_NOT_FOUND, std::nullopt,
                "No such target id: " + target_id);
       return;
     }
 
     if (command == "activate") {
       if (agent_host->Activate()) {
-        SendJson(connection_id, net::HTTP_OK, absl::nullopt,
-                 "Target activated");
+        SendJson(connection_id, net::HTTP_OK, std::nullopt, "Target activated");
       } else {
-        SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, absl::nullopt,
+        SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, std::nullopt,
                  "Could not activate target id: " + target_id);
       }
       return;
@@ -680,16 +688,16 @@ void DevToolsHttpHandler::OnJsonRequest(
 
     if (command == "close") {
       if (agent_host->Close()) {
-        SendJson(connection_id, net::HTTP_OK, absl::nullopt,
+        SendJson(connection_id, net::HTTP_OK, std::nullopt,
                  "Target is closing");
       } else {
-        SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, absl::nullopt,
+        SendJson(connection_id, net::HTTP_INTERNAL_SERVER_ERROR, std::nullopt,
                  "Could not close target id: " + target_id);
       }
       return;
     }
   }
-  SendJson(connection_id, net::HTTP_NOT_FOUND, absl::nullopt,
+  SendJson(connection_id, net::HTTP_NOT_FOUND, std::nullopt,
            "Unknown command: " + command);
 }
 
@@ -700,11 +708,10 @@ void DevToolsHttpHandler::DecompressAndSendJsonProtocol(int connection_id) {
   scoped_refptr<base::RefCountedMemory> bytes =
       GetContentClient()->GetDataResourceBytes(kCcompressedProtocolJSON);
   CHECK(bytes) << "Could not load protocol";
-  std::string json_protocol(reinterpret_cast<const char*>(bytes->front()),
-                            bytes->size());
 
   net::HttpServerResponseInfo response(net::HTTP_OK);
-  response.SetBody(json_protocol, "application/json; charset=UTF-8");
+  response.SetBody(std::string(base::as_string_view(*bytes)),
+                   "application/json; charset=UTF-8");
 
   thread_->task_runner()->PostTask(
       FROM_HERE, base::BindOnce(&ServerWrapper::SendResponse,
@@ -713,18 +720,17 @@ void DevToolsHttpHandler::DecompressAndSendJsonProtocol(int connection_id) {
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_IOS)
 }
 
-void DevToolsHttpHandler::RespondToJsonList(
-    int connection_id,
-    const std::string& host,
-    DevToolsAgentHost::List hosts) {
+void DevToolsHttpHandler::RespondToJsonList(int connection_id,
+                                            const std::string& host,
+                                            DevToolsAgentHost::List hosts,
+                                            bool for_tab) {
   DevToolsAgentHost::List agent_hosts = std::move(hosts);
   std::sort(agent_hosts.begin(), agent_hosts.end(), TimeComparator);
   base::Value::List list_value;
   for (auto& agent_host : agent_hosts) {
-    // TODO(caseq): figure out if it makes sense exposing tab target to
-    // HTTP clients and potentially compatibility risks involved.
-    if (agent_host->GetType() != DevToolsAgentHost::kTypeTab)
+    if (agent_host->GetType() != DevToolsAgentHost::kTypeTab || for_tab) {
       list_value.Append(SerializeDescriptor(agent_host, host));
+    }
   }
   SendJson(connection_id, net::HTTP_OK, list_value, std::string());
 }
@@ -837,13 +843,7 @@ DevToolsHttpHandler::DevToolsHttpHandler(
       new base::Thread(kDevToolsHandlerThreadName));
   base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
-#if BUILDFLAG(IS_OHOS)
-  LOG(INFO) << "Is Domain Socket Dev Tools Http Handler Entry?";
-#endif
   if (thread->StartWithOptions(std::move(options))) {
-#if BUILDFLAG(IS_OHOS)
-    LOG(INFO) << "Is Domain Socket Dev Tools Http Handler Entry!";
-#endif
     auto task_runner = thread->task_runner();
     task_runner->PostTask(
         FROM_HERE,
@@ -875,7 +875,7 @@ void DevToolsHttpHandler::ServerStarted(
 
 void DevToolsHttpHandler::SendJson(int connection_id,
                                    net::HttpStatusCode status_code,
-                                   absl::optional<base::ValueView> value,
+                                   std::optional<base::ValueView> value,
                                    const std::string& message) {
   if (!thread_)
     return;

@@ -10,7 +10,7 @@
 namespace content {
 
 BrowsingContextGroupSwap BrowsingContextGroupSwap::CreateDefault() {
-  return {BrowsingContextGroupSwapType::kNoSwap, absl::nullopt};
+  return {BrowsingContextGroupSwapType::kNoSwap, std::nullopt};
 }
 
 BrowsingContextGroupSwap BrowsingContextGroupSwap::CreateNoSwap(
@@ -50,7 +50,6 @@ bool BrowsingContextGroupSwap::ShouldSwap() const {
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
 bool BrowsingContextGroupSwap::ShouldClearProxiesOnCommit() const {
@@ -58,19 +57,13 @@ bool BrowsingContextGroupSwap::ShouldClearProxiesOnCommit() const {
     case BrowsingContextGroupSwapType::kNoSwap:
     case BrowsingContextGroupSwapType::kSecuritySwap:
     case BrowsingContextGroupSwapType::kProactiveSwap:
-      return false;
-
-    // TODO(https://crbug.com/1221127): Once we have the COOP group to support
-    // creating proxies across BrowsingInstances, we should also prevent their
-    // deletion, by changing this to false.
     case BrowsingContextGroupSwapType::kRelatedCoopSwap:
-      return true;
+      return false;
 
     case BrowsingContextGroupSwapType::kCoopSwap:
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
 bool BrowsingContextGroupSwap::ShouldClearWindowName() const {
@@ -85,12 +78,11 @@ bool BrowsingContextGroupSwap::ShouldClearWindowName() const {
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
 BrowsingContextGroupSwap::BrowsingContextGroupSwap(
     BrowsingContextGroupSwapType type,
-    const absl::optional<ShouldSwapBrowsingInstance>& reason)
+    const std::optional<ShouldSwapBrowsingInstance>& reason)
     : type_(type), reason_(reason) {}
 
 }  // namespace content

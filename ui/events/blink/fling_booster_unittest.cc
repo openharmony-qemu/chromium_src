@@ -2,15 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#if defined(OHOS_UNITTESTS)
-#include "testing/gmock/include/gmock/gmock.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/system_properties_adapter.h"
-
-#define private public
-#include "ohos_adapter_helper.h"
-#undef private
-#endif  // OHOS_UNITTESTS
-
 #include "ui/events/blink/fling_booster.h"
 
 #include <memory>
@@ -24,48 +15,6 @@ using blink::WebGestureDevice;
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
 using gfx::Vector2dF;
-
-#if defined(OHOS_UNITTESTS)
-namespace OHOS::NWeb {
-class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
- public:
-  MOCK_METHOD(bool, GetResourceUseHapPathEnable, (), (override));
-  MOCK_METHOD(std::string, GetDeviceInfoProductModel, (), (override));
-  MOCK_METHOD(std::string, GetDeviceInfoBrand, (), (override));
-  MOCK_METHOD(int32_t, GetDeviceInfoMajorVersion, (), (override));
-  MOCK_METHOD(ProductDeviceType, GetProductDeviceType, (), (override));
-  MOCK_METHOD(bool, GetWebOptimizationValue, (), (override));
-  MOCK_METHOD(bool, IsAdvancedSecurityMode, (), (override));
-  MOCK_METHOD(std::string, GetUserAgentOSName, (), (override));
-  MOCK_METHOD(int32_t, GetSoftwareMajorVersion, (), (override));
-  MOCK_METHOD(int32_t, GetSoftwareSeniorVersion, (), (override));
-  MOCK_METHOD(std::string, GetNetlogMode, (), (override));
-  MOCK_METHOD(bool, GetTraceDebugEnable, (), (override));
-  MOCK_METHOD(std::string, GetSiteIsolationMode, (), (override));
-  MOCK_METHOD(int32_t, GetFlowBufMaxFd, (), (override));
-  MOCK_METHOD(bool, GetOOPGPUEnable, (), (override));
-  MOCK_METHOD(void, SetOOPGPUDisable, (), (override));
-  MOCK_METHOD(void,
-              AttachSysPropObserver,
-              (PropertiesKey, SystemPropertiesObserver*),
-              (override));
-  MOCK_METHOD(void,
-              DetachSysPropObserver,
-              (PropertiesKey, SystemPropertiesObserver*),
-              (override));
-  MOCK_METHOD(bool, GetBoolParameter, (const std::string&, bool), (override));
-  std::vector<FrameRateSetting> GetLTPOConfig(
-      const std::string& settingName) override {
-    return {};
-  }
-  MOCK_METHOD(std::string, GetOOPGPUStatus, (), (override));
-  MOCK_METHOD(bool, IsLTPODynamicApp, (const std::string&), (override));
-  MOCK_METHOD(int32_t, GetLTPOStrategy, (), (override));
-  MOCK_METHOD(std::string, GetUserAgentBaseOSName, (), (override));
-  MOCK_METHOD(std::string, GetUserAgentOSVersion, (), (override));
-};
-}  // namespace OHOS::NWeb
-#endif // OHOS_UNITTESTS
 
 namespace ui {
 namespace test {
@@ -366,15 +315,5 @@ TEST_F(FlingBoosterTest, NoFlingBoostIfScrollBeginPastCutoffTime) {
          "delay.";
 }
 
-#if defined(OHOS_UNITTESTS)
-TEST_F(FlingBoosterTest, GetInstance001) {
-  auto real = std::make_shared<OHOS::NWeb::MockSystemPropertiesAdapter>();
-  OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance() =
-      *real;
-  Vector2dF fling_velocity = fling_booster_.GetVelocityForFlingStart(
-      CreateFlingStart(Vector2dF(0, 1500)));
-  EXPECT_EQ(Vector2dF(0, 2250), fling_velocity);
-}
-#endif  // OHOS_UNITTESTS
 }  // namespace test
 }  // namespace ui

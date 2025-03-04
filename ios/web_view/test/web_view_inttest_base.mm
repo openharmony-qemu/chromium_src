@@ -19,10 +19,6 @@
 #include "net/test/embedded_test_server/http_response.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // Test server path which renders a basic html page.
@@ -51,9 +47,7 @@ bool StartsWith(std::string string, std::string prefix) {
 
 // Encodes the |string| for use as the value of a url parameter.
 std::string EncodeQueryParamValue(std::string string) {
-  std::string encoded_string;
-  base::Base64Encode(string, &encoded_string);
-  return encoded_string;
+  return base::Base64Encode(string);
 }
 
 // Decodes the |encoded_string|. Undoes the encoding performed by

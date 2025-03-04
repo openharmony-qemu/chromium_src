@@ -4,7 +4,8 @@
 
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_metrics_recorder.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/histogram_macros.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
@@ -12,19 +13,100 @@
 #import "components/ntp_tiles/metrics.h"
 #import "components/ntp_tiles/ntp_tile_impression.h"
 #import "components/ntp_tiles/tile_visual_type.h"
+#import "components/prefs/pref_service.h"
+#import "ios/chrome/browser/favicon/ui_bundled/favicon_attributes_with_payload.h"
+#import "ios/chrome/browser/ntp/model/set_up_list_item_type.h"
+#import "ios/chrome/browser/ntp/model/set_up_list_metrics.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_most_visited_item.h"
 #import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_tile_constants.h"
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_constants.h"
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_metrics_constants.h"
-#import "ios/chrome/browser/ui/favicon/favicon_attributes_with_payload.h"
+#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_metrics_recorder.h"
+#import "ios/chrome/browser/ui/content_suggestions/set_up_list/utils.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+namespace {
 
-@implementation ContentSuggestionsMetricsRecorder
+const float kMaxModuleEngagementIndex = 50;
+
+}
+
+@implementation ContentSuggestionsMetricsRecorder {
+  raw_ptr<PrefService> _localState;
+}
+
+- (instancetype)initWithLocalState:(PrefService*)localState {
+  if ((self = [super init])) {
+    _localState = localState;
+  }
+  return self;
+}
+
+- (void)disconnect {
+  _localState = nullptr;
+}
 
 #pragma mark - Public
+
+- (void)recordMagicStackModuleEngagementForType:
+            (ContentSuggestionsModuleType)type
+                                        atIndex:(int)index {
+  UMA_HISTOGRAM_ENUMERATION(kMagicStackModuleEngagementHistogram, type);
+  switch (type) {
+    case ContentSuggestionsModuleType::kMostVisited:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementMostVisitedIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kSendTabPromo:
+      // TODO(crbug.com/343495516): log metrics.
+      break;
+    case ContentSuggestionsModuleType::kShortcuts:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementShortcutsIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kSafetyCheck:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementSafetyCheckIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kTabResumption:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementTabResumptionIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kParcelTracking:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementParcelTrackingIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kPriceTrackingPromo:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementPriceTrackingPromoIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kSetUpListSync:
+    case ContentSuggestionsModuleType::kSetUpListDefaultBrowser:
+    case ContentSuggestionsModuleType::kSetUpListAutofill:
+    case ContentSuggestionsModuleType::kSetUpListNotifications:
+    case ContentSuggestionsModuleType::kCompactedSetUpList:
+    case ContentSuggestionsModuleType::kSetUpListAllSet:
+      UMA_HISTOGRAM_EXACT_LINEAR(
+          kMagicStackModuleEngagementSetUpListIndexHistogram, index,
+          kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kTipsWithProductImage:
+    case ContentSuggestionsModuleType::kTips:
+      UMA_HISTOGRAM_EXACT_LINEAR(kMagicStackModuleEngagementTipsIndexHistogram,
+                                 index, kMaxModuleEngagementIndex);
+      break;
+    case ContentSuggestionsModuleType::kPlaceholder:
+    case ContentSuggestionsModuleType::kInvalid:
+      break;
+  }
+}
 
 - (void)recordReturnToRecentTabTileShown {
   base::RecordAction(base::UserMetricsAction(kShowReturnToRecentTabTileAction));
@@ -49,16 +131,10 @@
       break;
     case NTPCollectionShortcutTypeCount:
       NOTREACHED();
-      break;
   }
 }
 
-- (void)recordTrendingQueryTappedAtIndex:(int)index {
-  UMA_HISTOGRAM_ENUMERATION(kTrendingQueriesHistogram, index,
-                            kMaxTrendingQueries);
-}
-
-- (void)recordMostRecentTabOpened {
+- (void)recordTabResumptionTabOpened {
   base::RecordAction(base::UserMetricsAction(kOpenMostRecentTabAction));
 }
 
@@ -75,8 +151,7 @@
 }
 
 - (void)recordMostVisitedTileOpened:(ContentSuggestionsMostVisitedItem*)item
-                            atIndex:(NSInteger)index
-                           webState:(web::WebState*)webState {
+                            atIndex:(NSInteger)index {
   base::RecordAction(base::UserMetricsAction(kMostVisitedAction));
 
   ntp_tiles::metrics::RecordTileClick(ntp_tiles::NTPTileImpression(
@@ -84,12 +159,33 @@
       [self getVisualTypeFromAttributes:item.attributes],
       [self getIconTypeFromAttributes:item.attributes], item.URL));
 
-  new_tab_page_uma::RecordAction(
-      false, webState, new_tab_page_uma::ACTION_OPENED_MOST_VISITED_ENTRY);
+  new_tab_page_uma::RecordNTPAction(
+      false, true, new_tab_page_uma::ACTION_OPENED_MOST_VISITED_ENTRY);
 }
 
 - (void)recordMostVisitedTileRemoved {
   base::RecordAction(base::UserMetricsAction(kMostVisitedUrlBlacklistedAction));
+}
+
+- (void)recordSetUpListShown {
+  set_up_list_metrics::RecordDisplayed();
+}
+
+- (void)recordSetUpListItemShown:(SetUpListItemType)type {
+  set_up_list_metrics::RecordItemDisplayed(type);
+}
+
+- (void)recordSetUpListItemSelected:(SetUpListItemType)type {
+  set_up_list_metrics::RecordItemSelected(type);
+}
+
+- (void)recordContentNotificationSnackbarEvent:
+    (ContentNotificationSnackbarEvent)event {
+  UMA_HISTOGRAM_ENUMERATION(kContentNotificationSnackbarEventHistogram, event);
+  if (event == ContentNotificationSnackbarEvent::kActionButtonTapped) {
+    base::RecordAction(
+        base::UserMetricsAction(kContentNotificationSnackbarAction));
+  }
 }
 
 #pragma mark - Private
@@ -113,7 +209,7 @@
   favicon_base::IconType icon_type = favicon_base::IconType::kInvalid;
   if (attributes.faviconImage) {
     FaviconAttributesWithPayload* favicon_attributes =
-        base::mac::ObjCCastStrict<FaviconAttributesWithPayload>(attributes);
+        base::apple::ObjCCastStrict<FaviconAttributesWithPayload>(attributes);
     icon_type = favicon_attributes.iconType;
   }
   return icon_type;

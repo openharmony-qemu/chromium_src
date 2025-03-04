@@ -9,34 +9,30 @@
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/util/dynamic_type_util.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
+#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_collection_utils.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_ui_features.h"
-#import "ios/chrome/browser/ui/thumb_strip/thumb_strip_feature.h"
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_button.h"
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_button_factory.h"
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_configuration.h"
 #import "ios/chrome/browser/ui/toolbar/buttons/toolbar_tab_grid_button.h"
+#import "ios/chrome/browser/ui/toolbar/buttons/toolbar_tab_group_state.h"
 #import "ios/chrome/browser/ui/toolbar/public/toolbar_constants.h"
 #import "ios/chrome/browser/ui/toolbar/public/toolbar_utils.h"
+#import "ios/chrome/browser/ui/toolbar/tab_groups/ui/tab_group_indicator_constants.h"
+#import "ios/chrome/browser/ui/toolbar/tab_groups/ui/tab_group_indicator_view.h"
 #import "ios/chrome/browser/ui/toolbar/toolbar_progress_bar.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
+#import "ios/chrome/common/ui/util/ui_util.h"
 #import "ui/gfx/ios/uikit_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface PrimaryToolbarView ()
+
 // Factory used to create the buttons.
 @property(nonatomic, strong) ToolbarButtonFactory* buttonFactory;
 
 // ContentView of the vibrancy effect if there is one, self otherwise.
 @property(nonatomic, strong) UIView* contentView;
-
-// Container for the location bar, redefined as readwrite.
-@property(nonatomic, strong, readwrite) UIView* locationBarContainer;
-// The height of the container for the location bar, redefined as readwrite.
-@property(nonatomic, strong, readwrite) NSLayoutConstraint* locationBarHeight;
 
 // StackView containing the leading buttons (relative to the location bar). It
 // should only contain ToolbarButtons. Redefined as readwrite.
@@ -75,6 +71,15 @@
 
 // Button to cancel the edit of the location bar, redefined as readwrite.
 @property(nonatomic, strong, readwrite) UIButton* cancelButton;
+
+#pragma mark** Location bar. **
+// Location bar containing the omnibox.
+@property(nonatomic, strong) UIView* locationBarView;
+// Container for the location bar, redefined as readwrite.
+@property(nonatomic, strong, readwrite) UIView* locationBarContainer;
+// The height of the container for the location bar, redefined as readwrite.
+@property(nonatomic, strong, readwrite)
+    NSLayoutConstraint* locationBarContainerHeight;
 // Button taking the full size of the toolbar. Expands the toolbar when  tapped.
 // Redefined as readwrite.
 @property(nonatomic, strong, readwrite) UIButton* collapsedToolbarButton;
@@ -87,14 +92,19 @@
 @property(nonatomic, strong, readwrite)
     NSMutableArray<NSLayoutConstraint*>* contractedNoMarginConstraints;
 
+// Constraints for the tabGroupIndicator.
+@property(nonatomic, strong, readwrite)
+    NSArray<NSLayoutConstraint*>* tabGroupIndicatorTopOmniboxConstraints;
+@property(nonatomic, strong, readwrite)
+    NSArray<NSLayoutConstraint*>* tabGroupIndicatorBottomOmniboxConstraints;
+
 @end
 
 @implementation PrimaryToolbarView
 
-@synthesize locationBarView = _locationBarView;
 @synthesize fakeOmniboxTarget = _fakeOmniboxTarget;
 @synthesize locationBarBottomConstraint = _locationBarBottomConstraint;
-@synthesize locationBarHeight = _locationBarHeight;
+@synthesize locationBarContainerHeight = _locationBarContainerHeight;
 @synthesize buttonFactory = _buttonFactory;
 @synthesize allButtons = _allButtons;
 @synthesize progressBar = _progressBar;
@@ -164,17 +174,106 @@
   self.fakeOmniboxTarget = nil;
 }
 
-- (void)setTopCornersRounded:(BOOL)rounded {
-  _topCornersRounded = rounded;
-  self.layer.cornerRadius = rounded ? kTopCornerRadius : 0;
+- (void)updateTabGroupIndicatorAvailability {
+  CHECK(IsTabGroupIndicatorEnabled());
+
+  BOOL isTopOmnibox = self.locationBarView != nil;
+  if (isTopOmnibox) {
+    [NSLayoutConstraint
+        deactivateConstraints:self.tabGroupIndicatorBottomOmniboxConstraints];
+    [NSLayoutConstraint
+        activateConstraints:self.tabGroupIndicatorTopOmniboxConstraints];
+  } else {
+    [NSLayoutConstraint
+        deactivateConstraints:self.tabGroupIndicatorTopOmniboxConstraints];
+    [NSLayoutConstraint
+        activateConstraints:self.tabGroupIndicatorBottomOmniboxConstraints];
+  }
+  self.tabGroupIndicatorView.showSeparator = !isTopOmnibox;
+
+  BOOL canShowTabStrip = IsRegularXRegularSizeClass(self.superview);
+  BOOL isAvailable = !IsCompactHeight(self.superview) && !canShowTabStrip;
+  self.tabGroupIndicatorView.available = isAvailable;
+}
+
+#pragma mark - Properties
+
+- (void)setMatchNTPHeight:(BOOL)matchNTPHeight {
+  if (_matchNTPHeight == matchNTPHeight) {
+    return;
+  }
+  _matchNTPHeight = matchNTPHeight;
+  [self invalidateIntrinsicContentSize];
+  [self.superview setNeedsLayout];
+  [self.superview layoutIfNeeded];
+}
+
+// Sets tabgroupIndicatorView.
+- (void)setTabGroupIndicatorView:(TabGroupIndicatorView*)view {
+  CHECK(IsTabGroupIndicatorEnabled());
+  _tabGroupIndicatorView = view;
+  _tabGroupIndicatorView.hidden = YES;
+  _tabGroupIndicatorView.translatesAutoresizingMaskIntoConstraints = NO;
+  _tabGroupIndicatorView.backgroundColor =
+      self.buttonFactory.toolbarConfiguration.backgroundColor;
+  [self addSubview:_tabGroupIndicatorView];
+
+  id<LayoutGuideProvider> safeArea = self.safeAreaLayoutGuide;
+  [NSLayoutConstraint activateConstraints:@[
+    [self.tabGroupIndicatorView.leadingAnchor
+        constraintEqualToAnchor:safeArea.leadingAnchor],
+    [self.tabGroupIndicatorView.trailingAnchor
+        constraintEqualToAnchor:safeArea.trailingAnchor],
+    [self.tabGroupIndicatorView.heightAnchor
+        constraintEqualToConstant:kTabGroupIndicatorHeight],
+  ]];
+  self.tabGroupIndicatorTopOmniboxConstraints = @[
+    [self.tabGroupIndicatorView.bottomAnchor
+        constraintEqualToAnchor:self.locationBarContainer.topAnchor
+                       constant:-kAdaptiveLocationBarVerticalMargin],
+  ];
+  self.tabGroupIndicatorBottomOmniboxConstraints = @[
+    [self.tabGroupIndicatorView.bottomAnchor
+        constraintEqualToAnchor:self.bottomAnchor],
+  ];
+
+  [self updateTabGroupIndicatorAvailability];
 }
 
 #pragma mark - UIView
 
 - (CGSize)intrinsicContentSize {
-  return CGSizeMake(
-      UIViewNoIntrinsicMetric,
-      ToolbarExpandedHeight(self.traitCollection.preferredContentSizeCategory));
+  CGFloat height = 0;
+
+  BOOL isTopOmnibox = self.locationBarView != nil;
+  if (isTopOmnibox) {
+    height += self.matchNTPHeight
+                  ? content_suggestions::FakeToolbarHeight()
+                  : ToolbarExpandedHeight(
+                        self.traitCollection.preferredContentSizeCategory);
+  }
+
+  // If the tab group indicator is visible, add its height to the total height.
+  if (IsTabGroupIndicatorEnabled() && !_tabGroupIndicatorView.hidden) {
+    height += kTabGroupIndicatorHeight;
+    // If the Omnibox is not at the top, remove the top vertical margin to avoid
+    // extra space when the tab group indicator is present.
+    if (!isTopOmnibox) {
+      height -= kTopToolbarUnsplitMargin;
+    } else {
+    }
+  }
+  // TODO(crbug.com/40279063): Find out why primary toolbar height cannot be
+  // zero. This is a temporary fix for the pdf bug.
+  return CGSizeMake(UIViewNoIntrinsicMetric, height > 0 ? height : 1);
+}
+
+- (void)didMoveToSuperview {
+  if (IsTabGroupIndicatorEnabled()) {
+    // Ensure the tab group indicator's visibility aligns with the new
+    // superview's layout context.
+    [self updateTabGroupIndicatorAvailability];
+  }
 }
 
 #pragma mark - Setup
@@ -183,10 +282,6 @@
 - (void)setUpToolbarBackground {
   self.backgroundColor =
       self.buttonFactory.toolbarConfiguration.backgroundColor;
-  if (base::FeatureList::IsEnabled(kExpandedTabStrip)) {
-    self.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner;
-  }
-
   self.contentView = self;
 }
 
@@ -307,14 +402,14 @@
   ]];
 
   // LocationBar constraints. The constant value is set by the VC.
-  self.locationBarHeight =
+  self.locationBarContainerHeight =
       [self.locationBarContainer.heightAnchor constraintEqualToConstant:0];
   self.locationBarBottomConstraint = [self.locationBarContainer.bottomAnchor
       constraintEqualToAnchor:self.bottomAnchor];
 
   [NSLayoutConstraint activateConstraints:@[
     self.locationBarBottomConstraint,
-    self.locationBarHeight,
+    self.locationBarContainerHeight,
   ]];
   [self.contractedConstraints addObjectsFromArray:@[
     [self.locationBarContainer.trailingAnchor
@@ -389,18 +484,24 @@
   AddSameConstraints(self, self.collapsedToolbarButton);
 }
 
-#pragma mark - Property accessors
+#pragma mark - AdaptiveToolbarView
 
 - (void)setLocationBarView:(UIView*)locationBarView {
   if (_locationBarView == locationBarView) {
     return;
   }
-  [_locationBarView removeFromSuperview];
+
+  if ([_locationBarView superview] == self.locationBarContainer) {
+    [_locationBarView removeFromSuperview];
+  }
 
   _locationBarView = locationBarView;
   locationBarView.translatesAutoresizingMaskIntoConstraints = NO;
   [locationBarView setContentHuggingPriority:UILayoutPriorityDefaultLow
                                      forAxis:UILayoutConstraintAxisHorizontal];
+  if (IsTabGroupIndicatorEnabled()) {
+    [self updateTabGroupIndicatorAvailability];
+  }
 
   if (!self.locationBarContainer || !locationBarView)
     return;
@@ -412,6 +513,14 @@
       .active = YES;
 }
 
+- (void)updateTabGroupState:(ToolbarTabGroupState)tabGroupState {
+  const BOOL inGroup = tabGroupState == ToolbarTabGroupState::kTabGroup;
+  self.openNewTabButton.accessibilityLabel =
+      [self.buttonFactory.toolbarConfiguration
+          accessibilityLabelForOpenNewTabButtonInGroup:inGroup];
+  self.tabGridButton.tabGroupState = tabGroupState;
+}
+
 - (NSArray<ToolbarButton*>*)allButtons {
   if (!_allButtons) {
     _allButtons = [self.leadingStackViewButtons
@@ -419,8 +528,6 @@
   }
   return _allButtons;
 }
-
-#pragma mark - AdaptiveToolbarView
 
 - (ToolbarButton*)openNewTabButton {
   return nil;

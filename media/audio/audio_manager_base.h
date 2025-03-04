@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -23,10 +24,6 @@
 #include "media/audio/audio_device_name.h"
 #include "media/audio/audio_manager.h"
 #include "media/audio/audio_output_dispatcher.h"
-
-#if BUILDFLAG(IS_WIN)
-#include "base/win/scoped_com_initializer.h"
-#endif
 
 namespace media {
 
@@ -117,7 +114,6 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   void GetAudioOutputDeviceDescriptions(
       AudioDeviceDescriptions* device_descriptions) final;
 
-  AudioParameters GetDefaultOutputStreamParameters() override;
   AudioParameters GetOutputStreamParameters(
       const std::string& device_id) override;
   AudioParameters GetInputStreamParameters(
@@ -147,10 +143,10 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
       const std::string& output_device_id,
       const AudioParameters& input_params) = 0;
 
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   virtual AudioParameters GetPreferredInputStreamParameters(
       const std::string& input_device_id) = 0;
-#endif // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   // Appends a list of available input devices to |device_names|,
   // which must initially be empty.
@@ -210,7 +206,7 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   base::ObserverList<AudioDeviceListener>::Unchecked output_listeners_;
 
   // Contains currently open input streams.
-  std::unordered_set<AudioInputStream*> input_streams_;
+  std::unordered_set<raw_ptr<AudioInputStream, CtnExperimental>> input_streams_;
 
   // Map of cached AudioOutputDispatcher instances.  Must only be touched
   // from the audio thread (no locking).

@@ -9,23 +9,22 @@
 #include <cstdlib>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/logging.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/gl/buildflags.h"
 #include "ui/gl/gl_bindings.h"
+#include "ui/gl/gl_features.h"
 #include "ui/gl/gl_gl_api_implementation.h"
 #include "ui/gl/gl_version_info.h"
-#include "base/system/sys_info.h"
 
 namespace gl {
 
@@ -205,43 +204,16 @@ void CleanupNativeLibraries(void* due_to_fallback) {
   }
 }
 
-gfx::ExtensionSet GetGLExtensionsFromCurrentContext(
-    GLApi* api,
-    GLenum extensions_enum,
-    GLenum num_extensions_enum) {
-  if (WillUseGLGetStringForExtensions(api)) {
-    const char* extensions =
-        reinterpret_cast<const char*>(api->glGetStringFn(extensions_enum));
-    return extensions ? gfx::MakeExtensionSet(extensions) : gfx::ExtensionSet();
-  }
-
-  GLint num_extensions = 0;
-  api->glGetIntegervFn(num_extensions_enum, &num_extensions);
-
-  std::vector<base::StringPiece> exts(num_extensions);
-  for (GLint i = 0; i < num_extensions; ++i) {
-    const char* extension =
-        reinterpret_cast<const char*>(api->glGetStringiFn(extensions_enum, i));
-    DCHECK(extension != NULL);
-    exts[i] = extension;
-  }
-  return gfx::ExtensionSet(exts);
+gfx::ExtensionSet GetGLExtensionsFromCurrentContext(GLApi* api,
+                                                    GLenum extensions_enum) {
+  const char* extensions =
+      reinterpret_cast<const char*>(api->glGetStringFn(extensions_enum));
+  return extensions ? gfx::MakeExtensionSet(extensions) : gfx::ExtensionSet();
 }
 
 }  // namespace
 
-CurrentGL*& GetGlContextForCurrentThread() {
-  thread_local CurrentGL* gl_context = nullptr;
-  return gl_context;
-}
-
-#if defined(USE_EGL)
 EGLApi* g_current_egl_context;
-#endif
-
-#if defined(USE_GLX)
-GLXApi* g_current_glx_context;
-#endif
 
 GLImplementationParts GetNamedGLImplementation(const std::string& gl_name,
                                                const std::string& angle_name) {
@@ -275,11 +247,9 @@ void SetSoftwareWebGLCommandLineSwitches(base::CommandLine* command_line) {
                                   kANGLEImplementationSwiftShaderForWebGLName);
 }
 
-absl::optional<GLImplementationParts>
+std::optional<GLImplementationParts>
 GetRequestedGLImplementationFromCommandLine(
-    const base::CommandLine* command_line,
-    bool* fallback_to_software_gl) {
-  *fallback_to_software_gl = false;
+    const base::CommandLine* command_line) {
   bool overrideUseSoftwareGL =
       command_line->HasSwitch(switches::kOverrideUseSoftwareGLForTests);
 #if BUILDFLAG(IS_LINUX) || \
@@ -298,7 +268,7 @@ GetRequestedGLImplementationFromCommandLine(
 
   if (!command_line->HasSwitch(switches::kUseGL) &&
       !command_line->HasSwitch(switches::kUseANGLE)) {
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   std::string gl_name = command_line->GetSwitchValueASCII(switches::kUseGL);
@@ -309,11 +279,6 @@ GetRequestedGLImplementationFromCommandLine(
   if (command_line->HasSwitch(switches::kUseANGLE) &&
       !command_line->HasSwitch(switches::kUseGL)) {
     gl_name = kGLImplementationANGLEName;
-  }
-
-  if (gl_name == "any") {
-    *fallback_to_software_gl = true;
-    return absl::nullopt;
   }
 
   if ((gl_name == kGLImplementationANGLEName) &&
@@ -371,52 +336,6 @@ ANGLEImplementation GetANGLEImplementation() {
   return g_gl_implementation.angle;
 }
 
-#if BUILDFLAG(IS_OHOS)
-std::map<std::string, GLFunctionPointerType> g_glProcAddressMap;
-void GLProcAddresMapInit()
-{
-  static bool init = false;
-  if (init == false) {
-    init = true;
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglDupNativeFenceFDANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("glClearDepth", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("glDepthRange", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglCopyMetalSharedEventANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglCreateStreamProducerD3DTextureANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglDebugMessageControlKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportDMABUFImageMESA", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportDMABUFImageQueryMESA", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglExportVkImageANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetCompositorTimingANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetCompositorTimingSupportedANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetFrameTimestampsANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetFrameTimestampSupportedANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetMscRateANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetNativeClientBufferANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetNextFrameIdANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglGetSyncValuesCHROMIUM", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglHandleGPUSwitchANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglImageFlushExternalEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglLabelObjectKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglPostSubBufferNV", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDebugKHR", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDeviceAttribEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDevicesEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDeviceStringEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDisplayAttribANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryDisplayAttribEXT", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQueryStringiANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglQuerySurfacePointerANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglReacquireHighPowerGPUANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglReleaseHighPowerGPUANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglSetBlobCacheFuncsANDROID", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglStreamConsumerGLTextureExternalAttribsNV", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglStreamPostD3DTextureANGLE", NULL));
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>("eglWaitUntilWorkScheduledANGLE", NULL));
-    LOG(INFO) << "init map szie" << g_glProcAddressMap.size();
- }
-}
-#endif
 void AddGLNativeLibrary(base::NativeLibrary library) {
   DCHECK(library);
 
@@ -429,11 +348,6 @@ void AddGLNativeLibrary(base::NativeLibrary library) {
 }
 
 void UnloadGLNativeLibraries(bool due_to_fallback) {
-#if BUILDFLAG(IS_OHOS)
- if (base::SysInfo::IsLowEndDevice()) {
-    g_glProcAddressMap.clear();
-  }
-#endif
   CleanupNativeLibraries(&due_to_fallback);
 }
 
@@ -443,48 +357,23 @@ void SetGLGetProcAddressProc(GLGetProcAddressProc proc) {
 }
 
 NO_SANITIZE("cfi-icall")
-GLFunctionPointerType GetGLProcAddress(const char* name) {
+STDCALL GLFunctionPointerType GetGLProcAddress(const char* name) {
   DCHECK(g_gl_implementation.gl != kGLImplementationNone);
-#if BUILDFLAG(IS_OHOS)
-  if (base::SysInfo::IsLowEndDevice()) {
-    GLProcAddresMapInit();
-    std::map<std::string, GLFunctionPointerType>::iterator iter;
-    iter = g_glProcAddressMap.find(name);
-    if (iter != g_glProcAddressMap.end()) {
-        return iter->second;
-    }
-  }
-#endif
+
   if (g_libraries) {
     for (size_t i = 0; i < g_libraries->size(); ++i) {
       GLFunctionPointerType proc = reinterpret_cast<GLFunctionPointerType>(
           base::GetFunctionPointerFromNativeLibrary((*g_libraries)[i], name));
-      if (proc) {
-        #if BUILDFLAG(IS_OHOS)
-        if (base::SysInfo::IsLowEndDevice()) {
-          g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, proc));
-        }
-        #endif
+      if (proc)
         return proc;
-      }
     }
   }
   if (g_get_proc_address) {
     GLFunctionPointerType proc = g_get_proc_address(name);
-    if (proc) {
-      #if BUILDFLAG(IS_OHOS)
-      if (base::SysInfo::IsLowEndDevice()) {
-        g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, proc));
-      }
-      #endif
+    if (proc)
       return proc;
-    }
   }
-  #if BUILDFLAG(IS_OHOS)
-  if (base::SysInfo::IsLowEndDevice()) {
-    g_glProcAddressMap.insert(std::pair<std::string, GLFunctionPointerType>(name, NULL));
-  }
-  #endif
+
   return NULL;
 }
 
@@ -502,13 +391,13 @@ std::string FilterGLExtensionList(
   if (extensions == NULL)
     return "";
 
-  std::vector<base::StringPiece> extension_vec = base::SplitStringPiece(
+  std::vector<std::string_view> extension_vec = base::SplitStringPiece(
       extensions, " ", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
 
-  auto is_disabled = [&disabled_extensions](const base::StringPiece& ext) {
+  auto is_disabled = [&disabled_extensions](std::string_view ext) {
     return base::Contains(disabled_extensions, ext);
   };
-  base::EraseIf(extension_vec, is_disabled);
+  std::erase_if(extension_vec, is_disabled);
 
   return base::JoinString(extension_vec, " ");
 }
@@ -521,31 +410,17 @@ DisableNullDrawGLBindings::~DisableNullDrawGLBindings() {
   SetNullDrawGLBindingsEnabled(initial_enabled_);
 }
 
-GLWindowSystemBindingInfo::GLWindowSystemBindingInfo() {}
-GLWindowSystemBindingInfo::~GLWindowSystemBindingInfo() {}
+GLWindowSystemBindingInfo::GLWindowSystemBindingInfo() = default;
+GLWindowSystemBindingInfo::~GLWindowSystemBindingInfo() = default;
 
 std::string GetGLExtensionsFromCurrentContext() {
   return GetGLExtensionsFromCurrentContext(g_current_gl_context);
 }
 
 std::string GetGLExtensionsFromCurrentContext(GLApi* api) {
-  if (WillUseGLGetStringForExtensions(api)) {
-    const char* extensions =
-        reinterpret_cast<const char*>(api->glGetStringFn(GL_EXTENSIONS));
-    return extensions ? std::string(extensions) : std::string();
-  }
-
-  GLint num_extensions = 0;
-  api->glGetIntegervFn(GL_NUM_EXTENSIONS, &num_extensions);
-
-  std::vector<base::StringPiece> exts(num_extensions);
-  for (GLint i = 0; i < num_extensions; ++i) {
-    const char* extension =
-        reinterpret_cast<const char*>(api->glGetStringiFn(GL_EXTENSIONS, i));
-    DCHECK(extension != NULL);
-    exts[i] = extension;
-  }
-  return base::JoinString(exts, " ");
+  const char* extensions =
+      reinterpret_cast<const char*>(api->glGetStringFn(GL_EXTENSIONS));
+  return extensions ? std::string(extensions) : std::string();
 }
 
 gfx::ExtensionSet GetRequestableGLExtensionsFromCurrentContext() {
@@ -553,22 +428,8 @@ gfx::ExtensionSet GetRequestableGLExtensionsFromCurrentContext() {
 }
 
 gfx::ExtensionSet GetRequestableGLExtensionsFromCurrentContext(GLApi* api) {
-  return GetGLExtensionsFromCurrentContext(api, GL_REQUESTABLE_EXTENSIONS_ANGLE,
-                                           GL_NUM_REQUESTABLE_EXTENSIONS_ANGLE);
-}
-
-bool WillUseGLGetStringForExtensions() {
-  return WillUseGLGetStringForExtensions(g_current_gl_context);
-}
-
-bool WillUseGLGetStringForExtensions(GLApi* api) {
-  const char* version_str =
-      reinterpret_cast<const char*>(api->glGetStringFn(GL_VERSION));
-  const char* renderer_str =
-      reinterpret_cast<const char*>(api->glGetStringFn(GL_RENDERER));
-  gfx::ExtensionSet extensions;
-  GLVersionInfo version_info(version_str, renderer_str, extensions);
-  return version_info.is_es || version_info.major_version < 3;
+  return GetGLExtensionsFromCurrentContext(api,
+                                           GL_REQUESTABLE_EXTENSIONS_ANGLE);
 }
 
 base::NativeLibrary LoadLibraryAndPrintError(

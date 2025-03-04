@@ -6,6 +6,7 @@
 #define CONTENT_BROWSER_TRACING_TRACING_CONTROLLER_IMPL_H_
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -22,7 +23,7 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/system/data_pipe_drainer.h"
 #include "services/tracing/public/mojom/perfetto_service.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/perfetto/protos/perfetto/trace/chrome/chrome_metadata.pbzero.h"
 
 namespace perfetto::protos::pbzero {
 class TracePacket;
@@ -37,8 +38,6 @@ class BaseAgent;
 }  // namespace tracing
 
 namespace content {
-
-class TracingDelegate;
 
 class TracingControllerImpl : public TracingController,
                               public mojo::DataPipeDrainer::Client,
@@ -77,22 +76,21 @@ class TracingControllerImpl : public TracingController,
 
   void OnTracingFailed();
 
-  // For unittests.
-  CONTENT_EXPORT void SetTracingDelegateForTesting(
-      std::unique_ptr<TracingDelegate> delegate);
-
  private:
   friend std::default_delete<TracingControllerImpl>;
 
   ~TracingControllerImpl() override;
   void AddAgents();
   void ConnectToServiceIfNeeded();
-  absl::optional<base::Value::Dict> GenerateMetadataDict();
+  std::optional<base::Value::Dict> GenerateMetadataDict();
   void GenerateMetadataPacket(perfetto::protos::pbzero::TracePacket* packet,
                               bool privacy_filtering_enabled);
+  void GenerateMetadataPacketFieldTrials(
+      perfetto::protos::pbzero::ChromeMetadataPacket* metadata_proto,
+      bool privacy_filtering_enabled);
 
   // mojo::DataPipeDrainer::Client
-  void OnDataAvailable(const void* data, size_t num_bytes) override;
+  void OnDataAvailable(base::span<const uint8_t> data) override;
   void OnDataComplete() override;
 
   void OnReadBuffersComplete();
@@ -111,7 +109,6 @@ class TracingControllerImpl : public TracingController,
   StartTracingDoneCallback start_tracing_callback_;
 
   std::vector<std::unique_ptr<tracing::BaseAgent>> agents_;
-  std::unique_ptr<TracingDelegate> delegate_;
   std::unique_ptr<base::trace_event::TraceConfig> trace_config_;
   std::unique_ptr<mojo::DataPipeDrainer> drainer_;
   scoped_refptr<TraceDataEndpoint> trace_data_endpoint_;

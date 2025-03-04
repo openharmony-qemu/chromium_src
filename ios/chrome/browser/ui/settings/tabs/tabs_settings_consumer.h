@@ -9,7 +9,7 @@
 @protocol TabsSettingsConsumer
 
 // Called when the value of prefs::kInactiveTabsTimeThreshold changed.
-- (void)inactiveTabsTimeThresholdChanged:(int)threshold;
+- (void)setInactiveTabsTimeThreshold:(int)threshold;
 
 @end
 

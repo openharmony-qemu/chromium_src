@@ -4,6 +4,8 @@
 
 #include "components/viz/common/quads/compositor_frame_metadata.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace viz {
 
 CompositorFrameMetadata::CompositorFrameMetadata() = default;
@@ -28,13 +30,11 @@ CompositorFrameMetadata::CompositorFrameMetadata(
       page_scale_factor(other.page_scale_factor),
       scrollable_viewport_size(other.scrollable_viewport_size),
       content_color_usage(other.content_color_usage),
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_SLIDE)
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
       is_scrolling(other.is_scrolling),
 #endif
       may_contain_video(other.may_contain_video),
-      is_resourceless_software_draw_with_scroll_or_animation(
-          other.is_resourceless_software_draw_with_scroll_or_animation),
-      is_actively_scrolling(other.is_actively_scrolling),
+      is_handling_interaction(other.is_handling_interaction),
       root_background_color(other.root_background_color),
       latency_info(other.latency_info),
       referenced_surfaces(other.referenced_surfaces),
@@ -45,10 +45,13 @@ CompositorFrameMetadata::CompositorFrameMetadata(
       send_frame_token_to_embedder(other.send_frame_token_to_embedder),
       min_page_scale_factor(other.min_page_scale_factor),
       top_controls_visible_height(other.top_controls_visible_height),
-      preferred_frame_interval(other.preferred_frame_interval),
       display_transform_hint(other.display_transform_hint),
       transition_directives(other.transition_directives),
-      has_shared_element_resources(other.has_shared_element_resources) {
+      has_shared_element_resources(other.has_shared_element_resources),
+      screenshot_destination(other.screenshot_destination),
+      is_software(other.is_software),
+      offset_tag_definitions(other.offset_tag_definitions),
+      offset_tag_values(other.offset_tag_values) {
   if (other.delegated_ink_metadata) {
     delegated_ink_metadata = std::make_unique<gfx::DelegatedInkMetadata>(
         *other.delegated_ink_metadata.get());

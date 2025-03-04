@@ -25,7 +25,7 @@ const char* ResultFormatToShortString(
       return "RGBA";
     case viz::CopyOutputRequest::ResultFormat::I420_PLANES:
       return "I420";
-    case viz::CopyOutputRequest::ResultFormat::NV12_PLANES:
+    case viz::CopyOutputRequest::ResultFormat::NV12:
       return "NV12";
   }
 }
@@ -44,7 +44,7 @@ const char* ResultDestinationToShortString(
 
 namespace viz {
 
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
 CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
                                      ResultDestination result_destination,
                                      CopyOutputRequestCallback result_callback,
@@ -54,7 +54,9 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
       result_destination_(result_destination),
       result_callback_(std::move(result_callback)),
       scale_from_(1, 1),
-      scale_to_(1, 1), dump_frame_id_(id), dump_frame_path_(dump_path) {
+      scale_to_(1, 1),
+      dump_frame_id_(id),
+      dump_frame_path_(dump_path) {
   // If format is I420_PLANES, the result must be in system memory. Returning
   // I420_PLANES via textures is not yet supported.
   DCHECK(result_format_ != ResultFormat::I420_PLANES ||
@@ -128,35 +130,17 @@ void CopyOutputRequest::SetUniformScaleRatio(int scale_from, int scale_to) {
 void CopyOutputRequest::set_blit_request(BlitRequest blit_request) {
   DCHECK(!blit_request_);
   DCHECK_EQ(result_destination(), ResultDestination::kNativeTextures);
-  DCHECK_EQ(result_format(), ResultFormat::NV12_PLANES);
+  DCHECK(result_format() == ResultFormat::NV12 ||
+         result_format() == ResultFormat::RGBA);
   DCHECK(has_result_selection());
 
-  // Destination region must start at an even offset for NV12 results:
-  DCHECK_EQ(blit_request.destination_region_offset().x() % 2, 0);
-  DCHECK_EQ(blit_request.destination_region_offset().y() % 2, 0);
-
-#if DCHECK_IS_ON()
-  {
-    const gpu::MailboxHolder* first_zeroed_mailbox_it =
-        base::ranges::find_if(blit_request.mailboxes(), &gpu::Mailbox::IsZero,
-                              &gpu::MailboxHolder::mailbox);
-
-    size_t num_nonzeroed_mailboxes =
-        first_zeroed_mailbox_it - blit_request.mailboxes().begin();
-
-    switch (result_format()) {
-      case ResultFormat::RGBA:
-        DCHECK_EQ(num_nonzeroed_mailboxes, CopyOutputResult::kRGBAMaxPlanes);
-        break;
-      case ResultFormat::NV12_PLANES:
-        DCHECK_EQ(num_nonzeroed_mailboxes, CopyOutputResult::kNV12MaxPlanes);
-        break;
-      case ResultFormat::I420_PLANES:
-        DCHECK_EQ(num_nonzeroed_mailboxes, CopyOutputResult::kI420MaxPlanes);
-        break;
-    }
+  if (result_format() == ResultFormat::NV12) {
+    // Destination region must start at an even offset for NV12 results:
+    DCHECK_EQ(blit_request.destination_region_offset().x() % 2, 0);
+    DCHECK_EQ(blit_request.destination_region_offset().y() % 2, 0);
   }
-#endif
+
+  CHECK(!blit_request.mailbox().IsZero());
 
   blit_request_ = std::move(blit_request);
 }
@@ -172,7 +156,7 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
       result_task_runner_
           ? result_task_runner_
           : base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
-#if defined(OHOS_DFX_DUMP)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
   if (result) {
     result->SetDumpFrameId(dump_frame_id_);
     result->SetDumpFramePath(dump_frame_path_);

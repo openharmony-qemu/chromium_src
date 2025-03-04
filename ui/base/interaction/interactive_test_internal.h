@@ -5,31 +5,46 @@
 #ifndef UI_BASE_INTERACTION_INTERACTIVE_TEST_INTERNAL_H_
 #define UI_BASE_INTERACTION_INTERACTIVE_TEST_INTERNAL_H_
 
+#include <concepts>
+#include <functional>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
+#include <variant>
 
 #include "base/callback_list.h"
-#include "base/functional/callback_forward.h"
+#include "base/containers/contains.h"
 #include "base/functional/callback_helpers.h"
+#include "base/gtest_prod_util.h"
 #include "base/logging.h"
+#include "base/memory/weak_ptr.h"
+#include "base/no_destructor.h"
 #include "base/strings/strcat.h"
-#include "base/strings/string_piece_forward.h"
-#include "base/strings/stringprintf.h"
-#include "base/task/single_thread_task_runner.h"
 #include "base/test/bind.h"
 #include "base/test/rectify_callback.h"
+#include "base/types/is_instantiation.h"
+#include "base/types/pass_key.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "ui/base/interaction/element_identifier.h"
+#include "ui/base/interaction/element_test_util.h"
 #include "ui/base/interaction/element_tracker.h"
+#include "ui/base/interaction/framework_specific_implementation.h"
 #include "ui/base/interaction/interaction_sequence.h"
 #include "ui/base/interaction/interaction_test_util.h"
+#include "ui/base/interaction/state_observer.h"
+#include "ui/gfx/geometry/rect.h"
+
+class ChromeOSTestLauncherDelegate;
+class InteractiveUITestSuite;
 
 namespace ui::test {
 
 class InteractiveTestApi;
+class InteractiveTestTest;
 
 namespace internal {
 
@@ -37,6 +52,11 @@ namespace internal {
 // events off of.
 DECLARE_ELEMENT_IDENTIFIER_VALUE(kInteractiveTestPivotElementId);
 DECLARE_CUSTOM_ELEMENT_EVENT_TYPE(kInteractiveTestPivotEventType);
+
+extern const char kInteractiveTestFailedMessagePrefix[];
+extern const char kNoCheckDescriptionSpecified[];
+
+class StateObserverElement;
 
 // Class that implements functionality for InteractiveTest* that should be
 // hidden from tests that inherit the API.
@@ -87,6 +107,8 @@ class InteractiveTestPrivate {
 
   bool sequence_skipped() const { return sequence_skipped_; }
 
+  base::WeakPtr<InteractiveTestPrivate> GetAsWeakPtr();
+
   // Possibly fails or skips a sequence based on the result of an action
   // simulation.
   void HandleActionResult(InteractionSequence* seq,
@@ -96,6 +118,23 @@ class InteractiveTestPrivate {
 
   // Gets the pivot element for the specified context, which must exist.
   TrackedElement* GetPivotElement(ElementContext context) const;
+
+  // Adds `state_observer` and associates it with an element with identifier
+  // `id` and context `context`. Must be unique in its context.
+  // Returns true on success.
+#if defined(__clang__) && (__clang_major__ < 17)
+  template <typename Observer, typename V = typename Observer::ValueType>
+#else
+  template <typename Observer, typename V = Observer::ValueType>
+#endif
+  bool AddStateObserver(ElementIdentifier id,
+                        ElementContext context,
+                        std::unique_ptr<Observer> state_observer);
+
+  // Removes `StateObserver` with identifier `id` in `context`; if the context
+  // is null, assumes there is exactly one matching observer in some context.
+  // Returns true on success.
+  bool RemoveStateObserver(ElementIdentifier id, ElementContext context);
 
   // Call this method during test SetUp(), or SetUpOnMainThread() for browser
   // tests.
@@ -118,12 +157,55 @@ class InteractiveTestPrivate {
     aborted_callback_for_testing_ = std::move(aborted_callback_for_testing);
   }
 
-  // Places a callback in the message queue to bounce an event off of the pivot
-  // element, then responds by executing `task`.
+  // The following are the classes allowed to set the "allow interactive test
+  // verbs" flag.
   template <typename T>
-  static MultiStep PostTask(const base::StringPiece& description, T&& task);
+    requires std::same_as<T, ui::test::InteractiveTestTest> ||
+             std::same_as<T, ChromeOSTestLauncherDelegate> ||
+             std::same_as<T, InteractiveUITestSuite>
+  static void set_interactive_test_verbs_allowed(base::PassKey<T>) {
+    allow_interactive_test_verbs_ = true;
+  }
+
+  // Represents a node in a debug tree of UI elements that can be pretty-
+  // printed.
+  struct DebugTreeNode {
+    DebugTreeNode();
+    explicit DebugTreeNode(std::string initial_text);
+    DebugTreeNode(DebugTreeNode&& other) noexcept;
+    DebugTreeNode& operator=(DebugTreeNode&& other) noexcept;
+    ~DebugTreeNode();
+
+    std::string text;
+    std::vector<DebugTreeNode> children;
+
+    void PrintTo(std::ostream& stream) const;
+  };
+
+ protected:
+  // Dumps the entire tree of named elements. Default implementation organizes
+  // all elements by context. This is the entry point when printing test failure
+  // information. The `current_context` is the current context in the test, if
+  // known.
+  virtual DebugTreeNode DebugDumpElements(
+      ui::ElementContext current_context) const;
+
+  // Dumps the contents of a particular context.
+  virtual DebugTreeNode DebugDumpContext(
+      const ui::ElementContext context) const;
+
+  // Dumps the context of a particular element.
+  virtual DebugTreeNode DebugDumpElement(const ui::TrackedElement* el) const;
+
+  // Provides the top-level description for a context.
+  virtual std::string DebugDescribeContext(ui::ElementContext context) const;
+
+  // Gets a verbose string representation of a set of `bounds` for debug
+  // purposes.
+  virtual std::string DebugDumpBounds(const gfx::Rect& bounds) const;
 
  private:
+  friend class ui::test::InteractiveTestTest;
   friend class ui::test::InteractiveTestApi;
 
   // Prepare for a sequence to start.
@@ -156,157 +238,207 @@ class InteractiveTestPrivate {
   // Used to keep track of valid contexts.
   base::CallbackListSubscription context_subscription_;
 
+  // Used to track state observers and their associated elements.
+  std::vector<std::unique_ptr<StateObserverElement>> state_observer_elements_;
+
   // Used to relay events to trigger follow-up steps.
   std::map<ElementContext, std::unique_ptr<TrackedElement>> pivot_elements_;
 
   // Overrides the default test failure behavior to test the API itself.
   InteractionSequence::AbortedCallback aborted_callback_for_testing_;
+
+  base::WeakPtrFactory<InteractiveTestPrivate> weak_ptr_factory_{this};
+
+  // Whether interactive test verbs are allowed. See
+  // `InteractiveTestApi::RequireInteractiveTest()` for more info.
+  static bool allow_interactive_test_verbs_;
 };
 
 // Specifies an element either by ID or by name.
-using ElementSpecifier = absl::variant<ElementIdentifier, base::StringPiece>;
+using ElementSpecifier = std::variant<ElementIdentifier, std::string_view>;
+
+class StateObserverElement : public TestElementBase {
+ public:
+  StateObserverElement(ElementIdentifier id, ElementContext context);
+  ~StateObserverElement() override;
+
+  DECLARE_FRAMEWORK_SPECIFIC_METADATA()
+};
+
+// Implements an element that is shown when an observed state matches a desired
+// value or pattern, and hidden when it does not.
+template <typename T>
+class StateObserverElementT : public StateObserverElement {
+ public:
+  // A lookup table is provided per value of `T`.
+  using LookupTable = std::map<std::pair<ElementIdentifier, ElementContext>,
+                               StateObserverElementT<T>*>;
+
+  // Specify the `id` and `context` of the element to be created, as well as the
+  // associated `observer` which will be linked to this element.
+  StateObserverElementT(ElementIdentifier id,
+                        ElementContext context,
+                        std::unique_ptr<StateObserver<T>> observer)
+      : StateObserverElement(id, context),
+        current_value_(observer->GetStateObserverInitialState()),
+        observer_(std::move(observer)) {
+    auto& table = GetLookupTable();
+    CHECK(!base::Contains(table, std::make_pair(id, context)))
+        << "Duplicate ID + context for StateObserver not allowed: " << id
+        << ", " << context;
+    table.emplace(std::make_pair(id, context), this);
+    observer_->SetStateObserverStateChangedCallback(base::BindRepeating(
+        &StateObserverElementT::OnStateChanged, base::Unretained(this)));
+    OnStateChanged(current_value_);
+  }
+  ~StateObserverElementT() override {
+    CHECK(GetLookupTable().erase(std::make_pair(identifier(), context())));
+  }
+
+  void SetTarget(testing::Matcher<T> target) {
+    target_value_ = std::move(target);
+    UpdateVisibility();
+  }
+
+  // Helper method that looks up an element based on `id`, `context`, and
+  // whether `seq` allows all contexts to be searched. Fails the sequence if the
+  // element is not found.
+  static StateObserverElementT<T>* LookupElement(ElementIdentifier id,
+                                                 ElementContext context,
+                                                 bool search_all_contexts) {
+    const auto& lookup_table = GetLookupTable();
+    const auto it = lookup_table.find(std::make_pair(id, context));
+    if (it != lookup_table.end()) {
+      return it->second;
+    }
+
+    if (search_all_contexts) {
+      for (const auto& [key, ptr] : lookup_table) {
+        if (key.first == id) {
+          return ptr;
+        }
+      }
+    }
+
+    return nullptr;
+  }
+
+ private:
+  void OnStateChanged(T new_state) {
+    current_value_ = new_state;
+    UpdateVisibility();
+  }
+
+  void UpdateVisibility() {
+    if (target_value_ && target_value_->Matches(current_value_)) {
+      Show();
+    } else {
+      Hide();
+    }
+  }
+
+  // Fetch the lookup table associated with a value type/template instantiation.
+  //
+  // This table does not own the instances, just tracks them as long as they are
+  // alive and allows them to be retrieved. There is one static table per
+  // template instantiation due to the use of `base::NoDestructor`,
+  static LookupTable& GetLookupTable() {
+    static base::NoDestructor<LookupTable> lookup_table;
+    return *lookup_table;
+  }
+
+ private:
+  T current_value_;
+  std::optional<testing::Matcher<T>> target_value_;
+  std::unique_ptr<StateObserver<T>> observer_;
+};
 
 // Applies `matcher` to `value` and returns the result; on failure a useful
 // error message is printed using `test_name`, `value`, and `matcher`.
 //
 // Steps which use this method will fail if it returns false, printing out the
 // details of the step in the usual way.
-template <typename T>
-bool MatchAndExplain(const base::StringPiece& test_name,
-                     testing::Matcher<T>& matcher,
-                     T&& value) {
-  if (matcher.Matches(value))
+template <typename T, typename V = std::decay_t<T>>
+bool MatchAndExplain(std::string_view test_name,
+                     const testing::Matcher<V>& matcher,
+                     const T& value) {
+  testing::StringMatchResultListener listener;
+  if (matcher.MatchAndExplain(value, &listener)) {
     return true;
+  }
   std::ostringstream oss;
   oss << test_name << " failed.\nExpected: ";
   matcher.DescribeTo(&oss);
   oss << "\nActual: " << testing::PrintToString(value);
+  if (!listener.str().empty()) {
+    oss << "\n" << listener.str();
+  }
   LOG(ERROR) << oss.str();
   return false;
 }
 
-// static
-template <typename T>
-InteractiveTestPrivate::MultiStep InteractiveTestPrivate::PostTask(
-    const base::StringPiece& description,
-    T&& task) {
-  MultiStep result;
-  result.emplace_back(std::move(
-      InteractionSequence::StepBuilder()
-          .SetDescription(base::StrCat({description, ": PostTask()"}))
-          .SetElementID(kInteractiveTestPivotElementId)
-          .SetStartCallback(base::BindOnce([](ui::TrackedElement* el) {
-            base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-                FROM_HERE,
-                base::BindOnce(
-                    [](ElementIdentifier id, ElementContext context) {
-                      auto* const el =
-                          ui::ElementTracker::GetElementTracker()
-                              ->GetFirstMatchingElement(id, context);
-                      if (el) {
-                        ui::ElementTracker::GetFrameworkDelegate()
-                            ->NotifyCustomEvent(el,
-                                                kInteractiveTestPivotEventType);
-                      }
-                      // If there is no pivot element, the test sequence has
-                      // been aborted and there's no need to send an additional
-                      // error.
-                    },
-                    el->identifier(), el->context()));
-          }))));
-  result.emplace_back(std::move(
-      InteractionSequence::StepBuilder()
-          .SetDescription(base::StrCat({description, ": WaitForComplete()"}))
-          .SetElementID(kInteractiveTestPivotElementId)
-          .SetContext(InteractionSequence::ContextMode::kFromPreviousStep)
-          .SetType(InteractionSequence::StepType::kCustomEvent,
-                   kInteractiveTestPivotEventType)
-          .SetStartCallback(
-              base::RectifyCallback<InteractionSequence::StepStartCallback>(
-                  std::move(task)))));
-  return result;
+template <typename Observer, typename V>
+bool InteractiveTestPrivate::AddStateObserver(
+    ElementIdentifier id,
+    ElementContext context,
+    std::unique_ptr<Observer> state_observer) {
+  CHECK(id);
+  CHECK(context);
+  for (const auto& existing : state_observer_elements_) {
+    if (existing->identifier() == id && existing->context() == context) {
+      LOG(ERROR) << "AddStateObserver: Duplicate observer added for " << id;
+      return false;
+    }
+  }
+  state_observer_elements_.emplace_back(
+      std::make_unique<StateObserverElementT<V>>(id, context,
+                                                 std::move(state_observer)));
+  return true;
 }
 
+// Similar to `std::invocable<T, Args...>`, but does not put constraints on the
+// parameters passed to the invocation method.
 template <typename T>
-constexpr bool IsCallbackValue = base::IsBaseCallback<T>::value;
+concept IsCallable = requires { &std::decay_t<T>::operator(); };
 
-template <typename T, typename SFINAE = void>
-struct IsCallable {
-  static constexpr bool value = false;
-};
-
+// Applies if `T` has bound state (such as a lambda expression with captures).
 template <typename T>
-struct IsCallable<T, std::void_t<decltype(&T::operator())>> {
-  static constexpr bool value = true;
-};
+concept HasState = !std::is_empty_v<std::remove_reference_t<T>>;
 
+// Helper for matching a function pointer.
 template <typename T>
-constexpr bool IsCallableValue = IsCallable<std::remove_reference_t<T>>::value;
-
-template <typename T, typename SFINAE = void>
-struct IsFunctionPointer {
-  static constexpr bool value = false;
-};
+inline constexpr bool IsFunctionPointerValue = false;
 
 template <typename R, typename... Args>
-struct IsFunctionPointer<R (*)(Args...), void> {
-  static constexpr bool value = true;
-};
+inline constexpr bool IsFunctionPointerValue<R (*)(Args...)> = true;
 
+// Applies if `T` is a function pointer (but not a pointer to an instance
+// member function).
 template <typename T>
-constexpr bool IsFunctionPointerValue = IsFunctionPointer<T>::value;
-
-// Uses SFINAE to choose the correct implementation for `MaybeBind`.
-template <typename F, typename SFINAE = void>
-struct MaybeBindHelper;
-
-// Callbacks are already callbacks, so can be returned as-is.
-template <typename F>
-struct MaybeBindHelper<F, std::enable_if_t<IsCallbackValue<F>>> {
-  template <class G>
-  static auto MaybeBind(G&& function) {
-    return std::forward<G>(function);
-  }
-};
-
-// Callable objects with state can only be bound with
-// base::BindLambdaForTesting.
-template <typename F>
-struct MaybeBindHelper<
-    F,
-    std::enable_if_t<IsCallableValue<F> && !std::is_empty_v<F>>> {
-  template <class G>
-  static auto MaybeBind(G&& function) {
-    return base::BindLambdaForTesting(std::forward<G>(function));
-  }
-};
-
-// Function pointers and empty callable objects can be bound using
-// base::BindOnce.
-template <typename F>
-struct MaybeBindHelper<
-    F,
-    std::enable_if_t<(IsCallableValue<F> && std::is_empty_v<F>) ||
-                     IsFunctionPointerValue<F>>> {
-  template <class G>
-  static auto MaybeBind(G&& function) {
-    return base::BindOnce(std::forward<G>(function));
-  }
-};
-
-// base::DoNothing() is compatible with callbacks, so return it as-is.
-template <>
-struct MaybeBindHelper<decltype(base::DoNothing()), void> {
-  static auto MaybeBind(decltype(base::DoNothing()) function) {
-    return function;
-  }
-};
+concept IsFunctionPointer = IsFunctionPointerValue<T>;
 
 // Optionally converts `function` to something that is compatible with a
 // base::OnceCallback.
 template <typename F>
 auto MaybeBind(F&& function) {
-  return MaybeBindHelper<F>::MaybeBind(std::forward<F>(function));
+  if constexpr (base::IsBaseCallback<F>) {
+    // Callbacks are already callbacks, so can be returned as-is.
+    return std::forward<F>(function);
+  } else if constexpr (IsCallable<F> && HasState<F>) {
+    // Callable objects with state can only be bound with
+    // `base::BindLambdaForTesting`.
+    return base::BindLambdaForTesting(std::forward<F>(function));
+  } else if constexpr ((IsCallable<F> && !HasState<F>) ||
+                       IsFunctionPointer<F>) {
+    // Function pointers and empty callable objects can be bound using
+    // `base::BindOnce`.
+    return base::BindOnce(std::forward<F>(function));
+  } else if constexpr (std::same_as<F, decltype(base::DoNothing())>) {
+    // base::DoNothing() is compatible with callbacks, so return it as-is.
+    return function;
+  } else {
+    static_assert(base::AlwaysFalse<F>, "Can only bind callable objects.");
+  }
 }
 
 // Helper struct that captures information about what signature a function-like
@@ -324,77 +456,136 @@ struct MaybeBindTypeHelper<decltype(base::DoNothing())> {
   using ReturnType = void;
 };
 
+// Optionally converts `function` to something that is compatible with a
+// base::RepeatingCallback, or returns it as-is if it's already a callback.
+template <typename F>
+base::RepeatingCallback<typename MaybeBindTypeHelper<F>::Signature>
+MaybeBindRepeating(F&& function) {
+  if constexpr (IsCallable<F> && !HasState<F> &&
+                std::copy_constructible<std::decay_t<F>>) {
+    return base::BindRepeating(std::forward<F>(function));
+  } else {
+    return MaybeBind(std::forward<F>(function));
+  }
+}
+
 template <typename T>
 struct ArgsExtractor;
 
 template <typename R, typename... Args>
 struct ArgsExtractor<R(Args...)> {
-  using holder = std::tuple<Args...>;
+  using Holder = std::tuple<Args...>;
 };
 
 template <typename F>
+#if defined(__clang__) && (__clang_major__ < 17)
 using ReturnTypeOf = typename MaybeBindTypeHelper<F>::ReturnType;
+#else
+using ReturnTypeOf = MaybeBindTypeHelper<F>::ReturnType;
+#endif
 
 template <size_t N, typename F>
 using NthArgumentOf = std::tuple_element_t<
     N,
-    typename ArgsExtractor<typename MaybeBindTypeHelper<F>::Signature>::holder>;
-
-// Implementation for HasSignature that uses SFINAE to check whether the
-// signature of a callable object `F` matches signature `S`.
-template <typename F, typename S>
-struct HasSignatureHelper {
-  static constexpr bool value =
-      std::is_same_v<typename MaybeBindTypeHelper<F>::Signature, S>;
-};
-
-// DoNothing() can match any signature that returns void.
-template <typename... Args>
-struct HasSignatureHelper<decltype(base::DoNothing()), void(Args...)> {
-  static constexpr bool value = true;
-};
-
-template <typename F, typename S>
-constexpr bool HasSignature = HasSignatureHelper<F, S>::value;
+    typename ArgsExtractor<typename MaybeBindTypeHelper<F>::Signature>::Holder>;
 
 // Requires that `F` resolves to some kind of callable object with call
-// signature `S`; causes a compile failure on mismatch.
+// signature `S`.
 template <typename F, typename S>
-using RequireSignature = std::enable_if_t<HasSignature<F, S>>;
+concept HasSignature =
+    std::same_as<typename MaybeBindTypeHelper<F>::Signature, S> ||
+    std::same_as<F, decltype(base::DoNothing())>;
 
+// Helper for `HasCompatibleSignature`; see recursive implementation below.
 template <typename F, typename S>
-struct HasCompatibleSignatureHelper;
-
-// This is the leaf state for the recursive compatibility computation; see
-// below.
-template <typename F, typename R>
-struct HasCompatibleSignatureHelper<F, R()> {
-  static constexpr bool value = HasSignature<F, R()>;
-};
-
-// Implementation for `HasCompatibleSignature` and `RequireCompatibleSignature`.
-//
-// This removes arguments one by one from the left of the target signature `S`
-// to see if `F` has that signature. The recursion stops when one matches, or
-// when the arg list is empty (in which case the leaf state is hit, above).
-template <typename F, typename R, typename A, typename... Args>
-struct HasCompatibleSignatureHelper<F, R(A, Args...)> {
-  static constexpr bool value =
-      HasSignature<F, R(A, Args...)> ||
-      HasCompatibleSignatureHelper<F, R(Args...)>::value;
-};
-
-template <typename F, typename S>
-constexpr bool HasCompatibleSignature =
-    HasCompatibleSignatureHelper<F, S>::value;
+inline constexpr bool HasCompatibleSignatureValue = false;
 
 // Requires that `F` resolves to some kind of callable object whose signature
 // can be rectified to `S`; see `base::RectifyCallback` for more information.
 // (Basically, `F` can omit arguments from the left of `S`; these arguments
 // will be ignored.)
 template <typename F, typename S>
-using RequireCompatibleSignature =
-    std::enable_if_t<HasCompatibleSignature<F, S>>;
+concept HasCompatibleSignature = HasCompatibleSignatureValue<F, S>;
+
+// This is the leaf state for the recursive compatibility computation; see
+// below.
+template <typename F, typename R>
+  requires HasSignature<F, R()>
+inline constexpr bool HasCompatibleSignatureValue<F, R()> = true;
+
+// Implementation for `HasCompatibleSignature`.
+//
+// This removes arguments one by one from the left of the target signature `S`
+// to see if `F` has that signature. The recursion stops when one matches, or
+// when the arg list is empty (in which case the leaf state is hit, above).
+template <typename F, typename R, typename A, typename... Args>
+  requires HasSignature<F, R(A, Args...)> ||
+               HasCompatibleSignature<F, R(Args...)>
+inline constexpr bool HasCompatibleSignatureValue<F, R(A, Args...)> = true;
+
+// Checks that `T` is a reference wrapper around any type.
+template <typename T>
+concept IsReferenceWrapper = base::is_instantiation<std::reference_wrapper, T>;
+
+// Helper to determine the type used to match a value. The default is to just
+// use the decayed value type.
+template <typename T>
+struct MatcherTypeHelper {
+  using ActualType = T;
+};
+
+// Specialization for string types used in Chrome. For any representation of a
+// string using character type, the type used for matching is the corresponding
+// `std::basic_string`.
+//
+// Add to this template if different character formats become supported (e.g.
+// char8_t, char32_t, wchar_t, etc.)
+template <typename C>
+  requires(std::same_as<std::remove_const_t<C>, char> ||
+           std::same_as<std::remove_const_t<C>, char16_t>)
+struct MatcherTypeHelper<C*> {
+  using ActualType = std::basic_string<std::remove_const_t<C>>;
+};
+
+// Gets the appropriate matchable type for `T`. This affects string-like types
+// (e.g. `const char*`) as the corresponding `Matcher` should match a
+// `std::string` or `std::u16string`.
+template <typename T>
+#if defined(__clang__) && (__clang_major__ < 17)
+using MatcherTypeFor = typename MatcherTypeHelper<std::decay_t<T>>::ActualType;
+#else
+using MatcherTypeFor = MatcherTypeHelper<std::decay_t<T>>::ActualType;
+#endif
+
+// Determines if `T` is a valid type to be used in a matcher. This precludes
+// string-like types (const char*, constexpr char16_t[], etc.) in favor of
+// `std::string` and `std::u16string`.
+template <typename T>
+concept IsValidMatcherType = std::same_as<T, MatcherTypeFor<T>>;
+
+template <typename T>
+concept IsGtestMatcher = requires { typename T::is_gtest_matcher; };
+
+template <typename T>
+concept HasMatchAndExplain = requires { &T::MatchAndExplain; };
+
+template <typename T>
+concept IsMatcher = IsGtestMatcher<T> || HasMatchAndExplain<T> ||
+                    base::is_instantiation<testing::PolymorphicMatcher, T>;
+
+// Accepts any function-like object that is compatible with
+// `InteractionSequence::StepCallback`.
+template <typename F>
+concept IsStepCallback = internal::
+    HasCompatibleSignature<F, void(InteractionSequence*, TrackedElement*)>;
+
+// Accepts any function-like object that can be used with `Check()` and
+// `CheckResult()`.
+template <typename F, typename R>
+concept IsCheckCallback =
+    internal::HasCompatibleSignature<F,
+                                     R(const InteractionSequence*,
+                                       const TrackedElement*)>;
 
 // Converts an ElementSpecifier to an element ID or name and sets it onto
 // `builder`.
@@ -405,6 +596,24 @@ std::string DescribeElement(ElementSpecifier spec);
 
 InteractionSequence::Builder BuildSubsequence(
     InteractiveTestPrivate::MultiStep steps);
+
+// Takes an argument expected to be a literal value and retrieves the literal
+// value by either calling the object (if it's callable), unwrapping it (if it's
+// a `std::reference_wrapper`) or just returning it otherwise.
+//
+// This allows e.g. passing deferred or computed values to the `Log()` verb.
+template <typename Arg>
+auto UnwrapArgument(Arg arg) {
+  if constexpr (base::IsBaseCallback<Arg>) {
+    return std::move(arg).Run();
+  } else if constexpr (internal::IsFunctionPointer<Arg>) {
+    return (*arg)();
+  } else if constexpr (internal::IsCallable<Arg>) {
+    return arg();
+  } else {
+    return arg;
+  }
+}
 
 }  // namespace internal
 

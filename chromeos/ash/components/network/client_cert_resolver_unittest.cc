@@ -7,6 +7,7 @@
 #include <pk11pub.h>
 
 #include <memory>
+#include <string_view>
 
 #include "base/base64.h"
 #include "base/files/file_path.h"
@@ -37,13 +38,13 @@
 #include "crypto/scoped_test_nss_db.h"
 #include "net/base/net_errors.h"
 #include "net/cert/nss_cert_database_chromeos.h"
-#include "net/cert/pem.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util_nss.h"
 #include "net/test/cert_test_util.h"
 #include "net/test/test_data_directory.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/boringssl/src/pki/pem.h"
 #include "third_party/cros_system_api/dbus/service_constants.h"
 
 namespace ash {
@@ -76,20 +77,18 @@ void OnListCertsDone(base::OnceClosure loop_quit_closure,
 std::unique_ptr<chromeos::onc::OncParsedCertificates>
 OncParsedCertificatesForPkcs12File(
     const base::FilePath& client_cert_pkcs12_file,
-    base::StringPiece guid) {
+    std::string_view guid) {
   std::string pkcs12_raw;
   if (!base::ReadFileToString(client_cert_pkcs12_file, &pkcs12_raw))
     return nullptr;
 
-  std::string pkcs12_base64_encoded;
-  base::Base64Encode(pkcs12_raw, &pkcs12_base64_encoded);
+  std::string pkcs12_base64_encoded = base::Base64Encode(pkcs12_raw);
 
-  base::Value::Dict onc_certificate;
-  onc_certificate.Set("GUID", guid);
-  onc_certificate.Set("Type", "Client");
-  onc_certificate.Set("PKCS12", pkcs12_base64_encoded);
-  base::Value::List onc_certificates;
-  onc_certificates.Append(std::move(onc_certificate));
+  auto onc_certificates =
+      base::Value::List().Append(base::Value::Dict()
+                                     .Set("GUID", guid)
+                                     .Set("Type", "Client")
+                                     .Set("PKCS12", pkcs12_base64_encoded));
   return std::make_unique<chromeos::onc::OncParsedCertificates>(
       onc_certificates);
 }
@@ -217,13 +216,13 @@ class ClientCertResolverTest : public testing::Test,
             "subject_printable_string_containing_utf8_client_cert.pem"),
         &file_data));
 
-    net::PEMTokenizer pem_tokenizer(file_data, {"CERTIFICATE"});
+    bssl::PEMTokenizer pem_tokenizer(file_data, {"CERTIFICATE"});
     ASSERT_TRUE(pem_tokenizer.GetNext());
     std::string cert_der(pem_tokenizer.data());
     ASSERT_FALSE(pem_tokenizer.GetNext());
 
     test_client_cert_ = net::x509_util::CreateCERTCertificateFromBytes(
-        reinterpret_cast<const uint8_t*>(cert_der.data()), cert_der.size());
+        base::as_bytes(base::make_span(cert_der)));
     ASSERT_TRUE(test_client_cert_);
 
     ASSERT_TRUE(net::ImportClientCertToSlot(test_client_cert_.get(),
@@ -256,7 +255,8 @@ class ClientCertResolverTest : public testing::Test,
         /*managed_cellular_pref_handler=*/nullptr, network_state_handler_.get(),
         network_profile_handler_.get(), network_config_handler_.get(),
         nullptr /* network_device_handler */,
-        nullptr /* prohibited_technologies_handler */);
+        nullptr /* prohibited_technologies_handler */,
+        /*hotspot_controller=*/nullptr);
     // Run all notifications before starting the cert loader to reduce run time.
     task_environment_.RunUntilIdle();
 
@@ -353,7 +353,7 @@ class ClientCertResolverTest : public testing::Test,
   // particular it will match the test client cert.
   void SetupPolicyMatchingIssuerPEM(::onc::ONCSource onc_source,
                                     const std::string& identity) {
-    const char* test_policy_template = R"(
+    static constexpr char kTestPolicyTemplate[] = R"(
         [ { "GUID": "wifi_stub",
             "Name": "wifi_stub",
             "Type": "WiFi",
@@ -371,12 +371,12 @@ class ClientCertResolverTest : public testing::Test,
             }
         } ])";
     std::string policy_json = base::StringPrintf(
-        test_policy_template, identity.c_str(), test_ca_cert_pem_.c_str());
+        kTestPolicyTemplate, identity.c_str(), test_ca_cert_pem_.c_str());
     ASSERT_NO_FATAL_FAILURE(SetManagedNetworkPolicy(onc_source, policy_json));
   }
 
   void SetManagedNetworkPolicy(::onc::ONCSource onc_source,
-                               base::StringPiece policy_json) {
+                               std::string_view policy_json) {
     auto parsed_json = base::JSONReader::ReadAndReturnValueWithError(
         policy_json,
         base::JSON_ALLOW_TRAILING_COMMAS | base::JSON_ALLOW_CONTROL_CHARS);
@@ -487,7 +487,7 @@ class ClientCertResolverTest : public testing::Test,
   std::string test_cert_id_;
   std::unique_ptr<base::SimpleTestClock> test_clock_;
   std::unique_ptr<ClientCertResolver> client_cert_resolver_;
-  raw_ptr<NetworkCertLoader, ExperimentalAsh> network_cert_loader_ = nullptr;
+  raw_ptr<NetworkCertLoader, DanglingUntriaged> network_cert_loader_ = nullptr;
   std::unique_ptr<net::NSSCertDatabaseChromeOS> test_nsscertdb_;
   std::unique_ptr<net::NSSCertDatabaseChromeOS> test_system_nsscertdb_;
 
@@ -499,9 +499,9 @@ class ClientCertResolverTest : public testing::Test,
   }
 
  protected:
-  raw_ptr<ShillServiceClient::TestInterface, ExperimentalAsh> service_test_ =
+  raw_ptr<ShillServiceClient::TestInterface, DanglingUntriaged> service_test_ =
       nullptr;
-  raw_ptr<ShillProfileClient::TestInterface, ExperimentalAsh> profile_test_ =
+  raw_ptr<ShillProfileClient::TestInterface, DanglingUntriaged> profile_test_ =
       nullptr;
   std::unique_ptr<NetworkStateHandler> network_state_handler_;
   std::unique_ptr<NetworkProfileHandler> network_profile_handler_;

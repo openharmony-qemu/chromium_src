@@ -1,0 +1,10 @@
+#7 tests failed:
+-ValidationIntegrationTest.Receiver
+-ValidationIntegrationTest.Remote
+-ValidationTest.AssociatedConformace
+-ValidationTest.BoundsCheck
+-ValidationTest.Conformance
+-ValidationTest.ResponseBoundsCheck
+-ValidationTest.ResponseConformance
+#1 test timed out:
+-PipeCount/MultiprocessMessagePipeTestWithPipeCount.PlatformHandlePassing/1

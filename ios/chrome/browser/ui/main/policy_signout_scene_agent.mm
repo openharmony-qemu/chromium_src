@@ -8,10 +8,6 @@
 #import "ios/chrome/browser/ui/commands/command_dispatcher.h"
 #import "ios/chrome/browser/ui/commands/policy_change_commands.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface PolicySignoutSceneAgent ()
 
 // Command Dispatcher.
@@ -31,7 +27,7 @@
 
 - (void)sceneState:(SceneState*)sceneState
     transitionedToActivationLevel:(SceneActivationLevel)level {
-  AppState* appState = self.sceneState.appState;
+  AppState* appState = self.sceneState.profileState.appState;
   // Can only present UI when activation level is
   // SceneActivationLevelForegroundActive. Show the sign-out prompt if the user
   // was signed out due to policy.

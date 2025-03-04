@@ -20,10 +20,6 @@
 #import "ios/web/public/navigation/referrer.h"
 #import "ios/web/public/web_state.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 // Returns a rgb hexadecimal color, suitable for processing in JavaScript
 std::string ToHexStringRGB(int color) {
@@ -148,7 +144,7 @@ void TextFragmentsManagerImpl::WebStateDestroyed(WebState* web_state) {
 
 #pragma mark - Private Methods
 
-absl::optional<TextFragmentsManagerImpl::TextFragmentProcessingParams>
+std::optional<TextFragmentsManagerImpl::TextFragmentProcessingParams>
 TextFragmentsManagerImpl::ProcessTextFragments(
     const web::NavigationContext* context,
     const web::Referrer& referrer) {
@@ -183,7 +179,7 @@ TextFragmentsManagerImpl::ProcessTextFragments(
         ToHexStringRGB(shared_highlighting::kFragmentTextForegroundColorARGB);
   }
 
-  return absl::optional<TextFragmentProcessingParams>(
+  return std::optional<TextFragmentProcessingParams>(
       {std::move(parsed_fragments), bg_color, fg_color});
 }
 
@@ -200,7 +196,7 @@ void TextFragmentsManagerImpl::DoHighlight() {
 bool TextFragmentsManagerImpl::AreTextFragmentsAllowed(
     const web::NavigationContext* context) {
   if (!web_state_ || web_state_->HasOpener()) {
-    // TODO(crbug.com/1099268): Loosen this restriction if the opener has the
+    // TODO(crbug.com/40137397): Loosen this restriction if the opener has the
     // same domain.
     return false;
   }
@@ -210,7 +206,7 @@ bool TextFragmentsManagerImpl::AreTextFragmentsAllowed(
 
 TextFragmentsJavaScriptFeature* TextFragmentsManagerImpl::GetJSFeature() {
   return js_feature_for_testing_
-             ? js_feature_for_testing_
+             ? js_feature_for_testing_.get()
              : TextFragmentsJavaScriptFeature::GetInstance();
 }
 

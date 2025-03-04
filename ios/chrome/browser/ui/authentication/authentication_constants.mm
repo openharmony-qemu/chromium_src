@@ -4,10 +4,6 @@
 
 #import "ios/chrome/browser/ui/authentication/authentication_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 const CGFloat kAuthenticationHeaderImageHeight = 180.;
 
 const CGFloat kAccountProfilePhotoDimension = 40.;
@@ -18,7 +14,7 @@ const CGFloat kAuthenticationHeaderTitleMargin = 19.;
 const CGFloat kAuthenticationSeparatorColorAlpha = 0.12;
 const CGFloat kAuthenticationSeparatorHeight = 1;
 
-NSString* const kAuthenticationHeaderImageName = @"unified_consent_header";
-
 NSString* const kSigninSyncScreenAccessibilityIdentifier =
     @"kSigninSyncScreenAccessibilityIdentifier";
+
+NSString* const kSigninSnackbarUndo = @"SigninSnackbarUndo";

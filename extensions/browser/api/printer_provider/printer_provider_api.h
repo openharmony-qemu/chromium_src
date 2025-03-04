@@ -10,6 +10,7 @@
 #include "base/functional/callback_forward.h"
 #include "base/values.h"
 #include "components/keyed_service/core/keyed_service.h"
+#include "extensions/common/extension_id.h"
 #include "services/device/public/mojom/usb_device.mojom.h"
 
 namespace content {
@@ -34,7 +35,8 @@ class PrinterProviderAPI : public KeyedService {
   using GetPrinterInfoCallback =
       base::OnceCallback<void(const base::Value::Dict printer_info)>;
 
-  static PrinterProviderAPI* Create(content::BrowserContext* context);
+  static std::unique_ptr<PrinterProviderAPI> Create(
+      content::BrowserContext* context);
 
   // Returns generic error string for print request.
   static std::string GetDefaultPrintError();
@@ -85,7 +87,7 @@ class PrinterProviderAPI : public KeyedService {
   // information about |device_id|. The event is only dispatched to the
   // extension identified by |extension_id|.
   virtual void DispatchGetUsbPrinterInfoRequested(
-      const std::string& extension_id,
+      const ExtensionId& extension_id,
       const device::mojom::UsbDeviceInfo& device,
       GetPrinterInfoCallback callback) = 0;
 };

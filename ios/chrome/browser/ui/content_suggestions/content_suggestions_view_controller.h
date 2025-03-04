@@ -9,10 +9,8 @@
 
 #import "ios/chrome/browser/ui/content_suggestions/content_suggestions_consumer.h"
 
-@protocol ContentSuggestionsCommands;
-@protocol ContentSuggestionsMenuProvider;
-@class ContentSuggestionsMetricsRecorder;
 @protocol ContentSuggestionsViewControllerAudience;
+@class ContentSuggestionsMetricsRecorder;
 class UrlLoadingBrowserAgent;
 
 // CollectionViewController to display the suggestions items.
@@ -25,21 +23,13 @@ class UrlLoadingBrowserAgent;
 - (instancetype)initWithNibName:(NSString*)name
                          bundle:(NSBundle*)bundle NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
-
-// Returns the vertical space taken up by the Content Suggestions.
-- (CGFloat)contentSuggestionsHeight;
-
-// Handler for the commands sent by the ContentSuggestionsViewController.
-@property(nonatomic, weak) id<ContentSuggestionsCommands>
-    suggestionCommandHandler;
 @property(nonatomic, weak) id<ContentSuggestionsViewControllerAudience>
     audience;
 // Provider of menu configurations for the contentSuggestions component.
-@property(nonatomic, weak) id<ContentSuggestionsMenuProvider> menuProvider;
 @property(nonatomic, assign) UrlLoadingBrowserAgent* urlLoadingBrowserAgent;
 
 // Recorder for content suggestions metrics.
-@property(nonatomic, assign)
+@property(nonatomic, weak)
     ContentSuggestionsMetricsRecorder* contentSuggestionsMetricsRecorder;
 
 @end

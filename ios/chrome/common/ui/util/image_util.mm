@@ -8,10 +8,6 @@
 
 #import "ui/gfx/image/resize_image_dimensions.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 UIImage* ResizeImage(UIImage* image,
                      CGSize targetSize,
                      ProjectionMode projectionMode) {
@@ -33,12 +29,17 @@ UIImage* ResizeImage(UIImage* image,
 
   // Resize photo. Use UIImage drawing methods because they respect
   // UIImageOrientation as opposed to CGContextDrawImage().
-  UIGraphicsBeginImageContextWithOptions(revisedTargetSize, opaque,
-                                         /* scale = */ 0);
-  [image drawInRect:projectTo];
-  UIImage* resizedPhoto = UIGraphicsGetImageFromCurrentImageContext();
-  UIGraphicsEndImageContext();
-  return resizedPhoto;
+  UIGraphicsImageRendererFormat* format =
+      [UIGraphicsImageRendererFormat preferredFormat];
+  format.opaque = opaque;
+
+  UIGraphicsImageRenderer* renderer =
+      [[UIGraphicsImageRenderer alloc] initWithSize:revisedTargetSize
+                                             format:format];
+
+  return [renderer imageWithActions:^(UIGraphicsImageRendererContext* context) {
+    [image drawInRect:projectTo];
+  }];
 }
 
 UIImage* ResizeImageForSearchByImage(UIImage* image) {
@@ -166,16 +167,20 @@ void CalculateProjection(CGSize originalSize,
 UIImage* BlurredImageWithImage(UIImage* image, CGFloat blurRadius) {
   CIImage* inputImage = [CIImage imageWithCGImage:image.CGImage];
 
-  // Blur the UIImage with a CIFilter
-  CIFilter* filter = [CIFilter filterWithName:@"CIGaussianBlur"];
-  [filter setValue:inputImage forKey:kCIInputImageKey];
-  [filter setValue:[NSNumber numberWithFloat:blurRadius] forKey:@"inputRadius"];
+  // Extend the edges with a Affline Clamp filter.
+  CIFilter* clampFilter = [CIFilter filterWithName:@"CIAffineClamp"];
+  [clampFilter setDefaults];
+  [clampFilter setValue:inputImage forKey:kCIInputImageKey];
 
-  CIImage* outputImage = filter.outputImage;
-  CGFloat scale = 1 / image.scale;
-  outputImage = [outputImage
-      imageByApplyingTransform:CGAffineTransformMakeScale(scale, scale)];
-  UIImage* blurredImage = [UIImage imageWithCIImage:outputImage];
-  return
-      [blurredImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+  // Blur the UIImage with a Gaussian blur filter.
+  CIFilter* blurFilter = [CIFilter filterWithName:@"CIGaussianBlur"];
+  [blurFilter setValue:clampFilter.outputImage forKey:kCIInputImageKey];
+  [blurFilter setValue:[NSNumber numberWithFloat:blurRadius]
+                forKey:@"inputRadius"];
+
+  CIContext* context = [CIContext contextWithOptions:nil];
+  UIImage* blurredImage =
+      [UIImage imageWithCGImage:[context createCGImage:blurFilter.outputImage
+                                              fromRect:inputImage.extent]];
+  return blurredImage;
 }

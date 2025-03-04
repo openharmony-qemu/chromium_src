@@ -32,7 +32,6 @@ class CC_EXPORT TileDrawInfo {
         return true;
     }
     NOTREACHED();
-    return false;
   }
   bool NeedsRaster() const {
     switch (mode_) {
@@ -44,7 +43,6 @@ class CC_EXPORT TileDrawInfo {
         return true;
     }
     NOTREACHED();
-    return false;
   }
 
   viz::ResourceId resource_id_for_export() const {
@@ -77,6 +75,7 @@ class CC_EXPORT TileDrawInfo {
   }
 
   inline bool has_resource() const { return !!resource_; }
+  bool is_resource_ready_to_draw() const { return is_resource_ready_to_draw_; }
 
   const ResourcePool::InUsePoolResource& GetResource() const;
 

@@ -127,12 +127,38 @@ void CloudPolicyClientRegistrationHelper::StartRegistrationWithEnrollmentToken(
     bool is_mandatory,
     base::OnceClosure callback) {
   DVLOG_POLICY(1, POLICY_AUTH)
-      << "Starting device registration with enrollment token = " << token;
+      << "Starting browser registration with enrollment token = " << token;
   DCHECK(!client_->is_registered());
   callback_ = std::move(callback);
   client_->AddObserver(this);
-  client_->RegisterWithToken(token, client_id, client_data_delegate,
-                             is_mandatory);
+  client_->RegisterBrowserWithEnrollmentToken(
+      token, client_id, client_data_delegate, is_mandatory);
+}
+
+void CloudPolicyClientRegistrationHelper::StartRegistrationWithOidcTokens(
+    const std::string& oauth_token,
+    const std::string& id_token,
+    const std::string& client_id,
+    const std::string& state,
+    const base::TimeDelta& timeout_duration,
+    CloudPolicyClient::ResultCallback callback) {
+  DVLOG_POLICY(1, POLICY_AUTH)
+      << "Starting profile registration with Oidc tokens";
+  CHECK(!client_->is_registered());
+  // Oidc enrollment will pass the callback into the client itself in order to
+  // extract net error code.
+  client_->AddObserver(this);
+
+  CloudPolicyClient::RegistrationParameters register_user(
+      enterprise_management::DeviceRegisterRequest::USER,
+      enterprise_management::DeviceRegisterRequest::FLAVOR_USER_REGISTRATION);
+  if (!state.empty()) {
+    register_user.oidc_state = state;
+  }
+
+  client_->RegisterWithOidcResponse(register_user, oauth_token, id_token,
+                                    client_id, timeout_duration,
+                                    std::move(callback));
 }
 
 void CloudPolicyClientRegistrationHelper::OnTokenFetched(
@@ -182,8 +208,6 @@ void CloudPolicyClientRegistrationHelper::OnGetUserInfoSuccess(
   if (client_->is_registered()) {
     // Client should not be registered yet.
     NOTREACHED();
-    RequestCompleted();
-    return;
   }
 
   // Kick off registration of the CloudPolicyClient with our newly minted
@@ -220,7 +244,9 @@ void CloudPolicyClientRegistrationHelper::RequestCompleted() {
     client_->RemoveObserver(this);
     // |client_| may be freed by the callback so clear it now.
     client_ = nullptr;
-    std::move(callback_).Run();
+    if (callback_) {
+      std::move(callback_).Run();
+    }
   }
 }
 

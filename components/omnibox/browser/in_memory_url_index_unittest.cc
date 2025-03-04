@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/in_memory_url_index.h"
 
 #include <stddef.h>
@@ -20,6 +25,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/path_service.h"
 #include "base/ranges/algorithm.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -34,7 +40,9 @@
 #include "components/omnibox/browser/in_memory_url_index_types.h"
 #include "components/omnibox/browser/omnibox_triggered_feature_service.h"
 #include "components/omnibox/browser/url_index_private_data.h"
+#include "components/search_engines/search_engines_test_environment.h"
 #include "components/search_engines/template_url_service.h"
+#include "components/url_formatter/url_formatter.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 // The test version of the history url database table ('url') is contained in
@@ -119,10 +127,6 @@ class InMemoryURLIndexTest : public testing::Test {
   URLIndexPrivateData* GetPrivateData() const;
   base::CancelableTaskTracker* GetPrivateDataTracker() const;
   void ClearPrivateData();
-  void set_history_dir(const base::FilePath& dir_path);
-  bool GetCacheFilePath(base::FilePath* file_path) const;
-  void PostRestoreFromCacheFileTask();
-  void PostSaveToCacheFileTask();
   const SchemeSet& scheme_allowlist();
 
   // Pass-through functions to simplify our friendship with URLIndexPrivateData.
@@ -134,6 +138,8 @@ class InMemoryURLIndexTest : public testing::Test {
   void ExpectPrivateDataEmpty(const URLIndexPrivateData& data);
   void ExpectPrivateDataEqual(const URLIndexPrivateData& expected,
                               const URLIndexPrivateData& actual);
+
+  TemplateURLService* template_url_service();
 
   ScoredHistoryMatches HistoryItemsForTerms(const std::u16string& term_string,
                                             size_t cursor_position,
@@ -149,9 +155,14 @@ class InMemoryURLIndexTest : public testing::Test {
   base::test::TaskEnvironment task_environment_;
   std::unique_ptr<history::HistoryService> history_service_;
   raw_ptr<history::HistoryDatabase> history_database_ = nullptr;
-  std::unique_ptr<TemplateURLService> template_url_service_;
+  search_engines::SearchEnginesTestEnvironment search_engines_test_environment_{
+      {.template_url_service_initializer = kTemplateURLData}};
   std::unique_ptr<InMemoryURLIndex> url_index_;
 };
+
+TemplateURLService* InMemoryURLIndexTest::template_url_service() {
+  return search_engines_test_environment_.template_url_service();
+}
 
 sql::Database& InMemoryURLIndexTest::GetDB() {
   return history_database_->GetDB();
@@ -208,7 +219,7 @@ void InMemoryURLIndexTest::SetUp() {
         // Execute the contents of a golden file to populate the [urls] and
         // [visits] tables.
         base::FilePath golden_path;
-        base::PathService::Get(base::DIR_SOURCE_ROOT, &golden_path);
+        base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &golden_path);
         golden_path = golden_path.AppendASCII("components/test/data/omnibox");
         golden_path = golden_path.Append(TestDBName());
         ASSERT_TRUE(base::PathExists(golden_path));
@@ -216,7 +227,7 @@ void InMemoryURLIndexTest::SetUp() {
         ASSERT_TRUE(base::ReadFileToString(golden_path, &sql));
         sql::Database& db(GetDB());
         ASSERT_TRUE(db.is_open());
-        ASSERT_TRUE(db.Execute(sql.c_str()));
+        ASSERT_TRUE(db.Execute(sql));
 
         // Update [urls.last_visit_time] and [visits.visit_time] to represent a
         // time relative to 'now'.
@@ -243,11 +254,9 @@ void InMemoryURLIndexTest::SetUp() {
   BlockUntilHistoryProcessesPendingRequests(history_service_.get());
 
   // Set up a simple template URL service with a default search engine.
-  template_url_service_ = std::make_unique<TemplateURLService>(
-      kTemplateURLData, std::size(kTemplateURLData));
-  TemplateURL* template_url = template_url_service_->GetTemplateURLForKeyword(
+  TemplateURL* template_url = template_url_service()->GetTemplateURLForKeyword(
       kDefaultTemplateURLKeyword);
-  template_url_service_->SetUserSelectedDefaultSearchProvider(template_url);
+  template_url_service()->SetUserSelectedDefaultSearchProvider(template_url);
 
   if (InitializeInMemoryURLIndexInSetUp())
     InitializeInMemoryURLIndex();
@@ -275,8 +284,8 @@ void InMemoryURLIndexTest::InitializeInMemoryURLIndex() {
   SchemeSet client_schemes_to_allowlist;
   client_schemes_to_allowlist.insert(kClientAllowlistedScheme);
   url_index_ = std::make_unique<InMemoryURLIndex>(
-      nullptr, history_service_.get(), template_url_service_.get(),
-      base::FilePath(), client_schemes_to_allowlist);
+      nullptr, history_service_.get(), template_url_service(), base::FilePath(),
+      client_schemes_to_allowlist);
   url_index_->Init();
 
   BlockUntilHistoryProcessesPendingRequests(history_service_.get());
@@ -431,7 +440,7 @@ TEST_F(LimitedInMemoryURLIndexTest, Initialization) {
   // history_info_map_ should have the same number of items as were filtered.
   EXPECT_EQ(1U, private_data.history_info_map_.size());
   EXPECT_EQ(35U, private_data.char_word_map_.size());
-  EXPECT_EQ(17U, private_data.word_map_.size());
+  EXPECT_EQ(19U, private_data.word_map_.size());
 }
 
 TEST_F(InMemoryURLIndexTest, HiddenURLRowsAreIgnored) {
@@ -507,9 +516,9 @@ TEST_F(InMemoryURLIndexTest, Retrieval) {
   EXPECT_EQ(0U, matches.size());
 
   // But if it's not from the default search engine, it should be returned.
-  TemplateURL* template_url = template_url_service_->GetTemplateURLForKeyword(
+  TemplateURL* template_url = template_url_service()->GetTemplateURLForKeyword(
       kNonDefaultTemplateURLKeyword);
-  template_url_service_->SetUserSelectedDefaultSearchProvider(template_url);
+  template_url_service()->SetUserSelectedDefaultSearchProvider(template_url);
   matches = HistoryItemsForTerms(u"query", std::u16string::npos, "",
                                  kProviderMaxMatches);
   EXPECT_EQ(1U, matches.size());
@@ -535,6 +544,29 @@ TEST_F(InMemoryURLIndexTest, Retrieval) {
   EXPECT_EQ(34, matches[0].url_info.id());
   EXPECT_EQ("http://fubarfubarandfubar.com/", matches[0].url_info.url().spec());
   EXPECT_EQ(u"Situation Normal -- FUBARED", matches[0].url_info.title());
+}
+
+// Regression test for crbug.com/1494484. Exercises a URL that is valid but may
+// become invalid if handled with url_formatter::FormatUrl().
+TEST_F(InMemoryURLIndexTest,
+       RetrievalWithInternationalizedDomainNameWithInvalidCodePoint) {
+  const GURL url("https://xn--b4ab3a0a.xn--b4aew.com/");
+
+  ASSERT_TRUE(url.is_valid());
+  ASSERT_FALSE(GURL(url_formatter::FormatUrl(
+                        url, url_formatter::kFormatUrlOmitUsernamePassword,
+                        base::UnescapeRule::NONE, nullptr, nullptr, nullptr))
+                   .is_valid());
+
+  history::URLID new_row_id = 87654321;  // Arbitrarily chosen large new row id.
+  history::URLRow new_row = history::URLRow(url, new_row_id++);
+  new_row.set_last_visit(base::Time::Now());
+
+  EXPECT_TRUE(UpdateURL(new_row));
+  EXPECT_EQ(
+      1U, HistoryItemsForTerms(u"\u04a5\u049b\u049d", std::u16string::npos, "",
+                               kProviderMaxMatches)
+              .size());
 }
 
 TEST_F(InMemoryURLIndexTest, CursorPositionRetrieval) {
@@ -706,7 +738,7 @@ TEST_F(InMemoryURLIndexTest, TrimHistoryIds) {
     group.min_id = row_id;
     for (size_t i = 0; i < kAlmostLimit; ++i) {
       history::URLRow new_row(
-          GURL("http://www.fake_url" + std::to_string(row_id) + ".com"),
+          GURL("http://www.fake_url" + base::NumberToString(row_id) + ".com"),
           row_id);
       new_row.set_typed_count(group.typed_count);
       new_row.set_visit_count(group.visit_count);
@@ -960,7 +992,7 @@ TEST_F(InMemoryURLIndexTest, ExpireRow) {
   // notification, then ensure that the row has been deleted.
   history::URLRows deleted_rows;
   deleted_rows.push_back(matches[0].url_info);
-  url_index_->OnURLsDeleted(
+  url_index_->OnHistoryDeletions(
       nullptr, history::DeletionInfo::ForUrls(deleted_rows, std::set<GURL>()));
   EXPECT_TRUE(HistoryItemsForTerms(u"DrudgeReport", std::u16string::npos, "",
                                    kProviderMaxMatches)

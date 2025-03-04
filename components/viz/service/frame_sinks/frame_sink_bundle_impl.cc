@@ -175,6 +175,8 @@ class FrameSinkBundleImpl::SinkGroup : public BeginFrameObserver {
     }
   }
 
+  void DidFinishFrame() { source_->DidFinishFrame(this); }
+
  private:
   void UpdateBeginFrameObservation() {
     bool should_observe_begin_frame = !frame_sinks_needing_begin_frame_.empty();
@@ -281,9 +283,17 @@ void FrameSinkBundleImpl::SetNeedsBeginFrame(uint32_t sink_id,
   }
 }
 
+void FrameSinkBundleImpl::SetWantsBeginFrameAcks(uint32_t sink_id) {
+  if (auto* sink = GetFrameSink(sink_id)) {
+    sink->SetWantsBeginFrameAcks();
+  }
+}
+
 void FrameSinkBundleImpl::Submit(
     std::vector<mojom::BundledFrameSubmissionPtr> submissions) {
+  std::map<raw_ptr<SinkGroup>, base::WeakPtr<SinkGroup>> groups;
   std::map<raw_ptr<SinkGroup>, base::WeakPtr<SinkGroup>> affected_groups;
+
   // Count the frame submissions before processing anything. This ensures that
   // any frames submitted here will be acked together in a batch, and not acked
   // individually in case they happen to ack synchronously within
@@ -293,8 +303,9 @@ void FrameSinkBundleImpl::Submit(
   // they have no BeginFrameSource), we count nothing and their acks will pass
   // through to the client without batching.
   for (auto& submission : submissions) {
-    if (submission->data->is_frame()) {
-      if (auto* group = GetSinkGroup(submission->sink_id)) {
+    if (auto* group = GetSinkGroup(submission->sink_id)) {
+      groups.emplace(group, group->GetWeakPtr());
+      if (submission->data->is_frame()) {
         group->WillSubmitFrame(submission->sink_id);
         affected_groups.emplace(group, group->GetWeakPtr());
       }
@@ -326,6 +337,12 @@ void FrameSinkBundleImpl::Submit(
     }
   }
 
+  for (const auto& [unsafe_group, weak_group] : groups) {
+    if (weak_group) {
+      weak_group->DidFinishFrame();
+    }
+  }
+
   for (const auto& [unsafe_group, weak_group] : affected_groups) {
     if (weak_group) {
       weak_group->FlushMessages();
@@ -336,17 +353,17 @@ void FrameSinkBundleImpl::Submit(
 void FrameSinkBundleImpl::DidAllocateSharedBitmap(
     uint32_t sink_id,
     base::ReadOnlySharedMemoryRegion region,
-    const gpu::Mailbox& id) {
+    const SharedBitmapId& id) {
   if (auto* sink = GetFrameSink(sink_id)) {
     sink->DidAllocateSharedBitmap(std::move(region), id);
   }
 }
 
 #if BUILDFLAG(IS_ANDROID)
-void FrameSinkBundleImpl::SetThreadIds(uint32_t sink_id,
-                                       const std::vector<int32_t>& thread_ids) {
+void FrameSinkBundleImpl::SetThreads(uint32_t sink_id,
+                                     const std::vector<Thread>& threads) {
   if (auto* sink = GetFrameSink(sink_id)) {
-    sink->SetThreadIds(thread_ids);
+    sink->SetThreads(threads);
   }
 }
 #endif

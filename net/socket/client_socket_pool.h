@@ -6,7 +6,9 @@
 #define NET_SOCKET_CLIENT_SOCKET_POOL_H_
 
 #include <memory>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -24,7 +26,7 @@
 #include "net/log/net_log_capture_mode.h"
 #include "net/socket/connect_job.h"
 #include "net/socket/socket_tag.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "net/ssl/ssl_config.h"
 #include "url/scheme_host_port.h"
 
 namespace net {
@@ -35,7 +37,7 @@ class HttpAuthController;
 class HttpResponseInfo;
 class NetLogWithSource;
 struct NetworkTrafficAnnotationTag;
-class ProxyServer;
+class ProxyChain;
 struct SSLConfig;
 class StreamSocket;
 
@@ -96,11 +98,25 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   // considered indistinguishable.
   class NET_EXPORT GroupId {
    public:
+    // Returns the prefix for `privacy_mode` for logging.
+    static std::string_view GetPrivacyModeGroupIdPrefix(
+        PrivacyMode privacy_mode);
+
+    // Returns the prefix for `secure_dns_policy` for logging.
+    static std::string_view GetSecureDnsPolicyGroupIdPrefix(
+        SecureDnsPolicy secure_dns_policy);
+
     GroupId();
     GroupId(url::SchemeHostPort destination,
             PrivacyMode privacy_mode,
             NetworkAnonymizationKey network_anonymization_key,
-            SecureDnsPolicy secure_dns_policy);
+            SecureDnsPolicy secure_dns_policy,
+            bool disable_cert_network_fetches
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+            ,
+            bool secure_dns_only = false
+#endif
+    );
     GroupId(const GroupId& group_id);
 
     ~GroupId();
@@ -118,24 +134,58 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
     SecureDnsPolicy secure_dns_policy() const { return secure_dns_policy_; }
 
+    bool disable_cert_network_fetches() const {
+      return disable_cert_network_fetches_;
+    }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    bool secure_dns_only() const { return secure_dns_only_; }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
     // Returns the group ID as a string, for logging.
     std::string ToString() const;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool operator==(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
-                      secure_dns_policy_) ==
+                      secure_dns_policy_, disable_cert_network_fetches_,
+                      secure_dns_only_) ==
+             std::tie(
+                 other.destination_, other.privacy_mode_,
+                 other.network_anonymization_key_, other.secure_dns_policy_,
+                 other.disable_cert_network_fetches_, other.secure_dns_only_);
+    }
+#else
+    bool operator==(const GroupId& other) const {
+      return std::tie(destination_, privacy_mode_, network_anonymization_key_,
+                      secure_dns_policy_, disable_cert_network_fetches_) ==
              std::tie(other.destination_, other.privacy_mode_,
                       other.network_anonymization_key_,
-                      other.secure_dns_policy_);
+                      other.secure_dns_policy_,
+                      other.disable_cert_network_fetches_);
     }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool operator<(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
+                      secure_dns_policy_, disable_cert_network_fetches_,
                       secure_dns_policy_) <
+             std::tie(
+                 other.destination_, other.privacy_mode_,
+                 other.network_anonymization_key_, other.secure_dns_policy_,
+                 other.disable_cert_network_fetches_, other.secure_dns_policy_);
+    }
+#else
+    bool operator<(const GroupId& other) const {
+      return std::tie(destination_, privacy_mode_, network_anonymization_key_,
+                      secure_dns_policy_, disable_cert_network_fetches_) <
              std::tie(other.destination_, other.privacy_mode_,
                       other.network_anonymization_key_,
-                      other.secure_dns_policy_);
+                      other.secure_dns_policy_,
+                      other.disable_cert_network_fetches_);
     }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
    private:
     // The endpoint of the final destination (not the proxy).
@@ -149,6 +199,15 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
     // Controls the Secure DNS behavior to use when creating this socket.
     SecureDnsPolicy secure_dns_policy_;
+
+    // Whether cert validation-related network fetches are allowed. Should only
+    // be true for a very limited number of network-configuration related
+    // scripts (e.g., PAC fetches).
+    bool disable_cert_network_fetches_;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    bool secure_dns_only_ = false;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   };
 
   // Parameters that, in combination with GroupId, proxy, websocket information,
@@ -156,51 +215,33 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   //
   // DO NOT ADD ANY FIELDS TO THIS CLASS.
   //
-  // TODO(https://crbug.com/921369) In order to resolve longstanding issues
+  // TODO(crbug.com/40609237) In order to resolve longstanding issues
   // related to pooling distinguishable sockets together, remove this class
   // entirely.
   class NET_EXPORT_PRIVATE SocketParams
       : public base::RefCounted<SocketParams> {
    public:
-    // For non-SSL requests / non-HTTPS proxies, the corresponding SSLConfig
-    // argument may be nullptr.
-    SocketParams(std::unique_ptr<SSLConfig> ssl_config_for_origin,
-                 std::unique_ptr<SSLConfig> ssl_config_for_proxy);
+    // For non-SSL requests, `allowed_bad_certs` argument will be ignored (and
+    // is likely empty, anyways).
+    explicit SocketParams(
+        const std::vector<SSLConfig::CertAndStatus>& allowed_bad_certs);
 
     SocketParams(const SocketParams&) = delete;
     SocketParams& operator=(const SocketParams&) = delete;
 
-    // Creates a  SocketParams object with none of the fields populated. This
+    // Creates a SocketParams object with none of the fields populated. This
     // works for the HTTP case only.
     static scoped_refptr<SocketParams> CreateForHttpForTesting();
 
-    const SSLConfig* ssl_config_for_origin() const {
-      return ssl_config_for_origin_.get();
+    const std::vector<SSLConfig::CertAndStatus>& allowed_bad_certs() const {
+      return allowed_bad_certs_;
     }
 
-    const SSLConfig* ssl_config_for_proxy() const {
-      return ssl_config_for_proxy_.get();
-    }
-
-#if BUILDFLAG(IS_OHOS)
-  void SetFromPreload(bool from_preload) {
-    from_preload_ = from_preload;
-  }
-
-  bool IsFromPreload() const {
-    return from_preload_;
-  }
-#endif
    private:
     friend class base::RefCounted<SocketParams>;
     ~SocketParams();
 
-    std::unique_ptr<SSLConfig> ssl_config_for_origin_;
-    std::unique_ptr<SSLConfig> ssl_config_for_proxy_;
-
-#if BUILDFLAG(IS_OHOS)
-    bool from_preload_ = false;
-#endif
+    std::vector<SSLConfig::CertAndStatus> allowed_bad_certs_;
   };
 
   ClientSocketPool(const ClientSocketPool&) = delete;
@@ -249,7 +290,7 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   virtual int RequestSocket(
       const GroupId& group_id,
       scoped_refptr<SocketParams> params,
-      const absl::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
+      const std::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
       RequestPriority priority,
       const SocketTag& socket_tag,
       RespectLimits respect_limits,
@@ -273,7 +314,7 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   virtual int RequestSockets(
       const GroupId& group_id,
       scoped_refptr<SocketParams> params,
-      const absl::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
+      const std::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
       int num_sockets,
       CompletionOnceCallback callback,
       const NetLogWithSource& net_log) = 0;
@@ -353,9 +394,13 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
   static base::TimeDelta used_idle_socket_timeout();
   static void set_used_idle_socket_timeout(base::TimeDelta timeout);
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void SetConnectTimeout(int timeout_override);
   int GetConnectTimeout();
+#endif
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
+  int GetConnectJobWithSecureDnsOnlyTimeout();
 #endif
 
  protected:
@@ -372,13 +417,16 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
   std::unique_ptr<ConnectJob> CreateConnectJob(
       GroupId group_id,
       scoped_refptr<SocketParams> socket_params,
-      const ProxyServer& proxy_server,
-      const absl::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
+      const ProxyChain& proxy_chain,
+      const std::optional<NetworkTrafficAnnotationTag>& proxy_annotation_tag,
       RequestPriority request_priority,
       SocketTag socket_tag,
       ConnectJob::Delegate* delegate);
-#ifdef OHOS_EX_NETWORK_CONNECTION
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   int timeout_override_{0};
+#endif
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int connect_job_with_secure_dns_only_timeout_{15};
 #endif
 
  private:

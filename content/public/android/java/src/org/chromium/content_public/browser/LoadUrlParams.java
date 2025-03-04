@@ -8,9 +8,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.base.UserDataHost;
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
 import org.chromium.base.supplier.Supplier;
 import org.chromium.content_public.browser.navigation_controller.LoadURLType;
 import org.chromium.content_public.browser.navigation_controller.UserAgentOverrideOption;
@@ -38,13 +39,12 @@ public class LoadUrlParams {
     private int mTransitionType;
     private Referrer mReferrer;
     private Map<String, String> mExtraHeaders;
-    @Nullable
-    private UserDataHost mNavigationHandleUserDataHost;
+    @Nullable private UserDataHost mNavigationHandleUserDataHost;
     private String mVerbatimHeaders;
     private int mUaOverrideOption;
     private ResourceRequestBody mPostData;
     private String mBaseUrlForDataUrl;
-    private String mVirtualUrlForDataUrl;
+    private String mVirtualUrlForSpecialCases;
     private String mDataUrlAsString;
     private boolean mCanLoadLocalResources;
     private boolean mIsRendererInitiated;
@@ -53,7 +53,9 @@ public class LoadUrlParams {
     private long mInputStartTimestamp;
     private boolean mHasUserGesture;
     private boolean mShouldClearHistoryList;
+    @Nullable private AdditionalNavigationParams mAdditionalNavigationParams;
     private Supplier<Long> mNavigationUIDataSupplier;
+    private boolean mIsPdf;
 
     /**
      * Creates an instance with default page transition type.
@@ -95,7 +97,7 @@ public class LoadUrlParams {
         mUaOverrideOption = UserAgentOverrideOption.INHERIT;
         mPostData = null;
         mBaseUrlForDataUrl = null;
-        mVirtualUrlForDataUrl = null;
+        mVirtualUrlForSpecialCases = null;
         mDataUrlAsString = null;
     }
 
@@ -120,7 +122,7 @@ public class LoadUrlParams {
         copy.mUaOverrideOption = other.mUaOverrideOption;
         copy.mPostData = other.mPostData;
         copy.mBaseUrlForDataUrl = other.mBaseUrlForDataUrl;
-        copy.mVirtualUrlForDataUrl = other.mVirtualUrlForDataUrl;
+        copy.mVirtualUrlForSpecialCases = other.mVirtualUrlForSpecialCases;
         copy.mDataUrlAsString = other.mDataUrlAsString;
         copy.mCanLoadLocalResources = other.mCanLoadLocalResources;
         copy.mIsRendererInitiated = other.mIsRendererInitiated;
@@ -129,6 +131,7 @@ public class LoadUrlParams {
         copy.mInputStartTimestamp = other.mInputStartTimestamp;
         copy.mHasUserGesture = other.mHasUserGesture;
         copy.mShouldClearHistoryList = other.mShouldClearHistoryList;
+        copy.mAdditionalNavigationParams = other.mAdditionalNavigationParams;
         return copy;
     }
 
@@ -153,8 +156,8 @@ public class LoadUrlParams {
      */
     public static LoadUrlParams createLoadDataParams(
             String data, String mimeType, boolean isBase64Encoded, String charset) {
-        LoadUrlParams params = new LoadUrlParams(
-                buildDataUri(data, mimeType, isBase64Encoded, charset));
+        LoadUrlParams params =
+                new LoadUrlParams(buildDataUri(data, mimeType, isBase64Encoded, charset));
         params.setLoadType(LoadURLType.DATA);
         params.setTransitionType(PageTransition.TYPED);
         return params;
@@ -189,10 +192,13 @@ public class LoadUrlParams {
      *                   if null.
      */
     public static LoadUrlParams createLoadDataParamsWithBaseUrl(
-            String data, String mimeType, boolean isBase64Encoded,
-            String baseUrl, String historyUrl) {
-        return createLoadDataParamsWithBaseUrl(data, mimeType, isBase64Encoded,
-                baseUrl, historyUrl, null);
+            String data,
+            String mimeType,
+            boolean isBase64Encoded,
+            String baseUrl,
+            String historyUrl) {
+        return createLoadDataParamsWithBaseUrl(
+                data, mimeType, isBase64Encoded, baseUrl, historyUrl, null);
     }
 
     /**
@@ -211,8 +217,12 @@ public class LoadUrlParams {
      *                does not require a special charset.
      */
     public static LoadUrlParams createLoadDataParamsWithBaseUrl(
-            String data, String mimeType, boolean isBase64Encoded,
-            String baseUrl, String historyUrl, String charset) {
+            String data,
+            String mimeType,
+            boolean isBase64Encoded,
+            String baseUrl,
+            String historyUrl,
+            String charset) {
         LoadUrlParams params;
         // For WebView compatibility, when the base URL has the 'data:'
         // scheme, we treat it as a regular data URL load and skip setting
@@ -222,7 +232,7 @@ public class LoadUrlParams {
         if (baseUrl == null || !baseUrl.toLowerCase(Locale.US).startsWith("data:")) {
             params = createLoadDataParams("", mimeType, isBase64Encoded, charset);
             params.setBaseUrlForDataUrl(baseUrl != null ? baseUrl : "about:blank");
-            params.setVirtualUrlForDataUrl(historyUrl != null ? historyUrl : "about:blank");
+            params.setVirtualUrlForSpecialCases(historyUrl != null ? historyUrl : "about:blank");
             params.setDataUrlAsString(buildDataUri(data, mimeType, isBase64Encoded, charset));
         } else {
             params = createLoadDataParams(data, mimeType, isBase64Encoded, charset);
@@ -236,8 +246,7 @@ public class LoadUrlParams {
      * @param postData Post data of the load. Can be null.
      */
     @VisibleForTesting
-    public static LoadUrlParams createLoadHttpPostParams(
-            String url, byte[] postData) {
+    public static LoadUrlParams createLoadHttpPostParams(String url, byte[] postData) {
         LoadUrlParams params = new LoadUrlParams(url);
         params.setLoadType(LoadURLType.HTTP_POST);
         params.setTransitionType(PageTransition.TYPED);
@@ -245,37 +254,27 @@ public class LoadUrlParams {
         return params;
     }
 
-    /**
-     * Sets the url.
-     */
+    /** Sets the url. */
     public void setUrl(String url) {
         mUrl = url;
     }
 
-    /**
-     * Return the url.
-     */
+    /** Return the url. */
     public String getUrl() {
         return mUrl;
     }
 
-    /**
-     * Sets the initiator origin.
-     */
+    /** Sets the initiator origin. */
     public void setInitiatorOrigin(@Nullable Origin initiatorOrigin) {
         mInitiatorOrigin = initiatorOrigin;
     }
 
-    /**
-     * Return the initiator origin.
-     */
+    /** Return the initiator origin. */
     public @Nullable Origin getInitiatorOrigin() {
         return mInitiatorOrigin;
     }
 
-    /**
-     * Return the base url for a data url, otherwise null.
-     */
+    /** Return the base url for a data url, otherwise null. */
     public String getBaseUrl() {
         return mBaseUrlForDataUrl;
     }
@@ -296,16 +295,12 @@ public class LoadUrlParams {
         mTransitionType = transitionType;
     }
 
-    /**
-     * Return the transition type.
-     */
+    /** Return the transition type. */
     public int getTransitionType() {
         return mTransitionType;
     }
 
-    /**
-     * Sets the referrer of this load.
-     */
+    /** Sets the referrer of this load. */
     public void setReferrer(Referrer referrer) {
         mReferrer = referrer;
     }
@@ -327,9 +322,7 @@ public class LoadUrlParams {
         verifyHeaders();
     }
 
-    /**
-     * Return the extra headers as a map.
-     */
+    /** Return the extra headers as a map. */
     public Map<String, String> getExtraHeaders() {
         return mExtraHeaders;
     }
@@ -355,6 +348,7 @@ public class LoadUrlParams {
         mNavigationHandleUserDataHost = null;
         return returnValue;
     }
+
     /**
      * Return the extra headers as a single String separated by "\n", or null if no extra header is
      * set. This form is suitable for passing to native
@@ -402,7 +396,7 @@ public class LoadUrlParams {
     }
 
     private void verifyHeaders() {
-        // TODO(https://crbug.com/1199393): Merge extra and verbatim headers internally, and only
+        // TODO(crbug.com/40761218): Merge extra and verbatim headers internally, and only
         // expose one way to get headers, so users of this class don't miss headers.
         if (mExtraHeaders != null && mVerbatimHeaders != null) {
             // If both header types are set, ensure they're the same.
@@ -460,26 +454,29 @@ public class LoadUrlParams {
     }
 
     /**
-     * Get the virtual url for data load. It is the url displayed to the user.
-     * It is ignored unless load type is LoadURLType.DATA.
-     * @return The virtual url for this data load.
+     * Get the virtual url for data or pdf load. It is the url displayed to the user. It is ignored
+     * unless load type is LoadURLType.DATA or LoadURLType.PDF_ANDROID.
+     *
+     * @return The virtual url for this data or pdf load.
      */
-    public String getVirtualUrlForDataUrl() {
-        return mVirtualUrlForDataUrl;
+    public String getVirtualUrlForSpecialCases() {
+        return mVirtualUrlForSpecialCases;
     }
 
     /**
-     * Set the virtual url for data load. It is the url displayed to the user.
-     * It is ignored unless load type is LoadURLType.DATA.
-     * @param virtualUrl The virtual url for this data load.
+     * Set the virtual url for data or pdf load. It is the url displayed to the user. It is ignored
+     * unless load type is LoadURLType.DATA or LoadURLType.PDF_ANDROID.
+     *
+     * @param virtualUrl The virtual url for this data or pdf load.
      */
-    public void setVirtualUrlForDataUrl(String virtualUrl) {
-        mVirtualUrlForDataUrl = virtualUrl;
+    public void setVirtualUrlForSpecialCases(String virtualUrl) {
+        mVirtualUrlForSpecialCases = virtualUrl;
     }
 
     /**
-     * Get the data for data load. This is then passed to the renderer as
-     * a string, not as a GURL object to circumvent GURL size restriction.
+     * Get the data for data load. This is then passed to the renderer as a string, not as a GURL
+     * object to circumvent GURL size restriction.
+     *
      * @return The data url.
      */
     public String getDataUrlAsString() {
@@ -602,6 +599,24 @@ public class LoadUrlParams {
         return mShouldClearHistoryList;
     }
 
+    /**
+     * Set the additional navigation params associated with the load.
+     *
+     * @param additionalNavigationParams Additional navigation params associated with the load.
+     */
+    public void setAdditionalNavigationParams(
+            AdditionalNavigationParams additionalNavigationParams) {
+        mAdditionalNavigationParams = additionalNavigationParams;
+    }
+
+    /**
+     * @return The additional navigation params associated with the load.
+     */
+    @Nullable
+    public AdditionalNavigationParams getAdditionalNavigationParams() {
+        return mAdditionalNavigationParams;
+    }
+
     public boolean isBaseUrlDataScheme() {
         // If there's no base url set, but this is a data load then
         // treat the scheme as data:.
@@ -619,6 +634,18 @@ public class LoadUrlParams {
     /** Returns the supplier for {@link NavigationUIData} or null. */
     public Supplier<Long> getNavigationUIDataSupplier() {
         return mNavigationUIDataSupplier;
+    }
+
+    /**
+     * @return Whether the URL is a pdf file.
+     */
+    public boolean getIsPdf() {
+        return mIsPdf;
+    }
+
+    /** Sets whether the URL is a pdf file. */
+    public void setIsPdf(boolean isPdf) {
+        mIsPdf = isPdf;
     }
 
     @NativeMethods

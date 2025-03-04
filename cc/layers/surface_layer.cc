@@ -30,7 +30,8 @@ SurfaceLayer::SurfaceLayer()
       stretch_content_to_fill_bounds_(false),
       surface_hit_testable_(false),
       has_pointer_events_none_(false),
-      is_reflection_(false) {}
+      is_reflection_(false),
+      callback_layer_tree_host_changed_(false) {}
 
 SurfaceLayer::SurfaceLayer(
     UpdateSubmissionStateCB update_submission_state_callback)
@@ -41,7 +42,8 @@ SurfaceLayer::SurfaceLayer(
       stretch_content_to_fill_bounds_(false),
       surface_hit_testable_(false),
       has_pointer_events_none_(false),
-      is_reflection_(false) {}
+      is_reflection_(false),
+      callback_layer_tree_host_changed_(false) {}
 
 SurfaceLayer::~SurfaceLayer() {
   DCHECK(!layer_tree_host());
@@ -95,8 +97,8 @@ void SurfaceLayer::SetOldestAcceptableFallback(
     layer_tree_host()->RemoveSurfaceRange(surface_range);
 
   surface_range = viz::SurfaceRange(
-      surface_id.is_valid() ? absl::optional<viz::SurfaceId>(surface_id)
-                            : absl::nullopt,
+      surface_id.is_valid() ? std::optional<viz::SurfaceId>(surface_id)
+                            : std::nullopt,
       surface_range.end());
 
   if (layer_tree_host() && surface_range.IsValid())
@@ -139,11 +141,11 @@ void SurfaceLayer::SetMayContainVideo(bool may_contain_video) {
   SetNeedsCommit();
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void SurfaceLayer::SetVideoRectChangeCallback(RectChangeCallback callback) {
   video_rect_change_callback_ = std::move(callback);
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 std::unique_ptr<LayerImpl> SurfaceLayer::CreateLayerImpl(
     LayerTreeImpl* tree_impl) const {
@@ -161,11 +163,16 @@ void SurfaceLayer::SetLayerTreeHost(LayerTreeHost* host) {
     return;
   }
 
-  // Any time we change trees, start out as "not visible".  If drawing starts,
-  // then the impl layer can call it again with correct visibility.
+  // Any time we change trees, start out as "not visible". Notify the impl layer
+  // in case drawing has already started so it can reset its drawing state.
+  // Note: if this layer is detached while throttled, the LayerImpl may remain
+  // in place until we reattach; in that case it will never know it went
+  // invisible and so needs to be reset.
   auto callback = update_submission_state_callback_.Read(*this);
-  if (callback)
+  if (callback) {
     callback.Run(false, nullptr);
+    callback_layer_tree_host_changed_.Write(*this) = true;
+  }
 
   if (layer_tree_host() && surface_range_.Read(*this).IsValid())
     layer_tree_host()->RemoveSurfaceRange(surface_range_.Read(*this));
@@ -194,14 +201,36 @@ void SurfaceLayer::PushPropertiesTo(
   layer_impl->SetSurfaceHitTestable(surface_hit_testable_.Read(*this));
   layer_impl->SetHasPointerEventsNone(has_pointer_events_none_.Read(*this));
   layer_impl->set_may_contain_video(may_contain_video_.Read(*this));
+
+  if (callback_layer_tree_host_changed_.Read(*this)) {
+    // Anytime SetLayerTreeHost is called and
+    // `update_submission_state_callback_` is defined, the callback will be used
+    // to reset the visibility state. We must share this information with the
+    // SurfaceLayerImpl since it also tracks visibility state so it can avoid
+    // unnecessary invocations of the callback.
+    layer_impl->ResetStateForUpdateSubmissionStateCallback();
+    callback_layer_tree_host_changed_.Write(*this) = false;
+  }
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void SurfaceLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
   if (video_rect_change_callback_) {
     video_rect_change_callback_.Run(rect);
   }
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void SurfaceLayer::SetLayerBoundsChangeCallback(
+    LayerBoundsChangeCallback callback) {
+  layer_bounds_change_callback_ = std::move(callback);
+}
+void SurfaceLayer::OnLayerBoundsUpdate(const gfx::Rect& bounds) {
+  if (layer_bounds_change_callback_) {
+    layer_bounds_change_callback_.Run(bounds);
+  }
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "headless/public/headless_web_contents.h"
+
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,6 +17,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "cc/base/switches.h"
 #include "cc/test/pixel_test_utils.h"
@@ -24,14 +28,12 @@
 #include "content/public/test/browser_test.h"
 #include "headless/lib/browser/headless_web_contents_impl.h"
 #include "headless/public/headless_browser.h"
-#include "headless/public/headless_web_contents.h"
 #include "headless/test/headless_browser_test.h"
 #include "headless/test/headless_browser_test_utils.h"
 #include "headless/test/headless_devtooled_browsertest.h"
 #include "headless/test/test_network_interceptor.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/switches.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -156,14 +158,6 @@ IN_PROC_BROWSER_TEST_F(HeadlessWebContentsTest, HandleSSLError) {
   EXPECT_FALSE(WaitForLoad(web_contents));
 }
 
-namespace {
-bool DecodePNG(const std::string& png_data, SkBitmap* bitmap) {
-  return gfx::PNGCodec::Decode(
-      reinterpret_cast<const unsigned char*>(png_data.data()), png_data.size(),
-      bitmap);
-}
-}  // namespace
-
 // Parameter specifies whether --disable-gpu should be used.
 class HeadlessWebContentsScreenshotTest
     : public HeadlessDevTooledBrowserTest,
@@ -198,12 +192,12 @@ class HeadlessWebContentsScreenshotTest
     std::string png_data_base64 = DictString(result, "result.data");
     ASSERT_FALSE(png_data_base64.empty());
 
-    std::string png_data;
-    ASSERT_TRUE(base::Base64Decode(png_data_base64, &png_data));
-    EXPECT_GT(png_data.size(), 0U);
+    std::optional<std::vector<uint8_t>> png_data =
+        base::Base64Decode(png_data_base64);
+    EXPECT_GT(png_data.value().size(), 0U);
 
-    SkBitmap result_bitmap;
-    EXPECT_TRUE(DecodePNG(png_data, &result_bitmap));
+    SkBitmap result_bitmap = gfx::PNGCodec::Decode(png_data.value());
+    EXPECT_FALSE(result_bitmap.isNull());
 
     EXPECT_EQ(800, result_bitmap.width());
     EXPECT_EQ(600, result_bitmap.height());
@@ -248,16 +242,10 @@ class HeadlessWebContentsScreenshotWindowPositionTest
   }
 };
 
-#if BUILDFLAG(IS_MAC) && defined(ADDRESS_SANITIZER)
-// TODO(crbug.com/1086872): Disabled due to flakiness on Mac ASAN.
-DISABLED_HEADLESS_DEVTOOLED_TEST_P(
-    HeadlessWebContentsScreenshotWindowPositionTest);
-#else
 HEADLESS_DEVTOOLED_TEST_P(HeadlessWebContentsScreenshotWindowPositionTest);
-#endif
 
 // Instantiate test case for both software and gpu compositing modes.
-INSTANTIATE_TEST_SUITE_P(HeadlessWebContentsScreenshotWindowPositionTests,
+INSTANTIATE_TEST_SUITE_P(/* no prefix */,
                          HeadlessWebContentsScreenshotWindowPositionTest,
                          ::testing::Bool());
 
@@ -366,15 +354,15 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
     // See bit.ly/headless-rendering for why we use these flags.
     command_line->AppendSwitch(::switches::kRunAllCompositorStagesBeforeDraw);
     command_line->AppendSwitch(::switches::kDisableNewContentRenderingTimeout);
-    command_line->AppendSwitch(cc::switches::kDisableCheckerImaging);
-    command_line->AppendSwitch(cc::switches::kDisableThreadedAnimation);
-    command_line->AppendSwitch(blink::switches::kDisableThreadedScrolling);
+    command_line->AppendSwitch(switches::kDisableCheckerImaging);
+    command_line->AppendSwitch(switches::kDisableThreadedAnimation);
   }
 
   void RunTest() {
-    browser_context_ = browser()->CreateBrowserContextBuilder().Build();
-    browser()->SetDefaultBrowserContext(browser_context_);
-    browser_devtools_client_.AttachToBrowser();
+    browser()->SetDefaultBrowserContext(
+        browser()->CreateBrowserContextBuilder().Build());
+    SimpleDevToolsProtocolClient browser_devtools_client;
+    browser_devtools_client.AttachToBrowser();
 
     EXPECT_TRUE(embedded_test_server()->Start());
 
@@ -383,7 +371,7 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
     params.Set("width", 200);
     params.Set("height", 200);
     params.Set("enableBeginFrameControl", true);
-    browser_devtools_client_.SendCommand(
+    browser_devtools_client.SendCommand(
         "Target.createTarget", std::move(params),
         base::BindOnce(
             &HeadlessWebContentsBeginFrameControlTest::OnTargetCreated,
@@ -391,7 +379,7 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
 
     RunAsynchronousTest();
 
-    browser_devtools_client_.DetachClient();
+    browser_devtools_client.DetachClient();
   }
 
   void OnTargetCreated(base::Value::Dict result) {
@@ -399,18 +387,9 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
     ASSERT_FALSE(targetId.empty());
 
     web_contents_ = HeadlessWebContentsImpl::From(
-        browser()->GetWebContentsForDevToolsAgentHostId(targetId));
+        content::DevToolsAgentHost::GetForId(targetId)->GetWebContents());
 
     devtools_client_.AttachToWebContents(web_contents_->web_contents());
-
-    devtools_client_.SendCommand(
-        "Page.stopLoading",
-        base::BindOnce(
-            &HeadlessWebContentsBeginFrameControlTest::OnLoadingStopped,
-            base::Unretained(this)));
-  }
-
-  void OnLoadingStopped(base::Value::Dict) {
     devtools_client_.AddEventHandler("Page.loadEventFired",
                                      on_load_event_fired_handler_);
 
@@ -435,12 +414,10 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
     devtools_client_.RemoveEventHandler("Page.loadEventFired",
                                         on_load_event_fired_handler_);
 
-    page_ready_ = true;
     StartFrames();
   }
 
   void BeginFrame(bool screenshot) {
-    frame_in_flight_ = true;
     num_begin_frames_++;
 
     base::Value::Dict params;
@@ -459,17 +436,6 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
         "has_damage", DictBool(result, "result.hasDamage"),
         "has_screenshot_data", DictString(result, "result.screenshotData"));
 
-    // Post OnFrameFinished call so that any pending OnNeedsBeginFramesChanged
-    // call will be executed first.
-    browser()->BrowserMainThread()->PostTask(
-        FROM_HERE,
-        base::BindOnce(
-            &HeadlessWebContentsBeginFrameControlTest::NotifyOnFrameFinished,
-            base::Unretained(this), std::move(result)));
-  }
-
-  void NotifyOnFrameFinished(base::Value::Dict result) {
-    frame_in_flight_ = false;
     OnFrameFinished(std::move(result));
   }
 
@@ -481,16 +447,11 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
             base::Unretained(this)));
   }
 
-  raw_ptr<HeadlessBrowserContext, DanglingUntriaged> browser_context_ =
-      nullptr;  // Not owned.
-  raw_ptr<HeadlessWebContentsImpl, DanglingUntriaged> web_contents_ =
+  raw_ptr<HeadlessWebContentsImpl, AcrossTasksDanglingUntriaged> web_contents_ =
       nullptr;  // Not owned.
 
-  bool page_ready_ = false;
-  bool frame_in_flight_ = false;
   int num_begin_frames_ = 0;
 
-  SimpleDevToolsProtocolClient browser_devtools_client_;
   SimpleDevToolsProtocolClient devtools_client_;
 
   SimpleDevToolsProtocolClient::EventCallback on_load_event_fired_handler_ =
@@ -520,12 +481,12 @@ class HeadlessWebContentsBeginFrameControlBasicTest
       std::string png_data_base64 = DictString(result, "result.screenshotData");
       ASSERT_FALSE(png_data_base64.empty());
 
-      std::string png_data;
-      ASSERT_TRUE(base::Base64Decode(png_data_base64, &png_data));
-      EXPECT_GT(png_data.size(), 0U);
+      std::optional<std::vector<uint8_t>> png_data =
+          base::Base64Decode(png_data_base64);
+      EXPECT_GT(png_data.value().size(), 0U);
 
-      SkBitmap result_bitmap;
-      EXPECT_TRUE(DecodePNG(png_data, &result_bitmap));
+      SkBitmap result_bitmap = gfx::PNGCodec::Decode(png_data.value());
+      EXPECT_FALSE(result_bitmap.isNull());
       EXPECT_EQ(200, result_bitmap.width());
       EXPECT_EQ(200, result_bitmap.height());
       SkColor expected_color = SkColorSetRGB(0x00, 0x00, 0xff);
@@ -606,12 +567,12 @@ class HeadlessWebContentsBeginFrameControlViewportTest
     std::string png_data_base64 = DictString(result, "result.screenshotData");
     ASSERT_FALSE(png_data_base64.empty());
 
-    std::string png_data;
-    ASSERT_TRUE(base::Base64Decode(png_data_base64, &png_data));
-    ASSERT_GT(png_data.size(), 0ul);
+    std::optional<std::vector<uint8_t>> png_data =
+        base::Base64Decode(png_data_base64);
+    ASSERT_GT(png_data.value().size(), 0ul);
 
-    SkBitmap result_bitmap;
-    EXPECT_TRUE(DecodePNG(png_data, &result_bitmap));
+    SkBitmap result_bitmap = gfx::PNGCodec::Decode(png_data.value());
+    EXPECT_FALSE(result_bitmap.isNull());
 
     // Expect a 300x300 bitmap that is all blue.
     SkBitmap expected_bitmap;
@@ -629,7 +590,9 @@ class HeadlessWebContentsBeginFrameControlViewportTest
   }
 };
 
-HEADLESS_DEVTOOLED_TEST_F(HeadlessWebContentsBeginFrameControlViewportTest);
+// TODO(crbug.com/40274291): Turning this off since it's flaking regularly.
+DISABLED_HEADLESS_DEVTOOLED_TEST_F(
+    HeadlessWebContentsBeginFrameControlViewportTest);
 
 #endif  // !BUILDFLAG(IS_MAC)
 

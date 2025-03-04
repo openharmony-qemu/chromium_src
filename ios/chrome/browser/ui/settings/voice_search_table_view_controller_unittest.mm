@@ -6,8 +6,8 @@
 
 #import <memory>
 
+#import "base/apple/foundation_util.h"
 #import "base/files/file_path.h"
-#import "base/mac/foundation_util.h"
 #import "base/test/task_environment.h"
 #import "components/prefs/pref_member.h"
 #import "components/prefs/pref_registry_simple.h"
@@ -15,32 +15,28 @@
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_detail_text_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_cell.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_item.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
-#import "ios/chrome/browser/voice/speech_input_locale_config_impl.h"
-#import "ios/chrome/browser/voice/voice_search_prefs.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
+#import "ios/chrome/browser/voice/model/speech_input_locale_config_impl.h"
+#import "ios/chrome/browser/voice/model/voice_search_prefs.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 class VoiceSearchTableViewControllerTest
-    : public ChromeTableViewControllerTest {
+    : public LegacyChromeTableViewControllerTest {
  protected:
   VoiceSearchTableViewControllerTest()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
 
   void SetUp() override {
-    ChromeTableViewControllerTest::SetUp();
+    LegacyChromeTableViewControllerTest::SetUp();
     pref_service_ = CreateLocalState();
   }
 
-  ChromeTableViewController* InstantiateController() override {
+  LegacyChromeTableViewController* InstantiateController() override {
     return [[VoiceSearchTableViewController alloc]
         initWithPrefs:pref_service_.get()];
   }
@@ -54,7 +50,7 @@ class VoiceSearchTableViewControllerTest
   }
 
   TableViewSwitchCell* GetSwitchCell() {
-    return base::mac::ObjCCastStrict<TableViewSwitchCell>(
+    return base::apple::ObjCCastStrict<TableViewSwitchCell>(
         [controller().tableView
             cellForRowAtIndexPath:[NSIndexPath indexPathForItem:0
                                                       inSection:0]]);

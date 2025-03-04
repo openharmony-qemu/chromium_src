@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
 #include "media/base/video_types.h"
@@ -209,12 +210,11 @@ enum class VideoCaptureError {
   kWinMediaFoundationSourceCreationFailed = 144,
   kWinDirectShowDeviceFilterCreationFailed = 145,
   kWinDirectShowDeviceInitializationFailed = 146,
-#if BUILDFLAG(IS_OHOS)
-  kVideoCaptureDeviceFactoryOHOSCreateDeviceFailed = 147,
-  kMaxValue = 147
-#else
-  kMaxValue = 146
-#endif
+  kVideoCaptureDeviceFactorySecondCreateDenied = 147,
+  kScreenCaptureKitResetStreamError = 148,
+  kWinMediaFoundationCameraBusy = 149,
+  kWebRtcStartCaptureFailed = 150,
+  kMaxValue = 150
 };
 
 // WARNING: Do not change the values assigned to the entries. They are used for
@@ -241,14 +241,16 @@ enum class VideoCaptureFrameDropReason {
   kVideoTrackAdapterHasNoResolutionAdapters = 19,
   kResolutionAdapterFrameIsNotValid = 20,
   kResolutionAdapterWrappingFrameForCroppingFailed = 21,
-  kResolutionAdapterTimestampTooCloseToPrevious = 22,
+  // kResolutionAdapterTimestampTooCloseToPrevious = 22, // combined into 23.
   kResolutionAdapterFrameRateIsHigherThanRequested = 23,
   kResolutionAdapterHasNoCallbacks = 24,
   kVideoTrackFrameDelivererNotEnabledReplacingWithBlackFrame = 25,
   kRendererSinkFrameDelivererIsNotStarted = 26,
-  kCropVersionNotCurrent = 27,
+  kCropVersionNotCurrent_DEPRECATED = 27,
   kGpuMemoryBufferMapFailed = 28,
-  kMaxValue = 28
+  kSubCaptureTargetVersionNotCurrent = 29,
+  kPostProcessingFailed = 30,
+  kMaxValue = kPostProcessingFailed
 };
 
 // Assert that the int:frequency mapping is correct.
@@ -290,7 +292,7 @@ struct CAPTURE_EXPORT VideoCaptureFormat {
   }
 
   gfx::Size frame_size;
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   int stride = 0;
 #endif
   float frame_rate;

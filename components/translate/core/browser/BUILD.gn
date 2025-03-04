@@ -78,35 +78,18 @@ static_library("browser") {
 
   public_deps = [ ":translate_pref_names" ]
 
-  if (is_ios || is_android) {
+  if (is_ios) {
     sources += [
       "translate_infobar_delegate.cc",
       "translate_infobar_delegate.h",
     ]
+
     public_deps += [ "//components/infobars/core" ]
   }
 }
 
-static_library("translate_model_service") {
-  sources = [
-    "translate_model_service.cc",
-    "translate_model_service.h",
-  ]
-  deps = [
-    ":browser",
-    "//base",
-    "//components/keyed_service/core",
-    "//components/optimization_guide/core",
-    "//components/optimization_guide/proto:optimization_guide_proto",
-    "//mojo/public/cpp/bindings",
-  ]
-}
-
 source_set("translate_pref_names") {
-  sources = [
-    "translate_pref_names.cc",
-    "translate_pref_names.h",
-  ]
+  sources = [ "translate_pref_names.h" ]
 }
 
 source_set("unit_tests") {
@@ -152,7 +135,7 @@ source_set("unit_tests") {
     "//ui/base",
   ]
 
-  if (is_ios || is_android) {
+  if (is_ios) {
     sources += [ "translate_infobar_delegate_unittest.cc" ]
   }
 }
@@ -185,7 +168,7 @@ source_set("test_support") {
     "//url",
   ]
 
-  if (is_ios || is_android) {
+  if (is_ios) {
     sources += [
       "mock_translate_infobar_delegate.cc",
       "mock_translate_infobar_delegate.h",

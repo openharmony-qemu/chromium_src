@@ -17,13 +17,16 @@
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 
+namespace input {
+struct NativeWebKeyboardEvent;
+}  // namespace input
+
 namespace content {
 
 class BrowserPluginGuest;
 class BrowserPluginGuestManager;
 class WebContents;
 class WebContentsImpl;
-struct NativeWebKeyboardEvent;
 
 // TODO(wjmaclean): Get rid of "BrowserPlugin" in the name of this class.
 // Perhaps "WebContentsEmbedderDelegate" would be better?
@@ -40,7 +43,7 @@ class CONTENT_EXPORT BrowserPluginEmbedder {
   void CancelGuestDialogs();
 
   // Used to handle special keyboard events.
-  bool HandleKeyboardEvent(const NativeWebKeyboardEvent& event);
+  bool HandleKeyboardEvent(const input::NativeWebKeyboardEvent& event);
 
   // Returns the "full page" guest if there is one. That is, if there is a
   // single BrowserPlugin in the embedder which takes up the full page, then it
@@ -55,14 +58,6 @@ class CONTENT_EXPORT BrowserPluginEmbedder {
   explicit BrowserPluginEmbedder(WebContentsImpl* web_contents);
 
   BrowserPluginGuestManager* GetBrowserPluginGuestManager() const;
-
-  // Closes modal dialogs in |guest_web_contents|.
-  static bool CancelDialogs(WebContents* guest_web_contents);
-
-  static bool UnlockMouseIfNecessaryCallback(bool* mouse_unlocked,
-                                             WebContents* guest);
-
-  static bool GuestCurrentlyAudibleCallback(WebContents* guest);
 
   // Pointer to the WebContentsImpl that owns this object.
   raw_ptr<WebContentsImpl, DanglingUntriaged> web_contents_;

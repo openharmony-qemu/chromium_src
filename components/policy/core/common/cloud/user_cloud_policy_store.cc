@@ -78,6 +78,10 @@ void StorePolicyToDiskOnBackgroundThread(
     key_info.set_signing_key(policy.new_public_key());
     key_info.set_signing_key_signature(
         policy.new_public_key_verification_signature_deprecated());
+    key_info.set_new_public_key_verification_data(
+        policy.new_public_key_verification_data());
+    key_info.set_new_public_key_verification_data_signature(
+        policy.new_public_key_verification_data_signature());
     key_info.set_verification_key(GetPolicyVerificationKey());
     std::string key_data;
     if (!key_info.SerializeToString(&key_data)) {
@@ -102,7 +106,7 @@ DesktopCloudPolicyStore::DesktopCloudPolicyStore(
       key_path_(key_path),
       policy_load_filter_(std::move(policy_load_filter)) {}
 
-DesktopCloudPolicyStore::~DesktopCloudPolicyStore() {}
+DesktopCloudPolicyStore::~DesktopCloudPolicyStore() = default;
 
 void DesktopCloudPolicyStore::LoadImmediately() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -269,9 +273,10 @@ void DesktopCloudPolicyStore::ValidateKeyAndSignature(
     DLOG_IF(WARNING, !cached_key->has_signing_key())
         << "Unsigned policy blob detected";
 
-    validator->ValidateCachedKey(cached_key->signing_key(),
-                                 cached_key->signing_key_signature(),
-                                 owning_domain);
+    validator->ValidateCachedKey(
+        cached_key->signing_key(), cached_key->signing_key_signature(),
+        owning_domain, cached_key->new_public_key_verification_data(),
+        cached_key->new_public_key_verification_data_signature());
     // Loading from cache, so don't allow key rotation.
     validator->ValidateSignature(cached_key->signing_key());
   } else {
@@ -340,6 +345,10 @@ void DesktopCloudPolicyStore::Store(const em::PolicyFetchResponse& policy) {
                           weak_factory_.GetWeakPtr()));
 }
 
+void DesktopCloudPolicyStore::ResetPolicyKey() {
+  persisted_policy_key_.clear();
+}
+
 void DesktopCloudPolicyStore::OnPolicyToStoreValidated(
     UserCloudPolicyValidator* validator) {
   validation_result_ = validator->GetValidationResult();
@@ -378,7 +387,7 @@ UserCloudPolicyStore::UserCloudPolicyStore(
                               background_task_runner,
                               PolicyScope::POLICY_SCOPE_USER) {}
 
-UserCloudPolicyStore::~UserCloudPolicyStore() {}
+UserCloudPolicyStore::~UserCloudPolicyStore() = default;
 
 // static
 std::unique_ptr<UserCloudPolicyStore> UserCloudPolicyStore::Create(

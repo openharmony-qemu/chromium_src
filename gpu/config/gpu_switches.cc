@@ -6,14 +6,6 @@
 
 namespace switches {
 
-#if BUILDFLAG(IS_OHOS)
-// Allow commandline to determine whether use oop canvas gpu rasterization
-const char kDisableCanvasOopRasterization[] = "disable-canvas-oop-gpu-rasterization";
-
-// Allow commandline to determine whether use oop canvas gpu rasterization
-const char kEnableCanvasOopRasterization[] = "enable-canvas-oop-gpu-rasterization";
-#endif
-
 // Disable GPU rasterization, i.e. rasterize on the CPU only.
 // Overrides the kEnableGpuRasterization flag.
 const char kDisableGpuRasterization[] = "disable-gpu-rasterization";
@@ -66,16 +58,18 @@ GPU_EXPORT extern const char kUseWebGPUAdapter[] = "use-webgpu-adapter";
 GPU_EXPORT extern const char kUseWebGPUPowerPreference[] =
     "use-webgpu-power-preference";
 
+// Force all WebGPU content to run in WebGPU Compatibility mode.
+const char kForceWebGPUCompat[] = "force-webgpu-compat";
+
 // Set the Dawn features(toggles) enabled on the creation of Dawn devices.
 const char kEnableDawnFeatures[] = "enable-dawn-features";
 
 // Set the Dawn features(toggles) disabled on the creation of Dawn devices.
 const char kDisableDawnFeatures[] = "disable-dawn-features";
 
-// Changes the type (to kRealtimeAudio) of gpu process and compositor thread.
-// This is only to be used for perf tests on macOS for more reliable values.
-const char kUseHighGPUThreadPriorityForPerfTests[] =
-    "use-gpu-high-thread-priority-for-perf-tests";
+// Start the GPU process for Dawn info collection immediately after the browser
+// starts. The default is to delay for 120 seconds.
+const char kCollectDawnInfoEagerly[] = "collect-dawn-info-eagerly";
 
 // Start the non-sandboxed GPU process for DX12 and Vulkan info collection
 // immediately after the browser starts. The default is to delay for 120
@@ -119,11 +113,11 @@ const char kDisableVulkanFallbackToGLForTesting[] =
     "disable-vulkan-fallback-to-gl-for-testing";
 
 // Specifies the heap limit for Vulkan memory.
-// TODO(crbug/1158000): Remove this switch.
+// TODO(crbug.com/40161102): Remove this switch.
 const char kVulkanHeapMemoryLimitMb[] = "vulkan-heap-memory-limit-mb";
 
 // Specifies the sync CPU limit for total Vulkan memory.
-// TODO(crbug/1158000): Remove this switch.
+// TODO(crbug.com/40161102): Remove this switch.
 const char kVulkanSyncCpuMemoryLimitMb[] = "vulkan-sync-cpu-memory-limit-mb";
 
 // Crash Chrome if GPU process crashes. This is to force a test to fail when
@@ -142,6 +136,36 @@ const char kForceSeparateEGLDisplayForWebGLTesting[] =
 // (only allowed on non-official developer builds).
 const char kSkiaGraphiteBackend[] = "skia-graphite-backend";
 const char kSkiaGraphiteBackendDawn[] = "dawn";
+const char kSkiaGraphiteBackendDawnD3D11[] = "dawn-d3d11";
+const char kSkiaGraphiteBackendDawnD3D12[] = "dawn-d3d12";
+const char kSkiaGraphiteBackendDawnMetal[] = "dawn-metal";
+const char kSkiaGraphiteBackendDawnSwiftshader[] = "dawn-swiftshader";
+const char kSkiaGraphiteBackendDawnVulkan[] = "dawn-vulkan";
 const char kSkiaGraphiteBackendMetal[] = "metal";
+
+// Force disabling/enabling Skia Graphite. Disabling will take precedence over
+// enabling if both are specified.
+const char kDisableSkiaGraphite[] = "disable-skia-graphite";
+const char kEnableSkiaGraphite[] = "enable-skia-graphite";
+
+// Force disabling/enabling Skia Graphite's Pipeline Precompilation. Disabling
+// will take precedence over enabling if both are specified.
+const char kDisableSkiaGraphitePrecompilation[] =
+    "disable-skia-graphite-precompilation";
+const char kEnableSkiaGraphitePrecompilation[] =
+    "enable-skia-graphite-precompilation";
+
+const char kShaderCachePath[] = "shader-cache-path";
+
+// Try to use a redistributable DirectML.dll. Used for testing WebNN
+// against newer DirectML release before it is integrated into Windows OS.
+// Please see more info about DirectML releases at:
+// https://learn.microsoft.com/en-us/windows/ai/directml/dml-version-history
+const char kUseRedistributableDirectML[] = "use-redist-dml";
+
+// Enables ThreadControllerWithMessagePumpImpl's TimeKeeper UMA metrics using
+// CrGpuMain as suffix.
+const char kEnableGpuMainTimeKeeperMetrics[] =
+    "enable-gpu-main-time-keeper-metrics";
 
 }  // namespace switches

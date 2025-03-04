@@ -8,23 +8,23 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <optional>
 #include <string>
+#include <string_view>
 
 #include "base/command_line.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_file.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/strings/string_piece.h"
 #include "base/test/scoped_command_line.h"
 #include "chromeos/startup/startup_switches.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace chromeos {
 namespace {
 
-base::ScopedFD CreateMemoryFile(const base::StringPiece content) {
+base::ScopedFD CreateMemoryFile(std::string_view content) {
   base::ScopedFD file(memfd_create("test", 0));
   if (!file.is_valid()) {
     PLOG(ERROR) << "Failed to create a memory file";
@@ -58,7 +58,7 @@ TEST(ChromeOSStartup, Startup) {
   command_line->AppendSwitchASCII(switches::kCrosStartupDataFD,
                                   base::NumberToString(file.release()));
 
-  absl::optional<std::string> data = ReadStartupData();
+  std::optional<std::string> data = ReadStartupData();
   EXPECT_EQ(data, kTestData);
 }
 

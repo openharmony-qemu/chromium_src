@@ -109,8 +109,13 @@ class CONTENT_EXPORT BlinkNotificationServiceImpl
   // the checks fail.
   bool IsValidForNonPersistentNotification();
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  void CheckPermissionStatusAsync(GetPermissionStatusCallback callback);
+#endif // ARKWEB_NOTIFICATION
+
   // The notification context that owns this service instance.
-  raw_ptr<PlatformNotificationContextImpl> notification_context_;
+  raw_ptr<PlatformNotificationContextImpl, DanglingUntriaged>
+      notification_context_;
 
   raw_ptr<BrowserContext> browser_context_;
 

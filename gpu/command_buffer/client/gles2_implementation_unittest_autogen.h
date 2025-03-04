@@ -8,6 +8,11 @@
 //    clang-format -i -style=chromium filename
 // DO NOT EDIT!
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 // This file is included by gles2_implementation.h to declare the
 // GL api functions.
 #ifndef GPU_COMMAND_BUFFER_CLIENT_GLES2_IMPLEMENTATION_UNITTEST_AUTOGEN_H_
@@ -2922,17 +2927,6 @@ TEST_F(GLES2ImplementationTest, DrawBuffersEXT) {
   EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
 }
 
-TEST_F(GLES2ImplementationTest, DiscardBackbufferCHROMIUM) {
-  struct Cmds {
-    cmds::DiscardBackbufferCHROMIUM cmd;
-  };
-  Cmds expected;
-  expected.cmd.Init();
-
-  gl_->DiscardBackbufferCHROMIUM();
-  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
-}
-
 TEST_F(GLES2ImplementationTest, FlushDriverCachesCHROMIUM) {
   struct Cmds {
     cmds::FlushDriverCachesCHROMIUM cmd;
@@ -3006,38 +3000,6 @@ TEST_F(GLES2ImplementationTest, EndSharedImageAccessDirectCHROMIUM) {
   EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
 }
 
-TEST_F(GLES2ImplementationTest, ConvertRGBAToYUVAMailboxesINTERNAL) {
-  GLbyte data[80] = {0};
-  struct Cmds {
-    cmds::ConvertRGBAToYUVAMailboxesINTERNALImmediate cmd;
-    GLbyte data[80];
-  };
-
-  for (int jj = 0; jj < 80; ++jj) {
-    data[jj] = static_cast<GLbyte>(jj);
-  }
-  Cmds expected;
-  expected.cmd.Init(1, 2, 3, &data[0]);
-  gl_->ConvertRGBAToYUVAMailboxesINTERNAL(1, 2, 3, &data[0]);
-  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
-}
-
-TEST_F(GLES2ImplementationTest, ConvertYUVAMailboxesToRGBINTERNAL) {
-  GLbyte data[144] = {0};
-  struct Cmds {
-    cmds::ConvertYUVAMailboxesToRGBINTERNALImmediate cmd;
-    GLbyte data[144];
-  };
-
-  for (int jj = 0; jj < 144; ++jj) {
-    data[jj] = static_cast<GLbyte>(jj);
-  }
-  Cmds expected;
-  expected.cmd.Init(1, 2, 3, &data[0]);
-  gl_->ConvertYUVAMailboxesToRGBINTERNAL(1, 2, 3, &data[0]);
-  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
-}
-
 TEST_F(GLES2ImplementationTest, CopySharedImageINTERNAL) {
   GLbyte data[32] = {0};
   struct Cmds {
@@ -3049,8 +3011,8 @@ TEST_F(GLES2ImplementationTest, CopySharedImageINTERNAL) {
     data[jj] = static_cast<GLbyte>(jj);
   }
   Cmds expected;
-  expected.cmd.Init(1, 2, 3, 4, 5, 6, true, &data[0]);
-  gl_->CopySharedImageINTERNAL(1, 2, 3, 4, 5, 6, true, &data[0]);
+  expected.cmd.Init(1, 2, 3, 4, 5, 6, &data[0]);
+  gl_->CopySharedImageINTERNAL(1, 2, 3, 4, 5, 6, &data[0]);
   EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
 }
 
@@ -3335,5 +3297,38 @@ TEST_F(GLES2ImplementationTest,
   gl_->GetFramebufferPixelLocalStorageParameterivANGLE(123, 2, &result);
   EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
   EXPECT_EQ(static_cast<ResultType>(1), result);
+}
+
+TEST_F(GLES2ImplementationTest, ClipControlEXT) {
+  struct Cmds {
+    cmds::ClipControlEXT cmd;
+  };
+  Cmds expected;
+  expected.cmd.Init(1, 2);
+
+  gl_->ClipControlEXT(1, 2);
+  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
+}
+
+TEST_F(GLES2ImplementationTest, PolygonModeANGLE) {
+  struct Cmds {
+    cmds::PolygonModeANGLE cmd;
+  };
+  Cmds expected;
+  expected.cmd.Init(1, 2);
+
+  gl_->PolygonModeANGLE(1, 2);
+  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
+}
+
+TEST_F(GLES2ImplementationTest, PolygonOffsetClampEXT) {
+  struct Cmds {
+    cmds::PolygonOffsetClampEXT cmd;
+  };
+  Cmds expected;
+  expected.cmd.Init(1, 2, 3);
+
+  gl_->PolygonOffsetClampEXT(1, 2, 3);
+  EXPECT_EQ(0, memcmp(&expected, commands_, sizeof(expected)));
 }
 #endif  // GPU_COMMAND_BUFFER_CLIENT_GLES2_IMPLEMENTATION_UNITTEST_AUTOGEN_H_

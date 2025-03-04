@@ -152,7 +152,6 @@ class WebTestBackgroundFetchDelegate::WebTestBackgroundFetchDownloadClient
         return;
       default:
         NOTREACHED();
-        return;
     }
 
     std::unique_ptr<BackgroundFetchResult> result =
@@ -324,8 +323,8 @@ void WebTestBackgroundFetchDelegate::MarkJobComplete(
 
 void WebTestBackgroundFetchDelegate::UpdateUI(
     const std::string& job_unique_id,
-    const absl::optional<std::string>& title,
-    const absl::optional<SkBitmap>& icon) {
+    const std::optional<std::string>& title,
+    const std::optional<SkBitmap>& icon) {
   background_fetch_client_->client()->OnUIUpdated(job_unique_id);
 }
 

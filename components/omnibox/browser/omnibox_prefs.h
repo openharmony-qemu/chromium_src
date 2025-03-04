@@ -49,36 +49,88 @@ enum SuggestionGroupVisibility {
 };
 
 // Histograms being recorded when visibility of suggestion group IDs change.
-extern const char kGroupIdToggledOffHistogram[];
-extern const char kGroupIdToggledOnHistogram[];
+inline constexpr char kGroupIdToggledOffHistogram[] =
+    "Omnibox.GroupId.ToggledOff";
+inline constexpr char kGroupIdToggledOnHistogram[] =
+    "Omnibox.GroupId.ToggledOn";
 
 // Alphabetical list of preference names specific to the omnibox component.
-// Keep alphabetized, and document each in the .cc file.
-extern const char kDocumentSuggestEnabled[];
-extern const char kIntranetRedirectBehavior[];
-extern const char kKeywordSpaceTriggeringEnabled[];
-extern const char kSuggestionGroupVisibility[];
-extern const char kPreventUrlElisionsInOmnibox[];
-extern const char kZeroSuggestCachedResults[];
-extern const char kZeroSuggestCachedResultsWithURL[];
+// Keep alphabetized, and document each.
 
+// Enum specifying the active behavior for the intranet redirect detector.
+// The browser pref kDNSInterceptionChecksEnabled also impacts the redirector.
+// Values are defined in omnibox::IntranetRedirectorBehavior.
+inline constexpr char kIntranetRedirectBehavior[] =
+    "browser.intranet_redirect_behavior";
+
+// Boolean that controls whether scoped search mode can be triggered by <space>.
+inline constexpr char kKeywordSpaceTriggeringEnabled[] =
+    "omnibox.keyword_space_triggering_enabled";
+
+// A dictionary of visibility preferences for suggestion groups. The key is the
+// suggestion group ID serialized as a string, and the value is
+// SuggestionGroupVisibility serialized as an integer.
+inline constexpr char kSuggestionGroupVisibility[] =
+    "omnibox.suggestionGroupVisibility";
+
+// Boolean that specifies whether to show the LensOverlay entry point.
+inline constexpr char kShowGoogleLensShortcut[] =
+    "omnibox.show_google_lens_shortcut";
+
+// Boolean that specifies whether to always show full URLs in the omnibox.
+inline constexpr char kPreventUrlElisionsInOmnibox[] =
+    "omnibox.prevent_url_elisions";
+
+// A cache of NTP zero suggest results using a JSON dictionary serialized into a
+// string.
+inline constexpr char kZeroSuggestCachedResults[] = "zerosuggest.cachedresults";
+
+// A cache of SRP/Web zero suggest results using a JSON dictionary serialized
+// into a string keyed off the page URL.
+inline constexpr char kZeroSuggestCachedResultsWithURL[] =
+    "zerosuggest.cachedresults_with_url";
+
+// Booleans that specify whether various IPH suggestions have been dismissed.
+inline constexpr char kDismissedGeminiIph[] = "omnibox.dismissed_gemini_iph";
+inline constexpr char kDismissedFeaturedEnterpriseSiteSearchIphPrefName[] =
+    "omnibox.dismissed_featured_enterprise_search_iph";
+inline constexpr char kDismissedHistoryEmbeddingsSettingsPromo[] =
+    "omnibox.dismissed_history_embeddings_settings_promo";
+inline constexpr char kDismissedHistoryScopePromo[] =
+    "omnibox.dismissed_history_scope_promo";
+inline constexpr char kDismissedHistoryEmbeddingsScopePromo[] =
+    "omnibox.dismissed_history_embeddings_scope_promo";
+
+// How many times the various IPH suggestions were shown.
+inline constexpr char kShownCountGeminiIph[] = "omnibox.shown_count_gemini_iph";
+inline constexpr char kShownCountFeaturedEnterpriseSiteSearchIph[] =
+    "omnibox.shown_count_featured_enterprise_search_iph";
+inline constexpr char kShownCountHistoryEmbeddingsSettingsPromo[] =
+    "omnibox.shown_count_history_embeddings_settings_promo";
+inline constexpr char kShownCountHistoryScopePromo[] =
+    "omnibox.shown_count_history_scope_promo";
+inline constexpr char kShownCountHistoryEmbeddingsScopePromo[] =
+    "omnibox.shown_count_history_embeddings_scope_promo";
+
+// Many of the prefs defined above are registered locally where they're used.
+// New prefs should be added here and ordered the same as they're defined above.
 void RegisterProfilePrefs(PrefRegistrySimple* registry);
 
 // Returns the stored visibility preference for |suggestion_group_id|.
 // If |suggestion_group_id| has never been manually hidden or shown by the user,
 // this method returns SuggestionGroupVisibility::DEFAULT.
 //
-// Warning: UI code should use AutocompleteResult::IsSuggestionGroupHidden()
+// Warning: UI code should use OmniboxController::IsSuggestionGroupHidden()
 // instead, which passes the server-provided group ID to this method and takes
 // the server-provided hint on default visibility of the group into account.
 SuggestionGroupVisibility GetUserPreferenceForSuggestionGroupVisibility(
-    PrefService* prefs,
+    const PrefService* prefs,
     int suggestion_group_id);
 
 // Sets the stored visibility preference for |suggestion_group_id| to
 // |visibility|.
 //
-// Warning: UI code should use AutocompleteResult::SetSuggestionGroupHidden()
+// Warning: UI code should use OmniboxController::SetSuggestionGroupHidden()
 // instead, which passes the server-provided group ID to this method.
 void SetUserPreferenceForSuggestionGroupVisibility(
     PrefService* prefs,

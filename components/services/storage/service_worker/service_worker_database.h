@@ -35,7 +35,6 @@ class Location;
 namespace leveldb {
 class DB;
 class Env;
-class Status;
 class WriteBatch;
 }  // namespace leveldb
 
@@ -46,7 +45,7 @@ namespace storage {
 // file io. The ServiceWorkerStorage class owns this class and
 // is responsible for only calling it serially on background
 // non-IO threads (ala SequencedWorkerPool).
-// TODO(crbug.com/1016064): Update the above comments once the instance of this
+// TODO(crbug.com/40103973): Update the above comments once the instance of this
 // class lives in the Storage Service.
 class ServiceWorkerDatabase {
  public:
@@ -441,6 +440,8 @@ class ServiceWorkerDatabase {
                            NoCrossOriginEmbedderPolicyValue);
   FRIEND_TEST_ALL_PREFIXES(ServiceWorkerDatabaseTest, NoFetchHandlerType);
   FRIEND_TEST_ALL_PREFIXES(ServiceWorkerDatabaseTest, FetchHandlerType);
+  FRIEND_TEST_ALL_PREFIXES(ServiceWorkerDatabaseTest,
+                           RouterRulesLegacyPathname);
 };
 
 }  // namespace storage

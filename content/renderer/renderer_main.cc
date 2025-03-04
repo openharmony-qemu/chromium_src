@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 #include <stddef.h>
+
+#include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -22,6 +25,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/system/sys_info.h"
 #include "base/task/sequence_manager/sequence_manager.h"
+#include "base/threading/hang_watcher.h"
 #include "base/threading/platform_thread.h"
 #include "base/timer/hi_res_timer_manager.h"
 #include "base/trace_event/trace_event.h"
@@ -29,6 +33,7 @@
 #include "build/chromeos_buildflags.h"
 #include "content/common/content_constants_internal.h"
 #include "content/common/content_switches_internal.h"
+#include "content/common/features.h"
 #include "content/common/skia_utils.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
@@ -39,17 +44,19 @@
 #include "content/renderer/render_thread_impl.h"
 #include "content/renderer/renderer_main_platform_delegate.h"
 #include "media/media_buildflags.h"
+#include "mojo/public/cpp/bindings/interface_endpoint_client.h"
 #include "mojo/public/cpp/bindings/mojo_buildflags.h"
 #include "ppapi/buildflags/buildflags.h"
 #include "sandbox/policy/switches.h"
 #include "services/tracing/public/cpp/trace_startup.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/platform/scheduler/web_thread_scheduler.h"
-#include "third_party/icu/source/common/unicode/unistr.h"
-#include "third_party/icu/source/i18n/unicode/timezone.h"
 #include "third_party/webrtc_overrides/init_webrtc.h"  // nogncheck
 #include "ui/base/ui_base_switches.h"
+
+#if BUILDFLAG(IS_WIN)
+#include "components/startup_metric_utils/renderer/startup_metric_utils.h"
+#endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/library_loader/library_loader_hooks.h"
@@ -60,8 +67,8 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "base/mac/scoped_nsautorelease_pool.h"
-#include "base/message_loop/message_pump_mac.h"
+#include "base/apple/scoped_nsautorelease_pool.h"
+#include "base/message_loop/message_pump_apple.h"
 #include "third_party/blink/public/web/web_view.h"
 #endif  // BUILDFLAG(IS_MAC)
 
@@ -76,7 +83,7 @@
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-#include "content/renderer/renderer_thread_type_handler.h"
+#include "content/child/sandboxed_process_thread_type_handler.h"
 #endif
 
 #if BUILDFLAG(ENABLE_PPAPI)
@@ -86,7 +93,15 @@
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_FLING)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
 #include "ohos_adapter_helper.h"
+#endif
+
 namespace content {
 namespace {
 
@@ -111,8 +126,13 @@ std::unique_ptr<base::MessagePump> CreateMainThreadMessagePump() {
 
 void LogTimeToStartRunLoop(const base::CommandLine& command_line,
                            base::TimeTicks run_loop_start_time) {
-  if (!command_line.HasSwitch(switches::kRendererProcessLaunchTimeTicks))
+#if BUILDFLAG(IS_WIN)
+  startup_metric_utils::GetRenderer().RecordRunLoopStart(run_loop_start_time);
+#endif
+
+  if (!command_line.HasSwitch(switches::kRendererProcessLaunchTimeTicks)) {
     return;
+  }
 
   const std::string launch_time_delta_micro_as_string =
       command_line.GetSwitchValueASCII(
@@ -133,9 +153,18 @@ void LogTimeToStartRunLoop(const base::CommandLine& command_line,
 int RendererMain(MainFunctionParams parameters) {
   // Don't use the TRACE_EVENT0 macro because the tracing infrastructure doesn't
   // expect synchronous events around the main loop of a thread.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
   StartObserveTraceEnable();
+#endif
   TRACE_EVENT_INSTANT0("startup", "RendererMain", TRACE_EVENT_SCOPE_THREAD);
-  LOG(DEBUG) << "RendererMain startup";
+
+#if BUILDFLAG(IS_MAC)
+  // Declare that this process has CPU security mitigations enabled (see
+  // RendererSandboxedProcessLauncherDelegate::EnableCpuSecurityMitigations).
+  // This must be done before the first call to
+  // base::SysInfo::NumberOfProcessors().
+  base::SysInfo::SetCpuSecurityMitigationsEnabled();
+#endif
 
   base::CurrentProcess::GetInstance().SetProcessType(
       base::CurrentProcessType::PROCESS_RENDERER);
@@ -145,7 +174,7 @@ int RendererMain(MainFunctionParams parameters) {
   const base::CommandLine& command_line = *parameters.command_line;
 
 #if BUILDFLAG(IS_MAC)
-  base::mac::ScopedNSAutoreleasePool* pool = parameters.autorelease_pool;
+  base::apple::ScopedNSAutoreleasePool* pool = parameters.autorelease_pool;
 #endif  // BUILDFLAG(IS_MAC)
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -170,7 +199,7 @@ int RendererMain(MainFunctionParams parameters) {
 #if defined(ARCH_CPU_X86_64)
   using UserspaceSwapInit =
       ash::memory::userspace_swap::UserspaceSwapRendererInitializationImpl;
-  absl::optional<UserspaceSwapInit> swap_init;
+  std::optional<UserspaceSwapInit> swap_init;
   if (UserspaceSwapInit::UserspaceSwapSupportedAndEnabled()) {
     swap_init.emplace();
 
@@ -179,13 +208,6 @@ int RendererMain(MainFunctionParams parameters) {
   }
 #endif  // defined(ARCH_CPU_X86_64)
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
-
-  if (command_line.HasSwitch(switches::kTimeZoneForTesting)) {
-    std::string time_zone =
-        command_line.GetSwitchValueASCII(switches::kTimeZoneForTesting);
-    icu::TimeZone::adoptDefault(
-        icu::TimeZone::createTimeZone(icu::UnicodeString(time_zone.c_str())));
-  }
 
   InitializeSkia();
 
@@ -198,6 +220,7 @@ int RendererMain(MainFunctionParams parameters) {
   RendererMainPlatformDelegate platform(parameters);
 
   base::PlatformThread::SetName("CrRendererMain");
+  mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics("RendererMain");
 
   // Force main thread initialization. When the implementation is based on a
   // better means of determining which is the main thread, remove.
@@ -218,7 +241,7 @@ int RendererMain(MainFunctionParams parameters) {
   // NOTE: On linux, this call could already have been made from
   // zygote_main_linux.cc.  However, calling multiple times from the same thread
   // is OK.
-  InitializeWebRtcModule();
+  InitializeWebRtcModuleBeforeSandbox();
 
   {
     content::ContentRendererClient* client = GetContentClient()->renderer();
@@ -249,9 +272,12 @@ int RendererMain(MainFunctionParams parameters) {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
     // Thread type delegate of the process should be registered before
     // first thread type change in ChildProcess constructor.
+    // It also needs to be registered before the process has multiple threads,
+    // which may race with application of the sandbox.
     if (base::FeatureList::IsEnabled(
-            features::kHandleRendererThreadTypeChangesInBrowser)) {
-      RendererThreadTypeHandler::Create();
+            features::kHandleChildThreadTypeChangesInBrowser) ||
+        base::FeatureList::IsEnabled(features::kSchedQoSOnResourcedForChrome)) {
+      SandboxedProcessThreadTypeHandler::Create();
 
       // Change the main thread type. On Linux and ChromeOS this needs to be
       // done only if kHandleRendererThreadTypeChangesInBrowser is enabled to
@@ -259,14 +285,14 @@ int RendererMain(MainFunctionParams parameters) {
       if (base::FeatureList::IsEnabled(
               features::kMainThreadCompositingPriority)) {
         base::PlatformThread::SetCurrentThreadType(
-            base::ThreadType::kCompositing);
+            base::ThreadType::kDisplayCritical);
       }
     }
 #else
     if (base::FeatureList::IsEnabled(
             features::kMainThreadCompositingPriority)) {
       base::PlatformThread::SetCurrentThreadType(
-          base::ThreadType::kCompositing);
+          base::ThreadType::kDisplayCritical);
     } else {
       base::PlatformThread::SetCurrentThreadType(base::ThreadType::kDefault);
     }
@@ -309,6 +335,20 @@ int RendererMain(MainFunctionParams parameters) {
       if (client) {
         client->PostSandboxInitialized();
       }
+    }
+
+    // Start the HangWatcher now that the sandbox is engaged, if it hasn't
+    // already been started.
+    if (base::HangWatcher::IsEnabled() &&
+        !base::HangWatcher::GetInstance()->IsStarted()) {
+      DCHECK(parameters.hang_watcher_not_started_time.has_value());
+      base::TimeDelta uncovered_hang_watcher_time =
+          base::TimeTicks::Now() -
+          parameters.hang_watcher_not_started_time.value();
+      base::UmaHistogramTimes(
+          "HangWatcher.RendererProcess.UncoveredStartupTime",
+          uncovered_hang_watcher_time);
+      base::HangWatcher::GetInstance()->Start();
     }
 
 #if BUILDFLAG(MOJO_RANDOM_DELAYS_ENABLED)

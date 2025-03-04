@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "base/check.h"
+#include "base/check_deref.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/functional/bind.h"
@@ -27,9 +28,10 @@
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration_options.mojom.h"
 #include "url/gurl.h"
 
-#if defined(OHOS_NAVIGATION) && !BUILDFLAG(IS_OHOS)
-#include "libcef/browser/navigation_state_serializer.h"
-#endif
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+// #include
+// "cef/ohos_cef_ext/libcef/browser/arkweb_navigation_state_serializer_ext.h"
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 
 namespace content {
 
@@ -201,13 +203,14 @@ BackgroundFetchTestBase::CreateBackgroundFetchRegistrationData(
       /* download_total= */ 0, /* downloaded= */ 0, result, failure_reason);
 }
 
-scoped_refptr<DevToolsBackgroundServicesContextImpl>
+DevToolsBackgroundServicesContextImpl&
 BackgroundFetchTestBase::devtools_context() {
-  return static_cast<DevToolsBackgroundServicesContextImpl*>(
-      storage_partition()->GetDevToolsBackgroundServicesContext());
+  return CHECK_DEREF(static_cast<DevToolsBackgroundServicesContextImpl*>(
+      storage_partition()->GetDevToolsBackgroundServicesContext()));
 }
 
-#if defined(OHOS_NAVIGATION) && !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+/*
 CefRefPtr<CefBinaryValue> CefBrowserHostBase::GetWebState() {
   auto web_contents = GetWebContents();
   if (!web_contents) {
@@ -226,6 +229,7 @@ bool CefBrowserHostBase::RestoreWebState(
   return NavigationStateSerializer::RestoreNavigationStatus(*web_contents,
                                                             state);
 }
-#endif
+*/
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 
 }  // namespace content

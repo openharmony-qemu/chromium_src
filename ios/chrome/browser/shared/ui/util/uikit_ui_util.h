@@ -38,6 +38,9 @@ void MaybeSetUITextFieldScaledFont(BOOL maybe,
                                    UIFont* font);
 // Creates a dynamically scablable custom font based on the given parameters.
 UIFont* CreateDynamicFont(UIFontTextStyle style, UIFontWeight weight);
+UIFont* CreateDynamicFont(UIFontTextStyle style,
+                          UIFontWeight weight,
+                          id<UITraitEnvironment> environment);
 
 enum CaptureViewOption {
   kNoCaptureOption,      // Equivalent to calling CaptureView without options.
@@ -91,12 +94,6 @@ UIImage* NativeReversibleImage(int imageID, BOOL reversible);
 // reversible; equivalent to NativeReversibleImage(imageID, NO).
 UIImage* NativeImage(int imageID);
 
-// Returns an output image where each pixel has RGB values equal to a color and
-// the alpha value sampled from the given image. The RGB values of the image are
-// ignored. If the color has alpha value of less than one, then the entire
-// output image's alpha is scaled by the color's alpha value.
-UIImage* TintImage(UIImage* image, UIColor* color);
-
 // Returns the first responder in the subviews of `view`, or nil if no view in
 // the subtree is the first responder.
 UIView* GetFirstResponderSubview(UIView* view);
@@ -141,13 +138,6 @@ bool ShouldShowCompactToolbar(id<UITraitEnvironment> environment);
 // Whether toolbar should be shown in compact mode in `traitCollection`.
 bool ShouldShowCompactToolbar(UITraitCollection* traitCollection);
 
-// Whether the `environment` has a regular vertical and regular horizontal
-// size class.
-bool IsRegularXRegularSizeClass(id<UITraitEnvironment> environment);
-// Whether the `traitCollection` has a regular vertical and regular horizontal
-// size class.
-bool IsRegularXRegularSizeClass(UITraitCollection* traitCollection);
-
 // Returns whether the `environment`'s toolbar is split between top and bottom
 // toolbar or if it is displayed as only one toolbar.
 bool IsSplitToolbarMode(id<UITraitEnvironment> environment);
@@ -159,6 +149,10 @@ bool IsSplitToolbarMode(UITraitCollection* traitCollection);
 
 // Returns the current first responder for keyWindow.
 UIResponder* GetFirstResponder();
+// Returns the current first responder for `windowScene.keyWindow`. If none,
+// returns the current first responder for the first window which has one in
+// this scene, if any.
+UIResponder* GetFirstResponderInWindowScene(UIWindowScene* windowScene);
 
 // Trigger a haptic vibration for various types of actions. This is a no-op for
 // devices that do not support haptic feedback.
@@ -174,9 +168,9 @@ void TriggerHapticFeedbackForNotification(UINotificationFeedbackType type);
 // of the count if the user has more than 99 tabs open.
 NSAttributedString* TextForTabCount(int count, CGFloat font_size);
 
-// Adds `item` to the global Edit Menu configuration (UIMenuController). No-op
-// if a UIMenuItem with the same selector as `item` has already been registered.
-void RegisterEditMenuItem(UIMenuItem* item);
+// Returns the attributed text for tabs count to be displayed in the bottom
+// trailing view of a group cell with the correct font.
+NSAttributedString* TextForTabGroupCount(int count, CGFloat font_size);
 
 // Finds the root of `view`'s view hierarchy -- its window if it has one, or
 // the first (recursive) superview with no superview.
@@ -189,5 +183,21 @@ UIActivityIndicatorView* GetMediumUIActivityIndicatorView();
 // Creates and inits a large-sized UIActivityIndicatorView, regardless of iOS
 // version.
 UIActivityIndicatorView* GetLargeUIActivityIndicatorView();
+
+// Whether the given scroll view is considered scrolled to its top/bottom.
+bool IsScrollViewScrolledToTop(UIScrollView* scroll_view);
+bool IsScrollViewScrolledToBottom(UIScrollView* scroll_view);
+
+// Returns the approximate corner radius of the current device.
+CGFloat DeviceCornerRadius();
+
+// Returns whether bottom omnibox is an available option.
+bool IsBottomOmniboxAvailable();
+
+// Returns the `traits` array provided in the function's parameter if the
+// feature flag for the 'traitCollectionDidChange' refactor work is enabled.
+// Otherwise, return an array containing every iOS UITrait.
+NSArray<UITrait>* TraitCollectionSetForTraits(NSArray<UITrait>* traits)
+    API_AVAILABLE(ios(17.0));
 
 #endif  // IOS_CHROME_BROWSER_SHARED_UI_UTIL_UIKIT_UI_UTIL_H_

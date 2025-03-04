@@ -12,6 +12,7 @@
 @protocol PopupMenuCommands;
 @protocol OmniboxCommands;
 
+class TabBasedIPHBrowserAgent;
 class WebNavigationBrowserAgent;
 
 // Handler for the actions associated with the different toolbar buttons.
@@ -24,6 +25,7 @@ class WebNavigationBrowserAgent;
 @property(nonatomic, weak) id<OmniboxCommands> omniboxHandler;
 
 @property(nonatomic, assign) WebNavigationBrowserAgent* navigationAgent;
+@property(nonatomic, assign) TabBasedIPHBrowserAgent* tabBasedIPHAgent;
 
 // Whether this handler is created in incognito.
 @property(nonatomic, assign) BOOL incognito;

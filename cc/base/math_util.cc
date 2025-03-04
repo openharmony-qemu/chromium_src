@@ -11,9 +11,9 @@
 #include <xmmintrin.h>
 #endif
 
+#include "base/numerics/angle_conversions.h"
 #include "base/trace_event/traced_value.h"
 #include "base/values.h"
-#include "ui/gfx/geometry/angle_conversions.h"
 #include "ui/gfx/geometry/linear_gradient.h"
 #include "ui/gfx/geometry/quad_f.h"
 #include "ui/gfx/geometry/rect.h"
@@ -35,18 +35,20 @@ static HomogeneousCoordinate ProjectHomogeneousPoint(
   // ray (point p and z-axis direction) that we are trying to project. This
   // happens when the layer is rotated so that it is infinitesimally thin, or
   // when it is co-planar with the camera origin -- i.e. when the layer is
-  // invisible anyway.
-  if (!std::isnormal(m22))
-    return HomogeneousCoordinate(0.0, 0.0, 0.0, 1.0);
+  // invisible anyway. Return an invalid point.
+  if (!std::isnormal(m22)) {
+    return HomogeneousCoordinate(0.0, 0.0, 0.0, 0.0);
+  }
   SkScalar z = -(transform.rc(2, 0) * p.x() + transform.rc(2, 1) * p.y() +
                  transform.rc(2, 3)) /
                m22;
   // Same underlying condition as the previous early return.
-  if (!std::isfinite(z))
-    return HomogeneousCoordinate(0.0, 0.0, 0.0, 1.0);
+  if (!std::isfinite(z)) {
+    return HomogeneousCoordinate(0.0, 0.0, 0.0, 0.0);
+  }
 
   HomogeneousCoordinate result(p.x(), p.y(), z, 1.0);
-  transform.TransformVector4(result.vec);
+  transform.TransformVector4(result.vec.data());
   return result;
 }
 
@@ -63,7 +65,7 @@ static HomogeneousCoordinate MapHomogeneousPoint(
     const gfx::Transform& transform,
     const gfx::PointF& p) {
   HomogeneousCoordinate result(p.x(), p.y(), 0.0, 1.0);
-  transform.TransformVector4(result.vec);
+  transform.TransformVector4(result.vec.data());
   return result;
 }
 
@@ -112,7 +114,7 @@ static gfx::PointF ComputeClippedCartesianPoint2dForEdge(
   // This assertion isn't really as strong as it looks because
   // std::isfinite(h1.w()) or std::isfinite(h2.w()) might not be true
   // (and they could be NaN).
-  // TODO(crbug.com/1219622): We should be able to assert something
+  // TODO(crbug.com/40186138): We should be able to assert something
   // stronger here, and avoid dependencies on undefined floating point
   // behavior.
   DCHECK_NE(h1.w() <= 0, h2.w() <= 0);
@@ -171,7 +173,7 @@ static gfx::Point3F ComputeClippedCartesianPoint3dForEdge(
   // This assertion isn't really as strong as it looks because
   // std::isfinite(h1.w()) or std::isfinite(h2.w()) might not be true
   // (and they could be NaN).
-  // TODO(crbug.com/1219622): We should be able to assert something
+  // TODO(crbug.com/40186138): We should be able to assert something
   // stronger here, and avoid dependencies on undefined floating point
   // behavior.
   DCHECK_NE(h1.w() <= 0, h2.w() <= 0);
@@ -240,10 +242,11 @@ static inline bool IsNearlyTheSame(const gfx::Point3F& lhs,
          IsNearlyTheSame(lhs.y(), rhs.y()) && IsNearlyTheSame(lhs.z(), rhs.z());
 }
 
-static inline void AddVertexToClippedQuad3d(const gfx::Point3F& new_vertex,
-                                            gfx::Point3F clipped_quad[6],
-                                            int* num_vertices_in_clipped_quad,
-                                            bool* need_to_clamp) {
+static inline void AddVertexToClippedQuad3d(
+    const gfx::Point3F& new_vertex,
+    base::span<gfx::Point3F, 6> clipped_quad,
+    int* num_vertices_in_clipped_quad,
+    bool* need_to_clamp) {
   if (*num_vertices_in_clipped_quad > 0 &&
       IsNearlyTheSame(clipped_quad[*num_vertices_in_clipped_quad - 1],
                       new_vertex))
@@ -369,7 +372,7 @@ gfx::Rect MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
 
 bool MathUtil::MapClippedQuad3d(const gfx::Transform& transform,
                                 const gfx::QuadF& src_quad,
-                                gfx::Point3F clipped_quad[6],
+                                base::span<gfx::Point3F, 6> clipped_quad,
                                 int* num_vertices_in_clipped_quad) {
   // This is different from the 2D version because, when we clamp
   // coordinates to [-HomogeneousCoordinate::kInfiniteCoordinate,
@@ -582,18 +585,19 @@ bool MathUtil::MapClippedQuad3d(const gfx::Transform& transform,
 }
 
 gfx::RectF MathUtil::ComputeEnclosingRectOfVertices(
-    const gfx::PointF vertices[],
-    int num_vertices) {
-  if (num_vertices < 2)
+    base::span<const gfx::PointF> vertices) {
+  if (vertices.size() < 2) {
     return gfx::RectF();
+  }
 
   float xmin = std::numeric_limits<float>::max();
   float xmax = -std::numeric_limits<float>::max();
   float ymin = std::numeric_limits<float>::max();
   float ymax = -std::numeric_limits<float>::max();
 
-  for (int i = 0; i < num_vertices; ++i)
-    ExpandBoundsToIncludePoint(&xmin, &xmax, &ymin, &ymax, vertices[i]);
+  for (auto& vertex : vertices) {
+    ExpandBoundsToIncludePoint(&xmin, &xmax, &ymin, &ymax, vertex);
+  }
 
   return gfx::RectF(gfx::PointF(xmin, ymin),
                     gfx::SizeF(xmax - xmin, ymax - ymin));
@@ -731,15 +735,6 @@ gfx::PointF MathUtil::ProjectPoint(const gfx::Transform& transform,
   return h.CartesianPoint2d();
 }
 
-gfx::Point3F MathUtil::ProjectPoint3D(const gfx::Transform& transform,
-                                      const gfx::PointF& p,
-                                      bool* clipped) {
-  HomogeneousCoordinate h = ProjectHomogeneousPoint(transform, p, clipped);
-  if (!h.w())
-    return gfx::Point3F();
-  return h.CartesianPoint3d();
-}
-
 gfx::RectF MathUtil::ScaleRectProportional(const gfx::RectF& input_outer_rect,
                                            const gfx::RectF& scale_outer_rect,
                                            const gfx::RectF& scale_inner_rect) {
@@ -766,7 +761,7 @@ float MathUtil::SmallestAngleBetweenVectors(const gfx::Vector2dF& v1,
   double dot_product = gfx::DotProduct(v1, v2) / v1.Length() / v2.Length();
   // Clamp to compensate for rounding errors.
   dot_product = std::clamp(dot_product, -1.0, 1.0);
-  return static_cast<float>(gfx::RadToDeg(std::acos(dot_product)));
+  return static_cast<float>(base::RadToDeg(std::acos(dot_product)));
 }
 
 gfx::Vector2dF MathUtil::ProjectVector(const gfx::Vector2dF& source,

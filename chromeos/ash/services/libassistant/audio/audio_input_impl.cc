@@ -5,10 +5,10 @@
 #include "chromeos/ash/services/libassistant/audio/audio_input_impl.h"
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "base/command_line.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/memory/weak_ptr.h"
@@ -27,7 +27,6 @@
 #include "media/base/channel_layout.h"
 #include "media/mojo/mojom/audio_stream_factory.mojom.h"
 #include "services/audio/public/cpp/device_factory.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash::libassistant {
 
@@ -134,10 +133,7 @@ class AudioInputBufferImpl : public assistant_client::AudioBuffer {
     return g_current_format;
   }
   const void* GetData() const override { return data_.data(); }
-  void* GetWritableData() override {
-    NOTREACHED();
-    return nullptr;
-  }
+  void* GetWritableData() override { NOTREACHED(); }
   int GetFrameCount() const override { return frame_count_; }
 
  private:
@@ -183,7 +179,7 @@ class AudioCapturer : public media::AudioCapturerSource::CaptureCallback {
 
   void RemoveObserver(assistant_client::AudioInput::Observer* observer) {
     base::AutoLock lock(observers_lock_);
-    base::Erase(observers_, observer);
+    std::erase(observers_, observer);
   }
 
   int num_observers() {
@@ -198,6 +194,7 @@ class AudioCapturer : public media::AudioCapturerSource::CaptureCallback {
   // Runs on audio service thread.
   void Capture(const media::AudioBus* audio_source,
                base::TimeTicks audio_capture_time,
+               const media::AudioGlitchInfo& glitch_info,
                double volume,
                bool key_pressed) override {
     DCHECK_EQ(g_current_format.num_channels, audio_source->channels());
@@ -273,7 +270,7 @@ void AudioInputImpl::HotwordStateManager::RecreateAudioInputStream() {
   input_->RecreateAudioInputStream(/*use_dsp=*/false);
 }
 
-AudioInputImpl::AudioInputImpl(const absl::optional<std::string>& device_id)
+AudioInputImpl::AudioInputImpl(const std::optional<std::string>& device_id)
     : task_runner_(base::SequencedTaskRunner::GetCurrentDefault()),
       preferred_device_id_(device_id),
       weak_factory_(this) {
@@ -385,7 +382,7 @@ void AudioInputImpl::OnHotwordEnabled(bool enable) {
   UpdateRecordingState();
 }
 
-void AudioInputImpl::SetDeviceId(const absl::optional<std::string>& device_id) {
+void AudioInputImpl::SetDeviceId(const std::optional<std::string>& device_id) {
   DVLOG(1) << "Set audio input preferred_device_id to "
            << device_id.value_or("<null>");
   auto new_device_id = device_id;
@@ -416,7 +413,7 @@ void AudioInputImpl::SetDeviceId(const absl::optional<std::string>& device_id) {
 }
 
 void AudioInputImpl::SetHotwordDeviceId(
-    const absl::optional<std::string>& device_id) {
+    const std::optional<std::string>& device_id) {
   if (hotword_device_id_ == device_id)
     return;
 
@@ -466,14 +463,14 @@ bool AudioInputImpl::IsMicOpenForTesting() const {
   return mic_open_;
 }
 
-absl::optional<std::string> AudioInputImpl::GetOpenDeviceIdForTesting() const {
+std::optional<std::string> AudioInputImpl::GetOpenDeviceIdForTesting() const {
   return GetOpenDeviceId();
 }
 
-absl::optional<bool> AudioInputImpl::IsUsingDeadStreamDetectionForTesting()
+std::optional<bool> AudioInputImpl::IsUsingDeadStreamDetectionForTesting()
     const {
   if (!open_audio_stream_)
-    return absl::nullopt;
+    return std::nullopt;
   return open_audio_stream_->has_dead_stream_detection();
 }
 
@@ -535,9 +532,9 @@ std::string AudioInputImpl::GetDeviceId(bool use_dsp) const {
     return media::AudioDeviceDescription::kDefaultDeviceId;
 }
 
-absl::optional<std::string> AudioInputImpl::GetOpenDeviceId() const {
+std::optional<std::string> AudioInputImpl::GetOpenDeviceId() const {
   if (!open_audio_stream_)
-    return absl::nullopt;
+    return std::nullopt;
   return open_audio_stream_->device_id();
 }
 

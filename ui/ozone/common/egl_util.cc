@@ -29,7 +29,7 @@ const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so");
 const base::FilePath::CharType kDefaultGlesSoname[] =
     FILE_PATH_LITERAL("libGLESv3.so");
-#else
+#else  // BUILDFLAG(IS_FUCHSIA)
 const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so.1");
 const base::FilePath::CharType kDefaultGlesSoname[] =
@@ -131,9 +131,10 @@ bool LoadDefaultEGLGLES2Bindings(
 
   if (implementation.gl == gl::kGLImplementationEGLANGLE) {
     base::FilePath module_path;
-#if !BUILDFLAG(IS_FUCHSIA)
-    if (!base::PathService::Get(base::DIR_ASSETS, &module_path))
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
+    if (!base::PathService::Get(base::DIR_ASSETS, &module_path)) {
       return false;
+    }
 #endif
 
     glesv2_path = module_path.Append(kAngleGlesSoname);

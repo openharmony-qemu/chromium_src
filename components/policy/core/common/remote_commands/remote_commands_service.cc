@@ -9,18 +9,21 @@
 #include <string>
 #include <utility>
 
+#include "base/check_is_test.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/stringprintf.h"
 #include "base/syslog_logging.h"
+#include "build/chromeos_buildflags.h"
 #include "components/policy/core/common/cloud/cloud_policy_client.h"
 #include "components/policy/core/common/cloud/cloud_policy_constants.h"
 #include "components/policy/core/common/cloud/cloud_policy_store.h"
 #include "components/policy/core/common/cloud/cloud_policy_validator.h"
 #include "components/policy/core/common/cloud/enterprise_metrics.h"
 #include "components/policy/core/common/remote_commands/remote_commands_factory.h"
+#include "components/policy/core/common/remote_commands/remote_commands_fetch_reason.h"
 #include "components/policy/proto/device_management_backend.pb.h"
 
 namespace policy {
@@ -75,7 +78,6 @@ RemoteCommandsService::MetricReceivedRemoteCommand RemoteCommandMetricFromType(
   // None of possible types matched. May indicate that there is new unhandled
   // command type.
   NOTREACHED() << "Unknown command type to record: " << type;
-  return Metric::kUnknownType;
 }
 
 const char* RemoteCommandTypeToString(em::RemoteCommand_Type type) {
@@ -119,7 +121,6 @@ const char* RemoteCommandTypeToString(em::RemoteCommand_Type type) {
   }
 
   NOTREACHED() << "Unknown command type: " << type;
-  return "";
 }
 
 std::string ToString(
@@ -152,7 +153,6 @@ const char* RemoteCommandsService::GetMetricNameReceivedRemoteCommand(
     case PolicyInvalidationScope::kDeviceLocalAccount:
       NOTREACHED() << "Unexpected instance of remote commands service with "
                       "device local account scope.";
-      return "";
   }
 }
 
@@ -160,26 +160,39 @@ const char* RemoteCommandsService::GetMetricNameReceivedRemoteCommand(
 std::string RemoteCommandsService::GetMetricNameExecutedRemoteCommand(
     PolicyInvalidationScope scope,
     em::RemoteCommand_Type command_type) {
-  const char* base_metric_name = nullptr;
+  const char* const command = RemoteCommandTypeToString(command_type);
   switch (scope) {
     case PolicyInvalidationScope::kUser:
-      base_metric_name = kMetricUserRemoteCommandExecutedTemplate;
-      break;
+      return base::StringPrintf(kMetricUserRemoteCommandExecutedTemplate,
+                                command);
     case PolicyInvalidationScope::kDevice:
-      base_metric_name = kMetricDeviceRemoteCommandExecutedTemplate;
-      break;
+      return base::StringPrintf(kMetricDeviceRemoteCommandExecutedTemplate,
+                                command);
     case PolicyInvalidationScope::kCBCM:
-      base_metric_name = kMetricCBCMRemoteCommandExecutedTemplate;
-      break;
+      return base::StringPrintf(kMetricCBCMRemoteCommandExecutedTemplate,
+                                command);
     case PolicyInvalidationScope::kDeviceLocalAccount:
       NOTREACHED() << "Unexpected instance of remote commands service with "
                       "device local account scope.";
-      return "";
   }
+}
 
-  DCHECK(base_metric_name);
-  return base::StringPrintf(base_metric_name,
-                            RemoteCommandTypeToString(command_type));
+// static
+std::string RemoteCommandsService::GetRequestType(
+    PolicyInvalidationScope scope) {
+  switch (scope) {
+    case PolicyInvalidationScope::kDevice:
+    case PolicyInvalidationScope::kDeviceLocalAccount:
+      return dm_protocol::kChromeDeviceRemoteCommandType;
+    case PolicyInvalidationScope::kCBCM:
+      return dm_protocol::kChromeBrowserRemoteCommandType;
+    case PolicyInvalidationScope::kUser:
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+      return dm_protocol::kChromeAshUserRemoteCommandType;
+#else
+      return dm_protocol::kChromeUserRemoteCommandType;
+#endif
+  }
 }
 
 RemoteCommandsService::RemoteCommandsService(
@@ -192,14 +205,16 @@ RemoteCommandsService::RemoteCommandsService(
       store_(store),
       scope_(scope) {
   DCHECK(client_);
-  queue_.AddObserver(this);
+  remote_commands_queue_observation.Observe(&queue_);
+  if (!factory_) {
+    CHECK_IS_TEST();
+  }
 }
 
-RemoteCommandsService::~RemoteCommandsService() {
-  queue_.RemoveObserver(this);
-}
+RemoteCommandsService::~RemoteCommandsService() = default;
 
-bool RemoteCommandsService::FetchRemoteCommands() {
+bool RemoteCommandsService::FetchRemoteCommands(
+    RemoteCommandsFetchReason reason) {
   if (!client_->is_registered()) {
     SYSLOG(WARNING) << "Client is not registered.";
     return false;
@@ -234,6 +249,7 @@ bool RemoteCommandsService::FetchRemoteCommands() {
 
   client_->FetchRemoteCommands(
       std::move(id_to_acknowledge), previous_results, GetSignatureType(),
+      GetRequestType(scope_), reason,
       base::BindOnce(&RemoteCommandsService::OnRemoteCommandsFetched,
                      weak_factory_.GetWeakPtr()));
 
@@ -267,7 +283,8 @@ void RemoteCommandsService::VerifyAndEnqueueSignedCommand(
         self->unsent_results_.push_back(result);
         self->RecordReceivedRemoteCommand(metric);
         // Trigger another fetch so the results are uploaded.
-        self->FetchRemoteCommands();
+        self->FetchRemoteCommands(
+            RemoteCommandsFetchReason::kUploadExecutionResults);
       },
       base::Unretained(this));
 
@@ -366,7 +383,8 @@ void RemoteCommandsService::OnJobFinished(RemoteCommandJob* command) {
   if (command->GetResult()) {
     em::RemoteCommandResult result;
     result.set_command_id(command->unique_id());
-    result.set_timestamp(command->execution_started_time().ToJavaTime());
+    result.set_timestamp(
+        command->execution_started_time().InMillisecondsSinceUnixEpoch());
     result.set_result(command->GetResult().value());
 
     std::unique_ptr<std::string> result_payload = command->GetResultPayload();
@@ -383,7 +401,7 @@ void RemoteCommandsService::OnJobFinished(RemoteCommandJob* command) {
 
   RecordExecutedRemoteCommand(*command);
 
-  FetchRemoteCommands();
+  FetchRemoteCommands(RemoteCommandsFetchReason::kUploadExecutionResults);
 }
 
 void RemoteCommandsService::OnRemoteCommandsFetched(
@@ -406,7 +424,7 @@ void RemoteCommandsService::OnRemoteCommandsFetched(
   // Start another fetch request job immediately if there are unsent command
   // results or enqueued fetch requests.
   if (!unsent_results_.empty() || has_enqueued_fetch_request_) {
-    FetchRemoteCommands();
+    FetchRemoteCommands(RemoteCommandsFetchReason::kUploadExecutionResults);
   }
 }
 

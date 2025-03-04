@@ -19,7 +19,6 @@
 #include "base/numerics/safe_conversions.h"
 #include "base/observer_list.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/sys_byteorder.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "components/media_router/common/providers/cast/channel/cast_auth_util.h"
@@ -61,8 +60,8 @@ bool IsTerminalState(ConnectionState state) {
 void OnConnected(
     network::mojom::NetworkContext::CreateTCPConnectedSocketCallback callback,
     int result,
-    const absl::optional<net::IPEndPoint>& local_addr,
-    const absl::optional<net::IPEndPoint>& peer_addr,
+    const std::optional<net::IPEndPoint>& local_addr,
+    const std::optional<net::IPEndPoint>& peer_addr,
     mojo::ScopedDataPipeConsumerHandle receive_stream,
     mojo::ScopedDataPipeProducerHandle send_stream) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
@@ -73,12 +72,12 @@ void OnConnected(
 }
 
 void ConnectOnUIThread(
-    CastSocketImpl::NetworkContextGetter network_context_getter,
+    network::NetworkContextGetter network_context_getter,
     const net::AddressList& remote_address_list,
     mojo::PendingReceiver<network::mojom::TCPConnectedSocket> receiver,
     network::mojom::NetworkContext::CreateTCPConnectedSocketCallback callback) {
   network_context_getter.Run()->CreateTCPConnectedSocket(
-      absl::nullopt /* local_addr */, remote_address_list,
+      std::nullopt /* local_addr */, remote_address_list,
       nullptr /* tcp_connected_socket_options */,
       net::MutableNetworkTrafficAnnotationTag(
           CastSocketImpl::GetNetworkTrafficAnnotationTag()),
@@ -88,20 +87,24 @@ void ConnectOnUIThread(
 
 }  // namespace
 
-void CastSocket::Observer::OnReadyStateChanged(const CastSocket& socket) {}
+CastSocket::Observer::~Observer() {
+  CHECK(!IsInObserverList());
+}
 
-CastSocketImpl::CastSocketImpl(NetworkContextGetter network_context_getter,
-                               const CastSocketOpenParams& open_params,
-                               const scoped_refptr<Logger>& logger)
+CastSocketImpl::CastSocketImpl(
+    network::NetworkContextGetter network_context_getter,
+    const CastSocketOpenParams& open_params,
+    const scoped_refptr<Logger>& logger)
     : CastSocketImpl(network_context_getter,
                      open_params,
                      logger,
                      AuthContext::Create()) {}
 
-CastSocketImpl::CastSocketImpl(NetworkContextGetter network_context_getter,
-                               const CastSocketOpenParams& open_params,
-                               const scoped_refptr<Logger>& logger,
-                               const AuthContext& auth_context)
+CastSocketImpl::CastSocketImpl(
+    network::NetworkContextGetter network_context_getter,
+    const CastSocketOpenParams& open_params,
+    const scoped_refptr<Logger>& logger,
+    const AuthContext& auth_context)
     : channel_id_(0),
       open_params_(open_params),
       logger_(logger),
@@ -116,6 +119,8 @@ CastSocketImpl::CastSocketImpl(NetworkContextGetter network_context_getter,
       auth_delegate_(nullptr) {
   DCHECK(open_params.ip_endpoint.address().IsValid());
 }
+
+CastSocket::~CastSocket() = default;
 
 CastSocketImpl::~CastSocketImpl() {
   // Ensure that resources are freed but do not run pending callbacks that
@@ -162,8 +167,8 @@ bool CastSocketImpl::audio_only() const {
 
 bool CastSocketImpl::VerifyChannelPolicy(const AuthResult& result) {
   audio_only_ = (result.channel_policies & AuthResult::POLICY_AUDIO_ONLY) != 0;
-  if (audio_only_ && (open_params_.device_capabilities &
-                      CastDeviceCapability::VIDEO_OUT) != 0) {
+  if (audio_only_ &&
+      open_params_.device_capabilities.Has(CastDeviceCapability::kVideoOut)) {
     LOG_WITH_CONNECTION(ERROR)
         << "Audio only channel policy enforced for video out capable device";
     return false;
@@ -364,10 +369,6 @@ void CastSocketImpl::DoConnectLoop(int result) {
         break;
       default:
         NOTREACHED() << "Unknown state in connect flow: " << AsInteger(state);
-        SetConnectState(ConnectionState::FINISHED);
-        SetErrorState(ChannelError::UNKNOWN);
-        DoConnectCallback();
-        return;
     }
   } while (rv != net::ERR_IO_PENDING && !IsTerminalState(connect_state_));
   // Exit the state machine if an asynchronous network operation is pending
@@ -558,8 +559,8 @@ int CastSocketImpl::DoAuthChallengeReplyComplete(int result) {
 
 void CastSocketImpl::OnConnect(
     int result,
-    const absl::optional<net::IPEndPoint>& local_addr,
-    const absl::optional<net::IPEndPoint>& peer_addr,
+    const std::optional<net::IPEndPoint>& local_addr,
+    const std::optional<net::IPEndPoint>& peer_addr,
     mojo::ScopedDataPipeConsumerHandle receive_stream,
     mojo::ScopedDataPipeProducerHandle send_stream) {
   DoConnectLoop(result);
@@ -569,7 +570,7 @@ void CastSocketImpl::OnUpgradeToTLS(
     int result,
     mojo::ScopedDataPipeConsumerHandle receive_stream,
     mojo::ScopedDataPipeProducerHandle send_stream,
-    const absl::optional<net::SSLInfo>& ssl_info) {
+    const std::optional<net::SSLInfo>& ssl_info) {
   if (result == net::OK) {
     mojo_data_pump_ = std::make_unique<MojoDataPump>(std::move(receive_stream),
                                                      std::move(send_stream));
@@ -626,8 +627,8 @@ void CastSocketImpl::CloseInternal() {
   delegate_.reset();
   transport_.reset();
   mojo_data_pump_.reset();
-  tcp_socket_.reset();
   socket_.reset();
+  tcp_socket_.reset();
   if (GetTimer()) {
     GetTimer()->Stop();
   }
@@ -671,7 +672,8 @@ CastSocketImpl::CastSocketMessageDelegate::CastSocketMessageDelegate(
   DCHECK(socket_);
 }
 
-CastSocketImpl::CastSocketMessageDelegate::~CastSocketMessageDelegate() {}
+CastSocketImpl::CastSocketMessageDelegate::~CastSocketMessageDelegate() =
+    default;
 
 // CastTransport::Delegate implementation.
 void CastSocketImpl::CastSocketMessageDelegate::OnError(
@@ -690,15 +692,14 @@ void CastSocketImpl::CastSocketMessageDelegate::Start() {}
 
 CastSocketOpenParams::CastSocketOpenParams(const net::IPEndPoint& ip_endpoint,
                                            base::TimeDelta connect_timeout)
-    : ip_endpoint(ip_endpoint),
-      connect_timeout(connect_timeout),
-      device_capabilities(cast_channel::CastDeviceCapability::NONE) {}
+    : ip_endpoint(ip_endpoint), connect_timeout(connect_timeout) {}
 
-CastSocketOpenParams::CastSocketOpenParams(const net::IPEndPoint& ip_endpoint,
-                                           base::TimeDelta connect_timeout,
-                                           base::TimeDelta liveness_timeout,
-                                           base::TimeDelta ping_interval,
-                                           uint64_t device_capabilities)
+CastSocketOpenParams::CastSocketOpenParams(
+    const net::IPEndPoint& ip_endpoint,
+    base::TimeDelta connect_timeout,
+    base::TimeDelta liveness_timeout,
+    base::TimeDelta ping_interval,
+    CastDeviceCapabilitySet device_capabilities)
     : ip_endpoint(ip_endpoint),
       connect_timeout(connect_timeout),
       liveness_timeout(liveness_timeout),

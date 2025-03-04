@@ -55,7 +55,6 @@ std::vector<Sandbox> GetSandboxTypesToTest() {
     if (t == Sandbox::kZygoteIntermediateSandbox)
       continue;
 #endif
-
     types.push_back(t);
   }
   return types;
@@ -111,6 +110,7 @@ class UtilityProcessSandboxBrowserTest
 #if BUILDFLAG(ENABLE_PPAPI)
       case Sandbox::kPpapi:
 #endif
+      case Sandbox::kOnDeviceModelExecution:
       case Sandbox::kPrintCompositor:
       case Sandbox::kService:
       case Sandbox::kServiceWithJit:
@@ -133,6 +133,7 @@ class UtilityProcessSandboxBrowserTest
 #if BUILDFLAG(IS_CHROMEOS_ASH)
       case Sandbox::kIme:
       case Sandbox::kTts:
+      case Sandbox::kNearby:
 #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
       case Sandbox::kLibassistant:
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
@@ -141,6 +142,13 @@ class UtilityProcessSandboxBrowserTest
 #if BUILDFLAG(ENABLE_PRINTING)
       case Sandbox::kPrintBackend:
 #endif
+#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+      case Sandbox::kScreenAI:
+#endif
+#if BUILDFLAG(IS_LINUX)
+      case Sandbox::kVideoEffects:
+      case Sandbox::kOnDeviceTranslation:
+#endif
       case Sandbox::kSpeechRecognition: {
         constexpr int kExpectedPartialSandboxFlags =
             SandboxLinux::kSeccompBPF | SandboxLinux::kYama |
@@ -148,17 +156,11 @@ class UtilityProcessSandboxBrowserTest
         EXPECT_EQ(sandbox_status, kExpectedPartialSandboxFlags);
         break;
       }
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
-      case Sandbox::kScreenAI:
-        // TODO(https://crbug.com/1278249): Add test.
-        break;
-#endif
 
       case Sandbox::kGpu:
       case Sandbox::kRenderer:
       case Sandbox::kZygoteIntermediateSandbox:
         NOTREACHED();
-        break;
     }
 
     service_.reset();

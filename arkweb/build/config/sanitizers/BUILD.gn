@@ -1,0 +1,20 @@
+config("cfi_config") {
+  if (is_ohos) {
+    _cfi_blocklist_path = "//tools/cfi/ignores.txt"
+ 
+    cflags = [
+      "-flto=thin",
+      "-fvisibility=hidden",
+      "-fsanitize=cfi-icall",
+      "-fsanitize-cfi-icall-generalize-pointers",
+      "-fsanitize-blacklist=" +
+          rebase_path(_cfi_blocklist_path, root_build_dir),
+    ]
+ 
+    ldflags = [
+      "-flto=thin",
+      "-fsanitize=cfi-icall",
+      "-fsanitize-cfi-icall-generalize-pointers",
+    ]
+  }
+}

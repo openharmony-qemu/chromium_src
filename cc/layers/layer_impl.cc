@@ -44,6 +44,8 @@
 #include "ui/gfx/geometry/transform_util.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
 
+namespace cc {
+
 namespace {
 
 template <typename T>
@@ -51,39 +53,62 @@ std::unique_ptr<T> ClonePtr(const std::unique_ptr<T>& value) {
   return value ? std::make_unique<T>(*value) : nullptr;
 }
 
+const char* LayerTypeAsString(mojom::LayerType type) {
+  switch (type) {
+    case mojom::LayerType::kLayer:
+      return "cc::LayerImpl";
+    case mojom::LayerType::kSolidColor:
+      return "cc::SolidColorLayerImpl";
+    case mojom::LayerType::kTexture:
+      return "cc::TextureLayerImpl";
+    case mojom::LayerType::kSurface:
+      return "cc::SurfaceLayerImpl";
+    case mojom::LayerType::kPicture:
+      return "cc::PictureLayerImpl";
+    case mojom::LayerType::kTileDisplay:
+      return "cc::TileDisplayLayerImpl";
+    case mojom::LayerType::kMirror:
+      return "cc::MirrorLayerImpl";
+    case mojom::LayerType::kHeadsUpDisplay:
+      return "cc::HeadsUpDisplayLayerImpl";
+    case mojom::LayerType::kUIResource:
+      return "cc::UIResourceLayerImpl";
+    case mojom::LayerType::kNinePatch:
+      return "cc::NinePatchLayerImpl";
+    case mojom::LayerType::kSolidColorScrollbar:
+      return "cc::SolidColorScrollbarLayerImpl";
+    case mojom::LayerType::kPaintedScrollbar:
+      return "cc::PaintedScrollbarLayerImpl";
+    case mojom::LayerType::kNinePatchThumbScrollbar:
+      return "cc::NinePatchThumbScrollbarLayerImpl";
+    case mojom::LayerType::kVideo:
+      return "cc::VideoLayerImpl";
+    case mojom::LayerType::kViewTransitionContent:
+      return "cc::ViewTransitionContentLayerImpl";
+  }
+}
+
 }  // namespace
 
-namespace cc {
+LayerImpl::RareProperties::RareProperties() = default;
+LayerImpl::RareProperties::RareProperties(const RareProperties&) = default;
+LayerImpl::RareProperties::~RareProperties() = default;
+
 LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
                      int id,
                      bool will_always_push_properties)
     : layer_id_(id),
       layer_tree_impl_(tree_impl),
       will_always_push_properties_(will_always_push_properties),
-      scrollable_(false),
-      layer_property_changed_not_from_property_trees_(false),
-      layer_property_changed_from_property_trees_(false),
-      may_contain_video_(false),
-      contents_opaque_(false),
-      contents_opaque_for_text_(false),
-      should_check_backface_visibility_(false),
-      draws_content_(false),
-      contributes_to_drawn_render_surface_(false),
-      hit_testable_(false),
-      is_inner_viewport_scroll_layer_(false),
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
       may_contain_native_(false),
       native_embed_id_(false),
-      background_color_(SkColors::kTransparent),
-      safe_opaque_background_color_(SkColors::kTransparent),
+#endif
       transform_tree_index_(kInvalidPropertyNodeId),
       effect_tree_index_(kInvalidPropertyNodeId),
       clip_tree_index_(kInvalidPropertyNodeId),
       scroll_tree_index_(kInvalidPropertyNodeId),
-      current_draw_mode_(DRAW_MODE_NONE),
-      needs_push_properties_(false),
-      needs_show_scrollbars_(false),
-      raster_even_if_not_drawn_(false),
-      has_transform_node_(false) {
+      current_draw_mode_(DRAW_MODE_NONE) {
   DCHECK_GT(layer_id_, 0);
 
   DCHECK(layer_tree_impl_);
@@ -96,6 +121,10 @@ LayerImpl::~LayerImpl() {
   layer_tree_impl_->UnregisterLayer(this);
   TRACE_EVENT_OBJECT_DELETED_WITH_ID(
       TRACE_DISABLED_BY_DEFAULT("cc.debug"), "cc::LayerImpl", this);
+}
+
+mojom::LayerType LayerImpl::GetLayerType() const {
+  return mojom::LayerType::kLayer;
 }
 
 ElementListType LayerImpl::GetElementTypeForAnimation() const {
@@ -149,7 +178,7 @@ void LayerImpl::SetScrollTreeIndex(int index) {
 void LayerImpl::PopulateSharedQuadState(viz::SharedQuadState* state,
                                         bool contents_opaque) const {
   EffectNode* effect_node = GetEffectTree().Node(effect_tree_index_);
-  absl::optional<gfx::Rect> clip_rect;
+  std::optional<gfx::Rect> clip_rect;
   if (draw_properties_.is_clipped) {
     clip_rect = draw_properties_.clip_rect;
   }
@@ -159,8 +188,8 @@ void LayerImpl::PopulateSharedQuadState(viz::SharedQuadState* state,
                 draw_properties_.opacity,
                 effect_node->HasRenderSurface() ? SkBlendMode::kSrcOver
                                                 : effect_node->blend_mode,
-                GetSortingContextId(), static_cast<uint32_t>(id()));
-  state->is_fast_rounded_corner = draw_properties_.is_fast_rounded_corner;
+                GetSortingContextId(), static_cast<uint32_t>(id()),
+                draw_properties_.is_fast_rounded_corner);
 }
 
 void LayerImpl::PopulateScaledSharedQuadState(viz::SharedQuadState* state,
@@ -187,7 +216,7 @@ void LayerImpl::PopulateScaledSharedQuadStateWithContentRects(
       GetScaledDrawTransform(layer_to_content_scale);
 
   EffectNode* effect_node = GetEffectTree().Node(effect_tree_index_);
-  absl::optional<gfx::Rect> clip_rect;
+  std::optional<gfx::Rect> clip_rect;
   if (draw_properties().is_clipped) {
     clip_rect = draw_properties().clip_rect;
   }
@@ -196,8 +225,8 @@ void LayerImpl::PopulateScaledSharedQuadStateWithContentRects(
                 draw_properties().opacity,
                 effect_node->HasRenderSurface() ? SkBlendMode::kSrcOver
                                                 : effect_node->blend_mode,
-                GetSortingContextId(), static_cast<uint32_t>(id()));
-  state->is_fast_rounded_corner = draw_properties().is_fast_rounded_corner;
+                GetSortingContextId(), static_cast<uint32_t>(id()),
+                draw_properties().is_fast_rounded_corner);
 }
 
 bool LayerImpl::WillDraw(DrawMode draw_mode,
@@ -301,7 +330,6 @@ void LayerImpl::GetContentsResourceId(viz::ResourceId* resource_id,
                                       gfx::Size* resource_size,
                                       gfx::SizeF* resource_uv_size) const {
   NOTREACHED();
-  *resource_id = viz::kInvalidResourceId;
 }
 
 gfx::Vector2dF LayerImpl::ScrollBy(const gfx::Vector2dF& scroll) {
@@ -309,38 +337,6 @@ gfx::Vector2dF LayerImpl::ScrollBy(const gfx::Vector2dF& scroll) {
   ScrollNode* scroll_node = scroll_tree.Node(scroll_tree_index());
   DCHECK(scroll_node);
   return scroll_tree.ScrollBy(*scroll_node, scroll, layer_tree_impl());
-}
-
-void LayerImpl::UpdateScrollable() {
-  if (!element_id()) {
-    scrollable_ = false;
-    return;
-  }
-
-  const auto* scroll_node = GetScrollTree().FindNodeFromElementId(element_id());
-  bool was_scrollable = scrollable_;
-  scrollable_ = scroll_node && scroll_node->scrollable;
-  if (was_scrollable == scrollable_) {
-    if (!scrollable_)
-      return;
-    if (scroll_container_bounds_ == scroll_node->container_bounds &&
-        scroll_contents_bounds_ == scroll_node->bounds)
-      return;
-  }
-
-  scroll_container_bounds_ =
-      scrollable_ ? scroll_node->container_bounds : gfx::Size();
-  scroll_contents_bounds_ = scrollable_ ? scroll_node->bounds : gfx::Size();
-
-  // Scrollbar positions depend on the bounds.
-  layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
-
-  if (layer_tree_impl()->settings().scrollbar_animator ==
-      LayerTreeSettings::AURA_OVERLAY) {
-    set_needs_show_scrollbars(scrollable_);
-  }
-
-  NoteLayerPropertyChanged();
 }
 
 void LayerImpl::SetTouchActionRegion(TouchActionRegion region) {
@@ -391,7 +387,7 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->may_contain_video_ = may_contain_video_;
   layer->should_check_backface_visibility_ = should_check_backface_visibility_;
   layer->draws_content_ = draws_content_;
-  layer->hit_testable_ = hit_testable_;
+  layer->hit_test_opaqueness_ = hit_test_opaqueness_;
   layer->touch_action_region_ = touch_action_region_;
   layer->all_touch_action_regions_ = ClonePtr(all_touch_action_regions_);
   layer->background_color_ = background_color_;
@@ -400,11 +396,12 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->effect_tree_index_ = effect_tree_index_;
   layer->clip_tree_index_ = clip_tree_index_;
   layer->scroll_tree_index_ = scroll_tree_index_;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   layer->may_contain_native_ = may_contain_native_;
   layer->native_embed_id_ = native_embed_id_;
-  if (needs_show_scrollbars_)
-    layer->needs_show_scrollbars_ = needs_show_scrollbars_;
-
+  layer->SetNativeRect(native_rect_);
+  layer->SetInitScale(init_scale_);
+#endif
   if (layer_property_changed_not_from_property_trees_ ||
       layer_property_changed_from_property_trees_)
     layer->layer_tree_impl()->set_needs_update_draw_properties();
@@ -414,11 +411,6 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
     layer->layer_property_changed_from_property_trees_ = true;
 
   layer->SetBounds(bounds_);
-  layer->UpdateScrollable();
-
-  layer->SetNativeRect(native_rect_);
-
-  layer->SetInitScale(init_scale_);
 
   layer->UnionUpdateRect(update_rect_);
 
@@ -432,15 +424,21 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   }
 
   // Reset any state that should be cleared for the next update.
-  needs_show_scrollbars_ = false;
   ResetChangeTracking();
 
   layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
+
+  if (layer_tree_impl()->settings().UseLayerContextForDisplay()) {
+    // Ensure updates also propagate to the display tree on its next update.
+    layer->SetNeedsPushProperties();
+  }
 }
 
+#if BUILDFLAG(ARKWEB_WEBGL)
 bool LayerImpl::ShouldDeferImplInvalidation() const {
   return false;
 }
+#endif
 
 bool LayerImpl::IsAffectedByPageScale() const {
   TransformTree& transform_tree = GetTransformTree();
@@ -503,10 +501,6 @@ gfx::Transform LayerImpl::GetScaledDrawTransform(
   return scaled_draw_transform;
 }
 
-const char* LayerImpl::LayerTypeAsString() const {
-  return "cc::LayerImpl";
-}
-
 void LayerImpl::ResetChangeTracking() {
   layer_property_changed_not_from_property_trees_ = false;
   layer_property_changed_from_property_trees_ = false;
@@ -536,11 +530,6 @@ void LayerImpl::SetBounds(const gfx::Size& bounds) {
     return;
 
   bounds_ = bounds;
-
-  // Scrollbar positions depend on the scrolling layer bounds.
-  if (scrollable_)
-    layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
-
   NoteLayerPropertyChanged();
 }
 
@@ -549,6 +538,7 @@ bool LayerImpl::IsScrollbarLayer() const {
 }
 
 bool LayerImpl::IsScrollerOrScrollbar() const {
+  DCHECK(!layer_tree_impl()->settings().enable_hit_test_opaqueness);
   return IsScrollbarLayer() ||
          GetScrollTree().FindNodeFromElementId(element_id());
 }
@@ -561,26 +551,35 @@ void LayerImpl::SetDrawsContent(bool draws_content) {
   NoteLayerPropertyChanged();
 }
 
-void LayerImpl::SetHitTestable(bool should_hit_test) {
-  if (hit_testable_ == should_hit_test)
+void LayerImpl::SetHitTestOpaqueness(HitTestOpaqueness opaqueness) {
+  if (hit_test_opaqueness_ == opaqueness) {
     return;
+  }
 
-  hit_testable_ = should_hit_test;
+  hit_test_opaqueness_ = opaqueness;
   NoteLayerPropertyChanged();
 }
 
 bool LayerImpl::HitTestable() const {
   EffectTree& effect_tree = GetEffectTree();
-  bool should_hit_test = hit_testable_;
   // TODO(sunxd): remove or refactor SetHideLayerAndSubtree, or move this logic
   // to subclasses of Layer. See https://crbug.com/595843 and
   // https://crbug.com/931865.
   // The bit |subtree_hidden| can only be true for ui::Layers. Other layers are
   // not supposed to set this bit.
-  if (effect_tree.Node(effect_tree_index())) {
-    should_hit_test &= !effect_tree.Node(effect_tree_index())->subtree_hidden;
+  if (const EffectNode* node = effect_tree.Node(effect_tree_index())) {
+    if (node->subtree_hidden) {
+      return false;
+    }
   }
-  return should_hit_test;
+  return hit_test_opaqueness_ != HitTestOpaqueness::kTransparent;
+}
+
+bool LayerImpl::OpaqueToHitTest() const {
+  return HitTestable() && hit_test_opaqueness_ == HitTestOpaqueness::kOpaque &&
+         !GetEffectTree()
+              .Node(effect_tree_index())
+              ->node_or_ancestor_has_fast_rounded_corner;
 }
 
 void LayerImpl::SetBackgroundColor(SkColor4f background_color) {
@@ -629,10 +628,21 @@ gfx::Rect LayerImpl::GetDamageRect() const {
   return gfx::Rect();
 }
 
+DamageReasonSet LayerImpl::GetDamageReasons() const {
+  DamageReasonSet reasons;
+  if (LayerPropertyChanged() || !update_rect_.IsEmpty() ||
+      !GetDamageRect().IsEmpty()) {
+    reasons.Put(DamageReason::kUntracked);
+  }
+  return reasons;
+}
+
 void LayerImpl::SetCurrentScrollOffset(const gfx::PointF& scroll_offset) {
   DCHECK(IsActive());
-  if (GetScrollTree().SetScrollOffset(element_id(), scroll_offset))
-    layer_tree_impl()->DidUpdateScrollOffset(element_id());
+  if (GetScrollTree().SetScrollOffset(element_id(), scroll_offset)) {
+    layer_tree_impl()->DidUpdateScrollOffset(
+        element_id(), /*pushed_from_main_or_pending_tree=*/false);
+  }
 }
 
 SimpleEnclosedRegion LayerImpl::VisibleOpaqueRegion() const {
@@ -654,10 +664,18 @@ void LayerImpl::ReleaseTileResources() {}
 void LayerImpl::RecreateTileResources() {}
 
 void LayerImpl::SetNeedsPushProperties() {
-  // There's no need to push layer properties on the active tree, or when
-  // |will_always_push_properties_| is true.
-  if (will_always_push_properties_ || layer_tree_impl()->IsActiveTree())
+  // For the pending tree, there's no need to mark this layer to push properties
+  // when |will_always_push_properties_| is true.
+  if (will_always_push_properties_ && layer_tree_impl()->IsPendingTree()) {
     return;
+  }
+
+  // We never push properties from the active tree unless using a LayerContext.
+  if (layer_tree_impl()->IsActiveTree() &&
+      !layer_tree_impl()->settings().UseLayerContextForDisplay()) {
+    return;
+  }
+
   if (!needs_push_properties_) {
     needs_push_properties_ = true;
     layer_tree_impl()->AddLayerShouldPushProperties(this);
@@ -683,7 +701,7 @@ void LayerImpl::AsValueInto(base::trace_event::TracedValue* state) const {
   // consumers.
   viz::TracedValue::MakeDictIntoImplicitSnapshotWithCategory(
       TRACE_DISABLED_BY_DEFAULT("cc.debug"), state, "cc::LayerImpl",
-      LayerTypeAsString(), this);
+      LayerTypeAsString(GetLayerType()), this);
   state->SetInteger("layer_id", id());
   MathUtil::AddToTracedValue("bounds", bounds_, state);
 
@@ -725,11 +743,14 @@ void LayerImpl::AsValueInto(base::trace_event::TracedValue* state) const {
   wheel_event_handler_region().AsValueInto(state);
   state->EndArray();
 
+  // TODO(crbug.com/358408565): At least DevTools reads from trace using this
+  // name.
   state->BeginArray("non_fast_scrollable_region");
-  non_fast_scrollable_region().AsValueInto(state);
+  main_thread_scroll_hit_test_region().AsValueInto(state);
   state->EndArray();
 
   state->SetBoolean("hit_testable", HitTestable());
+  state->SetBoolean("opaque_to_hit_test", OpaqueToHitTest());
   state->SetBoolean("contents_opaque", contents_opaque());
 
   if (debug_info_) {
@@ -840,10 +861,10 @@ const RenderSurfaceImpl* LayerImpl::render_target() const {
 
 gfx::Vector2dF LayerImpl::GetIdealContentsScale() const {
   const auto& transform = ScreenSpaceTransform();
-  absl::optional<gfx::Vector2dF> transform_scales =
+  std::optional<gfx::Vector2dF> transform_scales =
       gfx::TryComputeTransform2dScaleComponents(transform);
   if (transform_scales) {
-    // TODO(crbug.com/1196414): Remove this scale cap.
+    // TODO(crbug.com/40176440): Remove this scale cap.
     float scale_cap = GetPreferredRasterScale(*transform_scales);
     transform_scales->SetToMin(gfx::Vector2dF(scale_cap, scale_cap));
     return *transform_scales;
@@ -859,7 +880,7 @@ gfx::Vector2dF LayerImpl::GetIdealContentsScale() const {
 
   float default_scale = page_scale * device_scale;
 
-  // TODO(crbug.com/1196414): This function should return a 2D scale.
+  // TODO(crbug.com/40176440): This function should return a 2D scale.
   float scale = gfx::ComputeApproximateMaxScale(transform);
 
   const int kMaxTilesToCoverLayerDimension = 5;
@@ -991,14 +1012,15 @@ int LayerImpl::CalculateJitter() {
   }
   return jitter;
 }
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 gfx::RectF LayerImpl::NativeRect() const {
   if (!may_contain_native()) {
     return native_rect_;
   }
 
-  auto viewport_bounds_delta = gfx::ToCeiledVector2d(GetPropertyTrees()->inner_viewport_scroll_bounds_delta());
-  return gfx::RectF(native_rect_.x(),native_rect_.y(),
+  auto viewport_bounds_delta = gfx::ToCeiledVector2d(
+      GetPropertyTrees()->inner_viewport_scroll_bounds_delta());
+  return gfx::RectF(native_rect_.x(), native_rect_.y(),
                     native_rect_.width() + viewport_bounds_delta.x(),
                     native_rect_.height() + viewport_bounds_delta.y());
 }
@@ -1011,9 +1033,6 @@ void LayerImpl::SetNativeRect(const gfx::RectF& rect) {
   if (init_scale_ == -1.0f) {
     init_scale_ = GetIdealContentsScaleKey();
   }
-  // Scrollbar positions depend on the scrolling layer bounds.
-  if (scrollable_)
-    layer_tree_impl()->SetScrollbarGeometriesNeedUpdate();
 
   NoteLayerPropertyChanged();
 }
@@ -1027,16 +1046,17 @@ void LayerImpl::SetInitScale(float scale) {
 
 gfx::RectF LayerImpl::GetNativeRect() {
   if (!may_contain_native()) {
-      return native_rect_;
+    return native_rect_;
   }
   gfx::Transform transform = ScreenSpaceTransform();
   gfx::RectF rf = NativeRect();
-  if(rf.IsEmpty()) {
+  if (rf.IsEmpty()) {
     rf.set_width(bounds().width());
     rf.set_height(bounds().height());
   }
   return transform.MapRect(rf);
 }
+#endif
 
 std::string LayerImpl::DebugName() const {
   return debug_info_ ? debug_info_->name : "";

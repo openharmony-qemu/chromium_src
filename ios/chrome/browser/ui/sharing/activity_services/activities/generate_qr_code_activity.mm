@@ -10,10 +10,6 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 NSString* const kGenerateQrCodeActivityType =
     @"com.google.chrome.GenerateQrCodeActivityType";
@@ -33,7 +29,7 @@ NSString* const kGenerateQrCodeActivityType =
 - (instancetype)initWithURL:(const GURL&)activityURL
                       title:(NSString*)title
                     handler:(id<QRGenerationCommands>)handler {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _activityURL = activityURL;
     _title = title;
     _handler = handler;

@@ -45,6 +45,7 @@
 #include "chromecast/browser/cast_web_service.h"
 #include "chromecast/browser/devtools/remote_debugging_server.h"
 #include "chromecast/browser/media/media_caps_impl.h"
+#include "chromecast/browser/media/supported_codec_finder.h"
 #include "chromecast/browser/metrics/cast_browser_metrics.h"
 #include "chromecast/browser/metrics/metrics_helper_impl.h"
 #include "chromecast/browser/mojom/cast_web_service.mojom.h"
@@ -69,6 +70,7 @@
 #include "chromecast/ui/display_settings_manager_impl.h"
 #include "components/heap_profiling/multi_process/client_connection_manager.h"
 #include "components/heap_profiling/multi_process/supervisor.h"
+#include "components/input/switches.h"
 #include "components/memory_pressure/multi_source_memory_pressure_monitor.h"
 #include "components/prefs/pref_service.h"
 #include "components/viz/common/switches.h"
@@ -88,6 +90,10 @@
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "ui/base/ui_base_switches.h"
 #include "ui/gl/gl_switches.h"
+
+#if BUILDFLAG(IS_OZONE)
+#include "ui/ozone/public/ozone_platform.h"
+#endif  // BUILDFLAG(IS_OZONE)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include <fontconfig/fontconfig.h>
@@ -305,7 +311,7 @@ const DefaultCommandLineSwitch kDefaultSwitches[] = {
 #if BUILDFLAG(IS_ANDROID)
     {switches::kDisableFrameRateLimit, ""},
     {switches::kDisableGLDrawingForTests, ""},
-    {cc::switches::kDisableThreadedAnimation, ""},
+    {switches::kDisableThreadedAnimation, ""},
 #endif  // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_CAST_AUDIO_ONLY)
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
@@ -329,7 +335,7 @@ const DefaultCommandLineSwitch kDefaultSwitches[] = {
     // TODO(halliwell): Revert after fix for b/63101386.
     {switches::kDisallowNonExactResourceReuse, ""},
     // Disable pinch zoom gesture.
-    {switches::kDisablePinch, ""},
+    {input::switches::kDisablePinch, ""},
 };
 
 void AddDefaultCommandLineSwitches(base::CommandLine* command_line) {
@@ -371,8 +377,7 @@ void AddDefaultCommandLineSwitches(base::CommandLine* command_line) {
 
 CastBrowserMainParts::CastBrowserMainParts(
     CastContentBrowserClient* cast_content_browser_client)
-    : BrowserMainParts(),
-      cast_browser_process_(new CastBrowserProcess()),
+    : cast_browser_process_(new CastBrowserProcess()),
       cast_content_browser_client_(cast_content_browser_client),
       media_caps_(std::make_unique<media::MediaCapsImpl>()),
       metrics_helper_(std::make_unique<metrics::MetricsHelperImpl>()) {
@@ -470,6 +475,13 @@ void CastBrowserMainParts::PreCreateMainMessageLoop() {
 void CastBrowserMainParts::PostCreateMainMessageLoop() {
   // Ensure CastMetricsHelper initialized on UI thread.
   metrics::CastMetricsHelper::GetInstance();
+
+#if BUILDFLAG(IS_OZONE)
+  // Pass the UI task runner to the ozone platform.
+  CHECK(base::SingleThreadTaskRunner::HasCurrentDefault());
+  ui::OzonePlatform::GetInstance()->PostCreateMainMessageLoop(
+      base::DoNothing(), base::SingleThreadTaskRunner::GetCurrentDefault());
+#endif  // BUILDFLAG(IS_OZONE)
 }
 
 void CastBrowserMainParts::ToolkitInitialized() {
@@ -610,8 +622,8 @@ int CastBrowserMainParts::PreMainMessageLoopRun() {
       ::ui_devtools::UiDevToolsServer::IsUiDevToolsEnabled(
           ::ui_devtools::switches::kEnableUiDevTools)) {
     // Starts the UI Devtools server for browser Aura UI
-    ui_devtools_ = std::make_unique<CastUIDevTools>(
-        cast_content_browser_client_->GetSystemNetworkContext());
+    ui_devtools_ =
+        std::make_unique<CastUIDevTools>(content::GetIOThreadTaskRunner({}));
   }
 #endif
 
@@ -629,7 +641,16 @@ int CastBrowserMainParts::PreMainMessageLoopRun() {
 
   cast_content_browser_client_->media_resource_tracker()->InitializeMediaLib();
   ::media::InitializeMediaLibrary();
-  media_caps_->Initialize();
+  // Query the supported codec/profile/levels asynchronously after initializing
+  // the media library. This query can block and cause App Not Responding (ANR)
+  // errors if CPU resources are tight during browser initialization.
+  cast_content_browser_client_->GetMediaTaskRunner()
+      ->PostTaskAndReplyWithResult(
+          FROM_HERE,
+          base::BindOnce(
+              &media::SupportedCodecFinder::FindSupportedCodecProfileLevels),
+          base::BindOnce(&CastBrowserMainParts::AddSupportedCodecProfileLevels,
+                         weak_factory_.GetWeakPtr()));
 
   display_settings_manager_ = std::make_unique<DisplaySettingsManagerImpl>(
       window_manager_.get(),
@@ -709,7 +730,6 @@ void CastBrowserMainParts::PostMainMessageLoopRun() {
   // Android does not use native main MessageLoop.
   NOTREACHED();
 #else
-
 #if defined(USE_AURA)
   // Reset display change observer here to ensure it is deleted before
   // display_configurator since display_configurator is deleted when
@@ -730,15 +750,24 @@ void CastBrowserMainParts::PostMainMessageLoopRun() {
 #if !BUILDFLAG(IS_FUCHSIA)
   DeregisterKillOnAlarm();
 #endif  // !BUILDFLAG(IS_FUCHSIA)
-#endif
 
   service_manager_context_.reset();
+#endif
 }
 
 void CastBrowserMainParts::PostDestroyThreads() {
 #if !BUILDFLAG(IS_ANDROID)
   cast_content_browser_client_->ResetMediaResourceTracker();
 #endif  // !BUILDFLAG(IS_ANDROID)
+}
+
+void CastBrowserMainParts::AddSupportedCodecProfileLevels(
+    base::span<const media::CodecProfileLevel> codec_profile_levels) {
+  LOG(INFO) << "Adding " << codec_profile_levels.size()
+            << " supported codec profiles/levels";
+  for (const auto& cpl : codec_profile_levels) {
+    media_caps_->AddSupportedCodecProfileLevel(cpl);
+  }
 }
 
 }  // namespace shell

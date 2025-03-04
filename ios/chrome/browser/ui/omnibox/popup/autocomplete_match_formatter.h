@@ -15,6 +15,8 @@ struct AutocompleteMatch;
 /// This is a temporary solution for coloring strings.
 @property(nonatomic, assign, getter=isIncognito) BOOL incognito;
 @property(nonatomic, assign, getter=isStarred) BOOL starred;
+/// Whether it's a multimodal suggestion.
+@property(nonatomic, assign) BOOL isMultimodal;
 
 /// Whether the default search engine is Google impacts which icon is used in
 /// some cases
@@ -24,6 +26,9 @@ struct AutocompleteMatch;
 @property(nonatomic, strong) OmniboxPedalData* pedalData;
 /// From <AutocompleteSuggestion>, redefined as readwrite.
 @property(nonatomic, strong) NSNumber* suggestionSectionId;
+
+/// From <AutocompleteSuggestion>, redefined as readwrite.
+@property(nonatomic, strong) NSArray<SuggestAction*>* actionsInSuggest;
 
 - (instancetype)initWithMatch:(const AutocompleteMatch&)match
     NS_DESIGNATED_INITIALIZER;

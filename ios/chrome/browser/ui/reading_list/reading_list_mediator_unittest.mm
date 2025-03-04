@@ -16,9 +16,11 @@
 #import "components/reading_list/core/fake_reading_list_model_storage.h"
 #import "components/reading_list/core/reading_list_model_impl.h"
 #import "components/sync/base/storage_type.h"
+#import "components/sync/model/wipe_model_upon_sync_disabled_behavior.h"
+#import "components/sync/test/test_sync_service.h"
 #import "components/url_formatter/url_formatter.h"
-#import "ios/chrome/browser/favicon/favicon_loader.h"
-#import "ios/chrome/browser/favicon/ios_chrome_large_icon_service_factory.h"
+#import "ios/chrome/browser/favicon/model/favicon_loader.h"
+#import "ios/chrome/browser/favicon/model/ios_chrome_large_icon_service_factory.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_list_item_accessibility_delegate.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_list_item_custom_action_factory.h"
 #import "ios/chrome/browser/ui/reading_list/reading_list_list_item_factory.h"
@@ -26,12 +28,9 @@
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/gmock/include/gmock/gmock.h"
 #import "testing/gtest/include/gtest/gtest.h"
+#import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "third_party/ocmock/OCMock/OCMock.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using testing::_;
 
@@ -39,7 +38,7 @@ namespace reading_list {
 
 // ReadingListMediatorTest is parameterized on this enum to test both
 // FaviconAttributesProvider and FaviconLoader.
-// TODO(crbug.com/878796): Remove as part of UIRefresh cleanup.
+// TODO(crbug.com/41410664): Remove as part of UIRefresh cleanup.
 enum class FaviconServiceType {
   FAVICON_LOADER,
   ATTRIBUTES_PROVIDER,
@@ -54,9 +53,11 @@ class ReadingListMediatorTest
     base::WeakPtr<FakeReadingListModelStorage> storage_ptr =
         storage->AsWeakPtr();
     model_ = std::make_unique<ReadingListModelImpl>(
-        std::move(storage), syncer::StorageType::kUnspecified, &clock_);
+        std::move(storage), syncer::StorageType::kUnspecified,
+        syncer::WipeModelUponSyncDisabledBehavior::kNever, &clock_);
     // Complete the initial model load from storage.
     storage_ptr->TriggerLoadCompletion();
+    sync_service_ = std::make_unique<syncer::TestSyncService>();
 
     EXPECT_CALL(mock_favicon_service_,
                 GetLargestRawFaviconForPageURL(_, _, _, _, _))
@@ -101,9 +102,12 @@ class ReadingListMediatorTest
     favicon_loader.reset(new FaviconLoader(large_icon_service_.get()));
     mediator_ = [[ReadingListMediator alloc]
           initWithModel:model_.get()
+            syncService:sync_service_.get()
           faviconLoader:favicon_loader.get()
         listItemFactory:[[ReadingListListItemFactory alloc] init]];
   }
+
+  ~ReadingListMediatorTest() { [mediator_ disconnect]; }
 
   ReadingListMediatorTest(const ReadingListMediatorTest&) = delete;
   ReadingListMediatorTest& operator=(const ReadingListMediatorTest&) = delete;
@@ -111,6 +115,7 @@ class ReadingListMediatorTest
  protected:
   testing::StrictMock<favicon::MockFaviconService> mock_favicon_service_;
   std::unique_ptr<ReadingListModelImpl> model_;
+  std::unique_ptr<syncer::TestSyncService> sync_service_;
   ReadingListMediator* mediator_;
   base::SimpleTestClock clock_;
   GURL no_title_entry_url_;
@@ -134,9 +139,9 @@ TEST_P(ReadingListMediatorTest, fillItems) {
   EXPECT_EQ(2U, [readArray count]);
   NSArray<ReadingListTableViewItem*>* rlReadArray = [readArray copy];
   NSArray<ReadingListTableViewItem*>* rlUneadArray = [unreadArray copy];
-  EXPECT_TRUE([rlUneadArray[0].title isEqualToString:@""]);
-  EXPECT_TRUE([rlReadArray[0].title isEqualToString:@"read2"]);
-  EXPECT_TRUE([rlReadArray[1].title isEqualToString:@"read1"]);
+  EXPECT_NSEQ(rlUneadArray[0].title, @"");
+  EXPECT_NSEQ(rlReadArray[0].title, @"read2");
+  EXPECT_NSEQ(rlReadArray[1].title, @"read1");
 }
 
 INSTANTIATE_TEST_SUITE_P(

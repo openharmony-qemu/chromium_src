@@ -15,6 +15,7 @@
 #include "base/scoped_multi_source_observation.h"
 #include "ui/aura/window.h"
 #include "ui/aura/window_observer.h"
+#include "ui/base/metadata/metadata_header_macros.h"
 #include "ui/views/controls/button/button.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_observer.h"
@@ -38,6 +39,8 @@ class ResizeToggleMenu : public views::WidgetObserver,
                          public aura::WindowObserver {
  public:
   class MenuButtonView : public views::Button {
+    METADATA_HEADER(MenuButtonView, views::Button)
+
    public:
     MenuButtonView(PressedCallback callback,
                    const gfx::VectorIcon& icon,
@@ -51,20 +54,23 @@ class ResizeToggleMenu : public views::WidgetObserver,
    private:
     // views::View:
     void OnThemeChanged() override;
-    gfx::Size CalculatePreferredSize() const override;
+    gfx::Size CalculatePreferredSize(
+        const views::SizeBounds& available_size) const override;
 
     void UpdateColors();
     void UpdateState();
 
     // Owned by views hierarchy.
-    views::ImageView* icon_view_{nullptr};
-    views::Label* title_{nullptr};
+    raw_ptr<views::ImageView> icon_view_{nullptr};
+    raw_ptr<views::Label> title_{nullptr};
 
-    const raw_ref<const gfx::VectorIcon, ExperimentalAsh> icon_;
+    const raw_ref<const gfx::VectorIcon> icon_;
     bool is_selected_{false};
+    const int title_string_id_;
   };
 
-  ResizeToggleMenu(views::Widget* widget,
+  ResizeToggleMenu(base::OnceClosure on_bubble_widget_closing_callback,
+                   views::Widget* widget,
                    ArcResizeLockPrefDelegate* pref_delegate);
   ResizeToggleMenu(const ResizeToggleMenu&) = delete;
   ResizeToggleMenu& operator=(const ResizeToggleMenu&) = delete;
@@ -88,7 +94,7 @@ class ResizeToggleMenu : public views::WidgetObserver,
 
   void UpdateSelectedButton();
 
-  void ApplyResizeCompatMode(ResizeCompatMode mode);
+  void ApplyResizeCompatMode(ash::ResizeCompatMode mode);
 
   gfx::Rect GetAnchorRect() const;
 
@@ -97,13 +103,15 @@ class ResizeToggleMenu : public views::WidgetObserver,
   std::unique_ptr<views::BubbleDialogDelegateView> MakeBubbleDelegateView(
       views::Widget* parent,
       gfx::Rect anchor_rect,
-      base::RepeatingCallback<void(ResizeCompatMode)> command_handler);
+      base::RepeatingCallback<void(ash::ResizeCompatMode)> command_handler);
 
   void CloseBubble();
 
-  raw_ptr<views::Widget, ExperimentalAsh> widget_;
+  base::OnceClosure on_bubble_widget_closing_callback_;
 
-  raw_ptr<ArcResizeLockPrefDelegate, ExperimentalAsh> pref_delegate_;
+  raw_ptr<views::Widget> widget_;
+
+  raw_ptr<ArcResizeLockPrefDelegate> pref_delegate_;
 
   base::ScopedMultiSourceObservation<views::Widget, views::WidgetObserver>
       widget_observations_{this};
@@ -112,12 +120,12 @@ class ResizeToggleMenu : public views::WidgetObserver,
 
   base::CancelableOnceClosure auto_close_closure_;
 
-  raw_ptr<views::Widget, ExperimentalAsh> bubble_widget_{nullptr};
+  raw_ptr<views::Widget> bubble_widget_{nullptr};
 
   // Store only for testing.
-  raw_ptr<MenuButtonView, ExperimentalAsh> phone_button_{nullptr};
-  raw_ptr<MenuButtonView, ExperimentalAsh> tablet_button_{nullptr};
-  raw_ptr<MenuButtonView, ExperimentalAsh> resizable_button_{nullptr};
+  raw_ptr<MenuButtonView, DanglingUntriaged> phone_button_{nullptr};
+  raw_ptr<MenuButtonView, DanglingUntriaged> tablet_button_{nullptr};
+  raw_ptr<MenuButtonView, DanglingUntriaged> resizable_button_{nullptr};
 
   base::WeakPtrFactory<ResizeToggleMenu> weak_ptr_factory_{this};
 };

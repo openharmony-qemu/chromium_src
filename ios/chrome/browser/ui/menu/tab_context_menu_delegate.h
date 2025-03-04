@@ -7,20 +7,26 @@
 
 #import <Foundation/Foundation.h>
 
+#import "base/memory/weak_ptr.h"
 #import "ios/chrome/browser/ui/sharing/sharing_scenario.h"
 
 class GURL;
+class TabGroup;
 
 namespace synced_sessions {
 struct DistantSession;
 }
+
+namespace web {
+class WebStateID;
+}  // namespace web
 
 // Methods used to create context menu actions for tabs.
 @protocol TabContextMenuDelegate <NSObject>
 
 // Tells the delegate to trigger the URL sharing flow for the given `URL` and
 // `title`, with the origin `view` representing the UI component for that URL.
-// TODO(crbug.com/1196956): Investigate removing `view` as a parameter.
+// TODO(crbug.com/40759896): Investigate removing `view` as a parameter.
 - (void)shareURL:(const GURL&)URL
            title:(NSString*)title
         scenario:(SharingScenario)scenario
@@ -49,17 +55,53 @@ struct DistantSession;
 - (void)selectTabs;
 
 // Tells the delegate to pin a tab with the item identifier `identifier`.
-- (void)pinTabWithIdentifier:(NSString*)identifier;
+- (void)pinTabWithIdentifier:(web::WebStateID)identifier;
 
 // Tells the delegate to unpin a tab with the item identifier `identifier`.
-- (void)unpinTabWithIdentifier:(NSString*)identifier;
+- (void)unpinTabWithIdentifier:(web::WebStateID)identifier;
+
+// Tells the delegate to create a new tab group with the given identifier
+// `identifier`. `incognito` YES if the given tab is incognito.
+- (void)createNewTabGroupWithIdentifier:(web::WebStateID)identifier
+                              incognito:(BOOL)incognito;
+
+// Tells the delegate to display the group edition view of the group of the
+// given identifier.
+- (void)editTabGroup:(base::WeakPtr<const TabGroup>)group
+           incognito:(BOOL)incognito;
 
 // Tells the delegate to close the tab with the item identifier `identifier`.
-// `incognito`tracks the incognito state of the tab.
-// `pinned` tracks the pinned state of the tab.
-- (void)closeTabWithIdentifier:(NSString*)identifier
-                     incognito:(BOOL)incognito
-                        pinned:(BOOL)pinned;
+// `incognito` tracks the incognito state of the tab.
+- (void)closeTabWithIdentifier:(web::WebStateID)identifier
+                     incognito:(BOOL)incognito;
+
+// Tells the delegate to delete the group. `incognito` tracks the incognito
+// state of the group. `sourceView` is the view that the delete action
+// originated from.
+- (void)deleteTabGroup:(base::WeakPtr<const TabGroup>)group
+             incognito:(BOOL)incognito
+            sourceView:(UIView*)sourceView;
+
+// Tells the delegate to close the group. `incognito` tracks the incognito state
+// of the group.
+- (void)closeTabGroup:(base::WeakPtr<const TabGroup>)group
+            incognito:(BOOL)incognito;
+
+// Tells the delegate to ungroup the `group`. `incognito` tracks the incognito
+// state of the group. `sourceView` is the view that the delete action
+// originated from.
+- (void)ungroupTabGroup:(base::WeakPtr<const TabGroup>)group
+              incognito:(BOOL)incognito
+             sourceView:(UIView*)sourceView;
+
+// Tells the delegate to manage the shared group.
+- (void)manageTabGroup:(base::WeakPtr<const TabGroup>)group;
+
+// Tells the delegate to share the local group.
+- (void)shareTabGroup:(base::WeakPtr<const TabGroup>)group;
+
+// Tells the delegate to show the recent activity for the shared group.
+- (void)showRecentActivityForTabGroup:(base::WeakPtr<const TabGroup>)tabGroup;
 
 @end
 

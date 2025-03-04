@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "base/memory/ref_counted_memory.h"
@@ -17,7 +18,6 @@
 #include "content/common/content_export.h"
 #include "content/public/common/page_type.h"
 #include "content/public/common/referrer.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/base/page_transition_types.h"
 
 class GURL;
@@ -75,7 +75,7 @@ class NavigationEntry : public base::SupportsUserData {
   virtual void SetBaseURLForDataURL(const GURL& url) = 0;
   virtual const GURL& GetBaseURLForDataURL() = 0;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   // The real data: URL when it is received via WebView.loadDataWithBaseUrl
   // method. Represented as a string to circumvent the size restriction
   // of GURLs for compatibility with legacy Android WebView apps.
@@ -107,8 +107,19 @@ class NavigationEntry : public base::SupportsUserData {
   // observers when the visible title changes. Only call
   // NavigationEntry::SetTitle() below directly when this entry is known not to
   // be visible.
-  virtual void SetTitle(const std::u16string& title) = 0;
+  virtual void SetTitle(std::u16string title) = 0;
   virtual const std::u16string& GetTitle() = 0;
+
+  // The app title as set by the page. SetAppTitle gets called only if page has
+  // an app-title meta tag. For all other pages, the app_title will not be set.
+  // This information is provided by an experimental meta tag. See:
+  // https://github.com/MicrosoftEdge/MSEdgeExplainers/blob/main/DocumentSubtitle/explainer.md
+  virtual void SetAppTitle(const std::u16string& app_title) = 0;
+
+  // If app-title meta tag is set by the page, GetAppTitle will return the
+  // value set by the page, including empty string. If the page does not have an
+  // app-title meta tag, GetAppTitle will return a nullopt.
+  virtual const std::optional<std::u16string>& GetAppTitle() = 0;
 
   // Page state is an opaque blob created by Blink that represents the state of
   // the page. This includes form entries and scroll position for each frame.
@@ -228,7 +239,7 @@ class NavigationEntry : public base::SupportsUserData {
   // contains some information about the entry prior to being replaced. Even if
   // an entry is replaced multiple times, it represents data prior to the
   // *first* replace.
-  virtual const absl::optional<ReplacedNavigationEntryData>&
+  virtual const std::optional<ReplacedNavigationEntryData>&
   GetReplacedEntryData() = 0;
 
   // True if this entry is restored and hasn't been loaded.

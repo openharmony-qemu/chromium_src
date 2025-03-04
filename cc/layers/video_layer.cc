@@ -14,7 +14,7 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
   return base::WrapRefCounted(new VideoLayer(provider, transform));
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
 scoped_refptr<VideoLayer> VideoLayer::Create(
     VideoFrameProvider* provider,
     media::VideoTransformation transform,
@@ -28,8 +28,8 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
     media::VideoTransformation transform,
     RectChangeCallback callback,
     RectVisibilityChangeCallback visibilitycallback) {
-  return base::WrapRefCounted(
-      new VideoLayer(provider, transform, std::move(callback), std::move(visibilitycallback)));
+  return base::WrapRefCounted(new VideoLayer(
+      provider, transform, std::move(callback), std::move(visibilitycallback)));
 }
 
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
@@ -89,6 +89,12 @@ std::unique_ptr<LayerImpl> VideoLayer::CreateLayerImpl(
     LayerTreeImpl* tree_impl) const {
   return VideoLayerImpl::Create(tree_impl, id(), provider_.Read(*this),
                                 transform_);
+}
+
+bool VideoLayer::RequiresSetNeedsDisplayOnHdrHeadroomChange() const {
+  // TODO(crbug.com/40065199): Only return true if the contents of the
+  // video are HDR.
+  return true;
 }
 
 bool VideoLayer::Update() {

@@ -5,22 +5,23 @@
 #include "base/task/common/task_annotator.h"
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <array>
+#include <string_view>
 
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
+#include "base/containers/span.h"
 #include "base/debug/alias.h"
 #include "base/hash/md5.h"
 #include "base/logging.h"
+#include "base/metrics/metrics_hashes.h"
 #include "base/ranges/algorithm.h"
-#include "base/sys_byteorder.h"
 #include "base/time/time.h"
 #include "base/trace_event/base_tracing.h"
 #include "base/tracing_buildflags.h"
-#include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/base/attributes.h"
 
 #if BUILDFLAG(ENABLE_BASE_TRACING)
 #include "third_party/perfetto/protos/perfetto/trace/track_event/chrome_mojo_event_info.pbzero.h"  // nogncheck
@@ -35,15 +36,15 @@ TaskAnnotator::ObserverForTesting* g_task_annotator_observer = nullptr;
 // The PendingTask currently in progress on each thread. Used to allow creating
 // a breadcrumb of program counters on the stack to help identify a task's
 // origin in crashes.
-ABSL_CONST_INIT thread_local PendingTask* current_pending_task = nullptr;
+constinit thread_local PendingTask* current_pending_task = nullptr;
 
 // Scoped IPC-related data (IPC hash and/or IPC interface name). IPC hash or
 // interface name can be known before the associated task object is created;
 // thread-local so that this data can be affixed to the associated task.
-ABSL_CONST_INIT thread_local TaskAnnotator::ScopedSetIpcHash*
+constinit thread_local TaskAnnotator::ScopedSetIpcHash*
     current_scoped_ipc_hash = nullptr;
 
-ABSL_CONST_INIT thread_local TaskAnnotator::LongTaskTracker*
+constinit thread_local TaskAnnotator::LongTaskTracker*
     current_long_task_tracker = nullptr;
 
 // These functions can be removed, and the calls below replaced with direct
@@ -67,6 +68,21 @@ TaskAnnotator::LongTaskTracker* GetCurrentLongTaskTracker() {
 
   return current_long_task_tracker;
 }
+
+#if BUILDFLAG(ENABLE_BASE_TRACING)
+perfetto::protos::pbzero::ChromeTaskAnnotator::DelayPolicy ToProtoEnum(
+    subtle::DelayPolicy type) {
+  using ProtoType = perfetto::protos::pbzero::ChromeTaskAnnotator::DelayPolicy;
+  switch (type) {
+    case subtle::DelayPolicy::kFlexibleNoSooner:
+      return ProtoType::FLEXIBLE_NO_SOONER;
+    case subtle::DelayPolicy::kFlexiblePreferEarly:
+      return ProtoType::FLEXIBLE_PREFER_EARLY;
+    case subtle::DelayPolicy::kPrecise:
+      return ProtoType::PRECISE;
+  }
+}
+#endif  // BUILDFLAG(ENABLE_BASE_TRACING)
 
 }  // namespace
 
@@ -103,7 +119,7 @@ TaskAnnotator::TaskAnnotator() = default;
 TaskAnnotator::~TaskAnnotator() = default;
 
 void TaskAnnotator::WillQueueTask(perfetto::StaticString trace_event_name,
-                                  PendingTask* pending_task) {
+                                  TaskMetadata* pending_task) {
   DCHECK(pending_task);
   TRACE_EVENT_INSTANT(
       "toplevel.flow", trace_event_name,
@@ -184,26 +200,6 @@ void TaskAnnotator::RunTaskImpl(PendingTask& pending_task) {
       g_task_annotator_observer->BeforeRunTask(&pending_task);
     }
     std::move(pending_task.task).Run();
-#if BUILDFLAG(IS_WIN) && defined(ARCH_CPU_X86_FAMILY)
-    // Some tasks on some machines clobber the non-volatile XMM registers in
-    // violation of the Windows ABI. This empty assembly language block with
-    // clobber directives tells the compiler to assume that these registers
-    // may have lost their values. This ensures that this function will not rely
-    // on the registers retaining their values, and it ensures that it will
-    // restore the values when this function ends. This is needed because the
-    // code-gen for at least one caller of this function in official builds
-    // relies on an XMM register (usually XMM7, cleared to zero) maintaining its
-    // value as multiple tasks are run, which causes crashes if it is corrupted,
-    // since "zeroed" variables end up not being zeroed. The third-party issue
-    // is believed to be fixed but will take a while to propagate to users which
-    // is why this mitigation is needed. For details see
-    // https://crbug.com/1218384.
-    asm(""
-        :
-        :
-        : "%xmm6", "%xmm7", "%xmm8", "%xmm9", "%xmm10", "%xmm11", "%xmm12",
-          "%xmm13", "%xmm14", "%xmm15");
-#endif
   }
 
   // Stomp the markers. Otherwise they can stick around on the unused parts of
@@ -216,7 +212,7 @@ void TaskAnnotator::RunTaskImpl(PendingTask& pending_task) {
   debug::Alias(&task_backtrace);
 }
 
-uint64_t TaskAnnotator::GetTaskTraceID(const PendingTask& task) const {
+uint64_t TaskAnnotator::GetTaskTraceID(const TaskMetadata& task) const {
   return (static_cast<uint64_t>(task.sequence_num) << 32) |
          ((static_cast<uint64_t>(reinterpret_cast<intptr_t>(this)) << 32) >>
           32);
@@ -251,11 +247,42 @@ void TaskAnnotator::MaybeEmitIncomingTaskFlow(perfetto::EventContext& ctx,
   if (!*flow_enabled)
     return;
 
-  perfetto::TerminatingFlow::ProcessScoped(GetTaskTraceID(task))(ctx);
+  perfetto::Flow::ProcessScoped(GetTaskTraceID(task))(ctx);
 }
 
-void TaskAnnotator::MaybeEmitIPCHashAndDelay(perfetto::EventContext& ctx,
-                                             const PendingTask& task) const {
+// static
+void TaskAnnotator::EmitTaskTimingDetails(perfetto::EventContext& ctx) {
+  auto* const tracker = GetCurrentLongTaskTracker();
+  if (tracker) {
+    base::TimeTicks event_start_time = base::TimeTicks::Now();
+    base::TimeTicks task_start_time = tracker->GetTaskStartTime();
+
+    perfetto::protos::pbzero::CurrentTask* current_task =
+        ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>()
+            ->set_current_task();
+    current_task->set_event_offset_from_task_start_time_us(
+        static_cast<uint64_t>(
+            (event_start_time - task_start_time).InMicroseconds()));
+    current_task->set_task_start_time_us(
+        static_cast<uint64_t>(task_start_time.since_origin().InMicroseconds()));
+  }
+}
+
+// static
+void TaskAnnotator::MaybeEmitDelayAndPolicy(perfetto::EventContext& ctx,
+                                            const PendingTask& task) {
+  if (task.delayed_run_time.is_null()) {
+    return;
+  }
+  auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
+  auto* annotator = event->set_chrome_task_annotator();
+  annotator->set_task_delay_us(static_cast<uint64_t>(
+      (task.delayed_run_time - task.queue_time).InMicroseconds()));
+  annotator->set_delay_policy(ToProtoEnum(task.delay_policy));
+}
+
+void TaskAnnotator::MaybeEmitIPCHash(perfetto::EventContext& ctx,
+                                     const PendingTask& task) const {
   static const uint8_t* toplevel_ipc_enabled =
       TRACE_EVENT_API_GET_CATEGORY_GROUP_ENABLED(
           TRACE_DISABLED_BY_DEFAULT("toplevel.ipc"));
@@ -265,10 +292,6 @@ void TaskAnnotator::MaybeEmitIPCHashAndDelay(perfetto::EventContext& ctx,
   auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
   auto* annotator = event->set_chrome_task_annotator();
   annotator->set_ipc_hash(task.ipc_hash);
-  if (!task.delayed_run_time.is_null()) {
-    annotator->set_task_delay_us(static_cast<uint64_t>(
-        (task.delayed_run_time - task.queue_time).InMicroseconds()));
-  }
 }
 #endif  //  BUILDFLAG(ENABLE_BASE_TRACING)
 
@@ -288,13 +311,8 @@ TaskAnnotator::ScopedSetIpcHash::ScopedSetIpcHash(
 
 // Static
 uint32_t TaskAnnotator::ScopedSetIpcHash::MD5HashMetricName(
-    base::StringPiece name) {
-  base::MD5Digest digest;
-  base::MD5Sum(name.data(), name.size(), &digest);
-  uint32_t value;
-  DCHECK_GE(sizeof(digest.a), sizeof(value));
-  memcpy(&value, digest.a, sizeof(value));
-  return base::NetToHost32(value);
+    std::string_view name) {
+  return HashMetricNameAs32Bits(name);
 }
 
 TaskAnnotator::ScopedSetIpcHash::~ScopedSetIpcHash() {
@@ -303,22 +321,25 @@ TaskAnnotator::ScopedSetIpcHash::~ScopedSetIpcHash() {
 
 TaskAnnotator::LongTaskTracker::LongTaskTracker(const TickClock* tick_clock,
                                                 PendingTask& pending_task,
-                                                TaskAnnotator* task_annotator)
+                                                TaskAnnotator* task_annotator,
+                                                TimeTicks task_start_time)
     : resetter_(&current_long_task_tracker, this),
       tick_clock_(tick_clock),
+      task_start_time_(task_start_time),
       pending_task_(pending_task),
-      task_annotator_(task_annotator) {
-  TRACE_EVENT_CATEGORY_GROUP_ENABLED("scheduler.long_tasks", &is_tracing_);
-  if (is_tracing_) {
-    task_start_time_ = tick_clock_->NowTicks();
-  }
-}
+      task_annotator_(task_annotator) {}
 
 TaskAnnotator::LongTaskTracker::~LongTaskTracker() {
   DCHECK_EQ(this, GetCurrentLongTaskTracker());
 
-  if (!is_tracing_)
+  // Use this to ensure that NowTicks() are not called
+  // unnecessarily.
+  bool is_tracing = false;
+  TRACE_EVENT_CATEGORY_GROUP_ENABLED("scheduler.long_tasks", &is_tracing);
+
+  if (!is_tracing) {
     return;
+  }
 
   task_end_time_ = tick_clock_->NowTicks();
   MaybeTraceInterestingTaskDetails();
@@ -327,7 +348,7 @@ TaskAnnotator::LongTaskTracker::~LongTaskTracker() {
     TRACE_EVENT_BEGIN("scheduler.long_tasks", "LongTaskTracker",
                       perfetto::Track::ThreadScoped(task_annotator_),
                       task_start_time_, [&](perfetto::EventContext& ctx) {
-                        TaskAnnotator::EmitTaskLocation(ctx, *pending_task_);
+                        TaskAnnotator::EmitTaskLocation(ctx, pending_task_);
                         EmitReceivedIPCDetails(ctx);
                       });
     TRACE_EVENT_END("scheduler.long_tasks",
@@ -365,7 +386,7 @@ void TaskAnnotator::LongTaskTracker::EmitReceivedIPCDetails(
   // base::ModuleCache::CreateModuleForAddress is not implemented for it.
   // Thus the below code must be included on a conditional basis.
   const auto ipc_method_address = reinterpret_cast<uintptr_t>(ipc_method_info_);
-  const absl::optional<size_t> location_iid =
+  const std::optional<size_t> location_iid =
       base::trace_event::InternedUnsymbolizedSourceLocation::Get(
           &ctx, ipc_method_address);
   if (location_iid) {
@@ -386,9 +407,9 @@ void TaskAnnotator::LongTaskTracker::MaybeTraceInterestingTaskDetails() {
     // start of the flow between task queue time and task execution start time.
     TRACE_EVENT_INSTANT("scheduler.long_tasks", "InterestingTask_QueueingTime",
                         perfetto::Track::ThreadScoped(task_annotator_),
-                        pending_task_->queue_time,
+                        pending_task_.queue_time,
                         perfetto::Flow::ProcessScoped(
-                            task_annotator_->GetTaskTraceID(*pending_task_)));
+                            task_annotator_->GetTaskTraceID(pending_task_)));
 
     // Record the equivalent of a top-level event with enough IPC information
     // to calculate the input to browser interval. This event will be the
@@ -398,7 +419,7 @@ void TaskAnnotator::LongTaskTracker::MaybeTraceInterestingTaskDetails() {
         perfetto::Track::ThreadScoped(task_annotator_), task_start_time_,
         [&](perfetto::EventContext& ctx) {
           perfetto::TerminatingFlow::ProcessScoped(
-              task_annotator_->GetTaskTraceID(*pending_task_))(ctx);
+              task_annotator_->GetTaskTraceID(pending_task_))(ctx);
           auto* info = ctx.event()->set_chrome_mojo_event_info();
           info->set_mojo_interface_tag(ipc_interface_name_);
         });

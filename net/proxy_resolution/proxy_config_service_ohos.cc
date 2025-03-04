@@ -11,7 +11,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  * Based on proxy_config_service_android.cc originally written by
  * Copyright (c) 2012 The Chromium Authors. All rights reserved.
  * Use of this source code is governed by a BSD-style license that can be
@@ -197,8 +197,10 @@ std::string GetProperty(const std::string& property) {
     return FixupProxyHostScheme(host);
   } else if (property == "http.proxyPort" || property == "https.proxyPort") {
     return std::to_string(port);
-  } else if (property == "http.nonProxyHosts" || property == "https.nonProxyHosts" ||
-      property == "ws.nonProxyHosts" || property == "wss.nonProxyHosts" ) {
+  } else if (property == "http.nonProxyHosts" ||
+             property == "https.nonProxyHosts" ||
+             property == "ws.nonProxyHosts" ||
+             property == "wss.nonProxyHosts") {
     return exclusion;
   }
 
@@ -456,7 +458,11 @@ class ProxyConfigServiceOHOS::Delegate
   bool has_proxy_override_;
 };
 
-void NetProxyEventCallback::Changed(const std::string& host, const uint16_t& port, const std::string& pacUrl, const std::vector<std::string>& exclusionList) {
+void NetProxyEventCallback::Changed(
+    const std::string& host,
+    const uint16_t& port,
+    const std::string& pacUrl,
+    const std::vector<std::string>& exclusionList) {
   if (service_) {
     service_->ProxySettingsChangedTo(host, port, pacUrl, exclusionList);
   }
@@ -470,7 +476,8 @@ ProxyConfigServiceOHOS::ProxyConfigServiceOHOS(
   event_callback_ = std::make_shared<NetProxyEventCallback>(this);
 
   OHOS::NWeb::OhosAdapterHelper::GetInstance()
-  .GetNetProxyInstance().RegNetProxyEvent(event_callback_);
+      .GetNetProxyInstance()
+      .RegNetProxyEvent(event_callback_);
 }
 
 ProxyConfigServiceOHOS::~ProxyConfigServiceOHOS() {}

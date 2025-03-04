@@ -26,12 +26,9 @@ CPU profiling is not to be confused with tracing or task profiling:
 # Profiling on Linux
 
 ## General checkout setup
-Profiling should always be done on a Release build, which has very similar performance characteristics to an official build. Make sure the following appears in your `args.gn` file:
+Profiling should preferably be done on an official build. Make sure the following appears in your `args.gn` file:
 
-    is_debug = false
-    blink_symbol_level = 2
-    symbol_level = 2
-    dcheck_always_on = false
+    is_official_build = true
 
 ## Profiling a process or thread for a defined period of time using perf
 
@@ -47,6 +44,10 @@ Run the perf tool like this:
 
 *** promo
 To adjust the sampling frequency, use the `-F` argument, e.g., `-F 1000`.
+***
+*** promo
+If this fails to collect any samples on a Cloudtop/VM (presumably while profiling tests),
+try adding `-e cpu-clock`.
 ***
 
 To stop profiling, press `Control-c` in the terminal window where `perf` is running. Run `pprof` to view the results, providing the path to the browser executable; e.g.:

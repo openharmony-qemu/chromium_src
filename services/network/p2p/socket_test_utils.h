@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef SERVICES_NETWORK_P2P_SOCKET_TEST_UTILS_H_
 #define SERVICES_NETWORK_P2P_SOCKET_TEST_UTILS_H_
 
@@ -58,7 +63,7 @@ class FakeP2PSocketDelegate : public P2PSocket::Delegate {
 
 class FakeSocket : public net::StreamSocket {
  public:
-  FakeSocket(std::string* written_data);
+  explicit FakeSocket(std::string* written_data);
   ~FakeSocket() override;
 
   void set_async_write(bool async_write) { async_write_ = async_write; }
@@ -87,7 +92,6 @@ class FakeSocket : public net::StreamSocket {
   int GetLocalAddress(net::IPEndPoint* address) const override;
   const net::NetLogWithSource& NetLog() const override;
   bool WasEverUsed() const override;
-  bool WasAlpnNegotiated() const override;
   net::NextProto GetNegotiatedProtocol() const override;
   bool GetSSLInfo(net::SSLInfo* ssl_info) override;
   int64_t GetTotalReceivedBytes() const override;
@@ -124,11 +128,16 @@ class FakeSocketClient : public mojom::P2PSocketClient {
   ~FakeSocketClient() override;
 
   // mojom::P2PSocketClient interface.
-  MOCK_METHOD2(SocketCreated,
-               void(const net::IPEndPoint&, const net::IPEndPoint&));
-  MOCK_METHOD1(SendComplete, void(const P2PSendPacketMetrics&));
-  MOCK_METHOD1(DataReceived,
-               void(const std::vector<network::mojom::P2PReceivedPacketPtr>));
+  MOCK_METHOD(void,
+              SocketCreated,
+              (const net::IPEndPoint&, const net::IPEndPoint&));
+  MOCK_METHOD(void, SendComplete, (const P2PSendPacketMetrics&));
+  MOCK_METHOD(void,
+              DataReceived,
+              (const std::vector<network::mojom::P2PReceivedPacketPtr>));
+  MOCK_METHOD(void,
+              SendBatchComplete,
+              (const std::vector<P2PSendPacketMetrics>&));
 
   bool connection_error() { return disconnect_error_; }
 

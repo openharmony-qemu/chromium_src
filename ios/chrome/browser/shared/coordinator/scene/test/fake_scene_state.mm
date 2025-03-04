@@ -4,20 +4,16 @@
 
 #import "ios/chrome/browser/shared/coordinator/scene/test/fake_scene_state.h"
 
-#import "base/mac/foundation_util.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/main/browser_provider.h"
-#import "ios/chrome/browser/main/test_browser.h"
+#import "base/apple/foundation_util.h"
 #import "ios/chrome/browser/shared/coordinator/scene/test/stub_browser_provider.h"
 #import "ios/chrome/browser/shared/coordinator/scene/test/stub_browser_provider_interface.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_opener.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_opener.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface FakeSceneState ()
 // Redeclare interface provider readwrite.
@@ -36,28 +32,30 @@
 @synthesize browserProviderInterface = _browserProviderInterface;
 
 @synthesize window = _window;
+@synthesize appState = _appState;
 
 - (instancetype)initWithAppState:(AppState*)appState
-                    browserState:(ChromeBrowserState*)browserState {
-  if (self = [super initWithAppState:appState]) {
-    DCHECK(browserState);
-    DCHECK(!browserState->IsOffTheRecord());
+                         profile:(ProfileIOS*)profile {
+  if ((self = [super initWithAppState:appState])) {
+    DCHECK(profile);
+    DCHECK(!profile->IsOffTheRecord());
     self.activationLevel = SceneActivationLevelForegroundInactive;
     self.browserProviderInterface = [[StubBrowserProviderInterface alloc] init];
+    self.appState = appState;
 
-    _browser = std::make_unique<TestBrowser>(browserState);
-    base::mac::ObjCCastStrict<StubBrowserProvider>(
+    _browser = std::make_unique<TestBrowser>(profile, self);
+    base::apple::ObjCCastStrict<StubBrowserProvider>(
         self.browserProviderInterface.mainBrowserProvider)
         .browser = _browser.get();
 
-    _inactive_browser = std::make_unique<TestBrowser>(browserState);
-    base::mac::ObjCCastStrict<StubBrowserProvider>(
+    _inactive_browser = std::make_unique<TestBrowser>(profile, self);
+    base::apple::ObjCCastStrict<StubBrowserProvider>(
         self.browserProviderInterface.mainBrowserProvider)
         .inactiveBrowser = _inactive_browser.get();
 
-    _incognito_browser = std::make_unique<TestBrowser>(
-        browserState->GetOffTheRecordChromeBrowserState());
-    base::mac::ObjCCastStrict<StubBrowserProvider>(
+    _incognito_browser =
+        std::make_unique<TestBrowser>(profile->GetOffTheRecordProfile(), self);
+    base::apple::ObjCCastStrict<StubBrowserProvider>(
         self.browserProviderInterface.incognitoBrowserProvider)
         .browser = _incognito_browser.get();
   }
@@ -65,12 +63,10 @@
 }
 
 + (NSArray<FakeSceneState*>*)sceneArrayWithCount:(int)count
-                                    browserState:
-                                        (ChromeBrowserState*)browserState {
+                                         profile:(ProfileIOS*)profile {
   NSMutableArray<SceneState*>* scenes = [NSMutableArray array];
   for (int i = 0; i < count; i++) {
-    [scenes addObject:[[self alloc] initWithAppState:nil
-                                        browserState:browserState]];
+    [scenes addObject:[[self alloc] initWithAppState:nil profile:profile]];
   }
   return [scenes copy];
 }
@@ -81,9 +77,7 @@
   WebStateList* web_state_list =
       self.browserProviderInterface.mainBrowserProvider.browser
           ->GetWebStateList();
-  web_state_list->InsertWebState(
-      WebStateList::kInvalidIndex, std::move(test_web_state),
-      WebStateList::INSERT_NO_FLAGS, WebStateOpener());
+  web_state_list->InsertWebState(std::move(test_web_state));
 }
 
 - (void)appendWebStatesWithURL:(const GURL)URL count:(int)count {

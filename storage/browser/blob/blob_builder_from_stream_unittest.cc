@@ -84,7 +84,6 @@ class BlobBuilderFromStreamTestWithDelayedLimits
         return actual_size / 2;
     }
     NOTREACHED();
-    return 0;
   }
 
   std::unique_ptr<BlobDataHandle> BuildFromString(
@@ -284,7 +283,7 @@ TEST_P(BlobBuilderFromStreamTest, MediumStream) {
   auto data_span = base::as_bytes(base::make_span(kData));
   if (GetParam() == LengthHintTestType::kUnknownSize) {
     VerifyBlobContents(
-        data_span.subspan(0, 2 * kTestBlobStorageMaxBytesDataItemSize),
+        data_span.first(2 * kTestBlobStorageMaxBytesDataItemSize),
         data_span.subspan(2 * kTestBlobStorageMaxBytesDataItemSize),
         *result->CreateSnapshot());
   } else {
@@ -326,7 +325,7 @@ TEST_P(BlobBuilderFromStreamTest, LargeStream) {
   auto data_span = base::as_bytes(base::make_span(kData));
   if (GetParam() == LengthHintTestType::kUnknownSize) {
     VerifyBlobContents(
-        data_span.subspan(0, 2 * kTestBlobStorageMaxBytesDataItemSize),
+        data_span.first(2 * kTestBlobStorageMaxBytesDataItemSize),
         data_span.subspan(2 * kTestBlobStorageMaxBytesDataItemSize),
         *result->CreateSnapshot());
   } else {

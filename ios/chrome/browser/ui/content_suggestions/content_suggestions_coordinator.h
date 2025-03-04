@@ -11,14 +11,12 @@ namespace web {
 class WebState;
 }
 
-@class ContentSuggestionsMediator;
+@protocol ContentSuggestionsDelegate;
 @class ContentSuggestionsViewController;
-@protocol FeedDelegate;
-@protocol NewTabPageControllerDelegate;
-@protocol NewTabPageDelegate;
-@protocol NewTabPageMetricsDelegate;
-@protocol ThumbStripSupporting;
-@class ViewRevealingVerticalPanHandler;
+@protocol HomeCustomizationDelegate;
+@protocol HomeStartDataSource;
+@class MagicStackCollectionViewController;
+@protocol NewTabPageActionsDelegate;
 
 // Coordinator to manage the Suggestions UI via a
 // ContentSuggestionsViewController.
@@ -27,8 +25,6 @@ class WebState;
 // Webstate associated with this coordinator.
 @property(nonatomic, assign) web::WebState* webState;
 
-@property(nonatomic, weak) id<NewTabPageControllerDelegate> toolbarDelegate;
-
 // YES if the coordinator has started. If YES, start is a no-op.
 @property(nonatomic, readonly) BOOL started;
 
@@ -36,32 +32,24 @@ class WebState;
 @property(nonatomic, strong, readonly)
     ContentSuggestionsViewController* viewController;
 
-// The mediator used by this coordinator.
-// TODO(crbug.com/1403298): Replace this with a delegate to avoid exposing this.
+// The Magic Stack UICollectionView.
 @property(nonatomic, strong, readonly)
-    ContentSuggestionsMediator* contentSuggestionsMediator;
+    MagicStackCollectionViewController* magicStackCollectionView;
 
-// Allows for the in-flight enabling/disabling of the thumb strip.
-@property(nonatomic, weak, readonly) id<ThumbStripSupporting>
-    thumbStripSupporting;
+// Delegate used to communicate Content Suggestions events to the delegate.
+@property(nonatomic, weak) id<ContentSuggestionsDelegate> delegate;
 
-// Delegate for NTP related actions.
-@property(nonatomic, weak) id<NewTabPageDelegate> NTPDelegate;
+// Delegate for reporting content suggestions actions to the NTP.
+@property(nonatomic, weak) id<NewTabPageActionsDelegate> NTPActionsDelegate;
 
-// Delegate used to communicate to communicate events to the feed.
-@property(nonatomic, weak) id<FeedDelegate> feedDelegate;
+// Data Source for the Home Start state.
+@property(nonatomic, weak) id<HomeStartDataSource> homeStartDataSource;
 
-// Delegate for reporting content suggestions actions to the NTP metrics
-// recorder.
-@property(nonatomic, weak) id<NewTabPageMetricsDelegate> NTPMetricsDelegate;
+// Delegate for the Home Customization menu.
+@property(nonatomic, weak) id<HomeCustomizationDelegate> customizationDelegate;
 
-// Reloads the suggestions.
-- (void)reload;
-
-// Configure Content Suggestions if showing the Start Surface. NOTE: this should
-// only be called once for every Start configuration. Calling it multiple times
-// in sequence can lead to unpredictable outcomes.
-- (void)configureStartSurfaceIfNeeded;
+// Refreshes the contents owned by this coordinator.
+- (void)refresh;
 
 @end
 

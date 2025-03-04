@@ -12,7 +12,6 @@
 #include "base/test/bind.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "cc/metrics/frame_sequence_metrics.h"
 #include "ui/compositor/compositor_observer.h"
 #include "ui/compositor/layer.h"
@@ -94,11 +93,23 @@ class TestCompositorMonitor : public ui::CompositorObserver {
   }
 
  private:
-  const base::raw_ptr<ui::Compositor> compositor_;
+  const raw_ptr<ui::Compositor> compositor_;
   bool animations_running_ = false;
   bool waiting_for_did_present_compositor_frame_ = false;
   std::unique_ptr<base::RunLoop> run_loop_;
 };
+
+TotalAnimationThroughputReporter::ReportOnceCallback IgnoreTimestamps(
+    ThroughputReportChecker::ReportOnceCallback original) {
+  return base::BindOnce(
+      [](ThroughputReportChecker::ReportOnceCallback original,
+         const cc::FrameSequenceMetrics::CustomReportData& data,
+         base::TimeTicks first_animation_started_at,
+         base::TimeTicks last_animation_finished_at) {
+        std::move(original).Run(data);
+      },
+      std::move(original));
+}
 
 }  // namespace
 
@@ -152,7 +163,7 @@ TEST_F(TotalAnimationThroughputReporterTest, StopAnimation) {
 }
 
 // Tests the longest animation will trigger the report.
-// TODO(crbug.com/1217783): Test is flaky.
+// TODO(crbug.com/40771278): Test is flaky.
 TEST_F(TotalAnimationThroughputReporterTest, DISABLED_MultipleAnimations) {
   Layer layer1;
   layer1.SetOpacity(0.5f);
@@ -209,7 +220,7 @@ TEST_F(TotalAnimationThroughputReporterTest, MultipleAnimationsOnSingleLayer) {
 }
 
 // Tests adding new animation will extends the duration.
-// TODO(crbug.com/1216715): Test is flaky.
+// TODO(crbug.com/40770648): Test is flaky.
 TEST_F(TotalAnimationThroughputReporterTest,
        DISABLED_AddAnimationWhileAnimating) {
   Layer layer1;
@@ -367,7 +378,8 @@ TEST_F(TotalAnimationThroughputReporterTest, OnceReporter) {
 
   ThroughputReportChecker checker(this);
   TotalAnimationThroughputReporter reporter(
-      compositor(), checker.once_callback(), /*should_delete=*/false);
+      compositor(), IgnoreTimestamps(checker.once_callback()),
+      /*should_delete=*/false);
   auto scoped_blocker = reporter.NewScopedBlocker();
 
   // Make sure the TotalAnimationThroughputReporter removes itself
@@ -435,9 +447,8 @@ TEST_F(TotalAnimationThroughputReporterTest, OnceReporterShouldDelete) {
   TotalAnimationThroughputReporter* reporter = new DeleteTestReporter(
       compositor(),
       base::BindLambdaForTesting(
-          [&](const cc::FrameSequenceMetrics::CustomReportData&) {
-            run_loop.Quit();
-          }),
+          [&](const cc::FrameSequenceMetrics::CustomReportData&,
+              base::TimeTicks, base::TimeTicks) { run_loop.Quit(); }),
       &deleted);
   auto scoped_blocker = reporter->NewScopedBlocker();
 
@@ -486,8 +497,9 @@ TEST_F(TotalAnimationThroughputReporterTest, ThreadCheck) {
             std::move(once_callback).Run(data);
           });
 
-  TotalAnimationThroughputReporter reporter(c, std::move(callback),
-                                            /*should_delete=*/false);
+  TotalAnimationThroughputReporter reporter(
+      c, IgnoreTimestamps(std::move(callback)),
+      /*should_delete=*/false);
   auto scoped_blocker = reporter.NewScopedBlocker();
 
   // Report data for animation of opacity goes to 1.

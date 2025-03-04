@@ -9,6 +9,7 @@
 #include <wrl/client.h>
 
 #include "base/component_export.h"
+#include "third_party/iaccessible2/ia2_api_all.h"
 #include "ui/accessibility/platform/inspect/ax_tree_formatter_base.h"
 
 namespace ui {
@@ -25,9 +26,8 @@ class COMPONENT_EXPORT(AX_PLATFORM) AXTreeFormatterWin
 
   base::Value::Dict BuildNode(AXPlatformNodeDelegate* node) const override;
 
-  std::string EvaluateScript(
-      const AXTreeSelector& selector,
-      const ui::AXInspectScenario& scenario) const override;
+  std::string EvaluateScript(const AXTreeSelector& selector,
+                             const AXInspectScenario& scenario) const override;
   std::string EvaluateScript(
       AXPlatformNodeDelegate* root,
       const std::vector<AXScriptInstruction>& instructions,
@@ -66,6 +66,10 @@ class COMPONENT_EXPORT(AX_PLATFORM) AXTreeFormatterWin
                               base::Value::Dict* dict) const;
   void AddIA2HypertextProperties(const Microsoft::WRL::ComPtr<IAccessible>,
                                  base::Value::Dict* dict) const;
+  void AddIA2RelationProperties(const Microsoft::WRL::ComPtr<IAccessible>,
+                                base::Value::Dict* dict) const;
+  void AddIA2RelationProperty(const Microsoft::WRL::ComPtr<IAccessibleRelation>,
+                              base::Value::Dict* dict) const;
   void AddIA2TextProperties(const Microsoft::WRL::ComPtr<IAccessible>,
                             base::Value::Dict* dict) const;
   void AddIA2TableProperties(const Microsoft::WRL::ComPtr<IAccessible>,

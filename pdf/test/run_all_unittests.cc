@@ -14,12 +14,12 @@
 #include "base/test/test_suite.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/public/cpp/bindings/binder_map.h"
+#include "pdf/test/test_helpers.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/platform/scheduler/test/renderer_scheduler_test_support.h"
 #include "third_party/blink/public/platform/scheduler/web_thread_scheduler.h"
 #include "third_party/blink/public/web/blink.h"
-#include "third_party/skia/include/core/SkGraphics.h"
 #include "tools/v8_context_snapshot/buildflags.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/base/ui_base_paths.h"
@@ -77,15 +77,15 @@ class PdfTestSuite final : public base::TestSuite {
     platform_ = std::make_unique<BlinkPlatformForTesting>();
 
     mojo::BinderMap binders;
-    blink::Initialize(platform_.get(), &binders,
-                      platform_->GetMainThreadScheduler());
-
+    blink::InitializeWithoutIsolateForTesting(
+        platform_.get(), &binders, platform_->GetMainThreadScheduler());
+    v8::Isolate* isolate = blink::CreateMainThreadIsolate();
+    chrome_pdf::SetBlinkIsolate(isolate);
     InitializeResourceBundle();
-
-    SkGraphics::SetPathAnalyticAADecider([](const SkPath&) { return true; });
   }
 
   void Shutdown() override {
+    chrome_pdf::SetBlinkIsolate(nullptr);
     platform_.reset();
     ui::ResourceBundle::CleanupSharedInstance();
     base::TestSuite::Shutdown();
@@ -94,12 +94,12 @@ class PdfTestSuite final : public base::TestSuite {
  private:
   void InitializeResourceBundle() {
     ui::RegisterPathProvider();
-    base::FilePath ui_test_pak_path;
-    ASSERT_TRUE(base::PathService::Get(ui::UI_TEST_PAK, &ui_test_pak_path));
+    base::FilePath ui_test_pak_path =
+        base::PathService::CheckedGet(ui::UI_TEST_PAK);
     ui::ResourceBundle::InitSharedInstanceWithPakPath(ui_test_pak_path);
 
-    base::FilePath pdf_tests_pak_path;
-    ASSERT_TRUE(base::PathService::Get(base::DIR_ASSETS, &pdf_tests_pak_path));
+    base::FilePath pdf_tests_pak_path =
+        base::PathService::CheckedGet(base::DIR_ASSETS);
     pdf_tests_pak_path =
         pdf_tests_pak_path.AppendASCII("pdf_tests_resources.pak");
     ui::ResourceBundle::GetSharedInstance().AddDataPackFromPath(

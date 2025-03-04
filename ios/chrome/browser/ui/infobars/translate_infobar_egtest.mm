@@ -7,23 +7,23 @@
 #import <memory>
 #import <string>
 
+#import "base/ios/ios_util.h"
 #import "base/strings/stringprintf.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "components/translate/core/browser/translate_pref_names.h"
 #import "components/translate/core/common/translate_constants.h"
 #import "components/translate/core/common/translate_util.h"
-#import "ios/chrome/browser/translate/translate_app_interface.h"
-#import "ios/chrome/browser/ui/badges/badge_constants.h"
+#import "ios/chrome/browser/badges/ui_bundled/badge_constants.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
+#import "ios/chrome/browser/translate/model/translate_app_interface.h"
 #import "ios/chrome/browser/ui/infobars/banners/infobar_banner_constants.h"
 #import "ios/chrome/browser/ui/infobars/infobar_constants.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_modal_constants.h"
 #import "ios/chrome/browser/ui/infobars/modals/infobar_translate_modal_constants.h"
 #import "ios/chrome/browser/ui/popup_menu/popup_menu_constants.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
-#import "ios/chrome/test/earl_grey/chrome_earl_grey_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/web_http_server_chrome_test_case.h"
@@ -37,15 +37,17 @@
 #import "ui/base/l10n/l10n_util_mac.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::test::ios::WaitUntilConditionOrTimeout;
 using base::test::ios::kWaitForUIElementTimeout;
 using chrome_test_util::WebStateScrollViewMatcher;
 
 namespace {
+
+// Infobar requires language detection to happen and may take a little longer
+// than kWaitForUIElementTimeout on laggy devices (like test bots).
+// Set a longer timeout.
+constexpr base::TimeDelta kWaitForUIElement3xTimeout =
+    3 * kWaitForUIElementTimeout;
 
 // Paragraph height height for test pages. This must be large enough to trigger
 // the fullscreen mode.
@@ -95,7 +97,7 @@ const char kMetaItContentLanguage[] =
     "<meta http-equiv=\"content-language\" content=\"it\">";
 
 // Various link components.
-// TODO(crbug.com/729195): Re-write the hardcoded address.
+// TODO(crbug.com/41322998): Re-write the hardcoded address.
 const char kHttpServerDomain[] = "127.0.0.1";
 const char kLanguagePath[] = "/languagepath/";
 const char kLinkPath[] = "/linkpath/";
@@ -106,7 +108,33 @@ const char kFrenchPageWithLinkPath[] = "/frenchpagewithlink/";
 const char kFrenchPageNoTranslateContent[] = "/frenchpagenotranslatecontent/";
 const char kFrenchPageNoTranslateValue[] = "/frenchpagenotranslatevalue/";
 const char kTranslateScriptPath[] = "/translatescript/";
-const char kTranslateScript[] = "Fake_Translate_Script";
+// Fakes the translate element script by adding a button with the 'Translated'
+// label to the web page. The test can check it to determine if the page was
+// translated. See translate.js for details.
+const char kTranslateScript[] =
+    "var google = {"
+    "  translate: {"
+    "    TranslateService: function(config) {"
+    "      return {"
+    "        isAvailable: function() {"
+    "          return true;"
+    "        },"
+    "        translatePage: function(source, target, callback) {"
+    "          myButton = document.createElement('button');"
+    "          myButton.setAttribute('id', 'translated-button');"
+    "          myButton.appendChild(document.createTextNode('Translated'));"
+    "          document.body.prepend(myButton);"
+    "          setTimeout(callback, 1.0, 1.0, true)"
+    "        },"
+    "        restore: function() {"
+    "          myButton = document.getElementById('translated-button');"
+    "          myButton.remove();"
+    "        }"
+    "      }"
+    "    }"
+    "  }"
+    "};"
+    "setTimeout(cr.googleTranslate.onTranslateElementLoad, 1.0);";
 
 // Body text for /languagepath/.
 const char kLanguagePathText[] = "123456";
@@ -247,19 +275,6 @@ void TestResponseProvider::GetLanguageResponse(
 
 @implementation TranslateInfobarTestCase
 
-- (AppLaunchConfiguration)appConfigurationForTestCase {
-  AppLaunchConfiguration config;
-  if ([self isRunningTest:@selector
-            (testLanguageDetectionDisabledWithForceTranslate)]) {
-    config.features_enabled.push_back(translate::kIOSForceTranslateEnabled);
-  }
-  if ([self isRunningTest:@selector
-            (testLanguageDetectionDisabledWithoutForceTranslate)]) {
-    config.features_disabled.push_back(translate::kIOSForceTranslateEnabled);
-  }
-  return config;
-}
-
 - (void)setUp {
   [super setUp];
 
@@ -271,16 +286,16 @@ void TestResponseProvider::GetLanguageResponse(
   [TranslateAppInterface setUpWithScriptServer:translateScriptSwitchValue];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   [TranslateAppInterface tearDown];
-  [super tearDown];
+  [super tearDownHelper];
 }
 
 #pragma mark - Test Cases
 
 // Tests that different language signals are detected correctly.
 - (void)testLanguageDetection {
-// TODO(crbug.com/1235979): test failing on ipad device
+// TODO(crbug.com/40192556): test failing on ipad device
 #if !TARGET_IPHONE_SIMULATOR
   if ([ChromeEarlGrey isIPadIdiom]) {
     EARL_GREY_TEST_SKIPPED(@"This test doesn't pass on iPad device.");
@@ -348,7 +363,8 @@ void TestResponseProvider::GetLanguageResponse(
 }
 
 // Tests that history.pushState triggers a new detection.
-- (void)testLanguageDetectionWithPushState {
+// TODO(crbug.com/40910864): This test is flaky.
+- (void)FLAKY_testLanguageDetectionWithPushState {
   const GURL URL = web::test::HttpServer::MakeUrl(
       "http://scenarioLanguageDetectionPushState");
   std::map<GURL, std::string> responses;
@@ -493,8 +509,8 @@ void TestResponseProvider::GetLanguageResponse(
 }
 
 // Tests that language detection is performed but no infobar is triggered when
-// translate is disabled but force translate is on.
-- (void)testLanguageDetectionDisabledWithForceTranslate {
+// translate is disabled.
+- (void)testLanguageDetectionDisabled {
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
   web::test::SetUpHttpServer(std::move(provider));
 
@@ -503,10 +519,8 @@ void TestResponseProvider::GetLanguageResponse(
       base::StringPrintf("http://%s", kFrenchPagePath));
 
   // Disable translate.
-  [ChromeEarlGreyAppInterface
-      setBoolValue:NO
-       forUserPref:base::SysUTF8ToNSString(
-                       translate::prefs::kOfferTranslateEnabled)];
+  [ChromeEarlGrey setBoolValue:NO
+                   forUserPref:translate::prefs::kOfferTranslateEnabled];
 
   // Open some webpage.
   [ChromeEarlGrey loadURL:URL];
@@ -520,44 +534,18 @@ void TestResponseProvider::GetLanguageResponse(
                   @"Before Translate banner was found");
 
   // Enable translate.
-  [ChromeEarlGreyAppInterface
-      setBoolValue:YES
-       forUserPref:base::SysUTF8ToNSString(
-                       translate::prefs::kOfferTranslateEnabled)];
-}
-
-// Tests that language detection is not performed when translate is disabled
-// with force translate disabled.
-- (void)testLanguageDetectionDisabledWithoutForceTranslate {
-  const GURL URL = web::test::HttpServer::MakeUrl(
-      "http://scenarioLanguageDetectionDisabled");
-  std::map<GURL, std::string> responses;
-  // A page with some text.
-  responses[URL] = "<html><body>Hello world!</body></html>";
-  web::test::SetUpSimpleHttpServer(responses);
-
-  // Disable translate.
-  [ChromeEarlGreyAppInterface
-      setBoolValue:NO
-       forUserPref:base::SysUTF8ToNSString(
-                       translate::prefs::kOfferTranslateEnabled)];
-
-  // Open some webpage.
-  [ChromeEarlGrey loadURL:URL];
-  // Check that no language has been detected.
-  GREYAssertFalse([self waitForLanguageDetection],
-                  @"A language has been detected");
-
-  // Enable translate.
-  [ChromeEarlGreyAppInterface
-      setBoolValue:YES
-       forUserPref:base::SysUTF8ToNSString(
-                       translate::prefs::kOfferTranslateEnabled)];
+  [ChromeEarlGrey setBoolValue:YES
+                   forUserPref:translate::prefs::kOfferTranslateEnabled];
 }
 
 // Tests that the infobar banner persists as the page scrolls mode and that the
 // banner can be dimissed.
 - (void)testInfobarShowHideDismiss {
+  // TODO(crbug.com/334867767): Test fails when run on iOS 17 iPad simulator.
+  if (base::ios::IsRunningOnIOS17OrLater() && [ChromeEarlGrey isIPadIdiom]) {
+    EARL_GREY_TEST_DISABLED(@"Fails on iOS 17 iPad simulator.");
+  }
+
   // Start the HTTP server.
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
   web::test::SetUpHttpServer(std::move(provider));
@@ -680,6 +668,10 @@ void TestResponseProvider::GetLanguageResponse(
 // Test that the Show Original banner dismisses with a longer delay since it is
 // a high priority banner.
 - (void)testInfobarAcceptedBannerDismissWithHighPriorityDelay {
+  // TODO(b/338250535): Test is failing on iPad simulator.
+  if ([ChromeEarlGrey isIPadIdiom]) {
+    EARL_GREY_TEST_DISABLED(@"Fails on iPad.");
+  }
   // Start the HTTP server.
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
   web::test::SetUpHttpServer(std::move(provider));
@@ -709,8 +701,8 @@ void TestResponseProvider::GetLanguageResponse(
                 grey_allOf(
                     grey_accessibilityID(
                         kInfobarBannerLabelsStackViewIdentifier),
-                    grey_accessibilityLabel(l10n_util::GetNSString(
-                        IDS_IOS_TRANSLATE_INFOBAR_AFTER_TRANSLATE_BANNER_TITLE)),
+                    grey_descendant(grey_text(l10n_util::GetNSString(
+                        IDS_IOS_TRANSLATE_INFOBAR_AFTER_TRANSLATE_BANNER_TITLE))),
                     nil)] assertWithMatcher:grey_nil() error:&error];
         return error == nil;
       });
@@ -736,9 +728,6 @@ void TestResponseProvider::GetLanguageResponse(
   [TranslateAppInterface tearDownLanguageDetectionTabHelperObserver];
   [ChromeEarlGrey openNewIncognitoTab];
   [ChromeEarlGrey loadURL:URL];
-  // Since current web state has changed to Incognito, a new fake translation
-  // manager has to be set up for the rest of this test.
-  [TranslateAppInterface setUpFakeJSTranslateManagerInCurrentTab];
 
   // Check Banner was presented.
   GREYAssertTrue([self isBeforeTranslateBannerVisible],
@@ -772,9 +761,8 @@ void TestResponseProvider::GetLanguageResponse(
       assertWithMatcher:grey_notNil()];
 }
 
-// Tests that the target language can be changed. TODO(crbug.com/1046629):
+// Tests that the target language can be changed. TODO(crbug.com/40670920):
 // implement test for changing source language.
-// TODO(crbug.com/1116012): This test is failing flaky on iOS14.
 - (void)testInfobarChangeTargetLanguage {
   // Start the HTTP server.
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
@@ -824,6 +812,7 @@ void TestResponseProvider::GetLanguageResponse(
 
 // Tests that the "Always Translate" options can be toggled and the prefs are
 // updated accordingly.
+// TODO(crbug.com/334867767) Fix and reenable tests.
 - (void)testInfobarAlwaysTranslate {
   // Start the HTTP server.
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
@@ -948,6 +937,11 @@ void TestResponseProvider::GetLanguageResponse(
 // Tests that the "Never Translate this site" option dismisses the infobar and
 // updates the prefs accordingly.
 - (void)testInfobarNeverTranslateSite {
+  // TODO(crbug.com/334867767): Test fails when run on iOS 17 iPad simulator.
+  if (base::ios::IsRunningOnIOS17OrLater() && [ChromeEarlGrey isIPadIdiom]) {
+    EARL_GREY_TEST_DISABLED(@"Fails on iOS 17 iPad simulator.");
+  }
+
   // Start the HTTP server.
   std::unique_ptr<web::DataResponseProvider> provider(new TestResponseProvider);
   web::test::SetUpHttpServer(std::move(provider));
@@ -1120,14 +1114,14 @@ void TestResponseProvider::GetLanguageResponse(
 #pragma mark - Utility methods
 
 - (BOOL)isBeforeTranslateBannerVisible {
-  BOOL bannerShown = WaitUntilConditionOrTimeout(kWaitForUIElementTimeout, ^{
+  BOOL bannerShown = WaitUntilConditionOrTimeout(kWaitForUIElement3xTimeout, ^{
     NSError* error = nil;
     [[EarlGrey
         selectElementWithMatcher:
             grey_allOf(
                 grey_accessibilityID(kInfobarBannerLabelsStackViewIdentifier),
-                grey_accessibilityLabel(l10n_util::GetNSString(
-                    IDS_IOS_TRANSLATE_INFOBAR_BEFORE_TRANSLATE_BANNER_TITLE)),
+                grey_descendant(grey_text(l10n_util::GetNSString(
+                    IDS_IOS_TRANSLATE_INFOBAR_BEFORE_TRANSLATE_BANNER_TITLE))),
                 nil)] assertWithMatcher:grey_notNil() error:&error];
     return error == nil;
   });
@@ -1137,15 +1131,15 @@ void TestResponseProvider::GetLanguageResponse(
 
 - (BOOL)isAfterTranslateBannerVisible {
   BOOL showOriginalBannerShown =
-      WaitUntilConditionOrTimeout(kWaitForUIElementTimeout, ^{
+      WaitUntilConditionOrTimeout(kWaitForUIElement3xTimeout, ^{
         NSError* error = nil;
         [[EarlGrey
             selectElementWithMatcher:
                 grey_allOf(
                     grey_accessibilityID(
                         kInfobarBannerLabelsStackViewIdentifier),
-                    grey_accessibilityLabel(l10n_util::GetNSString(
-                        IDS_IOS_TRANSLATE_INFOBAR_AFTER_TRANSLATE_BANNER_TITLE)),
+                    grey_descendant(grey_text(l10n_util::GetNSString(
+                        IDS_IOS_TRANSLATE_INFOBAR_AFTER_TRANSLATE_BANNER_TITLE))),
                     nil)] assertWithMatcher:grey_notNil() error:&error];
         return error == nil;
       });
@@ -1165,7 +1159,7 @@ void TestResponseProvider::GetLanguageResponse(
 // Returns whether a language has been detected on the current page. Returns
 // false if a timeout was detected while waiting for language detection.
 - (BOOL)waitForLanguageDetection {
-  bool detected = WaitUntilConditionOrTimeout(kWaitForUIElementTimeout, ^{
+  bool detected = WaitUntilConditionOrTimeout(kWaitForUIElement3xTimeout, ^{
     return [TranslateAppInterface isLanguageDetected];
   });
   return detected;

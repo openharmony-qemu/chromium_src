@@ -51,6 +51,7 @@ static_library("storage_monitor") {
       "DiskArbitration.framework",
       "Foundation.framework",
       "ImageCaptureCore.framework",
+      "UniformTypeIdentifiers.framework",
     ]
   } else if (is_chromeos_ash) {
     # For Chrome OS, |is_linux| is also true. Put this in an else-if block above
@@ -73,7 +74,7 @@ static_library("storage_monitor") {
       ]
       deps += [ "//services/device/public/mojom" ]
     }
-  } else if (is_linux || is_chromeos_lacros || is_ohos) {
+  } else if (is_linux || is_chromeos_lacros) {
     if (use_udev) {
       sources += [
         "mtab_watcher_linux.cc",
@@ -98,6 +99,10 @@ static_library("storage_monitor") {
 
   if (is_fuchsia) {
     sources += [ "storage_monitor_fuchsia.cc" ]
+  }
+
+  if (is_ohos) {
+    sources += [ "storage_monitor_ohos.cc" ]
   }
 }
 
@@ -165,6 +170,7 @@ source_set("unit_tests") {
       "image_capture_device_manager_unittest.mm",
       "storage_monitor_mac_unittest.mm",
     ]
+    frameworks = [ "UniformTypeIdentifiers.framework" ]
   }
 
   if (is_chromeos_ash) {

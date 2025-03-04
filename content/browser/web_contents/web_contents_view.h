@@ -12,8 +12,13 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_widget_types.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace content {
 
+class BackForwardTransitionAnimationManager;
 class RenderViewHost;
 class RenderViewHostDelegateView;
 class RenderWidgetHost;
@@ -67,7 +72,7 @@ class CONTENT_EXPORT WebContentsView {
   // Returns the current drop data, if any.
   virtual DropData* GetDropData() const = 0;
 
-  // Get the bounds of the View, relative to the parent.
+  // Get the bounds of the View in the global screen position.
   virtual gfx::Rect GetViewBounds() const = 0;
 
   virtual void CreateView(gfx::NativeView context) = 0;
@@ -120,9 +125,22 @@ class CONTENT_EXPORT WebContentsView {
   // web contents.
   virtual void UpdateWindowControlsOverlay(const gfx::Rect& bounding_rect) = 0;
 
-#if defined(OHOS_EX_TOPCONTROLS)
+  // Returns an animation manager that displays a preview of the history page
+  // during a session history navigation gesture. Only non-null if
+  // `features::kBackForwardTransitions` is enabled for the supported platform.
+  virtual BackForwardTransitionAnimationManager*
+  GetBackForwardTransitionAnimationManager() = 0;
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  virtual void DidStopRefresh() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   virtual void UpdateBrowserControlsHeight(int, bool) {}
 #endif
+
+  // Reset the above animation manager.
+  virtual void DestroyBackForwardTransitionAnimationManager() = 0;
 };
 
 // Factory function to create `WebContentsView`s. Implemented in the platform
@@ -130,7 +148,7 @@ class CONTENT_EXPORT WebContentsView {
 std::unique_ptr<WebContentsView> CreateWebContentsView(
     WebContentsImpl* web_contents,
     std::unique_ptr<WebContentsViewDelegate> delegate,
-    RenderViewHostDelegateView** render_view_host_delegate_view);
+    raw_ptr<RenderViewHostDelegateView>* render_view_host_delegate_view);
 
 }  // namespace content
 

@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
@@ -37,8 +38,8 @@
 #if BUILDFLAG(ENABLE_VULKAN) && (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA))
 #include "ui/ozone/platform/headless/vulkan_implementation_headless.h"
 #endif
-
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+// NativePixmapDmaBuf
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #include "ui/ozone/common/native_pixmap_egl_binding.h"
 #endif
@@ -60,9 +61,10 @@ base::FilePath GetPathForWidget(const base::FilePath& base_path,
 
 void WriteDataToFile(const base::FilePath& location, const SkBitmap& bitmap) {
   DCHECK(!location.empty());
-  std::vector<unsigned char> png_data;
-  gfx::PNGCodec::FastEncodeBGRASkBitmap(bitmap, true, &png_data);
-  if (!base::WriteFile(location, png_data)) {
+  std::optional<std::vector<uint8_t>> png_data =
+      gfx::PNGCodec::FastEncodeBGRASkBitmap(bitmap,
+                                            /*discard_transparency=*/true);
+  if (!png_data || !base::WriteFile(location, png_data.value())) {
     static bool logged_once = false;
     LOG_IF(ERROR, !logged_once)
         << "Failed to write frame to file. "
@@ -80,10 +82,10 @@ class FileSurface : public SurfaceOzoneCanvas {
   // SurfaceOzoneCanvas overrides:
   void ResizeCanvas(const gfx::Size& viewport_size, float scale) override {
     SkSurfaceProps props = skia::LegacyDisplayGlobals::GetSkSurfaceProps();
-    surface_ = SkSurface::MakeRaster(
-        SkImageInfo::MakeN32Premul(viewport_size.width(),
-                                   viewport_size.height()),
-        &props);
+    surface_ =
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(viewport_size.width(),
+                                                      viewport_size.height()),
+                           &props);
   }
   SkCanvas* GetCanvas() override { return surface_->getCanvas(); }
   void PresentCanvas(const gfx::Rect& damage) override {
@@ -172,7 +174,7 @@ class TestPixmap : public gfx::NativePixmap {
       std::vector<gfx::GpuFence> release_fences) override {
     return true;
   }
-  gfx::NativePixmapHandle ExportHandle() override {
+  gfx::NativePixmapHandle ExportHandle() const override {
     return gfx::NativePixmapHandle();
   }
 
@@ -192,10 +194,12 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
   ~GLOzoneEGLHeadless() override = default;
 
   // GLOzone:
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
-  bool CanImportNativePixmap() override {
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#if false
+  fixme bool CanImportNativePixmap() override {
     return true;
   }
+#endif
 
   std::unique_ptr<NativePixmapGLBinding> ImportNativePixmap(
       scoped_refptr<gfx::NativePixmap> pixmap,
@@ -205,11 +209,13 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
       const gfx::ColorSpace& color_space,
       GLenum target,
       GLuint texture_id) override {
-    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane, plane_size,
-                                          color_space, target, texture_id);
+    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane,
+                                          plane_size, color_space, target,
+                                          texture_id);
   }
 #endif
 
+  // GLOzone:
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gl::GLDisplay* display,
       gfx::AcceleratedWidget window) override {
@@ -256,7 +262,9 @@ std::vector<gl::GLImplementationParts>
 HeadlessSurfaceFactory::GetAllowedGLImplementations() {
   return std::vector<gl::GLImplementationParts>{
       gl::GLImplementationParts(gl::kGLImplementationEGLANGLE),
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
       gl::GLImplementationParts(gl::kGLImplementationEGLGLES2),
+#endif
   };
 }
 
@@ -283,20 +291,21 @@ scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmap(
     gfx::Size size,
     gfx::BufferFormat format,
     gfx::BufferUsage usage,
-    absl::optional<gfx::Size> framebuffer_size) {
+    std::optional<gfx::Size> framebuffer_size) {
   return new TestPixmap(format);
 }
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
-scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
-      gfx::AcceleratedWidget widget,
-      gfx::Size size,
-      gfx::BufferFormat format,
-      gfx::NativePixmapHandle handle,
-      void* window_buffer) {
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+scoped_refptr<gfx::NativePixmap>
+HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
+    gfx::AcceleratedWidget widget,
+    gfx::Size size,
+    gfx::BufferFormat format,
+    gfx::NativePixmapHandle handle,
+    void* window_buffer) {
   scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
       base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
-         size, format, std::move(handle), window_buffer);
+          size, format, std::move(handle), window_buffer);
 
   return pixmap;
 }

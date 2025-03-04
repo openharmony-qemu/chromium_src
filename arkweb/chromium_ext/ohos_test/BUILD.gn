@@ -1,0 +1,274 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/buildflag_header.gni")
+import("//build/config/features.gni")
+import("//build/config/ohos/config.gni")
+import("//ohos_nweb/src/nweb_sysevent.gni")
+import("//tools/grit/grit_rule.gni")
+import("//tools/grit/repack.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
+import("//testing/test.gni")
+import("//arkweb/build/features/features.gni")
+
+
+## add ohos fuzz test case here
+group("ohos_fuzz") {
+    testonly = true
+    deps = [
+        
+    ]
+}
+
+fuzzer_test("nweb_impl_createweb") {
+  sources = [
+    "fuzztest/nweb_impl_createweb_fuzzer.cc",
+  ]
+  defines = [
+    "OHOS_CLOUD_CONTROL",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ios/chrome/browser/application_context",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_impl_render_main") {
+  sources = [
+    "fuzztest/nweb_render_main_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_resource_handle_fuzzer") {
+  sources = [
+    "fuzztest/ohos_nweb/src/cef_delegate/nweb_resource_handle_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//base",
+    "//net",
+    "//ui/base",
+    "//cef:libcef_static",
+    "//components/embedder_support:browser_util",
+    "//ohos_nweb_ex/overrides/cef:cef",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+  ]
+}
+
+fuzzer_test("nweb_cookie_manager_delegate_fuzzer") {
+  sources = [
+    "fuzztest/ohos_nweb/src/cef_delegate/nweb_cookie_manager_delegate_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//base",
+    "//net",
+    "//ui/base",
+    "//cef:libcef_static",
+    "//components/embedder_support:browser_util",
+    "//ohos_nweb_ex/overrides/cef:cef",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+    "//net:net_fuzzer_test_support",
+  ]
+}
+
+## add chromium fuzz test case here
+group("chromium_fuzz") {
+    testonly = true
+    deps = [
+        "//base:base64_decode_fuzzer",
+    ]
+}
+
+## add ohos unit test case here
+group("ohos_unittest") {
+    testonly = true
+    deps = [
+        
+    ]
+}
+
+## add chromium unit test case here
+group("chromium_unittest") {
+    testonly = true
+    deps = [
+        
+    ]
+}
+
+group("ohos_test") {
+    testonly = true
+    deps = [
+        ":ohos_fuzz",
+        ":chromium_fuzz",
+        ":ohos_unittest",
+        ":chromium_unittest",
+    ]
+}
+
+####################################
+
+fuzzer_test("native_loader_fuzzer") {
+  sources = [
+    "fuzztest/native_loader_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//third_party/blink",
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//content/public/common",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+ 
+fuzzer_test("html_plugin_element_fuzzer") {
+  sources = [
+    "fuzztest/html_plugin_element_fuzzer.cc",
+  ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//content/public/common",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+####################################
+
+fuzzer_test("clipboard_fuzzer") {
+  sources =
+      [ "fuzztest/content/browser/renderer_host/clipboard_host_fuzzer.cc" ]
+  deps = [
+    "//base",
+    "//content/browser",
+  ]
+  include_dirs = [
+    "//cef",
+    "//content/browser/renderer_host",
+    "//ui/base/clipboard",
+    "//content/public/browser",
+  ]
+}
+
+fuzzer_test("nweb_inputmethod_fuzzer") {
+  sources = [ "fuzztest/ohos_mweb/nweb_inputmethod_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//cef/include",
+    "//ohos_nweb/include",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_delegate_fuzzer") {
+  sources = [ "fuzztest/ohos_mweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
+  include_dirs = [
+    "//cef",
+    "//ohos_nweb/include",
+    "//ohos_nweb/src",
+  ]
+  deps = [
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
+  ]
+}
+
+fuzzer_test("nweb_impl_rely_on_nweb_delegate_fuzzer") {
+    sources = [
+        "fuzztest/ohos_nweb/nweb_impl_rely_on_nweb_delegate_fuzzer.cc",
+    ]
+    include_dirs = [
+        "//cef",
+        "//cef/include",
+        "//ohos_nweb/include",
+    ]
+    deps = [
+        "//cef:libcef_static",
+        "//ohos_nweb:nweb_sources",
+    ]
+}
+
+fuzzer_test("nweb_impl_set_connection_timeout_fuzzer") {
+    sources = [
+        "fuzztest/ohos_nweb/nweb_impl_set_connection_timeout_fuzzer.cc",
+    ]
+    include_dirs = [
+        "//cef",
+        "//cef/include",
+        "//ohos_nweb/include",
+        "//third_party/skia",
+    ]
+    deps = [
+        "//cef:libcef_static",
+        "//ohos_nweb:nweb_sources",
+        "//net:net_fuzzer_test_support",
+    ]
+}
+
+fuzzer_test("nweb_impl_prepare_for_page_fuzzer") {
+    sources = [
+        "fuzztest/ohos_nweb/nweb_impl_prepare_for_page_fuzzer.cc",
+    ]
+    include_dirs = [
+        "//cef",
+        "//cef/include",
+        "//ohos_nweb/include",
+        "//third_party/skia",
+        "//third_party/boringssl/src/include",
+    ]
+    deps = [
+        "//cef:libcef_static",
+        "//ohos_nweb:nweb_sources",
+    ]
+}

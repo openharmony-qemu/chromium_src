@@ -7,13 +7,18 @@
 
 #import "components/password_manager/core/browser/ui/password_check_referrer.h"
 #import "ios/chrome/browser/shared/coordinator/chrome_coordinator/chrome_coordinator.h"
+#import "ios/chrome/browser/ui/settings/password/reauthentication/password_manager_reauthentication_delegate.h"
 
 @protocol ApplicationCommands;
 @class PasswordCheckupCoordinator;
-@class ReauthenticationModule;
+namespace password_manager {
+enum class WarningType;
+}
+@protocol ReauthenticationProtocol;
 
 // Delegate for PasswordCheckupCoordinator.
-@protocol PasswordCheckupCoordinatorDelegate
+@protocol
+    PasswordCheckupCoordinatorDelegate <PasswordManagerReauthenticationDelegate>
 
 // Called when the view controller is removed from navigation controller.
 - (void)passwordCheckupCoordinatorDidRemove:
@@ -28,7 +33,7 @@
     initWithBaseNavigationController:
         (UINavigationController*)navigationController
                              browser:(Browser*)browser
-                        reauthModule:(ReauthenticationModule*)reauthModule
+                        reauthModule:(id<ReauthenticationProtocol>)reauthModule
                             referrer:(password_manager::PasswordCheckReferrer)
                                          referrer NS_DESIGNATED_INITIALIZER;
 
@@ -38,6 +43,10 @@
 @property(nonatomic, weak) id<PasswordCheckupCoordinatorDelegate> delegate;
 
 @property(nonatomic, weak) id<ApplicationCommands> dispatcher;
+
+// Show the Password Issues page for `warningType`.
+- (void)showPasswordIssuesWithWarningType:
+    (password_manager::WarningType)warningType;
 
 @end
 

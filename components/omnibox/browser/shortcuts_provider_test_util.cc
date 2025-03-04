@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/shortcuts_provider_test_util.h"
 
 #include "base/ranges/algorithm.h"
@@ -45,7 +50,7 @@ TestShortcutData::TestShortcutData(
   this->number_of_hits = number_of_hits;
 }
 
-TestShortcutData::~TestShortcutData() {}
+TestShortcutData::~TestShortcutData() = default;
 
 void PopulateShortcutsBackendWithTestData(
     scoped_refptr<ShortcutsBackend> backend,

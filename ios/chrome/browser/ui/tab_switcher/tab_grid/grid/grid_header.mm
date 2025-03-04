@@ -4,6 +4,7 @@
 
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_header.h"
 
+#import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
@@ -11,10 +12,6 @@
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
 #import "ui/gfx/ios/uikit_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 @interface GridHeader ()
 // Visual components of the view.
@@ -57,7 +54,6 @@
     containerView.spacing = kGridHeaderContentSpacing;
     containerView.layoutMarginsRelativeArrangement = YES;
     _containerView = containerView;
-    [self updateContentInsets];
     [self addSubview:containerView];
 
     self.layer.masksToBounds = YES;
@@ -77,12 +73,6 @@
   return self;
 }
 
-#pragma mark - UIView
-
-- (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
-  [self updateContentInsets];
-}
-
 #pragma mark - UICollectionViewCell
 
 - (void)prepareForReuse {
@@ -92,7 +82,6 @@
   self.titleLabel.text = nil;
   self.valueLabel.text = nil;
   self.valueLabel.hidden = YES;
-  [self updateContentInsets];
 }
 
 #pragma mark - Public
@@ -108,46 +97,6 @@
   self.valueLabel.hidden = !value.length;
   self.valueLabel.accessibilityLabel = value;
   _value = value;
-}
-
-#pragma mark - Private
-
-// The collection view header always stretch across the whole collection view
-// width. to work around that, this method adds a padding to the container view
-// based on the current layout and the size classes.
-- (void)updateContentInsets {
-  UIEdgeInsets contentInsets;
-  CGFloat width = CGRectGetWidth(self.bounds);
-  UIUserInterfaceSizeClass horizontalSizeClass =
-      self.traitCollection.horizontalSizeClass;
-  UIUserInterfaceSizeClass verticalSizeClass =
-      self.traitCollection.verticalSizeClass;
-  if (UIContentSizeCategoryIsAccessibilityCategory(
-          UIApplication.sharedApplication.preferredContentSizeCategory)) {
-    contentInsets = kGridLayoutInsetsRegularCompact;
-  } else if (horizontalSizeClass == UIUserInterfaceSizeClassCompact &&
-             verticalSizeClass == UIUserInterfaceSizeClassCompact) {
-    if (width < kGridLayoutCompactCompactLimitedWidth) {
-      contentInsets = kGridLayoutInsetsCompactCompactLimitedWidth;
-    } else {
-      contentInsets = kGridLayoutInsetsCompactCompact;
-    }
-  } else if (horizontalSizeClass == UIUserInterfaceSizeClassCompact &&
-             verticalSizeClass == UIUserInterfaceSizeClassRegular) {
-    if (width < kGridLayoutCompactRegularLimitedWidth) {
-      contentInsets = kGridLayoutInsetsCompactRegularLimitedWidth;
-    } else {
-      contentInsets = kGridLayoutInsetsCompactRegular;
-    }
-  } else if (horizontalSizeClass == UIUserInterfaceSizeClassRegular &&
-             verticalSizeClass == UIUserInterfaceSizeClassCompact) {
-    contentInsets = kGridLayoutInsetsRegularCompact;
-  } else {
-    contentInsets = kGridLayoutInsetsRegularRegular;
-  }
-  self.containerView.layoutMargins =
-      UIEdgeInsetsMake(0, contentInsets.left, 0, contentInsets.right);
-  [self layoutIfNeeded];
 }
 
 @end

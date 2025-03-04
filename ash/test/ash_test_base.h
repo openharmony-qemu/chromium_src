@@ -11,9 +11,9 @@
 #include <string>
 #include <utility>
 
-#include "ash/constants/app_types.h"
 #include "ash/public/cpp/shell_window_ids.h"
 #include "ash/session/test_session_controller_client.h"
+#include "ash/system/privacy_hub/sensor_disabled_notification_delegate.h"
 #include "ash/test/pixel/ash_pixel_test_init_params.h"
 #include "ash/wm/desks/desks_util.h"
 #include "ash/wm/overview/overview_types.h"
@@ -21,6 +21,7 @@
 #include "base/test/task_environment.h"
 #include "base/threading/thread.h"
 #include "base/traits_bag.h"
+#include "chromeos/ui/base/app_types.h"
 #include "components/prefs/testing_pref_service.h"
 #include "components/user_manager/user_type.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -31,6 +32,7 @@
 #include "ui/display/display.h"
 #include "ui/events/event_constants.h"
 #include "ui/events/test/event_generator.h"
+#include "ui/views/widget/widget.h"
 
 namespace aura {
 class Window;
@@ -59,12 +61,6 @@ class DisplayManagerTestApi;
 namespace gfx {
 class Rect;
 }
-
-namespace views {
-class View;
-class Widget;
-class WidgetDelegate;
-}  // namespace views
 
 namespace ash {
 
@@ -123,9 +119,11 @@ class AshTestBase : public testing::Test {
 
   // Update the display configuration as given in |display_specs|.
   // See ash::DisplayManagerTestApi::UpdateDisplay for more details.
-  // Note: To add rounded-corners properly upon startup, set it via
-  // specifying the command line switch `ash-host-window-bounds`.
-  void UpdateDisplay(const std::string& display_specs);
+  // Note: To properly specify the radii of display's panel upon startup, set it
+  // via specifying the command line switch `ash-host-window-bounds`.
+  void UpdateDisplay(const std::string& display_specs,
+                     bool from_native_platform = false,
+                     bool generate_new_ids = false);
 
   // Returns a root Window. Usually this is the active root Window, but that
   // method can return NULL sometimes, and in those cases, we fall back on the
@@ -135,26 +133,28 @@ class AshTestBase : public testing::Test {
   // Creates and shows a widget. See ash/public/cpp/shell_window_ids.h for
   // values for |container_id|.
   static std::unique_ptr<views::Widget> CreateTestWidget(
+      views::Widget::InitParams::Ownership ownership,
       views::WidgetDelegate* delegate = nullptr,
       int container_id = desks_util::GetActiveDeskContainerId(),
       const gfx::Rect& bounds = gfx::Rect(),
       bool show = true);
 
   // Creates a frameless widget for testing.
-  static std::unique_ptr<views::Widget> CreateFramelessTestWidget();
+  // TODO(crbug.com/339619005) - Make the ownership parameter required.
+  static std::unique_ptr<views::Widget> CreateFramelessTestWidget(
+      views::Widget::InitParams::Ownership ownership =
+          views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET);
 
   // Creates a widget with a visible WINDOW_TYPE_NORMAL window with the given
-  // |app_type|. If |app_type| is AppType::NON_APP, this window is considered a
-  // non-app window.
-  // If |bounds_in_screen| is empty the window is added to the primary root
-  // window, otherwise the window is added to the display matching
-  // |bounds_in_screen|. |shell_window_id| is the shell window id to give to
-  // the new window.
-  // If |delegate| is empty, a new |TestWidgetDelegate| instance will be set as
-  // this widget's delegate.
+  // |app_type|. If |app_type| is chromeos::AppType::NON_APP, this window is
+  // considered a non-app window. If |bounds_in_screen| is empty the window is
+  // added to the primary root window, otherwise the window is added to the
+  // display matching |bounds_in_screen|. |shell_window_id| is the shell window
+  // id to give to the new window. If |delegate| is empty, a new
+  // |TestWidgetDelegate| instance will be set as this widget's delegate.
   std::unique_ptr<aura::Window> CreateAppWindow(
       const gfx::Rect& bounds_in_screen = gfx::Rect(),
-      AppType app_type = AppType::SYSTEM_APP,
+      chromeos::AppType app_type = chromeos::AppType::SYSTEM_APP,
       int shell_window_id = kShellWindowId_Invalid,
       views::WidgetDelegate* delegate = nullptr);
 
@@ -236,6 +236,21 @@ class AshTestBase : public testing::Test {
   bool ExitOverview(
       OverviewEnterExitType type = OverviewEnterExitType::kNormal);
 
+  // Sets shelf animation duration for all displays.
+  void SetShelfAnimationDuration(base::TimeDelta duration);
+
+  // Waits for shelf animation in all displays.
+  void WaitForShelfAnimation();
+
+  // Execute a list of tasks during a drag and drop sequence in the apps grid.
+  // This method should be called after the drag is initiated by long pressing
+  // over an app but before actually moving the pointer to drag the item. When
+  // the drag and drop sequence is not handled by DragDropController, the list
+  // of tasks is just run sequentially outside the loop
+  void MaybeRunDragAndDropSequenceForAppList(
+      std::list<base::OnceClosure>* tasks,
+      bool is_touch);
+
  protected:
   enum UserSessionBlockReason {
     FIRST_BLOCK_REASON,
@@ -252,15 +267,20 @@ class AshTestBase : public testing::Test {
   static display::Display::Rotation GetCurrentInternalDisplayRotation();
 
   // Creates init params to set up a pixel test. If the test is not pixel
-  // related, returns `absl::nullopt`. This function should be overridden by ash
+  // related, returns `std::nullopt`. This function should be overridden by ash
   // pixel tests.
-  virtual absl::optional<pixel_test::InitParams> CreatePixelTestInitParams()
+  virtual std::optional<pixel_test::InitParams> CreatePixelTestInitParams()
       const;
 
   void set_start_session(bool start_session) { start_session_ = start_session; }
+
   void set_create_global_cras_audio_handler(
       bool create_global_cras_audio_handler) {
     create_global_cras_audio_handler_ = create_global_cras_audio_handler;
+  }
+
+  void set_create_quick_pair_mediator(bool create_quick_pair_mediator) {
+    create_quick_pair_mediator_ = create_quick_pair_mediator;
   }
 
   base::test::TaskEnvironment* task_environment() {
@@ -301,33 +321,23 @@ class AshTestBase : public testing::Test {
   // behavior where |AccountId|s are compared, prefer the method of the same
   // name that takes an |AccountId| created with a valid storage key instead.
   // See the documentation for|AccountId::GetUserEmail| for discussion.
-  // NOTE: call `StabilizeUIForPixelTest()` after using this function in a pixel
-  // test.
   void SimulateUserLogin(
       const std::string& user_email,
-      user_manager::UserType user_type = user_manager::USER_TYPE_REGULAR);
+      user_manager::UserType user_type = user_manager::UserType::kRegular);
 
   // Simulates a user sign-in. It creates a new user session, adds it to
   // existing user sessions and makes it the active user session.
-  // NOTE: call `StabilizeUIForPixelTest()` after using this function in a pixel
-  // test.
   void SimulateUserLogin(
       const AccountId& account_id,
-      user_manager::UserType user_type = user_manager::USER_TYPE_REGULAR);
+      user_manager::UserType user_type = user_manager::UserType::kRegular);
 
   // Simular to SimulateUserLogin but for a newly created user first ever login.
-  // NOTE: call `StabilizeUIForPixelTest()` after using this function in a pixel
-  // test.
   void SimulateNewUserFirstLogin(const std::string& user_email);
 
   // Similar to SimulateUserLogin but for a guest user.
-  // NOTE: call `StabilizeUIForPixelTest()` after using this function in a pixel
-  // test.
   void SimulateGuestLogin();
 
   // Simulates kiosk mode. |user_type| must correlate to a kiosk type user.
-  // NOTE: call `StabilizeUIForPixelTest()` after using this function in a pixel
-  // test.
   void SimulateKioskMode(user_manager::UserType user_type);
 
   // Simulates setting height of the accessibility panel.
@@ -380,6 +390,10 @@ class AshTestBase : public testing::Test {
   // set to false.
   bool create_global_cras_audio_handler_ = true;
 
+  // `SetUp()` doesn't create a global `QuickPairMediator` instance if this is
+  // set to false.
+  bool create_quick_pair_mediator_ = true;
+
   // |task_environment_| is initialized-once at construction time but
   // subclasses may elect to provide their own.
   std::unique_ptr<base::test::TaskEnvironment> task_environment_;
@@ -397,6 +411,9 @@ class AshTestBase : public testing::Test {
   std::unique_ptr<AshTestHelper> ash_test_helper_;
 
   std::unique_ptr<ui::test::EventGenerator> event_generator_;
+
+  std::unique_ptr<ScopedSensorDisabledNotificationDelegateForTest>
+      scoped_disabled_notification_delegate_;
 };
 
 class NoSessionAshTestBase : public AshTestBase {

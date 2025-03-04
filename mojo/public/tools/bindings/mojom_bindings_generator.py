@@ -51,16 +51,17 @@ import crbug_1001171
 
 _BUILTIN_GENERATORS = {
     "c++": "mojom_cpp_generator",
-    "webui_js_bridge": "mojom_webui_js_bridge_generator",
     "javascript": "mojom_js_generator",
     "java": "mojom_java_generator",
     "mojolpm": "mojom_mojolpm_generator",
+    "rust": "mojom_rust_generator",
     "typescript": "mojom_ts_generator",
 }
 
 _BUILTIN_CHECKS = {
     "attributes": "mojom_attributes_check",
     "definitions": "mojom_definitions_check",
+    "features": "mojom_interface_feature_check",
     "restrictions": "mojom_restrictions_check",
 }
 
@@ -227,7 +228,6 @@ class MojomProcessor:
             export_attribute=args.export_attribute,
             export_header=args.export_header,
             generate_non_variant_code=args.generate_non_variant_code,
-            support_lazy_serialization=args.support_lazy_serialization,
             disallow_native_types=args.disallow_native_types,
             disallow_interfaces=args.disallow_interfaces,
             generate_message_ids=args.generate_message_ids,
@@ -317,7 +317,7 @@ def main():
                                "--checks",
                                dest="checks_string",
                                metavar="CHECKS",
-                               default="attributes,definitions,restrictions",
+                               default=",".join(_BUILTIN_CHECKS.keys()),
                                help="comma-separated list of checks")
   generate_parser.add_argument(
       "--gen_dir", dest="gen_directories", action="append", metavar="directory",
@@ -363,10 +363,6 @@ def main():
       "a salt for generating scrambled message IDs. If this switch is specified"
       "more than once, the contents of all salt files are concatenated to form"
       "the salt value.", default=[], action="append")
-  generate_parser.add_argument(
-      "--support_lazy_serialization",
-      help="If set, generated bindings will serialize lazily when possible.",
-      action="store_true")
   generate_parser.add_argument(
       "--extra_cpp_template_paths",
       dest="extra_cpp_template_paths",

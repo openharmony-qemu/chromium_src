@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stdint.h>
 
 #include "build/build_config.h"
@@ -87,7 +92,7 @@ class LayerTreeHostBlendingPixelTest
   std::unique_ptr<TestLayerTreeFrameSink> CreateLayerTreeFrameSink(
       const viz::RendererSettings& renderer_settings,
       double refresh_rate,
-      scoped_refptr<viz::ContextProvider> compositor_context_provider,
+      scoped_refptr<viz::RasterContextProvider> compositor_context_provider,
       scoped_refptr<viz::RasterContextProvider> worker_context_provider)
       override {
     viz::RendererSettings modified_renderer_settings = renderer_settings;
@@ -102,7 +107,7 @@ class LayerTreeHostBlendingPixelTest
     const int kLaneWidth = width;
     const int kLaneHeight = height / kCSSTestColorsCount;
     sk_sp<SkSurface> backing_store =
-        SkSurface::MakeRasterN32Premul(width, height);
+        SkSurfaces::Raster(SkImageInfo::MakeN32Premul(width, height));
     SkCanvas* canvas = backing_store->getCanvas();
     canvas->clear(SK_ColorTRANSPARENT);
     for (int i = 0; i < kCSSTestColorsCount; ++i) {
@@ -130,8 +135,8 @@ class LayerTreeHostBlendingPixelTest
   void SetupMaskLayer(scoped_refptr<Layer> layer) {
     gfx::Size bounds = layer->bounds();
 
-    sk_sp<SkSurface> surface =
-        SkSurface::MakeRasterN32Premul(bounds.width(), bounds.height());
+    sk_sp<SkSurface> surface = SkSurfaces::Raster(
+        SkImageInfo::MakeN32Premul(bounds.width(), bounds.height()));
     SkCanvas* canvas = surface->getCanvas();
     SkPaint paint;
     paint.setColor(SK_ColorWHITE);
@@ -250,7 +255,10 @@ std::vector<RasterTestConfig> const kTestCases = {
     {viz::RendererType::kSkiaVk, TestRasterType::kGpu},
 #endif  // BUILDFLAG(ENABLE_VULKAN_BACKEND_TESTS)
 #if BUILDFLAG(ENABLE_SKIA_GRAPHITE_TESTS)
-    {viz::RendererType::kSkiaGraphite, TestRasterType::kGpu},
+    {viz::RendererType::kSkiaGraphiteDawn, TestRasterType::kGpu},
+#if BUILDFLAG(IS_IOS)
+    {viz::RendererType::kSkiaGraphiteMetal, TestRasterType::kGpu},
+#endif  // BUILDFLAG(IS_IOS)
 #endif  // BUILDFLAG(ENABLE_SKIA_GRAPHITE_TESTS)
 };
 
@@ -322,8 +330,8 @@ TEST_P(LayerTreeHostBlendingPixelTest, BlendingWithBackdropFilter) {
   PaintFlags grayscale;
   grayscale.setColor(kCSSOrange);
 
-  sk_sp<PaintFilter> paint_filter = RenderSurfaceFilters::BuildImageFilter(
-      filters, gfx::SizeF(kRootWidth, kRootHeight));
+  sk_sp<PaintFilter> paint_filter =
+      RenderSurfaceFilters::BuildImageFilter(filters);
   grayscale.setImageFilter(paint_filter);
   paint_canvas.drawRect(SkRect::MakeWH(kRootWidth, kRootHeight), grayscale);
 

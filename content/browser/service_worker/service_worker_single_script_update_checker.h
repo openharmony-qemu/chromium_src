@@ -132,7 +132,7 @@ class CONTENT_EXPORT ServiceWorkerSingleScriptUpdateChecker
       Result,
       std::unique_ptr<FailureInfo>,
       std::unique_ptr<PausedState>,
-      const absl::optional<std::string>& sha256_checksum)>;
+      const std::optional<std::string>& sha256_checksum)>;
 
   ServiceWorkerSingleScriptUpdateChecker() = delete;
 
@@ -159,6 +159,7 @@ class CONTENT_EXPORT ServiceWorkerSingleScriptUpdateChecker
       mojo::Remote<storage::mojom::ServiceWorkerResourceWriter> writer,
       int64_t write_resource_id,
       ScriptChecksumUpdateOption script_checksum_update_option,
+      const blink::StorageKey& storage_key,
       ResultCallback callback);
 
   ServiceWorkerSingleScriptUpdateChecker(
@@ -173,9 +174,10 @@ class CONTENT_EXPORT ServiceWorkerSingleScriptUpdateChecker
   void OnReceiveResponse(
       network::mojom::URLResponseHeadPtr response_head,
       mojo::ScopedDataPipeConsumerHandle consumer,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override;
-#if BUILDFLAG(IS_OHOS)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+      std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override {}
 #endif
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,
@@ -221,7 +223,7 @@ class CONTENT_EXPORT ServiceWorkerSingleScriptUpdateChecker
   void Finish(Result result,
               std::unique_ptr<PausedState> paused_state,
               std::unique_ptr<FailureInfo> failure_info,
-              const absl::optional<std::string>& sha256_checksum);
+              const std::optional<std::string>& sha256_checksum);
 
   const GURL script_url_;
   const bool is_main_script_;

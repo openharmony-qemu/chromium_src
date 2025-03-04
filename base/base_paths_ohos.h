@@ -5,6 +5,9 @@
 #ifndef BASE_BASE_PATHS_OHOS_H_
 #define BASE_BASE_PATHS_OHOS_H_
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+
 namespace base {
 
 enum {
@@ -13,7 +16,7 @@ enum {
   DIR_OHOS_APP_DATA,
   DIR_OHOS_EXTERNAL_STORAGE,
   DIR_OHOS_APP_INSTALLATION,
-#if defined(OHOS_CRASHPAD)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CRASHPAD)
   DIR_OHOS_CRASHPAD,
 #endif
   PATH_OHOS_END

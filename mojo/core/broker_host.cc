@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/broker_host.h"
 
+#include <string_view>
 #include <utility>
 
 #include "base/logging.h"
@@ -14,6 +20,7 @@
 #include "build/build_config.h"
 #include "mojo/buildflags.h"
 #include "mojo/core/broker_messages.h"
+#include "mojo/core/ipcz_driver/envelope.h"
 #include "mojo/core/platform_handle_utils.h"
 
 #if BUILDFLAG(IS_WIN)
@@ -99,7 +106,7 @@ bool BrokerHost::SendChannel(PlatformHandle handle) {
 
 #if BUILDFLAG(IS_WIN)
 
-void BrokerHost::SendNamedChannel(base::WStringPiece pipe_name) {
+void BrokerHost::SendNamedChannel(std::wstring_view pipe_name) {
   InitData* data;
   wchar_t* name_data;
   Channel::MessagePtr message = CreateBrokerMessage(
@@ -151,9 +158,11 @@ void BrokerHost::OnBufferRequest(uint32_t num_bytes) {
   channel_->Write(std::move(message));
 }
 
-void BrokerHost::OnChannelMessage(const void* payload,
-                                  size_t payload_size,
-                                  std::vector<PlatformHandle> handles) {
+void BrokerHost::OnChannelMessage(
+    const void* payload,
+    size_t payload_size,
+    std::vector<PlatformHandle> handles,
+    scoped_refptr<ipcz_driver::Envelope> envelope) {
   if (payload_size < sizeof(BrokerMessageHeader))
     return;
 

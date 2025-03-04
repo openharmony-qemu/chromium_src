@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #ifndef COMPONENTS_VIZ_COMMON_QUADS_RENDER_PASS_DRAW_QUAD_INTERNAL_H_
 #define COMPONENTS_VIZ_COMMON_QUADS_RENDER_PASS_DRAW_QUAD_INTERNAL_H_
 
@@ -27,7 +32,7 @@ class VIZ_COMMON_EXPORT RenderPassDrawQuadInternal : public DrawQuad {
   // the render pass physical pixels. This scale is applied to the filter
   // parameters for pixel-moving filters. This scale should include
   // content-to-target-space scale, and device pixel ratio.
-  gfx::Vector2dF filters_scale;
+  gfx::Vector2dF filters_scale{1.0f, 1.0f};
 
   // The origin for post-processing filters which will be used to offset
   // crop rects, lights, etc.
@@ -35,9 +40,9 @@ class VIZ_COMMON_EXPORT RenderPassDrawQuadInternal : public DrawQuad {
 
   gfx::RectF tex_coord_rect;
 
-  float backdrop_filter_quality;
+  float backdrop_filter_quality = 1.0f;
 
-  bool force_anti_aliasing_off;
+  bool force_anti_aliasing_off = false;
 
   // Indicates if this quad intersects any damage from quads under it rendering
   // to the same target.

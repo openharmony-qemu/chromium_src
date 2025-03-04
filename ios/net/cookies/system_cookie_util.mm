@@ -14,10 +14,6 @@
 #include "url/gurl.h"
 #include "url/third_party/mozilla/url_parse.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace net {
 
 namespace {
@@ -55,14 +51,15 @@ std::unique_ptr<net::CanonicalCookie> CanonicalCookieFromSystemCookie(
       base::SysNSStringToUTF8([cookie value]),
       base::SysNSStringToUTF8([cookie domain]),
       base::SysNSStringToUTF8([cookie path]), ceation_time,
-      base::Time::FromDoubleT([[cookie expiresDate] timeIntervalSince1970]),
+      base::Time::FromSecondsSinceUnixEpoch(
+          [[cookie expiresDate] timeIntervalSince1970]),
       base::Time(), base::Time(), [cookie isSecure], [cookie isHTTPOnly],
       same_site,
-      // When iOS begins to support 'Priority' and 'SameParty' attributes, pass
-      // them through here.
-      net::COOKIE_PRIORITY_DEFAULT, false /* SameParty */,
-      absl::nullopt /* partition_key */, net::CookieSourceScheme::kUnset,
-      url::PORT_UNSPECIFIED);
+      // When iOS begins to support the 'Priority' attribute, pass it through
+      // here.
+      net::COOKIE_PRIORITY_DEFAULT, std::nullopt /* partition_key */,
+      net::CookieSourceScheme::kUnset, url::PORT_UNSPECIFIED,
+      net::CookieSourceType::kOther);
 }
 
 // Converts net::CanonicalCookie to NSHTTPCookie.
@@ -85,7 +82,8 @@ NSHTTPCookie* SystemCookieFromCanonicalCookie(
       }];
   if (cookie.IsPersistent()) {
     NSDate* expiry =
-        [NSDate dateWithTimeIntervalSince1970:cookie.ExpiryDate().ToDoubleT()];
+        [NSDate dateWithTimeIntervalSince1970:cookie.ExpiryDate()
+                                                  .InSecondsFSinceUnixEpoch()];
     [properties setObject:expiry forKey:NSHTTPCookieExpires];
   }
 
@@ -110,8 +108,9 @@ NSHTTPCookie* SystemCookieFromCanonicalCookie(
     properties[NSHTTPCookieSameSitePolicy] = same_site;
   }
 
-  if (cookie.IsSecure())
+  if (cookie.SecureAttribute()) {
     [properties setObject:@"Y" forKey:NSHTTPCookieSecure];
+  }
   if (cookie.IsHttpOnly())
     [properties setObject:@YES forKey:kNSHTTPCookieHttpOnly];
   NSHTTPCookie* system_cookie = [NSHTTPCookie cookieWithProperties:properties];

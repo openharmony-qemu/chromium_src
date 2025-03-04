@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "mojo/core/ipcz_driver/transport.h"
 
 #include <cstring>
@@ -21,6 +26,7 @@
 #include "base/synchronization/lock.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/test/gtest_util.h"
+#include "base/test/task_environment.h"
 #include "build/build_config.h"
 #include "mojo/core/ipcz_driver/driver.h"
 #include "mojo/core/ipcz_driver/shared_buffer.h"
@@ -185,7 +191,7 @@ class TransportListener {
                                const IpczDriverHandle* handles,
                                size_t num_handles,
                                IpczTransportActivityFlags flags,
-                               const void*) {
+                               const struct IpczTransportActivityOptions*) {
     auto* listener = reinterpret_cast<TransportListener*>(transport);
     auto bytes = base::make_span(static_cast<const uint8_t*>(data), num_bytes);
     listener->HandleActivity(bytes, base::make_span(handles, num_handles),

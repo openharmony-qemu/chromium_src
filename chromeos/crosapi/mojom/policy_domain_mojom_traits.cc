@@ -17,11 +17,7 @@ EnumTraits<crosapi::mojom::PolicyDomain, policy::PolicyDomain>::ToMojom(
     case policy::POLICY_DOMAIN_SIGNIN_EXTENSIONS:
       return crosapi::mojom::PolicyDomain::kPolicyDomainSigninExtensions;
     case policy::POLICY_DOMAIN_SIZE:
-      LOG(ERROR) << "Invalid input " << input;
-      NOTREACHED();
-      // Return any value. This is notreached, but compiler needs a return
-      // statement.
-      return crosapi::mojom::PolicyDomain::kPolicyDomainChrome;
+      NOTREACHED() << "Invalid input " << input;
   }
 
   NOTREACHED();
@@ -43,7 +39,6 @@ bool EnumTraits<crosapi::mojom::PolicyDomain, policy::PolicyDomain>::FromMojom(
   }
 
   NOTREACHED();
-  return false;
 }
 
 }  // namespace mojo

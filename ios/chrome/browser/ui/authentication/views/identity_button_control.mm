@@ -13,10 +13,6 @@
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/common/ui/util/pointer_interaction_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 const CGFloat kIdentityButtonControlRadius = 8.;
@@ -152,6 +148,7 @@ const CGFloat kArrowDownMargin = 12.;
   switch (self.arrowDirection) {
     case IdentityButtonControlArrowRight:
       image = [UIImage imageNamed:@"identity_picker_view_arrow_right"];
+      image = [image imageFlippedForRightToLeftLayoutDirection];
       tintColor = [UIColor colorNamed:kTextTertiaryColor];
       break;
     case IdentityButtonControlArrowDown:

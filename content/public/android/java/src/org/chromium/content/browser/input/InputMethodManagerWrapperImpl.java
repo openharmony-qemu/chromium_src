@@ -6,7 +6,6 @@ package org.chromium.content.browser.input;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.ResultReceiver;
 import android.os.StrictMode;
@@ -20,15 +19,14 @@ import org.chromium.base.Log;
 import org.chromium.base.task.PostTask;
 import org.chromium.base.task.TaskTraits;
 import org.chromium.content_public.browser.ContentFeatureList;
+import org.chromium.content_public.browser.ContentFeatureMap;
 import org.chromium.content_public.browser.InputMethodManagerWrapper;
 import org.chromium.ui.base.WindowAndroid;
 import org.chromium.ui.display.DisplayAndroid;
 
 import java.lang.ref.WeakReference;
 
-/**
- * Wrapper around Android's InputMethodManager
- */
+/** Wrapper around Android's InputMethodManager */
 public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper {
     private static final boolean DEBUG_LOGS = false;
     private static final String TAG = "IMM";
@@ -50,7 +48,7 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
         mWindowAndroid = windowAndroid;
         mDelegate = delegate;
         mOptimizeImmHideCalls =
-                ContentFeatureList.isEnabled(ContentFeatureList.OPTIMIZE_IMM_HIDE_CALLS);
+                ContentFeatureMap.isEnabled(ContentFeatureList.OPTIMIZE_IMM_HIDE_CALLS);
     }
 
     @Override
@@ -69,7 +67,6 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
     /**
      * Get an Activity from WindowAndroid.
      *
-     * @param windowAndroid
      * @return The Activity. May return null if it fails.
      */
     private static Activity getActivityFromWindowAndroid(WindowAndroid windowAndroid) {
@@ -100,16 +97,15 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
 
     @VisibleForTesting
     protected boolean hasCorrectDisplayId(Context context, Activity activity) {
-        // We did not support multi-display before O.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true;
-
         int contextDisplayId = getDisplayId(context);
         int activityDisplayId = getDisplayId(activity);
         if (activityDisplayId != contextDisplayId) {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "Activity's display ID(%d) does not match context's display ID(%d). "
                             + "Using a workaround to show soft input on the correct display...",
-                    activityDisplayId, contextDisplayId);
+                    activityDisplayId,
+                    contextDisplayId);
             return false;
         }
         return true;
@@ -134,9 +130,10 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
 
             if (mDelegate != null && !mDelegate.hasInputConnection()) {
                 // Delay keyboard showing until input connection is established.
-                mPendingRunnableOnInputConnection = () -> {
-                    if (isActive(view)) showSoftInputInternal(view, flags, resultReceiver);
-                };
+                mPendingRunnableOnInputConnection =
+                        () -> {
+                            if (isActive(view)) showSoftInputInternal(view, flags, resultReceiver);
+                        };
                 return;
             }
             // If we already have InputConnection, then show soft input now.
@@ -171,7 +168,7 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
         if (DEBUG_LOGS) Log.i(TAG, "hideSoftInputFromWindow");
         mPendingRunnableOnInputConnection = null;
         InputMethodManager manager = getInputMethodManager();
-        if (manager == null || mOptimizeImmHideCalls && !manager.isAcceptingText()) return false;
+        if (manager == null || (mOptimizeImmHideCalls && !manager.isAcceptingText())) return false;
         StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskWrites(); // crbug.com/616283
         try {
             return manager.hideSoftInputFromWindow(windowToken, flags, resultReceiver);
@@ -184,8 +181,13 @@ public class InputMethodManagerWrapperImpl implements InputMethodManagerWrapper 
     public void updateSelection(
             View view, int selStart, int selEnd, int candidatesStart, int candidatesEnd) {
         if (DEBUG_LOGS) {
-            Log.i(TAG, "updateSelection: SEL [%d, %d], COM [%d, %d]", selStart, selEnd,
-                    candidatesStart, candidatesEnd);
+            Log.i(
+                    TAG,
+                    "updateSelection: SEL [%d, %d], COM [%d, %d]",
+                    selStart,
+                    selEnd,
+                    candidatesStart,
+                    candidatesEnd);
         }
         InputMethodManager manager = getInputMethodManager();
         if (manager == null) return;

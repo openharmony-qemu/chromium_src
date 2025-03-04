@@ -6,8 +6,10 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
 #include "quiche/quic/platform/api/quic_flag_utils.h"
@@ -50,7 +52,7 @@ std::string QuicTagToString(QuicTag tag) {
         i == ABSL_ARRAYSIZE(chars) - 1) {
       chars[i] = ' ';
     }
-    if (!isprint(static_cast<unsigned char>(chars[i]))) {
+    if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
       ascii = false;
       break;
     }

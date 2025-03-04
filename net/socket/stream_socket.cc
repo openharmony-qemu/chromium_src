@@ -4,6 +4,8 @@
 
 #include "net/socket/stream_socket.h"
 
+#include <string_view>
+
 #include "base/notreached.h"
 
 namespace net {
@@ -13,9 +15,9 @@ void StreamSocket::SetBeforeConnectCallback(
   NOTREACHED();
 }
 
-absl::optional<base::StringPiece> StreamSocket::GetPeerApplicationSettings()
+std::optional<std::string_view> StreamSocket::GetPeerApplicationSettings()
     const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void StreamSocket::GetSSLCertRequestInfo(
@@ -26,15 +28,5 @@ void StreamSocket::GetSSLCertRequestInfo(
 int StreamSocket::ConfirmHandshake(CompletionOnceCallback callback) {
   return OK;
 }
-
-#if BUILDFLAG(IS_OHOS)
-void StreamSocket::SetFromPreload(bool from_preload) {
-  from_preload_ = from_preload;
-}
-
-bool StreamSocket::IsFromPreload() const {
-  return from_preload_;
-}
-#endif
 
 }  // namespace net

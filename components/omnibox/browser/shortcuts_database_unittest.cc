@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/omnibox/browser/shortcuts_database.h"
 
 #include <stddef.h>
@@ -120,7 +125,7 @@ void CheckV2Migration(base::FilePath sql_path) {
 
 const base::FilePath GetTestDataDir() {
   base::FilePath path;
-  base::PathService::Get(base::DIR_SOURCE_ROOT, &path);
+  base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &path);
   return path.AppendASCII("components/test/data/omnibox");
 }
 
@@ -381,7 +386,7 @@ TEST(ShortcutsDatabaseMigrationTest, Recovery1) {
     expecter.ExpectError(SQLITE_CORRUPT);
 
     sql::Database connection;
-    ASSERT_TRUE(connection.Open(db_path));
+    ASSERT_FALSE(connection.Open(db_path));
     sql::Statement statement(connection.GetUniqueStatement(kCountSql));
     ASSERT_FALSE(statement.is_valid());
 

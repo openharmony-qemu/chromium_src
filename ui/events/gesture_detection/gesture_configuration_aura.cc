@@ -7,21 +7,16 @@
 #include "base/command_line.h"
 #include "base/memory/singleton.h"
 #include "base/strings/string_number_conversions.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/events/event_switches.h"
-
-#if BUILDFLAG(IS_OHOS)
-#include "ohos_adapter_helper.h"
-#endif
 
 namespace ui {
 namespace {
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 constexpr bool kDoubleTapAuraSupport = true;
 #else
 constexpr bool kDoubleTapAuraSupport = false;
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 class GestureConfigurationAura : public GestureConfiguration {
  public:
@@ -67,21 +62,9 @@ class GestureConfigurationAura : public GestureConfiguration {
     set_velocity_tracker_strategy(VelocityTracker::Strategy::LSQ2_RESTRICTED);
     set_span_slop(max_touch_move_in_pixels_for_click() * 2);
     set_swipe_enabled(true);
-#if BUILDFLAG(IS_OHOS)
-    auto display_manager_adapter =
-        OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
-    bool is_pc_device =
-        display_manager_adapter && (!display_manager_adapter->IsDefaultPortrait());
-    if (is_pc_device) {
-      set_two_finger_tap_enabled(true);
-    } else {
-      set_two_finger_tap_enabled(false);
-    }
-#else
     set_two_finger_tap_enabled(true);
-#endif
     set_fling_touchpad_tap_suppression_enabled(true);
-#if BUILDFLAG(IS_OHOS)
+#ifndef ARKWEB_CLIPBOARD
     set_fling_touchscreen_tap_suppression_enabled(false);
 #else
     set_fling_touchscreen_tap_suppression_enabled(true);

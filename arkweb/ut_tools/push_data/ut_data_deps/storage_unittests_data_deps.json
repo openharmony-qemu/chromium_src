@@ -1,0 +1,13 @@
+[
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["data"],
+        "src_paths": [
+            "storage",
+            "test"
+        ],
+        "dst_path": "storage/test"
+    }
+]

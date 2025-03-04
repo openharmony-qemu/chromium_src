@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "extensions/common/url_pattern.h"
 
 #include <stddef.h>
@@ -861,12 +866,14 @@ TEST(ExtensionURLPatternTest, CanReusePatternWithParse) {
 // Returns success if neither |a| nor |b| encompasses the other.
 testing::AssertionResult NeitherContains(const URLPattern& a,
                                          const URLPattern& b) {
-  if (a.Contains(b))
+  if (a.Contains(b)) {
     return testing::AssertionFailure() << a.GetAsString() << " encompasses " <<
                                           b.GetAsString();
-  if (b.Contains(a))
+  }
+  if (b.Contains(a)) {
     return testing::AssertionFailure() << b.GetAsString() << " encompasses " <<
                                           a.GetAsString();
+  }
   return testing::AssertionSuccess() <<
       "Neither " << a.GetAsString() << " nor " << b.GetAsString() <<
       " encompass the other";
@@ -875,13 +882,15 @@ testing::AssertionResult NeitherContains(const URLPattern& a,
 // Returns success if |a| encompasses |b| but not the other way around.
 testing::AssertionResult StrictlyContains(const URLPattern& a,
                                           const URLPattern& b) {
-  if (!a.Contains(b))
+  if (!a.Contains(b)) {
     return testing::AssertionFailure() << a.GetAsString() <<
                                           " does not encompass " <<
                                           b.GetAsString();
-  if (b.Contains(a))
+  }
+  if (b.Contains(a)) {
     return testing::AssertionFailure() << b.GetAsString() << " encompasses " <<
                                           a.GetAsString();
+  }
   return testing::AssertionSuccess() << a.GetAsString() <<
                                         " strictly encompasses " <<
                                         b.GetAsString();
@@ -1221,14 +1230,14 @@ TEST(ExtensionURLPatternTest, Intersection) {
 
     // Intersection of two URLPatterns should be identical regardless of which
     // is the "first".
-    absl::optional<URLPattern> intersection1 =
+    std::optional<URLPattern> intersection1 =
         pattern1.CreateIntersection(pattern2);
-    absl::optional<URLPattern> intersection2 =
+    std::optional<URLPattern> intersection2 =
         pattern2.CreateIntersection(pattern1);
 
     if (test_case.expected_intersection.empty()) {
-      EXPECT_EQ(absl::nullopt, intersection1) << intersection1->GetAsString();
-      EXPECT_EQ(absl::nullopt, intersection2) << intersection2->GetAsString();
+      EXPECT_EQ(std::nullopt, intersection1) << intersection1->GetAsString();
+      EXPECT_EQ(std::nullopt, intersection2) << intersection2->GetAsString();
     } else {
       ASSERT_TRUE(intersection1);
       EXPECT_EQ(test_case.expected_intersection, intersection1->GetAsString());
@@ -1266,14 +1275,14 @@ TEST(ExtensionURLPatternTest, ValidSchemeIntersection) {
     URLPattern pattern2(test_case.scheme2);
     ASSERT_EQ(URLPattern::ParseResult::kSuccess,
               pattern2.Parse(URLPattern::kAllUrlsPattern));
-    absl::optional<URLPattern> intersection1 =
+    std::optional<URLPattern> intersection1 =
         pattern1.CreateIntersection(pattern2);
-    absl::optional<URLPattern> intersection2 =
+    std::optional<URLPattern> intersection2 =
         pattern2.CreateIntersection(pattern1);
 
     if (test_case.expected_scheme == URLPattern::SCHEME_NONE) {
-      EXPECT_EQ(absl::nullopt, intersection1) << intersection1->GetAsString();
-      EXPECT_EQ(absl::nullopt, intersection2) << intersection2->GetAsString();
+      EXPECT_EQ(std::nullopt, intersection1) << intersection1->GetAsString();
+      EXPECT_EQ(std::nullopt, intersection2) << intersection2->GetAsString();
     } else {
       ASSERT_TRUE(intersection1);
       EXPECT_EQ(test_case.expected_scheme, intersection1->valid_schemes());

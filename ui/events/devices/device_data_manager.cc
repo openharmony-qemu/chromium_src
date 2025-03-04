@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "ui/events/devices/device_data_manager.h"
-#include "ui/events/devices/mmi_device_info_adapter_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/at_exit.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -12,22 +12,25 @@
 #include "base/observer_list.h"
 #include "base/ranges/algorithm.h"
 #include "ui/display/types/display_constants.h"
+#include "ui/events/devices/input_device.h"
 #include "ui/events/devices/input_device_event_observer.h"
+#include "ui/events/devices/keyboard_device.h"
 #include "ui/events/devices/touch_device_transform.h"
 #include "ui/events/devices/touchscreen_device.h"
 #include "ui/gfx/geometry/point3_f.h"
 
-#if defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/ui/events/devices/mmi_device_info_adapter_impl.h"
 #include "base/logging.h"
 #include "base/task/thread_pool.h"
 #include "content/public/browser/browser_thread.h"
-#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 // This macro provides the implementation for the observer notification methods.
-#define NOTIFY_OBSERVERS(method_decl, observer_call)       \
-  void DeviceDataManager::method_decl {                    \
-    for (InputDeviceEventObserver & observer : observers_) \
-      observer.observer_call;                              \
+#define NOTIFY_OBSERVERS(method_decl, observer_call)      \
+  void DeviceDataManager::method_decl {                   \
+    for (InputDeviceEventObserver& observer : observers_) \
+      observer.observer_call;                             \
   }
 
 namespace ui {
@@ -36,10 +39,11 @@ namespace {
 
 bool InputDeviceEquals(const ui::InputDevice& a, const ui::InputDevice& b) {
   return a.id == b.id && a.enabled == b.enabled &&
-         a.suspected_imposter == b.suspected_imposter;
+         a.suspected_keyboard_imposter == b.suspected_keyboard_imposter &&
+         a.suspected_mouse_imposter == b.suspected_mouse_imposter;
 }
 
-#if defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 constexpr uint32_t TAG_KEYBOARD_TYPE = (1 << 1);
 constexpr uint32_t TAG_MOUSE_TYPE = (1 << 2);
 constexpr uint32_t TAG_TOUCHPAD_TYPE = (1 << 3);
@@ -81,14 +85,20 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
             [](const OHOS::NWeb::MMIDeviceInfo& info) {
               ui::InputDevice device(
                   info.id, ui::InputDeviceType::INPUT_DEVICE_USB, info.name);
+              ui::TouchpadDevice touchpadDevice(
+                  info.id, ui::InputDeviceType::INPUT_DEVICE_USB, info.name);
+              ui::KeyboardDevice KeyboardDevice(
+                  info.id, ui::InputDeviceType::INPUT_DEVICE_USB, info.name);
               if (info.type & TAG_MOUSE_TYPE) {
                 ui::DeviceDataManager::GetInstance()->AddMouseDevice(device);
               }
               if (info.type & TAG_TOUCHPAD_TYPE) {
-                ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(device);
+                ui::DeviceDataManager::GetInstance()->AddTouchpadDevice(
+                    touchpadDevice);
               }
               if (info.type & TAG_KEYBOARD_TYPE) {
-                ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(device);
+                ui::DeviceDataManager::GetInstance()->AddKeyboardDevice(
+                    KeyboardDevice);
               }
             },
             info));
@@ -116,7 +126,7 @@ class MMIListenerAdapterImpl : public OHOS::NWeb::MMIListenerAdapter {
   std::unique_ptr<OHOS::NWeb::MMIAdapter> mmi_adapter_;
   scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
 };
-#endif  // defined(OHOS_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 }  // namespace
 
@@ -126,8 +136,9 @@ DeviceDataManager* DeviceDataManager::instance_ = nullptr;
 DeviceDataManager::DeviceDataManager() {
   DCHECK(!instance_);
   instance_ = this;
-#if defined(OHOS_INPUT_EVENTS)
-  mmi_adapter_ = OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMMIAdapter();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  mmi_adapter_ =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateMMIAdapter();
   if (mmi_adapter_ == nullptr) {
     LOG(ERROR) << "DeviceDataManager mmi_adapter_ is nullptr";
     return;
@@ -137,7 +148,8 @@ DeviceDataManager::DeviceDataManager() {
     LOG(ERROR) << "DeviceDataManager GetUIThreadTaskRunner is null";
     return;
   }
-  dev_listener_ = std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
+  dev_listener_ =
+      std::make_shared<MMIListenerAdapterImpl>(sequenced_task_runner_);
   mmi_adapter_->RegisterDevListener(CHANGED_TYPE, dev_listener_);
   std::vector<int32_t> device_ids;
   mmi_adapter_->GetDeviceIds(device_ids);
@@ -153,43 +165,52 @@ DeviceDataManager::DeviceDataManager() {
     }
 
     auto addMMIDeviceInfoFunction =
-      [] (const OHOS::NWeb::MMIDeviceInfo& deviceInfo, DeviceDataManager* device_data_manager) {
-        ui::InputDevice device(deviceInfo.id, ui::InputDeviceType::INPUT_DEVICE_USB, deviceInfo.name);
-        if (deviceInfo.type & TAG_MOUSE_TYPE) {
-          device_data_manager->AddMouseDevice(device);
-        }
-        if (deviceInfo.type & TAG_TOUCHPAD_TYPE) {
-          device_data_manager->AddTouchpadDevice(device);
-        }
-        if (deviceInfo.type & TAG_KEYBOARD_TYPE) {
-          device_data_manager->AddKeyboardDevice(device);
-        }
-      };
+        [](const OHOS::NWeb::MMIDeviceInfo& deviceInfo,
+           DeviceDataManager* device_data_manager) {
+          ui::InputDevice device(deviceInfo.id,
+                                 ui::InputDeviceType::INPUT_DEVICE_USB,
+                                 deviceInfo.name);
+          ui::TouchpadDevice touchpadDevice(
+              deviceInfo.id, ui::InputDeviceType::INPUT_DEVICE_USB,
+              deviceInfo.name);
+          ui::KeyboardDevice keyboardDevice(
+              deviceInfo.id, ui::InputDeviceType::INPUT_DEVICE_USB,
+              deviceInfo.name);
+          if (deviceInfo.type & TAG_MOUSE_TYPE) {
+            device_data_manager->AddMouseDevice(device);
+          }
+          if (deviceInfo.type & TAG_TOUCHPAD_TYPE) {
+            device_data_manager->AddTouchpadDevice(touchpadDevice);
+          }
+          if (deviceInfo.type & TAG_KEYBOARD_TYPE) {
+            device_data_manager->AddKeyboardDevice(keyboardDevice);
+          }
+        };
     if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
       sequenced_task_runner_->PostTask(
-          FROM_HERE, base::BindOnce(addMMIDeviceInfoFunction, info, base::Unretained(this)));
+          FROM_HERE, base::BindOnce(addMMIDeviceInfoFunction, info,
+                                    base::Unretained(this)));
     } else {
       addMMIDeviceInfoFunction(info, this);
     }
   }
-#endif  // defined(OHOS_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }
 
 DeviceDataManager::~DeviceDataManager() {
-#if defined(OHOS_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   if (mmi_adapter_ != nullptr) {
     mmi_adapter_->UnregisterDevListener(CHANGED_TYPE);
     dev_listener_ = nullptr;
   }
-#endif  // defined(OHOS_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   instance_ = nullptr;
 }
 
 // static
 void DeviceDataManager::CreateInstance() {
-  if (instance_) {
+  if (instance_)
     return;
-  }
 
   new DeviceDataManager();
 
@@ -216,20 +237,16 @@ bool DeviceDataManager::HasInstance() {
 void DeviceDataManager::ConfigureTouchDevices(
     const std::vector<ui::TouchDeviceTransform>& transforms) {
   ClearTouchDeviceAssociations();
-  for (const TouchDeviceTransform& transform : transforms) {
+  for (const TouchDeviceTransform& transform : transforms)
     UpdateTouchInfoFromTransform(transform);
-  }
   are_touchscreen_target_displays_valid_ = true;
-  for (InputDeviceEventObserver& observer : observers_) {
-    observer.OnTouchDeviceAssociationChanged();
-  }
+  observers_.Notify(&InputDeviceEventObserver::OnTouchDeviceAssociationChanged);
 }
 
 void DeviceDataManager::ClearTouchDeviceAssociations() {
   touch_map_.clear();
-  for (TouchscreenDevice& touchscreen_device : touchscreen_devices_) {
+  for (TouchscreenDevice& touchscreen_device : touchscreen_devices_)
     touchscreen_device.target_display_id = display::kInvalidDisplayId;
-  }
 }
 
 void DeviceDataManager::UpdateTouchInfoFromTransform(
@@ -248,23 +265,21 @@ void DeviceDataManager::UpdateTouchInfoFromTransform(
 void DeviceDataManager::UpdateTouchMap() {
   // Remove all entries for devices from the |touch_map_| that are not currently
   // connected.
-  auto last_iter = std::remove_if(
-      touch_map_.begin(), touch_map_.end(),
+  base::EraseIf(
+      touch_map_,
       [this](const std::pair<int, TouchDeviceTransform>& map_entry) {
         // Remove the device identified by |map_entry| from |touch_map_| if it
         // is not present in the list of currently connected devices.
         return !base::Contains(touchscreen_devices_, map_entry.second.device_id,
                                &TouchscreenDevice::id);
       });
-  touch_map_.erase(last_iter, touch_map_.end());
 }
 
 void DeviceDataManager::ApplyTouchRadiusScale(int touch_device_id,
                                               double* radius) {
   auto iter = touch_map_.find(touch_device_id);
-  if (iter != touch_map_.end()) {
+  if (iter != touch_map_.end())
     *radius = (*radius) * iter->second.radius_scale;
-  }
 }
 
 void DeviceDataManager::ApplyTouchTransformer(int touch_device_id,
@@ -284,7 +299,8 @@ const std::vector<TouchscreenDevice>& DeviceDataManager::GetTouchscreenDevices()
   return touchscreen_devices_;
 }
 
-const std::vector<InputDevice>& DeviceDataManager::GetKeyboardDevices() const {
+const std::vector<KeyboardDevice>& DeviceDataManager::GetKeyboardDevices()
+    const {
   return keyboard_devices_;
 }
 
@@ -297,8 +313,14 @@ const std::vector<InputDevice>& DeviceDataManager::GetPointingStickDevices()
   return pointing_stick_devices_;
 }
 
-const std::vector<InputDevice>& DeviceDataManager::GetTouchpadDevices() const {
+const std::vector<TouchpadDevice>& DeviceDataManager::GetTouchpadDevices()
+    const {
   return touchpad_devices_;
+}
+
+const std::vector<InputDevice>& DeviceDataManager::GetGraphicsTabletDevices()
+    const {
+  return graphics_tablet_devices_;
 }
 
 const std::vector<InputDevice>& DeviceDataManager::GetUncategorizedDevices()
@@ -313,9 +335,8 @@ bool DeviceDataManager::AreDeviceListsComplete() const {
 int64_t DeviceDataManager::GetTargetDisplayForTouchDevice(
     int touch_device_id) const {
   auto iter = touch_map_.find(touch_device_id);
-  if (iter != touch_map_.end()) {
+  if (iter != touch_map_.end())
     return iter->second.display_id;
-  }
   return display::kInvalidDisplayId;
 }
 
@@ -335,7 +356,7 @@ void DeviceDataManager::OnTouchscreenDevicesUpdated(
 }
 
 void DeviceDataManager::OnKeyboardDevicesUpdated(
-    const std::vector<InputDevice>& devices) {
+    const std::vector<KeyboardDevice>& devices) {
   if (base::ranges::equal(devices, keyboard_devices_, InputDeviceEquals)) {
     return;
   }
@@ -363,7 +384,7 @@ void DeviceDataManager::OnPointingStickDevicesUpdated(
 }
 
 void DeviceDataManager::OnTouchpadDevicesUpdated(
-    const std::vector<InputDevice>& devices) {
+    const std::vector<TouchpadDevice>& devices) {
   if (base::ranges::equal(devices, touchpad_devices_, InputDeviceEquals)) {
     return;
   }
@@ -371,8 +392,8 @@ void DeviceDataManager::OnTouchpadDevicesUpdated(
   NotifyObserversTouchpadDeviceConfigurationChanged();
 }
 
-#if defined(OHOS_INPUT_EVENTS)
-void DeviceDataManager::AddKeyboardDevice(const InputDevice& device) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void DeviceDataManager::AddKeyboardDevice(const KeyboardDevice& device) {
   for (auto item = keyboard_devices_.begin(); item != keyboard_devices_.end();
        ++item) {
     if (InputDeviceEquals(*item, device)) {
@@ -396,7 +417,7 @@ void DeviceDataManager::AddMouseDevice(const InputDevice& device) {
   NotifyObserversMouseDeviceConfigurationChanged();
 }
 
-void DeviceDataManager::AddTouchpadDevice(const InputDevice& device) {
+void DeviceDataManager::AddTouchpadDevice(const TouchpadDevice& device) {
   for (auto item = touchpad_devices_.begin(); item != touchpad_devices_.end();
        ++item) {
     if (InputDeviceEquals(*item, device)) {
@@ -439,7 +460,17 @@ void DeviceDataManager::DeleteDevice(const InputDevice& device) {
     }
   }
 }
-#endif  // defined(OHOS_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+void DeviceDataManager::OnGraphicsTabletDevicesUpdated(
+    const std::vector<InputDevice>& devices) {
+  if (base::ranges::equal(devices, graphics_tablet_devices_,
+                          InputDeviceEquals)) {
+    return;
+  }
+  graphics_tablet_devices_ = devices;
+  NotifyObserversGraphicsTabletDeviceConfigurationChanged();
+}
 
 void DeviceDataManager::OnUncategorizedDevicesUpdated(
     const std::vector<InputDevice>& devices) {
@@ -476,6 +507,10 @@ NOTIFY_OBSERVERS(
 NOTIFY_OBSERVERS(
     NotifyObserversTouchpadDeviceConfigurationChanged(),
     OnInputDeviceConfigurationChanged(InputDeviceEventObserver::kTouchpad))
+
+NOTIFY_OBSERVERS(NotifyObserversGraphicsTabletDeviceConfigurationChanged(),
+                 OnInputDeviceConfigurationChanged(
+                     InputDeviceEventObserver::kGraphicsTablet))
 
 NOTIFY_OBSERVERS(
     NotifyObserversUncategorizedDeviceConfigurationChanged(),

@@ -6,20 +6,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import "base/mac/bridging.h"
+#import "base/apple/bridging.h"
 #import "ios/net/protocol_handler_util.h"
 #import "ios/web/test/test_url_constants.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "net/base/net_errors.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/gtest_mac.h"
 #import "testing/platform_test.h"
 #import "url/gurl.h"
 #import "url/scheme_host_port.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace web {
 
@@ -74,7 +70,7 @@ TEST_F(ErrorTranslationUtilTest, MalformedError) {
 // underlying error.
 TEST_F(ErrorTranslationUtilTest, UnknownCFNetworkError) {
   NSError* error = [[NSError alloc]
-      initWithDomain:base::mac::CFToNSPtrCast(kCFErrorDomainCFNetwork)
+      initWithDomain:base::apple::CFToNSPtrCast(kCFErrorDomainCFNetwork)
                 code:kCFURLErrorUnknown
             userInfo:nil];
   NSError* net_error = NetErrorFromError(error);

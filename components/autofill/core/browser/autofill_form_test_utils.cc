@@ -4,151 +4,184 @@
 
 #include "components/autofill/core/browser/autofill_form_test_utils.h"
 
+#include "base/containers/to_vector.h"
 #include "components/autofill/core/browser/autofill_test_utils.h"
+#include "components/autofill/core/browser/country_type.h"
 #include "components/autofill/core/browser/form_structure.h"
 #include "components/autofill/core/common/autocomplete_parsing_util.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
-namespace autofill {
-
-namespace test {
+namespace autofill::test {
 
 testing::Message DescribeFormData(const FormData& form_data) {
   testing::Message result;
-  result << "Form contains " << form_data.fields.size() << " fields:\n";
-  for (const FormFieldData& field : form_data.fields) {
-    result << "type=" << field.form_control_type << ", name=" << field.name
-           << ", label=" << field.label << "\n";
+  result << "Form contains " << form_data.fields().size() << " fields:\n";
+  for (const FormFieldData& field : form_data.fields()) {
+    result << "type=" << FormControlTypeToString(field.form_control_type())
+           << ", name=" << field.name() << ", label=" << field.label() << "\n";
   }
   return result;
 }
 
-FormFieldData CreateFieldByRole(ServerFieldType role) {
+FormFieldData CreateFieldByRole(FieldType role) {
   FormFieldData field;
   switch (role) {
-    case ServerFieldType::USERNAME:
-      field.label = u"Username";
-      field.name = u"username";
+    case FieldType::USERNAME:
+      field.set_label(u"Username");
+      field.set_name(u"username");
       break;
-    case ServerFieldType::NAME_FULL:
-      field.label = u"Full name";
-      field.name = u"fullname";
+    case FieldType::NAME_FULL:
+      field.set_label(u"Full name");
+      field.set_name(u"fullname");
       break;
-    case ServerFieldType::NAME_FIRST:
-      field.label = u"First Name";
-      field.name = u"firstName";
+    case FieldType::NAME_FIRST:
+      field.set_label(u"First Name");
+      field.set_name(u"firstName");
       break;
-    case ServerFieldType::NAME_LAST:
-      field.label = u"Last Name";
-      field.name = u"lastName";
+    case FieldType::NAME_LAST:
+      field.set_label(u"Last Name");
+      field.set_name(u"lastName");
       break;
-    case ServerFieldType::EMAIL_ADDRESS:
-      field.label = u"E-mail address";
-      field.name = u"email";
+    case FieldType::EMAIL_ADDRESS:
+      field.set_label(u"E-mail address");
+      field.set_name(u"email");
       break;
-    case ServerFieldType::ADDRESS_HOME_LINE1:
-      field.label = u"Address";
-      field.name = u"home_line_one";
+    case FieldType::ADDRESS_HOME_LINE1:
+      field.set_label(u"Address");
+      field.set_name(u"home_line_one");
       break;
-    case ServerFieldType::ADDRESS_HOME_CITY:
-      field.label = u"City";
-      field.name = u"city";
+    case FieldType::ADDRESS_HOME_CITY:
+      field.set_label(u"City");
+      field.set_name(u"city");
       break;
-    case ServerFieldType::ADDRESS_HOME_STATE:
-      field.label = u"State";
-      field.name = u"state";
+    case FieldType::ADDRESS_HOME_STATE:
+      field.set_label(u"State");
+      field.set_name(u"state");
       break;
-    case ServerFieldType::ADDRESS_HOME_COUNTRY:
-      field.label = u"Country";
-      field.name = u"country";
+    case FieldType::ADDRESS_HOME_COUNTRY:
+      field.set_label(u"Country");
+      field.set_name(u"country");
       break;
-    case ServerFieldType::ADDRESS_HOME_ZIP:
-      field.label = u"Zip Code";
-      field.name = u"zipCode";
+    case FieldType::ADDRESS_HOME_ZIP:
+      field.set_label(u"Zip Code");
+      field.set_name(u"zipCode");
       break;
-    case ServerFieldType::PHONE_HOME_NUMBER:
-      field.label = u"Phone";
-      field.name = u"phone";
+    case FieldType::PHONE_HOME_NUMBER:
+      field.set_label(u"Phone");
+      field.set_name(u"phone");
       break;
-    case ServerFieldType::COMPANY_NAME:
-      field.label = u"Company";
-      field.name = u"company";
+    case FieldType::COMPANY_NAME:
+      field.set_label(u"Company");
+      field.set_name(u"company");
       break;
-    case ServerFieldType::CREDIT_CARD_NUMBER:
-      field.label = u"Card Number";
-      field.name = u"cardNumber";
+    case FieldType::CREDIT_CARD_NUMBER:
+      field.set_label(u"Card Number");
+      field.set_name(u"cardNumber");
       break;
-    case ServerFieldType::EMPTY_TYPE:
+    case FieldType::PASSWORD:
+      field.set_label(u"Password");
+      field.set_name(u"password");
+      break;
+    case FieldType::EMPTY_TYPE:
     default:
       break;
   }
   return field;
 }
 
+FormFieldData GetFormFieldData(const FieldDescription& fd) {
+  FormFieldData ff = CreateFieldByRole(fd.role);
+  ff.set_form_control_type(fd.form_control_type);
+  if (ff.form_control_type() == FormControlType::kSelectOne &&
+      !fd.select_options.empty()) {
+    ff.set_options(fd.select_options);
+  }
+
+  ff.set_renderer_id(fd.renderer_id.value_or(MakeFieldRendererId()));
+  ff.set_host_form_id(MakeFormRendererId());
+  ff.set_is_focusable(fd.is_focusable);
+  ff.set_is_visible(fd.is_visible);
+  if (!fd.autocomplete_attribute.empty()) {
+    ff.set_autocomplete_attribute(fd.autocomplete_attribute);
+    ff.set_parsed_autocomplete(
+        ParseAutocompleteAttribute(fd.autocomplete_attribute));
+  }
+  if (fd.host_frame) {
+    ff.set_host_frame(*fd.host_frame);
+  }
+  if (fd.host_form_signature) {
+    ff.set_host_form_signature(*fd.host_form_signature);
+  }
+  if (fd.label) {
+    ff.set_label(*fd.label);
+  }
+  if (fd.name) {
+    ff.set_name(*fd.name);
+  }
+  if (fd.name_attribute) {
+    ff.set_name_attribute(*fd.name_attribute);
+  }
+  if (fd.id_attribute) {
+    ff.set_id_attribute(*fd.id_attribute);
+  }
+  if (fd.value) {
+    ff.set_value(*fd.value);
+  }
+  if (fd.placeholder) {
+    ff.set_placeholder(*fd.placeholder);
+  }
+  if (fd.max_length) {
+    ff.set_max_length(*fd.max_length);
+  }
+  if (fd.origin) {
+    ff.set_origin(*fd.origin);
+  }
+  ff.set_is_autofilled(fd.is_autofilled.value_or(false));
+  ff.set_should_autocomplete(fd.should_autocomplete);
+  ff.set_properties_mask(fd.properties_mask);
+  ff.set_check_status(fd.check_status);
+  return ff;
+}
+
 FormData GetFormData(const FormDescription& d) {
   FormData f;
-  f.url = GURL(d.url);
-  f.action = GURL(d.action);
-  f.name = d.name;
-  f.host_frame = d.host_frame.value_or(MakeLocalFrameToken());
-  f.unique_renderer_id = d.unique_renderer_id.value_or(MakeFormRendererId());
-  if (d.main_frame_origin)
-    f.main_frame_origin = *d.main_frame_origin;
-  f.is_form_tag = d.is_form_tag;
-  for (const FieldDescription& dd : d.fields) {
-    FormFieldData ff = CreateFieldByRole(dd.role);
-    ff.form_control_type = dd.form_control_type;
-    if (ff.form_control_type == "select-one" && !dd.select_options.empty())
-      ff.options = dd.select_options;
-    ff.host_frame = dd.host_frame.value_or(f.host_frame);
-    ff.unique_renderer_id =
-        dd.unique_renderer_id.value_or(MakeFieldRendererId());
-    ff.is_focusable = dd.is_focusable;
-    ff.is_visible = dd.is_visible;
-    if (!dd.autocomplete_attribute.empty()) {
-      ff.autocomplete_attribute = dd.autocomplete_attribute;
-      ff.parsed_autocomplete =
-          ParseAutocompleteAttribute(dd.autocomplete_attribute, ff.max_length);
-    }
-    if (dd.label)
-      ff.label = *dd.label;
-    if (dd.name)
-      ff.name = *dd.name;
-    if (dd.value)
-      ff.value = *dd.value;
-    if (dd.placeholder)
-      ff.placeholder = *dd.placeholder;
-    ff.is_autofilled = dd.is_autofilled.value_or(false);
-    ff.origin = dd.origin.value_or(f.main_frame_origin);
-    ff.should_autocomplete = dd.should_autocomplete;
-    ff.properties_mask = dd.properties_mask;
-    f.fields.push_back(ff);
+  f.set_url(GURL(d.url));
+  f.set_action(GURL(d.action));
+  f.set_name(d.name);
+  f.set_host_frame(d.host_frame.value_or(MakeLocalFrameToken()));
+  f.set_renderer_id(d.renderer_id.value_or(MakeFormRendererId()));
+  if (d.main_frame_origin) {
+    f.set_main_frame_origin(*d.main_frame_origin);
   }
+  f.set_fields(base::ToVector(d.fields, [&f](const FieldDescription& dd) {
+    FormFieldData ff = GetFormFieldData(dd);
+    ff.set_host_frame(dd.host_frame.value_or(f.host_frame()));
+    ff.set_origin(dd.origin.value_or(f.main_frame_origin()));
+    ff.set_host_form_id(f.renderer_id());
+    return ff;
+  }));
   return f;
 }
 
-std::vector<ServerFieldType> GetHeuristicTypes(
-    const FormDescription& form_description) {
-  std::vector<ServerFieldType> heuristic_types;
-  heuristic_types.reserve(form_description.fields.size());
-
-  for (const auto& field : form_description.fields) {
-    heuristic_types.emplace_back(field.heuristic_type.value_or(field.role));
+FormData GetFormData(const std::vector<FieldType>& field_types) {
+  FormDescription form_description;
+  form_description.fields.reserve(field_types.size());
+  for (FieldType type : field_types) {
+    form_description.fields.emplace_back(type);
   }
-
-  return heuristic_types;
+  return GetFormData(form_description);
 }
 
-std::vector<ServerFieldType> GetServerTypes(
+std::vector<FieldType> GetHeuristicTypes(
     const FormDescription& form_description) {
-  std::vector<ServerFieldType> server_types;
-  server_types.reserve(form_description.fields.size());
+  return base::ToVector(form_description.fields, [](const auto& field) {
+    return field.heuristic_type.value_or(field.role);
+  });
+}
 
-  for (const auto& field : form_description.fields) {
-    server_types.emplace_back(field.server_type.value_or(field.role));
-  }
-
-  return server_types;
+std::vector<FieldType> GetServerTypes(const FormDescription& form_description) {
+  return base::ToVector(form_description.fields, [](const auto& field) {
+    return field.server_type.value_or(field.role);
+  });
 }
 
 // static
@@ -162,7 +195,7 @@ void FormStructureTest::CheckFormStructureTestData(
     auto form_structure = std::make_unique<FormStructure>(form);
 
     if (test_case.form_flags.determine_heuristic_type)
-      form_structure->DetermineHeuristicTypes(nullptr, nullptr);
+      form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
 
     if (test_case.form_flags.is_autofillable)
       EXPECT_TRUE(form_structure->IsAutofillable());
@@ -174,8 +207,6 @@ void FormStructureTest::CheckFormStructureTestData(
       EXPECT_TRUE(form_structure->ShouldBeUploaded());
     if (test_case.form_flags.has_author_specified_types)
       EXPECT_TRUE(form_structure->has_author_specified_types());
-    if (test_case.form_flags.has_author_specified_upi_vpa_hint)
-      EXPECT_TRUE(form_structure->has_author_specified_upi_vpa_hint());
 
     if (test_case.form_flags.is_complete_credit_card_form.has_value()) {
       EXPECT_EQ(form_structure->IsCompleteCreditCardForm(),
@@ -192,7 +223,7 @@ void FormStructureTest::CheckFormStructureTestData(
     if (test_case.form_flags.section_count) {
       std::set<Section> section_names;
       for (const auto& field : *form_structure)
-        section_names.insert(field->section);
+        section_names.insert(field->section());
       EXPECT_EQ(*test_case.form_flags.section_count,
                 static_cast<int>(section_names.size()));
     }
@@ -216,6 +247,4 @@ void FormStructureTest::CheckFormStructureTestData(
   }
 }
 
-}  // namespace test
-
-}  // namespace autofill
+}  // namespace autofill::test

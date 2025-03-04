@@ -10,11 +10,11 @@ import './diagnostics_shared.css.js';
 import './icons.html.js';
 import './routine_result_list.js';
 import './text_badge.js';
-import './strings.m.js';
+import '/strings.m.js';
 
+import {I18nMixin} from 'chrome://resources/ash/common/cr_elements/i18n_mixin.js';
 import {loadTimeData} from 'chrome://resources/ash/common/load_time_data.m.js';
-import {I18nMixin} from 'chrome://resources/cr_elements/i18n_mixin.js';
-import {assert, assertNotReached} from 'chrome://resources/js/assert_ts.js';
+import {assert, assertNotReached} from 'chrome://resources/js/assert.js';
 import {IronA11yAnnouncer} from 'chrome://resources/polymer/v3_0/iron-a11y-announcer/iron-a11y-announcer.js';
 import {IronCollapseElement} from 'chrome://resources/polymer/v3_0/iron-collapse/iron-collapse.js';
 import {PolymerElementProperties} from 'chrome://resources/polymer/v3_0/polymer/interfaces.js';
@@ -47,8 +47,8 @@ export interface RoutineSectionElement {
 const RoutineSectionElementBase = I18nMixin(PolymerElement);
 
 export class RoutineSectionElement extends RoutineSectionElementBase {
-  static get is(): string {
-    return 'routine-section';
+  static get is(): 'routine-section' {
+    return 'routine-section' as const;
   }
 
   static get template(): HTMLTemplateElement {
@@ -210,10 +210,10 @@ export class RoutineSectionElement extends RoutineSectionElementBase {
   hideVerticalLines: boolean;
   usingRoutineGroups: boolean;
   ignoreRoutineStatusUpdates: boolean;
-  private announcedText: string;
+  announcedText: string;
+  currentTestName: string;
   private routineStartTimeMs: number;
   private executionStatus: ExecutionProgress;
-  private currentTestName: string;
   private powerRoutineResult: PowerRoutineResult;
   private badgeType: BadgeType;
   private badgeText: string;
@@ -458,7 +458,7 @@ export class RoutineSectionElement extends RoutineSectionElementBase {
   /**
    * Sets status texts for remaining runtime while the routine runs.
    */
-  private setRunningStatusBadgeText(): void {
+  setRunningStatusBadgeText(): void {
     // Routines that are longer than 5 minutes are considered large
     const largeRoutine = this.routineRuntime >= 5;
 
@@ -615,7 +615,7 @@ export class RoutineSectionElement extends RoutineSectionElementBase {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'routine-section': RoutineSectionElement;
+    [RoutineSectionElement.is]: RoutineSectionElement;
   }
 }
 

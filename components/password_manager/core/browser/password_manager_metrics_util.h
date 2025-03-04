@@ -12,23 +12,22 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/metrics/histogram_functions.h"
+#include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
+#include "components/autofill/core/browser/ui/suggestion.h"
 #include "components/autofill/core/common/mojom/autofill_types.mojom.h"
 #include "components/autofill/core/common/password_generation_util.h"
+#include "components/device_reauth/device_reauth_metrics_util.h"
+#include "components/password_manager/core/browser/features/password_manager_features_util.h"
+#include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/password_manager/core/common/credential_manager_types.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 
-namespace password_manager {
-
-namespace metrics_util {
-
-using IsUsernameChanged = base::StrongAlias<class IsUsernameChangedTag, bool>;
-using IsPasswordChanged = base::StrongAlias<class IsPasswordChangedTag, bool>;
-using IsPasswordNoteChanged =
-    base::StrongAlias<class IsPasswordNoteChangedTag, bool>;
+namespace password_manager::metrics_util {
 
 // These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused.
+// numeric values should never be reused. Needs to stay in sync with the
+// PasswordBubbleDisplayDisposition enum in enums.xml.
 // Metrics: "PasswordBubble.DisplayDisposition"
 enum UIDisplayDisposition {
   AUTOMATIC_WITH_PASSWORD_PENDING = 0,
@@ -47,6 +46,18 @@ enum UIDisplayDisposition {
   MANUAL_BIOMETRIC_AUTHENTICATION_FOR_FILLING = 13,
   AUTOMATIC_BIOMETRIC_AUTHENTICATION_FOR_FILLING = 14,
   AUTOMATIC_BIOMETRIC_AUTHENTICATION_CONFIRMATION = 15,
+  AUTOMATIC_SHARED_PASSWORDS_NOTIFICATION = 16,
+  AUTOMATIC_ADD_USERNAME_BUBBLE = 17,
+  MANUAL_ADD_USERNAME_BUBBLE = 18,
+  AUTOMATIC_RELAUNCH_CHROME_BUBBLE = 19,
+  AUTOMATIC_DEFAULT_STORE_CHANGED_BUBBLE = 20,
+  AUTOMATIC_PASSKEY_SAVED_CONFIRMATION = 21,
+  AUTOMATIC_PASSKEY_DELETED_CONFIRMATION = 22,
+  MANUAL_PASSKEY_DELETED_CONFIRMATION = 23,
+  AUTOMATIC_PASSKEY_UPDATED_CONFIRMATION = 24,
+  MANUAL_PASSKEY_UPDATED_CONFIRMATION = 25,
+  AUTOMATIC_PASSKEY_NOT_ACCEPTED_BUBBLE = 26,
+  MANUAL_PASSKEY_NOT_ACCEPTED_BUBBLE = 27,
   NUM_DISPLAY_DISPOSITIONS,
 };
 
@@ -69,6 +80,8 @@ enum UIDismissalReason {
   AUTO_SIGNIN_TOAST_CLICKED_OBSOLETE = 10,  // obsolete.
   CLICKED_BRAND_NAME_OBSOLETE = 11,         // obsolete.
   CLICKED_PASSWORDS_DASHBOARD = 12,
+  CLICKED_MANAGE_PASSWORD = 13,
+  CLICKED_GOT_IT = 14,
   NUM_UI_RESPONSES,
 };
 
@@ -106,18 +119,6 @@ enum class LeakDialogDismissalReason {
   // This type has been deprecated as part of APC removal.
   // kClickedChangePasswordAutomatically = 4,
   kMaxValue = kClickedOk,
-};
-
-// These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused.
-enum FormDeserializationStatus {
-  LOGIN_DATABASE_SUCCESS = 0,
-  LOGIN_DATABASE_FAILURE = 1,
-  LIBSECRET_SUCCESS = 2,
-  LIBSECRET_FAILURE = 3,
-  GNOME_SUCCESS = 4,
-  GNOME_FAILURE = 5,
-  NUM_DESERIALIZATION_STATUSES
 };
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -169,15 +170,6 @@ enum AutoSigninPromoUserAction {
   AUTO_SIGNIN_TURN_OFF = 1,
   AUTO_SIGNIN_OK_GOT_IT = 2,
   AUTO_SIGNIN_PROMO_ACTION_COUNT
-};
-
-// These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused.
-enum AccountChooserUserAction {
-  ACCOUNT_CHOOSER_DISMISSED = 0,
-  ACCOUNT_CHOOSER_CREDENTIAL_CHOSEN = 1,
-  ACCOUNT_CHOOSER_SIGN_IN = 2,
-  ACCOUNT_CHOOSER_ACTION_COUNT
 };
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -239,18 +231,6 @@ enum AccessPasswordInSettingsEvent {
   ACCESS_PASSWORD_COPIED = 1,
   ACCESS_PASSWORD_EDITED = 2,
   ACCESS_PASSWORD_COUNT
-};
-
-// These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused. Needs to stay in sync with
-// "PasswordManager.ReauthResult" in enums.xml.
-// Metrics: PasswordManager.ReauthToAccessPasswordInSettings
-// GENERATED_JAVA_ENUM_PACKAGE: org.chromium.chrome.browser.password_manager
-enum class ReauthResult {
-  kSuccess = 0,
-  kFailure = 1,
-  kSkipped = 2,
-  kMaxValue = kSkipped,
 };
 
 // Specifies the type of PasswordFormManagers and derived classes to distinguish
@@ -321,19 +301,6 @@ enum class IsSyncPasswordHashSaved {
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
-// Metrics: "PasswordManager.CertificateErrorsWhileSeeingForms"
-enum class CertificateError {
-  NONE = 0,
-  OTHER = 1,
-  AUTHORITY_INVALID = 2,
-  DATE_INVALID = 3,
-  COMMON_NAME_INVALID = 4,
-  WEAK_SIGNATURE_ALGORITHM = 5,
-  COUNT
-};
-
-// These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused.
 // Metric: "PasswordManager.ReusedPasswordType".
 enum class PasswordType {
   // Passwords saved by password manager.
@@ -341,7 +308,8 @@ enum class PasswordType {
   // Passwords used for Chrome sign-in and is closest ("blessed") to be set to
   // sync when signed into multiple profiles if user wants to set up sync.
   // The primary account is equivalent to the "sync account" if this profile has
-  // enabled sync.
+  // enabled history sync. Note: if sync is enabled, but the history datatype
+  // is not enabled, the account is not considered as primary.
   PRIMARY_ACCOUNT_PASSWORD = 1,
   // Other Gaia passwords used in Chrome other than the sync password.
   OTHER_GAIA_PASSWORD = 2,
@@ -429,28 +397,13 @@ enum class GenerationDialogChoice {
   kMaxValue = kRejected
 };
 
-// Represents the state of the user wrt. sign-in and account-scoped storage.
-// Used for metrics. Always keep this enum in sync with the corresponding
-// histogram_suffixes in histograms.xml!
-enum class PasswordAccountStorageUserState {
-  // Signed-out user (and no account storage opt-in exists).
-  kSignedOutUser = 0,
-  // Signed-out user, but an account storage opt-in exists.
-  kSignedOutAccountStoreUser = 1,
-  // Signed-in non-syncing user, not opted in to the account storage (but may
-  // save passwords to the account storage by default).
-  kSignedInUser = 2,
-  // Signed-in non-syncing user, not opted in to the account storage, and has
-  // explicitly chosen to save passwords only on the device.
-  kSignedInUserSavingLocally = 3,
-  // Signed-in non-syncing user, opted in to the account storage, and saving
-  // passwords to the account storage.
-  kSignedInAccountStoreUser = 4,
-  // Signed-in non-syncing user and opted in to the account storage, but has
-  // chosen to save passwords only on the device.
-  kSignedInAccountStoreUserSavingLocally = 5,
-  // Syncing user.
-  kSyncUser = 6,
+enum class SignInState {
+  // The user is signed out.
+  kSignedOut = 0,
+  // The user is signed in but has not enabled Sync.
+  kSignedInSyncDisabled = 1,
+  // The user has enabled Sync.
+  kSyncing = 2,
 };
 
 // Represents different user interactions related to password check.
@@ -472,6 +425,18 @@ enum class PasswordCheckInteraction {
   // Must be last.
   kMaxValue = kChangePasswordAutomatically,
 };
+
+#if BUILDFLAG(IS_ANDROID)
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+// Should be kept in sync with SaveFlowStep in enums.xml.
+enum class SaveFlowStep {
+  // The form was submitted. Does not strictly require a successful submission.
+  kFormSubmitted = 0,
+  kSavePromptShown = 1,
+  kMaxValue = kSavePromptShown,
+};
+#endif
 
 // Represents different user interactions related to adding credential from the
 // setting. These values are persisted to logs. Entries should not be renumbered
@@ -496,7 +461,8 @@ enum class AddCredentialFromSettingsUserInteractions {
 };
 
 // Metrics: PasswordManager.MoveToAccountStoreTrigger.
-// This must be kept in sync with the enum in password_move_to_account_dialog.js
+// This must be kept in sync with the enum in
+// password_move_multiple_passwords_to_account_dialog.ts
 // (in chrome/browser/resources/settings/autofill_page).
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -510,24 +476,12 @@ enum class MoveToAccountStoreTrigger {
   // After saving a password locally, the user opted in to saving this and
   // future passwords in the account.
   kUserOptedInAfterSavingLocally = 3,
-  kMaxValue = kUserOptedInAfterSavingLocally,
-};
-
-// Used to record metrics for the usage and timing of the GetChangePasswordUrl
-// call. These values are persisted to logs. Entries should not be renumbered
-// and numeric values should never be reused.
-enum class GetChangePasswordUrlMetric {
-  // Used when GetChangePasswordUrl is called before the response
-  // arrives.
-  kNotFetchedYet = 0,
-  // Used when a url was used, which corresponds to the requested site.
-  kUrlOverrideUsed = 1,
-  // Used when no override url was available.
-  kNoUrlOverrideAvailable = 2,
-  // Used when a url was used, which corresponds to a site from within same
-  // FacetGroup.
-  kGroupUrlOverrideUsed = 3,
-  kMaxValue = kGroupUrlOverrideUsed,
+  // The user explicitly asked to move a password to account store from password
+  // details page.
+  kExplicitlyTriggeredForSinglePasswordInDetailsInSettings = 4,
+  // The user clicked a link in a footer of the manage passwords bubble.
+  kExplicitlyTriggeredInPasswordsManagementBubble = 5,
+  kMaxValue = kExplicitlyTriggeredInPasswordsManagementBubble,
 };
 
 // Used to record what exactly was updated during password editing flow.
@@ -565,23 +519,8 @@ enum class PasswordNoteAction {
 };
 
 std::string GetPasswordAccountStorageUserStateHistogramSuffix(
-    PasswordAccountStorageUserState user_state);
-
-// The usage level of the account-scoped password storage. This is essentially
-// a less-detailed version of PasswordAccountStorageUserState, for metrics that
-// don't need the fully-detailed breakdown.
-// These values are persisted to logs. Entries should not be renumbered and
-// numeric values should never be reused.
-enum class PasswordAccountStorageUsageLevel {
-  // The user is not using the account-scoped password storage. Either they're
-  // not signed in, or they haven't opted in to the account storage.
-  kNotUsingAccountStorage = 0,
-  // The user is signed in (but not syncing) and has opted in to the account
-  // storage.
-  kUsingAccountStorage = 1,
-  // The user has enabled Sync.
-  kSyncing = 2,
-};
+    password_manager::features_util::PasswordAccountStorageUserState
+        user_state);
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -593,7 +532,7 @@ enum class PasswordViewPageInteractions {
   // The user opens the password view page to view an non-existing credential.
   // This will close the settings password view page.
   kCredentialNotFound = 2,
-  // The copy username button in settings password view page is clicked.
+  // The copy username button in settings password/passkey view page is clicked.
   kUsernameCopyButtonClicked = 3,
   // The copy password button in settings password view page is clicked.
   kPasswordCopyButtonClicked = 4,
@@ -615,7 +554,13 @@ enum class PasswordViewPageInteractions {
   kTimedOutInViewPage = 10,
   // The credential is requested by typing the URL.
   kCredentialRequestedByUrl = 11,
-  kMaxValue = kCredentialRequestedByUrl,
+  // The copy display name button in settings passkey view page is clicked.
+  kPasskeyDisplayNameCopyButtonClicked = 12,
+  // The delete button in a passkey view page is clicked.
+  kPasskeyDeleteButtonClicked = 13,
+  // The edit button in a passkey view page is clicked.
+  kPasskeyEditButtonClicked = 14,
+  kMaxValue = kPasskeyEditButtonClicked,
 };
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -649,7 +594,58 @@ enum class PasswordManagementBubbleInteractions {
   kNoteEdited = 10,
   kNoteDeleted = 11,
   kCredentialRowWithNoteClicked = 12,
-  kMaxValue = kCredentialRowWithNoteClicked,
+  kNotePartiallySelected = 13,
+  kNoteFullySelected = 14,
+  kNotePartiallyCopied = 15,
+  kNoteFullyCopied = 16,
+  kMovePasswordLinkClicked = 17,
+  kManagePasswordButtonClicked = 18,
+  kMaxValue = kManagePasswordButtonClicked,
+};
+
+// Represents different causes for showing the password access loss warning.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused. Always keep this enum in sync with the
+// corresponding PasswordAccessLossWarningTriggers in enums.xml.
+enum class PasswordAccessLossWarningTriggers {
+  kChromeStartup = 0,
+  kPasswordSaveUpdateMessage = 1,
+  kTouchToFill = 2,
+  kKeyboardAcessorySheet = 3,
+  kKeyboardAcessoryBar = 4,
+  kAllPasswords = 5,
+  kMaxValue = kAllPasswords,
+};
+
+// Represents different actions that the user can take on the password access
+// loss warning.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused. Always keep this enum in sync with the
+// corresponding PasswordAccessLossWarningUserActions in enums.xml.
+enum class PasswordAccessLossWarningUserActions {
+  kMainAction = 0,
+  kHelpCenter = 1,
+  kDismissed = 2,
+  kMaxValue = kDismissed,
+};
+
+// Represents different causes for showing the password migration warning.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused. Always keep this enum in sync with the
+// corresponding PasswordMigrationWarningTriggers in enums.xml.
+// GENERATED_JAVA_ENUM_PACKAGE: org.chromium.chrome.browser.pwd_migration
+enum class PasswordMigrationWarningTriggers {
+  kChromeStartup = 0,
+  kPasswordSaveUpdateMessage = 1,
+  kPasswordSettings = 2,
+  kTouchToFill = 3,
+  kKeyboardAcessorySheet = 4,
+  kKeyboardAcessoryBar = 5,
+  kAllPasswords = 6,
+  kMaxValue = kAllPasswords,
 };
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -664,8 +660,118 @@ enum class PasswordManagerShortcutMetric {
   kMaxValue = kProfileSwitched,
 };
 
+// Presumed password form type. Calculated using heuristics after form parsing.
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+// Needs to stay in sync with PasswordFormType2 in enums.xml.
+enum class SubmittedFormType {
+  kUndefined = 0,
+  kLogin = 1,
+  kSignup = 2,
+  kChangePassword = 3,
+  kResetPassword = 4,
+  kSingleUsername = 5,
+  kMaxValue = kSingleUsername,
+};
+
+// Represents different user interactions related to shared password
+// notification bubble. These values are persisted to logs. Entries should not
+// be renumbered and numeric values should never be reused. Always keep this
+// enum in sync with the corresponding
+// PasswordManager.SharedPasswordsNotificationInteractions in enums.xml.
+enum class SharedPasswordsNotificationBubbleInteractions {
+  kNotificationDisplayed = 0,
+  kGotItButtonClicked = 1,
+  kManagePasswordsButtonClicked = 2,
+  kCloseButtonClicked = 3,
+  kMaxValue = kCloseButtonClicked,
+};
+
+// Represent all possible states of GetLoginsWithAffiliationsRequestHandler in
+// regards to grouped matches. Entries should not be renumbered and numeric
+// values should never be reused. Always keep this enum in sync with the
+// corresponding PasswordManager.GroupedPasswordFetchResult in enums.xml.
+enum class GroupedPasswordFetchResult {
+  kNoMatches = 0,
+  kBetterMatchesExist = 1,
+  kOnlyGroupedMatches = 2,
+  kMaxValue = kOnlyGroupedMatches,
+};
+
+// Represents the result of processing an incoming password sharing invitation.
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused. Always keep this enum in sync with the
+// corresponding PasswordManager.ProcessIncomingPasswordSharingInvitationResult
+// in enums.xml.
+enum class ProcessIncomingPasswordSharingInvitationResult {
+  kInvitationAutoApproved = 0,
+  kNoPasswordStore = 1,
+  kCredentialsExistWithSamePassword = 2,
+  kCredentialsExistWithDifferentPassword = 3,
+  kSharedCredentialsExistWithSameSenderAndSamePassword = 4,
+  kSharedCredentialsExistWithSameSenderAndDifferentPassword = 5,
+  kSharedCredentialsExistWithDifferentSenderAndSamePassword = 6,
+  kSharedCredentialsExistWithDifferentSenderAndDifferentPassword = 7,
+  kInvalidInvitation = 8,
+  kMaxValue = kInvalidInvitation,
+};
+
+#if BUILDFLAG(IS_ANDROID)
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused. Keep in sync with `
+// `LocalPwdMigrationProgressState` in the passwords' enums.xml.
+enum class LocalPwdMigrationProgressState {
+  kScheduled = 0,
+  kStarted = 1,
+  // Finished is recorded irrespective of success status.
+  kFinished = 2,
+  kMaxValue = kFinished,
+};
+
+// Enum specifying the outcome of an attempt to access credentials stored in a
+// SharedPref. These values are persisted to logs. Entries should not be
+// renumbered and numeric values should never be reused. Keep in sync with
+// `SharedPrefCredentialsAccessOutcome` in passwords' enums.xml.
+enum class SharedPrefCredentialsAccessOutcome {
+  kNoCredentials = 0,
+  kParseError = 1,
+  kBadType = 2,
+  kEmptyCredentials = 3,
+  kLoginMatch = 4,
+  kLoginMismatch = 5,
+  kMaxValue = kLoginMismatch,
+};
+
+// Enum that describes different outcomes on the attempt of triggering the
+// Touch-To-Fill bottom sheet for password generation.
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+enum class TouchToFillPasswordGenerationTriggerOutcome {
+  kShown = 0,
+  kHasSavedCredentials = 1,
+  kDismissed4TimesInARow = 2,
+  kShownBefore = 3,
+  kFailedToDisplay = 4,
+  kMaxValue = kFailedToDisplay
+};
+#endif
+
+// Enum to track the reasons of password loss.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+enum class PasswordManagerCredentialRemovalReason {
+  kSettings = 0,                        // Stored as (1<<0) in the bit vector.
+  kClearBrowsingData = 1,               // Stored as (1<<1) in the bit vector.
+  kSync = 2,                            // Stored as (1<<2) in the bit vector.
+  kDeletingUndecryptablePasswords = 3,  // Stored as (1<<3) in the bit vector.
+  kDeleteAllPasswordManagerData = 4,    // Stored as (1<<4) in the bit vector.
+  kMaxValue = kDeleteAllPasswordManagerData,
+};
+
 std::string GetPasswordAccountStorageUsageLevelHistogramSuffix(
-    PasswordAccountStorageUsageLevel usage_level);
+    password_manager::features_util::PasswordAccountStorageUsageLevel
+        usage_level);
 
 // Records the `type` of a leak dialog shown to the user and the `reason`
 // why it was dismissed.
@@ -709,39 +815,29 @@ class LeakDialogMetricsRecorder {
 // bubbles.
 void LogGeneralUIDismissalReason(UIDismissalReason reason);
 
-// Log the |reason| a user dismissed the save password bubble. If
-// |user_state| is set, the |reason| is also logged to a separate
-// user-state-specific histogram. If the submission is detected on a cleared
-// change password form, dismissal reason is also recorded in a histogram
-// specific for this type of submission.
+// Log the `reason` a user dismissed the save password bubble. If
+// `user_state` is set, the `reason` is also logged to a separate
+// user-state-specific histogram.
+// If `log_adoption_metric` is true, additional histogram is recorded to
+// measure adoption among new users of password manager.
 void LogSaveUIDismissalReason(
     UIDismissalReason reason,
-    autofill::mojom::SubmissionIndicatorEvent submission_event,
-    absl::optional<PasswordAccountStorageUserState> user_state);
+    std::optional<features_util::PasswordAccountStorageUserState> user_state,
+    bool log_adoption_metric);
 
-// Log the |reason| a user dismissed the save password prompt after previously
-// having unblocklisted the origin while on the page.
-void LogSaveUIDismissalReasonAfterUnblocklisting(UIDismissalReason reason);
-
-// Log the |reason| a user dismissed the update password bubble. If the
-// submission is detected on a cleared change password form, dismissal reason is
-// also recorded in a histogram specific for this type of submission.
-void LogUpdateUIDismissalReason(
-    UIDismissalReason reason,
-    autofill::mojom::SubmissionIndicatorEvent submission_event);
+// Log the |reason| a user dismissed the update password bubble.
+void LogUpdateUIDismissalReason(UIDismissalReason reason);
 
 // Log the |reason| a user dismissed the move password bubble.
-void LogMoveUIDismissalReason(UIDismissalReason reason,
-                              PasswordAccountStorageUserState user_state);
+void LogMoveUIDismissalReason(
+    UIDismissalReason reason,
+    features_util::PasswordAccountStorageUserState user_state);
 
 // Log the appropriate display disposition.
 void LogUIDisplayDisposition(UIDisplayDisposition disposition);
 
-// Log if a saved FormData was deserialized correctly.
-void LogFormDataDeserializationStatus(FormDeserializationStatus status);
-
 // When a credential was filled, log whether it came from an Android app.
-void LogFilledCredentialIsFromAndroidApp(bool from_android);
+void LogFilledPasswordFromAndroidApp(bool from_android);
 
 // Log what's preventing passwords from syncing.
 void LogPasswordSyncState(PasswordSyncState state);
@@ -759,10 +855,6 @@ void LogPasswordGenerationAvailableSubmissionEvent(
 // Log a user action on showing the autosignin first run experience.
 void LogAutoSigninPromoUserAction(AutoSigninPromoUserAction action);
 
-// Log a user action on showing the account chooser for one or many accounts.
-void LogAccountChooserUserActionOneAccount(AccountChooserUserAction action);
-void LogAccountChooserUserActionManyAccounts(AccountChooserUserAction action);
-
 // Log the result of navigator.credentials.get.
 void LogCredentialManagerGetResult(CredentialManagerGetResult result,
                                    CredentialMediationRequirement mediation);
@@ -774,7 +866,8 @@ void LogPasswordReuse(int saved_passwords,
                       PasswordType reused_password_type);
 
 // Log the type of the password dropdown when it's shown.
-void LogPasswordDropdownShown(PasswordDropdownState state, bool off_the_record);
+void LogPasswordDropdownShown(
+    const std::vector<autofill::Suggestion>& suggestions);
 
 // Log the type of the password dropdown suggestion when chosen.
 void LogPasswordDropdownItemSelected(PasswordDropdownSelectedOption type,
@@ -807,18 +900,23 @@ void LogDownloadedBlocklistedEntriesCountFromAccountStoreAfterUnlock(
     int blocklist_entries_count);
 
 // Logs the result of a re-auth challenge in the password settings.
-void LogPasswordSettingsReauthResult(ReauthResult result);
+void LogPasswordSettingsReauthResult(device_reauth::ReauthResult result);
 
 // Log a return value of LoginDatabase::DeleteUndecryptableLogins method.
 void LogDeleteUndecryptableLoginsReturnValue(
     DeleteCorruptedPasswordsResult result);
 
-// Log metrics about a newly saved password (e.g. whether a saved password was
-// generated).
-void LogNewlySavedPasswordMetrics(
+// Log metrics about a newly saved credential (e.g. whether it had a username).
+void LogNewlySavedPasswordMetrics(bool is_generated_password,
+                                  bool is_username_empty,
+                                  ukm::SourceId ukm_source_id);
+
+// Log whether a saved password value was generated.
+void LogIfSavedPasswordWasGenerated(
     bool is_generated_password,
-    bool is_username_empty,
-    PasswordAccountStorageUsageLevel account_storage_usage_level);
+    password_manager::features_util::PasswordAccountStorageUsageLevel
+        account_storage_usage_level,
+    ukm::SourceId ukm_source_id);
 
 // Log whether the generated password was accepted or rejected for generation of
 // |type| (automatic or manual).
@@ -831,18 +929,14 @@ void LogGaiaPasswordHashChange(GaiaPasswordHashChange event,
                                bool is_sync_password);
 
 // Log whether a sync password hash saved.
-void LogIsSyncPasswordHashSaved(IsSyncPasswordHashSaved state,
-                                bool is_under_advanced_protection);
+void LogIsSyncPasswordHashSaved(IsSyncPasswordHashSaved state);
 
 // Log whether the saved password is protected by Phishguard. To preserve
 // privacy of individual data points, we will log with 10% noise.
 void LogIsPasswordProtected(bool is_password_protected);
 
-// Log the number of Gaia password hashes saved. Currently only called on
-// profile start up.
 void LogProtectedPasswordHashCounts(size_t gaia_hash_count,
-                                    bool does_primary_account_exists,
-                                    bool is_signed_in);
+                                    SignInState sign_in_state);
 
 // Log the user interaction events when creating a new credential from settings.
 void LogUserInteractionsWhenAddingCredentialFromSettings(
@@ -857,6 +951,21 @@ void LogPasswordNoteActionInSettings(PasswordNoteAction action);
 void LogUserInteractionsInPasswordManagementBubble(
     PasswordManagementBubbleInteractions
         password_management_bubble_interaction);
+
+// Log the user interaction events in the shared passwords notification bubble.
+void LogUserInteractionsInSharedPasswordsNotificationBubble(
+    SharedPasswordsNotificationBubbleInteractions interaction);
+
+// Log the result of processing an incoming password sharing invitation.
+void LogProcessIncomingPasswordSharingInvitationResult(
+    ProcessIncomingPasswordSharingInvitationResult result);
+
+#if BUILDFLAG(IS_ANDROID)
+// Records the scheduling state of the local passwords migration to the
+// Android backend.
+void LogLocalPwdMigrationProgressState(
+    LocalPwdMigrationProgressState scheduling_state);
+#endif
 
 // Wraps |callback| into another callback that measures the elapsed time between
 // construction and actual execution of the callback. Records the result to
@@ -874,8 +983,48 @@ base::OnceCallback<R(Args...)> TimeCallback(
       histogram, base::ElapsedTimer(), std::move(callback));
 }
 
-}  // namespace metrics_util
+// Wraps |callback| into another callback that measures the elapsed time between
+// construction and actual execution of the callback. Records the result to
+// |histogram|, which is expected to be a char literal.
+// For time intervals between 1ms and 3 minutes (50 buckets).
+template <typename R, typename... Args>
+base::OnceCallback<R(Args...)> TimeCallbackMediumTimes(
+    base::OnceCallback<R(Args...)> callback,
+    const char* histogram) {
+  return base::BindOnce(
+      [](const char* histogram, const base::ElapsedTimer& timer,
+         base::OnceCallback<R(Args...)> callback, Args... args) {
+        base::UmaHistogramMediumTimes(histogram, timer.Elapsed());
+        return std::move(callback).Run(std::forward<Args>(args)...);
+      },
+      histogram, base::ElapsedTimer(), std::move(callback));
+}
 
-}  // namespace password_manager
+#if BUILDFLAG(IS_ANDROID)
+void LogTouchToFillPasswordGenerationTriggerOutcome(
+    TouchToFillPasswordGenerationTriggerOutcome outcome);
+void LogFormSubmissionsVsSavePromptsHistogram(SaveFlowStep save_flow_step);
+void LogSharedPrefCredentialsAccessOutcome(
+    SharedPrefCredentialsAccessOutcome outcome);
+#endif
+
+// Record that password deletion from Chrome settings happened.
+// This will be used in case of suspecting a possible password loss.
+void AddPasswordRemovalReason(
+    PrefService* prefs,
+    IsAccountStore is_account_store,
+    PasswordManagerCredentialRemovalReason removal_reason);
+
+// Emits histograms for the number of password and webauthn credentials in the
+// passwords popup / dropdown. Also emits a user action for the displayed
+// dropdown.
+void MaybeLogMetricsForPasswordAndWebauthnCounts(
+    const std::vector<autofill::Suggestion>& suggestions,
+    bool is_for_webauthn_request);
+
+// Emits a user action that the dropdown was hidden.
+void LogPasswordDropdownHidden();
+
+}  // namespace password_manager::metrics_util
 
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_METRICS_UTIL_H_

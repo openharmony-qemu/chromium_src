@@ -14,7 +14,6 @@
 #include "base/json/json_reader.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/singleton.h"
-#include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/observer_list.h"
 #include "base/values.h"
@@ -60,6 +59,26 @@ class CONTENT_EXPORT TtsControllerImpl
   void Stop(const GURL& source_url) override;
   void Pause() override;
   void Resume() override;
+  void UpdateLanguageStatus(const std::string& lang,
+                            LanguageInstallStatus install_status,
+                            const std::string& error) override;
+  void AddUpdateLanguageStatusDelegate(
+      UpdateLanguageStatusDelegate* delegate) override;
+  void RemoveUpdateLanguageStatusDelegate(
+      UpdateLanguageStatusDelegate* delegate) override;
+  void UninstallLanguageRequest(content::BrowserContext* browser_context,
+                                const std::string& lang,
+                                const std::string& client_id,
+                                int source,
+                                bool uninstall_immediately) override;
+  void InstallLanguageRequest(BrowserContext* browser_context,
+                              const std::string& lang,
+                              const std::string& client_id,
+                              int source) override;
+  void LanguageStatusRequest(BrowserContext* browser_context,
+                             const std::string& lang,
+                             const std::string& client_id,
+                             int source) override;
   void OnTtsEvent(int utterance_id,
                   TtsEventType event_type,
                   int char_index,
@@ -194,10 +213,11 @@ class CONTENT_EXPORT TtsControllerImpl
 #if BUILDFLAG(IS_CHROMEOS_ASH)
   TtsControllerDelegate* GetTtsControllerDelegate();
   void SetTtsControllerDelegateForTesting(TtsControllerDelegate* delegate);
-  raw_ptr<TtsControllerDelegate, ExperimentalAsh> delegate_ = nullptr;
+  raw_ptr<TtsControllerDelegate, DanglingUntriaged> delegate_ = nullptr;
 #endif
 
-  raw_ptr<RemoteTtsEngineDelegate> remote_engine_delegate_ = nullptr;
+  raw_ptr<RemoteTtsEngineDelegate, DanglingUntriaged> remote_engine_delegate_ =
+      nullptr;
 
   raw_ptr<TtsEngineDelegate, DanglingUntriaged> engine_delegate_ = nullptr;
 
@@ -205,6 +225,11 @@ class CONTENT_EXPORT TtsControllerImpl
 
   // A set of delegates that want to be notified when the voices change.
   base::ObserverList<VoicesChangedDelegate> voices_changed_delegates_;
+
+  // A set of delegates to be notified when a voice status for a language
+  // changes.
+  base::ObserverList<UpdateLanguageStatusDelegate>
+      update_language_status_delegates_;
 
   // The current utterance being spoken.
   std::unique_ptr<TtsUtterance> current_utterance_;

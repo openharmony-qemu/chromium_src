@@ -107,9 +107,8 @@ void MediaStringView::MediaSessionInfoChanged(
     return;
   }
 
-  // Don't show the media string if session info is unavailable, or the active
-  // session is marked as sensitive.
-  if (!session_info || session_info->is_sensitive) {
+  // Don't show the media string if session info is unavailable.
+  if (!session_info) {
     SetVisible(false);
     return;
   }
@@ -122,7 +121,7 @@ void MediaStringView::MediaSessionInfoChanged(
 }
 
 void MediaStringView::MediaSessionMetadataChanged(
-    const absl::optional<media_session::MediaMetadata>& metadata) {
+    const std::optional<media_session::MediaMetadata>& metadata) {
   media_session::MediaMetadata session_metadata =
       metadata.value_or(media_session::MediaMetadata());
 
@@ -143,7 +142,8 @@ void MediaStringView::MediaSessionMetadataChanged(
 
   media_text_->SetText(media_string);
   media_text_->layer()->SetTransform(gfx::Transform());
-  const auto& text_size = media_text_->GetPreferredSize();
+  const auto& text_size = media_text_->GetPreferredSize(
+      views::SizeBounds(media_text_->width(), {}));
   const int text_width = text_size.width();
   media_text_container_->SetPreferredSize(gfx::Size(
       std::min(kMediaStringMaxWidthDip, text_width), text_size.height()));
@@ -258,8 +258,9 @@ void MediaStringView::UpdateMaskLayer() {
 }
 
 bool MediaStringView::NeedToAnimate() const {
-  return media_text_->GetPreferredSize().width() >
-         media_text_container_->GetPreferredSize().width();
+  return media_text_
+             ->GetPreferredSize(views::SizeBounds(media_text_->width(), {}))
+             .width() > media_text_container_->GetPreferredSize().width();
 }
 
 gfx::Transform MediaStringView::GetMediaTextTransform(bool is_initial) {
@@ -285,7 +286,10 @@ void MediaStringView::StartScrolling(bool is_initial) {
   text_layer->SetTransform(GetMediaTextTransform(is_initial));
   {
     // Desired speed is 10 seconds for kMediaStringMaxWidthDip.
-    const int text_width = media_text_->GetPreferredSize().width();
+    const int text_width =
+        media_text_
+            ->GetPreferredSize(views::SizeBounds(media_text_->width(), {}))
+            .width();
     const int shadow_width =
         gfx::ShadowValue::GetMargin(
             ambient::util::GetTextShadowValues(
@@ -310,7 +314,7 @@ void MediaStringView::StartScrolling(bool is_initial) {
   }
 }
 
-BEGIN_METADATA(MediaStringView, views::View)
+BEGIN_METADATA(MediaStringView)
 END_METADATA
 
 }  // namespace ash

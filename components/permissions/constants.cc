@@ -10,7 +10,9 @@ namespace permissions {
 const char kChooserBluetoothOverviewURL[] =
     "https://support.google.com/chrome?p=bluetooth";
 
-#if !BUILDFLAG(IS_ANDROID)
+const char kEmbeddedContentHelpCenterURL[] =
+    "https://support.google.com/chrome/?p=embedded_content";
+
 // The key in `Product Specific String Data` under which the disposition of the
 // permission prompt is recorded in the prompt HaTS survey.
 const char kPermissionsPromptSurveyPromptDispositionKey[] = "PromptDisposition";
@@ -54,10 +56,27 @@ const char kPermissionsPromptSurveyHadGestureKey[] = "HadGesture";
 // with min_version V with the rollout plan for stable. This filter allows
 // restriction to specific channels (typically to stable).
 const char kPermissionsPromptSurveyReleaseChannelKey[] = "ReleaseChannel";
-#endif
 
-// TODO(crbug.com/1410489): Remove the code related to unused site permissions
+const char kPermissionPromptSurveyPepcPromptPositionKey[] =
+    "PepcPromptPosition";
+
+const char kPermissionPromptSurveyInitialPermissionStatusKey[] =
+    "InitialPermissionStatus";
+
+// TODO(crbug.com/40254381): Remove the code related to unused site permissions
 // from Android builds.
 
 const char kRevokedKey[] = "revoked";
+
+const char kRevokedChooserPermissionsKey[] = "revoked-chooser-permissions";
+
+const base::TimeDelta kStorageAccessAPIExplicitPermissionLifetime =
+    base::Days(30);
+
+const base::TimeDelta kStorageAccessAPIImplicitPermissionLifetime =
+    base::Hours(24);
+
+const base::TimeDelta kStorageAccessAPIRelatedWebsiteSetsLifetime =
+    base::Days(30);
+
 }  // namespace permissions

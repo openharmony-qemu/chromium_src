@@ -7,20 +7,19 @@ package org.chromium.content_public.browser;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import org.jni_zero.CalledByNative;
+import org.jni_zero.JNINamespace;
+
 import org.chromium.base.UserDataHost;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.JNINamespace;
 import org.chromium.net.NetError;
 import org.chromium.ui.base.PageTransition;
 import org.chromium.url.GURL;
 import org.chromium.url.Origin;
 
-/**
- * JNI bridge with content::NavigationHandle
- */
+/** JNI bridge with content::NavigationHandle */
 @JNINamespace("content")
 public class NavigationHandle {
-    private long mNativeNavigationHandleProxy;
+    private long mNativeNavigationHandle;
     private boolean mIsInPrimaryMainFrame;
     private boolean mIsRendererInitiated;
     private boolean mIsSameDocument;
@@ -44,35 +43,104 @@ public class NavigationHandle {
     private boolean mIsPageActivation;
     private boolean mIsReload;
     private UserDataHost mUserDataHost;
+    private boolean mIsPdf;
+    private String mMimeType;
+    private boolean mIsSaveableNavigation;
 
-    public static NavigationHandle createForTesting(@NonNull GURL url, boolean isRendererInitiated,
-            @PageTransition int transition, boolean hasUserGesture) {
-        return createForTesting(url, true /* isInPrimaryMainFrame */, false /* isSameDocument */,
-                isRendererInitiated, transition, hasUserGesture, false /* isReload */);
+    public static NavigationHandle createForTesting(
+            @NonNull GURL url,
+            boolean isRendererInitiated,
+            @PageTransition int transition,
+            boolean hasUserGesture) {
+        return createForTesting(
+                url,
+                /* isInPrimaryMainFrame= */ true,
+                /* isSameDocument= */ false,
+                isRendererInitiated,
+                transition,
+                hasUserGesture,
+                /* isReload= */ false,
+                /* isSaveableNavigation= */ false);
     }
 
-    public static NavigationHandle createForTesting(@NonNull GURL url, boolean isInPrimaryMainFrame,
-            boolean isSameDocument, boolean isRendererInitiated, @PageTransition int transition,
-            boolean hasUserGesture, boolean isReload) {
-        NavigationHandle handle = new NavigationHandle();
-        handle.initialize(0, url, GURL.emptyGURL(), GURL.emptyGURL(), isInPrimaryMainFrame,
-                isSameDocument, isRendererInitiated, null, transition, false /* isPost */,
-                hasUserGesture, false /* isRedirect*/, false /* isExternalProtocol */,
-                0 /* navigationId */, false /* isPageActivation */, isReload);
+    public static NavigationHandle createForTesting(
+            @NonNull GURL url,
+            boolean isInPrimaryMainFrame,
+            boolean isSameDocument,
+            boolean isRendererInitiated,
+            @PageTransition int transition,
+            boolean hasUserGesture,
+            boolean isReload) {
+        return createForTesting(
+                url,
+                isInPrimaryMainFrame,
+                isSameDocument,
+                isRendererInitiated,
+                transition,
+                hasUserGesture,
+                isReload,
+                /* isSaveableNavigation= */ false);
+    }
+
+    public static NavigationHandle createForTesting(
+            @NonNull GURL url,
+            boolean isInPrimaryMainFrame,
+            boolean isSameDocument,
+            boolean isRendererInitiated,
+            @PageTransition int transition,
+            boolean hasUserGesture,
+            boolean isReload,
+            boolean isSaveableNavigation) {
+        NavigationHandle handle = new NavigationHandle(0);
+        handle.initialize(
+                0,
+                url,
+                GURL.emptyGURL(),
+                GURL.emptyGURL(),
+                isInPrimaryMainFrame,
+                isSameDocument,
+                isRendererInitiated,
+                null,
+                transition,
+                /* isPost= */ false,
+                hasUserGesture,
+                /* isRedirect= */ false,
+                /* isExternalProtocol= */ false,
+                /* navigationId= */ 0,
+                /* isPageActivation= */ false,
+                isReload,
+                /* isPdf= */ false,
+                /* mimeType= */ "",
+                isSaveableNavigation);
         return handle;
     }
 
     @CalledByNative
-    private NavigationHandle() {}
+    private NavigationHandle(long nativeNavigationHandle) {
+        mNativeNavigationHandle = nativeNavigationHandle;
+    }
 
     @CalledByNative
-    private void initialize(long nativeNavigationHandleProxy, @NonNull GURL url,
-            @NonNull GURL referrerUrl, @NonNull GURL baseUrlForDataUrl,
-            boolean isInPrimaryMainFrame, boolean isSameDocument, boolean isRendererInitiated,
-            Origin initiatorOrigin, @PageTransition int transition, boolean isPost,
-            boolean hasUserGesture, boolean isRedirect, boolean isExternalProtocol,
-            long navigationId, boolean isPageActivation, boolean isReload) {
-        mNativeNavigationHandleProxy = nativeNavigationHandleProxy;
+    private void initialize(
+            long unused_nativeNavigationHandleProxy,
+            @NonNull GURL url,
+            @NonNull GURL referrerUrl,
+            @NonNull GURL baseUrlForDataUrl,
+            boolean isInPrimaryMainFrame,
+            boolean isSameDocument,
+            boolean isRendererInitiated,
+            Origin initiatorOrigin,
+            @PageTransition int transition,
+            boolean isPost,
+            boolean hasUserGesture,
+            boolean isRedirect,
+            boolean isExternalProtocol,
+            long navigationId,
+            boolean isPageActivation,
+            boolean isReload,
+            boolean isPdf,
+            String mimeType,
+            boolean isSaveableNavigation) {
         mUrl = url;
         mReferrerUrl = referrerUrl;
         mBaseUrlForDataUrl = baseUrlForDataUrl;
@@ -88,10 +156,14 @@ public class NavigationHandle {
         mNavigationId = navigationId;
         mIsPageActivation = isPageActivation;
         mIsReload = isReload;
+        mIsPdf = isPdf;
+        mMimeType = mimeType;
+        mIsSaveableNavigation = isSaveableNavigation;
     }
 
     /**
      * The navigation received a redirect. Called once per redirect.
+     *
      * @param url The new URL.
      */
     @CalledByNative
@@ -102,15 +174,23 @@ public class NavigationHandle {
         mIsExternalProtocol = isExternalProtocol;
     }
 
-    /**
-     * The navigation finished. Called once per navigation.
-     */
+    /** The navigation finished. Called once per navigation. */
     @CalledByNative
     @VisibleForTesting
-    public void didFinish(@NonNull GURL url, boolean isErrorPage, boolean hasCommitted,
-            boolean isPrimaryMainFrameFragmentNavigation, boolean isDownload,
-            boolean isValidSearchFormUrl, @PageTransition int transition, @NetError int errorCode,
-            int httpStatuscode, boolean isExternalProtocol) {
+    public void didFinish(
+            @NonNull GURL url,
+            boolean isErrorPage,
+            boolean hasCommitted,
+            boolean isPrimaryMainFrameFragmentNavigation,
+            boolean isDownload,
+            boolean isValidSearchFormUrl,
+            @PageTransition int transition,
+            @NetError int errorCode,
+            int httpStatuscode,
+            boolean isExternalProtocol,
+            boolean isPdf,
+            String mimeType,
+            boolean isSaveableNavigation) {
         mUrl = url;
         mIsErrorPage = isErrorPage;
         mHasCommitted = hasCommitted;
@@ -121,18 +201,19 @@ public class NavigationHandle {
         mErrorCode = errorCode;
         mHttpStatusCode = httpStatuscode;
         mIsExternalProtocol = isExternalProtocol;
+        mIsPdf = isPdf;
+        mMimeType = mimeType;
+        mIsSaveableNavigation = isSaveableNavigation;
     }
 
-    /**
-     * Release the C++ pointer.
-     */
+    /** Release the C++ pointer. */
     @CalledByNative
     private void release() {
-        mNativeNavigationHandleProxy = 0;
+        mNativeNavigationHandle = 0;
     }
 
-    public long nativePtr() {
-        return mNativeNavigationHandleProxy;
+    public long nativeNavigationHandlePtr() {
+        return mNativeNavigationHandle;
     }
 
     /**
@@ -150,9 +231,7 @@ public class NavigationHandle {
         return mReferrerUrl;
     }
 
-    /**
-     * Used for specifying a base URL for pages loaded via data URLs.
-     */
+    /** Used for specifying a base URL for pages loaded via data URLs. */
     @NonNull
     public GURL getBaseUrlForDataUrl() {
         return mBaseUrlForDataUrl;
@@ -227,16 +306,12 @@ public class NavigationHandle {
         return mHttpStatusCode;
     }
 
-    /**
-     * Returns the page transition type.
-     */
+    /** Returns the page transition type. */
     public @PageTransition int pageTransition() {
         return mPageTransition;
     }
 
-    /**
-     * Returns true on same-document navigation with fragment change in the primary main frame.
-     */
+    /** Returns true on same-document navigation with fragment change in the primary main frame. */
     public boolean isPrimaryMainFrameFragmentNavigation() {
         return mIsPrimaryMainFrameFragmentNavigation;
     }
@@ -260,9 +335,7 @@ public class NavigationHandle {
         return mIsDownload;
     }
 
-    /**
-     * Returns true if the navigation is a search.
-     */
+    /** Returns true if the navigation is a search. */
     public boolean isValidSearchFormUrl() {
         return mIsValidSearchFormUrl;
     }
@@ -295,9 +368,7 @@ public class NavigationHandle {
         return mIsExternalProtocol;
     }
 
-    /**
-     * Get a unique ID for this navigation.
-     */
+    /** Get a unique ID for this navigation. */
     public long getNavigationId() {
         return mNavigationId;
     }
@@ -310,16 +381,12 @@ public class NavigationHandle {
         return mIsPageActivation;
     }
 
-    /**
-     * Whether this navigation was initiated by a page reload.
-     */
+    /** Whether this navigation was initiated by a page reload. */
     public boolean isReload() {
         return mIsReload;
     }
 
-    /**
-     * Return any user data which has been set on the NavigationHandle.
-     */
+    /** Return any user data which has been set on the NavigationHandle. */
     public UserDataHost getUserDataHost() {
         if (mUserDataHost == null) {
             mUserDataHost = new UserDataHost();
@@ -327,10 +394,23 @@ public class NavigationHandle {
         return mUserDataHost;
     }
 
-    /**
-     * Sets the user data host.  This should not be considered part of the content API.
-     */
+    /** Sets the user data host. This should not be considered part of the content API. */
     public void setUserDataHost(UserDataHost userDataHost) {
         mUserDataHost = userDataHost;
+    }
+
+    /** Whether the navigation is for PDF content. */
+    public boolean isPdf() {
+        return mIsPdf;
+    }
+
+    /** MIME type of the page. */
+    public String getMimeType() {
+        return mMimeType;
+    }
+
+    /** Whether this navigation can be saved so that it be reloaded or synced. */
+    public boolean isSaveableNavigation() {
+        return mIsSaveableNavigation;
     }
 }

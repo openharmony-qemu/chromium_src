@@ -15,27 +15,22 @@
 
 namespace autofill {
 
-class AutofillProfile;
-
 // A form group that stores name information.
 class NameInfo : public FormGroup {
  public:
   NameInfo();
   NameInfo(const NameInfo& info);
+  NameInfo(std::unique_ptr<NameFull> name,
+           std::unique_ptr<AlternativeFullName> alternative_name);
   ~NameInfo() override;
 
   NameInfo& operator=(const NameInfo& info);
   bool operator==(const NameInfo& other) const;
-  bool operator!=(const NameInfo& other) const { return !operator==(other); }
 
   // FormGroup:
-  std::u16string GetRawInfo(ServerFieldType type) const override;
+  std::u16string GetRawInfo(FieldType type) const override;
 
-  void GetMatchingTypes(const std::u16string& text,
-                        const std::string& app_locale,
-                        ServerFieldTypeSet* matching_types) const override;
-
-  void SetRawInfoWithVerificationStatus(ServerFieldType type,
+  void SetRawInfoWithVerificationStatus(FieldType type,
                                         const std::u16string& value,
                                         VerificationStatus status) override;
 
@@ -47,11 +42,7 @@ class NameInfo : public FormGroup {
   // conflicting iff they are on the same root-to-leaf path.
   // For example, NAME_FIRST is child of NAME_LAST and if both are set, the tree
   // cannot be completed.
-  // |profile_is_verified| indicates that the profile is already verified.
-  bool FinalizeAfterImport(bool profile_is_verified);
-
-  // Convenience wrapper to invoke finalization for unverified profiles.
-  bool FinalizeAfterImport() { return FinalizeAfterImport(false); }
+  bool FinalizeAfterImport();
 
   // Returns true if the structured-name information in |this| and |newer| are
   // mergeable. Note, returns false if |newer| is variant of |this| or vice
@@ -70,9 +61,18 @@ class NameInfo : public FormGroup {
   // Returns a constant reference to the structured name tree.
   const AddressComponent& GetStructuredName() const { return *name_; }
 
+  // Returns a constant reference to the structured alternative name tree.
+  const AddressComponent& GetStructuredAlternativeName() const {
+    return *alternative_name_;
+  }
+
+  // Returns the node in the tree that supports `field_type`. This node, if it
+  // exists, is unique by definition.
+  const AddressComponent* GetNodeForType(FieldType type) const;
+
  private:
   // FormGroup:
-  void GetSupportedTypes(ServerFieldTypeSet* supported_types) const override;
+  void GetSupportedTypes(FieldTypeSet* supported_types) const override;
   std::u16string GetInfoImpl(const AutofillType& type,
                              const std::string& app_locale) const override;
 
@@ -82,12 +82,16 @@ class NameInfo : public FormGroup {
                                          VerificationStatus status) override;
 
   // Return the verification status of a structured name value.
-  VerificationStatus GetVerificationStatusImpl(
-      ServerFieldType type) const override;
+  VerificationStatus GetVerificationStatusImpl(FieldType type) const override;
 
-  // This data structure stores the more-structured representation of the name
-  // when |features::kAutofillEnableSupportForMoreStructureInNames| is enabled.
-  const std::unique_ptr<AddressComponent> name_;
+  // Returns the node in the tree that supports `field_type`. This node, if it
+  // exists, is unique by definition.
+  AddressComponent* GetNodeForType(FieldType type);
+
+  // This data structures store structured representation of the name and
+  // alternative (e.g. phonetic) name.
+  const std::unique_ptr<NameFull> name_;
+  const std::unique_ptr<AlternativeFullName> alternative_name_;
 };
 
 class EmailInfo : public FormGroup {
@@ -101,14 +105,14 @@ class EmailInfo : public FormGroup {
   bool operator!=(const EmailInfo& other) const { return !operator==(other); }
 
   // FormGroup:
-  std::u16string GetRawInfo(ServerFieldType type) const override;
-  void SetRawInfoWithVerificationStatus(ServerFieldType type,
+  std::u16string GetRawInfo(FieldType type) const override;
+  void SetRawInfoWithVerificationStatus(FieldType type,
                                         const std::u16string& value,
                                         VerificationStatus status) override;
 
  private:
   // FormGroup:
-  void GetSupportedTypes(ServerFieldTypeSet* supported_types) const override;
+  void GetSupportedTypes(FieldTypeSet* supported_types) const override;
 
   std::u16string email_;
 };
@@ -117,29 +121,31 @@ class CompanyInfo : public FormGroup {
  public:
   CompanyInfo();
   CompanyInfo(const CompanyInfo& info);
-  explicit CompanyInfo(const AutofillProfile* profile);
   ~CompanyInfo() override;
 
-  CompanyInfo& operator=(const CompanyInfo& info);
   bool operator==(const CompanyInfo& other) const;
   bool operator!=(const CompanyInfo& other) const { return !operator==(other); }
 
   // FormGroup:
-  std::u16string GetRawInfo(ServerFieldType type) const override;
-  void SetRawInfoWithVerificationStatus(ServerFieldType type,
+  std::u16string GetRawInfo(FieldType type) const override;
+  void SetRawInfoWithVerificationStatus(FieldType type,
                                         const std::u16string& value,
                                         VerificationStatus status) override;
-  void set_profile(const AutofillProfile* profile) { profile_ = profile; }
+
+  // The `company_name_` is considered valid if it doesn't look like a birthdate
+  // or social title. Only valid company names are considered for voting.
+  bool IsValid() const;
 
  private:
   // FormGroup:
-  void GetSupportedTypes(ServerFieldTypeSet* supported_types) const override;
-  bool IsValidOrVerified(const std::u16string& value) const;
+  void GetSupportedTypes(FieldTypeSet* supported_types) const override;
+  void GetMatchingTypesWithProfileSources(
+      const std::u16string& text,
+      const std::string& app_locale,
+      FieldTypeSet* matching_types,
+      PossibleProfileValueSources* profile_value_sources) const override;
 
   std::u16string company_name_;
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #union
-  RAW_PTR_EXCLUSION const AutofillProfile* profile_ = nullptr;
 };
 
 }  // namespace autofill

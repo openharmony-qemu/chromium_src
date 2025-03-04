@@ -2,14 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "components/password_manager/core/browser/password_manager_client.h"
+
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "components/autofill/core/common/password_generation_util.h"
-#include "components/autofill/core/common/unique_ids.h"
 #include "components/device_reauth/device_authenticator.h"
+#include "components/password_manager/core/browser/field_info_manager.h"
 #include "components/password_manager/core/browser/http_auth_manager.h"
 #include "components/password_manager/core/browser/password_form_manager_for_ui.h"
-#include "components/password_manager/core/browser/password_manager_client.h"
 #include "components/signin/public/base/signin_metrics.h"
 #include "components/version_info/channel.h"
 #include "url/origin.h"
@@ -33,12 +36,21 @@ void PasswordManagerClient::ShowPasswordManagerErrorMessage(
     ErrorMessageFlowType flow_type,
     password_manager::PasswordStoreBackendErrorType error_type) {}
 
-void PasswordManagerClient::ShowTouchToFill(
+void PasswordManagerClient::ShowKeyboardReplacingSurface(
     PasswordManagerDriver* driver,
-    autofill::mojom::SubmissionReadinessState submission_readiness) {}
+    const PasswordFillingParams& password_filling_params,
+    bool is_webauthn_form,
+    base::OnceCallback<void(bool)> shown_cb) {
+  std::move(shown_cb).Run(false);
+}
 #endif
 
-#if defined(OHOS_PASSWORD_AUTOFILL)
+bool PasswordManagerClient::IsReauthBeforeFillingRequired(
+    device_reauth::DeviceAuthenticator*) {
+  return false;
+}
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 void PasswordManagerClient::FillAccountSuggestion(
     const GURL& page_url,
     const std::u16string& username,
@@ -53,7 +65,7 @@ void PasswordManagerClient::OnRequestAutofill(
     const autofill::InputFillRequestData& password_data) {}
 #endif
 
-scoped_refptr<device_reauth::DeviceAuthenticator>
+std::unique_ptr<device_reauth::DeviceAuthenticator>
 PasswordManagerClient::GetDeviceAuthenticator() {
   return nullptr;
 }
@@ -63,13 +75,13 @@ void PasswordManagerClient::GeneratePassword(
 
 void PasswordManagerClient::UpdateCredentialCache(
     const url::Origin& origin,
-    const std::vector<const PasswordForm*>& best_matches,
+    base::span<const PasswordForm> best_matches,
     bool is_blocklisted) {}
 
 void PasswordManagerClient::PasswordWasAutofilled(
-    const std::vector<const PasswordForm*>& best_matches,
+    base::span<const PasswordForm> best_matches,
     const url::Origin& origin,
-    const std::vector<const PasswordForm*>* federated_matches,
+    base::span<const PasswordForm> federated_matches,
     bool was_autofilled_on_pageload) {}
 
 void PasswordManagerClient::AutofillHttpAuth(
@@ -79,7 +91,8 @@ void PasswordManagerClient::AutofillHttpAuth(
 void PasswordManagerClient::NotifyUserCredentialsWereLeaked(
     password_manager::CredentialLeakType leak_type,
     const GURL& origin,
-    const std::u16string& username) {}
+    const std::u16string& username,
+    bool in_account_store) {}
 
 void PasswordManagerClient::TriggerReauthForPrimaryAccount(
     signin_metrics::ReauthAccessPoint access_point,
@@ -88,10 +101,6 @@ void PasswordManagerClient::TriggerReauthForPrimaryAccount(
 }
 
 void PasswordManagerClient::TriggerSignIn(signin_metrics::AccessPoint) {}
-
-SyncState PasswordManagerClient::GetPasswordSyncState() const {
-  return SyncState::kNotSyncing;
-}
 
 bool PasswordManagerClient::WasLastNavigationHTTPError() const {
   return false;
@@ -103,7 +112,7 @@ net::CertStatus PasswordManagerClient::GetMainFrameCertStatus() const {
 
 void PasswordManagerClient::PromptUserToEnableAutosignin() {}
 
-bool PasswordManagerClient::IsIncognito() const {
+bool PasswordManagerClient::IsOffTheRecord() const {
   return false;
 }
 
@@ -114,12 +123,13 @@ profile_metrics::BrowserProfileType PasswordManagerClient::GetProfileType()
   return profile_metrics::BrowserProfileType::kRegular;
 }
 
-const PasswordManager* PasswordManagerClient::GetPasswordManager() const {
+const PasswordManagerInterface* PasswordManagerClient::GetPasswordManager()
+    const {
   return nullptr;
 }
 
-PasswordManager* PasswordManagerClient::GetPasswordManager() {
-  return const_cast<PasswordManager*>(
+PasswordManagerInterface* PasswordManagerClient::GetPasswordManager() {
+  return const_cast<PasswordManagerInterface*>(
       static_cast<const PasswordManagerClient*>(this)->GetPasswordManager());
 }
 
@@ -138,8 +148,8 @@ HttpAuthManager* PasswordManagerClient::GetHttpAuthManager() {
   return nullptr;
 }
 
-autofill::AutofillDownloadManager*
-PasswordManagerClient::GetAutofillDownloadManager() {
+autofill::AutofillCrowdsourcingManager*
+PasswordManagerClient::GetAutofillCrowdsourcingManager() {
   return nullptr;
 }
 
@@ -168,6 +178,11 @@ favicon::FaviconService* PasswordManagerClient::GetFaviconService() {
   return nullptr;
 }
 
+password_manager::FieldInfoManager* PasswordManagerClient::GetFieldInfoManager()
+    const {
+  return nullptr;
+}
+
 network::mojom::NetworkContext* PasswordManagerClient::GetNetworkContext()
     const {
   return nullptr;
@@ -179,12 +194,33 @@ PasswordManagerClient::GetWebAuthnCredentialsDelegateForDriver(
   return nullptr;
 }
 
+void PasswordManagerClient::TriggerUserPerceptionOfPasswordManagerSurvey(
+    const std::string& filling_assistance) {}
+
+#if BUILDFLAG(IS_ANDROID)
+webauthn::WebAuthnCredManDelegate*
+PasswordManagerClient::GetWebAuthnCredManDelegateForDriver(
+    PasswordManagerDriver* driver) {
+  return nullptr;
+}
+
+void PasswordManagerClient::MarkSharedCredentialsAsNotified(const GURL& url) {}
+
+#endif  // BUILDFLAG(IS_ANDROID)
+
 version_info::Channel PasswordManagerClient::GetChannel() const {
   return version_info::Channel::UNKNOWN;
 }
 
 void PasswordManagerClient::RefreshPasswordManagerSettingsIfNeeded() const {
   // For most implementations settings do not need to be refreshed.
+}
+
+void PasswordManagerClient::ShowCredentialsInAmbientBubble(
+    std::vector<std::unique_ptr<password_manager::PasswordForm>> forms,
+    int credential_type_flags,
+    CredentialsCallback callback) {
+  std::move(callback).Run(nullptr);
 }
 
 }  // namespace password_manager

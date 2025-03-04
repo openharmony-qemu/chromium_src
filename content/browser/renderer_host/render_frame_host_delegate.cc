@@ -5,6 +5,7 @@
 #include "content/browser/renderer_host/render_frame_host_delegate.h"
 
 #include <stddef.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -12,6 +13,8 @@
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
 #include "build/build_config.h"
+#include "content/public/browser/cookie_access_details.h"
+#include "content/public/browser/trust_token_access_details.h"
 #include "ipc/ipc_message.h"
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom.h"
 #include "third_party/blink/public/mojom/frame/text_autosizer_page_info.mojom.h"
@@ -22,6 +25,12 @@
 #include "url/origin.h"
 
 namespace content {
+
+blink::mojom::PartitionedPopinParamsPtr
+PartitionedPopinOpenerProperties::AsMojom() const {
+  return blink::mojom::PartitionedPopinParams::New(top_frame_origin,
+                                                   site_for_cookies);
+}
 
 bool RenderFrameHostDelegate::OnMessageReceived(
     RenderFrameHostImpl* render_frame_host,
@@ -35,7 +44,7 @@ bool RenderFrameHostDelegate::DidAddMessageToConsole(
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id,
-    const absl::optional<std::u16string>& untrusted_stack_trace) {
+    const std::optional<std::u16string>& untrusted_stack_trace) {
   return false;
 }
 
@@ -49,6 +58,15 @@ void RenderFrameHostDelegate::RequestMediaAccessPermission(
                           std::unique_ptr<MediaStreamUI>());
 }
 
+void RenderFrameHostDelegate::ProcessSelectAudioOutput(
+    const SelectAudioOutputRequest& request,
+    SelectAudioOutputCallback callback) {
+  LOG(ERROR) << "RenderFrameHostDelegate::ProcessSelectAudioOutput: "
+             << "Not supported.";
+  std::move(callback).Run(
+      base::unexpected(content::SelectAudioOutputError::kNotSupported));
+}
+
 bool RenderFrameHostDelegate::CheckMediaAccessPermission(
     RenderFrameHostImpl* render_frame_host,
     const url::Origin& security_origin,
@@ -56,11 +74,6 @@ bool RenderFrameHostDelegate::CheckMediaAccessPermission(
   LOG(ERROR) << "RenderFrameHostDelegate::CheckMediaAccessPermission: "
              << "Not supported.";
   return false;
-}
-
-std::string RenderFrameHostDelegate::GetDefaultMediaDeviceID(
-    blink::mojom::MediaStreamType type) {
-  return std::string();
 }
 
 ui::AXMode RenderFrameHostDelegate::GetAccessibilityMode() {
@@ -79,8 +92,7 @@ void RenderFrameHostDelegate::GetNFC(
 #endif
 
 bool RenderFrameHostDelegate::CanEnterFullscreenMode(
-    RenderFrameHostImpl* requesting_frame,
-    const blink::mojom::FullscreenOptions& options) {
+    RenderFrameHostImpl* requesting_frame) {
   return true;
 }
 
@@ -89,8 +101,7 @@ void RenderFrameHostDelegate::FullscreenStateChanged(
     bool is_fullscreen,
     blink::mojom::FullscreenOptionsPtr options) {}
 
-bool RenderFrameHostDelegate::ShouldRouteMessageEvent(
-    RenderFrameHostImpl* target_rfh) const {
+bool RenderFrameHostDelegate::CanUseWindowingControls(RenderFrameHostImpl*) {
   return false;
 }
 
@@ -134,26 +145,17 @@ std::vector<FrameTreeNode*> RenderFrameHostDelegate::GetUnattachedOwnedNodes(
   return {};
 }
 
-media::MediaMetricsProvider::RecordAggregateWatchTimeCallback
-RenderFrameHostDelegate::GetRecordAggregateWatchTimeCallback(
-    const GURL& page_main_frame_last_committed_url) {
-  return base::NullCallback();
-}
-
-void RenderFrameHostDelegate::IsClipboardPasteContentAllowed(
-    const GURL& url,
-    const ui::ClipboardFormatType& data_type,
+void RenderFrameHostDelegate::IsClipboardPasteAllowedByPolicy(
+    const ClipboardEndpoint& source,
+    const ClipboardEndpoint& destination,
+    const ClipboardMetadata& metadata,
     ClipboardPasteData clipboard_paste_data,
-    IsClipboardPasteContentAllowedCallback callback) {
+    IsClipboardPasteAllowedCallback callback) {
   std::move(callback).Run(std::move(clipboard_paste_data));
 }
 
-bool RenderFrameHostDelegate::HasSeenRecentScreenOrientationChange() {
-  return false;
-}
-
-bool RenderFrameHostDelegate::IsTransientAllowFullscreenActive() const {
-  return false;
+bool RenderFrameHostDelegate::IsTransientActivationRequiredForHtmlFullscreen() {
+  return true;
 }
 
 bool RenderFrameHostDelegate::IsBackForwardCacheSupported() {
@@ -170,14 +172,14 @@ RenderWidgetHostImpl* RenderFrameHostDelegate::CreateNewPopupWidget(
   return nullptr;
 }
 
-bool RenderFrameHostDelegate::ShowPopupMenu(
-    RenderFrameHostImpl* render_frame_host,
-    const gfx::Rect& bounds) {
-  return false;
+std::vector<RenderFrameHostImpl*>
+RenderFrameHostDelegate::GetActiveTopLevelDocumentsInBrowsingContextGroup(
+    RenderFrameHostImpl* render_frame_host) {
+  return std::vector<RenderFrameHostImpl*>();
 }
 
 std::vector<RenderFrameHostImpl*>
-RenderFrameHostDelegate::GetActiveTopLevelDocumentsInBrowsingContextGroup(
+RenderFrameHostDelegate::GetActiveTopLevelDocumentsInCoopRelatedGroup(
     RenderFrameHostImpl* render_frame_host) {
   return std::vector<RenderFrameHostImpl*>();
 }
@@ -196,6 +198,29 @@ bool RenderFrameHostDelegate::IsJavaScriptDialogShowing() const {
 
 bool RenderFrameHostDelegate::ShouldIgnoreUnresponsiveRenderer() {
   return false;
+}
+
+std::optional<blink::ParsedPermissionsPolicy>
+RenderFrameHostDelegate::GetPermissionsPolicyForIsolatedWebApp(
+    RenderFrameHostImpl* source) {
+  return blink::ParsedPermissionsPolicy();
+}
+
+bool RenderFrameHostDelegate::IsPopup() const {
+  return false;
+}
+
+bool RenderFrameHostDelegate::IsPartitionedPopin() const {
+  return false;
+}
+
+const PartitionedPopinOpenerProperties&
+RenderFrameHostDelegate::GetPartitionedPopinOpenerProperties() const {
+  NOTREACHED();
+}
+
+WebContents* RenderFrameHostDelegate::GetOpenedPartitionedPopin() const {
+  return nullptr;
 }
 
 }  // namespace content

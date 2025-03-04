@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "base/command_line.h"
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "build/build_config.h"
@@ -20,9 +20,18 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "services/video_capture/public/cpp/receiver_media_to_mojo_adapter.h"
 #include "services/video_capture/public/mojom/video_frame_handler.mojom.h"
+#include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "media/base/media_switches.h"
+#endif
+
+#if BUILDFLAG(IS_LINUX)
+#include "content/browser/gpu/gpu_data_manager_impl.h"
+#endif
+
+#if BUILDFLAG(IS_MAC)
+#include "media/capture/video/apple/video_capture_device_factory_apple.h"
 #endif
 
 namespace content {
@@ -78,22 +87,21 @@ void ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync(
     base::WeakPtr<media::VideoFrameReceiver> receiver,
     base::OnceClosure connection_lost_cb,
     Callbacks* callbacks,
-    base::OnceClosure done_cb) {
+    base::OnceClosure done_cb,
+    mojo::PendingRemote<video_effects::mojom::VideoEffectsProcessor>
+        video_effects_processor) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(state_ == State::READY_TO_LAUNCH);
 
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   LOG(INFO) << "ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync";
-#endif // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   auto scoped_trace = ScopedCaptureTrace::CreateIfEnabled(
       "ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync");
 
-  if (stream_type != blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
-    // This launcher only supports MediaStreamType::DEVICE_VIDEO_CAPTURE.
-    NOTREACHED();
-    return;
-  }
+  // This launcher only supports MediaStreamType::DEVICE_VIDEO_CAPTURE.
+  CHECK_EQ(stream_type, blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE);
 
   connect_to_source_provider_cb_.Run(&service_connection_);
   if (!service_connection_->source_provider().is_bound()) {
@@ -125,6 +133,10 @@ void ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync(
   service_connection_->source_provider()->GetVideoSource(
       device_id, source.BindNewPipeAndPassReceiver());
 
+  if (video_effects_processor) {
+    source->RegisterVideoEffectsProcessor(std::move(video_effects_processor));
+  }
+
   auto receiver_adapter =
       std::make_unique<video_capture::ReceiverMediaToMojoAdapter>(
           std::make_unique<media::VideoFrameReceiverOnTaskRunner>(
@@ -146,24 +158,32 @@ void ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync(
                          OnConnectionLostWhileWaitingForCallback,
                      base::Unretained(this)));
 
-  // TODO(crbug.com/925083)
+  // TODO(crbug.com/40610987)
   media::VideoCaptureParams new_params = params;
   new_params.power_line_frequency =
       media::VideoCaptureDevice::GetPowerLineFrequency(params);
 
-  // GpuMemoryBuffer-based VideoCapture buffer works only on the Chrome OS
-  // and Windows VideoCaptureDevice implementations.
+  // GpuMemoryBuffer-based VideoCapture buffer works only on the Chrome OS,
+  // Windows and Linux VideoCaptureDevice implementations.
 #if BUILDFLAG(IS_WIN)
   if (media::IsMediaFoundationD3D11VideoCaptureEnabled() &&
       params.requested_format.pixel_format == media::PIXEL_FORMAT_NV12) {
     new_params.buffer_type = media::VideoCaptureBufferType::kGpuMemoryBuffer;
   }
-#else
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kDisableVideoCaptureUseGpuMemoryBuffer) &&
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kVideoCaptureUseGpuMemoryBuffer)) {
+#elif BUILDFLAG(IS_MAC)
+  // For mac(https://crbug.com/1175142), zero-copy is always enabled unless the
+  // user explicitly asks to disable it.
+  if (media::ShouldEnableGpuMemoryBuffer(device_id)) {
     new_params.buffer_type = media::VideoCaptureBufferType::kGpuMemoryBuffer;
+  }
+#else
+  if (switches::IsVideoCaptureUseGpuMemoryBufferEnabled()) {
+#if BUILDFLAG(IS_LINUX)
+    // On Linux, additionally check whether the NV12 GPU memory buffer is
+    // supported.
+    if (GpuDataManagerImpl::GetInstance()->IsGpuMemoryBufferNV12Supported())
+#endif
+      new_params.buffer_type = media::VideoCaptureBufferType::kGpuMemoryBuffer;
   }
 #endif
 

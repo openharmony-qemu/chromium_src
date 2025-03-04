@@ -1,33 +1,25 @@
-#include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
-#include "sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h"
-#include <sys/socket.h>
-#include "sandbox/linux/bpf_dsl/bpf_dsl.h"
-#include "sandbox/linux/system_headers/linux_syscalls.h"
-#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
-#include <linux/ashmem.h>
-#include <linux/android/binder.h>
-#include <signal.h>
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-struct access_token {
-    __u64 sender_tokenid;
-    __u64 first_tokenid;
-    __u64 reserved[2];
-};
-struct binder_sender_info {
-    struct access_token tokens;
-    __u64 sender_pid_nr;
-};
-#define BINDER_ENABLE_ONEWAY_SPAM_DETECTION _IOW('b', 16, __u32)
-#define BINDER_FEATURE_SET _IOWR('b', 30, __u64)
-#define BINDER_GET_SENDER_INFO  _IOWR('b', 32, struct binder_sender_info)
+#include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
+
+#include <sys/socket.h>
+
+#include "sandbox/linux/bpf_dsl/bpf_dsl.h"
+#include "sandbox/linux/bpf_dsl/bpf_dsl_impl.h"
+#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
+#include "sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h"
+#include "sandbox/linux/system_headers/linux_syscalls.h"
+#include "sandbox/sandbox_export.h"
 
 using sandbox::bpf_dsl::AllOf;
 using sandbox::bpf_dsl::Allow;
 using sandbox::bpf_dsl::AnyOf;
 using sandbox::bpf_dsl::Arg;
 using sandbox::bpf_dsl::BoolExpr;
-using sandbox::bpf_dsl::If;
 using sandbox::bpf_dsl::Error;
+using sandbox::bpf_dsl::If;
 using sandbox::bpf_dsl::ResultExpr;
 
 namespace sandbox {
@@ -44,7 +36,7 @@ namespace sandbox {
 
 namespace {
 
-#if !defined(__i386__) || defined(__x86_64__)
+#if defined(__arm__) || defined(__aarch64__)
 // Restricts the arguments to sys_socket() to AF_UNIX. Returns a BoolExpr that
 // evaluates to true if the syscall should be allowed.
 BoolExpr RestrictSocketArguments(const Arg<int>& domain,
@@ -56,21 +48,38 @@ BoolExpr RestrictSocketArguments(const Arg<int>& domain,
                      (type & ~kSockFlags) == SOCK_STREAM),
                protocol == 0);
 }
-#endif  // !defined(__i386__)
+#endif  // defined(__arm__) || defined(__aarch64__)
 
 }  // namespace
 
-BaselinePolicyOhos::BaselinePolicyOhos()
-    : BaselinePolicy() {}
+BaselinePolicyOhos::BaselinePolicyOhos(bool allow_sched_affinity)
+    : BaselinePolicy(allow_sched_affinity) {}
 
-BaselinePolicyOhos::~BaselinePolicyOhos() {}
+BaselinePolicyOhos::BaselinePolicyOhos() : BaselinePolicy() {}
+
+BaselinePolicyOhos::~BaselinePolicyOhos() = default;
 
 ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
-    bool override_and_allow = false;
-    bool override_and_trap = false;
+#if DCHECK_IS_ON()
+  // debug mode, collect stacktrace call _Unwind_Backtrace
+  // _Unwind_Backtrace call syscall __NR_process_vm_readv(270)
+  if (sysno == __NR_process_vm_readv) {
+    return Allow();
+  }
+#endif
 
-    switch (sysno) {
+  bool override_and_allow = false;
+  bool override_and_trap = false;
+  switch (sysno) {
 #if defined(__arm__) || defined(__aarch64__)
+    case __NR_setsockopt:
+    case __NR_socket:
+    case __NR_bind:
+    case __NR_inotify_add_watch:
+    case __NR_inotify_rm_watch:
+    case __NR_inotify_init1:
+    case __NR_getsockopt:
+    case __NR_getsockname:
     case __NR_fdatasync:
     case __NR_fsync:
     case __NR_ftruncate:
@@ -133,20 +142,30 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mincore:
     case __NR_memfd_create:
     case __NR_faccessat:
+    case __NR_prctl:
+    case __NR_fcntl:
+    case __NR_clone:
+    case __NR_capset:
     case __NR_openat:
     case __NR_connect:
     case __NR_readlinkat:
+    case __NR_ioctl:
     case __NR_mkdirat:
     case __NR_set_tid_address:
     case __NR_getdents64:
+    case __NR_madvise:
+    case __NR_getrandom:
     case __NR_prlimit64:
     case __NR_sched_setscheduler:
+    case __NR_sched_getparam:
     case __NR_sched_getscheduler:
+    case __NR_setsid:
+    case __NR_ptrace:
     case __NR_membarrier:
     case __NR_setitimer:
+    case __NR_execve:
     case __NR_msync:
-    case __NR_set_robust_list:
-    case __NR_sched_getparam:
+    case __NR_statx:
 #endif
 #if defined(__arm__)
     case __NR_sched_getaffinity:
@@ -177,128 +196,69 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_mkdir:
     case __NR_sigreturn:
     case __NR_fork:
+    case __NR_fcntl64:
     case __NR_access:
-    case __NR_statx:
 #endif
 #if defined(__aarch64__)
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
+    case __NR_mmap:
 #endif
+      override_and_allow = true;
+      break;
+    default:
+      break;
+  }
 
-    override_and_allow = true;
-    break;
-    }
+  if (override_and_allow) {
+    return Allow();
+  }
 
 #if defined(__arm__) || defined(__aarch64__)
-    if (sysno == __NR_socket) {
-        const Arg<int> domain(0);
-        const Arg<int> type(1);
-        const Arg<int> protocol(2);
-        return If(RestrictSocketArguments(domain, type, protocol), Allow())
-                .Else(Error(EPERM));
-    }
+  if (sysno == __NR_socket) {
+    const Arg<int> domain(0);
+    const Arg<int> type(1);
+    const Arg<int> protocol(2);
+    return If(RestrictSocketArguments(domain, type, protocol), Allow())
+        .Else(Error(EPERM));
+  }
 
-    if (sysno == __NR_setsockopt) {
+  if (sysno == __NR_setsockopt) {
     const Arg<int> level(1);
     const Arg<int> option(2);
     return If(AllOf(level == SOL_SOCKET,
-                    AnyOf(option == SO_SNDTIMEO,
-                          option == SO_RCVTIMEO,
-                          option == SO_SNDBUF,
-                          option == SO_REUSEADDR,
+                    AnyOf(option == SO_SNDTIMEO, option == SO_RCVTIMEO,
+                          option == SO_SNDBUF, option == SO_REUSEADDR,
                           option == SO_PASSCRED)),
               Allow())
-           .Else(BaselinePolicy::EvaluateSyscall(sysno));
-    }
+        .Else(BaselinePolicy::EvaluateSyscall(sysno));
+  }
 
-    if (sysno == __NR_clock_getres) {
-        return RestrictClockID();
-    }
-
-    if (sysno == __NR_ptrace) {
-        return RestrictPtrace();
-    }
-
-    if (sysno == __NR_madvise) {
-        const Arg<int> advice(2);
-        const unsigned int MADV_WIPEONFORK = 18;
-        return If(AnyOf(advice == -1,
-                        advice == MADV_WIPEONFORK),
-                Allow())
-            .Else(BaselinePolicy::EvaluateSyscall(sysno));
-    }
-
-    if (sysno == __NR_ioctl) {
-        const Arg<unsigned int> request(1);
-        #ifdef BINDER_IPC_32BIT
-        const unsigned int kBinderWriteRead32 = BINDER_WRITE_READ;
-        const unsigned int kBinderWriteRead64 =
-            (BINDER_WRITE_READ & ~IOCSIZE_MASK) |
-            ((sizeof(binder_write_read) * 2) << _IOC_SIZESHIFT);
-        #else
-        const unsigned int kBinderWriteRead64 = BINDER_WRITE_READ;
-        const unsigned int kBinderWriteRead32 =
-            (BINDER_WRITE_READ & ~IOCSIZE_MASK) |
-            ((sizeof(binder_write_read) / 2) << _IOC_SIZESHIFT);
-        #endif
-        return Switch(request)
-            .Cases({
-                        ASHMEM_SET_NAME, ASHMEM_GET_NAME, ASHMEM_SET_SIZE,
-                        ASHMEM_GET_SIZE, ASHMEM_SET_PROT_MASK, ASHMEM_GET_PROT_MASK,
-                        ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS,
-                        kBinderWriteRead32, kBinderWriteRead64, BINDER_SET_MAX_THREADS,
-                        BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
-                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
-                    Allow())
-            .Default(RestrictIoctl());
-    }
-
-    if (sysno == __NR_clone) {
-        const Arg<unsigned long> flags(0);
- 
-        const uint64_t kMuslForkFlags = SIGCHLD;
-        const uint64_t kPthreadCreateFlags =
-            CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD |
-            CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
- 
-        const BoolExpr is_fork_or_pthread =
-            AnyOf(flags==kMuslForkFlags, flags == kPthreadCreateFlags);
-        return If(is_fork_or_pthread, Allow()).Else(CrashSIGSYSClone());
-    }
-
-    if (sysno == __NR_prctl) {
-#define PR_SET_JITFORT_OPTION 0x6a6974
-#define JITFORT_CPU_FEATURES 7
-        const Arg<int> option(0), arg(1);
-
-        return Switch(option)
-            .Cases({PR_SET_JITFORT_OPTION},
-                If(arg == JITFORT_CPU_FEATURES, Allow()).Else(CrashSIGSYSPrctl()))
-            .Default(BaselinePolicy::EvaluateSyscall(sysno));
-    }
+  if (sysno == __NR_clock_getres) {
+    return RestrictClockID();
+  }
 #endif
 
-    switch(sysno) {
+  switch (sysno) {
 #if defined(__arm__) || defined(__aarch64__)
     case __NR_setrlimit:
     case __NR_sched_get_priority_max:
     case __NR_sched_get_priority_min:
     case __NR_times:
     case __NR_get_robust_list:
+    case __NR_set_robust_list:
     case __NR_setresuid:
-    case __NR_unlinkat:
     case __NR_flock:
     case __NR_sched_setaffinity:
     case __NR_getrusage:
     case __NR_getsockopt:
-    case __NR_process_vm_readv:
     case __NR_pkey_free:
     case __NR_pkey_mprotect:
     case __NR_pkey_alloc:
-    case __NR_execve:
-    case __NR_capset:
-    case __NR_setsid:
+    case __NR_seteuid:
+    case __NR_setegid:
+    case __NR_klogctl:
 #endif
 #if defined(__arm__)
     case __NR_sigaction:
@@ -314,18 +274,17 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_fstatat64:
     case __NR_fstatfs64:
 #endif
-    override_and_trap = true;
-    break;
-    }
+      override_and_trap = true;
+      break;
+    default:
+      break;
+  }
 
-    if (override_and_trap)
-        return CrashSIGSYS();
+  if (override_and_trap) {
+    return CrashSIGSYS();
+  }
 
-    if (override_and_allow)
-        return Allow();
-
-    return BaselinePolicy::EvaluateSyscall(sysno);
+  return BaselinePolicy::EvaluateSyscall(sysno);
 }
-
-
-} // namespace sandbox
+}  // namespace sandbox
+                      

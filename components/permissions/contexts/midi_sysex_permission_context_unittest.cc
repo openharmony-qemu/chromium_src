@@ -23,6 +23,8 @@ namespace permissions {
 
 namespace {
 
+using PermissionStatus = blink::mojom::PermissionStatus;
+
 class TestPermissionContext : public MidiSysexPermissionContext {
  public:
   explicit TestPermissionContext(content::BrowserContext* browser_context)
@@ -79,7 +81,8 @@ TEST_F(MidiSysexPermissionContextTests, TestInsecureRequestingUrl) {
       web_contents()->GetPrimaryMainFrame()->GetGlobalId(),
       permissions::PermissionRequestID::RequestLocalId());
   permission_context.RequestPermission(
-      id, url, true,
+      PermissionRequestData(&permission_context, id,
+                            /*user_gesture=*/true, url),
       base::BindOnce(&TestPermissionContext::TrackPermissionDecision,
                      base::Unretained(&permission_context)));
 
@@ -122,17 +125,17 @@ TEST_F(MidiSysexPermissionContextTests, TestInsecureQueryingUrl) {
                                     secure_url.DeprecatedGetOriginAsURL(),
                                     ContentSettingsType::MIDI_SYSEX));
 
-  EXPECT_EQ(CONTENT_SETTING_BLOCK,
+  EXPECT_EQ(PermissionStatus::DENIED,
             permission_context
                 .GetPermissionStatus(nullptr /* render_frame_host */,
                                      insecure_url, insecure_url)
-                .content_setting);
+                .status);
 
-  EXPECT_EQ(CONTENT_SETTING_BLOCK,
+  EXPECT_EQ(PermissionStatus::DENIED,
             permission_context
                 .GetPermissionStatus(nullptr /* render_frame_host */,
                                      insecure_url, secure_url)
-                .content_setting);
+                .status);
 }
 
 }  // namespace permissions

@@ -11,7 +11,7 @@
 #include "base/scoped_observation.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_registry_observer.h"
-#include "extensions/common/extension_icon_set.h"
+#include "extensions/common/icons/extension_icon_set.h"
 #include "ui/gfx/image/image.h"
 #include "ui/gfx/image/image_skia.h"
 
@@ -114,7 +114,8 @@ class IconImage : public ExtensionRegistryObserver {
                            UnloadedExtensionReason reason) override;
   void OnShutdown(ExtensionRegistry* extension_registry) override;
 
-  raw_ptr<content::BrowserContext, DanglingUntriaged> browser_context_;
+  raw_ptr<content::BrowserContext, AcrossTasksDanglingUntriaged>
+      browser_context_;
   scoped_refptr<const Extension> extension_;
   ExtensionIconSet icon_set_;
   const int resource_size_in_dip_;

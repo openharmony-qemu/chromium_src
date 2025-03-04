@@ -4,10 +4,12 @@
 
 #import "ios/chrome/browser/ui/price_notifications/price_notifications_price_tracking_mediator.h"
 
-#import "base/logging.h"
+#import "base/memory/raw_ptr.h"
+#import "base/metrics/histogram_functions.h"
 #import "base/strings/string_number_conversions.h"
 #import "base/strings/sys_string_conversions.h"
-#import "components/bookmarks/browser/bookmark_model.h"
+#import "base/task/bind_post_task.h"
+#import "components/commerce/core/commerce_constants.h"
 #import "components/commerce/core/price_tracking_utils.h"
 #import "components/commerce/core/shopping_service.h"
 #import "components/image_fetcher/core/image_data_fetcher.h"
@@ -15,21 +17,46 @@
 #import "components/power_bookmarks/core/power_bookmark_utils.h"
 #import "components/power_bookmarks/core/proto/power_bookmark_meta.pb.h"
 #import "components/power_bookmarks/core/proto/shopping_specifics.pb.h"
-#import "ios/chrome/browser/push_notification/push_notification_client_id.h"
-#import "ios/chrome/browser/push_notification/push_notification_service.h"
-#import "ios/chrome/browser/push_notification/push_notification_util.h"
-#import "ios/chrome/browser/shared/public/commands/bookmark_add_command.h"
+#import "ios/chrome/browser/price_insights/coordinator/price_insights_consumer.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_client_id.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_service.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_util.h"
 #import "ios/chrome/browser/shared/public/commands/bookmarks_commands.h"
 #import "ios/chrome/browser/shared/public/commands/price_notifications_commands.h"
+#import "ios/chrome/browser/tabs/model/tab_title_util.h"
 #import "ios/chrome/browser/ui/price_notifications/cells/price_notifications_table_view_item.h"
 #import "ios/chrome/browser/ui/price_notifications/price_notifications_alert_presenter.h"
 #import "ios/chrome/browser/ui/price_notifications/price_notifications_consumer.h"
 #import "ios/web/public/web_state.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+namespace {
+// The histogram used to record a product's new tracking state when a user
+// initates a state change.
+const char kPriceTrackingStatusHistogram[] =
+    "Commerce.PriceTracking.IOS.PriceTracking.ProductStatus";
+
+// The histogram used to record a product's new tracking state when a user
+// initates a state change.
+const char kPriceInsightsTrackingStatusHistogram[] =
+    "Commerce.PriceTracking.IOS.PriceInsights.ProductStatus";
+
+// This enum is used to represent the different tracking states a product can
+// observe.
+enum class PriceNotificationProductStatus {
+  kTrack,
+  kUntrack,
+  kMaxValue = kUntrack
+};
+
+// This enum is used to represent the different sources of tracking a product.
+enum class PriceNotificationTrackingSource {
+  kPriceTracking,
+  kPriceInsights,
+  kMaxValue = kPriceInsights
+};
+
+}  // namespace
 
 using PriceNotificationItems =
     NSMutableArray<PriceNotificationsTableViewItem*>*;
@@ -42,12 +69,12 @@ using PriceNotificationItems =
 // infrastructure.
 @property(nonatomic, assign) commerce::ShoppingService* shoppingService;
 // The service responsible for managing bookmarks.
-@property(nonatomic, assign) bookmarks::BookmarkModel* bookmarkModel;
+@property(nonatomic, readonly) bookmarks::BookmarkModel* bookmarkModel;
 // The current browser state's webstate.
-@property(nonatomic, assign) web::WebState* webState;
+@property(nonatomic, assign) base::WeakPtr<web::WebState> webState;
 // The product data for the product contained on the site the user is currently
 // viewing.
-@property(nonatomic, assign) absl::optional<commerce::ProductInfo>
+@property(nonatomic, assign) std::optional<commerce::ProductInfo>
     currentSiteProductInfo;
 // The service responsible for updating the user's chrome-level push
 // notification permissions for Price Tracking.
@@ -62,7 +89,7 @@ using PriceNotificationItems =
               bookmarkModel:(bookmarks::BookmarkModel*)bookmarkModel
                imageFetcher:
                    (std::unique_ptr<image_fetcher::ImageDataFetcher>)fetcher
-                   webState:(web::WebState*)webState
+                   webState:(base::WeakPtr<web::WebState>)webState
     pushNotificationService:(PushNotificationService*)pushNotificationService {
   self = [super init];
   if (self) {
@@ -90,16 +117,20 @@ using PriceNotificationItems =
   [self fetchPriceTrackingData];
 }
 
+- (void)setPriceInsightsConsumer:(id<PriceInsightsConsumer>)consumer {
+  if (_priceInsightsConsumer == consumer) {
+    return;
+  }
+
+  _priceInsightsConsumer = consumer;
+}
+
 #pragma mark - PriceNotificationsMutator
 
 - (void)trackItem:(PriceNotificationsTableViewItem*)item {
-  // Requests push notification permission. This will determine whether the user
-  // receives price tracking notifications to the current device. However, the
-  // device's permission status will not prevent the shopping service from
-  // subscribing the user to the product and its price tracking events.
   __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
-  [PushNotificationUtil requestPushNotificationPermission:^(
-                            BOOL granted, BOOL promptShown, NSError* error) {
+  [self presentNotificationPermission:^(BOOL granted, BOOL promptShown,
+                                        NSError* error) {
     if (!error && !promptShown && !granted) {
       // This callback can be executed on a background thread, make sure the UI
       // is displayed on the main thread.
@@ -117,63 +148,85 @@ using PriceNotificationItems =
     }
   }];
 
-  // The price tracking infrastructure is built on top of bookmarks, so a new
-  // bookmark needs to be created before the item can be registered for price
-  // tracking.
-  const bookmarks::BookmarkNode* bookmark =
-      self.bookmarkModel->GetMostRecentlyAddedUserNodeForURL(item.entryURL);
-  bool isNewBookmark = bookmark == nullptr;
-  if (!bookmark) {
-    const bookmarks::BookmarkNode* defaultFolder =
-        self.bookmarkModel->mobile_node();
-    bookmark = self.bookmarkModel->AddURL(
-        defaultFolder, defaultFolder->children().size(),
-        base::SysNSStringToUTF16(item.title), item.entryURL);
-  }
-
-  commerce::SetPriceTrackingStateForBookmark(
-      self.shoppingService, self.bookmarkModel, bookmark, true,
-      base::BindOnce(^(bool success) {
+  [self trackForURL:item.entryURL
+                  title:item.title
+      completionHandler:^(bool success) {
         [weakSelf didTrackItem:item successfully:success];
-      }),
-      isNewBookmark);
+      }];
 }
 
 - (void)stopTrackingItem:(PriceNotificationsTableViewItem*)item {
-  // Retrieve the bookmark node for the given URL.
-  const bookmarks::BookmarkNode* bookmark =
-      self.bookmarkModel->GetMostRecentlyAddedUserNodeForURL(item.entryURL);
-
-  if (!bookmark) {
-    return;
-  }
-
   __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
-  commerce::SetPriceTrackingStateForBookmark(
-      self.shoppingService, self.bookmarkModel, bookmark, false,
-      base::BindOnce(^(bool success) {
+  [self stopTrackingForURL:item.entryURL
+      withCompletionHandler:^(bool success) {
         if (!success) {
           [weakSelf.presenter presentStopPriceTrackingErrorAlertForItem:item];
           return;
         }
         [weakSelf didStopTrackingItem:item];
-      }));
+      }];
 }
 
 - (void)navigateToWebpageForItem:(PriceNotificationsTableViewItem*)item {
   DCHECK(item.tracking);
-  self.webState->OpenURL(web::WebState::OpenURLParams(
-      item.entryURL, web::Referrer(), WindowOpenDisposition::CURRENT_TAB,
-      ui::PAGE_TRANSITION_GENERATED, /*is_renderer_initiated=*/false));
+  [self navigateToWebpageForURL:item.entryURL
+                    disposition:WindowOpenDisposition::CURRENT_TAB];
   [self.handler hidePriceNotifications];
 }
 
 - (void)navigateToBookmarks {
   [self.handler hidePriceNotifications];
-  BookmarkAddCommand* command =
-      [[BookmarkAddCommand alloc] initWithWebState:self.webState
-                              presentFolderChooser:NO];
-  [self.bookmarksHandler openToExternalBookmark:command];
+  GURL URL = _webState->GetLastCommittedURL();
+  [self.bookmarksHandler openToExternalBookmark:URL];
+}
+
+#pragma mark - PriceInsightsMutator
+
+- (void)tryPriceInsightsTrackItem:(PriceInsightsItem*)item {
+  __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
+
+  auto callback = base::BindPostTask(
+      base::SequencedTaskRunner::GetCurrentDefault(),
+      base::BindOnce(^(BOOL granted, BOOL promptShown, NSError* error) {
+        [weakSelf onNotificationPermissionRequestForItem:item
+                                       permissionGranted:granted
+                                             promptShown:promptShown
+                                                   error:error];
+      }));
+
+  [self
+      presentNotificationPermission:base::CallbackToBlock(std::move(callback))];
+}
+
+- (void)priceInsightsTrackItem:(PriceInsightsItem*)item
+          notificationsGranted:(BOOL)granted
+                showCompletion:(BOOL)showCompletion {
+  __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
+  [self trackForURL:item.productURL
+                  title:item.title
+      completionHandler:^(bool success) {
+        [weakSelf onPriceInsightsTrackItem:item
+                                   success:success
+                         permissionGranted:granted
+                            showCompletion:showCompletion];
+      }];
+}
+
+- (void)priceInsightsStopTrackingItem:(PriceInsightsItem*)item {
+  __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
+  [self stopTrackingForURL:item.productURL
+                  clusterId:item.clusterId
+      withCompletionHandler:^(bool success) {
+        [weakSelf onPriceInsightsStopTrackingItem:item success:success];
+      }];
+}
+
+- (void)priceInsightsNavigateToWebpageForItem:(PriceInsightsItem*)item {
+  DCHECK(item.buyingOptionsURL.is_valid());
+  [self navigateToWebpageForURL:item.buyingOptionsURL
+                    disposition:WindowOpenDisposition::NEW_FOREGROUND_TAB];
+  [self.priceInsightsConsumer
+      didStartNavigationToWebpageWithPriceBucket:item.priceBucket];
 }
 
 #pragma mark - Private
@@ -191,9 +244,9 @@ using PriceNotificationItems =
 
 // Creates a `PriceNotificationsTableViewItem` object and sends the newly
 // created object to the Price Notifications UI.
-- (void)displayProduct:(const absl::optional<commerce::ProductInfo>&)productInfo
+- (void)displayProduct:(const std::optional<commerce::ProductInfo>&)productInfo
               fromSite:(const GURL&)URL {
-  if (!productInfo) {
+  if (!commerce::CanTrackPrice(productInfo)) {
     [self.consumer setTrackableItem:nil currentlyTracking:NO];
     return;
   }
@@ -204,8 +257,10 @@ using PriceNotificationItems =
       [self createPriceNotificationTableViewItem:NO
                                  fromProductInfo:productInfo
                                            atURL:URL];
-  self.shoppingService->IsClusterIdTrackedByUser(
-      productInfo->product_cluster_id, base::BindOnce(^(bool isTracked) {
+  self.shoppingService->IsSubscribed(
+      commerce::BuildUserSubscriptionForClusterId(
+          productInfo->product_cluster_id.value()),
+      base::BindOnce(^(bool isTracked) {
         [weakSelf.consumer setTrackableItem:item currentlyTracking:isTracked];
       }));
 
@@ -236,7 +291,7 @@ using PriceNotificationItems =
 // Creates a localized price string.
 - (NSString*)extractFormattedCurrentPrice:(BOOL)forCurrentPrice
                           fromProductInfo:
-                              (const absl::optional<commerce::ProductInfo>&)
+                              (const std::optional<commerce::ProductInfo>&)
                                   productInfo {
   if (!productInfo) {
     return nil;
@@ -271,6 +326,10 @@ using PriceNotificationItems =
   trackableItem.tracking = YES;
   [self.consumer reconfigureCellsForItems:@[ trackableItem ]];
   [self.consumer didStartPriceTrackingForItem:trackableItem];
+
+  [self recordProductStatusFromSource:PriceNotificationTrackingSource::
+                                          kPriceTracking
+                               status:PriceNotificationProductStatus::kTrack];
 }
 
 // This function handles the response from the user attempting to unsubscribe to
@@ -281,7 +340,7 @@ using PriceNotificationItems =
       item.entryURL,
       base::BindOnce(^(
           const GURL& productURL,
-          const absl::optional<commerce::ProductInfo>& productInfo) {
+          const std::optional<const commerce::ProductInfo>& productInfo) {
         PriceNotificationsPriceTrackingMediator* strongSelf = weakSelf;
         if (!strongSelf) {
           return;
@@ -292,14 +351,17 @@ using PriceNotificationItems =
         [strongSelf.consumer didStopPriceTrackingItem:item
                                         onCurrentSite:isProductOnCurrentSite];
       }));
+
+  [self recordProductStatusFromSource:PriceNotificationTrackingSource::
+                                          kPriceTracking
+                               status:PriceNotificationProductStatus::kUntrack];
 }
 
 // This function fetches the product data for the items the user has subscribed
 // to and populates the data into the Price Notifications UI.
 - (void)fetchTrackedItems {
   __weak PriceNotificationsPriceTrackingMediator* weakSelf = self;
-  commerce::GetAllPriceTrackedBookmarks(
-      self.shoppingService, self.bookmarkModel,
+  self.shoppingService->GetAllPriceTrackedBookmarks(
       base::BindOnce(
           ^(std::vector<const bookmarks::BookmarkNode*> subscribedItems) {
             if (!weakSelf) {
@@ -320,12 +382,17 @@ using PriceNotificationItems =
               // BookmarkMeta to ProductInfo to build the
               // PriceNotificationTableViewItem for tracked products, instead of
               // passing BookmarkMeta directly.
-              absl::optional<commerce::ProductInfo> info;
+              std::optional<commerce::ProductInfo> info;
               info.emplace();
               info->title = specifics.title();
               info->image_url = GURL(meta->lead_image().url());
-              info->product_cluster_id = specifics.product_cluster_id();
-              info->offer_id = specifics.offer_id();
+              if (specifics.has_product_cluster_id()) {
+                info->product_cluster_id.emplace(
+                    specifics.product_cluster_id());
+              }
+              if (specifics.has_offer_id()) {
+                info->offer_id.emplace(specifics.offer_id());
+              }
               info->currency_code = specifics.current_price().currency_code();
               info->amount_micros = specifics.current_price().amount_micros();
               info->country_code = specifics.country_code();
@@ -349,7 +416,7 @@ using PriceNotificationItems =
       currentSiteURL,
       base::BindOnce(
           ^(const GURL& productURL,
-            const absl::optional<commerce::ProductInfo>& productInfo) {
+            const std::optional<const commerce::ProductInfo>& productInfo) {
             PriceNotificationsPriceTrackingMediator* strongSelf = weakSelf;
             if (!strongSelf) {
               return;
@@ -363,7 +430,7 @@ using PriceNotificationItems =
 
 // Creates a `PriceNotificationsTableViewItem` object and sends the newly
 // created object to the Price Notifications UI.
-- (void)addTrackedItem:(const absl::optional<commerce::ProductInfo>&)productInfo
+- (void)addTrackedItem:(const std::optional<commerce::ProductInfo>&)productInfo
               fromSite:(const GURL&)URL {
   if (!productInfo) {
     return;
@@ -393,7 +460,7 @@ using PriceNotificationItems =
 - (PriceNotificationsTableViewItem*)
     createPriceNotificationTableViewItem:(BOOL)forTrackedItem
                          fromProductInfo:
-                             (const absl::optional<commerce::ProductInfo>&)
+                             (const std::optional<commerce::ProductInfo>&)
                                  productInfo
                                    atURL:(const GURL&)URL {
   PriceNotificationsTableViewItem* item =
@@ -416,13 +483,15 @@ using PriceNotificationItems =
 // Compares two commerce::ProductInfo objects for equality based on the
 // `product_cluster_id` property.
 - (BOOL)isCurrentSiteEqualToProductInfo:
-    (const absl::optional<commerce::ProductInfo>&)productInfo {
-  if (!productInfo || !self.currentSiteProductInfo) {
+    (const std::optional<commerce::ProductInfo>&)productInfo {
+  if (!productInfo || !productInfo->product_cluster_id.has_value() ||
+      !self.currentSiteProductInfo ||
+      !self.currentSiteProductInfo->product_cluster_id.has_value()) {
     return false;
   }
 
-  return productInfo->product_cluster_id ==
-         self.currentSiteProductInfo->product_cluster_id;
+  return productInfo->product_cluster_id.value() ==
+         self.currentSiteProductInfo->product_cluster_id.value();
 }
 
 // Checks if the item being offered at `URL` is already
@@ -432,9 +501,8 @@ using PriceNotificationItems =
     return false;
   }
 
-  std::vector<const bookmarks::BookmarkNode*> nodes;
-  self.bookmarkModel->GetNodesByURL(URL, &nodes);
-  for (const bookmarks::BookmarkNode* node : nodes) {
+  for (const bookmarks::BookmarkNode* node :
+       self.bookmarkModel->GetNodesByURL(URL)) {
     std::unique_ptr<power_bookmarks::PowerBookmarkMeta> meta =
         power_bookmarks::GetNodePowerBookmarkMeta(self.bookmarkModel, node);
 
@@ -443,7 +511,7 @@ using PriceNotificationItems =
       continue;
     }
 
-    // TODO: This should use the async version of IsSubscribed.
+    // TODO: b/355423868 - This should use the async version of IsSubscribed.
     if (self.shoppingService->IsSubscribedFromCache(
             commerce::BuildUserSubscriptionForClusterId(
                 meta->shopping_specifics().product_cluster_id()))) {
@@ -452,6 +520,161 @@ using PriceNotificationItems =
   }
 
   return false;
+}
+
+- (void)recordProductStatusFromSource:(PriceNotificationTrackingSource)source
+                               status:(PriceNotificationProductStatus)status {
+  switch (source) {
+    case PriceNotificationTrackingSource::kPriceTracking:
+      base::UmaHistogramEnumeration(kPriceTrackingStatusHistogram, status);
+      break;
+    case PriceNotificationTrackingSource::kPriceInsights:
+      base::UmaHistogramEnumeration(kPriceInsightsTrackingStatusHistogram,
+                                    status);
+      break;
+  }
+}
+
+- (void)navigateToWebpageForURL:(const GURL&)URL
+                    disposition:(WindowOpenDisposition)disposition {
+  self.webState->OpenURL(web::WebState::OpenURLParams(
+      URL, web::Referrer(), disposition, ui::PAGE_TRANSITION_GENERATED,
+      /*is_renderer_initiated=*/false));
+}
+
+- (void)stopTrackingForURL:(const GURL&)URL
+     withCompletionHandler:(void (^)(BOOL success))completionHandler {
+  // Retrieve the bookmark node for the given URL.
+  const bookmarks::BookmarkNode* bookmark =
+      self.bookmarkModel->GetMostRecentlyAddedUserNodeForURL(URL);
+
+  if (!bookmark) {
+    return;
+  }
+
+  commerce::SetPriceTrackingStateForBookmark(
+      self.shoppingService, self.bookmarkModel, bookmark, false,
+      base::BindOnce(completionHandler));
+}
+
+// Stops tracking a product's price by URL or cluster ID.
+- (void)stopTrackingForURL:(const GURL&)URL
+                 clusterId:(uint64_t)clusterId
+     withCompletionHandler:(void (^)(BOOL success))completionHandler {
+  // Retrieve the bookmark node for the given URL.
+  const bookmarks::BookmarkNode* bookmark =
+      self.bookmarkModel->GetMostRecentlyAddedUserNodeForURL(URL);
+
+  if (!bookmark) {
+    // If the URL isn't bookmarked, try to stop tracking for the given cluster
+    // ID.
+    commerce::SetPriceTrackingStateForClusterId(
+        self.shoppingService, self.bookmarkModel, clusterId, false,
+        base::BindOnce(completionHandler));
+    return;
+  }
+
+  commerce::SetPriceTrackingStateForBookmark(
+      self.shoppingService, self.bookmarkModel, bookmark, false,
+      base::BindOnce(completionHandler));
+}
+
+- (void)presentNotificationPermission:
+    (void (^)(BOOL granted, BOOL promptShown, NSError* error))
+        completionHandler {
+  // Requests push notification permission. This will determine whether the user
+  // receives price tracking notifications to the current device. However, the
+  // device's permission status will not prevent the shopping service from
+  // subscribing the user to the product and its price tracking events.
+  [PushNotificationUtil requestPushNotificationPermission:completionHandler];
+}
+
+- (void)trackForURL:(const GURL&)URL
+                title:(NSString*)title
+    completionHandler:(void (^)(BOOL success))completionHandler {
+  // The price tracking infrastructure is built on top of bookmarks, so a new
+  // bookmark needs to be created before the item can be registered for price
+  // tracking.
+  const bookmarks::BookmarkNode* bookmark =
+      self.bookmarkModel->GetMostRecentlyAddedUserNodeForURL(URL);
+  bool isNewBookmark = bookmark == nullptr;
+  if (!bookmark) {
+    const bookmarks::BookmarkNode* defaultFolder =
+        self.bookmarkModel->account_mobile_node();
+    if (!defaultFolder) {
+      // Cannot track URL: the user is likely signed out.
+      base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+          FROM_HERE, base::BindOnce(completionHandler, false));
+      return;
+    }
+    bookmark = self.bookmarkModel->AddURL(defaultFolder,
+                                          defaultFolder->children().size(),
+                                          base::SysNSStringToUTF16(title), URL);
+  }
+
+  commerce::SetPriceTrackingStateForBookmark(
+      self.shoppingService, self.bookmarkModel, bookmark, true,
+      base::BindOnce(completionHandler), isNewBookmark);
+}
+
+// Callback invoked after requesting push notification permission.
+- (void)onNotificationPermissionRequestForItem:(PriceInsightsItem*)item
+                             permissionGranted:(BOOL)granted
+                                   promptShown:(BOOL)promptShown
+                                         error:(NSError*)error {
+  if (error) {
+    [self priceInsightsTrackItem:item
+            notificationsGranted:false
+                  showCompletion:true];
+    return;
+  }
+
+  if (!promptShown && !granted) {
+    [self.priceInsightsConsumer presentPushNotificationPermissionAlert];
+    return;
+  }
+
+  if (promptShown && granted) {
+    self.pushNotificationService->SetPreference(
+        self.gaiaID, PushNotificationClientId::kCommerce, true);
+  }
+
+  [self priceInsightsTrackItem:item
+          notificationsGranted:granted
+                showCompletion:true];
+}
+
+// Callback invoked after requesting to track an item.
+- (void)onPriceInsightsTrackItem:(PriceInsightsItem*)item
+                         success:(BOOL)success
+               permissionGranted:(BOOL)granted
+                  showCompletion:(BOOL)showCompletion {
+  if (!success) {
+    [self.priceInsightsConsumer presentStartPriceTrackingErrorSnackbar];
+    return;
+  }
+
+  [self.priceInsightsConsumer
+      didStartPriceTrackingWithNotification:granted
+                             showCompletion:showCompletion];
+
+  [self recordProductStatusFromSource:PriceNotificationTrackingSource::
+                                          kPriceInsights
+                               status:PriceNotificationProductStatus::kTrack];
+}
+
+// Callback invoked after requesting to stop tracking an item.
+- (void)onPriceInsightsStopTrackingItem:(PriceInsightsItem*)item
+                                success:(BOOL)success {
+  if (!success) {
+    [self.priceInsightsConsumer presentStopPriceTrackingErrorSnackbar];
+    return;
+  }
+
+  [self recordProductStatusFromSource:PriceNotificationTrackingSource::
+                                          kPriceInsights
+                               status:PriceNotificationProductStatus::kUntrack];
+  [self.priceInsightsConsumer didStopPriceTracking];
 }
 
 @end

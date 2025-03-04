@@ -7,11 +7,13 @@
 
 #include "base/containers/enum_set.h"
 #include "base/containers/flat_set.h"
-#include "base/functional/function_ref.h"
+#include "base/observer_list_types.h"
 #include "base/process/process.h"
 #include "base/task/task_traits.h"
 #include "components/performance_manager/public/graph/node.h"
+#include "components/performance_manager/public/graph/node_set_view.h"
 #include "components/performance_manager/public/render_process_host_id.h"
+#include "components/performance_manager/public/resource_attribution/process_context.h"
 #include "content/public/common/process_type.h"
 
 namespace base {
@@ -39,9 +41,12 @@ class BrowserChildProcessHostProxy;
 //
 // It is only valid to access this object on the sequence of the graph that owns
 // it.
-class ProcessNode : public Node {
+class ProcessNode : public TypedNode<ProcessNode> {
  public:
-  using FrameNodeVisitor = base::FunctionRef<bool(const FrameNode*)>;
+  using NodeSet = base::flat_set<const Node*>;
+  template <class ReturnType>
+  using NodeSetView = NodeSetView<NodeSet, ReturnType>;
+
   using Observer = ProcessNodeObserver;
   class ObserverDefaultImpl;
 
@@ -64,6 +69,8 @@ class ProcessNode : public Node {
 
   using ContentTypes =
       base::EnumSet<ContentType, ContentType::kExtension, ContentType::kWorker>;
+
+  static constexpr NodeTypeEnum Type() { return NodeTypeEnum::kProcess; }
 
   ProcessNode();
 
@@ -88,29 +95,26 @@ class ProcessNode : public Node {
   // process if it has not yet started, or if it has exited.
   virtual const base::Process& GetProcess() const = 0;
 
+  // Gets the unique token identifying this node for resource attribution. This
+  // token will not be reused after the node is destroyed.
+  virtual resource_attribution::ProcessContext GetResourceContext() const = 0;
+
   // Returns a time captured as early as possible after the process is launched.
   virtual base::TimeTicks GetLaunchTime() const = 0;
 
   // Returns the exit status of this process. This will be empty if the process
   // has not yet exited.
-  virtual absl::optional<int32_t> GetExitStatus() const = 0;
+  virtual std::optional<int32_t> GetExitStatus() const = 0;
 
   // Returns the non-localized name of the process used for metrics reporting
   // metrics as specified in content::ChildProcessData during process creation.
   virtual const std::string& GetMetricsName() const = 0;
 
-  // Visits the frame nodes that are hosted in this process. The iteration is
-  // halted if the visitor returns false. Returns true if every call to the
-  // visitor returned true, false otherwise.
-  virtual bool VisitFrameNodes(const FrameNodeVisitor& visitor) const = 0;
+  // Returns the set of frame nodes that are hosted in this process.
+  virtual NodeSetView<const FrameNode*> GetFrameNodes() const = 0;
 
-  // Returns the set of frame nodes that are hosted in this process. Note that
-  // calling this causes the set of nodes to be generated.
-  virtual base::flat_set<const FrameNode*> GetFrameNodes() const = 0;
-
-  // Returns the set of worker nodes that are hosted in this process. Note that
-  // calling this causes the set of nodes to be generated.
-  virtual base::flat_set<const WorkerNode*> GetWorkerNodes() const = 0;
+  // Returns the set of worker nodes that are hosted in this process.
+  virtual NodeSetView<const WorkerNode*> GetWorkerNodes() const = 0;
 
   // Returns true if the main thread task load is low (below some threshold
   // of usage). See ProcessNodeObserver::OnMainThreadTaskLoadIsLow.
@@ -128,6 +132,10 @@ class ProcessNode : public Node {
   // Returns the most recently measured resident set of the process, in
   // kilobytes.
   virtual uint64_t GetResidentSetKb() const = 0;
+
+  // Returns the most recently measured size of private swap, in kilobytes. Will
+  // only be non-zero on Linux, ChromeOS, and Android.
+  virtual uint64_t GetPrivateSwapKb() const = 0;
 
   // Returns the render process id (equivalent to RenderProcessHost::GetID()),
   // or ChildProcessHost::kInvalidUniqueID if this is not a renderer.
@@ -154,14 +162,14 @@ class ProcessNode : public Node {
 
 // Pure virtual observer interface. Derive from this if you want to be forced to
 // implement the entire interface.
-class ProcessNodeObserver {
+class ProcessNodeObserver : public base::CheckedObserver {
  public:
   ProcessNodeObserver();
 
   ProcessNodeObserver(const ProcessNodeObserver&) = delete;
   ProcessNodeObserver& operator=(const ProcessNodeObserver&) = delete;
 
-  virtual ~ProcessNodeObserver();
+  ~ProcessNodeObserver() override;
 
   // Node lifetime notifications.
 

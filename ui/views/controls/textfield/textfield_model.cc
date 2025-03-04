@@ -13,7 +13,6 @@
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/current_thread.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/clipboard/clipboard.h"
 #include "ui/base/clipboard/scoped_clipboard_writer.h"
 #include "ui/gfx/range/range.h"
@@ -367,7 +366,7 @@ void SelectRangeInCompositionText(gfx::RenderText* render_text,
   DCHECK(range.IsValid());
   size_t start = range.GetMin();
   size_t end = range.GetMax();
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // Swap |start| and |end| so that GetCaretBounds() can always return the same
   // value during conversion.
   // TODO(yusukes): Check if this works for other platforms. If it is, use this
@@ -761,21 +760,6 @@ void TextfieldModel::SetCompositionText(
     render_text_->SetCursorPosition(cursor + composition.selection.end());
   }
 }
-
-#if BUILDFLAG(IS_CHROMEOS)
-bool TextfieldModel::SetAutocorrectRange(const gfx::Range& range) {
-  if (range.GetMax() > render_text()->text().length()) {
-    return false;
-  }
-  autocorrect_range_ = range;
-
-  // TODO(b/161490813): Update |autocorrect_range_| and show underline.
-  //  Autocorrect range needs to be updated based on user text inputs and an
-  //  underline should be shown for the range.
-  NOTIMPLEMENTED_LOG_ONCE();
-  return false;
-}
-#endif
 
 void TextfieldModel::SetCompositionFromExistingText(const gfx::Range& range) {
   if (range.is_empty() || !gfx::Range(0, text().length()).Contains(range)) {

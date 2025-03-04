@@ -6,17 +6,15 @@
 
 #import "base/time/time.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 // Keys of UMA IOS.TabSwitcher.Idle histograms.
 const char kUMATabSwitcherIdleIncognitoTabGridPageHistogram[] =
     "IOS.TabSwitcher.Idle.IncognitoTabGridPage";
-const char kUMATabSwitcherIdleRecentTabsHistogram[] =
-    "IOS.TabSwitcher.Idle.RecentTabs";
 const char kUMATabSwitcherIdleRegularTabGridPageHistogram[] =
     "IOS.TabSwitcher.Idle.RegularTabGridPage";
+const char kUMATabSwitcherIdleRecentTabsHistogram[] =
+    "IOS.TabSwitcher.Idle.RecentTabs";
+const char kUMATabSwitcherIdleTabGroupsHistogram[] =
+    "IOS.TabSwitcher.Idle.TabGroups";
 
 // Accessibility identifiers for automated testing.
 NSString* const kTabGridIncognitoTabsPageButtonIdentifier =
@@ -25,6 +23,8 @@ NSString* const kTabGridRegularTabsPageButtonIdentifier =
     @"TabGridRegularTabsPageButtonIdentifier";
 NSString* const kTabGridRemoteTabsPageButtonIdentifier =
     @"TabGridRemoteTabsPageButtonIdentifier";
+NSString* const kTabGridTabGroupsPageButtonIdentifier =
+    @"TabGridTabGroupsPageButtonIdentifier";
 NSString* const kTabGridDoneButtonIdentifier = @"TabGridDoneButtonIdentifier";
 NSString* const kTabGridCancelButtonIdentifier =
     @"TabGridCancelButtonIdentifier";
@@ -90,13 +90,6 @@ const CGFloat kTabGridSearchBarNonCompactWidthRatioModifier = 0.5f;
 // Intrinsic heights of the tab grid toolbars.
 const CGFloat kTabGridTopToolbarHeight = 52.0f;
 const CGFloat kTabGridBottomToolbarHeight = 44.0f;
-
-// The distance travelled by the thumb strip thumbnails during the slide-in
-// animation of the thumb strip reveal transition.
-const CGFloat kThumbStripSlideInHeight = 40.0f;
-// The distance travelled by the thumb strip's plus sign button during the
-// slide-out animation of the transition from Peeked to Revealed state.
-const CGFloat kThumbStripPlusSignButtonSlideOutDistance = 400.0f;
 
 // Alpha of the background color of the toolbar.
 const CGFloat kToolbarBackgroundAlpha = 0.75;

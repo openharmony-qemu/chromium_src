@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "remoting/protocol/audio_pump.h"
 
 #include <stddef.h>
@@ -77,8 +82,8 @@ class AudioPumpTest : public testing::Test, public protocol::AudioStub {
   base::test::SingleThreadTaskEnvironment task_environment_;
 
   // |source_| and |encoder_| are owned by the |pump_|.
-  raw_ptr<FakeAudioSource> source_;
-  raw_ptr<FakeAudioEncoder> encoder_;
+  raw_ptr<FakeAudioSource, AcrossTasksDanglingUntriaged> source_;
+  raw_ptr<FakeAudioEncoder, AcrossTasksDanglingUntriaged> encoder_;
 
   std::unique_ptr<AudioPump> pump_;
 

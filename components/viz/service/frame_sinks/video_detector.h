@@ -67,8 +67,10 @@ class VIZ_SERVICE_EXPORT VideoDetector : public SurfaceObserver {
   // before we assume that a video is playing.
   static constexpr int kMinFramesPerSecond = 15;
 
-  // Timeout after which video is no longer considered to be playing.
-  static constexpr base::TimeDelta kVideoTimeout = base::Milliseconds(1000);
+  // A video will no longer be consider playing at some interval between
+  // 'kMinVideoTimeout' to 'kMaxVideoTimeout'.
+  static constexpr base::TimeDelta kMinVideoTimeout = base::Milliseconds(500);
+  static constexpr base::TimeDelta kMaxVideoTimeout = base::Milliseconds(1000);
 
   // Duration video must be playing in a client before it is reported to
   // observers.
@@ -84,10 +86,10 @@ class VIZ_SERVICE_EXPORT VideoDetector : public SurfaceObserver {
   void OnSurfaceMarkedForDestruction(const SurfaceId& surface_id) override {}
   bool OnSurfaceDamaged(const SurfaceId& surface_id,
                         const BeginFrameAck& ack,
-                        bool is_actively_scrolling) override;
+                        HandleInteraction handle_interaction) override;
   void OnSurfaceDestroyed(const SurfaceId& surface_id) override {}
-  bool OnSurfaceDamageExpected(const SurfaceId& surface_id,
-                               const BeginFrameArgs& args) override { return false; }
+  void OnSurfaceDamageExpected(const SurfaceId& surface_id,
+                               const BeginFrameArgs& args) override {}
   void OnSurfaceWillBeDrawn(Surface* surface) override;
 
   // True if video has been observed in the last |kVideoTimeout|.

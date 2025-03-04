@@ -40,6 +40,7 @@ namespace android_webview {
 // indirect refs from the Application (via callbacks) and so can outlive
 // webview, this class notifies it before being destroyed and to nullify
 // any references.
+// Lifetime: WebView
 class AwContentsClientBridge {
  public:
   // Used to package up information needed by OnReceivedHttpError for transfer
@@ -97,6 +98,7 @@ class AwContentsClientBridge {
                                 bool has_user_gesture,
                                 bool is_redirect,
                                 bool is_outermost_main_frame,
+                                const net::HttpRequestHeaders& request_headers,
                                 bool* ignore_navigation);
 
   bool SendBrowseIntent(const std::u16string& url);

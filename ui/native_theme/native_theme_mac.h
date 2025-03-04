@@ -5,7 +5,6 @@
 #ifndef UI_NATIVE_THEME_NATIVE_THEME_MAC_H_
 #define UI_NATIVE_THEME_NATIVE_THEME_MAC_H_
 
-#include "base/mac/scoped_nsobject.h"
 #include "base/no_destructor.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/native_theme/native_theme_aura.h"
@@ -47,7 +46,8 @@ class NATIVE_THEME_EXPORT NativeThemeMac : public NativeThemeBase {
              const gfx::Rect& rect,
              const ExtraParams& extra,
              ColorScheme color_scheme,
-             const absl::optional<SkColor>& accent_color) const override;
+             bool in_forced_colors,
+             const std::optional<SkColor>& accent_color) const override;
   void PaintMenuPopupBackground(
       cc::PaintCanvas* canvas,
       const ColorProvider* color_provider,
@@ -89,7 +89,7 @@ class NATIVE_THEME_EXPORT NativeThemeMac : public NativeThemeBase {
   // Returns the minimum size for the thumb. We will not inset the thumb if it
   // will be smaller than this size. The scale parameter should be the device
   // scale factor.
-  gfx::Size GetThumbMinSize(bool vertical, float scale) const;
+  static gfx::Size GetThumbMinSize(bool vertical, float scale);
 
  protected:
   friend class NativeTheme;
@@ -99,12 +99,16 @@ class NATIVE_THEME_EXPORT NativeThemeMac : public NativeThemeBase {
   NativeThemeMac(bool configure_web_instance, bool should_only_use_dark_colors);
   ~NativeThemeMac() override;
 
+  // NativeTheme:
+  std::optional<base::TimeDelta> GetPlatformCaretBlinkInterval() const override;
+
  private:
   // Paint the selected menu item background, and a border for emphasis when in
   // high contrast.
   void PaintSelectedMenuItem(cc::PaintCanvas* canvas,
                              const ColorProvider* color_provider,
-                             const gfx::Rect& rect) const;
+                             const gfx::Rect& rect,
+                             const MenuItemExtraParams& extra_params) const;
 
   void PaintScrollBarTrackGradient(cc::PaintCanvas* canvas,
                                    const gfx::Rect& rect,
@@ -128,11 +132,12 @@ class NATIVE_THEME_EXPORT NativeThemeMac : public NativeThemeBase {
 
   enum ScrollbarPart {
     kThumb,
+    kTrack,
     kTrackInnerBorder,
     kTrackOuterBorder,
   };
 
-  absl::optional<SkColor> GetScrollbarColor(
+  std::optional<SkColor> GetScrollbarColor(
       ScrollbarPart part,
       ColorScheme color_scheme,
       const ScrollbarExtraParams& extra_params) const;
@@ -148,9 +153,8 @@ class NATIVE_THEME_EXPORT NativeThemeMac : public NativeThemeBase {
     return scale_from_dip * (is_overlay ? 2.0f : 3.0f);
   }
 
-  base::scoped_nsobject<NativeThemeEffectiveAppearanceObserver>
-      appearance_observer_;
-  id high_contrast_notification_token_;
+  NativeThemeEffectiveAppearanceObserver* __strong appearance_observer_;
+  id __strong display_accessibility_notification_token_;
 
   // Used to notify the web native theme of changes to dark mode and high
   // contrast.

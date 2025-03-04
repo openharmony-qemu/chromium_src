@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "remoting/protocol/message_serialization.h"
 
 #include <stdint.h>
@@ -20,8 +25,7 @@ scoped_refptr<net::IOBufferWithSize> SerializeAndFrameMessage(
   scoped_refptr<net::IOBufferWithSize> buffer =
       base::MakeRefCounted<net::IOBufferWithSize>(size);
   rtc::SetBE32(buffer->data(), msg.GetCachedSize());
-  msg.SerializeWithCachedSizesToArray(
-      reinterpret_cast<uint8_t*>(buffer->data()) + kExtraBytes);
+  msg.SerializeWithCachedSizesToArray(buffer->bytes() + kExtraBytes);
   return buffer;
 }
 

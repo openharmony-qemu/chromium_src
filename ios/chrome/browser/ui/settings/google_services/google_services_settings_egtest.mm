@@ -6,22 +6,29 @@
 #import "base/test/ios/wait_util.h"
 #import "components/policy/core/common/policy_loader_ios_constants.h"
 #import "components/policy/policy_constants.h"
+#import "components/signin/internal/identity_manager/account_capabilities_constants.h"
 #import "components/signin/public/base/signin_pref_names.h"
 #import "components/signin/public/base/signin_switches.h"
-#import "ios/chrome/browser/policy/policy_earl_grey_utils.h"
-#import "ios/chrome/browser/policy/policy_util.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
+#import "components/supervised_user/core/common/features.h"
+#import "components/variations/pref_names.h"
+#import "ios/chrome/browser/bookmarks/model/bookmark_storage_type.h"
+#import "ios/chrome/browser/bookmarks/ui_bundled/bookmark_earl_grey.h"
+#import "ios/chrome/browser/bookmarks/ui_bundled/bookmark_earl_grey_ui.h"
+#import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_feature.h"
+#import "ios/chrome/browser/parcel_tracking/features.h"
+#import "ios/chrome/browser/policy/model/policy_earl_grey_utils.h"
+#import "ios/chrome/browser/policy/model/policy_util.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey_ui_test_util.h"
 #import "ios/chrome/browser/ui/authentication/signin_matchers.h"
-#import "ios/chrome/browser/ui/bookmarks/bookmark_earl_grey.h"
-#import "ios/chrome/browser/ui/bookmarks/bookmark_earl_grey_ui.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_app_interface.h"
 #import "ios/chrome/browser/ui/settings/google_services/google_services_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/google_services/manage_sync_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/settings_table_view_controller_constants.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_actions.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
@@ -35,17 +42,13 @@
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ui/base/l10n/l10n_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using base::test::ios::kWaitForActionTimeout;
 using chrome_test_util::BookmarksHomeDoneButton;
 using chrome_test_util::ButtonWithAccessibilityLabelId;
 using chrome_test_util::GoogleServicesSettingsButton;
-using chrome_test_util::PrimarySignInButton;
 using chrome_test_util::SettingsDoneButton;
 using chrome_test_util::SettingsMenuBackButton;
+using chrome_test_util::SettingsSignInRowMatcher;
 using l10n_util::GetNSString;
 
 namespace {
@@ -96,20 +99,32 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
 - (void)setUp {
   [super setUp];
 
-  [ChromeEarlGrey waitForBookmarksToFinishLoading];
-  [ChromeEarlGrey clearBookmarks];
+  // Some tests change the value of this pref, so reset.
+  [ChromeEarlGrey clearUserPrefWithName:prefs::kSigninAllowed];
+  [BookmarkEarlGrey waitForBookmarkModelLoaded];
+  [BookmarkEarlGrey clearBookmarks];
 }
 
-- (void)tearDown {
-  [super tearDown];
-  [ChromeEarlGrey clearBookmarks];
+- (void)tearDownHelper {
+  [super tearDownHelper];
+  // Some tests change the value of this pref, so reset.
+  [ChromeEarlGrey clearUserPrefWithName:prefs::kSigninAllowed];
+  [BookmarkEarlGrey clearBookmarks];
   [BookmarkEarlGrey clearBookmarksPositionCache];
 }
 
 - (AppLaunchConfiguration)appConfigurationForTestCase {
   AppLaunchConfiguration config = [super appConfigurationForTestCase];
   config.relaunch_policy = ForceRelaunchByCleanShutdown;
-
+  if ([self
+          isRunningTest:@selector(testToggleAllowChromeSigninForManagedUser)]) {
+    // Enable the feature because the dialog uses a slightly different string if
+    // the feature is not enabled.
+    config.features_enabled.push_back(kIdentityDiscAccountMenu);
+  }
+  if ([self isRunningTest:@selector(testParcelTrackingSetting)]) {
+    config.features_disabled.push_back(kIOSDisableParcelTracking);
+  }
   return config;
 }
 
@@ -146,75 +161,23 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
                    IDS_IOS_GOOGLE_SERVICES_SETTINGS_IMPROVE_SEARCH_SUGGESTIONS_DETAIL];
 }
 
-// Tests that disabling the "Allow Chrome sign-in" > "Sign out" option blocks
-// the user from signing in to Chrome through the promo sign-in until it is
-// re-enabled.
-- (void)testToggleAllowChromeSigninWithPromoSignin {
-  // User is signed-in only
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableSync:NO];
-  [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity];
-
-  // Turn off "Allow Chrome Sign-in" with sign out option.
-  [ChromeEarlGreyUI openSettingsMenu];
-  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/YES,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(NO)];
-  [[EarlGrey
-      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
-                                   IDS_IOS_SIGNOUT_DIALOG_SIGN_OUT_BUTTON)]
-      performAction:grey_tap()];
-
-  // Verify that sign-in is disabled.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kSettingsSignInCellId)]
-      assertWithMatcher:grey_notVisible()];
-  WaitForSettingDoneButton();
-
-  // Verify signed out.
-  [SigninEarlGrey verifySignedOut];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-
-  // Turn on "Allow Chrome Sign-in" feature.
-  [ChromeEarlGreyUI openSettingsMenu];
-  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/NO,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(YES)];
-
-  // Verify that the user is signed out and sign-in is enabled.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:PrimarySignInButton()]
-      assertWithMatcher:grey_sufficientlyVisible()];
-}
-
-// Tests that disabling the "Allow Chrome sign-in" > "Clear Data" option blocks
-// the user from signing in to Chrome through the promo sign-in until it is
-// re-enabled.
-- (void)testToggleAllowChromeSigninWithPromoSigninClearData {
+// Tests that disabling the "Allow Chrome sign-in" blocks the user from signing
+// in to Chrome through settings until it is re-enabled.
+- (void)testToggleAllowChromeSignin {
   // User is signed-in and syncing.
   FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
   [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity];
 
   // Add a bookmark after sync is initialized.
   [ChromeEarlGrey waitForSyncEngineInitialized:YES
                                    syncTimeout:kWaitForActionTimeout];
-  [ChromeEarlGrey waitForBookmarksToFinishLoading];
-  [BookmarkEarlGrey setupStandardBookmarks];
+  [BookmarkEarlGrey waitForBookmarkModelLoaded];
+  [BookmarkEarlGrey
+      setupStandardBookmarksInStorage:BookmarkStorageType::kLocalOrSyncable];
 
-  // Turn off "Allow Chrome Sign-in" feature with Clear Data option.
+  // Turn off "Allow Chrome Sign-in" feature, which prompts the user with a
+  // confirmation dialog to sign out.
   [ChromeEarlGreyUI openSettingsMenu];
   [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
   [[EarlGrey
@@ -226,79 +189,6 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
   [[EarlGrey
       selectElementWithMatcher:ButtonWithAccessibilityLabelId(
                                    IDS_IOS_SIGNOUT_DIALOG_SIGN_OUT_BUTTON)]
-      performAction:grey_tap()];
-  [[EarlGrey
-      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
-                                   IDS_IOS_SIGNOUT_DIALOG_CLEAR_DATA_BUTTON)]
-      performAction:grey_tap()];
-  WaitForSettingDoneButton();
-
-  // Verify that sign-in is disabled.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kSettingsSignInCellId)]
-      assertWithMatcher:grey_notVisible()];
-
-  // Verify signed out.
-  [SigninEarlGrey verifySignedOut];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-
-  // Verify bookmarks are cleared.
-  [BookmarkEarlGreyUI openBookmarks];
-  [BookmarkEarlGreyUI verifyEmptyBackgroundAppears];
-  [[EarlGrey selectElementWithMatcher:BookmarksHomeDoneButton()]
-      performAction:grey_tap()];
-
-  // Turn on "Allow Chrome Sign-in" feature.
-  [ChromeEarlGreyUI openSettingsMenu];
-  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/NO,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(YES)];
-
-  // Verify that the user is signed out and sign-in is enabled.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:PrimarySignInButton()]
-      assertWithMatcher:grey_sufficientlyVisible()];
-}
-
-// Tests that disabling the "Allow Chrome sign-in" > "Keep Data" option blocks
-// the user from signing in to Chrome through the promo sign-in until it is
-// re-enabled.
-- (void)testToggleAllowChromeSigninWithPromoSigninKeepData {
-  // User is signed-in and syncing.
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity];
-  [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity];
-
-  // Add a bookmark after sync is initialized.
-  [ChromeEarlGrey waitForSyncEngineInitialized:YES
-                                   syncTimeout:kWaitForActionTimeout];
-  [ChromeEarlGrey waitForBookmarksToFinishLoading];
-  [BookmarkEarlGrey setupStandardBookmarks];
-
-  // Turn off "Allow Chrome Sign-in" feature with Keep Data option.
-  [ChromeEarlGreyUI openSettingsMenu];
-  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/YES,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(NO)];
-  [[EarlGrey
-      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
-                                   IDS_IOS_SIGNOUT_DIALOG_SIGN_OUT_BUTTON)]
-      performAction:grey_tap()];
-  [[EarlGrey
-      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
-                                   IDS_IOS_SIGNOUT_DIALOG_KEEP_DATA_BUTTON)]
       performAction:grey_tap()];
   WaitForSettingDoneButton();
 
@@ -333,56 +223,51 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
   // Verify that the user is signed out and sign-in is enabled.
   [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:PrimarySignInButton()]
+  [[EarlGrey selectElementWithMatcher:SettingsSignInRowMatcher()]
       assertWithMatcher:grey_sufficientlyVisible()];
 }
 
-// Tests that disabling the "Allow Chrome sign-in" option blocks the user
-// from signing in to Chrome through the default sign-in until it is re-enabled.
-- (void)testToggleAllowChromeSigninWithDefaultSignin {
+// Similar to `testToggleAllowChromeSignin`, but also verifies that an
+// informational message about data loss will be added in the prompt.
+- (void)testToggleAllowChromeSigninForManagedUser {
+  // Sign in with a managed identity.
+  FakeSystemIdentity* fakeManagedIdentity =
+      [FakeSystemIdentity fakeManagedIdentity];
+  [SigninEarlGrey signinWithFakeIdentity:fakeManagedIdentity];
+  [SigninEarlGrey verifySignedInWithFakeIdentity:fakeManagedIdentity];
+
+  // Turn off "Allow Chrome Sign-in" feature, which prompts the user with a
+  // confirmation dialog to sign out.
   [ChromeEarlGreyUI openSettingsMenu];
-  // Close the sign-in promo.
-  [[EarlGrey
-      selectElementWithMatcher:grey_allOf(grey_accessibilityID(
-                                              kSigninPromoCloseButtonId),
-                                          grey_sufficientlyVisible(), nil)]
-      performAction:grey_tap()];
-  [SigninEarlGreyUI verifySigninPromoNotVisible];
-
   [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-
-  // Turn off "Allow Chrome Sign-in" feature.
   [[EarlGrey
       selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
                                    kAllowSigninItemAccessibilityIdentifier,
                                    /*is_toggled_on=*/YES,
                                    /*enabled=*/YES)]
       performAction:chrome_test_util::TurnTableViewSwitchOn(NO)];
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_text(l10n_util::GetNSString(
+              IDS_IOS_SIGNOUT_AND_DISALLOW_SIGNIN_CLOSES_TABS_AND_CLEARS_DATA_MESSAGE_WITH_MANAGED_ACCOUNT))]
+      assertWithMatcher:grey_sufficientlyVisible()];
+  [[EarlGrey
+      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
+                                   IDS_IOS_SIGNOUT_DIALOG_SIGN_OUT_BUTTON)]
+      performAction:grey_tap()];
+  WaitForSettingDoneButton();
 
-  // Verify that the user is signed out and sign-in is disabled.
+  // Verify that sign-in is disabled.
   [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
       performAction:grey_tap()];
   [[EarlGrey
       selectElementWithMatcher:grey_accessibilityID(kSettingsSignInCellId)]
       assertWithMatcher:grey_notVisible()];
+
+  // Verify signed out.
   [SigninEarlGrey verifySignedOut];
-
-  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
-
-  // Turn on "Allow Chrome Sign-in" feature.
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/NO,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(YES)];
-
-  // Verify that the user is signed out and sign-in is enabled.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
-  [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kSettingsSignInCellId)]
-      assertWithMatcher:grey_sufficientlyVisible()];
 }
 
 // Tests that canceling the "Allow Chrome sign-in" option does not change the
@@ -406,36 +291,34 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
   // Dismiss the sign-out dialog.
   DismissSignOut();
 
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/YES,
-                                   /*enabled=*/YES)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-
-  // Turn off "Allow Chrome Sign-in" feature.
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/YES,
-                                   /*enabled=*/YES)]
-      performAction:chrome_test_util::TurnTableViewSwitchOn(NO)];
-
-  // Select "sign out" option then dismiss the sign-out dialog.
-  [[EarlGrey
-      selectElementWithMatcher:ButtonWithAccessibilityLabelId(
-                                   IDS_IOS_SIGNOUT_DIALOG_SIGN_OUT_BUTTON)]
-      performAction:grey_tap()];
-  DismissSignOut();
-
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::TableViewSwitchCell(
-                                   kAllowSigninItemAccessibilityIdentifier,
-                                   /*is_toggled_on=*/YES,
-                                   /*enabled=*/YES)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-
   [SigninEarlGrey verifySignedInWithFakeIdentity:fakeIdentity];
+}
+
+// Tests that the "Allow Chrome sign-in" option is disabled for supervised
+// users.
+- (void)testAllowChromeSigninDisabledForSupervisedUsers {
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey addFakeIdentity:fakeIdentity
+                 withCapabilities:@{
+                   @(kIsSubjectToParentalControlsCapabilityName) : @YES,
+                 }];
+
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  [ChromeEarlGreyUI openSettingsMenu];
+  [ChromeEarlGreyUI tapSettingsMenuButton:GoogleServicesSettingsButton()];
+
+  id<GREYMatcher> signinMatcher = [self
+      cellMatcherWithTitleID:IDS_IOS_GOOGLE_SERVICES_SETTINGS_ALLOW_SIGNIN_TEXT
+                detailTextID:
+                    IDS_IOS_GOOGLE_SERVICES_SETTINGS_ALLOW_SIGNIN_DETAIL];
+  [[EarlGrey selectElementWithMatcher:signinMatcher]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Assert that sign-in cell shows the "On" status instead of the knob.
+  [[EarlGrey selectElementWithMatcher:grey_text(l10n_util::GetNSString(
+                                          IDS_IOS_SETTING_ON))]
+      assertWithMatcher:grey_sufficientlyVisible()];
 }
 
 // Tests that the sign-in cell can't be used when sign-in is disabled by policy.
@@ -457,6 +340,44 @@ void SetSigninEnterprisePolicyValue(BrowserSigninMode signinMode) {
   [[EarlGrey selectElementWithMatcher:grey_text(l10n_util::GetNSString(
                                           IDS_IOS_SETTING_OFF))]
       assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests the parcel tracking settings row is properly shown.
+- (void)testParcelTrackingSetting {
+  // Parcel tracking is only enabled in the US.
+  [ChromeEarlGrey setStringValue:"us"
+               forLocalStatePref:variations::prefs::
+                                     kVariationsPermanentOverriddenCountry];
+
+  [self openGoogleServicesSettings];
+
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_allOf(
+              grey_accessibilityLabel(GetNSString(
+                  IDS_IOS_CONTENT_SUGGESTIONS_PARCEL_TRACKING_MODULE_TITLE)),
+              grey_kindOfClassName(@"UITableViewCell"),
+              grey_sufficientlyVisible(), nil)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests the parcel tracking settings row is not shown for non-US countries.
+- (void)testParcelTrackingSetting_notShownOutsideUS {
+  // Set permanent country to somthing other than the US.
+  [ChromeEarlGrey setStringValue:"fr"
+               forLocalStatePref:variations::prefs::
+                                     kVariationsPermanentOverriddenCountry];
+
+  [self openGoogleServicesSettings];
+
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_allOf(
+              grey_accessibilityLabel(GetNSString(
+                  IDS_IOS_CONTENT_SUGGESTIONS_PARCEL_TRACKING_MODULE_TITLE)),
+              grey_kindOfClassName(@"UITableViewCell"),
+              grey_sufficientlyVisible(), nil)]
+      assertWithMatcher:grey_notVisible()];
 }
 
 #pragma mark - Helpers

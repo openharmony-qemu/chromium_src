@@ -8,10 +8,10 @@
 
 #include <utility>
 
+#include "base/apple/foundation_util.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
 #include "base/logging.h"
-#include "base/mac/foundation_util.h"
 #include "base/strings/string_split.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
@@ -22,10 +22,6 @@
 #import "ios/web/public/navigation/web_state_policy_decider.h"
 #import "ios/web/public/web_state.h"
 #include "ios/web/public/web_state_observer.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -69,6 +65,9 @@ base::Value ConvertedResultFromScriptResult(const base::Value* value,
       DCHECK_EQ(result.type(), base::Value::Type::DOUBLE);
     }
     // End of different implementation.
+  } else if (value->is_int()) {
+    result = base::Value(value->GetInt());
+    DCHECK_EQ(result.type(), base::Value::Type::INTEGER);
   } else if (value->is_bool()) {
     result = base::Value(value->GetBool());
     DCHECK_EQ(result.type(), base::Value::Type::BOOLEAN);
@@ -100,7 +99,7 @@ base::Value ConvertedResultFromScriptResult(const base::Value* value,
     result = base::Value(std::move(list));
     DCHECK_EQ(result.type(), base::Value::Type::LIST);
   } else {
-    NOTREACHED();  // Convert other types as needed.
+    NOTREACHED_IN_MIGRATION();  // Convert other types as needed.
   }
   return result;
 }
@@ -163,7 +162,7 @@ void DistillerPageIOS::AttachWebState(
   }
   web_state_ = std::move(web_state);
   if (web_state_) {
-    web_state_->AddObserver(this);
+    web_state_observation_.Observe(web_state_.get());
     media_blocker_ =
         std::make_unique<DistillerPageMediaBlocker>(web_state_.get());
   }
@@ -172,7 +171,7 @@ void DistillerPageIOS::AttachWebState(
 std::unique_ptr<web::WebState> DistillerPageIOS::DetachWebState() {
   if (web_state_) {
     media_blocker_.reset();
-    web_state_->RemoveObserver(this);
+    web_state_observation_.Reset();
   }
   return std::move(web_state_);
 }
@@ -194,17 +193,25 @@ void DistillerPageIOS::DistillPageImpl(const GURL& url,
         web::WebState::Create(web_state_create_params);
     AttachWebState(std::move(web_state_unique));
   }
+
+  distilling_navigation_ = true;
   // Load page using WebState.
   web::NavigationManager::WebLoadParams params(url_);
   web_state_->SetKeepRenderProcessAlive(true);
   web_state_->GetNavigationManager()->LoadURLWithParams(params);
   // LoadIfNecessary is needed because the view is not created (but needed) when
-  // loading the page. TODO(crbug.com/705819): Remove this call.
+  // loading the page. TODO(crbug.com/41309809): Remove this call.
   web_state_->GetNavigationManager()->LoadIfNecessary();
 }
 
 void DistillerPageIOS::OnLoadURLDone(
     web::PageLoadCompletionStatus load_completion_status) {
+  if (!distilling_navigation_) {
+    // This is a second navigation after the distillation request.
+    // Distillation was already requested, so ignore this one.
+    return;
+  }
+  distilling_navigation_ = false;
   // Don't attempt to distill if the page load failed or if there is no
   // WebState.
   if (load_completion_status == web::PageLoadCompletionStatus::FAILURE ||
@@ -265,7 +272,7 @@ void DistillerPageIOS::WebStateDestroyed(web::WebState* web_state) {
   // The DistillerPageIOS owns the WebState that it observe and unregister
   // itself from the WebState before destroying it, so this method should
   // never be called.
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
 }
 
 }  // namespace dom_distiller

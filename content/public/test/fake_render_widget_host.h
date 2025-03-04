@@ -7,6 +7,8 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -50,12 +52,6 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
   void AutoscrollStart(const gfx::PointF& position) override;
   void AutoscrollFling(const gfx::Vector2dF& position) override;
   void AutoscrollEnd() override;
-  void StartDragging(blink::mojom::DragDataPtr drag_data,
-                     blink::DragOperationsMask operations_allowed,
-                     const SkBitmap& bitmap,
-                     const gfx::Vector2d& cursor_offset_in_dip,
-                     const gfx::Rect& drag_obj_rect_in_dip,
-                     blink::mojom::DragEventSourceInfoPtr event_info) override;
 
   // blink::mojom::WidgetHost overrides.
   void SetCursor(const ui::Cursor& cursor) override;
@@ -83,11 +79,18 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
           render_frame_metadata_observer_client_receiver,
       mojo::PendingRemote<cc::mojom::RenderFrameMetadataObserver>
           render_frame_metadata_observer) override;
-#if defined(OHOS_UNITTESTS)
-  void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
-  void CreateOverlay(const ::SkBitmap& image, const ::gfx::Rect& image_rect,
-  const ::gfx::Point& touch_point) override {}
-#endif // OHOS_UNITTESTS
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void GetWordSelection(const std::string& text,
+                        int8_t offset,
+                        GetWordSelectionCallback callback) override {}
+  void SendCurrentLanguage(const std::string& ans) override {}
+  void CreateOverlay(const ::SkBitmap& image,
+                     const ::gfx::Rect& image_rect,
+                     const ::gfx::Point& touch_point) override {}
+  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
+  void DidNativeEmbedEvent(
+      blink::mojom::NativeEmbedTouchEventPtr event) override {}
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
   // blink::mojom::PopupWidgetHost overrides.
   void RequestClosePopup() override;
   void ShowPopup(const gfx::Rect& initial_rect,
@@ -104,16 +107,15 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
   void ImeCancelComposition() override;
   void ImeCompositionRangeChanged(
       const gfx::Range& range,
-      const std::vector<gfx::Rect>& bounds) override;
+      const std::optional<std::vector<gfx::Rect>>& character_bounds,
+      const std::optional<std::vector<gfx::Rect>>& line_bounds) override;
   void SetMouseCapture(bool capture) override;
+  void SetAutoscrollSelectionActiveInMainFrame(
+      bool autoscroll_selection) override;
   void RequestMouseLock(bool from_user_gesture,
                         bool unadjusted_movement,
                         RequestMouseLockCallback callback) override;
-#if defined(OHOS_UNITTESTS)
-  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {}
-#else
-  void DidNativeEmbedEvent(blink::mojom::EmbedTouchEventPtr event) override {}
-#endif
+
   mojo::AssociatedReceiver<blink::mojom::WidgetHost>&
   widget_host_receiver_for_testing() {
     return widget_host_receiver_;
@@ -134,6 +136,9 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
  private:
   gfx::Range last_composition_range_;
   std::vector<gfx::Rect> last_composition_bounds_;
+
+  mojo::Remote<blink::mojom::RenderInputRouterClient> client_remote_;
+
   mojo::AssociatedReceiver<blink::mojom::FrameWidgetHost>
       frame_widget_host_receiver_{this};
   mojo::AssociatedRemote<blink::mojom::FrameWidget> frame_widget_remote_;

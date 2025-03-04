@@ -6,13 +6,13 @@
 
 #import "base/containers/contains.h"
 #import "base/functional/bind.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/user_metrics.h"
 #import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/omnibox/browser/omnibox_field_trial.h"
 #import "components/open_from_clipboard/clipboard_recent_content.h"
 #import "components/strings/grit/components_strings.h"
-#import "ios/chrome/browser/default_browser/utils.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_constants.h"
@@ -20,30 +20,21 @@
 #import "ios/chrome/browser/ui/omnibox/omnibox_keyboard_delegate.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_text_change_delegate.h"
 #import "ios/chrome/browser/ui/omnibox/omnibox_text_field_delegate.h"
+#import "ios/chrome/browser/ui/omnibox/omnibox_ui_features.h"
 #import "ios/chrome/browser/ui/toolbar/public/toolbar_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
-#import "ios/chrome/common/ui/util/pointer_interaction_util.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/public/provider/chrome/browser/lens/lens_api.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ui/base/l10n/l10n_util_mac.h"
 
 using base::UserMetricsAction;
-
-namespace {
-
-const CGFloat kClearButtonSize = 28.0f;
-
-}  // namespace
 
 @interface OmniboxViewController () <OmniboxTextFieldDelegate,
                                      OmniboxKeyboardDelegate,
                                      UIScribbleInteractionDelegate> {
   // Weak, acts as a delegate
-  OmniboxTextChangeDelegate* _textChangeDelegate;
+  raw_ptr<OmniboxTextChangeDelegate> _textChangeDelegate;
 }
 
 // Override of UIViewController's view with a different type.
@@ -57,11 +48,12 @@ const CGFloat kClearButtonSize = 28.0f;
 // edit menu option to do a Lens search.
 @property(nonatomic, assign) BOOL lensImageEnabled;
 
-@property(nonatomic, assign) BOOL incognito;
+/// The short name of the search provider.
+@property(nonatomic, assign) std::u16string searchProviderName;
 
 // YES if we are already forwarding an OnDidChange() message to the edit view.
 // Needed to prevent infinite recursion.
-// TODO(crbug.com/1015413): There must be a better way.
+// TODO(crbug.com/40103694): There must be a better way.
 @property(nonatomic, assign) BOOL forwardingOnDidChange;
 
 // YES if this text field is currently processing a user-initiated event,
@@ -93,13 +85,22 @@ const CGFloat kClearButtonSize = 28.0f;
 
 @end
 
-@implementation OmniboxViewController
+@implementation OmniboxViewController {
+  // Omnibox uses a custom clear button. It has a custom tint and image, but
+  // otherwise it should act exactly like a system button.
+  /// Clear button owned by `view` (OmniboxContainerView).
+  __weak UIButton* _clearButton;
+
+  /// Whether the view is presented in the lens overlay.
+  BOOL _isLensOverlay;
+}
+
 @dynamic view;
 
-- (instancetype)initWithIncognito:(BOOL)isIncognito {
-  self = [super init];
+- (instancetype)initWithIsLensOverlay:(BOOL)isLensOverlay {
+  self = [super initWithNibName:nil bundle:nil];
   if (self) {
-    _incognito = isIncognito;
+    _isLensOverlay = isLensOverlay;
   }
   return self;
 }
@@ -115,9 +116,10 @@ const CGFloat kClearButtonSize = 28.0f;
   self.view = [[OmniboxContainerView alloc] initWithFrame:CGRectZero
                                                 textColor:textColor
                                             textFieldTint:textFieldTintColor
-                                                 iconTint:iconTintColor];
-  self.view.incognito = self.incognito;
+                                                 iconTint:iconTintColor
+                                            isLensOverlay:_isLensOverlay];
   self.view.layoutGuideCenter = self.layoutGuideCenter;
+  _clearButton = self.view.clearButton;
 
   self.view.shouldGroupAccessibilityChildren = YES;
 
@@ -134,30 +136,37 @@ const CGFloat kClearButtonSize = 28.0f;
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  // Add Paste and Go option to the editing menu
-  RegisterEditMenuItem([[UIMenuItem alloc]
-      initWithTitle:l10n_util::GetNSString(IDS_IOS_SEARCH_COPIED_IMAGE)
-             action:@selector(searchCopiedImage:)]);
-  RegisterEditMenuItem([[UIMenuItem alloc]
-      initWithTitle:l10n_util::GetNSString(
-                        IDS_IOS_SEARCH_COPIED_IMAGE_WITH_LENS)
-             action:@selector(lensCopiedImage:)]);
-  RegisterEditMenuItem([[UIMenuItem alloc]
-      initWithTitle:l10n_util::GetNSString(IDS_IOS_VISIT_COPIED_LINK)
-             action:@selector(visitCopiedLink:)]);
-  RegisterEditMenuItem([[UIMenuItem alloc]
-      initWithTitle:l10n_util::GetNSString(IDS_IOS_SEARCH_COPIED_TEXT)
-             action:@selector(searchCopiedText:)]);
+  self.textField.placeholder = [self placeholderText];
 
-  self.textField.placeholderTextColor = [self placeholderAndClearButtonColor];
-  self.textField.placeholder = l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
-  [self setupClearButton];
+  [_clearButton addTarget:self
+                   action:@selector(clearButtonPressed)
+         forControlEvents:UIControlEventTouchUpInside];
+
+  // Observe text changes to show the clear button when there is text and hide
+  // it when the textfield is empty.
+  [self.textField addTarget:self
+                     action:@selector(textFieldDidChange:)
+           forControlEvents:UIControlEventEditingChanged];
+
+  if (base::FeatureList::IsEnabled(kEnableLensOverlay)) {
+    [self.view.thumbnailButton addTarget:self
+                                  action:@selector(didTapThumbnailButton)
+                        forControlEvents:UIControlEventTouchUpInside];
+  }
 
   [NSNotificationCenter.defaultCenter
       addObserver:self
          selector:@selector(textInputModeDidChange)
              name:UITextInputCurrentInputModeDidChangeNotification
            object:nil];
+
+  // Reset the text after initial layout has been forced, see comment in
+  // `OmniboxTextFieldIOS`.
+  if ([self.textField.text isEqualToString:@" "]) {
+    self.textField.text = @"";
+  }
+  [self updateClearButtonVisibility];
+  [self updateLeadingImage];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -177,6 +186,15 @@ const CGFloat kClearButtonSize = 28.0f;
          selector:@selector(applicationDidBecomeActive:)
              name:UIApplicationDidBecomeActiveNotification
            object:nil];
+}
+
+- (void)viewIsAppearing:(BOOL)animated {
+  [super viewIsAppearing:animated];
+  if (_isLensOverlay) {
+    self.semanticContentAttribute =
+        [self.textField bestSemanticContentAttribute];
+    [self.textField updateTextDirection];
+  }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -209,19 +227,11 @@ const CGFloat kClearButtonSize = 28.0f;
   if (_isTextfieldEditing == owns) {
     return;
   }
-  if (owns) {
-    [[NSNotificationCenter defaultCenter]
-        addObserver:self
-           selector:@selector(menuControllerWillShow:)
-               name:UIMenuControllerWillShowMenuNotification
-             object:nil];
-  } else {
-    [[NSNotificationCenter defaultCenter]
-        removeObserver:self
-                  name:UIMenuControllerWillShowMenuNotification
-                object:nil];
-  }
   _isTextfieldEditing = owns;
+}
+
+- (UIView<TextFieldViewContaining>*)viewContainingTextField {
+  return self.view;
 }
 
 #pragma mark - public methods
@@ -238,7 +248,7 @@ const CGFloat kClearButtonSize = 28.0f;
 }
 
 - (void)cleanupOmniboxAfterScribble {
-  self.textField.placeholder = l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
+  self.textField.placeholder = [self placeholderText];
 }
 
 #pragma mark - OmniboxTextFieldDelegate
@@ -251,18 +261,15 @@ const CGFloat kClearButtonSize = 28.0f;
     // already deconstructed on shutdown.
     return YES;
   }
+
+  // Any change in the content of the omnibox should deselect thumbnail button.
+  self.view.thumbnailButton.selected = NO;
   self.processingUserEvent = _textChangeDelegate->OnWillChange(range, newText);
   return self.processingUserEvent;
 }
 
 - (void)textFieldDidChange:(id)sender {
-  // If the text is empty, update the leading image.
-  if (self.textField.text.length == 0) {
-    [self.view setLeadingImage:self.emptyTextLeadingImage
-        withAccessibilityIdentifier:
-            kOmniboxLeadingImageEmptyTextAccessibilityIdentifier];
-  }
-
+  [self updateLeadingImage];
   [self updateClearButtonVisibility];
   self.semanticContentAttribute = [self.textField bestSemanticContentAttribute];
 
@@ -305,15 +312,11 @@ const CGFloat kClearButtonSize = 28.0f;
 
   // Update the clear button state.
   [self updateClearButtonVisibility];
-  UIImage* image = self.textField.text.length ? self.defaultLeadingImage
-                                              : self.emptyTextLeadingImage;
+  [self updateLeadingImage];
 
-  NSString* accessibilityID =
-      self.textField.text.length
-          ? kOmniboxLeadingImageDefaultAccessibilityIdentifier
-          : kOmniboxLeadingImageEmptyTextAccessibilityIdentifier;
-
-  [self.view setLeadingImage:image withAccessibilityIdentifier:accessibilityID];
+  if (base::FeatureList::IsEnabled(kEnableLensOverlay)) {
+    self.view.thumbnailButton.selected = NO;
+  }
 
   self.semanticContentAttribute = [self.textField bestSemanticContentAttribute];
   self.isTextfieldEditing = YES;
@@ -327,21 +330,14 @@ const CGFloat kClearButtonSize = 28.0f;
   _textChangeDelegate->OnDidBeginEditing();
 }
 
-- (BOOL)textFieldShouldEndEditing:(UITextField*)textField {
-  if (!_textChangeDelegate) {
-    // This can happen when the view controller is still alive but the model is
-    // already deconstructed on shutdown.
-    return YES;
-  }
-  _textChangeDelegate->OnWillEndEditing();
-
-  return YES;
-}
-
 // Record the metrics as needed.
 - (void)textFieldDidEndEditing:(UITextField*)textField
                         reason:(UITextFieldDidEndEditingReason)reason {
   self.isTextfieldEditing = NO;
+
+  if (base::FeatureList::IsEnabled(kEnableLensOverlay)) {
+    self.view.thumbnailButton.selected = NO;
+  }
 
   if (!self.omniboxInteractedWhileFocused) {
     RecordAction(
@@ -380,12 +376,33 @@ const CGFloat kClearButtonSize = 28.0f;
 }
 
 - (void)onDeleteBackward {
+  // If not in pre-edit, deleting when cursor is at the beginning interacts with
+  // the thumbnail.
+  if (OmniboxTextFieldIOS* textField = self.textField;
+      !textField.isPreEditing && textField.selectedTextRange.empty &&
+      [textField offsetFromPosition:textField.beginningOfDocument
+                         toPosition:textField.selectedTextRange.start] == 0) {
+    [self didTapThumbnailButton];
+  }
   if (!_textChangeDelegate) {
     // This can happen when the view controller is still alive but the model is
     // already deconstructed on shutdown.
     return;
   }
   _textChangeDelegate->OnDeleteBackward();
+}
+
+- (void)textFieldDidAcceptAutocomplete:(OmniboxTextFieldIOS*)textField {
+  if (_textChangeDelegate) {
+    _textChangeDelegate->OnAcceptAutocomplete();
+  }
+}
+
+- (void)textFieldDidRemoveAdditionalText:(OmniboxTextFieldIOS*)textField {
+  base::RecordAction(UserMetricsAction("MobileOmniboxRichInlineRemoved"));
+  if (_textChangeDelegate) {
+    _textChangeDelegate->OnRemoveAdditionalText();
+  }
 }
 
 - (BOOL)canPasteItemProviders:(NSArray<NSItemProvider*>*)itemProviders {
@@ -426,6 +443,58 @@ const CGFloat kClearButtonSize = 28.0f;
   }
 }
 
+- (UIMenu*)textField:(UITextField*)textField
+    editMenuForCharactersInRange:(NSRange)range
+                suggestedActions:(NSArray<UIMenuElement*>*)suggestedActions {
+  NSMutableArray* actions = [suggestedActions mutableCopy];
+  if ([self canPerformAction:@selector(searchCopiedImage:) withSender:nil]) {
+    UIAction* searchCopiedImage = [UIAction
+        actionWithTitle:l10n_util::GetNSString(IDS_IOS_SEARCH_COPIED_IMAGE)
+                  image:nil
+             identifier:nil
+                handler:^(__kindof UIAction* _Nonnull action) {
+                  [self searchCopiedImage:nil];
+                }];
+    [actions addObject:searchCopiedImage];
+  }
+
+  if ([self canPerformAction:@selector(lensCopiedImage:) withSender:nil]) {
+    UIAction* searchCopiedImageWithLens =
+        [UIAction actionWithTitle:l10n_util::GetNSString(
+                                      IDS_IOS_SEARCH_COPIED_IMAGE_WITH_LENS)
+                            image:nil
+                       identifier:nil
+                          handler:^(__kindof UIAction* _Nonnull action) {
+                            [self lensCopiedImage:nil];
+                          }];
+    [actions addObject:searchCopiedImageWithLens];
+  }
+
+  if ([self canPerformAction:@selector(visitCopiedLink:) withSender:nil]) {
+    UIAction* visitCopiedLink = [UIAction
+        actionWithTitle:l10n_util::GetNSString(IDS_IOS_VISIT_COPIED_LINK)
+                  image:nil
+             identifier:nil
+                handler:^(__kindof UIAction* _Nonnull action) {
+                  [self visitCopiedLink:nil];
+                }];
+    [actions addObject:visitCopiedLink];
+  }
+
+  if ([self canPerformAction:@selector(searchCopiedText:) withSender:nil]) {
+    UIAction* searchCopiedText = [UIAction
+        actionWithTitle:l10n_util::GetNSString(IDS_IOS_SEARCH_COPIED_TEXT)
+                  image:nil
+             identifier:nil
+                handler:^(__kindof UIAction* _Nonnull action) {
+                  [self searchCopiedText:nil];
+                }];
+    [actions addObject:searchCopiedText];
+  }
+
+  return [UIMenu menuWithChildren:actions];
+}
+
 #pragma mark - OmniboxConsumer
 
 - (void)updateAutocompleteIcon:(UIImage*)icon
@@ -445,26 +514,32 @@ const CGFloat kClearButtonSize = 28.0f;
   [self.textField setText:text userTextLength:text.length];
 }
 
+#pragma mark - OmniboxViewConsumer
+
+- (void)updateAdditionalText:(NSString*)additionalText {
+  [self.view updateAdditionalText:additionalText];
+}
+
+- (void)setOmniboxHasRichInline:(BOOL)omniboxHasRichInline {
+  [self.view setOmniboxHasRichInline:omniboxHasRichInline];
+}
+
+- (void)setThumbnailImage:(UIImage*)image {
+  [self.view setThumbnailImage:image];
+  // Cancel any pending image removal if a new selection is made.
+  self.view.thumbnailButton.selected = NO;
+  self.textField.allowsReturnKeyWithEmptyText = !!image;
+  self.textField.placeholder = [self placeholderText];
+}
+
 #pragma mark - EditViewAnimatee
 
-- (void)setLeadingIconFaded:(BOOL)faded {
-  CATransition* transition = [CATransition animation];
-  transition.duration = 0.3;
-  transition.timingFunction = [CAMediaTimingFunction
-      functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-  transition.type = kCATransitionFade;
-  [self.view.layer addAnimation:transition forKey:nil];
-  if (faded) {
-    [self.view setLeadingImageAlpha:0];
-    [self.view setLeadingImageScale:0];
-  } else {
-    [self.view setLeadingImageAlpha:1];
-    [self.view setLeadingImageScale:1];
-  }
+- (void)setLeadingIconScale:(CGFloat)scale {
+  [self.view setLeadingImageScale:scale];
 }
 
 - (void)setClearButtonFaded:(BOOL)faded {
-  self.textField.rightView.alpha = faded ? 0 : 1;
+  _clearButton.alpha = faded ? 0 : 1;
 }
 
 #pragma mark - LocationBarOffsetProvider
@@ -475,9 +550,15 @@ const CGFloat kClearButtonSize = 28.0f;
 
 #pragma mark - private
 
-// Tint color for the textfield placeholder and the clear button.
-- (UIColor*)placeholderAndClearButtonColor {
-  return [UIColor colorNamed:kTextfieldPlaceholderColor];
+- (void)updateLeadingImage {
+  UIImage* image = self.textField.text.length ? self.defaultLeadingImage
+                                              : self.emptyTextLeadingImage;
+  NSString* accessibilityID =
+      self.textField.text.length
+          ? kOmniboxLeadingImageDefaultAccessibilityIdentifier
+          : kOmniboxLeadingImageEmptyTextAccessibilityIdentifier;
+
+  [self.view setLeadingImage:image withAccessibilityIdentifier:accessibilityID];
 }
 
 - (BOOL)shouldUseLensInMenu {
@@ -539,26 +620,6 @@ const CGFloat kClearButtonSize = 28.0f;
       }));
 }
 
-- (void)menuControllerWillShow:(NSNotification*)notification {
-  if (self.showingEditMenu || !self.isTextfieldEditing ||
-      !self.textField.window.isKeyWindow) {
-    return;
-  }
-
-  self.showingEditMenu = YES;
-
-  // Cancel original menu opening.
-  UIMenuController* menuController = [UIMenuController sharedMenuController];
-  [menuController hideMenu];
-
-  // Reset where it should open below text field and reopen it.
-  menuController.arrowDirection = UIMenuControllerArrowUp;
-
-  [menuController showMenuFromView:self.textField rect:self.textField.frame];
-
-  self.showingEditMenu = NO;
-}
-
 - (void)pasteboardDidChange:(NSNotification*)notification {
   [self updateCachedClipboardState];
 }
@@ -568,47 +629,6 @@ const CGFloat kClearButtonSize = 28.0f;
 }
 
 #pragma mark clear button
-
-// Omnibox uses a custom clear button. It has a custom tint and image, but
-// otherwise it should act exactly like a system button. To achieve this, a
-// custom button is used as the `rightView`. Textfield's setRightViewMode: is
-// used to make the button invisible when the textfield is empty; the visibility
-// is updated on textfield text changes and clear button presses.
-- (void)setupClearButton {
-  // Do not use the system clear button. Use a custom "right view" instead.
-  // Note that `rightView` is an incorrect name, it's really a trailing view.
-  [self.textField setClearButtonMode:UITextFieldViewModeNever];
-  [self.textField setRightViewMode:UITextFieldViewModeAlways];
-
-  UIButton* clearButton = [UIButton buttonWithType:UIButtonTypeSystem];
-  clearButton.frame = CGRectMake(0, 0, kClearButtonSize, kClearButtonSize);
-  [clearButton setImage:[self clearButtonIcon] forState:UIControlStateNormal];
-  [clearButton addTarget:self
-                  action:@selector(clearButtonPressed)
-        forControlEvents:UIControlEventTouchUpInside];
-  self.textField.rightView = clearButton;
-
-  clearButton.tintColor = [self placeholderAndClearButtonColor];
-  SetA11yLabelAndUiAutomationName(clearButton, IDS_IOS_ACCNAME_CLEAR_TEXT,
-                                  @"Clear Text");
-
-  clearButton.pointerInteractionEnabled = YES;
-  clearButton.pointerStyleProvider =
-      CreateLiftEffectCirclePointerStyleProvider();
-
-  // Observe text changes to show the clear button when there is text and hide
-  // it when the textfield is empty.
-  [self.textField addTarget:self
-                     action:@selector(textFieldDidChange:)
-           forControlEvents:UIControlEventEditingChanged];
-}
-
-- (UIImage*)clearButtonIcon {
-  UIImage* image = [[UIImage imageNamed:@"omnibox_clear_icon"]
-      imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-
-  return image;
-}
 
 - (void)clearButtonPressed {
   // Emulate a system button clear callback.
@@ -625,8 +645,7 @@ const CGFloat kClearButtonSize = 28.0f;
 // Hides the clear button if the textfield is empty; shows it otherwise.
 - (void)updateClearButtonVisibility {
   BOOL hasText = self.textField.text.length > 0;
-  [self.textField setRightViewMode:hasText ? UITextFieldViewModeAlways
-                                           : UITextFieldViewModeNever];
+  [self.view setClearButtonHidden:!hasText];
 }
 
 // Handle the updates to semanticContentAttribute by passing the changes along
@@ -680,18 +699,12 @@ const CGFloat kClearButtonSize = 28.0f;
 }
 
 - (void)visitCopiedLink:(id)sender {
-  // A search using clipboard link is activity that should indicate a user
-  // that would be interested in setting Chrome as the default browser.
-  LogLikelyInterestedDefaultBrowserUserActivity(DefaultPromoTypeGeneral);
   RecordAction(UserMetricsAction("Mobile.OmniboxContextMenu.VisitCopiedLink"));
   self.omniboxInteractedWhileFocused = YES;
   [self.pasteDelegate didTapVisitCopiedLink];
 }
 
 - (void)searchCopiedText:(id)sender {
-  // A search using clipboard text is activity that should indicate a user
-  // that would be interested in setting Chrome as the default browser.
-  LogLikelyInterestedDefaultBrowserUserActivity(DefaultPromoTypeGeneral);
   RecordAction(UserMetricsAction("Mobile.OmniboxContextMenu.SearchCopiedText"));
   self.omniboxInteractedWhileFocused = YES;
   [self.pasteDelegate didTapSearchCopiedText];
@@ -699,8 +712,8 @@ const CGFloat kClearButtonSize = 28.0f;
 
 #pragma mark - UIScribbleInteractionDelegate
 
-- (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
-    API_AVAILABLE(ios(14.0)) {
+- (void)scribbleInteractionWillBeginWriting:
+    (UIScribbleInteraction*)interaction {
   if (self.textField.isPreEditing) {
     [self.textField exitPreEditState];
     [self.textField setText:[[NSAttributedString alloc] initWithString:@""]
@@ -710,12 +723,47 @@ const CGFloat kClearButtonSize = 28.0f;
   [self.textField clearAutocompleteText];
 }
 
-- (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
-    API_AVAILABLE(ios(14.0)) {
+- (void)scribbleInteractionDidFinishWriting:
+    (UIScribbleInteraction*)interaction {
   [self cleanupOmniboxAfterScribble];
 
   // Dismiss any inline autocomplete. The user expectation is to not have it.
   [self.textField clearAutocompleteText];
+
+  if (IsRichAutocompletionEnabled() && _textChangeDelegate) {
+    _textChangeDelegate->OnRemoveAdditionalText();
+  }
+}
+
+/// Handles interaction with the thumbnail button. (tap or keyboard delete)
+- (void)didTapThumbnailButton {
+  if (!self.view.thumbnailButton.selected) {
+    self.view.thumbnailButton.selected = YES;
+  } else {
+    if (_textChangeDelegate) {
+      _textChangeDelegate->RemoveThumbnail();
+      // Clear the selection once it's no longer needed. This prevents it from
+      // reappearing unexpectedly as the user navigates back through previous
+      // results.
+      self.view.thumbnailButton.selected = NO;
+    }
+  }
+}
+
+/// Returns the placeholder text for the current state.
+- (NSString*)placeholderText {
+  if (!base::FeatureList::IsEnabled(kEnableLensOverlay)) {
+    return l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
+  }
+
+  if (self.view.thumbnailImage) {
+    return l10n_util::GetNSString(IDS_IOS_OMNIBOX_PLACEHOLDER_IMAGE_SEARCH);
+  } else if (self.isSearchOnlyUI) {
+    return l10n_util::GetNSStringF(IDS_IOS_OMNIBOX_PLACEHOLDER_SEARCH_ONLY,
+                                   self.searchProviderName);
+  } else {
+    return l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
+  }
 }
 
 @end

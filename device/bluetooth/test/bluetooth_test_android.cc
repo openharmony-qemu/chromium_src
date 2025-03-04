@@ -20,6 +20,8 @@
 #include "device/bluetooth/bluetooth_remote_gatt_descriptor_android.h"
 #include "device/bluetooth/bluetooth_remote_gatt_service_android.h"
 #include "device/bluetooth/test/test_bluetooth_adapter_observer.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
 #include "device/bluetooth_test_jni_headers/Fakes_jni.h"
 
 using base::android::AttachCurrentThread;
@@ -95,8 +97,8 @@ void BluetoothTestAndroid::InitWithFakeAdapter() {
 }
 
 bool BluetoothTestAndroid::DenyPermission() {
-  Java_FakeBluetoothAdapter_setFakeContextLocationPermission(
-      AttachCurrentThread(), j_fake_bluetooth_adapter_, false);
+  Java_FakeBluetoothAdapter_setFakePermission(AttachCurrentThread(),
+                                              j_fake_bluetooth_adapter_, false);
   return true;
 }
 

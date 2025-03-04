@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <atk/atk.h>
-#include <dlfcn.h>
 #include <utility>
 #include <vector>
 
@@ -11,11 +15,12 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/accessibility/platform/atk_util_auralinux.h"
+#include "ui/accessibility/platform/ax_platform_for_test.h"
 #include "ui/accessibility/platform/ax_platform_node_auralinux.h"
 #include "ui/accessibility/platform/ax_platform_node_unittest.h"
 #include "ui/accessibility/platform/test_ax_node_wrapper.h"
 
-// TODO(https://crbug.com/1394423): Remove this again.
+// TODO(crbug.com/40248581): Remove this again.
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 namespace {
@@ -79,7 +84,7 @@ class AXPlatformNodeAuraLinuxTest : public AXPlatformNodeTest {
   // it's possible that the state we want to expose and/or emit an event for
   // is not present. This will generate a runtime error.
   bool PlatformSupportsState(AtkStateType atk_state_type) {
-    static absl::optional<int> max_state_type = absl::nullopt;
+    static std::optional<int> max_state_type = std::nullopt;
     if (!max_state_type.has_value()) {
       GEnumClass* enum_class =
           G_ENUM_CLASS(g_type_class_ref(atk_state_type_get_type()));
@@ -93,7 +98,7 @@ class AXPlatformNodeAuraLinuxTest : public AXPlatformNodeTest {
   // it's possible that the relation type we want to expose and/or emit an event
   // for is not present. This will generate a runtime error.
   bool PlatformSupportsRelation(AtkRelationType atk_relation_type) {
-    static absl::optional<int> max_relation_type = absl::nullopt;
+    static std::optional<int> max_relation_type = std::nullopt;
     if (!max_relation_type.has_value()) {
       GEnumClass* enum_class =
           G_ENUM_CLASS(g_type_class_ref(atk_relation_type_get_type()));
@@ -150,7 +155,7 @@ static void SetStringAttributeOnNode(
     AXNode* ax_node,
     ax::mojom::StringAttribute attribute,
     const char* attribute_value,
-    absl::optional<ax::mojom::Role> role = absl::nullopt) {
+    std::optional<ax::mojom::Role> role = std::nullopt) {
   AXNodeData new_data = AXNodeData();
   new_data.role = role.value_or(ax::mojom::Role::kApplication);
   new_data.id = ax_node->id();
@@ -163,7 +168,7 @@ static void TestAtkObjectIntAttribute(
     AtkObject* atk_object,
     ax::mojom::IntAttribute mojom_attribute,
     const gchar* attribute_name,
-    absl::optional<ax::mojom::Role> role = absl::nullopt) {
+    std::optional<ax::mojom::Role> role = std::nullopt) {
   AXNodeData new_data = AXNodeData();
   new_data.role = role.value_or(ax::mojom::Role::kApplication);
   new_data.id = ax_node->id();
@@ -192,7 +197,7 @@ static void TestAtkObjectStringAttribute(
     AtkObject* atk_object,
     ax::mojom::StringAttribute mojom_attribute,
     const gchar* attribute_name,
-    absl::optional<ax::mojom::Role> role = absl::nullopt) {
+    std::optional<ax::mojom::Role> role = std::nullopt) {
   AXNodeData new_data = AXNodeData();
   new_data.role = role.value_or(ax::mojom::Role::kApplication);
   new_data.id = ax_node->id();
@@ -215,7 +220,7 @@ static void TestAtkObjectBoolAttribute(
     AtkObject* atk_object,
     ax::mojom::BoolAttribute mojom_attribute,
     const gchar* attribute_name,
-    absl::optional<ax::mojom::Role> role = absl::nullopt) {
+    std::optional<ax::mojom::Role> role = std::nullopt) {
   AXNodeData new_data = AXNodeData();
   new_data.role = role.value_or(ax::mojom::Role::kApplication);
   new_data.id = ax_node->id();
@@ -879,17 +884,6 @@ typedef bool (*ScrollToPointFunc)(AtkComponent* component,
 typedef bool (*ScrollToFunc)(AtkComponent* component, AtkScrollType type);
 
 TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollToPoint) {
-  // There's a chance we may be compiled with a newer version of ATK and then
-  // run with an older one, so we need to do a runtime check for this method
-  // that is available in ATK 2.30 instead of linking directly.
-  ScrollToPointFunc scroll_to_point = reinterpret_cast<ScrollToPointFunc>(
-      dlsym(RTLD_DEFAULT, "atk_component_scroll_to_point"));
-  if (!scroll_to_point) {
-    LOG(WARNING) << "Skipping AtkComponentScrollToPoint"
-                    " because ATK version < 2.30 detected.";
-    return;
-  }
-
   AXNodeData root;
   root.id = 1;
   root.role = ax::mojom::Role::kRootWebArea;
@@ -917,7 +911,8 @@ TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollToPoint) {
   EXPECT_EQ(10, width);
   EXPECT_EQ(10, height);
 
-  scroll_to_point(ATK_COMPONENT(child_obj), ATK_XY_SCREEN, 600, 650);
+  atk_component_scroll_to_point(ATK_COMPONENT(child_obj), ATK_XY_SCREEN, 600,
+                                650);
   atk_component_get_extents(ATK_COMPONENT(child_obj), &x_left, &y_top, &width,
                             &height, ATK_XY_SCREEN);
   EXPECT_EQ(610, x_left);
@@ -925,7 +920,8 @@ TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollToPoint) {
   EXPECT_EQ(10, width);
   EXPECT_EQ(10, height);
 
-  scroll_to_point(ATK_COMPONENT(child_obj), ATK_XY_PARENT, 10, 10);
+  atk_component_scroll_to_point(ATK_COMPONENT(child_obj), ATK_XY_PARENT, 10,
+                                10);
   atk_component_get_extents(ATK_COMPONENT(child_obj), &x_left, &y_top, &width,
                             &height, ATK_XY_SCREEN);
   // The test wrapper scrolls every element when scrolling, so this should be
@@ -942,17 +938,6 @@ TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollToPoint) {
 }
 
 TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollTo) {
-  // There's a chance we may be compiled with a newer version of ATK and then
-  // run with an older one, so we need to do a runtime check for this method
-  // that is available in ATK 2.30 instead of linking directly.
-  ScrollToFunc scroll_to = reinterpret_cast<ScrollToFunc>(
-      dlsym(RTLD_DEFAULT, "atk_component_scroll_to"));
-  if (!scroll_to) {
-    LOG(WARNING) << "Skipping AtkComponentScrollTo"
-                    " because ATK version < 2.30 detected.";
-    return;
-  }
-
   AXNodeData root;
   root.id = 1;
   root.role = ax::mojom::Role::kRootWebArea;
@@ -980,7 +965,7 @@ TEST_F(AXPlatformNodeAuraLinuxTest, AtkComponentScrollTo) {
   EXPECT_EQ(10, width);
   EXPECT_EQ(10, height);
 
-  scroll_to(ATK_COMPONENT(child_obj), ATK_SCROLL_ANYWHERE);
+  atk_component_scroll_to(ATK_COMPONENT(child_obj), ATK_SCROLL_ANYWHERE);
   atk_component_get_extents(ATK_COMPONENT(child_obj), &x_left, &y_top, &width,
                             &height, ATK_XY_SCREEN);
   EXPECT_EQ(0, x_left);
@@ -1092,6 +1077,60 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkActionDoAction) {
   // Test that querying actions out of bounds doesn't crash
   EXPECT_FALSE(atk_action_do_action(ATK_ACTION(root_obj), -1));
   EXPECT_FALSE(atk_action_do_action(ATK_ACTION(root_obj), 4));
+
+  g_object_unref(root_obj);
+}
+
+TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkActionAriaAction) {
+  AXNodeData root;
+  root.id = 1;
+  root.role = ax::mojom::Role::kRootWebArea;
+  root.AddIntListAttribute(ax::mojom::IntListAttribute::kActionsIds, {2, 3});
+
+  AXNodeData child1;
+  child1.id = 2;
+  child1.role = ax::mojom::Role::kButton;
+  child1.SetName("close");
+  root.child_ids.push_back(2);
+
+  AXNodeData child2;
+  child2.id = 3;
+  child2.role = ax::mojom::Role::kButton;
+  child2.SetName("open");
+  child2.AddStringAttribute(ax::mojom::StringAttribute::kHtmlId, "open-button");
+  root.child_ids.push_back(3);
+
+  Init(root, child1, child2);
+
+  AtkObject* root_obj(GetRootAtkObject());
+  ASSERT_TRUE(ATK_IS_OBJECT(root_obj));
+  ASSERT_TRUE(ATK_IS_ACTION(root_obj));
+  g_object_ref(root_obj);
+
+  // Root node should have the default 2 actions (kDoDefault and
+  // kShowContextMenu) + 2 actions from aria-actions (child1 and child2).
+  gint number_of_actions = atk_action_get_n_actions(ATK_ACTION(root_obj));
+  EXPECT_EQ(4, number_of_actions);
+
+  // The third action refers to child1.
+  const gchar* action_name = atk_action_get_name(ATK_ACTION(root_obj), 2);
+  const gchar* action_localized_name =
+      atk_action_get_localized_name(ATK_ACTION(root_obj), 2);
+  EXPECT_STREQ("custom", action_name);
+  EXPECT_STREQ("close", action_localized_name);
+  EXPECT_TRUE(atk_action_do_action(ATK_ACTION(root_obj), 2));
+  EXPECT_EQ(GetRoot()->GetChildAtIndex(0),
+            TestAXNodeWrapper::GetNodeFromLastDefaultAction());
+
+  // The fourth action refers to child2.
+  action_name = atk_action_get_name(ATK_ACTION(root_obj), 3);
+  action_localized_name =
+      atk_action_get_localized_name(ATK_ACTION(root_obj), 3);
+  EXPECT_STREQ("custom#open-button", action_name);
+  EXPECT_STREQ("open", action_localized_name);
+  EXPECT_TRUE(atk_action_do_action(ATK_ACTION(root_obj), 3));
+  EXPECT_EQ(GetRoot()->GetChildAtIndex(1),
+            TestAXNodeWrapper::GetNodeFromLastDefaultAction());
 
   g_object_unref(root_obj);
 }
@@ -1865,7 +1904,7 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestPostponedAtkWindowActive) {
   g_object_ref(root_atk_object);
   EXPECT_TRUE(ATK_IS_WINDOW(root_atk_object));
 
-  AtkUtilAuraLinux* atk_util = ui::AtkUtilAuraLinux::GetInstance();
+  AtkUtilAuraLinux* atk_util = AtkUtilAuraLinux::GetInstance();
 
   {
     ActivationTester tester(root_atk_object);
@@ -2131,7 +2170,7 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkPopupWindowActive) {
 }
 
 TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkSelectionInterface) {
-  ui::TestAXTreeUpdate update(std::string(R"HTML(
+  TestAXTreeUpdate update(std::string(R"HTML(
     ++1 kListBox states=kFocusable,kMultiselectable
     ++++2 kListBoxOption
     ++++3 kListBoxOption
@@ -2266,7 +2305,8 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkRelations) {
   AXNodeData root;
   root.id = 1;
   root.role = ax::mojom::Role::kRootWebArea;
-  root.AddIntListAttribute(ax::mojom::IntListAttribute::kDetailsIds, {2});
+  // Add 999 as a target relation id to test that invalid relations are dropped.
+  root.AddIntListAttribute(ax::mojom::IntListAttribute::kDetailsIds, {2, 999});
 
   AXNodeData child1;
   child1.id = 2;
@@ -2277,7 +2317,7 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAtkRelations) {
   AXNodeData child2;
   child2.id = 3;
   child2.role = ax::mojom::Role::kStaticText;
-  std::vector<int32_t> labelledby_ids = {1, 4};
+  std::vector<int32_t> labelledby_ids = {1, 999, 4};
   child2.AddIntListAttribute(ax::mojom::IntListAttribute::kLabelledbyIds,
                              labelledby_ids);
 
@@ -2381,15 +2421,6 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAllReverseAtkRelations) {
     g_object_unref(G_OBJECT(relations));
   };
 
-  auto test_int_relation = [&](ax::mojom::IntAttribute relation,
-                               AtkRelationType expected_relation,
-                               AtkRelationType expected_reverse_relation) {
-    auto setter = [&](AXNodeData* data, int target_id) {
-      data->AddIntAttribute(relation, target_id);
-    };
-    test_relation(setter, expected_relation, expected_reverse_relation);
-  };
-
   auto test_int_list_relation = [&](ax::mojom::IntListAttribute relation,
                                     AtkRelationType expected_relation,
                                     AtkRelationType expected_reverse_relation) {
@@ -2402,8 +2433,8 @@ TEST_F(AXPlatformNodeAuraLinuxTest, TestAllReverseAtkRelations) {
 
   test_int_list_relation(ax::mojom::IntListAttribute::kDetailsIds,
                          ATK_RELATION_DETAILS, ATK_RELATION_DETAILS_FOR);
-  test_int_relation(ax::mojom::IntAttribute::kErrormessageId,
-                    ATK_RELATION_ERROR_MESSAGE, ATK_RELATION_ERROR_FOR);
+  test_int_list_relation(ax::mojom::IntListAttribute::kErrormessageIds,
+                         ATK_RELATION_ERROR_MESSAGE, ATK_RELATION_ERROR_FOR);
   test_int_list_relation(ax::mojom::IntListAttribute::kControlsIds,
                          ATK_RELATION_CONTROLLER_FOR,
                          ATK_RELATION_CONTROLLED_BY);

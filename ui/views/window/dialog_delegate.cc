@@ -17,14 +17,18 @@
 #include "ui/accessibility/ax_role_properties.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/dialog_button.mojom.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
+#include "ui/base/ui_base_types.h"
 #include "ui/gfx/color_palette.h"
 #include "ui/strings/grit/ui_strings.h"
 #include "ui/views/bubble/bubble_border.h"
+#include "ui/views/bubble/bubble_dialog_delegate_view.h"
 #include "ui/views/bubble/bubble_frame_view.h"
 #include "ui/views/buildflags.h"
-#include "ui/views/controls/button/label_button.h"
 #include "ui/views/layout/layout_provider.h"
 #include "ui/views/style/platform_style.h"
+#include "ui/views/view_utils.h"
 #include "ui/views/views_features.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_observer.h"
@@ -33,8 +37,39 @@
 
 namespace views {
 
-// Debug information for https://crbug.com/1215247.
-int g_instance_count = 0;
+namespace {
+
+// Class that ensures that dialogs are logically "parented" to their parent for
+// various purposes, including testing, theming, and Tutorials.
+class DialogWidget : public Widget {
+ public:
+  DialogWidget() = default;
+  ~DialogWidget() override = default;
+
+  // Widget:
+  Widget* GetPrimaryWindowWidget() override {
+    // Dialogs are usually parented to another window, so that window should be
+    // the primary window. Only fall back to default Widget behavior if there is
+    // no parent.
+    return parent() ? parent()->GetPrimaryWindowWidget()
+                    : Widget::GetPrimaryWindowWidget();
+  }
+
+  // TODO(dfried): Possibly also fix the following (possibly in Widget) so they
+  // don't have to be overridden in bubble_dialog_delegate_view.cc:
+  //  - GetCustomTheme()
+  //  - GetNativeTheme()
+  //  - GetColorProvider()
+};
+
+bool HasCallback(
+    const absl::variant<base::OnceClosure, base::RepeatingCallback<bool()>>&
+        callback) {
+  return absl::visit(
+      [](const auto& variant) { return static_cast<bool>(variant); }, callback);
+}
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 // DialogDelegate::Params:
@@ -45,21 +80,19 @@ DialogDelegate::Params::~Params() = default;
 // DialogDelegate:
 
 DialogDelegate::DialogDelegate() {
-  ++g_instance_count;
-
   WidgetDelegate::RegisterWindowWillCloseCallback(
       base::BindOnce(&DialogDelegate::WindowWillClose, base::Unretained(this)));
 }
 
 // static
-Widget* DialogDelegate::CreateDialogWidget(WidgetDelegate* delegate,
-                                           gfx::NativeWindow context,
-                                           gfx::NativeView parent,
-                                           gfx::AcceleratedWidget parent_widget) {
-  views::Widget* widget = new views::Widget;
+Widget* DialogDelegate::CreateDialogWidget(
+    WidgetDelegate* delegate,
+    gfx::NativeWindow context,
+    gfx::NativeView parent,
+    gfx::AcceleratedWidget parent_widget) {
+  views::Widget* widget = new DialogWidget;
   views::Widget::InitParams params =
-      GetDialogWidgetInitParams(delegate, context, parent, gfx::Rect(),
-                                parent_widget);
+      GetDialogWidgetInitParams(delegate, context, parent, gfx::Rect());
   widget->Init(std::move(params));
   return widget;
 }
@@ -70,17 +103,18 @@ Widget* DialogDelegate::CreateDialogWidget(
     gfx::NativeWindow context,
     gfx::NativeView parent,
     gfx::AcceleratedWidget parent_widget) {
-  DCHECK(delegate->owned_by_widget());
   return CreateDialogWidget(delegate.release(), context, parent, parent_widget);
 }
 
 // static
-bool DialogDelegate::CanSupportCustomFrame(gfx::NativeView parent,
-                                           gfx::AcceleratedWidget parent_widget) {
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && \
+bool DialogDelegate::CanSupportCustomFrame(
+    gfx::NativeView parent,
+    gfx::AcceleratedWidget parent_widget) {
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)) && \
     BUILDFLAG(ENABLE_DESKTOP_AURA)
   // The new style doesn't support unparented dialogs on Linux desktop.
   return parent != nullptr || parent_widget != gfx::kNullAcceleratedWidget;
+  ;
 #else
   return true;
 #endif
@@ -93,13 +127,17 @@ Widget::InitParams DialogDelegate::GetDialogWidgetInitParams(
     gfx::NativeView parent,
     const gfx::Rect& bounds,
     gfx::AcceleratedWidget parent_widget) {
-  views::Widget::InitParams params;
-  params.delegate = delegate;
-  params.bounds = bounds;
   DialogDelegate* dialog = delegate->AsDialogDelegate();
 
+  views::Widget::InitParams params(
+      dialog ? dialog->ownership_of_new_widget_
+             : Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
+  params.delegate = delegate;
+  params.bounds = bounds;
+
   if (dialog)
-    dialog->params_.custom_frame &= CanSupportCustomFrame(parent, parent_widget);
+    dialog->params_.custom_frame &=
+        CanSupportCustomFrame(parent, parent_widget);
 
   if (!dialog || dialog->use_custom_frame()) {
     params.opacity = Widget::InitParams::WindowOpacity::kTranslucent;
@@ -114,61 +152,111 @@ Widget::InitParams DialogDelegate::GetDialogWidgetInitParams(
   params.parent = parent;
   params.parent_widget = parent_widget;
 #if !BUILDFLAG(IS_APPLE)
-  // Web-modal (ui::MODAL_TYPE_CHILD) dialogs with parents are marked as child
-  // widgets to prevent top-level window behavior (independent movement, etc).
-  // On Mac, however, the parent may be a native window (not a views::Widget),
-  // and so the dialog must be considered top-level to gain focus and input
-  // method behaviors.
-  params.child = parent && (delegate->GetModalType() == ui::MODAL_TYPE_CHILD);
+  // Web-modal (ui::mojom::ModalType::kChild) dialogs with parents are marked as
+  // child widgets to prevent top-level window behavior (independent movement,
+  // etc). On Mac, however, the parent may be a native window (not a
+  // views::Widget), and so the dialog must be considered top-level to gain
+  // focus and input method behaviors.
+  params.child =
+      parent && (delegate->GetModalType() == ui::mojom::ModalType::kChild);
 #endif
+
+  if (BubbleDialogDelegate* bubble = delegate->AsBubbleDialogDelegate()) {
+    // TODO(crbug.com/41493925): Remove this CHECK once native frame dialogs
+    // support autosize.
+    CHECK(!bubble->is_autosized() || bubble->use_custom_frame())
+        << "Autosizing native frame dialogs is not supported.";
+    params.autosize = bubble->is_autosized();
+  }
+
   return params;
 }
 
 int DialogDelegate::GetDefaultDialogButton() const {
   if (GetParams().default_button.has_value())
     return *GetParams().default_button;
-  if (GetDialogButtons() & ui::DIALOG_BUTTON_OK)
-    return ui::DIALOG_BUTTON_OK;
-  if (GetDialogButtons() & ui::DIALOG_BUTTON_CANCEL)
-    return ui::DIALOG_BUTTON_CANCEL;
-  return ui::DIALOG_BUTTON_NONE;
+  if (buttons() & static_cast<int>(ui::mojom::DialogButton::kOk)) {
+    return static_cast<int>(ui::mojom::DialogButton::kOk);
+  }
+  if (buttons() & static_cast<int>(ui::mojom::DialogButton::kCancel)) {
+    return static_cast<int>(ui::mojom::DialogButton::kCancel);
+  }
+  return static_cast<int>(ui::mojom::DialogButton::kNone);
 }
 
 std::u16string DialogDelegate::GetDialogButtonLabel(
-    ui::DialogButton button) const {
-  if (!GetParams().button_labels[button].empty())
-    return GetParams().button_labels[button];
+    ui::mojom::DialogButton button) const {
+  if (!GetParams().button_labels[static_cast<size_t>(button)].empty()) {
+    return GetParams().button_labels[static_cast<size_t>(button)];
+  }
 
-  if (button == ui::DIALOG_BUTTON_OK)
+  if (button == ui::mojom::DialogButton::kOk) {
     return l10n_util::GetStringUTF16(IDS_APP_OK);
-  CHECK_EQ(button, ui::DIALOG_BUTTON_CANCEL);
-  return GetDialogButtons() & ui::DIALOG_BUTTON_OK
+  }
+  CHECK_EQ(button, ui::mojom::DialogButton::kCancel);
+  return buttons() & static_cast<int>(ui::mojom::DialogButton::kOk)
              ? l10n_util::GetStringUTF16(IDS_APP_CANCEL)
              : l10n_util::GetStringUTF16(IDS_APP_CLOSE);
 }
 
-bool DialogDelegate::IsDialogButtonEnabled(ui::DialogButton button) const {
-  return params_.enabled_buttons & button;
+ui::ButtonStyle DialogDelegate::GetDialogButtonStyle(
+    ui::mojom::DialogButton button) const {
+  std::optional<ui::ButtonStyle> style =
+      GetParams().button_styles[static_cast<size_t>(button)];
+  if (style.has_value()) {
+    return *style;
+  }
+
+  return GetIsDefault(button) ? ui::ButtonStyle::kProminent
+                              : ui::ButtonStyle::kDefault;
+}
+
+bool DialogDelegate::GetIsDefault(ui::mojom::DialogButton button) const {
+  return GetDefaultDialogButton() == static_cast<int>(button) &&
+         (button != ui::mojom::DialogButton::kCancel ||
+          PlatformStyle::kDialogDefaultButtonCanBeCancel);
+}
+
+bool DialogDelegate::IsDialogButtonEnabled(
+    ui::mojom::DialogButton button) const {
+  return params_.enabled_buttons & static_cast<int>(button);
+}
+
+bool DialogDelegate::ShouldIgnoreButtonPressedEventHandling(
+    View* button,
+    const ui::Event& event) const {
+  return false;
 }
 
 bool DialogDelegate::Cancel() {
   DCHECK(!already_started_close_);
-  if (cancel_callback_)
-    RunCloseCallback(std::move(cancel_callback_));
+  if (HasCallback(cancel_callback_)) {
+    return RunCloseCallback(cancel_callback_);
+  }
   return true;
 }
 
 bool DialogDelegate::Accept() {
   DCHECK(!already_started_close_);
-  if (accept_callback_)
-    RunCloseCallback(std::move(accept_callback_));
+  if (HasCallback(accept_callback_)) {
+    return RunCloseCallback(accept_callback_);
+  }
   return true;
 }
 
-void DialogDelegate::RunCloseCallback(base::OnceClosure callback) {
+bool DialogDelegate::RunCloseCallback(
+    absl::variant<base::OnceClosure, base::RepeatingCallback<bool()>>&
+        callback) {
   DCHECK(!already_started_close_);
-  already_started_close_ = true;
-  std::move(callback).Run();
+  if (absl::holds_alternative<base::OnceClosure>(callback)) {
+    already_started_close_ = true;
+    absl::get<base::OnceClosure>(std::move(callback)).Run();
+  } else {
+    already_started_close_ =
+        absl::get<base::RepeatingCallback<bool()>>(callback).Run();
+  }
+
+  return already_started_close_;
 }
 
 View* DialogDelegate::GetInitiallyFocusedView() {
@@ -180,16 +268,19 @@ View* DialogDelegate::GetInitiallyFocusedView() {
   if (!dcv)
     return nullptr;
   int default_button = GetDefaultDialogButton();
-  if (default_button == ui::DIALOG_BUTTON_NONE)
+  if (default_button == static_cast<int>(ui::mojom::DialogButton::kNone)) {
     return nullptr;
+  }
 
   // The default button should be a button we have.
-  CHECK(default_button & GetDialogButtons());
+  CHECK(default_button & buttons());
 
-  if (default_button & ui::DIALOG_BUTTON_OK)
+  if (default_button & static_cast<int>(ui::mojom::DialogButton::kOk)) {
     return dcv->ok_button();
-  if (default_button & ui::DIALOG_BUTTON_CANCEL)
+  }
+  if (default_button & static_cast<int>(ui::mojom::DialogButton::kCancel)) {
     return dcv->cancel_button();
+  }
   return nullptr;
 }
 
@@ -211,11 +302,18 @@ void DialogDelegate::WindowWillClose() {
   if (already_started_close_)
     return;
 
-  bool new_callback_present =
-      close_callback_ || cancel_callback_ || accept_callback_;
+  const bool new_callback_present = close_callback_ ||
+                                    HasCallback(cancel_callback_) ||
+                                    HasCallback(accept_callback_);
 
-  if (close_callback_)
-    RunCloseCallback(std::move(close_callback_));
+  if (close_callback_) {
+    // `RunCloseCallback` takes a non-const reference to this variant to support
+    // the accept and cancel callbacks. It doesn't make sense to be storing a
+    // variant for close callbacks, so we construct the variant here instead.
+    absl::variant<base::OnceClosure, base::RepeatingCallback<bool()>>
+        close_callback_wrapped(std::move(close_callback_));
+    RunCloseCallback(close_callback_wrapped);
+  }
 
   if (new_callback_present)
     return;
@@ -257,10 +355,7 @@ std::unique_ptr<NonClientFrameView> DialogDelegate::CreateDialogFrameView(
 const DialogClientView* DialogDelegate::GetDialogClientView() const {
   if (!GetWidget())
     return nullptr;
-  const views::View* client_view = GetWidget()->client_view();
-  return client_view->GetClassName() == DialogClientView::kViewClassName
-             ? static_cast<const DialogClientView*>(client_view)
-             : nullptr;
+  return AsViewClass<DialogClientView>(GetWidget()->client_view());
 }
 
 DialogClientView* DialogDelegate::GetDialogClientView() {
@@ -277,13 +372,13 @@ BubbleFrameView* DialogDelegate::GetBubbleFrameView() const {
   return view ? static_cast<BubbleFrameView*>(view->frame_view()) : nullptr;
 }
 
-views::LabelButton* DialogDelegate::GetOkButton() const {
+views::MdTextButton* DialogDelegate::GetOkButton() const {
   DCHECK(GetWidget()) << "Don't call this before OnWidgetInitialized";
   auto* client = GetDialogClientView();
   return client ? client->ok_button() : nullptr;
 }
 
-views::LabelButton* DialogDelegate::GetCancelButton() const {
+views::MdTextButton* DialogDelegate::GetCancelButton() const {
   DCHECK(GetWidget()) << "Don't call this before OnWidgetInitialized";
   auto* client = GetDialogClientView();
   return client ? client->cancel_button() : nullptr;
@@ -304,9 +399,9 @@ views::View* DialogDelegate::GetFootnoteViewForTesting() const {
   // CreateDialogFrameView above always uses BubbleFrameView. There are
   // subclasses that override CreateDialogFrameView, but none of them override
   // it to create anything other than a BubbleFrameView.
-  // TODO(https://crbug.com/1011446): Make CreateDialogFrameView final, then
+  // TODO(crbug.com/40101916): Make CreateDialogFrameView final, then
   // remove this DCHECK.
-  DCHECK_EQ(frame->GetClassName(), BubbleFrameView::kViewClassName);
+  DCHECK(IsViewClass<BubbleFrameView>(frame));
   return static_cast<BubbleFrameView*>(frame)->GetFootnoteView();
 }
 
@@ -319,12 +414,11 @@ void DialogDelegate::RemoveObserver(DialogObserver* observer) {
 }
 
 void DialogDelegate::DialogModelChanged() {
-  for (DialogObserver& observer : observer_list_)
-    observer.OnDialogChanged();
+  observer_list_.Notify(&DialogObserver::OnDialogChanged);
 }
 
-void DialogDelegate::TriggerInputProtection() {
-  GetDialogClientView()->TriggerInputProtection();
+void DialogDelegate::TriggerInputProtection(bool force_early) {
+  GetDialogClientView()->TriggerInputProtection(force_early);
 }
 
 void DialogDelegate::SetDefaultButton(int button) {
@@ -341,7 +435,9 @@ void DialogDelegate::SetButtons(int buttons) {
   DialogModelChanged();
 }
 
-void DialogDelegate::SetButtonEnabled(ui::DialogButton button, bool enabled) {
+void DialogDelegate::SetButtonEnabled(ui::mojom::DialogButton dialog_button,
+                                      bool enabled) {
+  int button = static_cast<int>(dialog_button);
   if (!!(params_.enabled_buttons & button) == enabled)
     return;
   if (enabled)
@@ -351,11 +447,21 @@ void DialogDelegate::SetButtonEnabled(ui::DialogButton button, bool enabled) {
   DialogModelChanged();
 }
 
-void DialogDelegate::SetButtonLabel(ui::DialogButton button,
+void DialogDelegate::SetButtonLabel(ui::mojom::DialogButton button,
                                     std::u16string label) {
-  if (params_.button_labels[button] == label)
+  if (params_.button_labels[static_cast<size_t>(button)] == label) {
     return;
-  params_.button_labels[button] = label;
+  }
+  params_.button_labels[static_cast<size_t>(button)] = label;
+  DialogModelChanged();
+}
+
+void DialogDelegate::SetButtonStyle(ui::mojom::DialogButton button,
+                                    std::optional<ui::ButtonStyle> style) {
+  if (params_.button_styles[static_cast<size_t>(button)] == style) {
+    return;
+  }
+  params_.button_styles[static_cast<size_t>(button)] = style;
   DialogModelChanged();
 }
 
@@ -363,7 +469,17 @@ void DialogDelegate::SetAcceptCallback(base::OnceClosure callback) {
   accept_callback_ = std::move(callback);
 }
 
+void DialogDelegate::SetAcceptCallbackWithClose(
+    base::RepeatingCallback<bool()> callback) {
+  accept_callback_ = std::move(callback);
+}
+
 void DialogDelegate::SetCancelCallback(base::OnceClosure callback) {
+  cancel_callback_ = std::move(callback);
+}
+
+void DialogDelegate::SetCancelCallbackWithClose(
+    base::RepeatingCallback<bool()> callback) {
   cancel_callback_ = std::move(callback);
 }
 
@@ -371,8 +487,14 @@ void DialogDelegate::SetCloseCallback(base::OnceClosure callback) {
   close_callback_ = std::move(callback);
 }
 
-std::unique_ptr<View> DialogDelegate::DisownExtraView() {
-  return std::move(extra_view_);
+void DialogDelegate::SetOwnershipOfNewWidget(
+    Widget::InitParams::Ownership ownership) {
+  CHECK(!GetWidget());
+  ownership_of_new_widget_ = ownership;
+}
+
+std::optional<std::unique_ptr<View>> DialogDelegate::DisownExtraView() {
+  return std::exchange(extra_view_, std::nullopt);
 }
 
 bool DialogDelegate::Close() {
@@ -392,18 +514,9 @@ void DialogDelegate::AcceptDialog() {
   // Copy the dialog widget name onto the stack so it appears in crash dumps.
   DEBUG_ALIAS_FOR_CSTR(last_widget_name, GetWidget()->GetName().c_str(), 64);
 
-  DCHECK(IsDialogButtonEnabled(ui::DIALOG_BUTTON_OK));
+  DCHECK(IsDialogButtonEnabled(ui::mojom::DialogButton::kOk));
   if (already_started_close_ || !Accept())
     return;
-
-  // Check for Accept() deleting `this` but returning false. Empirically the
-  // steady state instance count with no dialogs open is zero, so if it's back
-  // to zero `this` is deleted https://crbug.com/1215247
-  if (g_instance_count <= 0) {
-    // LOG(FATAL) instead of CHECK() to put the widget name into a crash key.
-    // See "Product Data" in the crash tool if a crash report shows this line.
-    LOG(FATAL) << last_widget_name;
-  }
 
   already_started_close_ = true;
   GetWidget()->CloseWithReason(
@@ -415,7 +528,7 @@ void DialogDelegate::CancelDialog() {
   // if the cancel button is available. Otherwise this can be reached through
   // closing the dialog via Esc.
   if (ShouldShowCloseButton())
-    DCHECK(IsDialogButtonEnabled(ui::DIALOG_BUTTON_CANCEL));
+    DCHECK(IsDialogButtonEnabled(ui::mojom::DialogButton::kCancel));
 
   if (already_started_close_ || !Cancel())
     return;
@@ -425,21 +538,23 @@ void DialogDelegate::CancelDialog() {
       views::Widget::ClosedReason::kCancelButtonClicked);
 }
 
-DialogDelegate::~DialogDelegate() {
-  --g_instance_count;
-}
+DialogDelegate::~DialogDelegate() = default;
 
 ax::mojom::Role DialogDelegate::GetAccessibleWindowRole() {
   return ax::mojom::Role::kDialog;
 }
 
 int DialogDelegate::GetCornerRadius() const {
+  if (!Widget::IsWindowCompositingSupported()) {
+    return 0;
+  }
 #if BUILDFLAG(IS_MAC)
-  // TODO(crbug.com/1116680): On Mac MODAL_TYPE_WINDOW is implemented using
+  // TODO(crbug.com/40144839): On Mac MODAL_TYPE_WINDOW is implemented using
   // sheets which causes visual artifacts when corner radius is increased for
   // modal types. Remove this after this issue has been addressed.
-  if (GetModalType() == ui::MODAL_TYPE_WINDOW)
+  if (GetModalType() == ui::mojom::ModalType::kWindow) {
     return 2;
+  }
 #endif
   if (params_.corner_radius)
     return *params_.corner_radius;
@@ -454,9 +569,7 @@ std::unique_ptr<View> DialogDelegate::DisownFootnoteView() {
 ////////////////////////////////////////////////////////////////////////////////
 // DialogDelegateView:
 
-DialogDelegateView::DialogDelegateView() {
-  SetOwnedByWidget(true);
-}
+DialogDelegateView::DialogDelegateView() = default;
 
 DialogDelegateView::~DialogDelegateView() = default;
 
@@ -472,7 +585,7 @@ View* DialogDelegateView::GetContentsView() {
   return this;
 }
 
-BEGIN_METADATA(DialogDelegateView, View)
+BEGIN_METADATA(DialogDelegateView)
 END_METADATA
 
 }  // namespace views

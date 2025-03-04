@@ -8,15 +8,16 @@
 #import "base/strings/utf_string_conversions.h"
 #import "components/security_state/core/security_state.h"
 #import "components/ssl_errors/error_info.h"
-#import "components/strings/grit/components_chromium_strings.h"
-#import "components/strings/grit/components_google_chrome_strings.h"
+#import "components/strings/grit/components_branded_strings.h"
 #import "components/strings/grit/components_strings.h"
-#import "ios/chrome/browser/reading_list/offline_page_tab_helper.h"
+#import "ios/chrome/browser/reading_list/model/offline_page_tab_helper.h"
+#import "ios/chrome/browser/shared/model/url/chrome_url_constants.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
+#import "ios/chrome/browser/ui/page_info/features.h"
+#import "ios/chrome/browser/ui/page_info/page_info_constants.h"
 #import "ios/chrome/browser/ui/page_info/page_info_site_security_description.h"
-#import "ios/chrome/browser/url/chrome_url_constants.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
-#import "ios/chrome/grit/ios_chromium_strings.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/components/webui/web_ui_url_constants.h"
 #import "ios/web/public/navigation/navigation_item.h"
@@ -26,13 +27,7 @@
 #import "ui/base/l10n/l10n_util.h"
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
-
-CGFloat kSymbolSize = 18;
 
 // Build the certificate details based on the `SSLStatus` and the `URL`.
 NSString* BuildCertificateDetailString(web::SSLStatus& SSLStatus,
@@ -106,21 +101,22 @@ NSString* BuildMessage(NSArray<NSString*>* messageComponents) {
   dataHolder.isEmpty = NO;
   dataHolder.status =
       l10n_util::GetNSString(IDS_IOS_PAGE_INFO_SECURITY_STATUS_NOT_SECURE);
+  dataHolder.securityStatus = l10n_util::GetNSString(
+      IDS_IOS_PAGE_INFO_SECURITY_CONNECTION_STATUS_NOT_SECURE);
+  dataHolder.secure = NO;
+  dataHolder.isPageLoading = webState->IsLoading();
 
   // Summary and details.
   if (!status.certificate) {
     // Not HTTPS. This maps to the WARNING security level. Show the red
     // triangle icon in page info based on the same logic used to determine
     // the iconography in the omnibox.
-    dataHolder.iconImage =
-        DefaultSymbolTemplateWithPointSize(kWarningSymbol, kSymbolSize);
+    dataHolder.iconImage = DefaultSymbolTemplateWithPointSize(
+        kWarningSymbol, kPageInfoSymbolPointSize);
     dataHolder.iconBackgroundColor = [UIColor colorNamed:kRed500Color];
 
     dataHolder.message =
-        [NSString stringWithFormat:@"%@ BEGIN_LINK %@ END_LINK",
-                                   l10n_util::GetNSString(
-                                       IDS_PAGE_INFO_NOT_SECURE_DETAILS),
-                                   l10n_util::GetNSString(IDS_LEARN_MORE)];
+        l10n_util::GetNSString(IDS_PAGE_INFO_NOT_SECURE_DETAILS);
 
     return dataHolder;
   }
@@ -133,17 +129,14 @@ NSString* BuildMessage(NSArray<NSString*>* messageComponents) {
   if (net::IsCertStatusError(status.cert_status) ||
       status.security_style == web::SECURITY_STYLE_AUTHENTICATION_BROKEN) {
     // HTTPS with major errors
-    dataHolder.iconImage =
-        DefaultSymbolTemplateWithPointSize(kWarningSymbol, kSymbolSize);
+    dataHolder.iconImage = DefaultSymbolTemplateWithPointSize(
+        kWarningSymbol, kPageInfoSymbolPointSize);
     dataHolder.iconBackgroundColor = [UIColor colorNamed:kRed500Color];
 
     NSString* certificateDetails = BuildCertificateDetailString(status, URL);
 
     dataHolder.message = BuildMessage(@[
-      [NSString stringWithFormat:@"%@ BEGIN_LINK %@ END_LINK",
-                                 l10n_util::GetNSString(
-                                     IDS_PAGE_INFO_NOT_SECURE_DETAILS),
-                                 l10n_util::GetNSString(IDS_LEARN_MORE)],
+      l10n_util::GetNSString(IDS_PAGE_INFO_NOT_SECURE_DETAILS),
       certificateDetails
     ]);
 
@@ -158,7 +151,7 @@ NSString* BuildMessage(NSArray<NSString*>* messageComponents) {
   NSString* certificateDetails = @"";
   if (!issuerName.empty()) {
     // Show the issuer name if it's available.
-    // TODO(crbug.com/502470): Implement a certificate viewer instead.
+    // TODO(crbug.com/41183995): Implement a certificate viewer instead.
     certificateDetails = l10n_util::GetNSStringF(
         IDS_IOS_PAGE_INFO_SECURITY_TAB_SECURE_IDENTITY, issuerName);
   }
@@ -168,15 +161,12 @@ NSString* BuildMessage(NSArray<NSString*>* messageComponents) {
     // so assume the WARNING state when determining whether to swap the icon for
     // a red triangle. This will result in an inconsistency between the omnibox
     // and page info if the mixed content WARNING feature is disabled.
-    dataHolder.iconImage =
-        DefaultSymbolTemplateWithPointSize(kWarningSymbol, kSymbolSize);
+    dataHolder.iconImage = DefaultSymbolTemplateWithPointSize(
+        kWarningSymbol, kPageInfoSymbolPointSize);
     dataHolder.iconBackgroundColor = [UIColor colorNamed:kRed500Color];
 
     dataHolder.message = BuildMessage(@[
-      [NSString stringWithFormat:@"%@ BEGIN_LINK %@ END_LINK",
-                                 l10n_util::GetNSString(
-                                     IDS_PAGE_INFO_MIXED_CONTENT_DETAILS),
-                                 l10n_util::GetNSString(IDS_LEARN_MORE)],
+      l10n_util::GetNSString(IDS_PAGE_INFO_MIXED_CONTENT_DETAILS),
       certificateDetails
     ]);
 
@@ -186,16 +176,15 @@ NSString* BuildMessage(NSArray<NSString*>* messageComponents) {
   // Valid HTTPS
   dataHolder.status =
       l10n_util::GetNSString(IDS_IOS_PAGE_INFO_SECURITY_STATUS_SECURE);
-  dataHolder.iconImage =
-      DefaultSymbolTemplateWithPointSize(kSecureSymbol, kSymbolSize);
+  dataHolder.securityStatus = l10n_util::GetNSString(
+      IDS_IOS_PAGE_INFO_SECURITY_CONNECTION_STATUS_SECURE);
+  dataHolder.secure = YES;
+  dataHolder.iconImage = DefaultSymbolTemplateWithPointSize(
+      kSecureSymbol, kPageInfoSymbolPointSize);
   dataHolder.iconBackgroundColor = [UIColor colorNamed:kGreen500Color];
 
   dataHolder.message = BuildMessage(@[
-    [NSString
-        stringWithFormat:@"%@ BEGIN_LINK %@ END_LINK",
-                         l10n_util::GetNSString(IDS_PAGE_INFO_SECURE_DETAILS),
-                         l10n_util::GetNSString(IDS_LEARN_MORE)],
-    certificateDetails
+    l10n_util::GetNSString(IDS_PAGE_INFO_SECURE_DETAILS), certificateDetails
   ]);
 
   DCHECK(!(status.cert_status & net::CERT_STATUS_IS_EV))

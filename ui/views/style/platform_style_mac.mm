@@ -4,14 +4,14 @@
 
 #include "ui/views/style/platform_style.h"
 
+#import <Cocoa/Cocoa.h>
+
 #include "base/numerics/safe_conversions.h"
 #include "base/strings/sys_string_conversions.h"
 #include "ui/base/buildflags.h"
 #include "ui/gfx/color_utils.h"
 #include "ui/views/controls/button/label_button.h"
 #import "ui/views/controls/scrollbar/cocoa_scroll_bar.h"
-
-#import <Cocoa/Cocoa.h>
 
 extern "C" {
 // From CFString private headers.
@@ -55,8 +55,9 @@ const Button::KeyClickAction PlatformStyle::kKeyClickActionOnSpace =
 const bool PlatformStyle::kReturnClicksFocusedControl = false;
 
 // static
-std::unique_ptr<ScrollBar> PlatformStyle::CreateScrollBar(bool is_horizontal) {
-  return std::make_unique<CocoaScrollBar>(is_horizontal);
+std::unique_ptr<ScrollBar> PlatformStyle::CreateScrollBar(
+    ScrollBar::Orientation orientation) {
+  return std::make_unique<CocoaScrollBar>(orientation);
 }
 
 // static
@@ -70,11 +71,12 @@ gfx::Range PlatformStyle::RangeToDeleteBackwards(const std::u16string& text,
   if (cursor_position == 0)
     return gfx::Range();
 
-  base::ScopedCFTypeRef<CFStringRef> cf_string(CFStringCreateWithCharacters(
-      kCFAllocatorDefault, reinterpret_cast<const UniChar*>(text.data()),
-      base::checked_cast<CFIndex>(text.size())));
+  base::apple::ScopedCFTypeRef<CFStringRef> cf_string(
+      CFStringCreateWithCharacters(
+          kCFAllocatorDefault, reinterpret_cast<const UniChar*>(text.data()),
+          base::checked_cast<CFIndex>(text.size())));
   CFRange range_to_delete = CFStringGetRangeOfCharacterClusterAtIndex(
-      cf_string, base::checked_cast<CFIndex>(cursor_position - 1),
+      cf_string.get(), base::checked_cast<CFIndex>(cursor_position - 1),
       kCFStringBackwardDeletionCluster);
 
   if (range_to_delete.location == NSNotFound)

@@ -10,6 +10,7 @@
 #include <memory>
 #include <unordered_set>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
@@ -22,7 +23,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "cc/metrics/events_metrics_manager.h"
 #include "cc/metrics/frame_sequence_tracker.h"
 #include "cc/paint/element_id.h"
@@ -43,10 +43,12 @@
 #include "services/viz/privileged/mojom/compositing/vsync_parameter_observer.mojom-forward.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkM44.h"
+#include "ui/base/ozone_buildflags.h"
 #include "ui/compositor/compositor_animation_observer.h"
 #include "ui/compositor/compositor_export.h"
 #include "ui/compositor/compositor_lock.h"
 #include "ui/compositor/compositor_observer.h"
+#include "ui/compositor/host_begin_frame_observer.h"
 #include "ui/compositor/layer_animator_collection.h"
 #include "ui/compositor/throughput_tracker.h"
 #include "ui/compositor/throughput_tracker_host.h"
@@ -90,7 +92,6 @@ namespace mojom {
 class DisplayPrivate;
 class ExternalBeginFrameController;
 }  // namespace mojom
-class ContextProvider;
 class HostFrameSinkManager;
 class LocalSurfaceId;
 class RasterContextProvider;
@@ -120,11 +121,6 @@ class COMPOSITOR_EXPORT ContextFactory {
 
   // Return a reference to a shared offscreen context provider usable from the
   // main thread.
-  virtual scoped_refptr<viz::ContextProvider>
-  SharedMainThreadContextProvider() = 0;
-
-  // Return a reference to a shared offscreen context provider usable from the
-  // main thread.
   virtual scoped_refptr<viz::RasterContextProvider>
   SharedMainThreadRasterContextProvider() = 0;
 
@@ -146,14 +142,17 @@ class COMPOSITOR_EXPORT ContextFactory {
   // Gets the frame sink manager host instance.
   virtual viz::HostFrameSinkManager* GetHostFrameSinkManager() = 0;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SendInternalBeginFrame(const viz::FrameSinkId& id) {}
-#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 };
 
 class COMPOSITOR_EXPORT CompositorDelegate {
  public:
   virtual std::unique_ptr<viz::HostDisplayClient> CreateHostDisplayClient() = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit() = 0;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
  protected:
   virtual ~CompositorDelegate() {}
@@ -223,6 +222,7 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void DisableAnimations();
   void EnableAnimations();
   bool animations_are_enabled() const { return animations_are_enabled_; }
+  bool IsAnimating() const { return animation_started_; }
 
   cc::AnimationTimeline* GetAnimationTimeline() const;
 
@@ -255,11 +255,12 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void ReenableSwap();
 #endif
 
-#if defined(OHOS_COMPOSITE_RENDER)
-  void SetShouldFrameSubmissionBeforeDraw(bool should);
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   void SetDrawRect(const gfx::Rect& new_rect);
   void SetDrawMode(const int32_t& mode);
-#endif  // defined(OHOS_COMPOSITE_RENDER)
+  int32_t drawMode_ = 0;
+  void SetShouldFrameSubmissionBeforeDraw(bool should);
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   // Sets the compositor's device scale factor and size.
   void SetScaleAndSize(float scale,
@@ -328,11 +329,13 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void AddVSyncParameterObserver(
       mojo::PendingRemote<viz::mojom::VSyncParameterObserver> observer);
 
-  // Sets and caches the maximum vsync interval, to be applied to the
-  // |display_private_| when possible, for use with variable refresh rates. An
-  // absent value indicates that VRR is not enabled.
-  void SetMaxVrrInterval(
-      const absl::optional<base::TimeDelta>& max_vrr_interval);
+  // Sets and caches the |max_vsync_interval| and |vrr_state|, to be applied to
+  // the |display_private_| when possible, for use with variable refresh rates
+  // and/or virtual modes. An absent |max_vsync_interval| value indicates that
+  // the display is not capable of utilizing such features.
+  void SetMaxVSyncAndVrr(
+      const std::optional<base::TimeDelta>& max_vsync_interval,
+      display::VariableRefreshRateState vrr_state);
 
   // Sets the widget for the compositor to render into.
   void SetAcceleratedWidget(gfx::AcceleratedWidget widget);
@@ -392,8 +395,8 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   // Registers a callback that is run when the next frame successfully makes it
   // to the screen (it's entirely possible some frames may be dropped between
   // the time this is called and the callback is run).
-  using SuccessfulPresentationTimeCallback =
-      base::OnceCallback<void(base::TimeTicks)>;
+  using SuccessfulPresentationTimeCallback = base::OnceCallback<void(
+      const viz::FrameTimingDetails& frame_timing_details)>;
   void RequestSuccessfulPresentationTimeForNextFrame(
       SuccessfulPresentationTimeCallback callback);
 
@@ -402,9 +405,9 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
       bool force,
       base::OnceCallback<void(const viz::BeginFrameAck&)> callback);
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SendInternalBeginFrame();
-#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // Creates a ThroughputTracker for tracking this Compositor.
   ThroughputTracker RequestNewThroughputTracker();
@@ -425,7 +428,7 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void OnDeferCommitsChanged(
       bool,
       cc::PaintHoldingReason,
-      absl::optional<cc::PaintHoldingCommitTrigger>) override {}
+      std::optional<cc::PaintHoldingCommitTrigger>) override {}
   void OnCommitRequested() override {}
   void WillUpdateLayers() override {}
   void DidUpdateLayers() override;
@@ -441,23 +444,25 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void DidInitializeLayerTreeFrameSink() override {}
   void DidFailToInitializeLayerTreeFrameSink() override;
   void WillCommit(const cc::CommitState&) override {}
-  void DidCommit(base::TimeTicks, base::TimeTicks) override;
-  void DidCommitAndDrawFrame() override {}
-  void DidReceiveCompositorFrameAck() override;
-  void DidCompletePageScaleAnimation() override {}
+  void DidCommit(int source_frame_number,
+                 base::TimeTicks,
+                 base::TimeTicks) override;
+  void DidCommitAndDrawFrame(int source_frame_number) override {}
+  void DidReceiveCompositorFrameAckDeprecatedForCompositor() override;
+  void DidCompletePageScaleAnimation(int source_frame_number) override {}
   void DidPresentCompositorFrame(
       uint32_t frame_token,
-      const gfx::PresentationFeedback& feedback) override;
+      const viz::FrameTimingDetails& frame_timing_details) override;
   void RecordStartOfFrameMetrics() override {}
   void RecordEndOfFrameMetrics(
       base::TimeTicks frame_begin_time,
       cc::ActiveFrameSequenceTrackers trackers) override {}
   std::unique_ptr<cc::BeginMainFrameMetrics> GetBeginMainFrameMetrics()
       override;
-  std::unique_ptr<cc::WebVitalMetrics> GetWebVitalMetrics() override;
   void NotifyThroughputTrackerResults(
       cc::CustomTrackerResults results) override;
   void DidObserveFirstScrollDelay(
+      int source_frame_number,
       base::TimeDelta first_scroll_delay,
       base::TimeTicks first_scroll_timestamp) override {}
 
@@ -477,20 +482,19 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void StartThroughputTracker(
       TrackerId tracker_id,
       ThroughputTrackerHost::ReportCallback callback) override;
-  bool StopThroughtputTracker(TrackerId tracker_id) override;
-  void CancelThroughtputTracker(TrackerId tracker_id) override;
+  bool StopThroughputTracker(TrackerId tracker_id) override;
+  void CancelThroughputTracker(TrackerId tracker_id) override;
 
   // base::PowerSuspendObserver:
   void OnResume() override;
 
-// TODO(crbug.com/1052397): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
   void OnCompleteSwapWithNewSize(const gfx::Size& size);
-#endif
+#endif  // BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
 
   bool IsLocked() { return lock_manager_.IsLocked(); }
 
+  bool output_is_secure() const { return output_is_secure_; }
   void SetOutputIsSecure(bool output_is_secure);
 
   const cc::LayerTreeDebugState& GetLayerTreeDebugState() const;
@@ -501,7 +505,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   }
 
   const viz::FrameSinkId& frame_sink_id() const { return frame_sink_id_; }
-  int activated_frame_count() const { return activated_frame_count_; }
   float refresh_rate() const { return refresh_rate_; }
 
   bool use_external_begin_frame_control() const {
@@ -524,17 +527,57 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   const cc::LayerTreeSettings& GetLayerTreeSettings() const;
 
-#if BUILDFLAG(IS_OHOS) && defined(OHOS_PERFORMANCE_JITTER)
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   void SetCurrentFrameSinkId(const viz::FrameSinkId& id);
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-void SetEnableLowerFrameRate(bool enabled);
-void EvictFrameBackBuffers(bool invisible);
-void UpdateVSyncFrequency();
-void ResetVSyncFrequency();
+  size_t saved_events_metrics_count_for_testing() const {
+    return host_->saved_events_metrics_count_for_testing();
+  }
+
+  // Returns true if there are throughput trackers.
+  bool has_throughput_trackers_for_testing() const {
+    return !throughput_tracker_map_.empty();
+  }
+
+  const cc::LayerTreeHost* host_for_testing() const { return host_.get(); }
+
+  void AddSimpleBeginFrameObserver(
+      ui::HostBeginFrameObserver::SimpleBeginFrameObserver* obs);
+  void RemoveSimpleBeginFrameObserver(
+      ui::HostBeginFrameObserver::SimpleBeginFrameObserver* obs);
+
+  const std::optional<base::TimeDelta>& max_vsync_interval_for_testing() const {
+    return max_vsync_interval_;
+  }
+
+  display::VariableRefreshRateState vrr_state_for_testing() const {
+    return vrr_state_;
+  }
+
+#if BUILDFLAG(IS_CHROMEOS)
+  // Sets the list of refresh rates that the compositor may request to use.
+  void SetSeamlessRefreshRates(
+      const std::vector<float>& seamless_refresh_rates);
+
+  // Notifies observers of a new refresh rate preference.
+  void OnSetPreferredRefreshRate(float refresh_rate);
+#endif  // BUILDFLAG(IS_CHROMEOS)
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void SetEnableLowerFrameRate(bool enabled);
+  void EvictFrameBackBuffers(bool invisible);
 #endif
 
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  void UpdateVSyncFrequency();
+  void ResetVSyncFrequency();
+#endif
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void DisableSwapUntilMaximized();
+  void RestoreRenderFit() override;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
  private:
   friend class base::RefCounted<Compositor>;
   friend class TotalAnimationThroughputReporter;
@@ -546,6 +589,8 @@ void ResetVSyncFrequency();
   void ReportMetricsForTracker(
       int tracker_id,
       const cc::FrameSequenceMetrics::CustomReportData& data);
+
+  void MaybeUpdateObserveBeginFrame();
 
   gfx::Size size_;
 
@@ -563,7 +608,11 @@ void ResetVSyncFrequency();
 
   std::unique_ptr<PendingBeginFrameArgs> pending_begin_frame_args_;
 
-  CompositorDelegate* delegate_ = nullptr;
+  ui::HostBeginFrameObserver::SimpleBeginFrameObserverList
+      simple_begin_frame_observers_;
+  std::unique_ptr<ui::HostBeginFrameObserver> host_begin_frame_observer_;
+
+  raw_ptr<CompositorDelegate> delegate_ = nullptr;
 
   // The root of the Layer tree drawn by this compositor.
   raw_ptr<Layer> root_layer_ = nullptr;
@@ -573,8 +622,6 @@ void ResetVSyncFrequency();
       animation_observer_list_;
 
   gfx::AcceleratedWidget widget_ = gfx::kNullAcceleratedWidget;
-  // A sequence number of a current compositor frame for use with metrics.
-  int activated_frame_count_ = 0;
 
 #if BUILDFLAG(IS_MAC)
   // Current CGDirectDisplayID for the screen.
@@ -600,7 +647,12 @@ void ResetVSyncFrequency();
   base::TimeTicks vsync_timebase_;
   base::TimeDelta vsync_interval_ = viz::BeginFrameArgs::DefaultInterval();
   bool has_vsync_params_ = false;
-  absl::optional<base::TimeDelta> max_vrr_interval_ = absl::nullopt;
+  std::optional<base::TimeDelta> max_vsync_interval_ = std::nullopt;
+  display::VariableRefreshRateState vrr_state_ =
+      display::VariableRefreshRateState::kVrrNotCapable;
+#if BUILDFLAG(IS_CHROMEOS)
+  std::vector<float> seamless_refresh_rates_;
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
   const bool use_external_begin_frame_control_;
   const bool force_software_compositor_;
@@ -634,7 +686,7 @@ void ResetVSyncFrequency();
 
   bool animations_are_enabled_ = true;
 
-  // This together with the animatinos observer list carries the "last
+  // This together with the animations observer list carries the "last
   // animation finished" state to the next BeginMainFrame so that it could
   // notify observers if needed. It is set in AddAnimationObserver and
   // Cleared in BeginMainFrame when there are no animation observers.

@@ -11,7 +11,10 @@
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "ui/base/l10n/l10n_util.h"
-#include "ui/base/models/simple_menu_model.h"
+#include "ui/base/metadata/metadata_header_macros.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
+#include "ui/base/mojom/menu_source_type.mojom.h"
+#include "ui/menus/simple_menu_model.h"
 #include "ui/views/border.h"
 #include "ui/views/controls/button/button.h"
 #include "ui/views/controls/button/menu_button.h"
@@ -64,6 +67,8 @@ class ExampleMenuModel : public ui::SimpleMenuModel,
 };
 
 class ExampleMenuButton : public MenuButton {
+  METADATA_HEADER(ExampleMenuButton, MenuButton)
+
  public:
   explicit ExampleMenuButton(const std::u16string& test = std::u16string());
 
@@ -80,6 +85,9 @@ class ExampleMenuButton : public MenuButton {
   std::unique_ptr<ExampleMenuModel> menu_model_;
   std::unique_ptr<MenuRunner> menu_runner_;
 };
+
+BEGIN_METADATA(ExampleMenuButton)
+END_METADATA
 
 BEGIN_VIEW_BUILDER(/* no export */, ExampleMenuButton, MenuButton)
 END_VIEW_BUILDER
@@ -201,7 +209,7 @@ void ExampleMenuButton::ButtonPressed() {
 
   menu_runner_->RunMenuAt(GetWidget()->GetTopLevelWidget(), button_controller(),
                           bounds, MenuAnchorPosition::kTopLeft,
-                          ui::MENU_SOURCE_NONE);
+                          ui::mojom::MenuSourceType::kNone);
 }
 
 ui::SimpleMenuModel* ExampleMenuButton::GetMenuModel() {

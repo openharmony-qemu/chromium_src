@@ -18,8 +18,8 @@
 #include "ui/accessibility/ax_tree.h"
 #include "ui/accessibility/ax_tree_data.h"
 #include "ui/accessibility/ax_tree_id.h"
-#include "ui/accessibility/single_ax_tree_manager.h"
 #include "ui/accessibility/test_ax_tree_update.h"
+#include "ui/accessibility/test_single_ax_tree_manager.h"
 #include "ui/gfx/geometry/rect_f.h"
 
 namespace ui {
@@ -231,11 +231,13 @@ TEST(AXNodeTest, TreeWalking) {
             root_node->GetLastUnignoredChildCrossingTreeBoundary()->id());
 
   EXPECT_EQ(static_text_0_0_ignored.id,
-            root_node->GetDeepestFirstChild()->id());
-  EXPECT_EQ(paragraph_0.id, root_node->GetDeepestFirstUnignoredChild()->id());
+            root_node->GetDeepestFirstDescendant()->id());
+  EXPECT_EQ(paragraph_0.id,
+            root_node->GetDeepestFirstUnignoredDescendant()->id());
 
-  EXPECT_EQ(button_3_1.id, root_node->GetDeepestLastChild()->id());
-  EXPECT_EQ(button_3_1.id, root_node->GetDeepestLastUnignoredChild()->id());
+  EXPECT_EQ(button_3_1.id, root_node->GetDeepestLastDescendant()->id());
+  EXPECT_EQ(button_3_1.id,
+            root_node->GetDeepestLastUnignoredDescendant()->id());
 
   {
     std::vector<AXNode*> siblings;
@@ -371,9 +373,9 @@ TEST(AXNodeTest, TreeWalkingCrossingTreeBoundary) {
   initial_state_2.tree_data = tree_data_2;
 
   auto tree_1 = std::make_unique<AXTree>(initial_state_1);
-  SingleAXTreeManager tree_manager_1(std::move(tree_1));
+  TestSingleAXTreeManager tree_manager_1(std::move(tree_1));
   auto tree_2 = std::make_unique<AXTree>(initial_state_2);
-  SingleAXTreeManager tree_manager_2(std::move(tree_2));
+  TestSingleAXTreeManager tree_manager_2(std::move(tree_2));
 
   const AXNode* root_node_1 = tree_manager_1.GetRoot();
   ASSERT_EQ(root_1.id, root_node_1->id());
@@ -477,7 +479,7 @@ TEST(AXNodeTest, GetValueForControlTextField) {
                   rich_text_field_line_2};
 
   auto tree = std::make_unique<AXTree>(update);
-  SingleAXTreeManager manager(std::move(tree));
+  TestSingleAXTreeManager manager(std::move(tree));
 
   {
     const AXNode* text_field_node =
@@ -703,37 +705,21 @@ TEST(AXNodeTest, GetTextContentRangeBounds) {
   const AXNode* text3_node = root_node->GetUnignoredChildAtIndex(2);
   ASSERT_EQ(text_data3.id, text3_node->id());
 
-  // Bounds should be the same between UTF-8 and UTF-16 for `kEnglishText`.
-  EXPECT_EQ(gfx::RectF(0, 0, 27, 0),
-            text1_node->GetTextContentRangeBoundsUTF8(0, 3));
-  EXPECT_EQ(gfx::RectF(12, 0, 7, 0),
-            text1_node->GetTextContentRangeBoundsUTF8(1, 2));
-  EXPECT_EQ(gfx::RectF(), text1_node->GetTextContentRangeBoundsUTF8(2, 4));
+  // Offsets correspond to code units in UTF-16
+  // Each character is a single glyph in `kEnglishText`.
   EXPECT_EQ(gfx::RectF(0, 0, 27, 0),
             text1_node->GetTextContentRangeBoundsUTF16(0, 3));
   EXPECT_EQ(gfx::RectF(12, 0, 7, 0),
             text1_node->GetTextContentRangeBoundsUTF16(1, 2));
   EXPECT_EQ(gfx::RectF(), text1_node->GetTextContentRangeBoundsUTF16(2, 4));
 
-  // Offsets are manually converted between UTF-8 and UTF-16.
-  //
-  // `kHindiText` is 6 code units in UTF-16 and 18 in UTF-8.
-  EXPECT_EQ(gfx::RectF(0, 0, 59, 0),
-            text2_node->GetTextContentRangeBoundsUTF8(0, 18));
-  EXPECT_EQ(gfx::RectF(0, 0, 19, 0),
-            text2_node->GetTextContentRangeBoundsUTF8(6, 12));
+  // `kHindiText` is 6 code units in UTF-16.
   EXPECT_EQ(gfx::RectF(0, 0, 59, 0),
             text2_node->GetTextContentRangeBoundsUTF16(0, 6));
   EXPECT_EQ(gfx::RectF(0, 0, 19, 0),
             text2_node->GetTextContentRangeBoundsUTF16(2, 4));
 
-  // Offsets are manually converted between UTF-8 and UTF-16.
-  //
-  // `kThaiText` is 6 code units in UTF-16 and 18 in UTF-8.
-  EXPECT_EQ(gfx::RectF(0, 0, 0, 85),
-            text3_node->GetTextContentRangeBoundsUTF8(0, 18));
-  EXPECT_EQ(gfx::RectF(0, 66, 0, 10),
-            text3_node->GetTextContentRangeBoundsUTF8(6, 12));
+  // `kThaiText` is 6 code units in UTF-16.
   EXPECT_EQ(gfx::RectF(0, 0, 0, 85),
             text3_node->GetTextContentRangeBoundsUTF16(0, 6));
   EXPECT_EQ(gfx::RectF(0, 66, 0, 10),

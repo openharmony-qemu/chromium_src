@@ -10,7 +10,7 @@
 #include <iterator>
 #include <memory>
 
-#include "base/cxx17_backports.h"
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/memory/singleton.h"
 #include "base/metrics/histogram_functions.h"
@@ -21,11 +21,12 @@
 #include "base/task/single_thread_task_runner.h"
 #include "components/os_crypt/sync/key_storage_config_linux.h"
 #include "components/os_crypt/sync/key_storage_linux.h"
+#include "components/os_crypt/sync/os_crypt_metrics.h"
 #include "crypto/encryptor.h"
 #include "crypto/symmetric_key.h"
 
-#if defined(OHOS_ENCRYPT)
-#include "ohos_crypto.h"
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+#include "arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto.h"
 #endif
 
 namespace {
@@ -33,7 +34,7 @@ namespace {
 // Salt for Symmetric key derivation.
 constexpr char kSalt[] = "saltysalt";
 
-#ifndef OHOS_ENCRYPT
+#if !BUILDFLAG(ARKWEB_ENCRYPT)
 // Key size required for 128 bit AES.
 constexpr size_t kDerivedKeySizeInBits = 128;
 
@@ -44,11 +45,11 @@ constexpr size_t kEncryptionIterations = 1;
 constexpr size_t kIVBlockSizeAES128 = 16;
 #endif
 
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
 // Size of initialization vectore for GCM
 const size_t kIVSizeAESGCM = 12;
 
-constexpr char kDdataKeyAlias[] = "nweb_data_key";
+constexpr char kDataKeyAlias[] = "nweb_data_key";
 #endif
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
 // ciphertext with this string so that future data migration can detect
@@ -70,11 +71,11 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
     const std::string& password) {
   const std::string salt(kSalt);
 
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   std::unique_ptr<crypto::SymmetricKey> encryption_key(
       crypto::SymmetricKey::Import(
           crypto::SymmetricKey::AES,
-          crypto::ohos::get_symmetric_key_256(kDdataKeyAlias)));
+          crypto::ohos::get_symmetric_key_256(kDataKeyAlias)));
 #else
   // Create an encryption key from our password and salt.
   std::unique_ptr<crypto::SymmetricKey> encryption_key(
@@ -87,9 +88,24 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
   return encryption_key;
 }
 
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+// Generates a newly allocated SymmetricKey object compatibility with ota.
+// Ownership of the key is passed to the caller. Returns null key if a key
+// generation error occurs.
+std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForOtaFail() {
+  std::unique_ptr<crypto::SymmetricKey> encryption_key(
+      crypto::SymmetricKey::Import(
+          crypto::SymmetricKey::AES,
+          crypto::ohos::get_symmetric_key_256_for_ota(kDataKeyAlias)));
+  DCHECK(encryption_key);
+
+  return encryption_key;
+}
+#endif  // BUILDFLAG(ARKWEB_ENCRYPT)
+
 // Decrypt `ciphertext` using `encryption_key` and store the result in
 // `encryption_key`.
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
 bool DecryptWithIv(const std::string& ciphertext,
                    crypto::SymmetricKey* encryption_key,
                    std::string* plaintext,
@@ -143,7 +159,7 @@ void SetRawEncryptionKey(const std::string& key) {
 bool IsEncryptionAvailable() {
   return OSCryptImpl::GetInstance()->IsEncryptionAvailable();
 }
-#if !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ARKWEB)
 void UseMockKeyStorageForTesting(
     base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
         storage_provider_factory) {
@@ -164,9 +180,7 @@ OSCryptImpl* OSCryptImpl::GetInstance() {
                          base::LeakySingletonTraits<OSCryptImpl>>::get();
 }
 
-OSCryptImpl::OSCryptImpl()
-    : storage_provider_factory_(base::BindOnce(&OSCryptImpl::CreateKeyStorage,
-                                               base::Unretained(this))) {}
+OSCryptImpl::OSCryptImpl() = default;
 
 OSCryptImpl::~OSCryptImpl() = default;
 
@@ -195,7 +209,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
 
   // If we are able to create a V11 key (i.e. a KeyStorage was available), then
   // we'll use it. If not, we'll use V10.
-  crypto::SymmetricKey* encryption_key = GetPasswordV11();
+  crypto::SymmetricKey* encryption_key = GetPasswordV11(/*probe=*/false);
   std::string obfuscation_prefix = kObfuscationPrefixV11;
   if (!encryption_key) {
     encryption_key = GetPasswordV10();
@@ -206,7 +220,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
     return false;
   }
 
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   std::string iv = crypto::ohos::get_iv(kIVSizeAESGCM);
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
@@ -221,7 +235,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
   if (!encryptor.Encrypt(plaintext, ciphertext)) {
     return false;
   }
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   ciphertext->insert(0, iv);
 #endif
   // Prefix the cipher text with version information.
@@ -241,15 +255,24 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
   // with prefix won't happen.
   crypto::SymmetricKey* encryption_key = nullptr;
   std::string obfuscation_prefix;
+  os_crypt::EncryptionPrefixVersion encryption_version =
+      os_crypt::EncryptionPrefixVersion::kNoVersion;
+
   if (base::StartsWith(ciphertext, kObfuscationPrefixV10,
                        base::CompareCase::SENSITIVE)) {
     encryption_key = GetPasswordV10();
     obfuscation_prefix = kObfuscationPrefixV10;
+    encryption_version = os_crypt::EncryptionPrefixVersion::kVersion10;
   } else if (base::StartsWith(ciphertext, kObfuscationPrefixV11,
                               base::CompareCase::SENSITIVE)) {
-    encryption_key = GetPasswordV11();
+    encryption_key = GetPasswordV11(/*probe=*/false);
     obfuscation_prefix = kObfuscationPrefixV11;
-  } else {
+    encryption_version = os_crypt::EncryptionPrefixVersion::kVersion11;
+  }
+
+  os_crypt::LogEncryptionVersion(encryption_version);
+
+  if (encryption_version == os_crypt::EncryptionPrefixVersion::kNoVersion) {
     // If the prefix is not found then we'll assume we're dealing with
     // old data saved as clear text and we'll return it directly.
     *plaintext = ciphertext;
@@ -261,7 +284,7 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
     return false;
   }
 
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
     return true;
   }
@@ -274,19 +297,33 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
   std::string raw_ciphertext = ciphertext.substr(obfuscation_prefix.length());
 #endif
 
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
+    return true;
+  } else {
+    // Retry use before second encrypted key to decrypt password
+    crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
+    if (!encryption_key_ota) {
+      VLOG(1) << "Decryption failed: could not get the key in ota";
+      return false;
+    }
+    if (DecryptWithIv(raw_ciphertext, encryption_key_ota, plaintext, iv)) {
+      LOG(INFO) << "decryption success with ota compatible key";
+      return true;
+    }
+  }
+
 #else
   if (DecryptWith(raw_ciphertext, encryption_key, plaintext)) {
-#endif
     base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
     return true;
   }
+#endif
 
   // Some clients have encrypted data with an empty key. See
   // crbug.com/1195256.
   auto empty_key = GenerateEncryptionKey(std::string());
-#if defined(OHOS_ENCRYPT)
+#if BUILDFLAG(ARKWEB_ENCRYPT)
   if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
 #else
   if (DecryptWith(raw_ciphertext, empty_key.get(), plaintext)) {
@@ -308,7 +345,7 @@ void OSCryptImpl::SetConfig(std::unique_ptr<os_crypt::Config> config) {
 }
 
 bool OSCryptImpl::IsEncryptionAvailable() {
-  return GetPasswordV11();
+  return GetPasswordV11(/*probe=*/true);
 }
 
 void OSCryptImpl::SetRawEncryptionKey(const std::string& raw_key) {
@@ -325,19 +362,19 @@ void OSCryptImpl::SetRawEncryptionKey(const std::string& raw_key) {
   }
   // Always set |is_password_v11_cached_|, even if given an empty string.
   // Note that |raw_key| can be an empty string if real V11 encryption is not
-  // available, and setting |is_password_v11_cached_| causes GetPasswordV11() to
+  // available, and setting |is_password_v11_cached_| causes GetPasswordV11 to
   // correctly return nullptr in that case.
   is_password_v11_cached_ = true;
 }
 
 std::string OSCryptImpl::GetRawEncryptionKey() {
-  if (crypto::SymmetricKey* key = GetPasswordV11()) {
+  if (crypto::SymmetricKey* key = GetPasswordV11(/*probe=*/false)) {
     return key->key();
   }
   return std::string();
 }
 
-#if !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::ClearCacheForTesting() {
   password_v10_cache_.reset();
   password_v11_cache_.reset();
@@ -348,26 +385,12 @@ void OSCryptImpl::ClearCacheForTesting() {
 void OSCryptImpl::UseMockKeyStorageForTesting(
     base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
         storage_provider_factory) {
-  if (storage_provider_factory) {
-    storage_provider_factory_ = std::move(storage_provider_factory);
-  } else {
-    storage_provider_factory_ =
-        base::BindOnce(&OSCryptImpl::CreateKeyStorage, base::Unretained(this));
-  }
+  base::AutoLock auto_lock(OSCryptImpl::GetLock());
+  storage_provider_factory_for_testing_ = std::move(storage_provider_factory);
 }
 #endif
 
-// Create the KeyStorage. Will be null if no service is found. A Config must be
-// set before every call to this function.
-std::unique_ptr<KeyStorageLinux> OSCryptImpl::CreateKeyStorage() {
-  CHECK(config_);
-  std::unique_ptr<KeyStorageLinux> key_storage =
-      KeyStorageLinux::CreateService(*config_);
-  config_.reset();
-  return key_storage;
-}
-
-#if !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::SetEncryptionPasswordForTesting(const std::string& password) {
   ClearCacheForTesting();  // IN-TEST
   password_v11_cache_ = GenerateEncryptionKey(password);
@@ -384,26 +407,48 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
   return password_v10_cache_.get();
 }
 
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
+  base::AutoLock auto_lock(OSCryptImpl::GetLock());
+  if (!password_ota_cache_.get()) {
+    password_ota_cache_ = GenerateEncryptionKeyForOtaFail();
+  }
+  return password_ota_cache_.get();
+}
+
+#endif
 // Caches and returns the password from the KeyStorage or null if there is no
 // service. Is thread-safe.
-crypto::SymmetricKey* OSCryptImpl::GetPasswordV11() {
+crypto::SymmetricKey* OSCryptImpl::GetPasswordV11(bool probe) {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
-  if (!is_password_v11_cached_) {
-#if defined(OHOS_COOKIE)
+  if (is_password_v11_cached_) {
+#if BUILDFLAG(ARKWEB_COOKIE)
     if (!config_) {
       return nullptr;
     }
-#endif // defined(OHOS_COOKIE)
-    std::unique_ptr<KeyStorageLinux> key_storage =
-        std::move(storage_provider_factory_).Run();
-    if (key_storage) {
-      absl::optional<std::string> key = key_storage->GetKey();
-      if (key.has_value()) {
-        password_v11_cache_ = GenerateEncryptionKey(*key);
-      }
-    }
-    is_password_v11_cached_ = true;
+#endif  // BUILDFLAG(ARKWEB_COOKIE)
+    return password_v11_cache_.get();
   }
+
+  std::unique_ptr<KeyStorageLinux> key_storage;
+  if (storage_provider_factory_for_testing_) {
+    key_storage = std::move(storage_provider_factory_for_testing_).Run();
+  } else {
+    CHECK(probe || config_);
+    if (config_) {
+      key_storage = KeyStorageLinux::CreateService(*config_);
+      config_.reset();
+    }
+  }
+
+  if (key_storage) {
+    std::optional<std::string> key = key_storage->GetKey();
+    if (key.has_value()) {
+      password_v11_cache_ = GenerateEncryptionKey(*key);
+    }
+  }
+
+  is_password_v11_cached_ = true;
   return password_v11_cache_.get();
 }
 

@@ -11,26 +11,27 @@
 #import "base/metrics/user_metrics_action.h"
 #import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/sessions/ios_chrome_tab_restore_service_factory.h"
-#import "ios/chrome/browser/sessions/session_restoration_browser_agent.h"
 #import "ios/chrome/browser/shared/coordinator/alert/action_sheet_coordinator.h"
-#import "ios/chrome/browser/snapshots/snapshot_browser_agent.h"
-#import "ios/chrome/browser/tabs/inactive_tabs/features.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_browser_agent.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
+#import "ios/chrome/browser/tabs/model/tabs_closer.h"
 #import "ios/chrome/browser/ui/settings/settings_navigation_controller.h"
-#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_view_controller.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/regular/regular_grid_view_controller.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_constants.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_coordinator_delegate.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_grid_view_controller.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_mediator.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_user_education_coordinator.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_view_controller.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/tab_context_menu/tab_context_menu_helper.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/grit/ios_strings.h"
+#import "ios/web/public/web_state_id.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ui/strings/grit/ui_strings.h"
 
 // A view that can be dimmed continusouly between no dimming and being fully
 // dimmed (the view is then fully black).
@@ -95,11 +96,11 @@ const CGFloat kMinForwardVelocityToDismiss = 100;
 // dismissal of the view controller, when the swiped position is already more
 // than half of the screen's width.
 const CGFloat kMinBackwardVelocityToCancelDismiss = 10;
-
-// NSUserDefaults key to check whether the user education screen has ever been
-// shown. The associated value in user defaults is a BOOL.
-NSString* const kInactiveTabsUserEducationShownOnce =
-    @"InactiveTabsUserEducationShownOnce";
+// When the inactive tabs grid would be emptied (last inactive tab, or closing
+// all inactive tabs via the confirmation dialog), the Inactive Tabs grid is
+// popped, but to avoid having it emptied immediately (producing a glitch),
+// delay the closing of the tab(s) in the mediator.
+const base::TimeDelta kPopUIDelay = base::Seconds(0.3);
 
 }  // namespace
 
@@ -133,11 +134,6 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 // Whether settings are currently presented.
 @property(nonatomic, getter=isPresetingSettings) BOOL presentingSettings;
 
-// Optional block called when settings are dismissed. This is because there
-// sometimes is work that needs to be delayed between the time the settings are
-// changed, and when the UI is updated.
-@property(nonatomic, copy) ProceduralBlock onSettingsDismissedBlock;
-
 // The optional user education coordinator shown the first time Inactive Tabs
 // are displayed.
 @property(nonatomic, strong)
@@ -150,23 +146,25 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   __weak id<InactiveTabsCoordinatorDelegate> _delegate;
 
   // Provides the context menu for the tabs on the grid.
-  __weak id<TabContextMenuProvider> _menuProvider;
+  TabContextMenuHelper* _contextMenuProvider;
+
+  // The navigation controller for inactive tabs settings.
+  SettingsNavigationController* _settingsController;
+
+  ActionSheetCoordinator* _actionSheetCoordinator;
 }
 
 #pragma mark - Public
 
-- (instancetype)
-    initWithBaseViewController:(UIViewController*)viewController
-                       browser:(Browser*)browser
-                      delegate:(id<InactiveTabsCoordinatorDelegate>)delegate
-                  menuProvider:(id<TabContextMenuProvider>)menuProvider {
+- (instancetype)initWithBaseViewController:(UIViewController*)viewController
+                                   browser:(Browser*)browser
+                                  delegate:(id<InactiveTabsCoordinatorDelegate>)
+                                               delegate {
   CHECK(IsInactiveTabsAvailable());
-  CHECK(menuProvider);
   CHECK(delegate);
   self = [super initWithBaseViewController:viewController browser:browser];
   if (self) {
     _delegate = delegate;
-    _menuProvider = menuProvider;
   }
   return self;
 }
@@ -175,26 +173,28 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   return self.mediator;
 }
 
+- (id<GridToolbarsConfigurationProvider>)toolbarsConfigurationProvider {
+  return self.mediator;
+}
+
 #pragma mark - ChromeCoordinator
 
 - (void)start {
   [super start];
 
-  // Create the mediator.
-  SessionRestorationBrowserAgent* sessionRestorationBrowserAgent =
-      SessionRestorationBrowserAgent::FromBrowser(self.browser);
-  SnapshotBrowserAgent* snapshotBrowserAgent =
-      SnapshotBrowserAgent::FromBrowser(self.browser);
-  sessions::TabRestoreService* tabRestoreService =
-      IOSChromeTabRestoreServiceFactory::GetForBrowserState(
-          self.browser->GetBrowserState());
+  _contextMenuProvider = [[TabContextMenuHelper alloc]
+             initWithProfile:self.browser->GetActiveBrowser()->GetProfile()
+      tabContextMenuDelegate:self.tabContextMenuDelegate];
 
+  Browser* browser = self.browser;
+  SnapshotStorageWrapper* snapshotStorage =
+      SnapshotBrowserAgent::FromBrowser(browser)->snapshot_storage();
   self.mediator = [[InactiveTabsMediator alloc]
-         initWithWebStateList:self.browser->GetWebStateList()
-                  prefService:GetApplicationContext()->GetLocalState()
-      sessionRestorationAgent:sessionRestorationBrowserAgent
-                snapshotAgent:snapshotBrowserAgent
-            tabRestoreService:tabRestoreService];
+      initWithWebStateList:browser->GetWebStateList()
+               prefService:GetApplicationContext()->GetLocalState()
+           snapshotStorage:snapshotStorage
+                tabsCloser:std::make_unique<TabsCloser>(
+                               browser, TabsCloser::ClosePolicy::kAllTabs)];
 }
 
 - (void)show {
@@ -202,6 +202,7 @@ NSString* const kInactiveTabsUserEducationShownOnce =
     return;
   }
   self.showing = YES;
+  base::RecordAction(base::UserMetricsAction("MobileInactiveTabGridEntered"));
 
   // Create the view controller.
   self.viewController = [[InactiveTabsViewController alloc] init];
@@ -217,7 +218,7 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 
   self.mediator.consumer = self.viewController.gridViewController;
 
-  self.viewController.gridViewController.menuProvider = _menuProvider;
+  self.viewController.gridViewController.menuProvider = _contextMenuProvider;
 
   // Add the Inactive Tabs view controller to the hierarchy.
   UIView* baseView = self.baseViewController.view;
@@ -262,12 +263,15 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   if (!self.showing) {
     return;
   }
+  base::RecordAction(base::UserMetricsAction("MobileInactiveTabGridExited"));
 
   [self.userEducationCoordinator stop];
   self.userEducationCoordinator = nil;
   if (self.presentingSettings) {
     [self closeSettings];
   }
+  [_actionSheetCoordinator stop];
+  _actionSheetCoordinator = nil;
   [self.viewController.gridViewController dismissModals];
 
   // Unhide the snapshot.
@@ -281,6 +285,7 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 
   [self.userEducationCoordinator stop];
   self.userEducationCoordinator = nil;
+  [self dismissActionSheetCoordinator];
 
   [self.mediator disconnect];
   self.mediator = nil;
@@ -289,104 +294,104 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 
 #pragma mark - GridViewControllerDelegate
 
-- (void)gridViewController:(GridViewController*)gridViewController
-       didSelectItemWithID:(NSString*)itemID {
+- (void)gridViewController:(BaseGridViewController*)gridViewController
+       didSelectItemWithID:(web::WebStateID)itemID {
   base::RecordAction(base::UserMetricsAction("MobileTabGridOpenInactiveTab"));
   [_delegate inactiveTabsCoordinator:self didSelectItemWithID:itemID];
-  [_delegate inactiveTabsCoordinatorDidFinish:self];
+  [self didFinish];
 }
 
-- (void)gridViewController:(GridViewController*)gridViewController
-        didCloseItemWithID:(NSString*)itemID {
-  [self.mediator closeItemWithID:itemID];
-}
-
-- (void)didTapPlusSignInGridViewController:
-    (GridViewController*)gridViewController {
+- (void)gridViewController:(BaseGridViewController*)gridViewController
+            didSelectGroup:(const TabGroup*)group {
   NOTREACHED();
 }
 
-- (void)gridViewController:(GridViewController*)gridViewController
-         didMoveItemWithID:(NSString*)itemID
-                   toIndex:(NSUInteger)destinationIndex {
-  NOTREACHED();
-}
+- (void)gridViewController:(BaseGridViewController*)gridViewController
+        didCloseItemWithID:(web::WebStateID)itemID {
+  __weak __typeof(self) weakSelf = self;
+  auto closeItem = ^{
+    [weakSelf.mediator closeItemWithID:itemID];
+  };
 
-- (void)gridViewController:(GridViewController*)gridViewController
-        didChangeItemCount:(NSUInteger)count {
-  // Close the Inactive Tabs view when closing the last inactive tab.
-  if (count == 0 && self.showing) {
-    __weak __typeof(self) weakSelf = self;
-    ProceduralBlock didFinish = ^{
-      InactiveTabsCoordinator* strongSelf = weakSelf;
-      if (!strongSelf) {
-        return;
-      }
-      [strongSelf->_delegate inactiveTabsCoordinatorDidFinish:strongSelf];
-    };
-
-    // Delay updating the UI if settings are presented.
-    if (self.presentingSettings) {
-      self.onSettingsDismissedBlock = didFinish;
-    } else {
-      didFinish();
-    }
+  NSInteger numberOfTabs = [self.mediator numberOfItems];
+  // If it is the latest item, pop the view (UI change), and defer the model
+  // change after the UI is no longer visible.
+  if (numberOfTabs <= 1) {
+    // Pop the view controller.
+    [self didFinish];
+    // To prevent the Inactive Tabs grid from being immediately emptied, defer
+    // the closing to after the view is popped.
+    base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
+        FROM_HERE, base::BindOnce(closeItem), kPopUIDelay);
+  } else {
+    // Otherwise, close the item immediately.
+    closeItem();
   }
 }
 
-- (void)gridViewController:(GridViewController*)gridViewController
-       didRemoveItemWIthID:(NSString*)itemID {
-  // No op.
-}
-
-- (void)didChangeLastItemVisibilityInGridViewController:
-    (GridViewController*)gridViewController {
-  // No op.
-}
-
-- (void)gridViewController:(GridViewController*)gridViewController
-    contentNeedsAuthenticationChanged:(BOOL)needsAuth {
+- (void)gridViewControllerDidMoveItem:
+    (BaseGridViewController*)gridViewController {
   NOTREACHED();
 }
 
-- (void)gridViewControllerWillBeginDragging:
-    (GridViewController*)gridViewController {
+- (void)gridViewController:(BaseGridViewController*)gridViewController
+       didRemoveItemWithID:(web::WebStateID)itemID {
   // No op.
 }
 
-- (void)gridViewControllerDragSessionWillBegin:
-    (GridViewController*)gridViewController {
+- (void)gridViewControllerDragSessionWillBeginForTab:
+    (BaseGridViewController*)gridViewController {
   // No op.
+}
+
+- (void)gridViewControllerDragSessionWillBeginForTabGroup:
+    (BaseGridViewController*)gridViewController {
+  // No-op.
 }
 
 - (void)gridViewControllerDragSessionDidEnd:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   // No op.
 }
 
 - (void)gridViewControllerScrollViewDidScroll:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   // No op.
 }
 
 - (void)gridViewControllerDropAnimationWillBegin:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   NOTREACHED();
 }
 
 - (void)gridViewControllerDropAnimationDidEnd:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   NOTREACHED();
 }
 
 - (void)didTapInactiveTabsButtonInGridViewController:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   NOTREACHED();
 }
 
 - (void)didTapInactiveTabsSettingsLinkInGridViewController:
-    (GridViewController*)gridViewController {
+    (BaseGridViewController*)gridViewController {
   [self presentSettings];
+}
+
+- (void)gridViewControllerDidRequestContextMenu:
+    (BaseGridViewController*)gridViewController {
+  // No-op.
+}
+
+- (void)gridViewControllerDropSessionDidEnter:
+    (BaseGridViewController*)gridViewController {
+  // No-op.
+}
+
+- (void)gridViewControllerDropSessionDidExit:
+    (BaseGridViewController*)gridViewController {
+  // No-op.
 }
 
 #pragma mark - InactiveTabsUserEducationCoordinatorDelegate
@@ -410,7 +415,7 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 
 - (void)inactiveTabsViewControllerDidTapBackButton:
     (InactiveTabsViewController*)inactiveTabsViewController {
-  [_delegate inactiveTabsCoordinatorDidFinish:self];
+  [self didFinish];
 }
 
 - (void)inactiveTabsViewController:
@@ -433,27 +438,33 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   NSString* message = l10n_util::GetNSString(
       IDS_IOS_INACTIVE_TABS_CLOSE_ALL_CONFIRMATION_MESSAGE);
 
-  ActionSheetCoordinator* actionSheetCoordinator =
-      [[ActionSheetCoordinator alloc]
-          initWithBaseViewController:self.baseViewController
-                             browser:self.browser
-                               title:title
-                             message:message
-                       barButtonItem:barButtonItem];
+  [_actionSheetCoordinator stop];
+  _actionSheetCoordinator = [[ActionSheetCoordinator alloc]
+      initWithBaseViewController:self.baseViewController
+                         browser:self.browser
+                           title:title
+                         message:message
+                   barButtonItem:barButtonItem];
 
   __weak __typeof(self) weakSelf = self;
   NSString* closeAllActionTitle = l10n_util::GetNSString(
       IDS_IOS_INACTIVE_TABS_CLOSE_ALL_CONFIRMATION_OPTION);
-  [actionSheetCoordinator
+  [_actionSheetCoordinator
       addItemWithTitle:closeAllActionTitle
                 action:^{
                   base::RecordAction(base::UserMetricsAction(
                       "MobileInactiveTabsCloseAllConfirm"));
                   [weakSelf closeAllInactiveTabs];
+                  [weakSelf dismissActionSheetCoordinator];
                 }
                  style:UIAlertActionStyleDestructive];
-
-  [actionSheetCoordinator start];
+  [_actionSheetCoordinator
+      addItemWithTitle:l10n_util::GetNSString(IDS_APP_CANCEL)
+                action:^{
+                  [weakSelf dismissActionSheetCoordinator];
+                }
+                 style:UIAlertActionStyleCancel];
+  [_actionSheetCoordinator start];
 }
 
 #pragma mark - SettingsNavigationControllerDelegate
@@ -473,20 +484,16 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   [self onSettingsDismissed];
 }
 
-- (id<ApplicationCommands, BrowserCommands, BrowsingDataCommands>)
-    handlerForSettings {
+- (id<ApplicationCommands, BrowserCommands>)handlerForSettings {
   NOTREACHED();
-  return nil;
 }
 
 - (id<ApplicationCommands>)handlerForApplicationCommands {
   NOTREACHED();
-  return nil;
 }
 
 - (id<SnackbarCommands>)handlerForSnackbarCommands {
   NOTREACHED();
-  return nil;
 }
 
 #pragma mark - Actions
@@ -534,6 +541,16 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 }
 
 #pragma mark - Private
+
+// Called when inactive tabs should be dismissed.
+- (void)didFinish {
+  [_delegate inactiveTabsCoordinatorDidFinish:self];
+}
+
+- (void)dismissActionSheetCoordinator {
+  [_actionSheetCoordinator stop];
+  _actionSheetCoordinator = nil;
+}
 
 // Called to make the Inactive Tabs grid appear in an animation.
 - (void)animateIn {
@@ -619,7 +636,7 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 // no-op.
 - (void)startUserEducationIfNeeded {
   NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-  if ([defaults boolForKey:kInactiveTabsUserEducationShownOnce]) {
+  if ([defaults boolForKey:kInactiveTabsUserEducationShownOnceKey]) {
     return;
   }
 
@@ -631,23 +648,29 @@ NSString* const kInactiveTabsUserEducationShownOnce =
   [self.userEducationCoordinator start];
 
   // Record the presentation.
-  [defaults setBool:YES forKey:kInactiveTabsUserEducationShownOnce];
+  [defaults setBool:YES forKey:kInactiveTabsUserEducationShownOnceKey];
 }
 
 // Called when the user confirmed wanting to close all inactive tabs.
 - (void)closeAllInactiveTabs {
-  [_delegate inactiveTabsCoordinatorDidFinish:self];
-  [self.mediator closeAllItems];
+  [self didFinish];
+  // To prevent the Inactive Tabs grid from being immediately emptied, defer the
+  // closing to after the view is popped.
+  __weak __typeof(self) weakSelf = self;
+  base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
+      FROM_HERE, base::BindOnce(^{
+        [weakSelf.mediator closeAllItems];
+      }),
+      kPopUIDelay);
 }
 
 // Presents the Inactive Tabs settings modally in their own navigation
 // controller.
 - (void)presentSettings {
-  SettingsNavigationController* settingsController =
-      [SettingsNavigationController
-          inactiveTabsControllerForBrowser:self.browser
-                                  delegate:self];
-  [self.viewController presentViewController:settingsController
+  _settingsController = [SettingsNavigationController
+      inactiveTabsControllerForBrowser:self.browser
+                              delegate:self];
+  [self.viewController presentViewController:_settingsController
                                     animated:YES
                                   completion:nil];
   self.presentingSettings = YES;
@@ -656,9 +679,16 @@ NSString* const kInactiveTabsUserEducationShownOnce =
 // Called when Inactive Tabs settings are dismissed.
 - (void)onSettingsDismissed {
   self.presentingSettings = NO;
-  if (self.onSettingsDismissedBlock) {
-    self.onSettingsDismissedBlock();
-    self.onSettingsDismissedBlock = nil;
+  [_settingsController cleanUpSettings];
+  _settingsController = nil;
+  [self popIfNeeded];
+}
+
+// Tells the delegate this coordinator did finish if it was showing its view
+// controller and had no item left.
+- (void)popIfNeeded {
+  if ([self.mediator numberOfItems] == 0 && self.showing) {
+    [self didFinish];
   }
 }
 

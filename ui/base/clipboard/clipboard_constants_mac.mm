@@ -19,7 +19,8 @@ NSString* const kUTTypeChromiumPrivilegedInitiatedDrag =
 NSString* const kUTTypeChromiumRendererInitiatedDrag =
     @"org.chromium.chromium-renderer-initiated-drag";
 
-NSString* const kUTTypeChromiumWebCustomData = @"org.chromium.web-custom-data";
+NSString* const kUTTypeChromiumDataTransferCustomData =
+    @"org.chromium.web-custom-data";
 
 NSString* const kUTTypeConfidentialData = @"org.nspasteboard.ConcealedType";
 
@@ -42,5 +43,7 @@ NSString* const kUTTypeWebKitWebSmartPaste =
 // https://github.com/WebKit/WebKit/search?q=WebURLsWithTitlesPboardType
 NSString* const kUTTypeWebKitWebURLsWithTitles =
     @"dyn.ah62d4rv4gu8zs3pcnzme2641rf4guzdmsv0gn64uqm10c6xenv61a3k";
+
+NSString* const kUTTypeChromiumSourceURL = @"org.chromium.source-url";
 
 }  // namespace ui

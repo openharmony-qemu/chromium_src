@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/containers/span.h"
 #include "base/memory/read_only_shared_memory_region.h"
@@ -61,6 +62,10 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafilePlayer {
                           bool fit_to_page) const = 0;
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  virtual bool OhosFinishDocument(std::function<bool()> checkCancel) = 0;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
   // Populates the buffer with the underlying data. This function should ONLY be
   // called after the metafile is closed. Returns true if writing succeeded.
   virtual bool GetDataAsVector(std::vector<char>* buffer) const = 0;
@@ -76,7 +81,7 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafilePlayer {
   // a local copy made of such data.  This query determines if such a copy needs
   // to be made by the caller, since not all implementations are required to
   // automatically do so.
-  // TODO(crbug.com/1135729)  Eliminate concern about making a copy when the
+  // TODO(crbug.com/40151989)  Eliminate concern about making a copy when the
   // shared memory can't be written by the sender.
   virtual bool ShouldCopySharedMemoryRegionData() const = 0;
 
@@ -111,7 +116,6 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) Metafile : public MetafilePlayer {
   virtual bool Init() = 0;
 
   // Initializes the metafile with `data`. Returns true on success.
-  // Note: It should only be called from within the browser process.
   virtual bool InitFromData(base::span<const uint8_t> data) = 0;
 
   // Prepares a context for rendering a new page with the given `page_size`,
@@ -157,10 +161,6 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) Metafile : public MetafilePlayer {
   virtual bool Playback(printing::NativeDrawingContext hdc,
                         const RECT* rect) const = 0;
 #endif  // BUILDFLAG(IS_WIN)
-
-#if defined(OHOS_PRINT)
-  virtual bool OhosFinishDocument(std::function<bool()> checkCancel) = 0;
-#endif // defined(OHOS_PRINT)
 
   // MetfilePlayer implementation.
   bool GetDataAsVector(std::vector<char>* buffer) const override;

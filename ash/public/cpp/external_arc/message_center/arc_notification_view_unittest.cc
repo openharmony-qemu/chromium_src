@@ -2,23 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "ash/public/cpp/external_arc/message_center/arc_notification_view.h"
+
 #include <memory>
 
 #include "ash/public/cpp/external_arc/message_center/arc_notification_content_view.h"
 #include "ash/public/cpp/external_arc/message_center/arc_notification_item.h"
 #include "ash/public/cpp/external_arc/message_center/arc_notification_surface.h"
-#include "ash/public/cpp/external_arc/message_center/arc_notification_view.h"
 #include "ash/public/cpp/external_arc/message_center/mock_arc_notification_item.h"
 #include "ash/public/cpp/external_arc/message_center/mock_arc_notification_surface.h"
 #include "ash/public/cpp/message_center/arc_notification_constants.h"
 #include "ash/shell.h"
-#include "ash/system/message_center/message_view_factory.h"
+#include "ash/system/notification_center/message_view_factory.h"
 #include "ash/test/ash_test_base.h"
 #include "ash/wm/desks/desks_util.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/base/ime/dummy_text_input_client.h"
@@ -26,6 +28,8 @@
 #include "ui/base/ime/text_input_client.h"
 #include "ui/compositor/layer.h"
 #include "ui/compositor/scoped_animation_duration_scale_mode.h"
+#include "ui/compositor/test/layer_animation_stopped_waiter.h"
+#include "ui/compositor/test/test_utils.h"
 #include "ui/events/event.h"
 #include "ui/events/event_utils.h"
 #include "ui/events/test/event_generator.h"
@@ -96,12 +100,11 @@ class ArcNotificationViewTest : public AshTestBase {
     UpdateNotificationViews(*notification);
 
     views::Widget::InitParams init_params(
+        views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET,
         views::Widget::InitParams::TYPE_WINDOW_FRAMELESS);
     init_params.context = GetContext();
     init_params.parent = Shell::GetPrimaryRootWindow()->GetChildById(
         desks_util::GetActiveDeskContainerId());
-    init_params.ownership =
-        views::Widget::InitParams::WIDGET_OWNS_NATIVE_WIDGET;
     views::Widget* widget = new views::Widget();
     widget->Init(std::move(init_params));
     widget->SetContentsView(std::move(notification_view));
@@ -132,19 +135,21 @@ class ArcNotificationViewTest : public AshTestBase {
 
   void PerformClick(const gfx::Point& point) {
     ui::MouseEvent pressed_event = ui::MouseEvent(
-        ui::ET_MOUSE_PRESSED, point, point, ui::EventTimeForNow(),
+        ui::EventType::kMousePressed, point, point, ui::EventTimeForNow(),
         ui::EF_LEFT_MOUSE_BUTTON, ui::EF_LEFT_MOUSE_BUTTON);
     widget()->OnMouseEvent(&pressed_event);
     ui::MouseEvent released_event = ui::MouseEvent(
-        ui::ET_MOUSE_RELEASED, point, point, ui::EventTimeForNow(),
+        ui::EventType::kMouseReleased, point, point, ui::EventTimeForNow(),
         ui::EF_LEFT_MOUSE_BUTTON, ui::EF_LEFT_MOUSE_BUTTON);
     widget()->OnMouseEvent(&released_event);
   }
 
   void PerformKeyEvents(ui::KeyboardCode code) {
-    ui::KeyEvent event1 = ui::KeyEvent(ui::ET_KEY_PRESSED, code, ui::EF_NONE);
+    ui::KeyEvent event1 =
+        ui::KeyEvent(ui::EventType::kKeyPressed, code, ui::EF_NONE);
     widget()->OnKeyEvent(&event1);
-    ui::KeyEvent event2 = ui::KeyEvent(ui::ET_KEY_RELEASED, code, ui::EF_NONE);
+    ui::KeyEvent event2 =
+        ui::KeyEvent(ui::EventType::kKeyReleased, code, ui::EF_NONE);
     widget()->OnKeyEvent(&event2);
   }
 
@@ -161,6 +166,11 @@ class ArcNotificationViewTest : public AshTestBase {
         .x();
   }
 
+  bool IsPopupRemovedAfterIdle(const std::string& notification_id) const {
+    base::RunLoop().RunUntilIdle();
+    return !MessageCenter::Get()->FindPopupNotificationById(notification_id);
+  }
+
   bool IsRemovedAfterIdle(const std::string& notification_id) const {
     base::RunLoop().RunUntilIdle();
     return !MessageCenter::Get()->FindVisibleNotificationById(notification_id);
@@ -172,21 +182,29 @@ class ArcNotificationViewTest : public AshTestBase {
   }
 
   void BeginScroll() {
-    DispatchGesture(ui::GestureEventDetails(ui::ET_GESTURE_SCROLL_BEGIN));
+    DispatchGesture(
+        ui::GestureEventDetails(ui::EventType::kGestureScrollBegin));
   }
 
   void EndScroll() {
-    DispatchGesture(ui::GestureEventDetails(ui::ET_GESTURE_SCROLL_END));
+    DispatchGesture(ui::GestureEventDetails(ui::EventType::kGestureScrollEnd));
   }
 
   void ScrollBy(int dx) {
     DispatchGesture(
-        ui::GestureEventDetails(ui::ET_GESTURE_SCROLL_UPDATE, dx, 0));
+        ui::GestureEventDetails(ui::EventType::kGestureScrollUpdate, dx, 0));
   }
 
   ArcNotificationContentView* content_view() {
     return notification_view_->content_view_;
   }
+
+  views::View* collapsed_summary_view() {
+    return notification_view_->collapsed_summary_view_;
+  }
+
+  bool IsGroupChild() { return notification_view_->is_group_child_; }
+
   views::Widget* widget() { return notification_view_->GetWidget(); }
   ArcNotificationView* notification_view() { return notification_view_; }
 
@@ -208,11 +226,10 @@ class ArcNotificationViewTest : public AshTestBase {
 
   std::unique_ptr<MockArcNotificationSurface> surface_;
   std::unique_ptr<Notification> notification_;
-  raw_ptr<ArcNotificationView, ExperimentalAsh> notification_view_ =
+  raw_ptr<ArcNotificationView> notification_view_ =
       nullptr;  // owned by its widget.
 
   std::unique_ptr<MockArcNotificationItem> item_;
-  std::unique_ptr<base::test::ScopedFeatureList> scoped_feature_list_;
 };
 
 TEST_F(ArcNotificationViewTest, Events) {
@@ -224,7 +241,7 @@ TEST_F(ArcNotificationViewTest, Events) {
             widget()->GetRootView()->GetEventHandlerForPoint(cursor_location));
 
   content_view()->RequestFocus();
-  ui::KeyEvent key_event(ui::ET_KEY_PRESSED, ui::VKEY_A, ui::EF_NONE);
+  ui::KeyEvent key_event(ui::EventType::kKeyPressed, ui::VKEY_A, ui::EF_NONE);
   EXPECT_EQ(content_view(),
             static_cast<ui::EventTargeter*>(
                 widget()->GetRootView()->GetEffectiveViewTargeter())
@@ -240,22 +257,22 @@ TEST_F(ArcNotificationViewTest, SlideOut) {
   BeginScroll();
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
   ScrollBy(-10);
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(-10.f, GetNotificationSlideAmount());
   EndScroll();
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
 
   BeginScroll();
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
   ScrollBy(-200);
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(-200.f, GetNotificationSlideAmount());
   EndScroll();
-  EXPECT_TRUE(IsRemovedAfterIdle(notification_id));
+  EXPECT_TRUE(IsPopupRemovedAfterIdle(notification_id));
 }
 
-// TODO(crbug.com/1410724): Flaky on MSAN bots.
+// TODO(crbug.com/40889858): Flaky on MSAN bots.
 #if defined(MEMORY_SANITIZER)
 #define MAYBE_SlideOutNested DISABLED_SlideOutNested
 #else
@@ -271,19 +288,19 @@ TEST_F(ArcNotificationViewTest, MAYBE_SlideOutNested) {
   BeginScroll();
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
   ScrollBy(-10);
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(-10.f, GetNotificationSlideAmount());
   EndScroll();
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
 
   BeginScroll();
   EXPECT_EQ(0.f, GetNotificationSlideAmount());
   ScrollBy(-200);
-  EXPECT_FALSE(IsRemovedAfterIdle(notification_id));
+  EXPECT_FALSE(IsPopupRemovedAfterIdle(notification_id));
   EXPECT_EQ(-200.f, GetNotificationSlideAmount());
   EndScroll();
-  EXPECT_TRUE(IsRemovedAfterIdle(notification_id));
+  EXPECT_TRUE(IsPopupRemovedAfterIdle(notification_id));
 }
 
 TEST_F(ArcNotificationViewTest, SlideOutPinned) {
@@ -367,19 +384,127 @@ TEST_F(ArcNotificationViewTest, ChangeContentHeight) {
   // Default size.
   gfx::Size size = notification_view()->GetPreferredSize();
   size.Enlarge(0, -notification_view()->GetInsets().height());
-  EXPECT_EQ("344x100", size.ToString());
+  EXPECT_EQ("100x100", size.ToString());
 
   // Allow small notifications.
   content_view()->SetPreferredSize(gfx::Size(10, 10));
   size = notification_view()->GetPreferredSize();
   size.Enlarge(0, -notification_view()->GetInsets().height());
-  EXPECT_EQ("344x10", size.ToString());
+  EXPECT_EQ("10x10", size.ToString());
 
   // The long notification.
   content_view()->SetPreferredSize(gfx::Size(1000, 1000));
   size = notification_view()->GetPreferredSize();
   size.Enlarge(0, -notification_view()->GetInsets().height());
-  EXPECT_EQ("344x1000", size.ToString());
+  EXPECT_EQ("1000x1000", size.ToString());
+}
+
+TEST_F(ArcNotificationViewTest, TrackPadGestureSlideOut) {
+  ui::ScopedAnimationDurationScaleMode zero_duration_scope(
+      ui::ScopedAnimationDurationScaleMode::ZERO_DURATION);
+
+  ui::test::EventGenerator generator(
+      (notification_view()->GetWidget()->GetNativeWindow()->GetRootWindow()));
+  generator.ScrollSequence(gfx::Point(), base::TimeDelta(), /*x_offset=*/200,
+                           /*y_offset=*/0, /*steps=*/1, /*num_fingers=*/2);
+  EXPECT_TRUE(IsPopupRemovedAfterIdle(kDefaultNotificationId));
+}
+
+class ArcNotificationViewRenderByChromeEnabledTest
+    : public ArcNotificationViewTest {
+ public:
+  ArcNotificationViewRenderByChromeEnabledTest() = default;
+
+  ArcNotificationViewRenderByChromeEnabledTest(
+      const ArcNotificationViewRenderByChromeEnabledTest&) = delete;
+  ArcNotificationViewRenderByChromeEnabledTest& operator=(
+      const ArcNotificationViewRenderByChromeEnabledTest&) = delete;
+
+  ~ArcNotificationViewRenderByChromeEnabledTest() override = default;
+
+  // Overridden from ViewsTestBase:
+  void SetUp() override {
+    scoped_feature_list_.InitAndEnableFeature(
+        ash::features::kRenderArcNotificationsByChrome);
+
+    ArcNotificationViewTest::SetUp();
+  }
+
+  // Check that smoothness should be recorded after an animation is performed on
+  // a particular view.
+  // This is copied from
+  // ash/system/notification_center/views/ash_notification_view_unittest.cc.
+  void CheckSmoothnessRecorded(base::HistogramTester& histograms,
+                               views::View* view,
+                               const char* animation_histogram_name,
+                               int data_point_count = 1) {
+    ui::Compositor* compositor = view->layer()->GetCompositor();
+
+    ui::LayerAnimationStoppedWaiter animation_waiter;
+    animation_waiter.Wait(view->layer());
+
+    // Force frames and wait for all throughput trackers to be gone to allow
+    // animation throughput data to be passed from cc to ui.
+    while (compositor->has_throughput_trackers_for_testing()) {
+      compositor->ScheduleFullRedraw();
+      std::ignore = ui::WaitForNextFrameToBePresented(compositor,
+                                                      base::Milliseconds(500));
+    }
+
+    // Smoothness should be recorded.
+    histograms.ExpectTotalCount(animation_histogram_name, data_point_count);
+  }
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
+};
+
+// TODO(b/324991437)): the test is disabled due to recent flaky results.
+TEST_F(ArcNotificationViewRenderByChromeEnabledTest,
+       DISABLED_AnimateGroupedChildExpandedCollapseChanged) {
+  // Enable animations.
+  ui::ScopedAnimationDurationScaleMode duration(
+      ui::ScopedAnimationDurationScaleMode::NORMAL_DURATION);
+
+  std::unique_ptr<Notification> notification = CreateSimpleNotification();
+  notification->SetGroupChild();
+  UpdateNotificationViews(*notification);
+  EXPECT_TRUE(IsGroupChild());
+  EXPECT_NE(nullptr, collapsed_summary_view());
+
+  // Expected histogram logged when expanding/collapsing.
+  notification_view()->AnimateGroupedChildExpandedCollapse(true);
+
+  base::HistogramTester tester_;
+  CheckSmoothnessRecorded(
+      tester_, collapsed_summary_view(),
+      "Arc.NotificationView.CollapsedSummaryView.FadeOut.AnimationSmoothness");
+
+  // Expected behavior in collapsed state.
+  notification_view()->AnimateGroupedChildExpandedCollapse(false);
+
+  CheckSmoothnessRecorded(
+      tester_, collapsed_summary_view(),
+      "Arc.NotificationView.CollapsedSummaryView.FadeIn.AnimationSmoothness");
+}
+
+TEST_F(ArcNotificationViewRenderByChromeEnabledTest,
+       GroupedChildExpandStateChanged) {
+  std::unique_ptr<Notification> notification = CreateSimpleNotification();
+  notification->SetGroupChild();
+  UpdateNotificationViews(*notification);
+  EXPECT_TRUE(IsGroupChild());
+  EXPECT_NE(nullptr, collapsed_summary_view());
+
+  // Expected behavior in expanded state.
+  notification_view()->SetGroupedChildExpanded(true);
+  EXPECT_TRUE(content_view()->GetVisible());
+  EXPECT_FALSE(collapsed_summary_view()->GetVisible());
+
+  // Expected behavior in collapsed state.
+  notification_view()->SetGroupedChildExpanded(false);
+  EXPECT_FALSE(content_view()->GetVisible());
+  EXPECT_TRUE(collapsed_summary_view()->GetVisible());
 }
 
 }  // namespace ash

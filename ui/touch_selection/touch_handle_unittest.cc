@@ -60,15 +60,9 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
 
   gfx::RectF GetVisibleBounds() const override { return data_->rect; }
 
-#if defined(OHOS_UNITTESTS)
-  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
-#endif
-
  private:
   raw_ptr<MockDrawableData> data_;
 };
-
-}  // namespace
 
 class TouchHandleTest : public testing::Test, public TouchHandleClient {
  public:
@@ -172,9 +166,7 @@ class TouchHandleTest : public testing::Test, public TouchHandleClient {
   bool NeedsAnimate() const { return needs_animate_; }
 
   const MockDrawableData& drawable() { return drawable_data_; }
-#if defined(OHOS_UNITTESTS)
-  void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) override {}
-#endif // OHOS_UNITTESTS
+
  private:
   gfx::PointF drag_position_;
   bool dragging_;
@@ -685,4 +677,5 @@ TEST_F(TouchHandleTest, ViewportSizeChange) {
   EXPECT_FALSE(drawable().mirror_horizontal);
 }
 
+}  // namespace
 }  // namespace ui

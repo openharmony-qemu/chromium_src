@@ -80,7 +80,7 @@ std::string GetTypeSignature(base::ValueView value) {
 
     std::string operator()(double) { return "d"; }
 
-    std::string operator()(base::StringPiece) { return "s"; }
+    std::string operator()(std::string_view) { return "s"; }
 
     std::string operator()(const base::Value::BlobStorage&) { return "ay"; }
 
@@ -175,7 +175,6 @@ base::Value PopDataAsValue(MessageReader* reader) {
     case Message::UNIX_FD: {
       // Cannot distinguish a file descriptor from an int
       NOTREACHED();
-      break;
     }
     case Message::ARRAY: {
       MessageReader sub_reader(nullptr);
@@ -207,7 +206,6 @@ base::Value PopDataAsValue(MessageReader* reader) {
     case Message::DICT_ENTRY:
       // DICT_ENTRY must be popped as an element of an array.
       NOTREACHED();
-      break;
     case Message::VARIANT: {
       MessageReader sub_reader(nullptr);
       if (reader->PopVariant(&sub_reader))
@@ -232,7 +230,9 @@ void AppendBasicTypeValueData(MessageWriter* writer, base::ValueView value) {
 
     void operator()(double value) { writer->AppendDouble(value); }
 
-    void operator()(base::StringPiece value) { writer->AppendString(value); }
+    void operator()(std::string_view value) {
+      writer->AppendString(std::string(value));
+    }
 
     void operator()(const base::Value::BlobStorage&) {
       DLOG(ERROR) << "Unexpected type: " << base::Value::Type::BINARY;
@@ -278,7 +278,7 @@ void AppendValueData(MessageWriter* writer, base::ValueView value) {
       return AppendBasicTypeValueData(writer, value);
     }
 
-    void operator()(base::StringPiece value) {
+    void operator()(std::string_view value) {
       return AppendBasicTypeValueData(writer, value);
     }
 

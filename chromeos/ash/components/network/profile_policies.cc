@@ -5,9 +5,11 @@
 #include "chromeos/ash/components/network/profile_policies.h"
 
 #include <iterator>
+#include <optional>
 #include <string>
 #include <utility>
 
+#include "base/containers/contains.h"
 #include "base/containers/flat_set.h"
 #include "base/values.h"
 #include "chromeos/ash/components/network/client_cert_util.h"
@@ -17,7 +19,6 @@
 #include "chromeos/components/onc/variable_expander.h"
 #include "components/device_event_log/device_event_log.h"
 #include "components/onc/onc_constants.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash {
 
@@ -122,7 +123,7 @@ ProfilePolicies::NetworkPolicy::GetPolicyWithRuntimeValues() const {
 
 ProfilePolicies::ChangeEffect
 ProfilePolicies::NetworkPolicy::ReapplyRuntimeValues() {
-  absl::optional<base::Value::Dict> old_policy_with_runtime_values =
+  std::optional<base::Value::Dict> old_policy_with_runtime_values =
       std::move(policy_with_runtime_values_);
 
   policy_with_runtime_values_ = parent_->runtime_values_setter_.Run(
@@ -151,7 +152,7 @@ base::flat_set<std::string> ProfilePolicies::ApplyOncNetworkConfigurationList(
         network.FindString(::onc::network_config::kGUID);
     DCHECK(guid_str && !guid_str->empty());
     std::string guid = *guid_str;
-    if (processed_guids.find(guid) != processed_guids.end()) {
+    if (base::Contains(processed_guids, guid)) {
       NET_LOG(ERROR) << "ONC Contains multiple entries for the same guid: "
                      << guid;
       continue;

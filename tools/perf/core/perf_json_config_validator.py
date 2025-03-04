@@ -25,18 +25,7 @@ _DEFAULT_VALID_PERF_POOLS = {
 _VALID_PERF_POOLS = {
     'android-builder-perf': {'chrome.tests'},
     'android_arm64-builder-perf': {'chrome.tests'},
-    'android-pixel4a_power-perf': {'chrome.tests.pinpoint'},
-    'android-pixel4a_power-perf-pgo': {'chrome.tests.pinpoint'},
-    'chromecast-linux-builder-perf': {'chrome.tests'},
     'chromeos-kevin-perf-fyi': {'chrome.tests'},
-    'chromeos-amd64-generic-lacros-builder-perf': {'chrome.tests'},
-    'chromeos-arm-generic-lacros-builder-perf': {'chrome.tests'},
-    'chromeos-arm64-generic-lacros-builder-perf': {'chrome.tests'},
-    'fuchsia-perf-fyi': {'chrome.tests'},
-    'fuchsia-perf-atlas-fyi': {'chrome.tests'},
-    'fuchsia-perf-nuc-fyi': {'chrome.tests'},
-    'fuchsia-perf-sherlock-fyi': {'chrome.tests'},
-    'fuchsia-perf-ast': {'chrome.tests'},
     'fuchsia-perf-nsn': {'chrome.tests'},
     'fuchsia-perf-shk': {'chrome.tests'},
     'linux-builder-perf': {'chrome.tests'},
@@ -144,6 +133,7 @@ def _ValidateBrowserType(builder_name, test_config):
       raise ValueError("%s must use 'lacros-chrome' browser type" %
                        builder_name)
   elif builder_name in ('win-10-perf', 'win-10-perf-pgo',
+                        'win-11-perf', 'win-11-perf-pgo',
                         'Win 7 Nvidia GPU Perf',
                         'win-10_laptop_low_end-perf_HP-Candidate',
                         'win-10_laptop_low_end-perf',
@@ -166,7 +156,7 @@ def ValidateTestingBuilder(builder_name, builder_data):
     _ValidateSwarmingDimension(
         builder_name,
         swarming_dimensions=test_config['swarming'].get('dimension_sets', {}))
-    if test_config['isolate_name'] in _PERFORMANCE_TEST_SUITES:
+    if test_config['test'] in _PERFORMANCE_TEST_SUITES:
       _ValidateShardingData(builder_name, test_config)
       _ValidateBrowserType(builder_name, test_config)
 

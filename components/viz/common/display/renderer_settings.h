@@ -12,6 +12,7 @@
 #include "build/build_config.h"
 #include "components/viz/common/display/overlay_strategy.h"
 #include "components/viz/common/viz_common_export.h"
+#include "ui/display/types/display_constants.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 
@@ -23,7 +24,6 @@ class VIZ_COMMON_EXPORT RendererSettings {
   RendererSettings(const RendererSettings& other);
   ~RendererSettings();
 
-  bool apply_simple_frame_rate_throttling = false;
   bool allow_antialiasing = true;
   bool force_antialiasing = false;
   bool force_blending_with_shaders = false;
@@ -38,16 +38,19 @@ class VIZ_COMMON_EXPORT RendererSettings {
 
   int slow_down_compositing_scale_factor = 1;
 
-  // The maximum number of occluding Rects to track during occlusion culling.
-  int kMaximumOccluderComplexity = 10;
+  struct VIZ_COMMON_EXPORT OcclusionCullerSettings {
+    // The maximum number of occluding rects to track during occlusion culling.
+    int maximum_occluder_complexity = 10;
+    // The maximum number (exclusive) of quads one draw quad may be split into
+    // during occlusion culling. e.g. an L-shaped visible region split into two
+    // quads
+    int quad_split_limit = 5;
+    // The minimum number of fragments that would not be drawn if a quads was
+    // split into multiple quads during occlusion culling.
+    int minimum_fragments_reduced = 128 * 128;
+  };
 
-  // The maximum number (exclusive) of quads one draw quad may be split into
-  // during occlusion culling. e.g. an L-shaped visible region split into two
-  // quads
-  int quad_split_limit = 5;
-  // The minimum number of fragments that would not be drawn if a quads was
-  // split into multiple quads during occlusion culling.
-  int minimum_fragments_reduced = 128 * 128;
+  OcclusionCullerSettings occlusion_culler_settings;
 
 #if BUILDFLAG(IS_ANDROID)
   // The screen size at renderer creation time.
@@ -64,7 +67,7 @@ class VIZ_COMMON_EXPORT RendererSettings {
 #if BUILDFLAG(IS_MAC)
   // CGDirectDisplayID for the screen on which the browser is currently
   // displayed.
-  int64_t display_id;
+  int64_t display_id = display::kInvalidDisplayId;
 #endif
 };
 

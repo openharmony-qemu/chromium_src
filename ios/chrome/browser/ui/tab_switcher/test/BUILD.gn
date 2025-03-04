@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 source_set("utils") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   testonly = true
   sources = [
     "query_title_server_util.h",
@@ -20,15 +19,23 @@ source_set("utils") {
 }
 
 source_set("fakes") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   sources = [
     "fake_drag_session.h",
     "fake_drag_session.mm",
     "fake_drop_session.h",
     "fake_drop_session.mm",
+    "fake_pinned_tab_collection_consumer.h",
+    "fake_pinned_tab_collection_consumer.mm",
     "fake_tab_collection_consumer.h",
     "fake_tab_collection_consumer.mm",
   ]
-  deps = [ "//ios/chrome/browser/ui/tab_switcher" ]
+  deps = [
+    "//base",
+    "//ios/chrome/browser/shared/model/web_state_list",
+    "//ios/chrome/browser/ui/tab_switcher",
+    "//ios/chrome/browser/ui/tab_switcher:items",
+    "//ios/chrome/browser/ui/tab_switcher/tab_grid/grid:grid_item_identifier",
+    "//ios/web/public",
+  ]
   frameworks = [ "UIKit.framework" ]
 }

@@ -9,7 +9,10 @@
 #include "base/notreached.h"
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/download_task_runner.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
+#endif
 
 namespace content {
 
@@ -32,11 +35,19 @@ SaveFile::~SaveFile() {
 
 download::DownloadInterruptReason SaveFile::Initialize() {
   int64_t bytes_wasted = 0;
+#if BUILDFLAG(IS_OHOS)
+  base::FilePath path;
+  base::PathService::Get(chrome::DIR_DEFAULT_DOWNLOADS, &path);
+  download::DownloadInterruptReason reason =
+      file_.Initialize(base::FilePath(), path, base::File(), 0, std::string(),
+                       nullptr, false, &bytes_wasted);
+#else
   download::DownloadInterruptReason reason = file_.Initialize(
       /*full_path=*/base::FilePath(), /*default_directory=*/base::FilePath(),
       /*file=*/base::File(), /*bytes_so_far=*/0, /*hash_so_far=*/std::string(),
       /*hash_state=*/nullptr, /*is_sparse_file=*/false,
       /*bytes_wasted*/ &bytes_wasted);
+#endif
   info_->path = FullPath();
   return reason;
 }
@@ -69,9 +80,11 @@ void SaveFile::AnnotateWithSourceInformation(
     const GURL& referrer_url,
     mojo::PendingRemote<quarantine::mojom::Quarantine> remote_quarantine,
     download::BaseFile::OnAnnotationDoneCallback on_annotation_done_callback) {
-  file_.AnnotateWithSourceInformation(client_guid, source_url, referrer_url,
-                                      std::move(remote_quarantine),
-                                      std::move(on_annotation_done_callback));
+  // TODO(crbug.com/351165321): Consider propagating request_initiator
+  // information here.
+  file_.AnnotateWithSourceInformation(
+      client_guid, source_url, referrer_url, /*request_initiator=*/std::nullopt,
+      std::move(remote_quarantine), std::move(on_annotation_done_callback));
 }
 
 base::FilePath SaveFile::FullPath() const {

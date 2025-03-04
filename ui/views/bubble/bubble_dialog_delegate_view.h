@@ -6,20 +6,27 @@
 #define UI_VIEWS_BUBBLE_BUBBLE_DIALOG_DELEGATE_VIEW_H_
 
 #include <memory>
+#include <optional>
+#include <string>
+#include <unordered_set>
 #include <utility>
 
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/raw_span.h"
 #include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
 #include "ui/base/class_property.h"
 #include "ui/base/metadata/metadata_header_macros.h"
+#include "ui/base/metadata/metadata_utils.h"
+#include "ui/base/mojom/dialog_button.mojom.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
 #include "ui/views/bubble/bubble_border.h"
 #include "ui/views/bubble/bubble_frame_view.h"
 #include "ui/views/metadata/view_factory.h"
 #include "ui/views/view_tracker.h"
+#include "ui/views/view_utils.h"
 #include "ui/views/widget/widget.h"
 #include "ui/views/widget/widget_observer.h"
 #include "ui/views/window/dialog_delegate.h"
@@ -41,7 +48,8 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   BubbleDialogDelegate(
       View* anchor_view,
       BubbleBorder::Arrow arrow,
-      BubbleBorder::Shadow shadow = BubbleBorder::DIALOG_SHADOW);
+      BubbleBorder::Shadow shadow = BubbleBorder::DIALOG_SHADOW,
+      bool autosize = false);
   BubbleDialogDelegate(const BubbleDialogDelegate& other) = delete;
   BubbleDialogDelegate& operator=(const BubbleDialogDelegate& other) = delete;
   ~BubbleDialogDelegate() override;
@@ -54,8 +62,14 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   ax::mojom::Role GetAccessibleWindowRole() final;
 
   // Create and initialize the bubble Widget with proper bounds.
+  // The default ownership for now is NATIVE_WIDGET_OWNS_WIDGET. If any other
+  // ownership mode is used, the returned Widget's lifetime must be managed by
+  // the caller. This is usually done by wrapping the pointer as a unique_ptr
+  // using base::WrapUnique().
   static Widget* CreateBubble(
-      std::unique_ptr<BubbleDialogDelegate> bubble_delegate);
+      std::unique_ptr<BubbleDialogDelegate> bubble_delegate,
+      Widget::InitParams::Ownership ownership =
+          Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
 
   //////////////////////////////////////////////////////////////////////////////
   // The anchor view and rectangle:
@@ -82,7 +96,7 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // TODO(ellyjones): Remove overrides of GetAnchorRect() and make this not
   // virtual.
   virtual gfx::Rect GetAnchorRect() const;
-  const absl::optional<gfx::Rect>& anchor_rect() const { return anchor_rect_; }
+  const std::optional<gfx::Rect>& anchor_rect() const { return anchor_rect_; }
   void SetAnchorRect(const gfx::Rect& rect);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -120,7 +134,7 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // before another function call which also sets bounds, so that bounds are
   // not set multiple times in a row. When animating bounds changes, setting
   // bounds twice in a row can make the widget position jump.
-  // TODO(crbug.com/982880) It would be good to be able to re-target the
+  // TODO(crbug.com/41470150) It would be good to be able to re-target the
   // animation rather than expect callers to use SetArrowWithoutResizing if they
   // are also changing the anchor rect, or similar.
   void SetArrowWithoutResizing(BubbleBorder::Arrow arrow);
@@ -143,7 +157,7 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // GetAnchorRect() has changed. You only need to do this if you have
   // overridden GetAnchorRect() - if you are using an anchor view or anchor rect
   // normally, do not call this.
-  void OnAnchorBoundsChanged();
+  virtual void OnAnchorBoundsChanged();
 
   // Call this method to update view shown time stamp of underneath input
   // protectors.
@@ -159,6 +173,12 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // Not intended to be overridden in production.
   virtual std::u16string GetSubtitle() const;
   void SetSubtitle(const std::u16string& subtitle);
+
+  bool GetSubtitleAllowCharacterBreak() const;
+  void SetSubtitleAllowCharacterBreak(bool allow);
+
+  // No setter: autosize_ should not be changed after construction.
+  bool is_autosized() const { return autosize_; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Miscellaneous bubble behaviors:
@@ -293,6 +313,8 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // Get the maximum available screen space to place a bubble anchored to
   // |anchor_view| at |arrow|. If offscreen adjustment is on, this would return
   // the max space corresponding to the possible arrow positions of the bubble.
+  // NOTE: This function should not be called in ozone platforms where global
+  // screen coordinates are not available.
   static gfx::Size GetMaxAvailableScreenSpaceToPlaceBubble(
       View* anchor_view,
       BubbleBorder::Arrow arrow,
@@ -310,9 +332,51 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // should be called only if you need to force update the bounds of the widget
   // and/or position of the bubble, for example if the size of the bubble's
   // content view changed.
+  // TODO(crbug.com/41493925) Not recommended; Use autosize in the constructor
+  // instead.
   void SizeToContents();
 
  protected:
+  // A helper class for logging UMA metrics related to bubbles.
+  // The class logs metrics to:
+  // 1. An aggregated histogram for all bubbles.
+  // 2. A histogram specific to a bubble subclass when its name is provided.
+  class VIEWS_EXPORT BubbleUmaLogger {
+   public:
+    BubbleUmaLogger();
+    ~BubbleUmaLogger();
+
+    void set_delegate(views::BubbleDialogDelegate* delegate) {
+      delegate_ = delegate;
+    }
+    void set_bubble_view(views::View* view) { bubble_view_ = view; }
+
+    void set_allowed_class_names_for_testing(
+        const base::span<const char* const>& value) {
+      allowed_class_names_for_testing_ = value;
+    }
+
+    std::optional<std::string> GetBubbleName() const;
+
+    base::WeakPtr<BubbleUmaLogger> GetWeakPtr();
+
+    // Logs a metric value to UMA histograms. This method logs to:
+    // - "Bubble.All.{histogram_name}" for the general bubble metric.
+    // - "Bubble.{bubble_name}.{histogram_name}" for a specific bubble
+    //   subclass, if `bubble_name` is set.
+    template <typename Value>
+    void LogMetric(void (*uma_func)(const std::string&, Value),
+                   const std::string& histogram_name,
+                   Value value) const;
+
+   private:
+    std::optional<raw_ptr<views::View>> bubble_view_;
+    std::optional<raw_ptr<views::BubbleDialogDelegate>> delegate_;
+    std::optional<base::raw_span<const char* const>>
+        allowed_class_names_for_testing_;
+    base::WeakPtrFactory<BubbleUmaLogger> weak_factory_{this};
+  };
+
   // Override this method if you want to position the bubble regardless of its
   // anchor, while retaining the other anchor view logic.
   virtual gfx::Rect GetBubbleBounds();
@@ -327,6 +391,8 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   void set_color_internal(SkColor color) { color_ = color; }
 
   bool color_explicitly_set() const { return color_explicitly_set_; }
+
+  BubbleUmaLogger& bubble_uma_logger() { return bubble_uma_logger_; }
 
   // Redeclarations of virtuals that BubbleDialogDelegate used to inherit from
   // WidgetObserver. These should not exist; do not add new overrides of them.
@@ -363,6 +429,7 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   friend class AnchorViewObserver;
   friend class AnchorWidgetObserver;
   friend class BubbleWidgetObserver;
+  friend class TestBubbleUmaLogger;
   friend class ThemeObserver;
 
   friend class BubbleBorderDelegate;
@@ -395,13 +462,15 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
 
   void SetAnchoredDialogKey();
 
+  gfx::Rect GetDesiredBubbleBounds();
+
   gfx::Insets title_margins_;
   gfx::Insets footnote_margins_;
   BubbleBorder::Arrow arrow_ = BubbleBorder::NONE;
   BubbleBorder::Shadow shadow_;
   SkColor color_ = gfx::kPlaceholderColor;
   bool color_explicitly_set_ = false;
-  raw_ptr<Widget, DanglingUntriaged> anchor_widget_ = nullptr;
+  raw_ptr<Widget> anchor_widget_ = nullptr;
   std::unique_ptr<AnchorViewObserver> anchor_view_observer_;
   std::unique_ptr<AnchorWidgetObserver> anchor_widget_observer_;
   std::unique_ptr<BubbleWidgetObserver> bubble_widget_observer_;
@@ -411,6 +480,11 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   ViewTracker highlighted_button_tracker_;
   ui::ImageModel main_image_;
   std::u16string subtitle_;
+  bool subtitle_allow_character_break_ = false;
+
+  // Whether the bubble should automatically resize to match its contents'
+  // preferred size.
+  bool autosize_ = false;
 
   // A flag controlling bubble closure on deactivation.
   bool close_on_deactivate_ = true;
@@ -420,10 +494,10 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
   // provided) should be highlighted when this bubble is shown.
   bool highlight_button_when_shown_ = true;
 
-  mutable absl::optional<gfx::Rect> anchor_rect_;
+  mutable std::optional<gfx::Rect> anchor_rect_;
 
   bool accept_events_ = true;
-  gfx::NativeView parent_window_ = nullptr;
+  gfx::NativeView parent_window_ = gfx::NativeView();
 
   // By default, all BubbleDialogDelegates have parent windows.
   bool has_parent_ = true;
@@ -454,7 +528,18 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
 #endif
 
   // Used to ensure the button remains anchored while this dialog is open.
-  absl::optional<Button::ScopedAnchorHighlight> button_anchor_higlight_;
+  std::optional<Button::ScopedAnchorHighlight> button_anchor_highlight_;
+
+  // The helper class that logs common bubble metrics.
+  BubbleUmaLogger bubble_uma_logger_;
+
+  std::optional<base::TimeTicks> bubble_created_time_;
+
+  // Timestamp when the bubble turns visible.
+  std::optional<base::TimeTicks> bubble_shown_time_;
+
+  // Cumulated time of bubble being visible.
+  base::TimeDelta bubble_shown_duration_;
 };
 
 // BubbleDialogDelegateView is a BubbleDialogDelegate that is also a View.
@@ -462,15 +547,33 @@ class VIEWS_EXPORT BubbleDialogDelegate : public DialogDelegate {
 // view.
 // TODO(pbos): Migrate existing uses of BubbleDialogDelegateView to directly
 // inherit or use BubbleDialogDelegate.
-class VIEWS_EXPORT BubbleDialogDelegateView : public BubbleDialogDelegate,
-                                              public View {
+class VIEWS_EXPORT BubbleDialogDelegateView : public View,
+                                              public BubbleDialogDelegate {
+  METADATA_HEADER(BubbleDialogDelegateView, View)
+
  public:
-  METADATA_HEADER(BubbleDialogDelegateView);
+  template <typename T>
+  static bool IsBubbleDialogDelegateView(const BubbleDialogDelegateView* view) {
+    return ui::metadata::IsClass<T, BubbleDialogDelegateView>(view);
+  }
 
   // Create and initialize the bubble Widget(s) with proper bounds.
+  // Like BubbleDialogDelegate::CreateBubble, the default ownership for now is
+  // NATIVE_WIDGET_OWNS_WIDGET. If any other ownership mode is used, the
+  // returned Widget's lifetime must be managed by the caller. This is usually
+  // done by wrapping the pointer as a unique_ptr using base::WrapUnique().
+  template <typename T>
   static Widget* CreateBubble(
-      std::unique_ptr<BubbleDialogDelegateView> delegate);
-  static Widget* CreateBubble(BubbleDialogDelegateView* bubble_delegate);
+      std::unique_ptr<T> delegate,
+      Widget::InitParams::Ownership ownership =
+          Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET) {
+    CHECK(IsBubbleDialogDelegateView<T>(delegate.get()));
+    return BubbleDialogDelegate::CreateBubble(std::move(delegate), ownership);
+  }
+  static Widget* CreateBubble(
+      BubbleDialogDelegateView* bubble_delegate,
+      Widget::InitParams::Ownership ownership =
+          Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
 
   BubbleDialogDelegateView();
   // |shadow| usually doesn't need to be explicitly set, just uses the default
@@ -479,7 +582,8 @@ class VIEWS_EXPORT BubbleDialogDelegateView : public BubbleDialogDelegate,
   BubbleDialogDelegateView(
       View* anchor_view,
       BubbleBorder::Arrow arrow,
-      BubbleBorder::Shadow shadow = BubbleBorder::DIALOG_SHADOW);
+      BubbleBorder::Shadow shadow = BubbleBorder::DIALOG_SHADOW,
+      bool autosize = false);
   BubbleDialogDelegateView(const BubbleDialogDelegateView&) = delete;
   BubbleDialogDelegateView& operator=(const BubbleDialogDelegateView&) = delete;
   ~BubbleDialogDelegateView() override;
@@ -518,7 +622,7 @@ VIEW_BUILDER_PROPERTY(bool, EnableArrowKeyTraversal)
 VIEW_BUILDER_PROPERTY(ui::ImageModel, Icon)
 VIEW_BUILDER_PROPERTY(ui::ImageModel, AppIcon)
 VIEW_BUILDER_PROPERTY(ui::ImageModel, MainImage)
-VIEW_BUILDER_PROPERTY(ui::ModalType, ModalType)
+VIEW_BUILDER_PROPERTY(ui::mojom::ModalType, ModalType)
 VIEW_BUILDER_PROPERTY(bool, OwnedByWidget)
 VIEW_BUILDER_PROPERTY(bool, ShowCloseButton)
 VIEW_BUILDER_PROPERTY(bool, ShowIcon)
@@ -532,8 +636,8 @@ VIEW_BUILDER_PROPERTY(bool, CenterTitle)
 #endif
 VIEW_BUILDER_PROPERTY(int, Buttons)
 VIEW_BUILDER_PROPERTY(int, DefaultButton)
-VIEW_BUILDER_METHOD(SetButtonLabel, ui::DialogButton, std::u16string)
-VIEW_BUILDER_METHOD(SetButtonEnabled, ui::DialogButton, bool)
+VIEW_BUILDER_METHOD(SetButtonLabel, ui::mojom::DialogButton, std::u16string)
+VIEW_BUILDER_METHOD(SetButtonEnabled, ui::mojom::DialogButton, bool)
 VIEW_BUILDER_METHOD(set_margins, gfx::Insets)
 VIEW_BUILDER_METHOD(set_use_round_corners, bool)
 VIEW_BUILDER_METHOD(set_corner_radius, int)

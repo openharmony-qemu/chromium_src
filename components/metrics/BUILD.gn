@@ -6,9 +6,11 @@ import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/cronet/config.gni")
 import("//build/config/features.gni")
 import("//testing/test.gni")
+import("//tools/grit/grit_rule.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
+  import("//third_party/jni_zero/jni_zero.gni")
 }
 
 # Dependency for histogram manager users: cronet and ios/webview
@@ -71,23 +73,59 @@ if (!is_cronet_build && is_android) {
     ]
     deps = [
       "//base:base_java",
-      "//base:jni_java",
       "//third_party/androidx:androidx_annotation_annotation_java",
+      "//third_party/jni_zero:jni_zero_java",
     ]
   }
 }
 
+# Used by the Chrome installer, which doesn't need the whole metrics library.
+source_set("client_info") {
+  sources = [
+    "client_info.cc",
+    "client_info.h",
+  ]
+}
+
+# Used by the Chrome installer, which doesn't need the whole metrics library.
+source_set("metrics_pref_names") {
+  sources = [
+    "metrics_pref_names.cc",
+    "metrics_pref_names.h",
+  ]
+}
+
 if (!is_cronet_build || is_ios) {
+  # histogram_controller.cc contains a singleton. If this would be part of a static library
+  # linked into multiple components (such as //content and //chrome), each component would get
+  # their own copy of this singleton, causing issues. For that reason make sure it is part of
+  # a component that can be linked to by multiple other components.
+  component("metrics_component") {
+    sources = [
+      "histogram_child_process.h",
+      "histogram_controller.cc",
+      "histogram_controller.h",
+      "histogram_subscriber.h",
+    ]
+
+    deps = [
+      "//base",
+      "//components/metrics/public/mojom:histogram_fetcher_mojo_bindings",
+    ]
+
+    defines = [ "IS_METRICS_IMPL" ]
+  }
+
   static_library("metrics") {
     sources = [
-      "android_metrics_provider.cc",
-      "android_metrics_provider.h",
-      "call_stack_profile_metrics_provider.cc",
-      "call_stack_profile_metrics_provider.h",
+      "android_metrics_helper.cc",
+      "android_metrics_helper.h",
+      "call_stacks/call_stack_profile_metrics_provider.cc",
+      "call_stacks/call_stack_profile_metrics_provider.h",
+      "child_histogram_fetcher_impl.cc",
+      "child_histogram_fetcher_impl.h",
       "clean_exit_beacon.cc",
       "clean_exit_beacon.h",
-      "client_info.cc",
-      "client_info.h",
       "cloned_install_detector.cc",
       "cloned_install_detector.h",
       "cpu_metrics_provider.cc",
@@ -118,6 +156,8 @@ if (!is_cronet_build || is_ios) {
       "field_trials_provider.h",
       "file_metrics_provider.cc",
       "file_metrics_provider.h",
+      "install_date_provider.cc",
+      "install_date_provider.h",
       "log_decoder.cc",
       "log_decoder.h",
       "log_store.h",
@@ -128,15 +168,11 @@ if (!is_cronet_build || is_ios) {
       "metrics_features.h",
       "metrics_log.cc",
       "metrics_log.h",
-      "metrics_log_manager.cc",
-      "metrics_log_manager.h",
       "metrics_log_store.cc",
       "metrics_log_store.h",
       "metrics_log_uploader.h",
       "metrics_logs_event_manager.cc",
       "metrics_logs_event_manager.h",
-      "metrics_pref_names.cc",
-      "metrics_pref_names.h",
       "metrics_provider.cc",
       "metrics_provider.h",
       "metrics_reporting_default_state.cc",
@@ -155,6 +191,8 @@ if (!is_cronet_build || is_ios) {
       "metrics_service_client.h",
       "metrics_service_observer.cc",
       "metrics_service_observer.h",
+      "metrics_shutdown.cc",
+      "metrics_shutdown.h",
       "metrics_state_manager.cc",
       "metrics_state_manager.h",
       "metrics_switches.cc",
@@ -175,7 +213,6 @@ if (!is_cronet_build || is_ios) {
       "stability_metrics_helper.h",
       "stability_metrics_provider.cc",
       "stability_metrics_provider.h",
-      "system_memory_stats_recorder.h",
       "ukm_demographic_metrics_provider.h",
       "unsent_log_store.cc",
       "unsent_log_store.h",
@@ -183,13 +220,21 @@ if (!is_cronet_build || is_ios) {
       "unsent_log_store_metrics.h",
       "unsent_log_store_metrics_impl.cc",
       "unsent_log_store_metrics_impl.h",
-      "url_constants.cc",
       "url_constants.h",
       "version_utils.cc",
       "version_utils.h",
     ]
 
+    if (is_chrome_branded) {
+      sources += [ "internal/url_constants.cc" ]
+    } else {
+      sources += [ "url_constants.cc" ]
+    }
+
     public_deps = [
+      ":metrics_component",
+      "//components/metrics:client_info",
+      "//components/metrics:metrics_pref_names",
       "//third_party/metrics_proto",
       "//third_party/zlib/google:compression_utils",
     ]
@@ -198,29 +243,35 @@ if (!is_cronet_build || is_ios) {
       ":library_support",
       "//base",
       "//base:base_static",
+      "//base:i18n",
       "//build:branding_buildflags",
       "//build:chromeos_buildflags",
       "//components/flags_ui:switches",
+      "//components/metrics/public/mojom:call_stack_mojo_bindings",
+      "//components/metrics/public/mojom:histogram_fetcher_mojo_bindings",
+      "//components/network_time",
       "//components/prefs",
       "//components/variations",
       "//components/variations/field_trial_config",
       "//components/version_info:version_info",
       "//crypto",
       "//extensions/buildflags",
+      "//mojo/public/cpp/base:protobuf_support",
       "//third_party/icu",
       "//url",
     ]
 
-    if (is_chromeos_ash) {
-      deps += [
-        ":serialization",
-        "//components/metrics/structured:neutrino_logging",
-      ]
-    }
-
     if (is_android) {
-      sources += [ "drive_metrics_provider_android.cc" ]
+      sources += [
+        "android_metrics_provider.cc",
+        "android_metrics_provider.h",
+        "drive_metrics_provider_android.cc",
+        "gms_metrics_provider.cc",
+        "gms_metrics_provider.h",
+      ]
       deps += [ ":jni_headers" ]
+    } else {
+      deps += [ "//components/keep_alive_registry" ]
     }
 
     if (is_ios) {
@@ -230,12 +281,11 @@ if (!is_cronet_build || is_ios) {
       ]
     }
 
-    if (is_linux || is_chromeos || is_ohos) {
+    if (is_linux || is_chromeos) {
       sources += [
         "drive_metrics_provider_linux.cc",
         "psi_memory_parser.h",
         "psi_memory_parser_linux.cc",
-        "system_memory_stats_recorder_linux.cc",
       ]
     }
 
@@ -264,6 +314,10 @@ if (!is_cronet_build || is_ios) {
 
     if (is_fuchsia) {
       sources += [ "drive_metrics_provider_fuchsia.cc" ]
+    }
+
+    if (is_ohos) {
+      sources += [ "drive_metrics_provider_ohos.cc" ]
     }
 
     if (is_win || is_linux) {
@@ -324,6 +378,8 @@ if (!is_cronet_build) {
         "content/extensions_helper.h",
         "content/gpu_metrics_provider.cc",
         "content/gpu_metrics_provider.h",
+        "content/metrics_services_web_contents_observer.cc",
+        "content/metrics_services_web_contents_observer.h",
         "content/rendering_perf_metrics_provider.cc",
         "content/rendering_perf_metrics_provider.h",
         "content/subprocess_metrics_provider.cc",
@@ -408,15 +464,13 @@ if (!is_cronet_build) {
     ]
   }
 
-  source_set("call_stack_profile_params") {
-    public = [
-      "call_stack_profile_encoding.h",
-      "call_stack_profile_params.h",
-    ]
-    sources = [ "call_stack_profile_encoding.cc" ]
+  source_set("call_stack_profile_encoding") {
+    public = [ "call_stacks/call_stack_profile_encoding.h" ]
+    sources = [ "call_stacks/call_stack_profile_encoding.cc" ]
 
     deps = [
       "//base:base",
+      "//components/sampling_profiler:profile_params",
       "//third_party/metrics_proto",
     ]
   }
@@ -424,19 +478,21 @@ if (!is_cronet_build) {
   # Dependency for child processes that use the CallStackProfileBuilder.
   source_set("child_call_stack_profile_builder") {
     public = [
-      "call_stack_profile_builder.h",
-      "call_stack_profile_metadata.h",
-      "child_call_stack_profile_collector.h",
+      "call_stacks/call_stack_profile_builder.h",
+      "call_stacks/call_stack_profile_metadata.h",
+      "call_stacks/child_call_stack_profile_collector.h",
     ]
     sources = [
-      "call_stack_profile_builder.cc",
-      "call_stack_profile_metadata.cc",
-      "child_call_stack_profile_collector.cc",
+      "call_stacks/call_stack_profile_builder.cc",
+      "call_stacks/call_stack_profile_metadata.cc",
+      "call_stacks/child_call_stack_profile_collector.cc",
     ]
-    public_deps = [ ":call_stack_profile_params" ]
+    public_deps = [ ":call_stack_profile_encoding" ]
     deps = [
       "//base",
       "//components/metrics/public/mojom:call_stack_mojo_bindings",
+      "//components/sampling_profiler:profile_params",
+      "//mojo/public/cpp/base:protobuf_support",
       "//third_party/metrics_proto",
     ]
 
@@ -455,11 +511,10 @@ if (!is_cronet_build) {
   # processes.
   source_set("call_stack_profile_collector") {
     sources = [
-      "call_stack_profile_collector.cc",
-      "call_stack_profile_collector.h",
+      "call_stacks/call_stack_profile_collector.cc",
+      "call_stacks/call_stack_profile_collector.h",
     ]
     deps = [
-      ":call_stack_profile_params",
       ":metrics",
       "//components/metrics/public/mojom:call_stack_mojo_bindings",
     ]
@@ -480,11 +535,11 @@ if (!is_cronet_build) {
   source_set("unit_tests") {
     testonly = true
     sources = [
-      "android_metrics_provider_unittest.cc",
-      "call_stack_profile_builder_unittest.cc",
-      "call_stack_profile_metadata_unittest.cc",
-      "call_stack_profile_metrics_provider_unittest.cc",
-      "child_call_stack_profile_collector_unittest.cc",
+      "android_metrics_helper_unittest.cc",
+      "call_stacks/call_stack_profile_builder_unittest.cc",
+      "call_stacks/call_stack_profile_metadata_unittest.cc",
+      "call_stacks/call_stack_profile_metrics_provider_unittest.cc",
+      "call_stacks/child_call_stack_profile_collector_unittest.cc",
       "clean_exit_beacon_unittest.cc",
       "cloned_install_detector_unittest.cc",
       "component_metrics_provider_unittest.cc",
@@ -540,11 +595,13 @@ if (!is_cronet_build) {
       "//components/metrics/public/mojom:call_stack_mojo_bindings",
       "//components/network_time:network_time_test_support",
       "//components/prefs:test_support",
+      "//components/sampling_profiler:profile_params",
       "//components/sync:test_support",
       "//components/sync/base",
       "//components/variations",
       "//components/variations:test_support",
       "//extensions/buildflags",
+      "//mojo/public/cpp/base:protobuf_support",
       "//mojo/public/cpp/bindings",
       "//net:test_support",
       "//services/network:test_support",
@@ -581,6 +638,13 @@ if (!is_cronet_build) {
       ]
     }
 
+    if (is_android) {
+      sources += [
+        "android_metrics_provider_unittest.cc",
+        "gms_metrics_provider_unittest.cc",
+      ]
+    }
+
     if (use_blink) {
       deps += [
         ":content",
@@ -591,7 +655,8 @@ if (!is_cronet_build) {
     # iOS is not supported by the profiler and the ios-simulator bot chokes on
     # these tests.
     if (is_ios) {
-      sources -= [ "child_call_stack_profile_collector_unittest.cc" ]
+      sources -=
+          [ "call_stacks/child_call_stack_profile_collector_unittest.cc" ]
       deps += [ "//ios/web/public/test" ]
     } else {
       sources += [
@@ -615,4 +680,16 @@ if (!is_cronet_build) {
       "//components/test:test_support",
     ]
   }
+}
+
+grit("url_constants") {
+  if (is_chrome_branded) {
+    source = "internal/url_constants.grd"
+  } else {
+    source = "url_constants.grd"
+  }
+  outputs = [
+    "grit/metrics_url_constants.h",
+    "metrics_url_constants.pak",
+  ]
 }

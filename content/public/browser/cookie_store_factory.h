@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -30,6 +31,14 @@ struct CONTENT_EXPORT CookieStoreConfig {
   // Convenience constructor for an in-memory cookie store with no delegate.
   CookieStoreConfig();
 
+  // This struct is move-only but also intentionally deletes the move assignment
+  // operator as base::FilePath does not implement this operator.
+#if BUILDFLAG(IS_ARKWEB)
+  CookieStoreConfig(CookieStoreConfig& config);
+#endif
+  CookieStoreConfig(CookieStoreConfig&&);
+  CookieStoreConfig& operator=(CookieStoreConfig&&) = delete;
+
   // If |path| is empty, then this specifies an in-memory cookie store.
   // With in-memory cookie stores, |session_cookie_mode| must be
   // EPHEMERAL_SESSION_COOKIES.
@@ -41,18 +50,22 @@ struct CONTENT_EXPORT CookieStoreConfig {
                     bool persist_session_cookies);
   ~CookieStoreConfig();
 
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  base::FilePath path;
+  const bool restore_old_session_cookies;
+  bool persist_session_cookies;
+#else
   const base::FilePath path;
   const bool restore_old_session_cookies;
   const bool persist_session_cookies;
+#endif
   // The following are infrequently used cookie store parameters.
   // Rather than clutter the constructor API, these are assigned a default
   // value on CookieStoreConfig construction. Clients should then override
   // them as necessary.
 
-  // Used to provide encryption hooks for the cookie store. The
-  // CookieCryptoDelegate must outlive any cookie store created with this
-  // config.
-  raw_ptr<net::CookieCryptoDelegate> crypto_delegate;
+  // Used to provide encryption hooks for the cookie store.
+  std::unique_ptr<net::CookieCryptoDelegate> crypto_delegate;
 
   // Callbacks for data load events will be performed on |client_task_runner|.
   // If nullptr, uses the task runner for BrowserThread::IO.
@@ -72,7 +85,7 @@ struct CONTENT_EXPORT CookieStoreConfig {
 };
 
 CONTENT_EXPORT std::unique_ptr<net::CookieStore> CreateCookieStore(
-    const CookieStoreConfig& config,
+    CookieStoreConfig config,
     net::NetLog* net_log);
 
 }  // namespace content

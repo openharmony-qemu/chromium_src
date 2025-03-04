@@ -6,10 +6,11 @@
 #define IOS_WEB_VIEW_INTERNAL_PASSWORDS_WEB_VIEW_PASSWORD_MANAGER_CLIENT_H_
 
 #import <Foundation/Foundation.h>
+
 #include <memory>
 
+#import "base/memory/raw_ptr.h"
 #include "components/autofill/core/browser/logging/log_manager.h"
-#include "components/password_manager/core/browser/password_change_success_tracker.h"
 #include "components/password_manager/core/browser/password_feature_manager.h"
 #include "components/password_manager/core/browser/password_form_manager_for_ui.h"
 #include "components/password_manager/core/browser/password_manager.h"
@@ -19,12 +20,12 @@
 #include "components/password_manager/core/browser/password_manager_metrics_recorder.h"
 #include "components/password_manager/core/browser/password_requirements_service.h"
 #include "components/password_manager/core/browser/password_reuse_manager.h"
-#include "components/password_manager/core/browser/password_store_interface.h"
+#include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/password_manager/core/browser/sync_credentials_filter.h"
 #include "components/password_manager/ios/password_manager_client_bridge.h"
 #include "components/prefs/pref_member.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
-#include "components/sync/driver/sync_service.h"
+#include "components/sync/service/sync_service.h"
 #import "ios/web/public/web_state.h"
 #include "ios/web_view/internal/passwords/web_view_password_feature_manager.h"
 #include "ios/web_view/internal/web_view_browser_state.h"
@@ -49,8 +50,7 @@ class WebViewPasswordManagerClient
       password_manager::PasswordStoreInterface* profile_store,
       password_manager::PasswordStoreInterface* account_store,
       password_manager::PasswordReuseManager* reuse_manager,
-      password_manager::PasswordRequirementsService* requirements_service,
-      password_manager::PasswordChangeSuccessTracker* password_change_tracker);
+      password_manager::PasswordRequirementsService* requirements_service);
 
   WebViewPasswordManagerClient(const WebViewPasswordManagerClient&) = delete;
   WebViewPasswordManagerClient& operator=(const WebViewPasswordManagerClient&) =
@@ -59,7 +59,6 @@ class WebViewPasswordManagerClient
   ~WebViewPasswordManagerClient() override;
 
   // password_manager::PasswordManagerClient implementation.
-  password_manager::SyncState GetPasswordSyncState() const override;
   bool PromptUserToSaveOrUpdatePassword(
       std::unique_ptr<password_manager::PasswordFormManagerForUI> form_to_save,
       bool update_password) override;
@@ -81,23 +80,23 @@ class WebViewPasswordManagerClient
       CredentialsCallback callback) override;
   void AutomaticPasswordSave(
       std::unique_ptr<password_manager::PasswordFormManagerForUI>
-          saved_form_manager) override;
+          saved_form_manager,
+      bool is_update_confirmation) override;
   void PromptUserToEnableAutosignin() override;
-  bool IsIncognito() const override;
+  bool IsOffTheRecord() const override;
   const password_manager::PasswordManager* GetPasswordManager() const override;
   const password_manager::PasswordFeatureManager* GetPasswordFeatureManager()
       const override;
   PrefService* GetPrefs() const override;
   PrefService* GetLocalStatePrefs() const override;
   const syncer::SyncService* GetSyncService() const override;
+  affiliations::AffiliationService* GetAffiliationService() override;
   password_manager::PasswordStoreInterface* GetProfilePasswordStore()
       const override;
   password_manager::PasswordStoreInterface* GetAccountPasswordStore()
       const override;
   password_manager::PasswordReuseManager* GetPasswordReuseManager()
       const override;
-  password_manager::PasswordChangeSuccessTracker*
-  GetPasswordChangeSuccessTracker() override;
   void NotifyUserAutoSignin(
       std::vector<std::unique_ptr<password_manager::PasswordForm>> local_forms,
       const url::Origin& origin) override;
@@ -110,7 +109,9 @@ class WebViewPasswordManagerClient
   void NotifyUserCredentialsWereLeaked(
       password_manager::CredentialLeakType leak_type,
       const GURL& origin,
-      const std::u16string& username) override;
+      const std::u16string& username,
+      bool in_account_store) override;
+  void NotifyKeychainError() override;
   bool IsSavingAndFillingEnabled(const GURL& url) const override;
   bool IsCommittedMainFrameSecure() const override;
   const GURL& GetLastCommittedURL() const override;
@@ -127,7 +128,6 @@ class WebViewPasswordManagerClient
   GetPasswordRequirementsService() override;
   bool IsIsolationForPasswordSitesEnabled() const override;
   bool IsNewTabPage() const override;
-  password_manager::FieldInfoManager* GetFieldInfoManager() const override;
 
   void set_bridge(id<PasswordManagerClientBridge> bridge) { bridge_ = bridge; }
 
@@ -139,8 +139,8 @@ class WebViewPasswordManagerClient
 
   web::WebState* web_state_;
   syncer::SyncService* sync_service_;
-  PrefService* pref_service_;
-  signin::IdentityManager* identity_manager_;
+  raw_ptr<PrefService> pref_service_;
+  raw_ptr<signin::IdentityManager> identity_manager_;
   std::unique_ptr<autofill::LogManager> log_manager_;
   password_manager::PasswordStoreInterface* profile_store_;
   password_manager::PasswordStoreInterface* account_store_;
@@ -148,7 +148,6 @@ class WebViewPasswordManagerClient
   WebViewPasswordFeatureManager password_feature_manager_;
   const password_manager::SyncCredentialsFilter credentials_filter_;
   password_manager::PasswordRequirementsService* requirements_service_;
-  password_manager::PasswordChangeSuccessTracker* password_change_tracker_;
 
   // The preference associated with
   // password_manager::prefs::kCredentialsEnableService.

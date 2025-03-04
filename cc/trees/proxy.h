@@ -8,9 +8,12 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
+#include "base/types/optional_ref.h"
 #include "cc/cc_export.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "cc/input/browser_controls_state.h"
 #include "cc/trees/paint_holding_commit_trigger.h"
 #include "cc/trees/paint_holding_reason.h"
@@ -43,10 +46,10 @@ class CC_EXPORT Proxy {
   virtual void ReleaseLayerTreeFrameSink() = 0;
 
   virtual void SetVisible(bool visible) = 0;
-
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
   virtual void SetPinchSmoothMode(bool isEnable) = 0;
 #endif
+  virtual void SetShouldWarmUp() = 0;
 
   virtual void SetNeedsAnimate() = 0;
   virtual void SetNeedsUpdateLayers() = 0;
@@ -54,6 +57,10 @@ class CC_EXPORT Proxy {
   virtual void SetNeedsRedraw(const gfx::Rect& damage_rect) = 0;
   virtual void SetTargetLocalSurfaceId(
       const viz::LocalSurfaceId& target_local_surface_id) = 0;
+
+  // Detaches the InputDelegateForCompositor (InputHandler) bound on the
+  // compositor thread.
+  virtual void DetachInputDelegateAndRenderFrameObserver() = 0;
 
   // Returns true if an animate or commit has been requested, and hasn't
   // completed yet.
@@ -65,6 +72,10 @@ class CC_EXPORT Proxy {
 
   // Pauses all main and impl-side rendering.
   virtual void SetPauseRendering(bool pause_rendering) = 0;
+
+  // Indicates that the next main frame will contain the result of running an
+  // event handler for an input event.
+  virtual void SetInputResponsePending() = 0;
 
   // Defers commits until at most the given |timeout| period has passed,
   // but continues to update the document lifecycle in
@@ -85,14 +96,18 @@ class CC_EXPORT Proxy {
   // Must be called before deleting the proxy.
   virtual void Stop() = 0;
 
+  virtual void QueueImageDecode(int request_id, const PaintImage& image) = 0;
   virtual void SetMutator(std::unique_ptr<LayerTreeMutator> mutator) = 0;
 
   virtual void SetPaintWorkletLayerPainter(
       std::unique_ptr<PaintWorkletLayerPainter> painter) = 0;
 
-  virtual void UpdateBrowserControlsState(BrowserControlsState constraints,
-                                          BrowserControlsState current,
-                                          bool animate) = 0;
+  virtual void UpdateBrowserControlsState(
+      BrowserControlsState constraints,
+      BrowserControlsState current,
+      bool animate,
+      base::optional_ref<const BrowserControlsOffsetTagsInfo>
+          offset_tags_info) = 0;
 
   virtual void RequestBeginMainFrameNotExpected(bool new_state) = 0;
 

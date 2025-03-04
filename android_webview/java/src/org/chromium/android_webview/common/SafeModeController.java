@@ -16,17 +16,18 @@ import androidx.annotation.VisibleForTesting;
 
 import org.chromium.base.ContextUtils;
 import org.chromium.base.Log;
+import org.chromium.base.ResettersForTesting;
 import org.chromium.base.StrictModeContext;
 import org.chromium.base.metrics.RecordHistogram;
 import org.chromium.build.BuildConfig;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * A browser-process class for querying SafeMode state and executing SafeModeActions.
- */
+/** A browser-process class for querying SafeMode state and executing SafeModeActions. */
 public class SafeModeController {
     public static final String SAFE_MODE_STATE_COMPONENT =
             "org.chromium.android_webview.SafeModeState";
@@ -48,9 +49,13 @@ public class SafeModeController {
 
     // These values are persisted to logs. Entries should not be renumbered and
     // numeric values should never be reused.
-    @IntDef({SafeModeExecutionResult.SUCCESS, SafeModeExecutionResult.UNKNOWN_ERROR,
-            SafeModeExecutionResult.ACTION_FAILED, SafeModeExecutionResult.ACTION_UNKNOWN,
-            SafeModeExecutionResult.COUNT})
+    @IntDef({
+        SafeModeExecutionResult.SUCCESS,
+        SafeModeExecutionResult.UNKNOWN_ERROR,
+        SafeModeExecutionResult.ACTION_FAILED,
+        SafeModeExecutionResult.ACTION_UNKNOWN,
+        SafeModeExecutionResult.COUNT
+    })
     public static @interface SafeModeExecutionResult {
         int SUCCESS = 0;
         int UNKNOWN_ERROR = 1;
@@ -59,15 +64,71 @@ public class SafeModeController {
         int COUNT = 3;
     }
 
+    // LINT.IfChange(SafeModeActionIds)
+    // These values are persisted to logs. Entries should not be renumbered and
+    // numeric values should never be reused.
+    @IntDef({
+        SafeModeActionName.DELETE_VARIATIONS_SEED,
+        SafeModeActionName.FAST_VARIATIONS_SEED,
+        SafeModeActionName.NOOP,
+        SafeModeActionName.DISABLE_ANDROID_AUTOFILL,
+        SafeModeActionName.DISABLE_ORIGIN_TRIALS,
+        SafeModeActionName.DISABLE_SAFE_BROWSING,
+        SafeModeActionName.RESET_COMPONENT_UPDATER,
+        SafeModeActionName.DISABLE_SUPERVISION_CHECKS
+    })
+    private static @interface SafeModeActionName {
+        int DELETE_VARIATIONS_SEED = 0;
+        int FAST_VARIATIONS_SEED = 1;
+        int NOOP = 2;
+        int DISABLE_ANDROID_AUTOFILL = 3;
+        // int DISABLE_CHROME_AUTOCOMPLETE = 4;  // Autofill replaced Autocomplete since Android O.
+        int DISABLE_ORIGIN_TRIALS = 5;
+        int DISABLE_SAFE_BROWSING = 6;
+        int RESET_COMPONENT_UPDATER = 7;
+        int DISABLE_SUPERVISION_CHECKS = 8;
+        int COUNT = 9;
+    }
+
+    // Maps the SafeModeAction ID to its histogram enum
+    @VisibleForTesting
+    public static final Map<String, Integer> sSafeModeActionLoggingMap = createLoggingMap();
+
+    private static Map<String, Integer> createLoggingMap() {
+        Map<String, Integer> map = new HashMap<String, Integer>();
+        map.put(
+                SafeModeActionIds.DELETE_VARIATIONS_SEED,
+                SafeModeActionName.DELETE_VARIATIONS_SEED);
+        map.put(SafeModeActionIds.FAST_VARIATIONS_SEED, SafeModeActionName.FAST_VARIATIONS_SEED);
+        map.put(SafeModeActionIds.NOOP, SafeModeActionName.NOOP);
+        map.put(
+                SafeModeActionIds.DISABLE_ANDROID_AUTOFILL,
+                SafeModeActionName.DISABLE_ANDROID_AUTOFILL);
+        map.put(SafeModeActionIds.DISABLE_ORIGIN_TRIALS, SafeModeActionName.DISABLE_ORIGIN_TRIALS);
+        map.put(
+                SafeModeActionIds.DISABLE_AW_SAFE_BROWSING,
+                SafeModeActionName.DISABLE_SAFE_BROWSING);
+        map.put(
+                SafeModeActionIds.RESET_COMPONENT_UPDATER,
+                SafeModeActionName.RESET_COMPONENT_UPDATER);
+        map.put(
+                SafeModeActionIds.DISABLE_SUPERVISION_CHECKS,
+                SafeModeActionName.DISABLE_SUPERVISION_CHECKS);
+        return map;
+    }
+
+    // LINT.ThenChange(/tools/metrics/histograms/metadata/android/enums.xml:SafeModeActionIds)
+
     /**
      * Sets the singleton instance for testing. Not thread safe, must only be called from single
      * threaded tests.
+     *
      * @param controller The SafeModeController object to return from getInstance(). Passing in a
-     * null value resets this.
+     *     null value resets this.
      */
-    @VisibleForTesting
     public static void setInstanceForTests(SafeModeController controller) {
         sInstanceForTests = controller;
+        ResettersForTesting.register(() -> sInstanceForTests = null);
     }
 
     public static SafeModeController getInstance() {
@@ -98,7 +159,6 @@ public class SafeModeController {
         mRegisteredActions = actions;
     }
 
-    @VisibleForTesting
     public void unregisterActionsForTesting() {
         mRegisteredActions = null;
     }
@@ -110,16 +170,27 @@ public class SafeModeController {
     public Set<String> queryActions(String webViewPackageName) {
         Set<String> actions = new HashSet<>();
 
-        Uri uri = new Uri.Builder()
-                          .scheme("content")
-                          .authority(webViewPackageName + URI_AUTHORITY_SUFFIX)
-                          .path(SAFE_MODE_ACTIONS_URI_PATH)
-                          .build();
+        Uri uri =
+                new Uri.Builder()
+                        .scheme("content")
+                        .authority(webViewPackageName + URI_AUTHORITY_SUFFIX)
+                        .path(SAFE_MODE_ACTIONS_URI_PATH)
+                        .build();
 
         final Context appContext = ContextUtils.getApplicationContext();
-        try (Cursor cursor = appContext.getContentResolver().query(uri, /* projection */ null,
-                     /* selection */ null, /* selectionArgs */ null, /* sortOrder */ null)) {
-            assert cursor != null : "ContentProvider doesn't support querying '" + uri + "'";
+        try (Cursor cursor =
+                appContext
+                        .getContentResolver()
+                        .query(
+                                uri,
+                                /* projection= */ null,
+                                /* selection= */ null,
+                                /* selectionArgs= */ null,
+                                /* sortOrder= */ null)) {
+            if (cursor == null || cursor.getCount() == 0) {
+                Log.i(TAG, "ContentProvider doesn't support querying '" + uri + "'");
+                return actions;
+            }
             int actionIdColumnIndex = cursor.getColumnIndexOrThrow(ACTIONS_COLUMN);
             while (cursor.moveToNext()) {
                 actions.add(cursor.getString(actionIdColumnIndex));
@@ -145,23 +216,33 @@ public class SafeModeController {
                     "Must registerActions() before calling executeActions()");
         }
 
+        String currentSafeModeActionName = "";
         try {
-            @SafeModeExecutionResult
-            int overallStatus = SafeModeExecutionResult.SUCCESS;
+            @SafeModeExecutionResult int overallStatus = SafeModeExecutionResult.SUCCESS;
             Set<String> allIds = new HashSet<>();
             for (SafeModeAction action : mRegisteredActions) {
                 allIds.add(action.getId());
                 if (actionsToExecute.contains(action.getId())) {
+                    currentSafeModeActionName = action.getId();
                     // Allow SafeModeActions in general to perform disk reads and writes.
                     try (StrictModeContext ignored = StrictModeContext.allowDiskWrites()) {
-                        Log.i(TAG, "Starting to execute %s", action.getId());
+                        Log.i(TAG, "Starting to execute %s", currentSafeModeActionName);
                         if (action.execute()) {
-                            Log.i(TAG, "Finished executing %s (%s)", action.getId(), "success");
+                            Log.i(
+                                    TAG,
+                                    "Finished executing %s (%s)",
+                                    currentSafeModeActionName,
+                                    "success");
                         } else {
                             overallStatus = SafeModeExecutionResult.ACTION_FAILED;
-                            Log.e(TAG, "Finished executing %s (%s)", action.getId(), "failure");
+                            Log.e(
+                                    TAG,
+                                    "Finished executing %s (%s)",
+                                    currentSafeModeActionName,
+                                    "failure");
                         }
                     }
+                    logSafeModeActionName(currentSafeModeActionName);
                 }
             }
 
@@ -176,6 +257,11 @@ public class SafeModeController {
             logSafeModeExecutionResult(overallStatus);
             return overallStatus;
         } catch (Throwable t) {
+            if (!"".equals(currentSafeModeActionName)) {
+                // Logging this with the ExecutionResult will help correlate failures with a
+                // specific SafeModeAction
+                logSafeModeActionName(currentSafeModeActionName);
+            }
             logSafeModeExecutionResult(SafeModeController.SafeModeExecutionResult.UNKNOWN_ERROR);
             throw t;
         }
@@ -195,6 +281,15 @@ public class SafeModeController {
     private static void logSafeModeExecutionResult(@SafeModeExecutionResult int result) {
         RecordHistogram.recordEnumeratedHistogram(
                 "Android.WebView.SafeMode.ExecutionResult", result, SafeModeExecutionResult.COUNT);
+    }
+
+    private static void logSafeModeActionName(String actionName) {
+        if (sSafeModeActionLoggingMap.get(actionName) != null) {
+            RecordHistogram.recordEnumeratedHistogram(
+                    "Android.WebView.SafeMode.ActionName",
+                    sSafeModeActionLoggingMap.get(actionName),
+                    SafeModeActionName.COUNT);
+        }
     }
 
     /**

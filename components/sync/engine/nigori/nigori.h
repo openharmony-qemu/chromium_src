@@ -7,14 +7,13 @@
 
 #include <stddef.h>
 
+#include <array>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "base/time/tick_clock.h"
-
-namespace crypto {
-class SymmetricKey;
-}  // namespace crypto
+#include "crypto/subtle_passkey.h"
 
 namespace syncer {
 
@@ -76,6 +75,9 @@ class Nigori {
 
   static std::string GenerateScryptSalt();
 
+  // Allows tests to use faster key derivation with Scrypt derivation method.
+  static void SetUseScryptCostParameterForTesting(bool use_low_scrypt_cost);
+
   // Exposed for tests.
   static const size_t kIvSize = 16;
 
@@ -84,13 +86,15 @@ class Nigori {
     Keys();
     ~Keys();
 
+    static inline constexpr size_t kKeySizeBytes = 16;
+
     // TODO(vitaliii): user_key isn't used any more, but legacy clients will
     // fail to import a nigori node without one. We preserve it for the sake of
     // those clients, but it should be removed once enough clients have upgraded
     // to code that doesn't enforce its presence.
-    std::unique_ptr<crypto::SymmetricKey> user_key;
-    std::unique_ptr<crypto::SymmetricKey> encryption_key;
-    std::unique_ptr<crypto::SymmetricKey> mac_key;
+    std::optional<std::array<uint8_t, kKeySizeBytes>> user_key;
+    std::array<uint8_t, kKeySizeBytes> encryption_key;
+    std::array<uint8_t, kKeySizeBytes> mac_key;
 
     void InitByDerivationUsingPbkdf2(const std::string& password);
     void InitByDerivationUsingScrypt(const std::string& salt,
@@ -106,6 +110,8 @@ class Nigori {
       const KeyDerivationParams& key_derivation_params,
       const std::string& password,
       const base::TickClock* tick_clock);
+
+  static crypto::SubtlePassKey MakeCryptoPassKey();
 
   Keys keys_;
 };

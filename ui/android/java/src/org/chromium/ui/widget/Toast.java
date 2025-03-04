@@ -64,17 +64,20 @@ public class Toast {
             // Don't HW accelerate Toasts. Unfortunately the only way to do that is to make
             // toast.getView().getContext().getApplicationInfo() return lies to prevent
             // WindowManagerGlobal.addView() from adding LayoutParams.FLAG_HARDWARE_ACCELERATED.
-            mSWLayout = new FrameLayout(new ContextWrapper(context) {
-                @Override
-                public ApplicationInfo getApplicationInfo() {
-                    ApplicationInfo info = new ApplicationInfo(super.getApplicationInfo());
+            mSWLayout =
+                    new FrameLayout(
+                            new ContextWrapper(context) {
+                                @Override
+                                public ApplicationInfo getApplicationInfo() {
+                                    ApplicationInfo info =
+                                            new ApplicationInfo(super.getApplicationInfo());
 
-                    // On M+ the condition we need to fail is
-                    // "flags & ApplicationInfo.FLAG_HARDWARE_ACCELERATED"
-                    info.flags &= ~ApplicationInfo.FLAG_HARDWARE_ACCELERATED;
-                    return info;
-                }
-            });
+                                    // On M+ the condition we need to fail is
+                                    // "flags & ApplicationInfo.FLAG_HARDWARE_ACCELERATED"
+                                    info.flags &= ~ApplicationInfo.FLAG_HARDWARE_ACCELERATED;
+                                    return info;
+                                }
+                            });
         }
 
         mToast = UiWidgetFactory.getInstance().createToast(context);
@@ -84,19 +87,11 @@ public class Toast {
     }
 
     public void show() {
-        if (ToastManager.isEnabled()) {
-            ToastManager.getInstance().requestShow(this);
-        } else {
-            mToast.show();
-        }
+        ToastManager.getInstance().requestShow(this);
     }
 
     public void cancel() {
-        if (ToastManager.isEnabled()) {
-            ToastManager.getInstance().cancel(this);
-        } else {
-            mToast.cancel();
-        }
+        ToastManager.getInstance().cancel(this);
     }
 
     public void setView(View view) {
@@ -157,7 +152,7 @@ public class Toast {
 
     @SuppressLint("RtlHardcoded")
     private void anchor(Context context, View anchoredView) {
-        // TODO(https://crbug.com/1313565): The follow logic has several problems, especially that
+        // TODO(crbug.com/40832378): The follow logic has several problems, especially that
         // Toast#setGravity requires screen coordinates. Would probably be better if reworked to use
         // something like AnchoredPopupWindow.
 
@@ -315,7 +310,6 @@ public class Toast {
             TextView textView = (TextView) inflater.inflate(R.layout.custom_toast_layout, null);
             if (mText != null) {
                 textView.setText(mText);
-                textView.announceForAccessibility(mText);
             }
             if (mBackgroundColor != null) {
                 textView.getBackground().setTint(mBackgroundColor);

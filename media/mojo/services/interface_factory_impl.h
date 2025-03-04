@@ -56,6 +56,11 @@ class InterfaceFactoryImpl final
       mojo::PendingReceiver<mojom::VideoDecoder> receiver,
       mojo::PendingRemote<media::stable::mojom::StableVideoDecoder>
           dst_video_decoder) final;
+#if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+  void CreateStableVideoDecoder(
+      mojo::PendingReceiver<media::stable::mojom::StableVideoDecoder>
+          video_decoder) final;
+#endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
   void CreateAudioEncoder(
       mojo::PendingReceiver<mojom::AudioEncoder> receiver) final;
@@ -68,15 +73,15 @@ class InterfaceFactoryImpl final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<mojom::Renderer> receiver) final;
 #endif
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
   void CreateMediaPlayerRenderer(
       mojo::PendingRemote<mojom::MediaPlayerRendererClientExtension>
           client_extension_remote,
       mojo::PendingReceiver<mojom::Renderer> receiver,
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver) final;
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
       mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
           client_extension_ptr,
@@ -84,7 +89,7 @@ class InterfaceFactoryImpl final
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
       int player_id) final;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,
@@ -104,7 +109,7 @@ class InterfaceFactoryImpl final
 
   void CreateCdm(const CdmConfig& cdm_config, CreateCdmCallback callback) final;
 
-  // DeferredDestroy<mojom::InterfaceFactory> implemenation.
+  // DeferredDestroy<mojom::InterfaceFactory> implementation.
   void OnDestroyPending(base::OnceClosure destroy_cb) final;
 
  private:
@@ -128,7 +133,7 @@ class InterfaceFactoryImpl final
   void OnCdmServiceInitialized(MojoCdmService* raw_mojo_cdm_service,
                                CreateCdmCallback callback,
                                mojom::CdmContextPtr cdm_context,
-                               const std::string& error_message);
+                               CreateCdmStatus status);
 #endif  // BUILDFLAG(ENABLE_MOJO_CDM)
 
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
@@ -144,7 +149,8 @@ class InterfaceFactoryImpl final
   MojoCdmServiceContext cdm_service_context_;
 
 #if BUILDFLAG(ENABLE_MOJO_AUDIO_DECODER)
-  mojo::UniqueReceiverSet<mojom::AudioDecoder> audio_decoder_receivers_;
+  class AudioDecoderReceivers;
+  std::unique_ptr<AudioDecoderReceivers> audio_decoder_receivers_;
 #endif  // BUILDFLAG(ENABLE_MOJO_AUDIO_DECODER)
 
 #if BUILDFLAG(ENABLE_MOJO_VIDEO_DECODER)

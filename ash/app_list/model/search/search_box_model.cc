@@ -25,16 +25,22 @@ void SearchBoxModel::SetShowAssistantButton(bool show) {
     observer.ShowAssistantChanged();
 }
 
+void SearchBoxModel::SetShowSunfishButton(bool show) {
+  if (show_sunfish_button_ == show) {
+    return;
+  }
+  show_sunfish_button_ = show;
+  for (SearchBoxModelObserver& observer : observers_) {
+    observer.ShowSunfishChanged();
+  }
+}
+
 void SearchBoxModel::SetWouldTriggerIph(bool would_trigger_iph) {
   if (would_trigger_iph_ == would_trigger_iph) {
     return;
   }
 
   would_trigger_iph_ = would_trigger_iph;
-
-  for (auto& observer : observers_) {
-    observer.OnWouldTriggerIphChanged();
-  }
 }
 
 void SearchBoxModel::SetSearchEngineIsGoogle(bool is_google) {

@@ -2,20 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/indexed_db/indexed_db_leveldb_coding.h"
 
+#include <array>
 #include <iterator>
 #include <limits>
+#include <list>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
-#include "base/big_endian.h"
+#include "base/bits.h"
 #include "base/check_op.h"
 #include "base/containers/span.h"
 #include "base/notreached.h"
+#include "base/numerics/byte_conversions.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/sys_byteorder.h"
 #include "build/build_config.h"
 #include "components/services/storage/indexed_db/scopes/leveldb_scopes_coding.h"
 #include "components/services/storage/indexed_db/scopes/varint_coding.h"
@@ -23,19 +31,12 @@
 // See leveldb_coding_scheme.md for detailed documentation of the coding
 // scheme implemented here.
 
-using base::StringPiece;
 using blink::IndexedDBKey;
 using blink::IndexedDBKeyPath;
 
-namespace content {
+namespace content::indexed_db {
+
 namespace {
-inline uint64_t ByteSwapToBE64(uint64_t x) {
-#if defined(ARCH_CPU_LITTLE_ENDIAN)
-  return base::ByteSwap(x);
-#else
-  return x;
-#endif
-}
 
 // As most of the IndexedDBKeys and encoded values are short, we
 // initialize some std::vectors with a default inline buffer size to reduce
@@ -49,6 +50,19 @@ constexpr unsigned char kIndexedDBKeyNumberTypeByte = 3;
 constexpr unsigned char kIndexedDBKeyArrayTypeByte = 4;
 constexpr unsigned char kIndexedDBKeyMinKeyTypeByte = 5;
 constexpr unsigned char kIndexedDBKeyBinaryTypeByte = 6;
+
+constexpr unsigned char kSentinel = 0x0;
+constexpr size_t kSentinelLength = sizeof(kSentinel);
+constexpr unsigned char kPaddingByte = 0x1;
+// These values are used with sentinel-based encoding. The relative order is
+// important as it matches the standard algorithm to compare two keys:
+// https://w3c.github.io/IndexedDB/#compare-two-keys
+// Gaps are left between values in case we need to insert new types.
+constexpr unsigned char kOrderedNumberTypeByte = 0x10;
+constexpr unsigned char kOrderedDateTypeByte = 0x20;
+constexpr unsigned char kOrderedStringTypeByte = 0x30;
+constexpr unsigned char kOrderedBinaryTypeByte = 0x40;
+constexpr unsigned char kOrderedArrayTypeByte = 0x50;
 
 constexpr unsigned char kIndexedDBKeyPathTypeCodedByte1 = 0;
 constexpr unsigned char kIndexedDBKeyPathTypeCodedByte2 = 0;
@@ -92,6 +106,184 @@ inline void EncodeIntSafely(int64_t value, int64_t max, std::string* into) {
   return EncodeInt(value, into);
 }
 
+// This doubles the length of the data; a variable length encoding would be more
+// efficient. TODO(estade): use variable length encoding.
+void EncodeStringWithSentinel(const std::u16string& value, std::string* into) {
+  size_t length = value.length();
+  into->reserve(into->size() +
+                length * (sizeof(char16_t) + sizeof(kPaddingByte)) +
+                kSentinelLength);
+
+  for (char16_t c : value) {
+    into->push_back(kPaddingByte);
+    into->push_back(static_cast<char>(c >> 8));
+    into->push_back(static_cast<char>(c));
+  }
+
+  into->push_back(kSentinel);
+}
+
+// Reads and consumes the first bytes of `encoded` and outputs decoded string to
+// `output`. Returns true on success.
+bool DecodeStringWithSentinel(std::string_view& encoded,
+                              std::u16string* output) {
+  constexpr int kChunkLengthInBytes = sizeof(kPaddingByte) + sizeof(char16_t);
+  if (encoded.size() < kChunkLengthInBytes + kSentinelLength) {
+    return false;
+  }
+
+  for (; !encoded.empty(); encoded = encoded.substr(kChunkLengthInBytes)) {
+    if (encoded.front() == kSentinel) {
+      encoded = encoded.substr(kSentinelLength);
+      return true;
+    }
+    if (encoded.size() < kChunkLengthInBytes + kSentinelLength) {
+      return false;
+    }
+    if (encoded.at(0) != kPaddingByte) {
+      return false;
+    }
+    output->push_back(static_cast<char16_t>(encoded.at(1)) << 8 |
+                      encoded.at(2));
+  }
+  return false;
+}
+
+// This doubles the length of the data; a variable length encoding would be more
+// efficient. TODO(estade): use variable length encoding.
+void EncodeBinaryWithSentinel(const std::string& value, std::string* into) {
+  size_t length = value.length();
+  into->reserve(into->size() + length * sizeof(char) * 2 + 1);
+
+  for (char c : value) {
+    into->push_back(kPaddingByte);
+    into->push_back(c);
+  }
+
+  into->push_back(kSentinel);
+}
+
+// Reads and consumes the first bytes of `encoded` and outputs decoded binary as
+// string in `output`. Returns true on success.
+bool DecodeBinaryWithSentinel(std::string_view& encoded, std::string* output) {
+  constexpr int kChunkLengthInBytes = sizeof(kPaddingByte) + 1;
+  if (encoded.size() < kChunkLengthInBytes + kSentinelLength) {
+    return false;
+  }
+  for (; !encoded.empty(); encoded = encoded.substr(kChunkLengthInBytes)) {
+    if (encoded.front() == kSentinel) {
+      encoded = encoded.substr(1);
+      return true;
+    }
+    if (encoded.size() < kChunkLengthInBytes + kSentinelLength) {
+      return false;
+    }
+    if (encoded.at(0) != kPaddingByte) {
+      return false;
+    }
+    output->push_back(encoded.at(1));
+  }
+  return true;
+}
+
+void EncodeSortableDouble(double value, std::string* into) {
+  CHECK(!std::isnan(value));
+
+  uint64_t double_bits = 0;
+  std::memcpy(&double_bits, &value, sizeof(value));
+
+  // When interpreted as plain bits, negative doubles will sort in reverse, so
+  // invert the bits. For positive doubles we only have to invert the sign bit
+  // so they sort higher than the negatives. The one exception to this is -0,
+  // which should be normalized to positive zero. This aligns with this spec
+  // proposal: https://github.com/w3c/IndexedDB/pull/386
+  // TODO(estade): revisit if this spec PR is not accepted.
+  uint64_t modified_bits = 0;
+  if (std::signbit(value) && value != -0.0) {
+    modified_bits = double_bits ^ std::numeric_limits<uint64_t>::max();
+  } else {
+    static constexpr uint64_t kSignBit = base::bits::LeftmostBit<uint64_t>();
+    modified_bits = kSignBit | double_bits;
+  }
+
+  std::array<uint8_t, 8u> chars;
+  base::span(chars).copy_from(base::U64ToBigEndian(modified_bits));
+  into->insert(into->end(), chars.begin(), chars.end());
+}
+
+// Reads and consumes the first 8 bytes of `encoded` and outputs decoded double
+// as `output`. Returns true on success.
+bool DecodeSortableDouble(std::string_view& data, double* output) {
+  constexpr size_t kLengthInBytes = sizeof(double);
+  if (data.size() < kLengthInBytes) {
+    return false;
+  }
+
+  uint64_t host_bits = base::U64FromBigEndian(base::as_bytes(
+      base::span<const char, kLengthInBytes>{data.data(), kLengthInBytes}));
+  data = data.substr(kLengthInBytes);
+
+  static constexpr uint64_t kSignBit = base::bits::LeftmostBit<uint64_t>();
+  if (host_bits & kSignBit) {
+    host_bits = host_bits ^ kSignBit;
+  } else {
+    host_bits = host_bits ^ std::numeric_limits<uint64_t>::max();
+  }
+
+  std::memcpy(output, &host_bits, kLengthInBytes);
+  return true;
+}
+
+// Decodes bytes of type `value_type` starting at `data`. Returns the address
+// after the end of the decoded data on success, or nullptr on failure (which
+// indicates a problem with the data).
+bool DecodeSortableKeyNonArray(char value_type,
+                               std::string_view& data,
+                               IndexedDBKey* decoded) {
+  switch (value_type) {
+    case kOrderedBinaryTypeByte: {
+      std::string binary;
+      if (DecodeBinaryWithSentinel(data, &binary)) {
+        *decoded = IndexedDBKey(std::move(binary));
+        return true;
+      }
+      return false;
+    }
+
+    case kOrderedStringTypeByte: {
+      std::u16string string_bytes;
+      if (DecodeStringWithSentinel(data, &string_bytes)) {
+        *decoded = IndexedDBKey(std::move(string_bytes));
+        return true;
+      }
+      return false;
+    }
+
+    case kOrderedDateTypeByte: {
+      double date;
+      if (DecodeSortableDouble(data, &date)) {
+        *decoded = IndexedDBKey(date, blink::mojom::IDBKeyType::Date);
+        return true;
+      }
+      return false;
+    }
+
+    case kOrderedNumberTypeByte: {
+      double number;
+      if (DecodeSortableDouble(data, &number)) {
+        *decoded = IndexedDBKey(number, blink::mojom::IDBKeyType::Number);
+        return true;
+      }
+      return false;
+    }
+
+    case kOrderedArrayTypeByte:
+    case kSentinel:
+    default:
+      return false;
+  }
+}
+
 }  // namespace
 
 const unsigned char kMinimumIndexId = 30;
@@ -133,15 +325,13 @@ void EncodeInt(int64_t value, std::string* into) {
 void EncodeString(const std::u16string& value, std::string* into) {
   if (value.empty())
     return;
-  // Backing store is UTF-16BE, convert from host endianness.
-  size_t length = value.length();
-  size_t current = into->size();
-  into->resize(into->size() + length * sizeof(char16_t));
 
-  const char16_t* src = value.c_str();
-  char16_t* dst = reinterpret_cast<char16_t*>(&*into->begin() + current);
-  for (unsigned i = 0; i < length; ++i)
-    *dst++ = base::HostToNet16(*src++);
+  // Backing store is UTF-16BE, convert from host endianness.
+  into->reserve(into->size() + value.length() * 2);
+  for (char16_t c : value) {
+    into->push_back(static_cast<char>(c >> 8));
+    into->push_back(static_cast<char>(c));
+  }
 }
 
 void EncodeBinary(const std::string& value, std::string* into) {
@@ -167,46 +357,102 @@ void EncodeDouble(double value, std::string* into) {
   into->insert(into->end(), p, p + sizeof(value));
 }
 
-void EncodeIDBKey(const IndexedDBKey& value, std::string* into) {
+// Return value is true iff successful.
+[[nodiscard]] bool EncodeIDBKeyRecursively(const IndexedDBKey& value,
+                                           std::string* into,
+                                           size_t recursion_level) {
+  // The recursion level is enforced in the renderer (in V8). If this check
+  // fails, it suggests a compromised renderer.
+  if (recursion_level > IndexedDBKey::kMaximumDepth) {
+    return false;
+  }
+
   size_t previous_size = into->size();
-  DCHECK(value.IsValid());
   switch (value.type()) {
     case blink::mojom::IDBKeyType::Array: {
       EncodeByte(kIndexedDBKeyArrayTypeByte, into);
       size_t length = value.array().size();
       EncodeVarInt(length, into);
-      for (size_t i = 0; i < length; ++i)
-        EncodeIDBKey(value.array()[i], into);
+      for (size_t i = 0; i < length; ++i) {
+        if (!EncodeIDBKeyRecursively(value.array()[i], into,
+                                     1 + recursion_level)) {
+          return false;
+        }
+      }
       DCHECK_GT(into->size(), previous_size);
-      return;
+      return true;
     }
     case blink::mojom::IDBKeyType::Binary:
       EncodeByte(kIndexedDBKeyBinaryTypeByte, into);
       EncodeBinary(value.binary(), into);
       DCHECK_GT(into->size(), previous_size);
-      return;
+      return true;
     case blink::mojom::IDBKeyType::String:
       EncodeByte(kIndexedDBKeyStringTypeByte, into);
       EncodeStringWithLength(value.string(), into);
       DCHECK_GT(into->size(), previous_size);
-      return;
+      return true;
     case blink::mojom::IDBKeyType::Date:
       EncodeByte(kIndexedDBKeyDateTypeByte, into);
       EncodeDouble(value.date(), into);
       DCHECK_EQ(9u, static_cast<size_t>(into->size() - previous_size));
-      return;
+      return true;
     case blink::mojom::IDBKeyType::Number:
       EncodeByte(kIndexedDBKeyNumberTypeByte, into);
       EncodeDouble(value.number(), into);
       DCHECK_EQ(9u, static_cast<size_t>(into->size() - previous_size));
+      return true;
+    case blink::mojom::IDBKeyType::None:
+    case blink::mojom::IDBKeyType::Invalid:
+    case blink::mojom::IDBKeyType::Min:
+    default:
+      return false;
+  }
+}
+
+// This function must be a thin wrapper around `MaybeEncodeIDBKey` to ensure
+// comprehensive test coverage.
+void EncodeIDBKey(const IndexedDBKey& value, std::string* into) {
+  CHECK(MaybeEncodeIDBKey(value, into));
+}
+
+bool MaybeEncodeIDBKey(const IndexedDBKey& value, std::string* into) {
+  return EncodeIDBKeyRecursively(value, into, 0);
+}
+
+void EncodeSortableIDBKey(const IndexedDBKey& value, std::string* into) {
+  size_t previous_size = into->size();
+  switch (value.type()) {
+    case blink::mojom::IDBKeyType::Array: {
+      EncodeByte(kOrderedArrayTypeByte, into);
+      for (const IndexedDBKey& key : value.array()) {
+        EncodeSortableIDBKey(key, into);
+      }
+      EncodeByte(kSentinel, into);
+      DCHECK_GT(into->size(), previous_size);
+      return;
+    }
+    case blink::mojom::IDBKeyType::Binary:
+      EncodeByte(kOrderedBinaryTypeByte, into);
+      EncodeBinaryWithSentinel(value.binary(), into);
+      return;
+    case blink::mojom::IDBKeyType::String:
+      EncodeByte(kOrderedStringTypeByte, into);
+      EncodeStringWithSentinel(value.string(), into);
+      return;
+    case blink::mojom::IDBKeyType::Date:
+      EncodeByte(kOrderedDateTypeByte, into);
+      EncodeSortableDouble(value.date(), into);
+      return;
+    case blink::mojom::IDBKeyType::Number:
+      EncodeByte(kOrderedNumberTypeByte, into);
+      EncodeSortableDouble(value.number(), into);
       return;
     case blink::mojom::IDBKeyType::None:
     case blink::mojom::IDBKeyType::Invalid:
     case blink::mojom::IDBKeyType::Min:
     default:
       NOTREACHED();
-      EncodeByte(kIndexedDBKeyNullTypeByte, into);
-      return;
   }
 }
 
@@ -255,7 +501,7 @@ void EncodeBlobJournal(const BlobJournalType& journal, std::string* into) {
   }
 }
 
-bool DecodeByte(StringPiece* slice, unsigned char* value) {
+bool DecodeByte(std::string_view* slice, unsigned char* value) {
   if (slice->empty())
     return false;
 
@@ -264,7 +510,7 @@ bool DecodeByte(StringPiece* slice, unsigned char* value) {
   return true;
 }
 
-bool DecodeBool(StringPiece* slice, bool* value) {
+bool DecodeBool(std::string_view* slice, bool* value) {
   if (slice->empty())
     return false;
 
@@ -273,11 +519,11 @@ bool DecodeBool(StringPiece* slice, bool* value) {
   return true;
 }
 
-bool DecodeInt(StringPiece* slice, int64_t* value) {
+bool DecodeInt(std::string_view* slice, int64_t* value) {
   if (slice->empty())
     return false;
 
-  StringPiece::const_iterator it = slice->begin();
+  std::string_view::const_iterator it = slice->begin();
   int shift = 0;
   int64_t ret = 0;
   while (it != slice->end()) {
@@ -290,7 +536,7 @@ bool DecodeInt(StringPiece* slice, int64_t* value) {
   return true;
 }
 
-bool DecodeString(StringPiece* slice, std::u16string* value) {
+bool DecodeString(std::string_view* slice, std::u16string* value) {
   if (slice->empty()) {
     value->clear();
     return true;
@@ -301,16 +547,18 @@ bool DecodeString(StringPiece* slice, std::u16string* value) {
   size_t length = slice->size() / sizeof(char16_t);
   std::u16string decoded;
   decoded.reserve(length);
-  const char16_t* encoded = reinterpret_cast<const char16_t*>(slice->begin());
-  for (unsigned i = 0; i < length; ++i)
-    decoded.push_back(base::NetToHost16(*encoded++));
+  for (size_t i = 0; i < length; ++i) {
+    uint8_t hi = static_cast<uint8_t>((*slice)[2 * i]);
+    uint8_t lo = static_cast<uint8_t>((*slice)[2 * i + 1]);
+    decoded.push_back((char16_t{hi} << 8) | char16_t{lo});
+  }
 
   *value = decoded;
   slice->remove_prefix(length * sizeof(char16_t));
   return true;
 }
 
-bool DecodeStringWithLength(StringPiece* slice, std::u16string* value) {
+bool DecodeStringWithLength(std::string_view* slice, std::u16string* value) {
   if (slice->empty())
     return false;
 
@@ -321,7 +569,7 @@ bool DecodeStringWithLength(StringPiece* slice, std::u16string* value) {
   if (slice->size() < bytes)
     return false;
 
-  StringPiece subpiece(slice->begin(), bytes);
+  std::string_view subpiece = slice->substr(0, bytes);
   slice->remove_prefix(bytes);
   if (!DecodeString(&subpiece, value))
     return false;
@@ -329,7 +577,7 @@ bool DecodeStringWithLength(StringPiece* slice, std::u16string* value) {
   return true;
 }
 
-bool DecodeBinary(StringPiece* slice, std::string* value) {
+bool DecodeBinary(std::string_view* slice, std::string* value) {
   if (slice->empty())
     return false;
 
@@ -340,12 +588,12 @@ bool DecodeBinary(StringPiece* slice, std::string* value) {
   if (slice->size() < size)
     return false;
 
-  value->assign(slice->begin(), size);
+  value->assign(slice->data(), size);
   slice->remove_prefix(size);
   return true;
 }
 
-bool DecodeBinary(StringPiece* slice, base::span<const uint8_t>* value) {
+bool DecodeBinary(std::string_view* slice, base::span<const uint8_t>* value) {
   if (slice->empty())
     return false;
 
@@ -361,7 +609,7 @@ bool DecodeBinary(StringPiece* slice, base::span<const uint8_t>* value) {
   return true;
 }
 
-bool DecodeIDBKeyRecursive(StringPiece* slice,
+bool DecodeIDBKeyRecursive(std::string_view* slice,
                            std::unique_ptr<IndexedDBKey>* value,
                            size_t recursion) {
   if (slice->empty())
@@ -375,8 +623,7 @@ bool DecodeIDBKeyRecursive(StringPiece* slice,
 
   switch (type) {
     case kIndexedDBKeyNullTypeByte:
-      *value = std::make_unique<IndexedDBKey>();
-      return true;
+      return false;
 
     case kIndexedDBKeyArrayTypeByte: {
       int64_t length = 0;
@@ -423,29 +670,85 @@ bool DecodeIDBKeyRecursive(StringPiece* slice,
       return true;
     }
     case kIndexedDBKeyMinKeyTypeByte: {
-      *value = std::make_unique<IndexedDBKey>(blink::mojom::IDBKeyType::Min);
-      return true;
+      return false;
     }
   }
 
-  NOTREACHED();
   return false;
 }
 
-bool DecodeIDBKey(StringPiece* slice, std::unique_ptr<IndexedDBKey>* value) {
+bool DecodeIDBKey(std::string_view* slice,
+                  std::unique_ptr<IndexedDBKey>* value) {
   return DecodeIDBKeyRecursive(slice, value, 0);
 }
 
-bool DecodeDouble(StringPiece* slice, double* value) {
-  if (slice->size() < sizeof(*value))
+bool DecodeSortableIDBKey(std::string_view serialized,
+                          blink::IndexedDBKey* value) {
+  if (serialized.empty()) {
     return false;
+  }
 
-  memcpy(value, slice->begin(), sizeof(*value));
-  slice->remove_prefix(sizeof(*value));
+  std::string_view data = serialized;
+  blink::IndexedDBKey* into = value;
+  std::list<std::vector<IndexedDBKey>> key_arrays;
+  while (!data.empty()) {
+    char value_type = data.front();
+    data = data.substr(1);
+    switch (value_type) {
+      case kOrderedArrayTypeByte:
+        key_arrays.emplace_back();
+        continue;
+
+      case kOrderedBinaryTypeByte:
+      case kOrderedStringTypeByte:
+      case kOrderedDateTypeByte:
+      case kOrderedNumberTypeByte:
+        if (!key_arrays.empty()) {
+          key_arrays.back().emplace_back();
+          into = &key_arrays.back().back();
+        } else if (into != value) {
+          return false;
+        }
+        if (!DecodeSortableKeyNonArray(value_type, data, into)) {
+          return false;
+        }
+        continue;
+
+      case kSentinel: {
+        if (key_arrays.empty()) {
+          return false;
+        }
+        IndexedDBKey keys(std::move(key_arrays.back()));
+        key_arrays.pop_back();
+        if (key_arrays.empty()) {
+          *value = std::move(keys);
+          break;
+        }
+
+        key_arrays.back().emplace_back(std::move(keys));
+        continue;
+      }
+
+      default:
+        return false;
+    }
+  }
+  return data.empty() && value->IsValid();
+}
+
+bool DecodeDouble(std::string_view* slice, double* value) {
+  constexpr size_t size = sizeof(*value);
+  if (slice->size() < size) {
+    return false;
+  }
+
+  base::byte_span_from_ref(*value).copy_from(
+      base::as_byte_span(*slice).first<size>());
+  slice->remove_prefix(size);
   return true;
 }
 
-bool DecodeIDBKeyPath(StringPiece* slice, IndexedDBKeyPath* value) {
+bool DecodeIDBKeyPath(std::string_view* slice, IndexedDBKeyPath* value) {
   // May be typed, or may be a raw string. An invalid leading
   // byte sequence is used to identify typed coding. New records are
   // always written as typed.
@@ -466,14 +769,16 @@ bool DecodeIDBKeyPath(StringPiece* slice, IndexedDBKeyPath* value) {
 
   switch (type) {
     case blink::mojom::IDBKeyPathType::Null:
-      DCHECK(slice->empty());
+      if (!slice->empty()) {
+        return false;
+      }
       *value = IndexedDBKeyPath();
       return true;
     case blink::mojom::IDBKeyPathType::String: {
       std::u16string string;
-      if (!DecodeStringWithLength(slice, &string))
+      if (!DecodeStringWithLength(slice, &string) || !slice->empty()) {
         return false;
-      DCHECK(slice->empty());
+      }
       *value = IndexedDBKeyPath(string);
       return true;
     }
@@ -488,16 +793,18 @@ bool DecodeIDBKeyPath(StringPiece* slice, IndexedDBKeyPath* value) {
           return false;
         array.push_back(string);
       }
-      DCHECK(slice->empty());
+      if (!slice->empty()) {
+        return false;
+      }
       *value = IndexedDBKeyPath(array);
       return true;
     }
   }
-  NOTREACHED();
+
   return false;
 }
 
-bool DecodeBlobJournal(StringPiece* slice, BlobJournalType* journal) {
+bool DecodeBlobJournal(std::string_view* slice, BlobJournalType* journal) {
   BlobJournalType output;
   while (!slice->empty()) {
     int64_t database_id = -1;
@@ -518,7 +825,7 @@ bool DecodeBlobJournal(StringPiece* slice, BlobJournalType* journal) {
   return true;
 }
 
-bool ConsumeEncodedIDBKey(StringPiece* slice) {
+bool ConsumeEncodedIDBKey(std::string_view* slice) {
   unsigned char type = (*slice)[0];
   slice->remove_prefix(1);
 
@@ -562,16 +869,15 @@ bool ConsumeEncodedIDBKey(StringPiece* slice) {
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
-bool ExtractEncodedIDBKey(StringPiece* slice, std::string* result) {
-  const char* start = slice->begin();
+bool ExtractEncodedIDBKey(std::string_view* slice, std::string* result) {
+  const char* start = slice->data();
   if (!ConsumeEncodedIDBKey(slice))
     return false;
 
   if (result)
-    result->assign(start, slice->begin());
+    result->assign(start, slice->data());
   return true;
 }
 
@@ -593,12 +899,12 @@ static blink::mojom::IDBKeyType KeyTypeByteToKeyType(unsigned char type) {
       return blink::mojom::IDBKeyType::Min;
   }
 
-  NOTREACHED() << "Got invalid type " << type;
+  DUMP_WILL_BE_NOTREACHED() << "Got invalid type " << type;
   return blink::mojom::IDBKeyType::Invalid;
 }
 
-int CompareEncodedStringsWithLength(StringPiece* slice1,
-                                    StringPiece* slice2,
+int CompareEncodedStringsWithLength(std::string_view* slice1,
+                                    std::string_view* slice2,
                                     bool* ok) {
   int64_t len1, len2;
   if (!DecodeVarInt(slice1, &len1) || !DecodeVarInt(slice2, &len2)) {
@@ -616,8 +922,8 @@ int CompareEncodedStringsWithLength(StringPiece* slice1,
   }
 
   // Extract the string data, and advance the passed slices.
-  StringPiece string1(slice1->begin(), len1 * sizeof(char16_t));
-  StringPiece string2(slice2->begin(), len2 * sizeof(char16_t));
+  std::string_view string1(slice1->data(), len1 * sizeof(char16_t));
+  std::string_view string2(slice2->data(), len2 * sizeof(char16_t));
   slice1->remove_prefix(len1 * sizeof(char16_t));
   slice2->remove_prefix(len2 * sizeof(char16_t));
 
@@ -626,7 +932,9 @@ int CompareEncodedStringsWithLength(StringPiece* slice1,
   return string1.compare(string2);
 }
 
-int CompareEncodedBinary(StringPiece* slice1, StringPiece* slice2, bool* ok) {
+int CompareEncodedBinary(std::string_view* slice1,
+                         std::string_view* slice2,
+                         bool* ok) {
   int64_t len1, len2;
   if (!DecodeVarInt(slice1, &len1) || !DecodeVarInt(slice2, &len2)) {
     *ok = false;
@@ -645,8 +953,8 @@ int CompareEncodedBinary(StringPiece* slice1, StringPiece* slice2, bool* ok) {
   }
 
   // Extract the binary data, and advance the passed slices.
-  StringPiece binary1(slice1->begin(), size1);
-  StringPiece binary2(slice2->begin(), size2);
+  std::string_view binary1(slice1->data(), size1);
+  std::string_view binary2(slice2->data(), size2);
   slice1->remove_prefix(size1);
   slice2->remove_prefix(size2);
 
@@ -682,8 +990,8 @@ static int CompareTypes(blink::mojom::IDBKeyType a,
   return static_cast<int32_t>(b) - static_cast<int32_t>(a);
 }
 
-int CompareEncodedIDBKeys(StringPiece* slice_a,
-                          StringPiece* slice_b,
+int CompareEncodedIDBKeys(std::string_view* slice_a,
+                          std::string_view* slice_b,
                           bool* ok) {
   DCHECK(!slice_a->empty());
   DCHECK(!slice_b->empty());
@@ -736,25 +1044,24 @@ int CompareEncodedIDBKeys(StringPiece* slice_a,
   }
 
   NOTREACHED();
-  return 0;
 }
 
 namespace {
 
 template <typename KeyType>
-int Compare(const StringPiece& a,
-            const StringPiece& b,
+int Compare(std::string_view a,
+            std::string_view b,
             bool only_compare_index_keys,
             bool* ok) {
   KeyType key_a;
   KeyType key_b;
 
-  StringPiece slice_a(a);
+  std::string_view slice_a(a);
   if (!KeyType::Decode(&slice_a, &key_a)) {
     *ok = false;
     return 0;
   }
-  StringPiece slice_b(b);
+  std::string_view slice_b(b);
   if (!KeyType::Decode(&slice_b, &key_b)) {
     *ok = false;
     return 0;
@@ -765,17 +1072,16 @@ int Compare(const StringPiece& a,
 }
 
 template <typename KeyType>
-int CompareSuffix(StringPiece* a,
-                  StringPiece* b,
+int CompareSuffix(std::string_view* a,
+                  std::string_view* b,
                   bool only_compare_index_keys,
                   bool* ok) {
   NOTREACHED();
-  return 0;
 }
 
 template <>
-int CompareSuffix<ExistsEntryKey>(StringPiece* slice_a,
-                                  StringPiece* slice_b,
+int CompareSuffix<ExistsEntryKey>(std::string_view* slice_a,
+                                  std::string_view* slice_b,
                                   bool only_compare_index_keys,
                                   bool* ok) {
   DCHECK(!slice_a->empty());
@@ -784,24 +1090,24 @@ int CompareSuffix<ExistsEntryKey>(StringPiece* slice_a,
 }
 
 template <>
-int CompareSuffix<ObjectStoreDataKey>(StringPiece* slice_a,
-                                      StringPiece* slice_b,
+int CompareSuffix<ObjectStoreDataKey>(std::string_view* slice_a,
+                                      std::string_view* slice_b,
                                       bool only_compare_index_keys,
                                       bool* ok) {
   return CompareEncodedIDBKeys(slice_a, slice_b, ok);
 }
 
 template <>
-int CompareSuffix<BlobEntryKey>(StringPiece* slice_a,
-                                StringPiece* slice_b,
+int CompareSuffix<BlobEntryKey>(std::string_view* slice_a,
+                                std::string_view* slice_b,
                                 bool only_compare_index_keys,
                                 bool* ok) {
   return CompareEncodedIDBKeys(slice_a, slice_b, ok);
 }
 
 template <>
-int CompareSuffix<IndexDataKey>(StringPiece* slice_a,
-                                StringPiece* slice_b,
+int CompareSuffix<IndexDataKey>(std::string_view* slice_a,
+                                std::string_view* slice_b,
                                 bool only_compare_index_keys,
                                 bool* ok) {
   // index key
@@ -830,12 +1136,12 @@ int CompareSuffix<IndexDataKey>(StringPiece* slice_a,
   return CompareInts(sequence_number_a, sequence_number_b);
 }
 
-int Compare(const StringPiece& a,
-            const StringPiece& b,
+int Compare(std::string_view a,
+            std::string_view b,
             bool only_compare_index_keys,
             bool* ok) {
-  StringPiece slice_a(a);
-  StringPiece slice_b(b);
+  std::string_view slice_a(a);
+  std::string_view slice_b(b);
   KeyPrefix prefix_a;
   KeyPrefix prefix_b;
   bool ok_a = KeyPrefix::Decode(&slice_a, &prefix_a);
@@ -983,14 +1289,12 @@ int Compare(const StringPiece& a,
   }
 
   NOTREACHED();
-  *ok = false;
-  return 0;
 }
 
 }  // namespace
 
-int Compare(const StringPiece& a,
-            const StringPiece& b,
+int Compare(std::string_view a,
+            std::string_view b,
             bool only_compare_index_keys) {
   bool ok;
   int result = Compare(a, b, only_compare_index_keys, &ok);
@@ -1001,16 +1305,16 @@ int Compare(const StringPiece& a,
   return result;
 }
 
-int CompareKeys(const StringPiece& a, const StringPiece& b) {
+int CompareKeys(std::string_view a, std::string_view b) {
   return Compare(a, b, /*index_keys=*/false);
 }
 
-int CompareIndexKeys(const StringPiece& a, const StringPiece& b) {
+int CompareIndexKeys(std::string_view a, std::string_view b) {
   return Compare(a, b, /*index_keys=*/true);
 }
 
-std::string IndexedDBKeyToDebugString(base::StringPiece key) {
-  base::StringPiece key_with_prefix_preserved = key;
+std::string IndexedDBKeyToDebugString(std::string_view key) {
+  std::string_view key_with_prefix_preserved = key;
   KeyPrefix prefix;
   std::stringstream result;
   if (!KeyPrefix::Decode(&key, &prefix)) {
@@ -1153,7 +1457,7 @@ std::string IndexedDBKeyToDebugString(base::StringPiece key) {
           }
           result << sub_key.DebugString();
           break;
-        }  // namespace content
+        }
         case kIndexNamesKeyTypeByte: {
           IndexNamesKey sub_key;
           if (!IndexNamesKey::Decode(&key_with_prefix_preserved, &sub_key)) {
@@ -1214,13 +1518,8 @@ std::string IndexedDBKeyToDebugString(base::StringPiece key) {
   return result.str();
 }
 
-PartitionedLockId GetDatabaseLockId(int64_t database_id) {
-  // These keys used to attempt to be bytewise-comparable, which is why
-  // it uses big-endian encoding here. There was a goal to match the
-  // existing leveldb key scheme used by IndexedDB. This is no longer a goal.
-  uint64_t key[1] = {ByteSwapToBE64(static_cast<uint64_t>(database_id))};
-  return {kDatabaseLockPartition,
-          std::string(reinterpret_cast<char*>(&key), sizeof(key))};
+PartitionedLockId GetDatabaseLockId(std::u16string database_name) {
+  return {kDatabaseLockPartition, base::UTF16ToUTF8(database_name)};
 }
 
 PartitionedLockId GetObjectStoreLockId(int64_t database_id,
@@ -1228,10 +1527,11 @@ PartitionedLockId GetObjectStoreLockId(int64_t database_id,
   // These keys used to attempt to be bytewise-comparable, which is why
   // it uses big-endian encoding here. There was a goal to match the
   // existing leveldb key scheme used by IndexedDB. This is no longer a goal.
-  uint64_t key[2] = {ByteSwapToBE64(static_cast<uint64_t>(database_id)),
-                     ByteSwapToBE64(static_cast<uint64_t>(object_store_id))};
-  return {kObjectStoreLockPartition,
-          std::string(reinterpret_cast<char*>(&key), sizeof(key))};
+  std::array<uint8_t, 16u> chars;
+  auto [db, obj] = base::span(chars).split_at<8u>();
+  db.copy_from(base::U64ToBigEndian(static_cast<uint64_t>(database_id)));
+  obj.copy_from(base::U64ToBigEndian(static_cast<uint64_t>(object_store_id)));
+  return {kObjectStoreLockPartition, std::string(chars.begin(), chars.end())};
 }
 
 KeyPrefix::KeyPrefix()
@@ -1297,7 +1597,7 @@ bool KeyPrefix::IsValidIndexId(int64_t index_id) {
   return (index_id >= kMinimumIndexId) && (index_id < KeyPrefix::kMaxIndexId);
 }
 
-bool KeyPrefix::Decode(StringPiece* slice, KeyPrefix* result) {
+bool KeyPrefix::Decode(std::string_view* slice, KeyPrefix* result) {
   unsigned char first_byte;
   if (!DecodeByte(slice, &first_byte))
     return false;
@@ -1311,19 +1611,19 @@ bool KeyPrefix::Decode(StringPiece* slice, KeyPrefix* result) {
     return false;
 
   {
-    StringPiece tmp(slice->begin(), database_id_bytes);
+    std::string_view tmp = slice->substr(0, database_id_bytes);
     if (!DecodeInt(&tmp, &result->database_id_))
       return false;
   }
   slice->remove_prefix(database_id_bytes);
   {
-    StringPiece tmp(slice->begin(), object_store_id_bytes);
+    std::string_view tmp = slice->substr(0, object_store_id_bytes);
     if (!DecodeInt(&tmp, &result->object_store_id_))
       return false;
   }
   slice->remove_prefix(object_store_id_bytes);
   {
-    StringPiece tmp(slice->begin(), index_id_bytes);
+    std::string_view tmp = slice->substr(0, index_id_bytes);
     if (!DecodeInt(&tmp, &result->index_id_))
       return false;
   }
@@ -1445,7 +1745,6 @@ KeyPrefix::Type KeyPrefix::type() const {
     return INDEX_DATA;
 
   NOTREACHED();
-  return INVALID_TYPE;
 }
 
 std::string SchemaVersionKey::Encode() {
@@ -1499,7 +1798,7 @@ std::vector<uint8_t> ScopesPrefix::Encode() {
 
 DatabaseFreeListKey::DatabaseFreeListKey() : database_id_(-1) {}
 
-bool DatabaseFreeListKey::Decode(StringPiece* slice,
+bool DatabaseFreeListKey::Decode(std::string_view* slice,
                                  DatabaseFreeListKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -1543,7 +1842,7 @@ std::string DatabaseFreeListKey::DebugString() const {
   return result.str();
 }
 
-bool DatabaseNameKey::Decode(StringPiece* slice, DatabaseNameKey* result) {
+bool DatabaseNameKey::Decode(std::string_view* slice, DatabaseNameKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -1615,7 +1914,7 @@ const int64_t ObjectStoreMetaDataKey::kKeyGeneratorInitialNumber = 1;
 ObjectStoreMetaDataKey::ObjectStoreMetaDataKey()
     : object_store_id_(-1), meta_data_type_(0xFF) {}
 
-bool ObjectStoreMetaDataKey::Decode(StringPiece* slice,
+bool ObjectStoreMetaDataKey::Decode(std::string_view* slice,
                                     ObjectStoreMetaDataKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -1709,7 +2008,8 @@ std::string ObjectStoreMetaDataKey::DebugString() const {
 IndexMetaDataKey::IndexMetaDataKey()
     : object_store_id_(-1), index_id_(-1), meta_data_type_(0) {}
 
-bool IndexMetaDataKey::Decode(StringPiece* slice, IndexMetaDataKey* result) {
+bool IndexMetaDataKey::Decode(std::string_view* slice,
+                              IndexMetaDataKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -1797,7 +2097,7 @@ int64_t IndexMetaDataKey::IndexId() const {
 
 ObjectStoreFreeListKey::ObjectStoreFreeListKey() : object_store_id_(-1) {}
 
-bool ObjectStoreFreeListKey::Decode(StringPiece* slice,
+bool ObjectStoreFreeListKey::Decode(std::string_view* slice,
                                     ObjectStoreFreeListKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -1848,7 +2148,8 @@ std::string ObjectStoreFreeListKey::DebugString() const {
 
 IndexFreeListKey::IndexFreeListKey() : object_store_id_(-1), index_id_(-1) {}
 
-bool IndexFreeListKey::Decode(StringPiece* slice, IndexFreeListKey* result) {
+bool IndexFreeListKey::Decode(std::string_view* slice,
+                              IndexFreeListKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -1908,10 +2209,7 @@ int64_t IndexFreeListKey::IndexId() const {
   return index_id_;
 }
 
-// TODO(jsbell): We never use this to look up object store ids,
-// because a mapping is kept in the IndexedDBDatabase. Can the
-// mapping become unreliable?  Can we remove this?
-bool ObjectStoreNamesKey::Decode(StringPiece* slice,
+bool ObjectStoreNamesKey::Decode(std::string_view* slice,
                                  ObjectStoreNamesKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -1953,7 +2251,7 @@ IndexNamesKey::IndexNamesKey() : object_store_id_(-1) {}
 
 // TODO(jsbell): We never use this to look up index ids, because a mapping
 // is kept at a higher level.
-bool IndexNamesKey::Decode(StringPiece* slice, IndexNamesKey* result) {
+bool IndexNamesKey::Decode(std::string_view* slice, IndexNamesKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -1999,7 +2297,7 @@ std::string IndexNamesKey::DebugString() const {
 ObjectStoreDataKey::ObjectStoreDataKey() {}
 ObjectStoreDataKey::~ObjectStoreDataKey() {}
 
-bool ObjectStoreDataKey::Decode(StringPiece* slice,
+bool ObjectStoreDataKey::Decode(std::string_view* slice,
                                 ObjectStoreDataKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -2014,7 +2312,7 @@ bool ObjectStoreDataKey::Decode(StringPiece* slice,
 
 std::string ObjectStoreDataKey::Encode(int64_t database_id,
                                        int64_t object_store_id,
-                                       const std::string encoded_user_key) {
+                                       const std::string& encoded_user_key) {
   KeyPrefix prefix(KeyPrefix::CreateWithSpecialIndex(
       database_id, object_store_id, kSpecialIndexNumber));
   std::string ret = prefix.Encode();
@@ -2041,7 +2339,7 @@ std::string ObjectStoreDataKey::DebugString() const {
 
 std::unique_ptr<IndexedDBKey> ObjectStoreDataKey::user_key() const {
   std::unique_ptr<IndexedDBKey> key;
-  StringPiece slice(encoded_user_key_);
+  std::string_view slice(encoded_user_key_);
   if (!DecodeIDBKey(&slice, &key)) {
     // TODO(jsbell): Return error.
   }
@@ -2053,7 +2351,7 @@ const int64_t ObjectStoreDataKey::kSpecialIndexNumber = kObjectStoreDataIndexId;
 ExistsEntryKey::ExistsEntryKey() {}
 ExistsEntryKey::~ExistsEntryKey() {}
 
-bool ExistsEntryKey::Decode(StringPiece* slice, ExistsEntryKey* result) {
+bool ExistsEntryKey::Decode(std::string_view* slice, ExistsEntryKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -2093,7 +2391,7 @@ std::string ExistsEntryKey::DebugString() const {
 
 std::unique_ptr<IndexedDBKey> ExistsEntryKey::user_key() const {
   std::unique_ptr<IndexedDBKey> key;
-  StringPiece slice(encoded_user_key_);
+  std::string_view slice(encoded_user_key_);
   if (!DecodeIDBKey(&slice, &key)) {
     // TODO(jsbell): Return error.
   }
@@ -2102,7 +2400,7 @@ std::unique_ptr<IndexedDBKey> ExistsEntryKey::user_key() const {
 
 const int64_t ExistsEntryKey::kSpecialIndexNumber = kExistsEntryIndexId;
 
-bool BlobEntryKey::Decode(StringPiece* slice, BlobEntryKey* result) {
+bool BlobEntryKey::Decode(std::string_view* slice, BlobEntryKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -2118,7 +2416,7 @@ bool BlobEntryKey::Decode(StringPiece* slice, BlobEntryKey* result) {
   return true;
 }
 
-bool BlobEntryKey::FromObjectStoreDataKey(StringPiece* slice,
+bool BlobEntryKey::FromObjectStoreDataKey(std::string_view* slice,
                                           BlobEntryKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
@@ -2134,7 +2432,8 @@ bool BlobEntryKey::FromObjectStoreDataKey(StringPiece* slice,
   return true;
 }
 
-std::string BlobEntryKey::ReencodeToObjectStoreDataKey(StringPiece* slice) {
+std::string BlobEntryKey::ReencodeToObjectStoreDataKey(
+    std::string_view* slice) {
   // TODO(ericu): We could be more efficient here, since the suffix is the same.
   BlobEntryKey key;
   if (!Decode(slice, &key))
@@ -2185,7 +2484,7 @@ std::string BlobEntryKey::DebugString() const {
   result << "BlobEntryKey{db: " << database_id_ << "os: " << object_store_id_
          << ", user_key: ";
   std::unique_ptr<blink::IndexedDBKey> key;
-  StringPiece slice(encoded_user_key_);
+  std::string_view slice(encoded_user_key_);
   if (!DecodeIDBKey(&slice, &key)) {
     result << "Invalid";
   } else {
@@ -2207,7 +2506,7 @@ IndexDataKey::IndexDataKey(IndexDataKey&& other) = default;
 
 IndexDataKey::~IndexDataKey() {}
 
-bool IndexDataKey::Decode(StringPiece* slice, IndexDataKey* result) {
+bool IndexDataKey::Decode(std::string_view* slice, IndexDataKey* result) {
   KeyPrefix prefix;
   if (!KeyPrefix::Decode(slice, &prefix))
     return false;
@@ -2325,7 +2624,7 @@ int64_t IndexDataKey::IndexId() const {
 
 std::unique_ptr<IndexedDBKey> IndexDataKey::user_key() const {
   std::unique_ptr<IndexedDBKey> key;
-  StringPiece slice(encoded_user_key_);
+  std::string_view slice(encoded_user_key_);
   if (!DecodeIDBKey(&slice, &key)) {
     // TODO(jsbell): Return error.
   }
@@ -2334,11 +2633,11 @@ std::unique_ptr<IndexedDBKey> IndexDataKey::user_key() const {
 
 std::unique_ptr<IndexedDBKey> IndexDataKey::primary_key() const {
   std::unique_ptr<IndexedDBKey> key;
-  StringPiece slice(encoded_primary_key_);
+  std::string_view slice(encoded_primary_key_);
   if (!DecodeIDBKey(&slice, &key)) {
     // TODO(jsbell): Return error.
   }
   return key;
 }
 
-}  // namespace content
+}  // namespace content::indexed_db

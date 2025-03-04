@@ -13,6 +13,8 @@
 #include <utility>
 #include <vector>
 
+#include "base/compiler_specific.h"
+#include "base/containers/heap_array.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
@@ -35,9 +37,9 @@
 #include "ui/gl/scoped_make_current.h"
 #include "ui/gl/sync_control_vsync_provider.h"
 
-#if BUILDFLAG(IS_OZONE)
-#include "ui/ozone/buildflags.h"
-#endif  // BUILDFLAG(IS_OZONE)
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 
 #if !defined(EGL_FIXED_SIZE_ANGLE)
 #define EGL_FIXED_SIZE_ANGLE 0x3201
@@ -179,12 +181,9 @@ EGLConfig ChooseConfig(EGLDisplay display,
   }
   renderable_types.push_back(EGL_OPENGL_ES2_BIT);
 
-  EGLint buffer_size = format.GetBufferSize();
   EGLint alpha_size = 8;
-  bool want_rgb565 = buffer_size == 16;
-  EGLint depth_size = format.GetDepthBits();
-  EGLint stencil_size = format.GetStencilBits();
-  EGLint samples = format.GetSamples();
+  bool want_rgb565 = format.IsRGB565();
+  EGLint buffer_size = want_rgb565 ? 16 : 32;
 
   // Some platforms (eg. X11) may want to set custom values for alpha and buffer
   // sizes.
@@ -207,12 +206,6 @@ EGLConfig ChooseConfig(EGLDisplay display,
                                     8,
                                     EGL_RED_SIZE,
                                     8,
-                                    EGL_SAMPLES,
-                                    samples,
-                                    EGL_DEPTH_SIZE,
-                                    depth_size,
-                                    EGL_STENCIL_SIZE,
-                                    stencil_size,
                                     EGL_RENDERABLE_TYPE,
                                     renderable_type,
                                     EGL_SURFACE_TYPE,
@@ -227,12 +220,6 @@ EGLConfig ChooseConfig(EGLDisplay display,
                                    6,
                                    EGL_RED_SIZE,
                                    5,
-                                   EGL_SAMPLES,
-                                   samples,
-                                   EGL_DEPTH_SIZE,
-                                   depth_size,
-                                   EGL_STENCIL_SIZE,
-                                   stencil_size,
                                    EGL_RENDERABLE_TYPE,
                                    renderable_type,
                                    EGL_SURFACE_TYPE,
@@ -254,10 +241,10 @@ EGLConfig ChooseConfig(EGLDisplay display,
       continue;
     }
 
-    std::unique_ptr<EGLConfig[]> matching_configs(new EGLConfig[num_configs]);
+    auto matching_configs = base::HeapArray<EGLConfig>::Uninit(num_configs);
     if (want_rgb565 || visual_id >= 0) {
       config_size = num_configs;
-      config_data = matching_configs.get();
+      config_data = matching_configs.data();
     }
 
     if (!eglChooseConfig(display, choose_attributes, config_data, config_size,
@@ -357,7 +344,10 @@ GLDisplayEGL* GLSurfaceEGL::GetGLDisplayEGL() {
       GpuPreference::kDefault);
 }
 
-GLSurfaceEGL::~GLSurfaceEGL() = default;
+GLSurfaceEGL::~GLSurfaceEGL() {
+  // InvalidateWeakPtrs should be called from the concrete dtors.
+  CHECK(!HasWeakPtrs());
+}
 
 #if BUILDFLAG(IS_ANDROID)
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
@@ -381,6 +371,16 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
   if (GetClientRect(window_, &windowRect))
     size_ = gfx::Rect(windowRect).size();
 #endif
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  enable_replace_swap_buffer_output_ =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetSystemPropertiesInstance()
+          .GetBoolParameter("web.debug.eglSwapBuffersBackgroundColor", false);
+  if (enable_replace_swap_buffer_output_) {
+    LOG(INFO) << "NativeViewGLSurfaceEGLOhos:: enable debug background color,"
+                 " The rendering output will be replaced with green.";
+  }
+#endif
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
@@ -398,6 +398,11 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
   // the platform-dependant quirks, if any, before creating the surface.
   if (!InitializeNativeWindow()) {
     LOG(ERROR) << "Error trying to initialize the native window.";
+    return false;
+  }
+
+  if (!GetConfig()) {
+    LOG(ERROR) << "No suitable EGL configs found for initialization.";
     return false;
   }
 
@@ -432,48 +437,23 @@ bool NativeViewGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
     egl_window_attributes.push_back(EGL_SURFACE_ORIENTATION_INVERT_Y_ANGLE);
   }
 
-  switch (format_.GetColorSpace()) {
-    case GLSurfaceFormat::COLOR_SPACE_UNSPECIFIED:
-      break;
-    case GLSurfaceFormat::COLOR_SPACE_SRGB:
-      // Note that COLORSPACE_LINEAR refers to the sRGB color space, but
-      // without opting into sRGB blending. It is equivalent to
-      // COLORSPACE_SRGB with Disable(FRAMEBUFFER_SRGB).
-      if (display_->ext->b_EGL_KHR_gl_colorspace) {
-        egl_window_attributes.push_back(EGL_GL_COLORSPACE_KHR);
-        egl_window_attributes.push_back(EGL_GL_COLORSPACE_LINEAR_KHR);
-      }
-      break;
-    case GLSurfaceFormat::COLOR_SPACE_DISPLAY_P3:
-      // Note that it is not the case that
-      //   COLORSPACE_SRGB is to COLORSPACE_LINEAR_KHR
-      // as
-      //   COLORSPACE_DISPLAY_P3 is to COLORSPACE_DISPLAY_P3_LINEAR
-      // COLORSPACE_DISPLAY_P3 is equivalent to COLORSPACE_LINEAR, except with
-      // with the P3 gamut instead of the the sRGB gamut.
-      // COLORSPACE_DISPLAY_P3_LINEAR has a linear transfer function, and is
-      // intended for use with 16-bit formats.
-      bool p3_supported =
-          display_->ext->b_EGL_EXT_gl_colorspace_display_p3 ||
-          display_->ext->b_EGL_EXT_gl_colorspace_display_p3_passthrough;
-      if (display_->ext->b_EGL_KHR_gl_colorspace && p3_supported) {
-        egl_window_attributes.push_back(EGL_GL_COLORSPACE_KHR);
-        // Chrome relied on incorrect Android behavior when dealing with P3 /
-        // framebuffer_srgb interactions. This behavior was fixed in Q, which
-        // causes invalid Chrome rendering. To achieve Android-P behavior in Q+,
-        // use EGL_GL_COLORSPACE_P3_PASSTHROUGH_EXT where possible.
-        if (display_->ext->b_EGL_EXT_gl_colorspace_display_p3_passthrough) {
-          egl_window_attributes.push_back(
-              EGL_GL_COLORSPACE_DISPLAY_P3_PASSTHROUGH_EXT);
-        } else {
-          egl_window_attributes.push_back(EGL_GL_COLORSPACE_DISPLAY_P3_EXT);
-        }
-      }
-      break;
+  // Note that COLORSPACE_LINEAR refers to the sRGB color space, but
+  // without opting into sRGB blending. It is equivalent to
+  // COLORSPACE_SRGB with Disable(FRAMEBUFFER_SRGB).
+  if (display_->ext->b_EGL_KHR_gl_colorspace) {
+    egl_window_attributes.push_back(EGL_GL_COLORSPACE_KHR);
+    egl_window_attributes.push_back(EGL_GL_COLORSPACE_LINEAR_KHR);
   }
 
   egl_window_attributes.push_back(EGL_NONE);
   // Create a surface for the native window.
+#if BUILDFLAG(IS_OHOS)
+  if (!window_) {
+    LOG(ERROR) << "eglCreateWindowSurface failed with error,window_ is null";
+    Destroy();
+    return false;
+  }
+#endif
   surface_ = eglCreateWindowSurface(display_->GetDisplay(), GetConfig(),
                                     window_, &egl_window_attributes[0]);
 
@@ -624,9 +604,8 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers",
-      "width", GetSize().width(),
-      "height", GetSize().height());
+  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers", "width",
+                    GetSize().width(), "height", GetSize().height());
 
   EGLuint64KHR new_frame_id = 0;
   bool new_frame_id_is_valid = true;
@@ -753,7 +732,7 @@ void NativeViewGLSurfaceEGL::TraceSwapEvents(EGLuint64KHR oldFrameId) {
 
   const char* pending_symbols = valid_symbols.c_str();
   for (size_t i = 1; i < tracePairs.size(); i++) {
-    pending_symbols++;
+    UNSAFE_TODO(pending_symbols++);
     TRACE_EVENT_COPY_NESTABLE_ASYNC_BEGIN_WITH_TIMESTAMP0(
         kSwapEventTraceCategories, pending_symbols, trace_id,
         tracePairs[i - 1].time);
@@ -795,10 +774,12 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   if (context == nullptr || surface == nullptr) {
     LOG(ERROR) << "context or surface is null";
     return false;
   }
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -825,10 +806,12 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   if (context == nullptr || surface == nullptr) {
     LOG(ERROR) << "context or surface is null";
     return false;
   }
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -979,6 +962,25 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
     gfx::FrameData data) {
   DCHECK(supports_swap_buffer_with_damage_);
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  OHOS_TRACE_EVENT2(
+      "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
+      "width", GetSize().width(), "height", GetSize().height());
+
+  if (enable_replace_swap_buffer_output_) {
+    glClearColor(0.0, 1.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+  }
+
+  if (is_first_swapbuffers_) {
+    is_first_swapbuffers_ = false;
+    LOG(INFO) << "web render log: first call SwapBuffersWithDamage, size = "
+              << GetSize().ToString();
+  }
+
+  auto start = std::chrono::high_resolution_clock::now();
+#endif
+
   GLSurfacePresentationHelper::ScopedSwapBuffers scoped_swap_buffers(
       presentation_helper_.get(), std::move(callback));
   if (!eglSwapBuffersWithDamageKHR(display_->GetDisplay(), surface_,
@@ -988,6 +990,22 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
              << GetLastEGLErrorString();
     scoped_swap_buffers.set_result(gfx::SwapResult::SWAP_FAILED);
   }
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+          .count();
+  if (duration > kMaxSwapIntervalOhos) {
+    LOG(WARNING) << "web render log: SwapBuffersWithDamage cost time = "
+                 << duration << "ms" << ", swap result = "
+                 << static_cast<int32_t>(scoped_swap_buffers.result());
+  }
+
+  if (scoped_swap_buffers.result() == gfx::SwapResult::SWAP_FAILED) {
+    LOG(ERROR) << "web render log: SwapBuffersWithDamage failed, size = "
+               << GetSize().ToString();
+  }
+#endif
   return scoped_swap_buffers.result();
 }
 
@@ -1039,6 +1057,7 @@ void NativeViewGLSurfaceEGL::SetVSyncEnabled(bool enabled) {
 }
 
 NativeViewGLSurfaceEGL::~NativeViewGLSurfaceEGL() {
+  InvalidateWeakPtrs();
   Destroy();
 }
 
@@ -1055,6 +1074,11 @@ bool PbufferGLSurfaceEGL::Initialize(GLSurfaceFormat format) {
   if (display_->GetDisplay() == EGL_NO_DISPLAY) {
     LOG(ERROR) << "Trying to create PbufferGLSurfaceEGL with invalid "
                << "display.";
+    return false;
+  }
+
+  if (!GetConfig()) {
+    LOG(ERROR) << "No suitable EGL configs found for initialization.";
     return false;
   }
 
@@ -1124,7 +1148,6 @@ bool PbufferGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult PbufferGLSurfaceEGL::SwapBuffers(PresentationCallback callback,
                                                  gfx::FrameData data) {
   NOTREACHED() << "Attempted to call SwapBuffers on a PbufferGLSurfaceEGL.";
-  return gfx::SwapResult::SWAP_FAILED;
 }
 
 gfx::Size PbufferGLSurfaceEGL::GetSize() {
@@ -1169,7 +1192,6 @@ EGLSurface PbufferGLSurfaceEGL::GetHandle() {
 void* PbufferGLSurfaceEGL::GetShareHandle() {
 #if BUILDFLAG(IS_ANDROID)
   NOTREACHED();
-  return nullptr;
 #else
   if (!display_->ext->b_EGL_ANGLE_query_surface_pointer)
     return nullptr;
@@ -1189,6 +1211,7 @@ void* PbufferGLSurfaceEGL::GetShareHandle() {
 }
 
 PbufferGLSurfaceEGL::~PbufferGLSurfaceEGL() {
+  InvalidateWeakPtrs();
   Destroy();
 }
 
@@ -1238,6 +1261,7 @@ void* SurfacelessEGL::GetShareHandle() {
 }
 
 SurfacelessEGL::~SurfacelessEGL() {
+  InvalidateWeakPtrs();
 }
 
 }  // namespace gl

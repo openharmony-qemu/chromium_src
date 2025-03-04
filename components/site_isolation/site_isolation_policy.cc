@@ -4,6 +4,7 @@
 
 #include "components/site_isolation/site_isolation_policy.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/json/values_util.h"
@@ -52,7 +53,7 @@ bool ShouldDisableSiteIsolationDueToMemorySlow(
   //   it doesn't, use a default that's slightly higher than 1GB (see
   //   https://crbug.com/844118).
   int default_memory_threshold_mb;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
   if (site_isolation_mode == content::SiteIsolationMode::kStrictSiteIsolation) {
     default_memory_threshold_mb = 3200;
   } else {
@@ -201,7 +202,7 @@ void SiteIsolationPolicy::PersistIsolatedOrigin(
   } else if (source == IsolatedOriginSource::WEB_TRIGGERED) {
     PersistWebTriggeredIsolatedOrigin(context, origin);
   } else {
-    NOTREACHED();
+    NOTREACHED_IN_MIGRATION();
   }
 }
 
@@ -247,8 +248,8 @@ void SiteIsolationPolicy::PersistWebTriggeredIsolatedOrigin(
   while (dict.size() > max_size) {
     auto oldest_site_time_pair = std::min_element(
         dict.begin(), dict.end(), [](auto pair_a, auto pair_b) {
-          absl::optional<base::Time> time_a = base::ValueToTime(pair_a.second);
-          absl::optional<base::Time> time_b = base::ValueToTime(pair_b.second);
+          std::optional<base::Time> time_a = base::ValueToTime(pair_a.second);
+          std::optional<base::Time> time_b = base::ValueToTime(pair_b.second);
           // has_value() should always be true unless the prefs were corrupted.
           // In that case, prioritize the corrupted entry for removal.
           return (time_a.has_value() ? time_a.value() : base::Time::Min()) <
@@ -295,7 +296,7 @@ void SiteIsolationPolicy::ApplyPersistedIsolatedOrigins(
         pref_service->GetDict(prefs::kWebTriggeredIsolatedOrigins);
     for (auto site_time_pair : dict) {
       // Only isolate origins that haven't expired.
-      absl::optional<base::Time> timestamp =
+      std::optional<base::Time> timestamp =
           base::ValueToTime(site_time_pair.second);
       base::TimeDelta expiration_timeout =
           ::features::
@@ -370,7 +371,7 @@ void SiteIsolationPolicy::IsolateNewOAuthURL(
 // static
 bool SiteIsolationPolicy::ShouldPdfCompositorBeEnabledForOopifs() {
 #if BUILDFLAG(IS_ANDROID)
-  // TODO(crbug.com/1022917): Always enable on Android, at which point, this
+  // TODO(crbug.com/40657857): Always enable on Android, at which point, this
   // method should go away.
   //
   // Only use the PDF compositor when one of the site isolation modes that

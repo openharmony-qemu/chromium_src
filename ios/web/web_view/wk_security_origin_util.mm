@@ -10,10 +10,6 @@
 #import "base/strings/sys_string_conversions.h"
 #import "url/scheme_host_port.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 GURL GURLOriginWithWKSecurityOrigin(WKSecurityOrigin* origin) {
@@ -25,7 +21,7 @@ GURL GURLOriginWithWKSecurityOrigin(WKSecurityOrigin* origin) {
   if (port == 0) {
     // WKSecurityOrigin.port is 0 if the effective port of this origin is the
     // default for its scheme.
-    int default_port = url::DefaultPortForScheme(scheme.c_str(), scheme.size());
+    int default_port = url::DefaultPortForScheme(scheme);
     if (default_port != url::PORT_UNSPECIFIED)
       port = base::checked_cast<uint16_t>(default_port);
   }

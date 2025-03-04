@@ -43,7 +43,7 @@ bool BluetoothAdapterFactory::IsBluetoothSupported() {
   if (Get()->adapter_)
     return true;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_APPLE)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OHOS)
   return true;
 #else
   return false;
@@ -51,12 +51,12 @@ bool BluetoothAdapterFactory::IsBluetoothSupported() {
 }
 
 bool BluetoothAdapterFactory::IsLowEnergySupported() {
-  if (values_for_testing_) {
-    return values_for_testing_->GetLESupported();
+  if (override_values_) {
+    return override_values_->GetLESupported();
   }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
+    BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   return true;
 #else
   return false;
@@ -150,21 +150,20 @@ BluetoothAdapterFactory::GetBleScanParserCallback() {
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-BluetoothAdapterFactory::GlobalValuesForTesting::GlobalValuesForTesting() =
+BluetoothAdapterFactory::GlobalOverrideValues::GlobalOverrideValues() = default;
+
+BluetoothAdapterFactory::GlobalOverrideValues::~GlobalOverrideValues() =
     default;
 
-BluetoothAdapterFactory::GlobalValuesForTesting::~GlobalValuesForTesting() =
-    default;
-
-base::WeakPtr<BluetoothAdapterFactory::GlobalValuesForTesting>
-BluetoothAdapterFactory::GlobalValuesForTesting::GetWeakPtr() {
+base::WeakPtr<BluetoothAdapterFactory::GlobalOverrideValues>
+BluetoothAdapterFactory::GlobalOverrideValues::GetWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
 
-std::unique_ptr<BluetoothAdapterFactory::GlobalValuesForTesting>
-BluetoothAdapterFactory::InitGlobalValuesForTesting() {
-  auto v = std::make_unique<BluetoothAdapterFactory::GlobalValuesForTesting>();
-  values_for_testing_ = v->GetWeakPtr();
+std::unique_ptr<BluetoothAdapterFactory::GlobalOverrideValues>
+BluetoothAdapterFactory::InitGlobalOverrideValues() {
+  auto v = std::make_unique<BluetoothAdapterFactory::GlobalOverrideValues>();
+  override_values_ = v->GetWeakPtr();
   return v;
 }
 

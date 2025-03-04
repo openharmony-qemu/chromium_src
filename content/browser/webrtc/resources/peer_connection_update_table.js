@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {$} from 'chrome://resources/js/util_ts.js';
+import {$} from 'chrome://resources/js/util.js';
 
 const MAX_NUMBER_OF_STATE_CHANGES_DISPLAYED = 10;
 const MAX_NUMBER_OF_EXPANDED_MEDIASECTIONS = 10;
@@ -97,9 +97,15 @@ export class PeerConnectionUpdateTable {
     if (update.type === 'icecandidate' || update.type === 'addIceCandidate') {
       const parts = update.value.split(', ');
       type += '(' + parts[0] + ', ' + parts[1]; // show sdpMid/sdpMLineIndex.
-      const candidateParts = parts[2].substr(11).split(' ');
+      const candidateParts = parts[2].substring(11).split(' ');
       if (candidateParts && candidateParts[7]) { // show candidate type.
         type += ', type: ' + candidateParts[7];
+      }
+      if (parts[3]) { // url, if present.
+        type += ', ' + parts[3];
+      }
+      if (parts[4]) { // relayProtocol, if present.
+        type += ', ' + parts[4];
       }
       type += ')';
     } else if (
@@ -107,9 +113,10 @@ export class PeerConnectionUpdateTable {
         update.type === 'createAnswerOnSuccess') {
       this.setLastOfferAnswer_(tableElement, update);
     } else if (update.type === 'setLocalDescription') {
+      const lastOfferAnswer = this.getLastOfferAnswer_(tableElement);
       if (update.value.startsWith('type: rollback')) {
         this.setLastOfferAnswer_(tableElement, {value: undefined})
-      } else if (update.value !== this.getLastOfferAnswer_(tableElement)) {
+      } else if (lastOfferAnswer && update.value !== lastOfferAnswer) {
         type += ' (munged)';
       }
     } else if (update.type === 'setConfiguration') {
@@ -121,6 +128,10 @@ export class PeerConnectionUpdateTable {
       const indexLine = update.value.split('\n', 3)[2];
       if (indexLine.startsWith('getTransceivers()[')) {
         type += ' ' + indexLine.substring(17, indexLine.length - 2);
+      }
+      const kindLine = update.value.split('\n', 5)[4].trim();
+      if (kindLine.startsWith('kind:')) {
+        type += ', ' + kindLine.substring(6, kindLine.length - 2);
       }
     } else if (['iceconnectionstatechange', 'connectionstatechange',
         'signalingstatechange'].includes(update.type)) {
@@ -159,7 +170,7 @@ export class PeerConnectionUpdateTable {
 
     // RTCSessionDescription is serialized as 'type: <type>, sdp:'
     if (update.value.indexOf(', sdp:') !== -1) {
-      const [type, sdp] = update.value.substr(6).split(', sdp: ');
+      const [type, sdp] = update.value.substring(6).split(', sdp: ');
       if (type === 'rollback') {
         // Rollback has no SDP.
         summary.textContent += ' (type: "rollback")';
@@ -183,7 +194,7 @@ export class PeerConnectionUpdateTable {
           // Extract the mid attribute.
           const mid = lines
               .filter(line => line.startsWith('a=mid:'))
-              .map(line => line.substr(6))[0];
+              .map(line => line.substring(6))[0];
           const sectionDetails = document.createElement('details');
           // Fold by default for large SDP.
           sectionDetails.open =
@@ -200,6 +211,12 @@ export class PeerConnectionUpdateTable {
           valueContainer.appendChild(sectionDetails);
         });
       }
+    } else if (update.type === 'icecandidate' ||
+        update.type === 'addIceCandidate') {
+      const parts = update.value.split(', ');
+      valueContainer.textContent = parts.slice(0, 2).join(', ') + '\n' +
+        parts[2] + '\n' +
+        parts.slice(3).join(', ');
     } else {
       valueContainer.textContent = update.value;
     }

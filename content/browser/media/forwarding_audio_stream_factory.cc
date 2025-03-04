@@ -7,12 +7,12 @@
 #include <utility>
 
 #include "base/check_op.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/no_destructor.h"
 #include "base/trace_event/trace_event.h"
+#include "content/browser/guest_page_holder_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/audio_service.h"
 #include "content/public/browser/browser_task_traits.h"
@@ -205,11 +205,21 @@ const base::UnguessableToken& ForwardingAudioStreamFactory::Core::GetGroupID() {
 ForwardingAudioStreamFactory* ForwardingAudioStreamFactory::ForFrame(
     RenderFrameHost* frame) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!frame) {
+    return nullptr;
+  }
+
+  GuestPageHolderImpl* guest_holder = GuestPageHolderImpl::FromRenderFrameHost(
+      static_cast<RenderFrameHostImpl&>(*frame));
+  if (guest_holder) {
+    return guest_holder->GetAudioStreamFactory();
+  }
 
   auto* contents =
       static_cast<WebContentsImpl*>(WebContents::FromRenderFrameHost(frame));
-  if (!contents)
+  if (!contents) {
     return nullptr;
+  }
 
   return contents->GetAudioStreamFactory();
 }
@@ -245,9 +255,9 @@ ForwardingAudioStreamFactory::~ForwardingAudioStreamFactory() {
 
 void ForwardingAudioStreamFactory::LoopbackStreamStarted() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  capture_handle_ =
-      web_contents()->IncrementCapturerCount(gfx::Size(), /*stay_hidden=*/false,
-                                             /*stay_awake=*/true);
+  capture_handle_ = web_contents()->IncrementCapturerCount(
+      gfx::Size(), /*stay_hidden=*/false,
+      /*stay_awake=*/true, /*is_activity=*/true);
 }
 
 void ForwardingAudioStreamFactory::LoopbackStreamStopped() {

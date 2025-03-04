@@ -14,13 +14,15 @@ class TimeDelta;
 
 // Keys of UMA IOS.TabSwitcher.Idle histograms.
 extern const char kUMATabSwitcherIdleIncognitoTabGridPageHistogram[];
-extern const char kUMATabSwitcherIdleRecentTabsHistogram[];
 extern const char kUMATabSwitcherIdleRegularTabGridPageHistogram[];
+extern const char kUMATabSwitcherIdleRecentTabsHistogram[];
+extern const char kUMATabSwitcherIdleTabGroupsHistogram[];
 
 // Accessibility identifiers for automated testing.
 extern NSString* const kTabGridIncognitoTabsPageButtonIdentifier;
 extern NSString* const kTabGridRegularTabsPageButtonIdentifier;
 extern NSString* const kTabGridRemoteTabsPageButtonIdentifier;
+extern NSString* const kTabGridTabGroupsPageButtonIdentifier;
 extern NSString* const kTabGridDoneButtonIdentifier;
 extern NSString* const kTabGridSearchButtonIdentifier;
 extern NSString* const kTabGridCancelButtonIdentifier;
@@ -78,14 +80,6 @@ extern const CGFloat kTabGridSearchBarWidthRatio;
 extern const CGFloat kTabGridSearchBarHeight;
 // The Search bar width ratio modifier for non-compact orientation.
 extern const CGFloat kTabGridSearchBarNonCompactWidthRatioModifier;
-
-// The distance travelled by the thumb strip thumbnails during the slide-in
-// animation of the thumb strip reveal transition.
-extern const CGFloat kThumbStripSlideInHeight;
-
-// The distance travelled by the thumb strip's plus sign button during the
-// slide-out animation of the transition from Peeked to Revealed state.
-extern const CGFloat kThumbStripPlusSignButtonSlideOutDistance;
 
 // Alpha of the background color of the toolbar.
 extern const CGFloat kToolbarBackgroundAlpha;

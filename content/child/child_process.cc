@@ -6,8 +6,8 @@
 
 #include <string.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/clang_profiling_buildflags.h"
-#include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/process/process_handle.h"
@@ -18,31 +18,36 @@
 #include "build/build_config.h"
 #include "build/config/compiler/compiler_buildflags.h"
 #include "content/child/child_thread_impl.h"
-#include "content/common/android/cpu_time_metrics.h"
-#include "content/common/mojo_core_library_support.h"
 #include "content/common/process_visibility_tracker.h"
 #include "content/public/common/content_switches.h"
-#include "gpu/ipc/common/nweb_native_window_tracker.h"
-#include "mojo/public/cpp/system/dynamic_library_support.h"
+#include "mojo/public/cpp/bindings/interface_endpoint_client.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "services/tracing/public/cpp/trace_startup.h"
-#include "third_party/abseil-cpp/absl/base/attributes.h"
 #include "third_party/blink/public/common/features.h"
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 #include "base/test/clang_profiling.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ANDROID)
+#include "content/common/android/cpu_time_metrics.h"
+#endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#include "content/child/sandboxed_process_thread_type_handler.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
 #include "base/threading/platform_thread.h"
-#include "res_sched_client_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
 
 namespace {
 
-ABSL_CONST_INIT thread_local ChildProcess* child_process = nullptr;
+constinit thread_local ChildProcess* child_process = nullptr;
 
 class ChildIOThread : public base::Thread {
  public:
@@ -53,6 +58,8 @@ class ChildIOThread : public base::Thread {
   ChildIOThread& operator=(ChildIOThread&&) = delete;
 
   void Run(base::RunLoop* run_loop) override {
+    mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
+        "ChildIOThread");
     base::ScopedClosureRunner unregister_thread_closure;
     if (base::HangWatcher::IsIOThreadHangWatchingEnabled()) {
       unregister_thread_closure = base::HangWatcher::RegisterThread(
@@ -69,25 +76,6 @@ ChildProcess::ChildProcess(base::ThreadType io_thread_type,
                                thread_pool_init_params)
     : resetter_(&child_process, this, nullptr),
       io_thread_(std::make_unique<ChildIOThread>()) {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-  const base::CommandLine& command_line =
-      *base::CommandLine::ForCurrentProcess();
-  const bool is_embedded_in_browser_process =
-      !command_line.HasSwitch(switches::kProcessType);
-  if (IsMojoCoreSharedLibraryEnabled() && !is_embedded_in_browser_process) {
-    // If we're in a child process on Linux and dynamic Mojo Core is in use, we
-    // expect early process startup code (see ContentMainRunnerImpl::Run()) to
-    // have already loaded the library via |mojo::LoadCoreLibrary()|, rendering
-    // this call safe even from within a strict sandbox.
-    MojoInitializeFlags flags = MOJO_INITIALIZE_FLAG_NONE;
-    if (sandbox::policy::IsUnsandboxedSandboxType(
-            sandbox::policy::SandboxTypeFromCommandLine(command_line))) {
-      flags |= MOJO_INITIALIZE_FLAG_FORCE_DIRECT_SHARED_MEMORY_ALLOCATION;
-    }
-    CHECK_EQ(MOJO_RESULT_OK, mojo::InitializeCoreLibrary(flags));
-  }
-#endif
-
   // Start ThreadPoolInstance if not already done. A ThreadPoolInstance
   // should already exist, and may already be running when ChildProcess is
   // instantiated in the browser process or in a test process.
@@ -137,14 +125,21 @@ ChildProcess::ChildProcess(base::ThreadType io_thread_type,
   // We can't recover from failing to start the IO thread.
   base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
   thread_options.thread_type = io_thread_type;
-// TODO(1329208): Figure out whether IS_ANDROID can be lifted here.
-#if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(IS_OHOS) && defined(OHOS_SCROLL_PERFORMANCE))
+// TODO(crbug.com/40226692): Figure out whether IS_ANDROID can be lifted here.
+#if BUILDFLAG(IS_ANDROID) || \
+    (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
   // TODO(reveman): Remove this in favor of setting it explicitly for each type
   // of process.
-  thread_options.thread_type = base::ThreadType::kCompositing;
+  thread_options.thread_type = base::ThreadType::kDisplayCritical;
 #endif
   CHECK(io_thread_->StartWithOptions(std::move(thread_options)));
+  io_thread_runner_ = io_thread_->task_runner();
 }
+
+ChildProcess::ChildProcess(
+    scoped_refptr<base::SingleThreadTaskRunner> io_thread_runner)
+    : resetter_(&child_process, this, nullptr),
+      io_thread_runner_(std::move(io_thread_runner)) {}
 
 ChildProcess::~ChildProcess() {
   DCHECK_EQ(child_process, this);
@@ -156,10 +151,9 @@ ChildProcess::~ChildProcess() {
   shutdown_event_.Signal();
 
   if (main_thread_) {  // null in unittests.
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
     ReportIoThreadStatus(false);
 #endif
-
     main_thread_->Shutdown();
     if (main_thread_->ShouldBeDestroyed()) {
       main_thread_.reset();
@@ -170,8 +164,10 @@ ChildProcess::~ChildProcess() {
     }
   }
 
-  io_thread_->Stop();
-  io_thread_.reset();
+  if (io_thread_) {
+    io_thread_->Stop();
+    io_thread_.reset();
+  }
 
   if (initialized_thread_pool_) {
     DCHECK(base::ThreadPoolInstance::Get());
@@ -186,57 +182,71 @@ ChildProcess::~ChildProcess() {
 #endif
 }
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 void ChildProcess::ReportIoThreadStatus(bool is_created) {
   if (!main_thread_) {
     return;
   }
 
   using namespace OHOS::NWeb;
-  ResSchedStatusAdapter status = is_created ?
-    ResSchedStatusAdapter::THREAD_CREATED : ResSchedStatusAdapter::THREAD_DESTROYED;
+  ResSchedStatusAdapter status = is_created
+                                     ? ResSchedStatusAdapter::THREAD_CREATED
+                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-    switches::kProcessType);
-  // If this thread is in browser process, then report key thread info to RSS directly.
-  // Otherwise, report key thread info to the browser process firstly.
+      switches::kProcessType);
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  // If this thread is in browser process, then report key thread info to RSS
+  // directly. Otherwise, report key thread info to the browser process firstly.
   if (main_thread_->IsInBrowserProcess()) {
-    ResSchedClientAdapter::ReportKeyThread(
-      status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
-  } else if (type == switches::kGpuProcess) {
+    ResSchedClientAdapter::ReportKeyThread(status, base::GetCurrentRealPid(),
+                                           io_thread_->GetThreadRealId(),
+                                           ResSchedRoleAdapter::USER_INTERACT);
+  }
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  else if (type == switches::kGpuProcess) {
     if (NWebNativeWindowTracker::Get() &&
         NWebNativeWindowTracker::Get()->g_browser_client_) {
-      LOG(DEBUG) << "get native window success pid:" << base::GetCurrentRealPid()
+      LOG(DEBUG) << "get native window success pid:"
+                 << base::GetCurrentRealPid()
                  << ", tid = " << io_thread_->GetThreadRealId();
-      NWebNativeWindowTracker::Get()->g_browser_client_ -> ReportThread(
-        status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(),
-        ResSchedRoleAdapter::USER_INTERACT);
+      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+          status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(),
+          ResSchedRoleAdapter::USER_INTERACT);
     }
-  } else {
+  }
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  else {
     main_thread_->ReportKeyThread(
-      static_cast<int32_t>(status), base::GetCurrentRealPid(), io_thread_->GetThreadRealId(),
-      static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
+        static_cast<int32_t>(status), base::GetCurrentRealPid(),
+        io_thread_->GetThreadRealId(),
+        static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
   }
 }
 
 void ChildProcess::ReportCompositorKeyThread(bool is_created) {
   if (!main_thread_) {
     LOG(WARNING) << "main thread is nullptr, can not report key"
-      << base::PlatformThread::CurrentRealId() << " id created: " << is_created;
+                 << base::PlatformThread::CurrentRealId()
+                 << " id created: " << is_created;
     return;
   }
   if (main_thread_->IsInBrowserProcess()) {
     return;
   }
   using namespace OHOS::NWeb;
-  ResSchedStatusAdapter status = is_created ?
-    ResSchedStatusAdapter::THREAD_CREATED : ResSchedStatusAdapter::THREAD_DESTROYED;
+  ResSchedStatusAdapter status = is_created
+                                     ? ResSchedStatusAdapter::THREAD_CREATED
+                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
   main_thread_->ReportKeyThread(
-    static_cast<int32_t>(status), base::GetCurrentRealPid(), base::PlatformThread::CurrentRealId(),
-    static_cast<int32_t>(ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-  LOG(DEBUG) << "child process pid: "
-      << base::GetCurrentRealPid() << ", tid: " << base::PlatformThread::CurrentRealId() << " id created: " << is_created;
+      static_cast<int32_t>(status), base::GetCurrentRealPid(),
+      base::PlatformThread::CurrentRealId(),
+      static_cast<int32_t>(ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  LOG(DEBUG) << "child process pid: " << base::GetCurrentRealPid()
+             << ", tid: " << base::PlatformThread::CurrentRealId()
+             << " id created: " << is_created;
 }
-#endif
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 ChildThreadImpl* ChildProcess::main_thread() {
   return main_thread_.get();
@@ -244,11 +254,27 @@ ChildThreadImpl* ChildProcess::main_thread() {
 
 void ChildProcess::set_main_thread(ChildThreadImpl* thread) {
   main_thread_.reset(thread);
-
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   ReportIoThreadStatus(true);
 #endif
 }
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+void ChildProcess::SetIOThreadType(base::ThreadType thread_type) {
+  if (!io_thread_) {
+    return;
+  }
+
+  // The SandboxedProcessThreadTypeHandler isn't created in
+  // in --single-process mode or if certain base::Features are disabled. See
+  // instances of SandboxedProcessThreadTypeHandler::Create() for more details.
+  if (SandboxedProcessThreadTypeHandler* sandboxed_process_thread_type_handler =
+          SandboxedProcessThreadTypeHandler::Get()) {
+    sandboxed_process_thread_type_handler->HandleThreadTypeChange(
+        io_thread_->GetThreadId(), base::ThreadType::kDisplayCritical);
+  }
+}
+#endif
 
 void ChildProcess::AddRefProcess() {
   DCHECK(!main_thread_.get() ||  // null in unittests.

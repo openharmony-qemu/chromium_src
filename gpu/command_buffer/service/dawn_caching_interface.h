@@ -11,6 +11,7 @@
 #include <string>
 
 #include "base/containers/flat_map.h"
+#include "base/containers/flat_set.h"
 #include "base/containers/linked_list.h"
 #include "base/functional/callback.h"
 #include "base/memory/ref_counted.h"
@@ -20,9 +21,6 @@
 #include "gpu/ipc/common/gpu_disk_cache_type.h"
 
 namespace gpu {
-
-class DecoderClient;
-
 namespace webgpu {
 
 class DawnCachingInterfaceFactory;
@@ -59,14 +57,21 @@ class GPU_GLES2_EXPORT DawnCachingBackend
     const std::string data_;
   };
 
+  // Overrides for transparent flat_set lookups using a string.
+  friend bool operator<(const std::unique_ptr<Entry>& lhs,
+                        const std::unique_ptr<Entry>& rhs);
+  friend bool operator<(const std::unique_ptr<Entry>& lhs,
+                        const std::string& rhs);
+  friend bool operator<(const std::string& lhs,
+                        const std::unique_ptr<Entry>& rhs);
+
   friend class base::RefCounted<DawnCachingBackend>;
   ~DawnCachingBackend();
 
   void EvictEntry(Entry* entry) EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   base::Lock mutex_;
-  base::flat_map<std::string, std::unique_ptr<Entry>> entries_
-      GUARDED_BY(mutex_);
+  base::flat_set<std::unique_ptr<Entry>> entries_ GUARDED_BY(mutex_);
   base::LinkedList<Entry> lru_ GUARDED_BY(mutex_);
 
   size_t max_size_;
@@ -87,6 +92,11 @@ class GPU_GLES2_EXPORT DawnCachingBackend
 class GPU_GLES2_EXPORT DawnCachingInterface
     : public dawn::platform::CachingInterface {
  public:
+  using CacheBlobCallback =
+      base::RepeatingCallback<void(gpu::GpuDiskCacheType type,
+                                   const std::string& key,
+                                   const std::string& blob)>;
+
   ~DawnCachingInterface() override;
 
   size_t LoadData(const void* key,
@@ -107,17 +117,14 @@ class GPU_GLES2_EXPORT DawnCachingInterface
 
   // Constructor is private because creation of interfaces should be deferred to
   // the factory.
-  explicit DawnCachingInterface(
-      scoped_refptr<detail::DawnCachingBackend> backend,
-      DecoderClient* decoder_client = nullptr);
+  explicit DawnCachingInterface(scoped_refptr<detail::DawnCachingBackend> backend,
+                                CacheBlobCallback callback = {});
 
   // Caching interface owns a reference to the backend.
   scoped_refptr<detail::DawnCachingBackend> backend_ = nullptr;
 
-  // Decoder client provides ability to store cache entries to persistent disk.
-  // The client is not owned by this class and needs to be valid throughout the
-  // interfaces lifetime.
-  raw_ptr<DecoderClient> decoder_client_ = nullptr;
+  // The callback provides ability to store cache entries to persistent disk.
+  CacheBlobCallback cache_blob_callback_;
 };
 
 // Factory class for producing and managing DawnCachingInterfaces.
@@ -139,7 +146,7 @@ class GPU_GLES2_EXPORT DawnCachingInterfaceFactory {
   // backend until ReleaseHandle below is called.
   std::unique_ptr<DawnCachingInterface> CreateInstance(
       const gpu::GpuDiskCacheHandle& handle,
-      DecoderClient* decoder_client = nullptr);
+      DawnCachingInterface::CacheBlobCallback callback = {});
 
   // Returns a pointer to a DawnCachingInterface that owns the in memory
   // backend. This is used for incognito cases where the cache should not be

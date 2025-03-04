@@ -40,13 +40,13 @@ class MockPasswordProtectionService : public PasswordProtectionService {
 
   MOCK_CONST_METHOD0(GetCurrentContentAreaSize, gfx::Size());
   MOCK_CONST_METHOD0(GetAccountInfo, AccountInfo());
-  MOCK_CONST_METHOD0(IsPrimaryAccountSyncing, bool());
+  MOCK_CONST_METHOD0(IsPrimaryAccountSyncingHistory, bool());
   MOCK_CONST_METHOD0(IsPrimaryAccountSignedIn, bool());
   MOCK_CONST_METHOD1(GetPasswordProtectionWarningTriggerPref,
                      PasswordProtectionTrigger(ReusedPasswordAccountType));
   MOCK_CONST_METHOD1(GetAccountInfoForUsername,
                      AccountInfo(const std::string&));
-  MOCK_CONST_METHOD1(IsAccountGmail, bool(const std::string&));
+  MOCK_CONST_METHOD1(IsAccountConsumer, bool(const std::string&));
   MOCK_CONST_METHOD1(IsURLAllowlistedForPasswordEntry, bool(const GURL&));
 
   MOCK_METHOD2(FillUserPopulation,
@@ -85,11 +85,7 @@ class MockPasswordProtectionService : public PasswordProtectionService {
                     const std::string&,
                     ReusedPasswordAccountType));
   MOCK_METHOD5(MaybeReportPasswordReuseDetected,
-               void(PasswordProtectionRequest*,
-                    const std::string&,
-                    PasswordType,
-                    bool,
-                    bool));
+               void(const GURL&, const std::string&, PasswordType, bool, bool));
   MOCK_METHOD3(UpdateSecurityState,
                void(safe_browsing::SBThreatType,
                     ReusedPasswordAccountType,

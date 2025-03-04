@@ -4,15 +4,12 @@
 
 #import "ios/chrome/browser/ui/sharing/share_download_overlay_coordinator.h"
 
-#import "ios/chrome/browser/main/browser.h"
+#import "base/memory/raw_ptr.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
 #import "ios/chrome/browser/shared/public/commands/share_download_overlay_commands.h"
 #import "ios/chrome/browser/ui/sharing/share_download_overlay_view_controller.h"
 #import "ios/web/public/web_state.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace {
 
@@ -22,8 +19,7 @@ const NSTimeInterval kOverlayViewAnimationDuration = 0.3;
 }  // namespace
 
 @interface ShareDownloadOverlayCoordinator () {
-  // Web state that will recieve the overlay view.
-  web::WebState* _webState;
+  UIView* _webView;
 }
 
 // Download overlay view controller.
@@ -35,19 +31,20 @@ const NSTimeInterval kOverlayViewAnimationDuration = 0.3;
 
 - (instancetype)initWithBaseViewController:(UIViewController*)viewController
                                    browser:(Browser*)browser
-                                  webState:(web::WebState*)webState {
-  DCHECK(webState);
+                                   webView:(UIView*)webView {
   self = [super initWithBaseViewController:viewController browser:browser];
   if (self) {
-    _webState = webState;
+    DCHECK(webView);
+    _webView = webView;
   }
   return self;
 }
 - (void)start {
   id<ShareDownloadOverlayCommands> handler = HandlerForProtocol(
       self.browser->GetCommandDispatcher(), ShareDownloadOverlayCommands);
+
   self.viewController = [[ShareDownloadOverlayViewController alloc]
-      initWithBaseView:_webState->GetView()
+      initWithBaseView:std::exchange(_webView, nil)
                handler:handler];
 
   UIView* overlayedView = self.viewController.view;

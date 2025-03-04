@@ -9,6 +9,7 @@
 #include <initializer_list>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,6 +20,7 @@
 #include "base/json/json_reader.h"
 #include "base/memory/ref_counted.h"
 #include "base/run_loop.h"
+#include "base/test/bind.h"
 #include "base/test/task_environment.h"
 #include "base/values.h"
 #include "base/version.h"
@@ -28,12 +30,10 @@
 #include "components/update_client/persisted_data.h"
 #include "components/update_client/protocol_definition.h"
 #include "components/update_client/protocol_serializer.h"
-#include "components/update_client/test_activity_data_service.h"
 #include "components/update_client/test_configurator.h"
 #include "components/update_client/update_client.h"
 #include "components/update_client/update_engine.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/re2/src/re2/re2.h"
 
 namespace update_client {
@@ -44,7 +44,7 @@ class PingManagerTest : public testing::Test,
   PingManagerTest();
   ~PingManagerTest() override = default;
 
-  PingManager::Callback MakePingCallback();
+  base::OnceClosure MakePingCallback();
   scoped_refptr<UpdateContext> MakeMockUpdateContext() const;
 
   // Overrides from testing::Test.
@@ -59,30 +59,22 @@ class PingManagerTest : public testing::Test,
 
   scoped_refptr<TestConfigurator> config_;
   scoped_refptr<PingManager> ping_manager_;
-  std::unique_ptr<PersistedData> metadata_;
-
-  int error_ = -1;
-  std::string response_;
 
  private:
   base::test::TaskEnvironment task_environment_;
   base::OnceClosure quit_closure_;
-  std::unique_ptr<TestActivityDataService> activity_data_service_;
   std::unique_ptr<TestingPrefServiceSimple> pref_;
 };
 
 PingManagerTest::PingManagerTest()
     : task_environment_(base::test::TaskEnvironment::MainThreadType::IO) {
-  config_ = base::MakeRefCounted<TestConfigurator>();
+  pref_ = std::make_unique<TestingPrefServiceSimple>();
+  RegisterPersistedDataPrefs(pref_->registry());
 }
 
 void PingManagerTest::SetUp() {
+  config_ = base::MakeRefCounted<TestConfigurator>(pref_.get());
   ping_manager_ = base::MakeRefCounted<PingManager>(config_);
-  pref_ = std::make_unique<TestingPrefServiceSimple>();
-  activity_data_service_ = std::make_unique<TestActivityDataService>();
-  PersistedData::RegisterPrefs(pref_->registry());
-  metadata_ = std::make_unique<PersistedData>(pref_.get(),
-                                              activity_data_service_.get());
 }
 
 void PingManagerTest::TearDown() {
@@ -90,6 +82,7 @@ void PingManagerTest::TearDown() {
   // of the network interceptors on the IO thread.
   task_environment_.RunUntilIdle();
   ping_manager_ = nullptr;
+  config_ = nullptr;
 }
 
 void PingManagerTest::RunThreads() {
@@ -99,42 +92,24 @@ void PingManagerTest::RunThreads() {
 }
 
 void PingManagerTest::Quit() {
-  if (!quit_closure_.is_null())
+  if (!quit_closure_.is_null()) {
     std::move(quit_closure_).Run();
+  }
 }
 
-PingManager::Callback PingManagerTest::MakePingCallback() {
-  return base::BindOnce(&PingManagerTest::PingSentCallback,
-                        base::Unretained(this));
-}
-
-void PingManagerTest::PingSentCallback(int error, const std::string& response) {
-  error_ = error;
-  response_ = response;
-  Quit();
+base::OnceClosure PingManagerTest::MakePingCallback() {
+  return base::BindOnce(&PingManagerTest::Quit, base::Unretained(this));
 }
 
 scoped_refptr<UpdateContext> PingManagerTest::MakeMockUpdateContext() const {
-#if BUILDFLAG(ENABLE_PUFFIN_PATCHES)
-  // TODO(crbug.com/1349060) once Puffin patches are fully implemented,
-  // we should remove this #if.
   base::ScopedTempDir temp_dir;
   if (!temp_dir.CreateUniqueTempDir()) {
     return nullptr;
   }
-  CrxCache::Options options(temp_dir.GetPath());
-#endif
   return base::MakeRefCounted<UpdateContext>(
-      config_,
-#if BUILDFLAG(ENABLE_PUFFIN_PATCHES)
-      // TODO(crbug.com/1349060) once Puffin patches are fully implemented,
-      // we should remove this #if.
-      base::MakeRefCounted<CrxCache>(options),
-#endif
-      false, false, std::vector<std::string>(),
-      UpdateClient::CrxStateChangeCallback(),
-      UpdateEngine::NotifyObserversCallback(), UpdateEngine::Callback(),
-      nullptr,
+      config_, base::MakeRefCounted<CrxCache>(temp_dir.GetPath()), false, false,
+      std::vector<std::string>(), UpdateClient::CrxStateChangeCallback(),
+      UpdateEngine::Callback(), nullptr,
       /*is_update_check_only=*/false);
 }
 
@@ -152,6 +127,7 @@ TEST_P(PingManagerTest, SendPing) {
     // Test eventresult="1" is sent for successful updates.
     Component component(*update_context, "abc");
     component.crx_component_ = CrxComponent();
+    component.crx_component_->app_id = "abc";
     component.crx_component_->version = base::Version("1.0");
     component.crx_component_->ap = "ap1";
     component.crx_component_->brand = "BRND";
@@ -160,12 +136,13 @@ TEST_P(PingManagerTest, SendPing) {
     component.next_version_ = base::Version("2.0");
     component.AppendEvent(component.MakeEventUpdateComplete());
 
-    metadata_->SetCohort("abc", "c1");
-    metadata_->SetCohortName("abc", "cn1");
-    metadata_->SetCohortHint("abc", "ch1");
+    config_->GetPersistedData()->SetCohort("abc", "c1");
+    config_->GetPersistedData()->SetCohortName("abc", "cn1");
+    config_->GetPersistedData()->SetCohortHint("abc", "ch1");
 
     EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+    ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                            component.GetEvents(), MakePingCallback());
     RunThreads();
 
     EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
@@ -178,11 +155,7 @@ TEST_P(PingManagerTest, SendPing) {
 
     EXPECT_TRUE(request.contains("@os"));
     EXPECT_EQ("fake_prodid", CHECK_DEREF(request.FindString("@updater")));
-#if BUILDFLAG(ENABLE_PUFFIN_PATCHES)
     EXPECT_EQ("crx3,puff", CHECK_DEREF(request.FindString("acceptformat")));
-#else
-    EXPECT_EQ("crx3", CHECK_DEREF(request.FindString("acceptformat")));
-#endif
     EXPECT_TRUE(request.contains("arch"));
     EXPECT_EQ("cr", CHECK_DEREF(request.FindString("dedup")));
     EXPECT_LT(0, request.FindByDottedPath("hw.physmemory")->GetInt());
@@ -232,6 +205,7 @@ TEST_P(PingManagerTest, SendPing) {
     // Test eventresult="0" is sent for failed updates.
     Component component(*update_context, "abc");
     component.crx_component_ = CrxComponent();
+    component.crx_component_->app_id = "abc";
     component.crx_component_->version = base::Version("1.0");
     component.state_ =
         std::make_unique<Component::StateUpdateError>(&component);
@@ -240,12 +214,13 @@ TEST_P(PingManagerTest, SendPing) {
     component.AppendEvent(component.MakeEventUpdateComplete());
 
     EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+    ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                            component.GetEvents(), MakePingCallback());
     RunThreads();
 
     EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
     const auto msg = interceptor->GetRequestBody(0);
-    const absl::optional<base::Value> root_val = base::JSONReader::Read(msg);
+    const std::optional<base::Value> root_val = base::JSONReader::Read(msg);
     ASSERT_TRUE(root_val);
     const base::Value::Dict& root = root_val->GetDict();
     const base::Value::Dict* request = root.FindDict("request");
@@ -266,6 +241,7 @@ TEST_P(PingManagerTest, SendPing) {
     // Test the error values and the fingerprints.
     Component component(*update_context, "abc");
     component.crx_component_ = CrxComponent();
+    component.crx_component_->app_id = "abc";
     component.crx_component_->version = base::Version("1.0");
     component.state_ =
         std::make_unique<Component::StateUpdateError>(&component);
@@ -283,7 +259,8 @@ TEST_P(PingManagerTest, SendPing) {
     component.AppendEvent(component.MakeEventUpdateComplete());
 
     EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+    ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                            component.GetEvents(), MakePingCallback());
     RunThreads();
 
     EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
@@ -317,6 +294,7 @@ TEST_P(PingManagerTest, SendPing) {
     // Test an invalid |next_version| is not serialized.
     Component component(*update_context, "abc");
     component.crx_component_ = CrxComponent();
+    component.crx_component_->app_id = "abc";
     component.crx_component_->version = base::Version("1.0");
     component.state_ =
         std::make_unique<Component::StateUpdateError>(&component);
@@ -325,7 +303,8 @@ TEST_P(PingManagerTest, SendPing) {
     component.AppendEvent(component.MakeEventUpdateComplete());
 
     EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+    ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                            component.GetEvents(), MakePingCallback());
     RunThreads();
 
     EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
@@ -348,49 +327,24 @@ TEST_P(PingManagerTest, SendPing) {
   {
     // Test a valid |previouversion| and |next_version| = base::Version("0")
     // are serialized correctly under <event...> for uninstall.
-    Component component(*update_context, "abc");
     CrxComponent crx_component;
+    crx_component.app_id = "abc";
     crx_component.version = base::Version("1.2.3.4");
-    component.Uninstall(crx_component, 0);
-    component.AppendEvent(component.MakeEventUninstalled());
 
     EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+    base::MakeRefCounted<UpdateEngine>(
+        config_,
+        base::BindRepeating(
+            [](scoped_refptr<Configurator>) -> std::unique_ptr<UpdateChecker> {
+              return nullptr;
+            }),
+        ping_manager_, base::DoNothing())
+        ->SendPing(crx_component, {.event_type = 4, .result = 1},
+                   base::BindLambdaForTesting([&](Error) { Quit(); }));
     RunThreads();
 
     EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
     const auto msg = interceptor->GetRequestBody(0);
-      const auto root = base::JSONReader::Read(msg);
-      ASSERT_TRUE(root);
-      const base::Value::Dict* request = root->GetDict().FindDict("request");
-      const base::Value& app_val = CHECK_DEREF(request->FindList("app"))[0];
-      const base::Value::Dict& app = app_val.GetDict();
-      EXPECT_EQ("abc", CHECK_DEREF(app.FindString("appid")));
-      EXPECT_EQ("1.2.3.4", CHECK_DEREF(app.FindString("version")));
-      const base::Value::Dict& event =
-          CHECK_DEREF(app.FindList("event"))[0].GetDict();
-      EXPECT_EQ(1, event.FindInt("eventresult"));
-      EXPECT_EQ(4, event.FindInt("eventtype"));
-      EXPECT_EQ("1.2.3.4", CHECK_DEREF(event.FindString("previousversion")));
-      EXPECT_EQ("0", CHECK_DEREF(event.FindString("nextversion")));
-      interceptor->Reset();
-  }
-
-  {
-    // Test registrationEvent.
-    Component component(*update_context, "abc");
-    CrxComponent crx_component;
-    crx_component.version = base::Version("1.2.3.4");
-    component.Registration(crx_component);
-    component.AppendEvent(component.MakeEventRegistration());
-
-    EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
-    RunThreads();
-
-    EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
-    const auto msg = interceptor->GetRequestBody(0);
-
     const auto root = base::JSONReader::Read(msg);
     ASSERT_TRUE(root);
     const base::Value::Dict* request = root->GetDict().FindDict("request");
@@ -401,124 +355,25 @@ TEST_P(PingManagerTest, SendPing) {
     const base::Value::Dict& event =
         CHECK_DEREF(app.FindList("event"))[0].GetDict();
     EXPECT_EQ(1, event.FindInt("eventresult"));
-    EXPECT_EQ(2, event.FindInt("eventtype"));
-    EXPECT_EQ("1.2.3.4", CHECK_DEREF(event.FindString("nextversion")));
-    interceptor->Reset();
-  }
-
-  {
-    // Test the download metrics.
-    Component component(*update_context, "abc");
-    component.crx_component_ = CrxComponent();
-    component.crx_component_->version = base::Version("1.0");
-    component.state_ = std::make_unique<Component::StateUpdated>(&component);
-    component.previous_version_ = base::Version("1.0");
-    component.next_version_ = base::Version("2.0");
-    component.AppendEvent(component.MakeEventUpdateComplete());
-
-    CrxDownloader::DownloadMetrics download_metrics;
-    download_metrics.url = GURL("http://host1/path1");
-    download_metrics.downloader = CrxDownloader::DownloadMetrics::kUrlFetcher;
-    download_metrics.error = -1;
-    download_metrics.downloaded_bytes = 123;
-    download_metrics.total_bytes = 456;
-    download_metrics.download_time_ms = 987;
-    component.AppendEvent(component.MakeEventDownloadMetrics(download_metrics));
-
-    download_metrics = CrxDownloader::DownloadMetrics();
-    download_metrics.url = GURL("http://host2/path2");
-    download_metrics.downloader = CrxDownloader::DownloadMetrics::kBits;
-    download_metrics.error = 0;
-    download_metrics.downloaded_bytes = 1230;
-    download_metrics.total_bytes = 4560;
-    download_metrics.download_time_ms = 9870;
-    component.AppendEvent(component.MakeEventDownloadMetrics(download_metrics));
-
-    download_metrics = CrxDownloader::DownloadMetrics();
-    download_metrics.url = GURL("http://host3/path3");
-    download_metrics.downloader = CrxDownloader::DownloadMetrics::kBits;
-    download_metrics.error = 0;
-    download_metrics.downloaded_bytes = kProtocolMaxInt;
-    download_metrics.total_bytes = kProtocolMaxInt - 1;
-    download_metrics.download_time_ms = kProtocolMaxInt - 2;
-    component.AppendEvent(component.MakeEventDownloadMetrics(download_metrics));
-
-    EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
-    ping_manager_->SendPing(component, *metadata_, MakePingCallback());
-    RunThreads();
-
-    EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
-    const auto msg = interceptor->GetRequestBody(0);
-      const auto root = base::JSONReader::Read(msg);
-      ASSERT_TRUE(root);
-      const base::Value::Dict* request = root->GetDict().FindDict("request");
-      const base::Value& app_val = CHECK_DEREF(request->FindList("app"))[0];
-      const base::Value::Dict& app = app_val.GetDict();
-      EXPECT_EQ("abc", CHECK_DEREF(app.FindString("appid")));
-      EXPECT_EQ("1.0", CHECK_DEREF(app.FindString("version")));
-      EXPECT_EQ(4u, CHECK_DEREF(app.FindList("event")).size());
-      {
-        const base::Value::Dict& event =
-            CHECK_DEREF(app.FindList("event"))[0].GetDict();
-        EXPECT_EQ(1, event.FindInt("eventresult"));
-        EXPECT_EQ(3, event.FindInt("eventtype"));
-        EXPECT_EQ("2.0", CHECK_DEREF(event.FindString("nextversion")));
-        EXPECT_EQ("1.0", CHECK_DEREF(event.FindString("previousversion")));
-      }
-      {
-        const base::Value::Dict& event =
-            CHECK_DEREF(app.FindList("event"))[1].GetDict();
-        EXPECT_EQ(0, event.FindInt("eventresult"));
-        EXPECT_EQ(14, event.FindInt("eventtype"));
-        EXPECT_EQ(987, event.FindDouble("download_time_ms"));
-        EXPECT_EQ(123, event.FindDouble("downloaded"));
-        EXPECT_EQ("direct", CHECK_DEREF(event.FindString("downloader")));
-        EXPECT_EQ(-1, event.FindInt("errorcode"));
-        EXPECT_EQ("2.0", CHECK_DEREF(event.FindString("nextversion")));
-        EXPECT_EQ("1.0", CHECK_DEREF(event.FindString("previousversion")));
-        EXPECT_EQ(456, event.FindDouble("total"));
-        EXPECT_EQ("http://host1/path1", CHECK_DEREF(event.FindString("url")));
-      }
-      {
-        const base::Value::Dict& event =
-            CHECK_DEREF(app.FindList("event"))[2].GetDict();
-        EXPECT_EQ(1, event.FindInt("eventresult"));
-        EXPECT_EQ(14, event.FindInt("eventtype"));
-        EXPECT_EQ(9870, event.FindDouble("download_time_ms"));
-        EXPECT_EQ(1230, event.FindDouble("downloaded"));
-        EXPECT_EQ("bits", CHECK_DEREF(event.FindString("downloader")));
-        EXPECT_EQ("2.0", CHECK_DEREF(event.FindString("nextversion")));
-        EXPECT_EQ("1.0", CHECK_DEREF(event.FindString("previousversion")));
-        EXPECT_EQ(4560, event.FindDouble("total"));
-        EXPECT_EQ("http://host2/path2", CHECK_DEREF(event.FindString("url")));
-      }
-      {
-        const base::Value::Dict& event =
-            CHECK_DEREF(app.FindList("event"))[3].GetDict();
-        EXPECT_EQ(1, event.FindInt("eventresult"));
-        EXPECT_EQ(14, event.FindInt("eventtype"));
-        EXPECT_EQ(9007199254740990, event.FindDouble("download_time_ms"));
-        EXPECT_EQ(9007199254740992, event.FindDouble("downloaded"));
-        EXPECT_EQ("bits", CHECK_DEREF(event.FindString("downloader")));
-        EXPECT_EQ("2.0", CHECK_DEREF(event.FindString("nextversion")));
-        EXPECT_EQ("1.0", CHECK_DEREF(event.FindString("previousversion")));
-        EXPECT_EQ(9007199254740991, event.FindDouble("total"));
-        EXPECT_EQ("http://host3/path3", CHECK_DEREF(event.FindString("url")));
-      }
+    EXPECT_EQ(4, event.FindInt("eventtype"));
+    EXPECT_EQ("1.2.3.4", CHECK_DEREF(event.FindString("previousversion")));
+    EXPECT_EQ(event.FindString("nextversion"), nullptr);
     interceptor->Reset();
   }
 
   // Tests the presence of the `domain joined` in the ping request.
   {
-    for (const auto is_managed : std::initializer_list<absl::optional<bool>>{
-             absl::nullopt, false, true}) {
+    for (const auto& is_managed : std::initializer_list<std::optional<bool>>{
+             std::nullopt, false, true}) {
       config_->SetIsMachineExternallyManaged(is_managed);
       EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
       Component component(*update_context, "abc");
       component.crx_component_ = CrxComponent();
+      component.crx_component_->app_id = "abc";
       component.previous_version_ = base::Version("1.0");
       component.AppendEvent(component.MakeEventUpdateComplete());
-      ping_manager_->SendPing(component, *metadata_, MakePingCallback());
+      ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                              component.GetEvents(), MakePingCallback());
 
       RunThreads();
 
@@ -531,32 +386,94 @@ TEST_P(PingManagerTest, SendPing) {
                 root->GetDict().FindBoolByDottedPath("request.domainjoined"));
     }
   }
-  config_->SetIsMachineExternallyManaged(absl::nullopt);
+
+  {
+    // Test `app_command_id`.
+    CrxComponent crx_component;
+    crx_component.app_id = "abc";
+    crx_component.version = base::Version("1.2.3.4");
+
+    EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
+    base::MakeRefCounted<UpdateEngine>(
+        config_,
+        base::BindRepeating(
+            [](scoped_refptr<Configurator>) -> std::unique_ptr<UpdateChecker> {
+              return nullptr;
+            }),
+        ping_manager_, base::DoNothing())
+        ->SendPing(crx_component,
+                   {
+                       .event_type = protocol_request::kEventAppCommandComplete,
+                       .result = false,
+                       .error_code = -11,
+                       .extra_code1 = 101,
+                       .app_command_id = "appcommandid1",
+                   },
+                   base::BindLambdaForTesting([&](Error) { Quit(); }));
+    RunThreads();
+
+    EXPECT_EQ(1, interceptor->GetCount()) << interceptor->GetRequestsAsString();
+    const auto msg = interceptor->GetRequestBody(0);
+    const auto root = base::JSONReader::Read(msg);
+    ASSERT_TRUE(root);
+    const base::Value::Dict* request = root->GetDict().FindDict("request");
+    const base::Value& app_val = CHECK_DEREF(request->FindList("app"))[0];
+    const base::Value::Dict& app = app_val.GetDict();
+    EXPECT_EQ("abc", CHECK_DEREF(app.FindString("appid")));
+    EXPECT_EQ("1.2.3.4", CHECK_DEREF(app.FindString("version")));
+    const base::Value::Dict& event =
+        CHECK_DEREF(app.FindList("event"))[0].GetDict();
+    EXPECT_EQ(false, event.FindInt("eventresult"));
+    EXPECT_EQ(protocol_request::kEventAppCommandComplete,
+              event.FindInt("eventtype"));
+    EXPECT_EQ(-11, event.FindInt("errorcode"));
+    EXPECT_EQ(101, event.FindInt("extracode1"));
+    EXPECT_EQ("appcommandid1", CHECK_DEREF(event.FindString("appcommandid")));
+    EXPECT_EQ("1.2.3.4", CHECK_DEREF(event.FindString("previousversion")));
+    EXPECT_EQ(event.FindString("nextversion"), nullptr);
+
+    interceptor->Reset();
+  }
+
+  config_->SetIsMachineExternallyManaged(std::nullopt);
 }
 
 // Tests that sending the ping fails when the component requires encryption but
 // the ping URL is unsecure.
 TEST_P(PingManagerTest, RequiresEncryption) {
   config_->SetPingUrl(GURL("http:\\foo\bar"));
+  auto interceptor = std::make_unique<URLLoaderPostInterceptor>(
+      config_->test_url_loader_factory());
+  EXPECT_TRUE(interceptor);
 
   const auto update_context = MakeMockUpdateContext();
+  {
+    Component component(*update_context, "abc");
+    component.crx_component_ = CrxComponent();
+    component.crx_component_->app_id = "abc";
+    component.crx_component_->version = base::Version("1.0");
+    component.crx_component_->ap = "ap1";
+    component.crx_component_->brand = "BRND";
+    component.state_ = std::make_unique<Component::StateUpdated>(&component);
+    component.previous_version_ = base::Version("1.0");
+    component.next_version_ = base::Version("2.0");
+    component.AppendEvent(component.MakeEventUpdateComplete());
+    // The default value for |requires_network_encryption| is true.
+    EXPECT_TRUE(component.crx_component_->requires_network_encryption);
 
-  Component component(*update_context, "abc");
-  component.crx_component_ = CrxComponent();
-  component.crx_component_->version = base::Version("1.0");
+    config_->GetPersistedData()->SetCohort("abc", "c1");
+    config_->GetPersistedData()->SetCohortName("abc", "cn1");
+    config_->GetPersistedData()->SetCohortHint("abc", "ch1");
 
-  // The default value for |requires_network_encryption| is true.
-  EXPECT_TRUE(component.crx_component_->requires_network_encryption);
+    EXPECT_TRUE(interceptor->ExpectRequest(std::make_unique<AnyMatch>()));
+    ping_manager_->SendPing(component.session_id(), *component.crx_component_,
+                            component.GetEvents(), MakePingCallback());
+    RunThreads();
 
-  component.state_ = std::make_unique<Component::StateUpdated>(&component);
-  component.previous_version_ = base::Version("1.0");
-  component.next_version_ = base::Version("2.0");
-  component.AppendEvent(component.MakeEventUpdateComplete());
-
-  ping_manager_->SendPing(component, *metadata_, MakePingCallback());
-  RunThreads();
-
-  EXPECT_EQ(-2, error_);
+    // Should not send
+    EXPECT_EQ(0, interceptor->GetCount()) << interceptor->GetRequestsAsString();
+  }
+  config_->SetIsMachineExternallyManaged(std::nullopt);
 }
 
 }  // namespace update_client

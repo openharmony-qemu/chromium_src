@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/377326291): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/service_worker/service_worker_single_script_update_checker.h"
 
 #include <utility>
 
+#include "base/containers/span.h"
 #include "base/functional/bind.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
@@ -93,7 +99,8 @@ constexpr net::NetworkTrafficAnnotationTag kUpdateCheckTrafficAnnotation =
 class ServiceWorkerSingleScriptUpdateChecker::WrappedIOBuffer
     : public net::WrappedIOBuffer {
  public:
-  WrappedIOBuffer(const char* data) : net::WrappedIOBuffer(data) {}
+  WrappedIOBuffer(const char* data, size_t size)
+      : net::WrappedIOBuffer(base::make_span(data, size)) {}
 
  private:
   ~WrappedIOBuffer() override = default;
@@ -120,6 +127,7 @@ ServiceWorkerSingleScriptUpdateChecker::ServiceWorkerSingleScriptUpdateChecker(
     mojo::Remote<storage::mojom::ServiceWorkerResourceWriter> writer,
     int64_t writer_resource_id,
     ScriptChecksumUpdateOption script_checksum_update_option,
+    const blink::StorageKey& storage_key,
     ResultCallback callback)
     : script_url_(script_url),
       is_main_script_(is_main_script),
@@ -143,8 +151,8 @@ ServiceWorkerSingleScriptUpdateChecker::ServiceWorkerSingleScriptUpdateChecker(
 
   network::ResourceRequest resource_request =
       service_worker_loader_helpers::CreateRequestForServiceWorkerScript(
-          script_url, url::Origin::Create(main_script_url), is_main_script_,
-          worker_script_type, *fetch_client_settings_object, *browser_context);
+          script_url, storage_key, is_main_script_, worker_script_type,
+          *fetch_client_settings_object, *browser_context);
 
   uint32_t options = network::mojom::kURLLoadOptionNone;
   if (is_main_script_) {
@@ -156,7 +164,7 @@ ServiceWorkerSingleScriptUpdateChecker::ServiceWorkerSingleScriptUpdateChecker(
 
   // Upgrade the request to an a priori authenticated URL, if appropriate.
   // https://w3c.github.io/webappsec-upgrade-insecure-requests/#upgrade-request
-  // TODO(https://crbug.com/987491): Set |ResourceRequest::upgrade_if_insecure_|
+  // TODO(crbug.com/40637521): Set |ResourceRequest::upgrade_if_insecure_|
   // appropriately.
 
   if (service_worker_loader_helpers::ShouldValidateBrowserCacheForScript(
@@ -184,13 +192,14 @@ ServiceWorkerSingleScriptUpdateChecker::ServiceWorkerSingleScriptUpdateChecker(
 
   // Service worker update checking doesn't have a relevant frame and tab, so
   // that `web_contents_getter` returns nullptr and the frame id is set to
-  // kNoFrameTreeNodeId.
+  // an invalid FrameTreeNodeId.
   base::RepeatingCallback<WebContents*()> web_contents_getter =
       base::BindRepeating([]() -> WebContents* { return nullptr; });
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
       CreateContentBrowserURLLoaderThrottles(
           resource_request, browser_context, std::move(web_contents_getter),
-          /*navigation_ui_data=*/nullptr, RenderFrameHost::kNoFrameTreeNodeId);
+          /*navigation_ui_data=*/nullptr, FrameTreeNodeId(),
+          /*navigation_id=*/std::nullopt);
 
   network_client_remote_.Bind(
       network_client_receiver_.BindNewPipeAndPassRemote());
@@ -217,7 +226,7 @@ void ServiceWorkerSingleScriptUpdateChecker::OnReceiveEarlyHints(
 void ServiceWorkerSingleScriptUpdateChecker::OnReceiveResponse(
     network::mojom::URLResponseHeadPtr response_head,
     mojo::ScopedDataPipeConsumerHandle consumer,
-    absl::optional<mojo_base::BigBuffer> cached_metadata) {
+    std::optional<mojo_base::BigBuffer> cached_metadata) {
   TRACE_EVENT_WITH_FLOW0(
       "ServiceWorker",
       "ServiceWorkerSingleScriptUpdateChecker::OnReceiveResponse", this,
@@ -257,7 +266,7 @@ void ServiceWorkerSingleScriptUpdateChecker::OnReceiveResponse(
              ->ShouldServiceWorkerInheritPolicyContainerFromCreator(
                  script_url_)) {
       policy_container_host_ = base::MakeRefCounted<PolicyContainerHost>(
-          // TODO(https://crbug.com/1366920): Ensure parsed headers are
+          // TODO(crbug.com/40867256): Ensure parsed headers are
           // available
           response_head->parsed_headers
               // This does not parse the referrer policy, which will be
@@ -294,7 +303,7 @@ void ServiceWorkerSingleScriptUpdateChecker::OnReceiveRedirect(
   // Step 9.5: "Set request's redirect mode to "error"."
   // https://w3c.github.io/ServiceWorker/#update-algorithm
   //
-  // TODO(https://crbug.com/889798): Follow redirects for imported scripts.
+  // TODO(crbug.com/40595655): Follow redirects for imported scripts.
   Fail(blink::ServiceWorkerStatusCode::kErrorNetwork,
        ServiceWorkerConsts::kServiceWorkerRedirectError,
        network::URLLoaderCompletionStatus(net::ERR_INVALID_REDIRECT));
@@ -348,7 +357,6 @@ void ServiceWorkerSingleScriptUpdateChecker::OnComplete(
       case ServiceWorkerUpdatedScriptLoader::WriterState::kNotStarted:
         NOTREACHED()
             << "Response header should be received before OnComplete()";
-        break;
       case ServiceWorkerUpdatedScriptLoader::WriterState::kWriting:
         // Wait until it's written. OnWriteHeadersComplete() will call
         // Finish().
@@ -512,9 +520,10 @@ void ServiceWorkerSingleScriptUpdateChecker::OnNetworkDataAvailable(
             ServiceWorkerUpdatedScriptLoader::WriterState::kCompleted);
   DCHECK(network_consumer_.is_valid());
   scoped_refptr<network::MojoToNetPendingBuffer> pending_buffer;
-  uint32_t bytes_available = 0;
   MojoResult result = network::MojoToNetPendingBuffer::BeginRead(
-      &network_consumer_, &pending_buffer, &bytes_available);
+      &network_consumer_, &pending_buffer);
+
+  const uint32_t bytes_available = pending_buffer ? pending_buffer->size() : 0;
   TRACE_EVENT_WITH_FLOW2(
       "ServiceWorker",
       "ServiceWorkerSingleScriptUpdateChecker::OnNetworkDataAvailable", this,
@@ -558,7 +567,8 @@ void ServiceWorkerSingleScriptUpdateChecker::CompareData(
 
   DCHECK(pending_buffer || bytes_to_compare == 0);
   auto buffer = base::MakeRefCounted<WrappedIOBuffer>(
-      pending_buffer ? pending_buffer->buffer() : nullptr);
+      pending_buffer ? pending_buffer->buffer() : nullptr,
+      pending_buffer ? pending_buffer->size() : 0);
 
   // Compare the network data and the stored data.
   net::Error error = cache_writer_->MaybeWriteData(
@@ -647,7 +657,7 @@ void ServiceWorkerSingleScriptUpdateChecker::Fail(
          /*paused_state=*/nullptr,
          std::make_unique<FailureInfo>(status, error_message,
                                        std::move(network_status)),
-         /*sha256_checksum=*/absl::nullopt);
+         /*sha256_checksum=*/std::nullopt);
 }
 
 void ServiceWorkerSingleScriptUpdateChecker::Succeed(
@@ -666,7 +676,7 @@ void ServiceWorkerSingleScriptUpdateChecker::Succeed(
   // and it can be pausing. In this case, the finalized checksum is still not
   // available here, and that will be handled in
   // ServiceWorkerUpdatedScriptLoader.
-  absl::optional<std::string> sha256_checksum;
+  std::optional<std::string> sha256_checksum;
   if (script_checksum_update_option_ ==
           ScriptChecksumUpdateOption::kForceUpdate &&
       result == Result::kIdentical) {
@@ -684,7 +694,7 @@ void ServiceWorkerSingleScriptUpdateChecker::Finish(
     Result result,
     std::unique_ptr<PausedState> paused_state,
     std::unique_ptr<FailureInfo> failure_info,
-    const absl::optional<std::string>& sha256_checksum) {
+    const std::optional<std::string>& sha256_checksum) {
   network_watcher_.Cancel();
   if (Result::kDifferent == result) {
     DCHECK(paused_state);
@@ -692,7 +702,7 @@ void ServiceWorkerSingleScriptUpdateChecker::Finish(
     // ServiceWorkerUpdatedScriptLoader.
     std::move(callback_).Run(script_url_, result, nullptr,
                              std::move(paused_state),
-                             /*sha256_checksum=*/absl::nullopt);
+                             /*sha256_checksum=*/std::nullopt);
     return;
   }
 

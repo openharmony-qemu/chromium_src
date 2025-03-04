@@ -65,7 +65,7 @@ FakeScreenControls::~FakeScreenControls() = default;
 
 void FakeScreenControls::SetScreenResolution(
     const ScreenResolution& resolution,
-    absl::optional<webrtc::ScreenId> screen_id) {}
+    std::optional<webrtc::ScreenId> screen_id) {}
 
 void FakeScreenControls::SetVideoLayout(
     const protocol::VideoLayout& video_layout) {}
@@ -96,7 +96,8 @@ std::unique_ptr<ScreenControls> FakeDesktopEnvironment::CreateScreenControls() {
   return std::make_unique<FakeScreenControls>();
 }
 
-std::unique_ptr<DesktopCapturer> FakeDesktopEnvironment::CreateVideoCapturer() {
+std::unique_ptr<DesktopCapturer> FakeDesktopEnvironment::CreateVideoCapturer(
+    webrtc::ScreenId id) {
   auto fake_capturer = std::make_unique<protocol::FakeDesktopCapturer>();
   if (!frame_generator_.is_null()) {
     fake_capturer->set_frame_generator(frame_generator_);
@@ -122,6 +123,14 @@ FakeDesktopEnvironment::CreateKeyboardLayoutMonitor(
   return std::make_unique<FakeKeyboardLayoutMonitor>();
 }
 
+std::unique_ptr<ActiveDisplayMonitor>
+FakeDesktopEnvironment::CreateActiveDisplayMonitor(
+    ActiveDisplayMonitor::Callback callback) {
+  auto result = std::make_unique<FakeActiveDisplayMonitor>(callback);
+  last_active_display_monitor_ = result->GetWeakPtr();
+  return result;
+}
+
 std::unique_ptr<FileOperations> FakeDesktopEnvironment::CreateFileOperations() {
   return nullptr;
 }
@@ -132,10 +141,12 @@ FakeDesktopEnvironment::CreateUrlForwarderConfigurator() {
 }
 
 std::string FakeDesktopEnvironment::GetCapabilities() const {
-  return std::string();
+  return capabilities_;
 }
 
-void FakeDesktopEnvironment::SetCapabilities(const std::string& capabilities) {}
+void FakeDesktopEnvironment::SetCapabilities(const std::string& capabilities) {
+  capabilities_ = capabilities;
+}
 
 uint32_t FakeDesktopEnvironment::GetDesktopSessionId() const {
   return desktop_session_id_;
@@ -165,6 +176,7 @@ std::unique_ptr<DesktopEnvironment> FakeDesktopEnvironmentFactory::Create(
       new FakeDesktopEnvironment(capture_thread_, options));
   result->set_frame_generator(frame_generator_);
   result->set_desktop_session_id(desktop_session_id_);
+  result->SetCapabilities(capabilities_);
   last_desktop_environment_ = result->weak_factory_.GetWeakPtr();
   return std::move(result);
 }

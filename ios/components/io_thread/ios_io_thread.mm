@@ -14,6 +14,7 @@
 #import "base/environment.h"
 #import "base/functional/bind.h"
 #import "base/functional/callback_helpers.h"
+#import "base/memory/raw_ptr.h"
 #import "base/metrics/field_trial.h"
 #import "base/strings/string_number_conversions.h"
 #import "base/strings/string_split.h"
@@ -65,10 +66,6 @@
 #import "net/url_request/url_request_job_factory.h"
 #import "url/url_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 // The IOSIOThread object must outlive any tasks posted to the IO thread before
 // the Quit task, so base::Bind{Once,Repeating}() calls are not refcounted.
 
@@ -84,7 +81,7 @@ std::unique_ptr<net::HostResolver> CreateGlobalHostResolver(
     net::NetLog* net_log) {
   TRACE_EVENT0("startup", "IOSIOThread::CreateGlobalHostResolver");
 
-  // TODO(crbug.com/934402): Use a shared HostResolverManager instead of a
+  // TODO(crbug.com/40614970): Use a shared HostResolverManager instead of a
   // single global HostResolver for iOS.
   std::unique_ptr<net::HostResolver> global_host_resolver =
       net::HostResolver::CreateStandaloneResolver(net_log);
@@ -108,7 +105,8 @@ class SystemURLRequestContextGetter : public net::URLRequestContextGetter {
   ~SystemURLRequestContextGetter() override;
 
  private:
-  IOSIOThread* io_thread_;  // Weak pointer, owned by ApplicationContext.
+  raw_ptr<IOSIOThread>
+      io_thread_;  // Weak pointer, owned by ApplicationContext.
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   LeakTracker<SystemURLRequestContextGetter> leak_tracker_;
@@ -238,19 +236,10 @@ void IOSIOThread::Init() {
   params_.ignore_certificate_errors = false;
   params_.enable_user_alternate_protocol_ports = false;
 
-  std::string quic_user_agent_id = GetChannelString();
-  if (!quic_user_agent_id.empty())
-    quic_user_agent_id.push_back(' ');
-  quic_user_agent_id.append(
-      version_info::GetProductNameAndVersionForUserAgent());
-  quic_user_agent_id.push_back(' ');
-  quic_user_agent_id.append(web::BuildOSCpuInfo());
-
   // Set up field trials, ignoring debug command line options.
   network_session_configurator::ParseCommandLineAndFieldTrials(
       base::CommandLine(base::CommandLine::NO_PROGRAM),
-      /*is_quic_force_disabled=*/false, quic_user_agent_id, &params_,
-      &quic_params_);
+      /*is_quic_force_disabled=*/false, &params_, &quic_params_);
 
   globals_->system_request_context = ConstructSystemRequestContext();
 }
@@ -327,7 +316,7 @@ IOSIOThread::ConstructSystemRequestContext() {
   *quic_context->params() = quic_params_;
   builder.set_quic_context(std::move(quic_context));
   // In-memory cookie store.
-  // TODO(crbug.com/801910): Hook up logging by passing in a non-null netlog.
+  // TODO(crbug.com/41364708): Hook up logging by passing in a non-null netlog.
   builder.SetCookieStore(std::make_unique<net::CookieMonster>(
       nullptr /* store */, nullptr /* netlog */));
   builder.set_network_delegate(std::move(network_delegate));

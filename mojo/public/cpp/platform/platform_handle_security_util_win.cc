@@ -5,7 +5,8 @@
 #include "mojo/public/cpp/platform/platform_handle_security_util_win.h"
 
 #include <windows.h>
-#include <winternl.h>
+
+#include <optional>
 
 #include "base/containers/span.h"
 #include "base/dcheck_is_on.h"
@@ -15,10 +16,9 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
-#include "base/strings/string_util.h"
 #include "base/win/nt_status.h"
 #include "base/win/scoped_handle.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "base/win/security_util.h"
 
 namespace mojo {
 
@@ -32,12 +32,18 @@ FileHandleSecurityErrorCallback& GetErrorCallback() {
 #if DCHECK_IS_ON()
 
 std::wstring GetPathFromHandle(HANDLE handle) {
-  std::wstring full_path;
-  DWORD result = ::GetFinalPathNameByHandleW(
-      handle, base::WriteInto(&full_path, MAX_PATH + 1), MAX_PATH + 1, 0);
+  std::wstring full_path(MAX_PATH - 1, '\0');
+  // Note: the math here is a bit messy. `basic_string` guarantees that enough
+  // space is reserved so that index may be any value between 0 and size()
+  // inclusive. However, `GetFinalPathNameByHandleW()` and `MAX_PATH` include
+  // the NUL terminator as part of the size (e.g. MAX_PATH is 3 characters for
+  // the drive letter, 256 characters for the path, and 1 character for NUL),
+  // hence `- 1` for the `resize()` calls.
+  DWORD result =
+      ::GetFinalPathNameByHandleW(handle, full_path.data(), MAX_PATH, 0);
   if (result > MAX_PATH) {
-    result = ::GetFinalPathNameByHandleW(
-        handle, base::WriteInto(&full_path, result), result, 0);
+    full_path.resize(result - 1);
+    result = ::GetFinalPathNameByHandleW(handle, full_path.data(), result, 0);
   }
   if (!result) {
     PLOG(ERROR) << "Could not get full path for handle " << handle;
@@ -47,24 +53,14 @@ std::wstring GetPathFromHandle(HANDLE handle) {
   return full_path;
 }
 
-absl::optional<bool> IsReadOnlyHandle(HANDLE handle) {
-  static const auto nt_query_object =
-      reinterpret_cast<decltype(&NtQueryObject)>(
-          GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtQueryObject"));
-  if (!nt_query_object) {
-    return absl::nullopt;
+std::optional<bool> IsReadOnlyHandle(HANDLE handle) {
+  std::optional<ACCESS_MASK> flags = base::win::GetGrantedAccess(handle);
+  if (!flags.has_value()) {
+    return std::nullopt;
   }
-
-  PUBLIC_OBJECT_BASIC_INFORMATION basic_info = {};
-  if (!NT_SUCCESS(nt_query_object(handle, ObjectBasicInformation, &basic_info,
-                                  sizeof(basic_info), nullptr))) {
-    // If unable to query the object
-    return absl::nullopt;
-  }
-
   // Cannot use GENERIC_WRITE as that includes SYNCHRONIZE.
   // This is ~(all the writable permissions).
-  return !(basic_info.GrantedAccess &
+  return !(flags.value() &
            (FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA |
             FILE_WRITE_EA | WRITE_DAC | WRITE_OWNER | DELETE));
 }
@@ -75,16 +71,11 @@ absl::optional<bool> IsReadOnlyHandle(HANDLE handle) {
 
 void DcheckIfFileHandleIsUnsafe(HANDLE handle) {
 #if DCHECK_IS_ON()
-  if (!base::FeatureList::IsEnabled(
-          base::features::kEnforceNoExecutableFileHandles)) {
-    return;
-  }
-
   if (GetFileType(handle) != FILE_TYPE_DISK) {
     return;
   }
 
-  absl::optional<bool> is_read_only = IsReadOnlyHandle(handle);
+  std::optional<bool> is_read_only = IsReadOnlyHandle(handle);
   if (!is_read_only.has_value()) {
     // If unable to obtain whether or not the handle is read-only, skip the rest
     // of the checks, since it's likely GetPathFromHandle below would fail

@@ -36,9 +36,13 @@ class CommerceTabHelper : public web::WebStateObserver,
   void DidFinishNavigation(web::WebState* web_state,
                            web::NavigationContext* navigation_context) override;
 
+  void DidStopLoading(web::WebState* web_state) override;
+
   void PageLoaded(
       web::WebState* web_state,
       web::PageLoadCompletionStatus load_completion_status) override;
+
+  void WasShown(web::WebState* web_state) override;
 
   void WebStateDestroyed(web::WebState* web_state) override;
 

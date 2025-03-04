@@ -20,8 +20,7 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/thread_pool.h"
 #include "services/device/generic_sensor/platform_sensor.h"
-
-#include "sensor_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/sensor_adapter.h"
 
 namespace device {
 
@@ -32,14 +31,13 @@ class PlatformSensorOHOS : public PlatformSensor {
   static scoped_refptr<PlatformSensorOHOS> Create(
       mojom::SensorType type,
       SensorReadingSharedBuffer* reading_buffer,
-      PlatformSensorProvider* provider);
+      base::WeakPtr<PlatformSensorProvider> provider);
 
-  static bool IsSupported(
-      mojom::SensorType type);
+  static bool IsSupported(mojom::SensorType type);
 
   PlatformSensorOHOS(mojom::SensorType type,
-                        SensorReadingSharedBuffer* reading_buffer,
-                        PlatformSensorProvider* provider);
+                     SensorReadingSharedBuffer* reading_buffer,
+                     base::WeakPtr<PlatformSensorProvider> provider);
 
   PlatformSensorOHOS(const PlatformSensorOHOS&) = delete;
   PlatformSensorOHOS& operator=(const PlatformSensorOHOS&) = delete;
@@ -48,19 +46,15 @@ class PlatformSensorOHOS : public PlatformSensor {
   PlatformSensorConfiguration GetDefaultConfiguration() override;
   double GetMaximumSupportedFrequency() override;
   double GetMinimumSupportedFrequency() override;
-  
   void NotifyPlatformSensorError();
 
-  void UpdatePlatformSensorReading(
-      double timestamp,
-      double value1,
-      double value2,
-      double value3,
-      double value4);
+  void UpdatePlatformSensorReading(double timestamp,
+                                   double value1,
+                                   double value2,
+                                   double value3,
+                                   double value4);
 
-  bool IsSupported() {
-    return is_supported_;
-  }
+  bool IsSupported() { return is_supported_; }
 
  protected:
   ~PlatformSensorOHOS() override;
@@ -82,14 +76,18 @@ class PlatformSensorOHOS : public PlatformSensor {
 class OHOSSensorCallback : public OHOS::NWeb::SensorCallbackAdapter {
  public:
   OHOSSensorCallback(
-    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-    base::WeakPtr<PlatformSensorOHOS> platform_sensor_ohos);
+      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+      base::WeakPtr<PlatformSensorOHOS> platform_sensor_ohos);
   virtual ~OHOSSensorCallback();
   OHOSSensorCallback(const OHOSSensorCallback&) = delete;
   OHOSSensorCallback& operator=(const OHOSSensorCallback&) = delete;
 
-  void UpdateOhosSensorData(double timestamp, double value1, 
-                                      double value2, double value3, double value4) override;
+  void UpdateOhosSensorData(double timestamp,
+                            double value1,
+                            double value2,
+                            double value3,
+                            double value4) override;
+
  private:
   base::WeakPtr<PlatformSensorOHOS> platform_sensor_ohos_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;

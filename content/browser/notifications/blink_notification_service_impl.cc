@@ -30,6 +30,11 @@
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif // ARKWEB_NOTIFICATION
+
 namespace content {
 
 namespace {
@@ -124,7 +129,16 @@ void BlinkNotificationServiceImpl::GetPermissionStatus(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      switches::kEnableNwebEx)) {
+    CheckPermissionStatusAsync(std::move(callback));
+  } else {
+    std::move(callback).Run(CheckPermissionStatus());
+  }
+#else
   std::move(callback).Run(CheckPermissionStatus());
+#endif // ARKWEB_NOTIFICATION
 }
 
 void BlinkNotificationServiceImpl::OnConnectionError() {
@@ -207,7 +221,7 @@ void BlinkNotificationServiceImpl::CloseNonPersistentNotification(
   browser_context_->GetPlatformNotificationService()->CloseNotification(
       notification_id);
 
-  // TODO(https://crbug.com/442141): Pass a callback here to focus the tab
+  // TODO(crbug.com/40398221): Pass a callback here to focus the tab
   // which created the notification, unless the event is canceled.
   NotificationEventDispatcherImpl::GetInstance()
       ->DispatchNonPersistentCloseEvent(notification_id, base::DoNothing());
@@ -217,7 +231,7 @@ blink::mojom::PermissionStatus
 BlinkNotificationServiceImpl::CheckPermissionStatus() {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
-  // TODO(crbug.com/987654): It is odd that a service instance can be created
+  // TODO(crbug.com/40637582): It is odd that a service instance can be created
   // for cross-origin subframes, yet the instance is completely oblivious of
   // whether it is serving a top-level browsing context or an embedded one.
   if (creator_type_ ==
@@ -316,7 +330,7 @@ void BlinkNotificationServiceImpl::DisplayPersistentNotification(
   database_data.notification_data = platform_notification_data;
   database_data.notification_resources = notification_resources;
 
-  // TODO(https://crbug.com/870258): Validate resources are not too big (either
+  // TODO(crbug.com/41405589): Validate resources are not too big (either
   // here or in the mojo struct traits).
 
   notification_context_->WriteNotificationData(
@@ -397,5 +411,38 @@ void BlinkNotificationServiceImpl::DidGetNotifications(
 
   std::move(callback).Run(std::move(ids), std::move(datas));
 }
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+void BlinkNotificationServiceImpl::CheckPermissionStatusAsync(
+    GetPermissionStatusCallback callback) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+
+  // TODO(crbug.com/987654): It is odd that a service instance can be created
+  // for cross-origin subframes, yet the instance is completely oblivious of
+  // whether it is serving a top-level browsing context or an embedded one.
+  if (creator_type_ ==
+      RenderProcessHost::NotificationServiceCreatorType::kDocument) {
+    RenderFrameHost* rfh = weak_document_ptr_.AsRenderFrameHostIfValid();
+    if (!rfh) {
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+    browser_context_->GetPermissionController()
+        ->GetPermissionStatusAsync(
+            blink::PermissionType::NOTIFICATIONS, true, (void*)rfh,
+            rfh->GetLastCommittedOrigin(), std::move(callback));
+  } else {
+    RenderProcessHost* rph = RenderProcessHost::FromID(render_process_host_id_);
+    if (!rph) {
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+    browser_context_->GetPermissionController()
+        ->GetPermissionStatusAsync(
+            blink::PermissionType::NOTIFICATIONS, false, (void*)rph,
+            storage_key_.origin(), std::move(callback));
+  }
+}
+#endif // ARKWEB_NOTIFICATION
 
 }  // namespace content

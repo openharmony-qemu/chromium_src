@@ -2,14 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/devtools/devtools_pipe_handler.h"
 #include "base/task/thread_pool.h"
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_WIN)
+#include <windows.h>
+
 #include <io.h>
 #include <stdlib.h>
-#include <windows.h>
 #else
 #include <sys/socket.h>
 #endif
@@ -21,10 +27,8 @@
 #include <utility>
 
 #include "base/command_line.h"
-#include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
-#include "base/memory/ref_counted_memory.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/strings/string_util.h"
 #include "base/synchronization/atomic_flag.h"
@@ -40,14 +44,6 @@
 
 const size_t kReceiveBufferSizeForDevTools = 100 * 1024 * 1024;  // 100Mb
 const size_t kWritePacketSize = 1 << 16;
-
-// The following file descriptors are used by DevTools remote debugging pipe
-// handler to read and write protocol messages. These should be identical to
-// the ones specified in //components/devtools/devtools_pipe/devtools_pipe.h
-// which we cannot include here because //content should not depend on
-// components.
-const int kReadFD = 3;
-const int kWriteFD = 4;
 
 // Our CBOR (RFC 7049) based format starts with a tag 24 indicating
 // an envelope, that is, a byte string which as payload carries the
@@ -392,10 +388,12 @@ class PipeReaderCBOR : public PipeReaderBase {
 
 // DevToolsPipeHandler ---------------------------------------------------
 
-DevToolsPipeHandler::DevToolsPipeHandler(base::OnceClosure on_disconnect)
+DevToolsPipeHandler::DevToolsPipeHandler(int read_fd,
+                                         int write_fd,
+                                         base::OnceClosure on_disconnect)
     : on_disconnect_(std::move(on_disconnect)),
-      read_fd_(kReadFD),
-      write_fd_(kWriteFD) {
+      read_fd_(read_fd),
+      write_fd_(write_fd) {
   browser_target_ = DevToolsAgentHost::CreateForBrowser(
       nullptr, DevToolsAgentHost::CreateServerSocketCallback());
   browser_target_->AttachClient(this);

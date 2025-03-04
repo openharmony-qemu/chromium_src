@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "content/public/browser/render_process_host.h"
+
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -18,8 +21,10 @@
 #include "base/task/bind_post_task.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/bind.h"
+#include "base/test/mock_callback.h"
 #include "base/test/test_timeouts.h"
 #include "base/threading/hang_watcher.h"
+#include "base/timer/elapsed_timer.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/renderer_host/render_frame_proxy_host.h"
@@ -28,11 +33,12 @@
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/common/content_navigation_policy.h"
 #include "content/public/browser/back_forward_cache.h"
+#include "content/public/browser/browser_context.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/browsing_data_remover.h"
 #include "content/public/browser/child_process_launcher_utils.h"
 #include "content/public/browser/render_frame_host.h"
-#include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_process_host_creation_observer.h"
 #include "content/public/browser/render_process_host_observer.h"
 #include "content/public/browser/web_contents.h"
@@ -45,6 +51,7 @@
 #include "content/public/test/back_forward_cache_util.h"
 #include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
+#include "content/public/test/browsing_data_remover_test_util.h"
 #include "content/public/test/content_browser_test.h"
 #include "content/public/test/content_browser_test_content_browser_client.h"
 #include "content/public/test/content_browser_test_utils.h"
@@ -67,8 +74,8 @@
 #include "net/test/embedded_test_server/http_request.h"
 #include "net/test/embedded_test_server/http_response.h"
 #include "testing/gmock/include/gmock/gmock.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/chrome_debug_urls.h"
+#include "third_party/blink/public/common/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/features.h"
@@ -81,6 +88,12 @@
 #include "mojo/public/cpp/platform/platform_handle_security_util_win.h"
 #include "sandbox/policy/switches.h"
 #endif
+
+using testing::_;
+using testing::InSequence;
+using testing::Mock;
+using testing::StrictMock;
+using testing::Test;
 
 namespace content {
 
@@ -205,6 +218,7 @@ class RenderProcessHostTestBase : public ContentBrowserTest,
   void SetVisibleClients(RenderProcessHost* process, int32_t visible_clients) {
     RenderProcessHostImpl* impl = static_cast<RenderProcessHostImpl*>(process);
     impl->visible_clients_ = visible_clients;
+    impl->UpdateProcessPriority();
   }
 
  protected:
@@ -240,50 +254,6 @@ class RenderProcessHostTestBase : public ContentBrowserTest,
   int process_exits_ = 0;
   int host_destructions_ = 0;
   base::OnceClosure process_exit_callback_;
-};
-
-// A mock ContentBrowserClient that only considers a spare renderer to be a
-// suitable host.
-class SpareRendererContentBrowserClient
-    : public ContentBrowserTestContentBrowserClient {
- public:
-  bool IsSuitableHost(RenderProcessHost* process_host,
-                      const GURL& site_url) override {
-    if (RenderProcessHostImpl::GetSpareRenderProcessHostForTesting()) {
-      return process_host ==
-             RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-    }
-    return true;
-  }
-};
-
-// A mock ContentBrowserClient that only considers a non-spare renderer to be a
-// suitable host, but otherwise tries to reuse processes.
-class NonSpareRendererContentBrowserClient
-    : public ContentBrowserTestContentBrowserClient {
- public:
-  NonSpareRendererContentBrowserClient() = default;
-
-  NonSpareRendererContentBrowserClient(
-      const NonSpareRendererContentBrowserClient&) = delete;
-  NonSpareRendererContentBrowserClient& operator=(
-      const NonSpareRendererContentBrowserClient&) = delete;
-
-  bool IsSuitableHost(RenderProcessHost* process_host,
-                      const GURL& site_url) override {
-    return RenderProcessHostImpl::GetSpareRenderProcessHostForTesting() !=
-           process_host;
-  }
-
-  bool ShouldTryToUseExistingProcessHost(BrowserContext* context,
-                                         const GURL& url) override {
-    return true;
-  }
-
-  bool ShouldUseSpareRenderProcessHost(BrowserContext* browser_context,
-                                       const GURL& site_url) override {
-    return false;
-  }
 };
 
 // A ContentBrowserClient that can wait for calls to
@@ -361,346 +331,6 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, GuestsAreNotSuitableHosts) {
   EXPECT_EQ(2, RenderProcessHost::GetCurrentRenderProcessCountForTesting());
 }
 
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareRenderProcessHostTaken) {
-  ASSERT_TRUE(embedded_test_server()->Start());
-
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  EXPECT_NE(nullptr, spare_renderer);
-
-  GURL test_url = embedded_test_server()->GetURL("/simple_page.html");
-  Shell* window = CreateBrowser();
-  EXPECT_TRUE(NavigateToURL(window, test_url));
-
-  EXPECT_EQ(spare_renderer,
-            window->web_contents()->GetPrimaryMainFrame()->GetProcess());
-
-  // The old spare render process host should no longer be available.
-  EXPECT_NE(spare_renderer,
-            RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-
-  // Check if a fresh spare is available (depending on the operating mode).
-  if (RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {
-    EXPECT_NE(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  } else {
-    EXPECT_EQ(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  }
-}
-
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareRenderProcessHostNotTaken) {
-  ASSERT_TRUE(embedded_test_server()->Start());
-
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->off_the_record_browser_context());
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  GURL test_url = embedded_test_server()->GetURL("/simple_page.html");
-  Shell* window = CreateBrowser();
-  EXPECT_TRUE(NavigateToURL(window, test_url));
-
-  // There should have been another process created for the navigation.
-  EXPECT_NE(spare_renderer,
-            window->web_contents()->GetPrimaryMainFrame()->GetProcess());
-
-  // Check if a fresh spare is available (depending on the operating mode).
-  // Note this behavior is identical to what would have happened if the
-  // RenderProcessHost were taken.
-  if (RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {
-    EXPECT_NE(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  } else {
-    EXPECT_EQ(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  }
-}
-
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareRenderProcessHostKilled) {
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  mojo::Remote<mojom::TestService> service;
-  ASSERT_NE(nullptr, spare_renderer);
-  spare_renderer->BindReceiver(service.BindNewPipeAndPassReceiver());
-
-  base::RunLoop run_loop;
-  SetProcessExitCallback(spare_renderer, run_loop.QuitClosure());
-
-  // Should reply with a bad message and cause process death.
-  {
-    ScopedAllowRendererCrashes scoped_allow_renderer_crashes(spare_renderer);
-    service->DoSomething(base::DoNothing());
-    run_loop.Run();
-  }
-
-  // The spare RenderProcessHost should disappear when its process dies.
-  EXPECT_EQ(nullptr,
-            RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-}
-
-// Test that the spare renderer works correctly when the limit on the maximum
-// number of processes is small.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
-                       SpareRendererSurpressedMaxProcesses) {
-  ASSERT_TRUE(embedded_test_server()->Start());
-
-  SpareRendererContentBrowserClient browser_client;
-
-  RenderProcessHost::SetMaxRendererProcessCount(1);
-
-  // A process is created with shell startup, so with a maximum of one renderer
-  // process the spare RPH should not be created.
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  EXPECT_EQ(nullptr,
-            RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-
-  // A spare RPH should be created with a max of 2 renderer processes.
-  RenderProcessHost::SetMaxRendererProcessCount(2);
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  EXPECT_NE(nullptr, spare_renderer);
-
-  // Thanks to the injected SpareRendererContentBrowserClient and the limit on
-  // processes, the spare RPH will always be used via GetExistingProcessHost()
-  // rather than picked up via MaybeTakeSpareRenderProcessHost().
-  GURL test_url = embedded_test_server()->GetURL("/simple_page.html");
-  Shell* new_window = CreateBrowser();
-  EXPECT_TRUE(NavigateToURL(new_window, test_url));
-  // Outside of RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes mode, the
-  // spare RPH should have been dropped during CreateBrowser() and given to the
-  // new window.  OTOH, even in the IsSpareProcessKeptAtAllTimes mode, the spare
-  // shouldn't be created because of the low process limit.
-  EXPECT_EQ(nullptr,
-            RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  EXPECT_EQ(spare_renderer,
-            new_window->web_contents()->GetPrimaryMainFrame()->GetProcess());
-
-  // Revert to the default process limit and original ContentBrowserClient.
-  RenderProcessHost::SetMaxRendererProcessCount(0);
-}
-
-// Check that the spare renderer is dropped if an existing process is reused.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareRendererOnProcessReuse) {
-  ASSERT_TRUE(embedded_test_server()->Start());
-
-  NonSpareRendererContentBrowserClient browser_client;
-
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  EXPECT_NE(nullptr, spare_renderer);
-
-  // This should reuse the existing process.
-  Shell* new_browser = CreateBrowser();
-  EXPECT_EQ(shell()->web_contents()->GetPrimaryMainFrame()->GetProcess(),
-            new_browser->web_contents()->GetPrimaryMainFrame()->GetProcess());
-  EXPECT_NE(spare_renderer,
-            new_browser->web_contents()->GetPrimaryMainFrame()->GetProcess());
-  if (RenderProcessHostImpl::IsSpareProcessKeptAtAllTimes()) {
-    EXPECT_NE(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  } else {
-    EXPECT_EQ(nullptr,
-              RenderProcessHostImpl::GetSpareRenderProcessHostForTesting());
-  }
-
-  // The launcher thread reads state from browser_client, need to wait for it to
-  // be done before resetting the browser client. crbug.com/742533.
-  base::WaitableEvent launcher_thread_done(
-      base::WaitableEvent::ResetPolicy::MANUAL,
-      base::WaitableEvent::InitialState::NOT_SIGNALED);
-  GetProcessLauncherTaskRunner()->PostTask(
-      FROM_HERE,
-      base::BindOnce([](base::WaitableEvent* done) { done->Signal(); },
-                     base::Unretained(&launcher_thread_done)));
-  ASSERT_TRUE(launcher_thread_done.TimedWait(TestTimeouts::action_timeout()));
-}
-
-// Verifies that the spare renderer maintained by SpareRenderProcessHostManager
-// is correctly destroyed during browser shutdown.  This test is an analogue
-// to the //chrome-layer FastShutdown.SpareRenderProcessHost test.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
-                       SpareRenderProcessHostDuringShutdown) {
-  content::RenderProcessHost::WarmupSpareRenderProcessHost(
-      shell()->web_contents()->GetBrowserContext());
-
-  // The verification is that there are no DCHECKs anywhere during test tear
-  // down.
-}
-
-// Verifies that the spare renderer maintained by SpareRenderProcessHostManager
-// is correctly destroyed when closing the last content shell.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareRendererDuringClosing) {
-  content::RenderProcessHost::WarmupSpareRenderProcessHost(
-      shell()->web_contents()->GetBrowserContext());
-  shell()->web_contents()->Close();
-
-  // The verification is that there are no DCHECKs or UaF anywhere during test
-  // tear down.
-}
-
-// This test verifies that SpareRenderProcessHostManager correctly accounts
-// for StoragePartition differences when handing out the spare process.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
-                       SpareProcessVsCustomStoragePartition) {
-  ASSERT_TRUE(embedded_test_server()->Start());
-
-  // Provide custom storage partition for test sites.
-  GURL test_url = embedded_test_server()->GetURL("a.com", "/simple_page.html");
-  CustomStoragePartitionBrowserClient modified_client(GURL("http://a.com/"));
-
-  BrowserContext* browser_context =
-      ShellContentBrowserClient::Get()->browser_context();
-  scoped_refptr<SiteInstance> test_site_instance =
-      SiteInstance::CreateForURL(browser_context, test_url);
-  StoragePartition* default_storage =
-      browser_context->GetDefaultStoragePartition();
-  StoragePartition* custom_storage =
-      browser_context->GetStoragePartition(test_site_instance.get());
-  EXPECT_NE(default_storage, custom_storage);
-
-  // Open a test window - it should be associated with the default storage
-  // partition.
-  Shell* window = CreateBrowser();
-  RenderProcessHost* old_process =
-      window->web_contents()->GetPrimaryMainFrame()->GetProcess();
-  EXPECT_EQ(default_storage, old_process->GetStoragePartition());
-
-  // Warm up the spare process - it should be associated with the default
-  // storage partition.
-  RenderProcessHost::WarmupSpareRenderProcessHost(browser_context);
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  ASSERT_TRUE(spare_renderer);
-  EXPECT_EQ(default_storage, spare_renderer->GetStoragePartition());
-
-  // Navigate to a URL that requires a custom storage partition.
-  EXPECT_TRUE(NavigateToURL(window, test_url));
-  RenderProcessHost* new_process =
-      window->web_contents()->GetPrimaryMainFrame()->GetProcess();
-  // Requirement to use a custom storage partition should force a process swap.
-  EXPECT_NE(new_process, old_process);
-  // The new process should be associated with the custom storage partition.
-  EXPECT_EQ(custom_storage, new_process->GetStoragePartition());
-  // And consequently, the spare shouldn't have been used.
-  EXPECT_NE(spare_renderer, new_process);
-}
-
-class RenderProcessHostObserverCounter : public RenderProcessHostObserver {
- public:
-  explicit RenderProcessHostObserverCounter(RenderProcessHost* host) {
-    host->AddObserver(this);
-    observing_ = true;
-    observed_host_ = host;
-  }
-
-  RenderProcessHostObserverCounter(const RenderProcessHostObserverCounter&) =
-      delete;
-  RenderProcessHostObserverCounter& operator=(
-      const RenderProcessHostObserverCounter&) = delete;
-
-  ~RenderProcessHostObserverCounter() override {
-    if (observing_)
-      observed_host_->RemoveObserver(this);
-  }
-
-  void RenderProcessExited(RenderProcessHost* host,
-                           const ChildProcessTerminationInfo& info) override {
-    DCHECK(observing_);
-    DCHECK_EQ(host, observed_host_);
-    exited_count_++;
-  }
-
-  void RenderProcessHostDestroyed(RenderProcessHost* host) override {
-    DCHECK(observing_);
-    DCHECK_EQ(host, observed_host_);
-    destroyed_count_++;
-
-    host->RemoveObserver(this);
-    observing_ = false;
-    observed_host_ = nullptr;
-  }
-
-  int exited_count() const { return exited_count_; }
-  int destroyed_count() const { return destroyed_count_; }
-
- private:
-  int exited_count_ = 0;
-  int destroyed_count_ = 0;
-  bool observing_ = false;
-  raw_ptr<RenderProcessHost> observed_host_ = nullptr;
-};
-
-// Check that the spare renderer is properly destroyed via DisableRefCounts().
-// Note: DisableRefCounts() used to be called DisableKeepAliveRefCount();
-// the name if this test is left unchanged to avoid disrupt any tracking
-// tools (e.g. flakiness) that might reference the old name.
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareVsDisableKeepAliveRefCount) {
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  base::RunLoop().RunUntilIdle();
-
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  RenderProcessHostObserverCounter counter(spare_renderer);
-
-  RenderProcessHostWatcher process_watcher(
-      spare_renderer, RenderProcessHostWatcher::WATCH_FOR_HOST_DESTRUCTION);
-
-  spare_renderer->DisableRefCounts();
-
-  process_watcher.Wait();
-  EXPECT_TRUE(process_watcher.did_exit_normally());
-
-  // An important part of test verification is that UaF doesn't happen in the
-  // next revolution of the message pump - without extra care in the
-  // SpareRenderProcessHostManager RenderProcessHost::Cleanup could be called
-  // twice leading to a crash caused by double-free flavour of UaF in
-  // base::DeleteHelper<...>::DoDelete.
-  base::RunLoop().RunUntilIdle();
-
-  DCHECK_EQ(1, counter.exited_count());
-  DCHECK_EQ(1, counter.destroyed_count());
-}
-
-// Check that the spare renderer is properly destroyed via DisableRefCounts().
-IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, SpareVsFastShutdown) {
-  RenderProcessHost::WarmupSpareRenderProcessHost(
-      ShellContentBrowserClient::Get()->browser_context());
-  base::RunLoop().RunUntilIdle();
-
-  RenderProcessHost* spare_renderer =
-      RenderProcessHostImpl::GetSpareRenderProcessHostForTesting();
-  RenderProcessHostObserverCounter counter(spare_renderer);
-
-  RenderProcessHostWatcher process_watcher(
-      spare_renderer, RenderProcessHostWatcher::WATCH_FOR_HOST_DESTRUCTION);
-
-  spare_renderer->FastShutdownIfPossible();
-
-  process_watcher.Wait();
-  EXPECT_FALSE(process_watcher.did_exit_normally());
-
-  // An important part of test verification is that UaF doesn't happen in the
-  // next revolution of the message pump - without extra care in the
-  // SpareRenderProcessHostManager RenderProcessHost::Cleanup could be called
-  // twice leading to a crash caused by double-free flavour of UaF in
-  // base::DeleteHelper<...>::DoDelete.
-  base::RunLoop().RunUntilIdle();
-
-  DCHECK_EQ(1, counter.exited_count());
-  DCHECK_EQ(1, counter.destroyed_count());
-}
-
 class ShellCloser : public RenderProcessHostObserver {
  public:
   ShellCloser(Shell* shell, std::string* logging_string)
@@ -718,7 +348,7 @@ class ShellCloser : public RenderProcessHostObserver {
     logging_string_->append("ShellCloser::RenderProcessHostDestroyed ");
   }
 
-  raw_ptr<Shell, DanglingUntriaged> shell_;
+  raw_ptr<Shell, AcrossTasksDanglingUntriaged> shell_;
   raw_ptr<std::string> logging_string_;
 };
 
@@ -831,7 +461,8 @@ class AudioStartObserver : public WebContentsObserver {
         render_frame_host_(
             static_cast<RenderFrameHostImpl*>(render_frame_host)),
         contents_audible_(web_contents->IsCurrentlyAudible()),
-        frame_audible_(render_frame_host_->is_audible()),
+        frame_audible_(render_frame_host_->HasMediaStreams(
+            RenderFrameHostImpl::GetAudibleMediaStreamType())),
         audible_closure_(std::move(audible_closure)) {
     MaybeFireClosure();
   }
@@ -987,8 +618,16 @@ IN_PROC_BROWSER_TEST_F(CaptureStreamRenderProcessHostTest,
 // Tests that video capture stream counts (used for process priority
 // calculations) are properly set and cleared during media playback and renderer
 // terminations.
+// Test is flaky on Android builders: https://crbug.com/352065578
+#if BUILDFLAG(IS_ANDROID)
+#define MAYBE_KillProcessZerosVideoCaptureStreams \
+  DISABLED_KillProcessZerosVideoCaptureStreams
+#else
+#define MAYBE_KillProcessZerosVideoCaptureStreams \
+  KillProcessZerosVideoCaptureStreams
+#endif
 IN_PROC_BROWSER_TEST_F(CaptureStreamRenderProcessHostTest,
-                       KillProcessZerosVideoCaptureStreams) {
+                       MAYBE_KillProcessZerosVideoCaptureStreams) {
   ASSERT_TRUE(embedded_test_server()->Start());
   EXPECT_TRUE(NavigateToURL(
       shell(), embedded_test_server()->GetURL("/media/getusermedia.html")));
@@ -1047,6 +686,14 @@ IN_PROC_BROWSER_TEST_F(CaptureStreamRenderProcessHostTest,
 // Tests that media stream counts (used for process priority
 // calculations) are properly set and cleared during media playback and renderer
 // terminations for audio only streams.
+// Test is flaky on Android builders: https://crbug.com/352065578
+#if BUILDFLAG(IS_ANDROID)
+#define MAYBE_KillProcessZerosVideoCaptureStreams \
+  DISABLED_KillProcessZerosVideoCaptureStreams
+#else
+#define MAYBE_KillProcessZerosVideoCaptureStreams \
+  KillProcessZerosVideoCaptureStreams
+#endif
 IN_PROC_BROWSER_TEST_F(CaptureStreamRenderProcessHostTest,
                        KillProcessZerosAudioCaptureStreams) {
   ASSERT_TRUE(embedded_test_server()->Start());
@@ -1136,10 +783,11 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, KeepAliveRendererProcess) {
   EXPECT_LT(base::TimeTicks::Now() - start, base::Seconds(30));
 }
 
+// TODO(crbug.com/40275040): Fix and re-enable.
 IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
-                       KeepAliveRendererProcessWithServiceWorker) {
+                       DISABLED_KeepAliveRendererProcessWithServiceWorker) {
   if (IsKeepAliveInBrowserMigrationEnabled()) {
-    // TODO(crbug.com/1356128): Add keepalive in-browser support for workers.
+    // TODO(crbug.com/40236167): Add keepalive in-browser support for workers.
     return;
   }
 
@@ -1363,26 +1011,27 @@ class IsProcessBackgroundedObserver : public RenderProcessHostInternalObserver {
     host_observation_.Observe(host);
   }
 
-  void RenderProcessBackgroundedChanged(RenderProcessHostImpl* host) override {
-    backgrounded_ = host->IsProcessBackgrounded();
+  void RenderProcessPriorityChanged(RenderProcessHostImpl* host) override {
+    priority_ = host->GetPriority();
   }
 
   // Returns the latest recorded value if there was one and resets the recorded
   // value to |nullopt|.
-  absl::optional<bool> TakeValue() {
-    auto value = backgrounded_;
-    backgrounded_ = absl::nullopt;
+  std::optional<base::Process::Priority> TakeValue() {
+    auto value = priority_;
+    priority_ = std::nullopt;
     return value;
   }
 
  private:
-  // Stores the last observed value of IsProcessBackgrounded for a host.
-  absl::optional<bool> backgrounded_;
+  // Stores the last observed value of GetPriority() for a host.
+  std::optional<base::Process::Priority> priority_;
   base::ScopedObservation<RenderProcessHostImpl,
                           RenderProcessHostInternalObserver>
       host_observation_{this};
 };
 
+#if !BUILDFLAG(IS_ANDROID)
 IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, PriorityOverride) {
   // Start up a real renderer process.
   ASSERT_TRUE(embedded_test_server()->Start());
@@ -1396,39 +1045,185 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, PriorityOverride) {
 
   // It starts off as normal priority with no override.
   EXPECT_FALSE(process->HasPriorityOverride());
-  EXPECT_FALSE(process->IsProcessBackgrounded());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kUserBlocking);
   EXPECT_FALSE(observer.TakeValue().has_value());
 
-  process->SetPriorityOverride(false /* foreground */);
+  process->SetPriorityOverride(base::Process::Priority::kBestEffort);
   EXPECT_TRUE(process->HasPriorityOverride());
-  EXPECT_TRUE(process->IsProcessBackgrounded());
-  EXPECT_EQ(observer.TakeValue().value(), process->IsProcessBackgrounded());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kBestEffort);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
 
-  process->SetPriorityOverride(true /* foreground */);
+  process->SetPriorityOverride(base::Process::Priority::kUserBlocking);
   EXPECT_TRUE(process->HasPriorityOverride());
-  EXPECT_FALSE(process->IsProcessBackgrounded());
-  EXPECT_EQ(observer.TakeValue().value(), process->IsProcessBackgrounded());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kUserBlocking);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
 
-  process->SetPriorityOverride(false /* foreground */);
+  process->SetPriorityOverride(base::Process::Priority::kBestEffort);
   EXPECT_TRUE(process->HasPriorityOverride());
-  EXPECT_TRUE(process->IsProcessBackgrounded());
-  EXPECT_EQ(observer.TakeValue().value(), process->IsProcessBackgrounded());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kBestEffort);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
 
-  // Add a pending view, and expect the process to *stay* backgrounded.
+  // Add a media stream, and expect the process to *stay* backgrounded.
+  process->OnMediaStreamAdded();
+  EXPECT_TRUE(process->HasPriorityOverride());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kBestEffort);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
+
+  // TODO(pmonette): Pending views will be taken into account if
+  // kPriorityOverridePendingViews is enabled.
+  base::Process::Priority kExpectedPriorityPendingViews =
+      base::FeatureList::IsEnabled(features::kPriorityOverridePendingViews)
+          ? base::Process::Priority::kUserBlocking
+          : base::Process::Priority::kBestEffort;
+
   process->AddPendingView();
   EXPECT_TRUE(process->HasPriorityOverride());
-  EXPECT_TRUE(process->IsProcessBackgrounded());
-  EXPECT_FALSE(observer.TakeValue().has_value());
+  EXPECT_EQ(process->GetPriority(), kExpectedPriorityPendingViews);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
 
-  // Clear the override. The pending view should cause the process to go back to
+  process->RemovePendingView();
+  EXPECT_TRUE(process->HasPriorityOverride());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kBestEffort);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
+
+  // Clear the override. The media stream should cause the process to go back to
   // being foregrounded.
   process->ClearPriorityOverride();
   EXPECT_FALSE(process->HasPriorityOverride());
-  EXPECT_FALSE(process->IsProcessBackgrounded());
-  EXPECT_EQ(observer.TakeValue().value(), process->IsProcessBackgrounded());
+  EXPECT_EQ(process->GetPriority(), base::Process::Priority::kUserBlocking);
+  EXPECT_EQ(observer.TakeValue().value(), process->GetPriority());
 
-  // Clear the pending view so the test doesn't explode.
-  process->RemovePendingView();
+  // Clear the media stream so the test doesn't explode.
+  process->OnMediaStreamRemoved();
+}
+#endif  // !BUILDFLAG(IS_ANDROID)
+
+struct BoostRenderProcessForLoadingBrowserTestParam {
+  bool enable_boost_render_process_for_loading;
+  std::string target_urls;
+  bool renderer_initiated_navigation;
+  bool expect_render_process_backgrounded;
+};
+
+// This test verifies `kBoostRenderProcessForLoading` feature can keep the
+// RenderProcessHost foregrounded until `DOMContentLoaded` comes.
+class BoostRenderProcessForLoadingBrowserTest
+    : public RenderProcessHostTestBase,
+      public content::WebContentsObserver,
+      public ::testing::WithParamInterface<
+          BoostRenderProcessForLoadingBrowserTestParam> {
+ public:
+  BoostRenderProcessForLoadingBrowserTest() {
+    if (GetParam().enable_boost_render_process_for_loading) {
+      feature_list_.InitWithFeaturesAndParameters(
+          {{blink::features::kBoostRenderProcessForLoading,
+            {{blink::features::kBoostRenderProcessForLoadingTargetUrls.name,
+              GetParam().target_urls},
+             {"prioritize_renderer_initiated", "false"}}}},
+          {});
+    } else {
+      feature_list_.InitAndDisableFeature(
+          blink::features::kBoostRenderProcessForLoading);
+    }
+  }
+
+  void SetUpOnMainThread() override {
+    content::WebContentsObserver::Observe(&web_contents());
+    RenderProcessHostTestBase::SetUpOnMainThread();
+  }
+
+  content::WebContents& web_contents() { return *shell()->web_contents(); }
+
+ private:
+  // content::WebContentsObserver:
+  void DOMContentLoaded(content::RenderFrameHost* render_frame_host) override {
+    if (!check_if_render_process_backgrounded_on_dom_content_loaded_) {
+      return;
+    }
+    RenderProcessHost* render_process_host = render_frame_host->GetProcess();
+    // Emulate render_process_host is not visible to users.
+    SetVisibleClients(render_process_host, 0);
+    EXPECT_EQ(render_process_host->GetPriority() ==
+                  base::Process::Priority::kBestEffort,
+              GetParam().expect_render_process_backgrounded);
+  }
+
+ protected:
+  bool check_if_render_process_backgrounded_on_dom_content_loaded_ = false;
+  base::test::ScopedFeatureList feature_list_;
+};
+
+const BoostRenderProcessForLoadingBrowserTestParam
+    kBoostRenderProcessForLoadingBrowserTestParams[] = {
+        {
+            .enable_boost_render_process_for_loading = false,
+            .target_urls = "[]",
+            .renderer_initiated_navigation = false,
+            .expect_render_process_backgrounded = true,
+        },
+        {
+            .enable_boost_render_process_for_loading = true,
+            .target_urls = "[]",
+            .renderer_initiated_navigation = false,
+            .expect_render_process_backgrounded = false,
+        },
+        {
+            .enable_boost_render_process_for_loading = true,
+            .target_urls = "[]",
+            .renderer_initiated_navigation = true,
+            .expect_render_process_backgrounded = true,
+        },
+        {
+            .enable_boost_render_process_for_loading = true,
+            .target_urls = "[\"http://a.com/simple_page.html\", "
+                           "\"http://b.com/simple_page.html\"]",
+            .renderer_initiated_navigation = false,
+            .expect_render_process_backgrounded = false,
+        },
+        {
+            .enable_boost_render_process_for_loading = true,
+            .target_urls = "[\"http://b.com/simple_page.html\", "
+                           "\"http://c.com/simple_page.html\"]",
+            .renderer_initiated_navigation = false,
+            .expect_render_process_backgrounded = true,
+        },
+        {
+            .enable_boost_render_process_for_loading = true,
+            .target_urls = "[\"http://a.co.jp/simple_page.html\"]",
+            .renderer_initiated_navigation = false,
+            .expect_render_process_backgrounded = false,
+        },
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    All,
+    BoostRenderProcessForLoadingBrowserTest,
+    testing::ValuesIn(kBoostRenderProcessForLoadingBrowserTestParams));
+
+IN_PROC_BROWSER_TEST_P(BoostRenderProcessForLoadingBrowserTest,
+                       VerifyRenderProcessBackgrounded) {
+  ASSERT_TRUE(embedded_test_server()->Start());
+  GURL empty_url(embedded_test_server()->GetURL("a.com", "/empty.html"));
+  GURL test_url(embedded_test_server()->GetURL("a.com", "/simple_page.html"));
+
+  EXPECT_TRUE(NavigateToURL(shell(), empty_url));
+
+  // `BoostRenderProcessForLoadingBrowserTest::DOMContentLoaded()` will be
+  // called during `NavigateToURL()` to check the renderer process priority.
+  check_if_render_process_backgrounded_on_dom_content_loaded_ = true;
+  if (GetParam().renderer_initiated_navigation) {
+    EXPECT_TRUE(ExecJs(shell(), JsReplace("location = $1", test_url)));
+    EXPECT_TRUE(WaitForLoadStop(&web_contents()));
+  } else {
+    EXPECT_TRUE(NavigateToURL(shell(), test_url));
+  }
+
+  // Emulate render_process_host is not visible to users.
+  RenderProcessHost* render_process_host =
+      web_contents().GetPrimaryMainFrame()->GetProcess();
+  SetVisibleClients(render_process_host, 0);
+  EXPECT_EQ(render_process_host->GetPriority(),
+            base::Process::Priority::kBestEffort);
 }
 
 // This test verifies properties of RenderProcessHostImpl *before* Init method
@@ -1540,7 +1335,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ForEachRenderFrameHost) {
       static_cast<WebContentsImpl*>(shell()->web_contents());
   TestNavigationManager manager(web_contents, url_b);
   shell()->LoadURL(url_b);
-  ASSERT_TRUE(manager.WaitForRequestStart());
+  manager.WaitForSpeculativeRenderFrameHostCreation();
 
   // 4. Get the speculative RenderFrameHost.
   FrameTreeNode* root = web_contents->GetPrimaryFrameTree().root();
@@ -1549,20 +1344,19 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ForEachRenderFrameHost) {
   EXPECT_EQ(RenderFrameHostImpl::LifecycleStateImpl::kSpeculative,
             rfh_b->lifecycle_state());
 
+  std::vector<RenderFrameHost*> same_process_rfhs;
   auto non_speculative_rfh_collector =
-      [](std::vector<RenderFrameHost*>& results, RenderFrameHost* rfh) {
+      [&same_process_rfhs](RenderFrameHost* rfh) {
         auto* rfhi = static_cast<RenderFrameHostImpl*>(rfh);
         EXPECT_NE(RenderFrameHostImpl::LifecycleStateImpl::kSpeculative,
                   rfhi->lifecycle_state());
-        results.push_back(rfh);
+        same_process_rfhs.push_back(rfh);
       };
 
   // 5. Check all of the a.com RenderFrameHosts are tracked by `rph_a`.
   RenderProcessHostImpl* rph_a =
       static_cast<RenderProcessHostImpl*>(rfh_a->GetProcess());
-  std::vector<RenderFrameHost*> same_process_rfhs;
-  rph_a->ForEachRenderFrameHost(base::BindRepeating(
-      non_speculative_rfh_collector, std::ref(same_process_rfhs)));
+  rph_a->ForEachRenderFrameHost(non_speculative_rfh_collector);
   EXPECT_EQ(5, rph_a->GetRenderFrameHostCount());
   EXPECT_EQ(5u, same_process_rfhs.size());
   EXPECT_THAT(same_process_rfhs,
@@ -1574,8 +1368,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ForEachRenderFrameHost) {
   RenderProcessHostImpl* rph_b =
       static_cast<RenderProcessHostImpl*>(rfh_b->GetProcess());
   ASSERT_NE(rph_a, rph_b);
-  rph_b->ForEachRenderFrameHost(base::BindRepeating(
-      non_speculative_rfh_collector, std::ref(same_process_rfhs)));
+  rph_b->ForEachRenderFrameHost(non_speculative_rfh_collector);
   EXPECT_EQ(1, rph_b->GetRenderFrameHostCount());
   // The speculative RenderFrameHost should be filtered out.
   EXPECT_EQ(same_process_rfhs.size(), 0u);
@@ -1590,8 +1383,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ForEachRenderFrameHost) {
 
   EXPECT_EQ(1, rph_b->GetRenderFrameHostCount());
   same_process_rfhs.clear();
-  rph_b->ForEachRenderFrameHost(base::BindRepeating(
-      non_speculative_rfh_collector, std::ref(same_process_rfhs)));
+  rph_b->ForEachRenderFrameHost(non_speculative_rfh_collector);
   EXPECT_EQ(1, rph_b->GetRenderFrameHostCount());
   EXPECT_EQ(1u, same_process_rfhs.size());
   EXPECT_THAT(same_process_rfhs, testing::ElementsAre(rfh_b));
@@ -1836,7 +1628,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
     std::string reload_script(
         "var f = document.getElementById('child-0');"
         "f.src = f.src;");
-    EXPECT_TRUE(ExecuteScript(root, reload_script));
+    EXPECT_TRUE(ExecJs(root, reload_script));
     reload_observer.Wait();
   }
   RenderFrameHostImpl* new_child_rfh0 = root->child_at(0)->current_frame_host();
@@ -1884,7 +1676,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
     std::string reload_script(
         "var f = document.getElementById('child-1');"
         "f.src = f.src;");
-    EXPECT_TRUE(ExecuteScript(root, reload_script));
+    EXPECT_TRUE(ExecJs(root, reload_script));
     reload_observer.Wait();
   }
   RenderFrameHostImpl* new_child_rfh1 = root->child_at(1)->current_frame_host();
@@ -1949,13 +1741,10 @@ class RenderFrameDeletionObserver : public WebContentsObserver {
 
     // Find all other RenderFrameHosts in the process, which should exclude the
     // one being deleted.
-    auto rfh_collector = [](std::vector<RenderFrameHost*>& results,
-                            RenderFrameHost* rfh) { results.push_back(rfh); };
-    RenderProcessHostImpl* process =
-        static_cast<RenderProcessHostImpl*>(render_frame_host->GetProcess());
     std::vector<RenderFrameHost*> all_rfhs;
+    RenderProcessHost* process = render_frame_host->GetProcess();
     process->ForEachRenderFrameHost(
-        base::BindRepeating(rfh_collector, std::ref(all_rfhs)));
+        [&all_rfhs](RenderFrameHost* rfh) { all_rfhs.push_back(rfh); });
 
     // Update the cumulative count of other RenderFrameHosts in the process.
     render_frame_host_iterator_count_ += all_rfhs.size();
@@ -2055,23 +1844,9 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ZeroExecutionTimes) {
 
 class RenderProcessHostWriteableFileTest
     : public RenderProcessHostTestBase,
-      public ::testing::WithParamInterface<
-          std::tuple</*enforcement_enabled=*/bool,
-                     /*add_no_execute_flags=*/bool>> {
- public:
-  void SetUp() override {
-    enforcement_feature_.InitWithFeatureState(
-        base::features::kEnforceNoExecutableFileHandles,
-        IsEnforcementEnabled());
-    RenderProcessHostTestBase::SetUp();
-  }
-
+      public ::testing::WithParamInterface</*add_no_execute_flags=*/bool> {
  protected:
-  bool IsEnforcementEnabled() { return std::get<0>(GetParam()); }
-  bool ShouldMarkNoExecute() { return std::get<1>(GetParam()); }
-
- private:
-  base::test::ScopedFeatureList enforcement_feature_;
+  bool ShouldMarkNoExecute() { return GetParam(); }
 };
 
 // This test verifies that the renderer process is wired up correctly with the
@@ -2125,19 +1900,14 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostWriteableFileTest,
                                   run_loop.QuitClosure());
   run_loop.Run();
 
-  // This test should only detect a violation if enforcement is enabled and the
-  // file has not been marked no-execute correctly.
-  bool should_violation_occur =
-      IsEnforcementEnabled() && !ShouldMarkNoExecute();
+  bool should_violation_occur = !ShouldMarkNoExecute();
   EXPECT_EQ(should_violation_occur, error_was_called);
 #endif  // DCHECK_IS_ON()
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    All,
-    RenderProcessHostWriteableFileTest,
-    testing::Combine(/*enforcement_enabled=*/testing::Bool(),
-                     /*add_no_execute_flags=*/testing::Bool()));
+INSTANTIATE_TEST_SUITE_P(All,
+                         RenderProcessHostWriteableFileTest,
+                         /*add_no_execute_flags=*/testing::Bool());
 
 #endif  // BUILDFLAG(IS_WIN)
 
@@ -2175,7 +1945,7 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
 
     base::RunLoop run_loop;
 
-    absl::optional<uint32_t> renderer_result = absl::nullopt;
+    std::optional<uint32_t> renderer_result = std::nullopt;
     service->PseudonymizeString(
         test_string, base::BindLambdaForTesting([&](uint32_t result) {
           renderer_result = result;
@@ -2275,5 +2045,415 @@ IN_PROC_BROWSER_TEST_P(RenderProcessHostTest,
   EXPECT_EQ(nullptr, creation_observer2.get());
   process->Cleanup();
 }
+
+namespace {
+
+bool FetchScript(Shell* shell, GURL url) {
+  EvalJsResult result = EvalJs(shell, JsReplace(R"(
+      new Promise(resolve => {
+        const script = document.createElement("script");
+        script.src = $1;
+        script.onerror = () => resolve("error");
+        script.onload = () => resolve("fetched");
+        document.body.appendChild(script);
+      });
+    )",
+                                                url));
+  return result.ExtractString() == "fetched";
+}
+
+}  // namespace
+
+// Tests that BrowsingDataRemover clears renderer's in-memory resource cache.
+IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ClearResourceCache) {
+  constexpr const char* kScriptPath = "/cacheable.js";
+
+  // Count the number of requests from the renderer. This doesn't count requests
+  // that are served via the renderer's in-memory cache.
+  size_t num_script_requests_from_renderer = 0;
+  embedded_test_server()->RegisterRequestMonitor(base::BindLambdaForTesting(
+      [&](const net::test_server::HttpRequest& request) {
+        if (request.relative_url == kScriptPath) {
+          ++num_script_requests_from_renderer;
+        }
+      }));
+
+  ASSERT_TRUE(embedded_test_server()->Start());
+
+  const GURL kUrl = embedded_test_server()->GetURL("/title1.html");
+  const GURL kScriptUrl = embedded_test_server()->GetURL(kScriptPath);
+
+  EXPECT_TRUE(NavigateToURL(shell(), kUrl));
+
+  // The first fetch. The renderer's in-memory cache doesn't contain a response
+  // so the counter should be incremented.
+  EXPECT_TRUE(FetchScript(shell(), kScriptUrl));
+  ASSERT_EQ(num_script_requests_from_renderer, 1u);
+
+  // The second fetch. The response will be served from the renderer's in-memory
+  // cache. The counter should not be incremented.
+  EXPECT_TRUE(FetchScript(shell(), kScriptUrl));
+  ASSERT_EQ(num_script_requests_from_renderer, 1u);
+
+  // Clear the renderer's in-memory cache.
+  BrowsingDataRemover* remover =
+      shell()->web_contents()->GetBrowserContext()->GetBrowsingDataRemover();
+  BrowsingDataRemoverCompletionObserver observer(remover);
+  remover->RemoveAndReply(
+      /*delete_begin=*/base::Time(), /*delete_end=*/base::Time::Max(),
+      BrowsingDataRemover::DATA_TYPE_CACHE,
+      BrowsingDataRemover::ORIGIN_TYPE_UNPROTECTED_WEB, &observer);
+  observer.BlockUntilCompletion();
+
+  // Fetch again. The response in the renderer's in-memory cache was evicted so
+  // the counter should be incremented.
+  EXPECT_TRUE(FetchScript(shell(), kScriptUrl));
+  ASSERT_EQ(num_script_requests_from_renderer, 2u);
+}
+
+// Tests that RenderProcessHost reuse works correctly even if the site URL of a
+// URL changes.
+IN_PROC_BROWSER_TEST_P(RenderProcessHostTest, ReuseSiteURLChanges) {
+  ASSERT_TRUE(embedded_test_server()->Start());
+  const GURL kUrl = embedded_test_server()->GetURL("/title1.html");
+  const GURL kModifiedSiteUrl("custom-scheme://custom");
+
+  // At first, trying to get a RenderProcessHost with the
+  // REUSE_PENDING_OR_COMMITTED_SITE policy should return a new process.
+  BrowserContext* context = shell()->web_contents()->GetBrowserContext();
+  scoped_refptr<SiteInstanceImpl> site_instance =
+      SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+  FrameTreeNode* root = static_cast<WebContentsImpl*>(shell()->web_contents())
+                            ->GetPrimaryFrameTree()
+                            .root();
+  EXPECT_NE(root->current_frame_host()->GetProcess(),
+            site_instance->GetProcess());
+
+  // Have the main frame navigate to the first url. Getting a RenderProcessHost
+  // with the REUSE_PENDING_OR_COMMITTED_SITE policy should now return the
+  // process of the main RFH.
+  EXPECT_TRUE(NavigateToURL(shell(), kUrl));
+  site_instance =
+      SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+  EXPECT_EQ(root->current_frame_host()->GetProcess(),
+            site_instance->GetProcess());
+
+  // Install the custom ContentBrowserClient. Site URLs are now modified.
+  // Getting a RenderProcessHost with the REUSE_PENDING_OR_COMMITTED_SITE policy
+  // should no longer return the process of the main RFH, as the RFH is
+  // registered with the normal site URL.
+  {
+    EffectiveURLContentBrowserTestContentBrowserClient modified_client(
+        kUrl, kModifiedSiteUrl,
+        /* requires_dedicated_process */ false);
+    site_instance =
+        SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+    EXPECT_NE(root->current_frame_host()->GetProcess(),
+              site_instance->GetProcess());
+
+    // Reload. Getting a RenderProcessHost with the
+    // REUSE_PENDING_OR_COMMITTED_SITE policy should now return the process of
+    // the main RFH, as it is now registered with the modified site URL.
+    shell()->web_contents()->GetController().Reload(ReloadType::NORMAL, false);
+    EXPECT_TRUE(WaitForLoadStop(shell()->web_contents()));
+    site_instance =
+        SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+    EXPECT_EQ(root->current_frame_host()->GetProcess(),
+              site_instance->GetProcess());
+  }
+
+  // Remove the custom ContentBrowserClient. Site URLs are back to normal.
+  // Getting a RenderProcessHost with the REUSE_PENDING_OR_COMMITTED_SITE policy
+  // should no longer return the process of the main RFH, as it is registered
+  // with the modified site URL.
+  site_instance =
+      SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+  EXPECT_NE(root->current_frame_host()->GetProcess(),
+            site_instance->GetProcess());
+
+  // Reload. Getting a RenderProcessHost with the
+  // REUSE_PENDING_OR_COMMITTED_SITE policy should now return the process of the
+  // main RFH, as it is now registered with the regular site URL.
+  shell()->web_contents()->GetController().Reload(ReloadType::NORMAL, false);
+  EXPECT_TRUE(WaitForLoadStop(shell()->web_contents()));
+  site_instance =
+      SiteInstanceImpl::CreateReusableInstanceForTesting(context, kUrl);
+  EXPECT_EQ(root->current_frame_host()->GetProcess(),
+            site_instance->GetProcess());
+}
+
+#if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+class FakeStableVideoDecoderFactoryService
+    : public media::stable::mojom::StableVideoDecoderFactory {
+ public:
+  FakeStableVideoDecoderFactoryService() = default;
+  FakeStableVideoDecoderFactoryService(
+      const FakeStableVideoDecoderFactoryService&) = delete;
+  FakeStableVideoDecoderFactoryService& operator=(
+      const FakeStableVideoDecoderFactoryService&) = delete;
+  ~FakeStableVideoDecoderFactoryService() override = default;
+
+  // media::stable::mojom::StableVideoDecoderFactory implementation.
+  void CreateStableVideoDecoder(
+      mojo::PendingReceiver<media::stable::mojom::StableVideoDecoder> receiver,
+      mojo::PendingRemote<media::stable::mojom::StableVideoDecoderTracker>
+          tracker) final {
+    video_decoders_.Add(
+        std::make_unique<FakeStableVideoDecoderService>(std::move(tracker)),
+        std::move(receiver));
+  }
+
+ private:
+  class FakeStableVideoDecoderService
+      : public media::stable::mojom::StableVideoDecoder {
+   public:
+    explicit FakeStableVideoDecoderService(
+        mojo::PendingRemote<media::stable::mojom::StableVideoDecoderTracker>
+            tracker)
+        : tracker_(std::move(tracker)) {}
+    FakeStableVideoDecoderService(const FakeStableVideoDecoderService&) =
+        delete;
+    FakeStableVideoDecoderService& operator=(
+        const FakeStableVideoDecoderService&) = delete;
+    ~FakeStableVideoDecoderService() override = default;
+
+    // media::stable::mojom::StableVideoDecoder implementation.
+    void GetSupportedConfigs(GetSupportedConfigsCallback callback) final {
+      std::move(callback).Run({}, media::VideoDecoderType::kTesting);
+    }
+    void Construct(
+        mojo::PendingAssociatedRemote<media::stable::mojom::VideoDecoderClient>
+            stable_video_decoder_client_remote,
+        mojo::PendingRemote<media::stable::mojom::MediaLog>
+            stable_media_log_remote,
+        mojo::PendingReceiver<media::stable::mojom::VideoFrameHandleReleaser>
+            stable_video_frame_handle_releaser_receiver,
+        mojo::ScopedDataPipeConsumerHandle decoder_buffer_pipe,
+        const gfx::ColorSpace& target_color_space) final {}
+    void Initialize(
+        const media::VideoDecoderConfig& config,
+        bool low_delay,
+        mojo::PendingRemote<media::stable::mojom::StableCdmContext> cdm_context,
+        InitializeCallback callback) final {}
+    void Decode(const scoped_refptr<media::DecoderBuffer>& buffer,
+                DecodeCallback callback) final {}
+    void Reset(ResetCallback callback) final {}
+
+   private:
+    mojo::Remote<media::stable::mojom::StableVideoDecoderTracker> tracker_;
+  };
+
+  mojo::UniqueReceiverSet<media::stable::mojom::StableVideoDecoder>
+      video_decoders_;
+};
+
+class RenderProcessHostTestStableVideoDecoderTest
+    : public RenderProcessHostTestBase {
+ public:
+  RenderProcessHostTestStableVideoDecoderTest()
+      : stable_video_decoder_factory_receiver_(
+            &stable_video_decoder_factory_service_) {}
+
+  void SetUp() override {
+    feature_list_.InitAndEnableFeature(media::kUseOutOfProcessVideoDecoding);
+    RenderProcessHostTestBase::SetUp();
+  }
+
+  void SetUpOnMainThread() override {
+    RenderProcessHostImpl::SetStableVideoDecoderFactoryCreationCBForTesting(
+        stable_video_decoder_factory_creation_cb_.Get());
+    RenderProcessHostImpl::SetStableVideoDecoderEventCBForTesting(
+        stable_video_decoder_event_cb_.Get());
+
+#if BUILDFLAG(PLATFORM_HAS_OPTIONAL_HEVC_DECODE_SUPPORT)
+    // When Chrome is compiled with
+    // BUILDFLAG(PLATFORM_HAS_OPTIONAL_HEVC_DECODE_SUPPORT), renderer processes
+    // need a media::mojom::VideoDecoder during startup in order to query for
+    // supported configurations (see content::RenderMediaClient::Initialize()).
+    // With OOP-VD, this should cause the creation of a
+    // media::stable::mojom::StableVideoDecoderFactory in order to create the
+    // corresponding media::stable::mojom::StableVideoDecoder. When the
+    // supported configurations are obtained, the media::mojom::VideoDecoder and
+    // media::stable::mojom::StableVideoDecoder connections should be torn down
+    // thus causing the termination of the
+    // media::stable::mojom::StableVideoDecoderFactory connection. Here, we set
+    // up expectations for that.
+    base::RunLoop run_loop;
+    {
+      InSequence seq;
+      EXPECT_CALL(stable_video_decoder_factory_creation_cb_, Run(_))
+          .WillOnce(
+              [&](mojo::PendingReceiver<
+                  media::stable::mojom::StableVideoDecoderFactory> receiver) {
+                stable_video_decoder_factory_receiver_.Bind(
+                    std::move(receiver));
+                stable_video_decoder_factory_receiver_.set_disconnect_handler(
+                    stable_video_decoder_factory_disconnect_cb_.Get());
+              });
+      EXPECT_CALL(stable_video_decoder_event_cb_,
+                  Run(RenderProcessHostImpl::StableVideoDecoderEvent::
+                          kAllDecodersDisconnected));
+      EXPECT_CALL(stable_video_decoder_factory_disconnect_cb_, Run())
+          .WillOnce([&]() {
+            stable_video_decoder_factory_receiver_.reset();
+            run_loop.Quit();
+          });
+    }
+#endif  // BUILDFLAG(PLATFORM_HAS_OPTIONAL_HEVC_DECODE_SUPPORT)
+
+    rph_ = RenderProcessHostImpl::CreateRenderProcessHost(
+        ShellContentBrowserClient::Get()->browser_context(), nullptr);
+    ASSERT_TRUE(rph_->Init());
+    rph_initialized_ = true;
+
+#if BUILDFLAG(PLATFORM_HAS_OPTIONAL_HEVC_DECODE_SUPPORT)
+    run_loop.Run();
+    ASSERT_TRUE(VerifyAndClearExpectations());
+#endif  // BUILDFLAG(PLATFORM_HAS_OPTIONAL_HEVC_DECODE_SUPPORT)
+  }
+
+  void TearDownOnMainThread() override {
+    // Reset the |stable_video_decoder_factory_receiver_| so that the
+    // disconnection callback is not called on tear down.
+    stable_video_decoder_factory_receiver_.reset();
+    if (rph_initialized_) {
+      rph_->Cleanup();
+    }
+    rph_ = nullptr;
+  }
+
+ protected:
+  bool VerifyAndClearExpectations() {
+    // Note: we verify and clear the expectations for all the mocks. We
+    // intentionally don't early out if verifying one mock fails.
+    bool result = Mock::VerifyAndClearExpectations(
+        &stable_video_decoder_factory_creation_cb_);
+    result = Mock::VerifyAndClearExpectations(
+                 &stable_video_decoder_factory_disconnect_cb_) &&
+             result;
+    result =
+        Mock::VerifyAndClearExpectations(&stable_video_decoder_event_cb_) &&
+        result;
+    return result;
+  }
+
+  base::test::ScopedFeatureList feature_list_;
+
+  StrictMock<base::MockRepeatingCallback<
+      RenderProcessHostImpl::StableVideoDecoderFactoryCreationCB::RunType>>
+      stable_video_decoder_factory_creation_cb_;
+  StrictMock<base::MockOnceCallback<void()>>
+      stable_video_decoder_factory_disconnect_cb_;
+  StrictMock<base::MockRepeatingCallback<
+      RenderProcessHostImpl::StableVideoDecoderEventCB::RunType>>
+      stable_video_decoder_event_cb_;
+
+  FakeStableVideoDecoderFactoryService stable_video_decoder_factory_service_;
+  mojo::Receiver<media::stable::mojom::StableVideoDecoderFactory>
+      stable_video_decoder_factory_receiver_;
+
+  raw_ptr<RenderProcessHost> rph_ = nullptr;
+  bool rph_initialized_ = false;
+};
+
+// Ensures that the StableVideoDecoderFactory connection is terminated after a
+// delay once all the StableVideoDecoders created with it have disconnected.
+IN_PROC_BROWSER_TEST_F(RenderProcessHostTestStableVideoDecoderTest,
+                       FactoryIsResetAfterDelay) {
+  ASSERT_FALSE(Test::HasFailure());
+
+  // First, let's ask the RPH to establish a StableVideoDecoder connection. This
+  // should cause the RPH's StableVideoDecoderFactory to be bound.
+  EXPECT_CALL(stable_video_decoder_factory_creation_cb_, Run(_))
+      .WillOnce([&](mojo::PendingReceiver<
+                    media::stable::mojom::StableVideoDecoderFactory> receiver) {
+        stable_video_decoder_factory_receiver_.Bind(std::move(receiver));
+        stable_video_decoder_factory_receiver_.set_disconnect_handler(
+            stable_video_decoder_factory_disconnect_cb_.Get());
+      });
+  mojo::PendingRemote<media::stable::mojom::StableVideoDecoder>
+      stable_video_decoder_remote;
+  rph_->CreateStableVideoDecoder(
+      stable_video_decoder_remote.InitWithNewPipeAndPassReceiver());
+  ASSERT_TRUE(VerifyAndClearExpectations());
+
+  // Now, let's destroy the StableVideoDecoder connection. Since this was the
+  // only StableVideoDecoder connection, destroying it should cause the RPH's
+  // StableVideoDecoderFactory connection to die after a delay.
+  base::RunLoop run_loop;
+  base::ElapsedTimer reset_stable_video_decoder_factory_timer;
+  {
+    InSequence seq;
+    EXPECT_CALL(stable_video_decoder_event_cb_,
+                Run(RenderProcessHostImpl::StableVideoDecoderEvent::
+                        kAllDecodersDisconnected));
+    EXPECT_CALL(stable_video_decoder_factory_disconnect_cb_, Run())
+        .WillOnce([&]() { run_loop.Quit(); });
+  }
+  stable_video_decoder_remote.reset();
+  run_loop.Run();
+  EXPECT_GE(reset_stable_video_decoder_factory_timer.Elapsed(),
+            base::Seconds(3));
+}
+
+// Ensures that the timer that destroys the StableVideoDecoderFactory connection
+// when all StableVideoDecoder connections die is stopped if a request to
+// connect another StableVideoDecoder is received soon enough.
+IN_PROC_BROWSER_TEST_F(RenderProcessHostTestStableVideoDecoderTest,
+                       FactoryResetTimerIsStoppedOnRequestBeforeResetDelay) {
+  ASSERT_FALSE(Test::HasFailure());
+
+  // First, let's ask the RPH to establish a StableVideoDecoder connection. This
+  // should cause the RPH's StableVideoDecoderFactory to be bound.
+  EXPECT_CALL(stable_video_decoder_factory_creation_cb_, Run(_))
+      .WillOnce([&](mojo::PendingReceiver<
+                    media::stable::mojom::StableVideoDecoderFactory> receiver) {
+        stable_video_decoder_factory_receiver_.Bind(std::move(receiver));
+        stable_video_decoder_factory_receiver_.set_disconnect_handler(
+            stable_video_decoder_factory_disconnect_cb_.Get());
+      });
+  mojo::PendingRemote<media::stable::mojom::StableVideoDecoder>
+      stable_video_decoder_remote;
+  rph_->CreateStableVideoDecoder(
+      stable_video_decoder_remote.InitWithNewPipeAndPassReceiver());
+  ASSERT_TRUE(VerifyAndClearExpectations());
+
+  // Now, let's destroy the StableVideoDecoder connection. Since this was the
+  // only StableVideoDecoder connection, destroying it should trigger a
+  // kAllDecodersDisconnected event.
+  base::RunLoop run_loop_1;
+  EXPECT_CALL(stable_video_decoder_event_cb_,
+              Run(RenderProcessHostImpl::StableVideoDecoderEvent::
+                      kAllDecodersDisconnected))
+      .WillOnce([&]() { run_loop_1.Quit(); });
+  stable_video_decoder_remote.reset();
+  run_loop_1.Run();
+  ASSERT_TRUE(VerifyAndClearExpectations());
+
+  // Now, let's request another StableVideoDecoder connection immediately. This
+  // should stop the timer that resets the factory.
+  EXPECT_CALL(stable_video_decoder_event_cb_,
+              Run(RenderProcessHostImpl::StableVideoDecoderEvent::
+                      kFactoryResetTimerStopped));
+  rph_->CreateStableVideoDecoder(
+      stable_video_decoder_remote.InitWithNewPipeAndPassReceiver());
+  ASSERT_TRUE(VerifyAndClearExpectations());
+
+  // Finally, let's wait a few seconds (longer than the delay configured for the
+  // timer that kills the StableVideoDecoderFactory connection). Because the
+  // |stable_video_decoder_factory_disconnect_cb_| is a StrictMock, this should
+  // detect that the StableVideoDecoderFactory connection doesn't die.
+  base::RunLoop run_loop_2;
+  GetUIThreadTaskRunner()->PostDelayedTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::OnceClosure quit_closure) { std::move(quit_closure).Run(); },
+          run_loop_2.QuitClosure()),
+      base::Seconds(5));
+  run_loop_2.Run();
+  ASSERT_TRUE(VerifyAndClearExpectations());
+}
+
+#endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
 }  // namespace content

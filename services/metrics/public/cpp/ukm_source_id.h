@@ -24,8 +24,8 @@ const SourceId kInvalidSourceId = 0;
 // NOTES ON USAGE: if only the underlying int value is required to identify a
 // Source and is used in Mojo interface, and no type conversion needs to be
 // performed, use ukm::SourceId instead.
-// TODO(crbug/1046951): migrate callers to use the public methods below then
-// remove METRICS_EXPORT on this class.
+// TODO(crbug.com/40671096): migrate callers to use the public methods below
+// then remove METRICS_EXPORT on this class.
 class METRICS_EXPORT SourceIdObj {
  public:
   enum class Type : SourceId {
@@ -39,9 +39,9 @@ class METRICS_EXPORT SourceIdObj {
     // the max threshold.
     NAVIGATION_ID = 1,
     // Source ID used by AppLaunchEventLogger::Log and
-    // AppPlatformMetrics::GetSourceId. They will be kept in memory as long as
-    // the associated app is still running and the number of sources are within
-    // the max threshold.
+    // AppPlatformMetrics::GetSourceId and DesktopWebAppUkmRecorder. They will
+    // be kept in memory as long as the associated app is still running and the
+    // number of sources are within the max threshold.
     APP_ID = 2,
     // Source ID for background events that don't have an open tab but the
     // associated URL is still present in the browsing history. A new source of
@@ -57,11 +57,8 @@ class METRICS_EXPORT SourceIdObj {
     // type and associated events are expected to be recorded within the same
     // report interval; it will not be kept in memory between different reports.
     PAYMENT_APP_ID = 5,
-    // Source ID for desktop web apps, based on the start_url in the web app
-    // manifest. A new source of this type and associated events are expected to
-    // be recorded within the same report interval; it will not be kept in
-    // memory between different reports.
-    DESKTOP_WEB_APP_ID = 6,
+    // DEPRECATED. Use APP_ID instead.
+    DEPRECATED_DESKTOP_WEB_APP_ID = 6,
     // Source ID for web workers, namely SharedWorkers and ServiceWorkers. Web
     // workers may inherit a source ID from the spawner context (in the case of
     // dedicated workers), or may have their own source IDs (in the case of
@@ -93,14 +90,16 @@ class METRICS_EXPORT SourceIdObj {
     // Some criteria (e.g. checking if it's a synced extension) will be applied
     // when recording metrics with this type.
     EXTENSION_ID = 12,
-    // Source ID type for reporting soft navigation metrics. A new source of
-    // this type and associated events are expected to be recorded within the
-    // same report interval; it will not be kept in memory between different
-    // reports. The URLs associated with source ids of this type are soft
-    // navigation URLs.
-    SOFT_NAVIGATION_ID = 13,
+    // Source ID type for service-worker triggered persisted notification
+    // events.
+    // Notification events may occur in the background and an associated URL is
+    // not necessarily present in the browsing history. A new source of this
+    // type and associated events are expected to be recorded within the same
+    // report
+    // interval; it will not be kept in memory between different reports.
+    NOTIFICATION_ID = 13,
 
-    kMaxValue = SOFT_NAVIGATION_ID,
+    kMaxValue = NOTIFICATION_ID,
   };
 
   // Default constructor has the invalid value.

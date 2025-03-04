@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "media/mojo/clients/mojo_renderer.h"
+
 #include <stdint.h>
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ptr_exclusion.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/gmock_callback_support.h"
@@ -22,9 +24,6 @@
 #include "media/base/test_helpers.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/cdm/default_cdm_factory.h"
-#define private public
-#include "media/mojo/clients/mojo_renderer.h"
-#undef private
 #include "media/mojo/common/media_type_converters.h"
 #include "media/mojo/mojom/content_decryption_module.mojom.h"
 #include "media/mojo/mojom/renderer.mojom.h"
@@ -178,7 +177,7 @@ class MojoRendererTest : public ::testing::Test {
   }
 
   void OnCdmServiceInitialized(mojom::CdmContextPtr cdm_context,
-                               const std::string& error_message) {
+                               CreateCdmStatus status) {
     cdm_context_.set_cdm_id(cdm_context->cdm_id);
   }
 
@@ -224,10 +223,9 @@ class MojoRendererTest : public ::testing::Test {
   std::unique_ptr<MojoCdmService> mojo_cdm_service_;
 
   // Service side mocks and helpers.
-  raw_ptr<StrictMock<MockRenderer>> mock_renderer_;
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #addr-of
-  RAW_PTR_EXCLUSION RendererClient* remote_renderer_client_;
+  raw_ptr<StrictMock<MockRenderer>, AcrossTasksDanglingUntriaged>
+      mock_renderer_;
+  raw_ptr<RendererClient, DanglingUntriaged> remote_renderer_client_;
 
   mojo::SelfOwnedReceiverRef<mojom::Renderer> renderer_receiver_;
 };
@@ -451,7 +449,8 @@ TEST_F(MojoRendererTest, OnEnded) {
 TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
   CreateAudioStream();
   EXPECT_CALL(*mock_renderer_, OnInitialize(_, _, _))
-      .WillRepeatedly(RunOnceCallback<2>(PIPELINE_ERROR_ABORT));
+      .WillRepeatedly(
+          base::test::RunOnceCallbackRepeatedly<2>(PIPELINE_ERROR_ABORT));
   EXPECT_CALL(*this, OnInitialized(
                          HasStatusCode(PIPELINE_ERROR_INITIALIZATION_FAILED)));
   mojo_renderer_->Initialize(
@@ -462,7 +461,7 @@ TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
 
 TEST_F(MojoRendererTest, Destroy_PendingFlush) {
   EXPECT_CALL(*mock_renderer_, OnSetCdm(_, _))
-      .WillRepeatedly(RunOnceCallback<1>(true));
+      .WillRepeatedly(base::test::RunOnceCallbackRepeatedly<1>(true));
   EXPECT_CALL(*this, OnCdmAttached(false));
   mojo_renderer_->SetCdm(
       &cdm_context_,
@@ -519,7 +518,7 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
   Flush();
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if !BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 TEST_F(MojoRendererTest, SetSurfaceId001) {
   gfx::Rect rect(0, 0, 800, 600);
   mojo_renderer_->SetSurfaceId(1, rect);
@@ -543,6 +542,6 @@ TEST_F(MojoRendererTest, SetMediaSourceList002) {
   mojo_renderer_->SetMediaSourceList(source_infos);
   EXPECT_FALSE(mojo_renderer_->source_infos_.empty());
 }
-#endif
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

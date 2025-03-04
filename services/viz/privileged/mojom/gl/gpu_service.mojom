@@ -19,17 +19,20 @@ import "components/chromeos_camera/common/mjpeg_decode_accelerator.mojom";
 [EnableIf=is_chromeos_ash]
 import "components/chromeos_camera/common/jpeg_encode_accelerator.mojom";
 import "gpu/ipc/common/device_perf_info.mojom";
-import "gpu/ipc/common/dx_diag_node.mojom";
 import "gpu/ipc/common/gpu_disk_cache_type.mojom";
 import "gpu/ipc/common/gpu_feature_info.mojom";
 import "gpu/ipc/common/gpu_info.mojom";
 import "gpu/ipc/common/gpu_peak_memory.mojom";
 import "gpu/ipc/common/memory_stats.mojom";
+import "gpu/ipc/common/client_gmb_interface.mojom";
+import "gpu/ipc/common/shared_image_capabilities.mojom";
 import "gpu/ipc/common/surface_handle.mojom";
 import "gpu/ipc/common/sync_token.mojom";
 import "media/mojo/mojom/video_encode_accelerator.mojom";
 import "mojo/public/mojom/base/byte_string.mojom";
 import "mojo/public/mojom/base/process_id.mojom";
+import "services/webnn/public/mojom/features.mojom";
+import "services/webnn/public/mojom/webnn_context_provider.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 import "ui/gfx/mojom/buffer_types.mojom";
 import "ui/gl/mojom/gpu_preference.mojom";
@@ -52,19 +55,20 @@ interface GpuService {
                       bool is_gpu_host)
       => (handle<message_pipe>? channel_handle,
           gpu.mojom.GpuInfo gpu_info,
-          gpu.mojom.GpuFeatureInfo gpu_feature_info);
+          gpu.mojom.GpuFeatureInfo gpu_feature_info,
+          gpu.mojom.SharedImageCapabilities shared_image_capabilities);
 
   // Tells the GPU service the PID of whatever client process is controlling the
   // GpuChannel established by a prior EstablishGpuChannel() call with the given
   // `client_id`.
   SetChannelClientPid(int32 client_id, mojo_base.mojom.ProcessId client_pid);
 
-  [EnableIf=is_ohos, Sync] GetSurfaceId(int32 native_embed_id)
+  [EnableIf=is_arkweb, Sync] GetSurfaceId(int32 native_embed_id)
       => (string surfaceId);
 
-  [EnableIf=is_ohos] DestroyNativeWindow(uint32 native_window_id);
+  [EnableIf=is_arkweb] SetTransformHint(uint32 rotation, uint32 window_id);
 
-  [EnableIf=is_ohos] SetTransformHint(uint32 rotation, uint32 window_id);
+  [EnableIf=is_arkweb] DestroyNativeWindow(uint32 native_window_id);
 
   // Tells the GPU service an assigned cache handle. Note that for each type of
   // handle per client only one unique handle is expected.
@@ -116,7 +120,8 @@ interface GpuService {
 
   // Registers a DCOMP surface handle and returns a token. The token will then
   // be used by MediaFoundationRendererClient to call DCOMPTexture to set the
-  // surface in GLImageDCOMPSurface. Null token will be returned upon failure.
+  // surface in DCompSurfaceImageBacking. Null token will be returned upon
+  // failure.
   // Also see media/mojo/mojom/dcomp_surface_registry.mojom.
   [EnableIf=is_win]
   RegisterDCOMPSurfaceHandle(handle<platform> surface_handle)
@@ -129,10 +134,21 @@ interface GpuService {
   [EnableIf=is_win]
   UnregisterDCOMPSurfaceHandle(mojo_base.mojom.UnguessableToken token);
 
+  // Binds the pending receiver.
+  BindClientGmbInterface(
+  pending_receiver<gpu.mojom.ClientGmbInterface> receiver, int32 client_id);
+
   // Creates a VideoEncodeAcceleratorProvider and binds it to |vea_provider|.
   CreateVideoEncodeAcceleratorProvider(
       pending_receiver<media.mojom.VideoEncodeAcceleratorProvider>
           vea_provider);
+
+  // Binds the pending receiver used to access the hardware accelerated OS
+  // machine learning APIs.
+  [RuntimeFeature=webnn.mojom.features.kWebMachineLearningNeuralNetwork]
+  BindWebNNContextProvider(
+      pending_receiver<webnn.mojom.WebNNContextProvider>? receiver, int32
+          client_id);
 
   [Sync, NoInterrupt]
   CreateGpuMemoryBuffer(gfx.mojom.GpuMemoryBufferId id,
@@ -176,7 +192,7 @@ interface GpuService {
   // host since multiple clients may be using the same physical disk path. Note
   // that this method is used only from a trusted process.
   LoadedBlob(gpu.mojom.GpuDiskCacheHandle cache_handle,
-             string key,
+             mojo_base.mojom.ByteString key,
              mojo_base.mojom.ByteString data);
 
   // Tells GPU to wake up the GPU because we're about to draw.
@@ -222,39 +238,42 @@ interface GpuService {
   [EnableIf=is_apple]
   CommitCATransaction() => ();
 
-  // start frame loss monitor during page sliding scene
-  [EnableIf=is_ohos]
-  StartMonitor();
-
-  // start frame loss monitor during page sliding scene
-  [EnableIf=is_ohos]
-  StopMonitor();
-
   // Write out the accumulated code profiling profile to the configured file.
   // The callback is invoked once the profile has been flushed to disk.
   [EnableIf=use_clang_profiling_inside_sandbox]
   WriteClangProfilingProfile() => ();
 
   // Requests Dawn Info for about:gpu.
-  GetDawnInfo() => (array<string> dawn_info_list);
+  GetDawnInfo(bool collect_metrics) => (array<string> dawn_info_list);
 
   Crash();
   Hang();
   ThrowJavaException();
-
   // notify web ltpo to update frame rate when visibility changed
   [EnableIf=is_ohos]
   SetVisible(int32 nweb_id, bool visible);
 
+  // start frame loss monitor during page sliding scene
+  [EnableIf=arkweb_report_loss_frame]
+  StartMonitor();
+ 
+  // start frame loss monitor during page sliding scene
+  [EnableIf=arkweb_report_loss_frame]
+  StopMonitor();
+
   // notify web ltpo to update frame rate when touch status changed
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_slide_ltpo]
   SetHasTouchPoint(bool has_touch_point);
 
   // Send vsync callback to host client
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_slide_ltpo]
   ReportSlidingFrameRate(int32 frame_rate);
 
   // Set ltpo strategy to gpu process
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_slide_ltpo]
   SetLTPOStrategy(int32 strategy);
+
+  // get gpu total size
+  [EnableIf=is_arkweb]
+  DumpGpuInfo() => (float totalSize);
 };

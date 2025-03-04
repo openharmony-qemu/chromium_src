@@ -9,6 +9,7 @@
 
 #include "base/functional/callback.h"
 #include "base/time/time.h"
+#include "components/supervised_user/core/browser/supervised_user_utils.h"
 
 class GURL;
 namespace supervised_user {
@@ -48,6 +49,7 @@ class WebContentHandler {
   virtual void RequestLocalApproval(
       const GURL& url,
       const std::u16string& child_display_name,
+      const UrlFormatter& url_formatter,
       ApprovalRequestInitiatedCallback callback) = 0;
 
   // TODO(b/273692421): Add unit (or browser test) coverage for the moved
@@ -61,10 +63,6 @@ class WebContentHandler {
   // and for which ShouldExpire() returns true, if the navigation frame id
   // is the main frame.
   virtual void CleanUpInfoBarOnMainFrame() = 0;
-
-  // Shows the feedback page to the user.
-  // TODO(b/276428131): Remove when local approvals is fully launched.
-  virtual void ShowFeedback(GURL url, std::u16string reason) = 0;
 
   // Goes back to main frame if we are on a subframe.
   // The action applies when localWebApprovalsEnabled is disabled.

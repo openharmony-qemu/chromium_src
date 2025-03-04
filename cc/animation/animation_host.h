@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -33,7 +32,7 @@ class ScrollOffsetAnimations;
 class ScrollOffsetAnimationsImpl;
 class WorkletAnimation;
 
-enum class ThreadInstance { MAIN, IMPL };
+enum class ThreadInstance { kMain, kImpl };
 
 // An AnimationHost contains all the state required to play animations.
 // Specifically, it owns all the AnimationTimelines objects.
@@ -62,8 +61,18 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
 
   AnimationHost& operator=(const AnimationHost&) = delete;
 
+  using IdToTimelineMap =
+      std::unordered_map<int, scoped_refptr<AnimationTimeline>>;
+  const IdToTimelineMap& timelines() const {
+    return id_to_timeline_map_.Read(*this);
+  }
+
   void AddAnimationTimeline(scoped_refptr<AnimationTimeline> timeline);
   void RemoveAnimationTimeline(scoped_refptr<AnimationTimeline> timeline);
+
+  // Lazy removal of an unused timeline.
+  void DetachAnimationTimeline(scoped_refptr<AnimationTimeline> timeline);
+
   const AnimationTimeline* GetTimelineById(int timeline_id) const;
   AnimationTimeline* GetTimelineById(int timeline_id);
 
@@ -93,6 +102,7 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
 
   void SetNeedsCommit();
   void SetNeedsPushProperties();
+  void ResetNeedsPushProperties();
   bool needs_push_properties() const {
     return needs_push_properties_.Read(*this);
   }
@@ -112,6 +122,8 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
 
   void PushPropertiesTo(MutatorHost* host_impl,
                         const PropertyTrees& property_trees) override;
+
+  void RemoveStaleTimelines() override;
 
   void SetScrollAnimationDurationForTesting(base::TimeDelta duration) override;
   bool NeedsTickAnimations() const override;
@@ -169,15 +181,21 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
       const gfx::PointF& current_offset,
       base::TimeDelta delayed_by,
       base::TimeDelta animation_start_offset) override;
-  bool ImplOnlyScrollAnimationUpdateTarget(const gfx::Vector2dF& scroll_delta,
-                                           const gfx::PointF& max_scroll_offset,
-                                           base::TimeTicks frame_monotonic_time,
-                                           base::TimeDelta delayed_by) override;
+  std::optional<gfx::PointF> ImplOnlyScrollAnimationUpdateTarget(
+      const gfx::Vector2dF& scroll_delta,
+      const gfx::PointF& max_scroll_offset,
+      base::TimeTicks frame_monotonic_time,
+      base::TimeDelta delayed_by,
+      ElementId element_id) override;
 
-  void ScrollAnimationAbort() override;
+  void ScrollAnimationAbort(ElementId element_id) override;
 
-  ElementId ImplOnlyScrollAnimatingElement() const override;
-  void ImplOnlyScrollAnimatingElementRemoved() override;
+  bool HasImplOnlyScrollAnimatingElement() const override;
+  bool HasImplOnlyAutoScrollAnimatingElement() const override;
+  bool ElementHasImplOnlyScrollAnimation(ElementId) const override;
+  bool IsElementInPropertyTrees(ElementId element_id,
+                                bool commits_to_active) const;
+  void HandleRemovedScrollAnimatingElements(bool commits_to_active) override;
 
   // This should only be called from the main thread.
   ScrollOffsetAnimations& scroll_offset_animations();
@@ -258,9 +276,12 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
   ProtectedSequenceReadable<AnimationsList> ticking_animations_;
 
   // A list of all timelines which this host owns.
-  using IdToTimelineMap =
-      std::unordered_map<int, scoped_refptr<AnimationTimeline>>;
   ProtectedSequenceReadable<IdToTimelineMap> id_to_timeline_map_;
+
+  // A list of IDs for detached timelines. A timeline may be detached on the
+  // owner thread even during a protected sequence. These timelines are no
+  // longer used and should be cleaned up at the next opportune moment.
+  ProtectedSequenceForbidden<IdToTimelineMap> detached_timeline_map_;
 
   // AnimationHosts's ProtectedSequenceSynchronizer implementation is
   // implemented using this member. As such the various helpers can not be used
@@ -268,9 +289,7 @@ class CC_ANIMATION_EXPORT AnimationHost : public MutatorHost,
   raw_ptr<MutatorHostClient> mutator_host_client_ = nullptr;
 
   // This is only non-null within the call scope of PushPropertiesTo().
-  // This field is not a raw_ptr<> because it was filtered by the rewriter for:
-  // #addr-of
-  RAW_PTR_EXCLUSION const PropertyTrees* property_trees_ = nullptr;
+  raw_ptr<const PropertyTrees> property_trees_ = nullptr;
 
   // Exactly one of scroll_offset_animations_ and scroll_offset_animations_impl_
   // will be non-null for a given AnimationHost instance (the former if

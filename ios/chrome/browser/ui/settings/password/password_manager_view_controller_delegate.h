@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#include <vector>
+
 namespace password_manager {
 class AffiliatedGroup;
 struct CredentialUIEntry;
@@ -49,8 +51,8 @@ struct CredentialUIEntry;
 
 // Returns string containing the timestamp of the last password check. If the
 // check finished less than 1 minute ago string will look "Last check just
-// now.", otherwise "Last check X minutes/hours... ago.". If check never run,
-// string will be "Check never run.".
+// now", otherwise "Last check X minutes/hours... ago.". If check never run,
+// string will be "Check never run".
 - (NSString*)formattedElapsedTimeSinceLastCheck;
 
 // Returns detailed information about Password Check error if applicable.
@@ -67,6 +69,10 @@ struct CredentialUIEntry;
 // Similar to above but for an affiliated group.
 - (BOOL)shouldShowLocalOnlyIconForGroup:
     (const password_manager::AffiliatedGroup&)group;
+
+// Tells the delegate that the user has dismissed the Password Manager widget
+// promo. Used to notify the Feature Engagement Tracker of the dismissal.
+- (void)notifyFETOfPasswordManagerWidgetPromoDismissal;
 
 @end
 

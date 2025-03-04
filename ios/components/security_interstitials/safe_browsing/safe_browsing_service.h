@@ -22,6 +22,10 @@ class FilePath;
 
 namespace network {
 class SharedURLLoaderFactory;
+
+namespace mojom {
+class NetworkContext;
+}
 }
 
 namespace safe_browsing {
@@ -61,6 +65,23 @@ class SafeBrowsingService
                    web::WebState* web_state,
                    SafeBrowsingClient* client) = 0;
 
+  // Creates a SafeBrowsingUrlCheckerImpl that can be used for async checks.
+  virtual std::unique_ptr<safe_browsing::SafeBrowsingUrlCheckerImpl>
+  CreateAsyncChecker(network::mojom::RequestDestination request_destination,
+                     web::WebState* web_state,
+                     SafeBrowsingClient* client) = 0;
+
+  // Creates a SafeBrowsingUrlCheckerImpl that can be used for sync checks which
+  // handles checks not related to real time.
+  virtual std::unique_ptr<safe_browsing::SafeBrowsingUrlCheckerImpl>
+  CreateSyncChecker(network::mojom::RequestDestination request_destination,
+                    web::WebState* web_state,
+                    SafeBrowsingClient* client) = 0;
+
+  // Checks if async check should be created.
+  virtual bool ShouldCreateAsyncChecker(web::WebState* web_state,
+                                        SafeBrowsingClient* client) = 0;
+
   // Returns true if `url` has a scheme that is handled by Safe Browsing.
   virtual bool CanCheckUrl(const GURL& url) const = 0;
 
@@ -71,6 +92,9 @@ class SafeBrowsingService
   // Returns the SafeBrowsingDatabaseManager owned by this service.
   virtual scoped_refptr<safe_browsing::SafeBrowsingDatabaseManager>
   GetDatabaseManager() = 0;
+
+  // Returns the network context owned by this service.
+  virtual network::mojom::NetworkContext* GetNetworkContext() = 0;
 
   // Clears cookies if the given deletion time range is for "all time". Calls
   // the given `callback` once deletion is complete.

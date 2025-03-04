@@ -5,9 +5,13 @@
 #ifndef CONTENT_BROWSER_UTILITY_SANDBOX_DELEGATE_H_
 #define CONTENT_BROWSER_UTILITY_SANDBOX_DELEGATE_H_
 
+#include <optional>
+
 #include "base/command_line.h"
 #include "base/environment.h"
+#include "base/files/file_path.h"
 #include "build/build_config.h"
+#include "content/common/content_export.h"
 #include "content/public/common/sandboxed_process_launcher_delegate.h"
 #include "content/public/common/zygote/zygote_buildflags.h"
 #include "sandbox/policy/mojom/sandbox.mojom.h"
@@ -20,8 +24,12 @@
 #include "sandbox/win/src/sandbox_policy.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_MAC)
+#include "base/mac/process_requirement.h"
+#endif  // BUILDFLAG(IS_MAC)
+
 namespace content {
-class UtilitySandboxedProcessLauncherDelegate
+class CONTENT_EXPORT UtilitySandboxedProcessLauncherDelegate
     : public SandboxedProcessLauncherDelegate {
  public:
   UtilitySandboxedProcessLauncherDelegate(sandbox::mojom::Sandbox sandbox_type,
@@ -39,7 +47,12 @@ class UtilitySandboxedProcessLauncherDelegate
   bool InitializeConfig(sandbox::TargetConfig* config) override;
   bool ShouldUnsandboxedRunInJob() override;
   bool CetCompatible() override;
-  bool AllowWindowsFontsDir() override;
+  bool PreSpawnTarget(sandbox::TargetPolicy* policy) override;
+  // Set preload libraries to transfer as part of the sandbox delegate data,
+  // which will used in utility_main to preload these libraries before lockdown.
+  void SetPreloadLibraries(const std::vector<base::FilePath>& preloads) {
+    preload_libraries_ = preloads;
+  }
 #endif  // BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(USE_ZYGOTE)
@@ -54,16 +67,28 @@ class UtilitySandboxedProcessLauncherDelegate
   void SetZygote(ZygoteCommunication* handle);
 #endif  // BUILDFLAG(USE_ZYGOTE_HANDLE)
 
+#if BUILDFLAG(IS_MAC)
+  std::optional<base::mac::ProcessRequirement> GetProcessRequirement() override;
+#endif  // BUILDFLAG(IS_MAC)
+
  private:
 #if BUILDFLAG(IS_POSIX)
   base::EnvironmentMap env_;
 #endif  // BUILDFLAG(IS_POSIX)
 
+#if BUILDFLAG(IS_WIN)
+  std::vector<base::FilePath> preload_libraries_;
+#endif  // BUILDFLAG(IS_WIN)
+
 #if BUILDFLAG(USE_ZYGOTE)
-  absl::optional<raw_ptr<ZygoteCommunication>> zygote_;
+  std::optional<raw_ptr<ZygoteCommunication>> zygote_;
 #endif  // BUILDFLAG(USE_ZYGOTE)
 
-  sandbox::mojom::Sandbox sandbox_type_;
+  const sandbox::mojom::Sandbox sandbox_type_;
+#if BUILDFLAG(IS_WIN)
+  // If true then App Container will not be used for this utility process.
+  const bool app_container_disabled_;
+#endif  // BUILDFLAG(IS_WIN)
   base::CommandLine cmd_line_;
 };
 }  // namespace content

@@ -9,6 +9,7 @@
 
 #import "ios/chrome/browser/ui/toolbar/adaptive_toolbar_view.h"
 
+@class TabGroupIndicatorView;
 @class ToolbarButtonFactory;
 
 // View for the primary toolbar. In an adaptive toolbar paradigm, this is the
@@ -24,18 +25,9 @@
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 - (instancetype)init NS_UNAVAILABLE;
 
-// The location bar view, containing the omnibox.
-@property(nonatomic, strong) UIView* locationBarView;
-
-// Container for the location bar.
-@property(nonatomic, strong, readonly) UIView* locationBarContainer;
-
 // A tappable view overlapping `locationBarContainer` used when the omnibox is
 // hidden by the NTP.
 @property(nonatomic, strong) UIView* fakeOmniboxTarget;
-
-// The height of the container for the location bar.
-@property(nonatomic, strong, readonly) NSLayoutConstraint* locationBarHeight;
 
 // StackView containing the leading buttons (relative to the location bar).
 // It should only contain ToolbarButtons.
@@ -46,9 +38,6 @@
 
 // Button to cancel the edit of the location bar.
 @property(nonatomic, strong, readonly) UIButton* cancelButton;
-
-// Button taking the full size of the toolbar. Expands the toolbar when  tapped.
-@property(nonatomic, strong, readonly) UIButton* collapsedToolbarButton;
 
 // Constraints to be activated when the location bar is expanded and positioned
 // relatively to the cancel button.
@@ -71,6 +60,12 @@
 // square.
 @property(nonatomic, assign) BOOL topCornersRounded;
 
+// Whether the height should match the height of the "fake" toolbar of the NTP.
+@property(nonatomic, assign) BOOL matchNTPHeight;
+
+// View that contains tab group information.
+@property(nonatomic, weak) TabGroupIndicatorView* tabGroupIndicatorView;
+
 // Sets all the subviews and constraints of the view. The `topSafeAnchor` needs
 // to be set before calling this.
 - (void)setUp;
@@ -81,6 +76,9 @@
 
 // Removes `fakeOmniboxTarget` from the view hierarchy.
 - (void)removeFakeOmniboxTarget;
+
+// Updates the `tabGroupIndicatorView` availability.
+- (void)updateTabGroupIndicatorAvailability;
 
 @end
 

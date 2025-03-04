@@ -7,16 +7,20 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/unguessable_token.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -27,18 +31,20 @@
 #include "net/base/load_states.h"
 #include "net/base/network_delegate.h"
 #include "net/base/transport_info.h"
+#include "net/base/upload_progress.h"
 #include "net/cookies/cookie_setting_override.h"
+#include "net/cookies/cookie_util.h"
+#include "net/socket/socket_tag.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/url_request.h"
 #include "services/network/attribution/attribution_request_helper.h"
 #include "services/network/keepalive_statistics_recorder.h"
-#include "services/network/local_network_access_checker.h"
 #include "services/network/network_service.h"
-#include "services/network/network_service_memory_cache.h"
-#include "services/network/public/cpp/corb/corb_api.h"
+#include "services/network/private_network_access_checker.h"
 #include "services/network/public/cpp/cors/cors_error_status.h"
 #include "services/network/public/cpp/initiator_lock_compatibility.h"
-#include "services/network/public/cpp/local_network_access_check_result.h"
+#include "services/network/public/cpp/orb/orb_api.h"
+#include "services/network/public/cpp/private_network_access_check_result.h"
 #include "services/network/public/mojom/accept_ch_frame_observer.mojom.h"
 #include "services/network/public/mojom/cookie_access_observer.mojom.h"
 #include "services/network/public/mojom/cross_origin_embedder_policy.mojom-forward.h"
@@ -53,18 +59,25 @@
 #include "services/network/public/mojom/url_response_head.mojom-forward.h"
 #include "services/network/resource_scheduler/resource_scheduler.h"
 #include "services/network/resource_scheduler/resource_scheduler_client.h"
+#include "services/network/shared_dictionary/shared_dictionary_access_checker.h"
+#include "services/network/shared_storage/shared_storage_request_helper.h"
 #include "services/network/trust_tokens/pending_trust_token_store.h"
 #include "services/network/trust_tokens/trust_token_request_helper.h"
 #include "services/network/trust_tokens/trust_token_request_helper_factory.h"
 #include "services/network/upload_progress_tracker.h"
 #include "services/network/url_loader_context.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader.h"
+#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
+#endif
 
 namespace net {
 class HttpResponseHeaders;
+class IOBufferWithSize;
 class IPEndPoint;
-struct RedirectInfo;
 class URLRequestContext;
+struct RedirectInfo;
 }  // namespace net
 
 namespace network {
@@ -73,26 +86,28 @@ namespace cors {
 class OriginAccessList;
 }
 
+namespace internal {
+
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(FetchKeepAliveRequestNetworkMetricType)
+enum class FetchKeepAliveRequestNetworkMetricType {
+  kOnCreate = 0,
+  kOnResponse = 1,
+  kMaxValue = kOnResponse
+};
+// LINT.ThenChange(//tools/metrics/histograms/enums.xml:FetchKeepAliveRequestNetworkMetricType)
+
+}  // namespace internal
+
 constexpr size_t kMaxFileUploadRequestsPerBatch = 64;
 
-class CacheTransparencySettings;
 class KeepaliveStatisticsRecorder;
 class NetToMojoPendingBuffer;
 class ScopedThrottlingToken;
-class URLLoaderFactory;
-
-// When a request matches a pervasive payload url and checksum a value from this
-// enum will be logged to the "Network.CacheTransparency.CacheNotUsed"
-// histogram. These values are persisted to logs. Entries should not be
-// renumbered and numeric values should never be reused. This is exposed in the
-// header file for use in tests.
-enum class CacheTransparencyCacheNotUsedReason {
-  kTryingSingleKeyedCache = 0,
-  kIncompatibleRequestType = 1,
-  kIncompatibleRequestLoadFlags = 2,
-  kIncompatibleRequestHeaders = 3,
-  kMaxValue = kIncompatibleRequestHeaders,
-};
+class SharedDictionaryManager;
+class SlopBucket;
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     : public mojom::URLLoader,
@@ -126,6 +141,24 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     base::WeakPtr<mojom::URLLoaderClient> sync_client_;
   };
 
+  // A subset of the fields in mojom::LoadInfo.
+  struct PartialLoadInfo final {
+    PartialLoadInfo() = default;
+    PartialLoadInfo(net::LoadStateWithParam load_state,
+                    net::UploadProgress upload_progress);
+
+    // Avoid accidentally copying this object as `load_state` contains a string.
+    PartialLoadInfo(const PartialLoadInfo&) = delete;
+    PartialLoadInfo& operator=(const PartialLoadInfo&) = delete;
+
+    // Moving it is good.
+    PartialLoadInfo(PartialLoadInfo&&) = default;
+    PartialLoadInfo& operator=(PartialLoadInfo&&) = default;
+
+    net::LoadStateWithParam load_state;
+    net::UploadProgress upload_progress;
+  };
+
   // |delete_callback| tells the URLLoader's owner to destroy the URLLoader.
   //
   // |trust_token_helper_factory| must be non-null exactly when the request has
@@ -154,11 +187,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       mojo::PendingRemote<mojom::URLLoaderClient> url_loader_client,
       base::WeakPtr<mojom::URLLoaderClient> sync_url_loader_client,
       const net::NetworkTrafficAnnotationTag& traffic_annotation,
-      uint32_t request_id,
+      base::StrictNumeric<int32_t> request_id,
       int keepalive_request_size,
       base::WeakPtr<KeepaliveStatisticsRecorder> keepalive_statistics_recorder,
       std::unique_ptr<TrustTokenRequestHelperFactory>
           trust_token_helper_factory,
+      SharedDictionaryManager* shared_dictionary_manager,
+      std::unique_ptr<SharedDictionaryAccessChecker> shared_dictionary_checker,
       mojo::PendingRemote<mojom::CookieAccessObserver> cookie_observer,
       mojo::PendingRemote<mojom::TrustTokenAccessObserver> trust_token_observer,
       mojo::PendingRemote<mojom::URLLoaderNetworkServiceObserver>
@@ -166,26 +201,27 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       mojo::PendingRemote<mojom::DevToolsObserver> devtools_observer,
       mojo::PendingRemote<mojom::AcceptCHFrameObserver>
           accept_ch_frame_observer,
-      bool third_party_cookies_enabled,
-      net::CookieSettingOverrides cookie_setting_overrides,
-      const CacheTransparencySettings* cache_transparency_settings,
-      std::unique_ptr<AttributionRequestHelper> attribution_request_helper);
+      std::unique_ptr<AttributionRequestHelper> attribution_request_helper,
+      bool shared_storage_writable_eligible
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
+#endif
+      );
 
   URLLoader(const URLLoader&) = delete;
   URLLoader& operator=(const URLLoader&) = delete;
 
   ~URLLoader() override;
 
-  void SetMemoryCache(base::WeakPtr<NetworkServiceMemoryCache> memory_cache) {
-    memory_cache_ = std::move(memory_cache);
-  }
-
   // mojom::URLLoader implementation:
   void FollowRedirect(
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override;
+      const std::optional<GURL>& new_url) override;
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
   void PauseReadingBodyFromNet() override;
@@ -219,7 +255,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       const net::HttpResponseHeaders* original_response_headers,
       scoped_refptr<net::HttpResponseHeaders>* override_response_headers,
       const net::IPEndPoint& endpoint,
-      absl::optional<GURL>* preserve_fragment_on_redirect_url);
+      std::optional<GURL>* preserve_fragment_on_redirect_url);
 
   mojom::URLLoaderNetworkServiceObserver* GetURLLoaderNetworkServiceObserver()
       const {
@@ -228,7 +264,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
 
   // mojom::AuthChallengeResponder:
   void OnAuthCredentials(
-      const absl::optional<net::AuthCredentials>& credentials) override;
+      const std::optional<net::AuthCredentials>& credentials) override;
 
   // mojom::ClientCertificateResponder:
   void ContinueWithCertificate(
@@ -239,17 +275,36 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   void ContinueWithoutCertificate() override;
   void CancelRequest() override;
 
+  // Cancel the request because network revocation was triggered.
+  void CancelRequestIfNonceMatchesAndUrlNotExempted(
+      const base::UnguessableToken& nonce,
+      const std::set<GURL>& exemptions);
+
   net::LoadState GetLoadState() const;
   net::UploadProgress GetUploadProgress() const;
 
   int32_t GetProcessId() const;
   uint32_t GetResourceType() const;
 
+  // Whether this URLLoader should allow sending/setting any cookies.
+  // This decision is based on the options passed to
+  // URLLoaderFactory::CreateLoaderAndStart().
+  bool CookiesDisabled() const;
+
   // Whether this URLLoader should allow sending/setting cookies for requests
   // with |url| and |site_for_cookies|. This decision is based on the options
   // passed to URLLoaderFactory::CreateLoaderAndStart().
-  bool AllowCookies(const GURL& url,
-                    const net::SiteForCookies& site_for_cookies) const;
+  // If this returns false, partitioned cookies could still be provided if
+  // CookiesDisabled returns false.
+  bool AllowFullCookies(const GURL& url,
+                        const net::SiteForCookies& site_for_cookies) const;
+
+  // Returns whether a particular cookie is allowed to be sent for requests
+  // with |url| and |site_for_cookies|. This decision is based on the options
+  // passed to URLLoaderFactory::CreateLoaderAndStart().
+  bool AllowCookie(const net::CanonicalCookie& cookie,
+                   const GURL& url,
+                   const net::SiteForCookies& site_for_cookies) const;
 
   const net::HttpRequestHeaders& custom_proxy_pre_cache_headers() const {
     return custom_proxy_pre_cache_headers_;
@@ -259,17 +314,27 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     return custom_proxy_post_cache_headers_;
   }
 
-  const absl::optional<GURL>& new_redirect_url() const {
+  const std::optional<GURL>& new_redirect_url() const {
     return new_redirect_url_;
   }
 
-  const absl::optional<std::string>& devtools_request_id() const {
+  const std::optional<std::string>& devtools_request_id() const {
     return devtools_request_id_;
+  }
+
+  SharedStorageRequestHelper* shared_storage_request_helper() const {
+    return shared_storage_request_helper_.get();
   }
 
   void SetEnableReportingRawHeaders(bool enable);
 
-  mojom::LoadInfoPtr CreateLoadInfo();
+  // Returns a subset of the info in mojom::LoadInfo. This is sufficient to make
+  // a decision on whether to call CreateLoadInfo() for this loader.
+  PartialLoadInfo GetPartialLoadInfo() const;
+
+  // Returns a mojom::LoadInfo, reusing the data returned by
+  // GetPartialLoadInfo().
+  mojom::LoadInfoPtr CreateLoadInfo(const PartialLoadInfo& partial_load_info);
 
   // Gets the URLLoader associated with this request.
   static URLLoader* ForRequest(const net::URLRequest& request);
@@ -278,9 +343,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
 
   static bool HasFetchStreamingUploadBody(const ResourceRequest*);
 
-  static absl::optional<net::IsolationInfo> GetIsolationInfo(
+  static std::optional<net::IsolationInfo> GetIsolationInfo(
       const net::IsolationInfo& factory_isolation_info,
       bool automatically_assign_isolation_info,
+      const ResourceRequest& request);
+
+  static net::CookieSettingOverrides CalculateCookieSettingOverrides(
+      net::CookieSettingOverrides factory_overrides,
       const ResourceRequest& request);
 
  private:
@@ -315,10 +384,94 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     kMaxValue = kErrorAfterResponseArrival,
   };
 
+  // Configures `url_request_`, including registering callbacks.
+  void ConfigureRequest(
+      const GURL& url,
+      std::string_view method,
+      const net::SiteForCookies& site_for_cookies,
+      bool force_ignore_site_for_cookies,
+      const std::vector<GURL>& url_chain,
+      const GURL& referrer,
+      net::ReferrerPolicy referrer_policy,
+      bool upgrade_if_insecure,
+      bool is_ad_tagged,
+      std::optional<net::IsolationInfo> isolation_info,
+      bool force_main_frame_for_same_site_cookies,
+      net::SecureDnsPolicy secure_dns_policy,
+      net::HttpRequestHeaders extra_request_headers,
+      const std::optional<std::vector<net::SourceStream::SourceType>>&
+          accepted_stream_types,
+      const std::optional<url::Origin>& initiator,
+      net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,
+      int request_load_flags,
+      bool priority_incremental,
+      net::CookieSettingOverrides cookie_setting_overrides,
+      std::optional<net::SharedDictionaryGetter> shared_dictionary_getter,
+      net::SocketTag socket_tag);
+
   void OpenFilesForUpload(const ResourceRequest& request);
   void SetUpUpload(const ResourceRequest& request,
                    int error_code,
                    const std::vector<base::File> opened_files);
+
+  // A `ResourceRequest` where `shared_storage_writable_eligible` is true, is
+  // eligible for shared storage operations via response headers.
+  //
+  // Outbound control flow:
+  //
+  // Start in `ProcessOutboundSharedStorageInterceptor()`
+  // - Execute `SharedStorageRequestHelper::ProcessOutgoingRequest`, which will
+  // add the `kSecSharedStorageWritableHeader` request header to the
+  // `URLRequest` if `ResourceRequest::shared_storage_writable_eligible` is true
+  // and there is a `mojom::URLLoaderNetworkServiceObserver*` available to
+  // forward processed headers to.
+  // - `ScheduleStart` immediately afterwards regardless of eligibility for
+  // shared storage
+  //
+  // Outbound redirection control flow:
+  //
+  // Start in `FollowRedirect`
+  // - Execute
+  // `SharedStorageRequestHelper::UpdateSharedStorageWritableEligible`
+  // to remove or restore the `kSecSharedStorageWritableHeader` request header
+  // if eligibility has been lost or regained
+  //
+  // Inbound redirection control flow:
+  //
+  // Start in `ProcessInboundSharedStorageInterceptorOnReceivedRedirect`
+  // - Execute `SharedStorageRequestHelper::ProcessIncomingResponse`
+  // - If the request has received the `kSharedStorageWriteHeader` response
+  // header and if it is currently eligible for shared storage (i.e., in
+  // particular, the `kSecSharedStorageWritableHeader` has not been removed on a
+  // redirect), the helper will parse the header value into a vector of Shared
+  // Storage operations to call
+  // - If the request has not received the `kSharedStorageWriteHeader` response
+  // header, or if parsing fails to produce any valid operations, then
+  // immediately call `ContinueOnReceivedRedirect`
+  // - Otherwise, `ContinueOnReceivedRedirect` will be run asynchronously after
+  // forwarding the operations to `URLLoaderNetworkServiceObserver` to queue via
+  // Mojo
+  //
+  // Inbound control flow:
+  //
+  // Start in `ProcessInboundSharedStorageInterceptorOnResponseStarted`
+  // - Execute `SharedStorageRequestHelper::ProcessIncomingResponse`
+  // - If the request has received the `kSharedStorageWriteHeader` response
+  // header and if it is currently eligible for shared storage (i.e., in
+  // particular, the `kSecSharedStorageWritableHeader` has not been removed on a
+  // redirect), the helper will parse the header value into a vector of Shared
+  // Storage operations to call
+  // - If the request has not received the `kSharedStorageWriteHeader` response
+  // header, or if parsing fails to produce any valid operations, then
+  // immediately call `ContinueOnResponseStarted`
+  // - Otherwise, `ContinueOnResponseStarted` will be run asynchronously after
+  // forwarding the operations to `URLLoaderNetworkServiceObserver` to queue via
+  // Mojo
+  void ProcessOutboundSharedStorageInterceptor();
+  void ProcessInboundSharedStorageInterceptorOnReceivedRedirect(
+      const ::net::RedirectInfo& redirect_info,
+      mojom::URLResponseHeadPtr response);
+  void ProcessInboundSharedStorageInterceptorOnResponseStarted();
 
   // A request where `attribution_request_helper_` is defined will (assuming
   // preconditions pass and operations are successful) have one
@@ -328,7 +481,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   //
   // Outbound control flow:
   //
-  // Start in `BeginAttributionIfNecessaryAndThenScheduleStart`
+  // Start in `ProcessOutboundAttributionInterceptor`
   // - If `attribution_request_helper_` is not defined, immediately
   //   calls`ScheduleStart`.
   // - Otherwise:
@@ -337,31 +490,33 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   //
   // Redirection control flow:
   //
-  // Start in `RedirectAttributionIfNecessaryAndThenContinueOnReceiveRedirect`
+  // Start in `ProcessInboundAttributionInterceptorOnReceivedRedirect`
   //  - If `attribution_request_helper_` is not defined, immediately
-  //    calls`ContinueOnReceiveRedirect`.
+  //    calls`ProcessInboundAttributionInterceptorOnReceivedRedirect`.
   // - Otherwise:
   //   - Execute `AttributionRequestHelper::OnReceiveRedirect`
-  //   - On OnReceiveRedirect's callback, calls `ContinueOnReceiveRedirect`
+  //   - On OnReceiveRedirect's callback, calls
+  //   `ProcessInboundAttributionInterceptorOnReceivedRedirect`
   //
   // Inbound control flow:
   //
-  // Start in `FinalizeAttributionIfNecessaryAndThenContinueOnResponseStarted`
+  // Start in `ProcessInboundAttributionInterceptorOnResponseStarted`
   //  - If `attribution_request_helper_` is not defined, immediately
-  //    calls`ContinueOnResponseStarted`.
+  //    calls`ProcessInboundSharedStorageInterceptorOnResponseStarted`.
   // - Otherwise:
   //   - Execute `AttributionRequestHelper::Finalize`
-  //   - On Finalize's callback, calls `ContinueOnResponseStarted`
-  void BeginAttributionIfNecessaryAndThenScheduleStart();
-  void RedirectAttributionIfNecessaryAndThenContinueOnReceiveRedirect(
+  //   - On Finalize's callback, calls
+  //   `ProcessInboundSharedStorageInterceptorOnResponseStarted`
+  void ProcessOutboundAttributionInterceptor();
+  void ProcessInboundAttributionInterceptorOnReceivedRedirect(
       const ::net::RedirectInfo& redirect_info,
       mojom::URLResponseHeadPtr response);
-  void FinalizeAttributionIfNecessaryAndThenContinueOnResponseStarted();
+  void ProcessInboundAttributionInterceptorOnResponseStarted();
 
   // Continuation of `OnReceivedRedirect` after possibly asynchronously
-  // concluding the request's Attribution operation.
+  // concluding the request's Attribution and/or Shared Storage operations.
   void ContinueOnReceiveRedirect(const ::net::RedirectInfo& redirect_info,
-                                 mojom::URLResponseHeadPtr response);
+                                 uint64_t response_index);
 
   // A request with Trust Tokens parameters will (assuming preconditions pass
   // and operations are successful) have one TrustTokenRequestHelper::Begin
@@ -370,7 +525,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   //
   // Outbound control flow:
   //
-  // Start in BeginTrustTokenOperationIfNecessaryAndThenScheduleStart
+  // Start in ProcessOutboundTrustTokenInterceptor
   // - If there are no Trust Tokens parameters, immediately ScheduleStart.
   // - Otherwise:
   //   - asynchronously construct a TrustTokenRequestHelper;
@@ -387,28 +542,32 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // ContinueOnResponseStarted.
   // - Otherwise:
   //   - execute TrustTokenRequestHelper::Finalize against the helper;
-  //   - receive the result in OnDoneFinalizingTrusttokenOperation;
-  //   - if successful, ContinueOnResponseStarted; if there was an error, fail.
-  void BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(
-      const ResourceRequest& request);
+  //   - receive the result in OnDoneFinalizingTrustTokenOperation;
+  //   - if successful, ProcessInboundAttributionInterceptorOnResponseStarted;
+  //   if there was an error, fail.
+  void ProcessOutboundTrustTokenInterceptor(const ResourceRequest& request);
   void OnDoneConstructingTrustTokenHelper(
       mojom::TrustTokenOperationType type,
       TrustTokenStatusOrRequestHelper status_or_helper);
   void OnDoneBeginningTrustTokenOperation(
-      absl::optional<net::HttpRequestHeaders> headers,
+      std::optional<net::HttpRequestHeaders> headers,
       mojom::TrustTokenOperationStatus status);
   void OnDoneFinalizingTrustTokenOperation(
       mojom::TrustTokenOperationStatus status);
-  // Continuation of |OnResponseStarted| after possibly asynchronously
-  // concluding the request's Trust Tokens & Attribution operations.
+
+  // Continuation of `OnResponseStarted` after possibly asynchronously
+  // concluding the request's Trust Tokens, Attribution, and/or Shared Storage
+  // operations.
   void ContinueOnResponseStarted();
   void MaybeSendTrustTokenOperationResultToDevTools();
 
   void ScheduleStart();
   void ReadMore();
-  void DidRead(int num_bytes, bool completed_synchronously);
+  void DidRead(int num_bytes,
+               bool completed_synchronously,
+               bool into_slop_bucket);
   void NotifyCompleted(int error_code);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
   std::string InMilliseconds(base::TimeTicks time);
   void PrintNetworkTimingInfo();
   void PrintNetworkCacheInfo();
@@ -421,7 +580,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   void CompletePendingWrite(bool success);
   void SetRawResponseHeaders(scoped_refptr<const net::HttpResponseHeaders>);
   void NotifyEarlyResponse(scoped_refptr<const net::HttpResponseHeaders>);
+  void MaybeNotifyEarlyResponseToDevtools(const net::HttpResponseHeaders&);
   void SetRawRequestHeadersAndNotify(net::HttpRawRequestHeaders);
+  bool IsSharedDictionaryReadAllowed();
   void DispatchOnRawRequest(
       std::vector<network::mojom::HttpRawHeaderPairPtr> headers);
   bool DispatchOnRawResponse();
@@ -435,34 +596,34 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   void OnBeforeSendHeadersComplete(
       net::NetworkDelegate::OnBeforeStartTransactionCallback callback,
       int result,
-      const absl::optional<net::HttpRequestHeaders>& headers);
+      const std::optional<net::HttpRequestHeaders>& headers);
   void OnHeadersReceivedComplete(
       net::CompletionOnceCallback callback,
       scoped_refptr<net::HttpResponseHeaders>* out_headers,
-      absl::optional<GURL>* out_preserve_fragment_on_redirect_url,
+      std::optional<GURL>* out_preserve_fragment_on_redirect_url,
       int result,
-      const absl::optional<std::string>& headers,
-      const absl::optional<GURL>& preserve_fragment_on_redirect_url);
+      const std::optional<std::string>& headers,
+      const std::optional<GURL>& preserve_fragment_on_redirect_url);
 
   void CompleteBlockedResponse(
       int error_code,
-      bool should_report_corb_blocking,
-      absl::optional<mojom::BlockedByResponseReason> reason = absl::nullopt);
+      bool should_report_orb_blocking,
+      std::optional<mojom::BlockedByResponseReason> reason = std::nullopt);
 
-  enum BlockResponseForCorbResult {
-    // Returned when caller of BlockResponseForCorb doesn't need to continue,
+  enum BlockResponseForOrbResult {
+    // Returned when caller of BlockResponseForOrb doesn't need to continue,
     // because the request will be cancelled soon.
     kWillCancelRequest,
 
-    // Returned when the caller of BlockResponseForCorb should continue
+    // Returned when the caller of BlockResponseForOrb should continue
     // processing the request (e.g. by calling ReadMore as necessary).
     kContinueRequest,
   };
-  // Block the response because of CORB (or ORB).
-  BlockResponseForCorbResult BlockResponseForCorb();
-  // Decide whether to call block a response via BlockResponseForCorb.
+  // Block the response because of ORB.
+  BlockResponseForOrbResult BlockResponseForOrb();
+  // Decide whether to call block a response via BlockResponseForOrb.
   // Returns true if the request should be cancelled.
-  bool MaybeBlockResponseForCorb(corb::ResponseAnalyzer::Decision);
+  bool MaybeBlockResponseForOrb(orb::ResponseAnalyzer::Decision);
 
   void ReportFlaggedResponseCookies(bool call_cookie_observer);
   void StartReading();
@@ -470,14 +631,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Whether `force_ignore_site_for_cookies` should be set on net::URLRequest.
   bool ShouldForceIgnoreSiteForCookies(const ResourceRequest& request);
 
-  // Whether `force_ignore_top_frame_party_for_cookies` should be set on
-  // net::URLRequest.
-  bool ShouldForceIgnoreTopFramePartyForCookies() const;
-
-  // Applies Local Network Access checks to the current request.
+  // Applies Private Network Access checks to the current request.
   //
   // Helper for `OnConnected()`.
-  LocalNetworkAccessCheckResult LocalNetworkAccessCheck(
+  PrivateNetworkAccessCheckResult PrivateNetworkAccessCheck(
       const net::TransportInfo& transport_info);
 
   mojom::DevToolsObserver* GetDevToolsObserver() const;
@@ -491,20 +648,79 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // credentials and client certificates.
   void SetRequestCredentials(const GURL& url);
 
-  // Returns whether sending/storing credentials is allowed by COEP.
+  // Returns whether sending/storing credentials is allowed by COEP and
+  // Document-Isolation-Policy.
   // |url| is the latest request URL, either the original URL or
   // `redirect_info.new_url`.
-  // When Cross-Origin-Embedder-Policy: credentialless is set, do not
-  // send or store credentials for no-cors cross-origin request.
-  bool CoepAllowCredentials(const GURL& url);
+  // When Cross-Origin-Embedder-Policy: credentialless or
+  // Document-Isolation-Policy: isolate-and-credentialless are set, do not send
+  // or store credentials for no-cors cross-origin request.
+  bool WebPoliciesAllowCredentials(const GURL& url);
 
-  raw_ptr<net::URLRequestContext> url_request_context_;
+  // Returns whether TransferSizeUpdated IPC should be sent.
+  bool ShouldSendTransferSizeUpdated() const;
 
-  raw_ptr<mojom::NetworkContextClient> network_context_client_;
+  // Returns true if the corresponding `URLResponseHead`'s
+  // `load_with_storage_access` field should be set.
+  bool ShouldSetLoadWithStorageAccess() const;
+
+  // Records metrics about GET requests.
+  void RecordRequestMetrics();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void UpdateResRequestInfo(
+      const std::string& key,
+      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info);
+
+  // Configures `url_request_rollback_`, including registering callbacks.
+  void ConfigureRequestForRollback(
+      const GURL& url,
+      std::string_view method,
+      const net::SiteForCookies& site_for_cookies,
+      bool force_ignore_site_for_cookies,
+      const std::vector<GURL>& url_chain,
+      const GURL& referrer,
+      net::ReferrerPolicy referrer_policy,
+      bool upgrade_if_insecure,
+      bool is_ad_tagged,
+      std::optional<net::IsolationInfo> isolation_info,
+      bool force_main_frame_for_same_site_cookies,
+      net::SecureDnsPolicy secure_dns_policy,
+      net::HttpRequestHeaders extra_request_headers,
+      const std::optional<std::vector<net::SourceStream::SourceType>>&
+          accepted_stream_types,
+      const std::optional<url::Origin>& initiator,
+      net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,
+      int request_load_flags,
+      bool priority_incremental,
+      net::CookieSettingOverrides cookie_setting_overrides,
+      std::optional<net::SharedDictionaryGetter> shared_dictionary_getter);
+
+  void InitUrlRequestForRollback(
+      URLLoaderContext& context,
+      const ResourceRequest& request,
+      const net::NetworkTrafficAnnotationTag& traffic_annotation,
+      SharedDictionaryManager* shared_dictionary_manager,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info);
+  void SetUrlRequestForPRPP(
+      const ResourceRequest& request,
+      const std::shared_ptr<net::URLRequest>& url_request,
+      const std::string& org_main_url,
+      std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info);
+  void RollbackFromPPRP();
+  void ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request);
+#endif
+
+  const raw_ptr<net::URLRequestContext> url_request_context_;
+
+  const raw_ptr<mojom::NetworkContextClient> network_context_client_;
   DeleteCallback delete_callback_;
 
   int32_t options_;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
   const bool corb_detachable_;
+#endif
   const int resource_type_;
   const bool is_load_timing_enabled_;
   bool has_received_response_ = false;
@@ -515,11 +731,15 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // This also belongs to URLLoaderFactory and outlives this loader.
   const raw_ptr<mojom::CrossOriginEmbedderPolicyReporter> coep_reporter_;
 
-  const uint32_t request_id_;
+  const int32_t request_id_;
   const int keepalive_request_size_;
   const bool keepalive_;
   const bool do_not_prompt_for_login_;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<net::URLRequest> url_request_;
+#else
   std::unique_ptr<net::URLRequest> url_request_;
+#endif
   mojo::Receiver<mojom::URLLoader> receiver_;
   mojo::Receiver<mojom::AuthChallengeResponder>
       auth_challenge_responder_receiver_{this};
@@ -535,31 +755,34 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   mojo::SimpleWatcher writable_handle_watcher_;
   mojo::SimpleWatcher peer_closed_handle_watcher_;
 
+  scoped_refptr<net::IOBufferWithSize> discard_buffer_;
+
   // True if there's a URLRequest::Read() call in progress.
   bool read_in_progress_ = false;
 
   // Stores any CORS error encountered while processing |url_request_|.
-  absl::optional<CorsErrorStatus> cors_error_status_;
-
-  // True if a pervasive payload is found, for logging purposes.
-  bool pervasive_payload_requested_ = false;
+  std::optional<CorsErrorStatus> cors_error_status_;
 
   // Used when deferring sending the data to the client until mime sniffing is
   // finished.
   mojom::URLResponseHeadPtr response_;
   mojo::ScopedDataPipeConsumerHandle consumer_handle_;
 
-  // Sniffing state and CORB state.
-  std::unique_ptr<corb::ResponseAnalyzer> corb_analyzer_;
-  bool is_more_corb_sniffing_needed_ = false;
+  // Sniffing state and ORB state.
+  bool is_more_orb_sniffing_needed_ = false;
   bool is_more_mime_sniffing_needed_ = false;
-  const raw_ref<corb::PerFactoryState> per_factory_corb_state_;
+  const raw_ref<orb::PerFactoryState> per_factory_orb_state_;
+  // `orb_analyzer_` must be destructed before `per_factory_orb_state_`.
+  std::unique_ptr<orb::ResponseAnalyzer> orb_analyzer_;
 
   std::unique_ptr<ResourceScheduler::ScheduledResourceRequest>
       resource_scheduler_request_handle_;
 
   bool enable_reporting_raw_headers_ = false;
   bool seen_raw_request_headers_ = false;
+  // Used for metrics.
+  size_t raw_request_line_size_ = 0;
+  size_t raw_request_headers_size_ = 0;
   scoped_refptr<const net::HttpResponseHeaders> raw_response_headers_;
 
   std::unique_ptr<UploadProgressTracker> upload_progress_tracker_;
@@ -570,12 +793,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // If |new_url| is given to FollowRedirect() it's saved here, so that it can
   // be later referred to from NetworkContext::OnBeforeURLRequestInternal, which
   // is called from NetworkDelegate::NotifyBeforeURLRequest.
-  absl::optional<GURL> new_redirect_url_;
+  std::optional<GURL> new_redirect_url_;
 
   // The ID that DevTools uses to track network requests. It is generated in the
   // renderer process and is only present when DevTools is enabled in the
   // renderer.
-  const absl::optional<std::string> devtools_request_id_;
+  const std::optional<std::string> devtools_request_id_;
 
   bool should_pause_reading_body_ = false;
   // The response body stream is open, but transferring data is paused.
@@ -588,32 +811,27 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   const mojom::RequestMode request_mode_;
   const mojom::CredentialsMode request_credentials_mode_;
 
-  bool has_user_activation_ = false;
+  const bool has_user_activation_ = false;
 
-  mojom::RequestDestination request_destination_ =
+  const mojom::RequestDestination request_destination_ =
       mojom::RequestDestination::kEmpty;
 
   scoped_refptr<ResourceSchedulerClient> resource_scheduler_client_;
 
   base::WeakPtr<KeepaliveStatisticsRecorder> keepalive_statistics_recorder_;
 
-  base::WeakPtr<NetworkServiceMemoryCache> memory_cache_;
-  std::unique_ptr<NetworkServiceMemoryCacheWriter> memory_cache_writer_;
-  // Passed to `memory_cache_writer_`. Do not use other purposes.
-  net::TransportInfo transport_info_;
-
   bool first_auth_attempt_ = true;
 
   std::unique_ptr<ScopedThrottlingToken> throttling_token_;
 
-  net::HttpRequestHeaders custom_proxy_pre_cache_headers_;
-  net::HttpRequestHeaders custom_proxy_post_cache_headers_;
+  const net::HttpRequestHeaders custom_proxy_pre_cache_headers_;
+  const net::HttpRequestHeaders custom_proxy_post_cache_headers_;
 
   // Indicates the originating frame of the request, see
   // network::ResourceRequest::fetch_window_id for details.
-  absl::optional<base::UnguessableToken> fetch_window_id_;
+  const std::optional<base::UnguessableToken> fetch_window_id_;
 
-  LocalNetworkAccessChecker local_network_access_checker_;
+  PrivateNetworkAccessChecker private_network_access_checker_;
 
   mojo::Remote<mojom::TrustedHeaderClient> header_client_;
 
@@ -631,17 +849,37 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   std::unique_ptr<TrustTokenRequestHelper> trust_token_helper_;
   std::unique_ptr<TrustTokenRequestHelperFactory> trust_token_helper_factory_;
 
+  // The current Trust Token operation being processed by the request.
+  std::optional<mojom::TrustTokenOperationType> trust_token_operation_;
+
   // The cached result of the request's Trust Tokens protocol operation, if any.
   // This can describe the result of either an outbound (request-annotating)
   // protocol step or an inbound (response header reading) step; some error
   // codes, like kFailedPrecondition (outbound) and kBadResponse (inbound) are
   // specific to one direction.
-  absl::optional<mojom::TrustTokenOperationStatus> trust_token_status_;
+  std::optional<mojom::TrustTokenOperationStatus> trust_token_status_;
+
+  // Whether the caller has opted into using the Storage Access API (via JS).
+  const net::StorageAccessApiStatus storage_access_api_status_;
+
+  // This is used to determine whether it is allowed to use a dictionary when
+  // there is a matching shared dictionary for the request.
+  std::unique_ptr<SharedDictionaryAccessChecker> shared_dictionary_checker_;
 
   // Request helper responsible for orchestrating Attribution operations
   // (https://github.com/WICG/attribution-reporting-api). Only set if the
   // request is related to attribution.
   std::unique_ptr<AttributionRequestHelper> attribution_request_helper_;
+
+  // The `SharedStorageRequestHelper` takes a callback to trigger
+  // `ContinueOnReceiveRedirect()`. To prevent re-entrancy, however, this
+  // callback is conditionally run only if the helper successfully parses
+  // operations and sends them via mojo to observer(s). We stash here the
+  // non-copyable `mojom::URLResponseHeadPtr` to which
+  // `ContinueOnReceiveRedirect()` needs access and pass the response's index in
+  // the map as a parameter.
+  std::map<uint64_t, mojom::URLResponseHeadPtr> on_receive_redirect_responses_;
+  uint64_t next_on_receive_redirect_response_index_ = 0;
 
   // Outlives `this`.
   const raw_ref<const cors::OriginAccessList> origin_access_list_;
@@ -666,15 +904,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   const mojo::Remote<mojom::DevToolsObserver> devtools_observer_remote_;
   const raw_ptr<mojom::DevToolsObserver> devtools_observer_ = nullptr;
 
-  const raw_ptr<const CacheTransparencySettings> cache_transparency_settings_;
+  // Request helper responsible for processing Shared Storage headers
+  // (https://github.com/WICG/shared-storage#from-response-headers).
+  std::unique_ptr<SharedStorageRequestHelper> shared_storage_request_helper_;
 
   // Indicates |url_request_| is fetch upload request and that has streaming
   // body.
   const bool has_fetch_streaming_upload_body_;
-
-  // Indicates whether fetch upload streaming is allowed/rejected over H/1.
-  // Even if this is false but there is a QUIC/H2 stream, the upload is allowed.
-  const bool allow_http1_for_streaming_upload_;
 
   bool emitted_devtools_raw_request_ = false;
   bool emitted_devtools_raw_response_ = false;
@@ -683,12 +919,31 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
 
   // Stores cookies passed from the browser process to later add them to the
   // request. This prevents the network stack from overriding them.
-  bool allow_cookies_from_browser_ = false;
+  const bool allow_cookies_from_browser_ = false;
   std::string cookies_from_browser_;
+
+  // Specifies that the response head should include request cookies.
+  const bool include_request_cookies_with_response_ = false;
+  net::cookie_util::ParsedRequestCookies request_cookies_;
 
   std::vector<network::mojom::CookieAccessDetailsPtr> cookie_access_details_;
 
   const bool provide_data_use_updates_;
+
+  // A SlopBucket is used as temporary storage for response body data from
+  // high-priority requests that cannot yet be written to the mojo data pipe
+  // because it is full.
+  std::unique_ptr<SlopBucket> slop_bucket_;
+
+  // Keeps the result of IsSharedDictionaryReadAllowed(). Used only for metrics.
+  bool shared_dictionary_allowed_check_passed_ = false;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader_ { nullptr };
+  bool redirect_updated_ { false };
+  bool already_update_info_ { false };
+  std::shared_ptr<net::URLRequest> url_request_rollback_;
+#endif
 
   base::WeakPtrFactory<URLLoader> weak_ptr_factory_{this};
 };

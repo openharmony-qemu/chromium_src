@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
@@ -43,22 +44,17 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   ~SkiaOutputDeviceGL() override;
 
   // SkiaOutputDevice implementation:
-  bool Reshape(const SkImageInfo& image_info,
-               const gfx::ColorSpace& color_space,
-               int sample_count,
-               float device_scale_factor,
-               gfx::OverlayTransform transform) override;
-  void Present(const absl::optional<gfx::Rect>& update_rect,
+  bool Reshape(const ReshapeParams& params) override;
+  void Present(const std::optional<gfx::Rect>& update_rect,
                BufferPresentedCallback feedback,
                OutputSurfaceFrame frame) override;
-  void EnsureBackbuffer() override;
   void DiscardBackbuffer() override;
   SkSurface* BeginPaint(
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
 
  private:
-  class OverlayData;
+  class MultiSurfaceSwapBuffersTracker;
 
   // Use instead of calling FinishSwapBuffers() directly.
   void DoFinishSwapBuffers(const gfx::Size& size,
@@ -75,10 +71,16 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   const raw_ptr<gpu::SharedContextState> context_state_;
   scoped_refptr<gl::GLSurface> gl_surface_;
   const bool supports_async_swap_;
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  bool supports_damage_region_;
+#endif
 
   uint64_t backbuffer_estimated_size_ = 0;
 
   sk_sp<SkSurface> sk_surface_;
+
+  std::unique_ptr<MultiSurfaceSwapBuffersTracker>
+      multisurface_swapbuffers_tracker_;
 
   base::WeakPtrFactory<SkiaOutputDeviceGL> weak_ptr_factory_{this};
 };

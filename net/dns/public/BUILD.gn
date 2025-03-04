@@ -5,7 +5,9 @@
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
-
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+}
 source_set("public") {
   # Due to circular dependencies, should only be depended on through //net.
   # Limit visibility to //net and other source_sets with the same access
@@ -31,11 +33,13 @@ source_set("public") {
     "doh_provider_entry.h",
     "host_resolver_results.cc",
     "host_resolver_results.h",
+    "host_resolver_source.cc",
     "host_resolver_source.h",
     "mdns_listener_update_type.h",
     "resolve_error_info.cc",
     "resolve_error_info.h",
     "secure_dns_mode.h",
+    "secure_dns_policy.cc",
     "secure_dns_policy.h",
     "util.cc",
     "util.h",
@@ -76,7 +80,7 @@ source_set("tests") {
     "doh_provider_entry_unittest.cc",
   ]
 
-  if (is_posix && !is_android) {
+  if (is_posix && !is_android && !is_ohos) {
     sources += [ "resolv_reader_unittest.cc" ]
   }
 

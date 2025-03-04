@@ -16,7 +16,7 @@
 
 namespace ui {
 
-enum class DomCode;
+enum class DomCode : uint32_t;
 
 KEYCODES_X_EXPORT KeyboardCode KeyboardCodeFromXKeyEvent(const x11::Event& xev);
 
@@ -31,8 +31,13 @@ KEYCODES_X_EXPORT uint16_t GetCharacterFromXEvent(const x11::Event& xev);
 KEYCODES_X_EXPORT DomKey GetDomKeyFromXEvent(const x11::Event& xev);
 
 // Converts a KeyboardCode into an X KeySym.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+KEYCODES_X_EXPORT int XKeysymForWindowsKeyCode(KeyboardCode keycode,
+                                               bool shift, bool capslock);
+#else
 KEYCODES_X_EXPORT int XKeysymForWindowsKeyCode(KeyboardCode keycode,
                                                bool shift);
+#endif
 
 // Returns a XKeyEvent keycode (scancode) for a KeyboardCode. Keyboard layouts
 // are usually not injective, so inverse mapping should be avoided when

@@ -8,65 +8,94 @@
 
 #import "base/functional/callback.h"
 #import "base/ios/ios_util.h"
+#import "base/strings/stringprintf.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/test/scoped_feature_list.h"
 #import "base/time/time.h"
+#import "components/feature_engagement/public/feature_constants.h"
 #import "components/password_manager/core/common/password_manager_constants.h"
 #import "components/password_manager/core/common/password_manager_features.h"
 #import "components/policy/policy_constants.h"
 #import "components/strings/grit/components_strings.h"
 #import "components/sync/base/features.h"
-#import "ios/chrome/browser/metrics/metrics_app_interface.h"
-#import "ios/chrome/browser/policy/policy_earl_grey_utils.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
+#import "components/sync/base/user_selectable_type.h"
+#import "components/sync/service/sync_prefs.h"
+#import "ios/chrome/browser/metrics/model/metrics_app_interface.h"
+#import "ios/chrome/browser/passwords/model/metrics/ios_password_manager_metrics.h"
+#import "ios/chrome/browser/policy/model/policy_earl_grey_utils.h"
+#import "ios/chrome/browser/signin/model/fake_system_identity.h"
+#import "ios/chrome/browser/ui/authentication/signin_earl_grey.h"
+#import "ios/chrome/browser/ui/authentication/signin_earl_grey_app_interface.h"
 #import "ios/chrome/browser/ui/authentication/signin_earl_grey_ui_test_util.h"
 #import "ios/chrome/browser/ui/settings/google_services/manage_sync_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/password/password_details/password_details_table_view_constants.h"
+#import "ios/chrome/browser/ui/settings/password/password_manager_egtest_utils.h"
 #import "ios/chrome/browser/ui/settings/password/password_settings/password_settings_constants.h"
 #import "ios/chrome/browser/ui/settings/password/password_settings_app_interface.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_in_other_apps/passwords_in_other_apps_app_interface.h"
 #import "ios/chrome/browser/ui/settings/password/passwords_table_view_constants.h"
+#import "ios/chrome/browser/ui/settings/password/reauthentication/reauthentication_constants.h"
+#import "ios/chrome/browser/ui/settings/password/widget_promo_instructions/widget_promo_instructions_constants.h"
 #import "ios/chrome/browser/ui/settings/settings_root_table_constants.h"
+#import "ios/chrome/common/ui/confirmation_alert/constants.h"
+#import "ios/chrome/common/ui/reauthentication/reauthentication_event.h"
 #import "ios/chrome/common/ui/reauthentication/reauthentication_protocol.h"
 #import "ios/chrome/common/ui/table_view/table_view_cells_constants.h"
+#import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/chrome/test/earl_grey/chrome_actions.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey.h"
-#import "ios/chrome/test/earl_grey/chrome_earl_grey_app_interface.h"
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_ui.h"
 #import "ios/chrome/test/earl_grey/chrome_matchers.h"
 #import "ios/chrome/test/earl_grey/chrome_test_case.h"
 #import "ios/chrome/test/earl_grey/earl_grey_scoped_block_swizzler.h"
+#import "ios/chrome/test/earl_grey/test_switches.h"
 #import "ios/testing/earl_grey/app_launch_manager.h"
 #import "ios/testing/earl_grey/earl_grey_test.h"
 #import "ios/testing/earl_grey/matchers.h"
+#import "ios/third_party/earl_grey2/src/CommonLib/Matcher/GREYLayoutConstraint.h"  // nogncheck
 #import "ios/web/public/test/element_selector.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#import "ios/third_party/earl_grey2/src/CommonLib/Matcher/GREYLayoutConstraint.h"  // nogncheck
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using chrome_test_util::ButtonWithAccessibilityLabel;
 using chrome_test_util::ButtonWithAccessibilityLabelId;
 using chrome_test_util::NavigationBarCancelButton;
 using chrome_test_util::NavigationBarDoneButton;
+using chrome_test_util::PasswordsTableViewMatcher;
+using chrome_test_util::SettingsCollectionView;
 using chrome_test_util::SettingsDoneButton;
-using chrome_test_util::SettingsMenuBackButton;
+using chrome_test_util::SettingsNavigationBar;
 using chrome_test_util::TabGridEditButton;
 using chrome_test_util::TextFieldForCellWithLabelId;
 using chrome_test_util::TurnTableViewSwitchOn;
+using password_manager::kPasswordManagerSurfaceVisitHistogramName;
+using password_manager_test_utils::DeleteButtonForUsernameAndSites;
+using password_manager_test_utils::DeleteCredential;
+using password_manager_test_utils::EditDoneButton;
+using password_manager_test_utils::EditPasswordConfirmationButton;
+using password_manager_test_utils::GetInteractionForPasswordIssueEntry;
+using password_manager_test_utils::kDefaultPassword;
+using password_manager_test_utils::kDefaultSite;
+using password_manager_test_utils::kDefaultUserDisplayName;
+using password_manager_test_utils::kDefaultUsername;
+using password_manager_test_utils::kPasswordStoreErrorMessage;
+using password_manager_test_utils::kScrollAmount;
+using password_manager_test_utils::NavigationBarEditButton;
+using password_manager_test_utils::OpenPasswordManager;
+using password_manager_test_utils::PasswordDetailPassword;
+using password_manager_test_utils::PasswordDetailsTableViewMatcher;
+using password_manager_test_utils::PasswordSettingsTableView;
+using password_manager_test_utils::PasswordTextfieldForUsernameAndSites;
+using password_manager_test_utils::ReauthenticationController;
+using password_manager_test_utils::SaveExamplePasskeyToStore;
+using password_manager_test_utils::SavePasswordFormToProfileStore;
+using password_manager_test_utils::TapNavigationBarEditButton;
+using password_manager_test_utils::UsernameTextfieldForUsernameAndSites;
 using testing::ElementWithAccessibilityLabelSubstring;
+using testing::NavigationBarBackButton;
 
 namespace {
-
-// How many points to scroll at a time when searching for an element. Setting it
-// too low means searching takes too long and the test might time out. Setting
-// it too high could result in scrolling way past the searched element.
-constexpr int kScrollAmount = 150;
 
 constexpr base::TimeDelta kSyncInitializedTimeout = base::Seconds(5);
 
@@ -89,19 +118,7 @@ GREYElementInteraction* GetInteractionForListItem(id<GREYMatcher> matcher,
       selectElementWithMatcher:grey_allOf(matcher, grey_sufficientlyVisible(),
                                           nil)]
          usingSearchAction:grey_scrollInDirection(direction, kScrollAmount)
-      onElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)];
-}
-
-// Returns the GREYElementInteraction* for the item on the password issues list
-// with the given `matcher`. It scrolls in `direction` if necessary to ensure
-// that the matched item is interactable.
-GREYElementInteraction* GetInteractionForIssuesListItem(
-    id<GREYMatcher> matcher,
-    GREYDirection direction) {
-  return [[EarlGrey
-      selectElementWithMatcher:grey_allOf(matcher, grey_interactable(), nil)]
-         usingSearchAction:grey_scrollInDirection(direction, kScrollAmount)
-      onElementWithMatcher:grey_accessibilityID(kPasswordIssuesTableViewId)];
+      onElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)];
 }
 
 // Returns the GREYElementInteraction* for the cell on the password list with
@@ -114,18 +131,6 @@ GREYElementInteraction* GetInteractionForPasswordEntry(NSString* username) {
                                    kGREYDirectionDown);
 }
 
-// Returns the GREYElementInteraction* for the cell on the password list with
-// the given `username` and `domain`. It scrolls down if necessary to ensure
-// that the matched cell is interactable.
-GREYElementInteraction* GetInteractionForPasswordIssueEntry(
-    NSString* domain,
-    NSString* username) {
-  return GetInteractionForIssuesListItem(
-      ButtonWithAccessibilityLabel(
-          [NSString stringWithFormat:@"%@, %@", domain, username]),
-      kGREYDirectionDown);
-}
-
 // Returns the GREYElementInteraction* for the item on the detail view
 // identified with the given `matcher`. It scrolls down if necessary to ensure
 // that the matched cell is interactable.
@@ -134,7 +139,7 @@ GREYElementInteraction* GetInteractionForPasswordDetailItem(
   return [[EarlGrey
       selectElementWithMatcher:grey_allOf(matcher, grey_interactable(), nil)]
          usingSearchAction:grey_scrollToContentEdge(kGREYContentEdgeTop)
-      onElementWithMatcher:grey_accessibilityID(kPasswordDetailsTableViewId)];
+      onElementWithMatcher:PasswordDetailsTableViewMatcher()];
 }
 
 // Returns the GREYElementInteraction* for the item on the deletion alert
@@ -152,6 +157,18 @@ GREYElementInteraction* GetPasswordDetailTextFieldWithID(int detail_id) {
                  grey_kindOfClassName(@"UITextField"), nil));
 }
 
+// Matcher for "Save in Account" confirmation dialog button for bulk save
+// passwords in account flow.
+GREYElementInteraction* SaveInAccountConfirmationDialogButton() {
+  return [[EarlGrey
+      selectElementWithMatcher:
+          grey_allOf(chrome_test_util::ButtonWithAccessibilityLabelId(
+                         IDS_IOS_BULK_UPLOAD_BUTTON_TITLE),
+                     grey_interactable(), nil)]
+      inRoot:grey_accessibilityID(
+                 kPasswordSettingsBulkMovePasswordsToAccountAlertViewId)];
+}
+
 // Matcher for "Saved Passwords" header in the password list.
 id<GREYMatcher> SavedPasswordsHeaderMatcher() {
   return grey_allOf(
@@ -162,7 +179,7 @@ id<GREYMatcher> SavedPasswordsHeaderMatcher() {
 
 // Matcher for a UITextField inside a SettingsSearchCell.
 id<GREYMatcher> SearchTextField() {
-  return grey_accessibilityID(kPasswordsSearchBarId);
+  return grey_accessibilityID(kPasswordsSearchBarID);
 }
 
 GREYLayoutConstraint* Below() {
@@ -180,20 +197,24 @@ id<GREYMatcher> AddPasswordWebsite() {
 }
 
 // Matcher for the username in Password Details view.
-id<GREYMatcher> PasswordDetailUsername() {
+id<GREYMatcher> CredentialDetailUsername() {
   return TextFieldForCellWithLabelId(IDS_IOS_SHOW_PASSWORD_VIEW_USERNAME);
 }
 
-// Matcher for the password in Password Details view.
-id<GREYMatcher> PasswordDetailPassword() {
-  return TextFieldForCellWithLabelId(IDS_IOS_SHOW_PASSWORD_VIEW_PASSWORD);
+id<GREYMatcher> PasskeyDetailUserDisplayName() {
+  return TextFieldForCellWithLabelId(IDS_IOS_SHOW_PASSKEY_DISPLAY_NAME);
 }
 
-// Matcher for the note in Password Details view.
+// Matcher for the text view of the note in Password Details view.
 id<GREYMatcher> PasswordDetailNote() {
   return grey_allOf(
       grey_accessibilityID(GetTextFieldForID(IDS_IOS_SHOW_PASSWORD_VIEW_NOTE)),
       grey_kindOfClassName(@"UITextView"), nil);
+}
+
+// Returns matcher for the label of the note in Password Details view.
+id<GREYMatcher> PasswordDetailNoteLabel() {
+  return grey_allOf(grey_kindOfClass([UILabel class]), grey_text(@"Note"), nil);
 }
 
 // Matcher for the federation details in Password Details view.
@@ -217,17 +238,6 @@ id<GREYMatcher> HidePasswordButton() {
                     grey_interactable(), nullptr);
 }
 
-// Matcher for the Delete button at with accessibility identifier containing
-// `username` and `password` in Password Details view.
-id<GREYMatcher> DeleteButtonForUsernameAndPassword(NSString* username,
-                                                   NSString* password) {
-  return grey_allOf(
-      grey_accessibilityID([NSString
-          stringWithFormat:@"%@%@%@", kDeleteButtonForPasswordDetailsId,
-                           username, password]),
-      grey_interactable(), nullptr);
-}
-
 // Matcher for the Delete button in Password Details view.
 id<GREYMatcher> DeleteButton() {
   return grey_allOf(
@@ -236,32 +246,11 @@ id<GREYMatcher> DeleteButton() {
       nullptr);
 }
 
-// TODO(crbug.com/1359392): Remove this override when kPasswordsGrouping flag is
-// removed. Matcher for the Delete button in Confirmation Alert for password
+// Matcher for the Delete button in Confirmation Alert for password
 // deletion.
-id<GREYMatcher> DeleteConfirmationButton() {
-  return grey_allOf(ButtonWithAccessibilityLabel(l10n_util::GetNSString(
-                        IDS_IOS_CONFIRM_PASSWORD_DELETION)),
-                    grey_interactable(), nullptr);
-}
-
-// Matcher for the Delete button in Confirmation Alert for password deletion
-// when password grouping is enabled.
-id<GREYMatcher> DeleteConfirmationButtonForGrouping() {
-  return grey_allOf(ButtonWithAccessibilityLabel(
-                        l10n_util::GetNSString(IDS_IOS_DELETE_ACTION_TITLE)),
-                    grey_interactable(), nullptr);
-}
-
-// Matcher for the Delete button in Confirmation Alert for batch passwords
-// deletion when password grouping is enabled.
-id<GREYMatcher> BatchDeleteConfirmationButtonForGrouping() {
-  return grey_allOf(
-      grey_accessibilityID([NSString
-          stringWithFormat:@"%@%@",
-                           l10n_util::GetNSString(IDS_IOS_DELETE_ACTION_TITLE),
-                           @"AlertAction"]),
-      grey_interactable(), nullptr);
+id<GREYMatcher> BatchDeleteConfirmationButton() {
+  return chrome_test_util::AlertAction(
+      l10n_util::GetNSString(IDS_IOS_DELETE_ACTION_TITLE));
 }
 
 // Matcher for the Delete button in the list view, located at the bottom of the
@@ -270,18 +259,17 @@ id<GREYMatcher> DeleteButtonAtBottom() {
   return grey_accessibilityID(kSettingsToolbarDeleteButtonId);
 }
 
-// Return the edit button from the navigation bar.
-id<GREYMatcher> NavigationBarEditButton() {
-  return grey_allOf(chrome_test_util::ButtonWithAccessibilityLabelId(
-                        IDS_IOS_NAVIGATION_BAR_EDIT_BUTTON),
-                    grey_not(TabGridEditButton()),
-                    grey_userInteractionEnabled(), nil);
+// Matcher for the "Delete" associated with the blocked site.
+id<GREYMatcher> DeleteBlockedSiteButton() {
+  return grey_allOf(ButtonWithAccessibilityLabel(
+                        l10n_util::GetNSString(IDS_IOS_DELETE_ACTION_TITLE)),
+                    grey_interactable(), nullptr);
 }
 
-// Matcher for the Confirm button in Confirmation Alert for password editing.
-id<GREYMatcher> EditConfirmationButton() {
-  return grey_allOf(ButtonWithAccessibilityLabel(
-                        l10n_util::GetNSString(IDS_IOS_CONFIRM_PASSWORD_EDIT)),
+// Matcher for the "Delete" associated with the blocked site.
+id<GREYMatcher> DeletePasskeyButton() {
+  return grey_allOf(ButtonWithAccessibilityLabel(l10n_util::GetNSString(
+                        IDS_IOS_CONFIRM_PASSKEY_DELETION)),
                     grey_interactable(), nullptr);
 }
 
@@ -311,7 +299,7 @@ id<GREYMatcher> PopUpMenuItemWithLabel(int label) {
 
 // Returns matcher for the "Add Password" button.
 id<GREYMatcher> AddPasswordButton() {
-  return grey_accessibilityID(kAddPasswordButtonId);
+  return grey_accessibilityID(kAddPasswordButtonID);
 }
 
 // Returns matcher for the "Add Password" toolbar button located at the bottom
@@ -322,12 +310,7 @@ id<GREYMatcher> AddPasswordToolbarButton() {
 
 // Returns matcher for the "Save" button in the "Add Password" view.
 id<GREYMatcher> AddPasswordSaveButton() {
-  return grey_accessibilityID(kPasswordsAddPasswordSaveButtonId);
-}
-
-// Matcher for the toolbar's edit done button.
-id<GREYMatcher> SettingToolbarEditDoneButton() {
-  return grey_accessibilityID(kSettingsToolbarEditDoneButtonId);
+  return grey_accessibilityID(kPasswordsAddPasswordSaveButtonID);
 }
 
 id<GREYMatcher> ToolbarSettingsSubmenuButton() {
@@ -343,71 +326,86 @@ id<GREYMatcher> TooLongNoteFooter() {
           password_manager::constants::kMaxPasswordNoteLength)));
 }
 
-// Saves an example form in the store.
-void SaveExamplePasswordForm() {
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExamplePassword:@"concrete password"
-                                               userName:@"concrete username"
-                                                 origin:@"https://example.com"],
-      @"Stored form was not found in the PasswordStore results.");
+// Returns matcher for the Password Manager widget promo.
+id<GREYMatcher> PasswordManagerWidgetPromo() {
+  return grey_accessibilityID(kWidgetPromoID);
+}
+
+// Returns matcher for the Password Manager widget promo's close button.
+id<GREYMatcher> PasswordManagerWidgetPromoCloseButton() {
+  return grey_accessibilityID(kWidgetPromoCloseButtonID);
+}
+
+// Returns matcher for the Password Manager widget promo's more info button.
+id<GREYMatcher> PasswordManagerWidgetPromoMoreInfoButton(bool enabled = YES) {
+  if (enabled) {
+    return grey_allOf(
+        ButtonWithAccessibilityLabelId(
+            IDS_IOS_PASSWORD_MANAGER_WIDGET_PROMO_BUTTON_TITLE),
+        grey_not(grey_accessibilityTrait(UIAccessibilityTraitNotEnabled)),
+        nullptr);
+  }
+
+  return grey_allOf(ButtonWithAccessibilityLabelId(
+                        IDS_IOS_PASSWORD_MANAGER_WIDGET_PROMO_BUTTON_TITLE),
+                    grey_accessibilityTrait(UIAccessibilityTraitNotEnabled),
+                    nullptr);
+}
+
+// Returns matcher for the Password Manager widget promo instructions screen.
+id<GREYMatcher> PasswordManagerWidgetPromoInstructions() {
+  return grey_accessibilityID(password_manager::kWidgetPromoInstructionsViewID);
+}
+
+// Returns matcher for the close button of the Password Manager widget promo
+// instruction screen.
+id<GREYMatcher> PasswordManagerWidgetPromoInstructionsCloseButton() {
+  return grey_allOf(
+      grey_accessibilityID(
+          kConfirmationAlertSecondaryActionAccessibilityIdentifier),
+      grey_interactable(), nullptr);
+}
+
+// Returns matcher for the Password Details move to account button.
+id<GREYMatcher> PasswordDetailsMoveToAccountButton() {
+  return grey_accessibilityID(kMovePasswordToAccountButtonID);
 }
 
 // Saves two example forms in the store.
 void SaveExamplePasswordForms() {
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"password1"
-                            userName:@"user1"
-                              origin:@"https://example11.com"],
-             @"Stored form was not found in the PasswordStore results.");
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"password2"
-                            userName:@"user2"
-                              origin:@"https://example12.com"],
-             @"Stored form was not found in the PasswordStore results.");
+  SavePasswordFormToProfileStore(/*password=*/@"password1",
+                                 /*username=*/@"user1",
+                                 /*origin=*/@"https://example11.com");
+  SavePasswordFormToProfileStore(/*password=*/@"password2",
+                                 /*username=*/@"user2",
+                                 /*origin=*/@"https://example12.com");
 }
 
 // Saves an example form with note in the store.
-void SaveExamplePasswordFormWithNote() {
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExampleNote:@"concrete note"
-                                           password:@"concrete password"
-                                           userName:@"concrete username"
-                                             origin:@"https://example.com"],
-      @"Stored form was not found in the PasswordStore results.");
+void SaveExamplePasswordFormToProfileStoreWithNote() {
+  GREYAssert([PasswordSettingsAppInterface
+                 saveExampleNoteToProfileStore:@"concrete note"
+                                      password:kDefaultPassword
+                                      username:kDefaultUsername
+                                        origin:@"https://example.com"],
+             kPasswordStoreErrorMessage);
 }
 
 // Saves two example blocked forms in the store.
-void SaveExampleBlockedForms() {
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExampleBlockedOrigin:@"https://exclude1.com"],
-             @"Stored form was not found in the PasswordStore results.");
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExampleBlockedOrigin:@"https://exclude2.com"],
-             @"Stored form was not found in the PasswordStore results.");
-}
-
-// Opens the passwords page from the NTP. It requires no menus to be open.
-void OpenPasswordManager() {
-  [ChromeEarlGreyUI openSettingsMenu];
-  [ChromeEarlGreyUI
-      tapSettingsMenuButton:chrome_test_util::SettingsMenuPasswordsButton()];
-  // The settings page requested results from PasswordStore. Make sure they
-  // have already been delivered by posting a task to PasswordStore's
-  // background task runner and waits until it is finished. Because the
-  // background task runner is sequenced, this means that previously posted
-  // tasks are also finished when this function exits.
-  [PasswordSettingsAppInterface passwordStoreResultsCount];
+void SaveExampleBlockedFormsToProfileStore() {
+  GREYAssert(
+      [PasswordSettingsAppInterface
+          saveExampleBlockedOriginToProfileStore:@"https://exclude1.com"],
+      kPasswordStoreErrorMessage);
+  GREYAssert(
+      [PasswordSettingsAppInterface
+          saveExampleBlockedOriginToProfileStore:@"https://exclude2.com"],
+      kPasswordStoreErrorMessage);
 }
 
 // Taps on the "Settings" option to show the submenu.
 void OpenSettingsSubmenu() {
   [[EarlGrey selectElementWithMatcher:ToolbarSettingsSubmenuButton()]
-      performAction:grey_tap()];
-}
-
-// Tap Edit in any settings view.
-void TapEdit() {
-  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 }
 
@@ -425,20 +423,211 @@ void CopyPasswordDetailWithID(int detail_id) {
       GetPasswordDetailTextFieldWithID(detail_id));
 }
 
-id<GREYMatcher> EditDoneButton() {
-  return SettingToolbarEditDoneButton();
+// Ensure the save passwords in account section is visible.
+void CheckSavePasswordsInAccountSectionVisible() {
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountDescriptionTableViewId)];
+
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)];
 }
+
+// Ensure the save passwords in account section is no longer visible.
+void CheckSavePasswordsInAccountSectionHidden() {
+  [ChromeEarlGrey
+      waitForNotSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountDescriptionTableViewId)];
+
+  [ChromeEarlGrey
+      waitForNotSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)];
+}
+
+// Checks that the section for udpating GPM PIN is visible.
+void CheckChangePinVisibleInSettings() {
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityID(kPasswordSettingsChangePinDescriptionId)];
+  [ChromeEarlGrey waitForSufficientlyVisibleElementWithMatcher:
+                      grey_accessibilityID(kPasswordSettingsChangePinButtonId)];
+}
+
+// Verifies reauthentication UI histogram was recorded.
+void CheckReauthenticationUIEventMetric(ReauthenticationEvent event) {
+  NSString* histogram = base::SysUTF8ToNSString(
+      password_manager::kReauthenticationUIEventHistogram);
+
+  NSError* error = [MetricsAppInterface expectCount:1
+                                          forBucket:static_cast<int>(event)
+                                       forHistogram:histogram];
+
+  GREYAssertNil(error,
+                @"Failed to record reauthentication ui event histogram.");
+}
+
+// Verifies the total count of reauthentication UI histogram recorded.
+void CheckReauthenticationUIEventMetricTotalCount(int count) {
+  NSString* histogram = base::SysUTF8ToNSString(
+      password_manager::kReauthenticationUIEventHistogram);
+
+  NSError* error = [MetricsAppInterface expectTotalCount:count
+                                            forHistogram:histogram];
+  GREYAssertNil(error,
+                @"Unexpected reauthentication ui event histogram count.");
+}
+
+// Verifies the total count of password manager visit histogram recorded.
+void CheckPasswordManagerVisitMetricCount(int count) {
+  // Check password manager visit metric.
+  NSError* error = [MetricsAppInterface
+      expectTotalCount:count
+          forHistogram:@(kPasswordManagerSurfaceVisitHistogramName)];
+  GREYAssertNil(error, @"Unexpected Password Manager Visit histogram count");
+
+  error = [MetricsAppInterface
+       expectCount:count
+         forBucket:static_cast<int>(
+                       password_manager::PasswordManagerSurface::kPasswordList)
+      forHistogram:@(kPasswordManagerSurfaceVisitHistogramName)];
+  GREYAssertNil(error, @"Unexpected Password Manager Visit histogram count");
+}
+
+// Verifies that the elements of the Password Manager widget promo are as
+// expected.
+void CheckPasswordManagerWidgetPromoVisible() {
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoCloseButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  id<GREYMatcher> image_matcher = grey_accessibilityID(kWidgetPromoImageID);
+  [[EarlGrey selectElementWithMatcher:image_matcher]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  id<GREYMatcher> text_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_PASSWORD_MANAGER_WIDGET_PROMO_TEXT));
+  [[EarlGrey selectElementWithMatcher:text_matcher]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  [[EarlGrey
+      selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Verifies that the elements of the Password Manager widget promo instruction
+// screen are as expected.
+void CheckPasswordManagerWidgetPromoInstructionScreenVisible(
+    bool image_hidden = false) {
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoInstructions()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  id<GREYMatcher> image_matcher =
+      grey_accessibilityID(password_manager::kWidgetPromoInstructionsImageID);
+  [[EarlGrey selectElementWithMatcher:image_matcher]
+      assertWithMatcher:image_hidden ? grey_notVisible()
+                                     : grey_minimumVisiblePercent(0.4)];
+
+  id<GREYMatcher> title_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_TITLE));
+  [[EarlGrey selectElementWithMatcher:title_matcher]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  id<GREYMatcher> subtitle_matcher = grey_text(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_SUBTITLE));
+  [[EarlGrey selectElementWithMatcher:subtitle_matcher]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  id<GREYMatcher> step1_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_STEP_1));
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(step1_matcher,
+                                          grey_sufficientlyVisible(), nil)]
+         usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
+                                                  kScrollAmount)
+      onElementWithMatcher:
+          grey_accessibilityID(
+              password_manager::kWidgetPromoInstructionsScrollableViewID)];
+
+  id<GREYMatcher> step2_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_STEP_2));
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(step2_matcher,
+                                          grey_sufficientlyVisible(), nil)]
+         usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
+                                                  kScrollAmount)
+      onElementWithMatcher:
+          grey_accessibilityID(
+              password_manager::kWidgetPromoInstructionsScrollableViewID)];
+
+  id<GREYMatcher> step3_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_STEP_3));
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(step3_matcher,
+                                          grey_sufficientlyVisible(), nil)]
+         usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
+                                                  kScrollAmount)
+      onElementWithMatcher:
+          grey_accessibilityID(
+              password_manager::kWidgetPromoInstructionsScrollableViewID)];
+
+  id<GREYMatcher> step4_matcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_WIDGET_PROMO_INSTRUCTIONS_STEP_4));
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(step4_matcher,
+                                          grey_sufficientlyVisible(), nil)]
+         usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
+                                                  kScrollAmount)
+      onElementWithMatcher:
+          grey_accessibilityID(
+              password_manager::kWidgetPromoInstructionsScrollableViewID)];
+
+  [[EarlGrey selectElementWithMatcher:
+                 PasswordManagerWidgetPromoInstructionsCloseButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+void CheckVisibilityOfElement(id<GREYMatcher> matcher, bool is_visible) {
+  [[EarlGrey selectElementWithMatcher:matcher]
+      assertWithMatcher:is_visible ? grey_sufficientlyVisible()
+                                   : grey_notVisible()];
+}
+
+// Opens the instructions for enabling the Password Manager Widget.
+void OpenPasswordManagerWidgetPromoInstructions() {
+  OpenPasswordManager();
+
+  // The Password Manager widget promo should be visible.
+  CheckPasswordManagerWidgetPromoVisible();
+
+  // Tap the promo's more info button.
+  [[EarlGrey
+      selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton()]
+      performAction:grey_tap()];
+
+  // The Password Manager widget promo's instructions should be visible.
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible();
+}
+
+#define REQUIRE_PASSKEYS                                         \
+  if (!syncer::IsWebauthnCredentialSyncEnabled()) {              \
+    EARL_GREY_TEST_DISABLED(                                     \
+        @"This build configuration does not support passkeys."); \
+  }
 
 }  // namespace
 
 // Various tests for the main Password Manager UI.
 @interface PasswordManagerTestCase : ChromeTestCase
 
-- (BOOL)groupingEnabled;
-
-- (GREYElementInteraction*)
-    interactionForSinglePasswordEntryWithDomain:(NSString*)domain
-                                       username:(NSString*)username;
+- (GREYElementInteraction*)interactionForSinglePasswordEntryWithDomain:
+    (NSString*)domain;
 
 // Matcher for the websites in Password Details view.
 // `websites` should be in the format "website1, website2,..." with `websiteN`
@@ -449,7 +638,7 @@ id<GREYMatcher> EditDoneButton() {
 // screen.
 - (id<GREYMatcher>)
     matcherForDeleteButtonInDetailsWithUsername:(NSString*)username
-                                       password:(NSString*)password;
+                                          sites:(NSString*)password;
 
 @end
 
@@ -458,32 +647,13 @@ id<GREYMatcher> EditDoneButton() {
   std::unique_ptr<EarlGreyScopedBlockSwizzler> _passwordAutoFillStatusSwizzler;
 }
 
-- (BOOL)groupingEnabled {
-  return YES;
-}
+- (GREYElementInteraction*)interactionForSinglePasswordEntryWithDomain:
+    (NSString*)domain {
+  // Since passwords notes launch authentication is required before interacting
+  // with password details.
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 
-- (BOOL)notesEnabled {
-  return YES;
-}
-
-- (BOOL)passwordCheckupEnabled {
-  return YES;
-}
-
-- (GREYElementInteraction*)
-    interactionForSinglePasswordEntryWithDomain:(NSString*)domain
-                                       username:(NSString*)username {
-  // With notes enabled authentication is required before interacting with
-  // password details.
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
-  // With grouping enabled, discard the username; it's only shown on the details
-  // page.
   // ID, not label because the latter might contain an extra label for the
   // "local password icon" and most tests don't care about it.
   return GetInteractionForListItem(ButtonWithAccessibilityID(domain),
@@ -498,8 +668,8 @@ id<GREYMatcher> EditDoneButton() {
 
 - (id<GREYMatcher>)
     matcherForDeleteButtonInDetailsWithUsername:(NSString*)username
-                                       password:(NSString*)password {
-  return DeleteButtonForUsernameAndPassword(username, password);
+                                          sites:(NSString*)sites {
+  return DeleteButtonForUsernameAndSites(username, sites);
 }
 
 - (void)setUp {
@@ -511,14 +681,18 @@ id<GREYMatcher> EditDoneButton() {
           @"PasswordAutoFillStatusManager", @"sharedManager",
           [PasswordsInOtherAppsAppInterface
               swizzlePasswordAutoFillStatusManagerWithFake]);
+
+  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 }
 
-- (void)tearDown {
+- (void)tearDownHelper {
   // Snackbars triggered by tests stay up for a limited time even if the
   // settings get closed. Ensure that they are closed to avoid interference with
   // other tests.
   [PasswordSettingsAppInterface dismissSnackBar];
-  GREYAssert([PasswordSettingsAppInterface clearPasswordStore],
+  GREYAssert([PasswordSettingsAppInterface clearProfilePasswordStore],
              @"PasswordStore was not cleared.");
 
   GREYAssertNil([MetricsAppInterface releaseHistogramTester],
@@ -527,53 +701,35 @@ id<GREYMatcher> EditDoneButton() {
   [PasswordsInOtherAppsAppInterface resetManager];
   _passwordAutoFillStatusSwizzler.reset();
 
-  [super tearDown];
+  [PasswordSettingsAppInterface removeMockReauthenticationModule];
+
+  [super tearDownHelper];
 }
 
 - (AppLaunchConfiguration)appConfigurationForTestCase {
   AppLaunchConfiguration config;
-  config.relaunch_policy = NoForceRelaunchAndResetState;
 
-  config.features_enabled.push_back(
-      password_manager::features::kIOSPasswordUISplit);
+  // See (crbug.com/1479593). Enforcing relaunch between tests is necessary to
+  // prevent flakiness, due to a spinner that appears in some tests and blocks
+  // later ones from interacting with the UI.
+  config.relaunch_policy = ForceRelaunchByCleanShutdown;
 
-  if ([self groupingEnabled]) {
-    config.features_enabled.push_back(
-        password_manager::features::kPasswordsGrouping);
-  } else {
-    config.features_disabled.push_back(
-        password_manager::features::kPasswordsGrouping);
-  }
-
-  if ([self isRunningTest:@selector
-            (testAccountStorageSwitchHiddenIfSignedInAndFlagDisabled)]) {
-    config.features_disabled.push_back(
-        password_manager::features::kEnablePasswordsAccountStorage);
-  }
-  if ([self isRunningTest:@selector
-            (testAccountStorageSwitchShownIfSignedInAndFlagEnabled)] ||
+  if ([self isRunningTest:@selector(testClosingPasswordManagerWidgetPromo)] ||
+      [self isRunningTest:@selector
+            (testOpeningPasswordManagerWidgetPromoInstructions)] ||
+      [self
+          isRunningTest:@selector(testPasswordManagerWidgetPromoInEditMode)] ||
+      [self isRunningTest:@selector
+            (testPasswordManagerWidgetPromoDeviceOrientation)] ||
+      [self isRunningTest:@selector
+            (testDismissPasswordManagerWidgetPromoInstructionsScreen)] ||
+      [self isRunningTest:@selector
+            (testPasswordManagerWidgetPromoInstructionsDeviceOrientation)] ||
       [self
           isRunningTest:@selector
-          (testAccountStorageSwitchDisabledIfBlockedByPolicyAndFlagEnabled)] ||
-      [self isRunningTest:@selector(testMovePasswordToAccount)] ||
-      [self isRunningTest:@selector
-            (testMovePasswordToAccountWithOnlyIncognitoTabOpen)]) {
-    config.features_enabled.push_back(
-        password_manager::features::kEnablePasswordsAccountStorage);
-  }
-
-  if ([self notesEnabled]) {
-    config.features_enabled.push_back(syncer::kPasswordNotesWithBackup);
-  } else {
-    config.features_disabled.push_back(syncer::kPasswordNotesWithBackup);
-  }
-
-  if ([self passwordCheckupEnabled]) {
-    config.features_enabled.push_back(
-        password_manager::features::kIOSPasswordCheckup);
-  } else {
-    config.features_disabled.push_back(
-        password_manager::features::kIOSPasswordCheckup);
+          (testOpeningPasswordManagerWidgetPromoInstructionsWithFailedAuth)] ||
+      [self isRunningTest:@selector(testDeletingLastAffiliatedGroup)]) {
+    config.iph_feature_enabled = "IPH_iOSPromoPasswordManagerWidget";
   }
 
   return config;
@@ -582,51 +738,37 @@ id<GREYMatcher> EditDoneButton() {
 // Verifies the UI elements are accessible on the Passwords page.
 - (void)testAccessibilityOnPasswords {
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
   [ChromeEarlGrey verifyAccessibilityForCurrentScreen];
 
-  TapEdit();
+  TapNavigationBarEditButton();
   [ChromeEarlGrey verifyAccessibilityForCurrentScreen];
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       performAction:grey_tap()];
 
   // Inspect "password details" view.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
   [ChromeEarlGrey verifyAccessibilityForCurrentScreen];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-// Checks that attempts to copy a password provide appropriate feedback,
-// both when reauthentication succeeds and when it fails.
+// Checks that attempt to copy a password provides appropriate feedback.
 - (void)testCopyPasswordToast {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is not needed with notes for passwords enabled.");
-  }
-
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  // Check the snackbar in case of successful reauthentication.
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kSuccess];
 
   CopyPasswordDetailWithID(IDS_IOS_SHOW_PASSWORD_VIEW_PASSWORD);
 
@@ -636,95 +778,34 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(snackbarLabel)]
       performAction:grey_tap()];
 
-  // Check the snackbar in case of failed reauthentication.
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kFailure];
-
-  CopyPasswordDetailWithID(IDS_IOS_SHOW_PASSWORD_VIEW_PASSWORD);
-
-  snackbarLabel =
-      l10n_util::GetNSString(IDS_IOS_SETTINGS_PASSWORD_WAS_NOT_COPIED_MESSAGE);
-  // The tap checks the existence of the snackbar and also closes it.
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(snackbarLabel)]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-// Checks that an attempt to show a password provides an appropriate feedback
-// when reauthentication succeeds.
-- (void)testShowPasswordAuthSucceeded {
+// Checks that an attempt to show a password provides an appropriate feedback.
+- (void)testShowPasswordSucceeded {
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   [GetInteractionForPasswordDetailItem(ShowPasswordButton())
       performAction:grey_tap()];
 
   // Ensure that password is shown.
-  [GetInteractionForPasswordDetailItem(grey_textFieldValue(
-      @"concrete password")) assertWithMatcher:grey_notNil()];
+  [GetInteractionForPasswordDetailItem(grey_textFieldValue(kDefaultPassword))
+      assertWithMatcher:grey_notNil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
-// Checks that an attempt to show a password provides an appropriate feedback
-// when reauthentication fails.
-- (void)testShowPasswordToastAuthFailed {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is not needed with notes for passwords enabled.");
-  }
-
-  // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kFailure];
-
-  // Check the snackbar in case of failed reauthentication.
-  [GetInteractionForPasswordDetailItem(ShowPasswordButton())
-      performAction:grey_tap()];
-
-  // Check that the password is not displayed.
-  [[EarlGrey selectElementWithMatcher:grey_textFieldValue(@"concrete password")]
-      assertWithMatcher:grey_nil()];
-
-  // Note that there is supposed to be no message (cf. the case of the copy
-  // button, which does need one). The reason is that the password not being
-  // shown is enough of a message that the action failed.
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -733,12 +814,11 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that attempts to copy a username provide appropriate feedback.
 - (void)testCopyUsernameToast {
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   CopyPasswordDetailWithID(IDS_IOS_SHOW_PASSWORD_VIEW_USERNAME);
@@ -748,9 +828,9 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(snackbarLabel)]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -759,27 +839,25 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that attempts to copy a site URL provide appropriate feedback.
 - (void)testCopySiteToast {
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   CopyPasswordDetailWithInteraction(GetInteractionForPasswordDetailItem(
-      [self matcherForPasswordDetailCellWithWebsites:@"https://example.com/"]));
+      [self matcherForPasswordDetailCellWithWebsites:kDefaultSite]));
 
-  NSString* snackbarLabel = l10n_util::GetNSString(
-      [self groupingEnabled] ? IDS_IOS_SETTINGS_SITES_WERE_COPIED_MESSAGE
-                             : IDS_IOS_SETTINGS_SITE_WAS_COPIED_MESSAGE);
+  NSString* snackbarLabel =
+      l10n_util::GetNSString(IDS_IOS_SETTINGS_SITES_WERE_COPIED_MESSAGE);
   // The tap checks the existence of the snackbar and also closes it.
   [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(snackbarLabel)]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -789,35 +867,17 @@ id<GREYMatcher> EditDoneButton() {
 // to the list-of-passwords view which doesn't display that form anymore.
 - (void)testSavedFormDeletionInDetailView {
   // Save form to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:[self groupingEnabled]
-                                          ? DeleteButtonForUsernameAndPassword(
-                                                @"concrete username",
-                                                @"concrete password")
-                                          : DeleteButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self groupingEnabled]
-                                   ? DeleteConfirmationButtonForGrouping()
-                                   : DeleteConfirmationButton()]
-      performAction:grey_tap()];
+  DeleteCredential(kDefaultUsername, kDefaultSite);
 
   // Wait until the alert and the detail view are dismissed.
   [ChromeEarlGreyUI waitForAppToIdle];
@@ -825,16 +885,16 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed password is no longer in the list.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Finally, verify that the Add button is visible and enabled, because there
@@ -843,7 +903,7 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -853,42 +913,24 @@ id<GREYMatcher> EditDoneButton() {
 // after the user had edited the password.
 - (void)testSavedFormDeletionInDetailViewAfterEditingFields {
   // Save form to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Edit password field.
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
-      assertWithMatcher:grey_textFieldValue(@"concrete password")];
+      assertWithMatcher:grey_textFieldValue(kDefaultPassword)];
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"")];
 
   // Delete password.
-  [[EarlGrey selectElementWithMatcher:[self groupingEnabled]
-                                          ? DeleteButtonForUsernameAndPassword(
-                                                @"concrete username",
-                                                @"concrete password")
-                                          : DeleteButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self groupingEnabled]
-                                   ? DeleteConfirmationButtonForGrouping()
-                                   : DeleteConfirmationButton()]
-      performAction:grey_tap()];
+  DeleteCredential(kDefaultUsername, kDefaultSite);
 
   // Wait until the alert and the detail view are dismissed.
   [ChromeEarlGreyUI waitForAppToIdle];
@@ -896,16 +938,16 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed password is no longer in the list.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Finally, verify that the Add button is visible and enabled, because there
@@ -914,7 +956,7 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -924,38 +966,20 @@ id<GREYMatcher> EditDoneButton() {
 // to the list-of-passwords showing only previously saved blocked sites.
 - (void)testSavedFormDeletionInDetailViewWithBlockedSites {
   // Save form to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   // Saved blocked sites that should not be affected.
-  SaveExampleBlockedForms();
+  SaveExampleBlockedFormsToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:[self groupingEnabled]
-                                          ? DeleteButtonForUsernameAndPassword(
-                                                @"concrete username",
-                                                @"concrete password")
-                                          : DeleteButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self groupingEnabled]
-                                   ? DeleteConfirmationButtonForGrouping()
-                                   : DeleteConfirmationButton()]
-      performAction:grey_tap()];
+  DeleteCredential(kDefaultUsername, kDefaultSite);
 
   // Wait until the alert and the detail view are dismissed.
   [ChromeEarlGreyUI waitForAppToIdle];
@@ -963,16 +987,16 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(2, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      2, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed password is no longer in the list.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Verify blocked sites are still there.
@@ -981,7 +1005,7 @@ id<GREYMatcher> EditDoneButton() {
   [GetInteractionForPasswordEntry(@"exclude2.com")
       assertWithMatcher:grey_sufficientlyVisible()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -991,39 +1015,28 @@ id<GREYMatcher> EditDoneButton() {
 // goes back to the list-of-passwords view which doesn't display that form
 // anymore.
 - (void)testDuplicatedSavedFormDeletionInDetailView {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
   // Save form to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
   // Save duplicate of the previously saved form to be deleted at the same time.
   // This entry is considered duplicated because it maps to the same sort key
   // as the previous one.
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"concrete password"
-                            userName:@"concrete username"
-                              origin:@"https://example.com/example"],
-             @"Stored form was not found in the PasswordStore results.");
+  SavePasswordFormToProfileStore(/*password=*/kDefaultPassword,
+                                 /*username=*/kDefaultUsername,
+                                 /*origin=*/@"https://example.com/example");
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteButton()] performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:DeleteButtonForUsernameAndSites(
+                                          kDefaultUsername, kDefaultSite)]
+      performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteConfirmationButton()]
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
       performAction:grey_tap()];
 
   // Wait until the alert and the detail view are dismissed.
@@ -1032,16 +1045,16 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed password is no longer in the list.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Finally, verify that the Add button is visible and enabled, because there
@@ -1050,7 +1063,7 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1059,14 +1072,10 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that deleting a blocked form from password details view goes
 // back to the list-of-passwords view which doesn't display that form anymore.
 - (void)testBlockedFormDeletionInDetailView {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
   // Save blocked form to be deleted later.
   GREYAssert([PasswordSettingsAppInterface
-                 saveExampleBlockedOrigin:@"https://blocked.com"],
-             @"Stored form was not found in the PasswordStore results.");
+                 saveExampleBlockedOriginToProfileStore:@"https://blocked.com"],
+             kPasswordStoreErrorMessage);
 
   OpenPasswordManager();
 
@@ -1075,9 +1084,10 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteButton()] performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:DeleteBlockedSiteButton()]
+      performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteConfirmationButton()]
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
       performAction:grey_tap()];
 
   // Wait until the alert and the detail view are dismissed.
@@ -1086,12 +1096,13 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed password is no longer in the list.
   [GetInteractionForPasswordEntry(@"secret.com")
@@ -1103,7 +1114,7 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1113,16 +1124,12 @@ id<GREYMatcher> EditDoneButton() {
 // back to the list-of-passwords view which only displays a previously saved
 // password.
 - (void)testBlockedFormDeletionInDetailViewWithSavedForm {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
   // Save blocked form to be deleted later.
   GREYAssert([PasswordSettingsAppInterface
-                 saveExampleBlockedOrigin:@"https://blocked.com"],
-             @"Stored form was not found in the PasswordStore results.");
+                 saveExampleBlockedOriginToProfileStore:@"https://blocked.com"],
+             kPasswordStoreErrorMessage);
 
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
@@ -1131,9 +1138,10 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteButton()] performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:DeleteBlockedSiteButton()]
+      performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:DeleteConfirmationButton()]
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
       performAction:grey_tap()];
 
   // Wait until the alert and the detail view are dismissed.
@@ -1142,81 +1150,68 @@ id<GREYMatcher> EditDoneButton() {
   // Check that the current view is now the list view, by locating
   // PasswordTableViewController.
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       assertWithMatcher:grey_notNil()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(1, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      1, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
 
   // Also verify that the removed blocked site is no longer in the list.
   [GetInteractionForPasswordEntry(@"secret.com")
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
   // Verify existing saved password is still in the list.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_sufficientlyVisible()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
 // Checks that deleting a password from password details can be cancelled.
-// TODO(crbug.com/1405037): The test is flaky.
-- (void)DISABLED_testCancelDeletionInDetailView {
+- (void)testCancelDeletionInDetailView {
   // Save form to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
-
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:[self groupingEnabled]
-                                          ? DeleteButtonForUsernameAndPassword(
-                                                @"concrete username",
-                                                @"concrete password")
-                                          : DeleteButton()]
+  [[EarlGrey selectElementWithMatcher:DeleteButtonForUsernameAndSites(
+                                          kDefaultUsername, kDefaultSite)]
       performAction:grey_tap()];
 
-  // Close the dialog by taping on Password Details screen.
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kPasswordDetailsTableViewId)]
+  // Close the dialog by tapping on Password Details screen cancel button.
+  [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
       performAction:grey_tap()];
 
   // Check that the current view is still the detail view.
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kPasswordDetailsTableViewId)]
+  [[EarlGrey selectElementWithMatcher:PasswordDetailsTableViewMatcher()]
       assertWithMatcher:grey_notNil()];
 
   // Verify that the deletion did not happen.
-  GREYAssertEqual(1u, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was removed from PasswordStore.");
+  GREYAssertEqual(
+      1u, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was removed from ProfilePasswordStore.");
 
   // Go back to the list view and verify that the password is still in the
   // list.
   [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_sufficientlyVisible()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1226,14 +1221,13 @@ id<GREYMatcher> EditDoneButton() {
 // not accessible on tapping the entries.
 - (void)testEditMode {
   // Save a form to have something to tap on.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   // Check that the current view is not the detail view, by failing to locate
@@ -1241,7 +1235,7 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_nil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1251,26 +1245,16 @@ id<GREYMatcher> EditDoneButton() {
 // an appropriate feedback.
 - (void)testCopyPasswordMenuItem {
   // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   // Tap the password cell to display the context menu.
   [GetInteractionForPasswordDetailItem(grey_text(kMaskedPassword))
       performAction:grey_tap()];
-
-  // Make sure to capture the reauthentication module in a variable until the
-  // end of the test, otherwise it might get deleted too soon and break the
-  // functionality of copying and viewing passwords.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
 
   // Tap the context menu item for copying.
   [[EarlGrey
@@ -1285,9 +1269,9 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(snackbarLabel)]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1295,28 +1279,24 @@ id<GREYMatcher> EditDoneButton() {
 
 // Checks that federated credentials have no password but show the federation.
 - (void)testFederated {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExampleFederatedOrigin:@"https://famous.provider.net"
-                                   userName:@"federated username"
-                                     origin:@"https://example.com"],
-             @"Stored form was not found in the PasswordStore results.");
+  GREYAssert(
+      [PasswordSettingsAppInterface
+          saveExampleFederatedOriginToProfileStore:
+              @"https://famous.provider.net"
+                                          username:@"federated username"
+                                            origin:@"https://example.com"],
+      kPasswordStoreErrorMessage);
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"federated username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   // Check that the Site and Username are present and correct.
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
+  [[EarlGrey selectElementWithMatcher:
+                 [self matcherForPasswordDetailCellWithWebsites:kDefaultSite]]
       assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_textFieldValue(@"federated username")];
   [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
       assertWithMatcher:grey_textFieldValue(@"famous.provider.net")];
@@ -1326,23 +1306,18 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_nil()];
 
   // Check that editing doesn't require reauth.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kFailure];
-  }
-
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
   // Ensure delete button is present after entering editing mode.
-  [[EarlGrey selectElementWithMatcher:DeleteButton()]
+  [[EarlGrey selectElementWithMatcher:DeleteButtonForUsernameAndSites(
+                                          @"federated username", kDefaultSite)]
       assertWithMatcher:grey_notNil()];
 
   [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1351,109 +1326,18 @@ id<GREYMatcher> EditDoneButton() {
 // Checks the order of the elements in the detail view layout for a
 // non-federated, non-blocked credential.
 - (void)testLayoutNormal {
-  SaveExamplePasswordForm();
+  SaveExamplePasswordFormToProfileStoreWithNote();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
+  [[EarlGrey selectElementWithMatcher:
+                 [self matcherForPasswordDetailCellWithWebsites:kDefaultSite]]
       assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      assertWithMatcher:grey_textFieldValue(@"concrete username")];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
-      assertWithMatcher:grey_textFieldValue(kMaskedPassword)];
-
-  // Check that the federation origin is not present.
-  [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
-      assertWithMatcher:grey_nil()];
-
-  [GetInteractionForPasswordDetailItem(PasswordDetailPassword())
-      assertWithMatcher:grey_layout(@[ Below() ], PasswordDetailUsername())];
-  [GetInteractionForPasswordDetailItem(PasswordDetailUsername())
-      assertWithMatcher:grey_layout(
-                            @[ Below() ],
-                            [self matcherForPasswordDetailCellWithWebsites:
-                                      @"https://example.com/"])];
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
-// Checks the order of the elements in the detail view layout for a
-// non-federated, non-blocked credential with notes feature disabled.
-- (void)testLayoutWithNotesDisabled {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(@"This test is obsolete with notes enabled.");
-  }
-
-  SaveExamplePasswordForm();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
-      assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      assertWithMatcher:grey_textFieldValue(@"concrete username")];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
-      assertWithMatcher:grey_textFieldValue(kMaskedPassword)];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
-      assertWithMatcher:grey_nil()];
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
-      assertWithMatcher:grey_nil()];
-  [GetInteractionForPasswordDetailItem(PasswordDetailUsername())
-      assertWithMatcher:grey_layout(
-                            @[ Below() ],
-                            [self matcherForPasswordDetailCellWithWebsites:
-                                      @"https://example.com/"])];
-  [GetInteractionForPasswordDetailItem(PasswordDetailPassword())
-      assertWithMatcher:grey_layout(@[ Below() ], PasswordDetailUsername())];
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
-// Checks the order of the elements in the detail view layout for a
-// non-federated, non-blocked credential with notes feature enabled.
-- (void)testLayoutWithNotesEnabled {
-  if (![self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolete with notes for passwords disabled.");
-  }
-
-  SaveExamplePasswordFormWithNote();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
-      assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      assertWithMatcher:grey_textFieldValue(@"concrete username")];
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      assertWithMatcher:grey_textFieldValue(kDefaultUsername)];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_textFieldValue(kMaskedPassword)];
   [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
@@ -1461,17 +1345,17 @@ id<GREYMatcher> EditDoneButton() {
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
       assertWithMatcher:grey_nil()];
-  [GetInteractionForPasswordDetailItem(PasswordDetailUsername())
-      assertWithMatcher:grey_layout(
-                            @[ Below() ],
-                            [self matcherForPasswordDetailCellWithWebsites:
-                                      @"https://example.com/"])];
+  [GetInteractionForPasswordDetailItem(CredentialDetailUsername())
+      assertWithMatcher:
+          grey_layout(
+              @[ Below() ],
+              [self matcherForPasswordDetailCellWithWebsites:kDefaultSite])];
   [GetInteractionForPasswordDetailItem(PasswordDetailPassword())
-      assertWithMatcher:grey_layout(@[ Below() ], PasswordDetailUsername())];
+      assertWithMatcher:grey_layout(@[ Below() ], CredentialDetailUsername())];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1480,20 +1364,14 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that entering too long note while editing a password blocks the save
 // button and displays a footer explanation.
 - (void)testLayoutWithLongNotes {
-  if (![self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolete with notes for passwords disabled.");
-  }
-
-  SaveExamplePasswordFormWithNote();
+  SaveExamplePasswordFormToProfileStoreWithNote();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  TapEdit();
+  TapNavigationBarEditButton();
   [[EarlGrey selectElementWithMatcher:TooLongNoteFooter()]
       assertWithMatcher:grey_nil()];
 
@@ -1507,7 +1385,7 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       assertWithMatcher:grey_not(grey_enabled())];
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kPasswordDetailsViewControllerId)]
+                                          kPasswordDetailsViewControllerID)]
       performAction:grey_scrollToContentEdge(kGREYContentEdgeBottom)];
   [[EarlGrey selectElementWithMatcher:TooLongNoteFooter()]
       assertWithMatcher:grey_sufficientlyVisible()];
@@ -1532,31 +1410,84 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_nil()];
 }
 
-// Checks the order of the elements in the detail view layout for a blocked
-// credential.
-- (void)testLayoutForBlockedCredential {
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExampleBlockedOrigin:@"https://example.com"],
-             @"Stored form was not found in the PasswordStore results.");
+// Check that tapping on empty note in password details switches to editing when
+// the view is not in editing mode.
+- (void)testTappingEmptyNoteInPasswordDetailsWhenNotEditing {
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
   [GetInteractionForPasswordEntry(@"example.com") performAction:grey_tap()];
 
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
+  // Check that view switches to editing on empty note tap.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
+      assertWithMatcher:grey_notVisible()];
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      performAction:grey_replaceText(@"note")];
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  // Check that view remains in non-editing state on non-empty note tap.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Check that after deleting a note tapping on its field in non-editing mode
+// switches to editing mode.
+- (void)testTappingEmptyNoteAfterDeleting {
+  SaveExamplePasswordFormToProfileStoreWithNote();
+
+  OpenPasswordManager();
+
+  [GetInteractionForPasswordEntry(@"example.com") performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
+
+  // Delete the note.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      performAction:grey_replaceText(@"")];
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  // Check that the view is in non-editing state.
+  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Check that it switches to editing on empty note tap.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
+      assertWithMatcher:grey_notVisible()];
+}
+
+// Checks the order of the elements in the detail view layout for a blocked
+// credential.
+- (void)testLayoutForBlockedCredential {
+  GREYAssert([PasswordSettingsAppInterface
+                 saveExampleBlockedOriginToProfileStore:@"https://example.com"],
+             kPasswordStoreErrorMessage);
+
+  OpenPasswordManager();
+
+  [GetInteractionForPasswordEntry(@"example.com") performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:
+                 [self matcherForPasswordDetailCellWithWebsites:kDefaultSite]]
       assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_nil()];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_nil()];
   [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
       assertWithMatcher:grey_nil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1565,40 +1496,40 @@ id<GREYMatcher> EditDoneButton() {
 // Checks the order of the elements in the detail view layout for a federated
 // credential.
 - (void)testLayoutFederated {
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExampleFederatedOrigin:@"https://famous.provider.net"
-                                   userName:@"federated username"
-                                     origin:@"https://example.com"],
-             @"Stored form was not found in the PasswordStore results.");
+  GREYAssert(
+      [PasswordSettingsAppInterface
+          saveExampleFederatedOriginToProfileStore:
+              @"https://famous.provider.net"
+                                          username:@"federated username"
+                                            origin:@"https://example.com"],
+      kPasswordStoreErrorMessage);
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"federated username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  [[EarlGrey
-      selectElementWithMatcher:[self matcherForPasswordDetailCellWithWebsites:
-                                         @"https://example.com/"]]
+  [[EarlGrey selectElementWithMatcher:
+                 [self matcherForPasswordDetailCellWithWebsites:kDefaultSite]]
       assertWithMatcher:grey_notNil()];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_textFieldValue(@"federated username")];
   [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
       assertWithMatcher:grey_textFieldValue(@"famous.provider.net")];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_nil()];
 
-  [GetInteractionForPasswordDetailItem(PasswordDetailUsername())
-      assertWithMatcher:grey_layout(
-                            @[ Below() ],
-                            [self matcherForPasswordDetailCellWithWebsites:
-                                      @"https://example.com/"])];
+  [GetInteractionForPasswordDetailItem(CredentialDetailUsername())
+      assertWithMatcher:
+          grey_layout(
+              @[ Below() ],
+              [self matcherForPasswordDetailCellWithWebsites:kDefaultSite])];
   [[EarlGrey selectElementWithMatcher:PasswordDetailFederation()]
-      assertWithMatcher:grey_layout(@[ Below() ], PasswordDetailUsername())];
+      assertWithMatcher:grey_layout(@[ Below() ], CredentialDetailUsername())];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1607,7 +1538,7 @@ id<GREYMatcher> EditDoneButton() {
 // Check that stored entries are shown no matter what the preference for saving
 // passwords is.
 - (void)testStoredEntriesAlwaysShown {
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
@@ -1630,11 +1561,11 @@ id<GREYMatcher> EditDoneButton() {
         performAction:TurnTableViewSwitchOn(!expected_state)];
 
     // Check that the switch has been modified.
-    [EarlGrey selectElementWithMatcher:
-                  grey_allOf(chrome_test_util::TableViewSwitchCell(
-                                 kPasswordSettingsSavePasswordSwitchTableViewId,
-                                 !expected_state),
-                             grey_sufficientlyVisible(), nil)];
+    [[EarlGrey selectElementWithMatcher:
+                   chrome_test_util::TableViewSwitchCell(
+                       kPasswordSettingsSavePasswordSwitchTableViewId,
+                       !expected_state)]
+        assertWithMatcher:grey_sufficientlyVisible()];
 
     // Close settings submenu.
     [[EarlGrey
@@ -1643,12 +1574,11 @@ id<GREYMatcher> EditDoneButton() {
         performAction:grey_tap()];
 
     // Check the stored items. Scroll down if needed.
-    [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                              username:@"concrete username"]
+    [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
         assertWithMatcher:grey_notNil()];
   }
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1662,6 +1592,7 @@ id<GREYMatcher> EditDoneButton() {
   // Toggle the "Save Passwords" control off and back on and check the
   // preferences.
   constexpr BOOL kExpectedState[] = {YES, NO};
+  int count = 0;
   for (BOOL expected_initial_state : kExpectedState) {
     [[EarlGrey selectElementWithMatcher:
                    chrome_test_util::TableViewSwitchCell(
@@ -1672,6 +1603,25 @@ id<GREYMatcher> EditDoneButton() {
     GREYAssertEqual(expected_final_state,
                     [PasswordSettingsAppInterface isCredentialsServiceEnabled],
                     @"State of the UI toggle differs from real preferences.");
+    count++;
+    // Verify histogram total count.
+    GREYAssertNil(
+        [MetricsAppInterface
+            expectTotalCount:count
+                forHistogram:
+                    @"PasswordManager.Settings.ToggleOfferToSavePasswords"],
+        @"Unexpected password settings toggle offer to save passwords switch "
+        @"histogram count");
+
+    // Verify histogram value and specific bucket count.
+    GREYAssertNil(
+        [MetricsAppInterface
+             expectCount:1
+               forBucket:expected_final_state
+            forHistogram:
+                @"PasswordManager.Settings.ToggleOfferToSavePasswords"],
+        @"Unexpected histogram error for password settings toggle offer to "
+        @"save passwords switch");
   }
 
   // "Done" to close settings submenu.
@@ -1680,7 +1630,7 @@ id<GREYMatcher> EditDoneButton() {
                                           grey_sufficientlyVisible(), nil)]
       performAction:grey_tap()];
   // "Back" to go to root settings menu.
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   // "Done" to close out.
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
@@ -1690,120 +1640,35 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that deleting a password from the list view works.
 - (void)testDeletionInListView {
   // Save a password to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Select password entry to be removed.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:DeleteButtonAtBottom()]
       performAction:grey_tap()];
 
-  if ([self groupingEnabled]) {
     // Tap on the Delete button of the alert dialog.
-    [[EarlGrey
-        selectElementWithMatcher:BatchDeleteConfirmationButtonForGrouping()]
-        performAction:grey_tap()];
-  }
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+      performAction:grey_tap()];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+  // Verify that the deletion was propagated to the ProfilePasswordStore.
+  GREYAssertEqual(
+      0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Stored password was not removed from ProfilePasswordStore.");
   // Verify that the removed password is no longer in the list.
   [GetInteractionForPasswordEntry(@"example.com, concrete username")
       assertWithMatcher:grey_not(grey_sufficientlyVisible())];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
-}
-
-// Checks that an attempt to copy a password provides appropriate feedback when
-// reauthentication cannot be attempted.
-- (void)testCopyPasswordToastNoReauth {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is not needed with notes for passwords enabled.");
-  }
-
-  // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleCanAttempt:NO];
-
-  CopyPasswordDetailWithID(IDS_IOS_SHOW_PASSWORD_VIEW_PASSWORD);
-
-  NSString* title =
-      l10n_util::GetNSString(IDS_IOS_SETTINGS_SET_UP_SCREENLOCK_TITLE);
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(title)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-  [[EarlGrey selectElementWithMatcher:chrome_test_util::OKButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
-// Checks that an attempt to view a password provides appropriate feedback when
-// reauthentication cannot be attempted.
-- (void)testShowPasswordToastNoReauth {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is not needed with notes for passwords enabled.");
-  }
-
-  // Saving a form is needed for using the "password details" view.
-  SaveExamplePasswordForm();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleCanAttempt:NO];
-  [GetInteractionForPasswordDetailItem(ShowPasswordButton())
-      performAction:grey_tap()];
-
-  NSString* title =
-      l10n_util::GetNSString(IDS_IOS_SETTINGS_SET_UP_SCREENLOCK_TITLE);
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(title)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-  NSString* learnHow =
-      l10n_util::GetNSString(IDS_IOS_SETTINGS_SET_UP_SCREENLOCK_LEARN_HOW);
-  [[EarlGrey
-      selectElementWithMatcher:chrome_test_util::ButtonWithAccessibilityLabel(
-                                   learnHow)] performAction:grey_tap()];
-  // Check the sub menu is closed due to the help article.
-  NSError* error = nil;
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      assertWithMatcher:grey_notNil()
-                  error:&error];
-  GREYAssertTrue(error, @"The settings back button is still displayed");
-
-  // Check the settings page is closed.
-  error = nil;
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      assertWithMatcher:grey_notNil()
-                  error:&error];
-  GREYAssertTrue(error, @"The settings page is still displayed");
 }
 
 // Test that even with many passwords the settings are still usable. In
@@ -1816,32 +1681,31 @@ id<GREYMatcher> EditDoneButton() {
 // storing just about enough passwords to ensure filling more than one page on
 // any device. To limit the effect of (2), custom large scrolling steps are
 // added to the usual scrolling actions.
-- (void)testManyPasswords {
+// TODO(crbug.com/40910877): This test is flaky.
+- (void)FLAKY_testManyPasswords {
   if ([ChromeEarlGrey isIPadIdiom]) {
-    // TODO(crbug.com/906551): Enable the test on iPad once the bug is fixed.
+    // TODO(crbug.com/40602996): Enable the test on iPad once the bug is fixed.
     EARL_GREY_TEST_DISABLED(@"Disabled for iPad.");
   }
 
   // Enough just to ensure filling more than one page on all devices.
   constexpr int kPasswordsCount = 15;
 
-  // Send the passwords to the queue to be added to the PasswordStore.
-  [PasswordSettingsAppInterface saveExamplePasswordWithCount:kPasswordsCount];
+  // Send the passwords to the queue to be added to the ProfilePasswordStore.
+  [PasswordSettingsAppInterface
+      saveExamplePasswordToProfileWithCount:kPasswordsCount];
 
   // Use TestStoreConsumer::GetStoreResults to wait for the background storing
   // task to complete and to verify that the passwords have been stored.
-  GREYAssertEqual(kPasswordsCount,
-                  [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Unexpected PasswordStore results.");
+  GREYAssertEqual(
+      kPasswordsCount,
+      [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+      @"Unexpected ProfilePasswordStore results.");
 
   OpenPasswordManager();
 
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 
   // Wait for the loading indicator to disappear, and the sections to be on
   // screen, before scrolling.
@@ -1851,28 +1715,9 @@ id<GREYMatcher> EditDoneButton() {
   // Aim at an entry almost at the end of the list.
   constexpr int kRemoteIndex = kPasswordsCount - 4;
 
-  if ([self groupingEnabled]) {
-    [GetInteractionForPasswordEntry([NSString
-        stringWithFormat:@"example.com, %d accounts", kPasswordsCount])
-        performAction:grey_tap()];
-  } else {
-    // The scrolling in GetInteractionForPasswordEntry has too fine steps to
-    // reach the desired part of the list quickly. The following gives it a head
-    // start of the desired position, counting 30 points per entry and
-    // aiming at `kRemoteIndex`.
-    constexpr int kJump = kRemoteIndex * 30 + 150;
-    [[EarlGrey
-        selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
-        performAction:grey_scrollInDirection(kGREYDirectionDown, kJump)];
-    [[self interactionForSinglePasswordEntryWithDomain:
-               [NSString stringWithFormat:@"www%02d.example.com", kRemoteIndex]
-                                              username:[NSString
-                                                           stringWithFormat:
-                                                               @"concrete "
-                                                               @"username %02d",
-                                                               kRemoteIndex]]
-        performAction:grey_tap()];
-  }
+  [GetInteractionForPasswordEntry(
+      [NSString stringWithFormat:@"example.com, %d accounts", kPasswordsCount])
+      performAction:grey_tap()];
 
   // Check that the detail view loaded correctly by verifying the site content.
   [[[EarlGrey
@@ -1882,12 +1727,12 @@ id<GREYMatcher> EditDoneButton() {
                                                kRemoteIndex]]]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
                                                   kScrollAmount)
-      onElementWithMatcher:grey_accessibilityID(kPasswordDetailsTableViewId)]
+      onElementWithMatcher:PasswordDetailsTableViewMatcher()]
       assertWithMatcher:grey_notNil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -1897,47 +1742,81 @@ id<GREYMatcher> EditDoneButton() {
 // button replaces the Done button.
 - (void)testEditButtonUpdateOnDeletion {
   // Save a password to be deleted later.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Select password entry to be removed.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:DeleteButtonAtBottom()]
       performAction:grey_tap()];
 
-  if ([self groupingEnabled]) {
     // Tap on the Delete button of the alert dialog.
-    [[EarlGrey
-        selectElementWithMatcher:BatchDeleteConfirmationButtonForGrouping()]
-        performAction:grey_tap()];
-  }
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+      performAction:grey_tap()];
 
   // Verify that the Add button is visible and enabled.
   [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
       assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
                                    nil)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
+// Tests that an alert is displayed when update GPM PIN flow returns an error.
+// For now, fake trusted vault backend returns the error unconditionally.
+- (void)testUpdateGPMPinErrorAlert {
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  CheckChangePinVisibleInSettings();
+
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
+                                          kPasswordSettingsChangePinButtonId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  id<GREYMatcher> pinErrorTitleMatcher = grey_accessibilityLabel(
+      l10n_util::GetNSString(IDS_IOS_PASSWORD_SETTINGS_UPDATE_PIN_ERROR_TITLE));
+  CheckVisibilityOfElement(pinErrorTitleMatcher, /*is_visible=*/true);
+
+  [[EarlGrey selectElementWithMatcher:
+                 chrome_test_util::ButtonWithAccessibilityLabelId(
+                     IDS_IOS_PASSWORD_SETTINGS_UPDATE_PIN_ERROR_BUTTON)]
+      performAction:grey_tap()];
+  CheckVisibilityOfElement(pinErrorTitleMatcher, /*is_visible=*/false);
+}
+
+// Tests that attempting to change GPM PIN with no passcode does not show the
+// dialog and displays an alert prompting the user to set a passcode.
+- (void)testUpdateGPMPinWithoutPasscodeSet {
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  CheckChangePinVisibleInSettings();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleCanAttempt:NO];
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
+                                          kPasswordSettingsChangePinButtonId)]
+      performAction:grey_tap()];
+  CheckVisibilityOfElement(
+      grey_accessibilityLabel(l10n_util::GetNSString(
+          IDS_IOS_PASSWORD_SETTINGS_CHANGE_PIN_SET_UP_PASSCODE_CONTENT)),
+      /*is_visible=*/true);
+}
+
 // Test export flow
 - (void)testExportFlow {
   // Saving a form is needed for exporting passwords.
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [PasswordSettingsAppInterface
-      setUpMockReauthenticationModuleForExportFromSettings];
   [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
                                     ReauthenticationResult::kSuccess];
 
@@ -1950,7 +1829,7 @@ id<GREYMatcher> EditDoneButton() {
                              grey_sufficientlyVisible(), nil)]
          usingSearchAction:grey_scrollInDirection(kGREYDirectionDown,
                                                   kScrollAmount)
-      onElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      onElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       performAction:grey_tap()];
 
   [GetInteractionForPasswordsExportConfirmAlert(
@@ -1968,24 +1847,8 @@ id<GREYMatcher> EditDoneButton() {
                                    IDS_IOS_EXPORT_PASSWORDS)]
       assertWithMatcher:exportButtonStatusMatcher];
 
-  if ([ChromeEarlGrey isIPadIdiom]) {
-    // Tap outside the activity view to dismiss it, because it is not
-    // accompanied by a "Cancel" button on iPad.
-    [[EarlGrey selectElementWithMatcher:
-                   chrome_test_util::ButtonWithAccessibilityLabelId(
-                       IDS_IOS_EXPORT_PASSWORDS)] performAction:grey_tap()];
-  } else {
-    // Tap on the "Cancel" or "X" button accompanying the activity view to
-    // dismiss it.
-    NSString* dismissLabel = @"Close";
-    [[EarlGrey
-        selectElementWithMatcher:grey_allOf(
-                                     ButtonWithAccessibilityLabel(dismissLabel),
-                                     grey_not(grey_accessibilityTrait(
-                                         UIAccessibilityTraitNotEnabled)),
-                                     grey_interactable(), nullptr)]
-        performAction:grey_tap()];
-  }
+  [ChromeEarlGrey verifyActivitySheetVisible];
+  [ChromeEarlGrey closeActivitySheet];
 
   // Wait until the activity view is dismissed.
   [ChromeEarlGreyUI waitForAppToIdle];
@@ -2007,23 +1870,21 @@ id<GREYMatcher> EditDoneButton() {
 // Test that when user types text in search field, passwords and blocked
 // items are filtered out and "save passwords" switch is removed.
 - (void)testSearchPasswords {
-  // TODO(crbug.com/1067818): Test doesn't pass on iPad device or simulator.
+  // TODO(crbug.com/40683159): Test doesn't pass on iPad device or simulator.
   if ([ChromeEarlGrey isIPadIdiom]) {
     EARL_GREY_TEST_SKIPPED(
         @"This test doesn't pass on iPad device or simulator.");
   }
 
   SaveExamplePasswordForms();
-  SaveExampleBlockedForms();
+  SaveExampleBlockedFormsToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"
-                                            username:@"user1"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"]
       assertWithMatcher:grey_notNil()];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                            username:@"user2"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
       assertWithMatcher:grey_notNil()];
   [GetInteractionForPasswordEntry(@"exclude1.com")
       assertWithMatcher:grey_notNil()];
@@ -2031,13 +1892,13 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_notNil()];
 
   [[EarlGrey selectElementWithMatcher:SearchTextField()]
-      performAction:grey_typeText(@"2")];
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:SearchTextField()]
+      performAction:grey_replaceText(@"2")];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"
-                                            username:@"user1"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"]
       assertWithMatcher:grey_nil()];
-  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                            username:@"user2"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
       assertWithMatcher:grey_notNil()];
   [GetInteractionForPasswordEntry(@"exclude1.com")
       assertWithMatcher:grey_nil()];
@@ -2046,37 +1907,38 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey
       selectElementWithMatcher:ButtonWithAccessibilityLabelId(IDS_CANCEL)]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
 // Test search and delete all passwords and blocked items.
-- (void)testSearchAndDeleteAllPasswords {
+// TODO(crbug.com/40910165): Flaky.
+- (void)DISABLED_testSearchAndDeleteAllPasswords {
   SaveExamplePasswordForms();
-  SaveExampleBlockedForms();
+  SaveExampleBlockedFormsToProfileStore();
 
   OpenPasswordManager();
 
-  // TODO(crbug.com/922511): Comment out because currently activating the search
-  // bar will hide the "Edit" button in the top toolbar. Recover this when the
-  // "Edit" button is moved to the bottom toolbar in the new Settings UI.
+  // TODO(crbug.com/40609735): Comment out because currently activating the
+  // search bar will hide the "Edit" button in the top toolbar. Recover this
+  // when the "Edit" button is moved to the bottom toolbar in the new Settings
+  // UI.
   //  [[EarlGrey selectElementWithMatcher:SearchTextField()]
-  //      performAction:grey_typeText(@"u\n")];
+  //      performAction:grey_replaceText(@"u")];
+  //  [ChromeEarlGrey simulatePhysicalKeyboardEvent:@"\n" flags:0];
 
   [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
       performAction:grey_scrollToContentEdge(kGREYContentEdgeBottom)];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Select all.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"
-                                            username:@"user1"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"]
       performAction:grey_tap()];
-  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                            username:@"user2"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
       performAction:grey_tap()];
 
   [GetInteractionForPasswordEntry(@"exclude1.com") performAction:grey_tap()];
@@ -2086,20 +1948,15 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:DeleteButtonAtBottom()]
       performAction:grey_tap()];
 
-  if ([self groupingEnabled]) {
-    [[EarlGrey
-        selectElementWithMatcher:BatchDeleteConfirmationButtonForGrouping()]
-        performAction:grey_tap()];
-  }
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+      performAction:grey_tap()];
 
   [ChromeEarlGreyUI waitForAppToIdle];
 
   // All should be gone.
-  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"
-                                            username:@"user1"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example11.com"]
       assertWithMatcher:grey_nil()];
-  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                            username:@"user2"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
       assertWithMatcher:grey_nil()];
   [GetInteractionForPasswordEntry(@"exclude1.com")
       assertWithMatcher:grey_nil()];
@@ -2114,7 +1971,7 @@ id<GREYMatcher> EditDoneButton() {
   SaveExamplePasswordForms();
 
   OpenPasswordManager();
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Verify search bar is disabled.
   [[EarlGrey selectElementWithMatcher:SearchTextField()]
@@ -2127,34 +1984,32 @@ id<GREYMatcher> EditDoneButton() {
 
 // Test that the user can edit a password that is part of search results.
 - (void)testCanEditPasswordsFromASearch {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
-
   SaveExamplePasswordForms();
   OpenPasswordManager();
 
-  // TODO(crbug.com/922511): Comment out because currently activating the search
-  // bar will hide the "Edit" button in the top toolbar. Recover this when the
-  // "Edit" button is moved to the bottom toolbar in the new Settings UI.
+  // TODO(crbug.com/40609735): Comment out because currently activating the
+  // search bar will hide the "Edit" button in the top toolbar. Recover this
+  // when the "Edit" button is moved to the bottom toolbar in the new Settings
+  // UI.
   //  [[EarlGrey selectElementWithMatcher:SearchTextField()]
-  //      performAction:grey_typeText(@"2")];
+  //      performAction:grey_replaceText(@"2")];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   // Select password entry to be edited.
-  [GetInteractionForPasswordEntry(@"example12.com, user2")
-      performAction:grey_tap()];
+  [GetInteractionForPasswordEntry(@"example12.com") performAction:grey_tap()];
 
   // Delete it
   [[EarlGrey selectElementWithMatcher:DeleteButtonAtBottom()]
       performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+      performAction:grey_tap()];
 
   // Filter results in nothing.
-  // TODO(crbug.com/922511): Comment out because currently activating the search
-  // bar will hide the "Edit" button in the top toolbar. Recover this when the
-  // "Edit" button is moved to the bottom toolbar in the new Settings UI.
+  // TODO(crbug.com/40609735): Comment out because currently activating the
+  // search bar will hide the "Edit" button in the top toolbar. Recover this
+  // when the "Edit" button is moved to the bottom toolbar in the new Settings
+  // UI.
   //  [GetInteractionForPasswordEntry(@"example11.com, user1")
   //      assertWithMatcher:grey_nil()];
   //  [GetInteractionForPasswordEntry(@"example12.com, user2")
@@ -2165,39 +2020,73 @@ id<GREYMatcher> EditDoneButton() {
       performAction:grey_tap()];
 
   // Remove filter search term.
+  // TODO(crbug.com/40916973): Revert to grey_clearText when fixed in EG.
   [[EarlGrey selectElementWithMatcher:SearchTextField()]
-      performAction:grey_clearText()];
+      performAction:grey_replaceText(@"")];
 
   // Only password 1 should show.
-  [GetInteractionForPasswordEntry(@"example11.com, user1")
+  [GetInteractionForPasswordEntry(@"example11.com")
       assertWithMatcher:grey_notNil()];
-  [GetInteractionForPasswordEntry(@"example12.com, user2")
+  [GetInteractionForPasswordEntry(@"example12.com")
       assertWithMatcher:grey_nil()];
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+      performAction:grey_tap()];
+}
+
+// Edit a password with only incognito tab opened should work.
+- (void)testEditPasswordWithOnlyIncognitoTabOpen {
+  SavePasswordFormToProfileStore();
+
+  [ChromeEarlGrey openNewIncognitoTab];
+  [ChromeEarlGrey closeAllNormalTabs];
+
+  OpenPasswordManager();
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
+
+  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
+      assertWithMatcher:grey_textFieldValue(kDefaultPassword)];
+
+  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
+      performAction:grey_replaceText(@"new password")];
+
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:EditPasswordConfirmationButton()]
+      performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
+
+  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
+      assertWithMatcher:grey_textFieldValue(@"new password")];
+
+  [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
 // Checks that attempts to edit a password provide appropriate feedback.
 - (void)testEditPassword {
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  // Check the snackbar in case of successful reauthentication.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
-  TapEdit();
+  TapNavigationBarEditButton();
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
-      assertWithMatcher:grey_textFieldValue(@"concrete password")];
+      assertWithMatcher:grey_textFieldValue(kDefaultPassword)];
 
   // Check that empty password is not allowed, and done button is disabled.
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
@@ -2213,19 +2102,19 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:EditConfirmationButton()]
+  [[EarlGrey selectElementWithMatcher:EditPasswordConfirmationButton()]
       performAction:grey_tap()];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_textFieldValue(@"new password")];
 
   [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -2233,61 +2122,46 @@ id<GREYMatcher> EditDoneButton() {
 
 // Checks that attempts to edit a username provide appropriate feedback.
 - (void)testEditUsername {
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  // Check the snackbar in case of successful reauthentication.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  TapNavigationBarEditButton();
 
-  TapEdit();
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      assertWithMatcher:grey_textFieldValue(@"concrete username")];
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      assertWithMatcher:grey_textFieldValue(kDefaultUsername)];
 
   // Empty username should work as well.
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"")];
 
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:EditConfirmationButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_textFieldValue(@"")];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"new username")];
 
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:EditConfirmationButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_textFieldValue(@"new username")];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"new username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_notNil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -2296,44 +2170,30 @@ id<GREYMatcher> EditDoneButton() {
 // Checks that attempts to edit a username to a value which is already used for
 // the same domain fails.
 - (void)testEditUsernameFails {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExamplePassword:@"concrete password"
-                                               userName:@"concrete username1"
-                                                 origin:@"https://example.com"],
-      @"Stored form was not found in the PasswordStore results.");
+  SavePasswordFormToProfileStore(/*password=*/kDefaultPassword,
+                                 /*username=*/@"concrete username1");
 
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExamplePassword:@"concrete password"
-                                               userName:@"concrete username2"
-                                                 origin:@"https://example.com"],
-      @"Stored form was not found in the PasswordStore results.");
+  SavePasswordFormToProfileStore(/*password=*/kDefaultPassword,
+                                 /*username=*/@"concrete username2");
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username1"]
+  [GetInteractionForPasswordEntry(@"example.com, 2 accounts")
       performAction:grey_tap()];
 
-  // Check the snackbar in case of successful reauthentication.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  TapNavigationBarEditButton();
 
-  TapEdit();
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:UsernameTextfieldForUsernameAndSites(
+                                          @"concrete username1", kDefaultSite)]
       assertWithMatcher:grey_textFieldValue(@"concrete username1")];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      performAction:grey_clearText()];
+  // TODO(crbug.com/40916973): Revert to grey_clearText when fixed in EG.
+  [[EarlGrey selectElementWithMatcher:UsernameTextfieldForUsernameAndSites(
+                                          @"concrete username1", kDefaultSite)]
+      performAction:grey_replaceText(@"")];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:UsernameTextfieldForUsernameAndSites(
+                                          @"concrete username1", kDefaultSite)]
       performAction:grey_replaceText(@"concrete username2")];
 
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
@@ -2343,33 +2203,149 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:NavigationBarCancelButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-// Checks that attempts to edit a username provide appropriate feedback.
-- (void)testCancelDuringEditing {
-  SaveExamplePasswordForm();
+- (void)testEditPasskeyUsername {
+  REQUIRE_PASSKEYS
+  SaveExamplePasskeyToStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  // Check the snackbar in case of successful reauthentication.
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  TapNavigationBarEditButton();
 
-  TapEdit();
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      assertWithMatcher:grey_textFieldValue(kDefaultUsername)];
+
+  // Empty username should work as well.
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      performAction:grey_replaceText(@"")];
+
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      assertWithMatcher:grey_textFieldValue(@"")];
+
+  TapNavigationBarEditButton();
+
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      performAction:grey_replaceText(@"new username")];
+
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      assertWithMatcher:grey_textFieldValue(@"new username")];
+
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      assertWithMatcher:grey_notNil()];
+
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+      performAction:grey_tap()];
+}
+
+- (void)testEditPasskeyUserDisplayName {
+  REQUIRE_PASSKEYS
+  SaveExamplePasskeyToStore();
+
+  OpenPasswordManager();
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
+
+  [[EarlGrey selectElementWithMatcher:PasskeyDetailUserDisplayName()]
+      assertWithMatcher:grey_textFieldValue(kDefaultUserDisplayName)];
+
+  // Empty username should work as well.
+  [[EarlGrey selectElementWithMatcher:PasskeyDetailUserDisplayName()]
+      performAction:grey_replaceText(@"")];
+
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:PasskeyDetailUserDisplayName()]
+      assertWithMatcher:grey_textFieldValue(@"")];
+
+  TapNavigationBarEditButton();
+
+  [[EarlGrey selectElementWithMatcher:PasskeyDetailUserDisplayName()]
+      performAction:grey_replaceText(@"new user display name")];
+
+  [[EarlGrey selectElementWithMatcher:EditDoneButton()]
+      performAction:grey_tap()];
+
+  [[EarlGrey selectElementWithMatcher:PasskeyDetailUserDisplayName()]
+      assertWithMatcher:grey_textFieldValue(@"new user display name")];
+
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      assertWithMatcher:grey_notNil()];
+
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+      performAction:grey_tap()];
+}
+
+- (void)testDeletePasskey {
+  REQUIRE_PASSKEYS
+  SaveExamplePasskeyToStore();
+
+  OpenPasswordManager();
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
+
+  id<GREYMatcher> userDisplayName = PasskeyDetailUserDisplayName();
+
+  // Verify that the passkey exists.
+  [[EarlGrey selectElementWithMatcher:userDisplayName]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Tap the delete button of the credential.
+  [[EarlGrey selectElementWithMatcher:DeletePasskeyButton()]
+      performAction:grey_tap()];
+
+  // Tap on the Delete confirmation button of the alert dialog.
+  [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+      performAction:grey_tap()];
+
+  // Verify that the passkey no longer exists.
+  [[EarlGrey selectElementWithMatcher:userDisplayName]
+      assertWithMatcher:grey_not(grey_sufficientlyVisible())];
+}
+
+// Checks that attempts to edit a username provide appropriate feedback.
+- (void)testCancelDuringEditing {
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManager();
+
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  TapNavigationBarEditButton();
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"new password")];
@@ -2382,11 +2358,11 @@ id<GREYMatcher> EditDoneButton() {
       performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
-      assertWithMatcher:grey_textFieldValue(@"concrete password")];
+      assertWithMatcher:grey_textFieldValue(kDefaultPassword)];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -2396,78 +2372,62 @@ id<GREYMatcher> EditDoneButton() {
 - (void)testRemovingMultiplePasswords {
   constexpr int kPasswordsCount = 4;
 
-  // Send the passwords to the queue to be added to the PasswordStore.
-  [PasswordSettingsAppInterface saveExamplePasswordWithCount:kPasswordsCount];
+  // Send the passwords to the queue to be added to the ProfilePasswordStore.
+  [PasswordSettingsAppInterface
+      saveExamplePasswordToProfileWithCount:kPasswordsCount];
 
-  if ([self groupingEnabled]) {
-    // Also save passwords for example11.com and example12.com, since the rest
-    // will be grouped together.
-    SaveExamplePasswordForms();
-  }
+  // Also save passwords for example11.com and example12.com, since the rest
+  // will be grouped together.
+  SaveExamplePasswordForms();
 
   OpenPasswordManager();
   [ChromeEarlGrey verifyAccessibilityForCurrentScreen];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
-  if ([self groupingEnabled]) {
     [[GetInteractionForPasswordEntry(@"example.com, 4 accounts")
         assertWithMatcher:grey_notNil()] performAction:grey_tap()];
     [[GetInteractionForPasswordEntry(@"example11.com")
         assertWithMatcher:grey_notNil()] performAction:grey_tap()];
     [[GetInteractionForPasswordEntry(@"example12.com")
         assertWithMatcher:grey_notNil()] performAction:grey_tap()];
-  } else {
-    for (int i = kPasswordsCount; i >= 1; i--) {
-      [[self
-          interactionForSinglePasswordEntryWithDomain:
-              [NSString stringWithFormat:@"www%02d.example.com", i]
-                                             username:[NSString
-                                                          stringWithFormat:
-                                                              @"concrete "
-                                                              @"username %02d",
-                                                              i]]
-          performAction:grey_tap()];
-    }
-  }
 
-  [[EarlGrey selectElementWithMatcher:DeleteButton()] performAction:grey_tap()];
-
-  if ([self groupingEnabled]) {
-    [[EarlGrey
-        selectElementWithMatcher:BatchDeleteConfirmationButtonForGrouping()]
+    [[EarlGrey selectElementWithMatcher:DeleteButton()]
         performAction:grey_tap()];
-  }
 
-  // Wait until animation is over.
-  [ChromeEarlGreyUI waitForAppToIdle];
+    [[EarlGrey selectElementWithMatcher:BatchDeleteConfirmationButton()]
+        performAction:grey_tap()];
 
-  // Check that saved forms header is removed.
-  [[EarlGrey selectElementWithMatcher:SavedPasswordsHeaderMatcher()]
-      assertWithMatcher:grey_nil()];
+    // Wait until animation is over.
+    [ChromeEarlGreyUI waitForAppToIdle];
 
-  // Verify that the deletion was propagated to the PasswordStore.
-  GREYAssertEqual(0, [PasswordSettingsAppInterface passwordStoreResultsCount],
-                  @"Stored password was not removed from PasswordStore.");
+    // Check that saved forms header is removed.
+    [[EarlGrey selectElementWithMatcher:SavedPasswordsHeaderMatcher()]
+        assertWithMatcher:grey_nil()];
 
-  // Finally, verify that the Add button is visible and enabled, because there
-  // are no other password entries left for deletion via the "Edit" mode.
-  [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
-      assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
-                                   nil)];
+    // Verify that the deletion was propagated to the ProfilePasswordStore.
+    GREYAssertEqual(
+        0, [PasswordSettingsAppInterface passwordProfileStoreResultsCount],
+        @"Stored password was not removed from ProfilePasswordStore.");
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
+    // Finally, verify that the Add button is visible and enabled, because there
+    // are no other password entries left for deletion via the "Edit" mode.
+    [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
+        assertWithMatcher:grey_allOf(grey_enabled(), grey_sufficientlyVisible(),
+                                     nil)];
+
+    [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+        performAction:grey_tap()];
+    [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+        performAction:grey_tap()];
 }
 
 // Checks that the "Add" button is not shown on Edit.
 - (void)testAddButtonDisabledInEditMode {
-  SaveExamplePasswordForm();
+  SavePasswordFormToProfileStore();
   OpenPasswordManager();
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   [[EarlGrey selectElementWithMatcher:AddPasswordButton()]
       performAction:grey_tap()];
@@ -2482,7 +2442,7 @@ id<GREYMatcher> EditDoneButton() {
 }
 
 // Tests the add password flow from the toolbar button.
-// TODO(crbug.com/1411944): Flaky, please re-enable once fixed.
+// TODO(crbug.com/40255054): Flaky, please re-enable once fixed.
 - (void)DISABLED_testAddNewPasswordCredential {
   OpenPasswordManager();
 
@@ -2495,9 +2455,9 @@ id<GREYMatcher> EditDoneButton() {
 
   // Fill form.
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
-      performAction:grey_replaceText(@"https://www.example.com")];
+      performAction:grey_replaceText(kDefaultSite)];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"new username")];
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
@@ -2513,28 +2473,57 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       performAction:grey_tap()];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"new username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
   [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
                                     ReauthenticationResult::kSuccess];
 
-  TapEdit();
+  TapNavigationBarEditButton();
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       assertWithMatcher:grey_textFieldValue(@"new password")];
 }
 
+// Validates that the Password Manager UI is dismissed if local authentication
+// fails while within the Add Password UI.
+- (void)testAddNewPasswordWithFailedAuth {
+  OpenPasswordManager();
+
+  // Press "Add".
+  [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
+      performAction:grey_tap()];
+
+  CheckVisibilityOfElement(/*matcher=*/AddPasswordSaveButton(),
+                           /*is_visible=*/true);
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kFailure];
+  [PasswordSettingsAppInterface mockReauthenticationModuleShouldSkipReAuth:NO];
+
+  [[AppLaunchManager sharedManager] backgroundAndForegroundApp];
+
+  // Verify that Add Password UI is covered by Reauthentication UI until local
+  // authentication is passed.
+  CheckVisibilityOfElement(/*matcher=*/AddPasswordSaveButton(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/ReauthenticationController(),
+                           /*is_visible=*/true);
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleReturnMockedResult];
+
+  // Password Manager should be dismissed leaving the Settings UI visible.
+  CheckVisibilityOfElement(/*matcher=*/AddPasswordSaveButton(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/ReauthenticationController(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/SettingsCollectionView(),
+                           /*is_visible=*/true);
+}
+
 // Checks that entering too long note while adding passwords blocks the save
 // button and displays a footer explanation.
 - (void)testAddPasswordLayoutWithLongNotes {
-  if (![self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolote with notes for passwords disabled.");
-  }
-
   OpenPasswordManager();
 
   [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
@@ -2542,8 +2531,8 @@ id<GREYMatcher> EditDoneButton() {
 
   // Fill form.
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
-      performAction:grey_replaceText(@"https://example.com/")];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+      performAction:grey_replaceText(kDefaultSite)];
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"new username")];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"new password")];
@@ -2558,7 +2547,7 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       assertWithMatcher:grey_not(grey_enabled())];
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kPasswordDetailsViewControllerId)]
+                                          kPasswordDetailsViewControllerID)]
       performAction:grey_scrollToContentEdge(kGREYContentEdgeBottom)];
   [[EarlGrey selectElementWithMatcher:TooLongNoteFooter()]
       assertWithMatcher:grey_sufficientlyVisible()];
@@ -2586,16 +2575,13 @@ id<GREYMatcher> EditDoneButton() {
 // Tests that when a new credential is saved or an existing one is updated via
 // the add credential flow, the VC auto scrolls to the newly created or the
 // updated entry.
-// TODO(crbug.com/1377079): Flaky, please re-enable once fixed.
-- (void)DISABLED_testAutoScroll {
+// TODO(crbug.com/40874087): Flaky, please re-enable once fixed.
+- (void)testAutoScroll {
   for (int i = 0; i < 20; i++) {
     NSString* username = [NSString stringWithFormat:@"username %d", i];
     NSString* password = [NSString stringWithFormat:@"password %d", i];
     NSString* site = [NSString stringWithFormat:@"https://example%d.com", i];
-    GREYAssert([PasswordSettingsAppInterface saveExamplePassword:password
-                                                        userName:username
-                                                          origin:site],
-               @"Stored form was not found in the PasswordStore results.");
+    SavePasswordFormToProfileStore(password, username, site);
   }
 
   OpenPasswordManager();
@@ -2604,11 +2590,14 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordButton()]
       performAction:grey_tap()];
 
+  NSString* const kAddedDomain = @"zexample.com";
+
   // Fill form.
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
-      performAction:grey_replaceText(@"https://zexample.com")];
+      performAction:grey_replaceText([NSString
+                        stringWithFormat:@"https://%@", kAddedDomain])];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"zconcrete username")];
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
@@ -2617,27 +2606,26 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       performAction:grey_tap()];
 
-  // The newly created credential exists.
-  [[self interactionForSinglePasswordEntryWithDomain:@"zexample.com"
-                                            username:@"zconcrete username"]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
+  // Verify that the added credential was automatically scrolled at and visible.
+  ConditionBlock condition = ^{
+    NSError* error = nil;
+    [[EarlGrey selectElementWithMatcher:ButtonWithAccessibilityID(kAddedDomain)]
+        assertWithMatcher:grey_sufficientlyVisible()
+                    error:&error];
+    return error == nil;
+  };
+  GREYAssert(
+      base::test::ios::WaitUntilConditionOrTimeout(base::Seconds(2), condition),
+      @"Didn't scroll to the added credential item");
 }
 
 // Tests that adding new password credential where the username and website
 // matches with an existing credential results in showing a section alert for
 // the existing credential.
-// TODO(crbug.com/1408773): Fix failure and re-enable.
-- (void)DISABLED_testAddNewDuplicatedPasswordCredential {
-  SaveExamplePasswordForm();
+- (void)testAddNewDuplicatedPasswordCredential {
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
-  [PasswordSettingsAppInterface
-      setUpMockReauthenticationModuleForPasswordManager];
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kSuccess];
 
   // Press "Add".
   [[EarlGrey selectElementWithMatcher:AddPasswordButton()]
@@ -2650,39 +2638,46 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"password")];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      performAction:grey_replaceText(@"concrete username")];
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      performAction:grey_replaceText(kDefaultUsername)];
 
-  [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
-      assertWithMatcher:grey_not(grey_enabled())];
+  // Verify Save Button is not enabled.
+  // The enabled state is set async after checking for credential duplication.
+  // Waiting until the button is not enabled.
+  ConditionBlock condition = ^{
+    NSError* error = nil;
+    [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
+        assertWithMatcher:grey_not(grey_enabled())
+                    error:&error];
+    return error == nil;
+  };
 
-  [PasswordSettingsAppInterface setUpMockReauthenticationModuleForAddPassword];
+  GREYAssert(base::test::ios::WaitUntilConditionOrTimeout(
+                 base::test::ios::kWaitForUIElementTimeout, condition),
+             @"Waiting Save Button to be disabled.");
+
   [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
                                     ReauthenticationResult::kSuccess];
 
   [[EarlGrey selectElementWithMatcher:DuplicateCredentialViewPasswordButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"new username")];
 
   [[EarlGrey selectElementWithMatcher:EditDoneButton()]
       performAction:grey_tap()];
 
-  [[EarlGrey selectElementWithMatcher:EditConfirmationButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       assertWithMatcher:grey_textFieldValue(@"new username")];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"new username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       assertWithMatcher:grey_notNil()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
@@ -2692,11 +2687,6 @@ id<GREYMatcher> EditDoneButton() {
 // from invalid to valid input in any of the fields (website, password, note),
 // when there are still other fields with invalid input.
 - (void)testAddPasswordSaveButtonStateOnFieldChanges {
-  if (![self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolete with notes for passwords disabled.");
-  }
-
   OpenPasswordManager();
   [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
       performAction:grey_tap()];
@@ -2704,7 +2694,7 @@ id<GREYMatcher> EditDoneButton() {
   NSString* long_note = [@"" stringByPaddingToLength:1001
                                           withString:@"a"
                                      startingAtIndex:0];
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"username")];
 
   // Make sure that switching from invalid to valid note doesn't enable the save
@@ -2725,7 +2715,7 @@ id<GREYMatcher> EditDoneButton() {
   // Make sure that switching from invalid to valid note doesn't enable the save
   // button when password is invalid.
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
-      performAction:grey_replaceText(@"https://example.com/")];
+      performAction:grey_replaceText(kDefaultSite)];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"")];
   [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
@@ -2748,7 +2738,7 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       assertWithMatcher:grey_not(grey_enabled())];
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
-      performAction:grey_replaceText(@"https://example.com/")];
+      performAction:grey_replaceText(kDefaultSite)];
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       assertWithMatcher:grey_not(grey_enabled())];
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
@@ -2760,11 +2750,15 @@ id<GREYMatcher> EditDoneButton() {
 // Tests that the duplicate credential section alert is shown when the user adds
 // a credential that has the same website as that of an existing credential
 // (does not contain username).
-- (void)testDuplicatedCredentialWithNoUsername {
-  if ([self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented with grouped passwords yet.");
-  }
+// TODO(crbug.com/40279461): Fix flaky test & re-enable.
+#if TARGET_OS_SIMULATOR
+#define MAYBE_testDuplicatedCredentialWithNoUsername \
+  DISABLED_testDuplicatedCredentialWithNoUsername
+#else
+#define MAYBE_testDuplicatedCredentialWithNoUsername \
+  testDuplicatedCredentialWithNoUsername
+#endif
+- (void)MAYBE_testDuplicatedCredentialWithNoUsername {
   OpenPasswordManager();
 
   [[EarlGrey selectElementWithMatcher:AddPasswordToolbarButton()]
@@ -2774,7 +2768,7 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordWebsite()]
       performAction:grey_replaceText(@"https://www.example.com")];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"")];
 
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
@@ -2794,8 +2788,11 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:DuplicateCredentialViewPasswordButton()]
       assertWithMatcher:grey_enabled()];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
       performAction:grey_replaceText(@"new username")];
+
+  // Wait until duplicated message disappearing animation is done.
+  [ChromeEarlGreyUI waitForAppToIdle];
 
   // Test that the section alert for duplicated credential is removed.
   [[EarlGrey selectElementWithMatcher:DuplicateCredentialViewPasswordButton()]
@@ -2807,19 +2804,16 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:AddPasswordSaveButton()]
       performAction:grey_tap()];
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"new username"]
+  [GetInteractionForPasswordEntry(@"example.com, 2 accounts")
+      assertWithMatcher:grey_notNil()];
+  [GetInteractionForPasswordEntry(@"example.com, 2 accounts")
       performAction:grey_tap()];
 
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  TapNavigationBarEditButton();
 
-  TapEdit();
-
-  [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
+  [[EarlGrey selectElementWithMatcher:PasswordTextfieldForUsernameAndSites(
+                                          @"new username",
+                                          @"https://www.example.com/")]
       assertWithMatcher:grey_textFieldValue(@"znew password")];
 }
 
@@ -2827,8 +2821,7 @@ id<GREYMatcher> EditDoneButton() {
 // when adding a new credential.
 - (void)testTLDMissingMessage {
   OpenPasswordManager();
-  [PasswordSettingsAppInterface
-      setUpMockReauthenticationModuleForPasswordManager];
+
   [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
                                     ReauthenticationResult::kSuccess];
 
@@ -2843,8 +2836,8 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:PasswordDetailPassword()]
       performAction:grey_replaceText(@"password")];
 
-  [[EarlGrey selectElementWithMatcher:PasswordDetailUsername()]
-      performAction:grey_replaceText(@"concrete username")];
+  [[EarlGrey selectElementWithMatcher:CredentialDetailUsername()]
+      performAction:grey_replaceText(kDefaultUsername)];
 
   [[EarlGrey selectElementWithMatcher:
                  grey_text(l10n_util::GetNSStringF(
@@ -2853,119 +2846,15 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_sufficientlyVisible()];
 }
 
-// Checks that deleting a compromised password from password issues goes back
-// to the list-of-issues which doesn't display that password anymore.
-- (void)testDeletePasswordIssue {
-  if ([self passwordCheckupEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test isn't implemented for Password Checkup yet.");
-  }
-
-  GREYAssert([PasswordSettingsAppInterface
-                 saveCompromisedPassword:@"concrete password"
-                                userName:@"concrete username"
-                                  origin:@"https://example.com"],
-             @"Stored form was not found in the PasswordStore results.");
-
-  OpenPasswordManager();
-
-  NSString* text = l10n_util::GetNSString(IDS_IOS_CHECK_PASSWORDS);
-  NSString* detailText =
-      base::SysUTF16ToNSString(l10n_util::GetPluralStringFUTF16(
-          IDS_IOS_CHECK_PASSWORDS_COMPROMISED_COUNT, 1));
-
-  [[EarlGrey selectElementWithMatcher:ButtonWithAccessibilityLabel([NSString
-                                          stringWithFormat:@"%@, %@", text,
-                                                           detailText])]
-      performAction:grey_tap()];
-
-  [GetInteractionForPasswordIssueEntry(@"example.com", @"concrete username")
-      performAction:grey_tap()];
-
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kSuccess];
-
-  [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:
-          [self
-              matcherForDeleteButtonInDetailsWithUsername:@"concrete username"
-                                                 password:@"concrete password"]]
-      performAction:grey_tap()];
-
-  [[EarlGrey
-      selectElementWithMatcher:[self groupingEnabled]
-                                   ? DeleteConfirmationButtonForGrouping()
-                                   : DeleteConfirmationButton()]
-      performAction:grey_tap()];
-
-  // Wait until the alert and the detail view are dismissed.
-  [ChromeEarlGreyUI waitForAppToIdle];
-
-  // Check that the current view is now the list view, by locating
-  // PasswordIssuesTableView.
-  [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityID(kPasswordIssuesTableViewId)]
-      assertWithMatcher:grey_notNil()];
-
-  [GetInteractionForPasswordIssueEntry(@"example.com", @"concrete username")
-      assertWithMatcher:grey_nil()];
-
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
-- (void)testShowHidePassword {
-  if ([self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolete with notes for passwords enabled.");
-  }
-
-  SaveExamplePasswordForm();
-
-  OpenPasswordManager();
-
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
-      performAction:grey_tap()];
-
-  // Check the snackbar in case of successful reauthentication.
-  [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                    ReauthenticationResult::kSuccess];
-
-  [GetInteractionForPasswordDetailItem(ShowPasswordButton())
-      assertWithMatcher:grey_sufficientlyVisible()];
-  [GetInteractionForPasswordDetailItem(ShowPasswordButton())
-      performAction:grey_tap()];
-  [GetInteractionForPasswordDetailItem(HidePasswordButton())
-      assertWithMatcher:grey_sufficientlyVisible()];
-  [GetInteractionForPasswordDetailItem(HidePasswordButton())
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
-      performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
-      performAction:grey_tap()];
-}
-
 // Tests that reauthentication is not required to show password when notes are
 // enabled since the reauthentication happens before navigating to the details
 // view in this scenario.
-- (void)testShowHidePasswordWithNotesEnabled {
-  if (![self notesEnabled]) {
-    EARL_GREY_TEST_SKIPPED(
-        @"This test is obsolete with notes for passwords disabled.");
-  }
-
-  SaveExamplePasswordForm();
+- (void)testShowHidePassword {
+  SavePasswordFormToProfileStore();
 
   OpenPasswordManager();
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"
-                                            username:@"concrete username"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
       performAction:grey_tap()];
 
   [GetInteractionForPasswordDetailItem(ShowPasswordButton())
@@ -2976,19 +2865,18 @@ id<GREYMatcher> EditDoneButton() {
       assertWithMatcher:grey_sufficientlyVisible()];
   [GetInteractionForPasswordDetailItem(HidePasswordButton())
       performAction:grey_tap()];
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-// Tests that the favicons for the password managers metrics are logged
-// properly when there are passwords with a favicon.
-// TODO(crbug.com/1348585): Fix to re-enable.
-- (void)testLogFaviconsForPasswordsMetrics {
+// Tests that the percentage of favicons for the password manager metric is
+// logged properly when there are passwords with a favicon.
+- (void)testLogFaviconsForPasswordsPercentageMetricWithPassword {
   // Sign-in and synced user.
   FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
   [ChromeEarlGrey waitForSyncEngineInitialized:YES
                                    syncTimeout:kSyncInitializedTimeout];
 
@@ -3000,8 +2888,7 @@ id<GREYMatcher> EditDoneButton() {
   // Make sure the cell is loaded properly before tapping on it.
   ConditionBlock condition = ^{
     NSError* error = nil;
-    [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                              username:@"user2"]
+    [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
         assertWithMatcher:grey_sufficientlyVisible()
                     error:&error];
     return error == nil;
@@ -3011,44 +2898,12 @@ id<GREYMatcher> EditDoneButton() {
                  base::test::ios::kWaitForUIElementTimeout, condition),
              @"Waiting for the cell to load");
 
-  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"
-                                            username:@"user2"]
+  [[self interactionForSinglePasswordEntryWithDomain:@"example12.com"]
       performAction:grey_tap()];
-
-  // Metric: Passwords in the password manager.
-  // Verify that histogram is called.
-  NSError* error = [MetricsAppInterface
-      expectTotalCount:1
-          forHistogram:@"IOS.PasswordManager.PasswordsWithFavicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-  // Verify the logged value of the histogram.
-  error = [MetricsAppInterface
-         expectSum:2
-      forHistogram:@"IOS.PasswordManager.PasswordsWithFavicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-
-  // Metric: Passwords with a favicon (image) in the password manager.
-  // Verify that histogram is called.
-  error = [MetricsAppInterface
-      expectTotalCount:1
-          forHistogram:@"IOS.PasswordManager.Favicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-  // Verify the logged value of the histogram.
-  error = [MetricsAppInterface expectSum:0
-                            forHistogram:@"IOS.PasswordManager.Favicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
 
   // Metric: Percentage of favicons with image.
   // Verify that histogram is called.
-  error = [MetricsAppInterface
+  NSError* error = [MetricsAppInterface
       expectTotalCount:1
           forHistogram:@"IOS.PasswordManager.Favicons.Percentage"];
   if (error) {
@@ -3061,48 +2916,23 @@ id<GREYMatcher> EditDoneButton() {
   if (error) {
     GREYFail([error description]);
   }
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-// Tests that the favicons for the password managers metrics are logged
-// properly when there are no password.
-- (void)testLogFaviconsForPasswordsMetricsNoPassword {
+// Tests that the percentage of favicons for the password manager metric is
+// logged properly when there are no password.
+- (void)testLogFaviconsForPasswordsPercentageMetricNoPassword {
   OpenPasswordManager();
 
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 
-  // Metric: Passwords in the password manager.
-  // Verify that histogram is called.
+  // Metric: Percentage of favicons with image.
+  // This histogram is not logged.
   NSError* error = [MetricsAppInterface
-      expectTotalCount:1
-          forHistogram:@"IOS.PasswordManager.PasswordsWithFavicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-  // Verify the logged value of the histogram.
-  error = [MetricsAppInterface
-         expectSum:0
-      forHistogram:@"IOS.PasswordManager.PasswordsWithFavicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-
-  // Metric: Percentage of favicons with image.
-  // This histogram is not logged.
-  error = [MetricsAppInterface
-      expectTotalCount:0
-          forHistogram:@"IOS.PasswordManager.Favicons.Count"];
-  if (error) {
-    GREYFail([error description]);
-  }
-
-  // Metric: Percentage of favicons with image.
-  // This histogram is not logged.
-  error = [MetricsAppInterface
       expectTotalCount:0
           forHistogram:@"IOS.PasswordManager.Favicons.Percentage"];
   if (error) {
@@ -3114,9 +2944,42 @@ id<GREYMatcher> EditDoneButton() {
   OpenPasswordManager();
   OpenSettingsSubmenu();
 
-  [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kPasswordsSettingsTableViewId)]
-      assertWithMatcher:grey_sufficientlyVisible()];
+  CheckVisibilityOfElement(/*matcher=*/PasswordSettingsTableView(),
+                           /*is_visible=*/true);
+}
+
+// Tests that the Password Manager UI is dismissed when local authentication
+// fails while within the Password Settings UI.
+- (void)testOpenPasswordSettingsSubmenuWithFailedAuth {
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+
+  CheckVisibilityOfElement(/*matcher=*/PasswordSettingsTableView(),
+                           /*is_visible=*/true);
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kFailure];
+  [PasswordSettingsAppInterface mockReauthenticationModuleShouldSkipReAuth:NO];
+
+  [[AppLaunchManager sharedManager] backgroundAndForegroundApp];
+
+  // Password Settings shouldn't be visible until successful authentication.
+  CheckVisibilityOfElement(/*matcher=*/PasswordSettingsTableView(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/ReauthenticationController(),
+                           /*is_visible=*/true);
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleReturnMockedResult];
+
+  // The Password Manager UI should be gone leaving the Settings UI visible.
+  CheckVisibilityOfElement(/*matcher=*/PasswordSettingsTableView(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/PasswordsTableViewMatcher(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/ReauthenticationController(),
+                           /*is_visible=*/false);
+  CheckVisibilityOfElement(/*matcher=*/SettingsCollectionView(),
+                           /*is_visible=*/true);
 }
 
 // Tests that the detail text in this row reflects the status of the system
@@ -3138,75 +3001,47 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:offMatcher] assertWithMatcher:grey_nil()];
 
   [PasswordsInOtherAppsAppInterface startFakeManagerWithAutoFillStatus:NO];
-  [[EarlGrey selectElementWithMatcher:offMatcher]
-      assertWithMatcher:grey_notNil()];
+  [ChromeEarlGrey waitForUIElementToAppearWithMatcher:offMatcher];
 
   [PasswordsInOtherAppsAppInterface setAutoFillStatus:YES];
-  [[EarlGrey selectElementWithMatcher:onMatcher]
-      assertWithMatcher:grey_notNil()];
+  [ChromeEarlGrey waitForUIElementToAppearWithMatcher:onMatcher];
 }
 
 // Tests that the detail view is dismissed when the last password is deleted,
 // but stays if there are still passwords on the page.
 - (void)testPasswordsDeletionNavigation {
-  if (![self groupingEnabled]) {
-    EARL_GREY_TEST_SKIPPED(@"This test is only for grouped passwords.");
-  }
-
   // Save forms with the same origin to be deleted later.
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"password1"
-                            userName:@"user1"
-                              origin:@"https://example1.com"],
-             @"Stored form was not found in the PasswordStore results.");
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"password2"
-                            userName:@"user2"
-                              origin:@"https://example1.com"],
-             @"Stored form was not found in the PasswordStore results.");
-  GREYAssert([PasswordSettingsAppInterface
-                 saveExamplePassword:@"password3"
-                            userName:@"user3"
-                              origin:@"https://example3.com"],
-             @"Stored form was not found in the PasswordStore results.");
+  SavePasswordFormToProfileStore(/*password=*/@"password1",
+                                 /*username=*/@"user1",
+                                 /*origin=*/@"https://example1.com");
+  SavePasswordFormToProfileStore(/*password=*/@"password2",
+                                 /*username=*/@"user2",
+                                 /*origin=*/@"https://example1.com");
+  SavePasswordFormToProfileStore(/*password=*/@"password3",
+                                 /*username=*/@"user3",
+                                 /*origin=*/@"https://example3.com");
 
   OpenPasswordManager();
 
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 
   [GetInteractionForPasswordEntry(@"example1.com, 2 accounts")
       assertWithMatcher:grey_notNil()];
   [GetInteractionForPasswordEntry(@"example1.com, 2 accounts")
       performAction:grey_tap()];
 
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
   [[EarlGrey selectElementWithMatcher:NavigationBarEditButton()]
       performAction:grey_tap()];
 
   // Delete first password.
-  [[EarlGrey selectElementWithMatcher:DeleteButtonForUsernameAndPassword(
-                                          @"user1", @"password1")]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:DeleteConfirmationButtonForGrouping()]
-      performAction:grey_tap()];
+  DeleteCredential(@"user1", @"https://example1.com/");
 
   // Check that the current view is still the password details since there is
   // still one more password left on the view.
   ConditionBlock condition = ^{
     NSError* error = nil;
-    [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                            kPasswordDetailsTableViewId)]
+    [[EarlGrey selectElementWithMatcher:PasswordDetailsTableViewMatcher()]
         assertWithMatcher:grey_notNil()
                     error:&error];
     return error == nil;
@@ -3217,19 +3052,14 @@ id<GREYMatcher> EditDoneButton() {
              @"Waiting for the view to load");
 
   // Delete last password.
-  [[EarlGrey selectElementWithMatcher:DeleteButtonForUsernameAndPassword(
-                                          @"user2", @"password2")]
-      performAction:grey_tap()];
-
-  [[EarlGrey selectElementWithMatcher:DeleteConfirmationButtonForGrouping()]
-      performAction:grey_tap()];
+  DeleteCredential(@"user2", @"https://example1.com/");
 
   // Check that the current view is now the password manager since we deleted
   // the last password.
   condition = ^{
     NSError* error = nil;
     [[EarlGrey
-        selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewId)]
+        selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
         assertWithMatcher:grey_notNil()
                     error:&error];
     return error == nil;
@@ -3239,125 +3069,28 @@ id<GREYMatcher> EditDoneButton() {
                  base::test::ios::kWaitForUIElementTimeout, condition),
              @"Waiting for the view to load");
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
   [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
       performAction:grey_tap()];
 }
 
-- (void)testAccountStorageSwitchHiddenIfSignedInAndFlagDisabled {
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableSync:NO];
-
-  OpenPasswordManager();
-  OpenSettingsSubmenu();
-
-  [[EarlGrey selectElementWithMatcher:
-                 grey_accessibilityID(
-                     kPasswordSettingsAccountStorageSwitchTableViewId)]
-      assertWithMatcher:grey_nil()];
-}
-
-- (void)testAccountStorageSwitchShownIfSignedInAndFlagEnabled {
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableSync:NO];
-
-  OpenPasswordManager();
-  OpenSettingsSubmenu();
-
-  // User should be opted in by default after sign-in.
-  GREYElementInteraction* accountStorageSwitch =
-      [EarlGrey selectElementWithMatcher:
-                    chrome_test_util::TableViewSwitchCell(
-                        kPasswordSettingsAccountStorageSwitchTableViewId,
-                        /*is_toggled_on=*/YES)];
-  [accountStorageSwitch assertWithMatcher:grey_sufficientlyVisible()];
-  // The toggle text must contain the signed-in account.
-  [[EarlGrey
-      selectElementWithMatcher:grey_accessibilityLabel(l10n_util::GetNSStringF(
-                                   IDS_IOS_ACCOUNT_STORAGE_OPT_IN_SUBLABEL,
-                                   base::SysNSStringToUTF16(
-                                       fakeIdentity.userEmail)))]
-      assertWithMatcher:grey_sufficientlyVisible()];
-
-  [accountStorageSwitch performAction:TurnTableViewSwitchOn(NO)];
-
-  [[EarlGrey selectElementWithMatcher:
-                 chrome_test_util::TableViewSwitchCell(
-                     kPasswordSettingsAccountStorageSwitchTableViewId,
-                     /*is_toggled_on=*/NO)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-}
-
-- (void)testAccountStorageSwitchDisabledIfBlockedByPolicyAndFlagEnabled {
-  policy_test_utils::SetPolicy(std::string("[\"passwords\"]"),
-                               policy::key::kSyncTypesListDisabled);
-
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableSync:NO];
-
-  OpenPasswordManager();
-  OpenSettingsSubmenu();
-
-  [[EarlGrey selectElementWithMatcher:
-                 chrome_test_util::TableViewSwitchCell(
-                     kPasswordSettingsAccountStorageSwitchTableViewId,
-                     /*is_toggled_on=*/NO,
-                     /*is_enabled=*/NO)]
-      assertWithMatcher:grey_sufficientlyVisible()];
-}
-
-- (void)testAccountStorageSwitchHiddenIfSignedOut {
-  OpenPasswordManager();
-  OpenSettingsSubmenu();
-
-  [[EarlGrey selectElementWithMatcher:
-                 grey_accessibilityID(
-                     kPasswordSettingsAccountStorageSwitchTableViewId)]
-      assertWithMatcher:grey_nil()];
-}
-
-- (void)testAccountStorageSwitchHiddenIfSyncing {
-  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
-  [SigninEarlGreyUI signinWithFakeIdentity:fakeIdentity enableSync:YES];
-  [ChromeEarlGrey waitForSyncFeatureEnabled:YES
-                                syncTimeout:kSyncInitializedTimeout];
-
-  OpenPasswordManager();
-  OpenSettingsSubmenu();
-
-  [[EarlGrey selectElementWithMatcher:
-                 grey_accessibilityID(
-                     kPasswordSettingsAccountStorageSwitchTableViewId)]
-      assertWithMatcher:grey_nil()];
-}
-
 - (void)testMovePasswordToAccount {
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExamplePassword:@"localPassword"
-                                               userName:@"username"
-                                                 origin:@"https://local.com"],
-      @"Stored form was not found in the PasswordStore results.");
-  [SigninEarlGreyUI signinWithFakeIdentity:[FakeSystemIdentity fakeIdentity1]
-                                enableSync:NO];
+  SavePasswordFormToProfileStore(/*password=*/@"localPassword",
+                                 /*username=*/@"username",
+                                 /*origin=*/@"https://local.com");
+  [SigninEarlGrey signinWithFakeIdentity:[FakeSystemIdentity fakeIdentity1]];
   OpenPasswordManager();
 
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 
   // `passwordMatcher` includes grey_sufficientlyVisible() because there are
   // other invisible cells when password details is closed later.
-  id<GREYMatcher> passwordMatcher =
-      grey_allOf([self groupingEnabled]
-                     ? ButtonWithAccessibilityID(@"local.com")
-                     : ButtonWithAccessibilityID(@"local.com, username"),
-                 grey_sufficientlyVisible(), nil);
+  id<GREYMatcher> passwordMatcher = grey_allOf(
+      ButtonWithAccessibilityID(@"local.com"), grey_sufficientlyVisible(), nil);
   id<GREYMatcher> localIconMatcher =
-      grey_allOf(grey_accessibilityID(kLocalOnlyPasswordIconId),
+      grey_allOf(grey_accessibilityID(kLocalOnlyPasswordIconID),
                  grey_ancestor(passwordMatcher), nil);
   [GetInteractionForListItem(localIconMatcher, kGREYDirectionDown)
       assertWithMatcher:grey_sufficientlyVisible()];
@@ -3365,25 +3098,19 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:passwordMatcher]
       performAction:grey_tap()];
 
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       assertWithMatcher:grey_sufficientlyVisible()];
 
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       assertWithMatcher:grey_notVisible()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
 
   [GetInteractionForListItem(localIconMatcher, kGREYDirectionDown)
@@ -3393,35 +3120,25 @@ id<GREYMatcher> EditDoneButton() {
 // Regression test for crbug.com/1431975. Similar to testMovePasswordToAccount
 // above but the only open tab is an incognito one.
 - (void)testMovePasswordToAccountWithOnlyIncognitoTabOpen {
-  GREYAssert(
-      [PasswordSettingsAppInterface saveExamplePassword:@"localPassword"
-                                               userName:@"username"
-                                                 origin:@"https://local.com"],
-      @"Stored form was not found in the PasswordStore results.");
-  [SigninEarlGreyUI signinWithFakeIdentity:[FakeSystemIdentity fakeIdentity1]
-                                enableSync:NO];
+  SavePasswordFormToProfileStore(/*password=*/@"localPassword",
+                                 /*username=*/@"username",
+                                 /*origin=*/@"https://local.com");
+  [SigninEarlGrey signinWithFakeIdentity:[FakeSystemIdentity fakeIdentity1]];
 
   [ChromeEarlGrey openNewIncognitoTab];
   [ChromeEarlGrey closeAllNormalTabs];
 
   OpenPasswordManager();
 
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
 
   // `passwordMatcher` includes grey_sufficientlyVisible() because there are
   // other invisible cells when password details is closed later.
-  id<GREYMatcher> passwordMatcher =
-      grey_allOf([self groupingEnabled]
-                     ? ButtonWithAccessibilityID(@"local.com")
-                     : ButtonWithAccessibilityID(@"local.com, username"),
-                 grey_sufficientlyVisible(), nil);
+  id<GREYMatcher> passwordMatcher = grey_allOf(
+      ButtonWithAccessibilityID(@"local.com"), grey_sufficientlyVisible(), nil);
   id<GREYMatcher> localIconMatcher =
-      grey_allOf(grey_accessibilityID(kLocalOnlyPasswordIconId),
+      grey_allOf(grey_accessibilityID(kLocalOnlyPasswordIconID),
                  grey_ancestor(passwordMatcher), nil);
   [GetInteractionForListItem(localIconMatcher, kGREYDirectionDown)
       assertWithMatcher:grey_sufficientlyVisible()];
@@ -3429,121 +3146,858 @@ id<GREYMatcher> EditDoneButton() {
   [[EarlGrey selectElementWithMatcher:passwordMatcher]
       performAction:grey_tap()];
 
-  if (![self notesEnabled]) {
-    [PasswordSettingsAppInterface setUpMockReauthenticationModule];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
-  }
-
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       assertWithMatcher:grey_sufficientlyVisible()];
 
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       performAction:grey_tap()];
 
   [[EarlGrey selectElementWithMatcher:grey_accessibilityID(
-                                          kMovePasswordToAccountButtonId)]
+                                          kMovePasswordToAccountButtonID)]
       assertWithMatcher:grey_notVisible()];
 
-  [[EarlGrey selectElementWithMatcher:SettingsMenuBackButton()]
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
       performAction:grey_tap()];
 
   [GetInteractionForListItem(localIconMatcher, kGREYDirectionDown)
       assertWithMatcher:grey_notVisible()];
 }
 
-@end
+// Tests that the save passwords in account section is hidden when syncing.
+- (void)testSavePasswordsInAccountHiddenWhenSyncing {
+  SavePasswordFormToProfileStore();
 
-// Rerun all the tests in this file but with kPasswordsGrouping disabled. This
-// will be removed once that feature launches fully, but ensures regressions
-// aren't introduced in the meantime.
-@interface PasswordManagerGroupingDisabledTestCase : PasswordManagerTestCase
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinAndEnableLegacySyncFeature:fakeIdentity];
 
-@end
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
 
-@implementation PasswordManagerGroupingDisabledTestCase
+  // Ensure module is hidden.
+  CheckSavePasswordsInAccountSectionHidden();
 
-- (BOOL)groupingEnabled {
-  return NO;
+  // Close password manager settings.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(SettingsDoneButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
 }
 
-- (GREYElementInteraction*)
-    interactionForSinglePasswordEntryWithDomain:(NSString*)domain
-                                       username:(NSString*)username {
-  // With notes enabled authentication is required before interacting with
-  // password details.
-  if ([self notesEnabled]) {
-    [PasswordSettingsAppInterface
-        setUpMockReauthenticationModuleForPasswordManager];
-    [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
-                                      ReauthenticationResult::kSuccess];
+// Tests that the save passwords in account section is hidden when not
+// signed-in.
+- (void)testSavePasswordsInAccountHiddenWhenNotSignedIn {
+  SavePasswordFormToProfileStore();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+
+  // Ensure module is hidden.
+  CheckSavePasswordsInAccountSectionHidden();
+
+  // Close password manager settings.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(SettingsDoneButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+}
+
+// Tests that the save passwords in account section is hidden when not opted-in
+// for account storage.
+- (void)testSavePasswordsInAccountHiddenWhenNotOptedInToAccountStorage {
+  SavePasswordFormToProfileStore();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Opt out of account storage.
+  [SigninEarlGreyAppInterface
+      setSelectedType:(syncer::UserSelectableType::kPasswords)
+              enabled:NO];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure module is now hidden.
+  CheckSavePasswordsInAccountSectionHidden();
+}
+
+// Tests that the save passwords in account section is shown when the user is
+// eligible.
+- (void)testSavePasswordsInAccountShownWhenEligible {
+  SavePasswordFormToProfileStore(@"passwordtest1", @"user1",
+                                 @"https://test1.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+
+  // Ensure the move passwords to account section is shown.
+  CheckSavePasswordsInAccountSectionVisible();
+
+  // Close password manager settings menu.
+  [[EarlGrey
+      selectElementWithMatcher:grey_allOf(SettingsDoneButton(),
+                                          grey_sufficientlyVisible(), nil)]
+      performAction:grey_tap()];
+}
+
+// Tests that the confirmation dialog contains the correct string for saving one
+// distinct domain to the account.
+- (void)testSavePasswordsInAccountOneDistinctDomain {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure the confirmation dialog appears with the correct patterned string.
+  NSString* result = @"You can save your password for example1.com in your "
+                     @"Google Account, foo1@gmail.com.";
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(result)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests that the confirmation dialog contains the correct string for saving two
+// distinct domains to the account.
+- (void)testSavePasswordsInAccountTwoDistinctDomains {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example2.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure the confirmation dialog appears with the correct patterned string.
+  NSString* result = @"You can save your passwords for example1.com and "
+                     @"example2.com in your Google Account, foo1@gmail.com.";
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(result)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests that the confirmation dialog contains the correct string for saving
+// three distinct domains to the account.
+- (void)testSavePasswordsInAccountThreeDistinctDomains {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example2.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example3.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure the confirmation dialog appears with the correct patterned string.
+  NSString* result = @"You can save your passwords for example1.com, "
+                     @"example2.com, and 1 other "
+                     @"in your Google Account, foo1@gmail.com.";
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(result)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests that the confirmation dialog contains the correct string for saving
+// four distinct domains to the account.
+- (void)testSavePasswordsInAccountFourDistinctDomains {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example2.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example3.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example4.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure the confirmation dialog appears with the correct patterned string.
+  NSString* result =
+      @"You can save your passwords for example1.com, example2.com, and 2 "
+      @"others in your Google Account, foo1@gmail.com.";
+  [[EarlGrey selectElementWithMatcher:grey_accessibilityLabel(result)]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests that the local password is moved when accepting the confirmation
+// dialog, and that the corresponding snackbar appears.
+- (void)testSavePasswordsInAccountFlowCompletes {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on "Save in Account" (accept) button.
+  [SaveInAccountConfirmationDialogButton() performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure that the save passwords to account module has disappeared.
+  CheckSavePasswordsInAccountSectionHidden();
+
+  // Ensure the correct snackbar appears.
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityLabel(
+              @"Password saved in your Google Account, foo1@gmail.com")];
+}
+
+// Tests that the local passwords are correctly handled in the save
+// passwords to account flow, and the correct snackbar appears.
+- (void)testSavePasswordsInAccountFlowCompletesMovingPasswords {
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+  SavePasswordFormToProfileStore(@"password2", @"user1",
+                                 @"https://example1.com");
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example2.com");
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+  SavePasswordFormToProfileStore(@"password1", @"user1",
+                                 @"https://example1.com");
+
+  OpenPasswordManager();
+  OpenSettingsSubmenu();
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on save passwords to account button.
+  [[EarlGrey
+      selectElementWithMatcher:
+          grey_accessibilityID(
+              kPasswordSettingsBulkMovePasswordsToAccountButtonTableViewId)]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Tap on "Save in Account" (accept) button.
+  [SaveInAccountConfirmationDialogButton() performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Ensure that the save passwords to account module has disappeared.
+  CheckSavePasswordsInAccountSectionHidden();
+
+  // Ensure the correct snackbar appears.
+  [ChromeEarlGrey
+      waitForSufficientlyVisibleElementWithMatcher:
+          grey_accessibilityLabel(
+              @"Passwords saved in your Google Account, foo1@gmail.com")];
+}
+
+// Checks opening the password manager with a successful reauthentication shows
+// the Password Manager.
+- (void)testOpenPasswordManagerWithSuccessfulAuth {
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+  // Delay the auth result to be able to validate that the passwords are not
+  // visible until the result is emitted.
+  [PasswordSettingsAppInterface mockReauthenticationModuleShouldSkipReAuth:NO];
+
+  OpenPasswordManager();
+
+  // Password Manager should be blocked until successful auth.
+  [[EarlGrey selectElementWithMatcher:PasswordsTableViewMatcher()]
+      assertWithMatcher:grey_notVisible()];
+
+  // Successful auth should remove blocking view and Password Manager should be
+  // visible visible.
+  [PasswordSettingsAppInterface mockReauthenticationModuleReturnMockedResult];
+  [[EarlGrey selectElementWithMatcher:PasswordsTableViewMatcher()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+      performAction:grey_tap()];
+
+  // Check password manager visit metric.
+  CheckPasswordManagerVisitMetricCount(1);
+
+  // Check Reauthentication UI metrics.
+  CheckReauthenticationUIEventMetricTotalCount(2);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kAttempt);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kSuccess);
+}
+
+// Checks opening the password manager with a failed reauthentication does not
+// show passwords and closes the Password Manager.
+- (void)testOpenPasswordManagerWithFailedAuth {
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kFailure];
+  // Delay the auth result to be able to validate that the passwords are not
+  // visible until the result is emitted.
+  [PasswordSettingsAppInterface mockReauthenticationModuleShouldSkipReAuth:NO];
+
+  OpenPasswordManager();
+
+  // Password Manager should be blocked until successful auth.
+  [[EarlGrey selectElementWithMatcher:PasswordsTableViewMatcher()]
+      assertWithMatcher:grey_notVisible()];
+
+  // Failed auth should dismiss the Password Manager, the Settings menu is
+  // displayed.
+  [PasswordSettingsAppInterface mockReauthenticationModuleReturnMockedResult];
+  CheckVisibilityOfElement(/*matcher=*/SettingsCollectionView(),
+                           /*is_visible=*/true);
+
+  // Check password manager visit metric.
+  CheckPasswordManagerVisitMetricCount(0);
+
+  // Check Reauthentication UI metrics.
+  CheckReauthenticationUIEventMetricTotalCount(2);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kAttempt);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kFailure);
+}
+
+// Checks opening the password manager with no passcode does not show passwords
+// and displays an alert prompting the user to set a passcode.
+- (void)testOpenPasswordManagerWithWithoutPasscodeSet {
+  [PasswordSettingsAppInterface mockReauthenticationModuleCanAttempt:NO];
+
+  OpenPasswordManager();
+
+  // Password Manager should be blocked.
+  [[EarlGrey selectElementWithMatcher:PasswordsTableViewMatcher()]
+      assertWithMatcher:grey_notVisible()];
+
+  if ([PasswordSettingsAppInterface isPasscodeSettingsAvailable]) {
+    // Go to Settings should be present.
+    [[EarlGrey selectElementWithMatcher:chrome_test_util::AlertAction(
+                                            @"Go to Settings")]
+        assertWithMatcher:grey_notNil()];
+  } else {
+    // Dismiss the passcode alert, this should dismiss the Password Manager.
+    [[EarlGrey
+        selectElementWithMatcher:grey_accessibilityLabel(l10n_util::GetNSString(
+                                     IDS_IOS_SETTINGS_SET_UP_SCREENLOCK_TITLE))]
+        assertWithMatcher:grey_sufficientlyVisible()];
+    [[EarlGrey selectElementWithMatcher:chrome_test_util::OKButton()]
+        performAction:grey_tap()];
+
+    // Check for the Settings page after Password Manager is gone.
+    [[EarlGrey
+        selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
+        assertWithMatcher:grey_sufficientlyVisible()];
   }
 
-  NSString* label = [NSString stringWithFormat:@"%@, %@", domain, username];
-  // ID, not label because the latter might contain an extra label for the
-  // "local password icon" and most tests don't care about it.
-  return GetInteractionForListItem(ButtonWithAccessibilityID(label),
-                                   kGREYDirectionDown);
+  // Check Reauthentication UI metrics.
+  CheckReauthenticationUIEventMetricTotalCount(2);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kAttempt);
+  CheckReauthenticationUIEventMetric(ReauthenticationEvent::kMissingPasscode);
+
+  // Check password manager visit metric.
+  CheckPasswordManagerVisitMetricCount(0);
 }
 
-- (id<GREYMatcher>)matcherForPasswordDetailCellWithWebsites:
-    (NSString*)websites {
-  return grey_accessibilityLabel(
-      [NSString stringWithFormat:@"Site, %@", websites]);
+// Checks that the user is prompt to set a passcode after backgrounding and
+// foregrounding the app and no passcode is set, while in a surface that
+// requires Local Authentication.
+- (void)testSetPasscodeAlertPresentedAfterBackgroundingApp {
+  OpenPasswordManager();
+
+  // Password Manager should be visible.
+  CheckVisibilityOfElement(/*matcher=*/PasswordsTableViewMatcher(),
+                           /*is_visible=*/true);
+  // Simulate passcode not set.
+  [PasswordSettingsAppInterface mockReauthenticationModuleCanAttempt:NO];
+  // Trigger local authentication by backgrounding the app.
+  [[AppLaunchManager sharedManager] backgroundAndForegroundApp];
+
+  if ([PasswordSettingsAppInterface isPasscodeSettingsAvailable]) {
+    // Go to Settings should be present.
+    [[EarlGrey selectElementWithMatcher:chrome_test_util::AlertAction(
+                                            @"Go to Settings")]
+        assertWithMatcher:grey_notNil()];
+  } else {
+    // Dismiss the passcode alert, this should dismiss the Password Manager.
+    [[EarlGrey
+        selectElementWithMatcher:grey_accessibilityLabel(l10n_util::GetNSString(
+                                     IDS_IOS_SETTINGS_SET_UP_SCREENLOCK_TITLE))]
+        assertWithMatcher:grey_sufficientlyVisible()];
+    [[EarlGrey selectElementWithMatcher:chrome_test_util::OKButton()]
+        performAction:grey_tap()];
+
+    // Check for the Settings page after Password Manager is gone.
+    [[EarlGrey
+        selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
+        assertWithMatcher:grey_sufficientlyVisible()];
+  }
 }
 
-- (id<GREYMatcher>)
-    matcherForDeleteButtonInDetailsWithUsername:(NSString*)username
-                                       password:(NSString*)password {
-  return DeleteButton();
+// Tests that the Password Manager is opened is search mode when opened from the
+// Search Passwords widget.
+- (void)testOpenSearchPasswordsWidget {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+
+  [ChromeEarlGrey
+      sceneOpenURL:
+          GURL("chromewidgetkit://search-passwords-widget/search-passwords")];
+
+  // The Password Manager should be visible behind the keyboard.
+  [ChromeEarlGrey waitForKeyboardToAppear];
+  [[EarlGrey selectElementWithMatcher:PasswordsTableViewMatcher()]
+      assertWithMatcher:grey_minimumVisiblePercent(0.5)];
+
+  // The search bar should be enabled.
+  [[EarlGrey selectElementWithMatcher:SearchTextField()]
+      assertWithMatcher:grey_userInteractionEnabled()];
+
+  // Dismiss the search controller and the Password Manager.
+  [[EarlGrey
+      selectElementWithMatcher:ButtonWithAccessibilityLabelId(IDS_CANCEL)]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:SettingsDoneButton()]
+      performAction:grey_tap()];
 }
 
-// This causes the test case to actually be detected as a test case. The actual
-// tests are all inherited from the parent class.
-- (void)testEmpty {
+// Tests that the indication to open the Password Manager in search mode does
+// not persist after it was first opened. For example, the search bar shouldn't
+// get automatically enabled when going back to the Password Manager when the
+// Password Manager was initially opened with the Search Passwords widget.
+- (void)testGoingBackAfterOpeningInSearchMode {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kSuccess];
+
+  // Open the Password Manager in search mode with the  Search Passwords widget.
+  [ChromeEarlGrey
+      sceneOpenURL:
+          GURL("chromewidgetkit://search-passwords-widget/search-passwords")];
+
+  // The search bar should be enabled.
+  [[EarlGrey selectElementWithMatcher:SearchTextField()]
+      assertWithMatcher:grey_userInteractionEnabled()];
+
+  // Dismiss the search controller.
+  [[EarlGrey
+      selectElementWithMatcher:ButtonWithAccessibilityLabelId(IDS_CANCEL)]
+      performAction:grey_tap()];
+
+  // Open password details.
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  // Navigate back to the Password Manager. The search bar should not be
+  // enabled.
+  [[EarlGrey selectElementWithMatcher:NavigationBarBackButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:SearchTextField()]
+      assertWithMatcher:grey_userInteractionEnabled()];
 }
 
-@end
+// Tests that tapping the close button of the Password Manager widget promo
+// removes the promo from the table view.
+- (void)testClosingPasswordManagerWidgetPromo {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
 
-// Rerun all the tests in this file but with kPasswordNotesWithBackup disabled.
-// This will be removed once that feature launches fully, but ensures
-// regressions aren't introduced in the meantime.
-@interface PasswordManagerNotesDisabledTestCase : PasswordManagerTestCase
+  OpenPasswordManager();
 
-@end
+  // The Password Manager widget promo should be visible.
+  CheckPasswordManagerWidgetPromoVisible();
 
-@implementation PasswordManagerNotesDisabledTestCase
+  // Tap the promo's close button.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoCloseButton()]
+      performAction:grey_tap()];
 
-- (BOOL)notesEnabled {
-  return NO;
+  // The Password Manager widget promo should now be gone.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_notVisible()];
 }
 
-// This causes the test case to actually be detected as a test case. The actual
-// tests are all inherited from the parent class.
-- (void)testEmpty {
+// Tests that tapping the more info button of the Password Manager widget
+// promo displays the instructions on how to install the widget.
+- (void)testOpeningPasswordManagerWidgetPromoInstructions {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManagerWidgetPromoInstructions();
 }
 
-@end
+// Tests the Password Manager UI is dismissed after a failed local
+// authentication while in the Widget Promo Instructions page.
+- (void)testOpeningPasswordManagerWidgetPromoInstructionsWithFailedAuth {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
 
-// Rerun all the tests in this file but with kIOSPasswordCheckup disabled.
-// This will be removed once that feature launches fully, but ensures
-// regressions aren't introduced in the meantime.
-@interface PasswordManagerPasswordCheckupDisabledTestCase
-    : PasswordManagerTestCase
+  OpenPasswordManagerWidgetPromoInstructions();
 
-@end
+  [PasswordSettingsAppInterface mockReauthenticationModuleExpectedResult:
+                                    ReauthenticationResult::kFailure];
 
-@implementation PasswordManagerPasswordCheckupDisabledTestCase
+  // Settings UI should be covered by Password Manager UI.
+  [[EarlGrey
+      selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
+      assertWithMatcher:grey_notVisible()];
 
-- (BOOL)passwordCheckupEnabled {
-  return NO;
+  // Trigger local authentication by backgrounding the app.
+  [[AppLaunchManager sharedManager] backgroundAndForegroundApp];
+
+  // Failed auth should dismiss the whole Password Manager leaving the Settings
+  // UI visible.
+  [[EarlGrey
+      selectElementWithMatcher:chrome_test_util::SettingsCollectionView()]
+      assertWithMatcher:grey_sufficientlyVisible()];
 }
 
-// This causes the test case to actually be detected as a test case. The actual
-// tests are all inherited from the parent class.
-- (void)testEmpty {
+// Tests that the more info and close buttons of the Password Manager widget
+// promo are disabled when the Password Manager is in edit mode.
+- (void)testPasswordManagerWidgetPromoInEditMode {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManager();
+
+  TapNavigationBarEditButton();
+
+  // The Password Manager widget promo should be visible.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // The close button should be disabled.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoCloseButton()]
+      assertWithMatcher:grey_not(grey_enabled())];
+
+  // The more info button should be disabled.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton(
+                                          /*enabled=*/false)]
+      assertWithMatcher:grey_not(grey_enabled())];
+}
+
+// Tests that the Password Manager widget promo is as expected when
+// transitioning between portrait and landscape modes. Also tests that the close
+// button still works after the layout change.
+- (void)testPasswordManagerWidgetPromoDeviceOrientation {
+  if ([ChromeEarlGrey isIPadIdiom]) {
+    EARL_GREY_TEST_SKIPPED(@"Landscape orientation doesn't change the look of "
+                           @"the instruction view on iPads.");
+  }
+
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManager();
+
+  // The Password Manager widget promo should be visible.
+  CheckPasswordManagerWidgetPromoVisible();
+
+  // The Password Manager widget promo's elements should be visible in landscape
+  // mode.
+  [EarlGrey rotateDeviceToOrientation:UIDeviceOrientationLandscapeRight
+                                error:nil];
+  CheckPasswordManagerWidgetPromoVisible();
+
+  // The promo's close button should still be tappable in landscape mode.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoCloseButton()]
+      performAction:grey_tap()];
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_notVisible()];
+}
+
+// Tests that the Password Manager widget promo's instruction screen can be
+// dismissed by swipping it down and by tapping its close button.
+- (void)testDismissPasswordManagerWidgetPromoInstructionsScreen {
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManager();
+
+  // Tap the promo's more info button.
+  [[EarlGrey
+      selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton()]
+      performAction:grey_tap()];
+
+  // The Password Manager widget promo's instructions should be visible.
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible();
+
+  // Swipe down to dismiss the instructions screen.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromoInstructions()]
+      performAction:grey_swipeFastInDirection(kGREYDirectionDown)];
+
+  // The Password Manager widget promo should be visible.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Tap the promo's more info button.
+  [[EarlGrey
+      selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton()]
+      performAction:grey_tap()];
+
+  // The Password Manager widget promo's instructions should be visible.
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible();
+
+  // Tap the instruction screen's close button.
+  [[EarlGrey selectElementWithMatcher:
+                 PasswordManagerWidgetPromoInstructionsCloseButton()]
+      performAction:grey_tap()];
+
+  // The Password Manager widget promo should be visible.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+// Tests that the Password Manager widget promo's instruction screen is as
+// expected when transitioning between portrait and landscape modes.
+- (void)testPasswordManagerWidgetPromoInstructionsDeviceOrientation {
+  if ([ChromeEarlGrey isIPadIdiom]) {
+    EARL_GREY_TEST_SKIPPED(@"Landscape orientation doesn't change the look of "
+                           @"the instruction view on iPads.");
+  }
+
+  // Add a saved password to not get the Password Manager's empty state.
+  SavePasswordFormToProfileStore();
+
+  OpenPasswordManager();
+
+  // The Password Manager widget promo should be visible.
+  [[EarlGrey selectElementWithMatcher:PasswordManagerWidgetPromo()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Tap the promo's more info button.
+  [[EarlGrey
+      selectElementWithMatcher:PasswordManagerWidgetPromoMoreInfoButton()]
+      performAction:grey_tap()];
+
+  // The Password Manager widget promo's instructions should be visible with its
+  // image.
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible();
+
+  // The Password Manager widget promo's instructions should be visible with no
+  // image in landscape mode.
+  [EarlGrey rotateDeviceToOrientation:UIDeviceOrientationLandscapeRight
+                                error:nil];
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible(
+      /*image_hidden=*/true);
+
+  // When going back to portrait mode, the Password Manager widget promo's
+  // instructions should be visible with its image.
+  [EarlGrey rotateDeviceToOrientation:UIDeviceOrientationPortrait error:nil];
+  CheckPasswordManagerWidgetPromoInstructionScreenVisible();
+}
+
+// Checks password details page offers move to account option if the password is
+// saved in the local store.
+- (void)testMovePasswordToAccountStoreIfSignedIn {
+  // Save form to be moved to account later.
+  SavePasswordFormToProfileStore();
+
+  // Sign in.
+  FakeSystemIdentity* fakeIdentity = [FakeSystemIdentity fakeIdentity1];
+  [SigninEarlGrey signinWithFakeIdentity:fakeIdentity];
+
+  // Open password details view for the saved password.
+  OpenPasswordManager();
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+
+  // Verify the locally-saved password details page has a move to account
+  // option.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailsMoveToAccountButton()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Tap on the move to account button to move the local password to account
+  // store.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailsMoveToAccountButton()]
+      performAction:grey_tap()];
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Verify the password details page does not show the move to account
+  // option anymore.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailsMoveToAccountButton()]
+      assertWithMatcher:grey_notVisible()];
+}
+
+- (void)testAddPasswordTappingAnywhereInNoteFieldFocusesTextView {
+  SavePasswordFormToProfileStore();
+  OpenPasswordManager();
+
+  // Tap "Add Password"
+  [[EarlGrey selectElementWithMatcher:AddPasswordButton()]
+      performAction:grey_tap()];
+
+  // Tap the "Note" label of the note cell.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNoteLabel()]
+      performAction:grey_tap()];
+
+  // Check that the text view is the first responder.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      assertWithMatcher:grey_firstResponder()];
+}
+
+- (void)testEditPasswordTappingAnywhereInNoteFieldFocusesTextView {
+  SaveExamplePasswordFormToProfileStoreWithNote();
+  OpenPasswordManager();
+
+  // Open password details and tap "Edit".
+  [[self interactionForSinglePasswordEntryWithDomain:@"example.com"]
+      performAction:grey_tap()];
+  TapNavigationBarEditButton();
+
+  // Tap the "Note" label of the note cell.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNoteLabel()]
+      performAction:grey_tap()];
+
+  // Check that the text view is the first responder.
+  [[EarlGrey selectElementWithMatcher:PasswordDetailNote()]
+      assertWithMatcher:grey_firstResponder()];
+}
+
+// Tests that deleting the last affiliated group (composed of at least two
+// passwords) while the Password Manager view is scrolled down results in
+// showing the empty state view. See crbug.com/41492279.
+- (void)testDeletingLastAffiliatedGroup {
+  // Form an affiliated group with two passwords.
+  SavePasswordFormToProfileStore(/*password=*/@"password1",
+                                 /*username=*/@"user1",
+                                 /*origin=*/@"https://example11.com");
+  SavePasswordFormToProfileStore(/*password=*/@"password2",
+                                 /*username=*/@"user2",
+                                 /*origin=*/@"https://example11.com");
+
+  OpenPasswordManager();
+
+  // Scroll down to the bottom of the Password Manager table view.
+  [[EarlGrey
+      selectElementWithMatcher:grey_accessibilityID(kPasswordsTableViewID)]
+      performAction:grey_scrollToContentEdge(kGREYContentEdgeBottom)];
+
+  // Delete the affiliated group with a left swipe.
+  [[EarlGrey selectElementWithMatcher:grey_text(@"example11.com")]
+      performAction:grey_swipeSlowInDirectionWithStartPoint(kGREYDirectionLeft,
+                                                            0.9, 0.5)];
+
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Verify that the empty view is now displayed.
+  [[EarlGrey selectElementWithMatcher:password_manager_test_utils::
+                                          PasswordManagerEmptyView()]
+      assertWithMatcher:grey_sufficientlyVisible()];
+}
+
+- (void)testSwipingAnotherAffiliatedGroupWhenAnotherIsInEditMode {
+  // Form an affiliated group with two passwords.
+  SavePasswordFormToProfileStore(/*password=*/@"password1",
+                                 /*username=*/@"user1",
+                                 /*origin=*/@"https://example.com");
+  SavePasswordFormToProfileStore(/*password=*/@"password2",
+                                 /*username=*/@"user2",
+                                 /*origin=*/@"https://example1.com");
+
+  OpenPasswordManager();
+
+  // Swipe the affiliated group until the "Delete" button is revealed.
+  [[EarlGrey selectElementWithMatcher:grey_text(@"example.com")]
+      performAction:chrome_test_util::SwipeToShowDeleteButton()];
+
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Assert that "Delete" button is displayed.
+  [[EarlGrey selectElementWithMatcher:grey_kindOfClassName(
+                                          @"UISwipeActionStandardButton")]
+      assertWithMatcher:grey_sufficientlyVisible()];
+
+  // Swipe the next affiliated group until the "Delete" button is revealed.
+  [[EarlGrey selectElementWithMatcher:grey_text(@"example1.com")]
+      performAction:chrome_test_util::SwipeToShowDeleteButton()];
+
+  // Wait for the first affiliated group to reach its original state (i.e. no
+  // visible delete button).
+  [ChromeEarlGreyUI waitForAppToIdle];
+
+  // Assert that "Delete" button is displayed for the second affiliated group.
+  [[EarlGrey selectElementWithMatcher:grey_kindOfClassName(
+                                          @"UISwipeActionStandardButton")]
+      assertWithMatcher:grey_sufficientlyVisible()];
 }
 
 @end

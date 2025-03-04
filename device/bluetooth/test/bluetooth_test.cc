@@ -106,6 +106,15 @@ void BluetoothTestBase::TearDown() {
   EXPECT_EQ(expected_error_callback_calls_, actual_error_callback_calls_);
   EXPECT_FALSE(unexpected_success_callback_);
   EXPECT_FALSE(unexpected_error_callback_);
+
+  // Tear down the test before the destructor runs. By the time the destructor
+  // runs, the BluetoothTestBase subclass has been partially destructed, so
+  // any pointers to the subclass in these objects cannot be accessed.
+  notify_sessions_.clear();
+  gatt_connections_.clear();
+  discovery_sessions_.clear();
+  advertisements_.clear();
+  adapter_ = nullptr;
 }
 
 bool BluetoothTestBase::DenyPermission() {
@@ -129,18 +138,18 @@ BluetoothDevice* BluetoothTestBase::SimulateClassicDevice() {
 
 bool BluetoothTestBase::ConnectGatt(
     BluetoothDevice* device,
-    absl::optional<BluetoothUUID> service_uuid,
-    absl::optional<base::OnceCallback<void(BluetoothDevice*)>>
+    std::optional<BluetoothUUID> service_uuid,
+    std::optional<base::OnceCallback<void(BluetoothDevice*)>>
         simulate_callback) {
   base::RunLoop run_loop;
-  absl::optional<bool> result;
-  absl::optional<std::unique_ptr<BluetoothGattConnection>> connection;
+  std::optional<bool> result;
+  std::optional<std::unique_ptr<BluetoothGattConnection>> connection;
 
   device->CreateGattConnection(
       base::BindLambdaForTesting(
           [this, &result, &connection, &run_loop](
               std::unique_ptr<BluetoothGattConnection> new_connection,
-              absl::optional<BluetoothDevice::ConnectErrorCode> error_code) {
+              std::optional<BluetoothDevice::ConnectErrorCode> error_code) {
             if (error_code.has_value()) {
               result = false;
               last_connect_error_code_ = error_code.value();
@@ -170,9 +179,9 @@ bool BluetoothTestBase::ConnectGatt(
   return true;
 }
 
-absl::optional<BluetoothUUID> BluetoothTestBase::GetTargetGattService(
+std::optional<BluetoothUUID> BluetoothTestBase::GetTargetGattService(
     BluetoothDevice* device) {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void BluetoothTestBase::SimulateDeviceBreaksConnection(
@@ -265,7 +274,7 @@ void BluetoothTestBase::GattConnectionCallback(
     Call expected,
     Result expected_result,
     std::unique_ptr<BluetoothGattConnection> connection,
-    absl::optional<BluetoothDevice::ConnectErrorCode> error_code) {
+    std::optional<BluetoothDevice::ConnectErrorCode> error_code) {
   Result actual_result;
   if (error_code) {
     ++error_callback_count_;
@@ -337,7 +346,7 @@ void BluetoothTestBase::StopNotifyCheckForPrecedingCalls(
 void BluetoothTestBase::ReadValueCallback(
     Call expected,
     Result expected_result,
-    absl::optional<BluetoothGattService::GattErrorCode> error_code,
+    std::optional<BluetoothGattService::GattErrorCode> error_code,
     const std::vector<uint8_t>& value) {
   if (expected_result == Result::FAILURE) {
     if (error_code.has_value())

@@ -21,6 +21,7 @@
 #include "ui/aura/window.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/base/hit_test.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
 #include "ui/display/screen.h"
 #include "ui/events/event_processor.h"
 #include "ui/events/event_utils.h"
@@ -39,10 +40,10 @@ void ClickButtonWithFlags(ui::test::EventGenerator* generator,
                           int button,
                           int flags) {
   gfx::Point location = generator->current_screen_location();
-  ui::MouseEvent press(ui::ET_MOUSE_PRESSED, location, location,
+  ui::MouseEvent press(ui::EventType::kMousePressed, location, location,
                        ui::EventTimeForNow(), button | flags, button);
   generator->Dispatch(&press);
-  ui::MouseEvent release(ui::ET_MOUSE_RELEASED, location, location,
+  ui::MouseEvent release(ui::EventType::kMouseReleased, location, location,
                          ui::EventTimeForNow(), button | flags, button);
   generator->Dispatch(&release);
 }
@@ -98,8 +99,8 @@ class WindowPropertyObserver : public aura::WindowObserver {
     properties_changed_.push_back(key);
   }
 
-  raw_ptr<aura::Window, ExperimentalAsh> window_;
-  std::vector<const void*> properties_changed_;
+  raw_ptr<aura::Window> window_;
+  std::vector<raw_ptr<const void, VectorExperimental>> properties_changed_;
 };
 
 TEST_F(WorkspaceEventHandlerTest, DoubleClickSingleAxisResizeEdge) {
@@ -171,7 +172,7 @@ TEST_F(WorkspaceEventHandlerTest, DoubleClickSingleAxisResizeEdge) {
   aura::Window* second_root = Shell::GetAllRootWindows()[1];
   EXPECT_EQ(second_root, window->GetRootWindow());
   ui::test::EventGenerator generator2(second_root, window.get());
-  // TODO(crbug.com/990589): Unit tests should be able to simulate mouse input
+  // TODO(crbug.com/40638870): Unit tests should be able to simulate mouse input
   // without having to call |CursorManager::SetDisplay|.
   Shell::Get()->cursor_manager()->SetDisplay(
       display::Screen::GetScreen()->GetDisplayNearestWindow(second_root));
@@ -222,7 +223,7 @@ TEST_F(WorkspaceEventHandlerTest, DoubleClickSingleAxisWhenSideSnapped) {
                                       .work_area();
 
   WindowState* window_state = WindowState::Get(window.get());
-  const WMEvent snap_event(WM_EVENT_SNAP_PRIMARY);
+  const WindowSnapWMEvent snap_event(WM_EVENT_SNAP_PRIMARY);
   window_state->OnWMEvent(&snap_event);
 
   gfx::Rect snapped_bounds_in_screen = window->GetBoundsInScreen();
@@ -307,7 +308,7 @@ TEST_F(WorkspaceEventHandlerTest,
                       aura::client::kResizeBehaviorCanMaximize);
   delegate1.set_window_component(HTCAPTION);
 
-  child->SetProperty(aura::client::kModalKey, ui::MODAL_TYPE_WINDOW);
+  child->SetProperty(aura::client::kModalKey, ui::mojom::ModalType::kWindow);
   ::wm::AddTransientChild(window.get(), child.get());
 
   WindowState* window_state = WindowState::Get(window.get());
@@ -371,7 +372,7 @@ TEST_F(WorkspaceEventHandlerTest, DoubleClickCaptionTogglesMaximize) {
   EXPECT_EQ(restore_bounds.ToString(), window->bounds().ToString());
 
   // 3) Double clicking a snapped window should maximize.
-  const WMEvent snap_event(WM_EVENT_SNAP_PRIMARY);
+  const WindowSnapWMEvent snap_event(WM_EVENT_SNAP_PRIMARY);
   window_state->OnWMEvent(&snap_event);
   EXPECT_TRUE(window_state->IsSnapped());
   generator.MoveMouseTo(window->GetBoundsInRootWindow().CenterPoint());
@@ -550,9 +551,12 @@ TEST_F(WorkspaceEventHandlerTest, DeleteWhileInRunLoop) {
   ASSERT_TRUE(::wm::GetWindowMoveClient(window->GetRootWindow()));
   base::SingleThreadTaskRunner::GetCurrentDefault()->DeleteSoon(FROM_HERE,
                                                                 window.get());
-  ::wm::GetWindowMoveClient(window->GetRootWindow())
-      ->RunMoveLoop(window.release(), gfx::Vector2d(),
-                    ::wm::WINDOW_MOVE_SOURCE_MOUSE);
+
+  aura::Env::GetInstance()->set_mouse_button_flags(ui::EF_LEFT_MOUSE_BUTTON);
+  EXPECT_EQ(::wm::GetWindowMoveClient(window->GetRootWindow())
+                ->RunMoveLoop(window.release(), gfx::Vector2d(),
+                              ::wm::WINDOW_MOVE_SOURCE_MOUSE),
+            ::wm::MOVE_CANCELED);
 }
 
 // Verifies that double clicking in the header does not maximize if the target

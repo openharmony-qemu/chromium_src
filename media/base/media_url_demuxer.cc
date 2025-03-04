@@ -6,13 +6,15 @@
 
 #include "base/functional/bind.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/demuxer.h"
+#include "net/storage_access_api/status.h"
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "media/base/ranges.h"
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace media {
 
@@ -21,11 +23,12 @@ MediaUrlDemuxer::MediaUrlDemuxer(
     const GURL& media_url,
     const net::SiteForCookies& site_for_cookies,
     const url::Origin& top_frame_origin,
-    bool has_storage_access,
+    net::StorageAccessApiStatus storage_access_api_status,
     bool allow_credentials,
     bool is_hls)
-    : params_{media_url,          site_for_cookies,  top_frame_origin,
-              has_storage_access, allow_credentials, is_hls},
+    : params_{media_url,         site_for_cookies,
+              top_frame_origin,  storage_access_api_status,
+              allow_credentials, is_hls},
       task_runner_(task_runner) {}
 
 MediaUrlDemuxer::~MediaUrlDemuxer() = default;
@@ -33,7 +36,6 @@ MediaUrlDemuxer::~MediaUrlDemuxer() = default;
 // Should never be called since MediaResource::Type is URL.
 std::vector<DemuxerStream*> MediaUrlDemuxer::GetAllStreams() {
   NOTREACHED();
-  return std::vector<DemuxerStream*>();
 }
 
 const MediaUrlParams& MediaUrlDemuxer::GetMediaUrlParams() const {
@@ -41,7 +43,7 @@ const MediaUrlParams& MediaUrlDemuxer::GetMediaUrlParams() const {
 }
 
 MediaResource::Type MediaUrlDemuxer::GetType() const {
-  return MediaResource::Type::URL;
+  return MediaResource::Type::KUrl;
 }
 
 std::string MediaUrlDemuxer::GetDisplayName() const {
@@ -59,7 +61,12 @@ void MediaUrlDemuxer::ForwardDurationChangeToDemuxerHost(
   host_->SetDuration(duration);
 }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+void MediaUrlDemuxer::SetHeaders(
+    base::flat_map<std::string, std::string> headers) {
+  params_.headers = std::move(headers);
+}
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 void MediaUrlDemuxer::ForwardBufferedEndTimeChangeToDemuxerHost(
     base::TimeDelta buffered_time) {
   DCHECK(host_);
@@ -76,7 +83,7 @@ void MediaUrlDemuxer::SetPreloadType(uint32_t preload_type) {
 void MediaUrlDemuxer::SetMediaSourceType(uint32_t media_source_type) {
   params_.custom_media_url_params.media_source_type = media_source_type;
 }
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 void MediaUrlDemuxer::Initialize(DemuxerHost* host,
                                  PipelineStatusCallback status_cb) {
@@ -118,18 +125,17 @@ int64_t MediaUrlDemuxer::GetMemoryUsage() const {
   return 0;
 }
 
-absl::optional<container_names::MediaContainerName>
+std::optional<container_names::MediaContainerName>
 MediaUrlDemuxer::GetContainerForMetrics() const {
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 void MediaUrlDemuxer::OnEnabledAudioTracksChanged(
     const std::vector<MediaTrack::Id>& track_ids,
     base::TimeDelta curr_time,
     TrackChangeCB change_completed_cb) {
-  // TODO(tmathmeyer): potentially support track changes for this renderer.
   std::vector<DemuxerStream*> streams;
-  std::move(change_completed_cb).Run(DemuxerStream::AUDIO, streams);
+  std::move(change_completed_cb).Run(streams);
   DLOG(WARNING) << "Track changes are not supported.";
 }
 
@@ -137,9 +143,8 @@ void MediaUrlDemuxer::OnSelectedVideoTrackChanged(
     const std::vector<MediaTrack::Id>& track_ids,
     base::TimeDelta curr_time,
     TrackChangeCB change_completed_cb) {
-  // TODO(tmathmeyer): potentially support track changes for this renderer.
   std::vector<DemuxerStream*> streams;
-  std::move(change_completed_cb).Run(DemuxerStream::VIDEO, streams);
+  std::move(change_completed_cb).Run(streams);
   DLOG(WARNING) << "Track changes are not supported.";
 }
 

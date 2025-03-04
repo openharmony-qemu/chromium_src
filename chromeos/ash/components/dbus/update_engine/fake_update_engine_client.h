@@ -6,6 +6,7 @@
 #define CHROMEOS_ASH_COMPONENTS_DBUS_UPDATE_ENGINE_FAKE_UPDATE_ENGINE_CLIENT_H_
 
 #include <map>
+#include <optional>
 #include <string>
 
 #include "base/component_export.h"
@@ -14,7 +15,6 @@
 #include "base/observer_list.h"
 #include "base/time/time.h"
 #include "chromeos/ash/components/dbus/update_engine/update_engine_client.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash {
 
@@ -77,7 +77,13 @@ class COMPONENT_EXPORT(ASH_DBUS_UPDATE_ENGINE) FakeUpdateEngineClient
   // value set here if |status_queue_| is empty.
   void set_default_status(const update_engine::StatusResult& status);
 
-  void set_eol_date(const base::Time& eol_date) { eol_date_ = eol_date; }
+  // Sets the whole EolInfo to be used when checking eol info.
+  void set_eol_info(const EolInfo& eol_info) { eol_info_ = eol_info; }
+
+  // Sets the eol date to be used when checking eol info.
+  void set_eol_date(const base::Time& eol_date) {
+    eol_info_.eol_date = eol_date;
+  }
 
   // Sets a value returned by RequestUpdateCheck().
   void set_update_check_result(
@@ -135,7 +141,7 @@ class COMPONENT_EXPORT(ASH_DBUS_UPDATE_ENGINE) FakeUpdateEngineClient
   }
 
   void SetToggleFeature(const std::string& feature,
-                        absl::optional<bool> opt_enabled);
+                        std::optional<bool> opt_enabled);
 
  private:
   base::ObserverList<Observer>::Unchecked observers_;
@@ -154,8 +160,8 @@ class COMPONENT_EXPORT(ASH_DBUS_UPDATE_ENGINE) FakeUpdateEngineClient
   int toggle_feature_count_ = 0;
   int is_feature_enabled_count_ = 0;
   int apply_deferred_update_count_ = 0;
-  std::map<std::string, absl::optional<bool>> features_;
-  base::Time eol_date_;
+  std::map<std::string, std::optional<bool>> features_;
+  EolInfo eol_info_;
 };
 
 }  // namespace ash

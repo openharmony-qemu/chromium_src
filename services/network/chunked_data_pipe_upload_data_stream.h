@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "base/component_export.h"
@@ -21,7 +22,6 @@
 #include "net/base/upload_data_stream.h"
 #include "services/network/public/cpp/resource_request_body.h"
 #include "services/network/public/mojom/chunked_data_pipe_getter.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace net {
 class IOBuffer;
@@ -40,7 +40,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
       scoped_refptr<ResourceRequestBody> resource_request_body,
       mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
           chunked_data_pipe_getter,
-#if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
       bool has_null_source = false,
       bool get_size_when_initialize = false);
 #else
@@ -64,9 +64,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   // all cached chunks and continues datapipe withdrawing after that.
   void EnableCache(size_t dst_window_size = kDefaultDestinationWindowSize);
 
-#if defined(OHOS_SCHEME_HANDLER)
-  mojo::PendingRemote<mojom::ChunkedDataPipeGetter> ReleaseChunkedDataPipeGetter();
- 
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
+  mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
+  ReleaseChunkedDataPipeGetter();
+
   bool has_null_source() const { return has_null_source_; }
 #endif
 
@@ -94,7 +95,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
 
   void OnDataPipeGetterClosed();
 
-  void WriteToCacheIfNeeded(net::IOBuffer* buf, uint32_t num_bytes);
+  void WriteToCacheIfNeeded(net::IOBuffer* buf, size_t num_bytes);
   int ReadFromCacheIfNeeded(net::IOBuffer* buf, int buf_len);
 
   scoped_refptr<ResourceRequestBody> resource_request_body_;
@@ -111,7 +112,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
 
   // Total size of input, as passed to ReadCallback(). nullptr until size is
   // received.
-  absl::optional<uint64_t> size_;
+  std::optional<uint64_t> size_;
 
   uint64_t bytes_read_ = 0;
 
@@ -124,7 +125,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ChunkedDataPipeUploadDataStream
   size_t dst_window_size_ = kDefaultDestinationWindowSize;
   std::vector<char> cache_;
 
-#if defined(OHOS_SCHEME_HANDLER)
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   bool has_null_source_{false};
   bool get_size_when_initialize_{false};
 #endif

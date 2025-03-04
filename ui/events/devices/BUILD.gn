@@ -1,10 +1,16 @@
 # Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
+  import("//third_party/jni_zero/jni_zero.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 component("devices") {
@@ -19,15 +25,17 @@ component("devices") {
     "input_device.cc",
     "input_device.h",
     "input_device_event_observer.h",
+    "keyboard_device.cc",
+    "keyboard_device.h",
     "microphone_mute_switch_monitor.cc",
     "microphone_mute_switch_monitor.h",
     "stylus_state.h",
     "touch_device_transform.cc",
     "touch_device_transform.h",
+    "touchpad_device.cc",
+    "touchpad_device.h",
     "touchscreen_device.cc",
     "touchscreen_device.h",
-    "mmi_device_info_adapter_impl.cc",
-    "mmi_device_info_adapter_impl.h",
   ]
 
   if (is_linux || is_chromeos) {
@@ -51,6 +59,10 @@ component("devices") {
     ]
   }
 
+  if (arkweb_input_events) {
+    sources += arkweb_ui_events_devices_sources
+  }
+
   defines = [ "EVENTS_DEVICES_IMPLEMENTATION" ]
 
   public_deps = [
@@ -60,12 +72,13 @@ component("devices") {
 
   deps = [
     "//base",
-    "//base/third_party/dynamic_annotations",
     "//skia",
     "//ui/events:platform_event",
     "//ui/gfx/geometry",
     "//ui/gfx/geometry:geometry_skia",
   ]
+
+  deps += [ "//arkweb/build/features" ]
 
   if (is_android) {
     deps += [ ":ui_events_devices_jni_headers" ]
@@ -83,7 +96,6 @@ source_set("unittests") {
 
   sources = [
     "input_device_unittest.cc",
-    "mmi_device_info_adapter_impl_unittest.cc",
     "touchscreen_device_unittest.cc",
   ]
 

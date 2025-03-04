@@ -91,6 +91,8 @@ class COMPONENT_EXPORT(UI_BASE) Accelerator {
 
   KeyboardCode key_code() const { return key_code_; }
 
+  bool IsEmpty() const;
+
 #if BUILDFLAG(IS_CHROMEOS)
   DomCode code() const { return code_; }
   void reset_code() { code_ = DomCode::NONE; }
@@ -154,8 +156,8 @@ class COMPONENT_EXPORT(UI_BASE) Accelerator {
   // Whether the accelerator is interrupted by a mouse press/release. This is
   // optionally used by AcceleratorController. Even this is set to true, the
   // accelerator may still be handled successfully. (Currently only
-  // TOGGLE_APP_LIST is disabled when mouse press/release occurs between search
-  // key down and up. See crbug.com/665897)
+  // AcceleratorAction::kToggleAppList is disabled when mouse press/release
+  // occurs between search key down and up. See crbug.com/665897)
   bool interrupted_by_mouse_event_;
 
   // The |source_device_id_| of the KeyEvent.

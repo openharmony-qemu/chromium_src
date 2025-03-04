@@ -9,15 +9,11 @@
 #include <vector>
 
 #include "build/build_config.h"
-#include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "content/public/browser/frame_type.h"
 #include "services/network/public/mojom/referrer_policy.mojom-forward.h"
 #include "third_party/blink/public/mojom/frame/user_activation_update_types.mojom-forward.h"
 #include "third_party/blink/public/mojom/loader/referrer.mojom-forward.h"
 #include "ui/base/page_transition_types.h"
-
-#if !BUILDFLAG(IS_ANDROID)
-#include "third_party/blink/public/mojom/webauthn/virtual_authenticator.mojom-forward.h"
-#endif
 
 class GURL;
 
@@ -36,7 +32,6 @@ class NavigationRequest;
 class Navigator;
 class RenderFrameHostManager;
 class RenderFrameHostImpl;
-class SubresourceWebBundleNavigationInfo;
 
 // An interface for RenderFrameHostImpl to communicate with FrameTreeNode owning
 // it (e.g. to initiate or cancel a navigation in the frame).
@@ -103,7 +98,7 @@ class RenderFrameHostOwner {
       bool is_same_document,
       const GURL& url,
       const url::Origin& origin,
-      const absl::optional<GURL>& initiator_base_url,
+      const std::optional<GURL>& initiator_base_url,
       const net::IsolationInfo& isolation_info_for_subresources,
       blink::mojom::ReferrerPtr referrer,
       const ui::PageTransition& transition,
@@ -114,30 +109,25 @@ class RenderFrameHostOwner {
       const std::vector<GURL>& redirects,
       const GURL& original_url,
       std::unique_ptr<CrossOriginEmbedderPolicyReporter> coep_reporter,
-      std::unique_ptr<SubresourceWebBundleNavigationInfo>
-          subresource_web_bundle_navigation_info,
       int http_response_code) = 0;
 
   // Cancels the navigation owned by the FrameTreeNode.
   // Note: this does not cancel navigations that are owned by the current or
   // speculative RenderFrameHosts.
-  virtual void CancelNavigation() = 0;
+  virtual void CancelNavigation(NavigationDiscardReason reason) = 0;
+
+  // Reset every non-speculative navigation in this frame, and its descendants.
+  // This is called after outermost main frame has been discarded.
+  //
+  // This takes into account:
+  // - Non-pending commit NavigationRequest owned by the FrameTreeNode
+  // - Pending commit NavigationRequest owned by the current RenderFrameHost
+  virtual void ResetNavigationsForDiscard() = 0;
 
   // Return the iframe.credentialless attribute value.
   virtual bool Credentialless() const = 0;
 
-  // Stores the payload that will be sent as part of an automatic beacon. Right
-  // now only the "reserved.top_navigation" beacon is supported.
-  virtual void SetFencedFrameAutomaticBeaconReportEventData(
-      const std::string& event_data,
-      const std::vector<blink::FencedFrame::ReportingDestination>&
-          destinations) = 0;
-
-#if !BUILDFLAG(IS_ANDROID)
-  virtual void GetVirtualAuthenticatorManager(
-      mojo::PendingReceiver<blink::test::mojom::VirtualAuthenticatorManager>
-          receiver) = 0;
-#endif
+  virtual FrameType GetCurrentFrameType() const = 0;
 };
 
 }  // namespace content

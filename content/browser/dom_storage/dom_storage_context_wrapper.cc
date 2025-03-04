@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/command_line.h"
+#include "base/containers/contains.h"
 #include "base/files/file_path.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -27,10 +28,12 @@
 #include "content/browser/dom_storage/session_storage_namespace_impl.h"
 #include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "content/browser/storage_access/storage_access_handle.h"
 #include "content/browser/storage_partition_impl.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/permission_controller.h"
 #include "content/public/browser/session_storage_usage_info.h"
 #include "content/public/browser/storage_usage_info.h"
 #include "content/public/common/content_client.h"
@@ -38,13 +41,14 @@
 #include "content/public/common/content_switches.h"
 #include "storage/browser/quota/special_storage_policy.h"
 #include "third_party/blink/public/common/features.h"
+#include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 
 namespace content {
 namespace {
 
 void AdaptSessionStorageUsageInfo(
-    DOMStorageContext::GetSessionStorageUsageCallback callback,
+    DOMStorageContextWrapper::GetSessionStorageUsageCallback callback,
     std::vector<storage::mojom::SessionStorageUsageInfoPtr> usage) {
   std::vector<SessionStorageUsageInfo> result;
   result.reserve(usage.size());
@@ -232,14 +236,14 @@ void DOMStorageContextWrapper::Shutdown() {
 
 void DOMStorageContextWrapper::Flush() {
   if (session_storage_control_)
-    session_storage_control_->Flush(base::NullCallback());
+    session_storage_control_->Flush();
   if (local_storage_control_)
-    local_storage_control_->Flush(base::NullCallback());
+    local_storage_control_->Flush();
 }
 
 void DOMStorageContextWrapper::OpenLocalStorage(
     const blink::StorageKey& storage_key,
-    absl::optional<blink::LocalFrameToken> local_frame_token,
+    std::optional<blink::LocalFrameToken> local_frame_token,
     mojo::PendingReceiver<blink::mojom::StorageArea> receiver,
     ChildProcessSecurityPolicyImpl::Handle security_policy_handle,
     mojo::ReportBadMessageCallback bad_message_callback) {
@@ -251,7 +255,7 @@ void DOMStorageContextWrapper::OpenLocalStorage(
   DCHECK(local_storage_control_);
   local_storage_control_->BindStorageArea(storage_key, std::move(receiver));
   if (storage_policy_observer_) {
-    // TODO(https://crbug.com/1199077): Pass the real StorageKey when
+    // TODO(crbug.com/40177656): Pass the real StorageKey when
     // StoragePolicyObserver is converted.
     storage_policy_observer_->StartTrackingOrigin(storage_key.origin());
   }
@@ -268,7 +272,7 @@ void DOMStorageContextWrapper::BindNamespace(
 
 void DOMStorageContextWrapper::BindStorageArea(
     const blink::StorageKey& storage_key,
-    absl::optional<blink::LocalFrameToken> local_frame_token,
+    std::optional<blink::LocalFrameToken> local_frame_token,
     const std::string& namespace_id,
     mojo::PendingReceiver<blink::mojom::StorageArea> receiver,
     ChildProcessSecurityPolicyImpl::Handle security_policy_handle,
@@ -286,10 +290,10 @@ void DOMStorageContextWrapper::BindStorageArea(
 bool DOMStorageContextWrapper::IsRequestValid(
     const StorageType type,
     const blink::StorageKey& storage_key,
-    absl::optional<blink::LocalFrameToken> local_frame_token,
+    std::optional<blink::LocalFrameToken> local_frame_token,
     ChildProcessSecurityPolicyImpl::Handle security_policy_handle,
     mojo::ReportBadMessageCallback bad_message_callback) {
-  bool host_storage_key_did_not_match = false;
+  bool host_storage_key_matched_or_missing = true;
   if (local_frame_token) {
     RenderFrameHostImpl* host = RenderFrameHostImpl::FromFrameToken(
         security_policy_handle.child_id(), *local_frame_token,
@@ -297,18 +301,15 @@ bool DOMStorageContextWrapper::IsRequestValid(
     if (!host) {
       return false;
     }
-    switch (type) {
-      case StorageType::kLocalStorage: {
-        host_storage_key_did_not_match = host->storage_key() != storage_key;
-        break;
-      }
-      case StorageType::kSessionStorage: {
-        host_storage_key_did_not_match =
-            host->frame_tree()->GetSessionStorageKey(host->storage_key()) !=
-            storage_key;
-        break;
-      }
-    }
+    // If the storage keys did not match, but storage access has been granted
+    // and the request was for a first-party storage key on the same origin as
+    // the frame's storage key, we can allow the request to proceed. See:
+    // third_party/blink/renderer/modules/storage_access/README.md
+    host_storage_key_matched_or_missing =
+        host->GetStorageKey() == storage_key ||
+        (StorageAccessHandle::DoesFrameHaveStorageAccess(host) &&
+         blink::StorageKey::CreateFirstParty(host->GetStorageKey().origin()) ==
+             storage_key);
   }
   if (!security_policy_handle.CanAccessDataForOrigin(storage_key.origin())) {
     const std::string type_string =
@@ -320,7 +321,7 @@ bool DOMStorageContextWrapper::IsRequestValid(
                            " request due to ChildProcessSecurityPolicy."}));
     return false;
   }
-  if (host_storage_key_did_not_match) {
+  if (!host_storage_key_matched_or_missing) {
     // Ideally we would kill the renderer here, but it's possible this is the
     // result of a race condition between committing the new document and
     // binding the DOM Storage. For now, we'll just fail to bind.
@@ -364,21 +365,21 @@ DOMStorageContextWrapper::MaybeGetExistingNamespace(
     const std::string& namespace_id) const {
   base::AutoLock lock(alive_namespaces_lock_);
   auto it = alive_namespaces_.find(namespace_id);
-  return (it != alive_namespaces_.end()) ? it->second : nullptr;
+  return (it != alive_namespaces_.end()) ? it->second.get() : nullptr;
 }
 
 void DOMStorageContextWrapper::AddNamespace(
     const std::string& namespace_id,
     SessionStorageNamespaceImpl* session_namespace) {
   base::AutoLock lock(alive_namespaces_lock_);
-  DCHECK(alive_namespaces_.find(namespace_id) == alive_namespaces_.end());
+  DCHECK(!base::Contains(alive_namespaces_, namespace_id));
   alive_namespaces_[namespace_id] = session_namespace;
 }
 
 void DOMStorageContextWrapper::RemoveNamespace(
     const std::string& namespace_id) {
   base::AutoLock lock(alive_namespaces_lock_);
-  DCHECK(alive_namespaces_.find(namespace_id) != alive_namespaces_.end());
+  DCHECK(base::Contains(alive_namespaces_, namespace_id));
   alive_namespaces_.erase(namespace_id);
 }
 
@@ -414,7 +415,7 @@ void DOMStorageContextWrapper::OnStartupUsageRetrieved(
   for (const auto& info : usage) {
     origins.emplace_back(std::move(info->storage_key.origin()));
   }
-  // TODO(https://crbug.com/1199077): Pass the real StorageKey when
+  // TODO(crbug.com/40177656): Pass the real StorageKey when
   // StoragePolicyObserver is converted.
   storage_policy_observer_->StartTrackingOrigins(std::move(origins));
 }

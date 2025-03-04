@@ -105,10 +105,12 @@
 #include <cstddef>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
-#include "base/strings/string_piece.h"
+#include "base/compiler_specific.h"
 #include "base/trace_event/base_tracing_forward.h"
 #include "build/build_config.h"
 
@@ -144,6 +146,10 @@
 #define FILE_PATH_LITERAL(x) x
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_APPLE)
+typedef const struct __CFString* CFStringRef;
+#endif
+
 namespace base {
 
 class SafeBaseName;
@@ -166,7 +172,7 @@ class BASE_EXPORT FilePath {
 #endif  // BUILDFLAG(IS_WIN)
 
   typedef StringType::value_type CharType;
-  typedef BasicStringPiece<CharType> StringPieceType;
+  typedef std::basic_string_view<CharType> StringPieceType;
 
   // Null-terminated array of separators used to separate components in paths.
   // Each character in this array is a valid separator, but kSeparators[0] is
@@ -213,7 +219,7 @@ class BASE_EXPORT FilePath {
     return path_ < that.path_;
   }
 
-  const StringType& value() const { return path_; }
+  const StringType& value() const LIFETIME_BOUND { return path_; }
 
   [[nodiscard]] bool empty() const { return path_.empty(); }
 
@@ -323,7 +329,8 @@ class BASE_EXPORT FilePath {
   // path == "C:\pics\jojo"     suffix == " (1)", returns "C:\pics\jojo (1)"
   // path == "C:\pics.old\jojo" suffix == " (1)", returns "C:\pics.old\jojo (1)"
   [[nodiscard]] FilePath InsertBeforeExtension(StringPieceType suffix) const;
-  [[nodiscard]] FilePath InsertBeforeExtensionASCII(StringPiece suffix) const;
+  [[nodiscard]] FilePath InsertBeforeExtensionASCII(
+      std::string_view suffix) const;
 
   // Adds |extension| to |file_name|. Returns the current FilePath if
   // |extension| is empty. Returns "" if BaseName() == "." or "..".
@@ -331,7 +338,7 @@ class BASE_EXPORT FilePath {
 
   // Like above, but takes the extension as an ASCII string. See AppendASCII for
   // details on how this is handled.
-  [[nodiscard]] FilePath AddExtensionASCII(StringPiece extension) const;
+  [[nodiscard]] FilePath AddExtensionASCII(std::string_view extension) const;
 
   // Replaces the extension of |file_name| with |extension|.  If |file_name|
   // does not have an extension, then |extension| is added.  If |extension| is
@@ -363,7 +370,7 @@ class BASE_EXPORT FilePath {
   // On Linux, although it can use any 8-bit encoding for paths, we assume that
   // ASCII is a valid subset, regardless of the encoding, since many operating
   // system paths will always be ASCII.
-  [[nodiscard]] FilePath AppendASCII(StringPiece component) const;
+  [[nodiscard]] FilePath AppendASCII(std::string_view component) const;
 
   // Returns true if this FilePath contains an absolute path.  On Windows, an
   // absolute path begins with either a drive letter specification followed by
@@ -420,7 +427,7 @@ class BASE_EXPORT FilePath {
   std::u16string AsUTF16Unsafe() const;
 
   // Returns a FilePath object from a path name in ASCII.
-  static FilePath FromASCII(StringPiece ascii);
+  static FilePath FromASCII(std::string_view ascii);
 
   // Returns a FilePath object from a path name in UTF-8. This function
   // should only be used for cases where you are sure that the input
@@ -430,10 +437,10 @@ class BASE_EXPORT FilePath {
   // internally calls SysWideToNativeMB() on POSIX systems other than Mac
   // and Chrome OS, to mitigate the encoding issue. See the comment at
   // AsUTF8Unsafe() for details.
-  static FilePath FromUTF8Unsafe(StringPiece utf8);
+  static FilePath FromUTF8Unsafe(std::string_view utf8);
 
   // Similar to FromUTF8Unsafe, but accepts UTF-16 instead.
-  static FilePath FromUTF16Unsafe(StringPiece16 utf16);
+  static FilePath FromUTF16Unsafe(std::u16string_view utf16);
 
   void WriteToPickle(Pickle* pickle) const;
   bool ReadFromPickle(PickleIterator* iter);
@@ -473,8 +480,9 @@ class BASE_EXPORT FilePath {
   // HFS, which is close to, but not quite, decomposition form D. See
   // http://developer.apple.com/mac/library/technotes/tn/tn1150.html#UnicodeSubtleties
   // for further comments.
-  // Returns the epmty string if the conversion failed.
+  // Returns the empty string if the conversion failed.
   static StringType GetHFSDecomposedForm(StringPieceType string);
+  static StringType GetHFSDecomposedForm(CFStringRef cfstring);
 
   // Special UTF-8 version of FastUnicodeCompare. Cf:
   // http://developer.apple.com/mac/library/technotes/tn/tn1150.html#StringComparisonAlgorithm
@@ -493,13 +501,13 @@ class BASE_EXPORT FilePath {
   bool IsContentUri() const;
 #endif
 
-#ifdef OHOS_FILE_UPLOAD
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Return true if the path is a datashare uri or dataability, or false
   // otherwise
   bool IsDataShareUri() const;
 #endif
 
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   static bool IsDataShareUrl(const StringType& url);
 #endif
 

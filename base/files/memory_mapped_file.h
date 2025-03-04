@@ -10,17 +10,20 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
+#include "base/containers/span.h"
 #include "base/files/file.h"
-#include "base/memory/raw_ptr.h"
+#include "base/memory/raw_ptr_exclusion.h"
 #include "build/build_config.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_handle.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
-#include "ohos_adapter_helper.h"
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace base {
@@ -42,6 +45,11 @@ class BASE_EXPORT MemoryMappedFile {
     // the OS to pause the thread while it writes them out. The pause can
     // be as much as 1s on some systems.
     READ_WRITE,
+
+    // This provides read/write access to the mapped file contents as above, but
+    // applies a copy-on-write policy such that no writes are carried through to
+    // the underlying file.
+    READ_WRITE_COPY,
 
     // This provides read/write access but with the ability to write beyond
     // the end of the existing file up to a maximum size specified as the
@@ -70,8 +78,7 @@ class BASE_EXPORT MemoryMappedFile {
   struct BASE_EXPORT Region {
     static const Region kWholeFile;
 
-    bool operator==(const Region& other) const;
-    bool operator!=(const Region& other) const;
+    friend bool operator==(const Region&, const Region&) = default;
 
     // Start of the region (measured in bytes from the beginning of the file).
     int64_t offset;
@@ -109,15 +116,18 @@ class BASE_EXPORT MemoryMappedFile {
     return Initialize(std::move(file), region, READ_ONLY);
   }
 
-  const uint8_t* data() const { return data_; }
-  uint8_t* data() { return data_; }
-  size_t length() const { return length_; }
+  const uint8_t* data() const { return bytes_.data(); }
+  uint8_t* data() { return bytes_.data(); }
+  size_t length() const { return bytes_.size(); }
+
+  span<const uint8_t> bytes() const { return bytes_; }
+  span<uint8_t> mutable_bytes() { return bytes_; }
 
   // Is file_ a valid file handle that points to an open, memory mapped file?
   bool IsValid() const;
 
-
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
   void SetDataAndLength(std::unique_ptr<uint8_t[]>& data, size_t length) {
     if (IsValid() && !customizeData_) {
       CloseHandles();
@@ -130,9 +140,10 @@ class BASE_EXPORT MemoryMappedFile {
     customizeData_ = true;
     data_ = data.release();
     length_ = length;
+    bytes_ = span<uint8_t>(data.release(), length);
   }
 
-  void SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper> &mapper);
+  void SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper);
 #endif
 
  private:
@@ -149,25 +160,30 @@ class BASE_EXPORT MemoryMappedFile {
                                            int32_t* offset);
 
 #if BUILDFLAG(IS_WIN)
-  // Maps the executable file to memory, set |data_| to that memory address.
+  // Maps the executable file to memory, point `bytes_` to the memory range.
   // Return true on success.
   bool MapImageToMemory(Access access);
 #endif
 
-  // Map the file to memory, set data_ to that memory address. Return true on
-  // success, false on any kind of failure. This is a helper for Initialize().
+  // Map the file to memory, point `bytes_` to that memory address. Return true
+  // on success, false on any kind of failure. This is a helper for
+  // Initialize().
   bool MapFileRegionToMemory(const Region& region, Access access);
 
   // Closes all open handles.
   void CloseHandles();
 
   File file_;
-  
-  raw_ptr<uint8_t, DanglingUntriaged | AllowPtrArithmetic> data_ = nullptr;
-  size_t length_ = 0;
-#if BUILDFLAG(IS_OHOS) && (defined(OHOS_HAP_DECOMPRESSED) || defined(OHOS_MEM))
+
+  // RAW_PTR_EXCLUSION: Never allocated by PartitionAlloc (always mmap'ed), so
+  // there is no benefit to using a raw_span, only cost.
+  RAW_PTR_EXCLUSION span<uint8_t> bytes_;
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
   bool customizeData_ = false;
   std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper_;
+  raw_ptr<uint8_t, DanglingUntriaged | AllowPtrArithmetic> data_ = nullptr;
+  size_t length_ = 0;
 #endif
 
 #if BUILDFLAG(IS_WIN)

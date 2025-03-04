@@ -17,7 +17,9 @@
 #include "components/services/storage/public/mojom/cache_storage_control.mojom-forward.h"
 #include "components/services/storage/public/mojom/local_storage_control.mojom-forward.h"
 #include "content/common/content_export.h"
+#include "media/media_buildflags.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
+#include "services/network/public/mojom/cert_verifier_service_updater.mojom-forward.h"
 #include "services/network/public/mojom/cookie_manager.mojom-forward.h"
 #include "services/network/public/mojom/restricted_cookie_manager.mojom-forward.h"
 #include "services/network/public/mojom/trust_tokens.mojom-forward.h"
@@ -68,7 +70,9 @@ class BackgroundSyncContext;
 class BrowserContext;
 class BrowsingDataFilterBuilder;
 class BrowsingTopicsSiteDataManager;
+class CdmStorageDataModel;
 class ContentIndexContext;
+class CookieDeprecationLabelManager;
 class DedicatedWorkerService;
 class DevToolsBackgroundServicesContext;
 class DOMStorageContext;
@@ -78,6 +82,7 @@ class HostZoomLevelContext;
 class HostZoomMap;
 class InterestGroupManager;
 class PlatformNotificationContext;
+class PrivateAggregationDataModel;
 class ServiceWorkerContext;
 class SharedWorkerService;
 class StoragePartitionConfig;
@@ -93,14 +98,17 @@ class NavigationRequest;
 class CONTENT_EXPORT StoragePartition {
  public:
   // Returns the StoragePartitionConfig that represents this StoragePartition.
-  virtual const StoragePartitionConfig& GetConfig() = 0;
+  virtual const StoragePartitionConfig& GetConfig() const = 0;
 
-  virtual base::FilePath GetPath() = 0;
+  virtual const base::FilePath& GetPath() const = 0;
 
   // Returns a raw mojom::NetworkContext pointer. When network service crashes
   // or restarts, the raw pointer will not be valid or safe to use. Therefore,
   // caller should not hold onto this pointer beyond the same message loop task.
   virtual network::mojom::NetworkContext* GetNetworkContext() = 0;
+
+  virtual cert_verifier::mojom::CertVerifierServiceUpdater*
+  GetCertVerifierServiceUpdater() = 0;
 
   // Returns the SharedStorageManager for the StoragePartition, or nullptr if it
   // doesn't exist because the feature is disabled.
@@ -117,7 +125,7 @@ class CONTENT_EXPORT StoragePartition {
   // network process restarts.
   //
   // SECURITY NOTE: This browser-process factory relaxes many security features
-  // (e.g. may disable CORB, won't set |request_initiator_origin_lock| or
+  // (e.g. may disable ORB, won't set |request_initiator_origin_lock| or
   // IsolationInfo, etc.).  Network requests that may be initiated or influenced
   // by a web origin should typically use a different factory (e.g.  the one
   // from RenderFrameHost::CreateNetworkServiceDefaultFactory).
@@ -163,6 +171,12 @@ class CONTENT_EXPORT StoragePartition {
   virtual InterestGroupManager* GetInterestGroupManager() = 0;
   virtual BrowsingTopicsSiteDataManager* GetBrowsingTopicsSiteDataManager() = 0;
   virtual AttributionDataModel* GetAttributionDataModel() = 0;
+  virtual PrivateAggregationDataModel* GetPrivateAggregationDataModel() = 0;
+  virtual CookieDeprecationLabelManager* GetCookieDeprecationLabelManager() = 0;
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS)
+  virtual CdmStorageDataModel* GetCdmStorageDataModel() = 0;
+#endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS)
+  virtual void DeleteStaleSessionOnlyCookiesAfterDelay() = 0;
 
   virtual leveldb_proto::ProtoDatabaseProvider* GetProtoDatabaseProvider() = 0;
   // Must be set before the first call to GetProtoDatabaseProvider(), or a new
@@ -338,6 +352,10 @@ class CONTENT_EXPORT StoragePartition {
   // use only.
   virtual void FlushNetworkInterfaceForTesting() = 0;
 
+  // Call |FlushForTesting()| on Cert Verifier Service related interfaces. For
+  // test use only.
+  virtual void FlushCertVerifierInterfaceForTesting() = 0;
+
   // Wait until all deletions tasks are finished. For test use only.
   virtual void WaitForDeletionTasksForTesting() = 0;
 
@@ -353,15 +371,13 @@ class CONTENT_EXPORT StoragePartition {
   virtual leveldb_proto::ProtoDatabaseProvider*
   GetProtoDatabaseProviderForTesting() = 0;
 
-  // Resets all state associated with the Attribution Reporting API for use in
-  // hermetic tests.
-  virtual void ResetAttributionManagerForTesting(
-      base::OnceCallback<void(bool success)> callback) = 0;
-
   // The value pointed to by |settings| should remain valid until the
   // the function is called again with a new value or a nullptr.
   static void SetDefaultQuotaSettingsForTesting(
       const storage::QuotaSettings* settings);
+
+  virtual void OverrideDeleteStaleSessionOnlyCookiesDelayForTesting(
+      const base::TimeDelta& delay) = 0;
 
  protected:
   virtual ~StoragePartition() {}

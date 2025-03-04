@@ -61,7 +61,6 @@ int ConvertHinting(gfx::FontRenderParams::Hinting hinting) {
       return 3;
   }
   NOTREACHED() << "Unexpected hinting value " << hinting;
-  return 0;
 }
 
 font_service::mojom::RenderStyleSwitch ConvertSubpixelRendering(
@@ -76,7 +75,6 @@ font_service::mojom::RenderStyleSwitch ConvertSubpixelRendering(
       return font_service::mojom::RenderStyleSwitch::ON;
   }
   NOTREACHED() << "Unexpected subpixel rendering value " << rendering;
-  return font_service::mojom::RenderStyleSwitch::NO_PREFERENCE;
 }
 
 // The maximum number of entries to keep in the font family matching cache.
@@ -235,7 +233,7 @@ void FontServiceApp::MatchFontByPostscriptNameOrFullFontName(
   TRACE_EVENT0("fonts",
                "FontServiceApp::MatchFontByPostscriptNameOrFullFontName");
 
-  absl::optional<FontConfigLocalMatching::FontConfigMatchResult> match_result =
+  std::optional<FontConfigLocalMatching::FontConfigMatchResult> match_result =
       FontConfigLocalMatching::FindFontByPostscriptNameOrFullFontName(family);
   if (match_result) {
     uint32_t fontconfig_interface_id = FindOrAddPath(match_result->file_path);

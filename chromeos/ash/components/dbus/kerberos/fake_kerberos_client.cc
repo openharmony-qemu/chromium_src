@@ -2,11 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "chromeos/ash/components/dbus/kerberos/fake_kerberos_client.h"
 
 #include <utility>
 
 #include "base/containers/contains.h"
+#include "base/containers/span.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
@@ -52,8 +58,9 @@ const char* const kBlocklistedConfigOptions[] = {
 // non-allowlisted keywords. Returns true if no blocklisted items are contained.
 bool ValidateConfigLine(const std::string& line) {
   for (const char* option : kBlocklistedConfigOptions) {
-    if (line.find(option) != std::string::npos)
+    if (base::Contains(line, option)) {
       return false;
+    }
   }
   return true;
 }
@@ -104,8 +111,9 @@ void PostResponse(base::OnceCallback<void(const TProto&)> callback,
 std::string ReadPassword(int password_fd) {
   std::string password;
   char c;
-  while (base::ReadFromFD(password_fd, &c, 1))
+  while (base::ReadFromFD(password_fd, base::span_from_ref(c))) {
     password.push_back(c);
+  }
   return password;
 }
 

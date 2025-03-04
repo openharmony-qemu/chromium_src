@@ -2,12 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "gpu/vulkan/vulkan_surface.h"
 
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/scoped_blocking_call.h"
@@ -15,6 +21,10 @@
 #include "gpu/vulkan/vulkan_device_queue.h"
 #include "gpu/vulkan/vulkan_function_pointers.h"
 #include "gpu/vulkan/vulkan_swap_chain.h"
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace gpu {
 
@@ -37,16 +47,18 @@ VkSurfaceTransformFlagBitsKHR ToVkSurfaceTransformFlag(
       return VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_BIT_KHR;
     case gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL:
       return VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR;
-    case gfx::OVERLAY_TRANSFORM_ROTATE_90:
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_90:
       return VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR;
-    case gfx::OVERLAY_TRANSFORM_ROTATE_180:
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_180:
       return VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR;
-    case gfx::OVERLAY_TRANSFORM_ROTATE_270:
+    case gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_270:
       return VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR;
-    default:
-      NOTREACHED() << "transform:" << transform;
-      return VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    case gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL_CLOCKWISE_90:
+    case gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL_CLOCKWISE_270:
+    case gfx::OVERLAY_TRANSFORM_INVALID:
+      break;
   };
+  NOTREACHED() << "transform:" << transform;
 }
 
 gfx::OverlayTransform FromVkSurfaceTransformFlag(
@@ -59,14 +71,13 @@ gfx::OverlayTransform FromVkSurfaceTransformFlag(
     case VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_180_BIT_KHR:
       return gfx::OVERLAY_TRANSFORM_FLIP_VERTICAL;
     case VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR:
-      return gfx::OVERLAY_TRANSFORM_ROTATE_90;
+      return gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_90;
     case VK_SURFACE_TRANSFORM_ROTATE_180_BIT_KHR:
-      return gfx::OVERLAY_TRANSFORM_ROTATE_180;
+      return gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_180;
     case VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR:
-      return gfx::OVERLAY_TRANSFORM_ROTATE_270;
+      return gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_270;
     default:
       NOTREACHED() << "transform:" << transform;
-      return gfx::OVERLAY_TRANSFORM_INVALID;
   }
 }
 
@@ -97,6 +108,9 @@ VulkanSurface::VulkanSurface(VkInstance vk_instance,
     vsync_provider_ = std::make_unique<gfx::FixedVSyncProvider>(
         base::TimeTicks(), base::Seconds(1) / 60);
   }
+#if BUILDFLAG(ARKWEB_VULKAN)
+  swap_chain_ = nullptr;
+#endif
 }
 
 bool VulkanSurface::Initialize(VulkanDeviceQueue* device_queue,
@@ -250,6 +264,13 @@ base::TimeDelta VulkanSurface::GetDisplayRefreshInterval() {
 
 bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
                                     gfx::OverlayTransform transform) {
+#if BUILDFLAG(ARKWEB_VULKAN)
+  Finish();
+  if (swap_chain_) {
+    swap_chain_->Destroy();
+    swap_chain_ = nullptr;
+  }
+#endif
   // Get Surface Information.
   VkSurfaceCapabilitiesKHR surface_caps;
   VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
@@ -257,7 +278,6 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
   if (VK_SUCCESS != result) {
     LOG(FATAL) << "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() failed: "
                << result;
-    return false;
   }
 
   auto vk_transform = transform != gfx::OVERLAY_TRANSFORM_INVALID
@@ -285,8 +305,8 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
       image_size.SetSize(surface_caps.currentExtent.width,
                          surface_caps.currentExtent.height);
     }
-    if (transform == gfx::OVERLAY_TRANSFORM_ROTATE_90 ||
-        transform == gfx::OVERLAY_TRANSFORM_ROTATE_270) {
+    if (transform == gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_90 ||
+        transform == gfx::OVERLAY_TRANSFORM_ROTATE_CLOCKWISE_270) {
       image_size.SetSize(image_size.height(), image_size.width());
     }
   }
@@ -302,8 +322,12 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
   DCHECK_GT(static_cast<uint32_t>(image_size.width()), 0u);
   DCHECK_GT(static_cast<uint32_t>(image_size.height()), 0u);
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+  if (image_size_ == image_size && transform_ == transform) {
+#else
   if (image_size_ == image_size && transform_ == transform &&
       swap_chain_->state() == VK_SUCCESS) {
+#endif
     return true;
   }
 
@@ -328,6 +352,12 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
       std::make_unique<VulkanSwapChain>(acquire_next_image_timeout_ns_);
   // Create swap chain.
   auto min_image_count = std::max(surface_caps.minImageCount, kMinImageCount);
+#if BUILDFLAG(ARKWEB_VULKAN)
+  uint32_t imageCount = base::ohos::IsMobileDevice() ? 5u : 4u;
+  min_image_count = std::max(min_image_count, imageCount);
+  LOG(INFO) << "VulkanSurface::CreateSwapChain min_image_count = "
+            << min_image_count;
+#endif
   if (!swap_chain->Initialize(device_queue_, surface_, surface_format_,
                               image_size_, min_image_count, image_usage_flags_,
                               vk_transform, composite_alpha_,

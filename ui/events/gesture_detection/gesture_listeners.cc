@@ -20,14 +20,15 @@ bool SimpleGestureListener::OnSingleTapUp(const MotionEvent& e,
 void SimpleGestureListener::OnShortPress(const MotionEvent& e) {}
 
 void SimpleGestureListener::OnLongPress(const MotionEvent& e) {}
-#ifdef OHOS_DRAG_DROP
-void SimpleGestureListener::OnDragLongPress(const MotionEvent& e) {
-}
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void SimpleGestureListener::OnDragLongPress(const MotionEvent& e) {}
 #endif
-#ifdef OHOS_AI
-void SimpleGestureListener::OnCreateOverlay(const MotionEvent& e) {
-}
+
+#if BUILDFLAG(ARKWEB_AI)
+void SimpleGestureListener::OnCreateOverlay(const MotionEvent& e) {}
 #endif
+
 bool SimpleGestureListener::OnScroll(const MotionEvent& e1,
                                      const MotionEvent& e2,
                                      const MotionEvent& secondary_pointer_down,

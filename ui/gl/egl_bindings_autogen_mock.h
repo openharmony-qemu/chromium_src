@@ -12,6 +12,8 @@
 // no-include-guard-because-multiply-included
 // NOLINT(build/header_guard)
 
+static void GL_BINDING_CALL
+Mock_eglAcquireExternalContextANGLE(EGLDisplay dpy, EGLSurface readAndDraw);
 static EGLBoolean GL_BINDING_CALL Mock_eglBindAPI(EGLenum api);
 static EGLBoolean GL_BINDING_CALL Mock_eglBindTexImage(EGLDisplay dpy,
                                                        EGLSurface surface,
@@ -278,6 +280,7 @@ Mock_eglQuerySurfacePointerANGLE(EGLDisplay dpy,
                                  void** value);
 static void GL_BINDING_CALL Mock_eglReacquireHighPowerGPUANGLE(EGLDisplay dpy,
                                                                EGLContext ctx);
+static void GL_BINDING_CALL Mock_eglReleaseExternalContextANGLE(EGLDisplay dpy);
 static void GL_BINDING_CALL Mock_eglReleaseHighPowerGPUANGLE(EGLDisplay dpy,
                                                              EGLContext ctx);
 static EGLBoolean GL_BINDING_CALL Mock_eglReleaseTexImage(EGLDisplay dpy,
@@ -288,6 +291,8 @@ static void GL_BINDING_CALL
 Mock_eglSetBlobCacheFuncsANDROID(EGLDisplay dpy,
                                  EGLSetBlobFuncANDROID set,
                                  EGLGetBlobFuncANDROID get);
+static void GL_BINDING_CALL
+Mock_eglSetValidationEnabledANGLE(EGLBoolean validationState);
 static EGLBoolean GL_BINDING_CALL Mock_eglStreamAttribKHR(EGLDisplay dpy,
                                                           EGLStreamKHR stream,
                                                           EGLenum attribute,

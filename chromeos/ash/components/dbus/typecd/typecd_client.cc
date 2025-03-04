@@ -29,6 +29,8 @@ class TypecdClientImpl : public TypecdClient {
 
   // TypecdClient overrides
   void SetPeripheralDataAccessPermissionState(bool permitted) override;
+  void SetTypeCPortsUsingDisplays(
+      const std::vector<uint32_t>& port_nums) override;
 
   void Init(dbus::Bus* bus);
 
@@ -39,7 +41,7 @@ class TypecdClientImpl : public TypecdClient {
                          const std::string& signal_name,
                          bool success);
 
-  raw_ptr<dbus::ObjectProxy, ExperimentalAsh> typecd_proxy_ = nullptr;
+  raw_ptr<dbus::ObjectProxy> typecd_proxy_ = nullptr;
   base::WeakPtrFactory<TypecdClientImpl> weak_ptr_factory_{this};
 };
 
@@ -116,6 +118,17 @@ void TypecdClientImpl::SetPeripheralDataAccessPermissionState(bool permitted) {
 
   dbus::MessageWriter writer(&method_call);
   writer.AppendBool(permitted);
+
+  typecd_proxy_->CallMethod(
+      &method_call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT, base::DoNothing());
+}
+
+void TypecdClientImpl::SetTypeCPortsUsingDisplays(
+    const std::vector<uint32_t>& port_nums) {
+  dbus::MethodCall method_call(typecd::kTypecdServiceInterface,
+                               typecd::kTypecdSetPortsUsingDisplaysMethod);
+  dbus::MessageWriter writer(&method_call);
+  writer.AppendArrayOfUint32s(port_nums);
 
   typecd_proxy_->CallMethod(
       &method_call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT, base::DoNothing());

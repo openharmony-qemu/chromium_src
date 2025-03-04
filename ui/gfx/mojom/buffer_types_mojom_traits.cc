@@ -12,6 +12,8 @@
 #include "mojo/public/cpp/system/scope_to_message_pipe.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+
 namespace mojo {
 
 // static
@@ -45,7 +47,7 @@ gfx::mojom::GpuMemoryBufferPlatformHandlePtr StructTraits<
           IOSurfaceCreateMachPort(handle.io_surface.get()));
       return gfx::mojom::GpuMemoryBufferPlatformHandle::NewMachPort(
           mojo::PlatformHandle(
-              base::mac::RetainMachSendRight(io_surface_mach_port.get())));
+              base::apple::RetainMachSendRight(io_surface_mach_port.get())));
 #else
       break;
 #endif
@@ -84,6 +86,11 @@ gfx::mojom::GpuMemoryBufferPlatformHandlePtr StructTraits<
       break;
 #endif
     }
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case gfx::OHOS_NATIVE_BUFFER: {
+      // TODO: Implement this
+    }
+#endif
   }
 
   return nullptr;

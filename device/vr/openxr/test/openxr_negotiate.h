@@ -5,12 +5,11 @@
 #ifndef DEVICE_VR_OPENXR_TEST_OPENXR_NEGOTIATE_H_
 #define DEVICE_VR_OPENXR_TEST_OPENXR_NEGOTIATE_H_
 
-#include <d3d11.h>
 #include <unknwn.h>
 
 #include "device/vr/openxr/openxr_platform.h"
 #include "third_party/openxr/src/include/openxr/openxr.h"
-#include "third_party/openxr/src/src/common/loader_interfaces.h"
+#include "third_party/openxr/src/include/openxr/openxr_loader_negotiation.h"
 
 // This file contains functions that are used by the openxr_loader.dll to call
 // into the fake OpenXR Runtime. Used for testing purposes only, so this should

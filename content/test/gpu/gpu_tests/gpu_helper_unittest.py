@@ -7,6 +7,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import unittest
 from unittest import mock
 
+import dataclasses  # Built-in, but pylint gives an ordering false positive.
+
+from gpu_tests import common_typing as ct
 from gpu_tests import gpu_helper
 from telemetry.internal.platform import gpu_info
 
@@ -44,23 +47,14 @@ def CreateGpuDeviceDict(vendor_id: Optional[int] = None,
 # pylint: enable=too-many-arguments
 
 
+@dataclasses.dataclass
 class TagHelperTestCase():
   """Struct-like class for defining a tag helper test case."""
-
-  # pylint: disable=too-many-arguments
-  def __init__(self,
-               expected_result: Any,
-               device_dict: Optional[Dict[str, Union[str, int]]] = None,
-               aux_attributes: Optional[Dict[str, Any]] = None,
-               feature_status: Optional[Dict[str, str]] = None,
-               extra_browser_args: Optional[List[str]] = None):
-    self.expected_result = expected_result
-    self.device_dict = device_dict or {}
-    self.aux_attributes = aux_attributes or {}
-    self.feature_status = feature_status or {}
-    self.extra_browser_args = extra_browser_args or []
-
-  # pylint: enable=too-many-arguments
+  expected_result: Any
+  device_dict: Dict[str, Union[str, int]] = ct.EmptyDict()
+  aux_attributes: Dict[str, Any] = ct.EmptyDict()
+  feature_status: Dict[str, str] = ct.EmptyDict()
+  extra_browser_args: List[str] = ct.EmptyList()
 
 
 class TagHelpersUnittest(unittest.TestCase):
@@ -80,16 +74,6 @@ class TagHelpersUnittest(unittest.TestCase):
     info = gpu_info.GPUInfo([CreateGpuDeviceDict(**tc.device_dict)],
                             tc.aux_attributes, tc.feature_status, None)
     self.assertEqual(test_method(info), tc.expected_result)
-
-  def runTagHelperTestWithBrowserArgs(
-      self, tc: TagHelperTestCase,
-      test_method: Callable[[Optional[gpu_info.GPUInfo], List[str]], Any]
-  ) -> None:
-    """Helper method for running a tag helper test case w/ browser args."""
-    info = gpu_info.GPUInfo([CreateGpuDeviceDict(**tc.device_dict)],
-                            tc.aux_attributes, tc.feature_status, None)
-    self.assertEqual(test_method(info, tc.extra_browser_args),
-                     tc.expected_result)
 
   def testGetGpuVendorString(self) -> None:
     """Tests all code paths for the GetGpuVendorString() method."""
@@ -246,27 +230,37 @@ class TagHelpersUnittest(unittest.TestCase):
     # Undefined info.
     self.assertEqual(gpu_helper.GetCommandDecoder(None), 'no_passthrough')
 
+  def testGetSkiaGraphiteStatus(self) -> None:
+    """Tests all the code paths for the GetSkiaGraphiteStatus() method."""
+    cases = [
+        # No feature status.
+        TagHelperTestCase('graphite-disabled'),
+        # Feature status off.
+        TagHelperTestCase('graphite-disabled',
+                          feature_status={'skia_graphite': 'disabled'}),
+        # Feature status on.
+        TagHelperTestCase('graphite-enabled',
+                          feature_status={'skia_graphite': 'enabled_on'}),
+    ]
+
+    for tc in cases:
+      self.runTagHelperTest(tc, gpu_helper.GetSkiaGraphiteStatus)
+
+    # Undefined info.
+    self.assertEqual(gpu_helper.GetSkiaGraphiteStatus(None),
+                     'graphite-disabled')
+
   def testGetSkiaRenderer(self) -> None:
     """Tests all code paths for the GetSkiaRenderer() method."""
     cases = [
         # No feature status.
-        TagHelperTestCase('renderer-software',
-                          extra_browser_args=['--enable-features=SkiaDawn']),
+        TagHelperTestCase('renderer-software'),
         # No GPU Compositing.
         TagHelperTestCase('renderer-software',
-                          feature_status={'gpu_compositing': 'disabled'},
-                          extra_browser_args=['--enable-features=SkiaDawn']),
+                          feature_status={'gpu_compositing': 'disabled'}),
         # No renderer.
         TagHelperTestCase('renderer-software',
                           feature_status={'gpu_compositing': 'enabled'}),
-        # Skia Dawn.
-        TagHelperTestCase('renderer-skia-dawn',
-                          feature_status={
-                              'gpu_compositing': 'enabled',
-                              'vulkan': 'enabled_on',
-                              'opengl': 'enabled_on'
-                          },
-                          extra_browser_args=['--enable-features=SkiaDawn']),
         # Vulkan Skia Renderer.
         TagHelperTestCase('renderer-skia-vulkan',
                           feature_status={
@@ -284,16 +278,15 @@ class TagHelpersUnittest(unittest.TestCase):
     ]
 
     for tc in cases:
-      self.runTagHelperTestWithBrowserArgs(tc, gpu_helper.GetSkiaRenderer)
+      self.runTagHelperTest(tc, gpu_helper.GetSkiaRenderer)
 
     # Undefined info.
-    self.assertEqual(
-        gpu_helper.GetSkiaRenderer(None, ['--enable-features=SkiaDawn']),
-        'renderer-software')
+    self.assertEqual(gpu_helper.GetSkiaRenderer(None), 'renderer-software')
 
   def testGetDisplayServer(self) -> None:
     """Tests all code paths for the GetDisplayServer() method."""
-    with mock.patch('sys.platform', 'linux2'):
+    with mock.patch('gpu_tests.util.host_information.IsLinux',
+                    return_value=True):
       # Remote platforms.
       for browser_type in gpu_helper.REMOTE_BROWSER_TYPES:
         self.assertEqual(gpu_helper.GetDisplayServer(browser_type), None)
@@ -305,7 +298,8 @@ class TagHelpersUnittest(unittest.TestCase):
         self.assertEqual(gpu_helper.GetDisplayServer(''),
                          'display-server-wayland')
 
-    with mock.patch('sys.platform', 'win32'):
+    with mock.patch('gpu_tests.util.host_information.IsLinux',
+                    return_value=False):
       self.assertEqual(gpu_helper.GetDisplayServer(''), None)
 
   def testGetOOPCanvasStatus(self) -> None:

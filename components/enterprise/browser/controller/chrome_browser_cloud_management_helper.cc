@@ -12,6 +12,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "components/enterprise/browser/controller/browser_dm_token_storage.h"
+#include "components/policy/core/common/cloud/cloud_policy_client.h"
 #include "components/policy/core/common/cloud/cloud_policy_client_registration_helper.h"
 #include "components/policy/core/common/cloud/cloud_policy_core.h"
 #include "components/policy/core/common/cloud/cloud_policy_manager.h"
@@ -41,7 +42,7 @@ ChromeBrowserCloudManagementRegistrar::ChromeBrowserCloudManagementRegistrar(
       url_loader_factory_(url_loader_factory) {}
 
 ChromeBrowserCloudManagementRegistrar::
-    ~ChromeBrowserCloudManagementRegistrar() {}
+    ~ChromeBrowserCloudManagementRegistrar() = default;
 
 void ChromeBrowserCloudManagementRegistrar::
     RegisterForCloudManagementWithEnrollmentToken(
@@ -130,7 +131,8 @@ void MachineLevelUserCloudPolicyFetcher::SetupRegistrationAndFetchPolicy(
   DCHECK(policy_manager_->IsClientRegistered());
 
   policy_manager_->core()->service()->RefreshPolicy(
-      base::BindOnce(&OnPolicyFetchCompleted));
+      base::BindOnce(&OnPolicyFetchCompleted),
+      PolicyFetchReason::kRegistrationChanged);
 }
 
 void MachineLevelUserCloudPolicyFetcher::AddClientObserver(
@@ -193,6 +195,10 @@ void MachineLevelUserCloudPolicyFetcher::TryToFetchPolicy() {
   std::string client_id = BrowserDMTokenStorage::Get()->RetrieveClientId();
   if (dm_token.is_valid() && !client_id.empty())
     SetupRegistrationAndFetchPolicy(dm_token, client_id);
+}
+
+std::string_view MachineLevelUserCloudPolicyFetcher::name() const {
+  return "MachineLevelUserCloudPolicyFetcher";
 }
 
 }  // namespace policy

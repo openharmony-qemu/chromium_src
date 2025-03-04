@@ -37,15 +37,7 @@ RenderSurfaceImpl::RenderSurfaceImpl(LayerTreeImpl* layer_tree_impl,
                                      ElementId id)
     : layer_tree_impl_(layer_tree_impl),
       id_(id),
-      effect_tree_index_(kInvalidPropertyNodeId),
-      num_contributors_(0),
-      has_contributing_layer_that_escapes_clip_(false),
-      surface_property_changed_(false),
-      ancestor_property_changed_(false),
-      contributes_to_drawn_surface_(false),
-      is_render_surface_list_member_(false),
-      intersects_damage_under_(true),
-      nearest_occlusion_immune_ancestor_(nullptr) {
+      effect_tree_index_(kInvalidPropertyNodeId) {
   DCHECK(id);
   damage_tracker_ = DamageTracker::Create();
 }
@@ -72,10 +64,7 @@ const RenderSurfaceImpl* RenderSurfaceImpl::render_target() const {
     return this;
 }
 
-RenderSurfaceImpl::DrawProperties::DrawProperties() {
-  draw_opacity = 1.f;
-  is_clipped = false;
-}
+RenderSurfaceImpl::DrawProperties::DrawProperties() = default;
 
 RenderSurfaceImpl::DrawProperties::~DrawProperties() = default;
 
@@ -92,8 +81,7 @@ gfx::RectF RenderSurfaceImpl::DrawableContentRect() const {
   }
   gfx::RectF drawable_content_rect = MathUtil::MapClippedRect(
       draw_transform(), gfx::RectF(surface_content_rect));
-  if (!filters.IsEmpty() && is_clipped()) {
-    // Filter could move pixels around, but still need to be clipped.
+  if (is_clipped()) {
     drawable_content_rect.Intersect(gfx::RectF(clip_rect()));
   }
 
@@ -147,7 +135,7 @@ const FilterOperations& RenderSurfaceImpl::BackdropFilters() const {
   return OwningEffectNode()->backdrop_filters;
 }
 
-absl::optional<gfx::RRectF> RenderSurfaceImpl::BackdropFilterBounds() const {
+std::optional<gfx::RRectF> RenderSurfaceImpl::BackdropFilterBounds() const {
   return OwningEffectNode()->backdrop_filter_bounds;
 }
 
@@ -199,11 +187,6 @@ EffectNode* RenderSurfaceImpl::OwningEffectNodeMutableForTest() const {
       EffectTreeIndex());
 }
 
-const ViewTransitionElementId& RenderSurfaceImpl::GetViewTransitionElementId()
-    const {
-  return OwningEffectNode()->view_transition_shared_element_id;
-}
-
 void RenderSurfaceImpl::SetClipRect(const gfx::Rect& clip_rect) {
   if (clip_rect == draw_properties_.clip_rect)
     return;
@@ -236,8 +219,9 @@ gfx::Rect RenderSurfaceImpl::CalculateExpandedClipForFilters(
 }
 
 gfx::Rect RenderSurfaceImpl::CalculateClippedAccumulatedContentRect() {
-  if (CopyOfOutputRequired() || !is_clipped())
+  if (!ShouldClip() || !is_clipped()) {
     return accumulated_content_rect();
+  }
 
   if (accumulated_content_rect().IsEmpty())
     return gfx::Rect();
@@ -286,6 +270,13 @@ void RenderSurfaceImpl::CalculateContentRectFromAccumulatedContentRect(
   // Root render surface use viewport, and does not calculate content rect.
   DCHECK_NE(render_target(), this);
 
+  for (LayerImpl* layer : deferred_contributing_layers_) {
+    DCHECK(layer->draws_content());
+    accumulated_content_rect_.Union(layer->visible_drawable_content_rect());
+  }
+
+  deferred_contributing_layers_.clear();
+
   // Surface's content rect is the clipped accumulated content rect. By default
   // use accumulated content rect, and then try to clip it.
   gfx::Rect surface_content_rect = CalculateClippedAccumulatedContentRect();
@@ -312,6 +303,7 @@ void RenderSurfaceImpl::CalculateContentRectFromAccumulatedContentRect(
 void RenderSurfaceImpl::SetContentRectToViewport() {
   // Only root render surface use viewport as content rect.
   DCHECK_EQ(render_target(), this);
+  DCHECK(deferred_contributing_layers_.empty());
   gfx::Rect viewport = gfx::ToEnclosingRect(
       layer_tree_impl_->property_trees()->clip_tree().ViewportClip());
   SetContentRect(viewport);
@@ -331,7 +323,13 @@ void RenderSurfaceImpl::AccumulateContentRectFromContributingLayer(
   if (render_target() == this)
     return;
 
-  accumulated_content_rect_.Union(layer->visible_drawable_content_rect());
+  // Contributions from view-transition capture layers are deferred until
+  // their surface content rect is computed.
+  if (layer->ViewTransitionResourceId().IsValid()) {
+    deferred_contributing_layers_.push_back(layer);
+  } else {
+    accumulated_content_rect_.Union(layer->visible_drawable_content_rect());
+  }
 }
 
 void RenderSurfaceImpl::AccumulateContentRectFromContributingRenderSurface(
@@ -454,14 +452,14 @@ void RenderSurfaceImpl::AppendQuads(DrawMode draw_mode,
   bool contents_opaque = false;
   viz::SharedQuadState* shared_quad_state =
       render_pass->CreateAndAppendSharedQuadState();
-  absl::optional<gfx::Rect> clip_rect;
+  std::optional<gfx::Rect> clip_rect;
   if (draw_properties_.is_clipped) {
     clip_rect = draw_properties_.clip_rect;
   }
-  shared_quad_state->SetAll(draw_transform(), content_rect(), content_rect(),
-                            mask_filter_info(), clip_rect, contents_opaque,
-                            draw_properties_.draw_opacity, BlendMode(),
-                            sorting_context_id);
+  shared_quad_state->SetAll(
+      draw_transform(), content_rect(), content_rect(), mask_filter_info(),
+      clip_rect, contents_opaque, draw_properties_.draw_opacity, BlendMode(),
+      sorting_context_id, /*layer_id=*/0u, is_fast_rounded_corner());
 
   if (layer_tree_impl_->debug_state().show_debug_borders.test(
           DebugBorderType::RENDERPASS)) {
@@ -518,6 +516,11 @@ void RenderSurfaceImpl::AppendQuads(DrawMode draw_mode,
       mask_texture_size, surface_contents_scale, gfx::PointF(), tex_coord_rect,
       !layer_tree_impl_->settings().enable_edge_anti_aliasing,
       OwningEffectNode()->backdrop_filter_quality, intersects_damage_under_);
+}
+
+bool RenderSurfaceImpl::ShouldClip() const {
+  return !HasCopyRequest() && !ShouldCacheRenderSurface() &&
+         !OwningEffectNode()->view_transition_element_resource_id.IsValid();
 }
 
 }  // namespace cc

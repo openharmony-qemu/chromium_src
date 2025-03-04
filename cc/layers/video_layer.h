@@ -27,16 +27,17 @@ class CC_EXPORT VideoLayer : public Layer {
  public:
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
   using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform,
-                                          RectChangeCallback callback,
-                                          RectVisibilityChangeCallback visibilitycallback);
-  static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
-                                          media::VideoTransformation transform,
                                           RectChangeCallback callback);
+  static scoped_refptr<VideoLayer> Create(
+      VideoFrameProvider* provider,
+      media::VideoTransformation transform,
+      RectChangeCallback callback,
+      RectVisibilityChangeCallback visibilitycallback);
 #endif
 
   VideoLayer(const VideoLayer&) = delete;
@@ -44,10 +45,10 @@ class CC_EXPORT VideoLayer : public Layer {
 
   std::unique_ptr<LayerImpl> CreateLayerImpl(
       LayerTreeImpl* tree_impl) const override;
-
+  bool RequiresSetNeedsDisplayOnHdrHeadroomChange() const override;
   bool Update() override;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void OnLayerRectUpdate(const gfx::Rect& rect) override;
   void OnLayerRectVisibilityChange(bool visibility) override;
   void ResetLayerRectCallback();
@@ -59,11 +60,10 @@ class CC_EXPORT VideoLayer : public Layer {
  private:
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform,
              RectChangeCallback callback);
-  
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform,
              RectChangeCallback callback,
@@ -77,7 +77,7 @@ class CC_EXPORT VideoLayer : public Layer {
 
   const media::VideoTransformation transform_;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
   base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
 #endif

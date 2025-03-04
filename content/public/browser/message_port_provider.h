@@ -5,13 +5,13 @@
 #ifndef CONTENT_PUBLIC_BROWSER_MESSAGE_PORT_PROVIDER_H_
 #define CONTENT_PUBLIC_BROWSER_MESSAGE_PORT_PROVIDER_H_
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "content/common/content_export.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/messaging/string_message_codec.h"
 #include "third_party/blink/public/common/messaging/web_message_port.h"
 
@@ -45,13 +45,12 @@ class CONTENT_EXPORT MessagePortProvider {
                                  const std::u16string& target_origin,
                                  const blink::WebMessagePayload& data);
 
-#if BUILDFLAG(IS_OHOS)
-      static void OhosPostMessageToFrame(
-          Page& page,
-          const std::u16string& source_origin,
-          const std::u16string& target_origin,
-          const std::u16string& data,
-          std::vector<blink::WebMessagePort>& ports);
+#if BUILDFLAG(IS_ARKWEB)
+  static void OhosPostMessageToFrame(Page& page,
+                                     const std::u16string& source_origin,
+                                     const std::u16string& target_origin,
+                                     const std::u16string& data,
+                                     std::vector<blink::WebMessagePort>& ports);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -74,7 +73,7 @@ class CONTENT_EXPORT MessagePortProvider {
   static void PostMessageToFrame(
       Page& page,
       const std::u16string& source_origin,
-      const absl::optional<std::u16string>& target_origin,
+      const std::optional<std::u16string>& target_origin,
       const std::u16string& data,
       std::vector<blink::WebMessagePort> ports);
 #endif

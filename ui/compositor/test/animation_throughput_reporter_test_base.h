@@ -9,7 +9,6 @@
 
 #include "base/test/task_environment.h"
 #include "base/timer/timer.h"
-#include "build/chromeos_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/compositor/compositor.h"
 #include "ui/compositor/layer.h"
@@ -46,12 +45,8 @@ class AnimationThroughputReporterTestBase : public testing::Test {
   void QuitRunLoop();
 
  private:
-#if defined(OHOS_UNITTESTS)
-  base::test::TaskEnvironment task_environment_{};
-#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI};
-#endif
 
   std::unique_ptr<TestContextFactories> context_factories_;
   std::unique_ptr<TestCompositorHost> host_;

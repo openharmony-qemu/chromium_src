@@ -2,16 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "sql/statement.h"
+
+#include <cstdint>
 #include <limits>
 #include <string>
+#include <string_view>
+#include <vector>
 
-#include "base/files/file_util.h"
+#include "base/containers/contains.h"
 #include "base/files/scoped_temp_dir.h"
-#include "base/functional/bind.h"
-#include "base/strings/string_piece_forward.h"
 #include "base/test/bind.h"
+#include "base/test/metrics/histogram_tester.h"
 #include "sql/database.h"
-#include "sql/statement.h"
 #include "sql/test/scoped_error_expecter.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/sqlite/sqlite3.h"
@@ -24,6 +27,8 @@ class StatementTest : public testing::Test {
   ~StatementTest() override = default;
 
   void SetUp() override {
+    db_.set_histogram_tag("Test");
+
     ASSERT_TRUE(temp_dir_.CreateUniqueTempDir());
     ASSERT_TRUE(
         db_.Open(temp_dir_.GetPath().AppendASCII("statement_test.sqlite")));
@@ -315,12 +320,23 @@ TEST_F(StatementTest, BindString) {
     insert.Reset(/*clear_bound_vars=*/true);
   }
 
-  Statement select(db_.GetUniqueStatement("SELECT t FROM texts ORDER BY id"));
-  for (const std::string& value : values) {
-    ASSERT_TRUE(select.Step());
-    EXPECT_EQ(value, select.ColumnString(0));
+  {
+    Statement select(db_.GetUniqueStatement("SELECT t FROM texts ORDER BY id"));
+    for (const std::string& value : values) {
+      ASSERT_TRUE(select.Step());
+      EXPECT_EQ(value, select.ColumnString(0));
+    }
+    EXPECT_FALSE(select.Step());
   }
-  EXPECT_FALSE(select.Step());
+
+  {
+    Statement select(db_.GetUniqueStatement("SELECT t FROM texts ORDER BY id"));
+    for (const std::string& value : values) {
+      ASSERT_TRUE(select.Step());
+      EXPECT_EQ(value, select.ColumnStringView(0));
+    }
+    EXPECT_FALSE(select.Step());
+  }
 }
 
 TEST_F(StatementTest, BindString_NullData) {
@@ -330,7 +346,7 @@ TEST_F(StatementTest, BindString_NullData) {
       "CREATE TABLE texts(id INTEGER PRIMARY KEY NOT NULL, t TEXT NOT NULL)"));
 
   Statement insert(db_.GetUniqueStatement("INSERT INTO texts(t) VALUES(?)"));
-  insert.BindString(0, base::StringPiece(nullptr, 0));
+  insert.BindString(0, std::string_view(nullptr, 0));
   ASSERT_TRUE(insert.Run());
 
   Statement select(db_.GetUniqueStatement("SELECT t FROM texts ORDER BY id"));
@@ -349,14 +365,34 @@ TEST_F(StatementTest, GetSQLStatementExcludesBoundValues) {
   ASSERT_TRUE(insert.Run());
 
   // Verify that GetSQLStatement doesn't leak any bound values that may be PII.
-  EXPECT_EQ(insert.GetSQLStatement(), "INSERT INTO texts(t) VALUES(?)");
-  EXPECT_EQ(insert.GetSQLStatement().find("VALUES"), 21U);
-  EXPECT_EQ(insert.GetSQLStatement().find("Doe"), std::string::npos);
+  std::string sql_statement = insert.GetSQLStatement();
+  EXPECT_TRUE(base::Contains(sql_statement, "INSERT INTO texts(t) VALUES(?)"));
+  EXPECT_TRUE(base::Contains(sql_statement, "VALUES"));
+  EXPECT_FALSE(base::Contains(sql_statement, "Doe"));
 
   // Sanity check that the name was actually committed.
   Statement select(db_.GetUniqueStatement("SELECT t FROM texts ORDER BY id"));
   ASSERT_TRUE(select.Step());
   EXPECT_EQ(select.ColumnString(0), "John Doe");
+}
+
+TEST_F(StatementTest, RunReportsPerformanceMetrics) {
+  base::HistogramTester histogram_tester;
+
+  ASSERT_TRUE(db_.Execute(
+      "CREATE TABLE rows(a INTEGER PRIMARY KEY NOT NULL, b INTEGER NOT NULL)"));
+  ASSERT_TRUE(db_.Execute("INSERT INTO rows(a, b) VALUES(12, 42)"));
+
+  histogram_tester.ExpectTotalCount("Sql.Statement.Test.VMSteps", 0);
+
+  {
+    Statement select(db_.GetUniqueStatement("SELECT b FROM rows WHERE a=?"));
+    select.BindInt64(0, 12);
+    ASSERT_TRUE(select.Step());
+    EXPECT_EQ(select.ColumnInt64(0), 42);
+  }
+
+  histogram_tester.ExpectTotalCount("Sql.Statement.Test.VMSteps", 1);
 }
 
 }  // namespace

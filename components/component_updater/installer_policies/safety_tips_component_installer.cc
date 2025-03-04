@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/component_updater/installer_policies/safety_tips_component_installer.h"
 
 #include <memory>
@@ -89,8 +94,9 @@ void SafetyTipsComponentInstallerPolicy::ComponentReady(
            << install_dir.value();
 
   const base::FilePath pb_path = GetInstalledPath(install_dir);
-  if (pb_path.empty())
+  if (pb_path.empty()) {
     return;
+  }
 
   // The default proto will always be a placeholder since the updated versions
   // are not checked in to the repo. Simply load whatever the component updater

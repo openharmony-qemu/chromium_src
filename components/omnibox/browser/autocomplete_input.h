@@ -7,10 +7,12 @@
 
 #include <stddef.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "components/lens/proto/server/lens_overlay_response.pb.h"
+#include "components/search_engines/search_terms_data.h"
 #include "third_party/metrics_proto/omnibox_event.pb.h"
 #include "third_party/metrics_proto/omnibox_focus_type.pb.h"
 #include "third_party/metrics_proto/omnibox_input_type.pb.h"
@@ -170,6 +172,22 @@ class AutocompleteInput {
     return current_page_classification_;
   }
 
+  // The Suggest or Search request source. Determines the client= (for Suggest
+  // request URLs) and source= or sourceid= (for Search request URLs).
+  SearchTermsData::RequestSource request_source() const {
+    switch (current_page_classification()) {
+      // Lens Overlay searchboxes don't rely on TemplateURL replacement and set
+      // `client=` in //components/omnibox/browser/remote_suggestions_service.cc
+      // and `source=` in //c/b/u/lens/lens_overlay_url_builder.cc.
+      case metrics::OmniboxEventProto::CONTEXTUAL_SEARCHBOX:
+      case metrics::OmniboxEventProto::SEARCH_SIDE_PANEL_SEARCHBOX:
+      case metrics::OmniboxEventProto::LENS_SIDE_PANEL_SEARCHBOX:
+        return SearchTermsData::RequestSource::LENS_OVERLAY;
+      default:
+        return SearchTermsData::RequestSource::SEARCHBOX;
+    }
+  }
+
   // The type of input supplied.
   metrics::OmniboxInputType type() const { return type_; }
 
@@ -265,17 +283,15 @@ class AutocompleteInput {
     return terms_prefixed_by_http_or_https_;
   }
 
-  // Returns the ID of the query tile selected by the user, if any.
-  // If no tile was selected, returns absl::nullopt.
-  const absl::optional<std::string>& query_tile_id() const {
-    return query_tile_id_;
+  const std::optional<lens::proto::LensOverlaySuggestInputs>&
+  lens_overlay_suggest_inputs() const {
+    return lens_overlay_suggest_inputs_;
   }
 
-  // Called to indicate that the query tile represented by |tile_id| was
-  // clicked by the user. In the absence of a |query_tile_id_|, top level tiles
-  // will be displayed.
-  void set_query_tile_id(const std::string& tile_id) {
-    query_tile_id_ = tile_id;
+  void set_lens_overlay_suggest_inputs(
+      const lens::proto::LensOverlaySuggestInputs&
+          lens_overlay_suggest_inputs) {
+    lens_overlay_suggest_inputs_ = lens_overlay_suggest_inputs;
   }
 
   // Resets all internal variables to the null-constructed state.
@@ -294,12 +310,19 @@ class AutocompleteInput {
     return added_default_scheme_to_typed_url_;
   }
 
+  bool typed_url_had_http_scheme() const { return typed_url_had_http_scheme_; }
+
   void WriteIntoTrace(perfetto::TracedValue context) const;
 
   // Returns true if in zero prefix input state.
-  // Zero suggest state is determined implicitly from focus type and is
-  // used to inform autocomplete tab matching and action attachment.
+  // Zero-Suggest state is determined from focus type and is used to inform
+  // autocomplete providers, tab matching, and action attachment. Note that the
+  // Zero-Suggest state does NOT mean that `text_` is empty.
   bool IsZeroSuggest() const;
+
+  // Uses the keyword entry mode to decide if the user is currently in keyword
+  // mode.
+  bool InKeywordMode() const;
 
  private:
   friend class AutocompleteProviderTest;
@@ -330,15 +353,19 @@ class AutocompleteInput {
   metrics::OmniboxFocusType focus_type_ =
       metrics::OmniboxFocusType::INTERACTION_DEFAULT;
   std::vector<std::u16string> terms_prefixed_by_http_or_https_;
-  absl::optional<std::string> query_tile_id_;
+  // The lens overlay suggest inputs to be sent as query parameters in
+  // the suggest requests.
+  std::optional<lens::proto::LensOverlaySuggestInputs>
+      lens_overlay_suggest_inputs_;
 
   // Flags for OmniboxDefaultNavigationsToHttps feature.
   bool should_use_https_as_default_scheme_;
-  bool added_default_scheme_to_typed_url_;
+  bool added_default_scheme_to_typed_url_ = false;
+  bool typed_url_had_http_scheme_ = false;
   // Port used by the embedded https server in tests. This is used to determine
   // the correct port while upgrading URLs to https if the original URL has a
   // non-default port.
-  // TODO(crbug.com/1168371): Remove when URLLoaderInterceptor can simulate
+  // TODO(crbug.com/40743298): Remove when URLLoaderInterceptor can simulate
   // redirects.
   int https_port_for_testing_;
   // If true, indicates that the tests are using a faux-HTTPS server which is

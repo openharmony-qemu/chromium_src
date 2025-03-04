@@ -9,21 +9,23 @@
 
 #import "base/check.h"
 #import "base/notreached.h"
+#import "base/strings/sys_string_conversions.h"
 #import "ios/chrome/browser/shared/ui/elements/top_aligned_image_view.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/rtl_geometry.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_item_identifier.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/pinned_tabs/pinned_tabs_constants.h"
-#import "ios/chrome/browser/ui/tab_switcher/tab_grid/transitions/grid_transition_animation.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/transitions/legacy_grid_transition_animation.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_switcher_item.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/elements/gradient_view.h"
+#import "ios/chrome/grit/ios_strings.h"
+#import "ios/web/public/web_state_id.h"
+#import "ui/base/l10n/l10n_util_mac.h"
 #import "ui/gfx/ios/uikit_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
-// TODO(crbug.com/1412115): Refactor this method.
+// TODO(crbug.com/40890700): Refactor this method.
 // Frame-based layout utilities for GridTransitionCell.
 // Scales the size of `view`'s frame by `factor` in both height and width. This
 // scaling is done by changing the frame size without changing its origin,
@@ -38,7 +40,7 @@ void ScaleView(UIView* view, CGFloat factor) {
   view.frame = frame;
 }
 
-// TODO(crbug.com/1412115): Refactor this method.
+// TODO(crbug.com/40890700): Refactor this method.
 // Positions `view` by setting its frame's origin to `point`.
 void PositionView(UIView* view, CGPoint point) {
   if (!view) {
@@ -144,11 +146,10 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
 
 - (void)prepareForReuse {
   [super prepareForReuse];
-
-  self.itemIdentifier = nil;
   self.icon = nil;
   self.title = nil;
   self.snapshot = nil;
+  self.pinnedItemIdentifier = web::WebStateID();
 }
 
 #pragma mark - Public
@@ -178,12 +179,11 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
 }
 
 - (void)setTitle:(NSString*)title {
-  NSTextAlignment titleTextAligment =
-      [self determineBestAlignmentForText:title];
+  NSTextAlignment titleTextAligment = DetermineBestAlignmentForText(title);
 
   _titleLabel.text = [title copy];
   _titleLabel.textAlignment = titleTextAligment;
-  self.accessibilityLabel = [title copy];
+  self.accessibilityLabel = [self accessibilityLabelWithTitle:title];
 
   [self updateTitleLabelAppearance];
   [self updateTitleLabelFaderAppearance];
@@ -208,6 +208,17 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
   [_activityIndicator stopAnimating];
   [_activityIndicator setHidden:YES];
   [_faviconContainerView setHidden:NO];
+}
+
+- (void)setPinnedItemIdentifier:(web::WebStateID)pinnedItemIdentifier {
+  _pinnedItemIdentifier = pinnedItemIdentifier;
+  if (pinnedItemIdentifier.valid()) {
+    TabSwitcherItem* item =
+        [[TabSwitcherItem alloc] initWithIdentifier:pinnedItemIdentifier];
+    self.itemIdentifier = [[GridItemIdentifier alloc] initWithTabItem:item];
+  } else {
+    self.itemIdentifier = nil;
+  }
 }
 
 #pragma mark - UIAccessibility
@@ -255,9 +266,9 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
 - (void)setupSnapshotView {
   TopAlignedImageView* snapshotView = [[TopAlignedImageView alloc] init];
   snapshotView.translatesAutoresizingMaskIntoConstraints = NO;
-  // Snapshot view is shown only during the animation transtion to the Tab
-  // view. The Tab view uses not static, but dynaic colors. Therefore, it is
-  // safe to apply dynaimc color here.
+  // Snapshot view is shown only during the animation transition to the Tab
+  // view. The Tab view uses not static, but dynamic colors. Therefore, it is
+  // safe to apply dynamic color here.
   snapshotView.backgroundColor = [UIColor colorNamed:kSecondaryBackgroundColor];
   snapshotView.hidden = YES;
   _snapshotView = snapshotView;
@@ -508,23 +519,14 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
   }
 }
 
-// Determines the best aligment for the provided `text`.
-- (NSTextAlignment)determineBestAlignmentForText:(NSString*)text {
-  if (text.length) {
-    NSString* lang = CFBridgingRelease(CFStringTokenizerCopyBestStringLanguage(
-        (CFStringRef)text, CFRangeMake(0, text.length)));
-
-    if ([NSLocale characterDirectionForLanguage:lang] ==
-        NSLocaleLanguageDirectionRightToLeft) {
-      return NSTextAlignmentRight;
-    }
-  }
-  return NSTextAlignmentLeft;
+- (NSString*)accessibilityLabelWithTitle:(NSString*)title {
+  return l10n_util::GetNSStringF(IDS_IOS_PINNED_TAB_ACCESSIBILITY_LABEL,
+                                 base::SysNSStringToUTF16(title));
 }
 
 @end
 
-// TODO(crbug.com/1412115): Refacor PinnedTransitionCell.
+// TODO(crbug.com/40890700): Refacor PinnedTransitionCell.
 @implementation PinnedTransitionCell {
   // Previous tab view width, used to scale the tab views.
   CGFloat _previousTabViewWidth;
@@ -700,6 +702,7 @@ UIColor* GetInterfaceStyleDarkColor(UIColor* dynamicColor) {
 
 // Scales the tab views relative to the current width of the cell.
 - (void)scaleTabViews {
+  DUMP_WILL_BE_CHECK_NE(_previousTabViewWidth, 0);
   CGFloat scale = self.bounds.size.width / _previousTabViewWidth;
   ScaleView(self.topTabView, scale);
   ScaleView(self.mainTabView, scale);

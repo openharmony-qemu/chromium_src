@@ -319,7 +319,7 @@ void MtpDeviceManager::OnGetStorageInfo(
     // attachments, which should not be in |storage_info_map_|, or for
     // storage detachments, which do not add to |storage_info_map_|.
     // Return to avoid giving client phantom detach events.
-    NOTREACHED();
+    DUMP_WILL_BE_NOTREACHED();
     return;
   }
 
@@ -351,7 +351,6 @@ void MtpDeviceManager::OnOpenStorage(const std::string& handle) {
     std::move(open_storage_callbacks_.front()).Run(handle, false);
   } else {
     NOTREACHED();
-    std::move(open_storage_callbacks_.front()).Run(std::string(), true);
   }
   open_storage_callbacks_.pop();
 }
@@ -369,7 +368,6 @@ void MtpDeviceManager::OnCloseStorage() {
     std::move(close_storage_callbacks_.front().first).Run(false);
   } else {
     NOTREACHED();
-    std::move(close_storage_callbacks_.front().first).Run(true);
   }
   close_storage_callbacks_.pop();
 }

@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <stddef.h>
-#include <memory>
-#define private public
-#include "select_file_dialog_factory.h"
-#include "select_file_policy.h"
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/shell_dialogs/select_file_dialog.h"
-#undef private
-#include "testing/gmock/include/gmock/gmock.h"
+
+#include <stddef.h>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
 TEST(ShellDialogs, ShortenFileNameIfNeeded) {
@@ -119,102 +120,3 @@ TEST(ShellDialogs, ShortenFileNameIfNeeded) {
               255u);
   }
 }
-
-namespace ui {
-
-class ConcreteListener : public ui::SelectFileDialog::Listener {
- public:
-  void FileSelected(const base::FilePath& path,
-                    int index,
-                    void* params) override {}
-  void FileSelectedWithExtraInfo(const ui::SelectedFileInfo& file,
-                                 int index,
-                                 void* params) override {}
-  void MultiFilesSelected(const std::vector<base::FilePath>& files,
-                          void* params) override {}
-  void MultiFilesSelectedWithExtraInfo(
-      const std::vector<ui::SelectedFileInfo>& files,
-      void* params) override {}
-  void FileSelectionCanceled(void* params) override {}
-};
-
-class MockSelectFileDialogFactory : public ui::SelectFileDialogFactory {
- public:
-  bool isCefFactory = false;
-  bool IsCefFactory() const override { return isCefFactory; }
-  MOCK_METHOD(SelectFileDialog*,
-              Create,
-              (ui::SelectFileDialog::Listener * listener,
-               std::unique_ptr<ui::SelectFilePolicy> policy),
-              (override));
-};
-
-TEST(ShellDialogs, CreateTest1) {
-  MockSelectFileDialogFactory* factory = new MockSelectFileDialogFactory();
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = false;
-  SelectFileDialog::SetFactory(factory);
-  EXPECT_CALL(*factory, Create(::testing::_, ::testing::_)).Times(1);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-}
-
-TEST(ShellDialogs, CreateTest2) {
-  MockSelectFileDialogFactory* factory = new MockSelectFileDialogFactory();
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = true;
-  SelectFileDialog::SetFactory(factory);
-  EXPECT_CALL(*factory, Create(::testing::_, ::testing::_)).Times(1);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-}
-
-TEST(ShellDialogs, CreateTest3) {
-  MockSelectFileDialogFactory* factory = new MockSelectFileDialogFactory();
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = false;
-  factory->isCefFactory = true;
-  SelectFileDialog::SetFactory(factory);
-  EXPECT_CALL(*factory, Create(::testing::_, ::testing::_)).Times(1);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-}
-
-TEST(ShellDialogs, CreateTest4) {
-  MockSelectFileDialogFactory* factory = new MockSelectFileDialogFactory();
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = true;
-  factory->isCefFactory = true;
-  SelectFileDialog::SetFactory(factory);
-  EXPECT_CALL(*factory, Create(::testing::_, ::testing::_)).Times(0);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-}
-
-TEST(ShellDialogs, CreateTest5) {
-  MockSelectFileDialogFactory* factory = new MockSelectFileDialogFactory();
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = true;
-  SelectFileDialog::SetFactory(factory);
-  EXPECT_CALL(*factory, Create(::testing::_, ::testing::_)).Times(1);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-}
-
-TEST(ShellDialogs, CreateTest6) {
-  ui::SelectFileDialogFactory* factory_ = nullptr;
-  std::unique_ptr<ConcreteListener> listener =
-      std::make_unique<ConcreteListener>();
-  std::unique_ptr<ui::SelectFilePolicy> policy;
-  bool run_from_cef = false;
-  SelectFileDialog::SetFactory(factory_);
-  SelectFileDialog::Create(listener.get(), std::move(policy), run_from_cef);
-  EXPECT_FALSE(factory_);
-}
-
-}  // namespace ui

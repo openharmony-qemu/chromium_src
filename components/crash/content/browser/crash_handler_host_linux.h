@@ -11,8 +11,11 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
+#include "base/containers/heap_array.h"
 #include "base/files/file_path.h"
 #include "base/files/scoped_file.h"
+#include "base/memory/raw_ptr.h"
 #include "base/message_loop/message_pump_for_io.h"
 #include "base/process/process_handle.h"
 #include "base/synchronization/atomic_flag.h"
@@ -21,7 +24,7 @@
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
 #include "components/crash/core/app/breakpad_linux_impl.h"
 #endif
 
@@ -30,7 +33,7 @@ class SequencedTaskRunner;
 class Thread;
 }
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
 
 namespace breakpad {
 
@@ -80,7 +83,7 @@ class CrashHandlerHostLinux : public base::MessagePumpForIO::FdWatcher,
 
   // Do work on |blocking_task_runner_| for OnFileCanReadWithoutBlocking().
   void WriteDumpFile(BreakpadInfo* info,
-                     std::unique_ptr<char[]> crash_context,
+                     base::HeapArray<char> crash_context,
                      pid_t crashing_pid);
 
   // Continue OnFileCanReadWithoutBlocking()'s work on the IO thread.
@@ -90,11 +93,11 @@ class CrashHandlerHostLinux : public base::MessagePumpForIO::FdWatcher,
   void FindCrashingThreadAndDump(
       pid_t crashing_pid,
       const std::string& expected_syscall_data,
-      std::unique_ptr<char[]> crash_context,
+      base::HeapArray<char> crash_context,
       std::unique_ptr<crash_reporter::internal::TransitionalCrashKeyStorage>
           crash_keys,
 #if defined(ADDRESS_SANITIZER)
-      std::unique_ptr<char[]> asan_report,
+      base::HeapArray<char> asan_report,
 #endif
       uint64_t uptime,
       size_t oom_size,
@@ -173,7 +176,7 @@ class CrashHandlerHost : public base::MessagePumpForIO::FdWatcher,
   void WillDestroyCurrentMessageLoop() override;
 
   base::Lock observers_lock_;
-  std::set<Observer*> observers_;
+  std::set<raw_ptr<Observer, SetExperimental>> observers_;
   base::MessagePumpForIO::FdWatchController fd_watch_controller_;
   base::ScopedFD process_socket_;
   base::ScopedFD browser_socket_;

@@ -8,7 +8,6 @@ See http://dev.chromium.org/developers/how-tos/depottools/presubmit-scripts
 for more details about the presubmit API built into depot_tools.
 """
 
-USE_PYTHON3 = True
 
 PRESUBMIT_VERSION = '2.0.0'
 
@@ -17,6 +16,7 @@ EXTRA_PATHS_COMPONENTS = [
     ('build', 'fuchsia', 'test'),
     ('build', 'util'),
     ('testing', ),
+    ('third_party', 'blink', 'tools'),
     ('third_party', 'catapult', 'common', 'py_utils'),
     ('third_party', 'catapult', 'devil'),
     ('third_party', 'catapult', 'telemetry'),
@@ -58,6 +58,19 @@ def CheckGpuTestsUnittests(input_api, output_api):
   return input_api.RunTests([command])
 
 
+def CheckMachineTimesUnittests(input_api, output_api):
+  """Runs the unittests for the machine_times directory."""
+  return input_api.canned_checks.RunUnitTestsInDirectory(
+      input_api,
+      output_api,
+      input_api.os_path.join(input_api.PresubmitLocalPath(),
+                             'machine_times'), [r'^.+_unittest\.py$'],
+      env=_GetGpuEnv(input_api),
+      run_on_python2=False,
+      run_on_python3=True,
+      skip_shebang_check=True)
+
+
 def CheckUnexpectedPassesUnittests(input_api, output_api):
   """Runs the unittests for the unexpected_passes directory."""
   return input_api.canned_checks.RunUnitTestsInDirectory(
@@ -65,10 +78,7 @@ def CheckUnexpectedPassesUnittests(input_api, output_api):
       output_api,
       input_api.os_path.join(input_api.PresubmitLocalPath(),
                              'unexpected_passes'), [r'^.+_unittest\.py$'],
-      env=_GetGpuEnv(input_api),
-      run_on_python2=False,
-      run_on_python3=True,
-      skip_shebang_check=True)
+      env=_GetGpuEnv(input_api))
 
 
 def CheckFlakeSuppressorUnittests(input_api, output_api):
@@ -78,10 +88,7 @@ def CheckFlakeSuppressorUnittests(input_api, output_api):
       output_api,
       input_api.os_path.join(input_api.PresubmitLocalPath(),
                              'flake_suppressor'), [r'^.+_unittest\.py$'],
-      env=_GetGpuEnv(input_api),
-      run_on_python2=False,
-      run_on_python3=True,
-      skip_shebang_check=True)
+      env=_GetGpuEnv(input_api))
 
 
 def CheckValidateTagConsistency(input_api, output_api):
@@ -92,8 +99,7 @@ def CheckValidateTagConsistency(input_api, output_api):
                                   'validate_tag_consistency.py', 'validate'
                               ],
                               kwargs={},
-                              message=output_api.PresubmitError,
-                              python3=True)
+                              message=output_api.PresubmitError)
   return input_api.RunTests([command])
 
 

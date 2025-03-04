@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "media/base/audio_parameters.h"
 
 #include <stddef.h>
@@ -11,44 +16,6 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace media {
-
-class AudioParametersTest : public testing::Test {
- public:
-  void SetUp() override {
-    obj1 = AudioParameters(AudioParameters::AUDIO_PCM_LINEAR, {}, 44100, 512);
-#if defined(OHOS_MEDIA_POLICY)
-    obj1.set_effects(0);
-    obj1.set_mic_positions({});
-    obj1.set_render_process_id(1);
-    obj1.set_render_frame_id(1);
-#endif
-    obj2 = obj1;
-  }
-  void TearDown() override {}
-  AudioParameters obj1;
-  AudioParameters obj2;
-};
-
-TEST_F(AudioParametersTest, Equals_Effects) {
-#if defined(OHOS_MEDIA_POLICY)
-  obj2.set_effects(1);
-  EXPECT_FALSE(obj1.Equals(obj2));
-#endif
-}
-
-TEST_F(AudioParametersTest, Equals_MicPositions) {
-#if defined(OHOS_MEDIA_POLICY)
-  obj2.set_mic_positions({{1.0f, 2.0f, 0.0f}, {3.0f, 4.0f, 0.0f}});
-  EXPECT_FALSE(obj1.Equals(obj2));
-#endif
-}
-
-TEST_F(AudioParametersTest, Equals_RenderId) {
-#if defined(OHOS_MEDIA_POLICY)
-  obj2.set_render_frame_id(2);
-  EXPECT_FALSE(obj1.Equals(obj2));
-#endif
-}
 
 TEST(AudioParameters, Constructor_Default) {
   AudioParameters::Format expected_format = AudioParameters::AUDIO_PCM_LINEAR;
@@ -101,6 +68,7 @@ TEST(AudioParameters, Constructor_ParameterValuesPlusHardwareCapabilities) {
   int expected_samples = 880;
 
   AudioParameters::HardwareCapabilities hardware_capabilities(0, true);
+  hardware_capabilities.require_audio_offload = true;
   AudioParameters params(
       expected_format,
       ChannelLayoutConfig::FromLayout<expected_channel_layout>(), expected_rate,
@@ -112,6 +80,7 @@ TEST(AudioParameters, Constructor_ParameterValuesPlusHardwareCapabilities) {
   EXPECT_EQ(expected_rate, params.sample_rate());
   EXPECT_EQ(expected_samples, params.frames_per_buffer());
   EXPECT_TRUE(params.RequireEncapsulation());
+  EXPECT_TRUE(params.RequireOffload());
 }
 
 TEST(AudioParameters, GetBytesPerBuffer) {

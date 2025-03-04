@@ -8,7 +8,6 @@
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ptr_exclusion.h"
 #include "base/no_destructor.h"
 #include "base/sequence_checker.h"
 #include "base/synchronization/lock.h"
@@ -110,12 +109,10 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
     // place to check this.
     void ClearProducerForTesting() { producer_ = nullptr; }
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
     // By default, data source callbacks (e.g., Start/StopTracingImpl) are
     // called on PerfettoTracedProcess::GetTaskRunner()'s sequence. This method
     // allows overriding that task runner.
     virtual base::SequencedTaskRunner* GetTaskRunner();
-#endif  // BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
    protected:
     SEQUENCE_CHECKER(perfetto_sequence_checker_);
@@ -123,10 +120,9 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
    private:
     uint64_t data_source_id_ = 0;
     std::string name_;
-    raw_ptr<PerfettoProducer> producer_ = nullptr;
+    raw_ptr<PerfettoProducer, AcrossTasksDanglingUntriaged> producer_ = nullptr;
   };
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
   // A proxy that adapts Chrome's DataSourceBase class into a Perfetto
   // DataSource, allowing the former to be registered as a data source in the
   // tracing service and participate in tracing sessions.
@@ -141,32 +137,34 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
   // to Register() must have process-lifetime since Perfetto data sources are
   // never unregistered.
   template <typename T>
-  class COMPONENT_EXPORT(TRACING_CPP) DataSourceProxy
-      : public perfetto::DataSource<DataSourceProxy<T>> {
+  class DataSourceProxy : public perfetto::DataSource<DataSourceProxy<T>> {
    public:
     // Create a proxy for a singleton data source instance.
     explicit DataSourceProxy(PerfettoTracedProcess::DataSourceBase*);
     // Create a proxy for a data source instance which may change, typically
     // between test iterations. Note that it is not safe to change the data
     // source instance while any tracing sessions are started or stopped.
-    explicit DataSourceProxy(PerfettoTracedProcess::DataSourceBase**);
+    explicit DataSourceProxy(raw_ptr<PerfettoTracedProcess::DataSourceBase>*);
     ~DataSourceProxy() override;
 
     // perfetto::DataSource implementation:
     void OnSetup(const perfetto::DataSourceBase::SetupArgs&) override;
     void OnStart(const perfetto::DataSourceBase::StartArgs&) override;
     void OnStop(const perfetto::DataSourceBase::StopArgs&) override;
+    void WillClearIncrementalState(
+        const base::perfetto_track_event::TrackEvent::
+            ClearIncrementalStateArgs&) override;
+    bool CanAdoptStartupSession(const perfetto::DataSourceConfig&,
+                                const perfetto::DataSourceConfig&) override;
+
+    static constexpr bool kSupportsMultipleInstances = false;
 
    private:
-    // This field is not a raw_ptr<> because it was filtered by the rewriter
-    // for: #addr-of
-    RAW_PTR_EXCLUSION PerfettoTracedProcess::DataSourceBase* const
-        data_source_ = nullptr;
-    raw_ptr<PerfettoTracedProcess::DataSourceBase* const> data_source_ptr_ =
-        &data_source_;
+    const raw_ptr<PerfettoTracedProcess::DataSourceBase> data_source_ = nullptr;
+    raw_ptr<const raw_ptr<PerfettoTracedProcess::DataSourceBase>>
+        data_source_ptr_ = &data_source_;
     perfetto::DataSourceConfig data_source_config_;
   };
-#endif  // BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 
   // Returns the process-wide instance of the PerfettoTracedProcess.
   static PerfettoTracedProcess* Get();
@@ -201,7 +199,7 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
   void AddDataSource(DataSourceBase*);
   // Returns a copy of the set of currently registered data sources. Can be
   // called on any thread.
-  std::set<DataSourceBase*> data_sources();
+  std::set<raw_ptr<DataSourceBase, SetExperimental>> data_sources();
 
   // Attempt to enable startup tracing for the current process and given
   // producer. Returns false on failure, e.g. because another concurrent tracing
@@ -228,8 +226,8 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
   // Called to initialize system tracing, i.e., connecting to a system Perfetto
   // daemon as a producer. If |system_socket| isn't provided, Perfetto's default
   // socket name is used.
-  void SetupSystemTracing(absl::optional<const char*> system_socket =
-                              absl::optional<const char*>());
+  void SetupSystemTracing(
+      std::optional<const char*> system_socket = std::optional<const char*>());
 
   // If the provided |producer| can begin tracing then |start_tracing| will be
   // invoked (unless cancelled by the Perfetto service) at some point later
@@ -316,7 +314,7 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
   base::Lock data_sources_lock_;
   // The canonical set of DataSourceBases alive in this process. These will be
   // registered with the tracing service.
-  std::set<DataSourceBase*> data_sources_;
+  std::set<raw_ptr<DataSourceBase, SetExperimental>> data_sources_;
 
   // A PerfettoProducer that connects to the chrome Perfetto service through
   // mojo.
@@ -331,13 +329,13 @@ class COMPONENT_EXPORT(TRACING_CPP) PerfettoTracedProcess final
   std::unique_ptr<PerfettoTracingBackend> tracing_backend_;
 
   bool startup_tracing_needed_ = false;
+  bool thread_pool_started_ = false;
   perfetto::TraceConfig saved_config_;
   perfetto::Tracing::SetupStartupTracingOpts saved_opts_;
 
   SEQUENCE_CHECKER(sequence_checker_);
 };
 
-#if BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
 template <typename T>
 PerfettoTracedProcess::DataSourceProxy<T>::DataSourceProxy(
     PerfettoTracedProcess::DataSourceBase* data_source)
@@ -345,7 +343,7 @@ PerfettoTracedProcess::DataSourceProxy<T>::DataSourceProxy(
 
 template <typename T>
 PerfettoTracedProcess::DataSourceProxy<T>::DataSourceProxy(
-    PerfettoTracedProcess::DataSourceBase** data_source_ptr)
+    raw_ptr<PerfettoTracedProcess::DataSourceBase>* data_source_ptr)
     : data_source_ptr_(data_source_ptr) {}
 
 template <typename T>
@@ -383,7 +381,31 @@ void PerfettoTracedProcess::DataSourceProxy<T>::OnStop(
               &PerfettoTracedProcess::DataSourceBase::StopTracingImpl,
               base::Unretained(*data_source_ptr_), std::move(stop_callback)));
 }
-#endif  // !BUILDFLAG(USE_PERFETTO_CLIENT_LIBRARY)
+
+template <typename T>
+void PerfettoTracedProcess::DataSourceProxy<T>::WillClearIncrementalState(
+    const base::perfetto_track_event::TrackEvent::ClearIncrementalStateArgs&
+        args) {
+  (*data_source_ptr_)->ClearIncrementalState();
+}
+
+template <typename T>
+bool PerfettoTracedProcess::DataSourceProxy<T>::CanAdoptStartupSession(
+    const perfetto::DataSourceConfig& startup_config,
+    const perfetto::DataSourceConfig& service_config) {
+  if (!startup_config.has_chrome_config() ||
+      !service_config.has_chrome_config()) {
+    return perfetto::DataSourceBase::CanAdoptStartupSession(startup_config,
+                                                            service_config);
+  }
+
+  base::trace_event::TraceConfig startup_trace_config(
+      startup_config.chrome_config().trace_config());
+  base::trace_event::TraceConfig service_trace_config(
+      service_config.chrome_config().trace_config());
+
+  return startup_trace_config.IsEquivalentTo(service_trace_config);
+}
 
 }  // namespace tracing
 #endif  // SERVICES_TRACING_PUBLIC_CPP_PERFETTO_PERFETTO_TRACED_PROCESS_H_

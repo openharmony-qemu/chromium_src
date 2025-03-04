@@ -8,20 +8,11 @@
 
 #import "ios/chrome/browser/providers/ui_utils/chromium_logo_controller.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace ios {
 namespace provider {
 
 void InitializeUI() {
   // Chromium does not have global UI state.
-}
-
-UITextField* CreateStyledTextField() {
-  // Chromium uses default style for UITextField.
-  return [[UITextField alloc] initWithFrame:CGRectZero];
 }
 
 id<LogoVendor> CreateLogoVendor(Browser* browser, web::WebState* web_state) {

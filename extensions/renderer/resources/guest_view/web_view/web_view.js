@@ -21,7 +21,6 @@ function WebViewImpl(webviewElement) {
   this.pendingZoomFactor_ = null;
   this.userAgentOverride = null;
   this.setupElementProperties();
-  new WebViewEvents(this, this.viewInstanceId);
 }
 
 WebViewImpl.prototype.__proto__ = GuestViewContainer.prototype;
@@ -51,6 +50,10 @@ WebViewImpl.prototype.setupAttributes = function() {
   }
 };
 
+WebViewImpl.prototype.setupEvents = function() {
+  new WebViewEvents(this);
+};
+
 // Initiates navigation once the <webview> element is attached to the DOM.
 WebViewImpl.prototype.onElementAttached = function() {
   // Mark all attributes as dirty on attachment.
@@ -64,7 +67,6 @@ WebViewImpl.prototype.onElementAttached = function() {
 
 // Resets some state upon detaching <webview> element from the DOM.
 WebViewImpl.prototype.onElementDetached = function() {
-  this.guest.destroy();
   for (var i in this.attributes) {
     this.attributes[i].dirty = false;
   }
@@ -130,9 +132,10 @@ WebViewImpl.prototype.onSizeChanged = function(webViewEvent) {
 };
 
 WebViewImpl.prototype.createGuest = function() {
-  this.guest.create(this.buildParams(), $Function.bind(function() {
-    this.attachWindow();
-  }, this));
+  this.guest.create(
+      this.viewInstanceId, this.buildParams(), $Function.bind(function() {
+        this.attachWindow();
+      }, this));
 };
 
 WebViewImpl.prototype.onFrameNameChanged = function(name) {

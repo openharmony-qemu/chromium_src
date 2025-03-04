@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/inotify.h>
@@ -592,7 +597,7 @@ class BPFTesterBrokerDelegate : public BPFTesterDelegate {
     BrokerTestDelegate::BrokerParams broker_params =
         broker_test_delegate_->ChildSetUpPreSandbox();
 
-    auto policy = absl::make_optional<syscall_broker::BrokerSandboxConfig>(
+    auto policy = std::make_optional<syscall_broker::BrokerSandboxConfig>(
         broker_params.allowed_command_set, broker_params.permissions,
         broker_params.denied_errno);
     broker_process_ = std::make_unique<BrokerProcess>(

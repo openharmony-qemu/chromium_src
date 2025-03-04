@@ -1,0 +1,18 @@
+# Copyright 2024 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//arkweb/build/features/features.gni")
+arkweb_gpu_ipc_service_sources = []
+
+if (arkweb_gl_init) {
+arkweb_gpu_ipc_service_sources += [
+  "//arkweb/chromium_ext/gpu/ipc/service/image_transport_surface_ohos.cc",
+]
+}
+
+arkweb_gpu_ipc_service_sources += [
+  "//arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.cc",
+  "//arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.h",
+]
+

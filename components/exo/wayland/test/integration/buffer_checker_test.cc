@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <drm_fourcc.h>
 #include <gbm.h>
 #include <sys/mman.h>
@@ -456,9 +461,9 @@ void PrintReportedFormats(std::vector<uint32_t>& formats) {
     drm_names.push_back(DrmCodeToString(format));
     buffer_names.push_back(DrmCodeToBufferFormatString(format));
   }
-  LOG(ERROR) << "zwp_linux_dmabuf_v1 reported supported DRM formats: "
+  LOG(INFO) << "zwp_linux_dmabuf_v1 reported supported DRM formats: "
              << base::JoinString(drm_names, ", ");
-  LOG(ERROR) << "zwp_linux_dmabuf_v1 reported supported gfx::BufferFormats: "
+  LOG(INFO) << "zwp_linux_dmabuf_v1 reported supported gfx::BufferFormats: "
              << base::JoinString(buffer_names, ", ");
 }
 

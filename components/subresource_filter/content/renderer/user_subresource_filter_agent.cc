@@ -12,9 +12,9 @@
 #include "base/memory/ref_counted.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/time/time.h"
-#include "components/subresource_filter/content/common/subresource_filter_utils.h"
 #include "components/subresource_filter/content/renderer/user_unverified_ruleset_dealer.h"
 #include "components/subresource_filter/content/renderer/web_document_subresource_filter_impl.h"
+#include "components/subresource_filter/content/shared/common/utils.h"
 #include "components/subresource_filter/core/common/document_subresource_filter.h"
 #include "components/subresource_filter/core/common/memory_mapped_ruleset.h"
 #include "components/subresource_filter/core/common/scoped_timers.h"
@@ -37,8 +37,9 @@ namespace {
 
 bool IsFencedFrameRoot(content::RenderFrame* frame) {
   // Unit tests may have a nullptr render_frame.
-  if (!frame)
+  if (!frame) {
     return false;
+  }
   return frame->IsInFencedFrameTree() && frame->IsMainFrame();
 }
 
@@ -48,13 +49,11 @@ namespace subresource_filter {
 
 UserSubresourceFilterAgent::UserSubresourceFilterAgent(
     content::RenderFrame* render_frame,
-    UserUnverifiedRulesetDealer* ruleset_dealer,
-    std::unique_ptr<AdResourceTracker> ad_resource_tracker)
+    UserUnverifiedRulesetDealer* ruleset_dealer)
     : content::RenderFrameObserver(render_frame),
       content::RenderFrameObserverTracker<UserSubresourceFilterAgent>(
           render_frame),
-      ruleset_dealer_(ruleset_dealer),
-      ad_resource_tracker_(std::move(ad_resource_tracker)) {
+      ruleset_dealer_(ruleset_dealer) {
   DCHECK(ruleset_dealer);
 }
 
@@ -84,8 +83,9 @@ void UserSubresourceFilterAgent::Initialize() {
     // DidCreateFencedFrame which is called by the creating RenderFrame.
     // Additionally, there's no need to set evidence for the initial empty
     // subframe since the fenced frame is isolated from its embedder.
-    if (IsFrameCreatedByAdScript())
+    if (IsFrameCreatedByAdScript()) {
       SendFrameWasCreatedByAdScript();
+    }
 
     // As this is the initial empty document, we won't have received any message
     // from the browser and so we must populate the ad evidence here.
@@ -123,11 +123,7 @@ void UserSubresourceFilterAgent::Initialize() {
   }
 }
 
-UserSubresourceFilterAgent::~UserSubresourceFilterAgent() {
-  // Filter may outlive us, so reset the ad tracker.
-  if (filter_for_last_created_document_)
-    filter_for_last_created_document_->set_ad_resource_tracker(nullptr);
-}
+UserSubresourceFilterAgent::~UserSubresourceFilterAgent() = default;
 
 GURL UserSubresourceFilterAgent::GetDocumentURL() {
   return render_frame()->GetWebFrame()->GetDocument().Url();
@@ -163,7 +159,7 @@ void UserSubresourceFilterAgent::SetUserSubresourceFilterForCurrentDocument(
 
 void UserSubresourceFilterAgent::
     SignalFirstSubresourceDisallowedForCurrentDocument() {
-  GetSubresourceFilterHost()->DidDisallowFirstSubresource();
+  GetSubresourceFilterHost()->DidDisallowFirstUserSubresource();
 }
 
 void UserSubresourceFilterAgent::SendDocumentLoadStatistics(
@@ -172,12 +168,12 @@ void UserSubresourceFilterAgent::SendDocumentLoadStatistics(
 }
 
 void UserSubresourceFilterAgent::SendFrameIsAd() {
-  GetSubresourceFilterHost()->FrameIsAd();
+  GetSubresourceFilterHost()->FrameIsUserAd();
 }
 
 void UserSubresourceFilterAgent::SendFrameWasCreatedByAdScript() {
   DCHECK(!IsFencedFrameRoot(render_frame()));
-  GetSubresourceFilterHost()->FrameWasCreatedByAdScript();
+  GetSubresourceFilterHost()->FrameWasCreatedByUserAdScript();
 }
 
 bool UserSubresourceFilterAgent::IsAdFrame() {
@@ -189,7 +185,7 @@ void UserSubresourceFilterAgent::SetAdEvidence(
   render_frame()->GetWebFrame()->SetAdEvidence(ad_evidence);
 }
 
-const absl::optional<blink::FrameAdEvidence>&
+const std::optional<blink::FrameAdEvidence>&
 UserSubresourceFilterAgent::AdEvidence() {
   return render_frame()->GetWebFrame()->AdEvidence();
 }
@@ -197,22 +193,25 @@ UserSubresourceFilterAgent::AdEvidence() {
 // static
 mojom::ActivationState UserSubresourceFilterAgent::GetInheritedActivationState(
     content::RenderFrame* render_frame) {
-  if (!render_frame)
+  if (!render_frame) {
     return mojom::ActivationState();
+  }
 
   // A fenced frame is isolated from its outer embedder so we cannot inspect
   // the parent's activation state. However, that's ok because the embedder
   // cannot script the fenced frame so we can wait until a navigation to set
   // activation state.
-  if (IsFencedFrameRoot(render_frame))
+  if (IsFencedFrameRoot(render_frame)) {
     return mojom::ActivationState();
+  }
 
   blink::WebFrame* frame_to_inherit_from =
       render_frame->IsMainFrame() ? render_frame->GetWebFrame()->Opener()
                                   : render_frame->GetWebFrame()->Parent();
 
-  if (!frame_to_inherit_from || !frame_to_inherit_from->IsWebLocalFrame())
+  if (!frame_to_inherit_from || !frame_to_inherit_from->IsWebLocalFrame()) {
     return mojom::ActivationState();
+  }
 
   blink::WebSecurityOrigin render_frame_origin =
       render_frame->GetWebFrame()->GetSecurityOrigin();
@@ -224,8 +223,9 @@ mojom::ActivationState UserSubresourceFilterAgent::GetInheritedActivationState(
     auto* agent =
         UserSubresourceFilterAgent::Get(content::RenderFrame::FromWebFrame(
             frame_to_inherit_from->ToWebLocalFrame()));
-    if (agent && agent->filter_for_last_created_document_)
+    if (agent && agent->filter_for_last_created_document_) {
       return agent->filter_for_last_created_document_->activation_state();
+    }
   }
 
   return mojom::ActivationState();
@@ -272,7 +272,7 @@ void UserSubresourceFilterAgent::OnSubresourceFilterAgentRequest(
 
 void UserSubresourceFilterAgent::ActivateForNextCommittedLoad(
     mojom::ActivationStatePtr activation_state,
-    const absl::optional<blink::FrameAdEvidence>& ad_evidence) {
+    const std::optional<blink::FrameAdEvidence>& ad_evidence) {
   activation_state_for_next_document_ = *activation_state;
 
   if (IsSubresourceFilterChild()) {
@@ -306,7 +306,7 @@ void UserSubresourceFilterAgent::SetAdEvidenceForInitialEmptySubframe() {
 }
 
 void UserSubresourceFilterAgent::DidCreateNewDocument() {
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   did_load_finished_ = false;
 #endif
   // TODO(csharrison): Use WebURL and WebSecurityOrigin for efficiency here,
@@ -316,8 +316,9 @@ void UserSubresourceFilterAgent::DidCreateNewDocument() {
   // A new browser-side host is created for each new page (i.e. new document in
   // a subresource filter root frame) so we have to reset the remote so we
   // re-bind on the next message.
-  if (!IsSubresourceFilterChild())
+  if (!IsSubresourceFilterChild()) {
     subresource_filter_host_.reset();
+  }
 
   const mojom::ActivationState activation_state =
       ShouldInheritActivation(url) ? GetInheritedActivationStateForNewDocument()
@@ -345,39 +346,32 @@ UserSubresourceFilterAgent::GetInheritedActivationStateForNewDocument() {
 void UserSubresourceFilterAgent::ConstructFilter(
     const mojom::ActivationState activation_state,
     const GURL& url) {
-  // Filter may outlive us, so reset the ad tracker.
-  if (filter_for_last_created_document_)
-    filter_for_last_created_document_->set_ad_resource_tracker(nullptr);
   filter_for_last_created_document_.reset();
 
   if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||
-      !ruleset_dealer_->IsRulesetFileAvailable())
+      !ruleset_dealer_->IsRulesetFileAvailable()) {
     return;
+  }
 
   scoped_refptr<const MemoryMappedRuleset> ruleset =
       ruleset_dealer_->GetRuleset();
 
   if (!ruleset) {
-    LOG(ERROR) << "ruleset nullptr";
-  }
-
-  if (!ruleset)
+    LOG(ERROR) << "adblock ruleset nullptr";
     return;
+  }
 
   base::OnceClosure first_disallowed_load_callback(
       base::BindOnce(&UserSubresourceFilterAgent::
                          SignalFirstSubresourceDisallowedForCurrentDocument,
-                     AsWeakPtr()));
+                     weak_ptr_factory_.GetWeakPtr()));
   auto filter = std::make_unique<WebDocumentSubresourceFilterImpl>(
       url::Origin::Create(url), activation_state, std::move(ruleset),
       std::move(first_disallowed_load_callback));
-
-  filter->set_ad_resource_tracker(ad_resource_tracker_.get());
-
   filter_for_last_created_document_ = filter->AsWeakPtr();
   SetUserSubresourceFilterForCurrentDocument(std::move(filter));
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   // This calc will only allowed after SetUserSubresourceFilterForCommittedLoad
   // which already finish
   // web_frame->GetDocumentLoader()->SetUserSubresourceFilter
@@ -391,29 +385,33 @@ void UserSubresourceFilterAgent::DidFailProvisionalLoad() {
 }
 
 void UserSubresourceFilterAgent::DidFinishLoad() {
-  if (!filter_for_last_created_document_)
+  if (!filter_for_last_created_document_) {
     return;
+  }
   const auto& statistics =
       filter_for_last_created_document_->filter().statistics();
 
   SendDocumentLoadStatistics(statistics);
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   filter_for_last_created_document_->SetDidFinishLoad(true);
   filter_for_last_created_document_->ClearStatistics();
   did_load_finished_ = true;
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 }
 
 void UserSubresourceFilterAgent::WillCreateWorkerFetchContext(
     blink::WebWorkerFetchContext* worker_fetch_context) {
-  if (!filter_for_last_created_document_)
+  if (!filter_for_last_created_document_) {
     return;
-  if (!ruleset_dealer_->IsRulesetFileAvailable())
+  }
+  if (!ruleset_dealer_->IsRulesetFileAvailable()) {
     return;
+  }
   base::File ruleset_file = ruleset_dealer_->DuplicateRulesetFile();
-  if (!ruleset_file.IsValid())
+  if (!ruleset_file.IsValid()) {
     return;
+  }
 
   worker_fetch_context->SetUserSubresourceFilterBuilder(
       std::make_unique<WebDocumentSubresourceFilterImpl::BuilderImpl>(
@@ -422,7 +420,7 @@ void UserSubresourceFilterAgent::WillCreateWorkerFetchContext(
           std::move(ruleset_file),
           base::BindOnce(&UserSubresourceFilterAgent::
                              SignalFirstSubresourceDisallowedForCurrentDocument,
-                         AsWeakPtr())));
+                         weak_ptr_factory_.GetWeakPtr())));
 }
 
 void UserSubresourceFilterAgent::OnOverlayPopupAdDetected() {
@@ -438,11 +436,12 @@ void UserSubresourceFilterAgent::OnLargeStickyAdDetected() {
 void UserSubresourceFilterAgent::DidCreateFencedFrame(
     const blink::RemoteFrameToken& placeholder_token) {
   if (render_frame()->GetWebFrame()->IsAdScriptInStack()) {
-    GetSubresourceFilterHost()->AdScriptDidCreateFencedFrame(placeholder_token);
+    GetSubresourceFilterHost()->UserAdScriptDidCreateFencedFrame(
+        placeholder_token);
   }
 }
 
-#ifdef OHOS_ARKWEB_ADBLOCK
+#if BUILDFLAG(ARKWEB_ADBLOCK)
 void UserSubresourceFilterAgent::SendStatisticsAfterDocumentLoad(
     const mojom::DocumentLoadStatistics& statistics) {
   GetSubresourceFilterHost()->UserSetStatisticsAfterDocumentLoad(
@@ -484,7 +483,7 @@ void UserSubresourceFilterAgent::CalcElementHidingTypeOption(
   }
 
   blink::WebDocumentSubresourceFilter* filter =
-      web_local_frame->GetDocumentLoader()->GetWebSubresourceFilter();
+      web_local_frame->GetDocumentLoader()->GetWebUserSubresourceFilter();
   if (!filter) {
     LOG(ERROR) << "[AdBlock] subresource filter is null, will not calculate"
                   "element hiding type option";
@@ -552,5 +551,5 @@ void UserSubresourceFilterAgent::CalcElementHidingTypeOption(
           << ", $generichide = " << has_generichide_type_option << " assumming "
           << duration.InMicroseconds() << " microseconds";
 }
-#endif  // OHOS_ARKWEB_ADBLOCK
+#endif
 }  // namespace subresource_filter

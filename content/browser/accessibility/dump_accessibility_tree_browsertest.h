@@ -5,9 +5,8 @@
 #ifndef CONTENT_BROWSER_ACCESSIBILITY_DUMP_ACCESSIBILITY_TREE_BROWSERTEST_H_
 #define CONTENT_BROWSER_ACCESSIBILITY_DUMP_ACCESSIBILITY_TREE_BROWSERTEST_H_
 
-#include "content/browser/accessibility/dump_accessibility_browsertest_base.h"
-
 #include "base/command_line.h"
+#include "content/browser/accessibility/dump_accessibility_browsertest_base.h"
 #include "content/public/common/content_switches.h"
 #include "ui/accessibility/accessibility_features.h"
 #include "ui/accessibility/accessibility_switches.h"
@@ -15,12 +14,12 @@
 namespace content {
 
 constexpr const char kARIA[]{"aria"};
-constexpr const char kAOM[]{"aom"};
 constexpr const char kCSS[]{"css"};
 constexpr const char kFormControls[]{"form-controls"};
 constexpr const char kHTML[]{"html"};
 constexpr const char kMathML[]{"mathml"};
 constexpr const char kDisplayLocking[]{"display-locking"};
+constexpr const char kRelations[]{"relations"};
 constexpr const char kRegression[]{"regression"};
 constexpr const char kTestHarness[]{"test-harness"};
 
@@ -60,10 +59,6 @@ class DumpAccessibilityTreeTest : public DumpAccessibilityTestBase {
     RunTypedTest<kARIA>(file_path);
   }
 
-  void RunAomTest(const base::FilePath::CharType* file_path) {
-    RunTypedTest<kAOM>(file_path);
-  }
-
   void RunCSSTest(const base::FilePath::CharType* file_path) {
     RunTypedTest<kCSS>(file_path);
   }
@@ -72,15 +67,24 @@ class DumpAccessibilityTreeTest : public DumpAccessibilityTestBase {
     RunTypedTest<kFormControls>(file_path, ui::kAXModeFormControls);
   }
 
+  void RunAriaTestMinusHtmlMode(const base::FilePath::CharType* file_path) {
+    RunTypedTest<kARIA>(file_path,
+                        ui::kAXModeComplete);  // & ~ui::AXMode::kHTML);
+  }
+
   void RunHtmlTest(const base::FilePath::CharType* file_path) {
     RunTypedTest<kHTML>(file_path);
   }
 
   // TODO(accessibility): Replace all tests using RunPopoverHintTest to just
-  // RunHtmlTest when Popover hints are enabled by default.
+  // RunHtmlTest when Popover hints and interest targets are enabled by default.
   void RunPopoverHintTest(const base::FilePath::CharType* file_path) {
     base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
         switches::kEnableBlinkFeatures, "HTMLPopoverHint");
+    base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
+        switches::kEnableBlinkFeatures, "HTMLInvokeTargetAttribute");
+    base::CommandLine::ForCurrentProcess()->AppendSwitchASCII(
+        switches::kEnableBlinkFeatures, "HTMLInterestTargetAttribute");
     RunTypedTest<kHTML>(file_path);
   }
 
@@ -92,28 +96,12 @@ class DumpAccessibilityTreeTest : public DumpAccessibilityTestBase {
     RunTypedTest<kDisplayLocking>(file_path);
   }
 
-  void RunRegressionTest(const base::FilePath::CharType* file_path) {
-    RunTypedTest<kRegression>(file_path);
+  void RunRelationsTest(const base::FilePath::CharType* file_path) {
+    RunTypedTest<kRelations>(file_path);
   }
 
-  void RunLanguageDetectionTest(const base::FilePath::CharType* file_path) {
-    base::FilePath test_path =
-        GetTestFilePath("accessibility", "language-detection");
-    {
-      base::ScopedAllowBlockingForTesting allow_blocking;
-      ASSERT_TRUE(base::PathExists(test_path)) << test_path.LossyDisplayName();
-    }
-    base::FilePath language_detection_file =
-        test_path.Append(base::FilePath(file_path));
-
-    // Enable language detection for both static and dynamic content.
-    base::CommandLine::ForCurrentProcess()->AppendSwitch(
-        ::switches::kEnableExperimentalAccessibilityLanguageDetection);
-    base::CommandLine::ForCurrentProcess()->AppendSwitch(
-        ::switches::kEnableExperimentalAccessibilityLanguageDetectionDynamic);
-
-    RunTest(ui::kAXModeComplete, language_detection_file,
-            "accessibility/language-detection");
+  void RunRegressionTest(const base::FilePath::CharType* file_path) {
+    RunTypedTest<kRegression>(file_path);
   }
 
   // Testing of the Test Harness itself.
@@ -123,16 +111,6 @@ class DumpAccessibilityTreeTest : public DumpAccessibilityTestBase {
 
  protected:
   // Override from DumpAccessibilityTestBase.
-  void ChooseFeatures(
-      std::vector<base::test::FeatureRef>* enabled_features,
-      std::vector<base::test::FeatureRef>* disabled_features) override;
-};
-
-// Subclass of DumpAccessibilityTreeTest that exposes ignored nodes.
-class DumpAccessibilityTreeTestWithIgnoredNodes
-    : public DumpAccessibilityTreeTest {
- protected:
-  // Override from DumpAccessibilityTreeTest.
   void ChooseFeatures(
       std::vector<base::test::FeatureRef>* enabled_features,
       std::vector<base::test::FeatureRef>* disabled_features) override;

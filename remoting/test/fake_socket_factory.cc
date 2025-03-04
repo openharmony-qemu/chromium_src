@@ -8,19 +8,22 @@
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
+#include <numbers>
 #include <string>
 
+#include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/location.h"
 #include "base/memory/raw_ptr.h"
-#include "base/numerics/math_constants.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "net/base/io_buffer.h"
 #include "remoting/base/leaky_bucket.h"
+#include "third_party/webrtc/api/units/timestamp.h"
 #include "third_party/webrtc/media/base/rtp_utils.h"
 #include "third_party/webrtc/rtc_base/async_packet_socket.h"
+#include "third_party/webrtc/rtc_base/network/received_packet.h"
 #include "third_party/webrtc/rtc_base/socket.h"
 #include "third_party/webrtc/rtc_base/time_utils.h"
 
@@ -39,7 +42,7 @@ double GetNormalRandom(double average, double stddev) {
   // Based on Box-Muller transform, see
   // http://en.wikipedia.org/wiki/Box_Muller_transform .
   return average + stddev * sqrt(-2.0 * log(1.0 - RandDouble())) *
-                       cos(RandDouble() * 2.0 * base::kPiDouble);
+                       cos(RandDouble() * 2.0 * std::numbers::pi);
 }
 
 class FakeUdpSocket : public rtc::AsyncPacketSocket {
@@ -98,7 +101,9 @@ void FakeUdpSocket::ReceivePacket(const rtc::SocketAddress& from,
                                   const rtc::SocketAddress& to,
                                   const scoped_refptr<net::IOBuffer>& data,
                                   int data_size) {
-  SignalReadPacket(this, data->data(), data_size, from, rtc::TimeMicros());
+  NotifyPacketReceived(
+      rtc::ReceivedPacket(rtc::MakeArrayView(data->bytes(), data_size), from,
+                          webrtc::Timestamp::Micros(rtc::TimeMicros())));
 }
 
 rtc::SocketAddress FakeUdpSocket::GetLocalAddress() const {
@@ -107,26 +112,23 @@ rtc::SocketAddress FakeUdpSocket::GetLocalAddress() const {
 
 rtc::SocketAddress FakeUdpSocket::GetRemoteAddress() const {
   NOTREACHED();
-  return rtc::SocketAddress();
 }
 
 int FakeUdpSocket::Send(const void* data,
                         size_t data_size,
                         const rtc::PacketOptions& options) {
   NOTREACHED();
-  return EINVAL;
 }
 
 int FakeUdpSocket::SendTo(const void* data,
                           size_t data_size,
                           const rtc::SocketAddress& address,
                           const rtc::PacketOptions& options) {
-  scoped_refptr<net::IOBuffer> buffer =
-      base::MakeRefCounted<net::IOBuffer>(data_size);
+  auto buffer = base::MakeRefCounted<net::IOBufferWithSize>(data_size);
   memcpy(buffer->data(), data, data_size);
   base::TimeTicks now = base::TimeTicks::Now();
-  cricket::ApplyPacketOptions(reinterpret_cast<uint8_t*>(buffer->data()),
-                              data_size, options.packet_time_params,
+  cricket::ApplyPacketOptions(buffer->bytes(), data_size,
+                              options.packet_time_params,
                               (now - base::TimeTicks()).InMicroseconds());
   SignalSentPacket(this, rtc::SentPacket(options.packet_id, rtc::TimeMillis()));
   dispatcher_->DeliverPacket(local_address_, address, buffer, data_size);
@@ -221,7 +223,7 @@ rtc::AsyncPacketSocket* FakePacketSocketFactory::CreateUdpSocket(
   int port = -1;
   if (min_port > 0 && max_port > 0) {
     for (uint16_t i = min_port; i <= max_port; ++i) {
-      if (udp_sockets_.find(i) == udp_sockets_.end()) {
+      if (!base::Contains(udp_sockets_, i)) {
         port = i;
         break;
       }
@@ -234,7 +236,7 @@ rtc::AsyncPacketSocket* FakePacketSocketFactory::CreateUdpSocket(
       port = next_port_;
       next_port_ =
           (next_port_ >= kPortRangeEnd) ? kPortRangeStart : (next_port_ + 1);
-    } while (udp_sockets_.find(port) != udp_sockets_.end());
+    } while (base::Contains(udp_sockets_, port));
   }
 
   CHECK(local_address.ipaddr() == address_);
@@ -259,13 +261,12 @@ rtc::AsyncListenSocket* FakePacketSocketFactory::CreateServerTcpSocket(
 rtc::AsyncPacketSocket* FakePacketSocketFactory::CreateClientTcpSocket(
     const rtc::SocketAddress& local_address,
     const rtc::SocketAddress& remote_address,
-    const rtc::ProxyInfo& proxy_info,
-    const std::string& user_agent,
     const rtc::PacketSocketTcpOptions& opts) {
   return nullptr;
 }
 
-rtc::AsyncResolverInterface* FakePacketSocketFactory::CreateAsyncResolver() {
+std::unique_ptr<webrtc::AsyncDnsResolverInterface>
+FakePacketSocketFactory::CreateAsyncDnsResolver() {
   return nullptr;
 }
 

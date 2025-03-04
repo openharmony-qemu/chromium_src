@@ -13,8 +13,8 @@ typedef NS_ENUM(NSInteger, SigninPromoViewMode) {
   // At least one identity is available on the device and the user can sign in
   // without entering their credentials.
   SigninPromoViewModeSigninWithAccount,
-  // The user is signed in to Chrome and can enable Sync on the primary account.
-  SigninPromoViewModeSyncWithPrimaryAccount,
+  // The user is signed in to Chrome.
+  SigninPromoViewModeSignedInWithPrimaryAccount,
 };
 
 typedef NS_ENUM(NSInteger, SigninPromoViewStyle) {
@@ -22,13 +22,14 @@ typedef NS_ENUM(NSInteger, SigninPromoViewStyle) {
   // logo, text body, rounded corners colored button and an optional secondary
   // plain button, all stacked vertically.
   SigninPromoViewStyleStandard = 0,
-  // Compact style that does not support personalization. Horizontal layout with
-  // generic icon and title.
-  SigninPromoViewStyleCompactTitled = 1,
-  // Compact style with horizontal layout and avatar/logo.
-  SigninPromoViewStyleCompactHorizontal = 2,
   // Compact style with vertical layout and avatar/logo.
-  SigninPromoViewStyleCompactVertical = 3,
+  SigninPromoViewStyleCompact = 2,
+  // Style containing a single rounded corners colored button.
+  // TODO(crbug.com/40924554): This is a weird construct used only by recent
+  // tabs, where SigninPromoView shows the button and other views show the
+  // text/illustration. We should consider adopting SigninPromoViewStyleStandard
+  // in that UI, or bringing the text/illustration here.
+  SigninPromoViewStyleOnlyButton = 3,
 };
 
 extern NSString* const kSigninPromoViewId;

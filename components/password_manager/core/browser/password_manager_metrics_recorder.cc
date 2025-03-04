@@ -27,11 +27,13 @@ PasswordManagerMetricsRecorder::PasswordManagerMetricsRecorder(
     PasswordManagerMetricsRecorder&& that) noexcept = default;
 
 PasswordManagerMetricsRecorder::~PasswordManagerMetricsRecorder() {
-  if (user_modified_password_field_)
+  if (user_modified_password_field_) {
     ukm_entry_builder_->SetUserModifiedPasswordField(1);
-  if (form_manager_availability_ != FormManagerAvailable::kNotSet)
+  }
+  if (form_manager_availability_ != FormManagerAvailable::kNotSet) {
     ukm_entry_builder_->SetFormManagerAvailable(
         static_cast<int64_t>(form_manager_availability_));
+  }
   ukm_entry_builder_->Record(ukm::UkmRecorder::Get());
 }
 
@@ -47,7 +49,7 @@ void PasswordManagerMetricsRecorder::RecordProvisionalSaveFailure(
     const GURL& main_frame_url,
     const GURL& form_origin,
     BrowserSavePasswordProgressLogger* logger) {
-  UMA_HISTOGRAM_ENUMERATION("PasswordManager.ProvisionalSaveFailure", failure,
+  UMA_HISTOGRAM_ENUMERATION("PasswordManager.ProvisionalSaveFailure2", failure,
                             MAX_FAILURE_VALUE);
   ukm_entry_builder_->SetProvisionalSaveFailure(static_cast<int64_t>(failure));
 
@@ -79,7 +81,6 @@ void PasswordManagerMetricsRecorder::RecordProvisionalSaveFailure(
         break;
       case MAX_FAILURE_VALUE:
         NOTREACHED();
-        return;
     }
     logger->LogMessage(Logger::STRING_DECISION_DROP);
   }

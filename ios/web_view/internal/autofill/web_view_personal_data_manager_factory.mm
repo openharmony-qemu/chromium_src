@@ -17,10 +17,6 @@
 #include "ios/web_view/internal/web_view_browser_state.h"
 #include "ios/web_view/internal/webdata_services/web_view_web_data_service_wrapper_factory.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace ios_web_view {
 
 // static
@@ -54,9 +50,6 @@ WebViewPersonalDataManagerFactory::BuildServiceInstanceFor(
     web::BrowserState* context) const {
   WebViewBrowserState* browser_state =
       WebViewBrowserState::FromBrowserState(context);
-  std::unique_ptr<autofill::PersonalDataManager> service(
-      new autofill::PersonalDataManager(
-          ApplicationContext::GetInstance()->GetApplicationLocale()));
   auto profile_db =
       WebViewWebDataServiceWrapperFactory::GetAutofillWebDataForBrowserState(
           browser_state, ServiceAccessType::EXPLICIT_ACCESS);
@@ -65,13 +58,14 @@ WebViewPersonalDataManagerFactory::BuildServiceInstanceFor(
           browser_state, ServiceAccessType::EXPLICIT_ACCESS);
   auto* sync_service =
       WebViewSyncServiceFactory::GetForBrowserState(browser_state);
-  service->Init(
+  return std::make_unique<autofill::PersonalDataManager>(
       profile_db, account_db, browser_state->GetPrefs(),
       ApplicationContext::GetInstance()->GetLocalState(),
       WebViewIdentityManagerFactory::GetForBrowserState(browser_state),
       /*history_service=*/nullptr, sync_service, /*strike_database=*/nullptr,
-      /*image_fetcher=*/nullptr, browser_state->IsOffTheRecord());
-  return service;
+      /*image_fetcher=*/nullptr, /*shared_storage_handler=*/nullptr,
+      ApplicationContext::GetInstance()->GetApplicationLocale(),
+      /*country_code=*/"");
 }
 
 }  // namespace ios_web_view

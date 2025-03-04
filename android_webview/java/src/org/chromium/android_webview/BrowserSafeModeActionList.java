@@ -5,12 +5,16 @@
 package org.chromium.android_webview;
 
 import org.chromium.android_webview.autofill.AndroidAutofillSafeModeAction;
-import org.chromium.android_webview.autofill.ChromeAutocompleteSafeModeAction;
+import org.chromium.android_webview.common.Lifetime;
 import org.chromium.android_webview.common.SafeModeAction;
+import org.chromium.android_webview.common.origin_trial.DisableOriginTrialsSafeModeAction;
 import org.chromium.android_webview.safe_browsing.AwSafeBrowsingSafeModeAction;
+import org.chromium.android_webview.supervised_user.AwSupervisedUserSafeModeAction;
+import org.chromium.android_webview.variations.FastVariationsSeedSafeModeAction;
 import org.chromium.android_webview.variations.VariationsSeedSafeModeAction;
 
 /** Exposes the SafeModeActions supported by the browser process. */
+@Lifetime.Singleton
 public final class BrowserSafeModeActionList {
     // Do not instantiate this class.
     private BrowserSafeModeActionList() {}
@@ -21,11 +25,12 @@ public final class BrowserSafeModeActionList {
      * the service) will be executed in the order listed below.
      */
     public static final SafeModeAction[] sList = {
-            new VariationsSeedSafeModeAction(),
-            new AndroidAutofillSafeModeAction(),
-            new ChromeAutocompleteSafeModeAction(),
-            new NoopSafeModeAction(),
-            // TODO(avvall): Re-add FastVariationsSeedSafeModeAction
-            new AwSafeBrowsingSafeModeAction(),
+        new VariationsSeedSafeModeAction(),
+        new AndroidAutofillSafeModeAction(),
+        new NoopSafeModeAction(),
+        new FastVariationsSeedSafeModeAction(),
+        new AwSafeBrowsingSafeModeAction(),
+        new DisableOriginTrialsSafeModeAction(),
+        new AwSupervisedUserSafeModeAction(),
     };
 }

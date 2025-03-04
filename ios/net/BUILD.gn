@@ -26,13 +26,13 @@ source_set("net") {
     "//url:buildflags",
   ]
 
-  configs += [ "//build/config/compiler:enable_arc" ]
-
   sources = [
     "cookies/cookie_cache.cc",
     "cookies/cookie_cache.h",
     "cookies/cookie_creation_time_manager.h",
     "cookies/cookie_creation_time_manager.mm",
+    "cookies/cookie_notification_observer.h",
+    "cookies/cookie_notification_observer.mm",
     "cookies/cookie_store_ios.h",
     "cookies/cookie_store_ios.mm",
     "cookies/cookie_store_ios_client.h",
@@ -49,8 +49,6 @@ source_set("net") {
     "empty_nsurlcache.mm",
     "http_cache_helper.cc",
     "http_cache_helper.h",
-    "http_response_headers_util.h",
-    "http_response_headers_util.mm",
     "protocol_handler_util.h",
     "protocol_handler_util.mm",
     "url_scheme_util.h",
@@ -70,8 +68,6 @@ source_set("network_protocol") {
     "//net",
     "//url:buildflags",
   ]
-
-  configs += [ "//build/config/compiler:enable_arc" ]
 
   sources = [
     "chunked_data_stream_uploader.cc",
@@ -95,7 +91,6 @@ source_set("network_protocol") {
 
 source_set("test_support") {
   testonly = true
-  configs += [ "//build/config/compiler:enable_arc" ]
 
   deps = [
     ":net",
@@ -113,7 +108,6 @@ source_set("test_support") {
 }
 
 test("ios_net_unittests") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   deps = [
     ":net",
     ":network_protocol",
@@ -133,7 +127,6 @@ test("ios_net_unittests") {
     "cookies/cookie_store_ios_unittest.mm",
     "cookies/ns_http_system_cookie_store_unittest.mm",
     "cookies/system_cookie_util_unittest.mm",
-    "http_response_headers_util_unittest.mm",
     "nsurlrequest_util_unittest.mm",
     "protocol_handler_util_unittest.mm",
     "url_scheme_util_unittest.mm",

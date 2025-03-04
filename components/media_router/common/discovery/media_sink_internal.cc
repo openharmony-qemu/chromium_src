@@ -68,7 +68,6 @@ bool MediaSinkInternal::operator==(const MediaSinkInternal& other) const {
       return true;
   }
   NOTREACHED();
-  return false;
 }
 
 bool MediaSinkInternal::operator!=(const MediaSinkInternal& other) const {

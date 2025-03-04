@@ -92,6 +92,7 @@ body {
 }
 
 #copy-to-clipboard,
+#copy-variations-to-clipboard,
 #copy-os-content-to-clipboard {
   background-color: var(--background-color);
   border: none;
@@ -112,12 +113,32 @@ body {
   width: 1em;
 }
 
+@media (forced-colors: active) {
+  #copy-to-clipboard-icon {
+    background-color: ButtonText;
+  }
+}
+
 #copy-to-clipboard:hover,
+#copy-variations-to-clipboard:hover,
 #copy-os-content-to-clipboard:hover {
   background-color: var(--hover-background-color);
 }
 
 #copy-to-clipboard:active,
+#copy-variations-to-clipboard:active,
 #copy-os-content-to-clipboard:active {
   background-color: var(--active-background-color);
+}
+
+#messages {
+  clip: rect(0 0 0 0);
+  height: 1px;
+  overflow: hidden;
+  position: fixed;
+  width: 1px;
+}
+
+#footnote {
+  font-size: 0.8em;
 }

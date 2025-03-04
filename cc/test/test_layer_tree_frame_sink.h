@@ -20,8 +20,17 @@
 #include "components/viz/service/display/display.h"
 #include "components/viz/service/display/display_client.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "components/viz/service/frame_sinks/shared_image_interface_provider.h"
 #include "components/viz/test/test_shared_bitmap_manager.h"
+#include "components/viz/test/test_shared_image_interface_provider.h"
+#include "gpu/command_buffer/service/scheduler.h"
+#include "gpu/command_buffer/service/shared_image/shared_image_manager.h"
+#include "gpu/command_buffer/service/sync_point_manager.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
+
+namespace gpu {
+class Scheduler;
+}  // namespace gpu
 
 namespace viz {
 class CompositorFrameSinkSupport;
@@ -62,7 +71,7 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   // If |begin_frame_source| is specified, |disable_display_vsync| and
   // |refresh_rate| are ignored.
   TestLayerTreeFrameSink(
-      scoped_refptr<viz::ContextProvider> compositor_context_provider,
+      scoped_refptr<viz::RasterContextProvider> compositor_context_provider,
       scoped_refptr<viz::RasterContextProvider> worker_context_provider,
       gpu::GpuMemoryBufferManager* gpu_memory_buffer_manager,
       const viz::RendererSettings& renderer_settings,
@@ -112,6 +121,7 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   void OnBeginFramePausedChanged(bool paused) override;
   void OnCompositorFrameTransitionDirectiveProcessed(
       uint32_t sequence_id) override {}
+  void OnSurfaceEvicted(const viz::LocalSurfaceId& local_surface_id) override {}
 
   // DisplayClient implementation.
   void DisplayOutputSurfaceLost() override;
@@ -129,13 +139,12 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
       const viz::FrameSinkId& id,
       viz::mojom::CompositorFrameSinkType* type) override;
 
-  const std::set<viz::SharedBitmapId>& owned_bitmaps() const {
-    return owned_bitmaps_;
+  gpu::SharedImageInterface* GetSharedImageInterface() {
+    return shared_image_interface_provider_.GetSharedImageInterface();
   }
 
-#if BUILDFLAG(IS_OHOS)
-  void TriggerVsyncImplTask() override {}
-  void SetHandledTouchEvent(bool handledTouchEvent) override {}
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
 #endif
 
  private:
@@ -154,6 +163,9 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   // TODO(danakj): These don't need to be stored in unique_ptrs when
   // LayerTreeFrameSink is owned/destroyed on the compositor thread.
   std::unique_ptr<viz::TestSharedBitmapManager> shared_bitmap_manager_;
+  std::unique_ptr<gpu::SharedImageManager> shared_image_manager_;
+  std::unique_ptr<gpu::SyncPointManager> sync_point_manager_;
+  std::unique_ptr<gpu::Scheduler> gpu_scheduler_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::ParentLocalSurfaceIdAllocator>
       parent_local_surface_id_allocator_;
@@ -183,6 +195,8 @@ class TestLayerTreeFrameSink : public LayerTreeFrameSink,
   // interface. On closing this interface, the display compositor should drop
   // ownership of the bitmaps with these ids to avoid leaking them.
   std::set<viz::SharedBitmapId> owned_bitmaps_;
+
+  viz::TestSharedImageInterfaceProvider shared_image_interface_provider_;
 
   base::WeakPtrFactory<TestLayerTreeFrameSink> weak_ptr_factory_{this};
 };

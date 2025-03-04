@@ -24,7 +24,8 @@ AndroidPaymentApp::AndroidPaymentApp(
     const std::string& payment_request_id,
     std::unique_ptr<AndroidAppDescription> description,
     base::WeakPtr<AndroidAppCommunication> communication,
-    content::GlobalRenderFrameHostId frame_routing_id)
+    content::GlobalRenderFrameHostId frame_routing_id,
+    const std::optional<base::UnguessableToken>& twa_instance_identifier)
     : PaymentApp(/*icon_resource_id=*/0, PaymentApp::Type::NATIVE_MOBILE_APP),
       stringified_method_data_(std::move(stringified_method_data)),
       top_level_origin_(top_level_origin),
@@ -34,7 +35,8 @@ AndroidPaymentApp::AndroidPaymentApp(
       communication_(communication),
       frame_routing_id_(frame_routing_id),
       payment_app_token_(base::UnguessableToken::Create()),
-      payment_app_open_(false) {
+      payment_app_open_(false),
+      twa_instance_identifier_(twa_instance_identifier) {
   DCHECK(!payment_method_names.empty());
   DCHECK_EQ(payment_method_names.size(), stringified_method_data_->size());
   DCHECK_EQ(*payment_method_names.begin(),
@@ -72,6 +74,7 @@ void AndroidPaymentApp::InvokePaymentApp(base::WeakPtr<Delegate> delegate) {
       description_->package, description_->activities.front()->name,
       *stringified_method_data_, top_level_origin_, payment_request_origin_,
       payment_request_id_, payment_app_token_, web_contents,
+      twa_instance_identifier_,
       base::BindOnce(&AndroidPaymentApp::OnPaymentAppResponse,
                      weak_ptr_factory_.GetWeakPtr(), delegate));
 }
@@ -86,7 +89,6 @@ bool AndroidPaymentApp::CanPreselect() const {
 
 std::u16string AndroidPaymentApp::GetMissingInfoLabel() const {
   NOTREACHED();
-  return std::u16string();
 }
 
 bool AndroidPaymentApp::HasEnrolledInstrument() const {
@@ -149,7 +151,7 @@ bool AndroidPaymentApp::IsWaitingForPaymentDetailsUpdate() const {
 
 void AndroidPaymentApp::UpdateWith(
     mojom::PaymentRequestDetailsUpdatePtr details_update) {
-  // TODO(crbug.com/1022512): Support payment method, shipping address, and
+  // TODO(crbug.com/40106647): Support payment method, shipping address, and
   // shipping option change events.
 }
 
@@ -157,10 +159,10 @@ void AndroidPaymentApp::OnPaymentDetailsNotUpdated() {}
 
 void AndroidPaymentApp::AbortPaymentApp(
     base::OnceCallback<void(bool)> abort_callback) {
-  // Browser is closing or no payment app active, so no need to invoke a
-  // callback.
-  if (!communication_ || !payment_app_open_)
+  if (!communication_ || !payment_app_open_) {
+    std::move(abort_callback).Run(false);
     return;
+  }
 
   payment_app_open_ = false;
 
@@ -173,17 +175,18 @@ bool AndroidPaymentApp::IsPreferred() const {
   // available is the trusted web application (TWA) that launched this instance
   // of Chrome with a TWA specific payment method, so this app should be
   // preferred.
-#if !BUILDFLAG(IS_CHROMEOS_ASH)
-  NOTREACHED();
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   DCHECK_EQ(1U, GetAppMethodNames().size());
   DCHECK_EQ(methods::kGooglePlayBilling, *GetAppMethodNames().begin());
   return true;
+#else
+  NOTREACHED();
+#endif  // BUILDFLAG(IS_CHROMEOS)
 }
 
 void AndroidPaymentApp::OnPaymentAppResponse(
     base::WeakPtr<Delegate> delegate,
-    const absl::optional<std::string>& error_message,
+    const std::optional<std::string>& error_message,
     bool is_activity_result_ok,
     const std::string& payment_method_identifier,
     const std::string& stringified_details) {

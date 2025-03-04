@@ -4,19 +4,21 @@
 
 package org.chromium.content_public.browser.test.util;
 
-import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.NativeMethods;
+import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
 
-/**
- * Collection of test-only WebContents utilities.
- */
+import org.chromium.base.ThreadUtils;
+
+/** Collection of test-only WebContents utilities. */
 @JNINamespace("content")
 public class RenderProcessHostUtils {
     private RenderProcessHostUtils() {}
 
     public static int getCurrentRenderProcessCount() {
-        return TestThreadUtils.runOnUiThreadBlockingNoException(
-                () -> { return RenderProcessHostUtilsJni.get().getCurrentRenderProcessCount(); });
+        return ThreadUtils.runOnUiThreadBlocking(
+                () -> {
+                    return RenderProcessHostUtilsJni.get().getCurrentRenderProcessCount();
+                });
     }
 
     @NativeMethods

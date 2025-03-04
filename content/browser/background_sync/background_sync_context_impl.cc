@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/task_traits.h"
 #include "build/build_config.h"
@@ -55,8 +56,7 @@ void BackgroundSyncContext::FireBackgroundSyncEventsAcrossPartitions(
 
 void BackgroundSyncContextImpl::Init(
     const scoped_refptr<ServiceWorkerContextWrapper>& service_worker_context,
-    const scoped_refptr<DevToolsBackgroundServicesContextImpl>&
-        devtools_context) {
+    DevToolsBackgroundServicesContextImpl& devtools_context) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   CreateBackgroundSyncManager(service_worker_context, devtools_context);
@@ -99,7 +99,7 @@ void BackgroundSyncContextImpl::OneShotSyncServiceHadConnectionError(
   DCHECK(service);
 
   auto iter = one_shot_sync_services_.find(service);
-  DCHECK(iter != one_shot_sync_services_.end());
+  CHECK(iter != one_shot_sync_services_.end(), base::NotFatalUntil::M130);
   one_shot_sync_services_.erase(iter);
 }
 
@@ -109,7 +109,7 @@ void BackgroundSyncContextImpl::PeriodicSyncServiceHadConnectionError(
   DCHECK(service);
 
   auto iter = periodic_sync_services_.find(service);
-  DCHECK(iter != periodic_sync_services_.end());
+  CHECK(iter != periodic_sync_services_.end(), base::NotFatalUntil::M130);
   periodic_sync_services_.erase(iter);
 }
 
@@ -184,12 +184,12 @@ void BackgroundSyncContextImpl::FireBackgroundSyncEvents(
 
 void BackgroundSyncContextImpl::CreateBackgroundSyncManager(
     scoped_refptr<ServiceWorkerContextWrapper> service_worker_context,
-    scoped_refptr<DevToolsBackgroundServicesContextImpl> devtools_context) {
+    DevToolsBackgroundServicesContextImpl& devtools_context) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(!background_sync_manager_);
 
   background_sync_manager_ = BackgroundSyncManager::Create(
-      std::move(service_worker_context), std::move(devtools_context));
+      std::move(service_worker_context), devtools_context);
 }
 
 }  // namespace content

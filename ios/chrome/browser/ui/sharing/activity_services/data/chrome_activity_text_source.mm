@@ -8,10 +8,6 @@
 
 #import "base/check.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @interface ChromeActivityTextSource ()
 
 // Text to be shared with share extensions.
@@ -23,7 +19,7 @@
 
 - (instancetype)initWithText:(NSString*)text {
   DCHECK(text);
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _text = [text copy];
   }
   return self;

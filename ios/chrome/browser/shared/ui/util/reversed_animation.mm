@@ -8,10 +8,6 @@
 #import <algorithm>
 #import <cmath>
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @protocol ReversedAnimationProtocol;
 typedef CAAnimation<ReversedAnimationProtocol> ReversedAnimation;
 
@@ -202,7 +198,7 @@ CAAnimation* CAAnimationMakeReverse(CAAnimation* animation,
                                                         parent:parent
                                                parentBeginTime:parentBeginTime];
   } else {
-    // TODO(crbug.com/546202): Investigate possible general-case reversals.  It
+    // TODO(crbug.com/41211316): Investigate possible general-case reversals. It
     // may be possible to implement this by manipulating the CAMediaTiming
     // properties.
   }

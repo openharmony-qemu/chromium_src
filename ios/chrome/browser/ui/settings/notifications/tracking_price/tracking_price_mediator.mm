@@ -4,35 +4,31 @@
 
 #import "ios/chrome/browser/ui/settings/notifications/tracking_price/tracking_price_mediator.h"
 
-#import "base/mac/foundation_util.h"
+#import "base/apple/foundation_util.h"
 #import "base/notreached.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/commerce/core/pref_names.h"
 #import "components/commerce/core/price_tracking_utils.h"
 #import "components/commerce/core/shopping_service.h"
 #import "components/prefs/pref_service.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/main/browser.h"
-#import "ios/chrome/browser/push_notification/push_notification_account_context_manager.h"
-#import "ios/chrome/browser/push_notification/push_notification_browser_state_service.h"
-#import "ios/chrome/browser/push_notification/push_notification_browser_state_service_factory.h"
-#import "ios/chrome/browser/push_notification/push_notification_client_id.h"
-#import "ios/chrome/browser/push_notification/push_notification_service.h"
-#import "ios/chrome/browser/push_notification/push_notification_util.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_account_context_manager.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_client_id.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_profile_service.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_profile_service_factory.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_service.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_settings_util.h"
+#import "ios/chrome/browser/push_notification/model/push_notification_util.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/browser.h"
 #import "ios/chrome/browser/shared/ui/list_model/list_model.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_link_header_footer_item.h"
 #import "ios/chrome/browser/shared/ui/table_view/cells/table_view_switch_item.h"
-#import "ios/chrome/browser/signin/authentication_service.h"
-#import "ios/chrome/browser/ui/settings/notifications/notifications_settings_util.h"
+#import "ios/chrome/browser/signin/model/authentication_service.h"
 #import "ios/chrome/browser/ui/settings/notifications/tracking_price/tracking_price_alert_presenter.h"
 #import "ios/chrome/browser/ui/settings/notifications/tracking_price/tracking_price_constants.h"
 #import "ios/chrome/browser/ui/settings/notifications/tracking_price/tracking_price_consumer.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 // List of items.
 typedef NS_ENUM(NSInteger, ItemType) {
@@ -94,8 +90,8 @@ typedef NS_ENUM(NSInteger, ItemType) {
         IDS_IOS_TRACKING_PRICE_MOBILE_NOTIFICATIONS_TITLE);
     _mobileNotificationItem.accessibilityIdentifier =
         kSettingsTrackingPriceMobileNotificationsCellId;
-    _mobileNotificationItem.on =
-        notifications_settings::GetMobileNotificationPermissionStatusForClient(
+    _mobileNotificationItem.on = push_notification_settings::
+        GetMobileNotificationPermissionStatusForClient(
             PushNotificationClientId::kCommerce,
             base::SysNSStringToUTF8(_identity.gaiaID));
   }
@@ -149,7 +145,7 @@ typedef NS_ENUM(NSInteger, ItemType) {
   switch (type) {
     case ItemTypeMobileNotifications: {
       [self setPreferenceFor:PushNotificationClientId::kCommerce to:value];
-      self.mobileNotificationItem.on = notifications_settings::
+      self.mobileNotificationItem.on = push_notification_settings::
           GetMobileNotificationPermissionStatusForClient(
               PushNotificationClientId::kCommerce,
               base::SysNSStringToUTF8(_identity.gaiaID));
@@ -180,7 +176,6 @@ typedef NS_ENUM(NSInteger, ItemType) {
     default:
       // Not a switch.
       NOTREACHED();
-      break;
   }
 }
 

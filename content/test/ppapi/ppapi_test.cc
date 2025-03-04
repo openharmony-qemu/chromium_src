@@ -72,7 +72,7 @@ void PPAPITestBase::SetUpCommandLine(base::CommandLine* command_line) {
   // PPAPI deprecation it doesn't seem worth fixing the tests now.
   command_line->AppendSwitch(switches::kAllowFileAccessFromFiles);
 
-  // TODO(https://crbug.com/1172495): Remove once NaCl code can be deleted.
+  // TODO(crbug.com/40166667): Remove once NaCl code can be deleted.
   command_line->AppendSwitchASCII(blink::switches::kBlinkSettings,
                                   "allowNonEmptyNavigatorPlugins=true");
 }
@@ -82,7 +82,8 @@ GURL PPAPITestBase::GetTestFileUrl(const std::string& test_case) {
   {
     base::ScopedAllowBlockingForTesting allow_blocking;
 
-    EXPECT_TRUE(base::PathService::Get(base::DIR_SOURCE_ROOT, &test_path));
+    EXPECT_TRUE(
+        base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_path));
     test_path = test_path.Append(FILE_PATH_LITERAL("ppapi"));
     test_path = test_path.Append(FILE_PATH_LITERAL("tests"));
     test_path = test_path.Append(FILE_PATH_LITERAL("test_case.html"));

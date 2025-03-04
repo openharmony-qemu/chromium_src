@@ -21,10 +21,6 @@ class PlatformEventDispatcher;
 class PlatformEventObserver;
 class ScopedEventDispatcher;
 
-namespace test {
-class PlatformEventSourceTestAPI;
-}
-
 // PlatformEventSource receives events from a source and dispatches the events
 // to the appropriate dispatchers.
 class EVENTS_EXPORT PlatformEventSource {
@@ -74,6 +70,8 @@ class EVENTS_EXPORT PlatformEventSource {
   // Creates PlatformEventSource and sets it as a thread-local singleton.
   static std::unique_ptr<PlatformEventSource> CreateDefault();
 
+  virtual void ResetStateForTesting() {}
+
  protected:
   typedef base::ObserverList<PlatformEventObserver>::Unchecked
       PlatformEventObserverList;
@@ -91,7 +89,6 @@ class EVENTS_EXPORT PlatformEventSource {
 
  private:
   friend class ScopedEventDispatcher;
-  friend class test::PlatformEventSourceTestAPI;
 
   // Use a base::ObserverList<> instead of an std::vector<> to store the list of
   // dispatchers, so that adding/removing dispatchers during an event dispatch

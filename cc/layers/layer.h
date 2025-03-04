@@ -7,12 +7,14 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <array>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -21,8 +23,10 @@
 #include "cc/base/region.h"
 #include "cc/benchmarks/micro_benchmark.h"
 #include "cc/cc_export.h"
+#include "cc/input/hit_test_opaqueness.h"
 #include "cc/input/scroll_snap_data.h"
 #include "cc/layers/layer_collections.h"
+#include "cc/layers/scroll_hit_test_rect.h"
 #include "cc/layers/touch_action_region.h"
 #include "cc/paint/element_id.h"
 #include "cc/paint/filter_operations.h"
@@ -272,6 +276,10 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // SetNeedsDisplay() that have not been committed to the compositor thread.
   const gfx::Rect& update_rect() const { return update_rect_.Read(*this); }
 
+  // If this returns true, then `SetNeedsDisplay` will be called in response to
+  // the HDR headroom of the display that the content is rendering to changing.
+  virtual bool RequiresSetNeedsDisplayOnHdrHeadroomChange() const;
+
   void ResetUpdateRectForTesting() { update_rect_.Write(*this) = gfx::Rect(); }
 
   // For layer tree mode only.
@@ -366,9 +374,9 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // For layer tree mode only.
   void SetBackdropFilterBounds(const gfx::RRectF& backdrop_filter_bounds);
   void ClearBackdropFilterBounds();
-  absl::optional<gfx::RRectF> backdrop_filter_bounds() const {
+  std::optional<gfx::RRectF> backdrop_filter_bounds() const {
     return layer_tree_inputs() ? layer_tree_inputs()->backdrop_filter_bounds
-                               : absl::nullopt;
+                               : std::nullopt;
   }
 
   // For layer tree mode only.
@@ -401,9 +409,12 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return inputs_.Read(*this).contents_opaque_for_text;
   }
 
-  // Set or get whether this layer should be a hit test target
-  void SetHitTestable(bool should_hit_test);
-  virtual bool HitTestable() const;
+  void SetHitTestOpaqueness(HitTestOpaqueness opaqueness);
+  // For callers that don't know the HitTestOpaqueness::kOpaque concept.
+  void SetHitTestable(bool hit_testable);
+  HitTestOpaqueness hit_test_opaqueness() const {
+    return inputs_.Read(*this).hit_test_opaqueness;
+  }
 
   // For layer tree mode only.
   // Set or get the transform to be used when compositing this layer into its
@@ -465,29 +476,30 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   virtual bool IsScrollbarLayerForTesting() const;
 
-  // For layer tree mode only.
-  // Set or get if this layer is able to be scrolled along each axis. These are
-  // independent of the scrollable state, or size of the scrollable area
-  // specified in SetScrollable(), as these may be enabled or disabled
-  // dynamically, while SetScrollable() defines what would be possible if these
-  // are enabled.
-  // When disabled, overscroll elasticity will not be used if the scroll offset
-  // ends up past the maximum range. And when enabled, with overlay scrollbars,
-  // the scrollbars will be shown when the scroll offset changes if these are
-  // set to true.
-  void SetUserScrollable(bool horizontal, bool vertical);
-  bool GetUserScrollableHorizontal() const;
-  bool GetUserScrollableVertical() const;
-
-  // Set or get an area of this layer within which initiating a scroll can not
-  // be done from the compositor thread. Within this area, if the user attempts
-  // to start a scroll, the events must be sent to the main thread and processed
+  // For layer list mode only.
+  // Set or get an area of this layer within which a scroll hit-test can not be
+  // done from the compositor thread. Within this area, if the user attempts to
+  // start a scroll, the events must be sent to the main thread and processed
   // there.
-  void SetNonFastScrollableRegion(const Region& non_fast_scrollable_region);
-  const Region& non_fast_scrollable_region() const {
+  void SetMainThreadScrollHitTestRegion(
+      const Region& main_thread_scroll_hit_test_region);
+  const Region& main_thread_scroll_hit_test_region() const {
     if (const auto& rare_inputs = inputs_.Read(*this).rare_inputs)
-      return rare_inputs->non_fast_scrollable_region;
+      return rare_inputs->main_thread_scroll_hit_test_region;
     return Region::Empty();
+  }
+
+  // For layer list mode only.
+  // A scroll in any of the rects but not in non_fast_scrollable_region can
+  // start on the compositor thread. The scroll node is determined by checking
+  // non_composited_scroll_hit_test_rects in reversed order.
+  void SetNonCompositedScrollHitTestRects(std::vector<ScrollHitTestRect> rects);
+  const std::vector<ScrollHitTestRect>* non_composited_scroll_hit_test_rects()
+      const {
+    if (const auto& rare_inputs = inputs_.Read(*this).rare_inputs) {
+      return &rare_inputs->non_composited_scroll_hit_test_rects;
+    }
+    return nullptr;
   }
 
   // Set or get the set of touch actions allowed across each point of this
@@ -656,23 +668,17 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   bool may_contain_video() const {
     return GetBitFlag(kMayContainVideoFlagMask);
   }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetMayContainNative(bool value) { native_.Write(*this) = value; }
 
-  void SetMayContainNative(bool value) {
-    native_.Write(*this) = value;
-  }
-
-  bool may_contain_native() const {
-    return native_.Read(*this);
-  }
+  bool may_contain_native() const { return native_.Read(*this); }
 
   void SetNativeEmbedId(int embedId);
 
-  int native_embed_id() const {
-    return native_embed_id_.Read(*this);
-  }
+  int native_embed_id() const { return native_embed_id_.Read(*this); }
 
   void SetNativeRect(const gfx::RectF& rect) { native_rect_ = rect; }
-
+#endif
   // Stable identifier for clients. See comment in cc/paint/element_id.h.
   void SetElementId(ElementId id);
   ElementId element_id() const { return inputs_.Read(*this).element_id; }
@@ -862,11 +868,14 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   virtual void OnLayerRectUpdate(const gfx::Rect& rect) {}
 
   virtual void OnLayerRectVisibilityChange(bool visibility) {}
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void OnLayerBoundsUpdate(const gfx::Rect& bounds) {}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
   void SetShouldInterceptTouchEvent(bool intercept) {
     should_intercept_touch_event_.Write(*this) = intercept;
@@ -875,10 +884,10 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     return should_intercept_touch_event_.Read(*this);
   }
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   virtual bool ShouldOverlay();
   virtual void SetShouldOverlay(bool should_overlay);
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
  protected:
   friend class LayerImpl;
@@ -1007,8 +1016,12 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // generally speaking in <10% of use cases. When adding new values to this
   // struct, consider the memory implications versus simply adding to Inputs.
   struct RareInputs {
+    RareInputs();
+    ~RareInputs();
+
     viz::RegionCaptureBounds capture_bounds;
-    Region non_fast_scrollable_region;
+    Region main_thread_scroll_hit_test_region;
+    std::vector<ScrollHitTestRect> non_composited_scroll_hit_test_rects;
     Region wheel_event_region;
   };
 
@@ -1031,14 +1044,14 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
     gfx::Size bounds;
 
-    // Hit testing depends on this bit.
-    bool hit_testable : 1;
-    bool contents_opaque : 1;
-    bool contents_opaque_for_text : 1;
-    bool is_drawable : 1;
-    bool double_sided : 1;
+    HitTestOpaqueness hit_test_opaqueness = HitTestOpaqueness::kTransparent;
 
-    SkColor4f background_color;
+    bool contents_opaque : 1 = false;
+    bool contents_opaque_for_text : 1 = false;
+    bool is_drawable : 1 = false;
+    bool double_sided : 1 = true;
+
+    SkColor4f background_color = SkColors::kTransparent;
     TouchActionRegion touch_action_region;
 
     ElementId element_id;
@@ -1064,23 +1077,20 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
     float opacity = 1.0f;
     SkBlendMode blend_mode = SkBlendMode::kSrcOver;
 
-    bool masks_to_bounds : 1;
+    bool masks_to_bounds : 1 = false;
 
     // If set, disables this layer's rounded corner from triggering a render
     // surface on itself if possible.
-    bool is_fast_rounded_corner : 1;
+    bool is_fast_rounded_corner : 1 = false;
 
-    bool user_scrollable_horizontal : 1;
-    bool user_scrollable_vertical : 1;
+    bool trilinear_filtering : 1 = false;
 
-    bool trilinear_filtering : 1;
-
-    bool hide_layer_and_subtree : 1;
+    bool hide_layer_and_subtree : 1 = false;
 
     // Indicates that this layer will need a scroll property node and that this
     // layer's bounds correspond to the scroll node's bounds (both |bounds| and
     // |scroll_container_bounds|).
-    bool scrollable : 1;
+    bool scrollable : 1 = false;
 
     gfx::PointF position;
     gfx::Transform transform;
@@ -1096,7 +1106,7 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
     FilterOperations filters;
     FilterOperations backdrop_filters;
-    absl::optional<gfx::RRectF> backdrop_filter_bounds;
+    std::optional<gfx::RRectF> backdrop_filter_bounds;
     float backdrop_filter_quality = 1.0f;
 
     int mirror_count = 0;
@@ -1162,8 +1172,11 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // because it's used in base::AutoReset.
   ProtectedSequenceReadable<bool> ignore_set_needs_commit_for_test_;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   ProtectedSequenceReadable<bool> native_;
-
+  ProtectedSequenceReadable<int> native_embed_id_;
+  gfx::RectF native_rect_;
+#endif
   enum : uint8_t {
     kDrawsContentFlagMask = 1 << 0,
     kShouldCheckBackfaceVisibilityFlagMask = 1 << 1,
@@ -1215,15 +1228,12 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   };
 #endif
 
-  ProtectedSequenceReadable<int> native_embed_id_{0};
-
-  gfx::RectF native_rect_;
   ProtectedSequenceWritable<std::unique_ptr<LayerDebugInfo>> debug_info_;
 
   ProtectedSequenceReadable<bool> should_intercept_touch_event_{false};
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   bool should_overlay_{false};
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};

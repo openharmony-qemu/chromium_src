@@ -89,6 +89,11 @@ class MOJO_SYSTEM_IMPL_EXPORT Transport : public Object<Transport>,
     error_handler_context_ = context;
   }
 
+  // Overrides the IO task runner used to monitor this transport for IO. Unless
+  // this is called, all Transports use the global IO task runner by default.
+  void OverrideIOTaskRunner(
+      scoped_refptr<base::SingleThreadTaskRunner> task_runner);
+
   // Takes ownership of the Transport's underlying channel endpoint, effectively
   // invalidating the transport. May only be called on a Transport which has not
   // yet been activated, and only when the channel endpoint is not a server.
@@ -151,7 +156,8 @@ class MOJO_SYSTEM_IMPL_EXPORT Transport : public Object<Transport>,
   bool IsIpczTransport() const override;
   void OnChannelMessage(const void* payload,
                         size_t payload_size,
-                        std::vector<PlatformHandle> handles) override;
+                        std::vector<PlatformHandle> handles,
+                        scoped_refptr<ipcz_driver::Envelope> envelope) override;
   void OnChannelError(Channel::Error error) override;
   void OnChannelDestroyed() override;
 
@@ -223,9 +229,13 @@ class MOJO_SYSTEM_IMPL_EXPORT Transport : public Object<Transport>,
   // still alive. So we retain a self-reference on behalf of the Channel and
   // release it only once notified of the Channel's destruction.
   //
-  // TODO(https://crbug.com/1299283): Refactor Channel so that this is
+  // TODO(crbug.com/40058840): Refactor Channel so that this is
   // unnecessary, once the non-ipcz Mojo implementation is phased out.
   scoped_refptr<Transport> self_reference_for_channel_ GUARDED_BY(lock_);
+
+  // The IO task runner used by this Transport to watch for incoming I/O events.
+  scoped_refptr<base::SingleThreadTaskRunner> io_task_runner_{
+      GetIOTaskRunner()};
 
   // These fields are not guarded by locks, since they're only set prior to
   // activation and remain constant throughout the remainder of this object's

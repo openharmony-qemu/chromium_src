@@ -11,10 +11,6 @@
 #import "base/check.h"
 #import "base/notreached.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // Background color RGB values for the content view which is displayed when the
@@ -57,12 +53,10 @@ const CGFloat kBackgroundRGBComponents[] = {0.75f, 0.74f, 0.76f};
 
 - (instancetype)initWithCoder:(NSCoder*)decoder {
   NOTREACHED();
-  return nil;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
   NOTREACHED();
-  return nil;
 }
 
 - (void)didMoveToSuperview {
@@ -125,7 +119,7 @@ const CGFloat kBackgroundRGBComponents[] = {0.75f, 0.74f, 0.76f};
 
 #pragma mark - CRWViewportAdjusting
 
-// TODO(crbug.com/1064041): Implement.
+// TODO(crbug.com/40123534): Implement.
 - (void)updateMinViewportInsets:(UIEdgeInsets)minInsets
               maxViewportInsets:(UIEdgeInsets)maxInsets {
 }

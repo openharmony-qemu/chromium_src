@@ -1,0 +1,6 @@
+arkweb_content_public_browser_custom_media_sources = [
+    "//arkweb/chromium_ext/content/public/browser/custom_media_info.h",
+    "//arkweb/chromium_ext/content/public/browser/custom_media_player.cc",
+    "//arkweb/chromium_ext/content/public/browser/custom_media_player.h",
+    "//arkweb/chromium_ext/content/public/browser/custom_media_player_listener.h",
+]

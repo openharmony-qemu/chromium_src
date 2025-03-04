@@ -4,12 +4,16 @@
 
 #import "ios/chrome/test/earl_grey/chrome_earl_grey_app_interface.h"
 
+#import <WebKit/WebKit.h>
+
+#import "base/apple/foundation_util.h"
+#import "base/barrier_closure.h"
 #import "base/command_line.h"
 #import "base/containers/contains.h"
+#import "base/files/file.h"
 #import "base/files/file_util.h"
 #import "base/ios/ios_util.h"
 #import "base/json/json_string_value_serializer.h"
-#import "base/mac/foundation_util.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/test/scoped_feature_list.h"
@@ -22,39 +26,45 @@
 #import "components/metrics/demographics/demographic_metrics_provider.h"
 #import "components/password_manager/core/common/password_manager_features.h"
 #import "components/prefs/pref_service.h"
+#import "components/safe_browsing/core/common/features.h"
 #import "components/search_engines/template_url_service.h"
-#import "components/sync/base/features.h"
 #import "components/sync/base/pref_names.h"
+#import "components/sync/service/sync_service.h"
+#import "components/sync/service/sync_user_settings.h"
+#import "components/sync/test/fake_server_http_post_provider.h"
 #import "components/unified_consent/unified_consent_service.h"
 #import "components/variations/variations_associated_data.h"
 #import "components/variations/variations_ids_provider.h"
+#import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/main_controller.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/autofill/personal_data_manager_factory.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/content_settings/host_content_settings_map_factory.h"
-#import "ios/chrome/browser/default_browser/utils.h"
-#import "ios/chrome/browser/default_browser/utils_test_support.h"
-#import "ios/chrome/browser/main/browser_provider.h"
-#import "ios/chrome/browser/ntp/features.h"
-#import "ios/chrome/browser/search_engines/search_engines_util.h"
-#import "ios/chrome/browser/search_engines/template_url_service_factory.h"
-#import "ios/chrome/browser/sessions/session_restoration_browser_agent.h"
-#import "ios/chrome/browser/sessions/session_service_ios.h"
+#import "ios/chrome/browser/autofill/model/personal_data_manager_factory.h"
+#import "ios/chrome/browser/content_settings/model/host_content_settings_map_factory.h"
+#import "ios/chrome/browser/default_browser/model/utils.h"
+#import "ios/chrome/browser/default_browser/model/utils_test_support.h"
+#import "ios/chrome/browser/first_run/model/first_run.h"
+#import "ios/chrome/browser/first_run/ui_bundled/first_run_screen_provider.h"
+#import "ios/chrome/browser/first_run/ui_bundled/first_run_util.h"
+#import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_feature.h"
+#import "ios/chrome/browser/search_engines/model/search_engines_util.h"
+#import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
+#import "ios/chrome/browser/sessions/model/session_restoration_service.h"
+#import "ios/chrome/browser/sessions/model/session_restoration_service_factory.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider.h"
+#import "ios/chrome/browser/shared/model/browser/browser_provider_interface.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
+#import "ios/chrome/browser/shared/ui/util/omnibox_util.h"
 #import "ios/chrome/browser/shared/ui/util/rtl_geometry.h"
-#import "ios/chrome/browser/signin/fake_system_identity.h"
-#import "ios/chrome/browser/sync/sync_service_factory.h"
-#import "ios/chrome/browser/ui/ntp/new_tab_page_feature.h"
+#import "ios/chrome/browser/sync/model/sync_service_factory.h"
+#import "ios/chrome/browser/tips_notifications/model/utils.h"
 #import "ios/chrome/browser/ui/popup_menu/overflow_menu/feature_flags.h"
-#import "ios/chrome/browser/ui/thumb_strip/thumb_strip_feature.h"
-#import "ios/chrome/browser/unified_consent/unified_consent_service_factory.h"
-#import "ios/chrome/browser/web/web_navigation_browser_agent.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/test/app/bookmarks_test_util.h"
+#import "ios/chrome/browser/unified_consent/model/unified_consent_service_factory.h"
+#import "ios/chrome/browser/web/model/web_navigation_browser_agent.h"
 #import "ios/chrome/test/app/browsing_data_test_util.h"
 #import "ios/chrome/test/app/chrome_test_util.h"
 #import "ios/chrome/test/app/navigation_test_util.h"
@@ -64,12 +74,15 @@
 #import "ios/chrome/test/app/window_test_util.h"
 #import "ios/chrome/test/earl_grey/accessibility_util.h"
 #import "ios/public/provider/chrome/browser/lens/lens_api.h"
+#import "ios/public/provider/chrome/browser/primes/primes_api.h"
+#import "ios/public/provider/chrome/browser/signin/choice_api.h"
 #import "ios/testing/hardware_keyboard_util.h"
 #import "ios/testing/nserror_util.h"
 #import "ios/testing/open_url_context.h"
 #import "ios/testing/verify_custom_webkit.h"
 #import "ios/web/common/features.h"
 #import "ios/web/js_messaging/web_view_js_utils.h"
+#import "ios/web/public/browser_state_utils.h"
 #import "ios/web/public/js_messaging/web_frame.h"
 #import "ios/web/public/js_messaging/web_frames_manager.h"
 #import "ios/web/public/navigation/navigation_manager.h"
@@ -81,13 +94,9 @@
 #import "ios/web/public/ui/crw_web_view_scroll_view_proxy.h"
 #import "ios/web/public/web_client.h"
 #import "ios/web/public/web_state.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #import "services/metrics/public/cpp/ukm_recorder.h"
 #import "ui/base/device_form_factor.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using base::test::ios::kWaitForActionTimeout;
 using base::test::ios::kWaitForJSCompletionTimeout;
@@ -121,7 +130,8 @@ NSString* SerializedValue(const base::Value* value) {
   serializer.Serialize(*result);
   return base::SysUTF8ToNSString(serialized_value);
 }
-}
+
+}  // namespace
 
 @implementation JavaScriptExecutionResult
 
@@ -147,8 +157,18 @@ NSString* SerializedValue(const base::Value* value) {
     return nil;
   }
 
+  [self killWebKitNetworkProcess];
   return testing::NSErrorWithLocalizedDescription(
       @"Clearing browser history timed out");
+}
+
++ (void)killWebKitNetworkProcess {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
+  WKWebsiteDataStore* dataStore =
+      web::GetDataStoreForBrowserState(chrome_test_util::GetOriginalProfile());
+  [dataStore performSelector:@selector(_terminateNetworkProcess)];
+#pragma clang diagnostic pop
 }
 
 + (NSInteger)browsingHistoryEntryCountWithError:
@@ -175,14 +195,30 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (void)saveSessionImmediately {
-  SessionRestorationBrowserAgent::FromBrowser(
-      chrome_test_util::GetMainBrowser())
-      ->SaveSession(/*immediately=*/true);
+  ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
+
+  SessionRestorationService* service =
+      SessionRestorationServiceFactory::GetForProfile(profile);
+
+  SessionRestorationService* otrService = nullptr;
+  if (profile->HasOffTheRecordProfile()) {
+    SessionRestorationServiceFactory::GetForProfile(
+        profile->GetOffTheRecordProfile());
+  }
+
   dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-  ProceduralBlock completionBlock = ^{
-    dispatch_semaphore_signal(semaphore);
-  };
-  [[SessionServiceIOS sharedService] shutdownWithCompletion:completionBlock];
+  base::RepeatingClosure closure =
+      base::BarrierClosure(otrService ? 2u : 1u, base::BindRepeating(^{
+                             dispatch_semaphore_signal(semaphore);
+                           }));
+
+  service->SaveSessions();
+  service->InvokeClosureWhenBackgroundProcessingDone(closure);
+  if (otrService) {
+    otrService->SaveSessions();
+    otrService->InvokeClosureWhenBackgroundProcessingDone(closure);
+  }
+
   dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
@@ -225,7 +261,15 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (void)dismissSettings {
-  [chrome_test_util::HandlerForActiveBrowser() closeSettingsUI];
+  [chrome_test_util::HandlerForActiveBrowser() closePresentedViews];
+}
+
++ (void)primesStopLogging {
+  ios::provider::PrimesStopLogging();
+}
+
++ (void)primesTakeMemorySnapshot:(NSString*)eventName {
+  ios::provider::PrimesTakeMemorySnapshot(eventName);
 }
 
 #pragma mark - Tab Utilities (EG2)
@@ -246,12 +290,27 @@ NSString* SerializedValue(const base::Value* value) {
   return chrome_test_util::GetMainTabCount();
 }
 
++ (NSUInteger)inactiveTabCount {
+  return chrome_test_util::GetInactiveTabCount();
+}
+
 + (NSUInteger)incognitoTabCount {
   return chrome_test_util::GetIncognitoTabCount();
 }
 
 + (NSUInteger)browserCount {
   return chrome_test_util::RegularBrowserCount();
+}
+
++ (NSInteger)realizedWebStatesCount {
+  int count = 0;
+  int tab_count = chrome_test_util::GetMainTabCount();
+  for (int i = 0; i < tab_count; i++) {
+    if (chrome_test_util::GetWebStateAtIndexInCurrentMode(i)->IsRealized()) {
+      count++;
+    }
+  }
+  return count;
 }
 
 + (NSUInteger)evictedMainTabCount {
@@ -300,6 +359,10 @@ NSString* SerializedValue(const base::Value* value) {
 
 + (void)closeCurrentTab {
   chrome_test_util::CloseCurrentTab();
+}
+
++ (void)pinCurrentTab {
+  chrome_test_util::PinCurrentTab();
 }
 
 + (void)openNewIncognitoTab {
@@ -421,10 +484,6 @@ NSString* SerializedValue(const base::Value* value) {
         @"Multiwindow not supported");
   }
 
-  // Always disable default browser promo in new window, to avoid
-  // messages to be closed too early.
-  [self disableDefaultBrowserPromo];
-
   NSUserActivity* activity =
       [[NSUserActivity alloc] initWithActivityType:@"EG2NewWindow"];
   UISceneActivationRequestOptions* options =
@@ -535,7 +594,7 @@ NSString* SerializedValue(const base::Value* value) {
   NSSet<UIScene*>* scenes = UIApplication.sharedApplication.connectedScenes;
   for (UIScene* scene in scenes) {
     UIWindowScene* windowScene =
-        base::mac::ObjCCastStrict<UIWindowScene>(scene);
+        base::apple::ObjCCastStrict<UIWindowScene>(scene);
 
     for (UIWindow* window in windowScene.windows) {
       if (window.isKeyWindow) {
@@ -633,19 +692,22 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (BOOL)webStateContainsElement:(ElementSelector*)selector {
-  return web::test::IsWebViewContainingElement(
-      chrome_test_util::GetCurrentWebState(), selector);
+  web::WebState* web_state = chrome_test_util::GetCurrentWebState();
+  return web_state &&
+         web::test::IsWebViewContainingElement(web_state, selector);
 }
 
 + (BOOL)webStateContainsText:(NSString*)text {
-  return web::test::IsWebViewContainingText(
-      chrome_test_util::GetCurrentWebState(), base::SysNSStringToUTF8(text));
+  web::WebState* web_state = chrome_test_util::GetCurrentWebState();
+  return web_state && web::test::IsWebViewContainingText(
+                          web_state, base::SysNSStringToUTF8(text));
 }
 
 + (NSError*)waitForWebStateContainingLoadedImage:(NSString*)imageID {
-  bool success = web::test::WaitForWebViewContainingImage(
-      base::SysNSStringToUTF8(imageID), chrome_test_util::GetCurrentWebState(),
-      web::test::IMAGE_STATE_LOADED);
+  web::WebState* web_state = chrome_test_util::GetCurrentWebState();
+  bool success = web_state && web::test::WaitForWebViewContainingImage(
+                                  base::SysNSStringToUTF8(imageID), web_state,
+                                  web::test::IMAGE_STATE_LOADED);
 
   if (!success) {
     NSString* errorString = [NSString
@@ -658,8 +720,9 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (NSError*)waitForWebStateContainingBlockedImage:(NSString*)imageID {
+  web::WebState* web_state = chrome_test_util::GetCurrentWebState();
   bool success = web::test::WaitForWebViewContainingImage(
-      base::SysNSStringToUTF8(imageID), chrome_test_util::GetCurrentWebState(),
+      base::SysNSStringToUTF8(imageID), web_state,
       web::test::IMAGE_STATE_BLOCKED);
 
   if (!success) {
@@ -691,8 +754,8 @@ NSString* SerializedValue(const base::Value* value) {
   return nil;
 }
 
-+ (void)signOutAndClearIdentities {
-  chrome_test_util::SignOutAndClearIdentities();
++ (void)signOutAndClearIdentitiesWithCompletion:(ProceduralBlock)completion {
+  chrome_test_util::SignOutAndClearIdentities(completion);
 }
 
 + (BOOL)hasIdentities {
@@ -720,7 +783,7 @@ NSString* SerializedValue(const base::Value* value) {
   // Attempt to deflake WebKit sometimes still holding on to the browser cache
   // with a larger hammer.
   base::ScopedAllowBlockingForTesting allow_blocking;
-  base::FilePath library_dir = base::mac::GetUserLibraryPath();
+  base::FilePath library_dir = base::apple::GetUserLibraryPath();
   base::FilePath webkit_cache_dir = library_dir.Append("WebKit");
   DeletePathRecursively(webkit_cache_dir);
 
@@ -730,24 +793,22 @@ NSString* SerializedValue(const base::Value* value) {
   return nil;
 }
 
-+ (BOOL)isRestoreSessionInProgress {
-  web::WebState* web_state = chrome_test_util::GetCurrentWebState();
-  return web_state->GetNavigationManager()->IsRestoreSessionInProgress();
-}
-
 + (BOOL)webStateWebViewUsesContentInset {
   web::WebState* web_state = chrome_test_util::GetCurrentWebState();
-  return web_state->GetWebViewProxy().shouldUseViewContentInset;
+  return web_state && web_state->GetWebViewProxy().shouldUseViewContentInset;
 }
 
 + (CGSize)webStateWebViewSize {
   web::WebState* web_state = chrome_test_util::GetCurrentWebState();
-  return [web_state->GetWebViewProxy() bounds].size;
+  return web_state ? [web_state->GetWebViewProxy() bounds].size : CGSizeZero;
 }
 
 + (void)stopAllWebStatesLoading {
+  if (!chrome_test_util::GetForegroundActiveScene()) {
+    return;
+  }
   WebStateList* web_state_list =
-      chrome_test_util::GetMainController()
+      chrome_test_util::GetForegroundActiveScene()
           .browserProviderInterface.currentBrowserProvider.browser
           ->GetWebStateList();
   for (int index = 0; index < web_state_list->count(); ++index) {
@@ -756,28 +817,6 @@ NSString* SerializedValue(const base::Value* value) {
       web_state->Stop();
     }
   }
-}
-
-#pragma mark - Bookmarks Utilities (EG2)
-
-+ (NSError*)waitForBookmarksToFinishinLoading {
-  bool success = WaitUntilConditionOrTimeout(kWaitForActionTimeout, ^{
-    return chrome_test_util::BookmarksLoaded();
-  });
-  if (!success) {
-    return testing::NSErrorWithLocalizedDescription(
-        @"Bookmark model did not load");
-  }
-  return nil;
-}
-
-+ (NSError*)clearBookmarks {
-  bool success = chrome_test_util::ClearBookmarks();
-  if (!success) {
-    return testing::NSErrorWithLocalizedDescription(
-        @"Not all bookmarks were removed.");
-  }
-  return nil;
 }
 
 #pragma mark - URL Utilities (EG2)
@@ -789,8 +828,16 @@ NSString* SerializedValue(const base::Value* value) {
 
 #pragma mark - Sync Utilities (EG2)
 
-+ (int)numberOfSyncEntitiesWithType:(syncer::ModelType)type {
++ (int)numberOfSyncEntitiesWithType:(syncer::DataType)type {
   return chrome_test_util::GetNumberOfSyncEntities(type);
+}
+
++ (void)disconnectFakeSyncServerNetwork {
+  fake_server::FakeServerHttpPostProvider::DisableNetwork();
+}
+
++ (void)connectFakeSyncServerNetwork {
+  fake_server::FakeServerHttpPostProvider::EnableNetwork();
 }
 
 + (void)addFakeSyncServerBookmarkWithURL:(NSString*)URL title:(NSString*)title {
@@ -807,10 +854,6 @@ NSString* SerializedValue(const base::Value* value) {
       base::SysNSStringToUTF8(originator_client_item_id));
 }
 
-+ (void)addFakeSyncServerTypedURL:(NSString*)URL {
-  chrome_test_util::AddTypedURLToFakeSyncServer(base::SysNSStringToUTF8(URL));
-}
-
 + (void)addFakeSyncServerHistoryVisit:(NSURL*)URL {
   chrome_test_util::AddHistoryVisitToFakeSyncServer(net::GURLWithNSURL(URL));
 }
@@ -823,6 +866,12 @@ NSString* SerializedValue(const base::Value* value) {
 
 + (void)addHistoryServiceTypedURL:(NSString*)URL {
   chrome_test_util::AddTypedURLToClient(GURL(base::SysNSStringToUTF8(URL)));
+}
+
++ (void)addHistoryServiceTypedURL:(NSString*)URL
+                   visitTimestamp:(base::Time)visitTimestamp {
+  chrome_test_util::AddTypedURLToClient(GURL(base::SysNSStringToUTF8(URL)),
+                                        visitTimestamp);
 }
 
 + (void)deleteHistoryServiceTypedURL:(NSString*)URL {
@@ -838,7 +887,7 @@ NSString* SerializedValue(const base::Value* value) {
   return success && !error;
 }
 
-+ (void)triggerSyncCycleForType:(syncer::ModelType)type {
++ (void)triggerSyncCycleForType:(syncer::DataType)type {
   chrome_test_util::TriggerSyncCycle(type);
 }
 
@@ -874,14 +923,6 @@ NSString* SerializedValue(const base::Value* value) {
       base::SysNSStringToUTF8(GUID));
 }
 
-+ (void)signInWithoutSyncWithIdentity:(FakeSystemIdentity*)identity {
-  chrome_test_util::SignInWithoutSync(identity);
-}
-
-+ (void)clearSyncServerData {
-  chrome_test_util::ClearSyncServerData();
-}
-
 + (NSError*)waitForSyncEngineInitialized:(BOOL)isInitialized
                              syncTimeout:(base::TimeDelta)timeout {
   bool success = WaitUntilConditionOrTimeout(timeout, ^{
@@ -899,11 +940,10 @@ NSString* SerializedValue(const base::Value* value) {
 + (NSError*)waitForSyncFeatureEnabled:(BOOL)isEnabled
                           syncTimeout:(base::TimeDelta)timeout {
   bool success = WaitUntilConditionOrTimeout(timeout, ^{
-    ChromeBrowserState* browser_state =
-        chrome_test_util::GetOriginalBrowserState();
-    DCHECK(browser_state);
+    ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
+    DCHECK(profile);
     syncer::SyncService* syncService =
-        SyncServiceFactory::GetForBrowserState(browser_state);
+        SyncServiceFactory::GetForProfile(profile);
     return syncService->IsSyncFeatureEnabled() == isEnabled;
   });
   if (!success) {
@@ -918,21 +958,19 @@ NSString* SerializedValue(const base::Value* value) {
 + (NSError*)waitForSyncTransportStateActiveWithTimeout:
     (base::TimeDelta)timeout {
   bool success = WaitUntilConditionOrTimeout(timeout, ^{
-    ChromeBrowserState* browser_state =
-        chrome_test_util::GetOriginalBrowserState();
-    DCHECK(browser_state);
+    ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
+    DCHECK(profile);
     syncer::SyncService* syncService =
-        SyncServiceFactory::GetForBrowserState(browser_state);
+        SyncServiceFactory::GetForProfile(profile);
     return syncService->GetTransportState() ==
            syncer::SyncService::TransportState::ACTIVE;
   });
   if (!success) {
-    ChromeBrowserState* browser_state =
-        chrome_test_util::GetOriginalBrowserState();
+    ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
     NSString* errorDescription = [NSString
         stringWithFormat:
             @"Sync transport must be active, but actual state was: %d",
-            (int)SyncServiceFactory::GetForBrowserState(browser_state)
+            (int)SyncServiceFactory::GetForProfile(profile)
                 ->GetTransportState()];
     return testing::NSErrorWithLocalizedDescription(errorDescription);
   }
@@ -966,19 +1004,27 @@ NSString* SerializedValue(const base::Value* value) {
   chrome_test_util::TearDownFakeSyncServer();
 }
 
++ (void)clearFakeSyncServerData {
+  chrome_test_util::ClearFakeSyncServerData();
+}
+
++ (void)flushFakeSyncServerToDisk {
+  chrome_test_util::FlushFakeSyncServerToDisk();
+}
+
 + (NSError*)verifyNumberOfSyncEntitiesWithType:(NSUInteger)type
                                           name:(NSString*)name
                                          count:(NSUInteger)count {
   std::string UTF8Name = base::SysNSStringToUTF8(name);
   NSError* __autoreleasing tempError = nil;
   bool success = chrome_test_util::VerifyNumberOfSyncEntitiesWithName(
-      (syncer::ModelType)type, UTF8Name, count, &tempError);
+      (syncer::DataType)type, UTF8Name, count, &tempError);
   NSError* error = tempError;
 
   if (!success and !error) {
     NSString* errorString =
         [NSString stringWithFormat:@"Expected %zu entities of the %d type.",
-                                   count, (syncer::ModelType)type];
+                                   count, (syncer::DataType)type];
     return testing::NSErrorWithLocalizedDescription(errorString);
   }
 
@@ -1022,6 +1068,18 @@ NSString* SerializedValue(const base::Value* value) {
 + (void)addBookmarkWithSyncPassphrase:(NSString*)syncPassphrase {
   chrome_test_util::AddBookmarkWithSyncPassphrase(
       base::SysNSStringToUTF8(syncPassphrase));
+}
+
++ (void)addSyncPassphrase:(NSString*)syncPassphrase {
+  chrome_test_util::AddSyncPassphrase(base::SysNSStringToUTF8(syncPassphrase));
+}
+
++ (BOOL)isSyncHistoryDataTypeSelected {
+  ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
+  DCHECK(profile);
+  syncer::SyncService* syncService = SyncServiceFactory::GetForProfile(profile);
+  return syncService->GetUserSettings()->GetSelectedTypes().Has(
+      syncer::UserSelectableType::kHistory);
 }
 
 #pragma mark - JavaScript Utilities (EG2)
@@ -1111,21 +1169,12 @@ NSString* SerializedValue(const base::Value* value) {
   return base::FeatureList::IsEnabled(ukm::kUkmFeature);
 }
 
-+ (BOOL)isSynthesizedRestoreSessionEnabled {
-  return base::FeatureList::IsEnabled(
-      web::features::kSynthesizedRestoreSession);
-}
-
 + (BOOL)isTestFeatureEnabled {
   return base::FeatureList::IsEnabled(kTestFeature);
 }
 
 + (BOOL)isDemographicMetricsReportingEnabled {
   return base::FeatureList::IsEnabled(metrics::kDemographicMetricsReporting);
-}
-
-+ (BOOL)isSyncHistoryDataTypeEnabled {
-  return base::FeatureList::IsEnabled(syncer::kSyncEnableHistoryDataType);
 }
 
 + (BOOL)appHasLaunchSwitch:(NSString*)launchSwitch {
@@ -1135,10 +1184,6 @@ NSString* SerializedValue(const base::Value* value) {
 
 + (BOOL)isCustomWebKitLoadedIfRequested {
   return IsCustomWebKitLoadedIfRequested();
-}
-
-+ (BOOL)isLoadSimulatedRequestAPIEnabled {
-  return web::features::IsLoadSimulatedRequestAPIEnabled();
 }
 
 + (BOOL)isMobileModeByDefault {
@@ -1158,56 +1203,70 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (BOOL)isUseLensToSearchForImageEnabled {
-  TemplateURLService* service =
-      ios::TemplateURLServiceFactory::GetForBrowserState(
-          chrome_test_util::GetOriginalBrowserState());
-  return base::FeatureList::IsEnabled(kUseLensToSearchForImage) &&
-         ios::provider::IsLensSupported() &&
+  TemplateURLService* service = ios::TemplateURLServiceFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile());
+  return ios::provider::IsLensSupported() &&
          ui::GetDeviceFormFactor() != ui::DEVICE_FORM_FACTOR_TABLET &&
          search_engines::SupportsSearchImageWithLens(service);
-}
-
-+ (BOOL)isThumbstripEnabledForWindowWithNumber:(int)windowNumber {
-  return ShowThumbStripInTraitCollection(
-      [self windowWithNumber:windowNumber].traitCollection);
 }
 
 + (BOOL)isWebChannelsEnabled {
   return base::FeatureList::IsEnabled(kEnableWebChannels);
 }
 
-+ (BOOL)isUIButtonConfigurationEnabled {
-  return IsUIButtonConfigurationEnabled();
++ (BOOL)isTabGroupSyncEnabled {
+  return IsTabGroupSyncEnabled();
 }
+
++ (BOOL)isCurrentLayoutBottomOmnibox {
+  return IsCurrentLayoutBottomOmnibox(chrome_test_util::GetCurrentBrowser());
+}
+
++ (BOOL)isEnhancedSafeBrowsingInfobarEnabled {
+  return base::FeatureList::IsEnabled(
+      safe_browsing::kEnhancedSafeBrowsingPromo);
+}
+
 #pragma mark - ContentSettings
 
 + (ContentSetting)popupPrefValue {
-  return ios::HostContentSettingsMapFactory::GetForBrowserState(
-             chrome_test_util::GetOriginalBrowserState())
+  return ios::HostContentSettingsMapFactory::GetForProfile(
+             chrome_test_util::GetOriginalProfile())
       ->GetDefaultContentSetting(ContentSettingsType::POPUPS, NULL);
 }
 
 + (void)setPopupPrefValue:(ContentSetting)value {
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_test_util::GetOriginalBrowserState())
+  ios::HostContentSettingsMapFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile())
       ->SetDefaultContentSetting(ContentSettingsType::POPUPS, value);
 }
 
 + (void)resetDesktopContentSetting {
-  ios::HostContentSettingsMapFactory::GetForBrowserState(
-      chrome_test_util::GetOriginalBrowserState())
+  ios::HostContentSettingsMapFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile())
       ->SetDefaultContentSetting(ContentSettingsType::REQUEST_DESKTOP_SITE,
                                  CONTENT_SETTING_BLOCK);
 }
 
++ (void)setContentSetting:(ContentSetting)setting
+    forContentSettingsType:(ContentSettingsType)type {
+  ios::HostContentSettingsMapFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile())
+      ->SetDefaultContentSetting(type, setting);
+}
+
 #pragma mark - Default Utilities (EG2)
 
-+ (void)setUserDefaultObject:(id)value forKey:(NSString*)defaultName {
++ (void)setUserDefaultsObject:(id)value forKey:(NSString*)defaultName {
   [[NSUserDefaults standardUserDefaults] setObject:value forKey:defaultName];
 }
 
-+ (void)removeUserDefaultObjectForKey:(NSString*)key {
++ (void)removeUserDefaultsObjectForKey:(NSString*)key {
   [[NSUserDefaults standardUserDefaults] removeObjectForKey:key];
+}
+
++ (id)userDefaultsObjectForKey:(NSString*)key {
+  return [[NSUserDefaults standardUserDefaults] objectForKey:key];
 }
 
 #pragma mark - Pref Utilities (EG2)
@@ -1225,39 +1284,79 @@ NSString* SerializedValue(const base::Value* value) {
   prefService->SetInteger(path, value);
 }
 
++ (void)setTimeValue:(base::Time)value forLocalStatePref:(NSString*)prefName {
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = GetApplicationContext()->GetLocalState();
+  prefService->SetTime(path, value);
+}
+
++ (void)setTimeValue:(base::Time)value forUserPref:(NSString*)prefName {
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = chrome_test_util::GetOriginalProfile()->GetPrefs();
+  prefService->SetTime(path, value);
+}
+
++ (void)setStringValue:(NSString*)value forLocalStatePref:(NSString*)prefName {
+  std::string UTF8Value = base::SysNSStringToUTF8(value);
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = GetApplicationContext()->GetLocalState();
+  prefService->SetString(path, UTF8Value);
+}
+
++ (void)setStringValue:(NSString*)value forUserPref:(NSString*)prefName {
+  std::string UTF8Value = base::SysNSStringToUTF8(value);
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = chrome_test_util::GetOriginalProfile()->GetPrefs();
+  prefService->SetString(path, UTF8Value);
+}
+
++ (void)setBoolValue:(BOOL)value forLocalStatePref:(NSString*)prefName {
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = GetApplicationContext()->GetLocalState();
+  prefService->SetBoolean(path, value);
+}
+
 + (NSString*)userPrefValue:(NSString*)prefName {
   std::string path = base::SysNSStringToUTF8(prefName);
   const PrefService::Preference* pref =
-      chrome_test_util::GetOriginalBrowserState()->GetPrefs()->FindPreference(
-          path);
+      chrome_test_util::GetOriginalProfile()->GetPrefs()->FindPreference(path);
   return SerializedPref(pref);
 }
 
 + (void)setBoolValue:(BOOL)value forUserPref:(NSString*)prefName {
   chrome_test_util::SetBooleanUserPref(
-      chrome_test_util::GetOriginalBrowserState(),
+      chrome_test_util::GetOriginalProfile(),
       base::SysNSStringToUTF8(prefName).c_str(), value);
 }
 
 + (void)setIntegerValue:(int)value forUserPref:(NSString*)prefName {
   chrome_test_util::SetIntegerUserPref(
-      chrome_test_util::GetOriginalBrowserState(),
+      chrome_test_util::GetOriginalProfile(),
       base::SysNSStringToUTF8(prefName).c_str(), value);
 }
 
++ (BOOL)prefWithNameIsDefaultValue:(NSString*)prefName {
+  std::string path = base::SysNSStringToUTF8(prefName);
+  const PrefService::Preference* pref =
+      GetApplicationContext()->GetLocalState()->FindPreference(path);
+  return pref->IsDefaultValue();
+}
+
 + (void)clearUserPrefWithName:(NSString*)prefName {
-  PrefService* prefs = chrome_test_util::GetOriginalBrowserState()->GetPrefs();
+  PrefService* prefs = chrome_test_util::GetOriginalProfile()->GetPrefs();
   prefs->ClearPref(base::SysNSStringToUTF8(prefName));
 }
 
 + (void)commitPendingUserPrefsWrite {
-  PrefService* prefs = chrome_test_util::GetOriginalBrowserState()->GetPrefs();
+  PrefService* prefs = chrome_test_util::GetOriginalProfile()->GetPrefs();
   prefs->CommitPendingWrite();
 }
 
 + (void)resetBrowsingDataPrefs {
-  PrefService* prefs = chrome_test_util::GetOriginalBrowserState()->GetPrefs();
+  PrefService* prefs = chrome_test_util::GetOriginalProfile()->GetPrefs();
+  prefs->ClearPref(browsing_data::prefs::kDeleteTimePeriod);
   prefs->ClearPref(browsing_data::prefs::kDeleteBrowsingHistory);
+  prefs->ClearPref(browsing_data::prefs::kCloseTabs);
   prefs->ClearPref(browsing_data::prefs::kDeleteCookies);
   prefs->ClearPref(browsing_data::prefs::kDeleteCache);
   prefs->ClearPref(browsing_data::prefs::kDeletePasswords);
@@ -1273,8 +1372,8 @@ NSString* SerializedValue(const base::Value* value) {
 #pragma mark - Unified Consent utilities
 
 + (void)setURLKeyedAnonymizedDataCollectionEnabled:(BOOL)enabled {
-  UnifiedConsentServiceFactory::GetForBrowserState(
-      chrome_test_util::GetOriginalBrowserState())
+  UnifiedConsentServiceFactory::GetForProfile(
+      chrome_test_util::GetOriginalProfile())
       ->SetUrlKeyedAnonymizedDataCollectionEnabled(enabled);
 }
 
@@ -1282,7 +1381,7 @@ NSString* SerializedValue(const base::Value* value) {
 
 + (NSInteger)registeredKeyCommandCount {
   UIViewController* browserViewController =
-      chrome_test_util::GetMainController()
+      chrome_test_util::GetForegroundActiveScene()
           .browserProviderInterface.mainBrowserProvider.viewController;
   // The BVC delegates its key commands to its next responder,
   // KeyCommandsProvider.
@@ -1374,7 +1473,7 @@ int watchRunNumber = 0;
           for (UIScene* scene in UIApplication.sharedApplication
                    .connectedScenes) {
             UIWindowScene* windowScene =
-                base::mac::ObjCCastStrict<UIWindowScene>(scene);
+                base::apple::ObjCCastStrict<UIWindowScene>(scene);
             [windows addObjectsFromArray:windowScene.windows];
           }
 
@@ -1427,10 +1526,42 @@ int watchRunNumber = 0;
   pasteboard.URL = [NSURL URLWithString:@"chrome://version"];
 }
 
-+ (void)disableDefaultBrowserPromo {
-  chrome_test_util::GetMainController().appState.shouldShowDefaultBrowserPromo =
-      NO;
-  LogUserInteractionWithFullscreenPromo();
+#pragma mark - First Run Utilities
+
++ (void)writeFirstRunSentinel {
+  base::ScopedAllowBlockingForTesting allow_blocking;
+  FirstRun::RemoveSentinel();
+  base::File::Error fileError;
+  FirstRun::CreateSentinel(&fileError);
+  FirstRun::LoadSentinelInfo();
+  FirstRun::ClearStateForTesting();
+  FirstRun::IsChromeFirstRun();
+}
+
++ (void)removeFirstRunSentinel {
+  base::ScopedAllowBlockingForTesting allow_blocking;
+  if (FirstRun::RemoveSentinel()) {
+    FirstRun::LoadSentinelInfo();
+    FirstRun::ClearStateForTesting();
+    FirstRun::IsChromeFirstRun();
+  }
+}
+
++ (bool)hasFirstRunSentinel {
+  base::ScopedAllowBlockingForTesting allow_blocking;
+  return HasFirstRunSentinel();
+}
+
++ (void)requestTipsNotification:(TipsNotificationType)type {
+  UNUserNotificationCenter* center =
+      UNUserNotificationCenter.currentNotificationCenter;
+
+  UNNotificationRequest* request = [UNNotificationRequest
+      requestWithIdentifier:kTipsNotificationId
+                    content:ContentForTipsNotificationType(type)
+                    trigger:nil];
+
+  [center addNotificationRequest:request withCompletionHandler:nil];
 }
 
 @end

@@ -10,6 +10,7 @@
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/types/cxx23_to_underlying.h"
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "media/base/key_systems.h"
@@ -31,14 +32,14 @@
 #include "media/mojo/services/playback_events_recorder.h"
 #endif
 
-#if defined(REPORT_SYS_EVENT)
-#include "ohos_nweb/src/sysevent/event_reporter.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif
 
 namespace media {
 
 constexpr char kInvalidInitialize[] = "Initialize() was not called correctly.";
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 constexpr int DEFAULT_VIDEO_ERROR_CODE = 0;
 #endif
 
@@ -56,7 +57,6 @@ MediaMetricsProvider::MediaMetricsProvider(
     learning::FeatureValue origin,
     VideoDecodePerfHistory::SaveCallback save_cb,
     GetLearningSessionCallback learning_session_cb,
-    RecordAggregateWatchTimeCallback record_playback_cb,
     IsShuttingDownCallback is_shutting_down_cb)
     : player_id_(g_player_id++),
       is_top_frame_(is_top_frame == FrameStatus::kTopFrame),
@@ -64,7 +64,6 @@ MediaMetricsProvider::MediaMetricsProvider(
       origin_(origin),
       save_cb_(std::move(save_cb)),
       learning_session_cb_(std::move(learning_session_cb)),
-      record_playback_cb_(std::move(record_playback_cb)),
       is_shutting_down_cb_(std::move(is_shutting_down_cb)),
       uma_info_(is_incognito == BrowsingMode::kIncognito) {}
 
@@ -90,6 +89,7 @@ MediaMetricsProvider::~MediaMetricsProvider() {
   builder.SetIsMSE(media_info_->is_mse);
   builder.SetRendererType(static_cast<int>(renderer_type_));
   builder.SetKeySystem(GetKeySystemIntForUKM(key_system_));
+  builder.SetHasWaitingForKey(has_waiting_for_key_);
   builder.SetIsHardwareSecure(is_hardware_secure_);
   builder.SetAudioEncryptionType(
       static_cast<int>(uma_info_.audio_pipeline_info.encryption_type));
@@ -99,7 +99,7 @@ MediaMetricsProvider::~MediaMetricsProvider() {
   if (!media_info_->is_mse) {
     builder.SetURLScheme(static_cast<int64_t>(media_info_->url_scheme));
     if (container_name_)
-      builder.SetContainerName(*container_name_);
+      builder.SetContainerName(base::to_underlying(*container_name_));
   }
 
   if (time_to_metadata_ != kNoTimestamp)
@@ -127,7 +127,13 @@ std::string MediaMetricsProvider::GetUMANameForAVStream(
   }
 
   // Using default RendererImpl. Put more detailed info into the UMA name.
-#if !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
+  if (player_info.is_eme && player_info.video_pipeline_info.decoder_type ==
+                                VideoDecoderType::kMediaCodec) {
+    return uma_name + "MediaDrm." +
+           (is_hardware_secure_ ? "HardwareSecure" : "SoftwareSecure");
+  }
+#else
   if (player_info.video_pipeline_info.decoder_type ==
       VideoDecoderType::kDecrypting) {
     return uma_name + "DVD";
@@ -146,6 +152,12 @@ std::string MediaMetricsProvider::GetUMANameForAVStream(
 }
 
 void MediaMetricsProvider::ReportPipelineUMA() {
+  if (uma_info_.start_status_.has_value()) {
+    base::UmaHistogramExactLinear("Media.PipelineStatus.Start",
+                                  uma_info_.start_status_.value(),
+                                  PIPELINE_STATUS_MAX + 1);
+  }
+
   if (uma_info_.has_video && uma_info_.has_audio) {
     base::UmaHistogramExactLinear(GetUMANameForAVStream(uma_info_),
                                   uma_info_.last_pipeline_status,
@@ -195,14 +207,12 @@ void MediaMetricsProvider::Create(
     learning::FeatureValue origin,
     VideoDecodePerfHistory::SaveCallback save_cb,
     GetLearningSessionCallback learning_session_cb,
-    GetRecordAggregateWatchTimeCallback get_record_playback_cb,
     IsShuttingDownCallback is_shutting_down_cb,
     mojo::PendingReceiver<mojom::MediaMetricsProvider> receiver) {
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<MediaMetricsProvider>(
           is_incognito, is_top_frame, source_id, origin, std::move(save_cb),
           std::move(learning_session_cb),
-          std::move(get_record_playback_cb).Run(),
           std::move(is_shutting_down_cb)),
       std::move(receiver));
 }
@@ -254,9 +264,20 @@ void MediaMetricsProvider::Initialize(
   DCHECK(IsInitialized());
 }
 
+void MediaMetricsProvider::OnStarted(const PipelineStatus& status) {
+  DCHECK(IsInitialized());
+  if (is_shutting_down_cb_.Run()) {
+    DVLOG(1) << __func__ << ": Start status " << PipelineStatusToString(status)
+             << " ignored since it is reported during shutdown.";
+    return;
+  }
+
+  uma_info_.start_status_ = status.code();
+}
+
 void MediaMetricsProvider::OnError(const PipelineStatus& status) {
   DCHECK(IsInitialized());
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   std::string errorType = "video play error";
   int errorCode = DEFAULT_VIDEO_ERROR_CODE;
   std::string errorDesc = "media player start failed or network error";
@@ -319,6 +340,10 @@ void MediaMetricsProvider::SetKeySystem(const std::string& key_system) {
   key_system_ = key_system;
 }
 
+void MediaMetricsProvider::SetHasWaitingForKey() {
+  has_waiting_for_key_ = true;
+}
+
 void MediaMetricsProvider::SetIsHardwareSecure() {
   is_hardware_secure_ = true;
 }
@@ -333,8 +358,7 @@ void MediaMetricsProvider::AcquireWatchTimeRecorder(
 
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<WatchTimeRecorder>(std::move(properties), source_id_,
-                                          is_top_frame_, player_id_,
-                                          record_playback_cb_),
+                                          is_top_frame_, player_id_),
       std::move(receiver));
 }
 

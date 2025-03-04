@@ -10,6 +10,7 @@
 #include "base/files/file_util.h"
 #include "base/path_service.h"
 #include "base/strings/escape.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/strings/sys_string_conversions.h"
 #include "base/strings/utf_string_conversions.h"
@@ -27,12 +28,11 @@ namespace net {
 static const char kFileURLPrefix[] = "file:///";
 
 GURL FilePathToFileURL(const base::FilePath& path) {
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (path.IsDataShareUri()) {
     return GURL(path.value());
   }
 #endif
-
   // Produce a URL like "file:///C:/foo" for a regular file, or
   // "file://///server/path" for UNC. The URL canonicalizer will fix up the
   // latter case to be the canonical UNC form: "file://server/path"
@@ -50,10 +50,8 @@ GURL FilePathToFileURL(const base::FilePath& path) {
         c == '\\' ||
 #endif
         c <= ' ') {
-      static const char kHexChars[] = "0123456789ABCDEF";
       url_string += '%';
-      url_string += kHexChars[(c >> 4) & 0xf];
-      url_string += kHexChars[c & 0xf];
+      base::AppendHexEncodedByte(static_cast<uint8_t>(c), url_string);
     } else {
       url_string += c;
     }
@@ -68,12 +66,11 @@ bool FileURLToFilePath(const GURL& url, base::FilePath* file_path) {
       const_cast<base::FilePath::StringType&>(file_path->value());
   file_path_str.clear();
 
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (base::FilePath::IsDataShareUrl(url.possibly_invalid_spec())) {
     file_path_str.assign(url.possibly_invalid_spec());
     return !file_path_str.empty();
   }
-
 #endif
 
   if (!url.is_valid())
@@ -123,7 +120,11 @@ bool FileURLToFilePath(const GURL& url, base::FilePath* file_path) {
   // https://crbug.com/585422 that this represents a potential security risk).
   // It isn't correct to keep it as "%2F", so this just fails. This is fine,
   // because '/' is not a valid filename character on either POSIX or Windows.
-  std::set<unsigned char> illegal_encoded_bytes{'/'};
+  //
+  // A valid URL may include "%00" (NULL) in its path (see
+  // https://crbug.com/1400251), which is considered an illegal filename and
+  // results in failure.
+  std::set<unsigned char> illegal_encoded_bytes{'/', '\0'};
 
 #if BUILDFLAG(IS_WIN)
   // "%5C" ('\\') on Windows results in failure, for the same reason as '/'
@@ -208,12 +209,10 @@ bool IsReservedNameOnWindows(const base::FilePath::StringType& filename) {
 #endif
 
   for (const char* const device : known_devices) {
-    // Exact match.
-    if (filename_lower == device)
-      return true;
-    // Starts with "DEVICE.".
-    if (base::StartsWith(filename_lower, std::string(device) + ".",
-                         base::CompareCase::SENSITIVE)) {
+    // Check for an exact match, or a "DEVICE." prefix.
+    size_t len = strlen(device);
+    if (filename_lower.starts_with(device) &&
+        (filename_lower.size() == len || filename_lower[len] == '.')) {
       return true;
     }
   }

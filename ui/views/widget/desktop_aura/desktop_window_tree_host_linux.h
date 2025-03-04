@@ -13,8 +13,8 @@
 #include "base/memory/weak_ptr.h"
 #include "ui/aura/scoped_window_targeter.h"
 #include "ui/base/buildflags.h"
+#include "ui/base/mojom/ui_base_types.mojom-shared.h"
 #include "ui/gfx/geometry/rect.h"
-#include "ui/ozone/buildflags.h"
 #include "ui/platform_window/extensions/x11_extension_delegate.h"
 #include "ui/views/views_export.h"
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_platform.h"
@@ -38,6 +38,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
     : public DesktopWindowTreeHostPlatform,
       public ui::X11ExtensionDelegate {
  public:
+  static const char kWindowKey[];
+
   DesktopWindowTreeHostLinux(
       internal::NativeWidgetDelegate* native_widget_delegate,
       DesktopNativeWidgetAura* desktop_native_widget_aura);
@@ -57,13 +59,17 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
   // Disables event listening to make |dialog| modal.
   base::OnceClosure DisableEventListening();
 
+  // Sets hints for the WM/compositor that reflect the extents of the
+  // client-drawn shadow.
+  virtual void UpdateFrameHints();
+
   void set_screen_bounds(const gfx::Rect& bounds) { screen_bounds_ = bounds; }
 
  protected:
   // Overridden from DesktopWindowTreeHost:
   void Init(const Widget::InitParams& params) override;
   void OnNativeWidgetCreated(const Widget::InitParams& params) override;
-  void InitModalType(ui::ModalType modal_type) override;
+  void InitModalType(ui::mojom::ModalType modal_type) override;
   Widget::MoveLoopResult RunMoveLoop(
       const gfx::Vector2d& drag_offset,
       Widget::MoveLoopSource source,
@@ -74,6 +80,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
   // PlatformWindowDelegate:
   void DispatchEvent(ui::Event* event) override;
   void OnClosed() override;
+  void OnBoundsChanged(const BoundsChange& change) override;
 
   ui::X11Extension* GetX11Extension();
   const ui::X11Extension* GetX11Extension() const;
@@ -118,7 +125,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
 
   uint32_t modal_dialog_counter_ = 0;
 
-   // Override the screen bounds when the host is a child window.
+  // Override the screen bounds when the host is a child window.
   gfx::Rect screen_bounds_;
 
   // The display and the native X window hosting the root window.

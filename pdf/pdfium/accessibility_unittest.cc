@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if defined(UNSAFE_BUFFERS_BUILD)
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "pdf/accessibility.h"
 
 #include <string>
@@ -79,8 +84,8 @@ TEST_P(AccessibilityTest, GetAccessibilityPage) {
   std::vector<AccessibilityTextRunInfo> text_runs;
   std::vector<AccessibilityCharInfo> chars;
   AccessibilityPageObjects page_objects;
-  ASSERT_TRUE(GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
-                                   page_objects));
+  GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
+                       page_objects);
   EXPECT_EQ(0u, page_info.page_index);
   EXPECT_EQ(gfx::Rect(5, 3, 266, 266), page_info.bounds);
   EXPECT_EQ(text_runs.size(), page_info.text_run_count);
@@ -128,8 +133,8 @@ TEST_P(AccessibilityTest, GetAccessibilityImageInfo) {
   std::vector<AccessibilityTextRunInfo> text_runs;
   std::vector<AccessibilityCharInfo> chars;
   AccessibilityPageObjects page_objects;
-  ASSERT_TRUE(GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
-                                   page_objects));
+  GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
+                       page_objects);
   EXPECT_EQ(0u, page_info.page_index);
   EXPECT_EQ(gfx::Rect(5, 3, 816, 1056), page_info.bounds);
   EXPECT_EQ(text_runs.size(), page_info.text_run_count);
@@ -446,8 +451,8 @@ TEST_P(AccessibilityTest, GetAccessibilityLinkInfo) {
   std::vector<AccessibilityTextRunInfo> text_runs;
   std::vector<AccessibilityCharInfo> chars;
   AccessibilityPageObjects page_objects;
-  ASSERT_TRUE(GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
-                                   page_objects));
+  GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
+                       page_objects);
   EXPECT_EQ(0u, page_info.page_index);
   EXPECT_EQ(gfx::Rect(5, 3, 533, 266), page_info.bounds);
   EXPECT_EQ(text_runs.size(), page_info.text_run_count);
@@ -485,8 +490,8 @@ TEST_P(AccessibilityTest, GetAccessibilityHighlightInfo) {
   std::vector<AccessibilityTextRunInfo> text_runs;
   std::vector<AccessibilityCharInfo> chars;
   AccessibilityPageObjects page_objects;
-  ASSERT_TRUE(GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
-                                   page_objects));
+  GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
+                       page_objects);
   EXPECT_EQ(0u, page_info.page_index);
   EXPECT_EQ(gfx::Rect(5, 3, 533, 266), page_info.bounds);
   EXPECT_EQ(text_runs.size(), page_info.text_run_count);
@@ -532,8 +537,8 @@ TEST_P(AccessibilityTest, GetAccessibilityTextFieldInfo) {
   std::vector<AccessibilityTextRunInfo> text_runs;
   std::vector<AccessibilityCharInfo> chars;
   AccessibilityPageObjects page_objects;
-  ASSERT_TRUE(GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
-                                   page_objects));
+  GetAccessibilityInfo(engine.get(), 0, page_info, text_runs, chars,
+                       page_objects);
   EXPECT_EQ(0u, page_info.page_index);
   EXPECT_EQ(gfx::Rect(5, 3, 400, 400), page_info.bounds);
   EXPECT_EQ(text_runs.size(), page_info.text_run_count);
@@ -658,8 +663,11 @@ TEST_P(AccessibilityTest, SetSelectionAndScroll) {
     action_data.selection_start_index.char_index = sel_action.start_char_index;
     action_data.selection_end_index.page_index = sel_action.end_page_index;
     action_data.selection_end_index.char_index = sel_action.end_char_index;
-    gfx::Rect char_bounds = gfx::ToEnclosingRect(engine->GetCharBounds(
-        sel_action.start_page_index, sel_action.start_char_index));
+
+    PDFiumPage& page =
+        GetPDFiumPageForTest(*engine, sel_action.start_page_index);
+    gfx::Rect char_bounds =
+        gfx::ToEnclosingRect(page.GetCharBounds(sel_action.start_char_index));
     action_data.target_rect = {{char_bounds.x(), char_bounds.y() + 400 * index},
                                char_bounds.size()};
 

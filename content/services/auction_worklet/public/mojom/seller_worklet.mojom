@@ -5,9 +5,12 @@
 module auction_worklet.mojom;
 
 import "content/services/auction_worklet/public/mojom/private_aggregation_request.mojom";
+import "content/services/auction_worklet/public/mojom/real_time_reporting.mojom";
+import "content/services/auction_worklet/public/mojom/reject_reason.mojom";
 import "mojo/public/mojom/base/time.mojom";
 import "services/network/public/mojom/url_loader_factory.mojom";
 import "third_party/blink/public/mojom/devtools/devtools_agent.mojom";
+import "third_party/blink/public/mojom/interest_group/ad_display_size.mojom";
 import "third_party/blink/public/mojom/interest_group/interest_group_types.mojom";
 import "url/mojom/origin.mojom";
 import "url/mojom/url.mojom";
@@ -30,13 +33,9 @@ struct ComponentAuctionModifiedBidParams {
   string ad;
 
   // Bid value and currency to send to the top-level seller seller in place of
-  // BidderWorkletBid::bid. Only valid if `has_bid` is true.
-  double bid;
+  // BidderWorkletBid::bid.
+  double? bid;
   blink.mojom.AdCurrency? bid_currency;
-
-  // True to indicate that `bid` has been populated.
-  // TODO(https://crbug.com/657632): Update when optional doubles are supported.
-  bool has_bid;
 };
 
 // Input parameters specific to a component auction's ReportResult() method.
@@ -44,28 +43,46 @@ struct ComponentAuctionReportResultParams {
   // Metadata returned by the top-level seller's ReportResult() method, as JSON.
   string top_level_seller_signals;
 
-  // The bid value returned by the component seller's ScoreAd() method. May
-  // be the same value as the original bid.
-  double modified_bid;
-
-  // True to indicate that `modified_bid` has been populated. False if the
-  // component seller's ScoreAd() method didn't return a bid value (either the
-  // same value of the original bid or a different value).
-  // TODO(https://crbug.com/657632): Update when optional doubles are supported.
-  bool has_modified_bid;
+  // The stochastically rounded numeric value of the bid returned by the
+  // component seller's ScoreAd() method. May be the same value as the original
+  // bid.
+  double? modified_bid;
 };
 
-// The reason a bid was rejected by an auction.
-enum RejectReason {
-  kNotAvailable = 0,
-  kInvalidBid = 1,
-  kBidBelowAuctionFloor = 2,
-  kPendingApprovalByExchange = 3,
-  kDisapprovedByExchange = 4,
-  kBlockedByPublisher = 5,
-  kLanguageExclusions = 6,
-  kCategoryExclusions = 7,
-  kBelowKAnonThreshold = 8,
+// Represents the time between SellerWorklet::ScoreAd and each of the
+// dependencies to SellerWorklet::ScoreAdIfReady, which can help to identify
+// the slowest dependency, both in absolute terms and relative to other
+// dependencies. Each of the latencies recorded here may be null if that
+// dependency didn't apply for this call to ScoreAd.
+struct ScoreAdDependencyLatencies {
+  // Load of Script
+  mojo_base.mojom.TimeDelta? code_ready_latency;
+
+  // Download of DirectFromSellerSignals
+  mojo_base.mojom.TimeDelta? direct_from_seller_signals_latency;
+
+  // Download of TrustedScoringSignals
+  mojo_base.mojom.TimeDelta? trusted_scoring_signals_latency;
+
+  // Times of each step of the ScoreAd flow, used to compute start and end
+  // times for latency phase UKMs.
+  mojo_base.mojom.TimeTicks deps_wait_start_time;
+  mojo_base.mojom.TimeTicks score_ad_start_time;
+  mojo_base.mojom.TimeTicks score_ad_finish_time;
+};
+
+// How long particular tasks took. Unlike ScoreAdDependencyLatencies this
+// doesn't denote how long things blocked for --- e.g. the fetch times are
+// how long the download took, even for later calls to scoreAd() that may not
+// actually wait for the download since it's already in memory.
+struct SellerTimingMetrics {
+  mojo_base.mojom.TimeDelta? js_fetch_latency;
+
+  // How long it took to execute the script (including both the top-level
+  // and the function).
+  mojo_base.mojom.TimeDelta script_latency;
+
+  bool script_timed_out;
 };
 
 // Interface for returning ScoreAd results. The advantage of having an interface
@@ -109,6 +126,13 @@ interface ScoreAdClient {
   //
   // `pa_requests` The various requests made to the Private Aggregation API.
   //
+  // `real_time_contributions` Real time reporting contributions.
+  //
+  // `score_ad_timing_metrics` Time metrics relevant to this call.
+  //
+  // `score_ad_dependency_latencies` How long various depedent-on operations
+  // were waited for on this particular call.
+  //
   // `errors` are various error messages to be used for debugging. These are too
   //  sensitive for the renderers to see. `errors` should not be assumed to be
   //  empty if `score` is positive, nor should it be assumed to be non-empty if
@@ -122,6 +146,9 @@ interface ScoreAdClient {
                     url.mojom.Url? debug_loss_report_url,
                     url.mojom.Url? debug_win_report_url,
                     array<PrivateAggregationRequest> pa_requests,
+                    array<RealTimeReportingContribution> real_time_contributions,
+                    SellerTimingMetrics score_ad_timing_metrics,
+                    ScoreAdDependencyLatencies score_ad_dependency_latencies,
                     array<string> errors);
 };
 
@@ -154,18 +181,28 @@ interface SellerWorklet {
   //  vary between auctions that can share a SellerWorklet.
   //
   // `direct_from_seller_seller_signals` The subresource URL of the
-  // DirectFromSellerSignals for the seller, as produced by concatenating the
-  // `directFromSellerSignals` URL prefix field passed from runAdAuction() with
-  // "?sellerSignals". Since this is fetched from a subresource bundle, it may
-  // only be fetched using the URLLoaderFactory passed in when creating the
-  // worklet.
+  //  DirectFromSellerSignals for the seller, as produced by concatenating the
+  //  `directFromSellerSignals` URL prefix field passed from runAdAuction() with
+  //  "?sellerSignals". Since this is fetched from a subresource bundle, it may
+  //  only be fetched using the URLLoaderFactory passed in when creating the
+  //  worklet.
+  //
+  // `direct_from_seller_seller_signals_header_ad_slot` A JSON string of the
+  //  DirectFromSellerSignals for the seller. Must not be passed if
+  //  `direct_from_seller_seller_signals` or
+  //  `direct_from_seller_auction_signals` is passed.
   //
   // `direct_from_seller_auction_signals` The subresource URL of the
-  // directFromSellerSignals for the seller and all buyers, as produced by
-  // concatenating the `directFromSellerSignals` URL prefix field passed from
-  // runAdAuction() with "?auctionSignals". Since this is fetched from a
-  // subresource bundle, it may only be fetched using the URLLoaderFactory
-  // passed in when creating the worklet.
+  //  directFromSellerSignals for the seller and all buyers, as produced by
+  //  concatenating the `directFromSellerSignals` URL prefix field passed from
+  //  runAdAuction() with "?auctionSignals". Since this is fetched from a
+  //  subresource bundle, it may only be fetched using the URLLoaderFactory
+  //  passed in when creating the worklet.
+  //
+  // `direct_from_seller_auction_signals_header_ad_slot` A JSON string of the
+  //  DirectFromSellerSignals for the seller and all buyers. Must not be passed
+  //  if `direct_from_seller_auction_signals` or
+  //  `direct_from_seller_seller_signals` is passed.
   //
   // `browser_signals_other_seller` The origin of the other seller associated
   //  with the bid. If this is a component seller worklet, it's the
@@ -183,12 +220,33 @@ interface SellerWorklet {
   // `browser_signal_render_url` The `renderUrl` returned by the
   //  BidderWorklet making the bid.
   //
+  // `browser_signal_selected_buyer_and_seller_reporting_id`
+  //  The selected reporting id from the interest group's ad's
+  // `selectableBuyerAndSellerReportingIds` array.
+  //
+  // `browser_signal_buyer_and_seller_reporting_id` This is the reporting id
+  //  from from the interest group's ad's buyerAndSellerReportingId field,
+  //  which is provided to both buyer and seller reporting worklets
+  //  (reportWin() and reportResult() respectively). This is only provided to
+  //  scoreAd() if browser_signal_selected_buyer_and_seller_reporting_id is
+  //  also present.
+  //
   // `browser_signal_ad_component_urls` The `adComponents` array returned by
   //  the BidderWorklet making the bid.
   //
   // `browser_signal_bidding_duration_msecs` is the duration the BiddingWorklet
   //  took to generate the bid. Taken as milliseconds to reduce granularity of
   //  timing information passed to an untrusted process.
+  //
+  // `browser_signal_render_size` is the size associated with the `renderUrl`
+  // returned by the BidderWorklet making the bid. This argument is optional.
+  // When there is no size associated with the `renderUrl`, it will be a
+  // nullopt.
+  // See explainer: https://github.com/WICG/turtledove/blob/main/FLEDGE.md#32-on-device-bidding
+  //
+  // `browser_signal_for_debugging_only_in_cooldown_or_lockout` Whether the
+  // browser is under lockout or the seller's origin is under cooldown for
+  // sending forDebuggingOnly reports.
   //
   // `seller_timeout` Restrict the runtime of the seller's scoring script. Any
   //  timeout higher than 500 ms will be clamped to 500 ms before passing in as
@@ -206,15 +264,22 @@ interface SellerWorklet {
           blink.mojom.AuctionAdConfigNonSharedParams
               auction_ad_config_non_shared_params,
           url.mojom.Url? direct_from_seller_seller_signals,
+          string? direct_from_seller_seller_signals_header_ad_slot,
           url.mojom.Url? direct_from_seller_auction_signals,
+          string? direct_from_seller_auction_signals_header_ad_slot,
           ComponentAuctionOtherSeller? browser_signals_other_seller,
           blink.mojom.AdCurrency? component_expect_bid_currency,
           url.mojom.Origin browser_signal_interest_group_owner,
           url.mojom.Url browser_signal_render_url,
+          string? browser_signal_selected_buyer_and_seller_reporting_id,
+          string? browser_signal_buyer_and_seller_reporting_id,
           array<url.mojom.Url> browser_signal_ad_component_render_urls,
           uint32 browser_signal_bidding_duration_msecs,
+          blink.mojom.AdSize? browser_signal_render_size,
+          bool browser_signal_for_debugging_only_in_cooldown_or_lockout,
           mojo_base.mojom.TimeDelta? seller_timeout,
           uint64 trace_id,
+          url.mojom.Origin bidder_joining_origin,
           pending_remote<ScoreAdClient> score_ad_client);
 
   // Hint to the worklet to send a network request for any needed trusted
@@ -239,18 +304,28 @@ interface SellerWorklet {
   //  vary between auctions that can share a SellerWorklet.
   //
   // `direct_from_seller_seller_signals` The subresource URL of the
-  // DirectFromSellerSignals for the seller, as produced by concatenating the
-  // `directFromSellerSignals` URL prefix field passed from runAdAuction() with
-  // "?sellerSignals". Since this is fetched from a subresource bundle, it may
-  // only be fetched using the URLLoaderFactory passed in when creating the
-  // worklet.
+  //  DirectFromSellerSignals for the seller, as produced by concatenating the
+  //  `directFromSellerSignals` URL prefix field passed from runAdAuction() with
+  //  "?sellerSignals". Since this is fetched from a subresource bundle, it may
+  //  only be fetched using the URLLoaderFactory passed in when creating the
+  //  worklet.
+  //
+  // `direct_from_seller_seller_signals_header_ad_slot` A JSON string of the
+  //  DirectFromSellerSignals for the seller. Must not be passed if
+  //  `direct_from_seller_seller_signals` or
+  //  `direct_from_seller_auction_signals` is passed.
   //
   // `direct_from_seller_auction_signals` The subresource URL of the
-  // directFromSellerSignals for the seller and all buyers, as produced by
-  // concatenating the `directFromSellerSignals` URL prefix field passed from
-  // runAdAuction() with "?auctionSignals". Since this is fetched from a
-  // subresource bundle, it may only be fetched using the URLLoaderFactory
-  // passed in when creating the worklet.
+  //  directFromSellerSignals for the seller and all buyers, as produced by
+  //  concatenating the `directFromSellerSignals` URL prefix field passed from
+  //  runAdAuction() with "?auctionSignals". Since this is fetched from a
+  //  subresource bundle, it may only be fetched using the URLLoaderFactory
+  //  passed in when creating the worklet.
+  //
+  // `direct_from_seller_auction_signals_header_ad_slot` A JSON string of the
+  //  DirectFromSellerSignals for the seller and all buyers. Must not be passed
+  //  if `direct_from_seller_auction_signals` or
+  //  `direct_from_seller_seller_signals` is passed.
   //
   // `browser_signals_other_seller` The origin of the other seller associated
   //  with the bid. If this is a component seller worklet, it's the
@@ -261,21 +336,34 @@ interface SellerWorklet {
   // `browser_signal_interest_group_owner` The owner of the interest group
   //  that offered the winning bid.
   //
+  //  `browser_signal_buyer_and_seller_reporting_id`. If the winning ad
+  //  specified buyerAndSellerReportingId, and that ID passed the appropriate
+  //  k-anonymity check, a value to set as
+  //  browserSignals.buyerAndSellerReportingId will be included here; otherwise
+  //  it is nullopt.
+  //
+  // `browser_signal_selected_buyer_and_seller_reporting_id` If the winning bid
+  //  specified selectedBuyerAndSellerReportingId, and that ID passed the
+  //  appropriate k-anonymity check, a value to set as
+  //  browserSignals.selectedBuyerAndSellerReportingId will be included here;
+  //  otherwise it is nullopt.
+  //
   // `browser_signal_render_url` The render URL provided by the winning bid.
   //
-  // `browser_signal_bid` The numeric value of the winning bid.
+  // `browser_signal_bid` The stochastically rounded numeric value of the
+  //  winning bid.
   //
   // `browser_signal_bid_currency` The currency the bid is in. This is either
   //  the sellerCurrency from auction configuration, or unset to denote it's in
   //  the bidder's currency.
   //
-  // `browser_signal_desirability` The score returned by ScoreAd for the
-  //  winning bid.
+  // `browser_signal_desirability` The stochastically rounded numeric value of
+  //  the score returned by ScoreAd() for the winning bid.
   //
-  // `browser_signal_highest_scoring_other_bid` The numeric value of the bid
-  //  that got the second highest score, or 0 if it's not available, either
-  //  because there is no such thing or because no currency conversion was
-  //  performed.
+  // `browser_signal_highest_scoring_other_bid` The stochastically rounded
+  //  numeric value of the bid that got the second highest score, or 0 if it's
+  //  not available, either because there is no such thing or because no
+  //  currency conversion was performed.
   //
   // `browser_signal_highest_scoring_other_bid_currency` The currency associated
   //  with `browser_signal_highest_scoring_other_bid`. This is either the
@@ -287,11 +375,7 @@ interface SellerWorklet {
   //  for top-level sellers.
   //
   // `scoring_signals_data_version` The value of the Data-Version header served
-  //  with the trusted scoring signals.
-  //
-  // `has_scoring_signals_data_version` True to indicate Data-Version header
-  //  was present in the HTTP response for the trusted scoring signals.
-  //  TODO(https://crbug.com/657632): Update when optional integers supported.
+  //  with the trusted scoring signals, if the header was present.
   //
   // `trace_id` ID of a nestable asynchronous trace event of category `fledge`
   //  to use with tracing calls.
@@ -308,6 +392,9 @@ interface SellerWorklet {
   //
   // `pa_requests` The various requests made to the Private Aggregation API.
   //
+  // `reporting_latency` How long it took to run `reportResult()` JS, including
+  //  the top-level.
+  //
   // `errors` are various error messages to be used for debugging. These are too
   //  sensitive for the renderers to see. `errors` should not be assumed to be
   //  empty if the other values are populated, nor should it be assumed to be
@@ -316,9 +403,13 @@ interface SellerWorklet {
       blink.mojom.AuctionAdConfigNonSharedParams
           auction_ad_config_non_shared_params,
       url.mojom.Url? direct_from_seller_seller_signals,
+      string? direct_from_seller_seller_signals_header_ad_slot,
       url.mojom.Url? direct_from_seller_auction_signals,
+      string? direct_from_seller_auction_signals_header_ad_slot,
       ComponentAuctionOtherSeller? browser_signals_other_seller,
       url.mojom.Origin browser_signal_interest_group_owner,
+      string? browser_signal_buyer_and_seller_reporting_id,
+      string? browser_signal_selected_buyer_and_seller_reporting_id,
       url.mojom.Url browser_signal_render_url,
       double browser_signal_bid,
       blink.mojom.AdCurrency? browser_signal_bid_currency,
@@ -327,16 +418,20 @@ interface SellerWorklet {
       blink.mojom.AdCurrency? browser_signal_highest_scoring_other_bid_currency,
       ComponentAuctionReportResultParams?
           browser_signals_component_auction_report_result_params,
-      uint32 scoring_signals_data_version,
-      bool has_scoring_signals_data_version,
+      uint32? scoring_signals_data_version,
       uint64 trace_id) =>
           (string? signals_for_winner,
            url.mojom.Url? report_url,
            map<string, url.mojom.Url> ad_beacon_map,
            array<PrivateAggregationRequest> pa_requests,
+           SellerTimingMetrics time_metrics,
            array<string> error_msgs);
 
-  // Establishes a debugger connection to the worklet.
+  // Establishes a debugger connection to the worklet thread.
+  //
+  // Arguments:
+  // `thread_index` The index of the thread in the thread pool.
   ConnectDevToolsAgent(
-      pending_associated_receiver<blink.mojom.DevToolsAgent> agent);
+      pending_associated_receiver<blink.mojom.DevToolsAgent> agent,
+      uint32 thread_index);
 };

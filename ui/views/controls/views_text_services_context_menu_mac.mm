@@ -6,12 +6,12 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "ui/base/cocoa/text_services_context_menu.h"
 #include "ui/base/l10n/l10n_util.h"
-#include "ui/base/models/simple_menu_model.h"
 #include "ui/base/resource/resource_bundle.h"
 #include "ui/gfx/decorated_text.h"
 #import "ui/gfx/decorated_text_mac.h"
+#include "ui/menus/cocoa/text_services_context_menu.h"
+#include "ui/menus/simple_menu_model.h"
 #include "ui/resources/grit/ui_resources.h"
 #include "ui/strings/grit/ui_strings.h"
 #include "ui/views/controls/textfield/textfield.h"
@@ -133,9 +133,12 @@ void ViewsTextServicesContextMenuMac::UpdateTextDirection(
 
 void ViewsTextServicesContextMenuMac::LookUpInDictionary() {
   gfx::DecoratedText text;
-  gfx::Point baseline_point;
-  if (client()->GetWordLookupDataFromSelection(&text, &baseline_point)) {
+  gfx::Rect rect;
+  if (client()->GetWordLookupDataFromSelection(&text, &rect)) {
     Widget* widget = client()->GetWidget();
+
+    // We only care about the baseline of the glyph, not the space it occupies.
+    gfx::Point baseline_point = rect.origin();
     views::View::ConvertPointToTarget(client(), widget->GetRootView(),
                                       &baseline_point);
     NSView* view = widget->GetNativeView().GetNativeNSView();

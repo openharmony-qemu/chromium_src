@@ -13,6 +13,10 @@
 #include "build/build_config.h"
 #include "services/resource_coordinator/public/mojom/memory_instrumentation/memory_instrumentation.mojom.h"
 
+#if BUILDFLAG(IS_APPLE)
+#include <mach/mach.h>
+#endif
+
 namespace heap_profiling {
 FORWARD_DECLARE_TEST(ProfilingJsonExporterTest, MemoryMaps);
 }
@@ -40,6 +44,10 @@ class COMPONENT_EXPORT(
   // before calling this function. If |pid| is null, the pid of the current
   // process is used
   static bool FillOSMemoryDump(base::ProcessId pid, mojom::RawOSMemDump* dump);
+#if BUILDFLAG(IS_APPLE)
+  static bool FillOSMemoryDumpFromTaskPort(mach_port_t task_port,
+                                           mojom::RawOSMemDump* dump);
+#endif
   static bool FillProcessMemoryMaps(base::ProcessId,
                                     mojom::MemoryMapOption,
                                     mojom::RawOSMemDump*);
@@ -49,7 +57,7 @@ class COMPONENT_EXPORT(
     BUILDFLAG(IS_OHOS)
   static void SetProcSmapsForTesting(FILE*);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
  private:
   FRIEND_TEST_ALL_PREFIXES(OSMetricsTest, ParseProcSmaps);
@@ -100,7 +108,7 @@ class COMPONENT_EXPORT(
   // making sure that peak RSS is useful.
   static size_t GetPeakResidentSetSize(base::ProcessId pid);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 };
 
 }  // namespace memory_instrumentation

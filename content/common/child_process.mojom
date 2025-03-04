@@ -38,12 +38,12 @@ interface ChildProcessHost {
 
   // Report the key threads in render process. This is used on OHOS to
   // dynamic resource scheduling.
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_performance_scheduling]
   ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
-
+  
   // Report the key threads in render process in batches. This is used on OHOS to
   // dynamic resource scheduling.
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_performance_scheduling]
   ReportKeyThreadIds(int32 status, int32 process_id, array<int32> thread_ids, int32 role);
 };
 
@@ -81,18 +81,10 @@ interface ChildProcess {
   // cleanup, generating a crash report).
   CrashHungProcess();
 
-  // Tells the child process to run an instance of a service named
-  // |service_name|, binding it to |receiver|. This is used by the browser to
-  // support launching of packaged services within Utility or GPU processes.
-  //
-  // DEPRECATED: |BindServiceInterface()| should be used instead. This will be
-  // removed soon.
-  RunServiceDeprecated(string service_name, handle<message_pipe> service_pipe);
-
   // Requests that the process bind a receiving pipe targeting the service
   // interface named by |receiver|.
   //
-  // TODO(crbug.com/977637): Rename this to |RunService()| once the above method
+  // TODO(crbug.com/40633267): Rename this to |RunService()| once the above method
   // is removed.
   BindServiceInterface(mojo_base.mojom.GenericPendingReceiver receiver);
 
@@ -141,7 +133,11 @@ interface ChildProcess {
   [EnableIf=is_android]
   OnMemoryPressure(mojo_base.mojom.MemoryPressureLevel memory_pressure_level);
 
-  // #if defined(OHOS_RENDERER_ANR_DUMP)
-  [EnableIf=ohos_renderer_anr_dump]
+  // Asks the child process to modify its internal settings to bias towards
+  // energy efficiency because the embedder is in battery saver mode. The
+  // default is `false`.
+  SetBatterySaverMode(bool battery_saver_mode_enabled);
+  
+  [EnableIf=arkweb_renderer_anr_dump]
   dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
 };

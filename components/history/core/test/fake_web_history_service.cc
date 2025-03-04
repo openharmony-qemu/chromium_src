@@ -121,7 +121,7 @@ const std::string& FakeWebHistoryService::FakeRequest::GetResponseBody() {
                                              &more_results_left);
     std::vector<std::string> results;
     for (const FakeWebHistoryService::Visit& visit : visits) {
-      std::string unix_time = std::to_string(
+      std::string unix_time = base::NumberToString(
           (visit.timestamp - base::Time::UnixEpoch()).InMicroseconds());
       results.push_back(base::StringPrintf(
           "{\"result\":[{\"id\":[{\"timestamp_usec\":\"%s\"}"
@@ -217,7 +217,7 @@ FakeWebHistoryService::GetVisitsBetween(base::Time begin,
   // return anything. This means that the most recent results are returned
   // first.
   std::sort(visits_.begin(), visits_.end(),
-            [](const Visit& lhs, const Visit rhs) -> bool {
+            [](const Visit& lhs, const Visit& rhs) -> bool {
               return lhs.timestamp > rhs.timestamp;
             });
   *more_results_left = false;

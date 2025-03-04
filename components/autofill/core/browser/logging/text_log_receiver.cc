@@ -83,7 +83,6 @@ std::vector<std::string> RenderEntry(const base::Value::Dict& entry) {
   } else {
     NOTREACHED();
   }
-  return {};
 }
 
 // Concatenates the rendered contents of a list of log entries.
@@ -105,11 +104,7 @@ std::string TextLogReceiver::LogEntryToText(
 }
 
 void TextLogReceiver::LogEntry(const base::Value::Dict& entry) {
-  // This is a cheap workaround because the presubmit scripts don't want us
-  // to log to INFO. Given that this is gated by a Finch feature, it should
-  // be fine.
-#define DESTINATION INFO
-  LOG(DESTINATION) << LogEntryToText(entry);
+  LOG(ERROR) << LogEntryToText(entry);
 }
 
 }  // namespace autofill

@@ -22,10 +22,10 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.core.widget.ImageViewCompat;
 
-import org.chromium.base.ApiCompatibilityUtils;
+import org.jni_zero.CalledByNative;
+import org.jni_zero.NativeMethods;
+
 import org.chromium.base.Log;
-import org.chromium.base.annotations.CalledByNative;
-import org.chromium.base.annotations.NativeMethods;
 import org.chromium.content_public.browser.LoadCommittedDetails;
 import org.chromium.content_public.browser.WebContents;
 import org.chromium.content_public.browser.WebContentsObserver;
@@ -35,9 +35,7 @@ import org.chromium.ui.modaldialog.ModalDialogProperties;
 import org.chromium.ui.modelutil.PropertyModel;
 import org.chromium.ui.widget.ButtonCompat;
 
-/**
- * Java side of Android implementation of the page info UI.
- */
+/** Java side of Android implementation of the page info UI. */
 public class ConnectionInfoView implements OnClickListener {
     private static final String TAG = "ConnectionInfoView";
 
@@ -64,14 +62,10 @@ public class ConnectionInfoView implements OnClickListener {
      * the embedding view is removed.
      */
     interface ConnectionInfoDelegate {
-        /**
-         * Called when the ConnectionInfoView is initialized
-         */
+        /** Called when the ConnectionInfoView is initialized */
         void onReady(ConnectionInfoView popup);
 
-        /**
-         * Called in order to dismiss the dialog or page that is showing the ConnectionInfoView.
-         */
+        /** Called in order to dismiss the dialog or page that is showing the ConnectionInfoView. */
         void dismiss(int actionOnContent);
     }
 
@@ -87,8 +81,9 @@ public class ConnectionInfoView implements OnClickListener {
         mContainer.setOrientation(LinearLayout.VERTICAL);
         mPaddingSides =
                 context.getResources().getDimensionPixelSize(R.dimen.page_info_popup_padding_sides);
-        mPaddingVertical = context.getResources().getDimensionPixelSize(
-                R.dimen.page_info_popup_padding_vertical);
+        mPaddingVertical =
+                context.getResources()
+                        .getDimensionPixelSize(R.dimen.page_info_popup_padding_vertical);
         mContainer.setPadding(mPaddingSides, mPaddingVertical, mPaddingSides, 0);
 
         // This needs to come after other member initialization.
@@ -96,13 +91,13 @@ public class ConnectionInfoView implements OnClickListener {
     }
 
     /**
-     * Adds certificate section, which contains an icon, a headline, a
-     * description and a label for certificate info link.
+     * Adds certificate section, which contains an icon, a description and a label for certificate
+     * info link.
      */
     @CalledByNative
     private void addCertificateSection(
-            int iconId, String headline, String description, String label, int iconColorId) {
-        View section = addSection(iconId, headline, description, iconColorId);
+            int iconId, String description, String label, int iconColorId) {
+        View section = addSection(iconId, description, iconColorId);
         assert mCertificateLayout == null;
         mCertificateLayout = (ViewGroup) section.findViewById(R.id.connection_info_text_layout);
         if (label != null && !label.isEmpty()) {
@@ -111,23 +106,27 @@ public class ConnectionInfoView implements OnClickListener {
     }
 
     /**
-     * Adds Description section, which contains an icon, a headline, and a
-     * description. Most likely headline for description is empty
+     * Adds Description section, which contains an icon, and a description. Most likely headline for
+     * description is empty
      */
     @CalledByNative
-    private void addDescriptionSection(
-            int iconId, String headline, String description, int iconColorId) {
-        View section = addSection(iconId, headline, description, iconColorId);
+    private void addDescriptionSection(int iconId, String description, int iconColorId) {
+        View section = addSection(iconId, description, iconColorId);
         assert mDescriptionLayout == null;
         mDescriptionLayout = section.findViewById(R.id.connection_info_text_layout);
     }
 
-    private View addSection(int iconId, String headline, String description, int iconColorId) {
+    private View addSection(int iconId, String description, int iconColorId) {
         View section = LayoutInflater.from(mContext).inflate(R.layout.connection_info, null);
         ImageView i = section.findViewById(R.id.connection_info_icon);
-        i.setImageResource(iconId);
-        ImageViewCompat.setImageTintList(
-                i, AppCompatResources.getColorStateList(mContext, iconColorId));
+        if (iconId == 0) {
+            assert iconColorId == 0;
+            i.setVisibility(View.INVISIBLE);
+        } else {
+            i.setImageResource(iconId);
+            ImageViewCompat.setImageTintList(
+                    i, AppCompatResources.getColorStateList(mContext, iconColorId));
+        }
 
         TextView d = section.findViewById(R.id.connection_info_description);
         d.setText(description);
@@ -141,8 +140,7 @@ public class ConnectionInfoView implements OnClickListener {
         assert mCertificateViewerTextView == null;
         mCertificateViewerTextView = new AppCompatTextView(mContext);
         mCertificateViewerTextView.setText(label);
-        ApiCompatibilityUtils.setTextAppearance(
-                mCertificateViewerTextView, R.style.TextAppearance_TextSmall_Link);
+        mCertificateViewerTextView.setTextAppearance(R.style.TextAppearance_TextMedium_Link);
         mCertificateViewerTextView.setOnClickListener(this);
         mCertificateViewerTextView.setPadding(0, mPaddingVertical, 0, 0);
         mCertificateLayout.addView(mCertificateViewerTextView);
@@ -168,8 +166,7 @@ public class ConnectionInfoView implements OnClickListener {
         mMoreInfoLink = new AppCompatTextView(mContext);
         mLinkUrl = HELP_URL;
         mMoreInfoLink.setText(linkText);
-        ApiCompatibilityUtils.setTextAppearance(
-                mMoreInfoLink, R.style.TextAppearance_TextSmall_Link);
+        mMoreInfoLink.setTextAppearance(R.style.TextAppearance_TextMedium_Link);
         mMoreInfoLink.setPadding(0, mPaddingVertical, 0, 0);
         mMoreInfoLink.setOnClickListener(this);
         mDescriptionLayout.addView(mMoreInfoLink);
@@ -184,8 +181,9 @@ public class ConnectionInfoView implements OnClickListener {
     @Override
     public void onClick(View v) {
         if (mResetCertDecisionsButton == v) {
-            ConnectionInfoViewJni.get().resetCertDecisions(
-                    mNativeConnectionInfoView, ConnectionInfoView.this, mWebContents);
+            ConnectionInfoViewJni.get()
+                    .resetCertDecisions(
+                            mNativeConnectionInfoView, ConnectionInfoView.this, mWebContents);
             mDelegate.dismiss(DialogDismissalCause.ACTION_ON_CONTENT);
         } else if (mCertificateViewerTextView == v) {
             byte[][] certChain = CertificateChainHelper.getCertificateChain(mWebContents);
@@ -200,24 +198,20 @@ public class ConnectionInfoView implements OnClickListener {
         }
     }
 
-    /**
-     * @return The view containing connection info.
-     */
+    /** @return The view containing connection info. */
     public View getView() {
         return mContainer;
     }
 
-    /**
-     * Called when the embedding view is removed.
-     */
+    /** Called when the embedding view is removed. */
     public void onDismiss() {
         assert mNativeConnectionInfoView != 0;
-        org.chromium.components.page_info.ConnectionInfoViewJni.get().destroy(
-                mNativeConnectionInfoView, ConnectionInfoView.this);
+        org.chromium.components.page_info.ConnectionInfoViewJni.get()
+                .destroy(mNativeConnectionInfoView, ConnectionInfoView.this);
     }
 
     private void showConnectionSecurityInfo() {
-        // TODO(crbug.com/1077766): We probably don't want to dismiss the new PageInfo UI here?
+        // TODO(crbug.com/40129299): We probably don't want to dismiss the new PageInfo UI here?
         mDelegate.dismiss(DialogDismissalCause.ACTION_ON_CONTENT);
         try {
             Intent i = Intent.parseUri(mLinkUrl, Intent.URI_INTENT_SCHEME);
@@ -242,20 +236,21 @@ public class ConnectionInfoView implements OnClickListener {
                 ModalDialogManager modalDialogManager, WebContents webContents) {
             mModalDialogManager = modalDialogManager;
             mWebContents = webContents;
-            mWebContentsObserver = new WebContentsObserver(mWebContents) {
-                @Override
-                public void navigationEntryCommitted(LoadCommittedDetails details) {
-                    // If a navigation is committed (e.g. from in-page redirect), the data we're
-                    // showing is stale so dismiss the dialog.
-                    dismiss(DialogDismissalCause.UNKNOWN);
-                }
+            mWebContentsObserver =
+                    new WebContentsObserver(mWebContents) {
+                        @Override
+                        public void navigationEntryCommitted(LoadCommittedDetails details) {
+                            // If a navigation is committed (e.g. from in-page redirect), the data
+                            // we're showing is stale so dismiss the dialog.
+                            dismiss(DialogDismissalCause.UNKNOWN);
+                        }
 
-                @Override
-                public void destroy() {
-                    super.destroy();
-                    dismiss(DialogDismissalCause.UNKNOWN);
-                }
-            };
+                        @Override
+                        public void destroy() {
+                            super.destroy();
+                            dismiss(DialogDismissalCause.UNKNOWN);
+                        }
+                    };
         }
 
         @Override
@@ -279,11 +274,12 @@ public class ConnectionInfoView implements OnClickListener {
             ScrollView scrollView = new ScrollView(popup.mContext);
             scrollView.addView(popup.getView());
 
-            mDialogModel = new PropertyModel.Builder(ModalDialogProperties.ALL_KEYS)
-                                   .with(ModalDialogProperties.CONTROLLER, this)
-                                   .with(ModalDialogProperties.CUSTOM_VIEW, scrollView)
-                                   .with(ModalDialogProperties.CANCEL_ON_TOUCH_OUTSIDE, true)
-                                   .build();
+            mDialogModel =
+                    new PropertyModel.Builder(ModalDialogProperties.ALL_KEYS)
+                            .with(ModalDialogProperties.CONTROLLER, this)
+                            .with(ModalDialogProperties.CUSTOM_VIEW, scrollView)
+                            .with(ModalDialogProperties.CANCEL_ON_TOUCH_OUTSIDE, true)
+                            .build();
 
             mModalDialogManager.showDialog(
                     mDialogModel, ModalDialogManager.ModalDialogType.APP, true);
@@ -301,7 +297,9 @@ public class ConnectionInfoView implements OnClickListener {
      */
     public static void show(
             Context context, WebContents webContents, ModalDialogManager modalDialogManager) {
-        new ConnectionInfoView(context, webContents,
+        new ConnectionInfoView(
+                context,
+                webContents,
                 new ConnectionInfoDialogDelegate(modalDialogManager, webContents));
     }
 
@@ -313,8 +311,12 @@ public class ConnectionInfoView implements OnClickListener {
     @NativeMethods
     interface Natives {
         long init(ConnectionInfoView popup, WebContents webContents);
+
         void destroy(long nativeConnectionInfoViewAndroid, ConnectionInfoView caller);
-        void resetCertDecisions(long nativeConnectionInfoViewAndroid, ConnectionInfoView caller,
+
+        void resetCertDecisions(
+                long nativeConnectionInfoViewAndroid,
+                ConnectionInfoView caller,
                 WebContents webContents);
     }
 }

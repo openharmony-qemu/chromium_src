@@ -2,12 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/error_page/common/localized_error.h"
 
 #include <stddef.h>
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "base/check_op.h"
@@ -28,7 +34,7 @@
 #include "components/error_page/common/error_page_switches.h"
 #include "components/error_page/common/net_error_info.h"
 #include "components/offline_pages/core/offline_page_feature.h"
-#include "components/strings/grit/components_chromium_strings.h"
+#include "components/strings/grit/components_branded_strings.h"
 #include "components/strings/grit/components_strings.h"
 #include "components/url_formatter/url_formatter.h"
 #include "net/base/net_errors.h"
@@ -69,6 +75,7 @@ enum NAV_SUGGESTIONS {
   SUGGEST_NAVIGATE_TO_ORIGIN = 1 << 12,
   SUGGEST_SECURE_DNS_CONFIG = 1 << 13,
   SUGGEST_CAPTIVE_PORTAL_SIGNIN = 1 << 14,
+  SUGGEST_RELOAD_PRIVATE_NETWORK_ACCESS = 1 << 15,
 };
 
 enum SHOW_BUTTONS {
@@ -262,8 +269,32 @@ const LocalizedErrorMap net_error_options[] = {
    SHOW_BUTTON_RELOAD,
   },
   {net::ERR_BAD_SSL_CLIENT_AUTH_CERT,
-   IDS_ERRORPAGES_HEADING_INSECURE_CONNECTION,
+   IDS_ERRORPAGES_HEADING_ACCESS_DENIED,
    IDS_ERRORPAGES_SUMMARY_BAD_SSL_CLIENT_AUTH_CERT,
+   SUGGEST_CONTACT_ADMINISTRATOR,
+   SHOW_NO_BUTTONS,
+  },
+  {net::ERR_SSL_CLIENT_AUTH_SIGNATURE_FAILED,
+   IDS_ERRORPAGES_HEADING_ACCESS_DENIED,
+   IDS_ERRORPAGES_SUMMARY_SSL_CLIENT_AUTH_SIGNATURE_FAILED,
+   SUGGEST_CONTACT_ADMINISTRATOR,
+   SHOW_NO_BUTTONS,
+  },
+  {net::ERR_SSL_CLIENT_AUTH_CERT_NO_PRIVATE_KEY,
+   IDS_ERRORPAGES_HEADING_ACCESS_DENIED,
+   IDS_ERRORPAGES_SUMMARY_SSL_CLIENT_AUTH_SIGNATURE_FAILED,
+   SUGGEST_CONTACT_ADMINISTRATOR,
+   SHOW_NO_BUTTONS,
+  },
+  {net::ERR_SSL_CLIENT_AUTH_NO_COMMON_ALGORITHMS,
+   IDS_ERRORPAGES_HEADING_ACCESS_DENIED,
+   IDS_ERRORPAGES_SUMMARY_SSL_CLIENT_AUTH_SIGNATURE_FAILED,
+   SUGGEST_CONTACT_ADMINISTRATOR,
+   SHOW_NO_BUTTONS,
+  },
+  {net::ERR_SSL_CLIENT_AUTH_CERT_BAD_FORMAT,
+   IDS_ERRORPAGES_HEADING_ACCESS_DENIED,
+   IDS_ERRORPAGES_SUMMARY_SSL_CLIENT_AUTH_SIGNATURE_FAILED,
    SUGGEST_CONTACT_ADMINISTRATOR,
    SHOW_NO_BUTTONS,
   },
@@ -291,6 +322,12 @@ const LocalizedErrorMap net_error_options[] = {
    SUGGEST_NONE,
    SHOW_BUTTON_RELOAD,
   },
+  {net::ERR_BLOCKED_BY_PRIVATE_NETWORK_ACCESS_CHECKS,
+   IDS_ERRORPAGES_HEADING_BLOCKED,
+   IDS_ERRORPAGES_SUMMARY_BLOCKED_BY_PRIVATE_NETWORK_ACCESS_CHECKS,
+   SUGGEST_RELOAD_PRIVATE_NETWORK_ACCESS,
+   SHOW_BUTTON_RELOAD,
+  },
   {net::ERR_BLOCKED_BY_CSP,
    IDS_ERRORPAGES_HEADING_BLOCKED,
    IDS_ERRORPAGES_SUMMARY_BLOCKED_BY_SECURITY,
@@ -306,7 +343,7 @@ const LocalizedErrorMap net_error_options[] = {
   {net::ERR_BLOCKED_BY_ADMINISTRATOR,
    IDS_ERRORPAGES_HEADING_BLOCKED,
    IDS_ERRORPAGES_SUMMARY_BLOCKED_BY_ADMINISTRATOR,
-   SUGGEST_CONTACT_ADMINISTRATOR,
+   SUGGEST_NONE,
    SHOW_NO_BUTTONS,
   },
   {net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH,
@@ -465,6 +502,16 @@ const LocalizedErrorMap dns_probe_error_options[] = {
     },
 };
 
+const LocalizedErrorMap link_preview_error_options[] = {
+    {
+        error_page::LinkPreviewErrorCode::kNonHttpsForbidden,
+        IDS_ERRORPAGES_HEADING_LINKPREVIEW_NON_HTTPS_FORBIDDEN,
+        IDS_ERRORPAGES_SUMMARY_LINKPREVIEW_NON_HTTPS_FORBIDDEN,
+        SUGGEST_NONE,
+        SHOW_NO_BUTTONS,
+    },
+};
+
 const LocalizedErrorMap* FindErrorMapInArray(const LocalizedErrorMap* maps,
                                                    size_t num_maps,
                                                    int error_code) {
@@ -505,9 +552,14 @@ const LocalizedErrorMap* LookupErrorMap(const std::string& error_domain,
                             std::size(dns_probe_error_options), error_code);
     DCHECK(map);
     return map;
+  } else if (error_domain == Error::kLinkPreviewErrorDomain) {
+    const LocalizedErrorMap* map =
+        FindErrorMapInArray(link_preview_error_options,
+                            std::size(link_preview_error_options), error_code);
+    CHECK(map);
+    return map;
   } else {
     NOTREACHED();
-    return nullptr;
   }
 }
 
@@ -528,11 +580,11 @@ const char* GetIconClassForError(const std::string& error_domain,
                                  int error_code) {
   return LocalizedError::IsOfflineError(error_domain, error_code)
              ? "icon-offline"
-             : "icon-generic";
+         : error_code == net::ERR_BLOCKED_BY_ADMINISTRATOR ? "icon-info"
+                                                           : "icon-generic";
 }
 
-base::Value::Dict SingleEntryDictionary(base::StringPiece path,
-                                        int message_id) {
+base::Value::Dict SingleEntryDictionary(std::string_view path, int message_id) {
   base::Value::Dict result;
   result.Set(path, l10n_util::GetStringUTF16(message_id));
   return result;
@@ -555,10 +607,10 @@ void AddLinkedSuggestionToList(const int error_code,
     case net::ERR_TOO_MANY_REDIRECTS:
       learn_more_url = GURL(kRedirectLoopLearnMoreUrl);
       suggestion_string = l10n_util::GetStringUTF16(
-          IDS_ERRORPAGES_SUGGESTION_CLEAR_COOKIES_SUMMARY);
+          IDS_ERRORPAGES_SUGGESTION_DELETE_COOKIES_SUMMARY);
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       break;
   }
 
@@ -634,6 +686,11 @@ void GetSuggestionsSummaryList(int error_code,
     return;
   }
   DCHECK(!IsSuggested(suggestions, SUGGEST_REPOST_RELOAD));
+
+  if (IsSuggested(suggestions, SUGGEST_RELOAD_PRIVATE_NETWORK_ACCESS)) {
+    suggestions_summary_list.Append(SingleEntryDictionary(
+        "summary", IDS_ERRORPAGES_SUGGESTION_RELOAD_PRIVATE_NETWORK_ACCESS));
+  }
 
   if (IsOnlySuggestion(suggestions, SUGGEST_NAVIGATE_TO_ORIGIN)) {
     DCHECK(suggestions_summary_list.empty());
@@ -820,8 +877,8 @@ void AddSuggestionsDetails(int error_code,
         IDS_ERRORPAGES_SUGGESTION_FIREWALL_CONFIG_BODY, false);
   }
 
-  // TODO(https://crbug.com/1254714): Provide meaningful strings for Fuchsia.
-#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
+  // TODO(crbug.com/40199702): Provide meaningful strings for Fuchsia.
+#if !BUILDFLAG(IS_FUCHSIA)
   if (suggestions & SUGGEST_PROXY_CONFIG) {
     AddSuggestionDetailDictionaryToList(
         suggestions_details, IDS_ERRORPAGES_SUGGESTION_PROXY_CONFIG_HEADER, 0,
@@ -1033,19 +1090,25 @@ LocalizedError::PageState LocalizedError::GetPageState(
                                         IDS_ERRORPAGE_NET_BUTTON_HIDE_DETAILS));
   result.strings.Set("summary", std::move(summary));
 
-  std::u16string error_string;
+  std::u16string error_code_string;
   if (error_domain == Error::kNetErrorDomain) {
     // Non-internationalized error string, for debugging Chrome itself.
-    error_string = base::ASCIIToUTF16(net::ErrorToShortString(error_code));
+    if (error_code != net::ERR_BLOCKED_BY_ADMINISTRATOR) {
+      error_code_string =
+          base::ASCIIToUTF16(net::ErrorToShortString(error_code));
+    }
+  } else if (error_domain == Error::kHttpErrorDomain) {
+    error_code_string = base::ASCIIToUTF16(HttpErrorCodeToString(error_code));
   } else if (error_domain == Error::kDnsProbeErrorDomain) {
-    std::string ascii_error_string =
-        error_page::DnsProbeStatusToString(error_code);
-    error_string = base::ASCIIToUTF16(ascii_error_string);
+    error_code_string =
+        base::ASCIIToUTF16(error_page::DnsProbeStatusToString(error_code));
+  } else if (error_domain == Error::kLinkPreviewErrorDomain) {
+    // NOP. Link Preview doesn't show error code and describes an error with
+    // text only.
   } else {
-    DCHECK_EQ(Error::kHttpErrorDomain, error_domain);
-    error_string = base::ASCIIToUTF16(HttpErrorCodeToString(error_code));
+    NOTREACHED();
   }
-  result.strings.Set("errorCode", error_string);
+  result.strings.Set("errorCode", error_code_string);
 
   base::Value::List suggestions_details;
   base::Value::List suggestions_summary_list;

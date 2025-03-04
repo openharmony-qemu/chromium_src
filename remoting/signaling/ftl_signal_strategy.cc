@@ -54,8 +54,7 @@ class FtlSignalStrategy::Core {
  private:
   // Methods are called in the order below when Connect() is called.
   void OnGetOAuthTokenResponse(OAuthTokenGetter::Status status,
-                               const std::string& user_email,
-                               const std::string& access_token);
+                               const OAuthTokenInfo& token_info);
   void OnSignInGaiaResponse(const ProtobufHttpStatus& status);
   void StartReceivingMessages();
   void OnReceiveMessagesStreamStarted();
@@ -112,6 +111,9 @@ FtlSignalStrategy::Core::Core(
 
 FtlSignalStrategy::Core::~Core() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (registration_manager_) {
+    registration_manager_->SignOut();
+  }
   Disconnect();
 }
 
@@ -139,10 +141,6 @@ void FtlSignalStrategy::Core::Connect() {
 
 void FtlSignalStrategy::Core::Disconnect() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-  if (registration_manager_->IsSignedIn()) {
-    registration_manager_->SignOut();
-  }
 
   if (receive_message_subscription_) {
     local_address_ = SignalingAddress();
@@ -242,8 +240,7 @@ bool FtlSignalStrategy::Core::IsSignInError() const {
 
 void FtlSignalStrategy::Core::OnGetOAuthTokenResponse(
     OAuthTokenGetter::Status status,
-    const std::string& user_email,
-    const std::string& access_token) {
+    const OAuthTokenInfo& token_info) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (status != OAuthTokenGetter::Status::SUCCESS) {
     switch (status) {
@@ -255,14 +252,13 @@ void FtlSignalStrategy::Core::OnGetOAuthTokenResponse(
         break;
       default:
         NOTREACHED();
-        break;
     }
     is_sign_in_error_ = true;
     Disconnect();
     return;
   }
 
-  user_email_ = user_email;
+  user_email_ = token_info.user_email();
   StartReceivingMessages();
 }
 
@@ -434,6 +430,7 @@ void FtlSignalStrategy::Core::HandleProtobufHttpStatusError(
   if (status.error_code() == ProtobufHttpStatus::Code::UNAUTHENTICATED ||
       status.error_code() == ProtobufHttpStatus::Code::PERMISSION_DENIED) {
     oauth_token_getter_->InvalidateCache();
+    registration_manager_->SignOut();
   }
   Disconnect();
 }

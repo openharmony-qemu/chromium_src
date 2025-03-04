@@ -12,9 +12,10 @@
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "base/test/mock_callback.h"
-#include "components/user_education/common/feature_promo_specification.h"
-#include "components/user_education/common/help_bubble.h"
-#include "components/user_education/common/help_bubble_params.h"
+#include "components/user_education/common/feature_promo/feature_promo_specification.h"
+#include "components/user_education/common/help_bubble/help_bubble.h"
+#include "components/user_education/common/help_bubble/help_bubble_params.h"
+#include "components/user_education/common/user_education_events.h"
 #include "components/user_education/views/help_bubble_delegate.h"
 #include "components/user_education/views/help_bubble_factory_views.h"
 #include "components/user_education/views/help_bubble_views_test_util.h"
@@ -77,8 +78,8 @@ class HelpBubbleViewTest : public views::ViewsTestBase {
 
   HelpBubbleView* CreateHelpBubbleView(
       HelpBubbleParams params,
-      absl::optional<gfx::Rect> bounds = absl::nullopt,
-      absl::optional<views::View*> view = absl::nullopt) {
+      std::optional<gfx::Rect> bounds = std::nullopt,
+      std::optional<views::View*> view = std::nullopt) {
     internal::HelpBubbleAnchorParams anchor_params;
     anchor_params.view = view.value_or(view_);
     anchor_params.rect = bounds;
@@ -103,9 +104,49 @@ class HelpBubbleViewTest : public views::ViewsTestBase {
   }
 
   test::TestHelpBubbleDelegate test_delegate_;
-  base::raw_ptr<views::View> view_;
+  raw_ptr<views::View, DanglingUntriaged> view_;
   std::unique_ptr<views::Widget> widget_;
 };
+
+TEST_F(HelpBubbleViewTest, DefaultMaxWidth) {
+  HelpBubbleParams params;
+
+  // Choose body text that will wrap.
+  params.body_text =
+      u"The quick brown fox jumped over the lazy dogs. How now brown cow.";
+  HelpBubbleButtonParams button1;
+  button1.is_default = true;
+  button1.text = u"button1";
+  params.buttons.emplace_back(std::move(button1));
+  HelpBubbleButtonParams button2;
+  button2.is_default = false;
+  button2.text = u"button2";
+  params.buttons.emplace_back(std::move(button2));
+
+  HelpBubbleView* const bubble = CreateHelpBubbleView(std::move(params));
+  EXPECT_EQ(HelpBubbleView::kMaxWidthDip, bubble->GetPreferredSize().width());
+  bubble->GetWidget()->Close();
+}
+
+TEST_F(HelpBubbleViewTest, ExpandedMaxWidth) {
+  HelpBubbleParams params;
+
+  // Choose body text that will wrap.
+  params.body_text =
+      u"The quick brown fox jumped over the lazy dogs. How now brown cow.";
+  HelpBubbleButtonParams button1;
+  button1.is_default = true;
+  button1.text = u"Lorem ipsum dolor sit amet, consectetur adipiscing elit";
+  params.buttons.emplace_back(std::move(button1));
+  HelpBubbleButtonParams button2;
+  button2.is_default = false;
+  button2.text = u"button2";
+  params.buttons.emplace_back(std::move(button2));
+
+  HelpBubbleView* const bubble = CreateHelpBubbleView(std::move(params));
+  EXPECT_GT(bubble->GetPreferredSize().width(), HelpBubbleView::kMaxWidthDip);
+  bubble->GetWidget()->Close();
+}
 
 TEST_F(HelpBubbleViewTest, CallButtonCallback_Mouse) {
   UNCALLED_MOCK_CALLBACK(base::RepeatingClosure, mock_callback);
@@ -161,9 +202,9 @@ TEST_F(HelpBubbleViewTest, StableButtonOrder) {
   button3.is_default = false;
   params.buttons.push_back(std::move(button3));
 
-  auto* bubble = new HelpBubbleView(&test_delegate_,
-                                    internal::HelpBubbleAnchorParams{view_},
-                                    std::move(params));
+  auto* bubble = new HelpBubbleView(
+      &test_delegate_, internal::HelpBubbleAnchorParams{view_.get()},
+      std::move(params));
   EXPECT_EQ(kButton1Text, bubble->GetNonDefaultButtonForTesting(0)->GetText());
   EXPECT_EQ(kButton2Text, bubble->GetDefaultButtonForTesting()->GetText());
   EXPECT_EQ(kButton3Text, bubble->GetNonDefaultButtonForTesting(1)->GetText());
@@ -259,8 +300,7 @@ TEST_F(HelpBubbleViewTest, ScrollAnchorViewToVisible) {
   HelpBubbleParams params;
   params.body_text = u"To X, do Y";
   params.arrow = HelpBubbleArrow::kTopRight;
-  CreateHelpBubbleView(std::move(params), /*bounds=*/absl::nullopt,
-                       anchor_view);
+  CreateHelpBubbleView(std::move(params), /*bounds=*/std::nullopt, anchor_view);
 
   // Expect that `anchor_view` is now visible.
   EXPECT_TRUE(scroll_view->GetBoundsInScreen().Contains(
@@ -382,7 +422,8 @@ TEST_F(HelpBubbleViewsTest, AnchorRectOverlapsEdge) {
       EXPECT_GT(help_bubble_bounds.x(), kNewAnchorBounds.right());
       break;
     default:
-      NOTREACHED() << "Arrow should only be right-center or left-center.";
+      NOTREACHED_IN_MIGRATION()
+          << "Arrow should only be right-center or left-center.";
   }
 }
 

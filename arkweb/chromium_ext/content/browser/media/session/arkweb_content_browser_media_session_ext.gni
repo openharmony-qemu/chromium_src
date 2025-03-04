@@ -1,0 +1,13 @@
+arkweb_content_browser_mediasession_sources = [
+  "//arkweb/chromium_ext/content/browser/media/session/audio_focus_delegate_ohos.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/audio_focus_delegate_ohos.h",
+
+  "//arkweb/chromium_ext/content/browser/media/session/audio_interrupt_adapter_impl.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/audio_interrupt_adapter_impl.h",
+
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_ohos.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_ohos.h",
+  
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.h",
+]

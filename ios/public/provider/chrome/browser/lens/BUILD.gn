@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 source_set("lens_api") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   sources = [
     "lens_api.h",
     "lens_configuration.h",
@@ -15,5 +14,14 @@ source_set("lens_api") {
     "//base",
     "//ios/web/public/navigation:navigation",
   ]
-  public_deps = [ "//third_party/abseil-cpp:absl" ]
+}
+
+source_set("lens_overlay_api") {
+  sources = [
+    "lens_overlay_accessibility_configuration.h",
+    "lens_overlay_accessibility_configuration.mm",
+    "lens_overlay_api.h",
+    "lens_overlay_result.h",
+  ]
+  deps = [ "//base" ]
 }

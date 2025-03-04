@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/events/gesture_detection/gesture_detector.h"
 
 #include <stddef.h>
@@ -10,18 +15,14 @@
 #include <cmath>
 
 #include "base/memory/raw_ptr.h"
+#include "base/numerics/angle_conversions.h"
 #include "base/timer/timer.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/events/event_constants.h"
 #include "ui/events/gesture_detection/gesture_listeners.h"
-#include "ui/events/gesture_detection/motion_event.h"
-#include "ui/gfx/geometry/angle_conversions.h"
+#include "ui/events/velocity_tracker/motion_event.h"
 
-#ifdef OHOS_DRAG_DROP
-#include "base/logging.h"
-#endif // #ifdef OHOS_DRAG_DROP
 namespace ui {
 namespace {
 
@@ -35,10 +36,10 @@ enum TimeoutEvent {
   SHORT_PRESS,
   LONG_PRESS,
   TAP,
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   DRAG_LONG_PRESS,
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
   CREATE_OVERLAY,
 #endif
   TIMEOUT_EVENT_COUNT
@@ -59,13 +60,6 @@ class GestureDetector::TimeoutGestureHandler {
     timeout_callbacks_[SHOW_PRESS] = &GestureDetector::OnShowPressTimeout;
     timeout_delays_[SHOW_PRESS] = config.showpress_timeout;
 
-#ifdef OHOS_AI
-    timeout_callbacks_[CREATE_OVERLAY] =
-        &GestureDetector::OnCreateOverlayTimeout;
-    timeout_delays_[CREATE_OVERLAY] =
-        config.createoverlay_timeout + config.showpress_timeout;
-#endif
-
     timeout_callbacks_[SHORT_PRESS] = &GestureDetector::OnShortPressTimeout;
     timeout_delays_[SHORT_PRESS] =
         config.shortpress_timeout + config.showpress_timeout;
@@ -76,20 +70,29 @@ class GestureDetector::TimeoutGestureHandler {
 
     timeout_callbacks_[TAP] = &GestureDetector::OnTapTimeout;
     timeout_delays_[TAP] = config.double_tap_timeout;
-#ifdef OHOS_DRAG_DROP
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
     timeout_callbacks_[DRAG_LONG_PRESS] =
         &GestureDetector::OnDragLongPressTimeout;
     timeout_delays_[DRAG_LONG_PRESS] =
         config.draglongpress_timeout + config.showpress_timeout;
 #endif
+
+#if BUILDFLAG(ARKWEB_AI)
+    timeout_callbacks_[CREATE_OVERLAY] =
+        &GestureDetector::OnCreateOverlayTimeout;
+    timeout_delays_[CREATE_OVERLAY] =
+        config.createoverlay_timeout + config.showpress_timeout;
+#endif
+
     if (config.task_runner) {
       timeout_timers_[SHOW_PRESS].SetTaskRunner(config.task_runner);
       timeout_timers_[LONG_PRESS].SetTaskRunner(config.task_runner);
       timeout_timers_[TAP].SetTaskRunner(config.task_runner);
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
       timeout_timers_[DRAG_LONG_PRESS].SetTaskRunner(config.task_runner);
 #endif
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
       timeout_timers_[CREATE_OVERLAY].SetTaskRunner(config.task_runner);
 #endif
     }
@@ -107,7 +110,7 @@ class GestureDetector::TimeoutGestureHandler {
 
   void StopTimeout(TimeoutEvent event) { timeout_timers_[event].Stop(); }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   void Stop(bool is_lost_focus) {
     for (size_t i = SHOW_PRESS; i < TIMEOUT_EVENT_COUNT; ++i) {
       // The longpress show contextmeu on UI will trigger focus changed and
@@ -115,8 +118,9 @@ class GestureDetector::TimeoutGestureHandler {
       // then draglongpress gesture will be stopped.
       // so, for draglongpress working, it will be continue in this Stop
       // and ACTION_CANCEL; ACTION_UP will stop draglongpress timer.
-      if (i == DRAG_LONG_PRESS && is_lost_focus)
+      if (i == DRAG_LONG_PRESS && is_lost_focus) {
         continue;
+      }
       timeout_timers_[i].Stop();
     }
   }
@@ -186,18 +190,17 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
     case MotionEvent::Action::BUTTON_PRESS:
     case MotionEvent::Action::BUTTON_RELEASE:
       NOTREACHED();
-      return handled;
 
     case MotionEvent::Action::POINTER_DOWN: {
       down_focus_x_ = last_focus_x_ = focus_x;
       down_focus_y_ = last_focus_y_ = focus_y;
       // Cancel long press and taps.
       CancelTaps();
-#ifdef OHOS_AI
-      timeout_handler_->StopTimeout(CREATE_OVERLAY);
-#endif
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
       timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+      timeout_handler_->StopTimeout(CREATE_OVERLAY);
 #endif
       maximum_pointer_count_ = std::max(maximum_pointer_count_,
                                         static_cast<int>(ev.GetPointerCount()));
@@ -304,18 +307,18 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
       // ensure proper timeout ordering.
       if (showpress_enabled_)
         timeout_handler_->StartTimeout(SHOW_PRESS);
-#ifdef OHOS_AI
-      timeout_handler_->StartTimeout(CREATE_OVERLAY);
-#endif
       if (press_and_hold_enabled_) {
         timeout_handler_->StartTimeout(SHORT_PRESS);
         timeout_handler_->StartTimeout(LONG_PRESS);
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
         if (draglongpress_enabled_) {
           timeout_handler_->StartTimeout(DRAG_LONG_PRESS);
         }
 #endif
       }
+#if BUILDFLAG(ARKWEB_AI)
+      timeout_handler_->StartTimeout(CREATE_OVERLAY);
+#endif
 
       // Number of complete taps that have occurred in the current tap sequence.
       int previous_tap_count = is_down_candidate_for_repeated_single_tap_
@@ -369,11 +372,11 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
         if (ev.GetToolType(0) == MotionEvent::ToolType::STYLUS &&
             stylus_button_accelerated_longpress_enabled_ &&
             (ev.GetFlags() & ui::EF_LEFT_MOUSE_BUTTON)) {
-          // This will generate a ET_GESTURE_LONG_PRESS event with
+          // This will generate a EventType::kGestureLongPress event with
           // EF_LEFT_MOUSE_BUTTON.
           ActivateShortPressGesture(ev);
-#ifdef OHOS_DRAG_DROP
-            ActivateLongPressKeepDragTimeout(ev);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+          ActivateLongPressKeepDragTimeout(ev);
 #else
           ActivateLongPressGesture(ev);
 #endif
@@ -430,6 +433,7 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
           velocity_tracker_.ComputeCurrentVelocity(1000, max_fling_velocity_);
           const float velocity_y = velocity_tracker_.GetYVelocity(pointer_id);
           const float velocity_x = velocity_tracker_.GetXVelocity(pointer_id);
+
           if ((std::abs(velocity_y) > min_fling_velocity_) ||
               (std::abs(velocity_x) > min_fling_velocity_)) {
             handled = listener_->OnFling(*current_down_event_, ev, velocity_x,
@@ -438,26 +442,27 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
 
           handled |= HandleSwipeIfNeeded(ev, velocity_x, velocity_y);
         }
+
         previous_up_event_ = ev.Clone();
 
         velocity_tracker_.Clear();
         is_double_tapping_ = false;
         defer_confirm_single_tap_ = false;
         timeout_handler_->StopTimeout(SHOW_PRESS);
-#ifdef OHOS_AI
-        timeout_handler_->StopTimeout(CREATE_OVERLAY);
-#endif
         timeout_handler_->StopTimeout(SHORT_PRESS);
         timeout_handler_->StopTimeout(LONG_PRESS);
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
         timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+        timeout_handler_->StopTimeout(CREATE_OVERLAY);
 #endif
       }
       maximum_pointer_count_ = 0;
       break;
 
     case MotionEvent::Action::CANCEL:
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
       Cancel(ev.IsCancelByLostFocus());
 #else
       Cancel();
@@ -468,12 +473,13 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
   return handled;
 }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 void GestureDetector::Cancel(bool is_lost_focus) {
   // Stop waiting for a second tap and send a GESTURE_TAP_CANCEL to keep the
   // gesture stream valid.
-  if (timeout_handler_->HasTimeout(TAP))
+  if (timeout_handler_->HasTimeout(TAP)) {
     listener_->OnTapCancel(*current_down_event_);
+  }
   CancelTaps(is_lost_focus);
   velocity_tracker_.Clear();
   all_pointers_within_slop_regions_ = false;
@@ -538,7 +544,7 @@ void GestureDetector::Init(const Config& config) {
   const float maximum_swipe_deviation_angle =
       std::clamp(config.maximum_swipe_deviation_angle, 0.001f, 45.0f);
   min_swipe_direction_component_ratio_ =
-      1.f / tan(gfx::DegToRad(maximum_swipe_deviation_angle));
+      1.f / tan(base::DegToRad(maximum_swipe_deviation_angle));
 
   two_finger_tap_enabled_ = config.two_finger_tap_enabled;
   two_finger_tap_distance_square_ = config.two_finger_tap_max_separation *
@@ -551,7 +557,6 @@ void GestureDetector::Init(const Config& config) {
       config.stylus_button_accelerated_longpress_enabled;
   deep_press_accelerated_longpress_enabled_ =
       config.deep_press_accelerated_longpress_enabled;
-
 }
 
 void GestureDetector::OnShowPressTimeout() {
@@ -563,29 +568,31 @@ void GestureDetector::OnShortPressTimeout() {
 }
 
 void GestureDetector::OnLongPressTimeout() {
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
   ActivateLongPressKeepDragTimeout(*current_down_event_);
 #else
   ActivateLongPressGesture(*current_down_event_);
 #endif
 }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 void GestureDetector::OnDragLongPressTimeout() {
   LOG(INFO) << "DragDrop GestureDetector::OnDragLongPressTimeout";
   listener_->OnDragLongPress(*current_down_event_);
 }
 #endif
 
-#ifdef OHOS_AI
+#if BUILDFLAG(ARKWEB_AI)
 void GestureDetector::OnCreateOverlayTimeout() {
   LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
   listener_->OnCreateOverlay(*current_down_event_);
 }
 
-void GestureDetector::OnAITextSelected() {
-  StopDragLongPressGesture();
+void GestureDetector::StopCreateOverlayGesture() {
+  timeout_handler_->StopTimeout(CREATE_OVERLAY);
 }
+
+void GestureDetector::OnAITextSelected() {}
 #endif
 
 void GestureDetector::OnTapTimeout() {
@@ -609,7 +616,8 @@ void GestureDetector::ActivateLongPressGesture(const MotionEvent& ev) {
   defer_confirm_single_tap_ = false;
   listener_->OnLongPress(ev);
 }
-#ifdef OHOS_DRAG_DROP
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 void GestureDetector::ActivateLongPressKeepDragTimeout(const MotionEvent& ev) {
   timeout_handler_->Stop(true);
   defer_confirm_single_tap_ = false;
@@ -628,15 +636,9 @@ void GestureDetector::Cancel() {
   still_down_ = false;
 }
 
-#ifdef OHOS_DRAG_DROP
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
 void GestureDetector::StopDragLongPressGesture() {
   timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
-}
-#endif
-
-#ifdef OHOS_AI
-void GestureDetector::StopCreateOverlayGesture() {
-  timeout_handler_->StopTimeout(CREATE_OVERLAY);
 }
 #endif
 

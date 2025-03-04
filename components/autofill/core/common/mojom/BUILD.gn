@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//build/config/features.gni")
 
 mojom("mojo_types") {
   generate_java = true
@@ -14,6 +15,11 @@ mojom("mojo_types") {
     "//url/mojom:url_mojom_gurl",
     "//url/mojom:url_mojom_origin",
   ]
+
+  enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_password_autofill" ]
+  }
 
   cpp_typemaps = [
     {
@@ -33,6 +39,10 @@ mojom("mojo_types") {
         {
           mojom = "autofill.mojom.FormFieldData"
           cpp = "::autofill::FormFieldData"
+        },
+        {
+          mojom = "autofill.mojom.FormFieldData_FillData"
+          cpp = "::autofill::FormFieldData::FillData"
         },
         {
           mojom = "autofill.mojom.FormFieldDataPredictions"
@@ -77,21 +87,15 @@ mojom("mojo_types") {
           cpp = "::autofill::password_generation::PasswordGenerationUIData"
         },
         {
-          mojom = "autofill.mojom.FormElementWasClicked"
-          cpp = "::autofill::FormElementWasClicked"
-          copyable_pass_by_value = true
+          mojom = "autofill.mojom.PasswordSuggestionRequest"
+          cpp = "::autofill::PasswordSuggestionRequest"
         },
-        {
-          mojom = "autofill.mojom.AutoselectFirstSuggestion"
-          cpp = "::autofill::AutoselectFirstSuggestion"
-          copyable_pass_by_value = true
-        },
-        # OHOS_PASSWORD_AUTOFILL begin
+        # ARKWEB_PASSWORD_AUTOFILL begin
         {
           mojom = "autofill.mojom.InputFillRequestData"
           cpp = "::autofill::InputFillRequestData"
         },
-        # OHOS_PASSWORD_AUTOFILL end
+        # ARKWEB_PASSWORD_AUTOFILL end
       ]
       traits_headers = [ "autofill_types_mojom_traits.h" ]
       traits_sources = [ "autofill_types_mojom_traits.cc" ]
@@ -124,6 +128,7 @@ source_set("unit_tests") {
     "//components/autofill/core/browser:test_support",
     "//components/password_manager/core/common",
     "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/test_support:test_utils",
     "//testing/gtest",
   ]
 }

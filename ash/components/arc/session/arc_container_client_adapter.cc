@@ -16,7 +16,7 @@
 #include "chromeos/ash/components/cryptohome/cryptohome_parameters.h"
 #include "chromeos/ash/components/dbus/arc/arc.pb.h"
 #include "chromeos/ash/components/dbus/session_manager/session_manager_client.h"
-#include "chromeos/dbus/common/dbus_method_call_status.h"
+#include "chromeos/dbus/common/dbus_callback.h"
 
 namespace arc {
 namespace {
@@ -71,16 +71,6 @@ class ArcContainerClientAdapter : public ArcClientAdapter,
   // ArcClientAdapter overrides:
   void StartMiniArc(StartParams params,
                     chromeos::VoidDBusMethodCallback callback) override {
-    switch (params.usap_profile) {
-      case StartParams::UsapProfile::DEFAULT:
-        break;
-      case StartParams::UsapProfile::M4G:
-      case StartParams::UsapProfile::M8G:
-      case StartParams::UsapProfile::M16G:
-        VLOG(1) << "USAP profile is not supported for container.";
-        break;
-    }
-
     auto request =
         ArcClientAdapter::ConvertStartParamsToStartArcMiniInstanceRequest(
             std::move(params));
@@ -142,10 +132,6 @@ class ArcContainerClientAdapter : public ArcClientAdapter,
   // The interface is only for ARCVM.
   void TrimVmMemory(TrimVmMemoryCallback callback, int) override {
     NOTREACHED();
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE,
-        base::BindOnce(std::move(callback), /*success=*/true,
-                       /*failure_reason=*/"ARC container is not supported."));
   }
 
   // ash::SessionManagerClient::Observer overrides:

@@ -5,12 +5,11 @@
 #ifndef COMPONENTS_SYNC_ENGINE_COMMIT_UTIL_H_
 #define COMPONENTS_SYNC_ENGINE_COMMIT_UTIL_H_
 
-#include <stdint.h>
 #include <string>
 #include <vector>
 
+#include "components/sync/base/data_type.h"
 #include "components/sync/base/extensions_activity.h"
-#include "components/sync/base/model_type.h"
 
 namespace sync_pb {
 class CommitMessage;
@@ -26,8 +25,7 @@ void AddExtensionsActivityToMessage(
 
 // Fills the config_params field of |message|.
 void AddClientConfigParamsToMessage(
-    ModelTypeSet enabled_types,
-    bool proxy_tabs_datatype_enabled,
+    DataTypeSet enabled_types,
     bool cookie_jar_mismatch,
     bool single_client,
     bool single_client_with_standalone_invalidations,

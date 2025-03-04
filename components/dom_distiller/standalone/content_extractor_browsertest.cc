@@ -68,7 +68,7 @@ class TestDistillerFactoryImpl : public DistillerFactory {
         dom_distiller_options_(dom_distiller_options),
         file_to_url_map_(file_to_url_map) {}
 
-  ~TestDistillerFactoryImpl() override {}
+  ~TestDistillerFactoryImpl() override = default;
 
   std::unique_ptr<Distiller> CreateDistillerForUrl(const GURL& url) override {
     dom_distiller::proto::DomDistillerOptions options;
@@ -331,7 +331,8 @@ class ContentExtractor : public ContentBrowserTest {
  protected:
   // Creates the DomDistillerService and creates and starts the extraction
   // request.
-  void Start() {
+  void Start(base::OnceClosure quit_closure) {
+    quit_closure_ = std::move(quit_closure);
     const base::CommandLine& command_line =
         *base::CommandLine::ForCurrentProcess();
     FileToUrlMap file_to_url_map;
@@ -410,7 +411,7 @@ class ContentExtractor : public ContentBrowserTest {
     requests_.clear();
     service_.reset();
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE, base::RunLoop::QuitCurrentWhenIdleClosureDeprecated());
+        FROM_HERE, std::move(quit_closure_));
   }
 
   size_t pending_tasks_;
@@ -426,12 +427,15 @@ class ContentExtractor : public ContentBrowserTest {
   std::string output_data_;
   std::unique_ptr<google::protobuf::io::StringOutputStream>
       protobuf_output_stream_;
+
+  base::OnceClosure quit_closure_;
 };
 
 IN_PROC_BROWSER_TEST_F(ContentExtractor, MANUAL_ExtractUrl) {
+  base::RunLoop loop;
   SetDistillerJavaScriptWorldId(content::ISOLATED_WORLD_ID_CONTENT_END);
-  Start();
-  base::RunLoop().Run();
+  Start(loop.QuitWhenIdleClosure());
+  loop.Run();
 }
 
 }  // namespace dom_distiller

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-latest_version="ohos-sdk-5.0.0.25-Beta1.tar.gz"
-
+latest_version="ohos-sdk-linux-5.0.2.56.tar.gz"
 
 base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+echo ${base_dir}
 version_file="${base_dir}/.version"
 
 sdk_upgrade() {
@@ -11,28 +11,73 @@ sdk_upgrade() {
   if [ -f "${version_file}" ]; then
     installed_version=$(head -n 1 "${version_file}")
   fi
+  cd $base_dir
+
+  if [ ! -d 14 ] && [ ! -d 14/ets ]; then
+    mkdir 14
+    mv openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer 14
+  fi
 
   if [ "-${latest_version}" == "-${installed_version}" ]; then
     return 0
   fi
 
-  cd "${base_dir}"
-  if [ ! -f "${latest_version}" ]; then
+  if [ ! -f "${latest_version}.00" ]; then
     echo "ERROR: Could not find latest SDK tarball: ${base_dir}/${latest_version}"
     return 1
   fi
 
-  rm -rf ets js native toolchains licenses previewer [0-9]*
-  tar zxf "${latest_version}"
+  rm -rf ets js native ohos-sdk toolchains previewer openharmony [0-9]*
+  #解压文件
+  cat ${latest_version}.* | tar zx
   rc=$?
-
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR: Failed to extract SDK tarball: ${base_dir}/${latest_version}, result: ${rc}"
+    return ${rc}
+  fi
+  
+  #将编译工具链替换为19版本
+  rm -rf llvm
+  # tar zxf "llvm.tar.gz"
+  cat llvm.tar.gz.* | tar zx
+  rc=$?
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR: Failed to extract llvm tarball: ${base_dir}/llvm.tar.gz, result: ${rc}"
+    return ${rc}
+  fi
+  rm -rf openharmony/native/llvm
+  cp -r llvm openharmony/native/
+  rc=$?
   if [ ${rc} -eq 0 ]; then
     echo -n "${latest_version}" > "${version_file}"
   else
-    echo "ERROR: Failed to extract SDK tarball: ${base_dir}/${latest_version}, result: ${rc}"
+    echo "ERROR: Failed to replace the llvm, result: ${rc}"
+    return ${rc}
+  fi
+ 
+  #将rust工具链替换为19版本
+  tar zxf "rust-toolchain.tar.gz"
+  rc=$?
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
+    return ${rc}
+  fi
+  cd "${base_dir}/../third_party"
+  rm -rf rust-toolchain -r
+  cp "${base_dir}/rust-toolchain.tar.gz" .
+  tar zxf "rust-toolchain.tar.gz"
+  rc=$?
+  if [ ${rc} -ne 0 ]; then
+    echo "ERROR1: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
+    return ${rc}
+  fi
+  if [ ! -d "14" ] && [ ! -d "14/ets" ]; then
+    mkdir 14
+    mv openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer 14
   fi
   return ${rc}
 }
 
 
 sdk_upgrade
+

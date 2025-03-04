@@ -5,11 +5,7 @@
 #import "ios/chrome/browser/shared/coordinator/chrome_coordinator/chrome_coordinator.h"
 
 #import "base/memory/weak_ptr.h"
-#import "ios/chrome/browser/main/browser.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+#import "ios/chrome/browser/shared/model/browser/browser.h"
 
 @implementation ChromeCoordinator {
   base::WeakPtr<Browser> _browser;
@@ -17,7 +13,7 @@
 
 - (instancetype)initWithBaseViewController:(UIViewController*)viewController
                                    browser:(Browser*)browser {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _baseViewController = viewController;
     _childCoordinators = [MutableCoordinatorArray array];
     if (browser) {

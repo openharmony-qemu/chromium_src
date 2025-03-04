@@ -3,15 +3,23 @@
 // found in the LICENSE file.
 
 #include "ui/base/interaction/interactive_test.h"
+
 #include <functional>
+#include <list>
+#include <memory>
 #include <string>
 
 #include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
+#include "base/observer_list.h"
+#include "base/observer_list_types.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/test/bind.h"
 #include "base/test/task_environment.h"
+#include "base/time/time.h"
+#include "base/types/pass_key.h"
 #include "build/build_config.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -20,6 +28,8 @@
 #include "ui/base/interaction/element_tracker.h"
 #include "ui/base/interaction/expect_call_in_scope.h"
 #include "ui/base/interaction/interaction_sequence.h"
+#include "ui/base/interaction/interactive_test_internal.h"
+#include "ui/base/interaction/state_observer.h"
 
 #if !BUILDFLAG(IS_IOS)
 #include "ui/base/accelerators/accelerator.h"
@@ -172,21 +182,61 @@ class InteractiveTestTest : public InteractiveTest {
     auto simulator = std::make_unique<TestSimulator>();
     simulator_ = simulator.get();
     test_util().AddSimulator(std::move(simulator));
+    internal::InteractiveTestPrivate::set_interactive_test_verbs_allowed(
+        base::PassKey<InteractiveTestTest>());
   }
 
  protected:
   TestSimulator* simulator() { return simulator_.get(); }
 
-  void QueueActions(base::OnceClosure actions) {
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE, std::move(actions));
+  // Posts the given `actions`, spaced out in time a bit so they don't flood the
+  // test faster than it can process the steps being tested.
+  //
+  // In a real test, each action would be triggered by the step before it, but
+  // since this test suite is testing the low-level primitives, the events must
+  // be simulated *and* cannot be tied to the sequence itself.
+  //
+  // This is in general not a great way to test things, as there is technically
+  // still a race condition.
+  template <typename... C>
+  void QueueActions(C&&... actions) {
+    (queued_actions_.emplace_back(
+         internal::MaybeBind(std::forward<C>(actions))),
+     ...);
+    MaybePostQueuedAction();
   }
 
-  base::raw_ptr<TestSimulator> simulator_ = nullptr;
+  const auto& state_observers() {
+    return private_test_impl().state_observer_elements_;
+  }
+
+  raw_ptr<TestSimulator> simulator_ = nullptr;
 
  private:
+  void MaybePostQueuedAction() {
+    if (queued_actions_.empty()) {
+      return;
+    }
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+        FROM_HERE,
+        base::BindOnce(&InteractiveTestTest::RunQueuedAction,
+                       weak_ptr_factory_.GetWeakPtr()),
+        base::Milliseconds(100));
+  }
+
+  void RunQueuedAction() {
+    if (queued_actions_.empty()) {
+      return;
+    }
+    std::move(queued_actions_.front()).Run();
+    queued_actions_.pop_front();
+    MaybePostQueuedAction();
+  }
+
+  std::list<base::OnceClosure> queued_actions_;
   base::test::SingleThreadTaskEnvironment task_environment_{
       base::test::SingleThreadTaskEnvironment::MainThreadType::UI};
+  base::WeakPtrFactory<InteractiveTestTest> weak_ptr_factory_{this};
 };
 
 TEST_F(InteractiveTestTest, StepsConstructsMultiStep) {
@@ -200,6 +250,33 @@ TEST_F(InteractiveTestTest, RunTestSequenceInContext) {
   TestElement el(kTestId1, kTestContext1);
   el.Show();
   EXPECT_TRUE(RunTestSequenceInContext(kTestContext1, WaitForShow(kTestId1)));
+}
+
+TEST_F(InteractiveTestTest, WaitInAnyContext) {
+  TestElement e1(kTestId1, kTestContext2);
+  TestElement e2(kTestId2, kTestContext2);
+
+  QueueActions(
+      [&]() { e1.Show(); }, [&]() { e2.Show(); }, [&]() { e1.Activate(); },
+      [&]() { e2.SendCustomEvent(kTestEvent1); }, [&]() { e1.Hide(); });
+
+  RunTestSequenceInContext(
+      kTestContext1,
+      InAnyContext(Steps(WaitForShow(kTestId1), WaitForShow(kTestId2),
+                         WaitForActivate(kTestId1),
+                         WaitForEvent(kTestId2, kTestEvent1),
+                         WaitForHide(kTestId1))));
+}
+
+TEST_F(InteractiveTestTest, FlushInAnyContext) {
+  TestElement e1(kTestId1, kTestContext2);
+  TestElement e2(kTestId2, kTestContext2);
+  e1.Show();
+  e2.Show();
+
+  RunTestSequenceInContext(
+      kTestContext1,
+      InAnyContext(Steps(WaitForShow(kTestId1), WaitForShow(kTestId2))));
 }
 
 TEST_F(InteractiveTestTest, InteractionVerbs) {
@@ -392,6 +469,32 @@ TEST_F(InteractiveTestTest, CheckResultFails) {
   });
 }
 
+TEST_F(InteractiveTestTest, CheckVariable) {
+  int x = 0;
+  const int y = 0;
+  const char* text = "foo";
+  constexpr char kNewValue[] = "bar";
+
+  RunTestSequenceInContext(kTestContext1, CheckVariable(y, 0), Do([&]() {
+                             x = 1;
+                             text = kNewValue;
+                           }),
+                           CheckVariable(x, testing::Gt(0)),
+                           CheckVariable(text, kNewValue));
+}
+
+TEST_F(InteractiveTestTest, CheckVariableFails) {
+  int x = 0;
+
+  UNCALLED_MOCK_CALLBACK(InteractionSequence::AbortedCallback, aborted);
+  private_test_impl().set_aborted_callback_for_testing(aborted.Get());
+
+  EXPECT_CALL_IN_SCOPE(aborted, Run, {
+    EXPECT_FALSE(RunTestSequenceInContext(kTestContext1, Do([&]() { x = 1; }),
+                                          CheckVariable(x, 0)));
+  });
+}
+
 TEST_F(InteractiveTestTest, CheckElement) {
   TestElement e1(kTestId1, kTestContext1);
   TestElement e2(kTestId2, kTestContext1);
@@ -481,13 +584,16 @@ TEST_F(InteractiveTestTest, After) {
   UNCALLED_MOCK_CALLBACK(base::OnceClosure, cb4);
   TestElement el(kTestId1, kTestContext1);
 
-  QueueActions(base::BindLambdaForTesting([&]() {
-    EXPECT_CALL_IN_SCOPE(cb1, Run, el.Show());
-    EXPECT_CALL_IN_SCOPE(cb2, Run, el.Activate());
-    el.SendCustomEvent(kTestEvent1);
-    EXPECT_CALL_IN_SCOPE(cb3, Run, el.SendCustomEvent(kTestEvent2));
-    EXPECT_CALL_IN_SCOPE(cb4, Run, el.Hide());
-  }));
+  testing::InSequence in_sequence;
+  EXPECT_CALL(cb1, Run);
+  EXPECT_CALL(cb2, Run);
+  EXPECT_CALL(cb3, Run);
+  EXPECT_CALL(cb4, Run);
+
+  QueueActions([&]() { el.Show(); }, [&]() { el.Activate(); },
+               [&]() { el.SendCustomEvent(kTestEvent1); },
+               [&]() { el.SendCustomEvent(kTestEvent2); },
+               [&]() { el.Hide(); });
 
   RunTestSequenceInContext(kTestContext1, AfterShow(kTestId1, cb1.Get()),
                            AfterActivate(kTestId1, cb2.Get()),
@@ -499,18 +605,17 @@ TEST_F(InteractiveTestTest, WaitFor) {
   TestElement e1(kTestId1, kTestContext1);
   TestElement e2(kTestId2, kTestContext1);
 
-  QueueActions(base::BindLambdaForTesting([&]() {
-    // Already in step 1, this triggers step 2.
-    e2.Show();
-    // Transition to step 3.
-    e1.Activate();
-    // Hide before moving to step 4.
-    e1.Hide();
-    // This should transition both 4 and 5.
-    e2.SendCustomEvent(kTestEvent1);
-    // This should transition step 6.
-    e2.Hide();
-  }));
+  QueueActions(
+      // Already in step 1, this triggers step 2.
+      [&]() { e2.Show(); },
+      // Transition to step 3.
+      [&]() { e1.Activate(); },
+      // Hide before moving to step 4.
+      [&]() { e1.Hide(); },
+      // This should transition both 4 and 5.
+      [&]() { e2.SendCustomEvent(kTestEvent1); },
+      // This should transition step 6.
+      [&]() { e2.Hide(); });
 
   e1.Show();
 
@@ -528,12 +633,11 @@ TEST_F(InteractiveTestTest, PresentOrNotPresentInAnyContext) {
   e1.Show();
   e2.Show();
 
-  RunTestSequenceInContext(
-      kTestContext1, EnsurePresent(kTestId1),
-      // Not present in the current context.
-      EnsureNotPresent(kTestId2),
-      EnsureNotPresent(kTestId3, /* in_any_context = */ true),
-      EnsurePresent(kTestId2, /* in_any_context = */ true));
+  RunTestSequenceInContext(kTestContext1, EnsurePresent(kTestId1),
+                           // Not present in the current context.
+                           EnsureNotPresent(kTestId2),
+                           InAnyContext(EnsureNotPresent(kTestId3)),
+                           InAnyContext(EnsurePresent(kTestId2)));
 }
 
 TEST_F(InteractiveTestTest, WithElementFails) {
@@ -569,29 +673,82 @@ TEST_F(InteractiveTestTest, EnsureNotPresentInAnyContextFails) {
 
   EXPECT_CALL_IN_SCOPE(aborted, Run, {
     EXPECT_FALSE(RunTestSequenceInContext(
-        kTestContext2,
-        EnsureNotPresent(kTestId1, /* in_any_context = */ true)));
+        kTestContext2, InAnyContext(EnsureNotPresent(kTestId1))));
   });
 }
 
-TEST_F(InteractiveTestTest, NamedElement) {
+TEST_F(InteractiveTestTest, EnsurePresentFails) {
+  UNCALLED_MOCK_CALLBACK(InteractionSequence::AbortedCallback, aborted);
+  private_test_impl().set_aborted_callback_for_testing(aborted.Get());
+  EXPECT_CALL_IN_SCOPE(aborted, Run, {
+    EXPECT_FALSE(RunTestSequenceInContext(
+        kTestContext2, InAnyContext(EnsurePresent(kTestId2))));
+  });
+}
+
+TEST_F(InteractiveTestTest, NameElementWithPointer) {
   UNCALLED_MOCK_CALLBACK(base::OnceCallback<void(TrackedElement*)>, cb);
 
-  TestElement e1(kTestId1, kTestContext1);
-  TestElement e2(kTestId2, kTestContext2);
-  e1.Show();
-  e2.Show();
+  TestElement el(kTestId1, kTestContext1);
+  el.Show();
   constexpr char kName[] = "name";
 
   EXPECT_CALL_IN_SCOPE(
-      cb, Run(&e2),
+      cb, Run(&el),
+      RunTestSequenceInContext(kTestContext1, NameElement(kName, &el),
+                               WithElement(kName, cb.Get())));
+}
+
+TEST_F(InteractiveTestTest, NameElementWithReference) {
+  UNCALLED_MOCK_CALLBACK(base::OnceCallback<void(TrackedElement*)>, cb);
+
+  TestElement el(kTestId1, kTestContext1);
+  el.Show();
+  constexpr char kName[] = "name";
+
+  TrackedElement* ptr = nullptr;
+
+  EXPECT_CALL_IN_SCOPE(
+      cb, Run(&el),
+      RunTestSequenceInContext(kTestContext1, Do([&]() { ptr = &el; }),
+                               NameElement(kName, std::ref(ptr)),
+                               WithElement(kName, cb.Get())));
+}
+
+TEST_F(InteractiveTestTest, NameElementWithCallback) {
+  UNCALLED_MOCK_CALLBACK(base::OnceCallback<void(TrackedElement*)>, cb);
+
+  TestElement el(kTestId1, kTestContext1);
+  el.Show();
+  constexpr char kName[] = "name";
+
+  EXPECT_CALL_IN_SCOPE(
+      cb, Run(&el),
       RunTestSequenceInContext(
           kTestContext1,
-          WithElement(kTestId1,
-                      base::BindLambdaForTesting(
-                          [&](InteractionSequence* seq, TrackedElement*) {
-                            seq->NameElement(&e2, kName);
-                          })),
+          NameElement(kName, base::BindLambdaForTesting(
+                                 [&]() -> TrackedElement* { return &el; })),
+          WithElement(kName, cb.Get())));
+}
+
+TEST_F(InteractiveTestTest, NameElementWithContext) {
+  UNCALLED_MOCK_CALLBACK(base::OnceCallback<void(TrackedElement*)>, cb);
+
+  TestElement el(kTestId1, kTestContext2);
+  el.Show();
+  constexpr char kName[] = "name";
+
+  EXPECT_CALL_IN_SCOPE(
+      cb, Run(&el),
+      RunTestSequenceInContext(
+          kTestContext1,
+          InContext(kTestContext2,
+                    NameElement(
+                        kName,
+                        base::BindLambdaForTesting([&](ElementContext context) {
+                          return ElementTracker::GetElementTracker()
+                              ->GetUniqueElement(kTestId1, context);
+                        }))),
           WithElement(kName, cb.Get())));
 }
 
@@ -760,8 +917,7 @@ TEST_F(InteractiveTestTest, SimulatorNotSupportedContinuesOnUnsupported) {
       kTestContext1,
       SetOnIncompatibleAction(OnIncompatibleAction::kIgnoreAndContinue,
                               kSetOnIncompatibleActionMessage),
-      PressButton(kTestId1),
-      Do(base::BindLambdaForTesting([&result]() { result = true; })));
+      PressButton(kTestId1), Do([&result]() { result = true; }));
   EXPECT_TRUE(result);
 }
 
@@ -797,8 +953,7 @@ TEST_F(InteractiveTestTest, SimulatorNotSupportedHaltAndSucceedOnUnsupported) {
       kTestContext1,
       SetOnIncompatibleAction(OnIncompatibleAction::kHaltTest,
                               kSetOnIncompatibleActionMessage),
-      PressButton(kTestId1),
-      Do(base::BindLambdaForTesting([&result]() { result = true; })));
+      PressButton(kTestId1), Do([&result]() { result = true; }));
   EXPECT_FALSE(result);
 }
 
@@ -1082,8 +1237,7 @@ TEST_F(InteractiveTestTest, InParallelAsync) {
   TestElement e1(kTestId1, kTestContext1);
   TestElement e2(kTestId2, kTestContext1);
 
-  QueueActions(base::BindLambdaForTesting([&e1]() { e1.Show(); }));
-  QueueActions(base::BindLambdaForTesting([&e2]() { e2.Show(); }));
+  QueueActions([&e1]() { e1.Show(); }, [&e2]() { e2.Show(); });
   EXPECT_CALL(seq1, Run(&e1));
   EXPECT_CALL(seq2, Run(&e2));
   RunTestSequenceInContext(kTestContext1,
@@ -1099,7 +1253,7 @@ TEST_F(InteractiveTestTest, InParallelDependent) {
   TestElement e1(kTestId1, kTestContext1);
   TestElement e2(kTestId2, kTestContext1);
 
-  QueueActions(base::BindLambdaForTesting([&e1]() { e1.Show(); }));
+  QueueActions([&e1]() { e1.Show(); });
   EXPECT_CALL(seq1, Run(&e1)).WillOnce([&e2](TrackedElement*) { e2.Show(); });
   EXPECT_CALL(seq2, Run(&e2));
   RunTestSequenceInContext(kTestContext1,
@@ -1117,7 +1271,7 @@ TEST_F(InteractiveTestTest, InParallelPingPong) {
   TestElement e1(kTestId1, kTestContext1);
   TestElement e2(kTestId2, kTestContext1);
 
-  QueueActions(base::BindLambdaForTesting([&e1]() { e1.Show(); }));
+  QueueActions([&e1]() { e1.Show(); });
   EXPECT_CALL(seq1, Run(&e1)).WillOnce([&e2](TrackedElement*) { e2.Show(); });
   EXPECT_CALL(seq2, Run(&e2)).WillOnce([&e1](TrackedElement*) {
     e1.SendCustomEvent(kTestEvent1);
@@ -1175,6 +1329,21 @@ TEST_F(InteractiveTestTest, AnyOfAllFail) {
                                Check(base::BindOnce([]() { return false; }))));
 }
 
+// This is a regression test for an issue where there is a UAF when tearing down
+// an AnyOf() inside an If().
+TEST_F(InteractiveTestTest, AnyOfInsideIf) {
+  TestElement el(kTestId1, kTestContext1);
+  QueueActions([&el]() { el.Show(); },
+               [&el]() { el.SendCustomEvent(kTestEvent1); });
+
+  RunTestSequenceInContext(
+      kTestContext1, If([]() { return true; },
+                        AnyOf(std::move(WaitForEvent(kTestId1, kTestEvent1)
+                                            .SetMustBeVisibleAtStart(false)),
+                              Steps(WaitForShow(kTestId1),
+                                    WaitForEvent(kTestId1, kTestEvent2)))));
+}
+
 // This test that various types of logging can compile with different types of
 // parameters. The output of this test must be verified manually.
 TEST_F(InteractiveTestTest, Log) {
@@ -1189,12 +1358,12 @@ TEST_F(InteractiveTestTest, Log) {
   } unnamed_struct, *unnamed_struct_ptr = nullptr;
 
   RunTestSequenceInContext(
-      e1.context(), Do(base::BindLambdaForTesting([&]() {
+      e1.context(), Do([&]() {
         y = 2;
         deferred_string1 = u"The quick brown fox";
         deferred_string2 = "Lorem ipsum";
         unnamed_struct_ptr = &unnamed_struct;
-      })),
+      }),
       Log(
           "Log() output follows:\nliteral int: ", x,
           "\ndeferred int: ", std::ref(y), "\nconstexpr string: ", kSomeString,
@@ -1210,6 +1379,49 @@ TEST_F(InteractiveTestTest, Log) {
           base::BindRepeating([](int x, int* y) { return x + *y + 1; }, x,
                               base::Unretained(&y)),
           "\nfunction pointer - should be 5: ", &ValueGeneratingFunction));
+}
+
+// This test that the element tree can be dumped.
+// The output of this test must be checked manually.
+TEST_F(InteractiveTestTest, DumpElements) {
+  TestElement e1(kTestId1, kTestContext1);
+  TestElement e2(kTestId2, kTestContext1);
+  TestElement e3(kTestId1, kTestContext1);
+  TestElement e4(kTestId3, kTestContext1);
+  TestElement e5(kTestId1, kTestContext2);
+  TestElement e6(kTestId2, kTestContext2);
+  TestElement e7(kTestId3, kTestContext2);
+  e1.Show();
+  e2.Show();
+  e3.Show();
+  e4.Show();
+  e5.Show();
+  // e6 not shown
+  e7.Show();
+
+  RunTestSequenceInContext(e1.context(), DumpElements());
+}
+
+// This test that the element tree can be dumped.
+// The output of this test must be checked manually.
+TEST_F(InteractiveTestTest, DumpElementsInContext) {
+  TestElement e1(kTestId1, kTestContext1);
+  TestElement e2(kTestId2, kTestContext1);
+  TestElement e3(kTestId1, kTestContext1);
+  TestElement e4(kTestId3, kTestContext1);
+  TestElement e5(kTestId1, kTestContext2);
+  TestElement e6(kTestId2, kTestContext2);
+  TestElement e7(kTestId3, kTestContext2);
+  e1.Show();
+  e2.Show();
+  e3.Show();
+  e4.Show();
+  e5.Show();
+  // e6 not shown
+  e7.Show();
+
+  RunTestSequenceInContext(e1.context(), DumpElementsInContext(),
+                           InContext(e5.context(), DumpElementsInContext()));
 }
 
 // This test ensures that binding of various types of functions and function
@@ -1276,6 +1488,255 @@ TEST_F(InteractiveTestTest, ConditionalBindingMethods) {
           Do(correct.Get()), Do(incorrect.Get())),
       IfElementMatches(kTestId2, &CheckElementFunction, testing::Ne(nullptr),
                        Do(incorrect.Get()), Do(correct.Get())));
+}
+
+namespace {
+
+template <typename T>
+class TestObservable;
+
+template <typename T>
+class TestObserver : public base::CheckedObserver {
+ public:
+  TestObserver() = default;
+  ~TestObserver() override = default;
+
+  virtual void OnObservableValueChanged(TestObservable<T>* observable,
+                                        T value) {}
+  virtual void OnObservableDestroying(TestObservable<T>* observable) {}
+};
+
+template <typename T>
+class TestObservable {
+ public:
+  explicit TestObservable(T value) : value_(value) {}
+  ~TestObservable() {
+    observers_.Notify(&TestObserver<T>::OnObservableDestroying, this);
+  }
+
+  T value() const { return value_; }
+
+  void SetValue(T value) {
+    value_ = value;
+    observers_.Notify(&TestObserver<T>::OnObservableValueChanged, this, value);
+  }
+
+  void AddObserver(TestObserver<T>* observer) {
+    observers_.AddObserver(observer);
+  }
+  void RemoveObserver(TestObserver<T>* observer) {
+    observers_.RemoveObserver(observer);
+  }
+
+ private:
+  T value_ = 0;
+  base::ObserverList<TestObserver<T>> observers_;
+};
+
+template <typename T>
+class TestStateObserver
+    : public ObservationStateObserver<T, TestObservable<T>, TestObserver<T>> {
+ public:
+  using Base = ObservationStateObserver<T, TestObservable<T>, TestObserver<T>>;
+
+  explicit TestStateObserver(TestObservable<T>* observable)
+      : Base(observable) {}
+  ~TestStateObserver() override = default;
+
+  // ObservationStateObserver:
+  T GetStateObserverInitialState() const override {
+    return Base::source()->value();
+  }
+
+  // TestObserver:
+  void OnObservableValueChanged(TestObservable<T>* observable,
+                                T value) override {
+    Base::OnStateObserverStateChanged(value);
+  }
+  void OnObservableDestroying(TestObservable<T>* observable) override {
+    Base::OnObservationStateObserverSourceDestroyed();
+  }
+};
+
+struct MyStruct {
+  MyStruct() : my_int(0), my_bool(false) {}
+  MyStruct(int a, bool b) : my_int(a), my_bool(b) {}
+  MyStruct(const MyStruct&) = default;
+  bool operator==(const MyStruct& b) const = default;
+  MyStruct& operator=(const MyStruct& b) = default;
+  int my_int;
+  bool my_bool;
+};
+
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(TestStateObserver<int>, kIntTestState);
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(TestStateObserver<std::string>,
+                                    kStringTestState);
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(TestStateObserver<std::u16string>,
+                                    kWStringTestState);
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(TestStateObserver<MyStruct>,
+                                    kStructTestState);
+
+}  // namespace
+
+TEST_F(InteractiveTestTest, ObserveStateFromUniquePtr) {
+  TestObservable<int> observable(2);
+  QueueActions([&observable]() { observable.SetValue(0); },
+               [&observable]() { observable.SetValue(3); },
+               [&observable]() { observable.SetValue(1); });
+
+  RunTestSequenceInContext(
+      kTestContext1,
+      ObserveState(kIntTestState,
+                   std::make_unique<TestStateObserver<int>>(&observable)),
+      WaitForState(kIntTestState, 3),
+      CheckResult([&observable]() { return observable.value(); }, 3),
+      WaitForState(kIntTestState, testing::Ne(3)),
+      CheckResult([&observable]() { return observable.value(); }, 1));
+}
+
+TEST_F(InteractiveTestTest, ObserveExistingStateProceedsImmediately) {
+  TestObservable<int> observable(2);
+  RunTestSequenceInContext(kTestContext1,
+                           ObserveState(kIntTestState, &observable),
+                           WaitForState(kIntTestState, 2));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateFromArgsWithReferences) {
+  TestObservable<int> observable(2);
+  int target = 0;
+  TestObservable<int>* obs_ptr = nullptr;
+  QueueActions([&observable]() { observable.SetValue(0); },
+               [&observable]() { observable.SetValue(3); });
+  RunTestSequenceInContext(
+      kTestContext1, Do([&]() {
+        target = 3;
+        obs_ptr = &observable;
+      }),
+      ObserveState(kIntTestState, std::ref(obs_ptr)),
+      WaitForState(kIntTestState, std::ref(target)),
+      CheckResult([&observable]() { return observable.value(); }, 3));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateFromArgsWithFunctions) {
+  TestObservable<int> observable(2);
+  QueueActions([&observable]() { observable.SetValue(0); },
+               [&observable]() { observable.SetValue(3); });
+  RunTestSequenceInContext(
+      kTestContext1, ObserveState(kIntTestState, [&]() { return &observable; }),
+      WaitForState(kIntTestState, base::BindRepeating([]() { return 3; })),
+      CheckResult([&observable]() { return observable.value(); }, 3));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateResetsOnDestruction) {
+  auto observable = std::make_unique<TestObservable<int>>(2);
+  QueueActions([&observable]() { observable->SetValue(0); },
+               [&observable]() { observable->SetValue(3); },
+               [&observable]() { observable.reset(); });
+  RunTestSequenceInContext(kTestContext1,
+                           ObserveState(kIntTestState, observable.get()),
+                           WaitForState(kIntTestState, 3),
+                           WaitForState(kIntTestState, testing::Ne(3)));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateWithString) {
+  TestObservable<std::string> observable("foo");
+  static const char* const kBar = "bar";
+  constexpr char kBaz[] = "baz";
+  QueueActions([&]() { observable.SetValue(kBar); },
+               [&]() { observable.SetValue(kBaz); });
+  RunTestSequenceInContext(kTestContext1,
+                           ObserveState(kStringTestState, &observable),
+                           WaitForState(kStringTestState, kBar),
+                           WaitForState(kStringTestState, testing::Eq(kBaz)));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateWithWideString) {
+  TestObservable<std::u16string> observable(u"foo");
+  static const char16_t* const kBar = u"bar";
+  constexpr char16_t kBaz[] = u"baz";
+  QueueActions([&]() { observable.SetValue(kBar); },
+               [&]() { observable.SetValue(kBaz); });
+  RunTestSequenceInContext(kTestContext1,
+                           ObserveState(kWStringTestState, &observable),
+                           WaitForState(kWStringTestState, kBar),
+                           WaitForState(kWStringTestState, testing::Eq(kBaz)));
+}
+
+TEST_F(InteractiveTestTest, ObserveStateWithStruct) {
+  TestObservable<MyStruct> observable(MyStruct(0, false));
+  QueueActions([&]() { observable.SetValue(MyStruct(123, false)); });
+  RunTestSequenceInContext(
+      kTestContext1, ObserveState(kStructTestState, &observable),
+      WaitForState(kStructTestState, testing::Field(&MyStruct::my_int, 123)));
+}
+
+TEST_F(InteractiveTestTest, StopObservingState) {
+  TestObservable<int> observable(1);
+  RunTestSequenceInContext(
+      kTestContext1,
+      ObserveState(kIntTestState,
+                   std::make_unique<TestStateObserver<int>>(&observable)),
+      WaitForState(kIntTestState, 1), StopObservingState(kIntTestState),
+      EnsureNotPresent(kIntTestState.identifier()),
+      Check([this]() { return state_observers().empty(); }));
+}
+
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(PollingStateObserver<int>,
+                                    kPollingTestState);
+
+TEST_F(InteractiveTestTest, PollingStateObserver) {
+  UNCALLED_MOCK_CALLBACK(PollingStateObserver<int>::PollCallback, poll_cb);
+  EXPECT_CALL(poll_cb, Run)
+      .WillOnce(testing::Return(0))
+      .WillOnce(testing::Return(1));
+  RunTestSequenceInContext(
+      kTestContext1,
+      PollState(kPollingTestState, poll_cb.Get(), base::Milliseconds(50)),
+      WaitForState(kPollingTestState, 1));
+}
+
+// Tests that the callback is issued exactly once to determine its initial
+// state, and not triggered unnecessarily once the desired condition is met.
+TEST_F(InteractiveTestTest, PollingStateCalledOnce) {
+  UNCALLED_MOCK_CALLBACK(PollingStateObserver<int>::PollCallback, callback);
+  EXPECT_CALL(callback, Run).Times(1).WillOnce(testing::Return(1));
+  RunTestSequenceInContext(kTestContext1,
+                           PollState(kPollingTestState, callback.Get()),
+                           WaitForState(kPollingTestState, 1));
+  EXPECT_CALL(callback, Run).Times(0);
+}
+
+DEFINE_LOCAL_STATE_IDENTIFIER_VALUE(PollingElementStateObserver<std::string>,
+                                    kPollingElementTestState);
+
+TEST_F(InteractiveTestTest, PollingElementStateObserver) {
+  UNCALLED_MOCK_CALLBACK(
+      PollingElementStateObserver<std::string>::PollElementCallback, poll_cb);
+  TestElement el(kTestId1, kTestContext1);
+  EXPECT_CALL(poll_cb, Run(&el))
+      .WillOnce(testing::Return(std::string("foo")))
+      .WillOnce(testing::Return(std::string("bar")))
+      .WillOnce(testing::Return(std::string("baz")));
+
+  // Start with the element not visible, then show it.
+  QueueActions([&el] { el.Show(); });
+
+  RunTestSequenceInContext(
+      kTestContext1,
+      PollElement(kPollingElementTestState, el.identifier(), poll_cb.Get(),
+                  base::Milliseconds(50)),
+      WaitForState(kPollingElementTestState, "baz"));
+}
+
+TEST_F(InteractiveTestTest, SubsequenceHidesElement) {
+  TestElement el1(kTestId1, kTestContext1);
+  TestElement el2(kTestId2, kTestContext1);
+
+  QueueActions([&]() { el1.Show(); }, [&]() { el2.Show(); });
+
+  RunTestSequenceInContext(
+      kTestContext1, WaitForShow(el1.identifier()),
+      InParallel(Do([&el1]() { el1.Hide(); }), WaitForShow(el2.identifier())));
 }
 
 }  // namespace ui::test

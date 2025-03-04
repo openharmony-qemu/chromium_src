@@ -7,30 +7,16 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/shared/coordinator/scene/scene_activation_level.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state_observer.h"
 #import "ios/chrome/browser/ui/scoped_ui_blocker/ui_blocker_target.h"
-#import "ios/chrome/browser/window_activities/window_activity_helpers.h"
+#import "ios/chrome/browser/window_activities/model/window_activity_helpers.h"
 
 @class AppState;
+@protocol BrowserProviderInterface;
+@class ProfileState;
 @class SceneController;
 @class SceneState;
-@protocol BrowserProviderInterface;
-
-// Describes the possible scene states.
-// This is an iOS 12 compatible version of UISceneActivationState enum.
-typedef NS_ENUM(NSUInteger, SceneActivationLevel) {
-  // The scene is not connected and has no window.
-  SceneActivationLevelUnattached = 0,
-  // The scene is connected, and has a window associated with it. The window is
-  // not visible to the user, except possibly in the app switcher.
-  SceneActivationLevelBackground,
-  // The scene is connected, and its window is on screen, but it's not active
-  // for user input. For example, keyboard events would not be sent to this
-  // window.
-  SceneActivationLevelForegroundInactive,
-  // The scene is connected, has a window, and receives user events.
-  SceneActivationLevelForegroundActive
-};
 
 // Scene agents are objects owned by a scene state and providing some
 // scene-scoped function. They can be driven by SceneStateObserver events.
@@ -45,13 +31,14 @@ typedef NS_ENUM(NSUInteger, SceneActivationLevel) {
 
 // An object containing the state of a UIWindowScene. One state object
 // corresponds to one scene.
+// TODO(b/326186137): This class should implement BrowserProviderInterface.
 @interface SceneState : NSObject <UIBlockerTarget>
 
 - (instancetype)initWithAppState:(AppState*)appState NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
-// The app state for the app that owns this scene. Set in init.
-@property(nonatomic, weak, readonly) AppState* appState;
+// The profile state for profile that owns this scene.
+@property(nonatomic, weak) ProfileState* profileState;
 
 // The current activation level.
 @property(nonatomic, assign) SceneActivationLevel activationLevel;
@@ -70,6 +57,9 @@ typedef NS_ENUM(NSUInteger, SceneActivationLevel) {
 // The scene object backing this scene state. It's in a 1-to-1 relationship and
 // the window scene owns this object (indirectly through scene delegate).
 @property(nonatomic, weak) UIWindowScene* scene;
+
+// The root view controller of the current scene if any.
+@property(nonatomic, readonly) UIViewController* rootViewController;
 
 // Connection options of `scene`, if any, from when the scene was connected.
 @property(nonatomic, strong) UISceneConnectionOptions* connectionOptions;
@@ -109,13 +99,6 @@ typedef NS_ENUM(NSUInteger, SceneActivationLevel) {
 // YES if the QR scanner is visible.
 @property(nonatomic, assign) BOOL QRScannerVisible;
 
-// YES if the visible NTP should be modified for the Start Surface.
-//
-// This flag is set by SceneController to YES when the Start Surface should be
-// shown. It is checked by the NewTabPageCoordinator to modify the NTP
-// accordingly, and then reset it to NO.
-@property(nonatomic, assign) BOOL modifytVisibleNTPForStartSurface;
-
 // YES if sign-in is in progress which covers the authentication flow and the
 // sign-in prompt UI.
 @property(nonatomic, assign) BOOL signinInProgress;
@@ -140,6 +123,12 @@ typedef NS_ENUM(NSUInteger, SceneActivationLevel) {
 // Stores `object` as a per-session preference if supported by the device or
 // into NSUserDefaults otherwise (old table, phone, ...).
 - (void)setSessionObject:(NSObject*)object forKey:(NSString*)key;
+
+// Set the root view controller with the given view controller. Set
+// `makeKeyAndVisible` to YES if it is needed to show and position it in front
+// of all other windows.
+- (void)setRootViewController:(UIViewController*)rootViewController
+            makeKeyAndVisible:(BOOL)makeKeyAndVisible;
 
 @end
 

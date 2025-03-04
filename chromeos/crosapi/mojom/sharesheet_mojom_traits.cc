@@ -14,7 +14,6 @@ EnumTraits<crosapi::mojom::SharesheetLaunchSource,
   switch (input) {
     default:
       NOTREACHED();
-      [[fallthrough]];
     case sharesheet::LaunchSource::kUnknown:
       return crosapi::mojom::SharesheetLaunchSource::kUnknown;
     case sharesheet::LaunchSource::kWebShare:
@@ -41,7 +40,6 @@ bool EnumTraits<crosapi::mojom::SharesheetLaunchSource,
   }
 
   NOTREACHED();
-  return false;
 }
 
 crosapi::mojom::SharesheetResult EnumTraits<
@@ -80,7 +78,6 @@ bool EnumTraits<crosapi::mojom::SharesheetResult,
   }
 
   NOTREACHED();
-  return false;
 }
 
 }  // namespace mojo

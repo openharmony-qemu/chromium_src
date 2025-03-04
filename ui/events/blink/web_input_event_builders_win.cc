@@ -45,6 +45,7 @@ WebMouseEvent WebMouseEventBuilder::Build(
   WebMouseEvent::Button button = WebMouseEvent::Button::kNoButton;
   switch (message) {
     case WM_MOUSEMOVE:
+    case WM_NCMOUSEMOVE:
       type = WebInputEvent::Type::kMouseMove;
       if (wparam & MK_LBUTTON)
         button = WebMouseEvent::Button::kLeft;
@@ -66,22 +67,30 @@ WebMouseEvent WebMouseEventBuilder::Build(
       lparam = GetRelativeCursorPos(hwnd);
       break;
     case WM_LBUTTONDOWN:
+    case WM_NCLBUTTONDOWN:
     case WM_LBUTTONDBLCLK:
+    case WM_NCLBUTTONDBLCLK:
       type = WebInputEvent::Type::kMouseDown;
       button = WebMouseEvent::Button::kLeft;
       break;
     case WM_MBUTTONDOWN:
+    case WM_NCMBUTTONDOWN:
     case WM_MBUTTONDBLCLK:
+    case WM_NCMBUTTONDBLCLK:
       type = WebInputEvent::Type::kMouseDown;
       button = WebMouseEvent::Button::kMiddle;
       break;
     case WM_RBUTTONDOWN:
+    case WM_NCRBUTTONDOWN:
     case WM_RBUTTONDBLCLK:
+    case WM_NCRBUTTONDBLCLK:
       type = WebInputEvent::Type::kMouseDown;
       button = WebMouseEvent::Button::kRight;
       break;
     case WM_XBUTTONDOWN:
+    case WM_NCXBUTTONDOWN:
     case WM_XBUTTONDBLCLK:
+    case WM_NCXBUTTONDBLCLK:
       type = WebInputEvent::Type::kMouseDown;
       if ((HIWORD(wparam) & XBUTTON1))
         button = WebMouseEvent::Button::kBack;
@@ -89,18 +98,22 @@ WebMouseEvent WebMouseEventBuilder::Build(
         button = WebMouseEvent::Button::kForward;
       break;
     case WM_LBUTTONUP:
+    case WM_NCLBUTTONUP:
       type = WebInputEvent::Type::kMouseUp;
       button = WebMouseEvent::Button::kLeft;
       break;
     case WM_MBUTTONUP:
+    case WM_NCMBUTTONUP:
       type = WebInputEvent::Type::kMouseUp;
       button = WebMouseEvent::Button::kMiddle;
       break;
     case WM_RBUTTONUP:
+    case WM_NCRBUTTONUP:
       type = WebInputEvent::Type::kMouseUp;
       button = WebMouseEvent::Button::kRight;
       break;
     case WM_XBUTTONUP:
+    case WM_NCXBUTTONUP:
       type = WebInputEvent::Type::kMouseUp;
       if ((HIWORD(wparam) & XBUTTON1))
         button = WebMouseEvent::Button::kBack;
@@ -290,16 +303,12 @@ WebMouseWheelEvent WebMouseWheelEventBuilder::Build(
     SystemParametersInfo(SPI_GETWHEELSCROLLCHARS, 0, &scroll_chars, 0);
     TRACE_EVENT1("input", "WebMouseWheelEventBuilder::Build", "scroll_chars",
                  scroll_chars);
-    base::UmaHistogramCounts10M("InputMethod.MouseWheel.ScrollCharacters",
-                                base::saturated_cast<int>(scroll_chars));
     scroll_delta *= static_cast<float>(scroll_chars);
   } else {
     unsigned long scroll_lines = kDefaultScrollLinesPerWheelDelta;
     SystemParametersInfo(SPI_GETWHEELSCROLLLINES, 0, &scroll_lines, 0);
     TRACE_EVENT1("input", "WebMouseWheelEventBuilder::Build", "scroll_lines",
                  scroll_lines);
-    base::UmaHistogramCounts10M("InputMethod.MouseWheel.ScrollLines",
-                                base::saturated_cast<int>(scroll_lines));
     if (scroll_lines == WHEEL_PAGESCROLL)
       result.delta_units = ui::ScrollGranularity::kScrollByPage;
     else

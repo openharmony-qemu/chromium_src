@@ -11,6 +11,7 @@
 #include "components/content_settings/core/common/content_settings.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "components/permissions/permission_prompt.h"
+#include "content/public/browser/permission_result.h"
 #include "third_party/blink/public/mojom/permissions/permission_status.mojom.h"
 #include "third_party/blink/public/mojom/permissions_policy/permissions_policy_feature.mojom-forward.h"
 
@@ -21,14 +22,12 @@ enum class PermissionType;
 namespace content {
 class RenderFrameHost;
 class RenderProcessHost;
-struct PermissionResult;
 }  // namespace content
 
 class GURL;
 
 namespace permissions {
 class PermissionRequest;
-struct PermissionResult;
 
 // This enum backs a UMA histogram, so it must be treated as append-only.
 enum class PermissionAction {
@@ -41,6 +40,12 @@ enum class PermissionAction {
 
   // Always keep this at the end.
   NUM,
+};
+
+enum PermissionPromptViewID {
+  VIEW_ID_PERMISSION_PROMPT_NONE = 0,
+  VIEW_ID_PERMISSION_PROMPT_EXTRA_TEXT,
+  VIEW_ID_PERMISSION_PROMPT_LINK,
 };
 
 // A utility class for permissions.
@@ -67,7 +72,7 @@ class PermissionUtil {
 
   // Returns the corresponding permissions policy feature to the given content
   // settings type, or nullopt if there is none.
-  static absl::optional<blink::mojom::PermissionsPolicyFeature>
+  static std::optional<blink::mojom::PermissionsPolicyFeature>
   GetPermissionsPolicyFeature(ContentSettingsType type);
 
   // Checks whether the given ContentSettingsType is a permission. Use this
@@ -85,27 +90,39 @@ class PermissionUtil {
   // "block" instead. This is primarily used for chooser-based permissions.
   static bool IsGuardContentSetting(ContentSettingsType type);
 
-  // Checks whether the given ContentSettingsType supports one time grants.
-  static bool CanPermissionBeAllowedOnce(ContentSettingsType type);
+  // Returns true if the permission for `type` can be granted for a short period
+  // of time. This means the following:
+  // - Permission prompts will have a button that is labeled along the lines of
+  //   "Allow this time".
+  // - The `permissions.query` API will report PermissionStatus.state as
+  //   "granted" within this short time window.
+  // - Subsequent requests to the permission-gated API in this time window will
+  //   succeed without user mediation.
+  static bool DoesSupportTemporaryGrants(ContentSettingsType type);
+
+  // For a permission `type` that `DoesSupportTemporaryGrants()`, returns true
+  // if that temporary grant is stored in the `OneTimePermissionProvider` in
+  // `HostContentSettingMap`, and false elsewhere.
+  static bool DoesStoreTemporaryGrantsInHcsm(ContentSettingsType type);
 
   // Returns the authoritative `embedding origin`, as a GURL, to be used for
   // permission decisions in `render_frame_host`.
-  // TODO(crbug.com/1327384): Remove this method when possible.
+  // TODO(crbug.com/40226169): Remove this method when possible.
   static GURL GetLastCommittedOriginAsURL(
       content::RenderFrameHost* render_frame_host);
 
-  // Helper method to convert `PermissionType` to `ContentSettingType`.
+  // Helper method to convert `PermissionType` to `ContentSettingsType`.
   // If `PermissionType` is not supported or found, returns
   // ContentSettingsType::DEFAULT.
-  static ContentSettingsType PermissionTypeToContentSettingTypeSafe(
+  static ContentSettingsType PermissionTypeToContentSettingsTypeSafe(
       blink::PermissionType permission);
 
-  // Helper method to convert `PermissionType` to `ContentSettingType`.
-  static ContentSettingsType PermissionTypeToContentSettingType(
+  // Helper method to convert `PermissionType` to `ContentSettingsType`.
+  static ContentSettingsType PermissionTypeToContentSettingsType(
       blink::PermissionType permission);
 
-  // Helper method to convert `ContentSettingType` to `PermissionType`.
-  static blink::PermissionType ContentSettingTypeToPermissionType(
+  // Helper method to convert `ContentSettingsType` to `PermissionType`.
+  static blink::PermissionType ContentSettingsTypeToPermissionType(
       ContentSettingsType permission);
 
   // Helper method to convert PermissionStatus to ContentSetting.
@@ -116,11 +133,6 @@ class PermissionUtil {
   // versa.
   static blink::mojom::PermissionStatus ContentSettingToPermissionStatus(
       ContentSetting setting);
-
-  static content::PermissionResult ToContentPermissionResult(
-      PermissionResult result);
-
-  static PermissionResult ToPermissionResult(content::PermissionResult result);
 
   // If an iframed document/worker inherits a different StoragePartition from
   // its embedder than it would use if it were a main frame, we should block
@@ -151,6 +163,13 @@ class PermissionUtil {
   // Returns `true` if at least one of the `delegate->Requests()` was requested
   // with a user gesture.
   static bool HasUserGesture(PermissionPrompt::Delegate* delegate);
+
+  static bool CanPermissionRequestIgnoreStatus(
+      const PermissionRequestData& request,
+      content::PermissionStatusSource source);
+
+  // Returns `true` if the current platform support permission chips.
+  static bool DoesPlatformSupportChip();
 };
 
 }  // namespace permissions

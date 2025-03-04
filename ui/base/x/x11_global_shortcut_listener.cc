@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "ui/base/x/x11_global_shortcut_listener.h"
 
 #include <stddef.h>
@@ -69,11 +74,11 @@ void XGlobalShortcutListener::StopListening() {
 }
 
 bool XGlobalShortcutListener::CanDispatchEvent(const PlatformEvent& event) {
-  return event->type() == ET_KEY_PRESSED;
+  return event->type() == EventType::kKeyPressed;
 }
 
 uint32_t XGlobalShortcutListener::DispatchEvent(const PlatformEvent& event) {
-  CHECK_EQ(event->type(), ET_KEY_PRESSED);
+  CHECK_EQ(event->type(), EventType::kKeyPressed);
   OnKeyPressEvent(*event->AsKeyEvent());
   return POST_DISPATCH_NONE;
 }
@@ -83,7 +88,11 @@ bool XGlobalShortcutListener::RegisterAccelerator(KeyboardCode key_code,
                                                   bool is_ctrl_down,
                                                   bool is_shift_down) {
   auto modifiers = GetNativeModifiers(is_alt_down, is_ctrl_down, is_shift_down);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  auto keysym = XKeysymForWindowsKeyCode(key_code, false, false);
+#else
   auto keysym = XKeysymForWindowsKeyCode(key_code, false);
+#endif
   auto keycode = connection_->KeysymToKeycode(keysym);
 
   // Because XGrabKey only works on the exact modifiers mask, we should register
@@ -117,7 +126,11 @@ void XGlobalShortcutListener::UnregisterAccelerator(KeyboardCode key_code,
                                                     bool is_ctrl_down,
                                                     bool is_shift_down) {
   auto modifiers = GetNativeModifiers(is_alt_down, is_ctrl_down, is_shift_down);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  auto keysym = XKeysymForWindowsKeyCode(key_code, false, false);
+#else
   auto keysym = XKeysymForWindowsKeyCode(key_code, false);
+#endif
   auto keycode = connection_->KeysymToKeycode(keysym);
 
   for (auto mask : kModifiersMasks)
@@ -128,7 +141,7 @@ void XGlobalShortcutListener::UnregisterAccelerator(KeyboardCode key_code,
 }
 
 void XGlobalShortcutListener::OnKeyPressEvent(const KeyEvent& event) {
-  DCHECK_EQ(event.type(), ET_KEY_PRESSED);
+  DCHECK_EQ(event.type(), EventType::kKeyPressed);
 
   const KeyboardCode key_code = event.key_code();
   const bool is_alt_down = event.flags() & EF_ALT_DOWN;

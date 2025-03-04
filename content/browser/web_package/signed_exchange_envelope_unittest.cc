@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/browser/web_package/signed_exchange_envelope.h"
+
+#include <string_view>
 
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -33,10 +40,10 @@ cbor::Value CBORByteString(const char* str) {
   return cbor::Value(str, cbor::Value::Type::BYTE_STRING);
 }
 
-absl::optional<SignedExchangeEnvelope> GenerateHeaderAndParse(
+std::optional<SignedExchangeEnvelope> GenerateHeaderAndParse(
     SignedExchangeVersion version,
-    base::StringPiece fallback_url,
-    base::StringPiece signature,
+    std::string_view fallback_url,
+    std::string_view signature,
     const std::map<const char*, const char*>& response_map) {
   cbor::Value::MapValue response_cbor_map;
   for (auto& pair : response_map)
@@ -88,14 +95,14 @@ TEST_P(SignedExchangeEnvelopeTest, ParseGoldenFile) {
   size_t signature_header_field_offset =
       signed_exchange_prologue::BeforeFallbackUrl::kEncodedSizeInBytes +
       prologue_a.ComputeFallbackUrlAndAfterLength();
-  base::StringPiece signature_header_field(
+  std::string_view signature_header_field(
       contents.data() + signature_header_field_offset,
       prologue_b.signature_header_field_length());
   const auto cbor_bytes =
       base::make_span(contents_bytes + signature_header_field_offset +
                           prologue_b.signature_header_field_length(),
                       prologue_b.cbor_header_length());
-  const absl::optional<SignedExchangeEnvelope> envelope =
+  const std::optional<SignedExchangeEnvelope> envelope =
       SignedExchangeEnvelope::Parse(
           SignedExchangeVersion::kB3, prologue_b.fallback_url(),
           signature_header_field, cbor_bytes, nullptr /* devtools_proxy */);

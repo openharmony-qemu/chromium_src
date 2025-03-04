@@ -102,8 +102,6 @@ void RunWhileTrue(const base::RepeatingCallback<bool(void)>& cb,
   }
 
   LOG(FATAL) << message << " (iterations: " << kMaxIterations << ")";
-
-  NOTREACHED();
 }
 
 bool IsMultiThreaded(int proc_fd) {

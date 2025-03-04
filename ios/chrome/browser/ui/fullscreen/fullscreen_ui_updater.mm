@@ -8,17 +8,13 @@
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_controller.h"
 #import "ios/chrome/browser/ui/fullscreen/fullscreen_ui_element.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 FullscreenUIUpdater::FullscreenUIUpdater(FullscreenController* controller,
                                          id<FullscreenUIElement> ui_element)
     : controller_(controller),
       forwarder_(this, ui_element),
       observation_(&forwarder_) {
   DCHECK(controller_);
-  observation_.Observe(controller_);
+  observation_.Observe(controller_.get());
 }
 
 FullscreenUIUpdater::~FullscreenUIUpdater() = default;
@@ -26,7 +22,7 @@ FullscreenUIUpdater::~FullscreenUIUpdater() = default;
 void FullscreenUIUpdater::Disconnect() {
   if (!controller_)
     return;
-  DCHECK(observation_.IsObservingSource(controller_));
+  DCHECK(observation_.IsObservingSource(controller_.get()));
   observation_.Reset();
   controller_ = nullptr;
 }

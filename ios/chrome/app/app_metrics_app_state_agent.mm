@@ -9,20 +9,24 @@
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/application_delegate/metrics_mediator.h"
 #import "ios/chrome/app/application_delegate/startup_information.h"
-#import "ios/chrome/browser/metrics/ios_profile_session_durations_service.h"
-#import "ios/chrome/browser/metrics/ios_profile_session_durations_service_factory.h"
-#import "ios/chrome/browser/shared/coordinator/scene/scene_controller.h"
+#import "ios/chrome/app/deferred_initialization_runner.h"
+#import "ios/chrome/app/tests_hook.h"
+#import "ios/chrome/browser/metrics/model/ios_profile_session_durations_service.h"
+#import "ios/chrome/browser/metrics/model/ios_profile_session_durations_service_factory.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/profile/profile_manager_ios.h"
 #import "ios/public/provider/chrome/browser/primes/primes_api.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
+namespace {
+// Constant for deferring snapshotting startup memory usage
+NSString* const kTakeStartupMemorySnapshot = @"TakeStartupMemorySnapshot";
+// Constant for naming the startup memory snapshot
+NSString* const kDeferredInitializationBlocksComplete =
+    @"DeferredInitializationBlocksComplete";
+}  // namespace
 
-@interface AppMetricsAppStateAgent () <SceneStateObserver>
-
-// Observed app state.
-@property(nonatomic, weak) AppState* appState;
+@interface AppMetricsAppStateAgent ()
 
 // This flag is set when the first scene has activated since the startup, and
 // never reset during the app's lifetime.
@@ -36,26 +40,15 @@
 
 @implementation AppMetricsAppStateAgent
 
-#pragma mark - AppStateAgent
-
-- (void)setAppState:(AppState*)appState {
-  // This should only be called once!
-  DCHECK(!_appState);
-
-  _appState = appState;
-  [appState addObserver:self];
-}
-
 #pragma mark - AppStateObserver
 
-- (void)appState:(AppState*)appState sceneConnected:(SceneState*)sceneState {
-  [sceneState addObserver:self];
-}
-
 - (void)appState:(AppState*)appState
-    didTransitionFromInitStage:(InitStage)previousInitStage {
-  if (previousInitStage == InitStageSafeMode) {
-    // Log session start if the app is already foreground
+    didTransitionFromInitStage:(AppInitStage)previousInitStage {
+  [super appState:appState didTransitionFromInitStage:previousInitStage];
+
+  if (appState.initStage ==
+      AppInitStage::kBrowserObjectsForBackgroundHandlers) {
+    // Log session start if the app is already foreground.
     if (self.appState.foregroundScenes.count > 0) {
       [self handleSessionStart];
     }
@@ -66,15 +59,20 @@
 
 - (void)sceneState:(SceneState*)sceneState
     transitionedToActivationLevel:(SceneActivationLevel)level {
+  [super sceneState:sceneState transitionedToActivationLevel:level];
+
   if (!self.firstSceneHasConnected) {
     self.appState.startupInformation.firstSceneConnectionTime =
         base::TimeTicks::Now();
     self.firstSceneHasConnected = YES;
-    if (self.appState.initStage > InitStageSafeMode)
+    if (self.appState.initStage >=
+        AppInitStage::kBrowserObjectsForBackgroundHandlers) {
       [MetricsMediator createStartupTrackingTask];
+    }
   }
 
-  if (self.appState.initStage <= InitStageSafeMode) {
+  if (self.appState.initStage <
+      AppInitStage::kBrowserObjectsForBackgroundHandlers) {
     return;
   }
 
@@ -103,23 +101,33 @@
   if (level >= SceneActivationLevelForegroundActive) {
     if (!self.firstSceneHasActivated) {
       self.firstSceneHasActivated = YES;
-      [MetricsMediator logStartupDuration:self.appState.startupInformation
-                    connectionInformation:sceneState.controller];
+      [MetricsMediator logStartupDuration:self.appState.startupInformation];
       if (ios::provider::IsPrimesSupported()) {
         ios::provider::PrimesAppReady();
+        [self.appState.deferredRunner
+            enqueueBlockNamed:kTakeStartupMemorySnapshot
+                        block:^{
+                          ios::provider::PrimesTakeMemorySnapshot(
+                              kDeferredInitializationBlocksComplete);
+                          tests_hook::SignalAppLaunched();
+                        }];
       }
     }
   }
 }
 
-#pragma mark - private
+#pragma mark - Private
 
 - (void)handleSessionStart {
   self.appState.lastTimeInForeground = base::TimeTicks::Now();
 
-  IOSProfileSessionDurationsService* psdService = [self psdService];
-  if (psdService) {
-    psdService->OnSessionStarted(self.appState.lastTimeInForeground);
+  for (ProfileIOS* profile :
+       GetApplicationContext()->GetProfileManager()->GetLoadedProfiles()) {
+    IOSProfileSessionDurationsService* psdService =
+        IOSProfileSessionDurationsServiceFactory::GetForProfile(profile);
+    if (psdService) {
+      psdService->OnSessionStarted(self.appState.lastTimeInForeground);
+    }
   }
 }
 
@@ -133,21 +141,16 @@
   UMA_HISTOGRAM_CUSTOM_TIMES("Session.TotalDurationMax1Day", duration,
                              base::Milliseconds(1), base::Hours(24), 50);
 
-  IOSProfileSessionDurationsService* psdService = [self psdService];
-  if (psdService) {
-    psdService->OnSessionEnded(duration);
+  for (ProfileIOS* profile :
+       GetApplicationContext()->GetProfileManager()->GetLoadedProfiles()) {
+    IOSProfileSessionDurationsService* psdService =
+        IOSProfileSessionDurationsServiceFactory::GetForProfile(profile);
+    if (psdService) {
+      psdService->OnSessionEnded(duration);
+    }
+
+    self.appState.lastTimeInForeground = base::TimeTicks();
   }
-
-  self.appState.lastTimeInForeground = base::TimeTicks();
-}
-
-- (IOSProfileSessionDurationsService*)psdService {
-  if (!self.appState.mainBrowserState) {
-    return nil;
-  }
-
-  return IOSProfileSessionDurationsServiceFactory::GetForBrowserState(
-      self.appState.mainBrowserState);
 }
 
 @end

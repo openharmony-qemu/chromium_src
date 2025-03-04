@@ -12,16 +12,16 @@
 
 namespace gpu {
 struct ContextCreationAttribs;
+class GpuDriverBugWorkarounds;
 
 namespace gles2 {
 class ContextGroup;
 
-GPU_GLES2_EXPORT gl::GLContextAttribs GenerateGLContextAttribs(
+GPU_GLES2_EXPORT gl::GLContextAttribs GenerateGLContextAttribsForDecoder(
     const ContextCreationAttribs& attribs_helper,
     const ContextGroup* context_group);
 
-GPU_GLES2_EXPORT gl::GLContextAttribs GenerateGLContextAttribs(
-    const ContextCreationAttribs& attribs_helper,
+GPU_GLES2_EXPORT gl::GLContextAttribs GenerateGLContextAttribsForCompositor(
     bool use_passthrough_cmd_decoder);
 
 // Returns true if the passthrough command decoder has been requested
@@ -38,23 +38,21 @@ ParseGpuPreferences(const base::CommandLine* command_line);
 // rasterization (if enabled) by checking the feature flags for Vulkan and/or
 // Graphite. If they are not enabled, default to GL.
 // If Graphite is enabled, the backend is Dawn by default or cn be specified
-// using the --skia-graphite-backend flag.
+// using the --skia-graphite-backend flag. On iOS, the backend is Metal by
+// default if skia_use_metal is set to true via gn args.
 GPU_GLES2_EXPORT GrContextType
 ParseGrContextType(const base::CommandLine* command_line);
 
-// Parse the value of --use-vulkan from the command line. If unspecified and
-// features::kVulkan is enabled (GrContext is going to use vulkan), default to
-// the native implementation.
-GPU_GLES2_EXPORT VulkanImplementationName
-ParseVulkanImplementationName(const base::CommandLine* command_line);
-
-GPU_GLES2_EXPORT WebGPUAdapterName
-ParseWebGPUAdapterName(const base::CommandLine* command_line);
-
-GPU_GLES2_EXPORT WebGPUPowerPreference
-ParseWebGPUPowerPreference(const base::CommandLine* command_line);
+bool MSAAIsSlow(const GpuDriverBugWorkarounds& workarounds);
 
 }  // namespace gles2
+
+#if BUILDFLAG(IS_MAC)
+// Gets the texture target to use with MacOS native GpuMemoryBuffers based on
+// the current GL implementation.
+GPU_GLES2_EXPORT uint32_t GetTextureTargetForIOSurfaces();
+#endif  // BUILDFLAG(IS_MAC)
+
 }  // namespace gpu
 
 #endif  // GPU_COMMAND_BUFFER_SERVICE_SERVICE_UTILS_H_

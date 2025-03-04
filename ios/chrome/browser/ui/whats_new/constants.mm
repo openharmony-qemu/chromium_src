@@ -6,14 +6,5 @@
 
 #import <Foundation/Foundation.h>
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-NSString* const kWhatsNewPromoRegistrationKey = @"whatsNewPromoRegistration";
-
-NSString* const kWhatsNewDaysAfterFre = @"whatsNewDaysAfterFre";
-
-NSString* const kWhatsNewLaunchesAfterFre = @"whatsNewLaunchesAfterFre";
-
-NSString* const kWhatsNewUsageEntryKey = @"userHasInteractedWithWhatsNew";
+NSString* const kWhatsNewM116UsageEntryKey =
+    @"userHasInteractedWithWhatsNewM116";

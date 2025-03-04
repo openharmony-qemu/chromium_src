@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/open_from_clipboard/clipboard_recent_content_generic.h"
 
 #include <memory>
@@ -13,8 +18,10 @@
 #include "base/run_loop.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/bind.h"
+#include "base/test/scoped_feature_list.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+#include "components/open_from_clipboard/clipboard_recent_content_features.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/clipboard/test/test_clipboard.h"
 #include "ui/gfx/image/image_unittest_util.h"
@@ -83,7 +90,7 @@ class ClipboardRecentContentGenericTest : public testing::Test {
     ui::Clipboard::DestroyClipboardForCurrentThread();
   }
 
-  raw_ptr<ui::TestClipboard> test_clipboard_;
+  raw_ptr<ui::TestClipboard, DanglingUntriaged> test_clipboard_;
   url::ScopedSchemeRegistryForTests scoped_scheme_registry_;
 };
 
@@ -123,9 +130,7 @@ TEST_F(ClipboardRecentContentGenericTest, RecognizesURLs) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   for (size_t i = 0; i < std::size(test_data); ++i) {
-    test_clipboard_->WriteText(test_data[i].clipboard.data(),
-                               test_data[i].clipboard.length(),
-                               ui::CopyOptionMode::NONE);
+    test_clipboard_->WriteText(test_data[i].clipboard);
     test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
     EXPECT_EQ(test_data[i].expected_get_recent_url_value,
               recent_content.GetRecentURLFromClipboard().has_value())
@@ -133,11 +138,15 @@ TEST_F(ClipboardRecentContentGenericTest, RecognizesURLs) {
   }
 }
 
-TEST_F(ClipboardRecentContentGenericTest, OlderURLsNotSuggested) {
+TEST_F(ClipboardRecentContentGenericTest,
+       OlderContentNotSuggestedDefaultLimit) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeatureWithParameters(
+      kClipboardMaximumAge, {{kClipboardMaximumAgeParam, "600"}});
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = "http://example.com/";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Minutes(9));
   EXPECT_TRUE(recent_content.GetRecentURLFromClipboard().has_value());
   // If the last modified time is 10 minutes ago, the URL shouldn't be
@@ -146,11 +155,23 @@ TEST_F(ClipboardRecentContentGenericTest, OlderURLsNotSuggested) {
   EXPECT_FALSE(recent_content.GetRecentURLFromClipboard().has_value());
 }
 
+TEST_F(ClipboardRecentContentGenericTest, OlderContentNotSuggestedLowerLimit) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeatureWithParameters(
+      kClipboardMaximumAge, {{kClipboardMaximumAgeParam, "119"}});
+  ClipboardRecentContentGeneric recent_content;
+  base::Time now = base::Time::Now();
+  std::string text = "http://example.com/";
+  test_clipboard_->WriteText(text);
+  test_clipboard_->SetLastModifiedTime(now - base::Minutes(2));
+  EXPECT_FALSE(recent_content.GetRecentURLFromClipboard().has_value());
+}
+
 TEST_F(ClipboardRecentContentGenericTest, GetClipboardContentAge) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = " whether URL or not should not matter here.";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(32));
   base::TimeDelta age = recent_content.GetClipboardContentAge();
   // It's possible the GetClipboardContentAge() took some time, so allow a
@@ -163,7 +184,7 @@ TEST_F(ClipboardRecentContentGenericTest, SuppressClipboardContent) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = "http://example.com/";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
   EXPECT_TRUE(recent_content.GetRecentURLFromClipboard().has_value());
   EXPECT_TRUE(recent_content.GetRecentTextFromClipboard().has_value());
@@ -175,7 +196,7 @@ TEST_F(ClipboardRecentContentGenericTest, SuppressClipboardContent) {
 
   // If the clipboard changes, even if to the same thing again, the content
   // should be suggested again.
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now);
   EXPECT_TRUE(recent_content.GetRecentURLFromClipboard().has_value());
   EXPECT_TRUE(recent_content.GetRecentTextFromClipboard().has_value());
@@ -187,7 +208,7 @@ TEST_F(ClipboardRecentContentGenericTest, GetRecentTextFromClipboard) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = "  Foo Bar   ";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
   EXPECT_TRUE(recent_content.GetRecentTextFromClipboard().has_value());
   EXPECT_FALSE(recent_content.GetRecentURLFromClipboard().has_value());
@@ -203,7 +224,7 @@ TEST_F(ClipboardRecentContentGenericTest, ClearClipboardContent) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = "http://example.com/";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
   EXPECT_TRUE(recent_content.GetRecentURLFromClipboard().has_value());
 
@@ -213,7 +234,7 @@ TEST_F(ClipboardRecentContentGenericTest, ClearClipboardContent) {
 
   // If the clipboard changes, even if to the same thing again, the content
   // should be suggested again.
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now);
   EXPECT_TRUE(recent_content.GetRecentURLFromClipboard().has_value());
 }
@@ -230,7 +251,7 @@ TEST_F(ClipboardRecentContentGenericTest, HasRecentImageFromClipboard) {
   EXPECT_FALSE(recent_content.GetRecentURLFromClipboard().has_value());
   EXPECT_FALSE(recent_content.GetRecentTextFromClipboard().has_value());
   recent_content.GetRecentImageFromClipboard(
-      base::BindLambdaForTesting([&bitmap](absl::optional<gfx::Image> image) {
+      base::BindLambdaForTesting([&bitmap](std::optional<gfx::Image> image) {
         EXPECT_TRUE(gfx::BitmapsAreEqual(image->AsBitmap(), bitmap));
       }));
 }
@@ -243,10 +264,9 @@ TEST_F(ClipboardRecentContentGenericTest, HasRecentContentFromClipboard_URL) {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   // The linux and chromeos clipboard treats the presence of text on the
   // clipboard as the url format being available.
-  test_clipboard_->WriteText(url_text.data(), url_text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(url_text);
 #else
-  test_clipboard_->WriteBookmark(title.data(), title.length(), url_text.data(),
-                                 url_text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteBookmark(title, url_text);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
 
@@ -261,7 +281,7 @@ TEST_F(ClipboardRecentContentGenericTest, HasRecentContentFromClipboard_Text) {
   ClipboardRecentContentGeneric recent_content;
   base::Time now = base::Time::Now();
   std::string text = "  Foo Bar   ";
-  test_clipboard_->WriteText(text.data(), text.length(), ui::CopyOptionMode::NONE);
+  test_clipboard_->WriteText(text);
   test_clipboard_->SetLastModifiedTime(now - base::Seconds(10));
 
   HasDataCallbackWaiter waiter(&recent_content);

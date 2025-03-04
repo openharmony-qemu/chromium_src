@@ -18,6 +18,7 @@
 #include "build/build_config.h"
 #include "content/browser/browser_process_io_thread.h"
 #include "content/browser/browser_thread_impl.h"
+#include "content/common/features.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/common/content_features.h"
 
@@ -27,24 +28,14 @@
 #include "base/android/task_scheduler/task_traits_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "base/ohos/task_scheduler/task_traits_ohos.h"
+#endif
+
 using QueueType = content::BrowserTaskQueues::QueueType;
 
 namespace content {
-namespace features {
-// When the "BrowserPrioritizeInputQueue" feature is enabled, the browser will
-// schedule tasks related to input in kHigh priority queue. This puts it under
-// bootstrap, but above regular tasks.
-//
-// The goal is to reduce jank by ensuring chromium is handling input events as
-// soon as possible.
-//
-// TODO(nuskos): Remove this feature flag after we've done our retroactive study
-// of all chrometto performance improvements.
-BASE_FEATURE(kBrowserPrioritizeInputQueue,
-             "BrowserPrioritizeInputQueue",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-}  // namespace features
 
 namespace {
 
@@ -72,6 +63,27 @@ scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForAndroidMainThread(
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForOHOSMainThread(
+    ::TaskTraits ohos_traits) {
+  BrowserTaskTraits traits;
+  switch (ohos_traits) {
+    case ::TaskTraits::UI_BEST_EFFORT:
+      traits = {base::TaskPriority::BEST_EFFORT};
+      break;
+    case ::TaskTraits::UI_USER_VISIBLE:
+      traits = {base::TaskPriority::USER_VISIBLE};
+      break;
+    case ::TaskTraits::UI_USER_BLOCKING:
+      traits = {base::TaskPriority::USER_BLOCKING};
+      break;
+    default:
+      traits = {};
+  }
+  return g_browser_task_executor->GetUIThreadTaskRunner(traits);
+}
+#endif
+
 }  // namespace
 
 BaseBrowserTaskExecutor::BaseBrowserTaskExecutor() = default;
@@ -92,7 +104,6 @@ BaseBrowserTaskExecutor::GetTaskRunner(BrowserThread::ID identifier,
     case BrowserThread::ID_COUNT:
       NOTREACHED();
   }
-  return nullptr;
 }
 
 // static
@@ -100,16 +111,11 @@ QueueType BaseBrowserTaskExecutor::GetQueueType(
     const BrowserTaskTraits& traits) {
   switch (traits.task_type()) {
     case BrowserTaskType::kUserInput:
-      if (base::FeatureList::IsEnabled(
-              features::kBrowserPrioritizeInputQueue)) {
-        return QueueType::kUserInput;
-      }
-      // Defer to traits.priority() below.
-      break;
+      return QueueType::kUserInput;
 
     case BrowserTaskType::kNavigationNetworkResponse:
       if (base::FeatureList::IsEnabled(
-              ::features::kNavigationNetworkResponseQueue)) {
+              features::kNavigationNetworkResponseQueue)) {
         return QueueType::kNavigationNetworkResponse;
       }
       // Defer to traits.priority() below.
@@ -117,6 +123,13 @@ QueueType BaseBrowserTaskExecutor::GetQueueType(
 
     case BrowserTaskType::kServiceWorkerStorageControlResponse:
       return QueueType::kServiceWorkerStorageControlResponse;
+
+    case BrowserTaskType::kBeforeUnloadBrowserResponse:
+      if (base::FeatureList::IsEnabled(
+              features::kBeforeUnloadBrowserResponseQueue)) {
+        return QueueType::kBeforeUnloadBrowserResponse;
+      }
+      break;
 
     case BrowserTaskType::kDefault:
       // Defer to traits.priority() below.
@@ -184,6 +197,11 @@ void BrowserTaskExecutor::CreateInternal(
       base::BindRepeating(&GetTaskRunnerForAndroidMainThread));
   base::PostTaskAndroid::SignalNativeSchedulerReady();
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+  base::TaskRunnerOHOS::SetUiThreadTaskRunnerCallback(
+      base::BindRepeating(&GetTaskRunnerForOHOSMainThread));
+#endif
 }
 
 // static
@@ -212,17 +230,19 @@ void BrowserTaskExecutor::PostFeatureListSetup() {
 }
 
 // static
-absl::optional<BrowserUIThreadScheduler::UserInputActiveHandle>
+std::optional<BrowserUIThreadScheduler::UserInputActiveHandle>
 BrowserTaskExecutor::OnUserInputStart() {
   DCHECK(Get()->ui_thread_executor_);
-  return absl::optional<BrowserUIThreadScheduler::UserInputActiveHandle>(
+  return std::optional<BrowserUIThreadScheduler::UserInputActiveHandle>(
       Get()->ui_thread_executor_->OnUserInputStart());
 }
 
 // static
 void BrowserTaskExecutor::Shutdown() {
-  if (!g_browser_task_executor || !g_browser_task_executor->ui_thread_executor_)
+  if (!g_browser_task_executor ||
+      !g_browser_task_executor->ui_thread_executor_) {
     return;
+  }
 
   DCHECK(Get()->ui_thread_executor_);
   DCHECK(Get()->io_thread_executor_);
@@ -302,21 +322,21 @@ std::unique_ptr<BrowserProcessIOThread> BrowserTaskExecutor::CreateIOThread() {
   base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
   options.delegate = std::move(browser_io_thread_delegate);
-// TODO(1329208): Align Win ThreadType with other platforms. The platform
-// discrepancy stems from organic evolution of the thread priorities on each
-// platform and while it might make sense not to bump the priority of the IO
-// thread per Windows' priority boosts capabilities on MessagePumpForIO, this
+// TODO(crbug.com/40226692): Align Win ThreadType with other platforms. The
+// platform discrepancy stems from organic evolution of the thread priorities on
+// each platform and while it might make sense not to bump the priority of the
+// IO thread per Windows' priority boosts capabilities on MessagePumpForIO, this
 // should at least be aligned with what platform_thread_win.cc does for
 // ThreadType::kDisplayCritical (IO pumps in other processes) and it currently
 // does not.
 #if BUILDFLAG(IS_WIN)
   if (base::FeatureList::IsEnabled(base::kAboveNormalCompositingBrowserWin)) {
-    options.thread_type = base::ThreadType::kCompositing;
+    options.thread_type = base::ThreadType::kDisplayCritical;
   }
 #else
   // Up the priority of the |io_thread_| as some of its IPCs relate to
   // display tasks.
-  options.thread_type = base::ThreadType::kCompositing;
+  options.thread_type = base::ThreadType::kDisplayCritical;
 #endif
   if (!io_thread->StartWithOptions(std::move(options)))
     LOG(FATAL) << "Failed to start BrowserThread:IO";
@@ -331,7 +351,7 @@ BrowserTaskExecutor::UIThreadExecutor::UIThreadExecutor(
 
 BrowserTaskExecutor::UIThreadExecutor::~UIThreadExecutor() = default;
 
-absl::optional<BrowserUIThreadScheduler::UserInputActiveHandle>
+std::optional<BrowserUIThreadScheduler::UserInputActiveHandle>
 BrowserTaskExecutor::UIThreadExecutor::OnUserInputStart() {
   DCHECK(browser_ui_thread_scheduler_);
   return browser_ui_thread_scheduler_->OnUserInputStart();

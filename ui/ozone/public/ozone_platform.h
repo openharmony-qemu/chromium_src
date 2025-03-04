@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback.h"
@@ -26,7 +27,7 @@ class NativeDisplayDelegate;
 }
 
 namespace ui {
-enum class DomCode;
+enum class DomCode : uint32_t;
 enum class PlatformKeyboardHookTypes;
 
 class CursorFactory;
@@ -92,6 +93,13 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // TODO(fangzhoug): Some Chrome OS boards still use the legacy video
     // decoder. Remove this once ChromeOSVideoDecoder is on everywhere.
     bool allow_sync_and_real_buffer_page_flip_testing = false;
+
+    // TODO(b/331237773): Unfortunately, the kHandleOverlaysSwapFailure feature
+    // cannot be checked by the overlay manager in ozone/drm directly as it
+    // creates a circular dependency that gn complains about. That's why this
+    // control bool is here. Remove this once kHandleOverlaysSwapFailure is
+    // removed and DrmOverlayManager is always handling swap failures.
+    bool handle_overlays_swap_failure = false;
   };
 
   // Struct used to indicate platform properties.
@@ -140,25 +148,21 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // back via gpu extra info.
     bool fetch_buffer_formats_for_gmb_on_gpu = false;
 
-#if BUILDFLAG(IS_LINUX)
-    // TODO(crbug.com/1116701): add vaapi support for other Ozone platforms on
-    // Linux. At the moment, VA-API Linux implementation supports only X11
-    // backend. This implementation must be refactored to support Ozone
-    // properly. As a temporary solution, VA-API on Linux checks if vaapi is
-    // supported (which implicitly means that it is Ozone/X11).
-    bool supports_vaapi = false;
-#endif
-
     // Indicates that the platform allows client applications to manipulate
     // global screen coordinates. Wayland, for example, disallow it by design.
     bool supports_global_screen_coordinates = true;
+
+    // Whether the platform supports system/shell integrated color picker
+    // dialog. An example is XDG Desktop Portal provided PickColor dialog.
+    bool supports_color_picker_dialog = true;
   };
 
   // Groups platform properties that can only be known at run time.
   struct PlatformRuntimeProperties {
-    // Values to override the value of the
-    // supports_server_side_window_decorations property in tests.
-    enum class SupportsSsdForTest {
+    PlatformRuntimeProperties();
+
+    // Values to override the value of a property in tests.
+    enum class SupportsForTest {
       kNotSet,  // The property is not overridden.
       kYes,     // The platform should return true.
       kNo,      // The plafrorm should return false.
@@ -175,14 +179,18 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     // this parameter allows setting the desired state in tests.  The platform
     // must have the appropriate logic in its GetPlatformRuntimeProperties()
     // method.
-    static SupportsSsdForTest override_supports_ssd_for_test;
+    static SupportsForTest override_supports_ssd_for_test;
 
     // Wayland only: determines whether solid color overlays can be delegated
     // without a backing image via a wayland protocol.
     bool supports_non_backed_solid_color_buffers = false;
 
+    // Wayland only: determines whether single pixel buffer protocol is
+    // supported.
+    bool supports_single_pixel_buffer = false;
+
     // Indicates whether the platform supports native pixmaps.
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     bool supports_native_pixmaps = true;
 #else
     bool supports_native_pixmaps = false;
@@ -193,16 +201,41 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
     bool needs_background_image = false;
 
     // Wayland only: determines whether clip rects can be delegated via the
-    // wayland protocol.
+    // wayland protocol when no quad is out of window.
     bool supports_clip_rect = false;
 
     // Wayland only: determine whether toplevel surfaces can be activated and
     // deactivated.
     bool supports_activation = false;
 
-    // Wayland only: determines whether tooltip can be delegated via wayland
-    // protocol.
-    bool supports_tooltip = false;
+    // Wayland only: determines whether non axis-aligned 2d transforms can be
+    // delegated via the wayland protocol.
+    bool supports_affine_transform = false;
+
+    // Wayland only: determines whether clip rects can be delegated via the
+    // wayland protocol when some quads are out of window.
+    // TODO(crbug.com/40277728): The flag is currently disabled by default since
+    // there is a bug. Set this flag to enabled in GPU process when the
+    // remaining issues are resolved.
+    bool supports_out_of_window_clip_rect = false;
+
+    // Wayland only: whether wayland server has the fix that applies
+    // transformations in the correct order.
+    bool has_transformation_fix = false;
+
+    // Wayland only: whether bubble widgets can use platform objects.
+    bool supports_subwindows_as_accelerated_widgets = false;
+
+    // Indicates whether the platform supports system-controlled per-window
+    // scaling.
+    bool supports_per_window_scaling = false;
+
+    // Whether status icon windows (with a wm_role_name of
+    // ui::kStatusIconWmRoleName) are supported.
+    bool supports_system_tray_windowing = false;
+
+    // Allows overriding whether per window scaling is enabled in tests.
+    static SupportsForTest override_supports_per_window_scaling_for_test;
   };
 
   // Corresponds to chrome_browser_main_extra_parts.h.
@@ -292,12 +325,15 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
   virtual std::unique_ptr<PlatformKeyboardHook> CreateKeyboardHook(
       PlatformKeyboardHookTypes type,
       base::RepeatingCallback<void(KeyEvent* event)> callback,
-      absl::optional<base::flat_set<DomCode>> dom_codes,
+      std::optional<base::flat_set<DomCode>> dom_codes,
       gfx::AcceleratedWidget accelerated_widget);
 
   // Returns true if the specified buffer format is supported.
   virtual bool IsNativePixmapConfigSupported(gfx::BufferFormat format,
                                              gfx::BufferUsage usage) const;
+
+  // Whether the platform supports compositing windows with transparency.
+  virtual bool IsWindowCompositingSupported() const = 0;
 
   // Returns whether a custom frame should be used for windows.
   // The default behaviour is returning what is suggested by the
@@ -346,6 +382,8 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
   // ensure that calls happen on the right thread.
   virtual std::unique_ptr<PlatformUserInputMonitor> GetPlatformUserInputMonitor(
       const scoped_refptr<base::SingleThreadTaskRunner>& io_task_runner);
+
+  virtual void DumpState(std::ostream& out) const {}
 
  protected:
   bool has_initialized_ui() const { return initialized_ui_; }

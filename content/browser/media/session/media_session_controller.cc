@@ -38,24 +38,24 @@ void MediaSessionController::SetMetadata(
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
-  LOG(INFO) << "MediaSessionController mediaContentType is:" << static_cast<uint32_t>(media_content_type_);
   AddOrRemovePlayer();
 }
 
 bool MediaSessionController::OnPlaybackStarted() {
   is_paused_ = false;
   is_playback_in_progress_ = true;
-#if defined(OHOS_MEDIA_POLICY)
-  media_session_->SetPlayingState(true);
-  LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState true";
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  if (media_session_) {
+    media_session_->SetPlayingState(true);
+    media_session_->SetPauseByAvsession(false);
+  }
 #endif
   return AddOrRemovePlayer();
 }
 
 void MediaSessionController::OnSuspend(int player_id) {
-  LOG(INFO) << "MediaSessionController::OnSuspend, player_id: " << player_id;
   DCHECK_EQ(player_id_, player_id);
-  // TODO(crbug.com/953645): Set triggered_by_user to true ONLY if that action
+  // TODO(crbug.com/40623496): Set triggered_by_user to true ONLY if that action
   // was actually triggered by user as this will activate the frame.
   web_contents_->media_web_contents_observer()
       ->GetMediaPlayerRemote(id_)
@@ -69,18 +69,22 @@ void MediaSessionController::OnResume(int player_id) {
       ->RequestPlay();
 }
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 void MediaSessionController::OnSetHtmlPlayEnabled(int player_id, bool enabled) {
   DCHECK_EQ(player_id_, player_id);
-  if (!web_contents_)
+  if (!web_contents_) {
     return;
+  }
   auto web_contents_observer = web_contents_->media_web_contents_observer();
-  if (!web_contents_observer)
+  if (!web_contents_observer) {
     return;
-  if(web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_))
-    web_contents_observer->GetMediaPlayerRemote(id_)->SetHtmlPlayEnabled(enabled);
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->SetHtmlPlayEnabled(
+        enabled);
+  }
 }
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionController::OnSeekForward(int player_id,
                                            base::TimeDelta seek_time) {
@@ -125,14 +129,6 @@ void MediaSessionController::OnEnterPictureInPicture(int player_id) {
       ->RequestEnterPictureInPicture();
 }
 
-void MediaSessionController::OnExitPictureInPicture(int player_id) {
-  DCHECK_EQ(player_id_, player_id);
-
-  web_contents_->media_web_contents_observer()
-      ->GetMediaPlayerRemote(id_)
-      ->RequestExitPictureInPicture();
-}
-
 void MediaSessionController::OnSetAudioSinkId(
     int player_id,
     const std::string& raw_device_id) {
@@ -142,18 +138,22 @@ void MediaSessionController::OnSetAudioSinkId(
   if (!render_frame_host)
     return;
 
-  // The sink id needs to be hashed before it is suitable for use in the
-  // renderer process.
-  auto salt_and_origin = content::GetMediaDeviceSaltAndOrigin(
-      render_frame_host->GetProcess()->GetID(),
-      render_frame_host->GetRoutingID());
+  GetHMACFromRawDeviceId(
+      render_frame_host->GetGlobalId(), raw_device_id,
+      base::BindOnce(&MediaSessionController::OnHashedSinkIdReceived,
+                     weak_factory_.GetWeakPtr()));
+}
 
-  std::string hashed_sink_id = GetHMACForMediaDeviceID(
-      salt_and_origin.device_id_salt, salt_and_origin.origin, raw_device_id);
-
+void MediaSessionController::OnHashedSinkIdReceived(
+    const std::string& hashed_sink_id) {
   // Grant the renderer the permission to use this audio output device.
-  static_cast<RenderFrameHostImpl*>(render_frame_host)
-      ->SetAudioOutputDeviceIdForGlobalMediaControls(hashed_sink_id);
+  auto* render_frame_host_impl =
+      RenderFrameHostImpl::FromID(id_.frame_routing_id);
+  if (!render_frame_host_impl) {
+    return;
+  }
+  render_frame_host_impl->SetAudioOutputDeviceIdForGlobalMediaControls(
+      hashed_sink_id);
 
   web_contents_->media_web_contents_observer()
       ->GetMediaPlayerRemote(id_)
@@ -183,12 +183,21 @@ void MediaSessionController::OnRequestMediaRemoting(int player_id) {
       ->RequestMediaRemoting();
 }
 
+void MediaSessionController::OnRequestVisibility(
+    int player_id,
+    RequestVisibilityCallback request_visibility_callback) {
+  DCHECK_EQ(player_id_, player_id);
+  web_contents_->media_web_contents_observer()
+      ->GetMediaPlayerRemote(id_)
+      ->RequestVisibility(std::move(request_visibility_callback));
+}
+
 RenderFrameHost* MediaSessionController::render_frame_host() const {
   return RenderFrameHost::FromID(id_.frame_routing_id);
 }
 
-absl::optional<media_session::MediaPosition>
-MediaSessionController::GetPosition(int player_id) const {
+std::optional<media_session::MediaPosition> MediaSessionController::GetPosition(
+    int player_id) const {
   DCHECK_EQ(player_id_, player_id);
   return position_;
 }
@@ -198,21 +207,26 @@ bool MediaSessionController::IsPictureInPictureAvailable(int player_id) const {
   return is_picture_in_picture_available_;
 }
 
+bool MediaSessionController::HasSufficientlyVisibleVideo(int player_id) const {
+  DCHECK_EQ(player_id_, player_id);
+  return has_sufficiently_visible_video_;
+}
+
 void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
   is_paused_ = true;
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   media_session_->SetPlayingState(false);
   LOG(INFO) << "MediaSessionController OnPlaybackStarted SetPlayingState false";
 #endif
   if (reached_end_of_stream) {
-#if defined(OHOS_MEDIA_AVSESSION)
-  if (media_session_) {
-    media_session_->SetEndOfMedia(reached_end_of_stream);
-  }
-#endif // defined(OHOS_MEDIA_AVSESSION)
     is_playback_in_progress_ = false;
     AddOrRemovePlayer();
   }
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (media_session_) {
+    media_session_->SetEndOfMedia(reached_end_of_stream);
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -229,11 +243,11 @@ void MediaSessionController::WebContentsMutedStateChanged(bool muted) {
   AddOrRemovePlayer();
 }
 
-#if defined(OHOS_MEDIA_POLICY)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 void MediaSessionController::SetHtmlPlayEnabled(bool enabled) {
   OnSetHtmlPlayEnabled(player_id_, enabled);
 }
-#endif // defined(OHOS_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionController::OnMediaPositionStateChanged(
     const media_session::MediaPosition& position) {
@@ -265,6 +279,13 @@ void MediaSessionController::OnAudioOutputSinkChangingDisabled() {
 void MediaSessionController::OnRemotePlaybackMetadataChanged(
     media_session::mojom::RemotePlaybackMetadataPtr metadata) {
   media_session_->SetRemotePlaybackMetadata(std::move(metadata));
+  AddOrRemovePlayer();
+}
+
+void MediaSessionController::OnVideoVisibilityChanged(
+    bool meets_visibility_threshold) {
+  has_sufficiently_visible_video_ = meets_visibility_threshold;
+  media_session_->OnVideoVisibilityChanged();
 }
 
 bool MediaSessionController::IsMediaSessionNeeded() const {
@@ -274,36 +295,31 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
   if (!is_playback_in_progress_)
     return false;
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (media_content_type_ == media::MediaContentType::kTransient) {
+    LOG(INFO) << __func__
+              << ", media_content_type_: media::MediaContentType::Transient";
+    return false;
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+
+  // If the media content has an associated Remote Playback session started, we
+  // should request audio focus regardless of whether the tab is muted.
+  media_session::mojom::MediaSessionInfoPtr session_info =
+      media_session_->GetMediaSessionInfoSync();
+  if (session_info && session_info->remote_playback_metadata &&
+      session_info->remote_playback_metadata->remote_playback_started) {
+    return true;
+  }
+
   // We want to make sure we do not request audio focus on a muted tab as it
   // would break user expectations by pausing/ducking other playbacks.
   return has_audio_ && !web_contents_->IsAudioMuted();
 }
 
-#if defined(OHOS_MEDIA_POLICY)
-void MediaSessionController::SetSessionStateIfNeed(bool isNeedMediaSession)
-{
-  if (!media_session_) {
-    return;
-  }
-  if (media_content_type_ == media::MediaContentType::OneShot) {
-    LOG(INFO) << "MediaSessionController contentType is oneShot, don't control mediaSession";
-    return;
-  }
-  if (isNeedMediaSession) {
-    LOG(INFO) << "MediaSessionController media has mediaSession";
-    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NEED);
-  } else {
-    LOG(INFO) << "MediaSessionController media is preloading, has no mediaSession";
-    media_session_->SetSessionState(MediaSessionImpl::NWebMediaSessionState::NONEED);
-  }
-}
-#endif
-
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-#if defined(OHOS_MEDIA_POLICY)
-  SetSessionStateIfNeed(needs_session);
-#endif
+
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate
@@ -334,6 +350,11 @@ bool MediaSessionController::HasAudio(int player_id) const {
 bool MediaSessionController::HasVideo(int player_id) const {
   DCHECK_EQ(player_id_, player_id);
   return has_video_;
+}
+
+bool MediaSessionController::IsPaused(int player_id) const {
+  DCHECK_EQ(player_id_, player_id);
+  return is_paused_;
 }
 
 std::string MediaSessionController::GetAudioOutputSinkId(int player_id) const {

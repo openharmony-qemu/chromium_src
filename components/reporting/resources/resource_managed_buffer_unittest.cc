@@ -2,19 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <cstdint>
 #include <string>
 
 #include "components/reporting/resources/resource_managed_buffer.h"
 
-#include <base/memory/scoped_refptr.h>
-#include <base/task/thread_pool.h>
-#include <base/test/task_environment.h>
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
-
+#include "base/memory/scoped_refptr.h"
+#include "base/task/thread_pool.h"
+#include "base/test/task_environment.h"
 #include "components/reporting/resources/resource_manager.h"
 #include "components/reporting/util/status.h"
+#include "components/reporting/util/status_macros.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 
 using ::testing::AllOf;
 using ::testing::Eq;

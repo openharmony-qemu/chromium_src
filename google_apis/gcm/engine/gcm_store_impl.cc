@@ -4,6 +4,8 @@
 
 #include "google_apis/gcm/engine/gcm_store_impl.h"
 
+#include <optional>
+#include <string_view>
 #include <utility>
 
 #include "base/files/file_path.h"
@@ -16,7 +18,6 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/strings/string_util.h"
 #include "base/task/sequenced_task_runner.h"
@@ -188,8 +189,8 @@ std::string ParseInstanceIDKey(const std::string& key) {
 // Note: leveldb::Slice keeps a pointer to the data in |s|, which must therefore
 // outlive the slice.
 // For example: MakeSlice(MakeOutgoingKey(x)) is invalid.
-leveldb::Slice MakeSlice(const base::StringPiece& s) {
-  return leveldb::Slice(s.begin(), s.size());
+leveldb::Slice MakeSlice(std::string_view s) {
+  return leveldb::Slice(s.data(), s.size());
 }
 
 }  // namespace
@@ -198,7 +199,6 @@ class GCMStoreImpl::Backend
     : public base::RefCountedThreadSafe<GCMStoreImpl::Backend> {
  public:
   Backend(const base::FilePath& path,
-          bool remove_account_mappings_with_email_key,
           scoped_refptr<base::SequencedTaskRunner> foreground_runner,
           std::unique_ptr<Encryptor> encryptor);
 
@@ -272,7 +272,6 @@ class GCMStoreImpl::Backend
   bool LoadInstanceIDData(std::map<std::string, std::string>* instance_id_data);
 
   const base::FilePath path_;
-  bool remove_account_mappings_with_email_key_;
   scoped_refptr<base::SequencedTaskRunner> foreground_task_runner_;
   std::unique_ptr<Encryptor> encryptor_;
 
@@ -281,12 +280,9 @@ class GCMStoreImpl::Backend
 
 GCMStoreImpl::Backend::Backend(
     const base::FilePath& path,
-    bool remove_account_mappings_with_email_key,
     scoped_refptr<base::SequencedTaskRunner> foreground_task_runner,
     std::unique_ptr<Encryptor> encryptor)
     : path_(path),
-      remove_account_mappings_with_email_key_(
-          remove_account_mappings_with_email_key),
       foreground_task_runner_(foreground_task_runner),
       encryptor_(std::move(encryptor)) {}
 
@@ -311,6 +307,13 @@ LoadStatus GCMStoreImpl::Backend::OpenStoreAndLoadData(StoreOpenMode open_mode,
   leveldb_env::Options options;
   options.create_if_missing = open_mode == CREATE_IF_MISSING;
   options.paranoid_checks = true;
+
+  // GCMStore does not typically handle large amounts of data, nor a
+  // high rate of store operations, so limit the write log size to something
+  // more appropriate (impact both in-memory and on-disk size before
+  // LevelDB compaction will be triggered).
+  options.write_buffer_size = 128 * 1024;
+
   leveldb::Status status =
       leveldb_env::OpenDB(options, path_.AsUTF8Unsafe(), &db_);
   UMA_HISTOGRAM_ENUMERATION("GCM.Database.Open",
@@ -356,7 +359,7 @@ void GCMStoreImpl::Backend::Load(StoreOpenMode open_mode,
                                  LoadCallback callback) {
   std::unique_ptr<LoadResult> result(new LoadResult());
   LoadStatus load_status = OpenStoreAndLoadData(open_mode, result.get());
-  UMA_HISTOGRAM_ENUMERATION("GCM.LoadStatus", load_status, LOAD_STATUS_COUNT);
+
   if (load_status != LOADING_SUCCEEDED) {
     result->Reset();
     result->store_does_not_exist = (load_status == STORE_DOES_NOT_EXIST);
@@ -379,10 +382,10 @@ void GCMStoreImpl::Backend::Load(StoreOpenMode open_mode,
 
   // Only record histograms if GCM had already been set up for this device.
   if (result->device_android_id != 0 && result->device_security_token != 0) {
-    int64_t file_size = 0;
-    if (base::GetFileSize(path_, &file_size)) {
+    std::optional<int64_t> file_size = base::GetFileSize(path_);
+    if (file_size.has_value()) {
       UMA_HISTOGRAM_COUNTS_1M("GCM.StoreSizeKB",
-                              static_cast<int>(file_size / 1024));
+                              static_cast<int>(file_size.value() / 1024));
     }
   }
 
@@ -1025,8 +1028,6 @@ bool GCMStoreImpl::Backend::LoadIncomingMessages(
   if (!expired_incoming_messages.empty()) {
     DVLOG(1) << "Removing " << expired_incoming_messages.size()
              << " expired incoming messages.";
-    UMA_HISTOGRAM_COUNTS_1M("GCM.ExpiredIncomingMessages",
-                            expired_incoming_messages.size());
     RemoveIncomingMessages(expired_incoming_messages, base::DoNothing());
   }
   return true;
@@ -1146,13 +1147,7 @@ bool GCMStoreImpl::Backend::LoadAccountMappingInfo(
   }
 
   for (const auto& account_mapping : loaded_account_mappings) {
-    bool remove = remove_account_mappings_with_email_key_ &&
-                  account_mapping.account_id.IsEmail();
-    if (remove) {
-      RemoveAccountMapping(account_mapping.account_id, base::DoNothing());
-    } else {
-      account_mappings->push_back(account_mapping);
-    }
+    account_mappings->push_back(account_mapping);
   }
 
   return true;
@@ -1227,11 +1222,9 @@ bool GCMStoreImpl::Backend::LoadInstanceIDData(
 
 GCMStoreImpl::GCMStoreImpl(
     const base::FilePath& path,
-    bool remove_account_mappings_with_email_key,
     scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
     std::unique_ptr<Encryptor> encryptor)
     : backend_(new Backend(path,
-                           remove_account_mappings_with_email_key,
                            base::SingleThreadTaskRunner::GetCurrentDefault(),
                            std::move(encryptor))),
       blocking_task_runner_(blocking_task_runner) {}

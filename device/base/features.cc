@@ -8,12 +8,6 @@
 
 namespace device {
 
-#if BUILDFLAG(IS_MAC)
-BASE_FEATURE(kNewUsbBackend,
-             "NewUsbBackend",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-#endif  // BUILDFLAG(IS_MAC)
-
 #if BUILDFLAG(IS_WIN)
 // Controls whether a more reliable GATT session handling
 // implementation is used on Windows 10 1709 (RS3) and beyond.
@@ -25,6 +19,7 @@ BASE_FEATURE(kNewBLEGattSessionHandling,
 #endif  // BUILDFLAG(IS_WIN)
 
 namespace features {
+
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
 // Controls whether Web Bluetooth should support confirm-only and confirm-PIN
 // pairing mode on Win/Linux
@@ -32,5 +27,14 @@ BASE_FEATURE(kWebBluetoothConfirmPairingSupport,
              "WebBluetoothConfirmPairingSupport",
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
+
+#if BUILDFLAG(IS_WIN)
+// Controls whether to use uncached mode when triggering GATT discovery for
+// creating a GATT connection.
+BASE_FEATURE(kUncachedGattDiscoveryForGattConnection,
+             "UncachedGattDiscoveryForGattConnection",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_WIN)
+
 }  // namespace features
 }  // namespace device

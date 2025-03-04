@@ -43,8 +43,7 @@ class GpuChannelManagerDelegate {
   virtual void DidDestroyOffscreenContext(const GURL& active_url) = 0;
 
   // Tells the delegate that a context was lost.
-  virtual void DidLoseContext(bool offscreen,
-                              error::ContextLostReason reason,
+  virtual void DidLoseContext(error::ContextLostReason reason,
                               const GURL& active_url) = 0;
 
   // Tells the delegate to cache the given blob information in persistent
@@ -69,7 +68,9 @@ class GpuChannelManagerDelegate {
   // delegate might cause a deliberate crash if it determines that the context
   // loss is irrecoverable and that crashing is better than entering a context
   // loss loop). This can only be called from the GPU thread.
-  virtual void MaybeExitOnContextLost(bool synthetic_loss) = 0;
+  virtual void MaybeExitOnContextLost(
+      bool synthetic_loss,
+      error::ContextLostReason context_lost_reason) = 0;
 
   // Returns true if the GPU process is exiting. This can be called from any
   // thread.

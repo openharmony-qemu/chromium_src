@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "content/browser/renderer_host/frame_navigation_entry.h"
+#include "content/browser/renderer_host/navigation_state_keep_alive.h"
 #include "content/browser/renderer_host/policy_container_host.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "services/network/public/cpp/web_sandbox_flags.h"
@@ -31,17 +32,17 @@ std::unique_ptr<PolicyContainerPolicies> GetParentPolicies(
 //
 // Must only be called on the browser's UI thread.
 std::unique_ptr<PolicyContainerPolicies> GetInitiatorPolicies(
-    const blink::LocalFrameToken* frame_token) {
+    const blink::LocalFrameToken* frame_token,
+    int initiator_process_id,
+    StoragePartitionImpl* storage_partition) {
   if (!frame_token) {
     return nullptr;
   }
 
-  // We use PolicyContainerHost::FromFrameToken directly since this will
-  // retrieve the PolicyContainerHost of the initiator RenderFrameHost even if
-  // the RenderFrameHost has already been deleted.
   PolicyContainerHost* initiator_policy_container_host =
-      PolicyContainerHost::FromFrameToken(*frame_token);
-  DCHECK(initiator_policy_container_host);
+      RenderFrameHostImpl::GetPolicyContainerHost(
+          frame_token, initiator_process_id, storage_partition);
+
   if (!initiator_policy_container_host) {
     // Guard against wrong tokens being passed accidentally.
     return nullptr;
@@ -70,9 +71,14 @@ std::unique_ptr<PolicyContainerPolicies> GetHistoryPolicies(
 NavigationPolicyContainerBuilder::NavigationPolicyContainerBuilder(
     RenderFrameHostImpl* parent,
     const blink::LocalFrameToken* initiator_frame_token,
+    int initiator_process_id,
+    StoragePartition* storage_partition,
     const FrameNavigationEntry* history_entry)
     : parent_policies_(GetParentPolicies(parent)),
-      initiator_policies_(GetInitiatorPolicies(initiator_frame_token)),
+      initiator_policies_(GetInitiatorPolicies(
+          initiator_frame_token,
+          initiator_process_id,
+          static_cast<StoragePartitionImpl*>(storage_partition))),
       history_policies_(GetHistoryPolicies(history_entry)) {}
 
 NavigationPolicyContainerBuilder::~NavigationPolicyContainerBuilder() = default;
@@ -104,6 +110,12 @@ void NavigationPolicyContainerBuilder::SetIsOriginPotentiallyTrustworthy(
   delivered_policies_.is_web_secure_context = value;
 }
 
+void NavigationPolicyContainerBuilder::SetAllowCrossOriginIsolation(
+    bool value) {
+  DCHECK(!HasComputedPolicies());
+  delivered_policies_.allow_cross_origin_isolation = value;
+}
+
 void NavigationPolicyContainerBuilder::AddContentSecurityPolicy(
     network::mojom::ContentSecurityPolicyPtr policy) {
   DCHECK(!HasComputedPolicies());
@@ -133,6 +145,13 @@ void NavigationPolicyContainerBuilder::SetCrossOriginEmbedderPolicy(
   delivered_policies_.cross_origin_embedder_policy = coep;
 }
 
+void NavigationPolicyContainerBuilder::SetDocumentIsolationPolicy(
+    const network::DocumentIsolationPolicy& dip) {
+  DCHECK(!HasComputedPolicies());
+
+  delivered_policies_.document_isolation_policy = dip;
+}
+
 const PolicyContainerPolicies&
 NavigationPolicyContainerBuilder::DeliveredPoliciesForTesting() const {
   DCHECK(!HasComputedPolicies());
@@ -148,7 +167,7 @@ void NavigationPolicyContainerBuilder::ComputePoliciesForError() {
 
   DCHECK(!HasComputedPolicies());
 
-  // TODO(https://crbug.com/1175787): We should enforce strict policies on error
+  // TODO(crbug.com/40747546): We should enforce strict policies on error
   // pages.
   PolicyContainerPolicies policies;
 
@@ -195,9 +214,23 @@ void NavigationPolicyContainerBuilder::ComputeSandboxFlags(
   // sandboxed, providing exceptions only for creating new windows. This
   // includes disallowing javascript and using an opaque origin.
   if (is_inside_mhtml) {
-    sandbox_flags_to_commit |= ~network::mojom::WebSandboxFlags::kPopups &
-                               ~network::mojom::WebSandboxFlags::
-                                   kPropagatesToAuxiliaryBrowsingContexts;
+    network::mojom::WebSandboxFlags allowed_flags =
+        network::mojom::WebSandboxFlags::kPopups |
+        network::mojom::WebSandboxFlags::kPropagatesToAuxiliaryBrowsingContexts;
+
+    // Allow JS to execute in saved MHTML documents, since certain constructs
+    // like custom elements, require additional JS to support. This is believed
+    // to be safe because:
+    // - MHTML serialization generally tries to drop script, though this is on
+    //   a best-effort basis
+    // - a MHTML document and all its descendant frames are sandboxed without
+    //   the allow-same-origin flag, so even though an MHTML archive can claim
+    //   to contain resources from arbitrary URLs, each frame will have a
+    //   unique opaque origin, which should limit any potential damage.
+    if (base::FeatureList::IsEnabled(blink::features::kMHTML_Improvements)) {
+      allowed_flags |= network::mojom::WebSandboxFlags::kScripts;
+    }
+    sandbox_flags_to_commit |= ~allowed_flags;
   }
 
   policies.sandbox_flags = sandbox_flags_to_commit;

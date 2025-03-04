@@ -43,6 +43,11 @@
 // when the effect of the tap is on the browser side (e.g. showing a popup).
 + (id<GREYAction>)tapWebElementUnverified:(ElementSelector*)selector;
 
+// Action to long press on the center of an element. This is mostly to be used
+// when the element is occulted by something and so the grey_longPress action
+// would fail.
++ (id<GREYAction>)longPressOnHiddenElement;
+
 // Action to scroll to top of a collection.
 // On iOS 13 the settings menu appears as a card that can be dismissed with a
 // downward swipe, for this reason we need to swipe up programatically to
@@ -58,6 +63,12 @@
 // Action to swipe a TableViewCell enough to display the "Delete" button and
 // not too much to have the cell being deleted right away.
 + (id<GREYAction>)swipeToShowDeleteButton;
+
+// Action to simulate the behaviour of swiping right using the 3-finger gesture
+// with VoiceOver. To simulate it, it is changing the content offset and
+// triggering scroll view delegate methods as there is no way to actually
+// trigger the gesture.
++ (id<GREYAction>)accessibilitySwipeRight;
 
 @end
 

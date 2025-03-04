@@ -4,11 +4,13 @@
 
 #import "ios/chrome/browser/ui/settings/notifications/notifications_constants.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-NSString* const kNotificationsTableViewId = @"kNotificationsTableViewId";
-
 NSString* const kSettingsNotificationsPriceTrackingCellId =
     @"kSettingsNotificationsPriceTrackingCellId";
+
+NSString* const kSettingsNotificationsContentCellId =
+    @"kSettingsNotificationsContentCellId";
+
+NSString* const kNewspaperSFSymbol = @"newspaper";
+
+NSString* const kNotificationsBannerTableViewId =
+    @"kNotificationsBannerTableViewId";

@@ -8,10 +8,6 @@
 
 #import "base/notreached.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace ios {
 namespace provider {
 
@@ -22,10 +18,19 @@ bool IsUserFeedbackSupported() {
 UIViewController* CreateUserFeedbackViewController(
     UserFeedbackConfiguration* configuration) {
   NOTREACHED() << "User feedback reporting not supported.";
-  return nil;
 }
 
 void UploadAllPendingUserFeedback() {
+  NOTREACHED() << "User feedback reporting not supported.";
+}
+
+bool CanUseStartUserFeedbackFlow() {
+  NOTREACHED() << "User feedback reporting not supported.";
+}
+
+bool StartUserFeedbackFlow(UserFeedbackConfiguration* configuration,
+                           UIViewController* presenting_view_controller,
+                           NSError** error) {
   NOTREACHED() << "User feedback reporting not supported.";
 }
 

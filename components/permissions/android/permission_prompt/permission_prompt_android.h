@@ -6,13 +6,12 @@
 #define COMPONENTS_PERMISSIONS_ANDROID_PERMISSION_PROMPT_PERMISSION_PROMPT_ANDROID_H_
 
 #include <memory>
-#include <string>
-
 #include "base/memory/raw_ptr.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "components/permissions/permission_prompt.h"
 #include "components/permissions/permission_uma_util.h"
 #include "components/permissions/permissions_client.h"
+#include "ui/gfx/geometry/rect.h"
 
 namespace content {
 class WebContents;
@@ -40,14 +39,22 @@ class PermissionPromptAndroid : public PermissionPrompt {
   // PermissionPrompt:
   bool UpdateAnchor() override;
   TabSwitchingBehavior GetTabSwitchingBehavior() override;
+  std::optional<gfx::Rect> GetViewBoundsInScreen() const override;
+  bool ShouldFinalizeRequestAfterDecided() const override;
+  std::vector<permissions::ElementAnchoredBubbleVariant> GetPromptVariants()
+      const override;
+  bool IsAskPrompt() const override;
+  std::optional<permissions::feature_params::PermissionElementPromptPosition>
+  GetPromptPosition() const override;
 
   void Closing();
   void Accept();
+  void AcceptThisTime();
   void Deny();
   void SetManageClicked();
   void SetLearnMoreClicked();
   bool ShouldCurrentRequestUseQuietUI();
-  absl::optional<PermissionUiSelector::QuietUiReason> ReasonForUsingQuietUi()
+  std::optional<PermissionUiSelector::QuietUiReason> ReasonForUsingQuietUi()
       const;
 
   // We show one permission at a time except for grouped mic+camera, for which
@@ -55,9 +62,12 @@ class PermissionPromptAndroid : public PermissionPrompt {
   size_t PermissionCount() const;
   ContentSettingsType GetContentSettingType(size_t position) const;
   int GetIconId() const;
-  std::u16string GetTitleText() const;
-  std::u16string GetMessageText() const;
 
+  PermissionRequest::AnnotatedMessageText GetAnnotatedMessageText() const;
+
+  bool ShouldUseRequestingOriginFavicon() const;
+
+  GURL GetRequestingOrigin() const;
   content::WebContents* web_contents() { return web_contents_; }
 
  private:

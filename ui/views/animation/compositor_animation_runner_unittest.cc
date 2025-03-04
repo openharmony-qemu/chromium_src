@@ -44,6 +44,11 @@ TEST_F(CompositorAnimationRunnerTest, BasicCoverageTest) {
                        }));
 
   run_loop.Run();
+
+  // Verifies that AnimationDelegateViews carries location of call sites
+  // instead of implementation.
+  EXPECT_STREQ(base::Location::Current().file_name(),
+               delegate.location_for_test().file_name());
 }
 
 namespace {
@@ -66,7 +71,9 @@ class TestAnimationDelegateViews : public AnimationDelegateViews {
 
 }  // namespace
 
-// Tests that ui::ThroughputTracker will report for gfx::Animation.
+#if BUILDFLAG(IS_CHROMEOS)
+// Tests that ui::ThroughputTracker will report for gfx::Animation. Only
+// supported on ChromeOS.
 TEST_F(CompositorAnimationRunnerTest, ThroughputTracker) {
   WidgetAutoclosePtr widget(CreateTopLevelPlatformWidget());
   widget->Show();
@@ -133,6 +140,7 @@ TEST_F(CompositorAnimationRunnerTest, ThroughputTracker) {
   EXPECT_EQ(1, report_count);
   EXPECT_EQ(1, report_count2);
 }
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 // No DesktopAura on ChromeOS.
 // Each widget on MACOSX has its own ui::Compositor.

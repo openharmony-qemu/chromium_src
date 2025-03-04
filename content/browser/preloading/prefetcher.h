@@ -7,11 +7,13 @@
 
 #include "content/browser/preloading/speculation_host_devtools_observer.h"
 #include "content/public/browser/speculation_host_delegate.h"
+#include "services/network/public/mojom/devtools_observer.mojom-forward.h"
 
 namespace content {
 
 class RenderFrameHost;
 class RenderFrameHostImpl;
+class PreloadingPredictor;
 
 // Handles speculation-rules bases prefetches.
 // TODO(isaboori  crbug.com/1384496): Currently Prefetcher class supports the
@@ -30,8 +32,13 @@ class CONTENT_EXPORT Prefetcher : public SpeculationHostDevToolsObserver {
   ~Prefetcher();
 
   // SpeculationHostDevToolsObserver implementation:
-  void OnStartSinglePrefetch(const std::string& request_id,
-                             const network::ResourceRequest& request) override;
+  void OnStartSinglePrefetch(
+      const std::string& request_id,
+      const network::ResourceRequest& request,
+      std::optional<
+          std::pair<const GURL&,
+                    const network::mojom::URLResponseHeadDevToolsInfo&>>
+          redirect_info) override;
   void OnPrefetchResponseReceived(
       const GURL& url,
       const std::string& request_id,
@@ -52,9 +59,10 @@ class CONTENT_EXPORT Prefetcher : public SpeculationHostDevToolsObserver {
   }
 
   void ProcessCandidatesForPrefetch(
-      const absl::optional<base::UnguessableToken>&
-          initiator_devtools_navigation_token,
       std::vector<blink::mojom::SpeculationCandidatePtr>& candidates);
+
+  bool MaybePrefetch(blink::mojom::SpeculationCandidatePtr candidate,
+                     const PreloadingPredictor& enacting_predictor);
 
   // Whether the prefetch attempt for target |url| failed or discarded.
   bool IsPrefetchAttemptFailedOrDiscarded(const GURL& url);

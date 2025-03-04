@@ -11,7 +11,9 @@
 #include "base/memory/raw_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
+#include "base/types/optional_ref.h"
 #include "cc/cc_export.h"
+#include "cc/input/browser_controls_offset_tags_info.h"
 #include "cc/input/browser_controls_state.h"
 #include "cc/trees/layer_tree_host.h"
 #include "cc/trees/paint_holding_reason.h"
@@ -27,10 +29,6 @@ class LayerTreeMutator;
 class PaintWorkletLayerPainter;
 class ProxyImpl;
 class RenderFrameMetadataObserver;
-
-namespace devtools_instrumentation {
-struct ScopedCommitTrace;
-}
 
 // This class aggregates all interactions that the impl side of the compositor
 // needs to have with the main side.
@@ -54,7 +52,6 @@ class CC_EXPORT ProxyMain : public Proxy {
     COMMIT_PIPELINE_STAGE,
   };
 
-  void DidReceiveCompositorFrameAck();
   void BeginMainFrameNotExpectedSoon();
   void BeginMainFrameNotExpectedUntil(base::TimeTicks time);
   void DidCommitAndDrawFrame(int source_frame_number);
@@ -64,18 +61,22 @@ class CC_EXPORT ProxyMain : public Proxy {
   void DidCompletePageScaleAnimation();
   void BeginMainFrame(
       std::unique_ptr<BeginMainFrameAndCommitState> begin_main_frame_state);
-  void DidCompleteCommit(CommitTimestamps);
+  void DidCompleteCommit(int source_frame_number, CommitTimestamps);
   void DidPresentCompositorFrame(
       uint32_t frame_token,
       std::vector<PresentationTimeCallbackBuffer::Callback>
           presentation_callbacks,
-      std::vector<PresentationTimeCallbackBuffer::SuccessfulCallback>
+      std::vector<PresentationTimeCallbackBuffer::SuccessfulCallbackWithDetails>
           successful_presentation_callbacks,
-      const gfx::PresentationFeedback& feedback);
+      const viz::FrameTimingDetails& frame_timing_details);
   void NotifyThroughputTrackerResults(CustomTrackerResults results);
-  void DidObserveFirstScrollDelay(base::TimeDelta first_scroll_delay,
+  void DidObserveFirstScrollDelay(int source_frame_number,
+                                  base::TimeDelta first_scroll_delay,
                                   base::TimeTicks first_scroll_timestamp);
-  void NotifyTransitionRequestFinished(uint32_t sequence_id);
+  void NotifyImageDecodeRequestFinished(int request_id, bool decode_succeeded);
+  void NotifyTransitionRequestFinished(
+      uint32_t sequence_id,
+      const viz::ViewTransitionElementResourceRects&);
 
   CommitPipelineStage max_requested_pipeline_stage() const {
     return max_requested_pipeline_stage_;
@@ -86,11 +87,14 @@ class CC_EXPORT ProxyMain : public Proxy {
   CommitPipelineStage final_pipeline_stage() const {
     return final_pipeline_stage_;
   }
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
 
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
  private:
   // Proxy implementation.
@@ -98,19 +102,21 @@ class CC_EXPORT ProxyMain : public Proxy {
   void SetLayerTreeFrameSink(
       LayerTreeFrameSink* layer_tree_frame_sink) override;
   void SetVisible(bool visible) override;
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
   void SetPinchSmoothMode(bool isEnable) override;
 #endif
-
+  void SetShouldWarmUp() override;
   void SetNeedsAnimate() override;
   void SetNeedsUpdateLayers() override;
   void SetNeedsCommit() override;
   void SetNeedsRedraw(const gfx::Rect& damage_rect) override;
   void SetTargetLocalSurfaceId(
       const viz::LocalSurfaceId& target_local_surface_id) override;
+  void DetachInputDelegateAndRenderFrameObserver() override;
   bool RequestedAnimatePending() override;
   void SetDeferMainFrameUpdate(bool defer_main_frame_update) override;
   void SetPauseRendering(bool pause_rendering) override;
+  void SetInputResponsePending() override;
   bool StartDeferringCommits(base::TimeDelta timeout,
                              PaintHoldingReason reason) override;
   void StopDeferringCommits(PaintHoldingCommitTrigger) override;
@@ -118,14 +124,18 @@ class CC_EXPORT ProxyMain : public Proxy {
   bool CommitRequested() const override;
   void Start() override;
   void Stop() override;
+  void QueueImageDecode(int request_id, const PaintImage& image) override;
   void SetMutator(std::unique_ptr<LayerTreeMutator> mutator) override;
   void SetPaintWorkletLayerPainter(
       std::unique_ptr<PaintWorkletLayerPainter> painter) override;
   bool MainFrameWillHappenForTesting() override;
   void ReleaseLayerTreeFrameSink() override;
-  void UpdateBrowserControlsState(BrowserControlsState constraints,
-                                  BrowserControlsState current,
-                                  bool animate) override;
+  void UpdateBrowserControlsState(
+      BrowserControlsState constraints,
+      BrowserControlsState current,
+      bool animate,
+      base::optional_ref<const BrowserControlsOffsetTagsInfo> offset_tags_info)
+      override;
   void RequestBeginMainFrameNotExpected(bool new_state) override;
   void SetSourceURL(ukm::SourceId source_id, const GURL& url) override;
   void SetUkmSmoothnessDestination(
@@ -178,16 +188,13 @@ class CC_EXPORT ProxyMain : public Proxy {
   // defer_main_frame_update_ will also cause commits to be deferred, regardless
   // of the setting for paint_holding_reason_.
   bool defer_main_frame_update_;
-  absl::optional<PaintHoldingReason> paint_holding_reason_;
+  std::optional<PaintHoldingReason> paint_holding_reason_;
 
   bool pause_rendering_;
+  bool block_on_next_commit_ = false;
 
   // Only used when defer_commits_ is active and must be set in such cases.
   base::TimeTicks commits_restart_time_;
-
-  // TODO(paint-dev): It is not clear how to best show the interlacing of main
-  // thread tasks with commit (non-blocking commit) (crbug.com/1277952).
-  std::unique_ptr<devtools_instrumentation::ScopedCommitTrace> commit_trace_;
 
   // ProxyImpl is created and destroyed on the impl thread, and should only be
   // accessed on the impl thread.
@@ -196,7 +203,6 @@ class CC_EXPORT ProxyMain : public Proxy {
   // run before we destroy it on the impl thread.
   std::unique_ptr<ProxyImpl> proxy_impl_;
 
-  int synchronous_composite_source_frame_number_ = -1;
   base::OnceClosure synchronous_composite_for_test_callback_;
 
   // WeakPtrs generated by this factory will be invalidated when

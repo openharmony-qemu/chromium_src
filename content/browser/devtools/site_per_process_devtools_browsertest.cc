@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "base/run_loop.h"
 #include "build/build_config.h"
 #include "content/browser/devtools/render_frame_devtools_agent_host.h"
@@ -42,7 +47,7 @@ class TestClient: public DevToolsAgentHostClient {
                                base::span<const uint8_t> message) override {
     if (waiting_for_reply_) {
       waiting_for_reply_ = false;
-      base::RunLoop::QuitCurrentDeprecated();
+      std::move(quit_closure_).Run();
     }
   }
 
@@ -52,12 +57,15 @@ class TestClient: public DevToolsAgentHostClient {
 
   void WaitForReply() {
     waiting_for_reply_ = true;
-    base::RunLoop().Run();
+    base::RunLoop loop;
+    quit_closure_ = loop.QuitClosure();
+    loop.Run();
   }
 
  private:
   bool closed_;
   bool waiting_for_reply_;
+  base::OnceClosure quit_closure_;
 };
 
 DevToolsAgentHost::List ExtractPageOrFrameTargets(

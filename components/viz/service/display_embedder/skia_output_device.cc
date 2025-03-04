@@ -7,24 +7,20 @@
 #include <algorithm>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
-#include "base/feature_list.h"
-#include "base/functional/bind.h"
 #include "base/notreached.h"
-#include "base/task/sequenced_task_runner.h"
-#include "base/task/task_features.h"
-#include "base/task/task_traits.h"
-#include "base/task/thread_pool.h"
-#include "base/task/thread_pool/thread_pool_instance.h"
 #include "gpu/command_buffer/service/memory_tracking.h"
 #include "gpu/command_buffer/service/skia_utils.h"
 #include "services/tracing/public/cpp/perfetto/flow_event_utils.h"
-#include "third_party/skia/include/core/SkDeferredDisplayList.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrTypes.h"
+#include "third_party/skia/include/gpu/graphite/Context.h"
+#include "third_party/skia/include/gpu/graphite/Recording.h"
+#include "third_party/skia/include/private/chromium/GrDeferredDisplayList.h"
 #include "ui/gfx/gpu_fence.h"
 #include "ui/gfx/presentation_feedback.h"
-#include "ui/latency/latency_tracker.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/display/dc_layer_overlay.h"
@@ -33,41 +29,20 @@
 namespace viz {
 namespace {
 
-BASE_FEATURE(kAsyncGpuLatencyReporting,
-             "AsyncGpuLatencyReporting",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-using ::perfetto::protos::pbzero::ChromeLatencyInfo;
-
-scoped_refptr<base::SequencedTaskRunner> CreateLatencyTracerRunner() {
-  if (!base::ThreadPoolInstance::Get())
-    return nullptr;
-
-  if (!base::FeatureList::IsEnabled(kAsyncGpuLatencyReporting))
-    return nullptr;
-
-  return base::ThreadPool::CreateSequencedTaskRunner(
-      {base::TaskPriority::BEST_EFFORT,
-       base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
-}
-
 void ReportLatency(const gfx::SwapTimings& timings,
-                   ui::LatencyTracker* tracker,
-                   std::vector<ui::LatencyInfo> latency_info,
-                   bool top_controls_visible_height_changed) {
+                   std::vector<ui::LatencyInfo> latency_info) {
   for (auto& latency : latency_info) {
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT, timings.swap_start);
     latency.AddLatencyNumberWithTimestamp(
         ui::INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT, timings.swap_end);
-
-    std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
-        " ,step: " + "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT";
-    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                      std::to_string(latency.trace_id()), "trace_content", trace_content_);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                      "trace_id", std::to_string(latency.trace_id()), "step",
+                      "INPUT_EVENT_GPU_SWAP_BUFFER_COMPONENT & "
+                      "INPUT_EVENT_LATENCY_FRAME_SWAP_COMPONENT");
+#endif
   }
-  tracker->OnGpuSwapBuffersCompleted(std::move(latency_info),
-                                     top_controls_visible_height_changed);
 }
 
 }  // namespace
@@ -106,30 +81,42 @@ bool SkiaOutputDevice::ScopedPaint::Wait(
 }
 
 bool SkiaOutputDevice::ScopedPaint::Draw(
-    sk_sp<const SkDeferredDisplayList> ddl) {
+    sk_sp<const GrDeferredDisplayList> ddl) {
   return device_->Draw(sk_surface_, std::move(ddl));
+}
+
+bool SkiaOutputDevice::ScopedPaint::Draw(
+    std::unique_ptr<skgpu::graphite::Recording> graphite_recording,
+    base::OnceClosure on_finished) {
+  return device_->Draw(sk_surface_, std::move(graphite_recording),
+                       std::move(on_finished));
 }
 
 SkiaOutputDevice::SkiaOutputDevice(
     GrDirectContext* gr_context,
+    skgpu::graphite::Context* graphite_context,
     gpu::MemoryTracker* memory_tracker,
-    DidSwapBufferCompleteCallback did_swap_buffer_complete_callback)
+    DidSwapBufferCompleteCallback did_swap_buffer_complete_callback,
+    ReleaseOverlaysCallback release_overlays_callback)
     : gr_context_(gr_context),
+      graphite_context_(graphite_context),
       did_swap_buffer_complete_callback_(
           std::move(did_swap_buffer_complete_callback)),
+      release_overlays_callback_(std::move(release_overlays_callback)),
       memory_type_tracker_(
-          std::make_unique<gpu::MemoryTypeTracker>(memory_tracker)),
-      latency_tracker_(std::make_unique<ui::LatencyTracker>()),
-      latency_tracker_runner_(CreateLatencyTracerRunner()) {
-  DCHECK(gr_context);
-  capabilities_.max_render_target_size = gr_context->maxRenderTargetSize();
-  capabilities_.max_texture_size = gr_context->maxTextureSize();
+          std::make_unique<gpu::MemoryTypeTracker>(memory_tracker)) {
+  if (gr_context_) {
+    CHECK(!graphite_context_);
+    capabilities_.max_render_target_size = gr_context->maxRenderTargetSize();
+    capabilities_.max_texture_size = gr_context->maxTextureSize();
+  } else {
+    CHECK(graphite_context_);
+    capabilities_.max_render_target_size = graphite_context->maxTextureSize();
+    capabilities_.max_texture_size = graphite_context->maxTextureSize();
+  }
 }
 
-SkiaOutputDevice::~SkiaOutputDevice() {
-  if (latency_tracker_runner_)
-    latency_tracker_runner_->DeleteSoon(FROM_HERE, std::move(latency_tracker_));
-}
+SkiaOutputDevice::~SkiaOutputDevice() = default;
 
 std::unique_ptr<SkiaOutputDevice::ScopedPaint>
 SkiaOutputDevice::BeginScopedPaint() {
@@ -145,37 +132,14 @@ SkiaOutputDevice::BeginScopedPaint() {
 void SkiaOutputDevice::SetViewportSize(const gfx::Size& viewport_size) {}
 
 void SkiaOutputDevice::Submit(bool sync_cpu, base::OnceClosure callback) {
-  gr_context_->submit(sync_cpu);
+  if (gr_context_) {
+    gr_context_->submit(sync_cpu ? GrSyncCpu::kYes : GrSyncCpu::kNo);
+  } else {
+    CHECK(graphite_context_);
+    graphite_context_->submit(sync_cpu ? skgpu::graphite::SyncToCpu::kYes
+                                       : skgpu::graphite::SyncToCpu::kNo);
+  }
   std::move(callback).Run();
-}
-
-bool SkiaOutputDevice::EnsureMinNumberOfBuffers(size_t n) {
-  NOTREACHED();
-  return false;
-}
-
-bool SkiaOutputDevice::SetDrawRectangle(const gfx::Rect& draw_rectangle) {
-  NOTREACHED();
-  return false;
-}
-
-void SkiaOutputDevice::SetEnableDCLayers(bool enable) {
-  NOTREACHED();
-}
-
-void SkiaOutputDevice::SetGpuVSyncEnabled(bool enabled) {
-  NOTREACHED();
-}
-
-bool SkiaOutputDevice::IsPrimaryPlaneOverlay() const {
-  return false;
-}
-
-void SkiaOutputDevice::SchedulePrimaryPlane(
-    const absl::optional<OverlayProcessorInterface::OutputSurfaceOverlayPlane>&
-        plane) {
-  if (plane)
-    NOTIMPLEMENTED();
 }
 
 void SkiaOutputDevice::ScheduleOverlays(
@@ -196,6 +160,11 @@ void SkiaOutputDevice::SetDependencyTimings(base::TimeTicks task_ready) {
   gpu_task_ready_ = task_ready;
 }
 
+void SkiaOutputDevice::ReadbackForTesting(
+    base::OnceCallback<void(SkBitmap)> callback) {
+  NOTIMPLEMENTED();
+}
+
 void SkiaOutputDevice::StartSwapBuffers(BufferPresentedCallback feedback) {
   DCHECK_LT(static_cast<int>(pending_swaps_.size()),
             capabilities_.pending_swap_params.GetMax());
@@ -211,44 +180,50 @@ void SkiaOutputDevice::FinishSwapBuffers(
     gfx::SwapCompletionResult result,
     const gfx::Size& size,
     OutputSurfaceFrame frame,
-    const absl::optional<gfx::Rect>& damage_area,
-    std::vector<gpu::Mailbox> released_overlays,
-    const gpu::Mailbox& primary_plane_mailbox) {
+    const std::optional<gfx::Rect>& damage_area,
+    std::vector<gpu::Mailbox> released_overlays
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+    ,
+    const gpu::Mailbox& primary_plane_mailbox
+#endif
+) {
   DCHECK(!pending_swaps_.empty());
 
+  TRACE_EVENT(
+      "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
+      perfetto::Flow::Global(frame.data.swap_trace_id),
+      [swap_trace_id = frame.data.swap_trace_id](perfetto::EventContext ctx) {
+        auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
+        auto* data = event->set_chrome_graphics_pipeline();
+        data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
+                           StepName::STEP_FINISH_BUFFER_SWAP);
+        data->set_display_trace_id(swap_trace_id);
+      });
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
+#endif
   auto release_fence = std::move(result.release_fence);
   const gpu::SwapBuffersCompleteParams& params =
       pending_swaps_.front().Complete(std::move(result), damage_area,
                                       std::move(released_overlays),
-                                      primary_plane_mailbox);
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+                                      primary_plane_mailbox,
+#endif
+                                      frame.data.swap_trace_id);
 
   did_swap_buffer_complete_callback_.Run(params, size,
                                          std::move(release_fence));
 
   pending_swaps_.front().CallFeedback();
-
-  if (latency_tracker_runner_) {
-    // Report latency off GPU main thread, but we still want this to be counted
-    // as part of the critical flow so emit a flow step.
-    ui::LatencyInfo::TraceIntermediateFlowEvents(
-        frame.latency_info, ChromeLatencyInfo::STEP_FINISHED_SWAP_BUFFERS);
-    for (auto& latency : frame.latency_info) {
-      std::string trace_content_ = "event_type: " + std::to_string(static_cast<int>(latency.source_event_type())) +
-          " ,step: " + "STEP_FINISHED_SWAP_BUFFERS";
-      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
-                        std::to_string(latency.trace_id()), "trace_content", trace_content_);
-    }
-
-    latency_tracker_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(&ReportLatency, params.swap_response.timings,
-                       latency_tracker_.get(), std::move(frame.latency_info),
-                       frame.top_controls_visible_height_changed));
-  } else {
-    ReportLatency(params.swap_response.timings, latency_tracker_.get(),
-                  std::move(frame.latency_info),
-                  frame.top_controls_visible_height_changed);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  for (auto& latency : frame.latency_info) {
+    OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                      "trace_id", std::to_string(latency.trace_id()), "step",
+                      "STEP_FINISHED_SWAP_BUFFERS");
   }
+#endif
+  ReportLatency(params.swap_response.timings, std::move(frame.latency_info));
 
   pending_swaps_.pop();
 
@@ -309,17 +284,21 @@ uint64_t SkiaOutputDevice::SwapInfo::SwapId() {
 
 const gpu::SwapBuffersCompleteParams& SkiaOutputDevice::SwapInfo::Complete(
     gfx::SwapCompletionResult result,
-    const absl::optional<gfx::Rect>& damage_rect,
+    const std::optional<gfx::Rect>& damage_rect,
     std::vector<gpu::Mailbox> released_overlays,
-    const gpu::Mailbox& primary_plane_mailbox) {
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+    const gpu::Mailbox& primary_plane_mailbox,
+#endif
+    int64_t swap_trace_id) {
   params_.swap_response.result = result.swap_result;
   params_.swap_response.timings.swap_end = base::TimeTicks::Now();
   params_.frame_buffer_damage_area = damage_rect;
   if (result.ca_layer_params)
     params_.ca_layer_params = *result.ca_layer_params;
 
-  params_.primary_plane_mailbox = primary_plane_mailbox;
   params_.released_overlays = std::move(released_overlays);
+
+  params_.swap_trace_id = swap_trace_id;
   return params_;
 }
 
@@ -344,6 +323,7 @@ GrSemaphoresSubmitted SkiaOutputDevice::Flush(
     VulkanContextProvider* vulkan_context_provider,
     std::vector<GrBackendSemaphore> end_semaphores,
     base::OnceClosure on_finished) {
+  CHECK(sk_surface);
   GrFlushInfo flush_info = {
       .fNumSemaphores = end_semaphores.size(),
       .fSignalSemaphores = end_semaphores.data(),
@@ -351,7 +331,11 @@ GrSemaphoresSubmitted SkiaOutputDevice::Flush(
   gpu::AddVulkanCleanupTaskForSkiaFlush(vulkan_context_provider, &flush_info);
   if (on_finished)
     gpu::AddCleanupTaskForSkiaFlush(std::move(on_finished), &flush_info);
-  return sk_surface->flush(flush_info);
+  if (GrDirectContext* direct_context =
+          GrAsDirectContext(sk_surface->recordingContext())) {
+    return direct_context->flush(sk_surface, flush_info);
+  }
+  return {};
 }
 
 bool SkiaOutputDevice::Wait(SkSurface* sk_surface,
@@ -363,11 +347,11 @@ bool SkiaOutputDevice::Wait(SkSurface* sk_surface,
 }
 
 bool SkiaOutputDevice::Draw(SkSurface* sk_surface,
-                            sk_sp<const SkDeferredDisplayList> ddl) {
+                            sk_sp<const GrDeferredDisplayList> ddl) {
 #if DCHECK_IS_ON()
   const auto& characterization = ddl->characterization();
   if (!sk_surface->isCompatible(characterization)) {
-    SkSurfaceCharacterization surface_characterization;
+    GrSurfaceCharacterization surface_characterization;
     DCHECK(sk_surface->characterize(&surface_characterization));
 #define CHECK_PROPERTY(name) \
   DCHECK_EQ(characterization.name(), surface_characterization.name());
@@ -385,7 +369,23 @@ bool SkiaOutputDevice::Draw(SkSurface* sk_surface,
     CHECK_PROPERTY(isProtected);
   }
 #endif
-  return sk_surface->draw(ddl);
+  return skgpu::ganesh::DrawDDL(sk_surface, ddl);
+}
+
+bool SkiaOutputDevice::Draw(
+    SkSurface* sk_surface,
+    std::unique_ptr<skgpu::graphite::Recording> graphite_recording,
+    base::OnceClosure on_finished) {
+  CHECK(sk_surface);
+  CHECK(graphite_recording);
+  CHECK(graphite_context_);
+  skgpu::graphite::InsertRecordingInfo info;
+  info.fRecording = graphite_recording.get();
+  info.fTargetSurface = sk_surface;
+  if (on_finished) {
+    gpu::AddCleanupTaskForGraphiteRecording(std::move(on_finished), &info);
+  }
+  return graphite_context_->insertRecording(info);
 }
 
 }  // namespace viz

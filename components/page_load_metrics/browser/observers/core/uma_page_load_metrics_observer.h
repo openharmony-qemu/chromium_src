@@ -6,10 +6,12 @@
 #define COMPONENTS_PAGE_LOAD_METRICS_BROWSER_OBSERVERS_CORE_UMA_PAGE_LOAD_METRICS_OBSERVER_H_
 
 #include "base/time/time.h"
+#include "base/trace_event/typed_macros.h"
 #include "components/page_load_metrics/browser/observers/click_input_tracker.h"
 #include "components/page_load_metrics/browser/page_load_metrics_observer.h"
 #include "content/public/browser/navigation_handle_timing.h"
 #include "services/metrics/public/cpp/ukm_source.h"
+#include "third_party/perfetto/include/perfetto/tracing/event_context.h"
 
 namespace internal {
 
@@ -28,6 +30,7 @@ extern const char
 extern const char
     kHistogramSumOfUserInteractionLatencyOverBudgetMaxEventDuration[];
 extern const char kHistogramWorstUserInteractionLatencyMaxEventDuration[];
+extern const char kHistogramInpOffset[];
 extern const char kHistogramFirstInputDelay[];
 extern const char kHistogramFirstInputTimestamp[];
 extern const char kHistogramFirstInputDelay4[];
@@ -42,9 +45,12 @@ extern const char kHistogramLargestContentfulPaintContentType[];
 extern const char kHistogramLargestContentfulPaintMainFrame[];
 extern const char kHistogramLargestContentfulPaintMainFrameContentType[];
 extern const char kHistogramLargestContentfulPaintCrossSiteSubFrame[];
+extern const char
+    kHistogramLargestContentfulPaintSetSpeculationRulesPrerender[];
 extern const char kHistogramParseBlockedOnScriptLoad[];
 extern const char kHistogramParseBlockedOnScriptExecution[];
 
+extern const char kBackgroundHistogramFirstContentfulPaint[];
 extern const char kBackgroundHistogramFirstImagePaint[];
 extern const char kBackgroundHistogramDomContentLoaded[];
 extern const char kBackgroundHistogramLoad[];
@@ -68,7 +74,6 @@ extern const char kHistogramCommitSentToFirstSubresourceLoadStart[];
 extern const char kHistogramNavigationToFirstSubresourceLoadStart[];
 extern const char kHistogramResourceLoadTimePrefix[];
 extern const char kHistogramTotalSubresourceLoadTimeAtFirstContentfulPaint[];
-extern const char kHistogramFirstEligibleToPaint[];
 extern const char kHistogramFirstEligibleToPaintToFirstPaint[];
 
 extern const char kHistogramPageLoadCpuTotalUsage[];
@@ -127,6 +132,9 @@ enum class PageLoadBackForwardCacheEvent {
 // Observer responsible for recording 'core' UMA page load metrics. Core metrics
 // are maintained by loading-dev team, typically the metrics under
 // PageLoad.(Document|Paint|Parse)Timing.*.
+// Only pages with web (http/https) schemes are observed.
+// UmaFileAndDataPageLoadMetricsObserver records page load metrics for the file
+// and data schemes.
 class UmaPageLoadMetricsObserver
     : public page_load_metrics::PageLoadMetricsObserver {
  public:
@@ -216,6 +224,12 @@ class UmaPageLoadMetricsObserver
       base::TimeTicks app_background_time);
   void RecordV8MemoryHistograms();
   void RecordNormalizedResponsivenessMetrics();
+
+  void EmitFCPTraceEvent(base::TimeDelta first_contentful_paint_timing);
+
+  void EmitLCPTraceEvent(base::TimeDelta largest_contentful_paint_timing);
+
+  void EmitInstantTraceEvent(base::TimeDelta duration, const char event_name[]);
 
   content::NavigationHandleTiming navigation_handle_timing_;
 

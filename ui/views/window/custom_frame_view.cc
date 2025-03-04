@@ -11,7 +11,6 @@
 #include "base/containers/adapters.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "ui/base/hit_test.h"
 #include "ui/base/l10n/l10n_util.h"
@@ -25,6 +24,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/image/image.h"
 #include "ui/strings/grit/ui_strings.h"
+#include "ui/views/accessibility/view_accessibility.h"
 #include "ui/views/controls/button/image_button.h"
 #include "ui/views/resources/grit/views_resources.h"
 #include "ui/views/views_delegate.h"
@@ -211,20 +211,21 @@ void CustomFrameView::OnPaint(gfx::Canvas* canvas) {
     PaintRestoredClientEdge(canvas);
 }
 
-void CustomFrameView::Layout() {
+void CustomFrameView::Layout(PassKey) {
   if (ShouldShowTitleBarAndBorder()) {
     LayoutWindowControls();
     LayoutTitleBar();
   }
 
   LayoutClientView();
-  NonClientFrameView::Layout();
+  LayoutSuperclass<NonClientFrameView>(this);
 }
 
-gfx::Size CustomFrameView::CalculatePreferredSize() const {
+gfx::Size CustomFrameView::CalculatePreferredSize(
+    const SizeBounds& available_size) const {
   return frame_->non_client_view()
       ->GetWindowBoundsForClientBounds(
-          gfx::Rect(frame_->client_view()->GetPreferredSize()))
+          gfx::Rect(frame_->client_view()->GetPreferredSize(available_size)))
       .size();
 }
 
@@ -264,9 +265,7 @@ int CustomFrameView::NonClientTopBorderHeight() const {
 int CustomFrameView::CaptionButtonY() const {
   // Maximized buttons start at window top so that even if their images aren't
   // drawn flush with the screen edge, they still obey Fitts' Law.
-// TODO(crbug.com/1052397): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX)
   return FrameBorderThickness();
 #else
   return frame_->IsMaximized() ? FrameBorderThickness() : kFrameShadowThickness;
@@ -476,7 +475,7 @@ void CustomFrameView::LayoutWindowControls() {
     if (!button)
       continue;
     gfx::Rect target_bounds(gfx::Point(next_button_x, caption_y),
-                            button->GetPreferredSize());
+                            button->GetPreferredSize({}));
     if (frame_button == leading_buttons.front())
       target_bounds.set_width(target_bounds.width() + extra_width);
     LayoutButton(button, target_bounds);
@@ -491,7 +490,7 @@ void CustomFrameView::LayoutWindowControls() {
     if (!button)
       continue;
     gfx::Rect target_bounds(gfx::Point(next_button_x, caption_y),
-                            button->GetPreferredSize());
+                            button->GetPreferredSize({}));
     if (frame_button == trailing_buttons.back())
       target_bounds.set_width(target_bounds.width() + extra_width);
     target_bounds.Offset(-target_bounds.width(), 0);
@@ -553,7 +552,8 @@ ImageButton* CustomFrameView::InitWindowCaptionButton(
   ImageButton* button =
       AddChildView(std::make_unique<ImageButton>(std::move(callback)));
   button->SetFocusBehavior(FocusBehavior::ACCESSIBLE_ONLY);
-  button->SetAccessibleName(l10n_util::GetStringUTF16(accessibility_string_id));
+  button->GetViewAccessibility().SetName(
+      l10n_util::GetStringUTF16(accessibility_string_id));
   button->SetImageModel(
       Button::STATE_NORMAL,
       ui::ImageModel::FromImage(rb.GetImageNamed(normal_image_id)));

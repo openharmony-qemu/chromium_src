@@ -39,12 +39,12 @@ export function ambientModeEnabledReducer(
   }
 }
 
-export function animationThemeReducer(
-    state: AmbientState['animationTheme'], action: Actions,
-    _: PersonalizationState): AmbientState['animationTheme'] {
+export function ambientThemeReducer(
+    state: AmbientState['ambientTheme'], action: Actions,
+    _: PersonalizationState): AmbientState['ambientTheme'] {
   switch (action.name) {
-    case AmbientActionName.SET_ANIMATION_THEME:
-      return action.animationTheme;
+    case AmbientActionName.SET_AMBIENT_THEME:
+      return action.ambientTheme;
     default:
       return state;
   }
@@ -114,15 +114,40 @@ export function shouldShowTimeOfDayBannerReducer(
   }
 }
 
+export function geolocationPermissionEnabledReducer(
+    state: AmbientState['geolocationPermissionEnabled'], action: Actions,
+    _: PersonalizationState): AmbientState['geolocationPermissionEnabled'] {
+  switch (action.name) {
+    case AmbientActionName.SET_GEOLOCATION_PERMISSION_ENABLED:
+      return action.enabled;
+    default:
+      return state;
+  }
+}
+
+export function geolocationIsUserModifiableReducer(
+    state: AmbientState['geolocationIsUserModifiable'], action: Actions,
+    _: PersonalizationState): AmbientState['geolocationIsUserModifiable'] {
+  switch (action.name) {
+    case AmbientActionName.SET_GEOLOCATION_IS_USER_MODIFIABLE:
+      return action.isUserModifiable;
+    default:
+      return state;
+  }
+}
+
+
 export const ambientReducers:
     {[K in keyof AmbientState]: ReducerFunction<AmbientState[K]>} = {
       albums: albumsReducer,
       ambientModeEnabled: ambientModeEnabledReducer,
-      animationTheme: animationThemeReducer,
+      ambientTheme: ambientThemeReducer,
       duration: screenSaverDurationReducer,
       previews: previewsReducer,
       temperatureUnit: temperatureUnitReducer,
       topicSource: topicSourceReducer,
       ambientUiVisibility: ambientUiVisibilityReducer,
       shouldShowTimeOfDayBanner: shouldShowTimeOfDayBannerReducer,
+      geolocationPermissionEnabled: geolocationPermissionEnabledReducer,
+      geolocationIsUserModifiable: geolocationIsUserModifiableReducer,
     };

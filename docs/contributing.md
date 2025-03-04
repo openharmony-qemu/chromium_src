@@ -86,8 +86,7 @@ contribution can be accepted:
 
 ## Initial git setup
 
-1. Visit <https://chromium.googlesource.com/new-password> and follow the
-   on-screen instructions to get credentials for uploading changes.
+1. Set up [Gerrit access](https://www.chromium.org/developers/gerrit-guide/).
 2. Tell git about your name, email and some other settings.
    ```
    git config --global user.name "My Name"
@@ -133,8 +132,10 @@ Chromium workflow is not the same as the GitHub pull request workflow.
 
 ## Uploading a change for review
 
-Note: go through the [commit checklist][commit-checklist] for Chromium before
-uploading a change for review.
+Note: If your change is to a dependent project, see the documentation on
+[changing dependencies](dependencies.md#changing-dependencies). Otherwise, go
+through the [commit checklist][commit-checklist] for Chromium before uploading a
+change for review.
 
 Chromium uses a Gerrit instance hosted at
 <https://chromium-review.googlesource.com> for code reviews. In order to upload
@@ -226,22 +227,31 @@ feature A change is the parent of the feature B change.  If A
 introduces a new file which B changes, the review for B will only show
 the diff from A.
 
-## Code review
+## Code review {#code-review}
 
-Code reviews are covered in more detail on the [code review
-policies][code-reviews] page.
+This section describes the mechanics and process of code reviews. See also:
+- [Code review policies](code_reviews.md) page for committer, OWNERS, and other
+rules
+- [Code of conduct](../CODE_OF_CONDUCT.md)
+- [Respectful Changes](cl_respect.md)
+- [Respectful Code Reviews](cr_respect.md)
 
 ### Finding a reviewer
 
-Ideally, the reviewer is someone who is familiar with the area of code in
-question. If you're not sure who that should be, check with anyone in the
-nearest ancestor OWNERS file.
+Please note here that a "reviewer" in this context is someone that not
+only provides comment on the CL but also someone who can approve the
+submission by providing a "Code-Review +1".
 
-- Anybody can review code, but there must be at least one owner for each
-  affected directory.
-- If there are multiple reviewers, make it clear what each reviewer is expected
-  to review.
-- `git cl owners` automatically suggests reviewers based on the OWNERS files.
+Reviewers must be [committers](https://www.chromium.org/getting-involved/become-a-committer/).
+Ideally they should be committers who are familiar with the area of code
+in question. If you're not sure who these should be, check with anyone in
+the nearest ancestor OWNERS file.
+
+- There must be at least one owner for each affected directory.
+- If there are multiple reviewers, make it clear what each reviewer is
+expected to review.
+- `git cl owners` automatically suggests reviewers based on the OWNERS
+files.
 
 _Note:_ By default, please only select one reviewer for each file (that is, a
 single reviewer may review multiple files, but typically each file only needs
@@ -256,6 +266,11 @@ There are times when requesting multiple reviewers for the same file may be
 desirable - such as when the code is particularly complicated, or when the file
 uses multiple systems and a perspective from each is valuable. In this case,
 please make it explicit that you would like both reviewers to review.
+
+Submissions to the chromium/src repository by a change contributor who is
+not a Chromium committer will require two committers to "Code-Review +1" the
+submissions. If the owner of the CL is already a committer, then only one
+other committer is needed to "Code-Review +1".
 
 ### Requesting review
 
@@ -295,6 +310,13 @@ When the reviewer is happy with the change, they will set the "Code-Review +1"
 label. Owners of all affected files must approve before a change can be
 committed. See: [code review policies: owners][code-reviews-owners].
 
+All code review comments must be marked resolved before a CL can be committed.
+In some cases a reviewer may give "Code-Review +1" with some additional
+comments. These should be addressed and responded to, or at least acknowledged
+with the ACK button to resolve them. If you cannot resolve all comments an
+override is provided through an "Unresolved-Comment-Reason:" stanza in your
+commit message.
+
 ## Running automated tests
 
 Before being submitted, a change must pass the commit queue (CQ). The commit
@@ -328,7 +350,7 @@ colors to indicate its status:
 
 ## Committing
 
-Changes should generally be committed via the [commit queue][commit-queue].
+Changes are committed via the [commit queue][commit-queue].
 This is done by clicking **Submit to CQ** in the upper right corner, or setting
 the "Commit-Queue +2" label on the change. The commit queue will then
 send the patch to the try bots. If all try bots return green, the change will
@@ -337,9 +359,8 @@ automatically be committed. Yay!
 Sometimes a test might be flaky. If you have an isolated failure that appears
 unrelated to your change, try sending the change to the commit queue again.
 
-Alternatively, a developer with commit access can [directly
-commit][direct-commit] a change, bypassing the commit queue. This should only
-be used in emergencies because it will bypass all the safety nets.
+In emergencies, a developer with commit access can [directly
+commit][direct-commit] a change, bypassing the commit queue and all safety nets.
 
 ## Relanding a change
 
@@ -379,17 +400,18 @@ general rules of thumb can be helpful in navigating how to structure changes:
   product in the Chromium repositories that depends on that line of code or else
   the line of code should be removed.
 
-  When you are adding support for a new OS, a new architecture, a new port or
-  a new top-level directory, please send an email to
-  chrome-atls@google.com and get approval. For long-term maintenance
+  When you are adding support for a new OS, architecture, compiler/STL
+  implementation, platform, or simply a new top-level directory, please send an
+  email to chrome-atls@google.com and get approval. For long-term maintenance
   reasons, we will accept only things that are used by the Chromium project
   (including Chromium-supported projects like V8 and Skia) and things whose
   benefit to Chromium outweighs any cost increase in maintaining Chromium's
-  supported architectures / platforms (e.g. adding one ifdef branch for an
-  unsupported architecture / platform has negligible cost and is likely fine,
+  supported toolchains, architectures, and platforms (e.g. adding one ifdef
+  branch for an unsupported architecture has negligible cost and is likely fine,
   but introducing new abstractions or changes to higher level directories has
   a high cost and would need to provide Chromium with corresponding benefit).
-  Note that an unsupported architecture / platform will not have bots on
+  See the [documentation on toolchain support](toolchain_support.md) for more
+  details. Note that an unsupported configuration will not have bots on
   Google-managed waterfalls (even FYI bots) or maintained by Chromium
   developers. Please use existing ifdef branches as much as possible.
 
@@ -563,7 +585,7 @@ formats.
 [life-of-a-chromium-developer]: https://docs.google.com/presentation/d/1abnqM9j6zFodPHA38JG1061rG2iGj_GABxEDgZsdbJg/edit
 [noms-tutorial]: https://meowni.ca/posts/chromium-101
 [review-lag]: https://dev.chromium.org/developers/contributing-code/minimizing-review-lag-across-time-zones
-[skia-dev-guide]: https://skia.org/dev/contrib
+[skia-dev-guide]: https://skia.org/docs/dev/contrib/
 [try-job-access]: https://www.chromium.org/getting-involved/become-a-committer#TOC-Try-job-access
 [v8-dev-guide]: https://v8.dev/docs
 [watchlist-doc]: infra/watchlists.md

@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/lookalikes/core/lookalike_url_util.h"
 
 #include <algorithm>
+#include <string_view>
 #include <utility>
 
 #include "base/containers/contains.h"
@@ -13,7 +19,6 @@
 #include "base/i18n/char_iterator.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/strcat.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
@@ -23,7 +28,7 @@
 #include "components/lookalikes/core/safety_tips_config.h"
 #include "components/security_interstitials/core/pref_names.h"
 #include "components/url_formatter/spoof_checks/common_words/common_words_util.h"
-#include "components/url_formatter/spoof_checks/top_domains/top500_domains.h"
+#include "components/url_formatter/spoof_checks/top_domains/top_bucket_domains.h"
 #include "components/url_formatter/spoof_checks/top_domains/top_domain_util.h"
 #include "components/url_formatter/url_formatter.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
@@ -37,7 +42,7 @@ using lookalikes::IsEditDistanceAtMostOne;
 using lookalikes::LookalikeTargetAllowlistChecker;
 using lookalikes::LookalikeUrlMatchType;
 using lookalikes::NavigationSuggestionEvent;
-using lookalikes::Top500DomainsParams;
+using lookalikes::TopBucketDomainsParams;
 
 namespace {
 
@@ -71,10 +76,10 @@ const char kTargetEmbeddingSeparators[] = "-.";
 // treat them as public for the purposes of lookalike checks.
 const char* kPrivateRegistriesTreatedAsPublic[] = {"com.de", "com.se"};
 
-Top500DomainsParams* GetTopDomainParams() {
-  static Top500DomainsParams params{
-      top500_domains::kTop500EditDistanceSkeletons,
-      top500_domains::kNumTop500EditDistanceSkeletons};
+TopBucketDomainsParams* GetTopDomainParams() {
+  static TopBucketDomainsParams params{
+      top_bucket_domains::kTopBucketEditDistanceSkeletons,
+      top_bucket_domains::kNumTopBucketEditDistanceSkeletons};
   return &params;
 }
 
@@ -102,7 +107,7 @@ const int kDefaultLaunchPercentageOnBeta = 50;
 // and second string is its skeleton.
 // If you are adding a brand name here, you can generate its skeleton using the
 // format_url binary (components/url_formatter/tools/format_url.cc)
-// TODO(crbug.com/1349490): Generate skeletons of hard coded brand names in
+// TODO(crbug.com/40855941): Generate skeletons of hard coded brand names in
 // Chrome initialization and remove manual adding of skeletons to this list.
 constexpr std::pair<const char*, const char*> kBrandNamesForCSQ[] = {
     {"adobe", "adobe"},
@@ -165,8 +170,8 @@ constexpr std::pair<const char*, const char*> kBrandNamesForCSQ[] = {
 // using the format_url binary (components/url_formatter/tools/format_url.cc)
 const char* kSkeletonsOfPopularKeywordsForCSQ[] = {
     // Security
-    "account",  "activate", "adrnin",   "login",  "logout",
-    "password", "secure",   "security", "signin", "signout"};
+    "account",  "activate", "adrnin",   "coin",   "crypto",  "login", "logout",
+    "password", "secure",   "security", "signin", "signout", "wallet"};
 
 // Minimum length of brand to be checked for Combo Squatting.
 const size_t kMinBrandNameLengthForComboSquatting = 4;
@@ -212,17 +217,17 @@ std::string GetMatchingSiteEngagementDomain(
 // done in lexicographic order on the top 500 suitable domains, instead of in
 // order by popularity. This means that the resulting "similar" domain may not
 // be the most popular domain that matches.
-bool GetSimilarDomainFromTop500(
+bool GetSimilarDomainFromTopBucket(
     const DomainInfo& navigated_domain,
     const LookalikeTargetAllowlistChecker& target_allowlisted,
     std::string* matched_domain,
     LookalikeUrlMatchType* match_type) {
-  Top500DomainsParams* top_500_domain_params = GetTopDomainParams();
+  TopBucketDomainsParams* top_bucket_domain_params = GetTopDomainParams();
   for (const std::string& navigated_skeleton : navigated_domain.skeletons) {
-    for (size_t i = 0; i < top_500_domain_params->num_edit_distance_skeletons;
-         i++) {
+    for (size_t i = 0;
+         i < top_bucket_domain_params->num_edit_distance_skeletons; i++) {
       const char* const top_domain_skeleton =
-          top_500_domain_params->edit_distance_skeletons[i];
+          top_bucket_domain_params->edit_distance_skeletons[i];
       DCHECK(strlen(top_domain_skeleton));
       // Check edit distance on skeletons.
       if (IsEditDistanceAtMostOne(base::UTF8ToUTF16(navigated_skeleton),
@@ -243,7 +248,7 @@ bool GetSimilarDomainFromTop500(
       }
 
       // Check character swap on skeletons.
-      // TODO(crbug/1109056): Also check character swap on actual hostnames
+      // TODO(crbug.com/40707797): Also check character swap on actual hostnames
       // with diacritics etc removed. This is because some characters have two
       // character skeletons such as m -> rn, and this prevents us from
       // detecting character swaps between example.com and exapmle.com.
@@ -337,8 +342,36 @@ bool GetSimilarDomainFromEngagedSites(
   return false;
 }
 
-void RecordEvent(NavigationSuggestionEvent event) {
-  UMA_HISTOGRAM_ENUMERATION(lookalikes::kInterstitialHistogramName, event);
+std::optional<NavigationSuggestionEvent> ToNavigationSuggestionEvent(
+    LookalikeUrlMatchType match_type) {
+  switch (match_type) {
+    case LookalikeUrlMatchType::kSkeletonMatchSiteEngagement:
+      return NavigationSuggestionEvent::kMatchSiteEngagement;
+    case LookalikeUrlMatchType::kEditDistance:
+      return NavigationSuggestionEvent::kMatchEditDistance;
+    case LookalikeUrlMatchType::kEditDistanceSiteEngagement:
+      return NavigationSuggestionEvent::kMatchEditDistanceSiteEngagement;
+    case LookalikeUrlMatchType::kTargetEmbedding:
+      return NavigationSuggestionEvent::kMatchTargetEmbedding;
+    case LookalikeUrlMatchType::kSkeletonMatchTop500:
+      return NavigationSuggestionEvent::kMatchSkeletonTop500;
+    case LookalikeUrlMatchType::kSkeletonMatchTop5k:
+      return NavigationSuggestionEvent::kMatchSkeletonTop5k;
+    case LookalikeUrlMatchType::kTargetEmbeddingForSafetyTips:
+      return NavigationSuggestionEvent::kMatchTargetEmbeddingForSafetyTips;
+    case LookalikeUrlMatchType::kFailedSpoofChecks:
+      return NavigationSuggestionEvent::kFailedSpoofChecks;
+    case LookalikeUrlMatchType::kCharacterSwapSiteEngagement:
+      return NavigationSuggestionEvent::kMatchCharacterSwapSiteEngagement;
+    case LookalikeUrlMatchType::kCharacterSwapTop500:
+      return NavigationSuggestionEvent::kMatchCharacterSwapTop500;
+    case LookalikeUrlMatchType::kComboSquatting:
+      return NavigationSuggestionEvent::kComboSquatting;
+    case LookalikeUrlMatchType::kComboSquattingSiteEngagement:
+      return NavigationSuggestionEvent::kComboSquattingSiteEngagement;
+    case LookalikeUrlMatchType::kNone:
+      return std::nullopt;
+  }
 }
 
 // Returns the parts of the domain that are separated by "." or "-", not
@@ -346,7 +379,7 @@ void RecordEvent(NavigationSuggestionEvent event) {
 //
 // |hostname| must outlive the return value since the vector contains
 // StringPieces.
-std::vector<base::StringPiece> SplitDomainIntoTokens(
+std::vector<std::string_view> SplitDomainIntoTokens(
     const std::string& hostname) {
   return base::SplitStringPiece(hostname, kTargetEmbeddingSeparators,
                                 base::TRIM_WHITESPACE,
@@ -357,7 +390,7 @@ std::vector<base::StringPiece> SplitDomainIntoTokens(
 // allowlisted. e.g. if domain_labels = {foo,scholar,google,com}, checks the
 // allowlist for google.com, scholar.google.com, and foo.scholar.google.com.
 bool ASubdomainIsAllowlisted(
-    const base::span<const base::StringPiece>& domain_labels,
+    const base::span<const std::string_view>& domain_labels,
     const LookalikeTargetAllowlistChecker& in_target_allowlist) {
   DCHECK(domain_labels.size() >= 2);
   std::string potential_hostname(domain_labels[domain_labels.size() - 1]);
@@ -376,7 +409,7 @@ bool ASubdomainIsAllowlisted(
 // Returns the top domain if the top domain without its separators matches the
 // |potential_target| (e.g. googlecom). The matching is a skeleton matching.
 std::string GetMatchingTopDomainWithoutSeparators(
-    const base::StringPiece& potential_target) {
+    std::string_view potential_target) {
   const url_formatter::Skeletons skeletons =
       url_formatter::GetSkeletons(base::UTF8ToUTF16(potential_target));
 
@@ -401,7 +434,7 @@ bool IsETLDPlusOneOrTrivialSubdomain(const DomainInfo& host) {
 }
 
 // Returns if |etld_plus_one| shares the skeleton of an eTLD+1 with an engaged
-// site or a top 500 domain. |embedded_target| is set to matching eTLD+1.
+// site or a top bucket domain. |embedded_target| is set to matching eTLD+1.
 bool DoesETLDPlus1MatchTopDomainOrEngagedSite(
     const DomainInfo& domain,
     const std::vector<DomainInfo>& engaged_sites,
@@ -422,7 +455,7 @@ bool DoesETLDPlus1MatchTopDomainOrEngagedSite(
     const url_formatter::TopDomainEntry top_domain =
         url_formatter::LookupSkeletonInTopDomains(
             skeleton, url_formatter::SkeletonType::kFull);
-    if (!top_domain.domain.empty() && top_domain.is_top_500) {
+    if (!top_domain.domain.empty() && top_domain.is_top_bucket) {
       *embedded_target = top_domain.domain;
       return true;
     }
@@ -468,7 +501,7 @@ bool UsesCommonWord(const reputation::SafetyTipsConfig* config_proto,
 // Returns whether |domain_labels| is in the same domain as embedding_domain.
 // e.g. IsEmbeddingItself(["foo", "example", "com"], "example.com") -> true
 //  since foo.example.com is in the same domain as example.com.
-bool IsEmbeddingItself(const base::span<const base::StringPiece>& domain_labels,
+bool IsEmbeddingItself(const base::span<const std::string_view>& domain_labels,
                        const std::string& embedding_domain) {
   DCHECK(domain_labels.size() >= 2);
   std::string potential_hostname(domain_labels[domain_labels.size() - 1]);
@@ -555,7 +588,7 @@ bool EndsWithPermittedDomains(const DomainInfo& embedded_target,
 // cross-TLD match (e.g. google.com vs google.com.mx).
 bool IsAllowedToBeEmbedded(
     const DomainInfo& embedded_target,
-    const base::span<const base::StringPiece>& subdomain_span,
+    const base::span<const std::string_view>& subdomain_span,
     const LookalikeTargetAllowlistChecker& in_target_allowlist,
     const std::string& embedding_domain,
     const reputation::SafetyTipsConfig* config_proto) {
@@ -578,7 +611,7 @@ char GetFirstDifferentChar(const std::string& str1, const std::string& str2) {
     i1++;
     i2++;
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return 0;
 }
 
@@ -716,6 +749,8 @@ bool IsComboSquatting(
 namespace lookalikes {
 
 const char kInterstitialHistogramName[] = "NavigationSuggestion.Event2";
+const char kIncognitoInterstitialHistogramName[] =
+    "NavigationSuggestion.Event2.Incognito";
 
 void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   registry->RegisterListPref(prefs::kLookalikeWarningAllowlistDomains);
@@ -980,9 +1015,10 @@ bool GetMatchingDomain(
       DCHECK_NE(navigated_domain.domain_and_registry,
                 navigated_domain.idn_result.matching_top_domain.domain);
       *matched_domain = navigated_domain.idn_result.matching_top_domain.domain;
-      *match_type = navigated_domain.idn_result.matching_top_domain.is_top_500
-                        ? LookalikeUrlMatchType::kSkeletonMatchTop500
-                        : LookalikeUrlMatchType::kSkeletonMatchTop5k;
+      *match_type =
+          navigated_domain.idn_result.matching_top_domain.is_top_bucket
+              ? LookalikeUrlMatchType::kSkeletonMatchTop500
+              : LookalikeUrlMatchType::kSkeletonMatchTop5k;
       return true;
     }
   }
@@ -1000,8 +1036,8 @@ bool GetMatchingDomain(
 
     // Finally, try to find a top domain within an edit distance or character
     // swap of one.
-    if (GetSimilarDomainFromTop500(navigated_domain, in_target_allowlist,
-                                   matched_domain, match_type)) {
+    if (GetSimilarDomainFromTopBucket(navigated_domain, in_target_allowlist,
+                                      matched_domain, match_type)) {
       DCHECK_NE(navigated_domain.domain_and_registry, *matched_domain);
       DCHECK(!matched_domain->empty());
       return true;
@@ -1037,47 +1073,17 @@ bool GetMatchingDomain(
   return false;
 }
 
-void RecordUMAFromMatchType(LookalikeUrlMatchType match_type) {
-  switch (match_type) {
-    case LookalikeUrlMatchType::kSkeletonMatchSiteEngagement:
-      RecordEvent(NavigationSuggestionEvent::kMatchSiteEngagement);
-      break;
-    case LookalikeUrlMatchType::kEditDistance:
-      RecordEvent(NavigationSuggestionEvent::kMatchEditDistance);
-      break;
-    case LookalikeUrlMatchType::kEditDistanceSiteEngagement:
-      RecordEvent(NavigationSuggestionEvent::kMatchEditDistanceSiteEngagement);
-      break;
-    case LookalikeUrlMatchType::kTargetEmbedding:
-      RecordEvent(NavigationSuggestionEvent::kMatchTargetEmbedding);
-      break;
-    case LookalikeUrlMatchType::kSkeletonMatchTop500:
-      RecordEvent(NavigationSuggestionEvent::kMatchSkeletonTop500);
-      break;
-    case LookalikeUrlMatchType::kSkeletonMatchTop5k:
-      RecordEvent(NavigationSuggestionEvent::kMatchSkeletonTop5k);
-      break;
-    case LookalikeUrlMatchType::kTargetEmbeddingForSafetyTips:
-      RecordEvent(
-          NavigationSuggestionEvent::kMatchTargetEmbeddingForSafetyTips);
-      break;
-    case LookalikeUrlMatchType::kFailedSpoofChecks:
-      RecordEvent(NavigationSuggestionEvent::kFailedSpoofChecks);
-      break;
-    case LookalikeUrlMatchType::kCharacterSwapSiteEngagement:
-      RecordEvent(NavigationSuggestionEvent::kMatchCharacterSwapSiteEngagement);
-      break;
-    case LookalikeUrlMatchType::kCharacterSwapTop500:
-      RecordEvent(NavigationSuggestionEvent::kMatchCharacterSwapTop500);
-      break;
-    case LookalikeUrlMatchType::kComboSquatting:
-      RecordEvent(NavigationSuggestionEvent::kComboSquatting);
-      break;
-    case LookalikeUrlMatchType::kComboSquattingSiteEngagement:
-      RecordEvent(NavigationSuggestionEvent::kComboSquattingSiteEngagement);
-      break;
-    case LookalikeUrlMatchType::kNone:
-      break;
+void RecordUMAFromMatchType(LookalikeUrlMatchType match_type,
+                            bool is_incognito) {
+  std::optional<NavigationSuggestionEvent> event =
+      ToNavigationSuggestionEvent(match_type);
+  if (event) {
+    if (is_incognito) {
+      UMA_HISTOGRAM_ENUMERATION(lookalikes::kIncognitoInterstitialHistogramName,
+                                *event);
+    } else {
+      UMA_HISTOGRAM_ENUMERATION(lookalikes::kInterstitialHistogramName, *event);
+    }
   }
 }
 
@@ -1118,7 +1124,7 @@ TargetEmbeddingType SearchForEmbeddings(
     bool safety_tips_allowed,
     std::string* safe_hostname) {
   const std::string embedding_domain = GetETLDPlusOne(hostname);
-  const std::vector<base::StringPiece> hostname_tokens =
+  const std::vector<std::string_view> hostname_tokens =
       SplitDomainIntoTokens(hostname);
 
   // There are O(n^2) potential target embeddings in a domain name. We want to
@@ -1128,8 +1134,8 @@ TargetEmbeddingType SearchForEmbeddings(
   // possible embedded domains that end in that eTLD (i.e. all possible start
   // points from the beginning of the string onward).
   for (size_t end = hostname_tokens.size(); end > 0; --end) {
-    base::span<const base::StringPiece> etld_check_span(hostname_tokens.data(),
-                                                        end);
+    base::span<const std::string_view> etld_check_span(hostname_tokens.data(),
+                                                       end);
     std::string etld_check_host = base::JoinString(etld_check_span, ".");
     auto etld_check_dominfo = GetDomainInfo(etld_check_host);
 
@@ -1177,7 +1183,7 @@ TargetEmbeddingType SearchForEmbeddings(
     // Check for exact matches against engaged sites, among all possible
     // subdomains ending at |end|.
     for (size_t start = 0; start < end - 1; ++start) {
-      const base::span<const base::StringPiece> span(
+      const base::span<const std::string_view> span(
           hostname_tokens.data() + start, end - start);
       auto embedded_hostname = base::JoinString(span, ".");
       auto embedded_dominfo = GetDomainInfo(embedded_hostname);
@@ -1247,7 +1253,7 @@ bool IsEmojiRelatedCodepoint(UChar32 codepoint) {
 // failed spoof checks should be blocked by an interstitial. Ideally, we would
 // check this for non-ASCII scripts as well (e.g. Cyrillic + emoji), but such
 // usage isn't common.
-bool IsASCIIAndEmojiOnly(const base::StringPiece16& text) {
+bool IsASCIIAndEmojiOnly(std::u16string_view text) {
   for (base::i18n::UTF16CharIterator iter(text); !iter.end(); iter.Advance()) {
     const UChar32 codepoint = iter.get();
     if (!IsASCII(codepoint) && !IsEmojiRelatedCodepoint(codepoint)) {
@@ -1354,14 +1360,14 @@ bool HasOneCharacterSwap(const std::u16string& str1,
   return has_swap;
 }
 
-void SetTop500DomainsParamsForTesting(const Top500DomainsParams& params) {
+void SetTopBucketDomainsParamsForTesting(const TopBucketDomainsParams& params) {
   *GetTopDomainParams() = params;
 }
 
-void ResetTop500DomainsParamsForTesting() {
-  Top500DomainsParams* params = GetTopDomainParams();
-  *params = {top500_domains::kTop500EditDistanceSkeletons,
-             top500_domains::kNumTop500EditDistanceSkeletons};
+void ResetTopBucketDomainsParamsForTesting() {
+  TopBucketDomainsParams* params = GetTopDomainParams();
+  *params = {top_bucket_domains::kTopBucketEditDistanceSkeletons,
+             top_bucket_domains::kNumTopBucketEditDistanceSkeletons};
 }
 
 bool IsHeuristicEnabledForHostname(
@@ -1373,12 +1379,9 @@ bool IsHeuristicEnabledForHostname(
   if (!config_proto) {
     return false;
   }
-  const unsigned char* bytes =
-      reinterpret_cast<const unsigned char*>(lookalike_etld_plus_one.c_str());
-  unsigned char data[base::kSHA1Length];
-  base::SHA1HashBytes(bytes, lookalike_etld_plus_one.length(), data);
-
-  float cohort = data[0] / 2.56;
+  base::SHA1Digest hash =
+      base::SHA1Hash(base::as_byte_span(lookalike_etld_plus_one));
+  float cohort = hash[0u] / 2.56;
   for (const reputation::HeuristicLaunchConfig& config :
        config_proto->launch_config()) {
     if (heuristic == config.heuristic()) {
@@ -1465,7 +1468,7 @@ LookalikeActionType GetActionForMatchType(
 
     case LookalikeUrlMatchType::kTargetEmbedding:
 #if BUILDFLAG(IS_IOS)
-      // TODO(crbug.com/1104384): Only enable target embedding on iOS once we
+      // TODO(crbug.com/40705070): Only enable target embedding on iOS once we
       // can
       //    check engaged sites. Otherwise, false positives are too high.
       return LookalikeActionType::kRecordMetrics;
@@ -1509,10 +1512,10 @@ LookalikeActionType GetActionForMatchType(
                  : LookalikeActionType::kRecordMetrics;
 
     case LookalikeUrlMatchType::kNone:
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
   }
 
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return LookalikeActionType::kNone;
 }
 
@@ -1545,7 +1548,7 @@ GURL GetSuggestedURL(LookalikeUrlMatchType match_type,
       navigated_url.ReplaceComponents(replace_host).GetWithEmptyPath();
 
   // Use https for top domain matches.
-  // TODO(crbug.com/1190309): If the match is against an engaged site, use the
+  // TODO(crbug.com/40755923): If the match is against an engaged site, use the
   // scheme of the engaged site instead.
   if (suggested_url.SchemeIs(url::kHttpScheme) &&
       suggested_url.IntPort() == url::PORT_UNSPECIFIED &&

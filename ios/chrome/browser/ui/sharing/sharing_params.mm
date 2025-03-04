@@ -7,14 +7,10 @@
 
 #import "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 @implementation SharingParams
 
 - (instancetype)initWithScenario:(SharingScenario)scenario {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     _scenario = scenario;
   }
   return self;
@@ -25,7 +21,7 @@
                      scenario:(SharingScenario)scenario {
   DCHECK(image);
   DCHECK(title);
-  if (self = [self initWithScenario:scenario]) {
+  if ((self = [self initWithScenario:scenario])) {
     _image = image;
     _imageTitle = title;
   }
@@ -44,7 +40,7 @@
 - (instancetype)initWithURLs:(NSArray<URLWithTitle*>*)URLs
                     scenario:(SharingScenario)scenario {
   DCHECK(URLs.count);
-  if (self = [self initWithScenario:scenario]) {
+  if ((self = [self initWithScenario:scenario])) {
     _URLs = URLs;
   }
   return self;
@@ -56,7 +52,7 @@
                    scenario:(SharingScenario)scenario {
   DCHECK(additionalText);
 
-  if (self = [self initWithURL:URL title:title scenario:scenario]) {
+  if ((self = [self initWithURL:URL title:title scenario:scenario])) {
     _additionalText = [additionalText copy];
   }
   return self;

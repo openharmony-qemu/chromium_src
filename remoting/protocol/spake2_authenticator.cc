@@ -7,9 +7,10 @@
 #include <utility>
 
 #include "base/base64.h"
+#include "base/containers/span.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
-#include "base/sys_byteorder.h"
+#include "base/numerics/byte_conversions.h"
 #include "crypto/hmac.h"
 #include "crypto/secure_util.h"
 #include "remoting/base/constants.h"
@@ -43,8 +44,7 @@ const jingle_xmpp::StaticQName kCertificateTag = {kChromotingXmlNamespace,
 std::unique_ptr<jingle_xmpp::XmlElement> EncodeBinaryValueToXml(
     const jingle_xmpp::StaticQName& qname,
     const std::string& content) {
-  std::string content_base64;
-  base::Base64Encode(content, &content_base64);
+  std::string content_base64 = base::Base64Encode(content);
 
   std::unique_ptr<jingle_xmpp::XmlElement> result(
       new jingle_xmpp::XmlElement(qname));
@@ -75,8 +75,10 @@ bool DecodeBinaryValueFromXml(const jingle_xmpp::XmlElement* message,
 }
 
 std::string PrefixWithLength(const std::string& str) {
-  uint32_t length = base::HostToNet32(str.size());
-  return std::string(reinterpret_cast<char*>(&length), sizeof(length)) + str;
+  std::string out;
+  out += base::as_string_view(base::numerics::U32ToBigEndian(str.size()));
+  out += str;
+  return out;
 }
 
 }  // namespace
@@ -134,6 +136,14 @@ Spake2Authenticator::Spake2Authenticator(const std::string& local_id,
 
 Spake2Authenticator::~Spake2Authenticator() {
   SPAKE2_CTX_free(spake2_context_);
+}
+
+CredentialsType Spake2Authenticator::credentials_type() const {
+  return CredentialsType::SHARED_SECRET;
+}
+
+const Authenticator& Spake2Authenticator::implementing_authenticator() const {
+  return *this;
 }
 
 Authenticator::State Spake2Authenticator::state() const {
@@ -235,10 +245,9 @@ void Spake2Authenticator::ProcessMessageInternal(
   }
 
   if (verification_hash_present) {
-    if (verification_hash.size() != expected_verification_hash_.size() ||
-        !crypto::SecureMemEqual(verification_hash.data(),
-                                expected_verification_hash_.data(),
-                                verification_hash.size())) {
+    if (!crypto::SecureMemEqual(
+            base::as_byte_span(verification_hash),
+            base::as_byte_span(expected_verification_hash_))) {
       state_ = REJECTED;
       rejection_reason_ = RejectionReason::INVALID_CREDENTIALS;
       return;
@@ -284,6 +293,10 @@ std::unique_ptr<jingle_xmpp::XmlElement> Spake2Authenticator::GetNextMessage() {
 
 const std::string& Spake2Authenticator::GetAuthKey() const {
   return auth_key_;
+}
+
+const SessionPolicies* Spake2Authenticator::GetSessionPolicies() const {
+  return nullptr;
 }
 
 std::unique_ptr<ChannelAuthenticator>

@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/strings/utf_string_conversions.h"
@@ -13,6 +14,7 @@
 #include "components/autofill/core/browser/address_normalizer.h"
 #include "components/autofill/core/browser/autofill_test_utils.h"
 #include "components/autofill/core/browser/data_model/autofill_profile.h"
+#include "components/autofill/core/common/autofill_features.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/libaddressinput/src/cpp/include/libaddressinput/null_storage.h"
 #include "third_party/libaddressinput/src/cpp/include/libaddressinput/source.h"
@@ -35,7 +37,7 @@ class ChromiumTestdataSource : public TestdataSource {
   ChromiumTestdataSource(const ChromiumTestdataSource&) = delete;
   ChromiumTestdataSource& operator=(const ChromiumTestdataSource&) = delete;
 
-  ~ChromiumTestdataSource() override {}
+  ~ChromiumTestdataSource() override = default;
 
   // For this test, only load the rules for the "US".
   void Get(const std::string& key, const Callback& data_ready) const override {
@@ -62,7 +64,7 @@ class TestAddressNormalizer : public AddressNormalizerImpl {
   TestAddressNormalizer(const TestAddressNormalizer&) = delete;
   TestAddressNormalizer& operator=(const TestAddressNormalizer&) = delete;
 
-  ~TestAddressNormalizer() override {}
+  ~TestAddressNormalizer() override = default;
 
   void ShouldLoadRules(bool should_load_rules) {
     should_load_rules_ = should_load_rules;
@@ -79,6 +81,8 @@ class TestAddressNormalizer : public AddressNormalizerImpl {
 };
 
 }  // namespace
+// The anonymous namespace needs to end here because of `friend`ships between
+// the tests and the production code.
 
 class AddressNormalizerTest : public testing::Test {
  public:
@@ -95,7 +99,7 @@ class AddressNormalizerTest : public testing::Test {
       : normalizer_(std::unique_ptr<Source>(new ChromiumTestdataSource),
                     std::unique_ptr<Storage>(new NullStorage)) {}
 
-  ~AddressNormalizerTest() override {}
+  ~AddressNormalizerTest() override = default;
 
   void WaitForAddressValidatorInitialization() {
     task_environment_.RunUntilIdle();
@@ -115,7 +119,7 @@ class AddressNormalizerTest : public testing::Test {
 
  private:
   bool success_ = false;
-  AutofillProfile profile_;
+  AutofillProfile profile_{i18n_model_definition::kLegacyHierarchyCountryCode};
   TestAddressNormalizer normalizer_;
 };
 
@@ -311,7 +315,9 @@ TEST_F(AddressNormalizerTest, FormatInvalidPhone_AddressNormalizedAsync) {
   // Expect that the phone number was formatted and address normalizer
   EXPECT_TRUE(normalization_successful());
   EXPECT_EQ(
-      "5151231234",
+      base::FeatureList::IsEnabled(features::kAutofillInferCountryCallingCode)
+          ? "+15151231234"
+          : "5151231234",
       base::UTF16ToUTF8(result_profile().GetRawInfo(PHONE_HOME_WHOLE_NUMBER)));
   EXPECT_EQ("CA",
             base::UTF16ToUTF8(result_profile().GetRawInfo(ADDRESS_HOME_STATE)));

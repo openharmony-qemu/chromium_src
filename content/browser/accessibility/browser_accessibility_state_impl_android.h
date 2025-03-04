@@ -10,30 +10,27 @@
 
 namespace content {
 
-class BrowserContext;
-
 class BrowserAccessibilityStateImplAndroid
     : public BrowserAccessibilityStateImpl,
-      public ui::AccessibilityState::Delegate {
+      public ui::AccessibilityState::AccessibilityStateDelegate {
  public:
   BrowserAccessibilityStateImplAndroid();
   ~BrowserAccessibilityStateImplAndroid() override;
 
-  void CollectAccessibilityServiceStats();
+  // ui::AccessibilityState::AccessibilityStateDelegate overrides
+  void OnAnimatorDurationScaleChanged() override;
+  void OnDisplayInversionEnabledChanged(bool enabled) override;
+  void OnContrastLevelChanged(bool highContrastEnabled) override;
+  void RecordAccessibilityServiceInfoHistograms() override;
+
+ protected:
+  void UpdateHistogramsOnOtherThread() override;
+  void UpdateUniqueUserHistograms() override;
   void RecordAccessibilityServiceStatsHistogram(int event_type_mask,
                                                 int feedback_type_mask,
                                                 int flags_mask,
                                                 int capabilities_mask,
                                                 std::string histogram);
-
-  // ui::AccessibilityState::Delegate overrides
-  void OnAnimatorDurationScaleChanged() override;
-
- protected:
-  void UpdateHistogramsOnOtherThread() override;
-  void UpdateUniqueUserHistograms() override;
-  void SetImageLabelsModeForProfile(bool enabled,
-                                    BrowserContext* profile) override;
 };
 
 }  // namespace content

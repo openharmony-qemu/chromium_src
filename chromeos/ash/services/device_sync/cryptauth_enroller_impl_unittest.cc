@@ -257,7 +257,7 @@ class DeviceSyncCryptAuthEnrollerTest
   // Owned by |enroller_|.
   std::unique_ptr<MockCryptAuthClientFactory> client_factory_;
   // Owned by |enroller_|.
-  raw_ptr<multidevice::FakeSecureMessageDelegate, ExperimentalAsh>
+  raw_ptr<multidevice::FakeSecureMessageDelegate, DanglingUntriaged>
       secure_message_delegate_;
   // The CryptAuthEnroller under test.
   CryptAuthEnrollerImpl enroller_;

@@ -23,8 +23,6 @@
 #include "components/viz/service/display/direct_renderer.h"
 #include "components/viz/test/fake_output_surface.h"
 #include "components/viz/test/fake_skia_output_surface.h"
-#include "components/viz/test/test_gles2_interface.h"
-#include "gpu/GLES2/gl2extchromium.h"
 
 namespace cc {
 
@@ -223,7 +221,7 @@ TEST_P(LayerTreeHostCopyRequestTestMultipleRequestsOutOfOrder, Test) {
   RunTest(compositor_mode());
 }
 
-// TODO(crbug.com/564832): Remove this test when the workaround it tests is no
+// TODO(crbug.com/40447355): Remove this test when the workaround it tests is no
 // longer needed.
 class LayerTreeHostCopyRequestCompletionCausesCommit
     : public LayerTreeHostCopyRequestTest {
@@ -538,7 +536,7 @@ class LayerTreeHostTestHiddenSurfaceNotAllocatedForSubtreeCopyRequest
   std::unique_ptr<TestLayerTreeFrameSink> CreateLayerTreeFrameSink(
       const viz::RendererSettings& renderer_settings,
       double refresh_rate,
-      scoped_refptr<viz::ContextProvider> compositor_context_provider,
+      scoped_refptr<viz::RasterContextProvider> compositor_context_provider,
       scoped_refptr<viz::RasterContextProvider> worker_context_provider)
       override {
     auto frame_sink = LayerTreeHostCopyRequestTest::CreateLayerTreeFrameSink(
@@ -571,8 +569,8 @@ class LayerTreeHostTestHiddenSurfaceNotAllocatedForSubtreeCopyRequest
       const viz::AggregatedRenderPassList& render_passes) override {
     EXPECT_TRUE(will_draw_and_swap) << did_swap_;
     if (did_swap_) {
-      // TODO(crbug.com/564832): Ignore the extra frame that occurs due to copy
-      // completion. This can be removed when the extra commit is removed.
+      // TODO(crbug.com/40447355): Ignore the extra frame that occurs due to
+      // copy completion. This can be removed when the extra commit is removed.
       EXPECT_EQ(1u, render_passes.size());
       return;
     }
@@ -592,7 +590,7 @@ class LayerTreeHostTestHiddenSurfaceNotAllocatedForSubtreeCopyRequest
     EXPECT_FALSE(
         renderer->HasAllocatedResourcesForTesting(parent_render_pass_id));
 
-    // TODO(crbug.com/564832): Ignore the extra frame that occurs due to copy
+    // TODO(crbug.com/40447355): Ignore the extra frame that occurs due to copy
     // completion. This can be removed when the extra commit is removed.
     if (did_swap_) {
       EXPECT_FALSE(
@@ -611,7 +609,7 @@ class LayerTreeHostTestHiddenSurfaceNotAllocatedForSubtreeCopyRequest
 
   viz::AggregatedRenderPassId parent_render_pass_id;
   viz::AggregatedRenderPassId copy_layer_render_pass_id;
-  raw_ptr<TestLayerTreeFrameSink> frame_sink_ = nullptr;
+  raw_ptr<TestLayerTreeFrameSink, DanglingUntriaged> frame_sink_ = nullptr;
   bool did_swap_ = false;
   FakeContentLayerClient client_;
   scoped_refptr<FakePictureLayer> root_;
@@ -828,7 +826,6 @@ class LayerTreeHostTestAsyncTwoReadbacksWithoutDraw
         break;
       default:
         NOTREACHED();
-        break;
     }
 
     ++callback_count_;
@@ -1059,7 +1056,7 @@ class LayerTreeHostCopyRequestTestCountSharedImages
   std::unique_ptr<TestLayerTreeFrameSink> CreateLayerTreeFrameSink(
       const viz::RendererSettings& renderer_settings,
       double refresh_rate,
-      scoped_refptr<viz::ContextProvider> compositor_context_provider,
+      scoped_refptr<viz::RasterContextProvider> compositor_context_provider,
       scoped_refptr<viz::RasterContextProvider> worker_context_provider)
       override {
     // Since this test counts shared images and SkiaRenderer uses shared images
@@ -1387,8 +1384,8 @@ class LayerTreeHostCopyRequestTestMultipleDrawsHiddenCopyRequest
     bool saw_root = false;
     bool saw_child = false;
     for (EffectTreeLayerListIterator it(host_impl->active_tree());
-         it.state() != EffectTreeLayerListIterator::State::END; ++it) {
-      if (it.state() == EffectTreeLayerListIterator::State::LAYER) {
+         it.state() != EffectTreeLayerListIterator::State::kEnd; ++it) {
+      if (it.state() == EffectTreeLayerListIterator::State::kLayer) {
         if (it.current_layer() == root)
           saw_root = true;
         else if (it.current_layer() == child)

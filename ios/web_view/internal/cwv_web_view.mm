@@ -10,13 +10,13 @@
 
 #import <WebKit/WebKit.h>
 
+#include "base/apple/foundation_util.h"
 #include "base/functional/bind.h"
+#import "base/functional/callback_helpers.h"
 #include "base/json/json_writer.h"
-#include "base/mac/foundation_util.h"
 #import "base/notreached.h"
 #include "base/strings/sys_string_conversions.h"
 #import "components/autofill/ios/browser/autofill_agent.h"
-#include "components/autofill/ios/form_util/unique_id_data_tab_helper.h"
 #include "components/password_manager/core/browser/password_manager.h"
 #import "components/password_manager/ios/password_controller_driver_helper.h"
 #import "components/password_manager/ios/shared_password_controller.h"
@@ -30,15 +30,18 @@
 #import "ios/components/security_interstitials/safe_browsing/safe_browsing_query_manager.h"
 #import "ios/components/security_interstitials/safe_browsing/safe_browsing_tab_helper.h"
 #import "ios/components/security_interstitials/safe_browsing/safe_browsing_unsafe_resource_container.h"
+#import "ios/web/navigation/nscoder_util.h"
 #include "ios/web/public/favicon/favicon_url.h"
 #include "ios/web/public/js_messaging/web_frame.h"
-#import "ios/web/public/js_messaging/web_frame_util.h"
 #import "ios/web/public/js_messaging/web_frames_manager.h"
 #import "ios/web/public/navigation/navigation_context.h"
 #import "ios/web/public/navigation/navigation_item.h"
 #import "ios/web/public/navigation/navigation_manager.h"
 #include "ios/web/public/navigation/referrer.h"
 #include "ios/web/public/navigation/reload_type.h"
+#import "ios/web/public/session/crw_session_storage.h"
+#import "ios/web/public/session/proto/metadata.pb.h"
+#import "ios/web/public/session/proto/storage.pb.h"
 #import "ios/web/public/ui/context_menu_params.h"
 #import "ios/web/public/ui/crw_web_view_proxy.h"
 #import "ios/web/public/ui/crw_web_view_scroll_view_proxy.h"
@@ -50,6 +53,7 @@
 #import "ios/web_view/internal/autofill/web_view_autofill_client_ios.h"
 #import "ios/web_view/internal/cwv_back_forward_list_internal.h"
 #import "ios/web_view/internal/cwv_favicon_internal.h"
+#import "ios/web_view/internal/cwv_find_in_page_controller_internal.h"
 #import "ios/web_view/internal/cwv_html_element_internal.h"
 #import "ios/web_view/internal/cwv_navigation_action_internal.h"
 #import "ios/web_view/internal/cwv_ssl_status_internal.h"
@@ -68,17 +72,28 @@
 #import "ios/web_view/public/cwv_preview_element_info.h"
 #import "ios/web_view/public/cwv_ui_delegate.h"
 #import "ios/web_view/public/cwv_web_view_configuration.h"
-#import "net/base/mac/url_conversions.h"
+#import "net/base/apple/url_conversions.h"
 #include "ui/base/page_transition_types.h"
 #include "url/gurl.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
+
+NSString* gCustomUserAgent = nil;
+NSString* gUserAgentProduct = nil;
+BOOL gChromeContextMenuEnabled = NO;
+BOOL gUseOptimizedSessionStorage = NO;
+BOOL gWebInspectorEnabled = NO;
+BOOL gSkipAccountStorageCheckEnabled = NO;
+
 // A key used in NSCoder to store the session storage object.
+// TODO(crbug.com/40945317): remove once the feature has been launched and
+// all session migrated to the new format.
 NSString* const kSessionStorageKey = @"sessionStorage";
+
+// Keys used to store CWVWebViewProtobufStorage and its properties.
+NSString* const kProtobufStorageKey = @"protobufStorage";
+NSString* const kStorageKey = @"storage";
+NSString* const kSessionKey = @"session";
 
 // Converts base::Value expected to be a dictionary or list to NSDictionary or
 // NSArray, respectively.
@@ -129,7 +144,7 @@ NSDictionary* NSDictionaryFromDictValue(const base::Value::Dict& value) {
   DCHECK(success) << "Failed to convert base::Value to JSON";
 
   NSData* json_data = [NSData dataWithBytes:json.c_str() length:json.length()];
-  NSDictionary* ns_dictionary = base::mac::ObjCCastStrict<NSDictionary>(
+  NSDictionary* ns_dictionary = base::apple::ObjCCastStrict<NSDictionary>(
       [NSJSONSerialization JSONObjectWithData:json_data
                                       options:kNilOptions
                                         error:nil]);
@@ -154,6 +169,237 @@ class WebViewHolder : public web::WebStateUserData<WebViewHolder> {
 WEB_STATE_USER_DATA_KEY_IMPL(WebViewHolder)
 }  // namespace
 
+// Used to serialize the protobuf message and the WebStateID.
+@interface CWVWebViewProtobufStorage : NSObject <NSCoding>
+
+- (instancetype)initWithProto:(web::proto::WebStateStorage)storage
+                   webStateID:(web::WebStateID)webStateID
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithCoder:(NSCoder*)coder;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+// Creates a new WebState with `browserState`.
+- (std::unique_ptr<web::WebState>)createWebState:
+    (web::BrowserState*)browserState;
+
+// The protobuf representation.
+@property(nonatomic, readonly) const web::proto::WebStateStorage& storage;
+
+// The web state identifier.
+@property(nonatomic, readonly) web::WebStateID webStateID;
+
+@end
+
+@implementation CWVWebViewProtobufStorage {
+  web::proto::WebStateStorage _storage;
+}
+
+- (instancetype)initWithProto:(web::proto::WebStateStorage)storage
+                   webStateID:(web::WebStateID)webStateID {
+  if ((self = [super init])) {
+    _storage = std::move(storage);
+    _webStateID = webStateID;
+  }
+  return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder*)coder {
+  if (![coder containsValueForKey:kStorageKey]) {
+    return nil;
+  }
+
+  if (![coder containsValueForKey:kSessionKey]) {
+    return nil;
+  }
+
+  const std::string buffer =
+      web::nscoder_util::DecodeString(coder, kStorageKey);
+
+  web::proto::WebStateStorage storage;
+  if (!storage.ParseFromString(buffer)) {
+    return nil;
+  }
+
+  web::WebStateID webStateID = web::WebStateID::FromSerializedValue(
+      [coder decodeInt32ForKey:kSessionKey]);
+  if (!webStateID.valid()) {
+    return nil;
+  }
+
+  return [self initWithProto:std::move(storage) webStateID:webStateID];
+}
+
+- (void)encodeWithCoder:(NSCoder*)coder {
+  std::string buffer;
+  _storage.SerializeToString(&buffer);
+
+  web::nscoder_util::EncodeString(coder, kStorageKey, buffer);
+  [coder encodeInt32:_webStateID.identifier() forKey:kSessionKey];
+}
+
+- (std::unique_ptr<web::WebState>)createWebState:
+    (web::BrowserState*)browserState {
+  return web::WebState::CreateWithStorage(
+      browserState, self.webStateID, _storage.metadata(),
+      base::ReturnValueOnce(std::move(_storage)),
+      base::ReturnValueOnce<NSData*>(nil));
+}
+
+- (const web::proto::WebStateStorage&)storage {
+  return _storage;
+}
+
+@end
+
+// Helper used to manage the serialization of CWVWebView's WebState
+// with either the legacy or the optimised session serialization code.
+@interface CWVWebViewSerializationHelper : NSObject
+
+// Designated initializer.
+- (instancetype)initWithConfiguration:(CWVWebViewConfiguration*)configuration
+    NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+// Creates a new WebState from `coder`.
+- (std::unique_ptr<web::WebState>)createWebStateWithCoder:(NSCoder*)coder;
+
+// Serializes `webState` to `coder`. If `webState` is null, then the cached
+// state is serialized instead (captured by `-updateStateFromWebState:`).
+- (void)encodeWebState:(web::WebState*)webState toCoder:(NSCoder*)coder;
+
+// Updates the cached serialization state from `webState`.
+- (void)updateStateFromWebState:(web::WebState*)webState;
+
+// Clears the cached serialized state for `webState` if it is possible to
+// reconstruct it at a later point (avoid keeping a copy of the state in
+// memory when not necessary after serialization).
+- (void)clearStateForWebStateIfPossible:(web::WebState*)webState;
+
+@end
+
+@implementation CWVWebViewSerializationHelper {
+  web::BrowserState* _browserState;
+
+  // Cached protobuf message. Only used if the optimised serialisation is used.
+  CWVWebViewProtobufStorage* _cachedProtobufStorage;
+
+  // Cached session storage. Only used if the legacy serialisation code is used.
+  // TODO(crbug.com/40945317): Remove when the feature has launched.
+  CRWSessionStorage* _cachedSessionStorage;
+}
+
+- (instancetype)initWithConfiguration:(CWVWebViewConfiguration*)configuration {
+  if ((self = [super init])) {
+    DCHECK(configuration.browserState);
+    _browserState = configuration.browserState;
+  }
+  return self;
+}
+
+- (std::unique_ptr<web::WebState>)createWebStateWithCoder:(NSCoder*)coder {
+  // To support partial rollout and roll back of the feature, try to load
+  // the data from `coder` in either the legacy or optimised format. This
+  // also allow migrating the storage in-place.
+  _cachedProtobufStorage =
+      base::apple::ObjCCastStrict<CWVWebViewProtobufStorage>(
+          [coder decodeObjectForKey:kProtobufStorageKey]);
+
+  _cachedSessionStorage = base::apple::ObjCCastStrict<CRWSessionStorage>(
+      [coder decodeObjectForKey:kSessionStorageKey]);
+
+  // If data can't be loaded in either format, return a brand new WebState.
+  // Since sending a message to nil is well-defined in Objective-C, this
+  // also cover the case when `coder` is nil.
+  if (!_cachedProtobufStorage && !_cachedSessionStorage) {
+    const web::WebState::CreateParams createParams(_browserState);
+    return web::WebState::Create(createParams);
+  }
+
+  // Support for legacy session serialisation code path.
+  // TODO(crbug.com/40945317): Remove when the feature has launched.
+  if (!gUseOptimizedSessionStorage) {
+    if (!_cachedSessionStorage) {
+      _cachedSessionStorage = [[CRWSessionStorage alloc]
+             initWithProto:_cachedProtobufStorage.storage
+          uniqueIdentifier:_cachedProtobufStorage.webStateID
+          stableIdentifier:[[NSUUID UUID] UUIDString]];
+
+      _cachedProtobufStorage = nil;
+    }
+    DCHECK(_cachedSessionStorage);
+
+    const web::WebState::CreateParams createParams(_browserState);
+    return web::WebState::CreateWithStorageSession(
+        createParams, _cachedSessionStorage,
+        base::ReturnValueOnce<NSData*>(nil));
+  }
+
+  if (!_cachedProtobufStorage) {
+    web::proto::WebStateStorage storage;
+    [_cachedSessionStorage serializeToProto:storage];
+
+    _cachedProtobufStorage = [[CWVWebViewProtobufStorage alloc]
+        initWithProto:std::move(storage)
+           webStateID:_cachedSessionStorage.uniqueIdentifier];
+    _cachedSessionStorage = nil;
+  }
+  DCHECK(_cachedProtobufStorage);
+
+  return [_cachedProtobufStorage createWebState:_browserState];
+}
+
+- (void)encodeWebState:(web::WebState*)webState toCoder:(NSCoder*)coder {
+  // TODO(crbug.com/40945317): Remove when the feature has launched.
+  if (!gUseOptimizedSessionStorage) {
+    if (webState) {
+      [self updateStateFromWebState:webState];
+    }
+
+    [coder encodeObject:_cachedSessionStorage forKey:kSessionStorageKey];
+    [self clearStateForWebStateIfPossible:webState];
+    return;
+  }
+
+  if (webState && webState->IsRealized()) {
+    [self updateStateFromWebState:webState];
+  }
+  [coder encodeObject:_cachedProtobufStorage forKey:kProtobufStorageKey];
+  [self clearStateForWebStateIfPossible:webState];
+}
+
+- (void)updateStateFromWebState:(web::WebState*)webState {
+  // TODO(crbug.com/40945317): Remove when the feature has launched.
+  if (!gUseOptimizedSessionStorage) {
+    _cachedSessionStorage = webState->BuildSessionStorage();
+    return;
+  }
+
+  DCHECK(webState->IsRealized());
+  web::proto::WebStateStorage storage;
+  webState->SerializeToProto(storage);
+  _cachedProtobufStorage = [[CWVWebViewProtobufStorage alloc]
+      initWithProto:storage
+         webStateID:webState->GetUniqueIdentifier()];
+}
+
+- (void)clearStateForWebStateIfPossible:(web::WebState*)webState {
+  // TODO(crbug.com/40945317): Remove when the feature has launched.
+  if (!gUseOptimizedSessionStorage) {
+    if (webState) {
+      _cachedSessionStorage = nil;
+    }
+  }
+
+  if (webState && webState->IsRealized()) {
+    _cachedProtobufStorage = nil;
+  }
+}
+
+@end
+
 @interface CWVWebView () {
   CWVWebViewConfiguration* _configuration;
   std::unique_ptr<web::WebState> _webState;
@@ -165,7 +411,9 @@ WEB_STATE_USER_DATA_KEY_IMPL(WebViewHolder)
   // Handles presentation of JavaScript dialogs.
   std::unique_ptr<ios_web_view::WebViewJavaScriptDialogPresenter>
       _javaScriptDialogPresenter;
-  CRWSessionStorage* _cachedSessionStorage;
+
+  // Handle the serialization and deserialization.
+  CWVWebViewSerializationHelper* _serializationHelper;
 }
 
 // Redefine these properties as readwrite to define setters, which send KVO
@@ -196,12 +444,6 @@ WEB_STATE_USER_DATA_KEY_IMPL(WebViewHolder)
 
 @end
 
-namespace {
-NSString* gCustomUserAgent = nil;
-NSString* gUserAgentProduct = nil;
-BOOL gChromeContextMenuEnabled = NO;
-}  // namespace
-
 @implementation CWVWebView
 
 @synthesize autofillController = _autofillController;
@@ -210,6 +452,7 @@ BOOL gChromeContextMenuEnabled = NO;
 @synthesize canGoForward = _canGoForward;
 @synthesize configuration = _configuration;
 @synthesize estimatedProgress = _estimatedProgress;
+@synthesize findInPageController = _findInPageController;
 @synthesize lastCommittedURL = _lastCommittedURL;
 @synthesize loading = _loading;
 @synthesize navigationDelegate = _navigationDelegate;
@@ -235,6 +478,30 @@ BOOL gChromeContextMenuEnabled = NO;
   gChromeContextMenuEnabled = newValue;
 }
 
++ (BOOL)useOptimizedSessionStorage {
+  return gUseOptimizedSessionStorage;
+}
+
++ (void)setUseOptimizedSessionStorage:(BOOL)newValue {
+  gUseOptimizedSessionStorage = newValue;
+}
+
++ (BOOL)webInspectorEnabled {
+  return gWebInspectorEnabled;
+}
+
++ (void)setWebInspectorEnabled:(BOOL)newValue {
+  gWebInspectorEnabled = newValue;
+}
+
++ (BOOL)skipAccountStorageCheckEnabled {
+  return gSkipAccountStorageCheckEnabled;
+}
+
++ (void)setSkipAccountStorageCheckEnabled:(BOOL)newValue {
+  gSkipAccountStorageCheckEnabled = newValue;
+}
+
 + (NSString*)customUserAgent {
   return gCustomUserAgent;
 }
@@ -254,16 +521,9 @@ BOOL gChromeContextMenuEnabled = NO;
 + (void)setGoogleAPIKey:(NSString*)googleAPIKey
                clientID:(NSString*)clientID
            clientSecret:(NSString*)clientSecret {
-  google_apis::SetAPIKey(base::SysNSStringToUTF8(googleAPIKey));
-
-  std::string clientIDString = base::SysNSStringToUTF8(clientID);
-  std::string clientSecretString = base::SysNSStringToUTF8(clientSecret);
-  for (size_t i = 0; i < google_apis::CLIENT_NUM_ITEMS; ++i) {
-    google_apis::OAuth2Client client =
-        static_cast<google_apis::OAuth2Client>(i);
-    google_apis::SetOAuth2ClientID(client, clientIDString);
-    google_apis::SetOAuth2ClientSecret(client, clientSecretString);
-  }
+  google_apis::InitializeAndOverrideAPIKeyAndOAuthClient(
+      base::SysNSStringToUTF8(googleAPIKey), base::SysNSStringToUTF8(clientID),
+      base::SysNSStringToUTF8(clientSecret));
 }
 
 + (CWVWebView*)webViewForWebState:(web::WebState*)webState {
@@ -290,9 +550,12 @@ BOOL gChromeContextMenuEnabled = NO;
     _configuration = configuration;
     [_configuration registerWebView:self];
 
-    [self resetWebStateWithSessionStorage:nil
-                          WKConfiguration:wkConfiguration
-                         createdWKWebView:createdWebView];
+    _serializationHelper = [[CWVWebViewSerializationHelper alloc]
+        initWithConfiguration:configuration];
+
+    [self resetWebStateWithCoder:nil
+                 WKConfiguration:wkConfiguration
+                  createdWebView:createdWebView];
   }
   return self;
 }
@@ -375,8 +638,9 @@ BOOL gChromeContextMenuEnabled = NO;
 }
 
 - (void)evaluateJavaScript:(NSString*)javaScriptString
-                completion:(void (^)(id, NSError*))completion {
-  web::WebFrame* mainFrame = web::GetMainFrame(_webState.get());
+         completionHandler:(void (^)(id result, NSError* error))completion {
+  web::WebFrame* mainFrame =
+      _webState->GetPageWorldWebFramesManager()->GetMainWebFrame();
   if (!mainFrame) {
     if (completion) {
       completion(nil, [NSError errorWithDomain:@"org.chromium.chromewebview"
@@ -400,6 +664,11 @@ BOOL gChromeContextMenuEnabled = NO;
         }
         completion(jsResult, error);
       }));
+}
+
+- (void)evaluateJavaScript:(NSString*)javaScriptString
+                completion:(void (^)(id, NSError*))completion {
+  [self evaluateJavaScript:javaScriptString completionHandler:completion];
 }
 
 - (void)setUIDelegate:(id<CWVUIDelegate>)UIDelegate {
@@ -460,7 +729,7 @@ BOOL gChromeContextMenuEnabled = NO;
   [self updateNavigationAvailability];
   [self updateCurrentURLs];
 
-  // TODO(crbug.com/898357): Remove this once crbug.com/898357 is fixed.
+  // TODO(crbug.com/41422373): Remove this once crbug.com/898357 is fixed.
   [self updateVisibleSSLStatus];
 
   if (navigation->HasCommitted() && !navigation->IsSameDocument() &&
@@ -483,7 +752,7 @@ BOOL gChromeContextMenuEnabled = NO;
     return;
   }
 
-  // TODO(crbug.com/1374071): Fragment navigations currently skip calling
+  // TODO(crbug.com/40872106): Fragment navigations currently skip calling
   // `webViewDidStartNavigation:` and `webViewDidCommitNavigation:`, and instead
   // only calls `webViewDidFinishNavigation:` below. Fix this inconsistency.
   SEL selector = @selector(webViewDidFinishNavigation:);
@@ -584,8 +853,7 @@ BOOL gChromeContextMenuEnabled = NO;
 
 - (void)webState:(web::WebState*)webState
     handlePermissions:(NSArray<NSNumber*>*)permissions
-      decisionHandler:(web::WebStatePermissionDecisionHandler)decisionHandler
-    API_AVAILABLE(ios(15.0)) {
+      decisionHandler:(web::WebStatePermissionDecisionHandler)decisionHandler {
   DCHECK(decisionHandler);
   CWVMediaCaptureType mediaCaptureType;
   BOOL cameraPermissionRequested =
@@ -723,8 +991,6 @@ BOOL gChromeContextMenuEnabled = NO;
 }
 
 - (CWVAutofillController*)newAutofillController {
-  UniqueIDDataTabHelper::CreateForWebState(_webState.get());
-
   auto autofillClient = autofill::WebViewAutofillClientIOS::Create(
       _webState.get(), _configuration.browserState);
   AutofillAgent* autofillAgent = [[AutofillAgent alloc]
@@ -761,31 +1027,26 @@ BOOL gChromeContextMenuEnabled = NO;
                                 ->GetApplicationLocale()];
 }
 
+#pragma mark - Find In Page
+
+- (CWVFindInPageController*)findInPageController {
+  if (!_findInPageController) {
+    _findInPageController =
+        [[CWVFindInPageController alloc] initWithWebState:_webState.get()];
+  }
+  return _findInPageController;
+}
+
 #pragma mark - Preserving and Restoring State
 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   [super encodeRestorableStateWithCoder:coder];
-
-  // It is possible for this instance to be encoded when the |_webState| is a
-  // nullptr, i.e. when this method is called after |shutDown| has occurred.
-  CRWSessionStorage* sessionStorage;
-  if (_webState) {
-    sessionStorage = _webState->BuildSessionStorage();
-  } else if (_cachedSessionStorage) {
-    sessionStorage = _cachedSessionStorage;
-  } else {
-    return;
-  }
-  [coder encodeObject:sessionStorage forKey:kSessionStorageKey];
+  [_serializationHelper encodeWebState:_webState.get() toCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
   [super decodeRestorableStateWithCoder:coder];
-  CRWSessionStorage* sessionStorage =
-      [coder decodeObjectForKey:kSessionStorageKey];
-  [self resetWebStateWithSessionStorage:sessionStorage
-                        WKConfiguration:nil
-                       createdWKWebView:nil];
+  [self resetWebStateWithCoder:coder WKConfiguration:nil createdWebView:nil];
 }
 
 #pragma mark - Private methods
@@ -802,17 +1063,16 @@ BOOL gChromeContextMenuEnabled = NO;
 }
 
 // Creates a WebState instance and assigns it to |_webState|.
-// It replaces the old |_webState| if any.
-// The WebState is restored from |sessionStorage| if provided.
+// The WebState is restored from |coder| if available.
 //
 // If |wkConfiguration| is provided, the underlying WKWebView is
 // initialized with |wkConfiguration|, and assigned to
 // |*createdWKWebView| if |createdWKWebView| is not nil.
 // |*createdWKWebView| will be provided only if |wkConfiguration| is provided,
 // otherwise it will always be reset to nil.
-- (void)resetWebStateWithSessionStorage:(CRWSessionStorage*)sessionStorage
-                        WKConfiguration:(WKWebViewConfiguration*)wkConfiguration
-                       createdWKWebView:(WKWebView**)createdWebView {
+- (void)resetWebStateWithCoder:(NSCoder*)coder
+               WKConfiguration:(WKWebViewConfiguration*)wkConfiguration
+                createdWebView:(WKWebView**)createdWebView {
   if (_webState) {
     if (_webStateObserver) {
       _webState->RemoveObserver(_webStateObserver.get());
@@ -830,13 +1090,13 @@ BOOL gChromeContextMenuEnabled = NO;
       _webState &&
       _webState->GetWebViewProxy().allowsBackForwardNavigationGestures;
 
-  web::WebState::CreateParams webStateCreateParams(_configuration.browserState);
-  if (sessionStorage) {
-    _webState = web::WebState::CreateWithStorageSession(webStateCreateParams,
-                                                        sessionStorage);
-  } else {
-    _webState = web::WebState::Create(webStateCreateParams);
-  }
+  // CWVWebView does not support unrealized WebState, so ignore the
+  // over-realization check (this simply reset the recent realization
+  // counter, so do it each time a WebState is created).
+  web::IgnoreOverRealizationCheck();
+
+  _webState = [_serializationHelper createWebStateWithCoder:coder];
+  DCHECK(_webState);
 
   // WARNING: NOTHING should be here between |web::WebState::Create()| and
   // |web::EnsureWebViewCreatedWithConfiguration()|, as this is the requirement
@@ -913,9 +1173,9 @@ BOOL gChromeContextMenuEnabled = NO;
   self.loading = NO;
   self.estimatedProgress = 0.0;
 
-  // TODO(crbug.com/873729): The session will not be restored until
+  // TODO(crbug.com/41407753): The session will not be restored until
   // LoadIfNecessary call. Fix the bug and remove extra call.
-  if (sessionStorage) {
+  if (coder) {
     _webState->GetNavigationManager()->LoadIfNecessary();
   }
 }
@@ -1011,10 +1271,11 @@ BOOL gChromeContextMenuEnabled = NO;
   if (_webState) {
     // CWVBackForwardList is unsafe to use after shutting down.
     _backForwardList.navigationManager = nil;
+
     // To handle the case where -[CWVWebView encodeRestorableStateWithCoder:] is
     // called after this method, precompute the session storage so it may be
     // used during encoding later.
-    _cachedSessionStorage = _webState->BuildSessionStorage();
+    [_serializationHelper updateStateFromWebState:_webState.get()];
     if (_webStateObserver) {
       _webState->RemoveObserver(_webStateObserver.get());
       _webStateObserver.reset();

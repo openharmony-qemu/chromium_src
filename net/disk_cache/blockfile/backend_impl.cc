@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "net/disk_cache/blockfile/backend_impl.h"
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -18,7 +24,7 @@
 #include "base/location.h"
 #include "base/message_loop/message_pump_type.h"
 #include "base/metrics/field_trial.h"
-#include "base/metrics/histogram.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/rand_util.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
@@ -39,15 +45,11 @@
 #include "net/disk_cache/blockfile/errors.h"
 #include "net/disk_cache/blockfile/experiments.h"
 #include "net/disk_cache/blockfile/file.h"
-#include "net/disk_cache/blockfile/histogram_macros.h"
 #include "net/disk_cache/cache_util.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "res_sched_client_adapter.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
-
-// Provide a BackendImpl object to macros from histogram_macros.h.
-#define CACHE_UMA_BACKEND_IMPL_OBJ this
 
 using base::Time;
 using base::TimeTicks;
@@ -80,7 +82,8 @@ int DesiredIndexTableLen(int32_t storage_size) {
 }
 
 int MaxStorageSizeForTable(int table_len) {
-  return table_len * (k64kEntriesStore / kBaseTableLen);
+  return std::min(int64_t{std::numeric_limits<int32_t>::max()},
+                  int64_t{table_len} * (k64kEntriesStore / kBaseTableLen));
 }
 
 size_t GetIndexSize(int table_len) {
@@ -99,15 +102,6 @@ bool InitExperiment(disk_cache::IndexHeader* header, bool cache_created) {
     return false;
   }
 
-  if (base::FieldTrialList::FindFullName("SimpleCacheTrial") ==
-          "ExperimentControl") {
-    if (cache_created) {
-      header->experiment = disk_cache::EXPERIMENT_SIMPLE_CONTROL;
-      return true;
-    }
-    return header->experiment == disk_cache::EXPERIMENT_SIMPLE_CONTROL;
-  }
-
   header->experiment = disk_cache::NO_EXPERIMENT;
   return true;
 }
@@ -124,22 +118,22 @@ class CacheThread : public base::Thread {
   CacheThread() : base::Thread("CacheThread_BlockFile") {
     CHECK(
         StartWithOptions(base::Thread::Options(base::MessagePumpType::IO, 0)));
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-        GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+        ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
+        GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   }
 
   ~CacheThread() override {
     // We don't expect to be deleted, but call Stop() in dtor 'cause docs
     // say we should.
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
-        ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-        GetThreadRealId(), ResSchedRoleAdapter::USER_INTERACT);
+        ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
+        GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
     Stop();
@@ -183,10 +177,12 @@ BackendImpl::BackendImpl(
 BackendImpl::BackendImpl(
     const base::FilePath& path,
     uint32_t mask,
+    scoped_refptr<BackendCleanupTracker> cleanup_tracker,
     const scoped_refptr<base::SingleThreadTaskRunner>& cache_thread,
     net::CacheType cache_type,
     net::NetLog* net_log)
     : Backend(cache_type),
+      cleanup_tracker_(std::move(cleanup_tracker)),
       background_queue_(this, FallbackToInternalIfNull(cache_thread)),
       path_(path),
       block_files_(path),
@@ -353,7 +349,7 @@ void BackendImpl::CleanupCache() {
 
     if (user_flags_ & kNoRandom) {
       // This is a net_unittest, verify that we are not 'leaking' entries.
-      // TODO(https://crbug.com/1184679): Refactor this and eliminate the
+      // TODO(crbug.com/40171748): Refactor this and eliminate the
       //    WaitForPendingIOForTesting API.
       File::WaitForPendingIOForTesting(&num_pending_io_);
       DCHECK(!num_refs_);
@@ -519,7 +515,6 @@ scoped_refptr<EntryImpl> BackendImpl::OpenEntryImpl(const std::string& key) {
   if (disabled_)
     return nullptr;
 
-  TimeTicks start = TimeTicks::Now();
   uint32_t hash = base::PersistentHash(key);
 
   bool error;
@@ -530,11 +525,6 @@ scoped_refptr<EntryImpl> BackendImpl::OpenEntryImpl(const std::string& key) {
     cache_entry = nullptr;
   }
 
-  int64_t current_size = data_->header.num_bytes / (1024 * 1024);
-  int64_t total_hours = stats_.GetCounter(Stats::TIMER) / 120;
-  int64_t no_use_hours = stats_.GetCounter(Stats::LAST_REPORT_TIMER) / 120;
-  int64_t use_hours = total_hours - no_use_hours;
-
   if (!cache_entry) {
     stats_.OnEvent(Stats::OPEN_MISS);
     return nullptr;
@@ -543,12 +533,6 @@ scoped_refptr<EntryImpl> BackendImpl::OpenEntryImpl(const std::string& key) {
   eviction_.OnOpenEntry(cache_entry.get());
   entry_count_++;
 
-  CACHE_UMA(AGE_MS, "OpenTime", 0, start);
-  CACHE_UMA(COUNTS_10000, "AllOpenBySize.Hit", 0, current_size);
-  CACHE_UMA(HOURS, "AllOpenByTotalHours.Hit", 0,
-            static_cast<base::HistogramBase::Sample>(total_hours));
-  CACHE_UMA(HOURS, "AllOpenByUseHours.Hit", 0,
-            static_cast<base::HistogramBase::Sample>(use_hours));
   stats_.OnEvent(Stats::OPEN_HIT);
   return cache_entry;
 }
@@ -559,7 +543,6 @@ scoped_refptr<EntryImpl> BackendImpl::CreateEntryImpl(const std::string& key) {
   if (disabled_ || key.empty())
     return nullptr;
 
-  TimeTicks start = TimeTicks::Now();
   uint32_t hash = base::PersistentHash(key);
 
   scoped_refptr<EntryImpl> parent;
@@ -577,7 +560,7 @@ scoped_refptr<EntryImpl> BackendImpl::CreateEntryImpl(const std::string& key) {
     DCHECK(!error);
     if (!parent && data_->table[hash & mask_]) {
       // We should have corrected the problem.
-      NOTREACHED();
+      DUMP_WILL_BE_NOTREACHED();
       return nullptr;
     }
   }
@@ -643,7 +626,6 @@ scoped_refptr<EntryImpl> BackendImpl::CreateEntryImpl(const std::string& key) {
   // Link this entry through the lists.
   eviction_.OnCreateEntry(cache_entry.get());
 
-  CACHE_UMA(AGE_MS, "CreateTime", 0, start);
   stats_.OnEvent(Stats::CREATE_HIT);
   FlushIndex();
   return cache_entry;
@@ -733,7 +715,7 @@ bool BackendImpl::SetMaxSize(int64_t max_bytes) {
 
 base::FilePath BackendImpl::GetFileName(Addr address) const {
   if (!address.is_separate_file() || !address.is_initialized()) {
-    NOTREACHED();
+    DUMP_WILL_BE_NOTREACHED();
     return base::FilePath();
   }
 
@@ -968,7 +950,6 @@ bool BackendImpl::IsAllocAllowed(int current_size, int new_size) {
     return false;
 
   buffer_bytes_ += to_add;
-  CACHE_UMA(COUNTS_50000, "BufferBytes", 0, buffer_bytes_ / 1024);
   return true;
 }
 
@@ -978,36 +959,29 @@ void BackendImpl::BufferDeleted(int size) {
 }
 
 bool BackendImpl::IsLoaded() const {
-  CACHE_UMA(COUNTS, "PendingIO", 0, num_pending_io_);
   if (user_flags_ & kNoLoadProtection)
     return false;
 
   return (num_pending_io_ > 5 || user_load_);
 }
 
-std::string BackendImpl::HistogramName(const char* name, int experiment) const {
-  if (!experiment)
-    return base::StringPrintf("DiskCache.%d.%s", GetCacheType(), name);
-  return base::StringPrintf("DiskCache.%d.%s_%d", GetCacheType(), name,
-                            experiment);
-}
-
 base::WeakPtr<BackendImpl> BackendImpl::GetWeakPtr() {
   return ptr_factory_.GetWeakPtr();
 }
 
-// We want to remove biases from some histograms so we only send data once per
-// week.
-bool BackendImpl::ShouldReportAgain() {
-  if (uma_report_)
-    return uma_report_ == 2;
+// Previously this method was used to determine when to report histograms, so
+// the logic is surprisingly convoluted.
+bool BackendImpl::ShouldUpdateStats() {
+  if (should_update_) {
+    return should_update_ == 2;
+  }
 
-  uma_report_++;
+  should_update_++;
   int64_t last_report = stats_.GetCounter(Stats::LAST_REPORT);
   Time last_time = Time::FromInternalValue(last_report);
   if (!last_report || (Time::Now() - last_time).InDays() >= 7) {
     stats_.SetCounter(Stats::LAST_REPORT, Time::Now().ToInternalValue());
-    uma_report_++;
+    should_update_++;
     return true;
   }
   return false;
@@ -1017,37 +991,6 @@ void BackendImpl::FirstEviction() {
   DCHECK(data_->header.create_time);
   if (!GetEntryCount())
     return;  // This is just for unit tests.
-
-  Time create_time = Time::FromInternalValue(data_->header.create_time);
-  CACHE_UMA(AGE, "FillupAge", 0, create_time);
-
-  int64_t use_time = stats_.GetCounter(Stats::TIMER);
-  CACHE_UMA(HOURS, "FillupTime", 0, static_cast<int>(use_time / 120));
-  CACHE_UMA(PERCENTAGE, "FirstHitRatio", 0, stats_.GetHitRatio());
-
-  if (!use_time)
-    use_time = 1;
-  CACHE_UMA(COUNTS_10000, "FirstEntryAccessRate", 0,
-            static_cast<int>(data_->header.num_entries / use_time));
-  CACHE_UMA(COUNTS, "FirstByteIORate", 0,
-            static_cast<int>((data_->header.num_bytes / 1024) / use_time));
-
-  int avg_size = data_->header.num_bytes / GetEntryCount();
-  CACHE_UMA(COUNTS, "FirstEntrySize", 0, avg_size);
-
-  int large_entries_bytes = stats_.GetLargeEntriesSize();
-  int large_ratio = large_entries_bytes * 100 / data_->header.num_bytes;
-  CACHE_UMA(PERCENTAGE, "FirstLargeEntriesRatio", 0, large_ratio);
-
-  if (new_eviction_) {
-    CACHE_UMA(PERCENTAGE, "FirstResurrectRatio", 0, stats_.GetResurrectRatio());
-    CACHE_UMA(PERCENTAGE, "FirstNoUseRatio", 0,
-              data_->header.lru.sizes[0] * 100 / data_->header.num_entries);
-    CACHE_UMA(PERCENTAGE, "FirstLowUseRatio", 0,
-              data_->header.lru.sizes[1] * 100 / data_->header.num_entries);
-    CACHE_UMA(PERCENTAGE, "FirstHighUseRatio", 0,
-              data_->header.lru.sizes[2] * 100 / data_->header.num_entries);
-  }
 
   stats_.ResetRatios();
 }
@@ -1079,7 +1022,9 @@ void BackendImpl::ReportError(int error) {
 
   // We transmit positive numbers, instead of direct error codes.
   DCHECK_LE(error, 0);
-  CACHE_UMA(CACHE_ERROR, "Error", 0, error * -1);
+  if (GetCacheType() == net::DISK_CACHE) {
+    base::UmaHistogramExactLinear("DiskCache.0.Error", error * -1, 50);
+  }
 }
 
 void BackendImpl::OnEvent(Stats::Counters an_event) {
@@ -1117,11 +1062,6 @@ void BackendImpl::OnStatsTimer() {
     stats_.SetCounter(Stats::MAX_ENTRIES, max_refs_);
   }
 
-  CACHE_UMA(COUNTS, "NumberOfReferences", 0, num_refs_);
-
-  CACHE_UMA(COUNTS_10000, "EntryAccessRate", 0, entry_count_);
-  CACHE_UMA(COUNTS, "ByteIORate", 0, byte_count_ / 1024);
-
   // These values cover about 99.5% of the population (Oct 2011).
   user_load_ = (entry_count_ > 300 || byte_count_ > 7 * 1024 * 1024);
   entry_count_ = 0;
@@ -1132,8 +1072,9 @@ void BackendImpl::OnStatsTimer() {
     first_timer_ = false;
   if (first_timer_) {
     first_timer_ = false;
-    if (ShouldReportAgain())
-      ReportStats();
+    if (ShouldUpdateStats()) {
+      UpdateStats();
+    }
   }
 
   // Save stats to disk at 5 min intervals.
@@ -1236,7 +1177,7 @@ int32_t BackendImpl::GetEntryCount() const {
       data_->header.num_entries - data_->header.lru.sizes[Rankings::DELETED];
 
   if (not_deleted < 0) {
-    NOTREACHED();
+    DUMP_WILL_BE_NOTREACHED();
     not_deleted = 0;
   }
 
@@ -1497,7 +1438,6 @@ bool BackendImpl::InitStats() {
 
   if (!address.is_block_file()) {
     NOTREACHED();
-    return false;
   }
 
   // Load the required data.
@@ -1514,8 +1454,9 @@ bool BackendImpl::InitStats() {
 
   if (!stats_.Init(data.get(), size, address))
     return false;
-  if (GetCacheType() == net::DISK_CACHE && ShouldReportAgain())
+  if (GetCacheType() == net::DISK_CACHE && ShouldUpdateStats()) {
     stats_.InitSizeHistogram();
+  }
   return true;
 }
 
@@ -1876,7 +1817,7 @@ void BackendImpl::IncreaseNumEntries() {
 void BackendImpl::DecreaseNumEntries() {
   data_->header.num_entries--;
   if (data_->header.num_entries < 0) {
-    NOTREACHED();
+    STRESS_NOTREACHED();
     data_->header.num_entries = 0;
   }
 }
@@ -1889,59 +1830,18 @@ void BackendImpl::LogStats() {
     VLOG(1) << stat.first << ": " << stat.second;
 }
 
-void BackendImpl::ReportStats() {
-  CACHE_UMA(COUNTS, "Entries", 0, data_->header.num_entries);
-
-  int64_t current_size = data_->header.num_bytes / (1024 * 1024);
-  int max_size = max_size_ / (1024 * 1024);
-  int hit_ratio_as_percentage = stats_.GetHitRatio();
-
-  CACHE_UMA(COUNTS_10000, "Size2", 0, current_size);
-  // For any bin in HitRatioBySize2, the hit ratio of caches of that size is the
-  // ratio of that bin's total count to the count in the same bin in the Size2
-  // histogram.
-  if (base::RandInt(0, 99) < hit_ratio_as_percentage)
-    CACHE_UMA(COUNTS_10000, "HitRatioBySize2", 0, current_size);
-  CACHE_UMA(COUNTS_10000, "MaxSize2", 0, max_size);
-  if (!max_size)
-    max_size++;
-  CACHE_UMA(PERCENTAGE, "UsedSpace", 0, current_size * 100 / max_size);
-
-  CACHE_UMA(COUNTS_10000, "AverageOpenEntries2", 0,
-            static_cast<int>(stats_.GetCounter(Stats::OPEN_ENTRIES)));
-  CACHE_UMA(COUNTS_10000, "MaxOpenEntries2", 0,
-            static_cast<int>(stats_.GetCounter(Stats::MAX_ENTRIES)));
+void BackendImpl::UpdateStats() {
+  // Previously this function was used to periodically emit histograms, however
+  // now it just performs some regular maintenance on the cache statistics.
   stats_.SetCounter(Stats::MAX_ENTRIES, 0);
-
-  CACHE_UMA(COUNTS_10000, "TotalFatalErrors", 0,
-            static_cast<int>(stats_.GetCounter(Stats::FATAL_ERROR)));
-  CACHE_UMA(COUNTS_10000, "TotalDoomCache", 0,
-            static_cast<int>(stats_.GetCounter(Stats::DOOM_CACHE)));
-  CACHE_UMA(COUNTS_10000, "TotalDoomRecentEntries", 0,
-            static_cast<int>(stats_.GetCounter(Stats::DOOM_RECENT)));
   stats_.SetCounter(Stats::FATAL_ERROR, 0);
   stats_.SetCounter(Stats::DOOM_CACHE, 0);
   stats_.SetCounter(Stats::DOOM_RECENT, 0);
 
   int64_t total_hours = stats_.GetCounter(Stats::TIMER) / 120;
   if (!data_->header.create_time || !data_->header.lru.filled) {
-    int cause = data_->header.create_time ? 0 : 1;
-    if (!data_->header.lru.filled)
-      cause |= 2;
-    CACHE_UMA(CACHE_ERROR, "ShortReport", 0, cause);
-    CACHE_UMA(HOURS, "TotalTimeNotFull", 0, static_cast<int>(total_hours));
     return;
   }
-
-  // This is an up to date client that will report FirstEviction() data. After
-  // that event, start reporting this:
-
-  CACHE_UMA(HOURS, "TotalTime", 0, static_cast<int>(total_hours));
-  // For any bin in HitRatioByTotalTime, the hit ratio of caches of that total
-  // time is the ratio of that bin's total count to the count in the same bin in
-  // the TotalTime histogram.
-  if (base::RandInt(0, 99) < hit_ratio_as_percentage)
-    CACHE_UMA(HOURS, "HitRatioByTotalTime", 0, static_cast<int>(total_hours));
 
   int64_t use_hours = stats_.GetCounter(Stats::LAST_REPORT_TIMER) / 120;
   stats_.SetCounter(Stats::LAST_REPORT_TIMER, stats_.GetCounter(Stats::TIMER));
@@ -1953,40 +1853,6 @@ void BackendImpl::ReportStats() {
 
   if (!use_hours || !GetEntryCount() || !data_->header.num_bytes)
     return;
-
-  CACHE_UMA(HOURS, "UseTime", 0, static_cast<int>(use_hours));
-  // For any bin in HitRatioByUseTime, the hit ratio of caches of that use time
-  // is the ratio of that bin's total count to the count in the same bin in the
-  // UseTime histogram.
-  if (base::RandInt(0, 99) < hit_ratio_as_percentage)
-    CACHE_UMA(HOURS, "HitRatioByUseTime", 0, static_cast<int>(use_hours));
-  CACHE_UMA(PERCENTAGE, "HitRatio", 0, hit_ratio_as_percentage);
-
-  int64_t trim_rate = stats_.GetCounter(Stats::TRIM_ENTRY) / use_hours;
-  CACHE_UMA(COUNTS, "TrimRate", 0, static_cast<int>(trim_rate));
-
-  int64_t avg_size = data_->header.num_bytes / GetEntryCount();
-  CACHE_UMA(COUNTS, "EntrySize", 0, avg_size);
-  CACHE_UMA(COUNTS, "EntriesFull", 0, data_->header.num_entries);
-
-  CACHE_UMA(PERCENTAGE, "IndexLoad", 0,
-            data_->header.num_entries * 100 / (mask_ + 1));
-
-  int large_entries_bytes = stats_.GetLargeEntriesSize();
-  int large_ratio = large_entries_bytes * 100 / data_->header.num_bytes;
-  CACHE_UMA(PERCENTAGE, "LargeEntriesRatio", 0, large_ratio);
-
-  if (new_eviction_) {
-    CACHE_UMA(PERCENTAGE, "ResurrectRatio", 0, stats_.GetResurrectRatio());
-    CACHE_UMA(PERCENTAGE, "NoUseRatio", 0,
-              data_->header.lru.sizes[0] * 100 / data_->header.num_entries);
-    CACHE_UMA(PERCENTAGE, "LowUseRatio", 0,
-              data_->header.lru.sizes[1] * 100 / data_->header.num_entries);
-    CACHE_UMA(PERCENTAGE, "HighUseRatio", 0,
-              data_->header.lru.sizes[2] * 100 / data_->header.num_entries);
-    CACHE_UMA(PERCENTAGE, "DeletedRatio", 0,
-              data_->header.lru.sizes[4] * 100 / data_->header.num_entries);
-  }
 
   stats_.ResetRatios();
   stats_.SetCounter(Stats::TRIM_ENTRY, 0);
@@ -2127,21 +1993,21 @@ bool BackendImpl::CheckEntry(EntryImpl* cache_entry) {
   return ok && cache_entry->rankings()->VerifyHash();
 }
 
+// static
 int BackendImpl::MaxBuffersSize() {
-  static uint64_t total_memory = base::SysInfo::AmountOfPhysicalMemory();
-  static bool done = false;
+  // Calculate based on total memory the first time this function is called,
+  // then cache the result.
+  static const int max_buffers_size = ([]() {
+    constexpr uint64_t kMaxMaxBuffersSize = 30 * 1024 * 1024;
+    const uint64_t total_memory = base::SysInfo::AmountOfPhysicalMemory();
+    if (total_memory == 0u) {
+      return int{kMaxMaxBuffersSize};
+    }
+    const uint64_t two_percent = total_memory * 2 / 100;
+    return static_cast<int>(std::min(two_percent, kMaxMaxBuffersSize));
+  })();
 
-  if (!done) {
-    done = true;
-
-    // We want to use up to 2% of the computer's memory, limit 30 MB.
-    total_memory = total_memory * 2 / 100;
-    constexpr uint64_t kMaxBuffersSize = 30 * 1024 * 1024;
-    if (total_memory > kMaxBuffersSize || total_memory == 0)
-      total_memory = kMaxBuffersSize;
-  }
-
-  return static_cast<int>(total_memory);
+  return max_buffers_size;
 }
 
 void BackendImpl::FlushForTesting() {
@@ -2164,5 +2030,3 @@ void BackendImpl::FlushAsynchronouslyForTesting(base::OnceClosure callback) {
 }
 
 }  // namespace disk_cache
-
-#undef CACHE_UMA_BACKEND_IMPL_OBJ  // undef for jumbo builds

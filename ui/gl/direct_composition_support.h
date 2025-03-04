@@ -5,9 +5,10 @@
 #ifndef UI_GL_DIRECT_COMPOSITION_SUPPORT_H_
 #define UI_GL_DIRECT_COMPOSITION_SUPPORT_H_
 
+#include <windows.h>
+
 #include <d3d11.h>
 #include <dcomp.h>
-#include <windows.h>
 #include <wrl/client.h>
 
 #include "base/no_destructor.h"
@@ -19,15 +20,22 @@
 
 namespace gl {
 
-class GLDisplayEGL;
+// Initialize direct composition with the given d3d11 device.
+GL_EXPORT void InitializeDirectComposition(
+    Microsoft::WRL::ComPtr<ID3D11Device> d3d11_device);
 
-GL_EXPORT void InitializeDirectComposition(GLDisplayEGL* display);
 GL_EXPORT void ShutdownDirectComposition();
 
 // Retrieves the global direct composition device. InitializeDirectComposition
 // must be called on GPU process startup before the device is retrieved, and
 // ShutdownDirectComposition must be called at process shutdown.
-GL_EXPORT IDCompositionDevice2* GetDirectCompositionDevice();
+GL_EXPORT IDCompositionDevice3* GetDirectCompositionDevice();
+
+// Retrieves the global d3d11 device used by direct composition.
+// InitializeDirectComposition must be called on GPU process startup before the
+// device is retrieved, and ShutdownDirectComposition must be called at process
+// shutdown.
+GL_EXPORT ID3D11Device* GetDirectCompositionD3D11Device();
 
 // Returns true if direct composition is supported.  We prefer to use direct
 // composition even without hardware overlays, because it allows us to bypass
@@ -36,7 +44,7 @@ GL_EXPORT IDCompositionDevice2* GetDirectCompositionDevice();
 GL_EXPORT bool DirectCompositionSupported();
 
 // Returns true if video overlays are supported and should be used. Overridden
-// with --enable_direct_composition_video_overlays=1 and
+// with --enable-direct-composition-video-overlays and
 // --disable_direct_composition_video_overlays=1. This function is thread safe.
 GL_EXPORT bool DirectCompositionOverlaysSupported();
 
@@ -56,6 +64,15 @@ GL_EXPORT bool DirectCompositionScaledOverlaysSupported();
 
 // Returns preferred overlay format set when detecting overlay support.
 GL_EXPORT DXGI_FORMAT GetDirectCompositionSDROverlayFormat();
+
+// Returns true if video processor auto HDR feature is supported.
+GL_EXPORT bool VideoProcessorAutoHDRSupported();
+
+// Returns true if video processor support handling the given format.
+GL_EXPORT bool CheckVideoProcessorFormatSupport(DXGI_FORMAT format);
+
+// Returns true if the given P010 video format is displayable.
+GL_EXPORT bool CheckDisplayableSupportForP010();
 
 // Returns overlay support flags for the given format.
 // Caller should check for DXGI_OVERLAY_SUPPORT_FLAG_DIRECT and
@@ -78,8 +95,14 @@ GL_EXPORT UINT GetDXGIWaitableSwapChainMaxQueuedFrames();
 // Returns true if there is an HDR capable display connected.
 GL_EXPORT bool DirectCompositionSystemHDREnabled();
 
+// Returns true if the window is displayed on an HDR capable display.
+GL_EXPORT bool DirectCompositionMonitorHDREnabled(HWND window);
+
 // Returns the collected DXGI information.
 GL_EXPORT gfx::mojom::DXGIInfoPtr GetDirectCompositionHDRMonitorDXGIInfo();
+
+// Returns true if there is support for |IDCompositionTexture|.
+GL_EXPORT bool DirectCompositionTextureSupported();
 
 // Set direct composition swap chain failure so that direct composition is
 // marked as unsupported from now on.

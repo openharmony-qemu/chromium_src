@@ -2,29 +2,30 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# ohos_useragent
+# arkweb_useragent
 import("//build/config/python.gni")
-
 static_library("embedder_support") {
   sources = [
-    "pref_names.cc",
     "pref_names.h",
     "switches.cc",
     "switches.h",
   ]
 }
 
-# ohos_useragent
+# arkweb_useragent
 action("make_ohos_arkweb_version") {
-  script = "make_ohos_arkweb_version.py"
+  script = "//arkweb/chromium_ext/components/embedder_support/make_ohos_arkweb_version.py"
   args = [
     "--input_file",
-    rebase_path("//third_party/ohos_nweb_hap/AppScope/app.json5"),
+    rebase_path("//third_party/ohos_nweb_hap/AppScope/app.json5.template"),
     "--output_file",
-    rebase_path("$target_gen_dir/arkweb_version.h", root_build_dir)]
+    rebase_path("$target_gen_dir/arkweb_version.h", root_build_dir),
+  ]
   outputs = [ "$target_gen_dir/arkweb_version.h" ]
   deps = [ "//third_party/ohos_nweb_hap:arkwebcore_hap_app_json5" ]
 }
+
+import("//arkweb/build/features/features.gni")
 
 # Target for general utilities that are only used in the browser process.
 static_library("browser_util") {
@@ -43,14 +44,17 @@ static_library("browser_util") {
     "//components/background_sync",
     "//components/content_settings/browser",
     "//components/content_settings/core/browser",
+    "//components/content_settings/core/browser:cookie_settings",
     "//components/permissions",
     "//components/policy/core/common",
     "//components/prefs",
     "//components/version_info",
     "//content/public/browser",
+    "//services/device/public/cpp:device_features",
+    "//services/device/public/cpp/geolocation:buildflags",
   ]
 
-  if (defined(ohos_useragent) && ohos_useragent) {
+  if (arkweb_useragent) {
     deps += [ ":make_ohos_arkweb_version" ]
   }
 }
@@ -60,7 +64,7 @@ source_set("unit_tests") {
   sources = [
     "origin_trials/component_updater_utils_unittest.cc",
     "origin_trials/origin_trial_policy_impl_unittest.cc",
-    "origin_trials/origin_trials_settings_manager_unittest.cc",
+    "origin_trials/origin_trials_settings_storage_unittest.cc",
   ]
 
   if (!is_ios) {
@@ -75,6 +79,7 @@ source_set("unit_tests") {
     "//components/component_updater/installer_policies",
     "//components/embedder_support",
     "//components/embedder_support/origin_trials",
+    "//components/embedder_support/origin_trials:test_support",
     "//components/prefs",
     "//components/prefs:test_support",
     "//components/version_info:version_info",

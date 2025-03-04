@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "base/command_line.h"
-#include "base/containers/cxx20_erase.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/task/sequenced_task_runner.h"
 #include "build/build_config.h"
@@ -43,22 +43,21 @@
 #include "media/fuchsia/video/fuchsia_video_encode_accelerator.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
+#include "media/base/ohos/ohos_media_codec_util.h"
 #include "media/gpu/ohos/ohos_video_encode_accelerator.h"
 #endif
+
 namespace media {
 
 namespace {
 #if BUILDFLAG(USE_V4L2_CODEC)
 std::unique_ptr<VideoEncodeAccelerator> CreateV4L2VEA() {
-  scoped_refptr<V4L2Device> device = V4L2Device::Create();
-  if (!device)
-    return nullptr;
 #if BUILDFLAG(IS_CHROMEOS)
   // TODO(crbug.com/901264): Encoders use hack for passing offset within
   // a DMA-buf, which is not supported upstream.
   return base::WrapUnique<VideoEncodeAccelerator>(
-      new V4L2VideoEncodeAccelerator(std::move(device)));
+      new V4L2VideoEncodeAccelerator(new V4L2Device()));
 #else
   return nullptr;
 #endif
@@ -72,7 +71,7 @@ std::unique_ptr<VideoEncodeAccelerator> CreateVaapiVEA() {
 
 #if BUILDFLAG(IS_ANDROID)
 std::unique_ptr<VideoEncodeAccelerator> CreateAndroidVEA() {
-  if (NdkVideoEncodeAccelerator::IsSupported()) {
+  if (__builtin_available(android NDK_MEDIA_CODEC_MIN_API, *)) {
     return base::WrapUnique<VideoEncodeAccelerator>(
         new NdkVideoEncodeAccelerator(
             base::SequencedTaskRunner::GetCurrentDefault()));
@@ -108,7 +107,7 @@ std::unique_ptr<VideoEncodeAccelerator> CreateFuchsiaVEA() {
 }
 #endif
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 std::unique_ptr<VideoEncodeAccelerator> CreateOHOSVEA() {
   return base::WrapUnique<VideoEncodeAccelerator>(
       new OHOSVideoEncodeAccelerator());
@@ -124,8 +123,6 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
   // Array of VEAFactoryFunctions potentially usable on the current platform.
   // This list is ordered by priority, from most to least preferred, if
   // applicable. This list is composed once and then reused.
-  LOG(INFO) << "GetVEAFactoryFunctions disable_accelerated_video_encode: "
-    << gpu_preferences.disable_accelerated_video_encode;
   static std::vector<VEAFactoryFunction> vea_factory_functions;
   if (gpu_preferences.disable_accelerated_video_encode)
     return vea_factory_functions;
@@ -134,13 +131,20 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
 
 #if BUILDFLAG(USE_VAAPI)
 #if BUILDFLAG(IS_LINUX)
-  if (base::FeatureList::IsEnabled(kVaapiVideoEncodeLinux))
+  if (base::FeatureList::IsEnabled(kAcceleratedVideoEncodeLinux)) {
     vea_factory_functions.push_back(base::BindRepeating(&CreateVaapiVEA));
+  }
 #else
   vea_factory_functions.push_back(base::BindRepeating(&CreateVaapiVEA));
 #endif
 #elif BUILDFLAG(USE_V4L2_CODEC)
+#if BUILDFLAG(IS_LINUX)
+  if (base::FeatureList::IsEnabled(kAcceleratedVideoEncodeLinux)) {
+    vea_factory_functions.push_back(base::BindRepeating(&CreateV4L2VEA));
+  }
+#else
   vea_factory_functions.push_back(base::BindRepeating(&CreateV4L2VEA));
+#endif
 #endif
 
 #if BUILDFLAG(IS_ANDROID)
@@ -158,7 +162,7 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
     vea_factory_functions.push_back(base::BindRepeating(&CreateFuchsiaVEA));
   }
 #endif
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   vea_factory_functions.push_back(base::BindRepeating(&CreateOHOSVEA));
 #endif
   return vea_factory_functions;
@@ -194,7 +198,9 @@ GpuVideoEncodeAcceleratorFactory::CreateVEA(
     const gpu::GpuPreferences& gpu_preferences,
     const gpu::GpuDriverBugWorkarounds& gpu_workarounds,
     const gpu::GPUInfo::GPUDevice& gpu_device,
-    std::unique_ptr<MediaLog> media_log) {
+    std::unique_ptr<MediaLog> media_log,
+    GetCommandBufferHelperCB get_command_buffer_helper_cb,
+    scoped_refptr<base::SingleThreadTaskRunner> gpu_task_runner) {
   // NullMediaLog silently and safely does nothing.
   if (!media_log)
     media_log = std::make_unique<media::NullMediaLog>();
@@ -204,6 +210,10 @@ GpuVideoEncodeAcceleratorFactory::CreateVEA(
     std::unique_ptr<VideoEncodeAccelerator> vea = create_vea.Run();
     if (!vea)
       continue;
+    if (!get_command_buffer_helper_cb.is_null()) {
+      vea->SetCommandBufferHelperCB(get_command_buffer_helper_cb,
+                                    gpu_task_runner);
+    }
     if (!vea->Initialize(config, client, media_log->Clone())) {
       DLOG(ERROR) << "VEA initialize failed (" << config.AsHumanReadableString()
                   << ")";
@@ -239,27 +249,27 @@ GpuVideoEncodeAcceleratorFactory::GetSupportedProfiles(
 #endif
 
   if (gpu_workarounds.disable_accelerated_av1_encode) {
-    base::EraseIf(profiles, [](const auto& vea_profile) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
       return vea_profile.profile >= AV1PROFILE_PROFILE_MAIN &&
              vea_profile.profile <= AV1PROFILE_PROFILE_PRO;
     });
   }
 
   if (gpu_workarounds.disable_accelerated_vp8_encode) {
-    base::EraseIf(profiles, [](const auto& vea_profile) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
       return vea_profile.profile == VP8PROFILE_ANY;
     });
   }
 
   if (gpu_workarounds.disable_accelerated_vp9_encode) {
-    base::EraseIf(profiles, [](const auto& vea_profile) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
       return vea_profile.profile >= VP9PROFILE_PROFILE0 &&
              vea_profile.profile <= VP9PROFILE_PROFILE3;
     });
   }
 
   if (gpu_workarounds.disable_accelerated_h264_encode) {
-    base::EraseIf(profiles, [](const auto& vea_profile) {
+    std::erase_if(profiles, [](const auto& vea_profile) {
       return vea_profile.profile >= H264PROFILE_MIN &&
              vea_profile.profile <= H264PROFILE_MAX;
     });

@@ -7,10 +7,6 @@ module network.mojom;
 import "services/network/public/mojom/optional_bool.mojom";
 
 enum SSLVersion {
-  [EnableIf=is_ohos]
-  kTLS1,
-  [EnableIf=is_ohos]
-  kTLS11,
   kTLS12,
   kTLS13,
 };
@@ -44,16 +40,13 @@ struct SSLConfig {
   // canonicalized according to the rules used by GURL.
   array<string> client_cert_pooling_policy;
 
-  // If false, disables post-quantum key agreement in TLS connections.
-  bool post_quantum_enabled = true;
+  // If specified, controls whether post-quantum key agreement is allowed
+  // in TLS connections. If kUnset, this is determined by feature flags.
+  OptionalBool post_quantum_override = kUnset;
 
   // If false, disables TLS Encrypted ClientHello (ECH). If true, the feature
   // may be enabled or disabled, depending on feature flags.
   bool ech_enabled = true;
-
-  // If specified, controls whether insecure hashes are allowed in TLS
-  // handshakes. If kUnset, this is determined by feature flags.
-  OptionalBool insecure_hash_override = kUnset;
 };
 
 // Receives SSL configuration updates.

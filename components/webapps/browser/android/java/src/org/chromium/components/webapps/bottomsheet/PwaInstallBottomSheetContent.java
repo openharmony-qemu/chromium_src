@@ -4,8 +4,10 @@
 
 package org.chromium.components.webapps.bottomsheet;
 
+import android.content.Context;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
@@ -22,8 +24,7 @@ public class PwaInstallBottomSheetContent implements BottomSheetContent {
     private final PwaInstallBottomSheetView mView;
 
     /** The delegate handling the install. */
-    @VisibleForTesting
-    protected final AddToHomescreenViewDelegate mDelegate;
+    @VisibleForTesting protected final AddToHomescreenViewDelegate mDelegate;
 
     /** This content's priority. */
     private @ContentPriority int mPriority = ContentPriority.LOW;
@@ -48,7 +49,12 @@ public class PwaInstallBottomSheetContent implements BottomSheetContent {
     @Nullable
     @Override
     public View getToolbarView() {
-        return mView.getToolbarView();
+        return null;
+    }
+
+    @Override
+    public int getPeekHeight() {
+        return mView.getPeekHeight();
     }
 
     @Override
@@ -78,8 +84,8 @@ public class PwaInstallBottomSheetContent implements BottomSheetContent {
     }
 
     @Override
-    public int getSheetContentDescriptionStringId() {
-        return R.string.pwa_install_bottom_sheet_accessibility;
+    public @NonNull String getSheetContentDescription(Context context) {
+        return context.getString(R.string.pwa_install_bottom_sheet_accessibility);
     }
 
     @Override

@@ -15,8 +15,9 @@ namespace views {
 class Widget;
 
 class VIEWS_EXPORT NativeFrameView : public NonClientFrameView {
+  METADATA_HEADER(NativeFrameView, NonClientFrameView)
+
  public:
-  METADATA_HEADER(NativeFrameView);
   explicit NativeFrameView(Widget* frame);
   NativeFrameView(const NativeFrameView&) = delete;
   NativeFrameView& operator=(const NativeFrameView&) = delete;
@@ -34,7 +35,8 @@ class VIEWS_EXPORT NativeFrameView : public NonClientFrameView {
   void SizeConstraintsChanged() override;
 
   // View overrides:
-  gfx::Size CalculatePreferredSize() const override;
+  gfx::Size CalculatePreferredSize(
+      const SizeBounds& available_size) const override;
   gfx::Size GetMinimumSize() const override;
   gfx::Size GetMaximumSize() const override;
 

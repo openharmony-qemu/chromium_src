@@ -6,6 +6,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -14,8 +15,6 @@
 #include "ash/components/arc/metrics/stability_metrics_manager.h"
 #include "ash/components/arc/session/arc_service_manager.h"
 #include "ash/components/arc/test/fake_process_instance.h"
-#include "ash/components/arc/test/test_browser_context.h"
-#include "ash/constants/app_types.h"
 #include "base/command_line.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_samples.h"
@@ -25,14 +24,17 @@
 #include "base/test/metrics/histogram_tester.h"
 #include "chromeos/ash/components/dbus/concierge/fake_concierge_client.h"
 #include "chromeos/ash/components/dbus/session_manager/fake_session_manager_client.h"
+#include "chromeos/ui/base/app_types.h"
+#include "chromeos/ui/base/window_properties.h"
 #include "components/prefs/testing_pref_service.h"
 #include "components/session_manager/core/session_manager.h"
+#include "components/user_prefs/test/test_browser_context_with_prefs.h"
 #include "content/public/test/browser_task_environment.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/test/test_windows.h"
 #include "ui/aura/window.h"
+#include "ui/display/test/test_screen.h"
 
 namespace arc {
 namespace {
@@ -84,7 +86,7 @@ class ArcMetricsServiceTest : public testing::Test {
         mojom::LowMemoryKillCounts::New(0, 0, 0, 0, 0, 0, 0));
     ArcServiceManager::Get()->arc_bridge_service()->process()->SetInstance(
         &fake_process_instance_);
-    context_ = std::make_unique<TestBrowserContext>();
+    context_ = std::make_unique<user_prefs::TestBrowserContextWithPrefs>();
     prefs::RegisterLocalStatePrefs(context_->pref_registry());
     prefs::RegisterProfilePrefs(context_->pref_registry());
     service_ =
@@ -141,21 +143,23 @@ class ArcMetricsServiceTest : public testing::Test {
   void CreateFakeWindows() {
     fake_arc_window_.reset(aura::test::CreateTestWindowWithId(
         /*id=*/0, nullptr));
-    fake_arc_window_->SetProperty(aura::client::kAppType,
-                                  static_cast<int>(ash::AppType::ARC_APP));
+    fake_arc_window_->SetProperty(chromeos::kAppTypeKey,
+                                  chromeos::AppType::ARC_APP);
     fake_non_arc_window_.reset(aura::test::CreateTestWindowWithId(
         /*id=*/1, nullptr));
   }
 
   content::BrowserTaskEnvironment task_environment_{
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+  display::test::TestScreen test_screen_{/*create_display=*/true,
+                                         /*register_screen=*/true};
 
   TestingPrefServiceSimple local_state_;
   session_manager::SessionManager session_manager_;
 
   std::unique_ptr<ArcServiceManager> arc_service_manager_;
-  std::unique_ptr<TestBrowserContext> context_;
-  raw_ptr<ArcMetricsService, ExperimentalAsh> service_;
+  std::unique_ptr<user_prefs::TestBrowserContextWithPrefs> context_;
+  raw_ptr<ArcMetricsService, DanglingUntriaged> service_;
 
   std::unique_ptr<aura::Window> fake_arc_window_;
   std::unique_ptr<aura::Window> fake_non_arc_window_;
@@ -178,18 +182,8 @@ TEST_F(ArcMetricsServiceTest, ReportBootProgress_FirstBoot) {
   base::HistogramTester tester;
   service()->ReportBootProgress(std::move(events), mojom::BootType::FIRST_BOOT);
   base::RunLoop().RunUntilIdle();
-  for (size_t i = 0; i < kBootEvents.size(); ++i) {
-    tester.ExpectUniqueSample(
-        std::string("Arc.") + kBootEvents[i] + ".FirstBoot", i,
-        1 /* count of the sample */);
-  }
-  // Confirm that Arc.AndroidBootTime.FirstBoot is also recorded, and has the
-  // same value as "Arc.boot_progress_enable_screen.FirstBoot".
-  std::unique_ptr<base::HistogramSamples> samples =
-      tester.GetHistogramSamplesSinceCreation(
-          "Arc." + std::string(kBootEvents.back()) + ".FirstBoot");
-  ASSERT_TRUE(samples.get());
-  tester.ExpectUniqueSample("Arc.AndroidBootTime.FirstBoot", samples->sum(), 1);
+  // Confirm that Arc.AndroidBootTime.FirstBoot is recorded.
+  tester.ExpectTotalCount("Arc.AndroidBootTime.FirstBoot", 1);
 }
 
 // Does the same but with negative values and FIRST_BOOT_AFTER_UPDATE.
@@ -213,18 +207,7 @@ TEST_F(ArcMetricsServiceTest, ReportBootProgress_FirstBootAfterUpdate) {
   service()->ReportBootProgress(std::move(events),
                                 mojom::BootType::FIRST_BOOT_AFTER_UPDATE);
   base::RunLoop().RunUntilIdle();
-  for (size_t i = 0; i < kBootEvents.size(); ++i) {
-    const int expected = std::max<int>(0, i * 2 - 5);
-    tester.ExpectUniqueSample(
-        std::string("Arc.") + kBootEvents[i] + ".FirstBootAfterUpdate",
-        expected, 1);
-  }
-  std::unique_ptr<base::HistogramSamples> samples =
-      tester.GetHistogramSamplesSinceCreation(
-          "Arc." + std::string(kBootEvents.back()) + ".FirstBootAfterUpdate");
-  ASSERT_TRUE(samples.get());
-  tester.ExpectUniqueSample("Arc.AndroidBootTime.FirstBootAfterUpdate",
-                            samples->sum(), 1);
+  tester.ExpectTotalCount("Arc.AndroidBootTime.FirstBoot", 0);
 }
 
 // Does the same but with REGULAR_BOOT.
@@ -238,17 +221,7 @@ TEST_F(ArcMetricsServiceTest, ReportBootProgress_RegularBoot) {
   service()->ReportBootProgress(std::move(events),
                                 mojom::BootType::REGULAR_BOOT);
   base::RunLoop().RunUntilIdle();
-  for (size_t i = 0; i < kBootEvents.size(); ++i) {
-    const int expected = std::max<int>(0, i * 2 - 5);
-    tester.ExpectUniqueSample(
-        std::string("Arc.") + kBootEvents[i] + ".RegularBoot", expected, 1);
-  }
-  std::unique_ptr<base::HistogramSamples> samples =
-      tester.GetHistogramSamplesSinceCreation(
-          "Arc." + std::string(kBootEvents.back()) + ".RegularBoot");
-  ASSERT_TRUE(samples.get());
-  tester.ExpectUniqueSample("Arc.AndroidBootTime.RegularBoot", samples->sum(),
-                            1);
+  tester.ExpectTotalCount("Arc.AndroidBootTime.FirstBoot", 0);
 }
 
 // Tests that no UMA is recorded when nothing is reported.
@@ -259,10 +232,6 @@ TEST_F(ArcMetricsServiceTest, ReportBootProgress_EmptyResults) {
   base::HistogramTester tester;
   service()->ReportBootProgress(std::move(events), mojom::BootType::FIRST_BOOT);
   base::RunLoop().RunUntilIdle();
-  for (size_t i = 0; i < kBootEvents.size(); ++i) {
-    tester.ExpectTotalCount(std::string("Arc.") + kBootEvents[i] + ".FirstBoot",
-                            0);
-  }
   tester.ExpectTotalCount("Arc.AndroidBootTime.FirstBoot", 0);
 }
 
@@ -276,8 +245,6 @@ TEST_F(ArcMetricsServiceTest, ReportBootProgress_InvalidBootType) {
   base::RunLoop().RunUntilIdle();
   for (const std::string& suffix :
        {".FirstBoot", ".FirstBootAfterUpdate", ".RegularBoot"}) {
-    tester.ExpectTotalCount("Arc." + (kBootEvents.front() + suffix), 0);
-    tester.ExpectTotalCount("Arc." + (kBootEvents.back() + suffix), 0);
     tester.ExpectTotalCount("Arc.AndroidBootTime" + suffix, 0);
   }
 }
@@ -368,7 +335,7 @@ TEST_F(ArcMetricsServiceTest, GetArcStartTimeFromEvents) {
   events.emplace_back(
       mojom::BootProgressEvent::New(kBootProgressArcUpgraded, kArcStartTimeMs));
 
-  absl::optional<base::TimeTicks> arc_start_time =
+  std::optional<base::TimeTicks> arc_start_time =
       service()->GetArcStartTimeFromEvents(events);
   EXPECT_TRUE(arc_start_time.has_value());
   EXPECT_EQ(*arc_start_time, base::Milliseconds(10) + base::TimeTicks());
@@ -385,7 +352,7 @@ TEST_F(ArcMetricsServiceTest, GetArcStartTimeFromEvents_NoArcUpgradedEvent) {
   std::vector<mojom::BootProgressEventPtr> events(
       GetBootProgressEvents(kArcStartTimeMs, 1 /* step_in_ms */));
 
-  absl::optional<base::TimeTicks> arc_start_time =
+  std::optional<base::TimeTicks> arc_start_time =
       service()->GetArcStartTimeFromEvents(events);
   EXPECT_FALSE(arc_start_time.has_value());
 }
@@ -396,7 +363,7 @@ TEST_F(ArcMetricsServiceTest, UserInteractionObserver) {
     void OnUserInteraction(UserInteractionType interaction_type) override {
       type = interaction_type;
     }
-    absl::optional<UserInteractionType> type;
+    std::optional<UserInteractionType> type;
   } observer;
 
   service()->AddUserInteractionObserver(&observer);
@@ -417,7 +384,7 @@ TEST_F(ArcMetricsServiceTest, BootTypeObserver) {
    public:
     void OnBootTypeRetrieved(mojom::BootType type) override { type_ = type; }
 
-    absl::optional<mojom::BootType> type_;
+    std::optional<mojom::BootType> type_;
   } observer;
 
   service()->AddBootTypeObserver(&observer);
@@ -465,6 +432,29 @@ TEST_F(ArcMetricsServiceTest, ReportWebViewProcessStarted_SomeUsageReported) {
                            static_cast<base::HistogramBase::Sample>(1), 2);
 }
 
+TEST_F(ArcMetricsServiceTest, ReportArcKeyMintError_SomeErrorReported) {
+  base::HistogramTester tester;
+
+  service()->ReportArcKeyMintError(arc::mojom::ArcKeyMintError::kUnknownError);
+  service()->OnArcSessionStopped();
+
+  tester.ExpectUniqueSample("Arc.KeyMint.KeyMintError",
+                            static_cast<base::HistogramBase::Sample>(2), 1);
+}
+
+TEST_F(ArcMetricsServiceTest,
+       ReportArcKeyMintErrorForOperation_GenerateCertificateRequest) {
+  base::HistogramTester tester;
+  service()->ReportArcKeyMintErrorForOperation(
+      arc::mojom::ArcKeyMintError::kUnknownError,
+      arc::mojom::ArcKeyMintLoggedOperation::kGenerateCertificateRequest);
+  service()->OnArcSessionStopped();
+
+  tester.ExpectUniqueSample(
+      "Arc.KeyMint.KeyMintError.GenerateCertificateRequest",
+      static_cast<int>(arc::mojom::ArcKeyMintError::kUnknownError), 1);
+}
+
 TEST_F(ArcMetricsServiceTest, ReportVpnServiceBuilderCompatApiUsage) {
   base::HistogramTester tester;
 
@@ -482,10 +472,23 @@ TEST_F(ArcMetricsServiceTest, ReportVpnServiceBuilderCompatApiUsage) {
       static_cast<int>(mojom::VpnServiceBuilderCompatApiId::kVpnAddRoute), 1);
 }
 
+// Tests that ReportApkCacheHit() actually records UMA stats.
+TEST_F(ArcMetricsServiceTest, ReportApkCacheHit) {
+  base::HistogramTester tester;
+
+  service()->ReportApkCacheHit(true /*hit*/);
+  tester.ExpectUniqueSample("Arc.AppInstall.CacheHit", 1, 1);
+
+  service()->ReportApkCacheHit(false /*hit*/);
+  tester.ExpectBucketCount("Arc.AppInstall.CacheHit", 0, 1);
+
+  tester.ExpectTotalCount("Arc.AppInstall.CacheHit", 2);
+}
+
 class ArcVmArcMetricsServiceTest
     : public ArcMetricsServiceTest,
       public testing::WithParamInterface<
-          absl::optional<vm_tools::concierge::ListVmsResponse>> {
+          std::optional<vm_tools::concierge::ListVmsResponse>> {
  public:
   ArcVmArcMetricsServiceTest(const ArcVmArcMetricsServiceTest&) = delete;
   ArcVmArcMetricsServiceTest& operator=(const ArcVmArcMetricsServiceTest&) =
@@ -496,7 +499,7 @@ class ArcVmArcMetricsServiceTest
 
   void RequestKillCountsAndRespond(
       mojom::LowMemoryKillCountsPtr counts,
-      absl::optional<vm_tools::concierge::ListVmsResponse> list_vms_response) {
+      std::optional<vm_tools::concierge::ListVmsResponse> list_vms_response) {
     ash::FakeConciergeClient::Get()->set_list_vms_response(
         std::move(list_vms_response));
     process_instance().set_request_low_memory_kill_counts_response(
@@ -521,7 +524,7 @@ class ArcVmArcMetricsServiceTest
 
 // Create a ListVmsResponse used to create the VM specific memory counters.
 // See LogVmSpecificLowMemoryKillCounts.
-static absl::optional<vm_tools::concierge::ListVmsResponse> VmsList(
+static std::optional<vm_tools::concierge::ListVmsResponse> VmsList(
     std::initializer_list<vm_tools::concierge::VmInfo_VmType> types) {
   // ArcMetricsService only uses the vm_type field and ignores everything else,
   // so that's the only thing we need to set.
@@ -587,7 +590,7 @@ static const char* VmKillCounterPrefix(VmType vm) {
 INSTANTIATE_TEST_SUITE_P(
     MultiVm,
     ArcVmArcMetricsServiceTest,
-    testing::Values(absl::nullopt,
+    testing::Values(std::nullopt,
                     VmsList({}),
                     VmsList({VmType_ARC_VM}),
                     VmsList({VmType_ARC_VM, VmType_BOREALIS}),
@@ -631,7 +634,7 @@ void ExpectOneSampleAppKillCountsForVm(
 
 void ExpectOneSampleAppKillCounts(
     base::HistogramTester& tester,
-    absl::optional<vm_tools::concierge::ListVmsResponse> vms,
+    std::optional<vm_tools::concierge::ListVmsResponse> vms,
     const mojom::LowMemoryKillCountsPtr& c0,
     const mojom::LowMemoryKillCountsPtr& c1) {
   // No VM prefix for general counters.
@@ -742,7 +745,7 @@ static void ExpectOneSampleAppKillDailyCountsForVm(
 
 static void ExpectOneSampleAppKillDailyCounts(
     base::HistogramTester& tester,
-    absl::optional<vm_tools::concierge::ListVmsResponse> vms,
+    std::optional<vm_tools::concierge::ListVmsResponse> vms,
     int oom,
     int foreground,
     int perceptible,
@@ -830,9 +833,9 @@ TEST_P(ArcVmArcMetricsServiceTest, AppLowMemoryDailyKills) {
                                             18,   // pressure_perceptible.
                                             18);  // pressure_cached.
 
-  RequestKillCountsAndRespond(c0->Clone(), absl::nullopt);
+  RequestKillCountsAndRespond(c0->Clone(), std::nullopt);
   RequestKillCountsAndRespond(c1->Clone(), GetParam());
-  RequestKillCountsAndRespond(c2->Clone(), absl::nullopt);
+  RequestKillCountsAndRespond(c2->Clone(), std::nullopt);
   // Reset daily events to make sure we restore values from prefs.
   // NB: We make a new ArcDailyMetrics for the passed prefs in SetPrefService.
   service()->SetPrefService(prefs());

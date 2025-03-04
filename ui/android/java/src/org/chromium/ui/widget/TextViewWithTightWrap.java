@@ -15,9 +15,7 @@ import android.widget.TextView;
  * calculation in the overwritten OnMeasure() method.
  */
 public class TextViewWithTightWrap extends TextView {
-    /**
-     * Constructing TextViewWithTightWrap programmatically is similar to a normal TextView.
-     */
+    /** Constructing TextViewWithTightWrap programmatically is similar to a normal TextView. */
     public TextViewWithTightWrap(Context context) {
         super(context);
     }
@@ -40,7 +38,6 @@ public class TextViewWithTightWrap extends TextView {
         if (layout != null && layout.getLineCount() > 1) {
             int width =
                     getMaxLineWidth(layout) + getCompoundPaddingLeft() + getCompoundPaddingRight();
-            int height = getMeasuredHeight();
             if (width < getMeasuredWidth()) {
                 super.onMeasure(
                         MeasureSpec.makeMeasureSpec(width, MeasureSpec.AT_MOST), heightMeasureSpec);

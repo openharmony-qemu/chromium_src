@@ -24,6 +24,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/test/metrics/histogram_tester.h"
+#include "base/test/scoped_feature_list.h"
 #include "base/test/simple_test_clock.h"
 #include "base/time/clock.h"
 #include "build/build_config.h"
@@ -46,9 +47,6 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/navigation_details.h"
 #include "content/public/browser/navigation_entry.h"
-#include "content/public/browser/notification_observer.h"
-#include "content/public/browser/notification_registrar.h"
-#include "content/public/browser/notification_service.h"
 #include "content/public/browser/permission_controller.h"
 #include "content/public/browser/permission_result.h"
 #include "content/public/browser/render_frame_host.h"
@@ -59,6 +57,8 @@
 #include "content/public/test/test_renderer_host.h"
 #include "content/public/test/test_utils.h"
 #include "content/public/test/web_contents_tester.h"
+#include "services/device/public/cpp/device_features.h"
+#include "services/device/public/cpp/geolocation/buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "url/origin.h"
@@ -70,10 +70,10 @@
 #include "components/prefs/pref_service.h"
 #endif
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
 #include "components/permissions/contexts/geolocation_permission_context_system.h"
-#include "services/device/public/cpp/test/fake_geolocation_manager.h"
-#endif
+#include "services/device/public/cpp/test/fake_geolocation_system_permission_manager.h"
+#endif  // BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
 
 using content::MockRenderProcessHost;
 
@@ -123,7 +123,7 @@ class TestGeolocationPermissionContextDelegate
 
  private:
   TestingPrefServiceSimple prefs_;
-  absl::optional<url::Origin> dse_origin_;
+  std::optional<url::Origin> dse_origin_;
 };
 }  // namespace
 
@@ -132,6 +132,9 @@ class TestGeolocationPermissionContextDelegate
 class GeolocationPermissionContextTests
     : public content::RenderViewHostTestHarness,
       public permissions::Observer {
+ public:
+  GeolocationPermissionContextTests();
+
  protected:
   // RenderViewHostTestHarness:
   void SetUp() override;
@@ -181,23 +184,27 @@ class GeolocationPermissionContextTests
   bool HasActivePrompt(content::WebContents* web_contents);
   void AcceptPrompt();
   void AcceptPrompt(content::WebContents* web_contents);
+  void AcceptPromptThisTime();
   void DenyPrompt();
   void ClosePrompt();
   std::u16string GetPromptText();
 
   TestPermissionsClient client_;
   // owned by |BrowserContest::GetPermissionControllerDelegate()|
-  raw_ptr<GeolocationPermissionContext> geolocation_permission_context_ =
-      nullptr;
+  raw_ptr<GeolocationPermissionContext, AcrossTasksDanglingUntriaged>
+      geolocation_permission_context_ = nullptr;
   // owned by |geolocation_permission_context_|
-  raw_ptr<TestGeolocationPermissionContextDelegate> delegate_ = nullptr;
+  raw_ptr<TestGeolocationPermissionContextDelegate,
+          AcrossTasksDanglingUntriaged>
+      delegate_ = nullptr;
   std::vector<std::unique_ptr<content::WebContents>> extra_tabs_;
   std::vector<std::unique_ptr<MockPermissionPromptFactory>>
       mock_permission_prompt_factories_;
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
-  std::unique_ptr<device::FakeGeolocationManager> fake_geolocation_manager_;
-#endif
+#if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+  raw_ptr<device::FakeGeolocationSystemPermissionManager>
+      fake_geolocation_system_permission_manager_;
+#endif  // BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
 
   // A map between renderer child id and a pair represending the bridge id and
   // whether the requested permission was allowed.
@@ -206,7 +213,20 @@ class GeolocationPermissionContextTests
   int num_permission_updates_ = 0;
   raw_ptr<ContentSettingsPattern> expected_primary_pattern_ = nullptr;
   raw_ptr<ContentSettingsPattern> expected_secondary_pattern_ = nullptr;
+
+  base::test::ScopedFeatureList feature_list_;
 };
+
+GeolocationPermissionContextTests::GeolocationPermissionContextTests() {
+  feature_list_.InitWithFeatures(/*enabled_features=*/
+                                 {
+                                     permissions::features::kOneTimePermission,
+#if BUILDFLAG(IS_WIN)
+                                     ::features::kWinSystemLocationPermission,
+#endif  // BUILDFLAG(IS_WIN)
+                                 },
+                                 /*disabled_features=*/{});
+}
 
 PermissionRequestID GeolocationPermissionContextTests::RequestID(
     int request_id) {
@@ -228,7 +248,8 @@ void GeolocationPermissionContextTests::RequestGeolocationPermission(
     const GURL& requesting_frame,
     bool user_gesture) {
   geolocation_permission_context_->RequestPermission(
-      id, requesting_frame, user_gesture,
+      permissions::PermissionRequestData(geolocation_permission_context_, id,
+                                         user_gesture, requesting_frame),
       base::BindOnce(&GeolocationPermissionContextTests::PermissionResponse,
                      base::Unretained(this), id));
   content::RunAllTasksUntilIdle();
@@ -307,10 +328,11 @@ void GeolocationPermissionContextTests::CheckTabContentsState(
   auto* content_settings =
       content_settings::PageSpecificContentSettings::GetForFrame(
           web_contents()->GetPrimaryMainFrame());
-
-  expected_content_setting == CONTENT_SETTING_BLOCK
-      ? content_settings->IsContentBlocked(ContentSettingsType::GEOLOCATION)
-      : content_settings->IsContentAllowed(ContentSettingsType::GEOLOCATION);
+  EXPECT_TRUE(
+      expected_content_setting == CONTENT_SETTING_BLOCK
+          ? content_settings->IsContentBlocked(ContentSettingsType::GEOLOCATION)
+          : content_settings->IsContentAllowed(
+                ContentSettingsType::GEOLOCATION));
 }
 
 std::unique_ptr<content::BrowserContext>
@@ -338,21 +360,27 @@ void GeolocationPermissionContextTests::SetUp() {
 
 #if BUILDFLAG(IS_ANDROID)
   auto context = std::make_unique<GeolocationPermissionContextAndroid>(
-      browser_context(), std::move(delegate));
-  context->SetLocationSettingsForTesting(
+      browser_context(), std::move(delegate), /*is_regular_profile=*/false,
       std::make_unique<MockLocationSettings>());
-  MockLocationSettings::SetLocationStatus(true, true);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/true);
   MockLocationSettings::SetCanPromptForAndroidPermission(true);
   MockLocationSettings::SetLocationSettingsDialogStatus(false /* enabled */,
                                                         GRANTED);
   MockLocationSettings::ClearHasShownLocationSettingsDialog();
-#elif BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
-  fake_geolocation_manager_ =
-      std::make_unique<device::FakeGeolocationManager>();
-  fake_geolocation_manager_->SetSystemPermission(
+#elif BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+  auto fake_geolocation_system_permission_manager =
+      std::make_unique<device::FakeGeolocationSystemPermissionManager>();
+  fake_geolocation_system_permission_manager_ =
+      fake_geolocation_system_permission_manager.get();
+  fake_geolocation_system_permission_manager->SetSystemPermission(
       device::LocationSystemPermissionStatus::kAllowed);
+  device::FakeGeolocationSystemPermissionManager::SetInstance(
+      std::move(fake_geolocation_system_permission_manager));
   auto context = std::make_unique<GeolocationPermissionContextSystem>(
-      browser_context(), std::move(delegate), fake_geolocation_manager_.get());
+      browser_context(), std::move(delegate));
 #else
   auto context = std::make_unique<GeolocationPermissionContext>(
       browser_context(), std::move(delegate));
@@ -471,6 +499,13 @@ void GeolocationPermissionContextTests::AcceptPrompt(
   base::RunLoop().RunUntilIdle();
 }
 
+void GeolocationPermissionContextTests::AcceptPromptThisTime() {
+  PermissionRequestManager* manager =
+      PermissionRequestManager::FromWebContents(web_contents());
+  manager->AcceptThisTime();
+  base::RunLoop().RunUntilIdle();
+}
+
 void GeolocationPermissionContextTests::DenyPrompt() {
   PermissionRequestManager* manager =
       PermissionRequestManager::FromWebContents(web_contents());
@@ -490,7 +525,10 @@ std::u16string GeolocationPermissionContextTests::GetPromptText() {
       PermissionRequestManager::FromWebContents(web_contents());
   PermissionRequest* request = manager->Requests().front();
 #if BUILDFLAG(IS_ANDROID)
-  return request->GetDialogMessageText();
+  return request
+      ->GetDialogAnnotatedMessageText(
+          /*embedding_origin=*/request->requesting_origin())
+      .text;
 #else
   return base::ASCIIToUTF16(request->requesting_origin().spec()) +
          request->GetMessageTextFragment();
@@ -527,8 +565,10 @@ TEST_F(GeolocationPermissionContextTests, GeolocationEnabledDisabled) {
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
   base::HistogramTester histograms;
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          true /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/true);
   EXPECT_FALSE(HasActivePrompt());
   RequestGeolocationPermission(RequestID(0), requesting_frame, true);
   EXPECT_TRUE(HasActivePrompt());
@@ -537,8 +577,10 @@ TEST_F(GeolocationPermissionContextTests, GeolocationEnabledDisabled) {
   content::NavigationSimulator::Reload(web_contents());
   histograms.ExpectUniqueSample("Permissions.Action.Geolocation",
                                 static_cast<int>(PermissionAction::IGNORED), 1);
-  MockLocationSettings::SetLocationStatus(false /* android */,
-                                          true /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/false,
+      /*has_android_fine_location_permission=*/false,
+      /*is_system_location_setting_enabled=*/true);
   MockLocationSettings::SetCanPromptForAndroidPermission(false);
   EXPECT_FALSE(HasActivePrompt());
   RequestGeolocationPermission(RequestID(0), requesting_frame, true);
@@ -547,16 +589,43 @@ TEST_F(GeolocationPermissionContextTests, GeolocationEnabledDisabled) {
   EXPECT_FALSE(HasActivePrompt());
 }
 
-TEST_F(GeolocationPermissionContextTests, AndroidEnabledCanPrompt) {
+TEST_F(GeolocationPermissionContextTests, AndroidEnabledCanPromptAndAccept) {
   GURL requesting_frame("https://www.example.com/geolocation");
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
-  MockLocationSettings::SetLocationStatus(false /* android */,
-                                          true /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/false,
+      /*has_android_fine_location_permission=*/false,
+      /*is_system_location_setting_enabled=*/true);
   EXPECT_FALSE(HasActivePrompt());
   RequestGeolocationPermission(RequestID(0), requesting_frame, true);
   ASSERT_TRUE(HasActivePrompt());
+  base::HistogramTester histograms;
   AcceptPrompt();
+  histograms.ExpectUniqueSample("Permissions.Action.Geolocation",
+                                static_cast<int>(PermissionAction::GRANTED), 1);
+  CheckTabContentsState(requesting_frame, CONTENT_SETTING_ALLOW);
+  CheckPermissionMessageSent(0, true);
+}
+
+TEST_F(GeolocationPermissionContextTests,
+       AndroidEnabledCanPromptAndAcceptThisTime) {
+  GURL requesting_frame("https://www.example.com/geolocation");
+  NavigateAndCommit(requesting_frame);
+  RequestManagerDocumentLoadCompleted();
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/false,
+      /*has_android_fine_location_permission=*/false,
+      /*is_system_location_setting_enabled=*/true);
+  EXPECT_FALSE(HasActivePrompt());
+  RequestGeolocationPermission(RequestID(0), requesting_frame, true);
+  ASSERT_TRUE(HasActivePrompt());
+  base::HistogramTester histograms;
+  AcceptPromptThisTime();
+
+  histograms.ExpectUniqueSample(
+      "Permissions.Action.Geolocation",
+      static_cast<int>(PermissionAction::GRANTED_ONCE), 1);
   CheckTabContentsState(requesting_frame, CONTENT_SETTING_ALLOW);
   CheckPermissionMessageSent(0, true);
 }
@@ -565,8 +634,10 @@ TEST_F(GeolocationPermissionContextTests, AndroidEnabledCantPrompt) {
   GURL requesting_frame("https://www.example.com/geolocation");
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
-  MockLocationSettings::SetLocationStatus(false /* android */,
-                                          true /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/false,
+      /*has_android_fine_location_permission=*/false,
+      /*is_system_location_setting_enabled=*/true);
   MockLocationSettings::SetCanPromptForAndroidPermission(false);
   EXPECT_FALSE(HasActivePrompt());
   RequestGeolocationPermission(RequestID(0), requesting_frame, true);
@@ -577,8 +648,10 @@ TEST_F(GeolocationPermissionContextTests, SystemLocationOffLSDDisabled) {
   GURL requesting_frame("https://www.example.com/geolocation");
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   EXPECT_FALSE(HasActivePrompt());
   RequestGeolocationPermission(RequestID(0), requesting_frame, true);
   EXPECT_FALSE(HasActivePrompt());
@@ -602,8 +675,10 @@ TEST_F(GeolocationPermissionContextTests, SystemLocationOffLSDAccept) {
   GURL requesting_frame("https://www.example.com/geolocation");
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         GRANTED);
   EXPECT_FALSE(HasActivePrompt());
@@ -619,8 +694,10 @@ TEST_F(GeolocationPermissionContextTests, SystemLocationOffLSDReject) {
   GURL requesting_frame("https://www.example.com/geolocation");
   NavigateAndCommit(requesting_frame);
   RequestManagerDocumentLoadCompleted();
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
   EXPECT_FALSE(HasActivePrompt());
@@ -648,8 +725,10 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffDifferentSites) {
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -679,8 +758,10 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffTiming) {
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -731,8 +812,10 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffPermissionStatus) {
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -755,8 +838,10 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffAskPromptsDespiteBackOff) {
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -782,8 +867,10 @@ TEST_F(GeolocationPermissionContextTests,
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -819,8 +906,10 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffAcceptLSDResetsBackOff) {
                                CONTENT_SETTING_ALLOW);
 
   // Turn off system location but allow the LSD to be shown, and denied.
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
 
@@ -846,7 +935,7 @@ TEST_F(GeolocationPermissionContextTests, LSDBackOffAcceptLSDResetsBackOff) {
   EXPECT_TRUE(RequestPermissionIsLSDShown(requesting_frame));
 }
 
-#endif
+#endif  // BUILDFLAG(IS_ANDROID)
 
 TEST_F(GeolocationPermissionContextTests, HashIsIgnored) {
   GURL url_a("https://www.example.com/geolocation#a");
@@ -986,8 +1075,10 @@ TEST_F(GeolocationPermissionContextTests, GeolocationStatusAndroidDisabled) {
   // permission status should be ASK.
   SetGeolocationContentSetting(requesting_frame, requesting_frame,
                                CONTENT_SETTING_ALLOW);
-  MockLocationSettings::SetLocationStatus(false /* android */,
-                                          true /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/false,
+      /*has_android_fine_location_permission=*/false,
+      /*is_system_location_setting_enabled=*/true);
   ASSERT_EQ(PermissionStatus::ASK,
             GetPermissionStatus(blink::PermissionType::GEOLOCATION,
                                 requesting_frame));
@@ -1016,8 +1107,10 @@ TEST_F(GeolocationPermissionContextTests, GeolocationStatusSystemDisabled) {
   // permission status should be reflect whether the LSD can be shown.
   SetGeolocationContentSetting(requesting_frame, requesting_frame,
                                CONTENT_SETTING_ALLOW);
-  MockLocationSettings::SetLocationStatus(true /* android */,
-                                          false /* system */);
+  MockLocationSettings::SetLocationStatus(
+      /*has_android_coarse_location_permission=*/true,
+      /*has_android_fine_location_permission=*/true,
+      /*is_system_location_setting_enabled=*/false);
   MockLocationSettings::SetLocationSettingsDialogStatus(true /* enabled */,
                                                         DENIED);
   ASSERT_EQ(PermissionStatus::ASK,
@@ -1055,9 +1148,60 @@ TEST_F(GeolocationPermissionContextTests, GeolocationStatusSystemDisabled) {
             GetPermissionStatus(blink::PermissionType::GEOLOCATION,
                                 requesting_frame));
 }
+
+struct PermissionStateTestEntry {
+  bool has_coarse_location;
+  bool has_fine_location;
+  int bucket;
+} kPermissionStateTestEntries[] = {
+    {/*has_coarse_location=*/false, /*has_fine_location=*/false, /*bucket=*/0},
+    {/*has_coarse_location=*/true, /*has_fine_location=*/false, /*bucket=*/1},
+    {/*has_coarse_location=*/false, /*has_fine_location=*/true, /*bucket=*/2},
+    {/*has_coarse_location=*/true, /*has_fine_location=*/true, /*bucket=*/2},
+};
+
+class GeolocationAndroidPermissionRegularProfileTest
+    : public content::RenderViewHostTestHarness,
+      public testing::WithParamInterface<PermissionStateTestEntry> {};
+
+TEST_P(GeolocationAndroidPermissionRegularProfileTest, Histogram) {
+  const auto& [has_coarse_location, has_fine_location, bucket] = GetParam();
+  MockLocationSettings::SetLocationStatus(
+      has_coarse_location, has_fine_location,
+      /*is_system_location_setting_enabled=*/true);
+  base::HistogramTester histogram_tester;
+  GeolocationPermissionContextAndroid context(
+      browser_context(), /*delegate=*/nullptr, /*is_regular_profile=*/true,
+      std::make_unique<MockLocationSettings>());
+  histogram_tester.ExpectUniqueSample(
+      "Geolocation.Android.LocationPermissionState", bucket,
+      /*expected_bucket_count=*/1);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    GeolocationAndroidPermissionRegularProfileTests,
+    GeolocationAndroidPermissionRegularProfileTest,
+    testing::ValuesIn(kPermissionStateTestEntries),
+    [](const testing::TestParamInfo<PermissionStateTestEntry>& info) {
+      return base::StringPrintf("Location%sFineLocation%s",
+                                info.param.has_coarse_location ? "On" : "Off",
+                                info.param.has_fine_location ? "On" : "Off");
+    });
+
+using GeolocationAndroidPermissionIrregularProfileTest =
+    content::RenderViewHostTestHarness;
+
+TEST_F(GeolocationAndroidPermissionIrregularProfileTest, DoesNotRecord) {
+  base::HistogramTester histogram_tester;
+  GeolocationPermissionContextAndroid context(
+      browser_context(), /*delegate=*/nullptr, /*is_regular_profile=*/false,
+      std::make_unique<MockLocationSettings>());
+  histogram_tester.ExpectTotalCount(
+      "Geolocation.Android.LocationPermissionState", /*expected_count=*/0);
+}
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
 TEST_F(GeolocationPermissionContextTests,
        AllSystemAndSitePermissionCombinations) {
   GURL requesting_frame("https://www.example.com/geolocation");
@@ -1093,7 +1237,8 @@ TEST_F(GeolocationPermissionContextTests,
   for (auto test_case : kTestCases) {
     SetGeolocationContentSetting(requesting_frame, requesting_frame,
                                  test_case.site_permission);
-    fake_geolocation_manager_->SetSystemPermission(test_case.system_permission);
+    fake_geolocation_system_permission_manager_->SetSystemPermission(
+        test_case.system_permission);
     base::RunLoop().RunUntilIdle();
     ASSERT_EQ(test_case.expected_effective_site_permission,
               GetPermissionStatus(blink::PermissionType::GEOLOCATION,
@@ -1114,14 +1259,14 @@ TEST_F(GeolocationPermissionContextTests, SystemPermissionUpdates) {
                                CONTENT_SETTING_ALLOW);
   ASSERT_EQ(1, num_permission_updates_);
   primary_pattern = ContentSettingsPattern::Wildcard();
-  fake_geolocation_manager_->SetSystemPermission(
+  fake_geolocation_system_permission_manager_->SetSystemPermission(
       LocationSystemPermissionStatus::kDenied);
-  fake_geolocation_manager_->SetSystemPermission(
+  fake_geolocation_system_permission_manager_->SetSystemPermission(
       LocationSystemPermissionStatus::kAllowed);
   base::RunLoop().RunUntilIdle();
   ASSERT_EQ(3, num_permission_updates_);
   geolocation_permission_context_->RemoveObserver(this);
 }
-#endif
+#endif  // BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
 
 }  // namespace permissions

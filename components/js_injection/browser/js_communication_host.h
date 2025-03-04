@@ -6,14 +6,15 @@
 #define COMPONENTS_JS_INJECTION_BROWSER_JS_COMMUNICATION_HOST_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "components/js_injection/common/interfaces.mojom.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents_observer.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace content {
 class RenderFrameHost;
@@ -22,10 +23,40 @@ class RenderFrameHost;
 namespace js_injection {
 
 class OriginMatcher;
-struct DocumentInjectJavaScript;
 struct JsObject;
-class JsToBrowserMessaging;
 class WebMessageHostFactory;
+
+struct DocumentStartJavaScript {
+  DocumentStartJavaScript(std::u16string script,
+                          OriginMatcher allowed_origin_rules,
+                          int32_t script_id);
+
+  DocumentStartJavaScript(DocumentStartJavaScript&) = delete;
+  DocumentStartJavaScript& operator=(DocumentStartJavaScript&) = delete;
+  DocumentStartJavaScript(DocumentStartJavaScript&&) = default;
+  DocumentStartJavaScript& operator=(DocumentStartJavaScript&&) = default;
+
+  std::u16string script_;
+  OriginMatcher allowed_origin_rules_;
+  int32_t script_id_;
+};
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+struct DocumentEndJavaScript {
+  DocumentEndJavaScript(std::u16string script,
+                        OriginMatcher allowed_origin_rules,
+                        int32_t script_id);
+
+  DocumentEndJavaScript(DocumentEndJavaScript&) = delete;
+  DocumentEndJavaScript& operator=(DocumentEndJavaScript&) = delete;
+  DocumentEndJavaScript(DocumentEndJavaScript&&) = default;
+  DocumentEndJavaScript& operator=(DocumentEndJavaScript&&) = default;
+
+  std::u16string script_;
+  OriginMatcher allowed_origin_rules_;
+  int32_t script_id_;
+};
+#endif
 
 // This class is 1:1 with WebContents, when AddWebMessageListener() is called,
 // it stores the information in this class and send them to renderer side
@@ -50,8 +81,8 @@ class JsCommunicationHost : public content::WebContentsObserver {
     AddScriptResult& operator=(const AddScriptResult&);
     ~AddScriptResult();
 
-    absl::optional<std::string> error_message;
-    absl::optional<int> script_id;
+    std::optional<std::string> error_message;
+    std::optional<int> script_id;
   };
 
   // Native side AddDocumentStartJavaScript, returns an error message if the
@@ -62,6 +93,7 @@ class JsCommunicationHost : public content::WebContentsObserver {
 
   bool RemoveDocumentStartJavaScript(int script_id);
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   // Native side AddDocumentEndJavaScript, returns an error message if the
   // parameters didn't pass necessary checks.
   AddScriptResult AddDocumentEndJavaScript(
@@ -69,6 +101,20 @@ class JsCommunicationHost : public content::WebContentsObserver {
       const std::vector<std::string>& allowed_origin_rules);
 
   bool RemoveDocumentEndJavaScript(int script_id);
+#endif
+
+  const std::vector<DocumentStartJavaScript>& GetDocumentStartJavascripts()
+      const;
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  // Native side AddHeadReadyJavaScript, returns an error message if the
+  // parameters didn't pass necessary checks.
+  AddScriptResult AddHeadReadyJavaScript(
+      const std::u16string& script,
+      const std::vector<std::string>& allowed_origin_rules);
+
+  bool RemoveHeadReadyJavaScript(int script_id);
+#endif
 
   // Adds a new WebMessageHostFactory. For any urls that match
   // |allowed_origin_rules|, |js_object_name| is registered as a JS object that
@@ -99,34 +145,55 @@ class JsCommunicationHost : public content::WebContentsObserver {
       content::RenderFrameHost* render_frame_host,
       content::RenderFrameHost::LifecycleState old_state,
       content::RenderFrameHost::LifecycleState new_state) override;
+  void PrimaryPageChanged(content::Page& page) override;
 
  private:
+  class JsToBrowserMessagingList;
   void NotifyFrameForWebMessageListener(
       content::RenderFrameHost* render_frame_host);
-  // Notification to add document inject javaScript,
-  // including injection at the start and end
-  void NotifyFrameForAllDocumentInjectJavaScripts(
+  void NotifyFrameForAllDocumentStartJavaScripts(
       content::RenderFrameHost* render_frame_host);
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void NotifyFrameForAllDocumentEndsJavaScripts(
+      content::RenderFrameHost* render_frame_host);
+#endif
+
   void NotifyFrameForAddDocumentStartJavaScript(
-       const DocumentInjectJavaScript* script,
-      content::RenderFrameHost* render_frame_host);
-  void NotifyFrameForAddDocumentEndJavaScript(
-      const DocumentInjectJavaScript* script,
+      const DocumentStartJavaScript* script,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveDocumentStartJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void NotifyFrameForAddDocumentEndJavaScript(
+      const DocumentEndJavaScript* script,
+      content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveDocumentEndJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void NotifyFrameForAddHeadReadyJavaScript(
+      const DocumentStartJavaScript* script,
+      content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForRemoveHeadReadyJavaScript(
+      int32_t script_id,
+      content::RenderFrameHost* render_frame_host);
+#endif
 
   int32_t next_script_id_ = 0;
-  std::vector<DocumentInjectJavaScript> document_start_scripts_;
-  std::vector<DocumentInjectJavaScript> document_end_scripts_;
+  std::vector<DocumentStartJavaScript> scripts_;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  std::vector<DocumentEndJavaScript> document_end_scripts_;
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  std::vector<DocumentStartJavaScript> head_ready_scripts_;
+#endif
   std::vector<std::unique_ptr<JsObject>> js_objects_;
   std::map<content::GlobalRenderFrameHostId,
-           std::vector<std::unique_ptr<JsToBrowserMessaging>>>
+           std::unique_ptr<JsToBrowserMessagingList>>
       js_to_browser_messagings_;
+  bool has_navigation_listener_ = false;
 };
 
 }  // namespace js_injection

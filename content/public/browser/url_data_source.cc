@@ -11,11 +11,7 @@
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "content/browser/webui/url_data_manager.h"
-#include "content/browser/webui/url_data_manager_backend.h"
-#include "content/browser/webui/url_data_source_impl.h"
 #include "content/public/browser/browser_context.h"
-#include "content/public/browser/browser_task_traits.h"
-#include "content/public/browser/browser_thread.h"
 #include "content/public/common/url_constants.h"
 #include "services/network/public/mojom/content_security_policy.mojom.h"
 
@@ -80,7 +76,7 @@ std::string URLDataSource::GetContentSecurityPolicy(
       // specific pages that need it, see context http://crbug.com/525224.
       return IsChromeUntrustedDataSource(this)
                  ? "script-src chrome-untrusted://resources 'self';"
-                 : "script-src chrome://resources  arkweb://resources 'self';";
+                 : "script-src chrome://resources 'self';";
     case network::mojom::CSPDirectiveName::FrameAncestors:
       return "frame-ancestors 'none';";
     case network::mojom::CSPDirectiveName::RequireTrustedTypesFor:
@@ -112,7 +108,6 @@ std::string URLDataSource::GetContentSecurityPolicy(
     case network::mojom::CSPDirectiveName::TreatAsPublicAddress:
     case network::mojom::CSPDirectiveName::WorkerSrc:
     case network::mojom::CSPDirectiveName::ReportTo:
-    case network::mojom::CSPDirectiveName::NavigateTo:
     case network::mojom::CSPDirectiveName::Unknown:
       return std::string();
   }
@@ -139,7 +134,7 @@ bool URLDataSource::ShouldServiceRequest(const GURL& url,
                                          int render_process_id) {
   return url.SchemeIs(kChromeDevToolsScheme) || url.SchemeIs(kChromeUIScheme) ||
          url.SchemeIs(kChromeUIUntrustedScheme)
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
          || url.SchemeIs(kArkWebUIScheme)
 #endif
       ;

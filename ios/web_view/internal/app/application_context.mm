@@ -14,6 +14,7 @@
 #include "components/component_updater/timer_update_scheduler.h"
 #include "components/flags_ui/pref_service_flags_storage.h"
 #import "components/metrics/demographics/user_demographics.h"
+#import "components/os_crypt/async/browser/os_crypt_async.h"
 #include "components/prefs/json_pref_store.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
@@ -39,10 +40,6 @@
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "ui/base/device_form_factor.h"
 #include "ui/base/l10n/l10n_util_mac.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 namespace ios_web_view {
 namespace {
@@ -74,6 +71,14 @@ void ApplicationContext::PreCreateThreads() {
 }
 
 void ApplicationContext::PostCreateThreads() {
+  // Delegate all encryption calls to OSCrypt.
+  os_crypt_async_ = std::make_unique<os_crypt_async::OSCryptAsync>(
+      std::vector<std::pair<os_crypt_async::OSCryptAsync::Precedence,
+                            std::unique_ptr<os_crypt_async::KeyProvider>>>());
+
+  // Trigger an instance grab on a background thread if necessary.
+  std::ignore = os_crypt_async_->GetInstance(base::DoNothing());
+
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   web::GetIOThreadTaskRunner({})->PostTask(
       FROM_HERE, base::BindOnce(&WebViewIOThread::InitOnIO,
@@ -140,9 +145,9 @@ PrefService* ApplicationContext::GetLocalState() {
     int max_normal_socket_pool_count =
         net::ClientSocketPoolManager::max_sockets_per_group(
             net::HttpNetworkSession::NORMAL_SOCKET_POOL);
-    int socket_count = std::max<int>(net::kDefaultMaxSocketsPerProxyServer,
+    int socket_count = std::max<int>(net::kDefaultMaxSocketsPerProxyChain,
                                      max_normal_socket_pool_count);
-    net::ClientSocketPoolManager::set_max_sockets_per_proxy_server(
+    net::ClientSocketPoolManager::set_max_sockets_per_proxy_chain(
         net::HttpNetworkSession::NORMAL_SOCKET_POOL, socket_count);
   }
   return local_state_.get();
@@ -159,7 +164,7 @@ ApplicationContext::GetSharedURLLoaderFactory() {
     auto url_loader_factory_params =
         network::mojom::URLLoaderFactoryParams::New();
     url_loader_factory_params->process_id = network::mojom::kBrowserProcessId;
-    url_loader_factory_params->is_corb_enabled = false;
+    url_loader_factory_params->is_orb_enabled = false;
     GetSystemNetworkContext()->CreateURLLoaderFactory(
         url_loader_factory_.BindNewPipeAndPassReceiver(),
         std::move(url_loader_factory_params));
@@ -212,7 +217,7 @@ net::NetLog* ApplicationContext::GetNetLog() {
 component_updater::ComponentUpdateService*
 ApplicationContext::GetComponentUpdateService() {
   if (!component_updater_) {
-    // TODO(crbug.com/1298671): Brand code should be configurable.
+    // TODO(crbug.com/40215633): Brand code should be configurable.
     std::string brand_code =
         ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET ? "APLB"
                                                                    : "APLA";
@@ -223,6 +228,10 @@ ApplicationContext::GetComponentUpdateService() {
         brand_code);
   }
   return component_updater_.get();
+}
+
+os_crypt_async::OSCryptAsync* ApplicationContext::GetOSCryptAsync() {
+  return os_crypt_async_.get();
 }
 
 WebViewIOThread* ApplicationContext::GetWebViewIOThread() {

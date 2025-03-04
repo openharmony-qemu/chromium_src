@@ -66,10 +66,11 @@ using QueryRequestResult = FeedNetwork::QueryRequestResult;
 feedwire::ClientInfo ExpectHasClientInfoHeader(
     network::ResourceRequest request) {
   EXPECT_TRUE(request.headers.HasHeader(feed::kClientInfoHeader));
-  std::string clientinfo;
-  EXPECT_TRUE(request.headers.GetHeader(feed::kClientInfoHeader, &clientinfo));
+  std::optional<std::string> clientinfo =
+      request.headers.GetHeader(feed::kClientInfoHeader);
+  CHECK(clientinfo.has_value());
   std::string decoded_clientinfo;
-  EXPECT_TRUE(base::Base64Decode(clientinfo, &decoded_clientinfo));
+  EXPECT_TRUE(base::Base64Decode(clientinfo.value(), &decoded_clientinfo));
   feedwire::ClientInfo clientinfo_proto;
   EXPECT_TRUE(clientinfo_proto.ParseFromString(decoded_clientinfo));
   return clientinfo_proto;
@@ -103,22 +104,6 @@ feedwire::UploadActionsResponse GetTestActionResponse() {
   feedwire::UploadActionsResponse response;
   response.mutable_consistency_token()->set_token("tok");
   return response;
-}
-
-void SetConsentLevelNeededForFeedPersonalization(
-    base::test::ScopedFeatureList& feature_list,
-    signin::ConsentLevel consent_level) {
-  std::vector<base::test::FeatureRef> enable_features, disable_features;
-  switch (consent_level) {
-    case signin::ConsentLevel::kSignin:
-      enable_features.push_back(kPersonalizeFeedNonSyncUsers);
-      break;
-    case signin::ConsentLevel::kSync:
-      disable_features.push_back(kPersonalizeFeedNonSyncUsers);
-      break;
-  }
-  feature_list.InitWithFeatures(std::move(enable_features),
-                                std::move(disable_features));
 }
 
 class TestDelegate : public FeedNetworkImpl::Delegate {
@@ -173,7 +158,6 @@ class FeedNetworkTest : public testing::Test {
     RequestMetadata request_metadata;
     request_metadata.chrome_info.version = base::Version({1, 2, 3, 4});
     request_metadata.chrome_info.channel = version_info::Channel::STABLE;
-    request_metadata.chrome_info.start_surface = false;
     request_metadata.display_metrics.density = 1;
     request_metadata.display_metrics.width_pixels = 2;
     request_metadata.display_metrics.height_pixels = 3;
@@ -321,26 +305,23 @@ TEST_F(FeedNetworkTest, SendQueryRequestSendsValidRequest) {
       resource_request.url);
   EXPECT_EQ("GET", resource_request.method);
   EXPECT_FALSE(resource_request.headers.HasHeader("content-encoding"));
-  std::string authorization;
-  EXPECT_TRUE(
-      resource_request.headers.GetHeader("Authorization", &authorization));
-  EXPECT_EQ(authorization, "Bearer access_token");
+  EXPECT_EQ(resource_request.headers.GetHeader("Authorization"),
+            "Bearer access_token");
   histogram().ExpectBucketCount(
       "ContentSuggestions.Feed.Network.ResponseStatus.FeedQuery", 200, 1);
+  histogram().ExpectBucketCount(
+      "ContentSuggestions.Feed.Network.FeedQueryRequestSize", 165, 1);
 }
 
 // These tests need ClearPrimaryAccount() which isn't supported by ChromeOS.
 // RevokeSyncConsent() sometimes clears the account rather than just changing
 // the consent level so we may as well sign out and sign back in ourselves.
 #if !BUILDFLAG(IS_CHROMEOS_ASH)
-TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSignin_NeedSignin) {
-  // Request should be signed in if account consent level is kSignin and consent
-  // level needed for personalization is kSignin.
+TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSignin) {
+  // Request should be signed in if account consent level is kSignin.
   identity_env()->ClearPrimaryAccount();
   SignIn(signin::ConsentLevel::kSignin);
   base::test::ScopedFeatureList feature_list;
-  SetConsentLevelNeededForFeedPersonalization(feature_list,
-                                              signin::ConsentLevel::kSignin);
 
   CallbackReceiver<QueryRequestResult> receiver;
 
@@ -358,48 +339,17 @@ TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSignin_NeedSignin) {
   EXPECT_FALSE(resource_request.headers.HasHeader("content-encoding"));
 
   // Verify that it's a signed-in request.
-  std::string authorization;
-  EXPECT_TRUE(
-      resource_request.headers.GetHeader("Authorization", &authorization));
-  EXPECT_EQ(authorization, "Bearer access_token");
+  EXPECT_EQ(resource_request.headers.GetHeader("Authorization"),
+            "Bearer access_token");
 
   histogram().ExpectBucketCount(
       "ContentSuggestions.Feed.Network.ResponseStatus.FeedQuery", 200, 1);
 }
 
-TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSignin_NeedSync) {
-  // Request should be "signed out" if account consent level is kSignin but
-  // consent level needed for personalization is kSync.
-  identity_env()->ClearPrimaryAccount();
-  SignIn(signin::ConsentLevel::kSignin);
-  base::test::ScopedFeatureList feature_list;
-  SetConsentLevelNeededForFeedPersonalization(feature_list,
-                                              signin::ConsentLevel::kSync);
-
-  CallbackReceiver<QueryRequestResult> receiver;
-  feed_network()->SendQueryRequest(NetworkRequestType::kFeedQuery,
-                                   GetTestFeedRequest(), AccountInfo{},
-                                   receiver.Bind());
-  network::ResourceRequest resource_request =
-      RespondToQueryRequest("", net::HTTP_OK);
-
-  EXPECT_EQ(
-      "https://www.google.com/httpservice/retry/TrellisClankService/"
-      "FeedQuery?reqpld=CAHCPgQSAggB&fmt=bin&hl=en&key=dummy_api_key",
-      resource_request.url);
-  EXPECT_EQ(AccountInfo{},
-            receiver.RunAndGetResult().response_info.account_info);
-  EXPECT_FALSE(resource_request.headers.HasHeader("Authorization"));
-}
 #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
 
-TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSync_NeedSignin) {
-  // Request should be signed in if account consent level is kSync and consent
-  // level needed for personalization is kSignin.
-  base::test::ScopedFeatureList feature_list;
-  SetConsentLevelNeededForFeedPersonalization(feature_list,
-                                              signin::ConsentLevel::kSignin);
-
+TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSync) {
+  // Request should be signed in if account consent level is kSync.
   CallbackReceiver<QueryRequestResult> receiver;
 
   feed_network()->SendQueryRequest(NetworkRequestType::kFeedQuery,
@@ -416,10 +366,8 @@ TEST_F(FeedNetworkTest, SendQueryRequestPersonalized_AccountSync_NeedSignin) {
   EXPECT_FALSE(resource_request.headers.HasHeader("content-encoding"));
 
   // Verify that it's a signed-in request.
-  std::string authorization;
-  EXPECT_TRUE(
-      resource_request.headers.GetHeader("Authorization", &authorization));
-  EXPECT_EQ(authorization, "Bearer access_token");
+  EXPECT_EQ(resource_request.headers.GetHeader("Authorization"),
+            "Bearer access_token");
 
   histogram().ExpectBucketCount(
       "ContentSuggestions.Feed.Network.ResponseStatus.FeedQuery", 200, 1);
@@ -864,14 +812,9 @@ TEST_F(FeedNetworkTest, SendApiRequestSendsValidRequest_UploadActions) {
             resource_request.url);
 
   EXPECT_EQ("POST", resource_request.method);
-  std::string content_encoding;
-  EXPECT_TRUE(resource_request.headers.GetHeader("content-encoding",
-                                                 &content_encoding));
-  EXPECT_EQ("gzip", content_encoding);
-  std::string authorization;
-  EXPECT_TRUE(
-      resource_request.headers.GetHeader("Authorization", &authorization));
-  EXPECT_EQ(authorization, "Bearer access_token");
+  EXPECT_EQ("gzip", resource_request.headers.GetHeader("content-encoding"));
+  EXPECT_EQ(resource_request.headers.GetHeader("Authorization"),
+            "Bearer access_token");
 
   // Check that the body content is correct. This requires some work to extract
   // the bytes and unzip them.
@@ -908,11 +851,8 @@ TEST_F(FeedNetworkTest, SendApiRequest_Unfollow) {
 TEST_F(FeedNetworkTest, SendApiRequest_ListWebFeedsSendsCorrectContentType) {
   feed_network()->SendApiRequest<ListWebFeedsDiscoverApi>(
       {}, account_info(), request_metadata(), base::DoNothing());
-  std::string requested_content_type;
-  RespondToDiscoverRequest("", net::HTTP_OK)
-      .headers.GetHeader("content-type", &requested_content_type);
-
-  EXPECT_EQ("application/x-protobuf", requested_content_type);
+  EXPECT_EQ("application/x-protobuf", RespondToDiscoverRequest("", net::HTTP_OK)
+                                          .headers.GetHeader("content-type"));
 }
 
 TEST_F(FeedNetworkTest,
@@ -920,11 +860,8 @@ TEST_F(FeedNetworkTest,
   feed_network()->SendApiRequest<QueryBackgroundFeedDiscoverApi>(
       {}, account_info(), request_metadata(), base::DoNothing());
 
-  std::string requested_response_encoding;
-  RespondToDiscoverRequest("", net::HTTP_OK)
-      .headers.GetHeader("x-response-encoding", &requested_response_encoding);
-
-  EXPECT_EQ("gzip", requested_response_encoding);
+  EXPECT_EQ("gzip", RespondToDiscoverRequest("", net::HTTP_OK)
+                        .headers.GetHeader("x-response-encoding"));
 }
 
 TEST_F(FeedNetworkTest, TestOverrideHostDoesNotAffectDiscoverApis) {
@@ -965,6 +902,26 @@ TEST_F(FeedNetworkTest, AppCloseRefreshRequestReasonHasUrl) {
       "https://www.google.com/httpservice/noretry/TrellisClankService/"
       "FeedQuery",
       result.response_info.base_request_url);
+}
+
+TEST_F(FeedNetworkTest, SendAsynccDataRequest) {
+  CallbackReceiver<FeedNetwork::RawResponse> receiver;
+  feed_network()->SendAsyncDataRequest(GURL("https://example.com"), "POST",
+                                       net::HttpRequestHeaders(), "post data",
+                                       account_info(), receiver.Bind());
+  response_headers_ = base::MakeRefCounted<net::HttpResponseHeaders>(
+      net::HttpUtil::AssembleRawHeaders(
+          "HTTP/1.1 200 OK\nname1: value1\nname2: value2\n\n"));
+  RespondToDiscoverRequest("dummy response", net::HTTP_OK);
+
+  ASSERT_TRUE(receiver.GetResult());
+  const FeedNetwork::RawResponse& result = *receiver.GetResult();
+  EXPECT_EQ(net::HTTP_OK, result.response_info.status_code);
+  std::vector<std::string> expected_response_headers = {"name1", "value1",
+                                                        "name2", "value2"};
+  EXPECT_EQ(expected_response_headers,
+            result.response_info.response_header_names_and_values);
+  EXPECT_EQ("dummy response", result.response_bytes);
 }
 
 }  // namespace

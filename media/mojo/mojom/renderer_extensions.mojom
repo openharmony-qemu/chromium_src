@@ -12,7 +12,7 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 [EnableIf=is_win]
 import "ui/gfx/mojom/buffer_types.mojom";
 
-[EnableIf=is_ohos]
+[EnableIf=is_arkweb]
 struct OhosSurfaceBufferHandle {
   uint32 buffer_size;
   int32 fd_browser;
@@ -34,12 +34,11 @@ interface MediaPlayerRendererClientExtension {
   // metadata changes.
   OnVideoSizeChange(gfx.mojom.Size size);
   OnDurationChange(mojo_base.mojom.TimeDelta duration);
-  [EnableIf=is_ohos]
+  [EnableIf=is_arkweb]
   OnFrameUpdate(OhosSurfaceBufferHandle ohosSurfaceBufferHandle);
 };
 
-
-[EnableIf=ohos_custom_video_player]
+[EnableIf=arkweb_custom_video_player]
 interface CustomMediaPlayerRendererClientExtension {
   OnVideoSizeChange(gfx.mojom.Size size);
   OnDurationChange(mojo_base.mojom.TimeDelta duration);
@@ -62,8 +61,8 @@ interface MediaPlayerRendererExtension {
   // StreamTexture's set-up.
   InitiateScopedSurfaceRequest()
       => (mojo_base.mojom.UnguessableToken request_token);
-
-  [EnableIf=is_ohos]
+  
+  [EnableIf=is_arkweb]
   FinishPaint(int32 fd);
 };
 

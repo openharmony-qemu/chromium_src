@@ -21,7 +21,7 @@ using Target =
     absl::variant<absl::monostate, std::string, int, const AtspiAccessible*>;
 
 // Optional tri-state object.
-using AXOptionalObject = ui::AXOptional<Target>;
+using AXOptionalObject = AXOptional<Target>;
 
 // Invokes a script instruction describing a call unit which represents
 // a sequence of calls.
@@ -72,10 +72,10 @@ class COMPONENT_EXPORT(AX_PLATFORM) AXCallStatementInvokerAuraLinux final {
 
   // Map between AXUIElement objects and their DOMIds/accessible tree
   // line numbers. Owned by the caller and outlives this object.
-  const base::raw_ptr<const AXTreeIndexerAuraLinux> indexer_;
+  const raw_ptr<const AXTreeIndexerAuraLinux> indexer_;
 
   // Variables storage. Owned by the caller and outlives this object.
-  const base::raw_ptr<std::map<std::string, Target>> storage_;
+  const raw_ptr<std::map<std::string, Target>> storage_;
 };
 
 }  // namespace ui

@@ -9,10 +9,15 @@
   to the relevant set of devtools protocol handlers.
 */
 
+#include <optional>
 #include <vector>
 
+#include "base/memory/stack_allocated.h"
+#include "base/values.h"
 #include "content/browser/devtools/devtools_device_request_prompt_info.h"
 #include "content/browser/devtools/devtools_throttle_handle.h"
+#include "content/browser/interest_group/devtools_enums.h"
+#include "content/browser/preloading/prefetch/prefetch_status.h"
 #include "content/browser/preloading/prerender/prerender_final_status.h"
 #include "content/browser/renderer_host/back_forward_cache_impl.h"
 #include "content/browser/renderer_host/frame_tree.h"
@@ -24,12 +29,9 @@
 #include "services/network/public/cpp/url_loader_completion_status.h"
 #include "services/network/public/mojom/url_loader_factory.mojom.h"
 #include "services/network/public/mojom/url_response_head.mojom-forward.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
-#include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
 #include "third_party/blink/public/mojom/devtools/inspector_issue.mojom-forward.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
-#include "third_party/blink/public/mojom/page/widget.mojom.h"
-#include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
+#include "third_party/blink/public/mojom/speculation_rules/speculation_rules.mojom-forward.h"
 
 class GURL;
 
@@ -47,9 +49,14 @@ class X509Certificate;
 struct WebTransportError;
 }  // namespace net
 
+namespace network {
+class URLLoaderFactoryBuilder;
+}  // namespace network
+
 namespace download {
 struct DownloadCreateInfo;
 class DownloadItem;
+class DownloadUrlParameters;
 }  // namespace download
 
 namespace content {
@@ -61,7 +68,6 @@ class FrameTreeNode;
 class NavigationHandle;
 class NavigationRequest;
 class NavigationThrottle;
-class Portal;
 class RenderFrameHostImpl;
 class RenderProcessHost;
 class SharedWorkerHost;
@@ -69,6 +75,7 @@ class ServiceWorkerContextWrapper;
 class SignedExchangeEnvelope;
 class StoragePartition;
 class WebContents;
+struct PrerenderMismatchedHeaders;
 
 struct SignedExchangeError;
 
@@ -77,6 +84,13 @@ class InspectorIssue;
 }  // namespace protocol::Audits
 
 namespace devtools_instrumentation {
+
+// Applies network request overrides to the auction worklet's network
+// request. Will set `network_instrumentation_enabled` to true if there is a
+// network handler listening. Also handles whether cache is disabled or not.
+void ApplyAuctionNetworkRequestOverrides(FrameTreeNode* frame_tree_node,
+                                         network::ResourceRequest* request,
+                                         bool* network_instrumentation_enabled);
 
 // If this function caused the User-Agent header to be overridden,
 // `devtools_user_agent_overridden` will be set to true; otherwise, it will be
@@ -87,7 +101,7 @@ void ApplyNetworkRequestOverrides(
     FrameTreeNode* frame_tree_node,
     blink::mojom::BeginNavigationParams* begin_params,
     bool* report_raw_headers,
-    absl::optional<std::vector<net::SourceStream::SourceType>>*
+    std::optional<std::vector<net::SourceStream::SourceType>>*
         devtools_accepted_stream_types,
     bool* devtools_user_agent_overridden,
     bool* devtools_accept_language_overridden);
@@ -98,57 +112,56 @@ void ApplyNetworkRequestOverrides(
 //  the behavior).
 bool ApplyUserAgentMetadataOverrides(
     FrameTreeNode* frame_tree_node,
-    absl::optional<blink::UserAgentMetadata>* override_out);
+    std::optional<blink::UserAgentMetadata>* override_out);
 
-CONTENT_EXPORT bool WillCreateURLLoaderFactory(
-    RenderFrameHostImpl* rfh,
-    bool is_navigation,
-    bool is_download,
-    mojo::PendingReceiver<network::mojom::URLLoaderFactory>*
-        target_factory_receiver,
-    network::mojom::URLLoaderFactoryOverridePtr* factory_override);
+class CONTENT_EXPORT WillCreateURLLoaderFactoryParams final {
+  STACK_ALLOCATED();
 
-bool WillCreateURLLoaderFactoryForServiceWorker(
-    RenderProcessHost* rph,
-    int routing_id,
-    network::mojom::URLLoaderFactoryOverridePtr* factory_override);
+ public:
+  static WillCreateURLLoaderFactoryParams ForFrame(RenderFrameHostImpl* rfh);
 
-bool WillCreateURLLoaderFactoryForServiceWorkerMainScript(
-    const ServiceWorkerContextWrapper* context_wrapper,
-    int64_t version_id,
-    mojo::PendingReceiver<network::mojom::URLLoaderFactory>*
-        loader_factory_receiver);
+  static WillCreateURLLoaderFactoryParams ForServiceWorker(
+      RenderProcessHost& rph,
+      int routing_id);
 
-bool WillCreateURLLoaderFactoryForSharedWorker(
-    SharedWorkerHost* host,
-    network::mojom::URLLoaderFactoryOverridePtr* factory_override);
+  static std::optional<WillCreateURLLoaderFactoryParams>
+  ForServiceWorkerMainScript(const ServiceWorkerContextWrapper* context_wrapper,
+                             std::optional<int64_t> version_id);
 
-bool WillCreateURLLoaderFactoryForWorkerMainScript(
-    DevToolsAgentHostImpl* host,
-    const base::UnguessableToken& worker_token,
-    network::mojom::URLLoaderFactoryOverridePtr* factory_override);
+  static std::optional<WillCreateURLLoaderFactoryParams> ForSharedWorker(
+      SharedWorkerHost* host);
 
-bool WillCreateURLLoaderFactory(
-    RenderFrameHostImpl* rfh,
-    bool is_navigation,
-    bool is_download,
-    std::unique_ptr<network::mojom::URLLoaderFactory>* factory);
+  static WillCreateURLLoaderFactoryParams ForWorkerMainScript(
+      DevToolsAgentHostImpl* agent_host,
+      const base::UnguessableToken& worker_token,
+      RenderFrameHostImpl& ancestor_render_frame_host);
 
-bool WillCreateURLLoaderFactoryInternal(
-    DevToolsAgentHostImpl* agent_host,
-    const base::UnguessableToken& devtools_token,
-    int process_id,
-    StoragePartition* storage_partition,
-    bool is_navigation,
-    bool is_download,
-    mojo::PendingReceiver<network::mojom::URLLoaderFactory>*
-        target_factory_receiver,
-    network::mojom::URLLoaderFactoryOverridePtr* factory_override);
+  // Calls devtools hooks so that they can add interceptors.
+  bool Run(bool is_navigation,
+           bool is_download,
+           network::URLLoaderFactoryBuilder& factory_builder,
+           network::mojom::URLLoaderFactoryOverridePtr* factory_override);
 
-void OnPrefetchRequestWillBeSent(FrameTreeNode* frame_tree_node,
-                                 const std::string& request_id,
-                                 const GURL& initiator,
-                                 const network::ResourceRequest& request);
+ private:
+  WillCreateURLLoaderFactoryParams(DevToolsAgentHostImpl* agent_host,
+                                   const base::UnguessableToken& devtools_token,
+                                   int process_id,
+                                   StoragePartition* storage_partition);
+
+  const raw_ptr<DevToolsAgentHostImpl> agent_host_;
+  const base::UnguessableToken devtools_token_;
+  const int process_id_;
+  const raw_ptr<StoragePartition> storage_partition_;
+};
+
+void OnPrefetchRequestWillBeSent(
+    FrameTreeNode* frame_tree_node,
+    const std::string& request_id,
+    const GURL& initiator,
+    const network::ResourceRequest& request,
+    std::optional<std::pair<const GURL&,
+                            const network::mojom::URLResponseHeadDevToolsInfo&>>
+        redirect_info);
 void OnPrefetchResponseReceived(FrameTreeNode* frame_tree_node,
                                 const std::string& request_id,
                                 const GURL& url,
@@ -173,8 +186,71 @@ void OnNavigationResponseReceived(
 void OnNavigationRequestFailed(
     const NavigationRequest& nav_request,
     const network::URLLoaderCompletionStatus& status);
-bool ShouldBypassCSP(const NavigationRequest& nav_request);
 
+// Logs fetch keepalive requests proxied via browser to Network panel.
+//
+// As the implementation requires a RenderFrameHost to locate a
+// RenderFrameDevToolsAgentHost to attach the logs to, `frame_free_node` must
+// not be nullptr. This doesn't really fit the whole need as such requests may
+// be sent after RenderFrameHost unload.
+//
+// Caller also needs to make sure to avoid duplicated logging that may already
+// happens in the request initiator renderer.
+void OnFetchKeepAliveRequestWillBeSent(
+    FrameTreeNode* frame_tree_node,
+    const std::string& request_id,
+    const network::ResourceRequest& request,
+    std::optional<std::pair<const GURL&,
+                            const network::mojom::URLResponseHeadDevToolsInfo&>>
+        redirect_info = std::nullopt);
+void OnFetchKeepAliveResponseReceived(
+    FrameTreeNode* frame_tree_node,
+    const std::string& request_id,
+    const GURL& url,
+    const network::mojom::URLResponseHead& head);
+void OnFetchKeepAliveRequestComplete(
+    FrameTreeNode* frame_tree_node,
+    const std::string& request_id,
+    const network::URLLoaderCompletionStatus& status);
+
+void OnAuctionWorkletNetworkRequestWillBeSent(
+    FrameTreeNodeId frame_tree_node_id,
+    const network::ResourceRequest& request,
+    base::TimeTicks timestamp);
+
+void OnAuctionWorkletNetworkResponseReceived(
+    FrameTreeNodeId frame_tree_node_id,
+    const std::string& request_id,
+    const std::string& loader_id,
+    const GURL& request_url,
+    const network::mojom::URLResponseHead& headers);
+
+void OnAuctionWorkletNetworkRequestComplete(
+    FrameTreeNodeId frame_tree_node_id,
+    const std::string& request_id,
+    const network::URLLoaderCompletionStatus& status);
+
+bool NeedInterestGroupAuctionEvents(FrameTreeNodeId frame_tree_node_id);
+
+void OnInterestGroupAuctionEventOccurred(
+    FrameTreeNodeId frame_tree_node_id,
+    base::Time event_time,
+    content::InterestGroupAuctionEventType type,
+    const std::string& unique_auction_id,
+    base::optional_ref<const std::string> parent_auction_id,
+    const base::Value::Dict& auction_config);
+void OnInterestGroupAuctionNetworkRequestCreated(
+    FrameTreeNodeId frame_tree_node_id,
+    content::InterestGroupAuctionFetchType type,
+    const std::string& request_id,
+    const std::vector<std::string>& devtools_auction_ids);
+
+bool ShouldBypassCSP(const NavigationRequest& nav_request);
+bool ShouldBypassCertificateErrors();
+
+void ApplyNetworkOverridesForDownload(
+    RenderFrameHostImpl* rfh,
+    download::DownloadUrlParameters* parameters);
 void WillBeginDownload(download::DownloadCreateInfo* info,
                        download::DownloadItem* item);
 
@@ -186,42 +262,44 @@ void BackForwardCacheNotUsed(
 void WillSwapFrameTreeNode(FrameTreeNode& old_node, FrameTreeNode& new_node);
 void OnFrameTreeNodeDestroyed(FrameTreeNode& frame_tree_node);
 
+bool IsPrerenderAllowed(FrameTree& frame_tree);
 void WillInitiatePrerender(FrameTree& frame_tree);
-void DidActivatePrerender(
-    const NavigationRequest& nav_request,
-    const base::UnguessableToken& initiator_devtools_navigation_token);
-// This function reports cancellation status to DevTools with the
-// `disallowed_api_method`, which is used to give users more information about
-// the cancellation details if the prerendering uses disallowed API method, and
-// disallowed_api_method will be formatted for display in the DevTools. See the
-// DevTools implementation for the format.
-void DidCancelPrerender(
-    FrameTreeNode* ftn,
-    const GURL& prerendering_url,
-    const base::UnguessableToken& initiator_devtools_navigation_token,
-    PrerenderFinalStatus status,
-    const std::string& disallowed_api_method);
+void DidActivatePrerender(const NavigationRequest& nav_request,
+                          const std::optional<base::UnguessableToken>&
+                              initiator_devtools_navigation_token);
+
+void DidUpdatePolicyContainerHost(FrameTreeNode* ftn);
 
 void DidUpdatePrefetchStatus(
     FrameTreeNode* ftn,
     const base::UnguessableToken& initiator_devtools_navigation_token,
     const GURL& prefetch_url,
-    PreloadingTriggeringOutcome status);
+    PreloadingTriggeringOutcome status,
+    PrefetchStatus prefetch_status,
+    const std::string& request_id);
 
 void DidUpdatePrerenderStatus(
-    int initiator_frame_tree_node_id,
+    FrameTreeNodeId initiator_frame_tree_node_id,
     const base::UnguessableToken& initiator_devtools_navigation_token,
     const GURL& prerender_url,
-    PreloadingTriggeringOutcome status);
+    std::optional<blink::mojom::SpeculationTargetHint> target_hint,
+    PreloadingTriggeringOutcome status,
+    std::optional<PrerenderFinalStatus> prerender_status,
+    std::optional<std::string> disallowed_mojo_interface,
+    const std::vector<PrerenderMismatchedHeaders>* mismatched_headers);
+
+void DidUpdateSpeculationCandidates(
+    RenderFrameHost& rfh,
+    const std::vector<blink::mojom::SpeculationCandidatePtr>& candidates);
 
 void OnSignedExchangeReceived(
     FrameTreeNode* frame_tree_node,
-    absl::optional<const base::UnguessableToken> devtools_navigation_token,
+    std::optional<const base::UnguessableToken> devtools_navigation_token,
     const GURL& outer_request_url,
     const network::mojom::URLResponseHead& outer_response,
-    const absl::optional<SignedExchangeEnvelope>& header,
+    const std::optional<SignedExchangeEnvelope>& header,
     const scoped_refptr<net::X509Certificate>& certificate,
-    const absl::optional<net::SSLInfo>& ssl_info,
+    const std::optional<net::SSLInfo>& ssl_info,
     const std::vector<SignedExchangeError>& errors);
 void OnSignedExchangeCertificateRequestSent(
     FrameTreeNode* frame_tree_node,
@@ -273,6 +351,7 @@ void ThrottleWorkerMainScriptFetch(
 bool ShouldWaitForDebuggerInWindowOpen();
 
 void WillStartDragging(FrameTreeNode* main_frame_tree_node,
+                       const content::DropData& drop_data,
                        const blink::mojom::DragDataPtr drag_data,
                        blink::DragOperationsMask drag_operations_mask,
                        bool* intercepted);
@@ -288,20 +367,9 @@ bool HandleCertificateError(WebContents* web_contents,
                             const GURL& request_url,
                             CertErrorCallback callback);
 
-void PortalAttached(RenderFrameHostImpl* render_frame_host_impl);
-void PortalDetached(RenderFrameHostImpl* render_frame_host_impl);
-// This receives the _old_ portal being activated just before actual
-// tab contents is swapped by the embedder.
-void PortalActivated(Portal& portal);
-
 void FencedFrameCreated(
     base::SafeRef<RenderFrameHostImpl> owner_render_frame_host,
     FencedFrame* fenced_frame);
-
-// Tells tracing that process `pid` is being used for an auction worklet
-// associated to `owner`.
-void DidCreateProcessForAuctionWorklet(RenderFrameHostImpl* owner,
-                                       base::ProcessId pid);
 
 void ReportCookieIssue(
     RenderFrameHostImpl* render_frame_host_impl,
@@ -309,7 +377,8 @@ void ReportCookieIssue(
     const GURL& url,
     const net::SiteForCookies& site_for_cookies,
     blink::mojom::CookieOperation operation,
-    const absl::optional<std::string>& devtools_request_id);
+    const std::optional<std::string>& devtools_request_id,
+    const std::optional<std::string>& devtools_issue_id);
 
 // This function works similar to RenderFrameHostImpl::AddInspectorIssue, in
 // that it reports an InspectorIssue to DevTools clients. The difference is that
@@ -325,7 +394,6 @@ ReportBrowserInitiatedIssue(RenderFrameHostImpl* frame,
 
 // Produces an inspector issue and sends it to the client with
 // |ReportBrowserInitiatedIssue|.
-// This only support TrustedWebActivityIssue for now.
 void BuildAndReportBrowserInitiatedIssue(
     RenderFrameHostImpl* frame,
     blink::mojom::InspectorIssueInfoPtr info);
@@ -333,7 +401,7 @@ void BuildAndReportBrowserInitiatedIssue(
 void OnWebTransportHandshakeFailed(
     RenderFrameHostImpl* frame_host,
     const GURL& url,
-    const absl::optional<net::WebTransportError>& error);
+    const std::optional<net::WebTransportError>& error);
 
 void OnServiceWorkerMainScriptFetchingFailed(
     const GlobalRenderFrameHostId& requesting_frame_id,
@@ -398,11 +466,27 @@ void CleanUpDeviceRequestPrompt(RenderFrameHost* render_frame_host,
 // `intercept` should be set to true if the handler is active.
 // `disable_delay` should be set to true if the handler wants to disable
 // the normal FedCM delay in notifying the renderer of success/failure.
-void WillSendFedCmRequest(RenderFrameHost* render_frame_host,
+void WillSendFedCmRequest(RenderFrameHost& render_frame_host,
                           bool* intercept,
                           bool* disable_delay);
-void WillShowFedCmDialog(RenderFrameHost* render_frame_host, bool* intercept);
-void OnFedCmAccountsDialogShown(RenderFrameHost* render_frame_host);
+void WillShowFedCmDialog(RenderFrameHost& render_frame_host, bool* intercept);
+void DidShowFedCmDialog(RenderFrameHost& render_frame_host);
+void DidCloseFedCmDialog(RenderFrameHost& render_frame_host);
+
+// Handles dev tools integration for fenced frame reporting beacons. Used in
+// `FencedFrameReporter`.
+void OnFencedFrameReportRequestSent(
+    FrameTreeNodeId initiator_frame_tree_node_id,
+    const std::string& devtools_request_id,
+    network::ResourceRequest& request,
+    const std::string& event_data);
+void OnFencedFrameReportResponseReceived(
+    FrameTreeNodeId initiator_frame_tree_node_id,
+    const std::string& devtools_request_id,
+    const GURL& final_url,
+    scoped_refptr<net::HttpResponseHeaders> headers);
+
+void DidChangeFrameLoadingState(FrameTreeNode& ftn);
 
 }  // namespace devtools_instrumentation
 

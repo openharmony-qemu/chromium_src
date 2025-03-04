@@ -7,7 +7,6 @@
 #include <string>
 
 #include "base/notreached.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace feature_engagement {
 namespace {
@@ -21,10 +20,39 @@ std::ostream& operator<<(std::ostream& os, const SessionRateImpact::Type type) {
       return os << "EXPLICIT";
     default:
       // All cases should be covered.
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       return os;
   }
 }
+
+std::ostream& operator<<(std::ostream& os, BlockedBy::Type type) {
+  switch (type) {
+    case BlockedBy::Type::ALL:
+      return os << "ALL";
+    case BlockedBy::Type::NONE:
+      return os << "NONE";
+    case BlockedBy::Type::EXPLICIT:
+      return os << "EXPLICIT";
+    default:
+      // All cases should be covered.
+      NOTREACHED_IN_MIGRATION();
+      return os;
+  }
+}
+
+std::ostream& operator<<(std::ostream& os, Blocking::Type type) {
+  switch (type) {
+    case Blocking::Type::ALL:
+      return os << "ALL";
+    case Blocking::Type::NONE:
+      return os << "NONE";
+    default:
+      // All cases should be covered.
+      NOTREACHED_IN_MIGRATION();
+      return os;
+  }
+}
+
 }  // namespace
 
 Comparator::Comparator() : type(ANY), value(0) {}
@@ -52,7 +80,7 @@ bool Comparator::MeetsCriteria(uint32_t v) const {
       return v != value;
     default:
       // All cases should be covered.
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       return false;
   }
 }
@@ -75,7 +103,7 @@ std::ostream& operator<<(std::ostream& os, const Comparator& comparator) {
       return os << "!=" << comparator.value;
     default:
       // All cases should be covered.
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       return os;
   }
 }
@@ -121,6 +149,34 @@ SnoozeParams::SnoozeParams(const SnoozeParams& other) = default;
 
 SnoozeParams::~SnoozeParams() = default;
 
+std::ostream& operator<<(std::ostream& os, const BlockedBy& blocked_by) {
+  os << "{ type: " << blocked_by.type << ", affected_features: ";
+  if (!blocked_by.affected_features.has_value()) {
+    return os << "NO VALUE }";
+  }
+
+  os << "[";
+  bool first = true;
+  for (const auto& affected_feature : blocked_by.affected_features.value()) {
+    if (first) {
+      first = false;
+      os << affected_feature;
+    } else {
+      os << ", " << affected_feature;
+    }
+  }
+  return os << "] }";
+}
+
+std::ostream& operator<<(std::ostream& os, const Blocking& blocking) {
+  return os << "{ type: " << blocking.type << " }";
+}
+
+std::ostream& operator<<(std::ostream& os, const SnoozeParams& snooze_params) {
+  return os << "{ max_limit: " << snooze_params.max_limit
+            << ", snooze_interval: " << snooze_params.snooze_interval << ", }";
+}
+
 std::ostream& operator<<(std::ostream& os, const SessionRateImpact& impact) {
   os << "{ type: " << impact.type << ", affected_features: ";
   if (!impact.affected_features.has_value())
@@ -149,7 +205,16 @@ bool operator==(const BlockedBy& lhs, const BlockedBy& rhs) {
          std::tie(rhs.type, rhs.affected_features);
 }
 
-FeatureConfig::FeatureConfig() : valid(false) {}
+bool operator==(const Blocking& lhs, const Blocking& rhs) {
+  return lhs.type == rhs.type;
+}
+
+bool operator==(const SnoozeParams& lhs, const SnoozeParams& rhs) {
+  return std::tie(lhs.max_limit, lhs.snooze_interval) ==
+         std::tie(rhs.max_limit, rhs.snooze_interval);
+}
+
+FeatureConfig::FeatureConfig() = default;
 
 FeatureConfig::FeatureConfig(const FeatureConfig& other) = default;
 

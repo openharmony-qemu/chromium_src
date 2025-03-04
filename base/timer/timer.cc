@@ -95,10 +95,6 @@ void DelayTimerBase::StartInternal(const Location& posted_from,
   Reset();
 }
 
-void DelayTimerBase::AbandonAndStop() {
-  Stop();
-}
-
 void DelayTimerBase::Reset() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
@@ -180,7 +176,7 @@ void OneShotTimer::RunUserTask() {
 }
 
 void OneShotTimer::EnsureNonNullUserTask() {
-  DCHECK(user_task_);
+  CHECK(user_task_);
 }
 
 RepeatingTimer::RepeatingTimer() = default;
@@ -252,6 +248,11 @@ void RetainingOneShotTimer::RunUserTask() {
   // Make a local copy of the task to run in case the task destroys the timer
   // instance.
   RepeatingClosure task = user_task_;
+#if BUILDFLAG(IS_ARKWEB)
+  if (!task) {
+    return;
+  }
+#endif
   Stop();
   task.Run();
   // No more member accesses here: |this| could be deleted at this point.

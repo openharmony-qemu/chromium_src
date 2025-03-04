@@ -23,7 +23,7 @@ class WaylandClientPerfTests : public exo::WaylandClientTest {
 };
 
 WaylandClientPerfTests::WaylandClientPerfTests() {
-  // TODO(crbug.com/1399591): Figure out the missing/misordered
+  // TODO(crbug.com/40249908): Figure out the missing/misordered
   // PresentationFeedback when using this feature.
   scoped_feature_list_.InitAndDisableFeature(features::kOnBeginFrameAcks);
 }
@@ -42,8 +42,16 @@ perf_test::PerfResultReporter SetUpReporter(const std::string& story) {
   return reporter;
 }
 
+// TODO(crbug.com/335313263): Flaky on Linux/ChromeOS ASAN.
+#if BUILDFLAG(IS_LINUX) && defined(ADDRESS_SANITIZER)
+#define MAYBE_Simple DISABLED_Simple
+#elif BUILDFLAG(IS_CHROMEOS) && defined(ADDRESS_SANITIZER)
+#define MAYBE_Simple DISABLED_Simple
+#else
+#define MAYBE_Simple Simple
+#endif
 // Test simple double-buffered client performance.
-TEST_F(WaylandClientPerfTests, Simple) {
+TEST_F(WaylandClientPerfTests, MAYBE_Simple) {
   const int kWarmUpFrames = 20;
   const int kTestFrames = 600;
 
@@ -55,11 +63,13 @@ TEST_F(WaylandClientPerfTests, Simple) {
   exo::wayland::clients::Simple client;
   EXPECT_TRUE(client.Init(params));
 
-  client.Run(kWarmUpFrames, false, nullptr);
+  const exo::wayland::clients::Simple::RunParam run_params = {false, false};
+
+  client.Run(kWarmUpFrames, run_params, nullptr);
 
   exo::wayland::clients::Simple::PresentationFeedback feedback;
   auto start_time = base::Time::Now();
-  client.Run(kTestFrames, false, &feedback);
+  client.Run(kTestFrames, run_params, &feedback);
   auto time_delta = base::Time::Now() - start_time;
   float fps = kTestFrames / time_delta.InSecondsF();
   auto reporter = SetUpReporter(kStorySimple);

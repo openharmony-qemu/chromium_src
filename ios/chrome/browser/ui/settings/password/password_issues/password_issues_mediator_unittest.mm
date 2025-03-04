@@ -5,28 +5,28 @@
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_mediator.h"
 
 #import "base/strings/sys_string_conversions.h"
+#import "base/test/bind.h"
 #import "base/test/scoped_feature_list.h"
+#import "components/affiliations/core/browser/fake_affiliation_service.h"
 #import "components/google/core/common/google_util.h"
 #import "components/keyed_service/core/service_access_type.h"
 #import "components/password_manager/core/browser/password_form.h"
 #import "components/password_manager/core/browser/password_manager_test_utils.h"
-#import "components/password_manager/core/browser/test_password_store.h"
+#import "components/password_manager/core/browser/password_store/test_password_store.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
-#import "components/password_manager/core/common/password_manager_features.h"
-#import "ios/chrome/browser/application_context/application_context.h"
-#import "ios/chrome/browser/browser_state/test_chrome_browser_state.h"
-#import "ios/chrome/browser/favicon/favicon_loader.h"
-#import "ios/chrome/browser/favicon/ios_chrome_favicon_loader_factory.h"
-#import "ios/chrome/browser/main/test_browser.h"
-#import "ios/chrome/browser/net/crurl.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_check_manager_factory.h"
-#import "ios/chrome/browser/passwords/ios_chrome_password_store_factory.h"
-#import "ios/chrome/browser/passwords/password_check_observer_bridge.h"
-#import "ios/chrome/browser/passwords/password_checkup_utils.h"
-#import "ios/chrome/browser/shared/ui/table_view/chrome_table_view_controller_test.h"
-#import "ios/chrome/browser/sync/sync_setup_service_factory.h"
-#import "ios/chrome/browser/sync/sync_setup_service_mock.h"
+#import "ios/chrome/browser/affiliations/model/ios_chrome_affiliation_service_factory.h"
+#import "ios/chrome/browser/favicon/model/favicon_loader.h"
+#import "ios/chrome/browser/favicon/model/ios_chrome_favicon_loader_factory.h"
+#import "ios/chrome/browser/net/model/crurl.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_password_check_manager_factory.h"
+#import "ios/chrome/browser/passwords/model/ios_chrome_profile_password_store_factory.h"
+#import "ios/chrome/browser/passwords/model/password_check_observer_bridge.h"
+#import "ios/chrome/browser/passwords/model/password_checkup_utils.h"
+#import "ios/chrome/browser/shared/model/application_context/application_context.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
+#import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/ui/table_view/legacy_chrome_table_view_controller_test.h"
 #import "ios/chrome/browser/ui/settings/password/password_checkup/password_checkup_constants.h"
 #import "ios/chrome/browser/ui/settings/password/password_issues/password_issues_consumer.h"
 #import "ios/chrome/grit/ios_strings.h"
@@ -36,11 +36,6 @@
 #import "testing/gtest_mac.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
-using password_manager::InsecureCredential;
 using password_manager::InsecureType;
 using password_manager::PasswordForm;
 using password_manager::TestPasswordStore;
@@ -61,6 +56,9 @@ constexpr char kUsername2[] = "bob";
 
 constexpr char kPassword[] = "s3cre3t";
 constexpr char kPassword2[] = "s3cre3t2";
+constexpr char kStrongPassword[] = "pmsFlsnoab4nsl#losb@skpfnsbkjb^klsnbs!cns";
+constexpr char kStrongPassword2[] = "sfdf#losb@sdf^klsnbs!cns";
+constexpr char kStrongPassword3[] = "sdfsdfwer@313QaDSdsd!cns";
 
 NSString* GetUsername() {
   return base::SysUTF8ToNSString(kUsername);
@@ -92,16 +90,16 @@ GURL GetLocalizedURL(const GURL& original) {
 
 @property(nonatomic, copy) CrURL* headerURL;
 
-@property(nonatomic, copy) NSString* dismissedWarningsButtonText;
+@property(nonatomic, assign) NSInteger dismissedWarningsCount;
 
 @end
 
 @implementation FakePasswordIssuesConsumer
 
 - (void)setPasswordIssues:(NSArray<PasswordIssueGroup*>*)passwordIssueGroups
-    dismissedWarningsButtonText:(NSString*)buttonText {
+    dismissedWarningsCount:(NSInteger)dismissedWarningsCount {
   _passwordIssueGroups = passwordIssueGroups;
-  _dismissedWarningsButtonText = buttonText;
+  _dismissedWarningsCount = dismissedWarningsCount;
   _passwordIssuesListChangedWasCalled = YES;
 }
 
@@ -121,26 +119,29 @@ class PasswordIssuesMediatorTest : public BlockCleanupTest {
  protected:
   void SetUp() override {
     BlockCleanupTest::SetUp();
-    // Create BrowserState.
-    TestChromeBrowserState::Builder test_cbs_builder;
-    test_cbs_builder.AddTestingFactory(
-        SyncSetupServiceFactory::GetInstance(),
-        base::BindRepeating(&SyncSetupServiceMock::CreateKeyedService));
-    test_cbs_builder.AddTestingFactory(
-        IOSChromePasswordStoreFactory::GetInstance(),
+    // Create profile.
+    TestProfileIOS::Builder builder;
+    builder.AddTestingFactory(
+        IOSChromeProfilePasswordStoreFactory::GetInstance(),
         base::BindRepeating(
             &password_manager::BuildPasswordStore<web::BrowserState,
                                                   TestPasswordStore>));
-    chrome_browser_state_ = test_cbs_builder.Build();
+    builder.AddTestingFactory(
+        IOSChromeAffiliationServiceFactory::GetInstance(),
+        base::BindRepeating(base::BindLambdaForTesting([](web::BrowserState*) {
+          return std::unique_ptr<KeyedService>(
+              std::make_unique<affiliations::FakeAffiliationService>());
+        })));
+    profile_ = std::move(builder).Build();
 
     store_ =
         base::WrapRefCounted(static_cast<password_manager::TestPasswordStore*>(
-            IOSChromePasswordStoreFactory::GetForBrowserState(
-                chrome_browser_state_.get(), ServiceAccessType::EXPLICIT_ACCESS)
+            IOSChromeProfilePasswordStoreFactory::GetForProfile(
+                profile_.get(), ServiceAccessType::EXPLICIT_ACCESS)
                 .get()));
 
-    password_check_ = IOSChromePasswordCheckManagerFactory::GetForBrowserState(
-        chrome_browser_state_.get());
+    password_check_ =
+        IOSChromePasswordCheckManagerFactory::GetForProfile(profile_.get());
 
     consumer_ = [[FakePasswordIssuesConsumer alloc] init];
 
@@ -152,10 +153,9 @@ class PasswordIssuesMediatorTest : public BlockCleanupTest {
     mediator_ = [[PasswordIssuesMediator alloc]
           initForWarningType:warning_type
         passwordCheckManager:password_check_.get()
-               faviconLoader:IOSChromeFaviconLoaderFactory::GetForBrowserState(
-                                 chrome_browser_state_.get())
-                 syncService:SyncServiceFactory::GetForBrowserState(
-                                 chrome_browser_state_.get())];
+               faviconLoader:IOSChromeFaviconLoaderFactory::GetForProfile(
+                                 profile_.get())
+                 syncService:SyncServiceFactory::GetForProfile(profile_.get())];
     mediator_.consumer = consumer_;
   }
 
@@ -215,8 +215,9 @@ class PasswordIssuesMediatorTest : public BlockCleanupTest {
   void RunUntilIdle() { task_environment_.RunUntilIdle(); }
 
  private:
+  base::test::ScopedFeatureList feature_list_;
   web::WebTaskEnvironment task_environment_;
-  std::unique_ptr<TestChromeBrowserState> chrome_browser_state_;
+  std::unique_ptr<TestProfileIOS> profile_;
   scoped_refptr<TestPasswordStore> store_;
   scoped_refptr<IOSChromePasswordCheckManager> password_check_;
   FakePasswordIssuesConsumer* consumer_;
@@ -241,9 +242,6 @@ TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesChanged) {
 // Tests that changes to password store are not sent to the consumer if the
 // credentials with the current warning type did not change.
 TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesChangedNotCalled) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kCompromisedPasswordsWarning);
 
   CheckGroupsCount(0);
@@ -274,22 +272,19 @@ TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesChangedNotCalled) {
 // Tests that only passwords issues of the current warning type are sent to the
 // consumer.
 TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesFilteredByWarningType) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   // Create all types of insecure passwords.
   // Weak.
   MakeTestPasswordIssue(kExampleCom, kUsername, kPassword, InsecureType::kWeak);
   // Reused.
-  MakeTestPasswordIssue(kExampleCom2, kUsername, kPassword,
+  MakeTestPasswordIssue(kExampleCom2, kUsername, kStrongPassword,
                         InsecureType::kReused);
-  MakeTestPasswordIssue(kExampleCom3, kUsername2, kPassword,
+  MakeTestPasswordIssue(kExampleCom3, kUsername2, kStrongPassword,
                         InsecureType::kReused);
   // Dismissed Compromised
-  MakeTestPasswordIssue(kExampleCom3, kUsername, kPassword,
+  MakeTestPasswordIssue(kExampleCom3, kUsername, kStrongPassword2,
                         InsecureType::kLeaked, /*muted=*/true);
   // Compromised.
-  MakeTestPasswordIssue(kExampleCom, kUsername2, kPassword,
+  MakeTestPasswordIssue(kExampleCom, kUsername2, kStrongPassword3,
                         InsecureType::kPhished);
   RunUntilIdle();
 
@@ -299,15 +294,14 @@ TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesFilteredByWarningType) {
   CheckIssue(/*group=*/0, /*index=*/0, /*expected_website=*/kExampleString,
              /*expected_username=*/GetUsername2());
 
-  EXPECT_NSEQ(consumer().dismissedWarningsButtonText,
-              @"Dismissed Warnings (1)");
+  EXPECT_EQ(consumer().dismissedWarningsCount, 1);
 
   // Send only weak passwords to consumer.
   CreateMediator(WarningType::kWeakPasswordsWarning);
 
   CheckIssue();
 
-  EXPECT_FALSE(consumer().dismissedWarningsButtonText);
+  EXPECT_EQ(0, consumer().dismissedWarningsCount);
 
   // Send only reused passwords to consumer.
   CreateMediator(WarningType::kReusedPasswordsWarning);
@@ -316,84 +310,61 @@ TEST_F(PasswordIssuesMediatorTest, TestPasswordIssuesFilteredByWarningType) {
   CheckIssue(/*group=*/0, /*index=*/1, /*expected_website=*/kExample3String,
              /*expected_username=*/GetUsername2());
 
-  EXPECT_FALSE(consumer().dismissedWarningsButtonText);
+  EXPECT_EQ(0, consumer().dismissedWarningsCount);
 
   // Send only dismissed passwords to consumer.
   CreateMediator(WarningType::kDismissedWarningsWarning);
 
   CheckIssue(/*group=*/0, /*index=*/0, /*expected_website=*/kExample3String);
 
-  EXPECT_FALSE(consumer().dismissedWarningsButtonText);
+  EXPECT_EQ(0, consumer().dismissedWarningsCount);
 }
 
 /// Tests the mediator sets the consumer title for compromised passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerCompromisedTitle) {
-  {
-    base::test::ScopedFeatureList feature_list(
-        password_manager::features::kIOSPasswordCheckup);
+  CreateMediator(WarningType::kCompromisedPasswordsWarning);
 
-    CreateMediator(WarningType::kCompromisedPasswordsWarning);
+  EXPECT_NSEQ(@"Compromised passwords", consumer().title);
 
-    EXPECT_NSEQ(@"Compromised Passwords", consumer().title);
+  MakeTestPasswordIssue();
+  RunUntilIdle();
 
-    MakeTestPasswordIssue();
-    RunUntilIdle();
+  EXPECT_NSEQ(@"1 compromised password", consumer().title);
 
-    EXPECT_NSEQ(@"1 Compromised Password", consumer().title);
+  MakeTestPasswordIssue(kExampleCom2);
+  RunUntilIdle();
 
-    MakeTestPasswordIssue(kExampleCom2);
-    RunUntilIdle();
-
-    EXPECT_NSEQ(@"2 Compromised Passwords", consumer().title);
-  }
-  {
-    base::test::ScopedFeatureList feature_list;
-    feature_list.InitAndDisableFeature(
-        password_manager::features::kIOSPasswordCheckup);
-
-    CreateMediator(WarningType::kCompromisedPasswordsWarning);
-
-    EXPECT_NSEQ(@"Passwords", consumer().title);
-  }
+  EXPECT_NSEQ(@"2 compromised passwords", consumer().title);
 }
 
 /// Tests the mediator sets the consumer title for weak passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerWeakTitle) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kWeakPasswordsWarning);
 
   MakeTestPasswordIssue(kExampleCom, kUsername, kPassword, InsecureType::kWeak);
   RunUntilIdle();
 
-  EXPECT_NSEQ(@"1 Weak Password", consumer().title);
+  EXPECT_NSEQ(@"1 weak password", consumer().title);
 
   MakeTestPasswordIssue(kExampleCom2, kUsername, kPassword,
                         InsecureType::kWeak);
   RunUntilIdle();
 
-  EXPECT_NSEQ(@"2 Weak Passwords", consumer().title);
+  EXPECT_NSEQ(@"2 weak passwords", consumer().title);
 }
 
 /// Tests the mediator sets the consumer title for dismissed warnings.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerDismissedTitle) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kDismissedWarningsWarning);
 
   MakeTestPasswordIssue();
   RunUntilIdle();
 
-  EXPECT_NSEQ(@"Dismissed Warnings", consumer().title);
+  EXPECT_NSEQ(@"Dismissed warnings", consumer().title);
 }
 
 /// Tests the mediator sets the consumer title for reused passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerReusedTitle) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kReusedPasswordsWarning);
 
   MakeTestPasswordIssue(kExampleCom, kUsername, kPassword,
@@ -402,43 +373,24 @@ TEST_F(PasswordIssuesMediatorTest, TestSetConsumerReusedTitle) {
                         InsecureType::kReused);
   RunUntilIdle();
 
-  EXPECT_NSEQ(@"2 Reused Passwords", consumer().title);
+  EXPECT_NSEQ(@"2 reused passwords", consumer().title);
 }
 
 /// Tests the mediator sets the consumer header for compromised passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerCompromisedHeader) {
-  {
-    base::test::ScopedFeatureList feature_list(
-        password_manager::features::kIOSPasswordCheckup);
+  CreateMediator(WarningType::kCompromisedPasswordsWarning);
 
-    CreateMediator(WarningType::kCompromisedPasswordsWarning);
-
-    EXPECT_NSEQ(
-        l10n_util::GetNSString(IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DESCRIPTION),
-        consumer().headerText);
-    EXPECT_EQ(GetLocalizedURL(
-                  GURL(password_manager::
-                           kPasswordManagerHelpCenterChangeUnsafePasswordsURL)),
-              consumer().headerURL.gurl);
-  }
-  {
-    base::test::ScopedFeatureList feature_list;
-    feature_list.InitAndDisableFeature(
-        password_manager::features::kIOSPasswordCheckup);
-
-    CreateMediator(WarningType::kCompromisedPasswordsWarning);
-
-    EXPECT_NSEQ(l10n_util::GetNSString(IDS_IOS_PASSWORD_ISSUES_DESCRIPTION),
-                consumer().headerText);
-    EXPECT_FALSE(consumer().headerURL);
-  }
+  EXPECT_NSEQ(
+      l10n_util::GetNSString(IDS_IOS_COMPROMISED_PASSWORD_ISSUES_DESCRIPTION),
+      consumer().headerText);
+  EXPECT_EQ(GetLocalizedURL(
+                GURL(password_manager::
+                         kPasswordManagerHelpCenterChangeUnsafePasswordsURL)),
+            consumer().headerURL.gurl);
 }
 
 /// Tests the mediator sets the consumer header for weak passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerWeakHeader) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kWeakPasswordsWarning);
 
   EXPECT_NSEQ(l10n_util::GetNSString(IDS_IOS_WEAK_PASSWORD_ISSUES_DESCRIPTION),
@@ -451,9 +403,6 @@ TEST_F(PasswordIssuesMediatorTest, TestSetConsumerWeakHeader) {
 
 /// Tests the mediator sets the consumer header for reused passwords.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerReusedHeader) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kReusedPasswordsWarning);
 
   EXPECT_NSEQ(
@@ -465,9 +414,6 @@ TEST_F(PasswordIssuesMediatorTest, TestSetConsumerReusedHeader) {
 
 /// Tests the mediator doesn't set a header for dismissed warnings.
 TEST_F(PasswordIssuesMediatorTest, TestSetConsumerDismissedHeader) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   consumer().headerText = nil;
   consumer().headerURL = nil;
 
@@ -509,9 +455,6 @@ TEST_F(PasswordIssuesMediatorTest, TestPasswordSorting) {
 
 // Tests that reused password issues are grouped by password.
 TEST_F(PasswordIssuesMediatorTest, TestReusedPasswordsGrouping) {
-  base::test::ScopedFeatureList feature_list(
-      password_manager::features::kIOSPasswordCheckup);
-
   CreateMediator(WarningType::kReusedPasswordsWarning);
   CheckGroupsCount(0);
 

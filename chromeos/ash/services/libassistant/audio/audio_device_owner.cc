@@ -44,7 +44,6 @@ int32_t GetBytesPerSample(const assistant_client::OutputStreamFormat& format) {
       break;
   }
   NOTREACHED();
-  return 1;
 }
 
 int32_t GetBytesPerFrame(const assistant_client::OutputStreamFormat& format) {

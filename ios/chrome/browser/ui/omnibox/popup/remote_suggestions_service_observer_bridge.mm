@@ -4,33 +4,41 @@
 
 #import "ios/chrome/browser/ui/omnibox/popup/remote_suggestions_service_observer_bridge.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 RemoteSuggestionsServiceObserverBridge::RemoteSuggestionsServiceObserverBridge(
-    id<RemoteSuggestionsServiceObserver> observer)
-    : observer_(observer) {}
+    id<RemoteSuggestionsServiceObserver> observer,
+    RemoteSuggestionsService* remote_suggestions_service)
+    : observer_(observer),
+      remote_suggestions_service_(remote_suggestions_service) {}
 
-void RemoteSuggestionsServiceObserverBridge::OnSuggestRequestStarting(
+void RemoteSuggestionsServiceObserverBridge::OnRequestCreated(
     const base::UnguessableToken& request_id,
     const network::ResourceRequest* request) {
-  // TODO: add remote suggestion service arg
-  [observer_ remoteSuggestionsService:nil
-                      startingRequest:request
-                     uniqueIdentifier:request_id];
+  [observer_ remoteSuggestionsService:remote_suggestions_service_
+         createdRequestWithIdentifier:request_id
+                              request:request];
 }
 
-void RemoteSuggestionsServiceObserverBridge::OnSuggestRequestCompleted(
+void RemoteSuggestionsServiceObserverBridge::OnRequestStarted(
     const base::UnguessableToken& request_id,
-    const bool response_received,
+    network::SimpleURLLoader* loader,
+    const std::string& request_body) {
+  NSString* requestBody = base::SysUTF8ToNSString(request_body);
+  [observer_ remoteSuggestionsService:remote_suggestions_service_
+         startedRequestWithIdentifier:request_id
+                          requestBody:requestBody
+                            URLLoader:loader];
+}
+
+void RemoteSuggestionsServiceObserverBridge::OnRequestCompleted(
+    const base::UnguessableToken& request_id,
+    const int response_code,
     const std::unique_ptr<std::string>& response_body) {
-  NSString* response_string = nil;
-  if (response_received && response_body) {
-    response_string = base::SysUTF8ToNSString(*response_body.get());
+  NSString* responseBody = nil;
+  if (response_code == 200 && response_body) {
+    responseBody = base::SysUTF8ToNSString(*response_body.get());
   }
-  // TODO: add remote suggestion service arg
-  [observer_ remoteSuggestionsService:nil
+  [observer_ remoteSuggestionsService:remote_suggestions_service_
        completedRequestWithIdentifier:request_id
-                     receivedResponse:response_string];
+                         responseCode:response_code
+                         responseBody:responseBody];
 }

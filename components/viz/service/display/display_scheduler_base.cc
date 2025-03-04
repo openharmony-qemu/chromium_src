@@ -7,9 +7,11 @@
 namespace viz {
 
 DisplaySchedulerBase::DisplaySchedulerBase() = default;
+
 DisplaySchedulerBase::~DisplaySchedulerBase() {
-  if (damage_tracker_)
-    damage_tracker_->RemoveObserver(this);
+  if (damage_tracker_) {
+    damage_tracker_->SetDelegate(nullptr);
+  }
 }
 
 void DisplaySchedulerBase::SetClient(DisplaySchedulerClient* client) {
@@ -21,7 +23,17 @@ void DisplaySchedulerBase::SetDamageTracker(
   DCHECK(!damage_tracker_);
   DCHECK(damage_tracker);
   damage_tracker_ = damage_tracker;
-  damage_tracker_->AddObserver(this);
+  damage_tracker_->SetDelegate(this);
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void DisplaySchedulerBase::ReenableSwapCheck(const SurfaceId& surface_id,
+                                             int width,
+                                             int height) {
+  if (client_) {
+    client_->ReenableSwapCheck(surface_id, width, height);
+  }
+}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
 }  // namespace viz

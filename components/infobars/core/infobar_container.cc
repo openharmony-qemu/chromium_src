@@ -56,8 +56,8 @@ void InfoBarContainer::ChangeInfoBarManager(InfoBarManager* infobar_manager) {
     if (infobar_manager_) {
       infobar_manager_->AddObserver(this);
 
-      for (size_t i = 0; i < infobar_manager_->infobar_count(); ++i) {
-        AddInfoBar(infobar_manager_->infobar_at(i), i, false);
+      for (size_t i = 0; i < infobar_manager_->infobars().size(); ++i) {
+        AddInfoBar(infobar_manager_->infobars()[i], i, false);
         state_changed = true;
       }
     }
@@ -79,7 +79,7 @@ void InfoBarContainer::OnInfoBarStateChanged(bool is_animating) {
 void InfoBarContainer::RemoveInfoBar(InfoBar* infobar) {
   infobar->set_container(nullptr);
   auto i = base::ranges::find(infobars_, infobar);
-  DCHECK(i != infobars_.end());
+  CHECK(i != infobars_.end());
   PlatformSpecificRemoveInfoBar(infobar);
   infobars_.erase(i);
 }
@@ -107,7 +107,7 @@ void InfoBarContainer::OnInfoBarReplaced(InfoBar* old_infobar,
                                          InfoBar* new_infobar) {
   PlatformSpecificReplaceInfoBar(old_infobar, new_infobar);
   InfoBars::const_iterator i = base::ranges::find(infobars_, old_infobar);
-  DCHECK(i != infobars_.end());
+  CHECK(i != infobars_.end());
   size_t position = i - infobars_.begin();
   old_infobar->Hide(false);
   AddInfoBar(new_infobar, position, false);
@@ -131,9 +131,8 @@ void InfoBarContainer::AddInfoBar(InfoBar* infobar,
   infobar->Show(infobar_manager_->animations_enabled() && animate);
 
   // Record the infobar being displayed.
-  DCHECK_NE(InfoBarDelegate::INVALID, infobar->delegate()->GetIdentifier());
-  base::UmaHistogramSparse("InfoBar.Shown",
-                           infobar->delegate()->GetIdentifier());
+  DCHECK_NE(InfoBarDelegate::INVALID, infobar->GetIdentifier());
+  base::UmaHistogramSparse("InfoBar.Shown", infobar->GetIdentifier());
 }
 
 }  // namespace infobars

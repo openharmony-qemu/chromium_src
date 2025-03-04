@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "printing/printing_context_system_dialog_win.h"
 
 #include <utility>
@@ -15,21 +20,17 @@
 #include "printing/print_settings_initializer_win.h"
 #include "skia/ext/skia_utils_win.h"
 
-#if BUILDFLAG(ENABLE_OOP_PRINTING)
-#include "printing/printing_features.h"
-#endif
-
 namespace printing {
 
 HWND PrintingContextSystemDialogWin::GetWindow() {
 #if BUILDFLAG(ENABLE_OOP_PRINTING)
-  if (features::kEnableOopPrintDriversJobPrint.Get()) {
+  if (process_behavior() == ProcessBehavior::kOopEnabledPerformSystemCalls) {
     // Delving through the view tree to get to root window happens separately
     // in the browser process (i.e., not in `PrintingContextSystemDialogWin`)
     // before sending the identified window owner to the Print Backend service.
     // This means that this call is happening in the service, and thus should
     // just use the parent view as-is instead of looking for the root window.
-    // TODO(crbug.com/809738)  Pursue having a service-level instantiation of
+    // TODO(crbug.com/40561724)  Pursue having a service-level instantiation of
     // `PrintingContextSystemDialogWin` for this behavior.  That would ensure
     // this logic would be compile-time driven and only invoked by the service.
     return reinterpret_cast<HWND>(delegate_->GetParentView());
@@ -39,8 +40,9 @@ HWND PrintingContextSystemDialogWin::GetWindow() {
 }
 
 PrintingContextSystemDialogWin::PrintingContextSystemDialogWin(
-    Delegate* delegate)
-    : PrintingContextWin(delegate) {}
+    Delegate* delegate,
+    ProcessBehavior process_behavior)
+    : PrintingContextWin(delegate, process_behavior) {}
 
 PrintingContextSystemDialogWin::~PrintingContextSystemDialogWin() {}
 
@@ -125,9 +127,9 @@ bool PrintingContextSystemDialogWin::InitializeSettingsWithRanges(
     int number_ranges,
     bool selection_only) {
   DCHECK(GetDeviceCaps(context(), CLIPCAPS));
-  DCHECK(GetDeviceCaps(context(), RASTERCAPS) & RC_STRETCHDIB);
-  DCHECK(GetDeviceCaps(context(), RASTERCAPS) & RC_BITMAP64);
   // Some printers don't advertise these.
+  // DCHECK(GetDeviceCaps(context(), RASTERCAPS) & RC_STRETCHDIB);
+  // DCHECK(GetDeviceCaps(context(), RASTERCAPS) & RC_BITMAP64);
   // DCHECK(GetDeviceCaps(context(), RASTERCAPS) & RC_SCALING);
   // DCHECK(GetDeviceCaps(context(), SHADEBLENDCAPS) & SB_CONST_ALPHA);
   // DCHECK(GetDeviceCaps(context(), SHADEBLENDCAPS) & SB_PIXEL_ALPHA);
@@ -135,7 +137,6 @@ bool PrintingContextSystemDialogWin::InitializeSettingsWithRanges(
   // StretchDIBits() support is needed for printing.
   if (!(GetDeviceCaps(context(), RASTERCAPS) & RC_STRETCHDIB) ||
       !(GetDeviceCaps(context(), RASTERCAPS) & RC_BITMAP64)) {
-    NOTREACHED();
     ResetSettings();
     return false;
   }

@@ -12,6 +12,7 @@
 #include "components/translate/core/browser/translate_download_manager.h"
 #include "components/translate/core/browser/translate_driver.h"
 #include "components/translate/core/browser/translate_manager.h"
+#include "components/translate/core/browser/translate_metrics_logger.h"
 #include "components/translate/core/browser/translate_prefs.h"
 #include "components/translate/core/browser/translate_ui_languages_manager.h"
 #include "components/translate/core/common/translate_util.h"
@@ -20,29 +21,7 @@
 
 namespace {
 
-const char kDeclineTranslate[] = "Translate.DeclineTranslate";
-const char kRevertTranslation[] = "Translate.RevertTranslation";
-const char kPerformTranslate[] = "Translate.Translate";
-const char kPerformTranslateAmpCacheUrl[] = "Translate.Translate.AMPCacheURL";
-const char kNeverTranslateLang[] = "Translate.NeverTranslateLang";
-const char kNeverTranslateSite[] = "Translate.NeverTranslateSite";
-const char kAlwaysTranslateLang[] = "Translate.AlwaysTranslateLang";
-const char kModifySourceLang[] = "Translate.ModifyOriginalLang";
-const char kModifyTargetLang[] = "Translate.ModifyTargetLang";
-const char kShowErrorUI[] = "Translate.ShowErrorUI";
-
-// Returns whether |url| fits pattern of an AMP cache url.
-// Note this is a copy of logic in amp_page_load_metrics_observer.cc
-// TODO(crbug.com/1064974) Factor out into shared utility.
-bool IsLikelyAmpCacheUrl(const GURL& url) {
-  // Our heuristic to identify AMP cache URLs is to check for the presence of
-  // the amp_js_v query param.
-  for (net::QueryIterator it(url); !it.IsAtEnd(); it.Advance()) {
-    if (it.GetKey() == "amp_js_v")
-      return true;
-  }
-  return false;
-}
+const char kShowErrorUI[] = "Translate.Translation.ShowErrorUI";
 
 }  // namespace
 
@@ -52,17 +31,17 @@ TranslateUIDelegate::TranslateUIDelegate(
     const base::WeakPtr<TranslateManager>& translate_manager,
     const std::string& source_language,
     const std::string& target_language)
-    : translate_driver_(
-          translate_manager->translate_client()->GetTranslateDriver()),
-      translate_manager_(translate_manager),
-      translate_ui_languages_manager_(
-          std::make_unique<TranslateUILanguagesManager>(translate_manager,
-                                                        source_language,
-                                                        target_language)),
+    : translate_manager_(translate_manager),
       prefs_(translate_manager_->translate_client()->GetTranslatePrefs()) {
-  DCHECK(translate_driver_);
   DCHECK(translate_manager_);
-  DCHECK(translate_ui_languages_manager_);
+
+  std::vector<std::string> language_codes;
+  TranslateDownloadManager::GetSupportedLanguages(
+      prefs_->IsTranslateAllowedByPolicy(), &language_codes);
+
+  translate_ui_languages_manager_ =
+      std::make_unique<TranslateUILanguagesManager>(
+          language_codes, source_language, target_language);
 
   if (base::FeatureList::IsEnabled(
           language::kContentLanguagesInLanguagePicker)) {
@@ -99,8 +78,6 @@ void TranslateUIDelegate::UpdateAndRecordSourceLanguageIndex(
     return;
   }
 
-  UMA_HISTOGRAM_BOOLEAN(kModifySourceLang, true);
-
   if (translate_manager_) {
     translate_manager_->GetActiveTranslateMetricsLogger()->LogSourceLanguage(
         translate_ui_languages_manager_->GetLanguageCodeAt(language_index));
@@ -125,8 +102,6 @@ void TranslateUIDelegate::UpdateAndRecordTargetLanguageIndex(
           language_index)) {
     return;
   }
-
-  UMA_HISTOGRAM_BOOLEAN(kModifyTargetLang, true);
 
   if (translate_manager_) {
     translate_manager_->GetActiveTranslateMetricsLogger()->LogTargetLanguage(
@@ -177,7 +152,7 @@ void TranslateUIDelegate::GetContentLanguagesCodes(
 }
 
 void TranslateUIDelegate::Translate() {
-  if (!translate_driver_->IsIncognito()) {
+  if (!IsIncognito()) {
     prefs_->ResetTranslationDeniedCount(
         translate_ui_languages_manager_->GetSourceLanguageCode());
     prefs_->ResetTranslationIgnoredCount(
@@ -198,22 +173,17 @@ void TranslateUIDelegate::Translate() {
         translate_manager_->GetActiveTranslateMetricsLogger()
             ->GetNextManualTranslationType(
                 /*is_context_menu_initiated_translation=*/false));
-    UMA_HISTOGRAM_BOOLEAN(kPerformTranslate, true);
-    if (IsLikelyAmpCacheUrl(translate_driver_->GetLastCommittedURL()))
-      UMA_HISTOGRAM_BOOLEAN(kPerformTranslateAmpCacheUrl, true);
   }
 }
 
 void TranslateUIDelegate::RevertTranslation() {
-  if (translate_manager_ &&
-      translate_manager_->GetLanguageState()->IsPageTranslated()) {
+  if (translate_manager_) {
     translate_manager_->RevertTranslation();
-    UMA_HISTOGRAM_BOOLEAN(kRevertTranslation, true);
   }
 }
 
 void TranslateUIDelegate::TranslationDeclined(bool explicitly_closed) {
-  if (!translate_driver_->IsIncognito()) {
+  if (!IsIncognito()) {
     const std::string& language =
         translate_ui_languages_manager_->GetSourceLanguageCode();
     if (explicitly_closed) {
@@ -235,10 +205,6 @@ void TranslateUIDelegate::TranslationDeclined(bool explicitly_closed) {
                           : metrics::TranslateEventProto::USER_IGNORE);
     if (explicitly_closed)
       translate_manager_->GetLanguageState()->set_translation_declined(true);
-  }
-
-  if (explicitly_closed) {
-    UMA_HISTOGRAM_BOOLEAN(kDeclineTranslate, true);
   }
 }
 
@@ -264,7 +230,10 @@ void TranslateUIDelegate::SetLanguageBlocked(bool value) {
         translate_ui_languages_manager_->GetSourceLanguageCode());
   }
 
-  UMA_HISTOGRAM_BOOLEAN(kNeverTranslateLang, value);
+  UIInteraction interaction =
+      value ? UIInteraction::kAddNeverTranslateLanguage
+            : UIInteraction::kRemoveNeverTranslateLanguage;
+  ReportUIInteraction(interaction);
 }
 
 bool TranslateUIDelegate::IsSiteOnNeverPromptList() const {
@@ -294,7 +263,9 @@ void TranslateUIDelegate::SetNeverPromptSite(bool value) {
     prefs_->RemoveSiteFromNeverPromptList(host);
   }
 
-  UMA_HISTOGRAM_BOOLEAN(kNeverTranslateSite, value);
+  UIInteraction interaction = value ? UIInteraction::kAddNeverTranslateSite
+                                    : UIInteraction::kRemoveNeverTranslateSite;
+  ReportUIInteraction(interaction);
 }
 
 bool TranslateUIDelegate::ShouldAlwaysTranslate() const {
@@ -323,10 +294,13 @@ void TranslateUIDelegate::SetAlwaysTranslate(bool value) {
     if (IsSiteOnNeverPromptList())
       SetNeverPromptSite(false);
   } else {
-    prefs_->RemoveLanguagePairFromAlwaysTranslateList(source_lang, target_lang);
+    prefs_->RemoveLanguagePairFromAlwaysTranslateList(source_lang);
   }
 
-  UMA_HISTOGRAM_BOOLEAN(kAlwaysTranslateLang, value);
+  UIInteraction interaction =
+      value ? UIInteraction::kAddAlwaysTranslateLanguage
+            : UIInteraction::kRemoveAlwaysTranslateLanguage;
+  ReportUIInteraction(interaction);
 }
 
 bool TranslateUIDelegate::ShouldAlwaysTranslateBeCheckedByDefault() const {
@@ -334,14 +308,14 @@ bool TranslateUIDelegate::ShouldAlwaysTranslateBeCheckedByDefault() const {
 }
 
 bool TranslateUIDelegate::ShouldShowAlwaysTranslateShortcut() const {
-  return !translate_driver_->IsIncognito() &&
+  return !IsIncognito() &&
          prefs_->GetTranslationAcceptedCount(
              translate_ui_languages_manager_->GetSourceLanguageCode()) >=
              kAlwaysTranslateShortcutMinimumAccepts;
 }
 
 bool TranslateUIDelegate::ShouldShowNeverTranslateShortcut() const {
-  return !translate_driver_->IsIncognito() &&
+  return !IsIncognito() &&
          prefs_->GetTranslationDeniedCount(
              translate_ui_languages_manager_->GetSourceLanguageCode()) >=
              kNeverTranslateShortcutMinimumDenials;
@@ -375,11 +349,8 @@ void TranslateUIDelegate::MaybeSetContentLanguages() {
 }
 
 bool TranslateUIDelegate::IsIncognito() const {
-  if (!translate_manager_)
-    return false;
-  TranslateClient* client = translate_manager_->translate_client();
-  TranslateDriver* driver = client->GetTranslateDriver();
-  return driver ? driver->IsIncognito() : false;
+  const TranslateDriver* translate_driver = GetTranslateDriver();
+  return translate_driver && translate_driver->IsIncognito();
 }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
@@ -446,10 +417,16 @@ bool TranslateUIDelegate::ShouldAutoNeverTranslate() {
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
 
 std::string TranslateUIDelegate::GetPageHost() const {
-  if (!translate_driver_->HasCurrentPage()) {
-    return std::string();
-  }
-  return translate_driver_->GetLastCommittedURL().HostNoBrackets();
+  const TranslateDriver* translate_driver = GetTranslateDriver();
+  return translate_driver && translate_driver->HasCurrentPage()
+             ? translate_driver->GetLastCommittedURL().HostNoBrackets()
+             : std::string();
+}
+
+const TranslateDriver* TranslateUIDelegate::GetTranslateDriver() const {
+  return translate_manager_ && translate_manager_->translate_client()
+             ? translate_manager_->translate_client()->GetTranslateDriver()
+             : nullptr;
 }
 
 }  // namespace translate

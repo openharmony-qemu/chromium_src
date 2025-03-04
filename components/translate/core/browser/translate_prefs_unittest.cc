@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "base/json/json_reader.h"
+#include "base/json/values_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/test_timeouts.h"
@@ -23,6 +24,7 @@
 #include "components/language/core/browser/language_prefs_test_util.h"
 #include "components/language/core/browser/pref_names.h"
 #include "components/language/core/common/language_experiments.h"
+#include "components/prefs/mock_pref_change_callback.h"
 #include "components/prefs/scoped_user_pref_update.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "components/translate/core/browser/translate_download_manager.h"
@@ -422,7 +424,7 @@ TEST_F(TranslatePrefsTest, RemoveFromLanguageListRemovesRemainingUnsupported) {
   accept_languages_tester_->SetLanguagePrefs(languages);
   accept_languages_tester_->ExpectAcceptLanguagePrefs("en,en-US,en-FOO");
   translate_prefs_->RemoveFromLanguageList("en-US");
-  accept_languages_tester_->ExpectAcceptLanguagePrefs("en,en-FOO");
+  accept_languages_tester_->ExpectAcceptLanguagePrefs("en");
   translate_prefs_->RemoveFromLanguageList("en");
   accept_languages_tester_->ExpectAcceptLanguagePrefs("");
 }
@@ -986,6 +988,80 @@ TEST_F(TranslatePrefsTest, MigrateInvalidNeverPromptSites) {
               ElementsAre("unmigrated.com"));
 }
 
+TEST_F(TranslatePrefsTest, ShouldNotifyUponMigrateNeverPromptSites) {
+  // Listen to pref changes.
+  MockPrefChangeCallback observer(&prefs_);
+  PrefChangeRegistrar registrar;
+  registrar.Init(&prefs_);
+  registrar.Add(prefs::kPrefNeverPromptSitesWithTime, observer.GetCallback());
+
+  ScopedListPrefUpdate update(&prefs_,
+                              TranslatePrefs::kPrefNeverPromptSitesDeprecated);
+  base::Value::List& never_prompt_list = update.Get();
+  never_prompt_list.Append("unmigrated.com");
+
+  EXPECT_CALL(observer, OnPreferenceChanged);
+  translate_prefs_->MigrateNeverPromptSites();
+}
+
+TEST_F(TranslatePrefsTest,
+       ShouldNotifyUponMigrateNeverPromptSitesForNonEmptyInitialValue) {
+  {
+    // Add initial values to kPrefNeverPromptSitesWithTime.
+    ScopedDictPrefUpdate never_prompt_list_update(
+        &prefs_, prefs::kPrefNeverPromptSitesWithTime);
+    base::Value::Dict& never_prompt_list = never_prompt_list_update.Get();
+    never_prompt_list.Set("migrated.com", base::TimeToValue(base::Time::Now()));
+  }
+
+  // Listen to pref changes.
+  MockPrefChangeCallback observer(&prefs_);
+  PrefChangeRegistrar registrar;
+  registrar.Init(&prefs_);
+  registrar.Add(prefs::kPrefNeverPromptSitesWithTime, observer.GetCallback());
+
+  ScopedListPrefUpdate update(&prefs_,
+                              TranslatePrefs::kPrefNeverPromptSitesDeprecated);
+  base::Value::List& never_prompt_list = update.Get();
+  never_prompt_list.Append("unmigrated.com");
+
+  EXPECT_CALL(observer, OnPreferenceChanged);
+  translate_prefs_->MigrateNeverPromptSites();
+  EXPECT_THAT(translate_prefs_->GetNeverPromptSitesBetween(
+                  base::Time::Now() - base::Days(1), base::Time::Max()),
+              ElementsAre("migrated.com", "unmigrated.com"));
+}
+
+TEST_F(TranslatePrefsTest, ShouldNotNotifyUponMigrateInvalidNeverPromptSites) {
+  // Listen to pref changes.
+  MockPrefChangeCallback observer(&prefs_);
+  PrefChangeRegistrar registrar;
+  registrar.Init(&prefs_);
+  registrar.Add(prefs::kPrefNeverPromptSitesWithTime, observer.GetCallback());
+
+  ScopedListPrefUpdate update(&prefs_,
+                              TranslatePrefs::kPrefNeverPromptSitesDeprecated);
+  base::Value::List& never_prompt_list = update.Get();
+  never_prompt_list.Append(1);
+
+  EXPECT_CALL(observer, OnPreferenceChanged).Times(0);
+  translate_prefs_->MigrateNeverPromptSites();
+}
+
+TEST_F(TranslatePrefsTest, ShouldNotNotifyUponMigrateNoNeverPromptSites) {
+  // Listen to pref changes.
+  MockPrefChangeCallback observer(&prefs_);
+  PrefChangeRegistrar registrar;
+  registrar.Init(&prefs_);
+  registrar.Add(prefs::kPrefNeverPromptSitesWithTime, observer.GetCallback());
+
+  ASSERT_TRUE(
+      prefs_.GetList(TranslatePrefs::kPrefNeverPromptSitesDeprecated).empty());
+
+  EXPECT_CALL(observer, OnPreferenceChanged).Times(0);
+  translate_prefs_->MigrateNeverPromptSites();
+}
+
 TEST_F(TranslatePrefsTest, SiteNeverPromptList) {
   base::Time a_insert = base::Time::Now();
   base::Time after_a_insert = a_insert + base::Seconds(2);
@@ -1069,39 +1145,25 @@ TEST_F(TranslatePrefsTest, AlwaysTranslateLanguages) {
       translate_prefs_->IsLanguagePairOnAlwaysTranslateList("am", "es"));
 
   // GetAlwaysTranslateLanguages
-  translate_prefs_->AddLanguagePairToAlwaysTranslateList("aa", "es");
+  translate_prefs_->AddLanguagePairToAlwaysTranslateList("ak", "es");
   // Use 'tl' as the translate language which is 'fil' as a Chrome language.
   translate_prefs_->AddLanguagePairToAlwaysTranslateList("tl", "es");
   std::vector<std::string> always_translate_languages =
       translate_prefs_->GetAlwaysTranslateLanguages();
-  EXPECT_EQ(std::vector<std::string>({"aa", "af", "am", "fil"}),
+  EXPECT_EQ(std::vector<std::string>({"af", "ak", "am", "fil"}),
             always_translate_languages);
   always_translate_languages.clear();
 
   // RemoveLanguagePairs
-  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("af",
-                                                              "<anything>");
+  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("af");
   always_translate_languages = translate_prefs_->GetAlwaysTranslateLanguages();
-  EXPECT_EQ(std::vector<std::string>({"aa", "am", "fil"}),
+  EXPECT_EQ(std::vector<std::string>({"ak", "am", "fil"}),
             always_translate_languages);
-  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("aa",
-                                                              "<anything>");
-  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("am",
-                                                              "<anything>");
-  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("tl",
-                                                              "<anything>");
+  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("ak");
+  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("am");
+  translate_prefs_->RemoveLanguagePairFromAlwaysTranslateList("tl");
 
   // AlwaysTranslateList should be empty now
-  EXPECT_FALSE(translate_prefs_->HasLanguagePairsToAlwaysTranslate());
-
-  // SetLanguageAlwaysTranslateState
-  translate_prefs_->SetRecentTargetLanguage("es");
-  translate_prefs_->SetLanguageAlwaysTranslateState("am", true);
-  translate_prefs_->SetRecentTargetLanguage("en");
-  translate_prefs_->SetLanguageAlwaysTranslateState("am", true);
-  always_translate_languages = translate_prefs_->GetAlwaysTranslateLanguages();
-  EXPECT_EQ(std::vector<std::string>({"am"}), always_translate_languages);
-  translate_prefs_->SetLanguageAlwaysTranslateState("am", false);
   EXPECT_FALSE(translate_prefs_->HasLanguagePairsToAlwaysTranslate());
 }
 

@@ -11,30 +11,22 @@
 #include "components/autofill/core/browser/logging/log_manager.h"
 #include "components/keyed_service/core/service_access_type.h"
 #include "components/password_manager/core/browser/password_form.h"
-#include "components/password_manager/core/browser/password_manager_util.h"
 #include "components/password_manager/core/common/password_manager_pref_names.h"
 #include "components/password_manager/ios/password_manager_ios_util.h"
 #import "ios/web_view/internal/app/application_context.h"
 #import "ios/web_view/internal/passwords/web_view_account_password_store_factory.h"
-#import "ios/web_view/internal/passwords/web_view_password_change_success_tracker_factory.h"
 #import "ios/web_view/internal/passwords/web_view_password_manager_log_router_factory.h"
 #import "ios/web_view/internal/passwords/web_view_password_requirements_service_factory.h"
 #import "ios/web_view/internal/passwords/web_view_password_reuse_manager_factory.h"
-#include "ios/web_view/internal/passwords/web_view_password_store_factory.h"
+#import "ios/web_view/internal/passwords/web_view_profile_password_store_factory.h"
 #include "ios/web_view/internal/signin/web_view_identity_manager_factory.h"
 #import "ios/web_view/internal/sync/web_view_sync_service_factory.h"
 #include "net/cert/cert_status_flags.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 using password_manager::PasswordFormManagerForUI;
 using password_manager::PasswordManagerMetricsRecorder;
-using password_manager::PasswordStore;
 using password_manager::PasswordStoreInterface;
-using password_manager::SyncState;
 
 namespace ios_web_view {
 
@@ -54,7 +46,7 @@ WebViewPasswordManagerClient::Create(web::WebState* web_state,
   auto log_manager =
       autofill::LogManager::Create(logRouter, base::RepeatingClosure());
   scoped_refptr<password_manager::PasswordStoreInterface> profile_store =
-      ios_web_view::WebViewPasswordStoreFactory::GetForBrowserState(
+      ios_web_view::WebViewProfilePasswordStoreFactory::GetForBrowserState(
           browser_state, ServiceAccessType::EXPLICIT_ACCESS);
   scoped_refptr<password_manager::PasswordStoreInterface> account_store =
       ios_web_view::WebViewAccountPasswordStoreFactory::GetForBrowserState(
@@ -65,13 +57,10 @@ WebViewPasswordManagerClient::Create(web::WebState* web_state,
   password_manager::PasswordRequirementsService* requirements_service =
       WebViewPasswordRequirementsServiceFactory::GetForBrowserState(
           browser_state, ServiceAccessType::EXPLICIT_ACCESS);
-  password_manager::PasswordChangeSuccessTracker* password_change_tracker =
-      WebViewPasswordChangeSuccessTrackerFactory::GetForBrowserState(
-          browser_state, ServiceAccessType::EXPLICIT_ACCESS);
   return std::make_unique<ios_web_view::WebViewPasswordManagerClient>(
       web_state, sync_service, browser_state->GetPrefs(), identity_manager,
       std::move(log_manager), profile_store.get(), account_store.get(),
-      reuse_manager, requirements_service, password_change_tracker);
+      reuse_manager, requirements_service);
 }
 
 WebViewPasswordManagerClient::WebViewPasswordManagerClient(
@@ -83,8 +72,7 @@ WebViewPasswordManagerClient::WebViewPasswordManagerClient(
     PasswordStoreInterface* profile_store,
     PasswordStoreInterface* account_store,
     password_manager::PasswordReuseManager* reuse_manager,
-    password_manager::PasswordRequirementsService* requirements_service,
-    password_manager::PasswordChangeSuccessTracker* password_change_tracker)
+    password_manager::PasswordRequirementsService* requirements_service)
     : web_state_(web_state),
       sync_service_(sync_service),
       pref_service_(pref_service),
@@ -94,22 +82,14 @@ WebViewPasswordManagerClient::WebViewPasswordManagerClient(
       account_store_(account_store),
       reuse_manager_(reuse_manager),
       password_feature_manager_(pref_service, sync_service),
-      credentials_filter_(
-          this,
-          base::BindRepeating(&WebViewPasswordManagerClient::GetSyncService,
-                              base::Unretained(this))),
+      credentials_filter_(this),
       requirements_service_(requirements_service),
-      password_change_tracker_(password_change_tracker),
       helper_(this) {
   saving_passwords_enabled_.Init(
       password_manager::prefs::kCredentialsEnableService, GetPrefs());
 }
 
 WebViewPasswordManagerClient::~WebViewPasswordManagerClient() = default;
-
-SyncState WebViewPasswordManagerClient::GetPasswordSyncState() const {
-  return password_manager_util::GetPasswordSyncState(sync_service_);
-}
 
 bool WebViewPasswordManagerClient::PromptUserToChooseCredentials(
     std::vector<std::unique_ptr<password_manager::PasswordForm>> local_forms,
@@ -162,16 +142,17 @@ void WebViewPasswordManagerClient::FocusedInputChanged(
 }
 
 void WebViewPasswordManagerClient::AutomaticPasswordSave(
-    std::unique_ptr<PasswordFormManagerForUI> saved_form_manager) {
+    std::unique_ptr<PasswordFormManagerForUI> saved_form_manager,
+    bool is_update_confirmation) {
   NOTIMPLEMENTED();
 }
 
 void WebViewPasswordManagerClient::PromptUserToEnableAutosignin() {
-  // TODO(crbug.com/435048): Implement this method.
+  // TODO(crbug.com/40394758): Implement this method.
   NOTIMPLEMENTED();
 }
 
-bool WebViewPasswordManagerClient::IsIncognito() const {
+bool WebViewPasswordManagerClient::IsOffTheRecord() const {
   return web_state_->GetBrowserState()->IsOffTheRecord();
 }
 
@@ -198,6 +179,12 @@ const syncer::SyncService* WebViewPasswordManagerClient::GetSyncService()
   return sync_service_;
 }
 
+affiliations::AffiliationService*
+WebViewPasswordManagerClient::GetAffiliationService() {
+  // Not used on IOS web view.
+  return nullptr;
+}
+
 PasswordStoreInterface* WebViewPasswordManagerClient::GetProfilePasswordStore()
     const {
   return profile_store_;
@@ -213,17 +200,12 @@ WebViewPasswordManagerClient::GetPasswordReuseManager() const {
   return reuse_manager_;
 }
 
-password_manager::PasswordChangeSuccessTracker*
-WebViewPasswordManagerClient::GetPasswordChangeSuccessTracker() {
-  return password_change_tracker_;
-}
-
 void WebViewPasswordManagerClient::NotifyUserAutoSignin(
     std::vector<std::unique_ptr<password_manager::PasswordForm>> local_forms,
     const url::Origin& origin) {
   DCHECK(!local_forms.empty());
   helper_.NotifyUserAutoSignin();
-  // TODO(crbug.com/865114): Implement remaining logic.
+  // TODO(crbug.com/40585559): Implement remaining logic.
 }
 
 void WebViewPasswordManagerClient::NotifyUserCouldBeAutoSignedIn(
@@ -245,15 +227,18 @@ void WebViewPasswordManagerClient::NotifyStorePasswordCalled() {
 void WebViewPasswordManagerClient::NotifyUserCredentialsWereLeaked(
     password_manager::CredentialLeakType leak_type,
     const GURL& origin,
-    const std::u16string& username) {
+    const std::u16string& username,
+    bool in_account_store) {
   [bridge_ showPasswordBreachForLeakType:leak_type
                                      URL:origin
                                 username:username];
 }
 
+void WebViewPasswordManagerClient::NotifyKeychainError() {}
+
 bool WebViewPasswordManagerClient::IsSavingAndFillingEnabled(
     const GURL& url) const {
-  return *saving_passwords_enabled_ && !IsIncognito() &&
+  return *saving_passwords_enabled_ && !IsOffTheRecord() &&
          !net::IsCertStatusError(GetMainFrameCertStatus()) &&
          IsFillingEnabled(url);
 }
@@ -312,14 +297,9 @@ bool WebViewPasswordManagerClient::IsNewTabPage() const {
   return false;
 }
 
-password_manager::FieldInfoManager*
-WebViewPasswordManagerClient::GetFieldInfoManager() const {
-  return nullptr;
-}
-
 safe_browsing::PasswordProtectionService*
 WebViewPasswordManagerClient::GetPasswordProtectionService() const {
-  // TODO(crbug.com/1148229): Enable PhishGuard in web_view.
+  // TODO(crbug.com/40731177): Enable PhishGuard in web_view.
   return nullptr;
 }
 

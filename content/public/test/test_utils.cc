@@ -28,18 +28,17 @@
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/site_info.h"
 #include "content/browser/site_instance_impl.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 #include "content/common/content_navigation_policy.h"
 #include "content/common/features.h"
 #include "content/public/browser/browser_child_process_host_iterator.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/browser/notification_service.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/site_isolation_policy.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_client.h"
-#include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/process_type.h"
 #include "content/public/common/url_constants.h"
@@ -103,17 +102,6 @@ class TaskObserver : public base::TaskObserver {
  private:
   bool processed_ = false;
 };
-
-// Adapter that makes a WindowedNotificationObserver::ConditionTestCallback from
-// a WindowedNotificationObserver::ConditionTestCallbackWithoutSourceAndDetails
-// by ignoring the notification source and details.
-bool IgnoreSourceAndDetails(
-    WindowedNotificationObserver::ConditionTestCallbackWithoutSourceAndDetails
-        callback,
-    const NotificationSource& source,
-    const NotificationDetails& details) {
-  return std::move(callback).Run();
-}
 
 }  // namespace
 
@@ -179,25 +167,6 @@ base::OnceClosure GetDeferredQuitTaskForRunLoop(base::RunLoop* run_loop) {
                         kNumQuitDeferrals);
 }
 
-base::Value ExecuteScriptAndGetValue(RenderFrameHost* render_frame_host,
-                                     const std::string& script) {
-  base::RunLoop run_loop;
-  base::Value result;
-
-  render_frame_host->ExecuteJavaScriptForTests(
-      base::UTF8ToUTF16(script),
-      base::BindOnce(
-          [](base::OnceClosure quit_closure, base::Value* out_result,
-             base::Value value) {
-            *out_result = std::move(value);
-            std::move(quit_closure).Run();
-          },
-          run_loop.QuitWhenIdleClosure(), &result));
-  run_loop.Run();
-
-  return result;
-}
-
 bool AreAllSitesIsolatedForTesting() {
   return SiteIsolationPolicy::UseDedicatedProcessesForAllSites();
 }
@@ -238,17 +207,23 @@ void IsolateAllSitesForTesting(base::CommandLine* command_line) {
 }
 
 bool CanSameSiteMainFrameNavigationsChangeRenderFrameHosts() {
-  return ShouldCreateNewHostForAllFrames() ||
+  return ShouldCreateNewRenderFrameHostOnSameSiteNavigation(
+             /*is_main_frame=*/true, /*is_local_root=*/true) ||
          CanSameSiteMainFrameNavigationsChangeSiteInstances();
 }
 
-bool WillSameSiteNavigationsChangeRenderFrameHosts() {
-  return ShouldCreateNewHostForAllFrames();
+bool WillSameSiteNavigationChangeRenderFrameHosts(bool is_main_frame,
+                                                  bool is_local_root) {
+  return ShouldCreateNewRenderFrameHostOnSameSiteNavigation(is_main_frame,
+                                                            is_local_root);
 }
 
 bool CanSameSiteMainFrameNavigationsChangeSiteInstances() {
-  return IsProactivelySwapBrowsingInstanceOnSameSiteNavigationEnabled() ||
-         IsBackForwardCacheEnabled();
+  return IsBackForwardCacheEnabled();
+}
+
+bool IsNavigationQueueingEnabled() {
+  return ShouldQueueNavigationsWhenPendingCommitRFHExists();
 }
 
 void DisableProactiveBrowsingInstanceSwapFor(RenderFrameHost* rfh) {
@@ -283,11 +258,8 @@ WebContents* CreateAndAttachInnerContents(RenderFrameHost* rfh) {
 
   // Attach. |inner_contents| becomes owned by |outer_contents|.
   WebContents* inner_contents = inner_contents_ptr.get();
-  outer_contents->AttachInnerWebContents(
-      std::move(inner_contents_ptr), rfh,
-      /*remote_frame=*/mojo::NullAssociatedRemote(),
-      /*remote_frame_host_receiver=*/mojo::NullAssociatedReceiver(),
-      /*is_full_page=*/false);
+  outer_contents->AttachInnerWebContents(std::move(inner_contents_ptr), rfh,
+                                         /*is_full_page=*/false);
 
   return inner_contents;
 }
@@ -324,6 +296,16 @@ void AwaitDocumentOnLoadCompleted(WebContents* web_contents) {
   };
 
   Awaiter(web_contents).Await();
+}
+
+void FocusWebContentsOnFrame(WebContents* web_contents, RenderFrameHost* rfh) {
+  WebContentsImpl* contents = static_cast<WebContentsImpl*>(web_contents);
+  FrameTreeNode* node =
+      contents->GetPrimaryFrameTree().FindByID(rfh->GetFrameTreeNodeId());
+  CHECK(node);
+  CHECK_EQ(node->current_frame_host(), rfh);
+  contents->GetPrimaryFrameTree().SetFocusedFrame(
+      node, node->current_frame_host()->GetSiteInstance()->group());
 }
 
 MessageLoopRunner::MessageLoopRunner(QuitMode quit_mode)
@@ -367,58 +349,9 @@ void MessageLoopRunner::Quit() {
   }
 }
 
-WindowedNotificationObserver::WindowedNotificationObserver(
-    int notification_type,
-    const NotificationSource& source)
-    : source_(NotificationService::AllSources()) {
-  AddNotificationType(notification_type, source);
-}
-
-WindowedNotificationObserver::WindowedNotificationObserver(
-    int notification_type,
-    ConditionTestCallback callback)
-    : callback_(std::move(callback)),
-      source_(NotificationService::AllSources()) {
-  AddNotificationType(notification_type, source_);
-}
-
-WindowedNotificationObserver::WindowedNotificationObserver(
-    int notification_type,
-    ConditionTestCallbackWithoutSourceAndDetails callback)
-    : callback_(
-          base::BindRepeating(&IgnoreSourceAndDetails, std::move(callback))),
-      source_(NotificationService::AllSources()) {
-  registrar_.Add(this, notification_type, source_);
-}
-
-WindowedNotificationObserver::~WindowedNotificationObserver() = default;
-
-void WindowedNotificationObserver::AddNotificationType(
-    int notification_type,
-    const NotificationSource& source) {
-  registrar_.Add(this, notification_type, source);
-}
-
-void WindowedNotificationObserver::Wait() {
-  if (!seen_)
-    run_loop_.Run();
-  EXPECT_TRUE(seen_);
-}
-
-void WindowedNotificationObserver::Observe(int type,
-                                           const NotificationSource& source,
-                                           const NotificationDetails& details) {
-  source_ = source;
-  details_ = details;
-  if (!callback_.is_null() && !callback_.Run(source, details))
-    return;
-
-  seen_ = true;
-  run_loop_.Quit();
-}
-
 LoadStopObserver::LoadStopObserver(WebContents* web_contents)
-    : WebContentsObserver(web_contents) {}
+    : WebContentsObserver(web_contents),
+      run_loop_(base::RunLoop::Type::kNestableTasksAllowed) {}
 
 void LoadStopObserver::Wait() {
   if (!seen_)
@@ -505,8 +438,9 @@ bool RenderFrameDeletedObserver::WaitUntilDeleted() {
 }
 
 RenderFrameHostWrapper::RenderFrameHostWrapper(RenderFrameHost* rfh)
-    : rfh_id_(rfh->GetGlobalId()),
-      deleted_observer_(std::make_unique<RenderFrameDeletedObserver>(rfh)) {}
+    : rfh_id_(rfh ? rfh->GetGlobalId() : GlobalRenderFrameHostId()),
+      deleted_observer_(rfh ? std::make_unique<RenderFrameDeletedObserver>(rfh)
+                            : nullptr) {}
 
 RenderFrameHostWrapper::RenderFrameHostWrapper(RenderFrameHostWrapper&& rfhft) =
     default;
@@ -523,10 +457,12 @@ bool RenderFrameHostWrapper::IsDestroyed() const {
 // See RenderFrameDeletedObserver for notes on the difference between
 // RenderFrame being deleted and RenderFrameHost being destroyed.
 bool RenderFrameHostWrapper::WaitUntilRenderFrameDeleted() const {
+  CHECK(deleted_observer_);
   return deleted_observer_->WaitUntilDeleted();
 }
 
 bool RenderFrameHostWrapper::IsRenderFrameDeleted() const {
+  CHECK(deleted_observer_);
   return deleted_observer_->deleted();
 }
 

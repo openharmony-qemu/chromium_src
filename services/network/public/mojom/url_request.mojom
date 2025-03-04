@@ -25,7 +25,9 @@ import "services/network/public/mojom/isolation_info.mojom";
 import "services/network/public/mojom/network_param.mojom";
 import "services/network/public/mojom/referrer_policy.mojom";
 import "services/network/public/mojom/request_priority.mojom";
+import "services/network/public/mojom/shared_dictionary_access_observer.mojom";
 import "services/network/public/mojom/site_for_cookies.mojom";
+import "services/network/public/mojom/storage_access_api.mojom";
 import "services/network/public/mojom/trust_tokens.mojom";
 import "services/network/public/mojom/trust_token_access_observer.mojom";
 import "services/network/public/mojom/url_response_head.mojom";
@@ -39,6 +41,7 @@ enum SourceType {
   kBrotli,
   kDeflate,
   kGzip,
+  kZstd,
   kNone,
   kUnknown,
 };
@@ -72,6 +75,12 @@ struct TrustedUrlRequestParams {
   // FollowRedirect().
   bool allow_cookies_from_browser;
 
+  // Specifies that the response head should include request cookies which were
+  // sent, including cookies added by the browser. Clients which set this flag
+  // should take care to remove them if they forward the response head to a
+  // client which should not be able to see them.
+  bool include_request_cookies_with_response = false;
+
   // Observer which should be notified when this URLRequest reads or writes
   // a cookie. If this is set to non-null, the observer passed to
   // URLLoaderFactory will be ignored.
@@ -101,6 +110,11 @@ struct TrustedUrlRequestParams {
   // received. Can be null to signify that the requestor is not interested in
   // ACCEPT_CH frames.
   pending_remote<AcceptCHFrameObserver>? accept_ch_frame_observer;
+
+  // Observer which should be notified when this URLRequest accesses a shared
+  // dictionary. If this is set to non-null, the observer passed to
+  // URLLoaderFactory will be ignored.
+  pending_remote<SharedDictionaryAccessObserver>? shared_dictionary_observer;
 };
 
 // Options that may only be set on URLRequests which are related to WebBundle.
@@ -118,15 +132,6 @@ struct WebBundleTokenParams {
   // process, for subframe navigation requests to bundled resources. Not used
   // for subresource requests sent by renderer processes.
   int32 render_process_id;
-};
-
-// Options that may be set when URLRequests need to take over NetLog related
-// parameters. The URLRequest will use these parameters on logging.
-// Typemapped to net::NetLogSource.
-struct NetLogSource {
-  uint32 source_type;
-  uint32 source_id;
-  mojo_base.mojom.TimeTicks start_time;
 };
 
 // Typemapped to network::ResourceRequest.
@@ -149,7 +154,7 @@ struct URLRequest {
   // third-party context when it otherwise wouldn't be able to.
   // https://crbug.com/1060631 will move the SFC computation into the browser
   // process to prevent this.
-  // TODO(https://crbug.com/1060631): Remove this message after the fix is
+  // TODO(crbug.com/40122112): Remove this message after the fix is
   // landed.
   SiteForCookies site_for_cookies;
 
@@ -167,9 +172,12 @@ struct URLRequest {
   // content script of an extension, with its own, separate origin).  This
   // needs to be true even if the request might be "proxied" in the browser
   // process on behalf of a web origin (e.g. as is the case for PaymentRequest
-  // API).
+  // API). In that sense, it is equivalent to the Fetch Standard's request
+  // origin concept [1].
   //
-  // |request_initiator| should be omitted (i.e. set to absl::nullopt) for
+  // [1]: https://fetch.spec.whatwg.org/#concept-request-origin
+  //
+  // |request_initiator| should be omitted (i.e. set to std::nullopt) for
   // browser-initiated requests (e.g. navigations initiated via omnibox or
   // bookmarks, internal subresource requests like fetching the SafeBrowsing
   // data, etc.).  Various security features may treat browser-initiated
@@ -181,9 +189,9 @@ struct URLRequest {
   // not enforce |request_initiator_origin_lock| and instead rely on the
   // factory user to ensure that a valid, non-nullopt |request_initiator| is
   // provided.  Failure to provide a correct, verified |request_initiator| may
-  // lead to bypasses of CORS, CORB, SameSite cookies and other HTTP security
+  // lead to bypasses of CORS, ORB, SameSite cookies and other HTTP security
   // features.  An untrustworthy process (e.g. a renderer or a utility process)
-  // should not be able to trigger or influence requests with a absl::nullopt
+  // should not be able to trigger or influence requests with a std::nullopt
   // |request_initiator|).
   //
   // See also:
@@ -258,7 +266,7 @@ struct URLRequest {
   // What this resource load is for (main frame, sub-frame, sub-resource,
   // object).
   // Note: this is an enum of type blink::mojom::ResourceType.
-  // TODO(https://crbug.com/1059639): remove this in favor of `destination`.
+  // TODO(crbug.com/40121693): remove this in favor of `destination`.
   int32 resource_type;
 
   // The priority of this request determined by Blink.
@@ -284,11 +292,13 @@ struct URLRequest {
   // about this.
   bool skip_service_worker;
 
+  // #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   // If true then the request continues even if it's blocked by CORB.
   bool corb_detachable = false;
+  // #endif
 
   // https://fetch.spec.whatwg.org/#concept-request-mode
-  // Used mainly by CORS handling (out-of-blink CORS), CORB, Service Worker.
+  // Used mainly by CORS handling (out-of-blink CORS), ORB, Service Worker.
   // CORS handling needs a proper origin (including a unique opaque origin).
   // Hence a request with kSameOrigin, kCors, or kCorsWithForcedPreflight should
   // have a non-null request_initiator.
@@ -305,7 +315,7 @@ struct URLRequest {
   // This member must be kFollow as long as |mode| is kNoCors.
   RedirectMode redirect_mode;
 
-  // The integrity used in Fetch API.
+  // Exposed as Request.integrity in Service Workers
   string fetch_integrity;
 
   // https://fetch.spec.whatwg.org/#concept-request-destination
@@ -322,6 +332,16 @@ struct URLRequest {
   // `Sec-Browsing-Topics` headers.
   // https://github.com/patcg-individual-drafts/topics
   bool browsing_topics;
+
+  // True if this is an ad auction request eligible for attaching the
+  // `Sec-Ad-Auction-Fetch` request header and processing the
+  // `X-Ad-Auction-Result` response header.
+  // https://github.com/WICG/turtledove/blob/main/FLEDGE_browser_bidding_and_auction_API.md#step-3-get-response-blobs-to-browser
+  bool ad_auction_headers;
+
+  // True if the request should send the `Sec-Shared-Storage-Writable` request
+  // header.
+  bool shared_storage_writable_eligible;
 
   // True if the request was user initiated.
   bool has_user_gesture;
@@ -397,6 +417,10 @@ struct URLRequest {
 
   // True for XHR, Fetch, and EventSource.
   bool is_fetch_like_api;
+
+  // True for FetchLater.
+  // https://whatpr.org/fetch/1647/094ea69...152d725.html#fetch-later-method
+  bool is_fetch_later_api;
 
   // True for favicon.
   bool is_favicon;
@@ -485,6 +509,13 @@ struct URLRequest {
   // other than `kUnknown`.
   IPAddressSpace target_ip_address_space;
 
+  // The target address space to which a given fetch operation is expected to
+  // connect. See more:
+  // https://wicg.github.io/private-network-access/#permission-prompt.
+  // If the actual address space and the expected address space don't match, a
+  // network error will be returned.
+  network.mojom.IPAddressSpace required_ip_address_space;
+
   // True if the request is eligible for using Storage Access API grant (if
   // one exists). This is secure since the renderer cannot forge a new storage
   // access permission grant, so the renderer would not be able to gain access
@@ -493,7 +524,7 @@ struct URLRequest {
   // compromised renderer would be able to access unpartitioned cookies. But by
   // assumption, the browser process has already determined that this access is
   // ok.
-  bool has_storage_access;
+  StorageAccessApiStatus storage_access_api_status;
 
  // Indicates whether web or OS-level Attribution Reporting is supported.
   AttributionSupport attribution_reporting_support;
@@ -503,18 +534,36 @@ struct URLRequest {
   // the request is made.
   AttributionReportingEligibility attribution_reporting_eligibility =
     AttributionReportingEligibility.kUnset;
+
+  // When applicable, indicates the token of an Attribution Reporting API
+  // eligible navigation request to which the current request is associated.
+  mojo_base.mojom.UnguessableToken? attribution_reporting_src_token;
+
+  // Indicates whether this request has been determined to be used for
+  // advertising purposes.
+  bool is_ad_tagged = false;
+
+  // Indicate the state of CompressionDictionaryTransport feature. When it is
+  // true, `use-as-dictionary` response HTTP header may be processed.
+  // TODO(crbug.com/40255884): Remove this flag when we launch
+  // CompressionDictionaryTransport feature.
+  bool shared_dictionary_writer_enabled = false;
+
   // True for download request.
-  [EnableIf=ohos_ex_download]
-  bool is_download_request;
+  [EnableIf=arkweb_ex_download]
+  bool is_download_request = false;
+  // The socket tag to associate this request with. This is typically set by the
+  // embedder.
+  SocketTag socket_tag;
 
-  [EnableIf=is_ohos]
+  [EnableIf=arkweb_prp_preload]
   bool allow_preload_record;
-
-  [EnableIf=is_ohos]
-  url.mojom.Url main_page;
-
-  [EnableIf=is_ohos]
-  bool is_sync_mode;
+ 
+  [EnableIf=arkweb_prp_preload]
+  url.mojom.Url main_url;
+ 
+  [EnableIf=arkweb_prp_preload]
+  bool is_preflight;
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.
@@ -571,4 +620,12 @@ union DataElement {
   DataElementFile file;
   DataElementDataPipe data_pipe;
   DataElementChunkedDataPipe chunked_data_pipe;
+};
+
+// Typemapped to net::SocketTag.
+struct SocketTag {
+  [EnableIf=is_android]
+  uint32 uid;
+  [EnableIf=is_android]
+  int32 tag;
 };

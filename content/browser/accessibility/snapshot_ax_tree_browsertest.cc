@@ -5,6 +5,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/test/scoped_feature_list.h"
+#include "build/build_config.h"
 #include "content/browser/fenced_frame/fenced_frame.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/common/content_features.h"
@@ -18,6 +19,7 @@
 #include "net/test/embedded_test_server/embedded_test_server.h"
 #include "testing/gmock/include/gmock/gmock-matchers.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "ui/accessibility/accessibility_features.h"
 #include "ui/accessibility/ax_node.h"
 #include "ui/accessibility/ax_tree.h"
 
@@ -36,7 +38,7 @@ class AXTreeSnapshotWaiter {
 
   const ui::AXTreeUpdate& snapshot() const { return snapshot_; }
 
-  void ReceiveSnapshot(const ui::AXTreeUpdate& snapshot) {
+  void ReceiveSnapshot(ui::AXTreeUpdate& snapshot) {
     snapshot_ = snapshot;
     loop_runner_->Quit();
   }
@@ -49,12 +51,14 @@ class AXTreeSnapshotWaiter {
 void DumpRolesAndNamesAsText(const ui::AXNode* node,
                              int indent,
                              std::string* dst) {
-  for (int i = 0; i < indent; i++)
+  for (int i = 0; i < indent; i++) {
     *dst += "  ";
+  }
   *dst += ui::ToString(node->GetRole());
-  if (node->HasStringAttribute(ax::mojom::StringAttribute::kName))
+  if (node->HasStringAttribute(ax::mojom::StringAttribute::kName)) {
     *dst += " '" + node->GetStringAttribute(ax::mojom::StringAttribute::kName) +
             "'";
+  }
   *dst += "\n";
   for (auto iter = node->UnignoredChildrenBegin();
        iter != node->UnignoredChildrenEnd(); ++iter) {
@@ -66,8 +70,16 @@ void DumpRolesAndNamesAsText(const ui::AXNode* node,
 
 class SnapshotAXTreeBrowserTest : public ContentBrowserTest {
  public:
-  SnapshotAXTreeBrowserTest() {}
-  ~SnapshotAXTreeBrowserTest() override {}
+  SnapshotAXTreeBrowserTest() {
+#if BUILDFLAG(IS_ANDROID)
+    scoped_feature_list_.InitAndDisableFeature(
+        features::kAccessibilitySnapshotStressTests);
+#endif
+  }
+  ~SnapshotAXTreeBrowserTest() override = default;
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
 };
 
 IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
@@ -84,7 +96,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
                      base::Unretained(&waiter)),
       ui::kAXModeComplete,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -107,7 +119,8 @@ class SnapshotAXTreeFencedFrameBrowserTest : public SnapshotAXTreeBrowserTest {
     scoped_feature_list_.InitWithFeaturesAndParameters(
         {{blink::features::kFencedFrames, {{"implementation_type", "mparch"}}},
          {features::kPrivacySandboxAdsAPIsOverride, {}},
-         {blink::features::kFencedFramesAPIChanges, {}}},
+         {blink::features::kFencedFramesAPIChanges, {}},
+         {blink::features::kFencedFramesDefaultMode, {}}},
         {/* disabled_features */});
   }
 
@@ -154,7 +167,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeFencedFrameBrowserTest,
                      base::Unretained(&waiter)),
       ui::kAXModeComplete,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -172,6 +185,52 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeFencedFrameBrowserTest,
       "      rootWebArea\n"
       "        genericContainer\n"
       "          staticText 'This page has no title.'\n",
+      dump);
+}
+
+IN_PROC_BROWSER_TEST_F(
+    SnapshotAXTreeFencedFrameBrowserTest,
+    SnapshotAccessibilityTreeFromMultipleFramesLimitedToNonFencedFrames) {
+  EXPECT_TRUE(NavigateToURL(
+      shell(), https_server()->GetURL("a.test", "/fenced_frames/basic.html")));
+
+  WebContentsImpl* web_contents =
+      static_cast<WebContentsImpl*>(shell()->web_contents());
+
+  RenderFrameHostImpl* primary_rfh = web_contents->GetPrimaryMainFrame();
+  std::vector<FencedFrame*> fenced_frames = primary_rfh->GetFencedFrames();
+  EXPECT_EQ(1u, fenced_frames.size());
+
+  const GURL fenced_frame_url =
+      https_server()->GetURL("a.test", "/fenced_frames/title1.html");
+  EXPECT_TRUE(
+      ExecJs(primary_rfh, JsReplace("document.querySelector('fencedframe')."
+                                    "config = new FencedFrameConfig($1);",
+                                    fenced_frame_url.spec())));
+  EXPECT_TRUE(WaitForLoadStop(web_contents));
+
+  AXTreeSnapshotWaiter waiter;
+  web_contents->RequestAXTreeSnapshot(
+      base::BindOnce(&AXTreeSnapshotWaiter::ReceiveSnapshot,
+                     base::Unretained(&waiter)),
+      ui::kAXModeComplete,
+      /* max_nodes= */ 0,
+      /* timeout= */ {},
+      WebContents::AXTreeSnapshotPolicy::kSameOriginDirectDescendants);
+  waiter.Wait();
+
+  // Dump the whole tree if one of the assertions below fails
+  // to aid in debugging why it failed.
+  SCOPED_TRACE(waiter.snapshot().ToString());
+
+  ui::AXTree tree(waiter.snapshot());
+  ui::AXNode* root = tree.root();
+  std::string dump;
+  DumpRolesAndNamesAsText(root, 0, &dump);
+  EXPECT_EQ(
+      "rootWebArea\n"
+      "  genericContainer\n"
+      "    iframe\n",
       dump);
 }
 
@@ -199,7 +258,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
                      base::Unretained(&waiter)),
       ui::kAXModeComplete,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -217,7 +276,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
       "      staticText 'Before'\n"
       "    iframe\n"
       "      rootWebArea\n"
-      "        pre\n"
+      "        genericContainer\n"
       "          staticText 'Alpha'\n"
       "    button 'Middle'\n"
       "      staticText 'Middle'\n"
@@ -233,6 +292,118 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
       "    button 'After'\n"
       "      staticText 'After'\n",
       dump);
+}
+
+IN_PROC_BROWSER_TEST_F(SnapshotAXTreeFencedFrameBrowserTest,
+                       SnapshotAccessibilityTreeFromSameOriginOnly) {
+  ASSERT_TRUE(embedded_test_server()->Start());
+
+  // Construct an A1(B1(A2),A3,C1) hierarchy.
+  GURL url_a1 = embedded_test_server()->GetURL(
+      "a.com", "/accessibility/snapshot/hierarchy/a1.html");
+  GURL url_a2 = embedded_test_server()->GetURL(
+      "a.com", "/accessibility/snapshot/hierarchy/a2.html");
+  GURL url_a3 = embedded_test_server()->GetURL(
+      "a.com", "/accessibility/snapshot/hierarchy/a3.html");
+  GURL url_b1 = embedded_test_server()->GetURL(
+      "b.com", "/accessibility/snapshot/hierarchy/b1.html");
+  GURL url_c1 = embedded_test_server()->GetURL(
+      "c.com", "/accessibility/snapshot/hierarchy/c1.html");
+
+  ASSERT_TRUE(NavigateToURL(shell(), url_a1));
+
+  WebContentsImpl* web_contents =
+      static_cast<WebContentsImpl*>(shell()->web_contents());
+  FrameTreeNode* root_frame = web_contents->GetPrimaryFrameTree().root();
+
+  ASSERT_TRUE(NavigateToURLFromRenderer(root_frame->child_at(0), url_b1));
+  ASSERT_TRUE(NavigateToURLFromRenderer(root_frame->child_at(1), url_a3));
+  ASSERT_TRUE(NavigateToURLFromRenderer(root_frame->child_at(2), url_c1));
+
+  ASSERT_TRUE(
+      NavigateToURLFromRenderer(root_frame->child_at(0)->child_at(0), url_a2));
+
+  // Get with WebContents::AXTreeSnapshotPolicy::kAll
+  {
+    AXTreeSnapshotWaiter waiter;
+    web_contents->RequestAXTreeSnapshot(
+        base::BindOnce(&AXTreeSnapshotWaiter::ReceiveSnapshot,
+                       base::Unretained(&waiter)),
+        ui::kAXModeComplete,
+        /* max_nodes= */ 0,
+        /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
+    waiter.Wait();
+
+    // Dump the whole tree if one of the assertions below fails
+    // to aid in debugging why it failed.
+    SCOPED_TRACE(waiter.snapshot().ToString());
+
+    ui::AXTree tree(waiter.snapshot());
+    ui::AXNode* root = tree.root();
+    std::string dump;
+    DumpRolesAndNamesAsText(root, 0, &dump);
+    EXPECT_EQ(
+        "rootWebArea\n"
+        "  genericContainer\n"
+        "    staticText 'This is A1'\n"
+        "  staticText 'iframe1: '\n"
+        "  iframe\n"
+        "    rootWebArea\n"
+        "      genericContainer\n"
+        "        staticText 'This is B1'\n"
+        "      staticText 'iframe1: '\n"
+        "      iframe\n"
+        "        rootWebArea\n"
+        "          genericContainer\n"
+        "            staticText 'This is A2'\n"
+        "  staticText 'iframe2: '\n"
+        "  iframe\n"
+        "    rootWebArea\n"
+        "      genericContainer\n"
+        "        staticText 'This is A3'\n"
+        "  staticText 'iframe3: '\n"
+        "  iframe\n"
+        "    rootWebArea\n"
+        "      genericContainer\n"
+        "        staticText 'This is C1'\n",
+        dump);
+  }
+
+  // Get with WebContents::AXTreeSnapshotPolicy::kSameOriginDirectDescendants
+  {
+    AXTreeSnapshotWaiter waiter;
+    web_contents->RequestAXTreeSnapshot(
+        base::BindOnce(&AXTreeSnapshotWaiter::ReceiveSnapshot,
+                       base::Unretained(&waiter)),
+        ui::kAXModeComplete,
+        /* max_nodes= */ 0,
+        /* timeout= */ {},
+        WebContents::AXTreeSnapshotPolicy::kSameOriginDirectDescendants);
+    waiter.Wait();
+
+    // Dump the whole tree if one of the assertions below fails
+    // to aid in debugging why it failed.
+    SCOPED_TRACE(waiter.snapshot().ToString());
+
+    ui::AXTree tree(waiter.snapshot());
+    ui::AXNode* root = tree.root();
+    std::string dump;
+    DumpRolesAndNamesAsText(root, 0, &dump);
+    EXPECT_EQ(
+        "rootWebArea\n"
+        "  genericContainer\n"
+        "    staticText 'This is A1'\n"
+        "  staticText 'iframe1: '\n"
+        "  iframe\n"
+        "  staticText 'iframe2: '\n"
+        "  iframe\n"
+        "    rootWebArea\n"
+        "      genericContainer\n"
+        "        staticText 'This is A3'\n"
+        "  staticText 'iframe3: '\n"
+        "  iframe\n",
+        dump);
+  }
 }
 
 // This tests to make sure that RequestAXTreeSnapshot() correctly traverses
@@ -265,7 +436,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
                      base::Unretained(&waiter)),
       ui::kAXModeComplete,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -283,7 +454,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
       "      staticText 'Before'\n"
       "    iframe\n"
       "      rootWebArea\n"
-      "        pre\n"
+      "        genericContainer\n"
       "          staticText 'Alpha'\n"
       "    button 'Middle'\n"
       "      staticText 'Middle'\n"
@@ -319,7 +490,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
                      base::Unretained(&waiter_complete)),
       ui::kAXModeComplete,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter_complete.Wait();
   const std::vector<ui::AXNodeData>& complete_nodes =
       waiter_complete.snapshot().nodes;
@@ -334,7 +505,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
                      base::Unretained(&waiter_contents)),
       ui::AXMode::kWebContents,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter_contents.Wait();
   const std::vector<ui::AXNodeData>& contents_nodes =
       waiter_contents.snapshot().nodes;
@@ -356,9 +527,23 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest,
   };
 
   ASSERT_EQ(complete_nodes.size(), contents_nodes.size());
-  for (size_t i = 0; i < complete_nodes.size(); ++i)
-    EXPECT_LT(total_attribute_count(contents_nodes[i]),
-              total_attribute_count(complete_nodes[i]));
+  int num_attributes_for_all_contents_nodes = 0;
+  int num_attributes_for_all_complete_nodes = 0;
+  for (size_t i = 0; i < complete_nodes.size(); ++i) {
+    num_attributes_for_all_contents_nodes +=
+        total_attribute_count(contents_nodes[i]);
+    num_attributes_for_all_complete_nodes +=
+        total_attribute_count(complete_nodes[i]);
+    EXPECT_LE(total_attribute_count(contents_nodes[i]),
+              total_attribute_count(complete_nodes[i]))
+        << "\nComplete node should have had more attributes:"
+        << "\n* AXNodeData with AXMode=kWebContents: "
+        << contents_nodes[i].ToString()
+        << "\n* AXNodeData with AXMode=kAXModeComplete: "
+        << complete_nodes[i].ToString();
+  }
+  EXPECT_LT(num_attributes_for_all_contents_nodes,
+            num_attributes_for_all_complete_nodes);
 }
 
 IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, SnapshotPDFMode) {
@@ -389,9 +574,9 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, SnapshotPDFMode) {
   web_contents->RequestAXTreeSnapshot(
       base::BindOnce(&AXTreeSnapshotWaiter::ReceiveSnapshot,
                      base::Unretained(&waiter)),
-      ui::AXMode::kPDF,
+      ui::AXMode::kPDFPrinting,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -405,8 +590,9 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, SnapshotPDFMode) {
     EXPECT_NE(ax::mojom::Role::kUnknown, node_data.role);
     EXPECT_NE(0, node_data.id);
 
-    if (node_data.GetIntAttribute(ax::mojom::IntAttribute::kDOMNodeId) != 0)
+    if (node_data.GetDOMNodeId()) {
       dom_node_id_count++;
+    }
 
     // We don't need bounding boxes to make a tagged PDF. Ensure those are
     // uninitialized.
@@ -487,7 +673,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, MaxNodes) {
                      base::Unretained(&waiter)),
       ui::kAXModeComplete,
       /* max_nodes= */ 10,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   // Dump the whole tree if one of the assertions below fails
@@ -527,7 +713,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, Timeout) {
                        base::Unretained(&waiter)),
         ui::kAXModeComplete,
         /* max_nodes= */ 0,
-        /* timeout= */ {});
+        /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
     waiter.Wait();
     actual_nodes = waiter.snapshot().nodes.size();
     LOG(INFO) << "Actual nodes: " << actual_nodes;
@@ -544,7 +730,8 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, Timeout) {
                        base::Unretained(&waiter)),
         ui::kAXModeComplete,
         /* max_nodes= */ 0,
-        /* timeout= */ base::Milliseconds(1));
+        /* timeout= */ base::Milliseconds(1),
+        WebContents::AXTreeSnapshotPolicy::kAll);
     waiter.Wait();
 
     nodes_with_timeout = waiter.snapshot().nodes.size();
@@ -571,7 +758,8 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, Metadata) {
   WebContentsImpl* web_contents =
       static_cast<WebContentsImpl*>(shell()->web_contents());
 
-  ui::AXMode mode(ui::AXMode::kWebContents | ui::AXMode::kHTMLMetadata);
+  ui::AXMode mode(ui::AXMode::kWebContents | ui::AXMode::kHTML |
+                  ui::AXMode::kHTMLMetadata);
 
   AXTreeSnapshotWaiter waiter;
   web_contents->RequestAXTreeSnapshot(
@@ -579,7 +767,7 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, Metadata) {
                      base::Unretained(&waiter)),
       mode,
       /* max_nodes= */ 0,
-      /* timeout= */ {});
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
   waiter.Wait();
 
   EXPECT_THAT(
@@ -590,4 +778,58 @@ IN_PROC_BROWSER_TEST_F(SnapshotAXTreeBrowserTest, Metadata) {
           "<script type=\"application/ld+json\">{}</script>"));
 }
 
+// For Android, test the field trial param to change the number of max nodes.
+#if BUILDFLAG(IS_ANDROID)
+class SnapshotAXTreeMaxNodesParamBrowserTest : public ContentBrowserTest {
+ public:
+  SnapshotAXTreeMaxNodesParamBrowserTest() {
+    scoped_feature_list_.InitAndEnableFeatureWithParameters(
+        features::kAccessibilitySnapshotStressTests,
+        {{"AccessibilitySnapshotStressTestsMaxNodes", "500"}});
+  }
+  ~SnapshotAXTreeMaxNodesParamBrowserTest() override = default;
+
+ private:
+  base::test::ScopedFeatureList scoped_feature_list_;
+};
+
+IN_PROC_BROWSER_TEST_F(SnapshotAXTreeMaxNodesParamBrowserTest, MaxNodes) {
+  GURL url(R"HTML(data:text/html,<body>
+                  <style> p { margin: 50px; } </style>
+                  <script>
+                    let outerDiv = document.createElement('div');
+                    for (let i = 0; i < 200; i++) {
+                      let div = document.createElement('div');
+                      for (let j = 0; j < 20; j++) {
+                        let p = document.createElement('p');
+                        p.innerHTML = j;
+                        div.appendChild(p);
+                      }
+                      outerDiv.appendChild(div);
+                    }
+                    document.body.appendChild(outerDiv);
+                  </script>
+                  </body>)HTML");
+  EXPECT_TRUE(NavigateToURL(shell(), url));
+
+  WebContentsImpl* web_contents =
+      static_cast<WebContentsImpl*>(shell()->web_contents());
+
+  AXTreeSnapshotWaiter waiter;
+  web_contents->RequestAXTreeSnapshot(
+      base::BindOnce(&AXTreeSnapshotWaiter::ReceiveSnapshot,
+                     base::Unretained(&waiter)),
+      ui::kAXModeComplete,
+      /* max_nodes= */ 10,
+      /* timeout= */ {}, WebContents::AXTreeSnapshotPolicy::kAll);
+  waiter.Wait();
+
+  // If the feature flag and param was honored, we should see more than 100
+  // nodes (which was the value set on the method call), but less than all the
+  // possible nodes.
+  EXPECT_GT(waiter.snapshot().nodes.size(), 100U);
+  EXPECT_LT(waiter.snapshot().nodes.size(), 800U);
+}
+
+#endif
 }  // namespace content

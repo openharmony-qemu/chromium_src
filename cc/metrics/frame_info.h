@@ -11,6 +11,10 @@
 namespace cc {
 
 struct CC_EXPORT FrameInfo {
+  FrameInfo();
+  FrameInfo(const FrameInfo& other);
+  ~FrameInfo();
+
   enum class FrameFinalState {
     kNoUpdateDesired,
     kDropped,
@@ -36,6 +40,8 @@ struct CC_EXPORT FrameInfo {
     kPresentedPartialNewMain,
   };
   FrameFinalState final_state = FrameFinalState::kNoUpdateDesired;
+  FrameFinalState final_state_raster_property =
+      FrameFinalState::kNoUpdateDesired;
 
   enum class SmoothThread {
     kSmoothNone,
@@ -44,6 +50,7 @@ struct CC_EXPORT FrameInfo {
     kSmoothBoth
   };
   SmoothThread smooth_thread = SmoothThread::kSmoothNone;
+  SmoothThread smooth_thread_raster_property = SmoothThread::kSmoothNone;
 
   enum class MainThreadResponse {
     kIncluded,
@@ -54,12 +61,18 @@ struct CC_EXPORT FrameInfo {
   enum class SmoothEffectDrivingThread { kMain, kCompositor, kUnknown };
   SmoothEffectDrivingThread scroll_thread = SmoothEffectDrivingThread::kUnknown;
 
-  bool has_missing_content = false;
+  bool checkerboarded_needs_raster = false;
+  bool checkerboarded_needs_record = false;
 
-  // The total latency for the frame. If the frame had to be 'split' (i.e.
-  // compositor-thread update and main-thread updates were presented in separate
-  // frames), then this contains the maximum latency of the two updates.
-  base::TimeDelta total_latency;
+  // The time when the frame was terminated. If the frame had to be 'split'
+  // (i.e. compositor-thread update and main-thread updates were presented in
+  // separate frames,) then this contains the maximum time when the updates were
+  // terminated. See GetTerminationTimeForThread to get the value for each.
+  base::TimeTicks termination_time;
+
+  // The frame number associated to the viz::BeginFrameArgs that started this
+  // frame's production.
+  uint64_t sequence_number = 0u;
 
   bool IsDroppedAffectingSmoothness() const;
   void MergeWith(const FrameInfo& info);
@@ -69,15 +82,33 @@ struct CC_EXPORT FrameInfo {
   // Returns whether any update from the compositor/main thread was dropped, and
   // whether the update was part of a smooth sequence.
   bool WasSmoothCompositorUpdateDropped() const;
+  bool WasSmoothRasterPropertyUpdateDropped() const;
   bool WasSmoothMainUpdateDropped() const;
   bool WasSmoothMainUpdateExpected() const;
 
   bool IsScrollPrioritizeFrameDropped() const;
 
+  // If this `was_merged` these return the value for `thread`, otherwise returns
+  // the default non-merged values.
+  FrameFinalState GetFinalStateForThread(
+      SmoothEffectDrivingThread thread) const;
+  base::TimeTicks GetTerminationTimeForThread(
+      SmoothEffectDrivingThread thread) const;
+
  private:
   bool was_merged = false;
   bool compositor_update_was_dropped = false;
+  bool raster_property_was_dropped = false;
   bool main_update_was_dropped = false;
+
+  // A frame that `was_merged` could have differing final states, and differing
+  // termination times. We track both so that each thread's jank can be
+  // calculated.
+  FrameFinalState compositor_final_state = FrameFinalState::kNoUpdateDesired;
+  FrameFinalState main_final_state = FrameFinalState::kNoUpdateDesired;
+
+  base::TimeTicks compositor_termination_time;
+  base::TimeTicks main_termination_time;
 };
 
 }  // namespace cc

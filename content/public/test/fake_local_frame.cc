@@ -8,6 +8,7 @@
 #include "services/network/public/mojom/content_security_policy.mojom.h"
 #include "third_party/blink/public/mojom/devtools/inspector_issue.mojom.h"
 #include "third_party/blink/public/mojom/frame/media_player_action.mojom.h"
+#include "third_party/blink/public/mojom/navigation/navigation_params.mojom.h"
 #include "third_party/blink/public/mojom/push_messaging/push_messaging.mojom.h"
 
 #if BUILDFLAG(IS_MAC)
@@ -53,9 +54,6 @@ void FakeLocalFrame::AddMessageToConsole(
     const std::string& message,
     bool discard_duplicates) {}
 
-void FakeLocalFrame::AddInspectorIssue(
-    blink::mojom::InspectorIssueInfoPtr info) {}
-
 void FakeLocalFrame::SwapInImmediately() {}
 
 void FakeLocalFrame::CheckCompleted() {}
@@ -88,12 +86,18 @@ void FakeLocalFrame::MediaPlayerActionAt(
     const gfx::Point& location,
     blink::mojom::MediaPlayerActionPtr action) {}
 
+void FakeLocalFrame::RequestVideoFrameAtWithBoundsHint(
+    const gfx::Point& window_point,
+    const gfx::Size& max_size,
+    int max_area,
+    RequestVideoFrameAtWithBoundsHintCallback callback) {}
+
 void FakeLocalFrame::PluginActionAt(const gfx::Point& location,
                                     blink::mojom::PluginActionType action) {}
 
 void FakeLocalFrame::AdvanceFocusInFrame(
     blink::mojom::FocusType focus_type,
-    const absl::optional<blink::RemoteFrameToken>& source_frame_token) {}
+    const std::optional<blink::RemoteFrameToken>& source_frame_token) {}
 
 void FakeLocalFrame::AdvanceFocusForIME(blink::mojom::FocusType focus_type) {}
 
@@ -103,8 +107,11 @@ void FakeLocalFrame::ReportContentSecurityPolicyViolation(
 void FakeLocalFrame::DidUpdateFramePolicy(
     const blink::FramePolicy& frame_policy) {}
 
+void FakeLocalFrame::OnFrameVisibilityChanged(
+    blink::mojom::FrameVisibility visibility) {}
+
 void FakeLocalFrame::PostMessageEvent(
-    const absl::optional<blink::RemoteFrameToken>& source_frame_token,
+    const std::optional<blink::RemoteFrameToken>& source_frame_token,
     const std::u16string& source_origin,
     const std::u16string& target_origin,
     blink::TransferableMessage message) {}
@@ -123,8 +130,9 @@ void FakeLocalFrame::JavaScriptExecuteRequest(
 
 void FakeLocalFrame::JavaScriptExecuteRequestForTests(
     const std::u16string& javascript,
-    bool wants_result,
     bool has_user_gesture,
+    bool resolve_promises,
+    bool honor_js_content_settings,
     int32_t world_id,
     JavaScriptExecuteRequestForTestsCallback callback) {}
 
@@ -150,7 +158,7 @@ void FakeLocalFrame::BindReportingObserver(
     mojo::PendingReceiver<blink::mojom::ReportingObserver> receiver) {}
 
 void FakeLocalFrame::UpdateOpener(
-    const absl::optional<blink::FrameToken>& opener_frame_token) {}
+    const std::optional<blink::FrameToken>& opener_frame_token) {}
 
 void FakeLocalFrame::MixedContentFound(
     const GURL& main_resource_url,
@@ -176,13 +184,14 @@ void FakeLocalFrame::ExtractSmartClipData(
 void FakeLocalFrame::HandleRendererDebugURL(const GURL& url) {}
 
 void FakeLocalFrame::GetCanonicalUrlForSharing(
-    base::OnceCallback<void(const absl::optional<GURL>&)> callback) {}
+    base::OnceCallback<void(const std::optional<GURL>&)> callback) {}
 
 void FakeLocalFrame::GetOpenGraphMetadata(
     base::OnceCallback<void(blink::mojom::OpenGraphMetadataPtr)>) {}
 
 void FakeLocalFrame::SetNavigationApiHistoryEntriesForRestore(
-    blink::mojom::NavigationApiHistoryEntryArraysPtr entry_arrays) {}
+    blink::mojom::NavigationApiHistoryEntryArraysPtr entry_arrays,
+    blink::mojom::NavigationApiEntryRestoreReason restore_reason) {}
 
 void FakeLocalFrame::NotifyNavigationApiOfDisposedEntries(
     const std::vector<std::string>& keys) {}
@@ -191,8 +200,19 @@ void FakeLocalFrame::TraverseCancelled(
     const std::string& navigation_api_key,
     blink::mojom::TraverseCancelledReason reason) {}
 
+void FakeLocalFrame::DispatchNavigateEventForCrossDocumentTraversal(
+    const GURL&,
+    const std::string& page_state,
+    bool is_browser_initiated) {}
+
 void FakeLocalFrame::SnapshotDocumentForViewTransition(
+    const blink::ViewTransitionToken& transition_token,
+    blink::mojom::PageSwapEventParamsPtr,
     SnapshotDocumentForViewTransitionCallback callback) {}
+
+void FakeLocalFrame::NotifyViewTransitionAbortedToOldDocument() {}
+
+void FakeLocalFrame::DispatchPageSwap(blink::mojom::PageSwapEventParamsPtr) {}
 
 void FakeLocalFrame::AddResourceTimingEntryForFailedSubframeNavigation(
     const ::blink::FrameToken& subframe_token,
@@ -204,19 +224,22 @@ void FakeLocalFrame::AddResourceTimingEntryForFailedSubframeNavigation(
     uint32_t response_code,
     const std::string& mime_type,
     const ::net::LoadTimingInfo& load_timing_info,
-    ::net::HttpResponseInfo::ConnectionInfo connection_info,
+    ::net::HttpConnectionInfo connection_info,
     const std::string& alpn_negotiated_protocol,
     bool is_secure_transport,
     bool is_validated,
     const std::string& normalized_server_timing,
     const ::network::URLLoaderCompletionStatus& completion_status) {}
 
-void FakeLocalFrame::RequestFullscreenDocumentElement() {}
-
 void FakeLocalFrame::BindFrameHostReceiver(
     mojo::ScopedInterfaceEndpointHandle handle) {
   receiver_.Bind(mojo::PendingAssociatedReceiver<blink::mojom::LocalFrame>(
       std::move(handle)));
+}
+
+void FakeLocalFrame::UpdatePrerenderURL(const ::GURL& matched_url,
+                                        UpdatePrerenderURLCallback callback) {
+  std::move(callback).Run();
 }
 
 }  // namespace content

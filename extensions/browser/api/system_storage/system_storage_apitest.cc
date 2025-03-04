@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/377326291): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stddef.h>
 
 #include <atomic>
@@ -83,8 +88,9 @@ double TestStorageInfoProvider::GetStorageFreeSpaceFromTransientIdAsync(
       break;
     }
   }
-  if (++callback_count_ == expected_call_count_)
+  if (++callback_count_ == expected_call_count_) {
     run_loop_.QuitWhenIdle();
+  }
   return result;
 }
 

@@ -11,6 +11,7 @@
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
 #include "cc/base/math_util.h"
+#include "components/viz/common/frame_sinks/copy_output_request.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/rrect_f.h"
@@ -29,13 +30,11 @@
 
 namespace viz {
 
-bool PreferRGB565ResourcesForDisplay() {
 #if BUILDFLAG(IS_ANDROID)
+bool PreferRGB565ResourcesForDisplay() {
   return base::SysInfo::AmountOfPhysicalMemoryMB() <= 512;
-#else
-  return false;
-#endif
 }
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 bool AlwaysUseWideColorGamut() {
@@ -99,21 +98,6 @@ bool GetScaledRRectF(const gfx::Rect& space,
   return true;
 }
 
-bool GetScaledUVs(const gfx::Rect& rect, const gfx::QuadF* clip, float uvs[8]) {
-  if (!clip)
-    return false;
-
-  uvs[0] = ((clip->p1().x() - rect.x()) / rect.width());
-  uvs[1] = ((clip->p1().y() - rect.y()) / rect.height());
-  uvs[2] = ((clip->p2().x() - rect.x()) / rect.width());
-  uvs[3] = ((clip->p2().y() - rect.y()) / rect.height());
-  uvs[4] = ((clip->p3().x() - rect.x()) / rect.width());
-  uvs[5] = ((clip->p3().y() - rect.y()) / rect.height());
-  uvs[6] = ((clip->p4().x() - rect.x()) / rect.width());
-  uvs[7] = ((clip->p4().y() - rect.y()) / rect.height());
-  return true;
-}
-
 bool GatherFDStats(base::TimeDelta* delta_time_taken,
                    int* fd_max,
                    int* active_fd_count,
@@ -167,10 +151,7 @@ gfx::Rect GetExpandedRectWithPixelMovingForegroundFilter(
     const DrawQuad& rpdq,
     const cc::FilterOperations& filters) {
   const SharedQuadState* shared_quad_state = rpdq.shared_quad_state;
-  float max_pixel_movement = filters.MaximumPixelMovement();
-  gfx::RectF rect(rpdq.rect);
-  rect.Inset(-max_pixel_movement);
-  gfx::Rect expanded_rect = gfx::ToEnclosingRect(rect);
+  gfx::Rect expanded_rect = filters.ExpandRectForPixelMovement(rpdq.rect);
 
   // expanded_rect in the target space
   return cc::MathUtil::MapEnclosingClippedRect(
@@ -182,6 +163,9 @@ gfx::Transform GetViewTransitionTransform(
     gfx::Rect view_transition_content_output) {
   gfx::Transform view_transition_transform;
 
+  view_transition_transform.Translate(shared_element_quad.x(),
+                                      shared_element_quad.y());
+
   view_transition_transform.Scale(
       shared_element_quad.width() /
           static_cast<SkScalar>(view_transition_content_output.width()),
@@ -192,6 +176,60 @@ gfx::Transform GetViewTransitionTransform(
                                       -view_transition_content_output.y());
 
   return view_transition_transform;
+}
+
+bool QuadRoundedCornersBoundsIntersects(const DrawQuad* quad,
+                                        const gfx::RectF& target_quad) {
+  const SharedQuadState* sqs = quad->shared_quad_state;
+  const gfx::MaskFilterInfo& mask_filter_info = sqs->mask_filter_info;
+
+  // There is no rounded corner set.
+  if (!mask_filter_info.HasRoundedCorners()) {
+    return false;
+  }
+
+  const gfx::RRectF& rounded_corner_bounds =
+      mask_filter_info.rounded_corner_bounds();
+
+  const gfx::RRectF::Corner corners[] = {
+      gfx::RRectF::Corner::kUpperLeft, gfx::RRectF::Corner::kUpperRight,
+      gfx::RRectF::Corner::kLowerRight, gfx::RRectF::Corner::kLowerLeft};
+  for (auto c : corners) {
+    if (rounded_corner_bounds.CornerBoundingRect(c).Intersects(target_quad)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void SetCopyOutoutRequestResultSize(CopyOutputRequest* request,
+                                    const gfx::Rect& src_rect,
+                                    const gfx::Size& output_size,
+                                    const gfx::Size& surface_size_in_pixels) {
+  CHECK(request);
+  if (!src_rect.IsEmpty()) {
+    request->set_area(src_rect);
+  }
+  if (output_size.IsEmpty()) {
+    return;
+  }
+  // The CopyOutputRequest API does not allow fixing the output size. Instead
+  // we have the set area and scale in such a way that it would result in the
+  // desired output size.
+  if (!request->has_area()) {
+    request->set_area(gfx::Rect(surface_size_in_pixels));
+  }
+  request->set_result_selection(gfx::Rect(output_size));
+  const gfx::Rect& area = request->area();
+  // Viz would normally return an empty result for an empty area.
+  // However, this guard here is still necessary to protect against setting
+  // an illegal scaling ratio.
+  if (area.IsEmpty()) {
+    return;
+  }
+  request->SetScaleRatio(
+      gfx::Vector2d(area.width(), area.height()),
+      gfx::Vector2d(output_size.width(), output_size.height()));
 }
 
 }  // namespace viz

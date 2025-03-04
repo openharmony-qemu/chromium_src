@@ -7,6 +7,7 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -15,12 +16,10 @@
 #include "ash/public/cpp/ambient/common/ambient_settings.h"
 #include "base/memory/weak_ptr.h"
 #include "chromeos/assistant/internal/ambient/backdrop_client_config.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash {
 
 class BackdropURLLoader;
-
 // The Backdrop client implementation of AmbientBackendController.
 class AmbientBackendControllerImpl : public AmbientBackendController {
  public:
@@ -35,23 +34,25 @@ class AmbientBackendControllerImpl : public AmbientBackendController {
       OnScreenUpdateInfoFetchedCallback callback) override;
   void FetchPreviewImages(const gfx::Size& preview_size,
                           OnPreviewImagesFetchedCallback callback) override;
-  void UpdateSettings(const AmbientSettings& settings,
+  void UpdateSettings(const AmbientSettings settings,
                       UpdateSettingsCallback callback) override;
   void FetchSettingsAndAlbums(
       int banner_width,
       int banner_height,
       int num_albums,
       OnSettingsAndAlbumsFetchedCallback callback) override;
-  void FetchWeather(FetchWeatherCallback callback) override;
+  void FetchWeather(std::optional<std::string> weather_client_id,
+                    FetchWeatherCallback callback) override;
   const std::array<const char*, 2>& GetBackupPhotoUrls() const override;
   std::array<const char*, 2> GetTimeOfDayVideoPreviewImageUrls(
       AmbientVideo video) const override;
   const char* GetPromoBannerUrl() const override;
+  const char* GetTimeOfDayProductName() const override;
 
  private:
   using BackdropClientConfig = chromeos::ambient::BackdropClientConfig;
   using GetSettingsCallback =
-      base::OnceCallback<void(const absl::optional<AmbientSettings>& settings)>;
+      base::OnceCallback<void(const std::optional<AmbientSettings>& settings)>;
   using OnPersonalAlbumsFetchedCallback =
       base::OnceCallback<void(PersonalAlbums)>;
 
@@ -108,7 +109,7 @@ class AmbientBackendControllerImpl : public AmbientBackendController {
       std::unique_ptr<std::string> response);
 
   void OnSettingsFetched(base::RepeatingClosure on_done,
-                         const absl::optional<ash::AmbientSettings>& settings);
+                         const std::optional<ash::AmbientSettings>& settings);
 
   void OnAlbumsFetched(base::RepeatingClosure on_done,
                        ash::PersonalAlbums personal_albums);
@@ -116,8 +117,8 @@ class AmbientBackendControllerImpl : public AmbientBackendController {
   void OnSettingsAndAlbumsFetched(OnSettingsAndAlbumsFetchedCallback callback);
 
   // Temporary store for FetchSettingsAndAlbums() when |GetSettingsCallback|
-  // called. |settings_| will be absl::nullopt if server returns with error.
-  absl::optional<ash::AmbientSettings> settings_;
+  // called. |settings_| will be std::nullopt if server returns with error.
+  std::optional<ash::AmbientSettings> settings_;
 
   // Temporary store for FetchSettingsAndAlbums() when
   // |OnPersonalAlbumsFetchedCallback| called. |personal_albums_| will contains

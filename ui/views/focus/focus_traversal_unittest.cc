@@ -4,11 +4,14 @@
 
 #include <stddef.h>
 
+#include "base/check.h"
 #include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
+#include "ui/base/metadata/metadata_header_macros.h"
+#include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/base/models/combobox_model.h"
 #include "ui/views/background.h"
 #include "ui/views/border.h"
@@ -101,6 +104,8 @@ class DummyComboboxModel : public ui::ComboboxModel {
 
 // A View that can act as a pane.
 class PaneView : public View, public FocusTraversable {
+  METADATA_HEADER(PaneView, View)
+
  public:
   PaneView() = default;
 
@@ -113,10 +118,10 @@ class PaneView : public View, public FocusTraversable {
 
   // Overridden from View:
   FocusTraversable* GetPaneFocusTraversable() override {
-    if (focus_search_)
+    if (focus_search_) {
       return this;
-    else
-      return nullptr;
+    }
+    return nullptr;
   }
 
   // Overridden from FocusTraversable:
@@ -128,10 +133,15 @@ class PaneView : public View, public FocusTraversable {
   raw_ptr<FocusSearch> focus_search_ = nullptr;
 };
 
+BEGIN_METADATA(PaneView)
+END_METADATA
+
 // BorderView is a view containing a native window with its own view hierarchy.
 // It is interesting to test focus traversal from a view hierarchy to an inner
 // view hierarchy.
 class BorderView : public NativeViewHost {
+  METADATA_HEADER(BorderView, NativeViewHost)
+
  public:
   explicit BorderView(std::unique_ptr<View> child) : child_(std::move(child)) {
     DCHECK(child_);
@@ -155,12 +165,11 @@ class BorderView : public NativeViewHost {
 
     if (details.child == this && details.is_add) {
       if (!widget_) {
-        auto widget = std::make_unique<Widget>();
-        widget_ = widget.get();
-        Widget::InitParams params(Widget::InitParams::TYPE_CONTROL);
+        widget_ = std::make_unique<Widget>();
+        Widget::InitParams params(Widget::InitParams::CLIENT_OWNS_WIDGET,
+                                  Widget::InitParams::TYPE_CONTROL);
         params.parent = details.parent->GetWidget()->GetNativeView();
         widget_->Init(std::move(params));
-        widget.release();  // Widget now owned by widget hierarchy.
         widget_->SetFocusTraversableParentView(this);
         widget_->SetContentsView(std::move(child_));
       }
@@ -175,8 +184,11 @@ class BorderView : public NativeViewHost {
 
  private:
   std::unique_ptr<View> child_;
-  raw_ptr<Widget> widget_ = nullptr;
+  std::unique_ptr<Widget> widget_;
 };
+
+BEGIN_METADATA(BorderView)
+END_METADATA
 
 }  // namespace
 
@@ -187,6 +199,14 @@ class FocusTraversalTest : public FocusManagerTest {
   ~FocusTraversalTest() override;
 
   void InitContentView() override;
+
+  void TearDown() override {
+    style_tab_ = nullptr;
+    search_border_view_ = nullptr;
+    left_container_ = nullptr;
+    right_container_ = nullptr;
+    FocusManagerTest::TearDown();
+  }
 
  protected:
   FocusTraversalTest();
@@ -208,17 +228,17 @@ class FocusTraversalTest : public FocusManagerTest {
   // Helper function to advance focus multiple times in a loop. |traversal_ids|
   // is an array of view ids of length |N|. |reverse| denotes the direction in
   // which focus should be advanced.
-  template <size_t N>
-  void AdvanceEntireFocusLoop(const int (&traversal_ids)[N], bool reverse) {
+  void AdvanceEntireFocusLoop(base::span<const int> traversal_ids,
+                              bool reverse) {
     for (size_t i = 0; i < 3; ++i) {
-      for (size_t j = 0; j < N; j++) {
+      for (size_t j = 0; j < traversal_ids.size(); j++) {
         SCOPED_TRACE(testing::Message()
                      << "reverse:" << reverse << " i:" << i << " j:" << j);
         GetFocusManager()->AdvanceFocus(reverse);
         View* focused_view = GetFocusManager()->GetFocusedView();
         EXPECT_NE(nullptr, focused_view);
         if (focused_view)
-          EXPECT_EQ(traversal_ids[reverse ? N - j - 1 : j],
+          EXPECT_EQ(traversal_ids[reverse ? traversal_ids.size() - j - 1 : j],
                     focused_view->GetID());
       }
     }
@@ -233,8 +253,8 @@ class FocusTraversalTest : public FocusManagerTest {
   raw_ptr<TabbedPane> style_tab_ = nullptr;
   raw_ptr<BorderView> search_border_view_ = nullptr;
   DummyComboboxModel combobox_model_;
-  raw_ptr<PaneView> left_container_;
-  raw_ptr<PaneView> right_container_;
+  raw_ptr<PaneView> left_container_ = nullptr;
+  raw_ptr<PaneView> right_container_ = nullptr;
 
  private:
   // Implementation of `ReverseChildrenFocusOrder`. |seen_views| should not be
@@ -242,12 +262,13 @@ class FocusTraversalTest : public FocusManagerTest {
   // sure there is no cycle while traversing the children views.
   void ReverseChildrenFocusOrderImpl(View* parent,
                                      base::flat_set<View*> seen_views = {}) {
-    std::vector<View*> children_views = parent->children();
+    std::vector<raw_ptr<View, VectorExperimental>> children_views =
+        parent->children();
     if (children_views.empty())
       return;
 
     View* first_child = children_views[0];
-    std::vector<View*> children_in_focus_order;
+    std::vector<raw_ptr<View, VectorExperimental>> children_in_focus_order;
 
     // Set each child to be before the first child in the focus list.  Do this
     // in reverse so that the last child is the first focusable view.
@@ -480,17 +501,16 @@ void FocusTraversalTest::InitContentView() {
   auto* scroll_content_ptr =
       scroll_view_ptr->SetContents(std::move(scroll_content));
 
-  static const char* const kTitles[] = {
-      "Rosetta",    "Stupeur et tremblement", "The diner game", "Ridicule",
-      "Le placard", "Les Visiteurs",          "Amelie",         "Joyeux Noel",
-      "Camping",    "Brice de Nice",          "Taxi",           "Asterix"};
+  constexpr auto kTitles = std::to_array<const char* const>(
+      {"Rosetta", "Stupeur et tremblement", "The diner game", "Ridicule",
+       "Le placard", "Les Visiteurs", "Amelie", "Joyeux Noel", "Camping",
+       "Brice de Nice", "Taxi", "Asterix"});
 
-  static const int kIDs[] = {ROSETTA_LINK_ID,    STUPEUR_ET_TREMBLEMENT_LINK_ID,
-                             DINER_GAME_LINK_ID, RIDICULE_LINK_ID,
-                             CLOSET_LINK_ID,     VISITING_LINK_ID,
-                             AMELIE_LINK_ID,     JOYEUX_NOEL_LINK_ID,
-                             CAMPING_LINK_ID,    BRICE_DE_NICE_LINK_ID,
-                             TAXI_LINK_ID,       ASTERIX_LINK_ID};
+  constexpr auto kIDs = std::to_array<int>(
+      {ROSETTA_LINK_ID, STUPEUR_ET_TREMBLEMENT_LINK_ID, DINER_GAME_LINK_ID,
+       RIDICULE_LINK_ID, CLOSET_LINK_ID, VISITING_LINK_ID, AMELIE_LINK_ID,
+       JOYEUX_NOEL_LINK_ID, CAMPING_LINK_ID, BRICE_DE_NICE_LINK_ID,
+       TAXI_LINK_ID, ASTERIX_LINK_ID});
 
   DCHECK(std::size(kTitles) == std::size(kIDs));
 
@@ -613,42 +633,43 @@ void FocusTraversalTest::InitContentView() {
 }
 
 TEST_F(FocusTraversalTest, NormalTraversal) {
-  const int kTraversalIDs[] = {TOP_CHECKBOX_ID,
-                               APPLE_TEXTFIELD_ID,
-                               ORANGE_TEXTFIELD_ID,
-                               BANANA_TEXTFIELD_ID,
-                               KIWI_TEXTFIELD_ID,
-                               FRUIT_BUTTON_ID,
-                               FRUIT_CHECKBOX_ID,
-                               COMBOBOX_ID,
-                               BROCCOLI_BUTTON_ID,
-                               ROSETTA_LINK_ID,
-                               STUPEUR_ET_TREMBLEMENT_LINK_ID,
-                               DINER_GAME_LINK_ID,
-                               RIDICULE_LINK_ID,
-                               CLOSET_LINK_ID,
-                               VISITING_LINK_ID,
-                               AMELIE_LINK_ID,
-                               JOYEUX_NOEL_LINK_ID,
-                               CAMPING_LINK_ID,
-                               BRICE_DE_NICE_LINK_ID,
-                               TAXI_LINK_ID,
-                               ASTERIX_LINK_ID,
-                               OK_BUTTON_ID,
-                               CANCEL_BUTTON_ID,
-                               HELP_BUTTON_ID,
-                               STYLE_CONTAINER_ID,
-                               BOLD_CHECKBOX_ID,
-                               ITALIC_CHECKBOX_ID,
-                               UNDERLINED_CHECKBOX_ID,
-                               STYLE_HELP_LINK_ID,
-                               STYLE_TEXT_EDIT_ID,
-                               SEARCH_TEXTFIELD_ID,
-                               SEARCH_BUTTON_ID,
-                               HELP_LINK_ID,
-                               THUMBNAIL_CONTAINER_ID,
-                               THUMBNAIL_STAR_ID,
-                               THUMBNAIL_SUPER_STAR_ID};
+  constexpr auto kTraversalIDs =
+      std::to_array<int>({TOP_CHECKBOX_ID,
+                          APPLE_TEXTFIELD_ID,
+                          ORANGE_TEXTFIELD_ID,
+                          BANANA_TEXTFIELD_ID,
+                          KIWI_TEXTFIELD_ID,
+                          FRUIT_BUTTON_ID,
+                          FRUIT_CHECKBOX_ID,
+                          COMBOBOX_ID,
+                          BROCCOLI_BUTTON_ID,
+                          ROSETTA_LINK_ID,
+                          STUPEUR_ET_TREMBLEMENT_LINK_ID,
+                          DINER_GAME_LINK_ID,
+                          RIDICULE_LINK_ID,
+                          CLOSET_LINK_ID,
+                          VISITING_LINK_ID,
+                          AMELIE_LINK_ID,
+                          JOYEUX_NOEL_LINK_ID,
+                          CAMPING_LINK_ID,
+                          BRICE_DE_NICE_LINK_ID,
+                          TAXI_LINK_ID,
+                          ASTERIX_LINK_ID,
+                          OK_BUTTON_ID,
+                          CANCEL_BUTTON_ID,
+                          HELP_BUTTON_ID,
+                          STYLE_CONTAINER_ID,
+                          BOLD_CHECKBOX_ID,
+                          ITALIC_CHECKBOX_ID,
+                          UNDERLINED_CHECKBOX_ID,
+                          STYLE_HELP_LINK_ID,
+                          STYLE_TEXT_EDIT_ID,
+                          SEARCH_TEXTFIELD_ID,
+                          SEARCH_BUTTON_ID,
+                          HELP_LINK_ID,
+                          THUMBNAIL_CONTAINER_ID,
+                          THUMBNAIL_STAR_ID,
+                          THUMBNAIL_SUPER_STAR_ID});
 
   SCOPED_TRACE("NormalTraversal");
 
@@ -721,26 +742,25 @@ TEST_F(FocusTraversalTest, FullKeyboardToggle) {
 #endif  // BUILDFLAG(IS_MAC)
 
 TEST_F(FocusTraversalTest, TraversalWithNonEnabledViews) {
-  const int kDisabledIDs[] = {
-      BANANA_TEXTFIELD_ID, FRUIT_CHECKBOX_ID,     COMBOBOX_ID,
-      ASPARAGUS_BUTTON_ID, CAULIFLOWER_BUTTON_ID, CLOSET_LINK_ID,
-      VISITING_LINK_ID,    BRICE_DE_NICE_LINK_ID, TAXI_LINK_ID,
-      ASTERIX_LINK_ID,     HELP_BUTTON_ID,        BOLD_CHECKBOX_ID,
-      SEARCH_TEXTFIELD_ID, HELP_LINK_ID};
+  constexpr auto kDisabledIDs = std::to_array<int>(
+      {BANANA_TEXTFIELD_ID, FRUIT_CHECKBOX_ID, COMBOBOX_ID, ASPARAGUS_BUTTON_ID,
+       CAULIFLOWER_BUTTON_ID, CLOSET_LINK_ID, VISITING_LINK_ID,
+       BRICE_DE_NICE_LINK_ID, TAXI_LINK_ID, ASTERIX_LINK_ID, HELP_BUTTON_ID,
+       BOLD_CHECKBOX_ID, SEARCH_TEXTFIELD_ID, HELP_LINK_ID});
 
-  const int kTraversalIDs[] = {
-      TOP_CHECKBOX_ID,     APPLE_TEXTFIELD_ID,
-      ORANGE_TEXTFIELD_ID, KIWI_TEXTFIELD_ID,
-      FRUIT_BUTTON_ID,     BROCCOLI_BUTTON_ID,
-      ROSETTA_LINK_ID,     STUPEUR_ET_TREMBLEMENT_LINK_ID,
-      DINER_GAME_LINK_ID,  RIDICULE_LINK_ID,
-      AMELIE_LINK_ID,      JOYEUX_NOEL_LINK_ID,
-      CAMPING_LINK_ID,     OK_BUTTON_ID,
-      CANCEL_BUTTON_ID,    STYLE_CONTAINER_ID,
-      ITALIC_CHECKBOX_ID,  UNDERLINED_CHECKBOX_ID,
-      STYLE_HELP_LINK_ID,  STYLE_TEXT_EDIT_ID,
-      SEARCH_BUTTON_ID,    THUMBNAIL_CONTAINER_ID,
-      THUMBNAIL_STAR_ID,   THUMBNAIL_SUPER_STAR_ID};
+  constexpr auto kTraversalIDs =
+      std::to_array<int>({TOP_CHECKBOX_ID,     APPLE_TEXTFIELD_ID,
+                          ORANGE_TEXTFIELD_ID, KIWI_TEXTFIELD_ID,
+                          FRUIT_BUTTON_ID,     BROCCOLI_BUTTON_ID,
+                          ROSETTA_LINK_ID,     STUPEUR_ET_TREMBLEMENT_LINK_ID,
+                          DINER_GAME_LINK_ID,  RIDICULE_LINK_ID,
+                          AMELIE_LINK_ID,      JOYEUX_NOEL_LINK_ID,
+                          CAMPING_LINK_ID,     OK_BUTTON_ID,
+                          CANCEL_BUTTON_ID,    STYLE_CONTAINER_ID,
+                          ITALIC_CHECKBOX_ID,  UNDERLINED_CHECKBOX_ID,
+                          STYLE_HELP_LINK_ID,  STYLE_TEXT_EDIT_ID,
+                          SEARCH_BUTTON_ID,    THUMBNAIL_CONTAINER_ID,
+                          THUMBNAIL_STAR_ID,   THUMBNAIL_SUPER_STAR_ID});
 
   SCOPED_TRACE("TraversalWithNonEnabledViews");
 
@@ -805,10 +825,9 @@ TEST_F(FocusTraversalTest, PaneTraversal) {
   // keyboard accessibility for toolbars.
 
   // First test the left container.
-  const int kLeftTraversalIDs[] = {APPLE_TEXTFIELD_ID,  ORANGE_TEXTFIELD_ID,
-                                   BANANA_TEXTFIELD_ID, KIWI_TEXTFIELD_ID,
-                                   FRUIT_BUTTON_ID,     FRUIT_CHECKBOX_ID,
-                                   COMBOBOX_ID};
+  constexpr auto kLeftTraversalIDs = std::to_array<int>(
+      {APPLE_TEXTFIELD_ID, ORANGE_TEXTFIELD_ID, BANANA_TEXTFIELD_ID,
+       KIWI_TEXTFIELD_ID, FRUIT_BUTTON_ID, FRUIT_CHECKBOX_ID, COMBOBOX_ID});
 
   SCOPED_TRACE("PaneTraversal");
 
@@ -822,15 +841,15 @@ TEST_F(FocusTraversalTest, PaneTraversal) {
   // Traverse in reverse order.
   FindViewByID(APPLE_TEXTFIELD_ID)->RequestFocus();
   AdvanceEntireFocusLoop(kLeftTraversalIDs, true);
+  left_container_->EnablePaneFocus(nullptr);
 
   // Now test the right container, but this time with accessibility mode.
   // Make some links not focusable, but mark one of them as
   // "accessibility focusable", so it should show up in the traversal.
-  const int kRightTraversalIDs[] = {
-      BROCCOLI_BUTTON_ID,  DINER_GAME_LINK_ID, RIDICULE_LINK_ID,
-      CLOSET_LINK_ID,      VISITING_LINK_ID,   AMELIE_LINK_ID,
-      JOYEUX_NOEL_LINK_ID, CAMPING_LINK_ID,    BRICE_DE_NICE_LINK_ID,
-      TAXI_LINK_ID,        ASTERIX_LINK_ID};
+  constexpr auto kRightTraversalIDs = std::to_array<int>(
+      {BROCCOLI_BUTTON_ID, DINER_GAME_LINK_ID, RIDICULE_LINK_ID, CLOSET_LINK_ID,
+       VISITING_LINK_ID, AMELIE_LINK_ID, JOYEUX_NOEL_LINK_ID, CAMPING_LINK_ID,
+       BRICE_DE_NICE_LINK_ID, TAXI_LINK_ID, ASTERIX_LINK_ID});
 
   FocusSearch focus_search_right(right_container_, true, true);
   right_container_->EnablePaneFocus(&focus_search_right);
@@ -847,29 +866,30 @@ TEST_F(FocusTraversalTest, PaneTraversal) {
   // Traverse in reverse order.
   FindViewByID(BROCCOLI_BUTTON_ID)->RequestFocus();
   AdvanceEntireFocusLoop(kRightTraversalIDs, true);
+  right_container_->EnablePaneFocus(nullptr);
 }
 
 TEST_F(FocusTraversalTest, TraversesFocusInFocusOrder) {
   View* parent = GetContentsView();
 
   ReverseChildrenFocusOrder(parent);
-  const int kTraversalIDs[] = {
-      THUMBNAIL_CONTAINER_ID, THUMBNAIL_SUPER_STAR_ID, THUMBNAIL_STAR_ID,
-      // All views under SEARCH_CONTAINER_ID (SEARCH_TEXTFIELD_ID,
-      // SEARCH_BUTTON_ID, HELP_LINK_ID) will have their original order. This is
-      // because SEARCH_CONTAINER_ID is a NativeView and
-      // `ReverseChildrenFocusOrder` does not reverse the order of native
-      // children.
-      SEARCH_TEXTFIELD_ID, SEARCH_BUTTON_ID, HELP_LINK_ID, STYLE_TEXT_EDIT_ID,
-      STYLE_HELP_LINK_ID, UNDERLINED_CHECKBOX_ID, ITALIC_CHECKBOX_ID,
-      BOLD_CHECKBOX_ID, STYLE_CONTAINER_ID, HELP_BUTTON_ID, CANCEL_BUTTON_ID,
-      OK_BUTTON_ID, ASTERIX_LINK_ID, TAXI_LINK_ID, BRICE_DE_NICE_LINK_ID,
-      CAMPING_LINK_ID, JOYEUX_NOEL_LINK_ID, AMELIE_LINK_ID, VISITING_LINK_ID,
-      CLOSET_LINK_ID, RIDICULE_LINK_ID, DINER_GAME_LINK_ID,
-      STUPEUR_ET_TREMBLEMENT_LINK_ID, ROSETTA_LINK_ID, BROCCOLI_BUTTON_ID,
-      COMBOBOX_ID, FRUIT_CHECKBOX_ID, FRUIT_BUTTON_ID, KIWI_TEXTFIELD_ID,
-      BANANA_TEXTFIELD_ID, ORANGE_TEXTFIELD_ID, APPLE_TEXTFIELD_ID,
-      TOP_CHECKBOX_ID};
+  constexpr auto kTraversalIDs = std::to_array<int>(
+      {THUMBNAIL_CONTAINER_ID, THUMBNAIL_SUPER_STAR_ID, THUMBNAIL_STAR_ID,
+       // All views under SEARCH_CONTAINER_ID (SEARCH_TEXTFIELD_ID,
+       // SEARCH_BUTTON_ID, HELP_LINK_ID) will have their original order. This
+       // is because SEARCH_CONTAINER_ID is a NativeView and
+       // `ReverseChildrenFocusOrder` does not reverse the order of native
+       // children.
+       SEARCH_TEXTFIELD_ID, SEARCH_BUTTON_ID, HELP_LINK_ID, STYLE_TEXT_EDIT_ID,
+       STYLE_HELP_LINK_ID, UNDERLINED_CHECKBOX_ID, ITALIC_CHECKBOX_ID,
+       BOLD_CHECKBOX_ID, STYLE_CONTAINER_ID, HELP_BUTTON_ID, CANCEL_BUTTON_ID,
+       OK_BUTTON_ID, ASTERIX_LINK_ID, TAXI_LINK_ID, BRICE_DE_NICE_LINK_ID,
+       CAMPING_LINK_ID, JOYEUX_NOEL_LINK_ID, AMELIE_LINK_ID, VISITING_LINK_ID,
+       CLOSET_LINK_ID, RIDICULE_LINK_ID, DINER_GAME_LINK_ID,
+       STUPEUR_ET_TREMBLEMENT_LINK_ID, ROSETTA_LINK_ID, BROCCOLI_BUTTON_ID,
+       COMBOBOX_ID, FRUIT_CHECKBOX_ID, FRUIT_BUTTON_ID, KIWI_TEXTFIELD_ID,
+       BANANA_TEXTFIELD_ID, ORANGE_TEXTFIELD_ID, APPLE_TEXTFIELD_ID,
+       TOP_CHECKBOX_ID});
 
   AdvanceEntireFocusLoop(kTraversalIDs, false);
   GetFocusManager()->ClearFocus();

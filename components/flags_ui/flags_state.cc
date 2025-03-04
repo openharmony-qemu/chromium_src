@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/flags_ui/flags_state.h"
 
 #include <algorithm>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 #include "base/containers/contains.h"
@@ -16,9 +22,9 @@
 #include "base/logging.h"
 #include "base/metrics/field_trial.h"
 #include "base/metrics/field_trial_params.h"
+#include "base/not_fatal_until.h"
 #include "base/stl_util.h"
 #include "base/strings/strcat.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
@@ -57,11 +63,7 @@ const struct {
     {kOsLinux, "Linux"},     {kOsCrOS, "ChromeOS"},
     {kOsAndroid, "Android"}, {kOsCrOSOwnerOnly, "ChromeOS (owner only)"},
     {kOsIos, "iOS"},         {kOsFuchsia, "Fuchsia"},
-    {kOsLacros, "Lacros"},
-#if BUILDFLAG(IS_OHOS)
-    {kOsOhOS, "OhOS"},
-#endif
-};
+    {kOsLacros, "Lacros"},   {kOsOhOS, "OhOS"}};
 
 // Adds a |StringValue| to |list| for each platform where |bitmask| indicates
 // whether the entry is available on that platform.
@@ -79,6 +81,7 @@ bool IsDefaultValue(const FeatureEntry& entry,
     case FeatureEntry::SINGLE_VALUE:
     case FeatureEntry::SINGLE_DISABLE_VALUE:
     case FeatureEntry::ORIGIN_LIST_VALUE:
+    case FeatureEntry::STRING_VALUE:
       return enabled_entries.count(entry.internal_name) == 0;
     case FeatureEntry::MULTI_VALUE:
     case FeatureEntry::ENABLE_DISABLE_VALUE:
@@ -94,7 +97,7 @@ bool IsDefaultValue(const FeatureEntry& entry,
       }
       return true;
   }
-  NOTREACHED();
+  NOTREACHED_IN_MIGRATION();
   return true;
 }
 
@@ -176,7 +179,7 @@ std::vector<std::string> TokenizeOriginList(const std::string& value) {
   base::StringTokenizer tokenizer(input, delimiters);
   std::vector<std::string> origin_strings;
   while (tokenizer.GetNext()) {
-    base::StringPiece token = tokenizer.token_piece();
+    std::string_view token = tokenizer.token_piece();
     DCHECK(!token.empty());
     const GURL url(token);
     if (!url.is_valid() ||
@@ -226,7 +229,40 @@ std::string GetCombinedOriginListValue(const FlagsStorage& flags_storage,
   return CombineAndSanitizeOriginLists(existing_value, new_value);
 }
 
+std::string GetCombinedStringValue(const FlagsStorage& flags_storage,
+                                   const base::CommandLine& command_line,
+                                   const std::string& internal_entry_name,
+                                   const std::string& command_line_switch) {
+  const std::string existing_value =
+      command_line.GetSwitchValueASCII(command_line_switch);
+  const std::string new_value =
+      flags_storage.GetStringFlag(internal_entry_name);
+  if (new_value.empty()) {
+    return existing_value;
+  }
+  return new_value;
+}
+
 #if BUILDFLAG(IS_CHROMEOS_ASH)
+// Removes the specified command line switch (if present).
+void RemoveCommandLineSwitch(base::CommandLine* current_cl,
+                             const std::string& switch_to_remove) {
+  base::CommandLine new_cl(current_cl->GetProgram());
+  const base::CommandLine::SwitchMap switches = current_cl->GetSwitches();
+  for (const auto& it : switches) {
+    const auto& switch_name = it.first;
+    const auto& switch_value = it.second;
+    if (switch_name != switch_to_remove) {
+      if (switch_value.empty()) {
+        new_cl.AppendSwitch(switch_name);
+      } else {
+        new_cl.AppendSwitchNative(switch_name, switch_value);
+      }
+    }
+  }
+  *current_cl = new_cl;
+}
+
 // ChromeOS does not call ConvertFlagsToSwitches on startup (see
 // ChromeFeatureListCreator::ConvertFlagsToSwitches() for details) so the
 // command line cannot be updated using pref values. Instead, this method
@@ -238,25 +274,27 @@ void DidModifyOriginListFlag(const FlagsStorage& flags_storage,
       flags_storage, *current_cl, entry.internal_name,
       entry.switches.command_line_switch);
 
-  // Remove the switch if it exists.
-  base::CommandLine new_cl(current_cl->GetProgram());
-  const base::CommandLine::SwitchMap switches = current_cl->GetSwitches();
-  for (const auto& it : switches) {
-    const auto& switch_name = it.first;
-    const auto& switch_value = it.second;
-    if (switch_name != entry.switches.command_line_switch) {
-      if (switch_value.empty()) {
-        new_cl.AppendSwitch(switch_name);
-      } else {
-        new_cl.AppendSwitchNative(switch_name, switch_value);
-      }
-    }
-  }
-  *current_cl = new_cl;
+  RemoveCommandLineSwitch(current_cl, entry.switches.command_line_switch);
 
   const std::string sanitized =
       CombineAndSanitizeOriginLists(std::string(), new_value);
   current_cl->AppendSwitchASCII(entry.switches.command_line_switch, sanitized);
+}
+
+// ChromeOS does not call ConvertFlagsToSwitches on startup (see
+// ChromeFeatureListCreator::ConvertFlagsToSwitches() for details) so the
+// command line cannot be updated using pref values. Instead, this method
+// modifies it on the fly when the user makes a change.
+void DidModifyStringFlag(const FlagsStorage& flags_storage,
+                         const FeatureEntry& entry) {
+  base::CommandLine* current_cl = base::CommandLine::ForCurrentProcess();
+  const std::string new_value =
+      GetCombinedStringValue(flags_storage, *current_cl, entry.internal_name,
+                             entry.switches.command_line_switch);
+
+  RemoveCommandLineSwitch(current_cl, entry.switches.command_line_switch);
+
+  current_cl->AppendSwitchASCII(entry.switches.command_line_switch, new_value);
 }
 #endif
 
@@ -296,7 +334,7 @@ FlagsState::FlagsState(base::span<const FeatureEntry> feature_entries,
       needs_restart_(false),
       delegate_(delegate) {}
 
-FlagsState::~FlagsState() {}
+FlagsState::~FlagsState() = default;
 
 void FlagsState::ConvertFlagsToSwitches(
     FlagsStorage* flags_storage,
@@ -326,7 +364,7 @@ void FlagsState::GetSwitchesAndFeaturesFromFlags(
 
   for (const std::string& entry_name : enabled_entries) {
     const auto& entry_it = name_to_switch_map.find(entry_name);
-    DCHECK(entry_it != name_to_switch_map.end());
+    CHECK(entry_it != name_to_switch_map.end(), base::NotFatalUntil::M130);
 
     const SwitchEntry& entry = entry_it->second;
     if (!entry.switch_name.empty())
@@ -377,16 +415,23 @@ void FlagsState::SetFeatureEntryEnabled(FlagsStorage* flags_storage,
   DCHECK(e);
 
   if (e->type == FeatureEntry::SINGLE_VALUE ||
-      e->type == FeatureEntry::ORIGIN_LIST_VALUE) {
+      e->type == FeatureEntry::ORIGIN_LIST_VALUE ||
+      e->type == FeatureEntry::STRING_VALUE) {
     if (enable)
       needs_restart_ |= enabled_entries.insert(internal_name).second;
     else
       needs_restart_ |= (enabled_entries.erase(internal_name) > 0);
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
-    // If an origin list was enabled or disabled, update the command line flag.
-    if (e->type == FeatureEntry::ORIGIN_LIST_VALUE && enable)
-      DidModifyOriginListFlag(*flags_storage, *e);
+    // If a string or origin list was enabled or disabled, update the command
+    // line flag.
+    if (enable) {
+      if (e->type == FeatureEntry::ORIGIN_LIST_VALUE) {
+        DidModifyOriginListFlag(*flags_storage, *e);
+      } else if (e->type == FeatureEntry::STRING_VALUE) {
+        DidModifyStringFlag(*flags_storage, *e);
+      }
+    }
 #endif
 
   } else if (e->type == FeatureEntry::SINGLE_DISABLE_VALUE) {
@@ -434,6 +479,24 @@ void FlagsState::SetOriginListFlag(const std::string& internal_name,
 #endif
 }
 
+void FlagsState::SetStringFlag(const std::string& internal_name,
+                               const std::string& value,
+                               FlagsStorage* flags_storage) {
+  flags_storage->SetStringFlag(internal_name, value);
+
+#if BUILDFLAG(IS_CHROMEOS_ASH)
+  const FeatureEntry* entry = FindFeatureEntryByName(internal_name);
+  DCHECK(entry);
+
+  std::set<std::string> enabled_entries;
+  GetSanitizedEnabledFlags(flags_storage, &enabled_entries);
+  const bool enabled = base::Contains(enabled_entries, entry->internal_name);
+  if (enabled) {
+    DidModifyStringFlag(*flags_storage, *entry);
+  }
+#endif
+}
+
 void FlagsState::RemoveFlagsSwitches(
     base::CommandLine::SwitchMap* switch_list) {
   for (const auto& entry : flags_switches_)
@@ -453,9 +516,9 @@ void FlagsState::RemoveFlagsSwitches(
     const std::string& existing_value_utf8 = existing_value;
 #endif
 
-    std::vector<base::StringPiece> features =
+    std::vector<std::string_view> features =
         base::FeatureList::SplitFeatureListString(existing_value_utf8);
-    std::vector<base::StringPiece> remaining_features;
+    std::vector<std::string_view> remaining_features;
     // For any featrue name in |features| that is not in |switch_added_values| -
     // i.e. it wasn't added by about_flags code, add it to |remaining_features|.
     for (const auto& feature : features) {
@@ -610,6 +673,14 @@ void FlagsState::GetFlagFeatureEntries(
     bool is_default_value = IsDefaultValue(entry, enabled_entries);
     data.Set("is_default", is_default_value);
 
+    if (!entry.links.empty()) {
+      base::Value::List links;
+      for (auto* link : entry.links) {
+        links.Append(link);
+      }
+      data.Set("links", std::move(links));
+    }
+
     switch (entry.type) {
       case FeatureEntry::SINGLE_VALUE:
       case FeatureEntry::SINGLE_DISABLE_VALUE:
@@ -623,6 +694,13 @@ void FlagsState::GetFlagFeatureEntries(
         data.Set("enabled", !is_default_value);
         data.Set("origin_list_value",
                  GetCombinedOriginListValue(
+                     *flags_storage, *base::CommandLine::ForCurrentProcess(),
+                     entry.internal_name, entry.switches.command_line_switch));
+        break;
+      case FeatureEntry::STRING_VALUE:
+        data.Set("enabled", !is_default_value);
+        data.Set("string_value",
+                 GetCombinedStringValue(
                      *flags_storage, *base::CommandLine::ForCurrentProcess(),
                      entry.internal_name, entry.switches.command_line_switch));
         break;
@@ -733,7 +811,7 @@ void FlagsState::AddSwitchesToCommandLine(
   for (const std::string& entry_name : enabled_entries) {
     const auto& entry_it = name_to_switch_map.find(entry_name);
     if (entry_it == name_to_switch_map.end()) {
-      NOTREACHED();
+      NOTREACHED_IN_MIGRATION();
       continue;
     }
 
@@ -774,7 +852,7 @@ void FlagsState::MergeFeatureCommandLineSwitch(
     base::CommandLine* command_line) {
   std::string original_switch_value =
       command_line->GetSwitchValueASCII(switch_name);
-  std::vector<base::StringPiece> features =
+  std::vector<std::string_view> features =
       base::FeatureList::SplitFeatureListString(original_switch_value);
   // Only add features that don't already exist in the lists.
   // Note: The base::Contains() call results in O(n^2) performance, but in
@@ -887,6 +965,15 @@ void FlagsState::GenerateFlagsToSwitchesMapping(
             entry.switches.command_line_switch);
         AddSwitchMapping(entry.internal_name,
                          entry.switches.command_line_switch, origin_list_value,
+                         name_to_switch_map);
+        break;
+      }
+      case FeatureEntry::STRING_VALUE: {
+        const std::string string_value = GetCombinedStringValue(
+            *flags_storage, command_line, entry.internal_name,
+            entry.switches.command_line_switch);
+        AddSwitchMapping(entry.internal_name,
+                         entry.switches.command_line_switch, string_value,
                          name_to_switch_map);
         break;
       }

@@ -6,8 +6,10 @@
 #define COMPONENTS_VIZ_SERVICE_FRAME_SINKS_COMPOSITOR_FRAME_SINK_IMPL_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "build/build_config.h"
 #include "components/viz/common/surfaces/frame_sink_bundle_id.h"
@@ -19,9 +21,8 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 #include "base/process/process_handle.h"
 #endif
 
@@ -36,7 +37,7 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
   CompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,
-      absl::optional<FrameSinkBundleId> bundle_id,
+      std::optional<FrameSinkBundleId> bundle_id,
       mojo::PendingReceiver<mojom::CompositorFrameSink> receiver,
       mojo::PendingRemote<mojom::CompositorFrameSinkClient> client);
 
@@ -49,15 +50,16 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
   void SetNeedsBeginFrame(bool needs_begin_frame) override;
   void SetWantsAnimateOnlyBeginFrames() override;
   void SetWantsBeginFrameAcks() override;
+  void SetAutoNeedsBeginFrame() override;
   void SubmitCompositorFrame(
       const LocalSurfaceId& local_surface_id,
       CompositorFrame frame,
-      absl::optional<HitTestRegionList> hit_test_region_list,
+      std::optional<HitTestRegionList> hit_test_region_list,
       uint64_t submit_time) override;
   void SubmitCompositorFrameSync(
       const LocalSurfaceId& local_surface_id,
       CompositorFrame frame,
-      absl::optional<HitTestRegionList> hit_test_region_list,
+      std::optional<HitTestRegionList> hit_test_region_list,
       uint64_t submit_time,
       SubmitCompositorFrameSyncCallback callback) override;
   void DidNotProduceFrame(const BeginFrameAck& begin_frame_ack) override;
@@ -68,24 +70,23 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
       mojom::CompositorFrameSinkType type) override;
   void BindLayerContext(mojom::PendingLayerContextPtr context) override;
 #if BUILDFLAG(IS_ANDROID)
-  void SetThreadIds(const std::vector<int32_t>& thread_ids) override;
+  void SetThreads(const std::vector<Thread>& threads) override;
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  int GetFrameRate();
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
                           int32_t process_id,
                           bool is_created) override;
-  int GetFrameRate();
-
-  void TriggerVsyncImplTask() override;
-  void SetHandledTouchEvent(bool handledTouchEvent) override;
 #endif
 
  private:
   void SubmitCompositorFrameInternal(
       const LocalSurfaceId& local_surface_id,
       CompositorFrame frame,
-      absl::optional<HitTestRegionList> hit_test_region_list,
+      std::optional<HitTestRegionList> hit_test_region_list,
       uint64_t submit_time,
       mojom::CompositorFrameSink::SubmitCompositorFrameSyncCallback);
 

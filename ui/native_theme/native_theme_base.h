@@ -36,7 +36,8 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
              const gfx::Rect& rect,
              const ExtraParams& extra,
              ColorScheme color_scheme,
-             const absl::optional<SkColor>& accent_color) const override;
+             bool in_forced_colors,
+             const std::optional<SkColor>& accent_color) const override;
 
   bool SupportsNinePatch(Part part) const override;
   gfx::Size GetNinePatchCanvasSize(Part part) const override;
@@ -72,7 +73,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
     kScrollbarArrow,
     kScrollbarArrowHovered,
     kScrollbarArrowPressed,
-    // TODO(1374503): kScrollbarCorner overlaps with
+    // TODO(crbug.com/40242489): kScrollbarCorner overlaps with
     // NativeTheme::Part::kScrollbarCorner. Make ControlColorId a enum class
     // or remove the class completely in favor of ColorProvider colors.
     kScrollbarCornerControlColorId,
@@ -99,13 +100,15 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
   ~NativeThemeBase() override;
 
   // Draw the arrow. Used by scrollbar and inner spin button.
-  virtual void PaintArrowButton(cc::PaintCanvas* gc,
-                                const ColorProvider* color_provider,
-                                const gfx::Rect& rect,
-                                Part direction,
-                                State state,
-                                ColorScheme color_scheme,
-                                const ScrollbarArrowExtraParams& arrow) const;
+  virtual void PaintArrowButton(
+      cc::PaintCanvas* gc,
+      const ColorProvider* color_provider,
+      const gfx::Rect& rect,
+      Part direction,
+      State state,
+      ColorScheme color_scheme,
+      bool in_forced_colors,
+      const ScrollbarArrowExtraParams& extra_params) const;
   // Paint the scrollbar track. Done before the thumb so that it can contain
   // alpha.
   virtual void PaintScrollbarTrack(
@@ -115,7 +118,8 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
       State state,
       const ScrollbarTrackExtraParams& extra_params,
       const gfx::Rect& rect,
-      ColorScheme color_scheme) const;
+      ColorScheme color_scheme,
+      bool in_forced_colors) const;
   // Draw the scrollbar thumb over the track.
   virtual void PaintScrollbarThumb(
       cc::PaintCanvas* canvas,
@@ -123,17 +127,21 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
       Part part,
       State state,
       const gfx::Rect& rect,
-      NativeTheme::ScrollbarOverlayColorTheme theme,
+      const ScrollbarThumbExtraParams& extra_params,
       ColorScheme color_scheme
-#ifdef OHOS_SCROLLBAR
-      , SkColor scrollbar_color
-#endif // OHOS_SCROLLBAR
-      ) const;
-  virtual void PaintScrollbarCorner(cc::PaintCanvas* canvas,
-                                    const ColorProvider* color_provider,
-                                    State state,
-                                    const gfx::Rect& rect,
-                                    ColorScheme color_scheme) const;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      ,
+      SkColor scrollbar_color
+#endif  // ARKWEB_SCROLLBAR
+  ) const;
+
+  virtual void PaintScrollbarCorner(
+      cc::PaintCanvas* canvas,
+      const ColorProvider* color_provider,
+      State state,
+      const gfx::Rect& rect,
+      const ScrollbarTrackExtraParams& extra_params,
+      ColorScheme color_scheme) const;
 
   void PaintCheckbox(cc::PaintCanvas* canvas,
                      const ColorProvider* color_provider,
@@ -141,7 +149,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
                      const gfx::Rect& rect,
                      const ButtonExtraParams& button,
                      ColorScheme color_scheme,
-                     const absl::optional<SkColor>& accent_color) const;
+                     const std::optional<SkColor>& accent_color) const;
 
   void PaintRadio(cc::PaintCanvas* canvas,
                   const ColorProvider* color_provider,
@@ -149,7 +157,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
                   const gfx::Rect& rect,
                   const ButtonExtraParams& button,
                   ColorScheme color_scheme,
-                  const absl::optional<SkColor>& accent_color) const;
+                  const std::optional<SkColor>& accent_color) const;
 
   void PaintButton(cc::PaintCanvas* canvas,
                    const ColorProvider* color_provider,
@@ -199,7 +207,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
                         const gfx::Rect& rect,
                         const SliderExtraParams& slider,
                         ColorScheme color_scheme,
-                        const absl::optional<SkColor>& accent_color) const;
+                        const std::optional<SkColor>& accent_color) const;
 
   void PaintSliderThumb(cc::PaintCanvas* canvas,
                         const ColorProvider* color_provider,
@@ -207,7 +215,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
                         const gfx::Rect& rect,
                         const SliderExtraParams& slider,
                         ColorScheme color_scheme,
-                        const absl::optional<SkColor>& accent_color) const;
+                        const std::optional<SkColor>& accent_color) const;
 
   virtual void PaintInnerSpinButton(
       cc::PaintCanvas* canvas,
@@ -215,7 +223,8 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
       State state,
       const gfx::Rect& rect,
       const InnerSpinButtonExtraParams& spin_button,
-      ColorScheme color_scheme) const;
+      ColorScheme color_scheme,
+      bool in_forced_colors) const;
 
   void PaintProgressBar(cc::PaintCanvas* canvas,
                         const ColorProvider* color_provider,
@@ -223,7 +232,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
                         const gfx::Rect& rect,
                         const ProgressBarExtraParams& progress_bar,
                         ColorScheme color_scheme,
-                        const absl::optional<SkColor>& accent_color) const;
+                        const std::optional<SkColor>& accent_color) const;
 
   virtual void PaintFrameTopArea(cc::PaintCanvas* canvas,
                                  State state,
@@ -326,14 +335,12 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
       bool is_checkbox,
       const SkScalar border_radius,
       ColorScheme color_scheme,
-      const absl::optional<SkColor>& accent_color) const;
+      const std::optional<SkColor>& accent_color) const;
 
   SkColor ControlsBackgroundColorForState(
       State state,
       ColorScheme color_scheme,
       const ColorProvider* color_provider) const;
-  SkColor GetHighContrastControlColor(ControlColorId color_id,
-                                      ColorScheme color_scheme) const;
   SkColor GetDarkModeControlColor(ControlColorId color_id) const;
 
   SkColor GetControlColorFromColorProvider(
@@ -347,7 +354,7 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
 
   // Returns true if the ColorProvider color map is not empty and a color
   // represented by the ControlColorId is added to the ui color mixer.
-  // TODO(crbug.com/1374503): Remove this function when the NativeThemeBase
+  // TODO(crbug.com/40242489): Remove this function when the NativeThemeBase
   // class is fully transitioned to the color pipeline and the GetControlColor()
   // is deleted.
   bool IsColorPipelineSupportedForControlColorId(

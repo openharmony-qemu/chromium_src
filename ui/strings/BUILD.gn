@@ -5,11 +5,14 @@
 import("//build/config/locales.gni")
 import("//tools/grit/grit_rule.gni")
 
-# Meta target that includes both ax/ui_strings and app_locale_settings. Most
+import("//arkweb/build/features/features.gni")
+
+# Meta target that includes all ui strings. Most
 # targets want them all. You can depend on the individually if you need to.
 group("strings") {
   public_deps = [
     ":app_locale_settings",
+    ":auto_image_annotation_strings",
     ":ax_strings",
     ":ui_strings",
   ]
@@ -19,8 +22,8 @@ grit("ax_strings") {
   source = "ax_strings.grd"
   outputs = [ "grit/ax_strings.h" ]
 
-  #ifdef ohos_i18n
-  if (is_ohos && ohos_i18n) {
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
     all_chrome_locales += extra_locales
   }
 
@@ -30,12 +33,26 @@ grit("ax_strings") {
   }
 }
 
+grit("auto_image_annotation_strings") {
+  source = "auto_image_annotation_strings.grd"
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    all_chrome_locales += extra_locales
+  }
+
+  #endif
+  outputs = [ "grit/auto_image_annotation_strings.h" ]
+  foreach(locale, all_chrome_locales) {
+    outputs += [ "auto_image_annotation_strings_$locale.pak" ]
+  }
+}
+
 grit("ui_strings") {
   source = "ui_strings.grd"
   outputs = [ "grit/ui_strings.h" ]
 
-  #ifdef ohos_i18n
-  if (is_ohos && ohos_i18n) {
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
     all_chrome_locales += extra_locales
   }
 
@@ -49,8 +66,8 @@ grit("app_locale_settings") {
   source = "app_locale_settings.grd"
   outputs = [ "grit/app_locale_settings.h" ]
 
-  #ifdef ohos_i18n
-  if (is_ohos && ohos_i18n) {
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
     all_chrome_locales += extra_locales
   }
 

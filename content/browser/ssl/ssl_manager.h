@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "content/browser/ssl/ssl_error_handler.h"
@@ -54,12 +55,12 @@ class SSLManager {
       int net_error,
       const net::SSLInfo& ssl_info,
       bool fatal
-#ifdef OHOS_NETWORK_LOAD
-,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      ,
       const GURL& origin_url,
       const std::string& referrer
 #endif
-      );
+  );
 
   // Construct an SSLManager for the specified tab.
   explicit SSLManager(NavigationControllerImpl* controller);
@@ -75,8 +76,8 @@ class SSLManager {
 
   void DidCommitProvisionalLoad(const LoadCommittedDetails& details);
 
-  // TODO(crbug.com/1385424): Revert function DidStartResourceResponse to return
-  // void after expiry of histogram SSL.Experimental.SubresourceResponse.
+  // TODO(crbug.com/40879220): Revert function DidStartResourceResponse to
+  // return void after expiry of histogram SSL.Experimental.SubresourceResponse.
   // Return true when a good certificate is seen and any exceptions that were
   // made by the user for bad certificates are cleared out, returns false
   // otherwise without processing anything.
@@ -97,6 +98,10 @@ class SSLManager {
 
   // An error occurred with the certificate in an SSL connection.
   void OnCertError(std::unique_ptr<SSLErrorHandler> handler);
+
+  // Returns true if any HTTPS-related warning exceptions has been allowed by
+  // the user for any host.
+  bool HasAllowExceptionForAnyHost();
 
  private:
   // Helper method for handling certificate errors.

@@ -9,7 +9,7 @@
 #import "ios/chrome/browser/ui/settings/settings_root_table_view_controller.h"
 
 class Browser;
-class ChromeBrowserState;
+class ProfileIOS;
 
 // The table view for the Autofill settings.
 @interface AutofillCreditCardTableViewController
@@ -19,8 +19,7 @@ class ChromeBrowserState;
 - (instancetype)initWithBrowser:(Browser*)browser NS_DESIGNATED_INITIALIZER;
 
 // Use -initWithBrowser:.
-- (instancetype)initWithBrowserState:(ChromeBrowserState*)browserState
-    NS_UNAVAILABLE;
+- (instancetype)initWithProfile:(ProfileIOS*)profile NS_UNAVAILABLE;
 
 - (instancetype)initWithStyle:(UITableViewStyle)style NS_UNAVAILABLE;
 

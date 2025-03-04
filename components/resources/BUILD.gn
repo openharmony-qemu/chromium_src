@@ -3,10 +3,18 @@
 # found in the LICENSE file.
 
 import("//build/config/android/config.gni")
+import("//build/config/features.gni")
 import("//components/safe_browsing/buildflags.gni")
 import("//components/supervised_user/buildflags.gni")
+import("//pdf/features.gni")
 import("//printing/buildflags/buildflags.gni")
 import("//tools/grit/grit_rule.gni")
+
+declare_args() {
+  # Generating the credits page requires a filesystem traversal for licenses
+  # that is slow in some environments.
+  generate_about_credits = is_official_build
+}
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -23,6 +31,8 @@ group("resources") {
     ":components_resources",
     ":components_scaled_resources",
     ":dev_ui_components_resources",
+    "../flags_ui/resources:resources",
+    "../version_ui/resources:resources",
   ]
 }
 
@@ -45,25 +55,27 @@ grit("components_resources") {
   ]
 
   defines = [
+    "enable_pdf=$enable_pdf",
     "enable_printing=$enable_printing",
     "enable_print_preview=$enable_print_preview",
     "enable_supervised_users=$enable_supervised_users",
     "safe_browsing_mode=$safe_browsing_mode",
     "is_fuchsia=$is_fuchsia",
+    "use_blink=$use_blink",
   ]
 
   deps = [
     ":about_credits",
-    "//components/flags_ui/resources:build_ts",
+    "//components/neterror/resources:bundle_js",
     "//components/security_interstitials/content/resources:build_ts",
-    "//components/version_ui/resources:build_ts",
+    "//components/security_interstitials/core/browser/resources:bundle_js",
   ]
 
-  if (!is_ios) {
+  if (use_blink) {
     deps += [ "//components/resources/ssl/ssl_error_assistant:make_ssl_error_assistant_protobuf" ]
   }
 
-  if (safe_browsing_mode > 0) {
+  if (safe_browsing_mode > 0 || is_arkweb) {
     deps += [
       "//components/safe_browsing/content/resources:make_file_types_protobuf",
     ]
@@ -103,34 +115,43 @@ grit("components_scaled_resources") {
   output_dir = "$root_gen_dir/components"
 }
 
-action("about_credits") {
-  script = "//tools/licenses/licenses.py"
-  depfile = "$target_gen_dir/$target_name.d"
+if (generate_about_credits) {
+  action("about_credits") {
+    script = "//tools/licenses/licenses.py"
+    depfile = "$target_gen_dir/$target_name.d"
 
-  inputs = [
-    "../about_ui/resources/about_credits.tmpl",
-    "../about_ui/resources/about_credits_entry.tmpl",
-  ]
+    inputs = [
+      "../about_ui/resources/about_credits.tmpl",
+      "../about_ui/resources/about_credits_entry.tmpl",
+      "../about_ui/resources/about_credits_reciprocal.tmpl",
+    ]
 
-  outputs = [ about_credits_file ]
+    outputs = [ about_credits_file ]
 
-  args = [
-    "--target-os=$target_os",
-    "--depfile",
-    rebase_path(depfile, root_build_dir),
-    "credits",
-    rebase_path(about_credits_file, root_build_dir),
-  ]
+    args = [
+      "--target-os=$target_os",
+      "--depfile",
+      rebase_path(depfile, root_build_dir),
+      "credits",
+      rebase_path(about_credits_file, root_build_dir),
+    ]
 
-  # Defined by downstream projects.
-  if (defined(extra_third_party_notice_dirs)) {
-    args += [ "--extra-third-party-dirs=$extra_third_party_notice_dirs" ]
+    # Defined by downstream projects.
+    if (defined(extra_third_party_notice_dirs)) {
+      args += [ "--extra-third-party-dirs=$extra_third_party_notice_dirs" ]
+    }
+  }
+} else {
+  copy("about_credits") {
+    sources = [ "sample_credits.html" ]
+    outputs = [ about_credits_file ]
   }
 }
 
 if (is_android) {
   source_set("android_resources") {
     sources = [
+      "android/autofill_resource_id.h",
       "android/blocked_content_resource_id.h",
       "android/page_info_resource_id.h",
       "android/permissions_resource_id.h",

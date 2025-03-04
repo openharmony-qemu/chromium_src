@@ -57,16 +57,16 @@ class ArcAudioBridge : public KeyedService,
   void SendSwitchState(bool headphone_inserted, bool microphone_inserted);
   void SendVolumeState();
 
-  const raw_ptr<ArcBridgeService, ExperimentalAsh>
+  const raw_ptr<ArcBridgeService>
       arc_bridge_service_;  // Owned by ArcServiceManager.
 
-  raw_ptr<ash::CrasAudioHandler, ExperimentalAsh> cras_audio_handler_;
+  raw_ptr<ash::CrasAudioHandler, DanglingUntriaged> cras_audio_handler_;
 
   int volume_ = 0;  // Volume range: 0-100.
   bool muted_ = false;
 
   // Avoids sending requests when the instance is unavailable.
-  // TODO(crbug.com/549195): Remove once the root cause is fixed.
+  // TODO(crbug.com/41213400): Remove once the root cause is fixed.
   bool available_ = false;
 };
 

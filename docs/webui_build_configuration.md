@@ -32,15 +32,14 @@ the code that should be served at runtime.
 
 * WebUI build rules should only be used directly or via the wrapper rules
   documented here ([build_webui](#build_webui),
-  [build_webui_tests](#build_webui_tests). If you want to use any of the rules
+  [build_webui_tests](#build_webui_tests)). If you want to use any of the rules
   below from within another tool or script, please get a review from one of the
-  cross-platform, non-backend WebUI
-  [OWNERS](https://source.chromium.org/chromium/chromium/src/+/main:ui/webui/PLATFORM_OWNERS).
+  cross-platform, non-backend WebUI [OWNERS](/ui/webui/PLATFORM_OWNERS).
 
 ## WebUI build rules
 
 ### **html_to_wrapper, css_to_wrapper**
-```
+
 These rules are used to inline HTML or CSS into a TypeScript file which can be
 compiled by TS compiler and then imported with JS imports at runtime. This is
 necessary when writing Web Components, which need to return their HTML in the
@@ -50,7 +49,6 @@ By default, these rules accept input files from within the current directory.
 
 By default, they output the wrapped `.html.ts` and `.css.ts` files to the target
 generated directory (|target_gen_dir|).
-```
 
 #### **Arguments**
 ```
@@ -90,14 +88,13 @@ css_to_wrapper("css_wrapper_files") {
 ```
 
 ### **preprocess_if_expr**
-```
+
 This rule is used to preprocess files containing `<if expr="*">`. These
 expressions are most frequently used to enable code to only run on certain
 platforms.
 
 By default, reads input files from within the current directory and saves output
 in |target_gen_dir|.
-```
 
 #### **Arguments**
 ```
@@ -114,6 +111,8 @@ out_manifest: Specifies a file where the list of output files and their
               preprocessed files are instead passed to ts_library in WebUIs
               that have been migrated to TypeScript, this is only used by
               WebUIs that have not been migrated to TypeScript yet.
+defines: Optional parameter. Specifies additional variables that can be used in
+         conditional expressions.
 ```
 #### **Example:**
 ```
@@ -133,6 +132,7 @@ preprocess_if_expr("preprocess_generated") {
     "my_web_component.html.ts",
   ]
   out_folder = "$target_gen_dir/$preprocess_folder"
+  defines = [ "foo_enabled=false" ]
 }
 
 # Preprocess "my_web_component.ts" and "my_webui.ts" in the src dir into
@@ -144,16 +144,16 @@ preprocess_if_expr("preprocess_src") {
     "my_webui.ts",
   ]
   out_folder = "$target_gen_dir/$preprocess_folder"
+  defines = [ "foo_enabled=true" ]
 }
 ```
 
 ### **ts_library**
-```
+
 This rule is used to compile TypeScript code to JavaScript. It outputs JS files
 corresponding to each TS file passed as an input into the designated output
 directory, and generates a manifest listing all the files it has output named
 $target_name.manifest in the target generated directory.
-```
 
 #### **Input File notes**
 ```
@@ -163,7 +163,7 @@ preprocessed, if necessary. It also means that e.g. HTML or image files
 shouldn't be passed to ts_library.
 
 All files that aren't imported with an absolute path (e.g.
-`import {assert} from 'chrome://resources/js/assert_ts.js'; `) need to exist
+`import {assert} from 'chrome://resources/js/assert.js'; `) need to exist
 inside the TypeScript root directory, at the expected location. For example,
 if foo.ts in the top level directory contains the import statement
 `import {Baz} from './bar/baz.js';`, then the folder structure when ts_library
@@ -199,15 +199,26 @@ path_mappings: Additional non-default path mappings for absolute imports. The
                adding "//ui/webui/resources/cr_elements:build_ts" in deps will
                automatically add the mapping for imports from that library
                (e.g. 'chrome://resources/cr_elements/cr_button/cr_button.js').
-               Important: Don't add path_mappings without also adding the
-               ts_library() target(s) responsible for the files being mapped to
-               deps! path_mappings without corresponding deps can result in
-               flaky build errors.
+               Important: Adding path_mappings *does not* add the files mapped
+               in |inputs| or the targets generating files to |deps|. To prevent
+               flaky build errors, *always* do one of the following when adding
+               a path_mapping:
+               - Add the ts_library() target responsible for compiling .ts files
+                 into the mapped generated directory to |deps|.
+               - Add the ts_definitions(), copy(), preprocess_if_expr(), or
+                 other target responsible for generating definitions files in
+                 the mapped generated directory to |extra_deps|
+               - Add all source .d.ts files your target uses from the mapped
+                 source directory to |definitions|.
+path_mappings_file: A .json file containing path mappings in the form
+                    {url: [ dir1, dir2, ... ] } where dir* are relative to the
+                   |target_gen_dir|.
 manifest_excludes: List of input files to exclude from the output
                    the manifest file.
-enable_source_maps: Defaults to "false". Setting it to "true" turns on TS
-                    compiler's 'inlineSourceMap' and 'inlineSources' flags.
-                    Non-inlined source maps are currently not supported.
+enable_source_maps: Defaults to the value of the enable_webui_inline_sourcemaps
+                    GN flag. Setting it to "true" turns on TS compiler's
+                    'inlineSourceMap' and 'inlineSources' flags. Non-inlined
+                    source maps are currently not supported.
 ```
 
 #### **Example**
@@ -242,12 +253,48 @@ ts_library("build_ts") {
 }
 ```
 
-### **optimize_webui**
+### **webui_path_mappings**
+
+This rule generates a path mappings .json file named
+'path_mappings_<target_name>.json' in |target_gen_dir| from a list of target
+dependencies. Its output can be passed to ts_library's |path_mappings_file|
+parameter.
+
+Note that the rule only generates mappings for dependencies that are mapped
+in path_mappings.py (e.g. //ui/webui/resources/ deps).
+
+#### **Arguments**
 ```
+ts_deps: List of ts_library() dependencies to generate path mappings for.
+webui_context_type: What import scheme(s) should be mapped for the UI. Options:
+                    'trusted': Maps chrome:// and scheme-relative imports.
+                               Default value.
+                    'untrusted': Maps chrome-untrusted:// and scheme-relative
+                                 imports.
+                    'relative': Maps scheme-relative imports only.
+                    'trusted_only': Maps chrome:// imports only.
+```
+
+### **webui_ts_library**
+
+This rule is a thin wrapper around ts_library() that defines 2 targets:
+(1) a webui_path_mappings() ("path_mappings") target to generate a path mappings
+    file from |deps|.
+(2) a ts_library() target ("build_ts") that consumes the generated path
+    mappings file along with all remaining arguments.
+
+#### **Arguments**
+webui_ts_library uses all the same arguments as ts_library, in addition to
+the following:
+```
+webui_context_type: See |webui_context_type| in webui_path_mappings().
+```
+
+### **bundle_js**
+
 This rule is used to bundle larger user-facing WebUIs for improved performance.
 It is generally not needed for debug UIs or UIs that have very few files to
 import.
-```
 
 #### **Arguments**
 ```
@@ -265,7 +312,13 @@ js_module_in_files: The names of the root files to bundle. These files should
                     The shared bundle will be named "shared.rollup.js" and
                     located at the same relative path as the inputs.
 out_manifest: File location to write the manifest of all output files created
-              by optimize_webui(). Useful for generating grds.
+              by bundle_js(). Useful for generating grds.
+rollup_config: Optional parameter. The path to a custom Rollup configuration
+               file. When specified it overrides the default auto-generated
+               configuration file.
+               Note: The custom configuration should not refer to other files
+               (like plugin files), because such files are not automatically
+               declared as `inputs`.
 deps: Targets generating any files being bundled. Note that this should include
       targets generating shared resources that are expected to be bundled in
       the UI, e.g. //ui/webui/resources/js:build_ts.
@@ -282,17 +335,19 @@ external_paths: Mappings between absolute URLs and paths where files imported
                 Note: all absolute URLs must either be listed in |excludes| or
                 be mapped in |external_paths|, otherwise a build time error is
                 raised.
+out_folder: The location where bundled files will be placed in. Defaults to
+            |target_gen_dir|.
 ```
 
 #### **Example**
 ```
-import("//ui/webui/resources/tools/optimize_webui.gni")
+import("//ui/webui/resources/tools/bundle_js.gni")
 import ("//chrome/common/features.gni")
 
 # optimize_webui should generally only be called when the optimize_webui
 # feature flag is enabled.
 if (optimize_webui) {
-  optimize_webui("build") {
+  bundle_js("build") {
     host = "mywebui"
     js_module_in_files = [ "my_webui.js" ]  # will output my_webui.rollup.js
     input = rebase_path("$target_gen_dir/tsc", root_build_dir)
@@ -312,18 +367,19 @@ if (optimize_webui) {
 ```
 
 ### **minify_js**
-```
+
 This rule is used to minify Javascript files to reduce build size.
-Also generates a manifest file to |target_gen_dir| named
-minify_js_manifest.json. Note that this should not be used alongside
-optimize_webui, which minifies files in addition to bundling them.
-```
+This can be used alongside bundle_js(), if bundling and minifying is
+desired.
 
 #### **Arguments**
 ```
 in_folder: The location of the input files to be minified.
 in_files: The list of JS files to minify with respect to the |in_folder|.
 out_folder: The location where minified files will be outputted.
+out_manifest: The location to write the manifest file of all files
+              outputted by minify_js(). Defaults to
+              $target_gen_dir/${target_name}_manifest.json.
 deps: Targets generating any files being minified.
 ```
 
@@ -347,10 +403,9 @@ if (optimize_webui) {
 ```
 
 ### **generate_grd**
-```
+
 This rule is used to list the WebUI resources that need to be served at runtime
 in a grd file.
-```
 
 #### **Arguments**
 ```
@@ -367,6 +422,10 @@ grdp_files: List of .grdp files that should be included in the grd. Generally
 grd_prefix: The prefix to use for the grd resource IDs. Resources will be named
             with the following pattern: IDR_GRD_PREFIX_INPUT_FILE_PATH
 out_grd: The output grd file to write. Must end with either '.grd' or '.grdp'.
+resource_path_prefix: Optional prefix to add to every path in input_files (after
+                      the path has been processed by |resource_path_rewrites|).
+                      Must not end in a `/` as it will automatically be added
+                      when joining to each path.
 resource_path_rewrites: Paths to rewrite. In general, the path in input_files,
                         or the path listed in a manifest, will be used as the
                         resource path, i.e. "foo/bar.js" will have that path
@@ -385,7 +444,7 @@ generate_grd("build_grd") {
   input_files = [ "my_webui.html" ]
   input_files_base_dir = rebase_path(".", "//")
   deps = [ ":build_ts" ]
-  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*.manifest" ])
+  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*_manifest.json" ])
   # Or, configure statically the manifest file name:
   # manifest_files = [ "$target_gen_dir/build_ts.manifest" ]
   grd_prefix = "my_webui"
@@ -394,14 +453,13 @@ generate_grd("build_grd") {
 ```
 
 ### **grit**
-```
+
 This rule is used to create a pak file from the grd file that contains all the
 listed resources, so that they can be included in the binary and served at
 runtime. Without creating a grit rule (and hooking up the target to the build),
 the WebUI will not load since the resources will not exist. This rule also
 generates C++ header files that are used to add the files to a specific
 WebUIController.
-```
 
 #### **Arguments**
 ```
@@ -443,7 +501,7 @@ grit("resources") {
 
 ### **build_webui**
 
-<!-- TODO(crbug.com/1340376): Elevate build_webui() to the top of this document
+<!-- TODO(crbug.com/40230335): Elevate build_webui() to the top of this document
       after it has been deployed to a few places. -->
 
 See the [go/build-webui-pipeline](http://go/build-webui-pipeline) design doc for
@@ -454,7 +512,6 @@ user-facing WebUI is being built.
 
 ![WebUI build pipeline flow diagram](images/webui_build_pipeline.png)
 
-```
 This umbrella rule captures the most common WebUI build pipeline configuration
 and aims to hide the complexity of having to define all previously described
 rules directly. Using build_webui() is the recommended approach for most modern
@@ -465,26 +522,26 @@ rules described earlier.
 
 Under the cover, build_webui() defines the following targets
 
-preprocess_if_expr("preprocess_ts_files")
-preprocess_if_expr("preprocess_html_css_files")
-create_js_source_maps("create_source_maps")
-html_to_wrapper("html_wrapper_files")
-css_to_wrapper("css_wrapper_files")
-copy("copy_mojo")
-ts_library("build_ts")
-merge_js_source_maps("merge_source_maps")
-optimize_webui("build_bundle")
-minify_js("build_min_js")
-generate_grd("build_grd")
-generate_grd("build_grdp")
-grit("resources")
+* preprocess_if_expr("preprocess_ts_files")
+* preprocess_if_expr("preprocess_html_css_files")
+* create_js_source_maps("create_source_maps")
+* html_to_wrapper("html_wrapper_files")
+* css_to_wrapper("css_wrapper_files")
+* copy("copy_mojo")
+* webui_path_mappings("build_path_map")
+* ts_library("build_ts")
+* merge_js_source_maps("merge_source_maps")
+* bundle_js("build_bundle")
+* minify_js("build_min_js")
+* generate_grd("build_grd")
+* generate_grd("build_grdp")
+* grit("resources")
 
 Some targets are only conditionally defined based on build_webui() input
 parameters.
 
 Only ":build_ts", ":resources" and ":build_grdp" targets are public and can be
 referred to from other parts of the build.
-```
 
 #### **Arguments**
 ```
@@ -511,45 +568,57 @@ css_files: List of CSS files that hold Polymer style modules, or CSS variable
            definitions. These are passed css_to_wrapper(). Optional parameter.
 
 mojo_files: List of Mojo JS generated files. These will be copied to a temporary
-            location so that they can be passed to ts_library() along with other
-            files. Optional parameter.
+            location so that they can be passed to ts_library() along with
+            other files. Optional parameter.
 
 mojo_files_deps: List of Mojo targets that generate |mojo_files|. Must be
                  defined if |mojo_files| is defined.
+
+mojo_base_path: Specifies the directory under which Mojo files will be served at
+                runtime. Optional parameter. Defaults to the top level folder
+                '.', which results in Mojo files being served from
+                'chrome://<webui_name>/foo.mojom-webui.js'.
+                Example: Passing 'mojom-webui' would result in Mojo files being
+                served from
+                'chrome://<webui_name>/mojom-webui/foo.mojom-webui.js'.
 
 TypeScript (ts_library()) related params:
 ts_composite: See |composite| in ts_library(). Defaults to false, optional.
 ts_out_dir: See |out_dir| in ts_library(). Optional parameter, defaults
             '$target_gen_dir/tsc'
 ts_definitions: See |definitions| in ts_library(). Optional parameter.
-ts_deps: See |deps| in ts_library(). Optional parameter.
+ts_deps: See |deps| in ts_library(). Also used for webui_path_mappings().
+         Optional parameter.
 ts_extra_deps: See |extra_deps| in ts_library(). Optional parameter.
 ts_path_mappings: See |path_mappings| in ts_library(). Optional parameter.
-ts_tsconfig_base: The tsconfig file to use for ts_library(). Optional, defaults
-                  to "//tools/typescript/tsconfig_base_polymer.json" for Polymer
-                  UIs (i.e. UIs that specify |web_component_files| and/or
-                  |icons_html_files| and do not set |html_to_wrapper_template|
-                  to "native"). Defaults to
-                  "//tools/typescript/tsconfig_base.json" for non-Polymer UIs.
+ts_tsconfig_base: The tsconfig file to use for ts_library(). Optional. Defaults
+                  to "//tools/typescript/tsconfig_base_polymer.json" for UIs
+                  that depend on Polymer (i.e. have
+                  "//third_party/polymer/v3_0:library" in their |ts_deps|).
+                  Defaults to "//tools/typescript/tsconfig_base_lit.json" for
+                  UIs that do not depend on Polymer and depend on Lit (i.e. have
+                  "//third_party/lit/v3_0:build_ts" in |ts_deps|). Defaults to
+                  "//tools/typescript/tsconfig_base.json" for all other UIs.
 
 HTML/CSS/JS optimization related params:
 optimize: Specifies whether any optimization steps will be used. Defaults to the
           value of the optimize_webui GN flag.
           When true, html_to_wrapper() and css_to_wrapper() will be invoked with
           the |minify| flag on, to minify HTML/CSS code.
-          If |optimize_webui_in_files| is provided then optimize_webui() will be
-          invoked to bundle+minify JS code (using Rollup and Terser).
-          If |optimize_webui_in_files| is not provided then minify_js() will be
-          invoked to minify JS code (using Terser).
+          When true, minify_js() will be invoked to minify JS code (using Terser).
+          If |optimize_webui_in_files| is provided then bundle_js() will also be
+          invoked to bundle JS code (using Rollup).
           |optimize_webui_host| must be specified if |optimize_webui_in_files|
           is provided.
-optimize_webui_excludes: See |excludes| in optimize_webui(). Optional.
+optimize_webui_host: See |host| in bundle_js().
+optimize_webui_excludes: See |excludes| in bundle_js(). Optional.
 optimize_webui_external_paths: See |external_paths| in optimize_webui().
                                Optional.
-optimize_webui_host: See |host| in optimize_webui().
-optimize_webui_in_files: See |in_files| in optimize_webui().
+optimize_webui_in_files: See |in_files| in bundle_js().
 
 Other params:
+webui_context_type: See |webui_context_type| in webui_path_mappings(). Optional,
+                    defaults to "relative".
 generate_grdp: Whether to generate grdp file instead of a grd file. Defaults to
                false.
 grd_prefix: See |grd_prefix| in generate_grd(). Required parameter.
@@ -562,6 +631,7 @@ extra_grdp_deps: List of external generate_grd() targets that generate .grdp
                  resources.grd file. Optional parameter.
 extra_grdp_files: Output .grdp files of external generate_grd() targets. Must be
                   defined if |extra_grdp_deps| is defined.
+preprocessor_defines: Optional parameter. See |defines| in preprocess_if_expr().
 grit_output_dir: See |output_dir| in grit(). Optional parameter, defaults to
                  "$root_gen_dir/chrome"
 enable_source_maps: Defaults to "false". Incompatible with |optimize=true|.
@@ -614,6 +684,8 @@ build_webui("build") {
     "//ui/webui/resources/cr_elements:build_ts",
     "//ui/webui/resources/js:build_ts",
   ]
+
+  preprocessor_defines = [ "foo_enabled=false" ]
 }
 
 ```
@@ -625,7 +697,6 @@ WebUI's tests are built.
 
 ![WebUI tests build pipeline flow diagram](images/webui_build_pipeline_tests.png)
 
-```
 This umbrella rule captures the most common WebUI test build pipeline
 configuration and aims to hide the complexity of having to define multiple other
 targets directly. Using build_webui_tests() is the recommended approach for most
@@ -635,18 +706,22 @@ chrome://webui-test/<webui_name>/
 
 Under the cover, build_webui_tests() defines the following targets
 
-preprocess_if_expr("preprocess")
-ts_library("build_ts")
-generate_grd("build_grdp")
+* preprocess_if_expr("preprocess")
+* webui_ts_library("build_ts")
+* generate_grd("build_grdp")
 
 The parameters passed to build_webui_tests() are forwarded as needed to
 the targets above. Only the ":build_grdp" target is public and can be referred
 to from other parts of the build.
 
-```
-
 #### **Arguments**
 ```
+is_chrome_untrusted: Set to true if testing a chrome-untrusted:// UI. Optional
+                     parameter. Allows importing shared test files from
+                     chrome-untrusted://webui-test/ instead of
+                     chrome://webui-test. Passing true will set
+                     |webui_context_type| to 'untrusted' rather than 'trusted'
+                     for webui_ts_library().
 
 List of files params:
 files: Required parameter. List of all test related files.
@@ -655,13 +730,15 @@ TypeScript (ts_library()) related params:
 ts_tsconfig_base: See |tsconfig_base| in ts_library(). Optional parameter. If
                   not provided the default configuration at
                   '//chrome/test/data/webui/tsconfig_base.json' is used.
+ts_composite: See |composite| in ts_library(). Defaults to false, optional.
 ts_definitions: See |definitions| in ts_library(). Optional parameter.
 ts_deps: See |deps| in ts_library(). Required parameter.
 ts_path_mappings: See |path_mappings| in ts_library(). Optional parameter.
 
-Other params:
-resource_path_prefix: See |resource_path_prefix| in generate_grd(). Required
-                      parameter.
+Grit (generate_grd()) related params:
+resource_path_prefix: See |resource_path_prefix| in generate_grd(). Optional
+                      parameter. Only specify it for targets residing outside of
+                      //chrome/test/data/webui.
 ```
 
 #### **Example**
@@ -669,8 +746,6 @@ resource_path_prefix: See |resource_path_prefix| in generate_grd(). Required
 import("//chrome/test/data/webui/settings/tools/build_webui_tests.gni")
 
 build_webui_tests("build") {
-  resource_path_prefix = "settings"
-
   files = [
     "checkbox_tests.ts",
     "collapse_radio_button_tests.ts",
@@ -732,7 +807,7 @@ generate_grd("build_grd") {
   out_grd = "$target_gen_dir/resources.grd"
   input_files = [ "my_debug_page_index.html" ]
   input_files_base_dir = rebase_path(".", "//")
-  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*.manifest" ])
+  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*_manifest.json" ])
 }
 
 # Create the pak, header, and resource map files.
@@ -815,7 +890,7 @@ generate_grd("build_grd") {
   out_grd = "$target_gen_dir/resources.grd"
   input_files = [ "my_debug_page_index.html" ]
   input_files_base_dir = rebase_path(".", "//")
-  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*.manifest" ])
+  manifest_files = filter_include(get_target_outputs(":build_ts"), [ "*_manifest.json" ])
 }
 
 # Create the pak, header, and resource map files.

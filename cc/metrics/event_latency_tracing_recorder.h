@@ -35,6 +35,19 @@ class EventLatencyTracingRecorder {
   static void RecordEventLatencyTraceEvent(
       EventMetrics* event_metrics,
       base::TimeTicks termination_time,
+      base::TimeDelta vsync_interval,
+      const std::vector<CompositorFrameReporter::StageData>* stage_history,
+      const CompositorFrameReporter::ProcessedVizBreakdown* viz_breakdown);
+
+  static bool IsEventLatencyTracingEnabled();
+
+ private:
+  // We do not want the emitting of traces to have any side-effects, so the
+  // actual emitting uses `const EventMetrics*`.
+  static void RecordEventLatencyTraceEventInternal(
+      const EventMetrics* event_metrics,
+      base::TimeTicks termination_time,
+      base::TimeDelta vsync_interval,
       const std::vector<CompositorFrameReporter::StageData>* stage_history,
       const CompositorFrameReporter::ProcessedVizBreakdown* viz_breakdown);
 };

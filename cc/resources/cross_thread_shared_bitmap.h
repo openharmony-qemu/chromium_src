@@ -5,6 +5,8 @@
 #ifndef CC_RESOURCES_CROSS_THREAD_SHARED_BITMAP_H_
 #define CC_RESOURCES_CROSS_THREAD_SHARED_BITMAP_H_
 
+#include <utility>
+
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/shared_memory_mapping.h"
@@ -25,7 +27,8 @@ class CC_EXPORT CrossThreadSharedBitmap
     : public base::RefCountedThreadSafe<CrossThreadSharedBitmap> {
  public:
   CrossThreadSharedBitmap(const viz::SharedBitmapId& id,
-                          base::MappedReadOnlyRegion shm,
+                          const base::ReadOnlySharedMemoryRegion region,
+                          base::WritableSharedMemoryMapping mapping,
                           const gfx::Size& size,
                           viz::SharedImageFormat format);
 
@@ -33,7 +36,12 @@ class CC_EXPORT CrossThreadSharedBitmap
   const base::ReadOnlySharedMemoryRegion& shared_region() const {
     return region_;
   }
-  void* memory() const { return mapping_.memory(); }
+  void* memory() { return const_cast<void*>(std::as_const(*this).memory()); }
+  const void* memory() const {
+    // TODO(crbug.com/355003196): This returns an unsafe unbounded pointer. The
+    // return type here should be changed to a span, then return span(mapping_).
+    return mapping_.data();
+  }
   const gfx::Size& size() const { return size_; }
   viz::SharedImageFormat format() const { return format_; }
 

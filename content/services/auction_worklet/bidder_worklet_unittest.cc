@@ -6,11 +6,14 @@
 
 #include <stdint.h>
 
+#include <array>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "base/feature_list.h"
+#include "base/format_macros.h"
 #include "base/functional/bind.h"
 #include "base/json/json_writer.h"
 #include "base/memory/raw_ptr.h"
@@ -19,12 +22,23 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/test/bind.h"
+#include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
+#include "base/test/test_timeouts.h"
 #include "base/time/time.h"
+#include "components/cbor/writer.h"
+#include "content/common/features.h"
+#include "content/public/common/content_features.h"
 #include "content/services/auction_worklet/auction_v8_helper.h"
+#include "content/services/auction_worklet/public/cpp/cbor_test_util.h"
+#include "content/services/auction_worklet/public/cpp/real_time_reporting.h"
+#include "content/services/auction_worklet/public/mojom/auction_worklet_service.mojom-forward.h"
 #include "content/services/auction_worklet/public/mojom/auction_worklet_service.mojom.h"
+#include "content/services/auction_worklet/public/mojom/bidder_worklet.mojom-forward.h"
 #include "content/services/auction_worklet/public/mojom/private_aggregation_request.mojom.h"
+#include "content/services/auction_worklet/public/mojom/real_time_reporting.mojom.h"
+#include "content/services/auction_worklet/public/mojom/trusted_signals_cache.mojom.h"
 #include "content/services/auction_worklet/worklet_devtools_debug_test_util.h"
 #include "content/services/auction_worklet/worklet_test_util.h"
 #include "content/services/auction_worklet/worklet_v8_debug_test_util.h"
@@ -34,26 +48,37 @@
 #include "mojo/public/cpp/bindings/struct_ptr.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
 #include "net/http/http_status_code.h"
+#include "net/third_party/quiche/src/quiche/oblivious_http/oblivious_http_gateway.h"
+#include "services/network/public/mojom/shared_storage.mojom.h"
 #include "services/network/test/test_url_loader_factory.h"
 #include "testing/gmock/include/gmock/gmock-matchers.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/abseil-cpp/absl/numeric/int128.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "third_party/blink/public/common/features.h"
+#include "third_party/blink/public/common/features_generated.h"
 #include "third_party/blink/public/common/interest_group/ad_auction_constants.h"
 #include "third_party/blink/public/common/interest_group/ad_auction_currencies.h"
+#include "third_party/blink/public/common/interest_group/ad_display_size.h"
 #include "third_party/blink/public/common/interest_group/interest_group.h"
 #include "third_party/blink/public/mojom/interest_group/interest_group_types.mojom.h"
+#include "third_party/googletest/src/googlemock/include/gmock/gmock-more-matchers.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "url/url_constants.h"
 
 using testing::HasSubstr;
+using testing::IsEmpty;
 using testing::StartsWith;
+using testing::UnorderedElementsAre;
 
 namespace auction_worklet {
 namespace {
 
+using base::test::TaskEnvironment;
 using PrivateAggregationRequests = BidderWorklet::PrivateAggregationRequests;
+using RealTimeReportingContributions =
+    BidderWorklet::RealTimeReportingContributions;
 
 // This was produced by running wat2wasm on this:
 // (module
@@ -64,7 +89,20 @@ const uint8_t kToyWasm[] = {
     0x7f, 0x00, 0x41, 0xfb, 0x00, 0x0b, 0x07, 0x0e, 0x01, 0x0a, 0x74,
     0x65, 0x73, 0x74, 0x5f, 0x63, 0x6f, 0x6e, 0x73, 0x74, 0x03, 0x00};
 
+const uint8_t kTestPrivateKey[] = {
+    0xff, 0x1f, 0x47, 0xb1, 0x68, 0xb6, 0xb9, 0xea, 0x65, 0xf7, 0x97,
+    0x4f, 0xf2, 0x2e, 0xf2, 0x36, 0x94, 0xe2, 0xf6, 0xb6, 0x8d, 0x66,
+    0xf3, 0xa7, 0x64, 0x14, 0x28, 0xd4, 0x45, 0x35, 0x01, 0x8f,
+};
+
+const uint8_t kTestPublicKey[] = {
+    0xa1, 0x5f, 0x40, 0x65, 0x86, 0xfa, 0xc4, 0x7b, 0x99, 0x59, 0x70,
+    0xf1, 0x85, 0xd9, 0xd8, 0x91, 0xc7, 0x4d, 0xcf, 0x1e, 0xb9, 0x1a,
+    0x7d, 0x50, 0xa5, 0x8b, 0x01, 0x68, 0x3e, 0x60, 0x05, 0x2d,
+};
+
 const char kWasmUrl[] = "https://foo.test/helper.wasm";
+const uint8_t kKeyId = 0xFF;
 
 // Packs kToyWasm into a std::string.
 std::string ToyWasm() {
@@ -80,7 +118,7 @@ std::string CreateGenerateBidScript(const std::string& raw_return_value,
   constexpr char kGenerateBidScript[] = R"(
     function generateBid(interestGroup, auctionSignals, perBuyerSignals,
                          trustedBiddingSignals, browserSignals,
-                         directFromSellerSignals) {
+                         directFromSellerSignals, crossOriginTrustedSignals) {
       %s;
       return %s;
     }
@@ -96,9 +134,8 @@ static std::string CreateBasicGenerateBidScript() {
       R"({ad: ["ad"], bid:1, render:"https://response.test/"})");
 }
 
-// Returns a working script which calls forDebuggingOnly.reportAdAuctionLoss()
-// and forDebuggingOnly.reportAdAuctionWin() if corresponding url is provided.
-static std::string CreateBasicGenerateBidScriptWithDebuggingReport(
+// Returns a working script which executes given `extra_code` as well.
+static std::string CreateBasicGenerateBidScriptWithExtraCode(
     const std::string& extra_code) {
   return CreateGenerateBidScript(
       R"({ad: ["ad"], bid:1, render:"https://response.test/"})", extra_code);
@@ -126,23 +163,25 @@ class GenerateBidClientWithCallbacks : public mojom::GenerateBidClient {
   using OnBiddingSignalsReceivedCallback = base::OnceCallback<void(
       const base::flat_map<std::string, double>& priority_vector,
       base::TimeDelta trusted_signals_fetch_latency,
+      std::optional<base::TimeDelta> update_if_older_than,
       base::OnceClosure callback)>;
 
   using GenerateBidCallback = base::OnceCallback<void(
-      mojom::BidderWorkletBidPtr bid,
-      mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-      uint32_t data_version,
-      bool has_data_version,
-      const absl::optional<GURL>& debug_loss_report_url,
-      const absl::optional<GURL>& debug_win_report_url,
-      double set_priority,
-      bool has_set_priority,
+      std::vector<mojom::BidderWorkletBidPtr> bid,
+      std::optional<uint32_t> data_version,
+      const std::optional<GURL>& debug_loss_report_url,
+      const std::optional<GURL>& debug_win_report_url,
+      std::optional<double> set_priority,
       base::flat_map<std::string,
                      auction_worklet::mojom::PrioritySignalsDoublePtr>
           update_priority_signals_overrides,
       PrivateAggregationRequests pa_requests,
       PrivateAggregationRequests non_kanon_pa_requests,
-      base::TimeDelta bidding_latency,
+      RealTimeReportingContributions real_time_contributions,
+      mojom::BidderTimingMetricsPtr generate_bid_metrics,
+      mojom::GenerateBidDependencyLatenciesPtr
+          generate_bid_dependency_latencies,
+      mojom::RejectReason reject_reason,
       const std::vector<std::string>& errors)>;
 
   explicit GenerateBidClientWithCallbacks(
@@ -181,18 +220,21 @@ class GenerateBidClientWithCallbacks : public mojom::GenerateBidClient {
 
   static GenerateBidCallback GenerateBidNeverInvokedCallback() {
     return base::BindOnce(
-        [](mojom::BidderWorkletBidPtr bid,
-           mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-           uint32_t data_version, bool has_data_version,
-           const absl::optional<GURL>& debug_loss_report_url,
-           const absl::optional<GURL>& debug_win_report_url,
-           double set_priority, bool has_set_priority,
+        [](std::vector<mojom::BidderWorkletBidPtr> bids,
+           std::optional<uint32_t> data_version,
+           const std::optional<GURL>& debug_loss_report_url,
+           const std::optional<GURL>& debug_win_report_url,
+           std::optional<double> set_priority,
            base::flat_map<std::string,
                           auction_worklet::mojom::PrioritySignalsDoublePtr>
                update_priority_signals_overrides,
            PrivateAggregationRequests pa_requests,
            PrivateAggregationRequests non_kanon_pa_requests,
-           base::TimeDelta bidding_latency,
+           RealTimeReportingContributions real_time_contributions,
+           mojom::BidderTimingMetricsPtr generate_bid_metrics,
+           mojom::GenerateBidDependencyLatenciesPtr
+               generate_bid_dependency_latencies,
+           mojom::RejectReason reject_reason,
            const std::vector<std::string>& errors) {
           ADD_FAILURE() << "OnGenerateBidComplete should not be invoked.";
         });
@@ -203,6 +245,7 @@ class GenerateBidClientWithCallbacks : public mojom::GenerateBidClient {
   void OnBiddingSignalsReceived(
       const base::flat_map<std::string, double>& priority_vector,
       base::TimeDelta trusted_signals_fetch_latency,
+      std::optional<base::TimeDelta> update_if_older_than,
       base::OnceClosure callback) override {
     // May only be called once.
     EXPECT_FALSE(on_bidding_signals_received_invoked_);
@@ -211,38 +254,41 @@ class GenerateBidClientWithCallbacks : public mojom::GenerateBidClient {
     if (on_bidding_signals_received_callback_) {
       std::move(on_bidding_signals_received_callback_)
           .Run(priority_vector, trusted_signals_fetch_latency,
-               std::move(callback));
+               update_if_older_than, std::move(callback));
       return;
     }
     std::move(callback).Run();
   }
 
   void OnGenerateBidComplete(
-      mojom::BidderWorkletBidPtr bid,
-      mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-      uint32_t data_version,
-      bool has_data_version,
-      const absl::optional<GURL>& debug_loss_report_url,
-      const absl::optional<GURL>& debug_win_report_url,
-      double set_priority,
-      bool has_set_priority,
+      std::vector<mojom::BidderWorkletBidPtr> bids,
+      std::optional<uint32_t> data_version,
+      const std::optional<GURL>& debug_loss_report_url,
+      const std::optional<GURL>& debug_win_report_url,
+      std::optional<double> set_priority,
       base::flat_map<std::string,
                      auction_worklet::mojom::PrioritySignalsDoublePtr>
           update_priority_signals_overrides,
       PrivateAggregationRequests pa_requests,
       PrivateAggregationRequests non_kanon_pa_requests,
-      base::TimeDelta bidding_latency,
+      RealTimeReportingContributions real_time_contributions,
+      mojom::BidderTimingMetricsPtr generate_bid_metrics,
+      mojom::GenerateBidDependencyLatenciesPtr
+          generate_bid_dependency_latencies,
+      mojom::RejectReason reject_reason,
       const std::vector<std::string>& errors) override {
     // OnBiddingSignalsReceived() must be called first.
     EXPECT_TRUE(on_bidding_signals_received_invoked_);
 
     std::move(generate_bid_callback_)
-        .Run(std::move(bid), std::move(kanon_bid), data_version,
-             has_data_version, debug_loss_report_url, debug_win_report_url,
-             set_priority, has_set_priority,
+        .Run(std::move(bids), data_version, debug_loss_report_url,
+             debug_win_report_url, set_priority,
              std::move(update_priority_signals_overrides),
              std::move(pa_requests), std::move(non_kanon_pa_requests),
-             bidding_latency, errors);
+             std::move(real_time_contributions),
+             std::move(generate_bid_metrics),
+             std::move(generate_bid_dependency_latencies), reject_reason,
+             errors);
   }
 
  private:
@@ -253,18 +299,29 @@ class GenerateBidClientWithCallbacks : public mojom::GenerateBidClient {
 
 class BidderWorkletTest : public testing::Test {
  public:
-  BidderWorkletTest() { SetDefaultParameters(); }
+  BidderWorkletTest(TaskEnvironment::TimeSource time_source =
+                        TaskEnvironment::TimeSource::SYSTEM_TIME)
+      : task_environment_(time_source) {
+    SetDefaultParameters();
+    feature_list_.InitAndEnableFeature(
+        features::kInterestGroupUpdateIfOlderThan);
+  }
 
   ~BidderWorkletTest() override = default;
 
   void SetUp() override {
-    // v8_helper_ needs to be created here instead of the constructor, because
-    // this test fixture has a subclass that initializes a ScopedFeatureList in
-    // their constructor, which needs to be done BEFORE other threads are
-    // started in multithreaded test environments so that no other threads use
-    // it when it's being initiated.
+    // The v8_helpers_ need to be created here instead of the constructor,
+    // because this test fixture has a subclass that initializes a
+    // ScopedFeatureList in their constructor, which needs to be done BEFORE
+    // other threads are started in multithreaded test environments so that no
+    // other threads use it when it's being initiated.
     // https://source.chromium.org/chromium/chromium/src/+/main:base/test/scoped_feature_list.h;drc=60124005e97ae2716b0fb34187d82da6019b571f;l=37
-    v8_helper_ = AuctionV8Helper::Create(AuctionV8Helper::CreateTaskRunner());
+    while (v8_helpers_.size() < NumThreads()) {
+      v8_helpers_.push_back(
+          AuctionV8Helper::Create(AuctionV8Helper::CreateTaskRunner()));
+    }
+
+    shared_storage_hosts_.resize(NumThreads());
   }
 
   void TearDown() override {
@@ -273,33 +330,40 @@ class BidderWorkletTest : public testing::Test {
     // that will result in UAFs. These lines are not necessary for any test to
     // pass. This needs to be done before a subclass resets ScopedFeatureList,
     // so no thread queries it while it's being modified.
-    v8_helper_.reset();
+    v8_helpers_.clear();
     task_environment_.RunUntilIdle();
   }
+
+  virtual size_t NumThreads() { return 1u; }
 
   // Default values. No test actually depends on these being anything but valid,
   // but test that set these can use this to reset values to default after each
   // test.
   void SetDefaultParameters() {
     interest_group_name_ = "Fred";
+    is_for_additional_bid_ = false;
+    reporting_id_field_ = mojom::ReportingIdField::kInterestGroupName;
+    interest_group_name_reporting_id_ = interest_group_name_;
     interest_group_enable_bidding_signals_prioritization_ = false;
     interest_group_priority_vector_.reset();
-    interest_group_user_bidding_signals_ = absl::nullopt;
+    interest_group_user_bidding_signals_ = std::nullopt;
     join_origin_ = url::Origin::Create(GURL("https://url.test/"));
     execution_mode_ =
         blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
 
     interest_group_ads_.clear();
     interest_group_ads_.emplace_back(GURL("https://response.test/"),
-                                     /*metadata=*/absl::nullopt);
+                                     /*metadata=*/std::nullopt);
 
     interest_group_ad_components_.reset();
     interest_group_ad_components_.emplace();
     interest_group_ad_components_->emplace_back(
-        GURL("https://ad_component.test/"), /*metadata=*/absl::nullopt);
+        GURL("https://ad_component.test/"), /*metadata=*/std::nullopt);
 
+    trusted_signals_cache_key_.reset();
     kanon_keys_.clear();
     kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kNone;
+    bid_is_kanon_ = false;
     provide_direct_from_seller_signals_late_ = false;
 
     update_url_.reset();
@@ -309,40 +373,50 @@ class BidderWorkletTest : public testing::Test {
 
     browser_signal_join_count_ = 2;
     browser_signal_bid_count_ = 3;
+    browser_signal_for_debugging_only_in_cooldown_or_lockout_ = false;
     browser_signal_prev_wins_.clear();
 
     auction_signals_ = "[\"auction_signals\"]";
     per_buyer_signals_ = "[\"per_buyer_signals\"]";
-    per_buyer_timeout_ = absl::nullopt;
-    per_buyer_currency_ = absl::nullopt;
+    per_buyer_timeout_ = std::nullopt;
+    per_buyer_currency_ = std::nullopt;
     top_window_origin_ = url::Origin::Create(GURL("https://top.window.test/"));
     permissions_policy_state_ =
         mojom::AuctionWorkletPermissionsPolicyState::New(
             /*private_aggregation_allowed=*/true,
-            /*shared_storage_allowed=*/true);
-    experiment_group_id_ = absl::nullopt;
+            /*shared_storage_allowed=*/false);
+    experiment_group_id_ = std::nullopt;
+    public_key_ = nullptr;
+
     browser_signal_seller_origin_ =
         url::Origin::Create(GURL("https://browser.signal.seller.test/"));
     browser_signal_top_level_seller_origin_.reset();
     seller_signals_ = "[\"seller_signals\"]";
     browser_signal_render_url_ = GURL("https://render_url.test/");
     browser_signal_bid_ = 1;
-    browser_signal_bid_currency_ = absl::nullopt;
+    browser_signal_bid_currency_ = std::nullopt;
     browser_signal_highest_scoring_other_bid_ = 0.5;
-    browser_signal_highest_scoring_other_bid_currency_ = absl::nullopt;
+    browser_signal_highest_scoring_other_bid_currency_ = std::nullopt;
     browser_signal_made_highest_scoring_other_bid_ = false;
     browser_signal_ad_cost_.reset();
     browser_signal_modeling_signals_.reset();
     browser_signal_join_count_ = 2;
-    browser_signal_recency_ = 5;
+    browser_signal_recency_report_win_ = 5;
     data_version_.reset();
   }
+
+  // Because making a vector of move-only values is unwieldy, the test helpers
+  // take this variant that's easily constructible from a single bid object.
+  using OneOrManyBids = absl::variant<mojom::BidderWorkletBidPtr,
+                                      std::vector<mojom::BidderWorkletBidPtr>>;
 
   // Helper that creates and runs a script to validate that `expression`
   // evaluates to true when evaluated in a generateBid() script. Does this by
   // evaluating the expression in the content of generateBid() and throwing if
   // it's not true. Otherwise, a bid is generated.
-  void RunGenerateBidExpectingExpressionIsTrue(const std::string& expression) {
+  void RunGenerateBidExpectingExpressionIsTrue(
+      const std::string& expression,
+      const std::optional<uint32_t>& expected_data_version = std::nullopt) {
     std::string script = CreateGenerateBidScript(
         /*raw_return_value=*/R"({bid: 1, render:"https://response.test/"})",
         /*extra_code=*/base::StringPrintf(R"(let val = %s;
@@ -351,110 +425,140 @@ class BidderWorkletTest : public testing::Test {
                                           expression.c_str()));
 
     RunGenerateBidWithJavascriptExpectingResult(
-        script, mojom::BidderWorkletBid::New(
-                    /*ad=*/"null",
-                    /*bid=*/1, /*bid_currency=*/absl::nullopt,
-                    /*ad_cost=*/absl::nullopt,
-                    blink::AdDescriptor(GURL("https://response.test/")),
-                    /*ad_component_descriptors=*/absl::nullopt,
-                    /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+        script,
+        mojom::BidderWorkletBid::New(
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+            /*ad=*/"null",
+            /*bid=*/1, /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
+            blink::AdDescriptor(GURL("https://response.test/")),
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        expected_data_version);
   }
 
   // Configures `url_loader_factory_` to return a generateBid() script with the
-  // specified return line. Then runs the script, expecting the provided result.
+  // specified return line. Then runs the script, expecting the provided result
+  // to be the first returned bid.
   void RunGenerateBidWithReturnValueExpectingResult(
       const std::string& raw_return_value,
-      mojom::BidderWorkletBidPtr expected_bid,
-      const absl::optional<uint32_t>& expected_data_version = absl::nullopt,
+      OneOrManyBids expected_bids,
+      const std::optional<uint32_t>& expected_data_version = std::nullopt,
       std::vector<std::string> expected_errors = std::vector<std::string>(),
-      const absl::optional<GURL>& expected_debug_loss_report_url =
-          absl::nullopt,
-      const absl::optional<GURL>& expected_debug_win_report_url = absl::nullopt,
-      const absl::optional<double> expected_set_priority = absl::nullopt,
-      const base::flat_map<std::string, absl::optional<double>>&
+      const std::optional<GURL>& expected_debug_loss_report_url = std::nullopt,
+      const std::optional<GURL>& expected_debug_win_report_url = std::nullopt,
+      const std::optional<double> expected_set_priority = std::nullopt,
+      const base::flat_map<std::string, std::optional<double>>&
           expected_update_priority_signals_overrides =
-              base::flat_map<std::string, absl::optional<double>>(),
+              base::flat_map<std::string, std::optional<double>>(),
       PrivateAggregationRequests expected_pa_requests = {},
-      PrivateAggregationRequests expected_non_kanon_pa_requests = {}) {
+      PrivateAggregationRequests expected_non_kanon_pa_requests = {},
+      RealTimeReportingContributions expected_real_time_contributions = {}) {
     RunGenerateBidWithJavascriptExpectingResult(
-        CreateGenerateBidScript(raw_return_value), std::move(expected_bid),
+        CreateGenerateBidScript(raw_return_value), std::move(expected_bids),
         expected_data_version, expected_errors, expected_debug_loss_report_url,
         expected_debug_win_report_url, expected_set_priority,
         expected_update_priority_signals_overrides,
         std::move(expected_pa_requests),
-        std::move(expected_non_kanon_pa_requests));
+        std::move(expected_non_kanon_pa_requests),
+        std::move(expected_real_time_contributions));
   }
 
   // Configures `url_loader_factory_` to return a script with the specified
-  // Javascript. Then runs the script, expecting the provided result.
+  // Javascript. Then runs the script, expecting the provided result to be the
+  // first returned bid.
   void RunGenerateBidWithJavascriptExpectingResult(
       const std::string& javascript,
-      mojom::BidderWorkletBidPtr expected_bid,
-      const absl::optional<uint32_t>& expected_data_version = absl::nullopt,
+      OneOrManyBids expected_bids,
+      const std::optional<uint32_t>& expected_data_version = std::nullopt,
       std::vector<std::string> expected_errors = std::vector<std::string>(),
-      const absl::optional<GURL>& expected_debug_loss_report_url =
-          absl::nullopt,
-      const absl::optional<GURL>& expected_debug_win_report_url = absl::nullopt,
-      const absl::optional<double> expected_set_priority = absl::nullopt,
-      const base::flat_map<std::string, absl::optional<double>>&
+      const std::optional<GURL>& expected_debug_loss_report_url = std::nullopt,
+      const std::optional<GURL>& expected_debug_win_report_url = std::nullopt,
+      const std::optional<double> expected_set_priority = std::nullopt,
+      const base::flat_map<std::string, std::optional<double>>&
           expected_update_priority_signals_overrides =
-              base::flat_map<std::string, absl::optional<double>>(),
+              base::flat_map<std::string, std::optional<double>>(),
       PrivateAggregationRequests expected_pa_requests = {},
-      PrivateAggregationRequests expected_non_kanon_pa_requests = {}) {
+      PrivateAggregationRequests expected_non_kanon_pa_requests = {},
+      RealTimeReportingContributions expected_real_time_contributions = {}) {
     SCOPED_TRACE(javascript);
     AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                           javascript);
     RunGenerateBidExpectingResult(
-        std::move(expected_bid), expected_data_version, expected_errors,
+        std::move(expected_bids), expected_data_version, expected_errors,
         expected_debug_loss_report_url, expected_debug_win_report_url,
         expected_set_priority, expected_update_priority_signals_overrides,
         std::move(expected_pa_requests),
-        std::move(expected_non_kanon_pa_requests));
+        std::move(expected_non_kanon_pa_requests),
+        std::move(expected_real_time_contributions));
   }
 
-  // Loads and runs a generateBid() script, expecting the provided result.
+  // Loads and runs a generateBid() script, expecting the provided result to
+  // be the first returned bid.
   //
   // `bid_duration` of `expected_bid` is ignored unless it's non-zero, in which
   // case the duration is expected to be at least `bid_duration` - useful for
   // testing that `bid_duration` at least seems to reflect timeouts.
   void RunGenerateBidExpectingResult(
-      mojom::BidderWorkletBidPtr expected_bid,
-      const absl::optional<uint32_t>& expected_data_version = absl::nullopt,
+      OneOrManyBids expected_bid_or_bids,
+      const std::optional<uint32_t>& expected_data_version = std::nullopt,
       std::vector<std::string> expected_errors = std::vector<std::string>(),
-      const absl::optional<GURL>& expected_debug_loss_report_url =
-          absl::nullopt,
-      const absl::optional<GURL>& expected_debug_win_report_url = absl::nullopt,
-      const absl::optional<double> expected_set_priority = absl::nullopt,
-      const base::flat_map<std::string, absl::optional<double>>&
+      const std::optional<GURL>& expected_debug_loss_report_url = std::nullopt,
+      const std::optional<GURL>& expected_debug_win_report_url = std::nullopt,
+      const std::optional<double> expected_set_priority = std::nullopt,
+      const base::flat_map<std::string, std::optional<double>>&
           expected_update_priority_signals_overrides =
-              base::flat_map<std::string, absl::optional<double>>(),
+              base::flat_map<std::string, std::optional<double>>(),
       PrivateAggregationRequests expected_pa_requests = {},
-      PrivateAggregationRequests expected_non_kanon_pa_requests = {}) {
+      PrivateAggregationRequests expected_non_kanon_pa_requests = {},
+      RealTimeReportingContributions expected_real_time_contributions = {}) {
+    std::vector<mojom::BidderWorkletBidPtr> expected_bids;
+    if (absl::holds_alternative<mojom::BidderWorkletBidPtr>(
+            expected_bid_or_bids)) {
+      mojom::BidderWorkletBidPtr expected_bid =
+          absl::get<mojom::BidderWorkletBidPtr>(
+              std::move(expected_bid_or_bids));
+      if (expected_bid) {
+        expected_bids.push_back(std::move(expected_bid));
+      }
+    } else {
+      expected_bids = absl::get<std::vector<mojom::BidderWorkletBidPtr>>(
+          std::move(expected_bid_or_bids));
+    }
+
     auto bidder_worklet = CreateWorkletAndGenerateBid();
 
-    EXPECT_EQ(expected_bid.is_null(), bid_.is_null());
-    if (expected_bid && bid_) {
-      EXPECT_EQ(expected_bid->ad, bid_->ad);
-      EXPECT_EQ(expected_bid->bid, bid_->bid);
+    EXPECT_EQ(expected_errors, bid_errors_);
+    ASSERT_EQ(expected_bids.size(), bids_.size());
+    for (size_t i = 0; i < bids_.size(); ++i) {
+      const mojom::BidderWorkletBidPtr& expected_bid = expected_bids[i];
+      EXPECT_EQ(expected_bid->bid_role, bids_[i]->bid_role);
+      EXPECT_EQ(expected_bid->ad, bids_[i]->ad);
+      EXPECT_EQ(expected_bid->selected_buyer_and_seller_reporting_id,
+                bids_[i]->selected_buyer_and_seller_reporting_id);
+      EXPECT_EQ(expected_bid->bid, bids_[i]->bid);
       EXPECT_EQ(blink::PrintableAdCurrency(expected_bid->bid_currency),
-                blink::PrintableAdCurrency(bid_->bid_currency));
-      EXPECT_EQ(expected_bid->ad_descriptor.url, bid_->ad_descriptor.url);
+                blink::PrintableAdCurrency(bids_[i]->bid_currency));
+      EXPECT_EQ(expected_bid->ad_descriptor.url, bids_[i]->ad_descriptor.url);
+      EXPECT_EQ(expected_bid->ad_descriptor.size, bids_[i]->ad_descriptor.size);
       if (!expected_bid->ad_component_descriptors) {
-        EXPECT_FALSE(bid_->ad_component_descriptors);
+        EXPECT_FALSE(bids_[i]->ad_component_descriptors);
       } else {
-        EXPECT_THAT(*bid_->ad_component_descriptors,
+        EXPECT_THAT(*bids_[i]->ad_component_descriptors,
                     ::testing::ElementsAreArray(
                         *expected_bid->ad_component_descriptors));
       }
-      if (!expected_bid->bid_duration.is_zero())
-        EXPECT_GE(bid_->bid_duration, expected_bid->bid_duration);
+      if (!expected_bid->bid_duration.is_zero()) {
+        EXPECT_GE(bids_[i]->bid_duration, expected_bid->bid_duration);
+      }
     }
     EXPECT_EQ(expected_data_version, data_version_);
     EXPECT_EQ(expected_debug_loss_report_url, bid_debug_loss_report_url_);
     EXPECT_EQ(expected_debug_win_report_url, bid_debug_win_report_url_);
     EXPECT_EQ(expected_pa_requests, pa_requests_);
     EXPECT_EQ(expected_non_kanon_pa_requests, non_kanon_pa_requests_);
-    EXPECT_EQ(expected_errors, bid_errors_);
+    EXPECT_EQ(expected_real_time_contributions, real_time_contributions_);
     EXPECT_EQ(expected_set_priority, set_priority_);
     EXPECT_EQ(expected_update_priority_signals_overrides,
               update_priority_signals_overrides_);
@@ -464,122 +568,163 @@ class BidderWorkletTest : public testing::Test {
   // specified body. Then runs the script, expecting the provided result.
   void RunReportWinWithFunctionBodyExpectingResult(
       const std::string& function_body,
-      const absl::optional<GURL>& expected_report_url,
+      const std::optional<GURL>& expected_report_url,
       const base::flat_map<std::string, GURL>& expected_ad_beacon_map =
           base::flat_map<std::string, GURL>(),
+      const base::flat_map<std::string, std::string>& expected_ad_macro_map =
+          base::flat_map<std::string, std::string>(),
       PrivateAggregationRequests expected_pa_requests = {},
       const std::vector<std::string>& expected_errors =
           std::vector<std::string>()) {
     RunReportWinWithJavascriptExpectingResult(
         CreateReportWinScript(function_body), expected_report_url,
-        expected_ad_beacon_map, std::move(expected_pa_requests),
-        expected_errors);
+        expected_ad_beacon_map, std::move(expected_ad_macro_map),
+        std::move(expected_pa_requests), expected_errors);
   }
 
   // Configures `url_loader_factory_` to return a reportWin() script with the
   // specified Javascript. Then runs the script, expecting the provided result.
   void RunReportWinWithJavascriptExpectingResult(
       const std::string& javascript,
-      const absl::optional<GURL>& expected_report_url,
+      const std::optional<GURL>& expected_report_url,
       const base::flat_map<std::string, GURL>& expected_ad_beacon_map =
           base::flat_map<std::string, GURL>(),
+      const base::flat_map<std::string, std::string>& expected_ad_macro_map =
+          {},
       PrivateAggregationRequests expected_pa_requests = {},
       const std::vector<std::string>& expected_errors =
           std::vector<std::string>()) {
     SCOPED_TRACE(javascript);
     AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                           javascript);
-    RunReportWinExpectingResult(expected_report_url, expected_ad_beacon_map,
-                                std::move(expected_pa_requests),
-                                expected_errors);
+    RunReportWinExpectingResult(
+        expected_report_url, expected_ad_beacon_map,
+        std::move(expected_ad_macro_map), std::move(expected_pa_requests),
+        /*expected_reporting_latency_timeout=*/false, expected_errors);
   }
 
   // Runs reportWin() on an already loaded worklet,  verifies the return
   // value and invokes `done_closure` when done. Expects something else to
-  // spin the event loop.
+  // spin the event loop. If `expected_reporting_latency_timeout` is true,
+  // the timeout will be (extremely loosely) compared against normal script
+  // timeout.
   void RunReportWinExpectingResultAsync(
       mojom::BidderWorklet* bidder_worklet,
-      const absl::optional<GURL>& expected_report_url,
+      const std::optional<GURL>& expected_report_url,
       const base::flat_map<std::string, GURL>& expected_ad_beacon_map,
+      const base::flat_map<std::string, std::string>& expected_ad_macro_map,
       PrivateAggregationRequests expected_pa_requests,
+      bool expected_reporting_latency_timeout,
       const std::vector<std::string>& expected_errors,
       base::OnceClosure done_closure) {
     bidder_worklet->ReportWin(
-        interest_group_name_, auction_signals_, per_buyer_signals_,
-        direct_from_seller_per_buyer_signals_,
-        direct_from_seller_auction_signals_, seller_signals_,
-        browser_signal_render_url_, browser_signal_bid_,
-        browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+        is_for_additional_bid_, interest_group_name_reporting_id_,
+        buyer_reporting_id_, buyer_and_seller_reporting_id_,
+        selected_buyer_and_seller_reporting_id_, auction_signals_,
+        per_buyer_signals_, direct_from_seller_per_buyer_signals_,
+        direct_from_seller_per_buyer_signals_header_ad_slot_,
+        direct_from_seller_auction_signals_,
+        direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+        kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+        browser_signal_bid_, browser_signal_bid_currency_,
+        browser_signal_highest_scoring_other_bid_,
         browser_signal_highest_scoring_other_bid_currency_,
         browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
         browser_signal_modeling_signals_, browser_signal_join_count_,
-        browser_signal_recency_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-        data_version_.has_value(),
+        browser_signal_recency_report_win_, browser_signal_seller_origin_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_reporting_timeout_, data_version_,
+
         /*trace_id=*/1,
         base::BindOnce(
-            [](const absl::optional<GURL>& expected_report_url,
+            [](const std::optional<GURL>& expected_report_url,
                const base::flat_map<std::string, GURL>& expected_ad_beacon_map,
+               const base::flat_map<std::string, std::string>&
+                   expected_ad_macro_map,
                PrivateAggregationRequests expected_pa_requests,
+               bool expected_reporting_latency_timeout,
+               std::optional<base::TimeDelta> reporting_timeout,
                const std::vector<std::string>& expected_errors,
                base::OnceClosure done_closure,
-               const absl::optional<GURL>& report_url,
+               const std::optional<GURL>& report_url,
                const base::flat_map<std::string, GURL>& ad_beacon_map,
+               const base::flat_map<std::string, std::string>& ad_macro_map,
                PrivateAggregationRequests pa_requests,
+               auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
                const std::vector<std::string>& errors) {
               EXPECT_EQ(expected_report_url, report_url);
               EXPECT_EQ(expected_errors, errors);
               EXPECT_EQ(expected_ad_beacon_map, ad_beacon_map);
+              EXPECT_EQ(expected_ad_macro_map, ad_macro_map);
               EXPECT_EQ(expected_pa_requests, pa_requests);
+              if (expected_reporting_latency_timeout) {
+                // We only know that about the time of the timeout should have
+                // elapsed, and there may also be some thread skew.
+                EXPECT_GE(timing_metrics->script_latency,
+                          (reporting_timeout.has_value()
+                               ? reporting_timeout.value()
+                               : AuctionV8Helper::kScriptTimeout) *
+                              0.9);
+              }
+              EXPECT_EQ(expected_reporting_latency_timeout,
+                        timing_metrics->script_timed_out);
               std::move(done_closure).Run();
             },
             expected_report_url, expected_ad_beacon_map,
-            std::move(expected_pa_requests), expected_errors,
+            std::move(expected_ad_macro_map), std::move(expected_pa_requests),
+            expected_reporting_latency_timeout,
+            browser_signal_reporting_timeout_, expected_errors,
             std::move(done_closure)));
   }
 
   // Loads and runs a reportWin() with the provided return line, expecting the
   // supplied result.
   void RunReportWinExpectingResult(
-      const absl::optional<GURL>& expected_report_url,
+      const std::optional<GURL>& expected_report_url,
       const base::flat_map<std::string, GURL>& expected_ad_beacon_map =
           base::flat_map<std::string, GURL>(),
+      const base::flat_map<std::string, std::string>& expected_ad_macro_map =
+          base::flat_map<std::string, std::string>(),
       PrivateAggregationRequests expected_pa_requests = {},
+      bool expected_reporting_latency_timeout = false,
       const std::vector<std::string>& expected_errors =
           std::vector<std::string>()) {
     auto bidder_worklet = CreateWorklet();
     ASSERT_TRUE(bidder_worklet);
 
     base::RunLoop run_loop;
-    RunReportWinExpectingResultAsync(bidder_worklet.get(), expected_report_url,
-                                     expected_ad_beacon_map,
-                                     std::move(expected_pa_requests),
-                                     expected_errors, run_loop.QuitClosure());
+    RunReportWinExpectingResultAsync(
+        bidder_worklet.get(), expected_report_url, expected_ad_beacon_map,
+        std::move(expected_ad_macro_map), std::move(expected_pa_requests),
+        expected_reporting_latency_timeout, expected_errors,
+        run_loop.QuitClosure());
     run_loop.Run();
   }
 
   // Creates a BidderWorkletNonSharedParams based on test fixture
   // configuration.
   mojom::BidderWorkletNonSharedParamsPtr CreateBidderWorkletNonSharedParams() {
-    std::vector<std::pair<auction_worklet::mojom::KAnonKeyPtr, bool>>
-        kanon_keys;
+    std::vector<auction_worklet::mojom::KAnonKeyPtr> kanon_keys;
     for (const auto& key : kanon_keys_) {
-      kanon_keys.emplace_back(key.first.Clone(), key.second);
+      kanon_keys.emplace_back(key.Clone());
     }
     return mojom::BidderWorkletNonSharedParams::New(
         interest_group_name_,
+        blink::InterestGroup::TrustedBiddingSignalsSlotSizeMode::kNone,
         interest_group_enable_bidding_signals_prioritization_,
         interest_group_priority_vector_, execution_mode_, update_url_,
         interest_group_trusted_bidding_signals_keys_,
+        /*max_trusted_bidding_signals_url_length=*/0,
         interest_group_user_bidding_signals_, interest_group_ads_,
         interest_group_ad_components_, std::move(kanon_keys));
   }
 
   // Creates a BiddingBrowserSignals based on test fixture configuration.
-  mojom::BiddingBrowserSignalsPtr CreateBiddingBrowserSignals() {
-    return mojom::BiddingBrowserSignals::New(
+  blink::mojom::BiddingBrowserSignalsPtr CreateBiddingBrowserSignals() {
+    return blink::mojom::BiddingBrowserSignals::New(
         browser_signal_join_count_, browser_signal_bid_count_,
-        CloneWinList(browser_signal_prev_wins_));
+        CloneWinList(browser_signal_prev_wins_),
+        browser_signal_for_debugging_only_in_cooldown_or_lockout_);
   }
 
   // Create a BidderWorklet, returning the remote. If `out_bidder_worklet_impl`
@@ -590,7 +735,7 @@ class BidderWorkletTest : public testing::Test {
       bool pause_for_debugger_on_start = false,
       BidderWorklet** out_bidder_worklet_impl = nullptr,
       bool use_alternate_url_loader_factory = false) {
-    CHECK(!load_script_run_loop_);
+    CHECK(!generate_bid_run_loop_);
 
     mojo::PendingRemote<network::mojom::URLLoaderFactory> url_loader_factory;
     if (use_alternate_url_loader_factory) {
@@ -601,13 +746,24 @@ class BidderWorkletTest : public testing::Test {
           url_loader_factory.InitWithNewPipeAndPassReceiver());
     }
 
+    CHECK_EQ(v8_helpers_.size(), shared_storage_hosts_.size());
+
     auto bidder_worklet_impl = std::make_unique<BidderWorklet>(
-        v8_helper_, std::move(shared_storage_host_remote_),
+        v8_helpers_, std::move(shared_storage_hosts_),
         pause_for_debugger_on_start, std::move(url_loader_factory),
+        auction_network_events_handler_.CreateRemote(),
+        trusted_signals_kvv2_manager_.get(),
         url.is_empty() ? interest_group_bidding_url_ : url,
         interest_group_wasm_url_, interest_group_trusted_bidding_signals_url_,
-        top_window_origin_, permissions_policy_state_.Clone(),
-        experiment_group_id_);
+        /*trusted_bidding_signals_slot_size_param=*/"", top_window_origin_,
+        permissions_policy_state_.Clone(), experiment_group_id_,
+        public_key_ ? public_key_.Clone() : nullptr);
+
+    shared_storage_hosts_.resize(NumThreads());
+
+    last_bidder_join_origin_hash_salt_ =
+        bidder_worklet_impl->join_origin_hash_salt_for_testing();
+
     auto* bidder_worklet_ptr = bidder_worklet_impl.get();
     mojo::Remote<mojom::BidderWorklet> bidder_worklet;
     mojo::ReceiverId receiver_id =
@@ -619,10 +775,13 @@ class BidderWorkletTest : public testing::Test {
     bidder_worklet.set_disconnect_with_reason_handler(base::BindRepeating(
         &BidderWorkletTest::OnDisconnectWithReason, base::Unretained(this)));
 
-    if (out_bidder_worklet_impl)
+    if (out_bidder_worklet_impl) {
       *out_bidder_worklet_impl = bidder_worklet_ptr;
+    }
     return bidder_worklet;
   }
+
+  scoped_refptr<AuctionV8Helper> v8_helper() { return v8_helpers_[0]; }
 
   // If no `generate_bid_client` is provided, uses one that invokes
   // GenerateBidCallback().
@@ -637,15 +796,17 @@ class BidderWorkletTest : public testing::Test {
               &BidderWorkletTest::GenerateBidCallback, base::Unretained(this)));
     }
     bidder_worklet->BeginGenerateBid(
-        CreateBidderWorkletNonSharedParams(), kanon_mode_, join_origin_,
+        CreateBidderWorkletNonSharedParams(),
+        trusted_signals_cache_key_.Clone(), kanon_mode_, join_origin_,
         provide_direct_from_seller_signals_late_
-            ? absl::nullopt
+            ? std::nullopt
             : direct_from_seller_per_buyer_signals_,
         provide_direct_from_seller_signals_late_
-            ? absl::nullopt
+            ? std::nullopt
             : direct_from_seller_auction_signals_,
         browser_signal_seller_origin_, browser_signal_top_level_seller_origin_,
-        CreateBiddingBrowserSignals(), auction_start_time_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1, std::move(generate_bid_client), std::move(finalizer));
     bidder_worklet->SendPendingSignalsRequests();
   }
@@ -660,14 +821,17 @@ class BidderWorkletTest : public testing::Test {
     BeginGenerateBid(bidder_worklet,
                      bid_finalizer.BindNewEndpointAndPassReceiver(),
                      std::move(generate_bid_client));
-    bid_finalizer->FinishGenerateBid(auction_signals_, per_buyer_signals_,
-                                     per_buyer_timeout_, per_buyer_currency_,
-                                     provide_direct_from_seller_signals_late_
-                                         ? direct_from_seller_per_buyer_signals_
-                                         : absl::nullopt,
-                                     provide_direct_from_seller_signals_late_
-                                         ? direct_from_seller_auction_signals_
-                                         : absl::nullopt);
+    bid_finalizer->FinishGenerateBid(
+        auction_signals_, per_buyer_signals_, per_buyer_timeout_,
+        per_buyer_currency_,
+        provide_direct_from_seller_signals_late_
+            ? direct_from_seller_per_buyer_signals_
+            : std::nullopt,
+        direct_from_seller_per_buyer_signals_header_ad_slot_,
+        provide_direct_from_seller_signals_late_
+            ? direct_from_seller_auction_signals_
+            : std::nullopt,
+        direct_from_seller_auction_signals_header_ad_slot_);
   }
 
   // Calls BeginGenerateBid()/FinishGenerateBid(), expecting the
@@ -677,19 +841,23 @@ class BidderWorkletTest : public testing::Test {
     mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
         bid_finalizer;
     bidder_worklet->BeginGenerateBid(
-        CreateBidderWorkletNonSharedParams(), kanon_mode_, join_origin_,
+        CreateBidderWorkletNonSharedParams(),
+        trusted_signals_cache_key_.Clone(), kanon_mode_, join_origin_,
         direct_from_seller_per_buyer_signals_,
         direct_from_seller_auction_signals_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, CreateBiddingBrowserSignals(),
-        auction_start_time_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1, GenerateBidClientWithCallbacks::CreateNeverCompletes(),
         bid_finalizer.BindNewEndpointAndPassReceiver());
     bidder_worklet->SendPendingSignalsRequests();
     bid_finalizer->FinishGenerateBid(
         auction_signals_, per_buyer_signals_, per_buyer_timeout_,
         per_buyer_currency_,
-        /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-        /*direct_from_seller_auction_signals=*/absl::nullopt);
+        /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+        /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+        /*direct_from_seller_auction_signals=*/std::nullopt,
+        /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   }
 
   // Create a BidderWorklet and invokes BeginGenerateBid()/FinishGenerateBid(),
@@ -698,55 +866,74 @@ class BidderWorkletTest : public testing::Test {
   mojo::Remote<mojom::BidderWorklet> CreateWorkletAndGenerateBid() {
     mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
     GenerateBid(bidder_worklet.get());
-    load_script_run_loop_ = std::make_unique<base::RunLoop>();
-    load_script_run_loop_->Run();
-    load_script_run_loop_.reset();
-    if (!bid_)
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+    generate_bid_run_loop_->Run();
+    generate_bid_run_loop_.reset();
+    if (bids_.empty()) {
       return mojo::Remote<mojom::BidderWorklet>();
+    }
     return bidder_worklet;
   }
 
+  bool OnlyBidsForKAnonUpdate() {
+    if (kanon_mode_ != auction_worklet::mojom::KAnonymityBidMode::kEnforce) {
+      return false;
+    }
+    for (const auto& bid : bids_) {
+      if (bid->bid_role != auction_worklet::mojom::BidRole::kUnenforcedKAnon) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void GenerateBidCallback(
-      mojom::BidderWorkletBidPtr bid,
-      mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-      uint32_t data_version,
-      bool has_data_version,
-      const absl::optional<GURL>& debug_loss_report_url,
-      const absl::optional<GURL>& debug_win_report_url,
-      double set_priority,
-      bool has_set_priority,
+      std::vector<mojom::BidderWorkletBidPtr> bids,
+      std::optional<uint32_t> data_version,
+      const std::optional<GURL>& debug_loss_report_url,
+      const std::optional<GURL>& debug_win_report_url,
+      std::optional<double> set_priority,
       base::flat_map<std::string,
                      auction_worklet::mojom::PrioritySignalsDoublePtr>
           update_priority_signals_overrides,
       PrivateAggregationRequests pa_requests,
       PrivateAggregationRequests non_kanon_pa_requests,
-      base::TimeDelta bidding_latency,
+      RealTimeReportingContributions real_time_contributions,
+      mojom::BidderTimingMetricsPtr generate_bid_metrics,
+      mojom::GenerateBidDependencyLatenciesPtr
+          generate_bid_dependency_latencies,
+      mojom::RejectReason reject_reason,
       const std::vector<std::string>& errors) {
-    absl::optional<uint32_t> maybe_data_version;
-    if (has_data_version)
-      maybe_data_version = data_version;
-    absl::optional<double> maybe_set_priority;
-    if (has_set_priority)
-      maybe_set_priority = set_priority;
-    bid_ = std::move(bid);
-    kanon_bid_ = std::move(kanon_bid);
-    data_version_ = maybe_data_version;
+    bids_ = std::move(bids);
+    data_version_ = data_version;
     bid_debug_loss_report_url_ = debug_loss_report_url;
     bid_debug_win_report_url_ = debug_win_report_url;
-    set_priority_ = maybe_set_priority;
+    set_priority_ = set_priority;
 
     update_priority_signals_overrides_.clear();
     for (const auto& override : update_priority_signals_overrides) {
-      absl::optional<double> value;
-      if (override.second)
+      std::optional<double> value;
+      if (override.second) {
         value = override.second->value;
+      }
       update_priority_signals_overrides_.emplace(override.first, value);
     }
 
     pa_requests_ = std::move(pa_requests);
     non_kanon_pa_requests_ = std::move(non_kanon_pa_requests);
+    real_time_contributions_ = std::move(real_time_contributions);
+    generate_bid_metrics_ = std::move(generate_bid_metrics);
+    generate_bid_dependency_latencies_ =
+        std::move(generate_bid_dependency_latencies);
+    reject_reason_ = reject_reason;
+    // Shouldn't have a reject reason if we have bids, unless they are all
+    // non-k-anon bids only there to update k-anon data and not determine the
+    // actual winner.
+    if (!bids_.empty() && !OnlyBidsForKAnonUpdate()) {
+      EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+    }
     bid_errors_ = errors;
-    load_script_run_loop_->Quit();
+    generate_bid_run_loop_->Quit();
   }
 
   // Waits for OnDisconnectWithReason() to be invoked, if it hasn't been
@@ -766,6 +953,21 @@ class BidderWorkletTest : public testing::Test {
     return disconnect_reason;
   }
 
+  void AuthorizeKAnonForReporting(
+      const GURL& ad_render_url,
+      std::optional<std::string> buyer_reporting_id,
+      std::optional<std::string> buyer_and_seller_reporting_id,
+      std::optional<std::string> selected_buyer_and_seller_reporting_id,
+      mojom::BidderWorkletNonSharedParamsPtr& params) {
+    params->kanon_keys.emplace_back(auction_worklet::mojom::KAnonKey::New(
+        blink::HashedKAnonKeyForAdNameReportingWithoutInterestGroup(
+            url::Origin::Create(interest_group_bidding_url_),
+            interest_group_name_, interest_group_bidding_url_,
+            ad_render_url.spec(), buyer_reporting_id,
+            buyer_and_seller_reporting_id,
+            selected_buyer_and_seller_reporting_id)));
+  }
+
  protected:
   void ClosePipeCallback(mojo::ReceiverId receiver_id,
                          const std::string& description) {
@@ -776,22 +978,25 @@ class BidderWorkletTest : public testing::Test {
   void OnDisconnectWithReason(uint32_t custom_reason,
                               const std::string& description) {
     DCHECK(!disconnect_reason_);
+    LOG(WARNING) << "Worklet disconnect with reason: " << description;
 
     disconnect_reason_ = description;
-    if (disconnect_run_loop_)
+    if (disconnect_run_loop_) {
       disconnect_run_loop_->Quit();
+    }
   }
 
-  std::vector<mojo::StructPtr<mojom::PreviousWin>> CloneWinList(
-      const std::vector<mojo::StructPtr<mojom::PreviousWin>>& prev_win_list) {
-    std::vector<mojo::StructPtr<mojom::PreviousWin>> out;
+  std::vector<mojo::StructPtr<blink::mojom::PreviousWin>> CloneWinList(
+      const std::vector<mojo::StructPtr<blink::mojom::PreviousWin>>&
+          prev_win_list) {
+    std::vector<mojo::StructPtr<blink::mojom::PreviousWin>> out;
     for (const auto& prev_win : prev_win_list) {
       out.push_back(prev_win->Clone());
     }
     return out;
   }
 
-  base::test::TaskEnvironment task_environment_;
+  TaskEnvironment task_environment_;
 
   // Values used to construct the BiddingInterestGroup passed to the
   // BidderWorklet.
@@ -800,94 +1005,180 @@ class BidderWorkletTest : public testing::Test {
   // ReportWinLoadCompletionOrder should be updated.
   std::string interest_group_name_;
   bool interest_group_enable_bidding_signals_prioritization_;
-  absl::optional<base::flat_map<std::string, double>>
+  std::optional<base::flat_map<std::string, double>>
       interest_group_priority_vector_;
   GURL interest_group_bidding_url_ = GURL("https://url.test/");
   url::Origin join_origin_;
   blink::mojom::InterestGroup::ExecutionMode execution_mode_ =
       blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
-  absl::optional<GURL> interest_group_wasm_url_;
-  absl::optional<std::string> interest_group_user_bidding_signals_;
+  std::optional<GURL> interest_group_wasm_url_;
+  std::optional<std::string> interest_group_user_bidding_signals_;
   std::vector<blink::InterestGroup::Ad> interest_group_ads_;
-  absl::optional<std::vector<blink::InterestGroup::Ad>>
+  std::optional<std::vector<blink::InterestGroup::Ad>>
       interest_group_ad_components_;
-  base::flat_map<auction_worklet::mojom::KAnonKeyPtr, bool> kanon_keys_;
+  base::flat_set<auction_worklet::mojom::KAnonKeyPtr> kanon_keys_;
+  mojom::TrustedSignalsCacheKeyPtr trusted_signals_cache_key_;
   auction_worklet::mojom::KAnonymityBidMode kanon_mode_ =
       auction_worklet::mojom::KAnonymityBidMode::kNone;
-  absl::optional<GURL> update_url_;
-  absl::optional<GURL> interest_group_trusted_bidding_signals_url_;
-  absl::optional<std::vector<std::string>>
+  bool bid_is_kanon_;
+  std::optional<GURL> update_url_;
+  std::optional<GURL> interest_group_trusted_bidding_signals_url_;
+  std::optional<std::vector<std::string>>
       interest_group_trusted_bidding_signals_keys_;
   int browser_signal_join_count_;
   int browser_signal_bid_count_;
-  std::vector<mojo::StructPtr<mojom::PreviousWin>> browser_signal_prev_wins_;
+  bool browser_signal_for_debugging_only_in_cooldown_or_lockout_;
+  base::TimeDelta browser_signal_recency_generate_bid_;
+  std::vector<mojo::StructPtr<blink::mojom::PreviousWin>>
+      browser_signal_prev_wins_;
 
-  absl::optional<std::string> auction_signals_;
-  absl::optional<std::string> per_buyer_signals_;
-  absl::optional<GURL> direct_from_seller_per_buyer_signals_;
-  absl::optional<GURL> direct_from_seller_auction_signals_;
-  absl::optional<base::TimeDelta> per_buyer_timeout_;
-  absl::optional<blink::AdCurrency> per_buyer_currency_;
+  std::optional<std::string> auction_signals_;
+  std::optional<std::string> per_buyer_signals_;
+  std::optional<GURL> direct_from_seller_per_buyer_signals_;
+  std::optional<std::string>
+      direct_from_seller_per_buyer_signals_header_ad_slot_;
+  std::optional<GURL> direct_from_seller_auction_signals_;
+  std::optional<std::string> direct_from_seller_auction_signals_header_ad_slot_;
+  std::optional<base::TimeDelta> per_buyer_timeout_;
+  std::optional<blink::AdCurrency> per_buyer_currency_;
   url::Origin top_window_origin_;
   mojom::AuctionWorkletPermissionsPolicyStatePtr permissions_policy_state_;
-  absl::optional<uint16_t> experiment_group_id_;
+  std::optional<uint16_t> experiment_group_id_;
+  mojom::TrustedSignalsPublicKeyPtr public_key_;
   url::Origin browser_signal_seller_origin_;
-  absl::optional<url::Origin> browser_signal_top_level_seller_origin_;
+  std::optional<url::Origin> browser_signal_top_level_seller_origin_;
 
   bool provide_direct_from_seller_signals_late_ = false;
 
   std::string seller_signals_;
   // Used for both the output GenerateBid(), and the input of ReportWin().
-  absl::optional<uint32_t> data_version_;
+  std::optional<uint32_t> data_version_;
   GURL browser_signal_render_url_;
   double browser_signal_bid_;
-  absl::optional<blink::AdCurrency> browser_signal_bid_currency_;
+  std::optional<blink::AdCurrency> browser_signal_bid_currency_;
   double browser_signal_highest_scoring_other_bid_;
-  absl::optional<blink::AdCurrency>
+  std::optional<blink::AdCurrency>
       browser_signal_highest_scoring_other_bid_currency_;
   bool browser_signal_made_highest_scoring_other_bid_;
-  absl::optional<double> browser_signal_ad_cost_;
-  absl::optional<uint16_t> browser_signal_modeling_signals_;
-  uint8_t browser_signal_recency_;
+  std::optional<double> browser_signal_ad_cost_;
+  std::optional<uint16_t> browser_signal_modeling_signals_;
+  uint8_t browser_signal_recency_report_win_;
+
+  // Used for reportWin();
+  std::optional<base::TimeDelta> browser_signal_reporting_timeout_ =
+      std::nullopt;
+  bool is_for_additional_bid_ = false;
+  auction_worklet::mojom::ReportingIdField reporting_id_field_ =
+      auction_worklet::mojom::ReportingIdField::kInterestGroupName;
+  std::optional<std::string> interest_group_name_reporting_id_;
+  std::optional<std::string> buyer_reporting_id_;
+  std::optional<std::string> buyer_and_seller_reporting_id_;
+  std::optional<std::string> selected_buyer_and_seller_reporting_id_;
 
   // Use a single constant start time. Only delta times are provided to scripts,
   // relative to the time of the auction, so no need to vary the auction time.
   const base::Time auction_start_time_ = base::Time::Now();
 
-  // Reuseable run loop for loading the script. It's always populated after
-  // creating the worklet, to cause a crash if the callback is invoked
-  // synchronously.
-  std::unique_ptr<base::RunLoop> load_script_run_loop_;
+  // This is the requested ad size provided to BeginGenerateBid() by the auction
+  // logic. It's piped through to the browserSignals JS object in the
+  // buyer's generateBid() function if it is present.
+  std::optional<blink::AdSize> requested_ad_size_;
+
+  // How many bids can be returned from multi bid (if on).
+  uint16_t multi_bid_limit_ = 1;
+
+  // Reusable run loop for waiting until the GenerateBid() callback has been
+  // invoked. It's populated and later cleared by the
+  // CreateWorkletAndGenerateBid() series of methods, which wait for a bid to be
+  // generated. Callers that need to spin the loop themselves need to populate
+  // this directly.
+  std::unique_ptr<base::RunLoop> generate_bid_run_loop_;
 
   // Values passed to the GenerateBidCallback().
-  mojom::BidderWorkletBidPtr bid_;
-  mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid_;
-  absl::optional<GURL> bid_debug_loss_report_url_;
-  absl::optional<GURL> bid_debug_win_report_url_;
-  absl::optional<double> set_priority_;
-  // Uses absl::optional<double> instead of the Mojo type to be more
+  std::vector<mojom::BidderWorkletBidPtr> bids_;
+  std::optional<GURL> bid_debug_loss_report_url_;
+  std::optional<GURL> bid_debug_win_report_url_;
+  std::optional<double> set_priority_;
+  // Uses std::optional<double> instead of the Mojo type to be more
   // user-friendly.
-  base::flat_map<std::string, absl::optional<double>>
+  base::flat_map<std::string, std::optional<double>>
       update_priority_signals_overrides_;
   PrivateAggregationRequests pa_requests_;
   PrivateAggregationRequests non_kanon_pa_requests_;
+  RealTimeReportingContributions real_time_contributions_;
+  mojom::BidderTimingMetricsPtr generate_bid_metrics_;
+  mojom::GenerateBidDependencyLatenciesPtr generate_bid_dependency_latencies_;
+  mojom::RejectReason reject_reason_ = mojom::RejectReason::kNotAvailable;
   std::vector<std::string> bid_errors_;
 
   network::TestURLLoaderFactory url_loader_factory_;
   network::TestURLLoaderFactory alternate_url_loader_factory_;
-  scoped_refptr<AuctionV8Helper> v8_helper_;
 
-  mojo::PendingRemote<mojom::AuctionSharedStorageHost>
-      shared_storage_host_remote_;
+  std::vector<scoped_refptr<AuctionV8Helper>> v8_helpers_;
+
+  std::unique_ptr<TrustedSignalsKVv2Manager> trusted_signals_kvv2_manager_;
+
+  std::string last_bidder_join_origin_hash_salt_;
+
+  TestAuctionNetworkEventsHandler auction_network_events_handler_;
+
+  std::vector<mojo::PendingRemote<mojom::AuctionSharedStorageHost>>
+      shared_storage_hosts_;
 
   // Reuseable run loop for disconnection errors.
   std::unique_ptr<base::RunLoop> disconnect_run_loop_;
-  absl::optional<std::string> disconnect_reason_;
+  std::optional<std::string> disconnect_reason_;
 
   // Owns all created BidderWorklets - having a ReceiverSet allows them to have
   // a ClosePipeCallback which behaves just like the one in
   // AuctionWorkletServiceImpl, to better match production behavior.
   mojo::UniqueReceiverSet<mojom::BidderWorklet> bidder_worklets_;
+
+  base::test::ScopedFeatureList feature_list_;
+};
+
+class BidderWorkletTwoThreadsTest : public BidderWorkletTest {
+ private:
+  size_t NumThreads() override { return 2u; }
+};
+
+class BidderWorkletMultiThreadingTest
+    : public BidderWorkletTest,
+      public testing::WithParamInterface<size_t> {
+ private:
+  size_t NumThreads() override { return GetParam(); }
+};
+
+INSTANTIATE_TEST_SUITE_P(All,
+                         BidderWorkletMultiThreadingTest,
+                         testing::Values(1, 2),
+                         [](const auto& info) {
+                           return base::StrCat({info.param == 2
+                                                    ? "TwoThreads"
+                                                    : "SingleThread"});
+                         });
+
+class BidderWorkletCustomAdComponentLimitTest : public BidderWorkletTest {
+ public:
+  BidderWorkletCustomAdComponentLimitTest() {
+    const std::map<std::string, std::string> params = {
+        {"FledgeAdComponentLimit", "25"}};
+    feature_list_.InitAndEnableFeatureWithParameters(
+        blink::features::kFledgeCustomMaxAuctionAdComponents, params);
+  }
+
+ protected:
+  base::test::ScopedFeatureList feature_list_;
+};
+
+class BidderWorkletMultiBidDisabledTest : public BidderWorkletTest {
+ public:
+  BidderWorkletMultiBidDisabledTest() {
+    feature_list_.InitAndDisableFeature(blink::features::kFledgeMultiBid);
+  }
+
+ protected:
+  base::test::ScopedFeatureList feature_list_;
 };
 
 // Test the case the BidderWorklet pipe is closed before invoking the
@@ -896,6 +1187,7 @@ class BidderWorkletTest : public testing::Test {
 // should be no Mojo exception due to destroying the creation callback without
 // invoking it.
 TEST_F(BidderWorkletTest, PipeClosed) {
+  base::HistogramTester histogram_tester;
   auto bidder_worklet = CreateWorklet();
   GenerateBidExpectingNeverCompletes(bidder_worklet.get());
   bidder_worklet.reset();
@@ -904,6 +1196,13 @@ TEST_F(BidderWorkletTest, PipeClosed) {
   // This should not result in a Mojo crash.
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(bidder_worklets_.empty());
+
+  // These metrics should get recorded when a bidder worklet is destroyed.
+  histogram_tester.ExpectTotalCount(
+      "Ads.InterestGroup.Auction.BidderWorkletIsolateTotalHeapSizeKilobytes",
+      1);
+  histogram_tester.ExpectTotalCount(
+      "Ads.InterestGroup.Auction.BidderWorkletIsolateUsedHeapSizeKilobytes", 1);
 }
 
 TEST_F(BidderWorkletTest, NetworkError) {
@@ -914,6 +1213,15 @@ TEST_F(BidderWorkletTest, NetworkError) {
   GenerateBidExpectingNeverCompletes(bidder_worklet.get());
   EXPECT_EQ("Failed to load https://url.test/ HTTP status = 404 Not Found.",
             WaitForDisconnect());
+
+  // Wait until idle to ensure all requests have been observed within the
+  // `auction_network_events_handler_`.
+  task_environment_.RunUntilIdle();
+  EXPECT_THAT(
+      auction_network_events_handler_.GetObservedRequests(),
+      testing::ElementsAre(
+          "Sent URL: https://url.test/", "Received URL: https://url.test/",
+          "Completion Status: net::ERR_HTTP_RESPONSE_CODE_FAILURE"));
 }
 
 TEST_F(BidderWorkletTest, CompileError) {
@@ -932,92 +1240,129 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAd) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Wait until idle to ensure all requests have been observed within the
+  // `auction_network_events_handler_`.
+  task_environment_.RunUntilIdle();
+  EXPECT_THAT(auction_network_events_handler_.GetObservedRequests(),
+              testing::ElementsAre("Sent URL: https://url.test/",
+                                   "Received URL: https://url.test/",
+                                   "Completion Status: net::OK"));
 
   // Explicitly setting an undefined ad value acts just like not setting an ad
   // value.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: globalThis.not_defined, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Make sure "ad" can be of a variety of JS object types.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: {a:1,b:null}, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"({"a":1,"b":null})", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"({"a":1,"b":null})", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: [2.5,[]], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "[2.5,[]]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[2.5,[]]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: -5, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "-5", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "-5", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   // Some values that can't be represented in JSON become null.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: 0/0, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: [globalThis.not_defined], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "[null]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[null]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: [function() {return 1;}], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "[null]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[null]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Other values JSON can't represent result in failing instead of null.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: function() {return 1;}, bid:1, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid has invalid ad value."});
+
+  // JSON extraction failing to terminate is also handled.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: {get field() { while(true); } },
+          bid:1, render:"https://response.test/"})",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() serializing bid 'ad' value to JSON "
+       "timed out."});
 
   // Make sure recursive structures aren't allowed in ad field.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1028,8 +1373,8 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAd) {
           return {ad: a, bid:1, render:"https://response.test/"};
         }
       )",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid has invalid ad value."});
 }
 
@@ -1037,94 +1382,163 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueBid) {
   // Undefined / an empty return statement and null are treated as not bidding.
   RunGenerateBidWithReturnValueExpectingResult(
       "",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
+  EXPECT_FALSE(generate_bid_metrics_->script_timed_out);
   RunGenerateBidWithReturnValueExpectingResult(
       "null",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
+  EXPECT_FALSE(generate_bid_metrics_->script_timed_out);
 
-  // Missing bid value.
+  // Missing bid value is also treated as not bidding, since setBid(null)
+  // is basically the same as setBid({}) in WebIDL.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() returned object must have numeric bid "
-       "field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
+  EXPECT_FALSE(generate_bid_metrics_->script_timed_out);
 
   // Valid positive bid values.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  EXPECT_FALSE(generate_bid_metrics_->script_timed_out);
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1.5, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1.5, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1.5,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:2, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+
+          "\"ad\"", 2, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:0.001, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 0.001, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+
+          "\"ad\"", 0.001, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Bids <= 0.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:0, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:-10, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:-1.5, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
 
   // Infinite and NaN bid.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1/0, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid of inf is not a valid bid."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:-1/0, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid of -inf is not a valid bid."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:0/0, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid of nan is not a valid bid."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."});
 
-  // Non-numeric bid.
+  // Non-numeric bid. JS just makes these into numbers. At least [1,2] turns
+  // into NaN...
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:"1", render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() returned object must have numeric bid "
-       "field."});
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: ["ad"], bid:true, render:"https://response.test/"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:[1], render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() returned object must have numeric bid "
-       "field."});
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: ["ad"], bid:[1,2], render:"https://response.test/"})",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."});
+  EXPECT_FALSE(generate_bid_metrics_->script_timed_out);
+
+  // Test with bid with a non-terminating conversion.
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          /*raw_return_value=*/"",
+          /*extra_code=*/R"(
+            return {ad: "ad", bid:{valueOf:() => {while(true) {} } },
+                    render:"https://response.test/"};
+          )"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to Number timed"
+       " out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
+
+  // Test with bid with a non-terminating getter.
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          /*raw_return_value=*/"",
+          /*extra_code=*/R"(
+            return {ad: "ad", get bid() {while(true) {} },
+                    render:"https://response.test/"};
+          )"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Execution timed out trying to access "
+       "field 'bid'."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 TEST_F(BidderWorkletTest, GenerateBidReturnBidCurrencyExpectUnspecified) {
@@ -1136,22 +1550,28 @@ TEST_F(BidderWorkletTest, GenerateBidReturnBidCurrencyExpectUnspecified) {
       R"({ad: "ad", bid:1, bidCurrency: "USD",
           render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, blink::AdCurrency::From("USD"),
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          blink::AdCurrency::From("USD"),
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
 
   // Not specifying currency explicitly results in nullopt tag.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1,
           render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
 
   // Trying to explicitly specify kUnspecifiedAdCurrency fails.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -1160,27 +1580,30 @@ TEST_F(BidderWorkletTest, GenerateBidReturnBidCurrencyExpectUnspecified) {
           render:"https://response.test/"})",
           blink::kUnspecifiedAdCurrency),
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bidCurrency of '???' "
        "is not a currency code."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kWrongGenerateBidCurrency);
 
   // Expect currency codes to be 3 characters.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, bidCurrency:"USSD",
           render:"https://response.test/"})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bidCurrency of 'USSD' "
        "is not a currency code."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kWrongGenerateBidCurrency);
 
   // Expect currency code to be 3 uppercase characters.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, bidCurrency:"usd",
           render:"https://response.test/"})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bidCurrency of 'usd' "
        "is not a currency code."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kWrongGenerateBidCurrency);
 }
 
 TEST_F(BidderWorkletTest, GenerateBidReturnBidCurrencyExpectCAD) {
@@ -1193,115 +1616,222 @@ TEST_F(BidderWorkletTest, GenerateBidReturnBidCurrencyExpectCAD) {
       R"({ad: "ad", bid:1, bidCurrency: "CAD",
           render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, blink::AdCurrency::From("CAD"),
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          blink::AdCurrency::From("CAD"),
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
 
   // Explicitly specified incorrect one.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, bidCurrency: "USD",
           render:"https://response.test/"})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bidCurrency mismatch; "
        "returned 'USD', expected 'CAD'."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kWrongGenerateBidCurrency);
 
-  // Not specifying currency explicitly results in absl::nullopt, which matches
+  // Not specifying currency explicitly results in std::nullopt, which matches
   // for compatibility reasons.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1,
           render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
 }
 
 TEST_F(BidderWorkletTest, GenerateBidReturnValueUrl) {
   // Missing render field.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() 'render' is required when making a "
+       "bid."});
 
   // Missing ad and render fields.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({bid:1})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() 'render' is required when making a "
+       "bid."});
 
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Missing value with bid <= 0 is considered a valid no-bid case.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({bid:0})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
   RunGenerateBidWithReturnValueExpectingResult(
       R"({bid:-1})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
 
   // Disallowed render schemes.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"http://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL 'http://response.test/' "
        "isn't a valid https:// URL."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"chrome-extension://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL "
        "'chrome-extension://response.test/' isn't a valid https:// URL."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"about:blank"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL 'about:blank' isn't a "
        "valid https:// URL."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"data:,foo"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL 'data:,foo' isn't a "
        "valid https:// URL."});
 
   // Invalid render URLs.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"test"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL '' isn't a valid "
        "https:// URL."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:"http://"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL 'http:' isn't a valid "
        "https:// URL."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:["http://response.test/"]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() 'render': Required field 'url' "
+       "is undefined."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: ["ad"], bid:1, render:9})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() 'render': Value passed as dictionary "
+       "is neither object, null, nor undefined."});
+}
+
+// Check that accessing `renderUrl` of an entry in the ads array displays a
+// warning. Also checks that renderUrl works as expected.
+//
+// TODO(crbug.com/40266734): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, AdsRenderUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  interest_group_ads_.emplace_back(GURL("https://response2.test/"),
+                                   /*metadata=*/std::nullopt);
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          R"(if (interestGroup.ads[0].renderUrl !== "https://response.test/" ||
+             interestGroup.ads[1].renderUrl !== "https://response2.test/") {
+           return;
+         })"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  // Each access of a different `renderUrl` value should have generated a
+  // separate warning.
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"AuctionAd.renderUrl is deprecated. Please use "
+      "AuctionAd.renderURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"AuctionAd.renderUrl is deprecated. Please use "
+      "AuctionAd.renderURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/5);
+
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `renderURL` of an entry in the ads array does not
+// display a warning.
+//
+// TODO(crbug.com/40266734): Remove this test when renderUrl is removed.
+TEST_F(BidderWorkletTest, AdsRenderUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.ads[0].renderURL) return;"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
@@ -1309,7 +1839,7 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
   // No adComponents in IG.
   // ----------------------
 
-  interest_group_ad_components_ = absl::nullopt;
+  interest_group_ad_components_ = std::nullopt;
 
   // Auction should fail if adComponents in return value is an array.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -1317,8 +1847,8 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/",
         adComponents:["http://response.test/"]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid contains adComponents but "
        "InterestGroup has no adComponents."});
   RunGenerateBidWithReturnValueExpectingResult(
@@ -1326,8 +1856,8 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/",
         adComponents:[]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid contains adComponents but "
        "InterestGroup has no adComponents."});
 
@@ -1337,33 +1867,34 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/",
         adComponents:5})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid contains adComponents but "
-       "InterestGroup has no adComponents."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Sequence field 'adComponents' must be "
+       "an Object."});
 
-  // Not present and null adComponents fields should result in success.
+  // Not present adComponents field should result in success; null is a type
+  // error.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad",
         bid:1,
         render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad",
         bid:1,
         render:"https://response.test/",
         adComponents:null})",
-      mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Sequence field 'adComponents' must be "
+       "an Object."});
 
   SetDefaultParameters();
 
@@ -1377,11 +1908,13 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Auction should fail if adComponents in return value is an unexpected type.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -1389,10 +1922,10 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/",
         adComponents:5})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Sequence field 'adComponents' must be "
+       "an Object."});
 
   // Unexpected value types in adComponents should fail.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -1400,72 +1933,17 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
         bid:1,
         render:"https://response.test/",
         adComponents:[{}]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() adComponents entry: Required field "
+       "'url' is undefined."});
 
-  // Up to 20 values in the output adComponents output array are allowed (And
-  // they can all be the same URL).
-  static_assert(blink::kMaxAdAuctionAdComponents == 20,
-                "Unexpected value of kMaxAdAuctionAdComponents");
-  RunGenerateBidWithReturnValueExpectingResult(
-      R"({ad: "ad",
-        bid:1,
-        render:"https://response.test/",
-        adComponents:[
-          "https://ad_component.test/" /* 1 */,
-          "https://ad_component.test/" /* 2 */,
-          "https://ad_component.test/" /* 3 */,
-          "https://ad_component.test/" /* 4 */,
-          "https://ad_component.test/" /* 5 */,
-          "https://ad_component.test/" /* 6 */,
-          "https://ad_component.test/" /* 7 */,
-          "https://ad_component.test/" /* 8 */,
-          "https://ad_component.test/" /* 9 */,
-          "https://ad_component.test/" /* 10 */,
-          "https://ad_component.test/" /* 11 */,
-          "https://ad_component.test/" /* 12 */,
-          "https://ad_component.test/" /* 13 */,
-          "https://ad_component.test/" /* 14 */,
-          "https://ad_component.test/" /* 15 */,
-          "https://ad_component.test/" /* 16 */,
-          "https://ad_component.test/" /* 17 */,
-          "https://ad_component.test/" /* 18 */,
-          "https://ad_component.test/" /* 19 */,
-          "https://ad_component.test/" /* 20 */,
-        ]})",
-      mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/
-          std::vector<blink::AdDescriptor>{
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 1 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 2 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 3 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 4 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 5 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 6 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 7 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 8 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 9 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 10 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 11 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 12 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 13 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 14 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 15 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 16 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 17 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 18 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 19 */,
-              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 20 */,
-          },
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
-
-  // Results with 21 or more values are rejected.
+  // By default up to 40 values in the output adComponents output array are
+  // allowed (And they can all be the same URL).
+  ASSERT_EQ(blink::MaxAdAuctionAdComponents(), 40u)
+      << "Unexpected value of MaxAdAuctionAdComponents()";
+  std::vector<blink::AdDescriptor> expected_descriptors(
+      40u, blink::AdDescriptor(GURL("https://ad_component.test/")));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad",
         bid:1,
@@ -1492,11 +1970,300 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueAdComponents) {
           "https://ad_component.test/" /* 19 */,
           "https://ad_component.test/" /* 20 */,
           "https://ad_component.test/" /* 21 */,
+          "https://ad_component.test/" /* 22 */,
+          "https://ad_component.test/" /* 23 */,
+          "https://ad_component.test/" /* 24 */,
+          "https://ad_component.test/" /* 25 */,
+          "https://ad_component.test/" /* 26 */,
+          "https://ad_component.test/" /* 27 */,
+          "https://ad_component.test/" /* 28 */,
+          "https://ad_component.test/" /* 29 */,
+          "https://ad_component.test/" /* 30 */,
+          "https://ad_component.test/" /* 31 */,
+          "https://ad_component.test/" /* 32 */,
+          "https://ad_component.test/" /* 33 */,
+          "https://ad_component.test/" /* 34 */,
+          "https://ad_component.test/" /* 35 */,
+          "https://ad_component.test/" /* 36 */,
+          "https://ad_component.test/" /* 37 */,
+          "https://ad_component.test/" /* 38 */,
+          "https://ad_component.test/" /* 39 */,
+          "https://ad_component.test/" /* 40 */,
         ]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() bid adComponents with over 20 "
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          std::move(expected_descriptors),
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Results with 41 or more values are rejected.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad",
+        bid:1,
+        render:"https://response.test/",
+        adComponents:[
+          "https://ad_component.test/" /* 1 */,
+          "https://ad_component.test/" /* 2 */,
+          "https://ad_component.test/" /* 3 */,
+          "https://ad_component.test/" /* 4 */,
+          "https://ad_component.test/" /* 5 */,
+          "https://ad_component.test/" /* 6 */,
+          "https://ad_component.test/" /* 7 */,
+          "https://ad_component.test/" /* 8 */,
+          "https://ad_component.test/" /* 9 */,
+          "https://ad_component.test/" /* 10 */,
+          "https://ad_component.test/" /* 11 */,
+          "https://ad_component.test/" /* 12 */,
+          "https://ad_component.test/" /* 13 */,
+          "https://ad_component.test/" /* 14 */,
+          "https://ad_component.test/" /* 15 */,
+          "https://ad_component.test/" /* 16 */,
+          "https://ad_component.test/" /* 17 */,
+          "https://ad_component.test/" /* 18 */,
+          "https://ad_component.test/" /* 19 */,
+          "https://ad_component.test/" /* 20 */,
+          "https://ad_component.test/" /* 21 */,
+          "https://ad_component.test/" /* 22 */,
+          "https://ad_component.test/" /* 23 */,
+          "https://ad_component.test/" /* 24 */,
+          "https://ad_component.test/" /* 25 */,
+          "https://ad_component.test/" /* 26 */,
+          "https://ad_component.test/" /* 27 */,
+          "https://ad_component.test/" /* 28 */,
+          "https://ad_component.test/" /* 29 */,
+          "https://ad_component.test/" /* 30 */,
+          "https://ad_component.test/" /* 31 */,
+          "https://ad_component.test/" /* 32 */,
+          "https://ad_component.test/" /* 33 */,
+          "https://ad_component.test/" /* 34 */,
+          "https://ad_component.test/" /* 35 */,
+          "https://ad_component.test/" /* 36 */,
+          "https://ad_component.test/" /* 37 */,
+          "https://ad_component.test/" /* 38 */,
+          "https://ad_component.test/" /* 39 */,
+          "https://ad_component.test/" /* 40 */,
+          "https://ad_component.test/" /* 41 */,
+        ]})",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() bid adComponents with over 40 "
        "items."});
+}
+
+TEST_F(BidderWorkletCustomAdComponentLimitTest, AdComponentsLimit) {
+  // The fixture sets the limit to max of 25 output adComponents.
+  ASSERT_EQ(blink::MaxAdAuctionAdComponents(), 25u)
+      << "Unexpected value of MaxAdAuctionAdComponents()";
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad",
+        bid:1,
+        render:"https://response.test/",
+        adComponents:[
+          "https://ad_component.test/" /* 1 */,
+          "https://ad_component.test/" /* 2 */,
+          "https://ad_component.test/" /* 3 */,
+          "https://ad_component.test/" /* 4 */,
+          "https://ad_component.test/" /* 5 */,
+          "https://ad_component.test/" /* 6 */,
+          "https://ad_component.test/" /* 7 */,
+          "https://ad_component.test/" /* 8 */,
+          "https://ad_component.test/" /* 9 */,
+          "https://ad_component.test/" /* 10 */,
+          "https://ad_component.test/" /* 11 */,
+          "https://ad_component.test/" /* 12 */,
+          "https://ad_component.test/" /* 13 */,
+          "https://ad_component.test/" /* 14 */,
+          "https://ad_component.test/" /* 15 */,
+          "https://ad_component.test/" /* 16 */,
+          "https://ad_component.test/" /* 17 */,
+          "https://ad_component.test/" /* 18 */,
+          "https://ad_component.test/" /* 19 */,
+          "https://ad_component.test/" /* 20 */,
+          "https://ad_component.test/" /* 21 */,
+          "https://ad_component.test/" /* 22 */,
+          "https://ad_component.test/" /* 23 */,
+          "https://ad_component.test/" /* 24 */,
+          "https://ad_component.test/" /* 25 */
+        ]})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/
+          std::vector<blink::AdDescriptor>{
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 1 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 2 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 3 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 4 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 5 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 6 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 7 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 8 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 9 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 10 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 11 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 12 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 13 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 14 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 15 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 16 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 17 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 18 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 19 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 20 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 21 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 22 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 23 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 24 */,
+              blink::AdDescriptor(GURL("https://ad_component.test/")) /* 25 */,
+          },
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Results with 26 or more values are rejected.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad",
+        bid:1,
+        render:"https://response.test/",
+        adComponents:[
+          "https://ad_component.test/" /* 1 */,
+          "https://ad_component.test/" /* 2 */,
+          "https://ad_component.test/" /* 3 */,
+          "https://ad_component.test/" /* 4 */,
+          "https://ad_component.test/" /* 5 */,
+          "https://ad_component.test/" /* 6 */,
+          "https://ad_component.test/" /* 7 */,
+          "https://ad_component.test/" /* 8 */,
+          "https://ad_component.test/" /* 9 */,
+          "https://ad_component.test/" /* 10 */,
+          "https://ad_component.test/" /* 11 */,
+          "https://ad_component.test/" /* 12 */,
+          "https://ad_component.test/" /* 13 */,
+          "https://ad_component.test/" /* 14 */,
+          "https://ad_component.test/" /* 15 */,
+          "https://ad_component.test/" /* 16 */,
+          "https://ad_component.test/" /* 17 */,
+          "https://ad_component.test/" /* 18 */,
+          "https://ad_component.test/" /* 19 */,
+          "https://ad_component.test/" /* 20 */,
+          "https://ad_component.test/" /* 21 */,
+          "https://ad_component.test/" /* 21 */,
+          "https://ad_component.test/" /* 22 */,
+          "https://ad_component.test/" /* 23 */,
+          "https://ad_component.test/" /* 24 */,
+          "https://ad_component.test/" /* 25 */,
+          "https://ad_component.test/" /* 26 */
+        ]})",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() bid adComponents with over 25 "
+       "items."});
+}
+
+// Check that accessing `renderUrl` of an entry in the adComponents array
+// displays a warning. Also checks that renderUrl works as expected.
+//
+// TODO(crbug.com/40266734): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, AdComponentsRenderUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  interest_group_ad_components_.emplace();
+  interest_group_ad_components_->emplace_back(GURL("https://component1.test/"),
+                                              /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(GURL("https://component2.test/"),
+                                              /*metadata=*/std::nullopt);
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          R"(if (interestGroup.adComponents[0].renderUrl !==
+                 "https://component1.test/" ||
+             interestGroup.adComponents[1].renderUrl !==
+                 "https://component2.test/") {
+           return;
+         })"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  // Each access of a different `renderUrl` value should have generated a
+  // separate warning.
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"AuctionAd.renderUrl is deprecated. Please use "
+      "AuctionAd.renderURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"AuctionAd.renderUrl is deprecated. Please use "
+      "AuctionAd.renderURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/6);
+
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `renderURL` of an entry in the ads array does not
+// display a warning.
+//
+// TODO(crbug.com/40266734): Remove this test when renderUrl is removed.
+TEST_F(BidderWorkletTest, AdComponentsRenderUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  interest_group_ad_components_.emplace();
+  interest_group_ad_components_->emplace_back(GURL("https://component1.test/"),
+                                              /*metadata=*/std::nullopt);
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.adComponents[0].renderURL) return;"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignals) {
@@ -1506,9 +2273,11 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
           /*modeling_signals=*/123u, base::TimeDelta()));
 }
 
@@ -1519,10 +2288,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNaN) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsInfinity) {
@@ -1532,10 +2303,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsInfinity) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegative) {
@@ -1545,10 +2318,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegative) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegativeInfinity) {
@@ -1558,10 +2333,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegativeInfinity) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegativeZero) {
@@ -1571,10 +2348,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNegativeZero) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsPositiveZero) {
@@ -1584,9 +2363,11 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsPositiveZero) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
           /*modeling_signals=*/0u, base::TimeDelta()));
 }
 
@@ -1597,9 +2378,11 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsNonInteger) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
           /*modeling_signals=*/123u, base::TimeDelta()));
 }
 
@@ -1610,10 +2393,12 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsTooLarge) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidModelingSignalsAlmostTooLarge) {
@@ -1623,9 +2408,11 @@ TEST_F(BidderWorkletTest, GenerateBidModelingSignalsAlmostTooLarge) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
           /*modeling_signals=*/4095, base::TimeDelta()));
 }
 
@@ -1637,22 +2424,22 @@ TEST_F(BidderWorkletTest, GenerateBidReturnValueInvalid) {
           return {ad: ["ad"], bid:1, render:"https://response.test/"};
         }
       )",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ `generateBid` is not a function."});
   RunGenerateBidWithJavascriptExpectingResult(
-      "", /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      "", /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ `generateBid` is not a function."});
   RunGenerateBidWithJavascriptExpectingResult(
-      "5", /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      "5", /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ `generateBid` is not a function."});
 
   // Throw exception.
   RunGenerateBidWithJavascriptExpectingResult(
-      "shrimp", /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      "shrimp", /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:1 Uncaught ReferenceError: "
        "shrimp is not defined."});
 }
@@ -1669,8 +2456,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: function() {return 1;}, bid:1, render:"https://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid has invalid ad value."});
 
   // Make sure recursive structures aren't allowed in ad field.
@@ -1683,9 +2470,24 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
           return {};
         }
       )",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:5 Uncaught TypeError: bid has invalid ad value."});
+
+  // Timeouts can also happen when serializing ad field to json.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(
+        function generateBid() {
+          var a = {
+            get field() { while(true); }
+          }
+          setBid({ad: a, bid:1, render:"https://response.test/"});
+          return {};
+        }
+      )",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
 
   // --------
   // Vary bid
@@ -1694,22 +2496,22 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
   // Non-numeric bid.
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
-         setBid({ad: ["ad"], bid:"1", render:"https://response.test/"});
+         setBid({ad: ["ad"], bid:"boo", render:"https://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Converting field 'bid' to a "
+       "Number did not produce a finite double."});
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
-         setBid({ad: ["ad"], bid:[1], render:"https://response.test/"});
+         setBid({ad: ["ad"], bid:[1,2], render:"https://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Converting field 'bid' to a "
+       "Number did not produce a finite double."});
 
   // ---------
   // Vary URL.
@@ -1721,8 +2523,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:"http://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL "
        "'http://response.test/' isn't a valid https:// URL."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1732,8 +2534,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  render:"chrome-extension://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL "
        "'chrome-extension://response.test/' isn't a valid https:// URL."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1741,8 +2543,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:"about:blank"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL 'about:blank' "
        "isn't a valid https:// URL."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1750,8 +2552,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:"data:,foo"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL 'data:,foo' "
        "isn't a valid https:// URL."});
 
@@ -1761,8 +2563,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:"test"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL '' isn't a "
        "valid https:// URL."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1770,8 +2572,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:"http://"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid render URL 'http:' isn't a "
        "valid https:// URL."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1779,23 +2581,25 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid({ad: ["ad"], bid:1, render:["http://response.test/"]});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: 'render': Required field 'url' "
+       "is undefined."});
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({ad: ["ad"], bid:1, render:9});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: 'render': Value passed as "
+       "dictionary is neither object, null, nor undefined."});
 
   // ----------------------
   // No adComponents in IG.
   // ----------------------
 
-  interest_group_ad_components_ = absl::nullopt;
+  interest_group_ad_components_ = std::nullopt;
 
   // Auction should fail if adComponents in return value is an array.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1806,8 +2610,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  adComponents:["http://response.test/"]});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid contains adComponents but "
        "InterestGroup has no adComponents."});
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1818,8 +2622,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  adComponents:[]});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:2 Uncaught TypeError: bid contains adComponents but "
        "InterestGroup has no adComponents."});
 
@@ -1832,10 +2636,10 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  adComponents:5});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid contains adComponents but "
-       "InterestGroup has no adComponents."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Sequence field 'adComponents' "
+       "must be an Object."});
 
   SetDefaultParameters();
 
@@ -1852,10 +2656,10 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  adComponents:5});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid adComponents value must be "
-       "an array."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Sequence field 'adComponents' "
+       "must be an Object."});
 
   // Unexpected value types in adComponents should fail.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -1866,18 +2670,17 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                  adComponents:[{}]});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid adComponents value must be "
-       "an array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: adComponents entry: Required "
+       "field 'url' is undefined."});
 
   // Up to 20 values in the output adComponents output array are allowed (And
   // they can all be the same URL).
-  static_assert(blink::kMaxAdAuctionAdComponents == 20,
-                "Unexpected value of kMaxAdAuctionAdComponents");
+  ASSERT_EQ(blink::MaxAdAuctionAdComponents(), 40u)
+      << "Unexpected value of MaxAdAuctionAdComponents";
 
-  // Results with 21 or more values are rejected.
+  // Results with 41 or more values are rejected.
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({ad: "ad",
@@ -1905,12 +2708,32 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
                    "https://ad_component.test/" /* 19 */,
                    "https://ad_component.test/" /* 20 */,
                    "https://ad_component.test/" /* 21 */,
+                   "https://ad_component.test/" /* 22 */,
+                   "https://ad_component.test/" /* 23 */,
+                   "https://ad_component.test/" /* 24 */,
+                   "https://ad_component.test/" /* 25 */,
+                   "https://ad_component.test/" /* 26 */,
+                   "https://ad_component.test/" /* 27 */,
+                   "https://ad_component.test/" /* 28 */,
+                   "https://ad_component.test/" /* 29 */,
+                   "https://ad_component.test/" /* 30 */,
+                   "https://ad_component.test/" /* 31 */,
+                   "https://ad_component.test/" /* 32 */,
+                   "https://ad_component.test/" /* 33 */,
+                   "https://ad_component.test/" /* 34 */,
+                   "https://ad_component.test/" /* 35 */,
+                   "https://ad_component.test/" /* 36 */,
+                   "https://ad_component.test/" /* 37 */,
+                   "https://ad_component.test/" /* 38 */,
+                   "https://ad_component.test/" /* 39 */,
+                   "https://ad_component.test/" /* 40 */,
+                   "https://ad_component.test/" /* 41 */,
         ]});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid adComponents with over 20 "
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: bid adComponents with over 40 "
        "items."});
 
   // ------------
@@ -1923,58 +2746,925 @@ TEST_F(BidderWorkletTest, GenerateBidSetBidThrows) {
          setBid(1);
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: bid not an object."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Value passed as dictionary "
+       "is neither object, null, nor undefined."});
 
-  // Missing value.
+  // Missing or invalid bid value.
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({bid:"a", render:"https://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Converting field 'bid' to a "
+       "Number did not produce a finite double."});
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({ad: ["ad"], render:"https://response.test/"});
-         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+         return {ad: "actually_reached", bid: 4,
+                 render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() bid render URL "
+       "'https://response.test/2' isn't one of the registered creative URLs."});
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({ad: ["ad"], bid:"a"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:2 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:2 Uncaught TypeError: Converting field 'bid' to a "
+       "Number did not produce a finite double."});
   // Setting a valid bid with setBid(), followed by setting an invalid bid that
   // throws, should result in no bid being set.
   RunGenerateBidWithJavascriptExpectingResult(
       R"(function generateBid() {
          setBid({bid:1, render:"https://response.test/"});
-         setBid({ad: ["ad"], bid:"1", render:"https://response.test/"});
+         setBid({ad: ["ad"], bid:"1/0", render:"https://response.test/"});
          return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:3 Uncaught TypeError: returned object must have "
-       "numeric bid field."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:3 Uncaught TypeError: Converting field 'bid' to a "
+       "Number did not produce a finite double."});
+
+  // An exception in a coercion invoked by setBid().
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         let o = { a: 123 };
+         try {
+           setBid({bid:{valueOf: () => { throw o }},
+                  render:"https://response.test/"});
+         } catch (e) {
+           if (e === o) {
+             setBid({bid:1, render:"https://response.test/"});
+           }
+           throw "something";
+         }
+         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+       })",
+      /*expected_bids=*/
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:10 Uncaught something."});
+}
+
+TEST_F(BidderWorkletTest, GenerateBidSetBidNonTermConversion) {
+  // A setBid() that hits a timeout in value conversion.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid({bid:{valueOf: () => { while(true) {} } },
+                 render:"https://response.test/"});
+         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+       })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
+
+  // Variant that tries to catch it.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         try { setBid({bid:{valueOf: () => { while(true) {} } },
+               render:"https://response.test/"});
+         } catch (e) {}
+         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+       })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
+
+  // A setBid() that hits a timeout in a field getter.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid({ get bid() { while(true) {} },
+                 render:"https://response.test/"});
+         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+       })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
+
+  // Non-terminating conversion inside a field of the render dictionary.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid({bid: 1,
+                 render: { get url() { while(true) {} } } });
+         return {ad: "not_reached", bid: 4, render:"https://response.test/2"};
+       })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
+}
+
+TEST_F(BidderWorkletMultiBidDisabledTest, GenerateBidMultiBid) {
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 1,
+          render: "https://response.test/"}])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
+}
+
+// Make sure that fields that are only available with multibid on aren't
+// read when its off.
+TEST_F(BidderWorkletMultiBidDisabledTest, ComponentTargetFieldsOnlyMultiBid) {
+  auto expected_bid = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 5,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          get numMandatoryAdComponents() {
+            throw 'used numMandatoryAdComponents';
+          }
+      })",
+      expected_bid->Clone());
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          get targetNumAdComponents() {
+            throw 'used targetNumAdComponents';
+          }
+      })",
+      expected_bid->Clone());
+}
+
+// Make sure that fields that are only available with multibid on are read
+// when it's on. This is mostly meant to validate the multibid=off
+// version of the testcase; the actual functionality of the fields is tested
+// separately.
+TEST_F(BidderWorkletTest, ComponentTargetFieldsOnlyMultiBid) {
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          get numMandatoryAdComponents() {
+            throw 'used numMandatoryAdComponents';
+          }
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/:9 Uncaught used numMandatoryAdComponents."});
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          get targetNumAdComponents() {
+            throw 'used targetNumAdComponents';
+          }
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/:9 Uncaught used targetNumAdComponents."});
+}
+
+TEST_F(BidderWorkletTest, TargetNumAdComponents) {
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component2.test/"), /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component3.test/"), /*metadata=*/std::nullopt);
+
+  // Can't target 0 component ads (just don't return any).
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          targetNumAdComponents: 0
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() targetNumAdComponents must be "
+       "positive."});
+
+  // Still an error if some are included.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          adComponents: [
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+          ],
+          targetNumAdComponents: 0
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() targetNumAdComponents must be "
+       "positive."});
+
+  // Can't target more than permitted.
+  const char kLotsProvidedAndTargeted[] = R"(
+    let componentsArray = [];
+    componentsArray.length = 60;
+    componentsArray.fill("https://ad_component.test", 0);
+
+    function generateBid() {
+      return {
+          ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          targetNumAdComponents: 50,
+          adComponents: componentsArray
+      }
+    }
+  )";
+  RunGenerateBidWithJavascriptExpectingResult(
+      kLotsProvidedAndTargeted,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bid targetNumAdComponents larger than "
+       "component ad limit of 40."});
+
+  // Must provide at least as much as target.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          targetNumAdComponents: 1
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents list smaller than "
+       "targetNumAdComponents."});
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          targetNumAdComponents: 2,
+          adComponents: [
+            "https://ad_component.test",
+          ]
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents list smaller than "
+       "targetNumAdComponents."});
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          adComponents: [
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+          ],
+          targetNumAdComponents: 5
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents list smaller than "
+       "targetNumAdComponents."});
+
+  // Provided exactly what's targeted.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          adComponents: [
+            "https://ad_component.test",
+            "https://ad_component2.test",
+            "https://ad_component3.test",
+          ],
+          targetNumAdComponents: 3,
+          numMandatoryAdComponents: 2
+      })",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 5,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/
+          std::vector<blink::AdDescriptor>{
+              blink::AdDescriptor(GURL("https://ad_component.test/")),
+              blink::AdDescriptor(GURL("https://ad_component2.test/")),
+              blink::AdDescriptor(GURL("https://ad_component3.test/"))},
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Can't say that more is mandatory than target.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          adComponents: [
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+          ],
+          targetNumAdComponents: 5,
+          numMandatoryAdComponents: 6
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() numMandatoryAdComponents cannot exceed "
+       "targetNumAdComponents."});
+
+  // Providing invalid (as opposed to non-k-anon) component ads beyond the limit
+  // is still an error.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          adComponents: [
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://ad_component.test",
+            "https://not_ad_component.test",
+          ],
+          targetNumAdComponents: 5,
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bid adComponents URL "
+       "'https://not_ad_component.test/' isn't one of the registered creative "
+       "URLs."});
+
+  // It's actually OK to provide more adComponents than limit as long as the
+  // target is below it. It will get reduced to the target.
+  const char kLotsProvided[] = R"(
+    let componentsArray = [];
+    componentsArray.length = 50;
+    componentsArray[0] = "https://ad_component.test/";
+    componentsArray[1] = "https://ad_component2.test/";
+    componentsArray.fill("https://ad_component3.test", 2);
+
+    function generateBid() {
+      return {
+          ad: "ad", bid: 5,
+          render: {url: "https://response.test/"},
+          targetNumAdComponents: 2,
+          adComponents: componentsArray
+      }
+    }
+  )";
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      kLotsProvided,
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 5,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/
+          std::vector<blink::AdDescriptor>{
+              blink::AdDescriptor(GURL("https://ad_component.test/")),
+              blink::AdDescriptor(GURL("https://ad_component2.test/"))},
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, TargetNumAdComponentsKAnon) {
+  const char kBid[] = R"({
+    ad: "ad",
+    bid: 5,
+    render: "https://response.test/",
+    targetNumAdComponents: 2,
+    adComponents: [
+      "https://ad_component.test",
+      "https://ad_component2.test",
+      "https://ad_component3.test",
+      "https://ad_component4.test",
+    ]
+  })";
+
+  auto non_k_anon_bid = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 5,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/
+      std::vector<blink::AdDescriptor>{
+          blink::AdDescriptor(GURL("https://ad_component.test/")),
+          blink::AdDescriptor(GURL("https://ad_component2.test/"))},
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component2.test/"), /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component3.test/"), /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component4.test/"), /*metadata=*/std::nullopt);
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kNone;
+
+  // With no k-anon enforcement, the requested 2 component ads are just the
+  // first two component ads.
+  RunGenerateBidWithReturnValueExpectingResult(kBid, non_k_anon_bid->Clone());
+
+  // Turn on enforcement, but don't authorize anything. This is still going to
+  // be a non-k-anon bid only.
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, non_k_anon_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{});
+
+  // Just authorizing the main bid still produces the same effect, but the
+  // reason for re-run failure is different.
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response.test/")));
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, non_k_anon_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bid adComponents URL "
+       "'https://ad_component.test/' isn't one of the registered creative "
+       "URLs."});
+
+  // Authorizing ad components 2 and 4, they should be used for k-anon bid but
+  // there should still be the non-k-anon bid.
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component2.test/"))));
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component4.test/"))));
+
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(mojom::BidderWorkletBid::New(
+        auction_worklet::mojom::BidRole::kEnforcedKAnon, "\"ad\"", 5,
+        /*bid_currency=*/std::nullopt,
+        /*ad_cost=*/std::nullopt,
+        blink::AdDescriptor(GURL("https://response.test/")),
+        /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+        /*ad_component_descriptors=*/
+        std::vector<blink::AdDescriptor>{
+            blink::AdDescriptor(GURL("https://ad_component2.test/")),
+            blink::AdDescriptor(GURL("https://ad_component4.test/"))},
+        /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+    expected.push_back(non_k_anon_bid->Clone());
+    RunGenerateBidWithReturnValueExpectingResult(kBid, std::move(expected));
+  }
+
+  // Authorizing 1 as well makes the bid suitable for both auctions.
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component.test/"))));
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, mojom::BidderWorkletBid::New(
+                auction_worklet::mojom::BidRole::kBothKAnonModes, "\"ad\"", 5,
+                /*bid_currency=*/std::nullopt,
+                /*ad_cost=*/std::nullopt,
+                blink::AdDescriptor(GURL("https://response.test/")),
+                /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+                /*ad_component_descriptors=*/
+                std::vector<blink::AdDescriptor>{
+                    blink::AdDescriptor(GURL("https://ad_component.test/")),
+                    blink::AdDescriptor(GURL("https://ad_component2.test/"))},
+                /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, TargetAndMandatoryAdComponentsKAnon) {
+  const char kBid[] = R"({
+    ad: "ad",
+    bid: 5,
+    render: "https://response.test/",
+    targetNumAdComponents: 2,
+    numMandatoryAdComponents: 1,
+    adComponents: [
+      "https://ad_component.test",
+      "https://ad_component2.test",
+      {url: "https://ad_component3.test", requiredComponent: true},
+      "https://ad_component4.test",
+    ]
+  })";
+
+  auto non_k_anon_bid = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 5,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/
+      std::vector<blink::AdDescriptor>{
+          blink::AdDescriptor(GURL("https://ad_component.test/")),
+          blink::AdDescriptor(GURL("https://ad_component2.test/"))},
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component2.test/"), /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component3.test/"), /*metadata=*/std::nullopt);
+  interest_group_ad_components_->emplace_back(
+      GURL("https://ad_component4.test/"), /*metadata=*/std::nullopt);
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kNone;
+
+  // With no k-anon enforcement, the requested 2 component ads are just the
+  // first two component ads.
+  RunGenerateBidWithReturnValueExpectingResult(kBid, non_k_anon_bid->Clone());
+
+  // Turn on enforcement, but don't authorize anything. This is still going to
+  // be a non-k-anon bid only.
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, non_k_anon_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{});
+
+  // Authorize the main bid. This is still going to be a non-k-anon bid only;
+  // there will be an error-message from a failed re-run, though.
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response.test/")));
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, non_k_anon_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bid adComponents URL "
+       "'https://ad_component.test/' isn't one of the registered creative "
+       "URLs."});
+
+  // Authorizing ad components 3 and 4 isn't enough since absence of 1 prevents
+  // it from being accepted.
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component3.test/"))));
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component4.test/"))));
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, non_k_anon_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bid adComponents URL "
+       "'https://ad_component.test/' isn't one of the registered creative "
+       "URLs."});
+
+  // Now authorize 1 as well. Should get 1 and 3 as k-anon bid.
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component.test/"))));
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(mojom::BidderWorkletBid::New(
+        auction_worklet::mojom::BidRole::kEnforcedKAnon, "\"ad\"", 5,
+        /*bid_currency=*/std::nullopt,
+        /*ad_cost=*/std::nullopt,
+        blink::AdDescriptor(GURL("https://response.test/")),
+        /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+        /*ad_component_descriptors=*/
+        std::vector<blink::AdDescriptor>{
+            blink::AdDescriptor(GURL("https://ad_component.test/")),
+            blink::AdDescriptor(GURL("https://ad_component3.test/"))},
+        /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+    expected.push_back(non_k_anon_bid->Clone());
+    RunGenerateBidWithReturnValueExpectingResult(kBid, std::move(expected));
+  }
+
+  // Authorizing 2 as well makes the bid suitable for both auctions.
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(
+          GURL("https://ad_component2.test/"))));
+  RunGenerateBidWithReturnValueExpectingResult(
+      kBid, mojom::BidderWorkletBid::New(
+                auction_worklet::mojom::BidRole::kBothKAnonModes, "\"ad\"", 5,
+                /*bid_currency=*/std::nullopt,
+                /*ad_cost=*/std::nullopt,
+                blink::AdDescriptor(GURL("https://response.test/")),
+                /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+                /*ad_component_descriptors=*/
+                std::vector<blink::AdDescriptor>{
+                    blink::AdDescriptor(GURL("https://ad_component.test/")),
+                    blink::AdDescriptor(GURL("https://ad_component2.test/"))},
+                /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, GenerateBidMultiBid) {
+  multi_bid_limit_ = 2;
+
+  auto expected_bid = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 2,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  // Empty array means no-bid.
+  RunGenerateBidWithReturnValueExpectingResult(
+      "[]", /*expected_bids=*/mojom::BidderWorkletBidPtr());
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // Single bid as an array member.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"}])",
+      expected_bid->Clone());
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // Actually multiple bids.
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(expected_bid->Clone());
+    expected.push_back(expected_bid->Clone());
+    expected[1]->bid = 3;
+    expected[1]->ad = "\"ad2\"";
+    RunGenerateBidWithReturnValueExpectingResult(
+        R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          {ad: "ad2", bid: 3,
+          render: "https://response.test/"},
+         ])",
+        std::move(expected));
+    EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+  }
+
+  // Too many bids.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          {ad: "ad2", bid: 3,
+          render: "https://response.test/"},
+          {ad: "ad3", bid: 4,
+          render: "https://response.test/"},
+         ])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() more bids provided than permitted by "
+       "auction configuration."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kMultiBidLimitExceeded);
+
+  // The bid limit looks at the length of the sequence provided; some entries
+  // being dropped as non-bids doesn't change that.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          {ad: "ad2", bid: -5,
+          render: "https://response.test/"},
+          {ad: "ad3", bid: 4,
+          render: "https://response.test/"},
+         ])",
+      /*expected_bids=*/nullptr,
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() more bids provided than permitted by "
+       "auction configuration."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kMultiBidLimitExceeded);
+
+  // Catches errors in individual entries.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 10}])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: 'render' is "
+       "required when making a bid."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // Some more complicated error messages.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 10, render: {}}])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: 'render': "
+       "Required field 'url' is undefined."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 10, render: "https://example.org/",
+           adComponents: [{}]
+      }])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: adComponents "
+       "entry: Required field 'url' is undefined."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          {ad: "ad", bid: 10}])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: 'render' is "
+       "required when making a bid."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          10])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: Value passed as "
+       "dictionary is neither object, null, nor undefined."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // A non-bid is still ignored.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad",
+          render: "https://response.test/"}])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // A non-bid among real bids in an array is also ignored.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2,
+          render: "https://response.test/"},
+          {ad: "ad2",
+          render: "https://response.test/"},
+         ])",
+      expected_bid->Clone());
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+
+  // Make sure the IDL checks happen before semantic checks. This has 4 bids,
+  // but 4th one isn't an object, so the IDL error about that is what we should
+  // report, not the semantic error on size or on lack of URL on first one. This
+  // is mostly important in that looking at the 4th one could have side-effects.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"([{ad: "ad", bid: 2},
+          {ad: "ad2", bid: 3,
+          render:"https://response.test/"},
+          {ad: "ad3", bid: 4,
+          render:"https://response.test/"},
+          4
+         ])",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() bids sequence entry: Value passed as "
+       "dictionary is neither object, null, nor undefined."});
+  EXPECT_EQ(reject_reason_, mojom::RejectReason::kNotAvailable);
+}
+
+// If multibid is off, even passing an array with 1 element to SetBid() isn't
+// available.
+TEST_F(BidderWorkletMultiBidDisabledTest, SetBidMultiBid) {
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+        setBid([{ad: "ad", bid:2, render: "https://response.test"}]);
+        throw "oh no";
+      })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"https://url.test/:3 Uncaught oh no."});
+}
+
+TEST_F(BidderWorkletTest, SetBidMultiBid) {
+  multi_bid_limit_ = 2;
+  interest_group_ads_.emplace_back(GURL("https://response2.test/"),
+                                   /*metadata=*/std::nullopt);
+  interest_group_ads_.emplace_back(GURL("https://response3.test/"),
+                                   /*metadata=*/std::nullopt);
+
+  auto expected_bid = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 2,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  auto expected_bid3 = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"lad\"", 8,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response3.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  // Can set an array with one entry.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"}]);
+         throw "boo";
+       })",
+      /*expected_bids=*/expected_bid->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"https://url.test/:3 Uncaught boo."});
+
+  // Or two.
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(expected_bid->Clone());
+    expected.push_back(expected_bid->Clone());
+    expected[1]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response2.test"));
+    expected[1]->ad = "\"bad\"";
+    expected[1]->bid = 4;
+    RunGenerateBidWithJavascriptExpectingResult(
+        R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                 {ad: "bad", bid:4, render: "https://response2.test"}]);
+         throw "boo";
+       })",
+        std::move(expected),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{"https://url.test/:4 Uncaught boo."});
+  }
+
+  // ..but given our `multi_bid_limit_` is 2, not 3.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                 {ad: "bad", bid:4, render: "https://response2.test"},
+                 {ad: "lad", bid:8, render: "https://response3.test"}]);
+         throw "boo";
+       })",
+      /*expected_bids=*/nullptr, /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/:2 Uncaught TypeError: more bids provided than "
+       "permitted by auction configuration."});
+
+  // SetBid() with arrays overwrites.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                 {ad: "bad", bid:4, render: "https://response2.test"}]);
+         setBid([{ad: "lad", bid:8, render: "https://response3.test"}]);
+         throw "boo";
+       })",
+      /*expected_bids=*/expected_bid3->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"https://url.test/:5 Uncaught boo."});
+
+  // Can overwrite with an empty array as well.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                 {ad: "bad", bid:4, render: "https://response2.test"}]);
+         setBid([]);
+         throw "boo";
+       })",
+      /*expected_bids=*/nullptr, /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"https://url.test/:5 Uncaught boo."});
+
+  // Individual checks do happen.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                 {ad: "bad", bid:4, render: "https://response4.test"}]);
+         throw "boo";
+       })",
+      /*expected_bids=*/nullptr, /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/:2 Uncaught TypeError: bids sequence entry: bid "
+       "render URL 'https://response4.test/' isn't one of the registered "
+       "creative URLs."});
+
+  // Can recover from a set that throws an exception.
+  RunGenerateBidWithJavascriptExpectingResult(
+      R"(function generateBid() {
+         try {
+           setBid([{ad: "ad", bid:2, render: "https://response.test"},
+                  {ad: "bad", bid:4, render: "https://response4.test"}]);
+         } catch (e) {
+           setBid([{ad: "lad", bid:8, render: "https://response3.test"}]);
+         }
+         throw "boo";
+       })",
+      /*expected_bids=*/expected_bid3->Clone(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"https://url.test/:8 Uncaught boo."});
 }
 
 // Make sure Date() is not available when running generateBid().
 TEST_F(BidderWorkletTest, GenerateBidDateNotAvailable) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: Date().toString(), bid:1, render:"https://response.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:6 Uncaught ReferenceError: Date is not defined."});
 }
 
@@ -1983,21 +3673,25 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupOwner) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: interestGroup.owner, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("https://foo.test")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://foo.test")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_bidding_url_ = GURL("https://[::1]:40000/");
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: interestGroup.owner, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("https://[::1]:40000")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://[::1]:40000")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupName) {
@@ -2008,33 +3702,53 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupName) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("foo")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_name_ = R"("foo")";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("\"foo\"")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("\"foo\"")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_name_ = "[1]";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("[1]")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("[1]")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
+TEST_F(BidderWorkletTest,
+       GenerateBidInterestGroupEnableBiddingSignalsPrioritization) {
+  RunGenerateBidExpectingExpressionIsTrue(
+      "interestGroup.enableBiddingSignalsPrioritization === false");
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+  RunGenerateBidExpectingExpressionIsTrue(
+      "interestGroup.enableBiddingSignalsPrioritization === true");
+}
+
+// This is deprecated and slated to be removed, but should work in the meantime.
+//
+// TODO(crbug.com/41490104): Remove this test when the field itself is
+// removed.
 TEST_F(BidderWorkletTest,
        GenerateBidInterestGroupUseBiddingSignalsPrioritization) {
   RunGenerateBidExpectingExpressionIsTrue(
@@ -2043,6 +3757,84 @@ TEST_F(BidderWorkletTest,
   interest_group_enable_bidding_signals_prioritization_ = true;
   RunGenerateBidExpectingExpressionIsTrue(
       "interestGroup.useBiddingSignalsPrioritization === true");
+}
+
+// Check that accessing `useBiddingSignalsPrioritization` displays a warning.
+//
+// TODO(crbug.com/41490104): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, UseBiddingSignalsPrioritizationDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.useBiddingSignalsPrioritization) return;"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.useBiddingSignalsPrioritization is "
+      "deprecated. Please use interestGroup.enableBiddingSignalsPrioritization "
+      "instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `enableBiddingSignalsPrioritization` does not display a
+// warning.
+//
+// TODO(crbug.com/41490104): Remove this test when
+// useBiddingSignalsPrioritization is removed.
+TEST_F(BidderWorkletTest,
+       EnableBiddingSignalsPrioritizationNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.enableBiddingSignalsPrioritization) return;"));
+
+  interest_group_enable_bidding_signals_prioritization_ = true;
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupPriorityVector) {
@@ -2070,127 +3862,414 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupPriorityVector) {
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupBiddingLogicUrl) {
   const std::string kGenerateBidBody =
-      R"({ad: interestGroup.biddingLogicUrl, bid:1,
+      R"({ad: interestGroup.biddingLogicURL, bid:1,
         render:"https://response.test/"})";
 
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("https://url.test/")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://url.test/")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_bidding_url_ = GURL("https://url.test/foo");
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("https://url.test/foo")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://url.test/foo")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+// Check that accessing `biddingLogicUrl` displays a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, BiddingLogicUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.biddingLogicUrl) return;"));
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.biddingLogicUrl is deprecated. Please use "
+      "interestGroup.biddingLogicURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `biddingLogicURL` does not display a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when `biddingLogicUrl` is
+// removed.
+TEST_F(BidderWorkletTest, BiddingLogicUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.biddingLogicURL) return;"));
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupBiddingWasmHelperUrl) {
   const std::string kGenerateBidBody =
-      R"({ad: "biddingWasmHelperUrl" in interestGroup ?
-            interestGroup.biddingWasmHelperUrl : "missing",
+      R"({ad: "biddingWasmHelperURL" in interestGroup ?
+            interestGroup.biddingWasmHelperURL : "missing",
         bid:1,
         render:"https://response.test/"})";
 
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("missing")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("missing")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_wasm_url_ = GURL(kWasmUrl);
   AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
-              /*charset=*/absl::nullopt, ToyWasm());
+              /*charset=*/std::nullopt, ToyWasm());
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
           R"("https://foo.test/helper.wasm")", 1,
-          /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+// Check that accessing `biddingWasmHelperUrl` displays a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, BiddingWasmHelperUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.biddingWasmHelperUrl) return;"));
+
+  interest_group_wasm_url_ = GURL(kWasmUrl);
+  // Need a valid WASM response to avoid a hang, and for the script to run.
+  AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
+              /*charset=*/std::nullopt, ToyWasm());
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.biddingWasmHelperUrl is deprecated. Please "
+      "use interestGroup.biddingWasmHelperURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `biddingWasmHelperURL` does not display a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when `biddingWasmHelperUrl`
+// is removed.
+TEST_F(BidderWorkletTest, BiddingWasmHelperUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.biddingWasmHelperURL) return;"));
+
+  interest_group_wasm_url_ = GURL(kWasmUrl);
+  // Need a valid WASM response to avoid a hang, and for the script to run.
+  AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
+              /*charset=*/std::nullopt, ToyWasm());
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupUpdateUrl) {
   const std::string kGenerateBidBody =
-      R"({ad: "updateUrl" in interestGroup ?
-            interestGroup.updateUrl : "missing",
+      R"({ad: "updateURL" in interestGroup ?
+            interestGroup.updateURL : "missing",
         bid:1,
         render:"https://response.test/"})";
-  // TODO(https://crbug.com/1420080): Remove this and tests that use it when
+  // TODO(crbug.com/40258629): Remove this and tests that use it when
   // removing support for the deprecated `dailyUpdateUrl` field, in favor of
-  // `updateUrl`.
+  // `updateURL`.
   const std::string kGenerateBidBodyUsingDeprecatedDailyUpdateUrl =
       R"({ad: "dailyUpdateUrl" in interestGroup ?
-            interestGroup.updateUrl : "missing",
+            interestGroup.updateURL : "missing",
         bid:1,
         render:"https://response.test/"})";
 
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("missing")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("missing")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBodyUsingDeprecatedDailyUpdateUrl,
       mojom::BidderWorkletBid::New(
-          R"("missing")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("missing")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   update_url_ = GURL("https://url.test/daily_update");
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
           R"("https://url.test/daily_update")", 1,
-          /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBodyUsingDeprecatedDailyUpdateUrl,
       mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
           R"("https://url.test/daily_update")", 1,
-          /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+// Check that accessing `updateUrl` displays a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, UpdateUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.updateUrl) return;"));
+
+  update_url_ = GURL("https://url.test/update");
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.updateUrl is deprecated. Please use "
+      "interestGroup.updateURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `dailyUpdateUrl` displays a warning.
+//
+// TODO(crbug.com/40258629): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, DailyUpdateUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.dailyUpdateUrl) return;"));
+
+  update_url_ = GURL("https://url.test/update");
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.dailyUpdateUrl is deprecated. Please use "
+      "interestGroup.updateURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `updateURL` does not display a warning.
+//
+// TODO(crbug.com/40264073) and TODO(crbug.com/40258629):
+// Remove this test when `dailyUpdateUrl` and `updateUrl` are removed.
+TEST_F(BidderWorkletTest, UpdateUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.updateURL) return;"));
+
+  update_url_ = GURL("https://url.test/update");
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupTrustedBiddingSignalsUrl) {
   const std::string kGenerateBidBody =
-      R"({ad: "trustedBiddingSignalsUrl" in interestGroup ?
-            interestGroup.trustedBiddingSignalsUrl : "missing",
+      R"({ad: "trustedBiddingSignalsURL" in interestGroup ?
+            interestGroup.trustedBiddingSignalsURL : "missing",
         bid:1,
         render:"https://response.test/"})";
 
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("missing")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("missing")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_trusted_bidding_signals_url_ =
       GURL("https://signals.test/foo.json");
@@ -2204,12 +4283,103 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupTrustedBiddingSignalsUrl) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
           R"("https://signals.test/foo.json")", 1,
-          /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+// Check that accessing `trustedBiddingSignalsUrl` displays a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, TrustedBiddingSignalsUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.trustedBiddingSignalsUrl) return;"));
+
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/trusted_signals");
+  // Need trusted signals response to prevent a hang.
+  AddBidderJsonResponse(
+      &url_loader_factory_,
+      GURL(interest_group_trusted_bidding_signals_url_->spec() +
+           "?hostname=top.window.test&interestGroupNames=Fred"),
+      "{}");
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"interestGroup.trustedBiddingSignalsUrl is deprecated. "
+      "Please use interestGroup.trustedBiddingSignalsURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"generateBid",
+      interest_group_bidding_url_, /*line_number=*/4);
+  channel->ExpectNoMoreConsoleEvents();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+}
+
+// Check that accessing `TrustedBiddingSignalsURL` does not display a warning.
+//
+// TODO(crbug.com/40264073): Remove this test when
+// `trustedBiddingSignalsUrl` is removed.
+TEST_F(BidderWorkletTest, TrustedBiddingSignalsUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(
+          R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
+          "if (!interestGroup.trustedBiddingSignalsURL) return;"));
+
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/trusted_signals");
+  // Need trusted signals response to prevent a hang.
+  AddBidderJsonResponse(
+      &url_loader_factory_,
+      GURL(interest_group_trusted_bidding_signals_url_->spec() +
+           "?hostname=top.window.test&interestGroupNames=Fred"),
+      "{}");
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(worklet.get());
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupTrustedBiddingSignalsKeys) {
@@ -2222,21 +4392,25 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupTrustedBiddingSignalsKeys) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("missing")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("missing")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // 0-length but non-null key list.
   interest_group_trusted_bidding_signals_keys_.emplace();
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"([])", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"([])", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_trusted_bidding_signals_keys_->push_back("2");
   interest_group_trusted_bidding_signals_keys_->push_back("1");
@@ -2244,11 +4418,13 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupTrustedBiddingSignalsKeys) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"(["2","1","3"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["2","1","3"])",
+          1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidInterestGroupUserBiddingSignals) {
@@ -2263,44 +4439,52 @@ TEST_F(BidderWorkletTest, GenerateBidInterestGroupUserBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_user_bidding_signals_ = R"("foo")";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("foo")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   interest_group_user_bidding_signals_ = "[1]";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "[1]", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[1]", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
-  interest_group_user_bidding_signals_ = absl::nullopt;
+  interest_group_user_bidding_signals_ = std::nullopt;
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: interestGroup.userBiddingSignals === undefined, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "true", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "true", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 // Test multiple GenerateBid calls on a single worklet, in parallel. Do this
 // twice, once before the worklet has loaded its Javascript, and once after, to
 // make sure both cases work.
-TEST_F(BidderWorkletTest, GenerateBidParallel) {
+TEST_P(BidderWorkletMultiThreadingTest, GenerateBidParallel) {
   // Each GenerateBid call provides a different `auctionSignals` value. Use that
   // in the result for testing.
   const char kBidderScriptReturnValue[] = R"({
@@ -2326,45 +4510,54 @@ TEST_F(BidderWorkletTest, GenerateBidParallel) {
       mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
           bid_finalizer;
       bidder_worklet->BeginGenerateBid(
-          CreateBidderWorkletNonSharedParams(), kanon_mode_, join_origin_,
+          CreateBidderWorkletNonSharedParams(),
+          trusted_signals_cache_key_.Clone(), kanon_mode_, join_origin_,
           direct_from_seller_per_buyer_signals_,
           direct_from_seller_auction_signals_, browser_signal_seller_origin_,
           browser_signal_top_level_seller_origin_,
-          CreateBiddingBrowserSignals(), auction_start_time_,
+          browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+          auction_start_time_, requested_ad_size_, multi_bid_limit_,
           /*trace_id=*/1,
           GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
               [&run_loop, &num_generate_bid_calls, bid_value](
-                  mojom::BidderWorkletBidPtr bid,
-                  mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-                  uint32_t data_version, bool has_data_version,
-                  const absl::optional<GURL>& debug_loss_report_url,
-                  const absl::optional<GURL>& debug_win_report_url,
-                  double set_priority, bool has_set_priority,
+                  std::vector<mojom::BidderWorkletBidPtr> bids,
+                  std::optional<uint32_t> data_version,
+                  const std::optional<GURL>& debug_loss_report_url,
+                  const std::optional<GURL>& debug_win_report_url,
+                  std::optional<double> set_priority,
                   base::flat_map<
                       std::string,
                       auction_worklet::mojom::PrioritySignalsDoublePtr>
                       update_priority_signals_overrides,
                   PrivateAggregationRequests pa_requests,
                   PrivateAggregationRequests non_kanon_pa_requests,
-                  base::TimeDelta bidding_latency,
+                  RealTimeReportingContributions real_time_contributions,
+                  mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                  mojom::GenerateBidDependencyLatenciesPtr
+                      generate_bid_dependency_latencies,
+                  mojom::RejectReason reject_reason,
                   const std::vector<std::string>& errors) {
+                ASSERT_EQ(1u, bids.size());
+                const mojom::BidderWorkletBid* bid = bids[0].get();
                 EXPECT_EQ(bid_value, bid->bid);
                 EXPECT_EQ(base::NumberToString(bid_value), bid->ad);
                 EXPECT_EQ(GURL("https://response.test/"),
                           bid->ad_descriptor.url);
-                EXPECT_FALSE(kanon_bid);
-                EXPECT_FALSE(has_data_version);
+                EXPECT_FALSE(data_version.has_value());
                 EXPECT_TRUE(errors.empty());
                 ++num_generate_bid_calls;
-                if (num_generate_bid_calls == kNumGenerateBidCalls)
+                if (num_generate_bid_calls == kNumGenerateBidCalls) {
                   run_loop.Quit();
+                }
               })),
           bid_finalizer.BindNewEndpointAndPassReceiver());
       bid_finalizer->FinishGenerateBid(
           /*auction_signals_json=*/base::NumberToString(bid_value),
           per_buyer_signals_, per_buyer_timeout_, per_buyer_currency_,
-          /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-          /*direct_from_seller_auction_signals=*/absl::nullopt);
+          /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+          /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+          /*direct_from_seller_auction_signals=*/std::nullopt,
+          /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
     }
 
     // If this is the first loop iteration, wait for all the Mojo calls to
@@ -2387,7 +4580,7 @@ TEST_F(BidderWorkletTest, GenerateBidParallel) {
 
 // Test multiple GenerateBid calls on a single worklet, in parallel, in the case
 // the script fails to load.
-TEST_F(BidderWorkletTest, GenerateBidParallelLoadFails) {
+TEST_P(BidderWorkletMultiThreadingTest, GenerateBidParallelLoadFails) {
   auto bidder_worklet = CreateWorklet();
 
   for (size_t i = 0; i < 10; ++i) {
@@ -2410,8 +4603,10 @@ TEST_F(BidderWorkletTest, GenerateBidParallelLoadFails) {
 // 1) GenerateBid() calls are made.
 // 2) The worklet script load completes.
 // 3) The trusted bidding signals are loaded.
-TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched1) {
+TEST_P(BidderWorkletMultiThreadingTest,
+       GenerateBidTrustedBiddingSignalsParallelBatched1) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_.emplace();
 
   // Each GenerateBid() call provides a different `auctionSignals` value. The
@@ -2438,44 +4633,52 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched1) {
     mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
         bid_finalizer;
     bidder_worklet->BeginGenerateBid(
-        std::move(interest_group_fields), kanon_mode_, join_origin_,
-        direct_from_seller_per_buyer_signals_,
+        std::move(interest_group_fields), trusted_signals_cache_key_.Clone(),
+        kanon_mode_, join_origin_, direct_from_seller_per_buyer_signals_,
         direct_from_seller_auction_signals_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, CreateBiddingBrowserSignals(),
-        auction_start_time_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1,
         GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
             [&run_loop, &num_generate_bid_calls, i](
-                mojom::BidderWorkletBidPtr bid,
-                mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-                uint32_t data_version, bool has_data_version,
-                const absl::optional<GURL>& debug_loss_report_url,
-                const absl::optional<GURL>& debug_win_report_url,
-                double set_priority, bool has_set_priority,
+                std::vector<mojom::BidderWorkletBidPtr> bids,
+                std::optional<uint32_t> data_version,
+                const std::optional<GURL>& debug_loss_report_url,
+                const std::optional<GURL>& debug_win_report_url,
+                std::optional<double> set_priority,
                 base::flat_map<std::string,
                                auction_worklet::mojom::PrioritySignalsDoublePtr>
                     update_priority_signals_overrides,
                 PrivateAggregationRequests pa_requests,
                 PrivateAggregationRequests non_kanon_pa_requests,
-                base::TimeDelta bidding_latency,
+                RealTimeReportingContributions real_time_contributions,
+                mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                mojom::GenerateBidDependencyLatenciesPtr
+                    generate_bid_dependency_latencies,
+                mojom::RejectReason reject_reason,
                 const std::vector<std::string>& errors) {
+              ASSERT_EQ(1u, bids.size());
+              const mojom::BidderWorkletBid* bid = bids[0].get();
               EXPECT_EQ(base::NumberToString(i), bid->ad);
               EXPECT_EQ(i + 1, bid->bid);
               EXPECT_EQ(GURL("https://response.test/"), bid->ad_descriptor.url);
-              EXPECT_FALSE(kanon_bid);
-              EXPECT_EQ(10u, data_version);
-              EXPECT_TRUE(has_data_version);
+              ASSERT_TRUE(data_version.has_value());
+              EXPECT_EQ(10u, data_version.value());
               EXPECT_TRUE(errors.empty());
               ++num_generate_bid_calls;
-              if (num_generate_bid_calls == kNumGenerateBidCalls)
+              if (num_generate_bid_calls == kNumGenerateBidCalls) {
                 run_loop.Quit();
+              }
             })),
         bid_finalizer.BindNewEndpointAndPassReceiver());
     bid_finalizer->FinishGenerateBid(
         auction_signals_, per_buyer_signals_, per_buyer_timeout_,
         per_buyer_currency_,
-        /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-        /*direct_from_seller_auction_signals=*/absl::nullopt);
+        /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+        /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+        /*direct_from_seller_auction_signals=*/std::nullopt,
+        /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   }
   // This should trigger a single network request for all needed signals.
   bidder_worklet->SendPendingSignalsRequests();
@@ -2500,8 +4703,9 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched1) {
   std::string keys;
   base::Value::Dict keys_dict;
   for (size_t i = 0; i < kNumGenerateBidCalls; ++i) {
-    if (i != 0)
+    if (i != 0) {
       keys.append(",");
+    }
     keys.append(base::NumberToString(i));
     keys_dict.Set(base::NumberToString(i), static_cast<int>(i + 1));
   }
@@ -2529,8 +4733,10 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched1) {
 // 1) GenerateBid() calls are made
 // 2) The trusted bidding signals are loaded.
 // 3) The worklet script load completes.
-TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched2) {
+TEST_P(BidderWorkletMultiThreadingTest,
+       GenerateBidTrustedBiddingSignalsParallelBatched2) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_.emplace();
 
   // Each GenerateBid() call provides a different `auctionSignals` value. The
@@ -2557,44 +4763,52 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched2) {
     mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
         bid_finalizer;
     bidder_worklet->BeginGenerateBid(
-        std::move(interest_group_fields), kanon_mode_, join_origin_,
-        direct_from_seller_per_buyer_signals_,
+        std::move(interest_group_fields), trusted_signals_cache_key_.Clone(),
+        kanon_mode_, join_origin_, direct_from_seller_per_buyer_signals_,
         direct_from_seller_auction_signals_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, CreateBiddingBrowserSignals(),
-        auction_start_time_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1,
         GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
             [&run_loop, &num_generate_bid_calls, i](
-                mojom::BidderWorkletBidPtr bid,
-                mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-                uint32_t data_version, bool has_data_version,
-                const absl::optional<GURL>& debug_loss_report_url,
-                const absl::optional<GURL>& debug_win_report_url,
-                double set_priority, bool has_set_priority,
+                std::vector<mojom::BidderWorkletBidPtr> bids,
+                std::optional<uint32_t> data_version,
+                const std::optional<GURL>& debug_loss_report_url,
+                const std::optional<GURL>& debug_win_report_url,
+                std::optional<double> set_priority,
                 base::flat_map<std::string,
                                auction_worklet::mojom::PrioritySignalsDoublePtr>
                     update_priority_signals_overrides,
                 PrivateAggregationRequests pa_requests,
                 PrivateAggregationRequests non_kanon_pa_requests,
-                base::TimeDelta bidding_latency,
+                RealTimeReportingContributions real_time_contributions,
+                mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                mojom::GenerateBidDependencyLatenciesPtr
+                    generate_bid_dependency_latencies,
+                mojom::RejectReason reject_reason,
                 const std::vector<std::string>& errors) {
+              ASSERT_EQ(1u, bids.size());
+              const mojom::BidderWorkletBid* bid = bids[0].get();
               EXPECT_EQ(base::NumberToString(i), bid->ad);
               EXPECT_EQ(i + 1, bid->bid);
               EXPECT_EQ(GURL("https://response.test/"), bid->ad_descriptor.url);
-              EXPECT_FALSE(kanon_bid);
-              EXPECT_EQ(42u, data_version);
-              EXPECT_TRUE(has_data_version);
+              ASSERT_TRUE(data_version.has_value());
+              EXPECT_EQ(42u, data_version.value());
               EXPECT_TRUE(errors.empty());
               ++num_generate_bid_calls;
-              if (num_generate_bid_calls == kNumGenerateBidCalls)
+              if (num_generate_bid_calls == kNumGenerateBidCalls) {
                 run_loop.Quit();
+              }
             })),
         bid_finalizer.BindNewEndpointAndPassReceiver());
     bid_finalizer->FinishGenerateBid(
         auction_signals_, per_buyer_signals_, per_buyer_timeout_,
         per_buyer_currency_,
-        /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-        /*direct_from_seller_auction_signals=*/absl::nullopt);
+        /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+        /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+        /*direct_from_seller_auction_signals=*/std::nullopt,
+        /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   }
   // This should trigger a single network request for all needed signals.
   bidder_worklet->SendPendingSignalsRequests();
@@ -2610,8 +4824,9 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched2) {
   std::string keys;
   base::Value::Dict keys_dict;
   for (size_t i = 0; i < kNumGenerateBidCalls; ++i) {
-    if (i != 0)
+    if (i != 0) {
       keys.append(",");
+    }
     keys.append(base::NumberToString(i));
     keys_dict.Set(base::NumberToString(i), static_cast<int>(i + 1));
   }
@@ -2649,8 +4864,10 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched2) {
 // 1) The worklet script load completes.
 // 2) GenerateBid() calls are made.
 // 3) The trusted bidding signals are loaded.
-TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched3) {
+TEST_P(BidderWorkletMultiThreadingTest,
+       GenerateBidTrustedBiddingSignalsParallelBatched3) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_.emplace();
 
   // Each GenerateBid() call provides a different `auctionSignals` value. The
@@ -2682,44 +4899,52 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched3) {
     mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
         bid_finalizer;
     bidder_worklet->BeginGenerateBid(
-        std::move(interest_group_fields), kanon_mode_, join_origin_,
-        direct_from_seller_per_buyer_signals_,
+        std::move(interest_group_fields), trusted_signals_cache_key_.Clone(),
+        kanon_mode_, join_origin_, direct_from_seller_per_buyer_signals_,
         direct_from_seller_auction_signals_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, CreateBiddingBrowserSignals(),
-        auction_start_time_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1,
         GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
             [&run_loop, &num_generate_bid_calls, i](
-                mojom::BidderWorkletBidPtr bid,
-                mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-                uint32_t data_version, bool has_data_version,
-                const absl::optional<GURL>& debug_loss_report_url,
-                const absl::optional<GURL>& debug_win_report_url,
-                double set_priority, bool has_set_priority,
+                std::vector<mojom::BidderWorkletBidPtr> bids,
+                std::optional<uint32_t> data_version,
+                const std::optional<GURL>& debug_loss_report_url,
+                const std::optional<GURL>& debug_win_report_url,
+                std::optional<double> set_priority,
                 base::flat_map<std::string,
                                auction_worklet::mojom::PrioritySignalsDoublePtr>
                     update_priority_signals_overrides,
                 PrivateAggregationRequests pa_requests,
                 PrivateAggregationRequests non_kanon_pa_requests,
-                base::TimeDelta bidding_latency,
+                RealTimeReportingContributions real_time_contributions,
+                mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                mojom::GenerateBidDependencyLatenciesPtr
+                    generate_bid_dependency_latencies,
+                mojom::RejectReason reject_reason,
                 const std::vector<std::string>& errors) {
+              ASSERT_EQ(1u, bids.size());
+              const mojom::BidderWorkletBid* bid = bids[0].get();
               EXPECT_EQ(base::NumberToString(i), bid->ad);
               EXPECT_EQ(i + 1, bid->bid);
-              EXPECT_FALSE(kanon_bid);
-              EXPECT_EQ(22u, data_version);
-              EXPECT_TRUE(has_data_version);
+              ASSERT_TRUE(data_version.has_value());
+              EXPECT_EQ(22u, data_version.value());
               EXPECT_EQ(GURL("https://response.test/"), bid->ad_descriptor.url);
               EXPECT_TRUE(errors.empty());
               ++num_generate_bid_calls;
-              if (num_generate_bid_calls == kNumGenerateBidCalls)
+              if (num_generate_bid_calls == kNumGenerateBidCalls) {
                 run_loop.Quit();
+              }
             })),
         bid_finalizer.BindNewEndpointAndPassReceiver());
     bid_finalizer->FinishGenerateBid(
         auction_signals_, per_buyer_signals_, per_buyer_timeout_,
         per_buyer_currency_,
-        /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-        /*direct_from_seller_auction_signals=*/absl::nullopt);
+        /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+        /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+        /*direct_from_seller_auction_signals=*/std::nullopt,
+        /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   }
   // This should trigger a single network request for all needed signals.
   bidder_worklet->SendPendingSignalsRequests();
@@ -2734,8 +4959,9 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched3) {
   std::string keys;
   base::Value::Dict keys_dict;
   for (size_t i = 0; i < kNumGenerateBidCalls; ++i) {
-    if (i != 0)
+    if (i != 0) {
       keys.append(",");
+    }
     keys.append(base::NumberToString(i));
     keys_dict.Set(base::NumberToString(i), static_cast<int>(i + 1));
   }
@@ -2758,8 +4984,10 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelBatched3) {
 
 // Same as the first batched test, but without batching requests. No need to
 // test all not batched order variations.
-TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelNotBatched) {
+TEST_P(BidderWorkletMultiThreadingTest,
+       GenerateBidTrustedBiddingSignalsParallelNotBatched) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_.emplace();
 
   // Each GenerateBid() call provides a different `auctionSignals` value. The
@@ -2786,37 +5014,43 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelNotBatched) {
     mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
         bid_finalizer;
     bidder_worklet->BeginGenerateBid(
-        std::move(interest_group_fields), kanon_mode_, join_origin_,
-        direct_from_seller_per_buyer_signals_,
+        std::move(interest_group_fields), trusted_signals_cache_key_.Clone(),
+        kanon_mode_, join_origin_, direct_from_seller_per_buyer_signals_,
         direct_from_seller_auction_signals_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, CreateBiddingBrowserSignals(),
-        auction_start_time_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_recency_generate_bid_, CreateBiddingBrowserSignals(),
+        auction_start_time_, requested_ad_size_, multi_bid_limit_,
         /*trace_id=*/1,
         GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
             [&run_loop, &num_generate_bid_calls, i](
-                mojom::BidderWorkletBidPtr bid,
-                mojom::BidderWorkletKAnonEnforcedBidPtr kanon_bid,
-                uint32_t data_version, bool has_data_version,
-                const absl::optional<GURL>& debug_loss_report_url,
-                const absl::optional<GURL>& debug_win_report_url,
-                double set_priority, bool has_set_priority,
+                std::vector<mojom::BidderWorkletBidPtr> bids,
+                std::optional<uint32_t> data_version,
+                const std::optional<GURL>& debug_loss_report_url,
+                const std::optional<GURL>& debug_win_report_url,
+                std::optional<double> set_priority,
                 base::flat_map<std::string,
                                auction_worklet::mojom::PrioritySignalsDoublePtr>
                     update_priority_signals_overrides,
                 PrivateAggregationRequests pa_requests,
                 PrivateAggregationRequests non_kanon_pa_requests,
-                base::TimeDelta bidding_latency,
+                RealTimeReportingContributions real_time_contributions,
+                mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                mojom::GenerateBidDependencyLatenciesPtr
+                    generate_bid_dependency_latencies,
+                mojom::RejectReason reject_reason,
                 const std::vector<std::string>& errors) {
+              ASSERT_EQ(1u, bids.size());
+              const mojom::BidderWorkletBid* bid = bids[0].get();
               EXPECT_EQ(base::NumberToString(i), bid->ad);
               EXPECT_EQ(i + 1, bid->bid);
               EXPECT_EQ(GURL("https://response.test/"), bid->ad_descriptor.url);
-              EXPECT_FALSE(kanon_bid);
-              EXPECT_EQ(i, data_version);
-              EXPECT_TRUE(has_data_version);
+              ASSERT_TRUE(data_version.has_value());
+              EXPECT_EQ(i, data_version.value());
               EXPECT_TRUE(errors.empty());
               ++num_generate_bid_calls;
-              if (num_generate_bid_calls == kNumGenerateBidCalls)
+              if (num_generate_bid_calls == kNumGenerateBidCalls) {
                 run_loop.Quit();
+              }
             })),
         bid_finalizer.BindNewEndpointAndPassReceiver());
 
@@ -2826,8 +5060,10 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelNotBatched) {
     bid_finalizer->FinishGenerateBid(
         auction_signals_, per_buyer_signals_, per_buyer_timeout_,
         per_buyer_currency_,
-        /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-        /*direct_from_seller_auction_signals=*/absl::nullopt);
+        /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+        /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+        /*direct_from_seller_auction_signals=*/std::nullopt,
+        /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   }
 
   // Calling FinishGenerateBid() shouldn't cause any callbacks to be invoked -
@@ -2865,11 +5101,11 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsParallelNotBatched) {
 // It shouldn't matter the order in which network fetches complete. For each
 // required and optional generateBid() URL load prerequisite, ensure that
 // generateBid() completes when that URL is the last loaded URL.
-TEST_F(BidderWorkletTest, GenerateBidLoadCompletionOrder) {
+TEST_P(BidderWorkletMultiThreadingTest, GenerateBidLoadCompletionOrder) {
   constexpr char kTrustedSignalsResponse[] = R"({"keys":{"1":1}})";
   constexpr char kJsonResponse[] = "{}";
   constexpr char kDirectFromSellerSignalsHeaders[] =
-      "X-Allow-FLEDGE: true\nX-FLEDGE-Auction-Only: true";
+      "Ad-Auction-Allowed: true\nAd-Auction-Only: true";
 
   direct_from_seller_per_buyer_signals_ =
       GURL("https://url.test/perbuyersignals");
@@ -2885,16 +5121,33 @@ TEST_F(BidderWorkletTest, GenerateBidLoadCompletionOrder) {
     std::string content;
   };
 
-  const Response kResponses[] = {
-      {interest_group_bidding_url_, kJavascriptMimeType, kAllowFledgeHeader,
-       CreateBasicGenerateBidScript()},
-      {*direct_from_seller_per_buyer_signals_, kJsonMimeType,
-       kDirectFromSellerSignalsHeaders, kJsonResponse},
-      {*direct_from_seller_auction_signals_, kJsonMimeType,
-       kDirectFromSellerSignalsHeaders, kJsonResponse},
-      {GURL(interest_group_trusted_bidding_signals_url_->spec() +
-            "?hostname=top.window.test&keys=1&interestGroupNames=Fred"),
-       kJsonMimeType, kAllowFledgeHeader, kTrustedSignalsResponse}};
+  const auto kResponses = std::to_array<Response>({
+      {
+          interest_group_bidding_url_,
+          kJavascriptMimeType,
+          kAllowFledgeHeader,
+          CreateBasicGenerateBidScript(),
+      },
+      {
+          *direct_from_seller_per_buyer_signals_,
+          kJsonMimeType,
+          kDirectFromSellerSignalsHeaders,
+          kJsonResponse,
+      },
+      {
+          *direct_from_seller_auction_signals_,
+          kJsonMimeType,
+          kDirectFromSellerSignalsHeaders,
+          kJsonResponse,
+      },
+      {
+          GURL(interest_group_trusted_bidding_signals_url_->spec() +
+               "?hostname=top.window.test&keys=1&interestGroupNames=Fred"),
+          kJsonMimeType,
+          kAllowFledgeHeader,
+          kTrustedSignalsResponse,
+      },
+  });
 
   // Cycle such that each response in `kResponses` gets to be the last response,
   // like so:
@@ -2906,26 +5159,26 @@ TEST_F(BidderWorkletTest, GenerateBidLoadCompletionOrder) {
     SCOPED_TRACE(offset);
     mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
     url_loader_factory_.ClearResponses();
-    load_script_run_loop_ = std::make_unique<base::RunLoop>();
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
     GenerateBid(bidder_worklet.get());
     for (size_t i = 0; i < std::size(kResponses); ++i) {
       SCOPED_TRACE(i);
       const Response& response =
           kResponses[(i + offset) % std::size(kResponses)];
-      AddResponse(
-          &url_loader_factory_, response.response_url, response.response_type,
-          /*charset=*/absl::nullopt, response.content, response.headers);
+      AddResponse(&url_loader_factory_, response.response_url,
+                  response.response_type,
+                  /*charset=*/std::nullopt, response.content, response.headers);
       task_environment_.RunUntilIdle();
       if (i < std::size(kResponses) - 1) {
         // Some URLs haven't finished loading -- generateBid() should be
         // blocked.
-        EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+        EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
       }
     }
     // The last URL for this generateBid() call has completed -- check that
     // generateBid() returns.
-    load_script_run_loop_->Run();
-    load_script_run_loop_.reset();
+    generate_bid_run_loop_->Run();
+    generate_bid_run_loop_.reset();
   }
 }
 
@@ -2965,7 +5218,7 @@ if (auctionSignalsJson !== '{"worklet":2}') {
   constexpr char kRawReturnValue[] =
       R"({bid: 1, render:"https://response.test/"})";
   constexpr char kDirectFromSellerSignalsHeaders[] =
-      "X-Allow-FLEDGE: true\nX-FLEDGE-Auction-Only: true";
+      "Ad-Auction-Allowed: true\nAd-Auction-Only: true";
 
   for (bool late_direct_from_seller_signals : {false, true}) {
     SCOPED_TRACE(late_direct_from_seller_signals);
@@ -2977,10 +5230,10 @@ if (auctionSignalsJson !== '{"worklet":2}') {
 
     mojo::Remote<mojom::BidderWorklet> bidder_worklet1 = CreateWorklet();
     AddResponse(&url_loader_factory_, *direct_from_seller_per_buyer_signals_,
-                kJsonMimeType, /*charset=*/absl::nullopt, kWorklet1JsonResponse,
+                kJsonMimeType, /*charset=*/std::nullopt, kWorklet1JsonResponse,
                 kDirectFromSellerSignalsHeaders);
     AddResponse(&url_loader_factory_, *direct_from_seller_auction_signals_,
-                kJsonMimeType, /*charset=*/absl::nullopt, kWorklet1JsonResponse,
+                kJsonMimeType, /*charset=*/std::nullopt, kWorklet1JsonResponse,
                 kDirectFromSellerSignalsHeaders);
     AddJavascriptResponse(
         &url_loader_factory_, interest_group_bidding_url_,
@@ -2998,26 +5251,26 @@ if (auctionSignalsJson !== '{"worklet":2}') {
                       /*use_alternate_url_loader_factory=*/true);
     AddResponse(&alternate_url_loader_factory_,
                 *direct_from_seller_per_buyer_signals_, kJsonMimeType,
-                /*charset=*/absl::nullopt, kWorklet2JsonResponse,
+                /*charset=*/std::nullopt, kWorklet2JsonResponse,
                 kDirectFromSellerSignalsHeaders);
     AddResponse(&alternate_url_loader_factory_,
                 *direct_from_seller_auction_signals_, kJsonMimeType,
-                /*charset=*/absl::nullopt, kWorklet2JsonResponse,
+                /*charset=*/std::nullopt, kWorklet2JsonResponse,
                 kDirectFromSellerSignalsHeaders);
     AddJavascriptResponse(
         &alternate_url_loader_factory_, interest_group_bidding_url_,
         CreateGenerateBidScript(/*raw_return_value=*/kRawReturnValue,
                                 /*extra_code=*/kWorklet2ExtraCode));
-    load_script_run_loop_ = std::make_unique<base::RunLoop>();
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
     GenerateBid(bidder_worklet1.get());
-    load_script_run_loop_->Run();
+    generate_bid_run_loop_->Run();
     EXPECT_THAT(bid_errors_, ::testing::UnorderedElementsAre());
 
-    load_script_run_loop_ = std::make_unique<base::RunLoop>();
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
     GenerateBid(bidder_worklet2.get());
-    load_script_run_loop_->Run();
+    generate_bid_run_loop_->Run();
     EXPECT_THAT(bid_errors_, ::testing::UnorderedElementsAre());
-    load_script_run_loop_.reset();
+    generate_bid_run_loop_.reset();
   }
 }
 
@@ -3035,20 +5288,24 @@ TEST_F(BidderWorkletTest, GenerateBidAuctionSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("foo")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   auction_signals_ = "[1]";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "[1]", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[1]", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidPerBuyerSignals) {
@@ -3065,29 +5322,95 @@ TEST_F(BidderWorkletTest, GenerateBidPerBuyerSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          R"("foo")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   per_buyer_signals_ = "[1]";
   RunGenerateBidWithReturnValueExpectingResult(
       kGenerateBidBody,
       mojom::BidderWorkletBid::New(
-          "[1]", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[1]", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
-  per_buyer_signals_ = absl::nullopt;
+  per_buyer_signals_ = std::nullopt;
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: perBuyerSignals === null, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "true", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "true", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest,
+       GenerateBidDirectFromSellerSignalsHeaderAdSlotAuctionSignals) {
+  const std::string kGenerateBidBody =
+      R"({ad: directFromSellerSignals.auctionSignals,
+           bid:1, render:"https://response.test/"})";
+
+  direct_from_seller_auction_signals_header_ad_slot_ = R"("foo")";
+  RunGenerateBidWithReturnValueExpectingResult(
+      kGenerateBidBody,
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  direct_from_seller_auction_signals_header_ad_slot_ = "[1]";
+  RunGenerateBidWithReturnValueExpectingResult(
+      kGenerateBidBody,
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[1]", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest,
+       GenerateBidDirectFromSellerSignalsHeaderAdSlotPerBuyerSignals) {
+  const std::string kGenerateBidBody =
+      R"({ad: directFromSellerSignals.perBuyerSignals,
+           bid:1, render:"https://response.test/"})";
+
+  direct_from_seller_per_buyer_signals_header_ad_slot_ = R"("foo")";
+  RunGenerateBidWithReturnValueExpectingResult(
+      kGenerateBidBody,
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("foo")", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  direct_from_seller_per_buyer_signals_header_ad_slot_ = "[1]";
+  RunGenerateBidWithReturnValueExpectingResult(
+      kGenerateBidBody,
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[1]", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidBrowserSignalSellerOrigin) {
@@ -3096,35 +5419,69 @@ TEST_F(BidderWorkletTest, GenerateBidBrowserSignalSellerOrigin) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: browserSignals.seller, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("https://foo.test")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://foo.test")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   browser_signal_seller_origin_ =
       url::Origin::Create(GURL("https://[::1]:40000/"));
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: browserSignals.seller, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("https://[::1]:40000")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://[::1]:40000")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, GenerateBidBrowserSignalsAdComponentsLimit) {
+  // Default is now limit of 40.
+  RunGenerateBidExpectingExpressionIsTrue(
+      "browserSignals.adComponentsLimit === 40");
+}
+
+TEST_F(BidderWorkletCustomAdComponentLimitTest,
+       GenerateBidBrowserSignalsAdComponentsLimit) {
+  RunGenerateBidExpectingExpressionIsTrue(
+      "browserSignals.adComponentsLimit === 25");
+}
+
+TEST_F(BidderWorkletMultiBidDisabledTest, GenerateBidMultiBidLimit) {
+  // If feature not enabled.
+  RunGenerateBidExpectingExpressionIsTrue(
+      "!('multiBidLimit' in browserSignals)");
+}
+
+TEST_F(BidderWorkletTest, GenerateBidMultiBidLimit) {
+  multi_bid_limit_ = 143;
+  RunGenerateBidExpectingExpressionIsTrue(
+      "browserSignals.multiBidLimit === 143");
+
+  multi_bid_limit_ = 10;
+  RunGenerateBidExpectingExpressionIsTrue(
+      "browserSignals.multiBidLimit === 10");
 }
 
 TEST_F(BidderWorkletTest, GenerateBidBrowserSignalTopLevelSellerOrigin) {
-  browser_signal_top_level_seller_origin_ = absl::nullopt;
+  browser_signal_top_level_seller_origin_ = std::nullopt;
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "topLevelSeller" in browserSignals,
           bid:1,
           render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "false", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "false", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Need to set `allowComponentAuction` to true for a bid to be created when
   // topLevelSeller is non-null.
@@ -3134,11 +5491,13 @@ TEST_F(BidderWorkletTest, GenerateBidBrowserSignalTopLevelSellerOrigin) {
       R"({ad: browserSignals.topLevelSeller, bid:1, render:"https://response.test/",
           allowComponentAuction: true})",
       mojom::BidderWorkletBid::New(
-          R"("https://foo.test")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("https://foo.test")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidBrowserSignalTopWindowOrigin) {
@@ -3146,11 +5505,13 @@ TEST_F(BidderWorkletTest, GenerateBidBrowserSignalTopWindowOrigin) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: browserSignals.topWindowHostname, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("top.window.test")", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"("top.window.test")", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidBrowserSignalJoinCountBidCount) {
@@ -3172,10 +5533,12 @@ TEST_F(BidderWorkletTest, GenerateBidBrowserSignalJoinCountBidCount) {
             R"({ad: %s, bid:1, render:"https://response.test/"})",
             test_case.name),
         mojom::BidderWorkletBid::New(
-            "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+            /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
     *test_case.value_ptr = 10;
     RunGenerateBidWithReturnValueExpectingResult(
@@ -3183,47 +5546,222 @@ TEST_F(BidderWorkletTest, GenerateBidBrowserSignalJoinCountBidCount) {
             R"({ad: %s, bid:1, render:"https://response.test/"})",
             test_case.name),
         mojom::BidderWorkletBid::New(
-            "10", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "10", 1,
+            /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()));
     SetDefaultParameters();
   }
+}
+
+TEST_F(BidderWorkletTest,
+       GenerateBidBrowserSignalForDebuggingOnlyInCooldownOrLockout) {
+  RunGenerateBidExpectingExpressionIsTrue(R"(
+    browserSignals.forDebuggingOnlyInCooldownOrLockout === false;
+  )");
+
+  browser_signal_for_debugging_only_in_cooldown_or_lockout_ = true;
+  RunGenerateBidExpectingExpressionIsTrue(R"(
+    browserSignals.forDebuggingOnlyInCooldownOrLockout === true;
+  )");
 }
 
 TEST_F(BidderWorkletTest, GenerateBidAds) {
   // A bid URL that's not in the InterestGroup's ads list should fail.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: 0, bid:1, render:"https://response2.test/"})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid render URL "
        "'https://response2.test/' isn't one of the registered creative URLs."});
 
-  // Adding an ad with a corresponding `renderUrl` should result in success.
+  // Adding an ad with a corresponding `renderURL` should result in success.
   // Also check the `interestGroup.ads` field passed to Javascript.
   interest_group_ads_.emplace_back(GURL("https://response2.test/"),
                                    /*metadata=*/R"(["metadata"])");
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/"})",
       mojom::BidderWorkletBid::New(
-          "[{\"renderUrl\":\"https://response.test/\"},"
-          "{\"renderUrl\":\"https://response2.test/"
-          "\",\"metadata\":[\"metadata\"]}]",
-          1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response.test/\","
+          "\"renderUrl\":\"https://response.test/\"},"
+          "{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\","
+          "\"metadata\":[\"metadata\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response2.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Make sure `metadata` is treated as an object, instead of a raw string.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: interestGroup.ads[1].metadata[0], bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "\"metadata\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"metadata\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+// Verify generateBid can see the reporting Ids when
+// `selectable_buyer_and_seller_reporting_ids` is present.
+TEST_F(BidderWorkletTest, GenerateBidAdsWithAllReportingIds) {
+  // Ad with all reporting ids.
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/"buyer_reporting_id",
+      /*buyer_and_seller_reporting_id=*/"buyer_and_seller_reporting_id",
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"selectable_id1", "selectable_id2"});
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\","
+          "\"buyerReportingId\":\"buyer_reporting_id\","
+          "\"buyerAndSellerReportingId\":\"buyer_and_seller_reporting_id\","
+          "\"selectableBuyerAndSellerReportingIds\":[\"selectable_id1\","
+          "\"selectable_id2\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response2.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Ad with only selectable reporting ids.
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/std::nullopt,
+      /*buyer_and_seller_reporting_id=*/std::nullopt,
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"selectable_id1", "selectable_id2"});
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\","
+          "\"selectableBuyerAndSellerReportingIds\":[\"selectable_id1\","
+          "\"selectable_id2\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response2.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest,
+       GenerateBidDoesNotContainSelectedReportingIdsWhenFlagDisabled) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndDisableFeature(
+      blink::features::kFledgeAuctionDealSupport);
+
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/std::nullopt,
+      /*buyer_and_seller_reporting_id=*/std::nullopt,
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"selectable_id1", "selectable_id2"});
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1,
+      render:"https://response2.test/",
+      selectedBuyerAndSellerReportingId: "selectable_id1"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\","
+          "\"selectableBuyerAndSellerReportingIds\":[\"selectable_id1\","
+          "\"selectable_id2\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response2.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, GenerateBidReturnsSelectedReportingId) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAuctionDealSupport);
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/std::nullopt,
+      /*buyer_and_seller_reporting_id=*/std::nullopt,
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"selectable_id1", "selectable_id2"});
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/", selectedBuyerAndSellerReportingId: "selectable_id1"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\","
+          "\"selectableBuyerAndSellerReportingIds\":[\"selectable_id1\","
+          "\"selectable_id2\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response2.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/"selectable_id1",
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+}
+
+TEST_F(BidderWorkletTest, GenerateBidWithInvalidSelectedReportingId) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAuctionDealSupport);
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/std::nullopt,
+      /*buyer_and_seller_reporting_id=*/std::nullopt,
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"selectable_id1", "selectable_id2"});
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/",
+          selectedBuyerAndSellerReportingId: "invalid_id_not_in_array"})",
+      mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() Invalid selected buyer and seller "
+       "reporting id"});
+}
+
+// Verify generateBid cannot see the reporting Ids when
+// `selectable_buyer_and_seller_reporting_ids` is not present.
+TEST_F(BidderWorkletTest, GenerateBidAdsWithoutReportingIds) {
+  // Ads without selectable should not see any reporting ids in generate bid.
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response2.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/"buyer_reporting_id",
+      /*buyer_and_seller_reporting_id=*/"buyer_and_seller_reporting_id",
+      /*selectable_buyer_and_seller_reporting_ids=*/std::nullopt);
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: interestGroup.ads, bid:1, render:"https://response2.test/"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://response2.test/\","
+          "\"renderUrl\":\"https://response2.test/\"}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response2.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidAdComponents) {
@@ -3231,26 +5769,30 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponents) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: 0, bid:1, render:"https://response.test/", adComponents:["https://ad_component.test/"]})",
       mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{
               blink::AdDescriptor(GURL("https://ad_component.test/"))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   // Empty, but non-null, adComponents field.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: 0, bid:1, render:"https://response.test/", adComponents:[]})",
       mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>(),
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // An adComponent URL that's not in the InterestGroup's adComponents list
   // should fail.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: 0, bid:1, render:"https://response.test/", adComponents:["https://response.test/"]})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ generateBid() bid adComponents URL "
        "'https://response.test/' isn't one of the registered creative URLs."});
 
@@ -3265,15 +5807,19 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponents) {
         render:"https://response.test/",
         adComponents:["https://ad_component.test/", "https://ad_component2.test/"]})",
       mojom::BidderWorkletBid::New(
-          "[{\"renderUrl\":\"https://ad_component.test/\"},"
-          "{\"renderUrl\":\"https://ad_component2.test/"
-          "\",\"metadata\":[\"metadata\"]}]",
-          1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          "[{\"renderURL\":\"https://ad_component.test/\","
+          "\"renderUrl\":\"https://ad_component.test/\"},"
+          "{\"renderURL\":\"https://ad_component2.test/\","
+          "\"renderUrl\":\"https://ad_component2.test/\","
+          "\"metadata\":[\"metadata\"]}]",
+          1, /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{
               blink::AdDescriptor(GURL("https://ad_component.test/")),
               blink::AdDescriptor(GURL("https://ad_component2.test/"))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 // Test behavior of the `allowComponentAuction` output field, which can block
@@ -3281,14 +5827,16 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponents) {
 TEST_F(BidderWorkletTest, GenerateBidAllowComponentAuction) {
   // In all success cases, this is the returned bid.
   const auto kBidOnSuccess = mojom::BidderWorkletBid::New(
-      "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+      /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
       blink::AdDescriptor(GURL("https://response.test/")),
-      /*ad_component_descriptors=*/absl::nullopt,
-      /*modeling_signals=*/absl::nullopt, base::TimeDelta());
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
 
   // Use a null `topLevelSellerOrigin`. `allowComponentAuction` value should be
   // ignored.
-  browser_signal_top_level_seller_origin_ = absl::nullopt;
+  browser_signal_top_level_seller_origin_ = std::nullopt;
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: null, bid:1, render:"https://response.test/", allowComponentAuction: true})",
       kBidOnSuccess.Clone());
@@ -3319,21 +5867,21 @@ TEST_F(BidderWorkletTest, GenerateBidAllowComponentAuction) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: null, bid:1, render:"https://response.test/", allowComponentAuction: false})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid does not have "
        "allowComponentAuction set to true. Bid dropped from component "
        "auction."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: null, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid does not have "
        "allowComponentAuction set to true. Bid dropped from component "
        "auction."});
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: null, bid:1, render:"https://response.test/", allowComponentAuction: 0})",
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid does not have "
        "allowComponentAuction set to true. Bid dropped from component "
        "auction."});
@@ -3350,7 +5898,7 @@ TEST_F(BidderWorkletTest, GenerateBidWasm404) {
   // Have the WASM URL 404.
   AddResponse(&url_loader_factory_, interest_group_wasm_url_.value(),
               kWasmMimeType,
-              /*charset=*/absl::nullopt, "Error 404", kAllowFledgeHeader,
+              /*charset=*/std::nullopt, "Error 404", kAllowFledgeHeader,
               net::HTTP_NOT_FOUND);
 
   // The Javascript request receives valid JS.
@@ -3370,7 +5918,7 @@ TEST_F(BidderWorkletTest, GenerateBidWasmFailure) {
   // Instead of WASM have JS, but with WASM mimetype.
   AddResponse(&url_loader_factory_, interest_group_wasm_url_.value(),
               kWasmMimeType,
-              /*charset=*/absl::nullopt, CreateBasicGenerateBidScript());
+              /*charset=*/std::nullopt, CreateBasicGenerateBidScript());
 
   // The Javascript request receives valid JS.
   AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
@@ -3392,16 +5940,18 @@ TEST_F(BidderWorkletTest, GenerateBidWasm) {
 
   interest_group_wasm_url_ = GURL(kWasmUrl);
   AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
-              /*charset=*/absl::nullopt, ToyWasm());
+              /*charset=*/std::nullopt, ToyWasm());
 
   RunGenerateBidWithJavascriptExpectingResult(
       bid_script, mojom::BidderWorkletBid::New(
+                      auction_worklet::mojom::BidRole::kUnenforcedKAnon,
                       R"([{"name":"test_const","kind":"global"}])", 1,
-                      /*bid_currency=*/absl::nullopt,
-                      /*ad_cost=*/absl::nullopt,
+                      /*bid_currency=*/std::nullopt,
+                      /*ad_cost=*/std::nullopt,
                       blink::AdDescriptor(GURL("https://response.test/")),
-                      /*ad_component_descriptors=*/absl::nullopt,
-                      /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+                      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+                      /*ad_component_descriptors=*/std::nullopt,
+                      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, WasmReportWin) {
@@ -3417,32 +5967,39 @@ TEST_F(BidderWorkletTest, WasmReportWin) {
 
   // Wedge the V8 thread so that completed first instance of reportWin doesn't
   // fully wrap up and clean up the task by time the WASM is delivered.
-  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper_.get());
+  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper().get());
 
   base::RunLoop run_loop;
   bidder_worklet->ReportWin(
-      interest_group_name_, /*auction_signals_json=*/"0", per_buyer_signals_,
+      is_for_additional_bid_, interest_group_name_reporting_id_,
+      buyer_reporting_id_, buyer_and_seller_reporting_id_,
+      selected_buyer_and_seller_reporting_id_,
+      /*auction_signals_json=*/"0", per_buyer_signals_,
       direct_from_seller_per_buyer_signals_,
-      direct_from_seller_auction_signals_, seller_signals_,
-      browser_signal_render_url_, browser_signal_bid_,
-      browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+      direct_from_seller_per_buyer_signals_header_ad_slot_,
+      direct_from_seller_auction_signals_,
+      direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+      kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+      browser_signal_bid_, browser_signal_bid_currency_,
+      browser_signal_highest_scoring_other_bid_,
       browser_signal_highest_scoring_other_bid_currency_,
       browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
       browser_signal_modeling_signals_, browser_signal_join_count_,
-      browser_signal_recency_, browser_signal_seller_origin_,
-      browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-      data_version_.has_value(),
+      browser_signal_recency_report_win_, browser_signal_seller_origin_,
+      browser_signal_top_level_seller_origin_,
+      browser_signal_reporting_timeout_, data_version_,
       /*trace_id=*/1,
       base::BindLambdaForTesting(
-          [&run_loop](const absl::optional<GURL>& report_url,
-                      const base::flat_map<std::string, GURL>& ad_beacon_map,
-                      PrivateAggregationRequests pa_requests,
-                      const std::vector<std::string>& errors) {
-            run_loop.Quit();
-          }));
+          [&run_loop](
+              const std::optional<GURL>& report_url,
+              const base::flat_map<std::string, GURL>& ad_beacon_map,
+              const base::flat_map<std::string, std::string>& ad_macro_map,
+              PrivateAggregationRequests pa_requests,
+              auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
+              const std::vector<std::string>& errors) { run_loop.Quit(); }));
   base::RunLoop().RunUntilIdle();
   AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
-              /*charset=*/absl::nullopt, ToyWasm());
+              /*charset=*/std::nullopt, ToyWasm());
   base::RunLoop().RunUntilIdle();
   event_handle->Signal();
   run_loop.Run();
@@ -3468,12 +6025,14 @@ TEST_F(BidderWorkletTest, WasmReportWin2) {
   RunReportWinExpectingResultAsync(
       bidder_worklet.get(), GURL("https://foo.test"),
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/false,
       /*expected_errors=*/{},
       base::BindLambdaForTesting([&run_loop]() { run_loop.Quit(); }));
   task_environment_.RunUntilIdle();
   AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
-              /*charset=*/absl::nullopt, ToyWasm());
+              /*charset=*/std::nullopt, ToyWasm());
   task_environment_.RunUntilIdle();
 
   run_loop.Run();
@@ -3506,7 +6065,7 @@ TEST_F(BidderWorkletTest, WasmOrdering) {
     mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
     if (test.expect_success) {
       // On success, callback should be invoked.
-      load_script_run_loop_ = std::make_unique<base::RunLoop>();
+      generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
       GenerateBid(bidder_worklet.get());
     } else {
       // On error, the pipe is closed without invoking the callback.
@@ -3518,7 +6077,7 @@ TEST_F(BidderWorkletTest, WasmOrdering) {
         case kWasmSuccess:
           AddResponse(&url_loader_factory_, GURL(kWasmUrl),
                       std::string(kWasmMimeType),
-                      /*charset=*/absl::nullopt, ToyWasm());
+                      /*charset=*/std::nullopt, ToyWasm());
           break;
 
         case kJsSuccess:
@@ -3536,15 +6095,15 @@ TEST_F(BidderWorkletTest, WasmOrdering) {
                                           "", net::HTTP_NOT_FOUND);
 
           break;
-      };
+      }
       task_environment_.RunUntilIdle();
     }
 
     if (test.expect_success) {
       // On success, the callback is invoked.
-      load_script_run_loop_->Run();
-      load_script_run_loop_.reset();
-      EXPECT_TRUE(bid_);
+      generate_bid_run_loop_->Run();
+      generate_bid_run_loop_.reset();
+      EXPECT_TRUE(!bids_.empty());
     } else {
       // On failure, the pipe is closed with a non-empty error message, without
       // invoking the callback.
@@ -3555,16 +6114,18 @@ TEST_F(BidderWorkletTest, WasmOrdering) {
 
 // Utility method to create a vector of PreviousWin. Needed because StructPtrs
 // don't allow copying.
-std::vector<mojom::PreviousWinPtr> CreateWinList(
-    const mojom::PreviousWinPtr& win1,
-    const mojom::PreviousWinPtr& win2 = mojom::PreviousWinPtr(),
-    const mojom::PreviousWinPtr& win3 = mojom::PreviousWinPtr()) {
-  std::vector<mojo::StructPtr<mojom::PreviousWin>> out;
+std::vector<blink::mojom::PreviousWinPtr> CreateWinList(
+    const blink::mojom::PreviousWinPtr& win1,
+    const blink::mojom::PreviousWinPtr& win2 = blink::mojom::PreviousWinPtr(),
+    const blink::mojom::PreviousWinPtr& win3 = blink::mojom::PreviousWinPtr()) {
+  std::vector<mojo::StructPtr<blink::mojom::PreviousWin>> out;
   out.emplace_back(win1.Clone());
-  if (win2)
+  if (win2) {
     out.emplace_back(win2.Clone());
-  if (win3)
+  }
+  if (win3) {
     out.emplace_back(win3.Clone());
+  }
   return out;
 }
 
@@ -3576,11 +6137,13 @@ TEST_F(BidderWorkletTest, GenerateBidPrevWins) {
   base::Time time2 = auction_start_time_ - delta - tiny_delta;
   base::Time future_time = auction_start_time_ + delta;
 
-  auto win1 = mojom::PreviousWin::New(time1, R"("ad1")");
-  auto win2 = mojom::PreviousWin::New(time2, R"(["ad2"])");
-  auto future_win = mojom::PreviousWin::New(future_time, R"("future_ad")");
+  auto win1 = blink::mojom::PreviousWin::New(time1, R"({"renderURL":"ad1"})");
+  auto win2 = blink::mojom::PreviousWin::New(
+      time2, R"({"renderURL":"ad2", "metadata":"{\"key\":\"value\"}"})");
+  auto future_win = blink::mojom::PreviousWin::New(
+      future_time, R"({"renderURL":"future_ad"})");
   struct TestCase {
-    std::vector<mojo::StructPtr<mojom::PreviousWin>> prev_wins;
+    std::vector<mojo::StructPtr<blink::mojom::PreviousWin>> prev_wins;
     // Value to output as the ad data.
     const char* ad;
     // Expected output in the `ad` field of the result.
@@ -3594,38 +6157,92 @@ TEST_F(BidderWorkletTest, GenerateBidPrevWins) {
       {
           CreateWinList(win1),
           "browserSignals.prevWins",
-          R"([[200,"ad1"]])",
+          R"([[200,{"renderURL":"ad1","render_url":"ad1"}]])",
       },
       // Make sure it's passed on as an object and not a string.
       {
           CreateWinList(win1),
           "browserSignals.prevWins[0]",
-          R"([200,"ad1"])",
+          R"([200,{"renderURL":"ad1","render_url":"ad1"}])",
       },
       // Test rounding.
       {
           CreateWinList(win2),
           "browserSignals.prevWins",
-          R"([[100,["ad2"]]])",
+          R"([[100,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}]])",
       },
       // Multiple previous wins.
       {
           CreateWinList(win1, win2),
           "browserSignals.prevWins",
-          R"([[200,"ad1"],[100,["ad2"]]])",
+          R"([[200,{"renderURL":"ad1","render_url":"ad1"}],)"
+          R"([100,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}]])",
       },
       // Times are trimmed at 0.
       {
           CreateWinList(future_win),
           "browserSignals.prevWins",
-          R"([[0,"future_ad"]])",
+          R"([[0,{"renderURL":"future_ad","render_url":"future_ad"}]])",
       },
       // Out of order wins should be sorted.
       {
           CreateWinList(win2, future_win, win1),
           "browserSignals.prevWins",
-          R"([[200,"ad1"],[100,["ad2"]],[0,"future_ad"]])",
+          R"([[200,{"renderURL":"ad1","render_url":"ad1"}],)"
+          R"([100,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}],)"
+          R"([0,{"renderURL":"future_ad","render_url":"future_ad"}]])",
       },
+      // Same as above, but for prevWinsMs.
+      {
+          {},
+          "browserSignals.prevWinsMs",
+          "[]",
+      },
+      {
+          CreateWinList(win1),
+          "browserSignals.prevWinsMs",
+          R"([[200000,{"renderURL":"ad1","render_url":"ad1"}]])",
+      },
+      // Make sure it's passed on as an object and not a string.
+      {
+          CreateWinList(win1),
+          "browserSignals.prevWinsMs[0]",
+          R"([200000,{"renderURL":"ad1","render_url":"ad1"}])",
+      },
+      // Test rounding.
+      {
+          CreateWinList(win2),
+          "browserSignals.prevWinsMs",
+          R"([[100000,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}]])",
+      },
+      // Multiple previous wins.
+      {
+          CreateWinList(win1, win2),
+          "browserSignals.prevWinsMs",
+          R"([[200000,{"renderURL":"ad1","render_url":"ad1"}],)"
+          R"([100000,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}]])",
+      },
+      // Times are trimmed at 0.
+      {
+          CreateWinList(future_win),
+          "browserSignals.prevWinsMs",
+          R"([[0,{"renderURL":"future_ad","render_url":"future_ad"}]])",
+      },
+      // Out of order wins should be sorted.
+      {
+          CreateWinList(win2, future_win, win1),
+          "browserSignals.prevWinsMs",
+          R"([[200000,{"renderURL":"ad1","render_url":"ad1"}],)"
+          R"([100000,{"renderURL":"ad2",)"
+          R"("metadata":{"key":"value"},"render_url":"ad2"}],)"
+          R"([0,{"renderURL":"future_ad","render_url":"future_ad"}]])",
+      },
+
   };
 
   for (auto& test_case : test_cases) {
@@ -3637,16 +6254,19 @@ TEST_F(BidderWorkletTest, GenerateBidPrevWins) {
             R"({ad: %s, bid:1, render:"https://response.test/"})",
             test_case.ad),
         mojom::BidderWorkletBid::New(
-            test_case.expected_ad, 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+            test_case.expected_ad, 1, /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   }
 }
 
 TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = kBaseSignalsUrl;
   const GURL kNoKeysSignalsUrl(
       "https://signals.test/"
       "?hostname=top.window.test&interestGroupNames=Fred");
@@ -3670,10 +6290,12 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   EXPECT_EQ(observed_requests += 1, url_loader_factory_.total_requests());
 
   // Request with TrustedBiddingSignals keys and null URL. No request should be
@@ -3683,10 +6305,12 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   EXPECT_EQ(observed_requests += 1, url_loader_factory_.total_requests());
 
   // Request with TrustedBiddingSignals URL and null keys. Request should be
@@ -3698,10 +6322,12 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   EXPECT_EQ(observed_requests += 2, url_loader_factory_.total_requests());
 
   // Request with TrustedBiddingSignals URL and empty keys. Request should be
@@ -3711,10 +6337,12 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   EXPECT_EQ(observed_requests += 2, url_loader_factory_.total_requests());
   url_loader_factory_.ClearResponses();
 
@@ -3724,18 +6352,34 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
       std::vector<std::string>({"key1", "key2"});
   url_loader_factory_.AddResponse(kFullSignalsUrl.spec(), kJson,
                                   net::HTTP_NOT_FOUND);
+  mojom::RealTimeReportingContribution expected_trusted_signal_histogram(
+      /*bucket=*/1024 + auction_worklet::RealTimeReportingPlatformError::
+                            kTrustedBiddingSignalsFailure,
+      /*priority_weight=*/1,
+      /*latency_threshold=*/std::nullopt);
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(
+      expected_trusted_signal_histogram.Clone());
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       {"Failed to load "
        "https://signals.test/"
        "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred HTTP "
-       "status = 404 Not Found."});
+       "status = 404 Not Found."},
+      std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
   EXPECT_EQ(observed_requests += 2, url_loader_factory_.total_requests());
 
   // Request with valid TrustedBiddingSignals URL and non-empty keys. Request
@@ -3744,11 +6388,13 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignals) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"({"key1":1,"key2":[2]})", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"({"key1":1,"key2":[2]})", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
   EXPECT_EQ(observed_requests += 2, url_loader_factory_.total_requests());
 }
 
@@ -3765,23 +6411,26 @@ TEST_F(BidderWorkletTest, GenerateBidTrustedBiddingSignalsV1) {
   )";
 
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_ =
       std::vector<std::string>({"key1", "key2"});
 
   // Request with valid TrustedBiddingSignals URL and non-empty keys. Request
   // should be made. The request succeeds.
   AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson,
-                        /*data_version=*/absl::nullopt,
-                        /*format_version_string=*/absl::nullopt);
+                        /*data_version=*/std::nullopt,
+                        /*format_version_string=*/std::nullopt);
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"({"key1":1,"key2":[2]})", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"({"key1":1,"key2":[2]})", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/
       {"Bidding signals URL https://signals.test/ is using outdated bidding "
        "signals format. Consumers should be updated to use bidding signals "
@@ -3801,13 +6450,14 @@ TEST_F(BidderWorkletTest, GenerateBidOnBiddingSignalsReceivedNoTrustedSignals) {
   auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
       [&](const base::flat_map<std::string, double>& priority_vector,
           base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
           base::OnceClosure callback) {
         EXPECT_TRUE(priority_vector.empty());
         EXPECT_EQ(base::TimeDelta(), trusted_signals_fetch_latency);
         on_bidding_signals_received_run_loop.Quit();
         on_bidding_signals_received_continue_callback = std::move(callback);
       });
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   GenerateBid(bidder_worklet.get(),
               GenerateBidClientWithCallbacks::Create(
                   base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
@@ -3816,11 +6466,11 @@ TEST_F(BidderWorkletTest, GenerateBidOnBiddingSignalsReceivedNoTrustedSignals) {
 
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
   ASSERT_TRUE(on_bidding_signals_received_continue_callback);
 
   std::move(on_bidding_signals_received_continue_callback).Run();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 }
 
 // Test that when signals fail to be feteched, OnBiddingSignalsReceived() is
@@ -3841,12 +6491,13 @@ TEST_F(BidderWorkletTest, GenerateBidOnBiddingSignalsReceivedFetchFails) {
   auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
       [&](const base::flat_map<std::string, double>& priority_vector,
           base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
           base::OnceClosure callback) {
         EXPECT_TRUE(priority_vector.empty());
         on_bidding_signals_received_run_loop.Quit();
         on_bidding_signals_received_continue_callback = std::move(callback);
       });
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   GenerateBid(bidder_worklet.get(),
               GenerateBidClientWithCallbacks::Create(
                   base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
@@ -3855,17 +6506,17 @@ TEST_F(BidderWorkletTest, GenerateBidOnBiddingSignalsReceivedFetchFails) {
 
   task_environment_.RunUntilIdle();
   EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
 
   url_loader_factory_.AddResponse(kFullSignalsUrl.spec(), /*content=*/"",
                                   net::HTTP_NOT_FOUND);
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
   ASSERT_TRUE(on_bidding_signals_received_continue_callback);
 
   std::move(on_bidding_signals_received_continue_callback).Run();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 }
 
 // Test that when signals are successfully fetched, OnBiddingSignalsReceived()
@@ -3891,12 +6542,13 @@ TEST_F(BidderWorkletTest,
   auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
       [&](const base::flat_map<std::string, double>& priority_vector,
           base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
           base::OnceClosure callback) {
         EXPECT_TRUE(priority_vector.empty());
         on_bidding_signals_received_run_loop.Quit();
         on_bidding_signals_received_continue_callback = std::move(callback);
       });
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   GenerateBid(bidder_worklet.get(),
               GenerateBidClientWithCallbacks::Create(
                   base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
@@ -3905,16 +6557,16 @@ TEST_F(BidderWorkletTest,
 
   task_environment_.RunUntilIdle();
   EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
 
   AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
   ASSERT_TRUE(on_bidding_signals_received_continue_callback);
 
   std::move(on_bidding_signals_received_continue_callback).Run();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 }
 
 // Test that when signals are successfully fetched, but the response includes no
@@ -3939,12 +6591,14 @@ TEST_F(BidderWorkletTest,
   auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
       [&](const base::flat_map<std::string, double>& priority_vector,
           base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
           base::OnceClosure callback) {
         EXPECT_TRUE(priority_vector.empty());
+        EXPECT_EQ(std::nullopt, update_if_older_than);
         on_bidding_signals_received_run_loop.Quit();
         on_bidding_signals_received_continue_callback = std::move(callback);
       });
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   GenerateBid(bidder_worklet.get(),
               GenerateBidClientWithCallbacks::Create(
                   base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
@@ -3953,16 +6607,177 @@ TEST_F(BidderWorkletTest,
 
   task_environment_.RunUntilIdle();
   EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
 
   AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
   task_environment_.RunUntilIdle();
   EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
-  EXPECT_FALSE(load_script_run_loop_->AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
   ASSERT_TRUE(on_bidding_signals_received_continue_callback);
 
   std::move(on_bidding_signals_received_continue_callback).Run();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
+}
+
+// Same as GenerateBidOnBiddingSignalsReceivedNoPriorityVectorReceived, but
+// the priority vector is received, and verified in the signals received
+// callback.
+TEST_F(BidderWorkletTest,
+       GenerateBidOnBiddingSignalsReceivedPriorityVectorReceived) {
+  interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  const GURL kFullSignalsUrl(
+      "https://signals.test/?hostname=top.window.test&interestGroupNames=Fred");
+
+  const char kJson[] = R"({"perInterestGroupData":
+                            {"Fred": {"priorityVector": {"foo": 1.0}}}
+                          })";
+
+  auto bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(CreateBasicGenerateBidScript()));
+
+  base::RunLoop on_bidding_signals_received_run_loop;
+  base::OnceClosure on_bidding_signals_received_continue_callback;
+  auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
+      [&](const base::flat_map<std::string, double>& priority_vector,
+          base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
+          base::OnceClosure callback) {
+        EXPECT_THAT(priority_vector,
+                    UnorderedElementsAre(std::make_pair("foo", 1.0)));
+        EXPECT_EQ(std::nullopt, update_if_older_than);
+        on_bidding_signals_received_run_loop.Quit();
+        on_bidding_signals_received_continue_callback = std::move(callback);
+      });
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(bidder_worklet.get(),
+              GenerateBidClientWithCallbacks::Create(
+                  base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
+                                 base::Unretained(this)),
+                  std::move(on_bidding_signals_received_callback)));
+
+  task_environment_.RunUntilIdle();
+  EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+  ASSERT_TRUE(on_bidding_signals_received_continue_callback);
+
+  std::move(on_bidding_signals_received_continue_callback).Run();
+  generate_bid_run_loop_->Run();
+}
+
+// Same as GenerateBidOnBiddingSignalsReceivedNoPriorityVectorReceived, but the
+// updateIfOlderThanMs field is present, but priorityVector is not -- this is
+// verified in the signals received callback.
+TEST_F(
+    BidderWorkletTest,
+    GenerateBidOnBiddingSignalsReceivedNoPriorityVectorYesUpdateIfOlderThanMsReceived) {
+  interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  const GURL kFullSignalsUrl(
+      "https://signals.test/?hostname=top.window.test&interestGroupNames=Fred");
+
+  const char kJson[] = R"({"perInterestGroupData":
+                            {"Fred": {"updateIfOlderThanMs": 3600000}}
+                          })";
+
+  auto bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(CreateBasicGenerateBidScript()));
+
+  base::RunLoop on_bidding_signals_received_run_loop;
+  base::OnceClosure on_bidding_signals_received_continue_callback;
+  auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
+      [&](const base::flat_map<std::string, double>& priority_vector,
+          base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
+          base::OnceClosure callback) {
+        EXPECT_THAT(priority_vector, IsEmpty());
+        EXPECT_EQ(base::Milliseconds(3600000), update_if_older_than);
+        on_bidding_signals_received_run_loop.Quit();
+        on_bidding_signals_received_continue_callback = std::move(callback);
+      });
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(bidder_worklet.get(),
+              GenerateBidClientWithCallbacks::Create(
+                  base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
+                                 base::Unretained(this)),
+                  std::move(on_bidding_signals_received_callback)));
+
+  task_environment_.RunUntilIdle();
+  EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+  ASSERT_TRUE(on_bidding_signals_received_continue_callback);
+
+  std::move(on_bidding_signals_received_continue_callback).Run();
+  generate_bid_run_loop_->Run();
+}
+
+// Same as GenerateBidOnBiddingSignalsReceivedNoPriorityVectorReceived, but the
+// priorityVector and updateIfOlderThanMs fields are present -- this is verified
+// in the signals received callback.
+TEST_F(
+    BidderWorkletTest,
+    GenerateBidOnBiddingSignalsReceivedYesPriorityVectorYesUpdateIfOlderThanMsReceived) {
+  interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  const GURL kFullSignalsUrl(
+      "https://signals.test/?hostname=top.window.test&interestGroupNames=Fred");
+
+  const char kJson[] = R"({"perInterestGroupData": {
+                              "Fred": {
+                                "priorityVector": {"foo": 1.0},
+                                "updateIfOlderThanMs": 3600000
+                              }
+                            }
+                          })";
+
+  auto bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(CreateBasicGenerateBidScript()));
+
+  base::RunLoop on_bidding_signals_received_run_loop;
+  base::OnceClosure on_bidding_signals_received_continue_callback;
+  auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
+      [&](const base::flat_map<std::string, double>& priority_vector,
+          base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
+          base::OnceClosure callback) {
+        EXPECT_THAT(priority_vector,
+                    UnorderedElementsAre(std::make_pair("foo", 1.0)));
+        EXPECT_EQ(base::Milliseconds(3600000), update_if_older_than);
+        on_bidding_signals_received_run_loop.Quit();
+        on_bidding_signals_received_continue_callback = std::move(callback);
+      });
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(bidder_worklet.get(),
+              GenerateBidClientWithCallbacks::Create(
+                  base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
+                                 base::Unretained(this)),
+                  std::move(on_bidding_signals_received_callback)));
+
+  task_environment_.RunUntilIdle();
+  EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+  ASSERT_TRUE(on_bidding_signals_received_continue_callback);
+
+  std::move(on_bidding_signals_received_continue_callback).Run();
+  generate_bid_run_loop_->Run();
 }
 
 // Test that cancelling a GenerateBid() call by deleting the GenerateBidClient
@@ -4020,6 +6835,7 @@ TEST_F(BidderWorkletTest, GenerateBidCancelWhileRunningJavascript) {
   auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
       [&](const base::flat_map<std::string, double>& priority_vector,
           base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
           base::OnceClosure callback) {
         EXPECT_TRUE(priority_vector.empty());
         on_bidding_signals_received_continue_callback = std::move(callback);
@@ -4030,7 +6846,7 @@ TEST_F(BidderWorkletTest, GenerateBidCancelWhileRunningJavascript) {
       std::move(on_bidding_signals_received_callback));
   mojo::AssociatedReceiver<mojom::GenerateBidClient> client_receiver(&client);
 
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   GenerateBid(bidder_worklet.get(),
               client_receiver.BindNewEndpointAndPassRemote());
 
@@ -4054,6 +6870,7 @@ TEST_F(BidderWorkletTest, GenerateBidCancelWhileRunningJavascript) {
 
 TEST_F(BidderWorkletTest, GenerateBidDataVersion) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   interest_group_trusted_bidding_signals_keys_.emplace();
   interest_group_trusted_bidding_signals_keys_->push_back("key1");
   AddBidderJsonResponse(
@@ -4064,17 +6881,20 @@ TEST_F(BidderWorkletTest, GenerateBidDataVersion) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:browserSignals.dataVersion, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("ad")", 7, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("ad")", 7,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
       /*expected_data_version=*/7u);
 }
 
 // Even with no trustedBiddingSignalsKeys, the data version should be available.
 TEST_F(BidderWorkletTest, GenerateBidDataVersionNoKeys) {
   interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  interest_group_bidding_url_ = *interest_group_trusted_bidding_signals_url_;
   AddBidderJsonResponse(
       &url_loader_factory_,
       GURL("https://signals.test/"
@@ -4083,11 +6903,13 @@ TEST_F(BidderWorkletTest, GenerateBidDataVersionNoKeys) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:browserSignals.dataVersion, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("ad")", 7, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("ad")", 7,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
       /*expected_data_version=*/7u);
 }
 
@@ -4095,7 +6917,7 @@ TEST_F(BidderWorkletTest, GenerateBidDataVersionNoKeys) {
 // returned value should be used instead.
 TEST_F(BidderWorkletTest, GenerateBidWithSetBid) {
   interest_group_ads_.emplace_back(GURL("https://response.test/replacement"),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
 
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
@@ -4104,13 +6926,15 @@ TEST_F(BidderWorkletTest, GenerateBidWithSetBid) {
           /*extra_code=*/R"(
             setBid({ad: "ad", bid:1, render:"https://response.test/"})
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "\"returned\"", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"returned\"", 2,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/replacement")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // Test the no-bid version as well.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4120,8 +6944,17 @@ TEST_F(BidderWorkletTest, GenerateBidWithSetBid) {
           /*extra_code=*/R"(
             setBid({ad: "ad", bid:1, render:"https://response.test/"})
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr());
+
+  // Test which ends by doing a return; (with no value specified).
+  RunGenerateBidWithJavascriptExpectingResult(CreateGenerateBidScript(
+                                                  /*raw_return_value=*/"",
+                                                  /*extra_code=*/R"(
+            setBid({ad: "ad", bid:1, render:"https://response.test/"})
+          )"),
+                                              /*expected_bids=*/
+                                              mojom::BidderWorkletBidPtr());
 }
 
 TEST_F(BidderWorkletTest, GenerateBidExperimentGroupId) {
@@ -4138,11 +6971,13 @@ TEST_F(BidderWorkletTest, GenerateBidExperimentGroupId) {
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:123, render:"https://response.test/"})",
       mojom::BidderWorkletBid::New(
-          R"("ad")", 123, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"("ad")", 123,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, GenerateBidTimedOut) {
@@ -4150,9 +6985,21 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOut) {
   // AuctionV8Helper's default script timeout (50 ms).
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(/*raw_return_value=*/"", R"(while (1))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
+}
+
+TEST_F(BidderWorkletTest, GenerateBidTopLevelTimeout) {
+  // The bidding script has an endless while loop. It will time out due to
+  // AuctionV8Helper's default script timeout (50 ms).
+  RunGenerateBidWithJavascriptExpectingResult(
+      "while (1) {}",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ top-level execution timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 TEST_F(BidderWorkletTest, GenerateBidPerBuyerTimeOut) {
@@ -4160,23 +7007,24 @@ TEST_F(BidderWorkletTest, GenerateBidPerBuyerTimeOut) {
   // that if the bidder script with endless loop times out, we know that the per
   // buyer timeout overwrote the default script timeout and worked.
   const base::TimeDelta kScriptTimeout = base::Days(360);
-  v8_helper_->v8_runner()->PostTask(
+  v8_helper()->v8_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](scoped_refptr<AuctionV8Helper> v8_helper,
              const base::TimeDelta script_timeout) {
             v8_helper->set_script_timeout_for_testing(script_timeout);
           },
-          v8_helper_, kScriptTimeout));
+          v8_helper(), kScriptTimeout));
   // Make sure set_script_timeout_for_testing is called.
   task_environment_.RunUntilIdle();
 
   per_buyer_timeout_ = base::Milliseconds(20);
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(/*raw_return_value=*/"", R"(while (1))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 // Even though the script timed out, it had set an intermediate result with
@@ -4193,15 +7041,18 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBid) {
             setBid({ad: "ad", bid:1, render:"https://response.test/"});
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, AuctionV8Helper::kScriptTimeout),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, AuctionV8Helper::kScriptTimeout),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 
   // Test the case where setBid() sets no bid. There should be no bid, and
   // no error, other than the timeout.
@@ -4213,18 +7064,22 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBid) {
             setBid();
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 // Test that per-buyer timeout of zero results in no bid produced.
-TEST_F(BidderWorkletTest, TimeoutZero) {
+TEST_F(BidderWorkletTest, PerBuyerTimeoutZero) {
   per_buyer_timeout_ = base::Seconds(0);
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid:1, render:"https://response.test/"})",
-      mojom::BidderWorkletBidPtr());
+      mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{"generateBid() aborted due to zero timeout."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 // Test that in the case of multiple setBid() calls, the most recent call takes
@@ -4233,7 +7088,7 @@ TEST_F(BidderWorkletTest, TimeoutZero) {
 // included in the duration.
 TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBidTwice) {
   interest_group_ads_.emplace_back(GURL("https://response.test/replacement"),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
 
   // The bidding script has an endless while loop.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4245,15 +7100,18 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBidTwice) {
             setBid({ad: "ad2", bid:2, render:"https://response.test/replacement"});
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "\"ad2\"", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad2\"", 2,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/replacement")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, AuctionV8Helper::kScriptTimeout),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, AuctionV8Helper::kScriptTimeout),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 
   // Test the case where the second setBid() call clears the bid from the first
   // call without setting a new bid, by passing in no bid. There should be no
@@ -4267,10 +7125,11 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBidTwice) {
             setBid(null);
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 
   // Test the case where the second setBid() call clears the bid from the first
   // call without setting a new bid, by passing in null. There should be no bid,
@@ -4284,10 +7143,11 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBidTwice) {
             setBid(null);
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
+  EXPECT_TRUE(generate_bid_metrics_->script_timed_out);
 }
 
 // Even though the script timed out, it had set an intermediate result with
@@ -4307,14 +7167,16 @@ TEST_F(BidderWorkletTest, GenerateBidTimedOutWithSetBidMutateAfter) {
             result.render = "https://response.test/3";
             while (1)
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."});
 }
 
@@ -4326,10 +7188,10 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
           /*extra_code=*/R"(
             setPriority();
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: setPriority requires 1 double "
-       "parameter."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPriority(): at least 1 "
+       "argument(s) are required."});
   // priority not a double
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
@@ -4337,10 +7199,10 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
           /*extra_code=*/R"(
             setPriority("string");
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: setPriority requires 1 double "
-       "parameter."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPriority(): Converting "
+       "argument 'priority' to a Number did not produce a finite double."});
   // priority not finite
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
@@ -4348,10 +7210,10 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
           /*extra_code=*/R"(
             setPriority(0.0/0.0);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: setPriority requires 1 finite "
-       "double parameter."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPriority(): Converting "
+       "argument 'priority' to a Number did not produce a finite double."});
   // priority called twice
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
@@ -4360,8 +7222,8 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
             setPriority(4);
             setPriority(4);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:7 Uncaught TypeError: setPriority may be called at "
        "most once."});
   // success
@@ -4371,17 +7233,19 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
           /*extra_code=*/R"(
             setPriority(9.0);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/9.0);
   // set priority with no bid should work.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4389,12 +7253,12 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
                               /*extra_code=*/R"(
             setPriority(9.0);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/9.0);
   // set priority with an invalid bid should work.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4402,14 +7266,28 @@ TEST_F(BidderWorkletTest, GenerateBidSetPriority) {
                               /*extra_code=*/R"(
             setPriority(9.0);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/
-      {"https://url.test/ generateBid() bid of inf is not a valid bid."},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/9.0);
+
+  // priority argument doesn't terminate
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          R"({ad: "ad", bid:1, render:"https://response.test/" })",
+          /*extra_code=*/R"(
+            setPriority({
+              valueOf:() => {while(true) {}}
+            });
+          )"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
 }
 
 TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
@@ -4419,21 +7297,44 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride();
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: setPrioritySignalsOverride "
-       "requires at least 1 parameter."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPrioritySignalsOverride(): "
+       "at least 1 argument(s) are required."});
 
-  // Key not a string.
+  // Key not a string, so it gets turned into one.
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(R"({bid:1, render:"https://response.test/" })",
                               /*extra_code=*/R"(
             setPrioritySignalsOverride(15, 15);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: First argument to "
-       "setPrioritySignalsOverride must be a String."});
+      /*expected_bids=*/
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{{"15", 15}});
+
+  // Key can't be turned into a string.
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(R"({bid:1, render:"https://response.test/" })",
+                              /*extra_code=*/R"(
+            setPrioritySignalsOverride({
+              toString: () => { return {} }
+            }, 15);
+          )"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: Cannot convert object to "
+       "primitive value."});
 
   // Value not a double.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4441,10 +7342,11 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key", "value");
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: Second argument to "
-       "setPrioritySignalsOverride must be a finite Number or null."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPrioritySignalsOverride(): "
+       "Converting argument 'priority' to a Number did not produce a finite "
+       "double."});
 
   // Value not finite.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4452,10 +7354,23 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key", 0.0/0.0);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:6 Uncaught TypeError: Second argument to "
-       "setPrioritySignalsOverride must be a finite Number or null."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:6 Uncaught TypeError: setPrioritySignalsOverride(): "
+       "Converting argument 'priority' to a Number did not produce a finite "
+       "double."});
+
+  // Value conversion doesn't terminate.
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(R"({bid:1, render:"https://response.test/" })",
+                              /*extra_code=*/R"(
+            setPrioritySignalsOverride("key", {
+              valueOf:() => {while(true) {}}
+            });
+          )"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
 
   // A key with no value means the value should be removed.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4463,18 +7378,20 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key");
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
-      /*expected_update_priority_signals_overrides=*/{{"key", absl::nullopt}});
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{{"key", std::nullopt}});
 
   // An undefined value means the value should be removed.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4482,18 +7399,20 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key", undefined);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
-      /*expected_update_priority_signals_overrides=*/{{"key", absl::nullopt}});
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{{"key", std::nullopt}});
 
   // A null value means the value should be removed.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4501,18 +7420,20 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key", null);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
-      /*expected_update_priority_signals_overrides=*/{{"key", absl::nullopt}});
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{{"key", std::nullopt}});
 
   // Set a number.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4520,17 +7441,19 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key", 0);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/{{"key", 0}});
 
   // Set a value multiple times.
@@ -4542,17 +7465,19 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
             setPrioritySignalsOverride("key", 5);
             setPrioritySignalsOverride("key", 6);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/{{"key", 6}});
 
   // Set multiple values.
@@ -4563,19 +7488,21 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
             setPrioritySignalsOverride("key2");
             setPrioritySignalsOverride("key3", -6);
           )"),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          "null", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/
-      {{"key1", 1}, {"key2", absl::nullopt}, {"key3", -6}});
+      {{"key1", 1}, {"key2", std::nullopt}, {"key3", -6}});
 
   // Overrides should be respected when there's no bid.
   RunGenerateBidWithJavascriptExpectingResult(
@@ -4583,12 +7510,12 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key1", 1);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/{{"key1", 1}});
 
   // Overrides should be respected when there's an invalid bid.
@@ -4597,22 +7524,23 @@ TEST_F(BidderWorkletTest, GenerateBidSetPrioritySignalsOverrides) {
                               /*extra_code=*/R"(
             setPrioritySignalsOverride("key1", 1);
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/
-      {"https://url.test/ generateBid() bid of inf is not a valid bid."},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/{{"key1", 1}});
 }
 
 TEST_F(BidderWorkletTest, ReportWin) {
   RunReportWinWithFunctionBodyExpectingResult(
-      "", /*expected_report_url =*/absl::nullopt);
+      "", /*expected_report_url=*/std::nullopt);
   RunReportWinWithFunctionBodyExpectingResult(
       R"(return "https://ignored.test/")",
-      /*expected_report_url =*/absl::nullopt);
+      /*expected_report_url=*/std::nullopt);
 
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("https://foo.test"))", GURL("https://foo.test/"));
@@ -4621,57 +7549,266 @@ TEST_F(BidderWorkletTest, ReportWin) {
 
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("http://http.not.allowed.test"))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:11 Uncaught TypeError: sendReportTo must be passed a "
        "valid HTTPS url."});
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("file:///file.not.allowed.test"))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:11 Uncaught TypeError: sendReportTo must be passed a "
        "valid HTTPS url."});
 
   RunReportWinWithFunctionBodyExpectingResult(
-      R"(sendReportTo(""))", /*expected_report_url =*/absl::nullopt,
+      R"(sendReportTo(""))", /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:11 Uncaught TypeError: sendReportTo must be passed a "
        "valid HTTPS url."});
 
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("https://foo.test");sendReportTo("https://foo.test"))",
-      /*expected_report_url =*/absl::nullopt, /*expected_ad_beacon_map=*/{},
+      /*expected_report_url=*/std::nullopt, /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:11 Uncaught TypeError: sendReportTo may be called at "
        "most once."});
 }
 
+TEST_F(BidderWorkletTest, ReportWinTimeout) {
+  const char kBody[] = R"(
+    sendReportTo({
+      toString:() => {while(true) {}}
+    }))";
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript(kBody));
+  RunReportWinExpectingResult(
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/true,
+      /*expected_errors=*/
+      {"https://url.test/ execution of `reportWin` timed out."});
+}
+
+TEST_F(BidderWorkletTest, ReportWinTopLevelTimeout) {
+  const char kScript[] = "while (1) {}";
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        kScript);
+  RunReportWinExpectingResult(
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/true,
+      /*expected_errors=*/
+      {"https://url.test/ top-level execution timed out."});
+}
+
+TEST_F(BidderWorkletTest, SendReportToLongUrl) {
+  // Copying large URLs can cause flaky generateBid() timeouts with the default
+  // value, even on the standard debug bots.
+  browser_signal_reporting_timeout_ = TestTimeouts::action_max_timeout();
+
+  GURL long_report_url("https://long.test/" +
+                       std::string(url::kMaxURLChars, '1'));
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateReportWinScript(base::StringPrintf(
+          R"(sendReportTo("%s"))", long_report_url.spec().c_str())));
+
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  base::RunLoop run_loop;
+  RunReportWinExpectingResultAsync(
+      worklet_impl, /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/false,
+      /*expected_errors=*/{}, run_loop.QuitClosure());
+  run_loop.Run();
+
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      base::StringPrintf("[{\"type\":\"string\", \"value\":\"sendReportTo "
+                         "passed URL of length %" PRIuS
+                         " but accepts URLs of at most length %" PRIuS ".\"}]",
+                         long_report_url.spec().size(), url::kMaxURLChars),
+      /*stack_trace_size=*/1, /*function=*/"reportWin",
+      interest_group_bidding_url_, /*line_number=*/10);
+
+  channel->ExpectNoMoreConsoleEvents();
+}
+
+// Turn enforcement of permission policy on contributeToHistogramOnEvent on.
+TEST_F(BidderWorkletTest, ContributeToHistogramOnEventPermissionEnforced) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeEnforcePermissionPolicyContributeOnEvent);
+
+  base::HistogramTester histogram_tester;
+  permissions_policy_state_ = mojom::AuctionWorkletPermissionsPolicyState::New(
+      /*private_aggregation_allowed=*/false,
+      /*shared_storage_allowed=*/false);
+
+  const char kScriptBody[] = R"(
+      privateAggregation.contributeToHistogramOnEvent(
+          "reserved.win", {bucket: 234n, value: 56});
+  )";
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript(kScriptBody));
+
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  base::RunLoop run_loop;
+  RunReportWinExpectingResultAsync(
+      worklet_impl, /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/false,
+      /*expected_errors=*/
+      {"https://url.test/:12 Uncaught TypeError: The \"private-aggregation\" "
+       "Permissions Policy denied the method contributeToHistogramOnEvent on "
+       "privateAggregation."},
+      run_loop.QuitClosure());
+  run_loop.Run();
+
+  channel->ExpectNoMoreConsoleEvents();
+  histogram_tester.ExpectUniqueSample(
+      "Ads.InterestGroup.Auction.ContributeToHistogramOnEventPermissionPolicy",
+      false, 1);
+}
+
+// Not enforcing permission policy on contributeToHistogramOnEvent.
+// Legacy compatibility mode.
+TEST_F(BidderWorkletTest, ContributeToHistogramOnEventPermissionNotEnforced) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndDisableFeature(
+      blink::features::kFledgeEnforcePermissionPolicyContributeOnEvent);
+
+  base::HistogramTester histogram_tester;
+  permissions_policy_state_ = mojom::AuctionWorkletPermissionsPolicyState::New(
+      /*private_aggregation_allowed=*/false,
+      /*shared_storage_allowed=*/false);
+
+  const char kScriptBody[] = R"(
+      privateAggregation.contributeToHistogramOnEvent(
+          "reserved.win", {bucket: 234n, value: 56});
+  )";
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript(kScriptBody));
+
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  base::RunLoop run_loop;
+  PrivateAggregationRequests incorrectly_expected_pa_requests;
+  incorrectly_expected_pa_requests.push_back(
+      mojom::PrivateAggregationRequest::New(
+          mojom::AggregatableReportContribution::NewForEventContribution(
+              mojom::AggregatableReportForEventContribution::New(
+                  /*bucket=*/mojom::ForEventSignalBucket::NewIdBucket(234),
+                  /*value=*/mojom::ForEventSignalValue::NewIntValue(56),
+                  /*filtering_id=*/std::nullopt,
+                  /*event_type=*/
+                  mojom::EventType::NewReserved(
+                      mojom::ReservedEventType::kReservedWin))),
+          blink::mojom::AggregationServiceMode::kDefault,
+          blink::mojom::DebugModeDetails::New()));
+  RunReportWinExpectingResultAsync(
+      worklet_impl, /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/std::move(incorrectly_expected_pa_requests),
+      /*expected_reporting_latency_timeout=*/false,
+      /*expected_errors=*/{}, run_loop.QuitClosure());
+  run_loop.Run();
+
+  const char kWarning[] =
+      "privateAggregation.contributeToHistogramOnEvent called without "
+      "appropriate \\\"private-aggregation\\\" Permissions Policy approval; "
+      "accepting for backwards compatibility but this will be shortly throwing "
+      "an exception";
+
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      base::StrCat({"[{\"type\":\"string\", \"value\":\"", kWarning, "\"}]"}),
+      /*stack_trace_size=*/1, /*function=*/"reportWin",
+      interest_group_bidding_url_, /*line_number=*/11);
+
+  channel->ExpectNoMoreConsoleEvents();
+  histogram_tester.ExpectUniqueSample(
+      "Ads.InterestGroup.Auction.ContributeToHistogramOnEventPermissionPolicy",
+      false, 1);
+}
+
 // Debug win/loss reporting APIs should do nothing when feature
 // kBiddingAndScoringDebugReportingAPI is not enabled. It will not fail
 // generateBid().
-TEST_F(BidderWorkletTest, ForDebuggingOnlyReports) {
-  RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url"))"),
-      mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+TEST_F(BidderWorkletTest, ForDebuggingOnlyReportsWithDebugFeatureDisabled) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndDisableFeature(
+      blink::features::kBiddingAndScoringDebugReportingAPI);
 
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
+      CreateBasicGenerateBidScriptWithExtraCode(
+          R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url"))"),
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(
           R"(forDebuggingOnly.reportAdAuctionWin("https://win.url"))"),
       mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 TEST_F(BidderWorkletTest, DeleteBeforeReportWinCallback) {
@@ -4681,26 +7818,35 @@ TEST_F(BidderWorkletTest, DeleteBeforeReportWinCallback) {
   auto bidder_worklet = CreateWorklet();
   ASSERT_TRUE(bidder_worklet);
 
-  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper_.get());
+  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper().get());
   bidder_worklet->ReportWin(
-      interest_group_name_, auction_signals_, per_buyer_signals_,
-      direct_from_seller_per_buyer_signals_,
-      direct_from_seller_auction_signals_, seller_signals_,
-      browser_signal_render_url_, browser_signal_bid_,
-      browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+      is_for_additional_bid_, interest_group_name_reporting_id_,
+      buyer_reporting_id_, buyer_and_seller_reporting_id_,
+      selected_buyer_and_seller_reporting_id_, auction_signals_,
+      per_buyer_signals_, direct_from_seller_per_buyer_signals_,
+      direct_from_seller_per_buyer_signals_header_ad_slot_,
+      direct_from_seller_auction_signals_,
+      direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+      kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+      browser_signal_bid_, browser_signal_bid_currency_,
+      browser_signal_highest_scoring_other_bid_,
       browser_signal_highest_scoring_other_bid_currency_,
       browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
       browser_signal_modeling_signals_, browser_signal_join_count_,
-      browser_signal_recency_, browser_signal_seller_origin_,
-      browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-      data_version_.has_value(),
+      browser_signal_recency_report_win_, browser_signal_seller_origin_,
+      browser_signal_top_level_seller_origin_,
+      browser_signal_reporting_timeout_, data_version_,
       /*trace_id=*/1,
-      base::BindOnce([](const absl::optional<GURL>& report_url,
-                        const base::flat_map<std::string, GURL>& ad_beacon_map,
-                        PrivateAggregationRequests pa_requests,
-                        const std::vector<std::string>& errors) {
-        ADD_FAILURE() << "Callback should not be invoked since worklet deleted";
-      }));
+      base::BindOnce(
+          [](const std::optional<GURL>& report_url,
+             const base::flat_map<std::string, GURL>& ad_beacon_map,
+             const base::flat_map<std::string, std::string>& ad_macro_map,
+             PrivateAggregationRequests pa_requests,
+             auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
+             const std::vector<std::string>& errors) {
+            ADD_FAILURE()
+                << "Callback should not be invoked since worklet deleted";
+          }));
   base::RunLoop().RunUntilIdle();
   bidder_worklet.reset();
   event_handle->Signal();
@@ -4730,33 +7876,40 @@ TEST_F(BidderWorkletTest, ReportWinParallel) {
     size_t num_report_win_calls = 0;
     for (size_t i = 0; i < kNumReportWinCalls; ++i) {
       bidder_worklet->ReportWin(
-          interest_group_name_,
+          is_for_additional_bid_, interest_group_name_reporting_id_,
+          buyer_reporting_id_, buyer_and_seller_reporting_id_,
+          selected_buyer_and_seller_reporting_id_,
           /*auction_signals_json=*/base::NumberToString(i), per_buyer_signals_,
           direct_from_seller_per_buyer_signals_,
-          direct_from_seller_auction_signals_, seller_signals_,
-          browser_signal_render_url_, browser_signal_bid_,
-          browser_signal_bid_currency_,
+          direct_from_seller_per_buyer_signals_header_ad_slot_,
+          direct_from_seller_auction_signals_,
+          direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+          kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+          browser_signal_bid_, browser_signal_bid_currency_,
           browser_signal_highest_scoring_other_bid_,
           browser_signal_highest_scoring_other_bid_currency_,
           browser_signal_made_highest_scoring_other_bid_,
           browser_signal_ad_cost_, browser_signal_modeling_signals_,
-          browser_signal_join_count_, browser_signal_recency_,
+          browser_signal_join_count_, browser_signal_recency_report_win_,
           browser_signal_seller_origin_,
-          browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-          data_version_.has_value(),
+          browser_signal_top_level_seller_origin_,
+          browser_signal_reporting_timeout_, data_version_,
           /*trace_id=*/1,
           base::BindLambdaForTesting(
               [&run_loop, &num_report_win_calls, i](
-                  const absl::optional<GURL>& report_url,
+                  const std::optional<GURL>& report_url,
                   const base::flat_map<std::string, GURL>& ad_beacon_map,
+                  const base::flat_map<std::string, std::string>& ad_macro_map,
                   PrivateAggregationRequests pa_requests,
+                  auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
                   const std::vector<std::string>& errors) {
                 EXPECT_EQ(GURL(base::StringPrintf("https://foo.test/%zu", i)),
                           report_url);
                 EXPECT_TRUE(errors.empty());
                 ++num_report_win_calls;
-                if (num_report_win_calls == kNumReportWinCalls)
+                if (num_report_win_calls == kNumReportWinCalls) {
                   run_loop.Quit();
+                }
               }));
     }
 
@@ -4781,23 +7934,30 @@ TEST_F(BidderWorkletTest, ReportWinParallelLoadFails) {
 
   for (size_t i = 0; i < 10; ++i) {
     bidder_worklet->ReportWin(
-        interest_group_name_,
+        is_for_additional_bid_, interest_group_name_reporting_id_,
+        buyer_reporting_id_, buyer_and_seller_reporting_id_,
+        selected_buyer_and_seller_reporting_id_,
         /*auction_signals_json=*/base::NumberToString(i), per_buyer_signals_,
         direct_from_seller_per_buyer_signals_,
-        direct_from_seller_auction_signals_, seller_signals_,
-        browser_signal_render_url_, browser_signal_bid_,
-        browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+        direct_from_seller_per_buyer_signals_header_ad_slot_,
+        direct_from_seller_auction_signals_,
+        direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+        kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+        browser_signal_bid_, browser_signal_bid_currency_,
+        browser_signal_highest_scoring_other_bid_,
         browser_signal_highest_scoring_other_bid_currency_,
         browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
         browser_signal_modeling_signals_, browser_signal_join_count_,
-        browser_signal_recency_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-        data_version_.has_value(),
+        browser_signal_recency_report_win_, browser_signal_seller_origin_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_reporting_timeout_, data_version_,
         /*trace_id=*/1,
         base::BindOnce(
-            [](const absl::optional<GURL>& report_url,
+            [](const std::optional<GURL>& report_url,
                const base::flat_map<std::string, GURL>& ad_beacon_map,
+               const base::flat_map<std::string, std::string>& ad_macro_map,
                PrivateAggregationRequests pa_requests,
+               auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
                const std::vector<std::string>& errors) {
               ADD_FAILURE() << "Callback should not be invoked.";
             }));
@@ -4815,17 +7975,89 @@ TEST_F(BidderWorkletTest, ReportWinParallelLoadFails) {
 TEST_F(BidderWorkletTest, ReportWinDateNotAvailable) {
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("https://foo.test/" + Date().toString()))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:11 Uncaught ReferenceError: Date is not defined."});
 }
 
-TEST_F(BidderWorkletTest, ReportWinInterestGroupName) {
-  interest_group_name_ = "https://interest.group.name.test/";
+TEST_F(BidderWorkletTest, ReportWinIsForAdditionalBid) {
+  const char kScript[] = R"(
+    function reportWin() {
+      sendReportTo("https://report-win.test/");
+    }
+
+    function reportAdditionalBidWin() {
+      sendReportTo("https://report-additional-bid-win.test/");
+    }
+  )";
+
+  is_for_additional_bid_ = false;
+  RunReportWinWithJavascriptExpectingResult(kScript,
+                                            GURL("https://report-win.test/"));
+
+  is_for_additional_bid_ = true;
+  RunReportWinWithJavascriptExpectingResult(
+      kScript, GURL("https://report-additional-bid-win.test/"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinContainsInterestGroupName) {
+  const char kScriptBody[] = R"(
+    sendReportTo("https://example.test/?" +
+                 browserSignals.interestGroupName);
+  )";
+
   RunReportWinWithFunctionBodyExpectingResult(
-      "sendReportTo(browserSignals.interestGroupName)",
-      GURL(interest_group_name_));
+      kScriptBody, GURL("https://example.test/?Fred"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinContainsBuyerReportingId) {
+  const char kScriptBody[] = R"(
+    sendReportTo("https://example.test/?" +
+                 browserSignals.buyerReportingId);
+  )";
+
+  buyer_reporting_id_ = "reporting_id";
+  RunReportWinWithFunctionBodyExpectingResult(
+      kScriptBody, GURL("https://example.test/?reporting_id"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinContainsBuyerAndSellerReportingId) {
+  const char kScriptBody[] = R"(
+    sendReportTo("https://example.test/?" +
+                 browserSignals.buyerAndSellerReportingId);
+  )";
+
+  buyer_and_seller_reporting_id_ = "reporting_id";
+  RunReportWinWithFunctionBodyExpectingResult(
+      kScriptBody, GURL("https://example.test/?reporting_id"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinContainsSelectedBuyerAndSellerReportingId) {
+  const char kScriptBody[] = R"(
+    sendReportTo("https://example.test/?" +
+                 browserSignals.selectedBuyerAndSellerReportingId);
+  )";
+
+  selected_buyer_and_seller_reporting_id_ = "reporting_id";
+  RunReportWinWithFunctionBodyExpectingResult(
+      kScriptBody, GURL("https://example.test/?reporting_id"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinContainsNoReportingId) {
+  const char kScriptBody[] = R"(
+    sendReportTo("https://example.test/?" +
+                 browserSignals.interestGroupName + "/" +
+                 browserSignals.buyerReportingId + "/" +
+                 browserSignals.buyerAndSellerReportingId + "/" +
+                 browserSignals.selectedBuyerAndSellerReportingId);
+  )";
+
+  interest_group_name_reporting_id_ = std::nullopt;
+  RunReportWinWithFunctionBodyExpectingResult(
+      kScriptBody,
+      GURL("https://example.test/?undefined/undefined/undefined/undefined"));
 }
 
 TEST_F(BidderWorkletTest, ReportWinDataVersion) {
@@ -4841,7 +8073,7 @@ TEST_F(BidderWorkletTest, ReportWinDataVersion) {
 TEST_F(BidderWorkletTest, ReportWinLoadCompletionOrder) {
   constexpr char kJsonResponse[] = "{}";
   constexpr char kDirectFromSellerSignalsHeaders[] =
-      "X-Allow-FLEDGE: true\nX-FLEDGE-Auction-Only: true";
+      "Ad-Auction-Allowed: true\nAd-Auction-Only: true";
 
   direct_from_seller_per_buyer_signals_ =
       GURL("https://url.test/perbuyersignals");
@@ -4854,13 +8086,26 @@ TEST_F(BidderWorkletTest, ReportWinLoadCompletionOrder) {
     std::string content;
   };
 
-  const Response kResponses[] = {
-      {interest_group_bidding_url_, kJavascriptMimeType, kAllowFledgeHeader,
-       CreateReportWinScript(R"(sendReportTo("https://foo.test"))")},
-      {*direct_from_seller_per_buyer_signals_, kJsonMimeType,
-       kDirectFromSellerSignalsHeaders, kJsonResponse},
-      {*direct_from_seller_auction_signals_, kJsonMimeType,
-       kDirectFromSellerSignalsHeaders, kJsonResponse}};
+  const auto kResponses = std::to_array<const Response>({
+      {
+          interest_group_bidding_url_,
+          kJavascriptMimeType,
+          kAllowFledgeHeader,
+          CreateReportWinScript(R"(sendReportTo("https://foo.test"))"),
+      },
+      {
+          *direct_from_seller_per_buyer_signals_,
+          kJsonMimeType,
+          kDirectFromSellerSignalsHeaders,
+          kJsonResponse,
+      },
+      {
+          *direct_from_seller_auction_signals_,
+          kJsonMimeType,
+          kDirectFromSellerSignalsHeaders,
+          kJsonResponse,
+      },
+  });
 
   // Cycle such that each response in `kResponses` gets to be the last response,
   // like so:
@@ -4873,16 +8118,17 @@ TEST_F(BidderWorkletTest, ReportWinLoadCompletionOrder) {
     mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
     url_loader_factory_.ClearResponses();
     auto run_loop = std::make_unique<base::RunLoop>();
-    RunReportWinExpectingResultAsync(bidder_worklet.get(),
-                                     GURL("https://foo.test/"), {}, {}, {},
-                                     run_loop->QuitClosure());
+    RunReportWinExpectingResultAsync(
+        bidder_worklet.get(), GURL("https://foo.test/"), {}, {}, {},
+        /*expected_reporting_latency_timeout=*/false, {},
+        run_loop->QuitClosure());
     for (size_t i = 0; i < std::size(kResponses); ++i) {
       SCOPED_TRACE(i);
       const Response& response =
           kResponses[(i + offset) % std::size(kResponses)];
-      AddResponse(
-          &url_loader_factory_, response.response_url, response.response_type,
-          /*charset=*/absl::nullopt, response.content, response.headers);
+      AddResponse(&url_loader_factory_, response.response_url,
+                  response.response_type,
+                  /*charset=*/std::nullopt, response.content, response.headers);
       task_environment_.RunUntilIdle();
       if (i < std::size(kResponses) - 1) {
         // Some URLs haven't finished loading -- generateBid() should be
@@ -4908,7 +8154,7 @@ TEST_F(BidderWorkletTest, ReportWinAuctionSignals) {
       "sendReportTo(auctionSignals)",
       GURL("https://interest.group.name.test/"));
 
-  auction_signals_ = absl::nullopt;
+  auction_signals_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("https://" + (auctionSignals === null)))",
       GURL("https://true/"));
@@ -4926,7 +8172,7 @@ TEST_F(BidderWorkletTest, ReportWinPerBuyerSignals) {
       "sendReportTo(perBuyerSignals)",
       GURL("https://interest.group.name.test/"));
 
-  per_buyer_signals_ = absl::nullopt;
+  per_buyer_signals_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(sendReportTo("https://" + (perBuyerSignals === null)))",
       GURL("https://true/"));
@@ -4938,11 +8184,41 @@ TEST_F(BidderWorkletTest, ReportWinSellerSignals) {
   // having an error message.
   seller_signals_ = "https://interest.group.name.test/";
   RunReportWinWithFunctionBodyExpectingResult(
-      "sendReportTo(sellerSignals)", /*expected_report_url=*/absl::nullopt);
+      "sendReportTo(sellerSignals)", /*expected_report_url=*/std::nullopt);
 
   seller_signals_ = R"("https://interest.group.name.test/")";
   RunReportWinWithFunctionBodyExpectingResult(
       "sendReportTo(sellerSignals)", GURL("https://interest.group.name.test/"));
+}
+
+TEST_F(BidderWorkletTest,
+       ReportWinDirectFromSellerSignalsHeaderAdSlotAuctionSignals) {
+  direct_from_seller_auction_signals_header_ad_slot_ =
+      R"("https://interest.group.name.test/")";
+  RunReportWinWithFunctionBodyExpectingResult(
+      "sendReportTo(directFromSellerSignals.auctionSignals)",
+      GURL("https://interest.group.name.test/"));
+
+  direct_from_seller_auction_signals_header_ad_slot_ = std::nullopt;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(sendReportTo("https://" +
+          (directFromSellerSignals.auctionSignals === null)))",
+      GURL("https://true/"));
+}
+
+TEST_F(BidderWorkletTest,
+       ReportWinDirectFromSellerSignalsHeaderAdSlotPerBuyerSignals) {
+  direct_from_seller_per_buyer_signals_header_ad_slot_ =
+      R"("https://interest.group.name.test/")";
+  RunReportWinWithFunctionBodyExpectingResult(
+      "sendReportTo(directFromSellerSignals.perBuyerSignals)",
+      GURL("https://interest.group.name.test/"));
+
+  direct_from_seller_per_buyer_signals_header_ad_slot_ = std::nullopt;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(sendReportTo("https://" +
+          (directFromSellerSignals.perBuyerSignals === null)))",
+      GURL("https://true/"));
 }
 
 TEST_F(BidderWorkletTest, ReportWinInterestGroupOwner) {
@@ -4970,7 +8246,80 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalTopWindowOrigin) {
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalRenderUrl) {
   browser_signal_render_url_ = GURL("https://shrimp.test/");
   RunReportWinWithFunctionBodyExpectingResult(
-      "sendReportTo(browserSignals.renderUrl)", browser_signal_render_url_);
+      "sendReportTo(browserSignals.renderURL)", browser_signal_render_url_);
+}
+
+// Check that accessing `renderUrl` of browserSignals displays a warning.
+//
+// TODO(crbug.com/40266734): Remove this test when the field itself is
+// removed.
+TEST_F(BidderWorkletTest, ReportWinBrowserSignalRenderUrlDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateReportWinScript("sendReportTo(browserSignals.renderUrl);"));
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  base::RunLoop run_loop;
+  RunReportWinExpectingResultAsync(worklet_impl, browser_signal_render_url_,
+                                   /*expected_ad_beacon_map=*/{},
+                                   /*expected_ad_macro_map=*/{},
+                                   /*expected_pa_requests=*/{},
+                                   /*expected_reporting_latency_timeout=*/false,
+                                   /*expected_errors=*/{},
+                                   run_loop.QuitClosure());
+  run_loop.Run();
+
+  channel->WaitForAndValidateConsoleMessage(
+      "warning", /*json_args=*/
+      "[{\"type\":\"string\", "
+      "\"value\":\"browserSignals.renderUrl is deprecated. Please use "
+      "browserSignals.renderURL instead.\"}]",
+      /*stack_trace_size=*/1, /*function=*/"reportWin",
+      interest_group_bidding_url_, /*line_number=*/10);
+
+  channel->ExpectNoMoreConsoleEvents();
+}
+
+// Check that accessing `renderURL` of browserSignals does not display a
+// warning.
+//
+// TODO(crbug.com/40266734): Remove this test when renderUrl is removed.
+TEST_F(BidderWorkletTest, ReportWinBrowserSignalRenderUrlNoDeprecationWarning) {
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateReportWinScript("sendReportTo(browserSignals.renderURL);"));
+
+  BidderWorklet* worklet_impl;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+  int id = worklet_impl->context_group_ids_for_testing()[0];
+  TestChannel* channel =
+      inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+  base::RunLoop run_loop;
+  RunReportWinExpectingResultAsync(worklet_impl, browser_signal_render_url_,
+                                   /*expected_ad_beacon_map=*/{},
+                                   /*expected_ad_macro_map=*/{},
+                                   /*expected_pa_requests=*/{},
+                                   /*expected_reporting_latency_timeout=*/false,
+                                   /*expected_errors=*/{},
+                                   run_loop.QuitClosure());
+  run_loop.Run();
+  channel->ExpectNoMoreConsoleEvents();
 }
 
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalBid) {
@@ -4990,7 +8339,7 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalHighestScoringOtherBid) {
 }
 
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalBidCurrency) {
-  browser_signal_bid_currency_ = absl::nullopt;
+  browser_signal_bid_currency_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(if (browserSignals.bidCurrency === "???")
         sendReportTo("https://jumboshrimp.test"))",
@@ -5012,7 +8361,7 @@ TEST_F(BidderWorkletTest,
         sendReportTo("https://jumboshrimp.test"))",
       GURL("https://jumboshrimp.test"));
 
-  browser_signal_highest_scoring_other_bid_currency_ = absl::nullopt;
+  browser_signal_highest_scoring_other_bid_currency_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(if (browserSignals.highestScoringOtherBidCurrency === "???")
         sendReportTo("https://jumboshrimp.test"))",
@@ -5036,7 +8385,7 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalSeller) {
 }
 
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalTopLevelSeller) {
-  browser_signal_top_level_seller_origin_ = absl::nullopt;
+  browser_signal_top_level_seller_origin_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(if (!("topLevelSeller" in browserSignals))
             sendReportTo('https://pass.test');)",
@@ -5051,7 +8400,7 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalTopLevelSeller) {
 }
 
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalModelingSignals) {
-  browser_signal_modeling_signals_ = absl::nullopt;
+  browser_signal_modeling_signals_ = std::nullopt;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(if (!("modelingSignals" in browserSignals))
             sendReportTo('https://pass.test');)",
@@ -5073,11 +8422,72 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalJoinCount) {
 }
 
 TEST_F(BidderWorkletTest, ReportWinBrowserSignalRecency) {
-  browser_signal_recency_ = 19u;
+  browser_signal_recency_report_win_ = 19u;
   RunReportWinWithFunctionBodyExpectingResult(
       R"(if (browserSignals.recency === 19)
         sendReportTo("https://jumboshrimp.test"))",
       GURL("https://jumboshrimp.test"));
+}
+
+TEST_F(BidderWorkletTest, ReportWinNoBrowserSignalRecencyForAdditionalBid) {
+  is_for_additional_bid_ = true;
+  browser_signal_recency_report_win_ = 19u;
+  const char kScript[] = R"(
+    function reportAdditionalBidWin(
+          auctionSignals, perBuyerSignals, sellerSignals,
+          browserSignals, directFromSellerSignals) {
+      if ('recency' in browserSignals)
+        throw 'Should not have recency in reportAdditionalBidWin';
+      sendReportTo("https://report-additional-bid-win.test/");
+    }
+  )";
+
+  RunReportWinWithJavascriptExpectingResult(
+      kScript, GURL("https://report-additional-bid-win.test/"));
+}
+
+TEST_F(BidderWorkletTest, KAnonStatusExposesInReportWinBrowserSignals) {
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  bid_is_kanon_ = true;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "passedAndEnforced")
+        sendReportTo("https://passedAndEnforced.test"))",
+      GURL("https://passedAndEnforced.test"));
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  bid_is_kanon_ = false;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "passedAndEnforced")
+        sendReportTo("https://passedAndEnforced.test"))",
+      GURL("https://passedAndEnforced.test"));
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kSimulate;
+  bid_is_kanon_ = true;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "passedNotEnforced")
+        sendReportTo("https://passedNotEnforced.test"))",
+      GURL("https://passedNotEnforced.test"));
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kSimulate;
+  bid_is_kanon_ = false;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "belowThreshold")
+        sendReportTo("https://belowThreshold.test"))",
+      GURL("https://belowThreshold.test"));
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kNone;
+  bid_is_kanon_ = true;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "notCalculated")
+        sendReportTo("https://notCalculated.test"))",
+      GURL("https://notCalculated.test"));
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kNone;
+  bid_is_kanon_ = false;
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(if (browserSignals.kAnonStatus === "notCalculated")
+        sendReportTo("https://notCalculated.test"))",
+      GURL("https://notCalculated.test"));
 }
 
 // Subsequent runs of the same script should not affect each other. Same is true
@@ -5087,7 +8497,7 @@ TEST_F(BidderWorkletTest, ReportWinBrowserSignalRecency) {
 // called once, but each ReportWin() to be called multiple times. When the API
 // is updated to allow multiple calls to generateBid(), update this method to
 // invoke it multiple times.
-TEST_F(BidderWorkletTest, ScriptIsolation) {
+TEST_P(BidderWorkletMultiThreadingTest, ScriptIsolation) {
   // Use arrays so that all values are references, to catch both the case where
   // variables are persisted, and the case where what they refer to is
   // persisted, but variables are overwritten between runs.
@@ -5122,23 +8532,30 @@ TEST_F(BidderWorkletTest, ScriptIsolation) {
   for (int i = 0; i < 3; ++i) {
     base::RunLoop run_loop;
     bidder_worklet->ReportWin(
-        interest_group_name_, auction_signals_, per_buyer_signals_,
-        direct_from_seller_per_buyer_signals_,
-        direct_from_seller_auction_signals_, seller_signals_,
-        browser_signal_render_url_, browser_signal_bid_,
-        browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+        is_for_additional_bid_, interest_group_name_reporting_id_,
+        buyer_reporting_id_, buyer_and_seller_reporting_id_,
+        selected_buyer_and_seller_reporting_id_, auction_signals_,
+        per_buyer_signals_, direct_from_seller_per_buyer_signals_,
+        direct_from_seller_per_buyer_signals_header_ad_slot_,
+        direct_from_seller_auction_signals_,
+        direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+        kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+        browser_signal_bid_, browser_signal_bid_currency_,
+        browser_signal_highest_scoring_other_bid_,
         browser_signal_highest_scoring_other_bid_currency_,
         browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
         browser_signal_modeling_signals_, browser_signal_join_count_,
-        browser_signal_recency_, browser_signal_seller_origin_,
-        browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-        data_version_.has_value(),
-        /*trace_id=*/1,
+        browser_signal_recency_report_win_, browser_signal_seller_origin_,
+        browser_signal_top_level_seller_origin_,
+        browser_signal_reporting_timeout_, data_version_, /*trace_id=*/1,
         base::BindLambdaForTesting(
-            [&run_loop](const absl::optional<GURL>& report_url,
-                        const base::flat_map<std::string, GURL>& ad_beacon_map,
-                        PrivateAggregationRequests pa_requests,
-                        const std::vector<std::string>& errors) {
+            [&run_loop](
+                const std::optional<GURL>& report_url,
+                const base::flat_map<std::string, GURL>& ad_beacon_map,
+                const base::flat_map<std::string, std::string>& ad_macro_map,
+                PrivateAggregationRequests pa_requests,
+                auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
+                const std::vector<std::string>& errors) {
               EXPECT_EQ(GURL("https://23.test/"), report_url);
               EXPECT_TRUE(errors.empty());
               run_loop.Quit();
@@ -5161,7 +8578,7 @@ TEST_F(BidderWorkletTest, PauseOnStart) {
                     /* pause_for_debugger_on_start=*/true, &worklet_impl);
   GenerateBid(worklet.get());
   // Grab the context group ID to be able to resume.
-  int id = worklet_impl->context_group_id_for_testing();
+  int id = worklet_impl->context_group_ids_for_testing()[0];
 
   // Give it a chance to fetch.
   task_environment_.RunUntilIdle();
@@ -5170,25 +8587,72 @@ TEST_F(BidderWorkletTest, PauseOnStart) {
                         CreateBasicGenerateBidScript());
 
   // Set up the event loop for the standard callback.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
 
   // Let this run.
-  v8_helper_->v8_runner()->PostTask(
+  v8_helper()->v8_runner()->PostTask(
       FROM_HERE, base::BindOnce([](scoped_refptr<AuctionV8Helper> v8_helper,
                                    int id) { v8_helper->Resume(id); },
-                                v8_helper_, id));
+                                v8_helper(), id));
 
-  load_script_run_loop_->Run();
-  load_script_run_loop_.reset();
+  generate_bid_run_loop_->Run();
+  generate_bid_run_loop_.reset();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ("[\"ad\"]", bid_->ad);
-  EXPECT_EQ(1, bid_->bid);
-  EXPECT_EQ(GURL("https://response.test/"), bid_->ad_descriptor.url);
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ("[\"ad\"]", bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(GURL("https://response.test/"), bids_[0]->ad_descriptor.url);
   EXPECT_THAT(bid_errors_, ::testing::UnorderedElementsAre());
 }
 
-TEST_F(BidderWorkletTest, PauseOnStartDelete) {
+TEST_F(BidderWorkletTwoThreadsTest, PauseOnStart) {
+  // If pause isn't working, this will be used and not the right script.
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        "nonsense;");
+
+  // No trusted signals to simplify spying on URL loading.
+  interest_group_trusted_bidding_signals_keys_.reset();
+
+  BidderWorklet* worklet_impl = nullptr;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /* pause_for_debugger_on_start=*/true, &worklet_impl);
+  GenerateBid(worklet.get());
+
+  // Grab the context group IDs to be able to resume.
+  std::vector<int> ids = worklet_impl->context_group_ids_for_testing();
+  ASSERT_EQ(ids.size(), 2u);
+
+  // Give it a chance to fetch.
+  task_environment_.RunUntilIdle();
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateBasicGenerateBidScript());
+
+  // Set up the event loop for the standard callback.
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+
+  // Let this run.
+  v8_helpers_[0]->v8_runner()->PostTask(
+      FROM_HERE, base::BindOnce([](scoped_refptr<AuctionV8Helper> v8_helper,
+                                   int id) { v8_helper->Resume(id); },
+                                v8_helpers_[0], ids[0]));
+  v8_helpers_[1]->v8_runner()->PostTask(
+      FROM_HERE, base::BindOnce([](scoped_refptr<AuctionV8Helper> v8_helper,
+                                   int id) { v8_helper->Resume(id); },
+                                v8_helpers_[1], ids[1]));
+
+  generate_bid_run_loop_->Run();
+  generate_bid_run_loop_.reset();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ("[\"ad\"]", bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(GURL("https://response.test/"), bids_[0]->ad_descriptor.url);
+  EXPECT_THAT(bid_errors_, ::testing::UnorderedElementsAre());
+}
+
+TEST_P(BidderWorkletMultiThreadingTest, PauseOnStartDelete) {
   AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                         CreateBasicGenerateBidScript());
   // No trusted signals to simplify things.
@@ -5204,35 +8668,36 @@ TEST_F(BidderWorkletTest, PauseOnStartDelete) {
   task_environment_.RunUntilIdle();
 
   // Grab the context group ID.
-  int id = worklet_impl->context_group_id_for_testing();
+  int id = worklet_impl->context_group_ids_for_testing()[0];
 
   // Delete the worklet. No callback should be invoked.
   worklet.reset();
   task_environment_.RunUntilIdle();
 
   // Try to resume post-delete. Should not crash.
-  v8_helper_->v8_runner()->PostTask(
+  v8_helper()->v8_runner()->PostTask(
       FROM_HERE, base::BindOnce([](scoped_refptr<AuctionV8Helper> v8_helper,
                                    int id) { v8_helper->Resume(id); },
-                                v8_helper_, id));
+                                v8_helper(), id));
   task_environment_.RunUntilIdle();
 }
 
 TEST_F(BidderWorkletTest, BasicV8Debug) {
-  ScopedInspectorSupport inspector_support(v8_helper_.get());
+  ScopedInspectorSupport inspector_support(v8_helper().get());
 
   // Helper for looking for scriptParsed events.
   auto is_script_parsed = [](const TestChannel::Event& event) -> bool {
-    if (event.type != TestChannel::Event::Type::Notification)
+    if (event.type != TestChannel::Event::Type::Notification) {
       return false;
+    }
 
     const std::string* candidate_method =
         event.value.GetDict().FindString("method");
     return (candidate_method && *candidate_method == "Debugger.scriptParsed");
   };
 
-  const char kUrl1[] = "http://example.com/first.js";
-  const char kUrl2[] = "http://example.org/second.js";
+  const char kUrl1[] = "http://example.test/first.js";
+  const char kUrl2[] = "http://example2.test/second.js";
 
   AddJavascriptResponse(&url_loader_factory_, GURL(kUrl1),
                         CreateBasicGenerateBidScript());
@@ -5249,8 +8714,8 @@ TEST_F(BidderWorkletTest, BasicV8Debug) {
       GURL(kUrl2), /*pause_for_debugger_on_start=*/true, &worklet_impl2);
   GenerateBid(worklet2.get());
 
-  int id1 = worklet_impl1->context_group_id_for_testing();
-  int id2 = worklet_impl2->context_group_id_for_testing();
+  int id1 = worklet_impl1->context_group_ids_for_testing()[0];
+  int id2 = worklet_impl2->context_group_ids_for_testing()[0];
 
   TestChannel* channel1 = inspector_support.ConnectDebuggerSession(id1);
   TestChannel* channel2 = inspector_support.ConnectDebuggerSession(id2);
@@ -5272,16 +8737,16 @@ TEST_F(BidderWorkletTest, BasicV8Debug) {
   EXPECT_TRUE(base::ranges::none_of(events1, is_script_parsed));
 
   // Unpause execution for #1.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   channel1->RunCommandAndWaitForResult(
       3, "Runtime.runIfWaitingForDebugger",
       R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  bid_.reset();
-  load_script_run_loop_.reset();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
 
   // channel1 should have had a parsed notification for kUrl1.
   TestChannel::Event script_parsed1 =
@@ -5296,16 +8761,16 @@ TEST_F(BidderWorkletTest, BasicV8Debug) {
   EXPECT_TRUE(base::ranges::none_of(events2, is_script_parsed));
 
   // Unpause execution for #2.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   channel2->RunCommandAndWaitForResult(
       3, "Runtime.runIfWaitingForDebugger",
       R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  bid_.reset();
-  load_script_run_loop_.reset();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
 
   // channel2 should have had a parsed notification for kUrl2.
   TestChannel::Event script_parsed2 =
@@ -5326,8 +8791,101 @@ TEST_F(BidderWorkletTest, BasicV8Debug) {
   EXPECT_TRUE(base::ranges::none_of(events2, is_script_parsed));
 }
 
+TEST_F(BidderWorkletTwoThreadsTest, BasicV8Debug) {
+  ScopedInspectorSupport inspector_support0(v8_helpers_[0].get());
+  ScopedInspectorSupport inspector_support1(v8_helpers_[1].get());
+
+  // Helper for looking for scriptParsed events.
+  auto is_script_parsed = [](const TestChannel::Event& event) -> bool {
+    if (event.type != TestChannel::Event::Type::Notification) {
+      return false;
+    }
+
+    const std::string* candidate_method =
+        event.value.GetDict().FindString("method");
+    return (candidate_method && *candidate_method == "Debugger.scriptParsed");
+  };
+
+  const char kUrl[] = "http://example.test/first.js";
+
+  AddJavascriptResponse(&url_loader_factory_, GURL(kUrl),
+                        CreateBasicGenerateBidScript());
+
+  BidderWorklet* worklet_impl;
+  auto worklet = CreateWorklet(GURL(kUrl), /*pause_for_debugger_on_start=*/true,
+                               &worklet_impl);
+  GenerateBid(worklet.get());
+
+  std::vector<int> ids = worklet_impl->context_group_ids_for_testing();
+  ASSERT_EQ(ids.size(), 2u);
+
+  TestChannel* channel0 = inspector_support0.ConnectDebuggerSession(ids[0]);
+  TestChannel* channel1 = inspector_support1.ConnectDebuggerSession(ids[1]);
+
+  channel0->RunCommandAndWaitForResult(
+      1, "Runtime.enable", R"({"id":1,"method":"Runtime.enable","params":{}})");
+  channel0->RunCommandAndWaitForResult(
+      2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  channel1->RunCommandAndWaitForResult(
+      1, "Runtime.enable", R"({"id":1,"method":"Runtime.enable","params":{}})");
+  channel1->RunCommandAndWaitForResult(
+      2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  // Should not see scriptParsed before resume.
+  std::list<TestChannel::Event> events0 = channel0->TakeAllEvents();
+  EXPECT_TRUE(base::ranges::none_of(events0, is_script_parsed));
+  std::list<TestChannel::Event> events1 = channel1->TakeAllEvents();
+  EXPECT_TRUE(base::ranges::none_of(events1, is_script_parsed));
+
+  // Unpause execution for #0. Expect that no bid is generated yet, as the
+  // worklet is waiting on both V8 threads to resume.
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  channel0->RunCommandAndWaitForResult(
+      3, "Runtime.runIfWaitingForDebugger",
+      R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+  generate_bid_run_loop_->RunUntilIdle();
+
+  EXPECT_TRUE(bids_.empty());
+
+  // Unpause execution for #1. Expect that one bid is generated.
+  channel1->RunCommandAndWaitForResult(
+      3, "Runtime.runIfWaitingForDebugger",
+      R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
+  generate_bid_run_loop_.reset();
+
+  // channel0 should have had a parsed notification for kUrl, as the GenerateBid
+  // is executed on the corresponding thread.
+  TestChannel::Event script_parsed0 =
+      channel0->WaitForMethodNotification("Debugger.scriptParsed");
+  const std::string* url =
+      script_parsed0.value.GetDict().FindStringByDottedPath("params.url");
+  ASSERT_TRUE(url);
+  EXPECT_EQ(kUrl, *url);
+
+  // There shouldn't be a parsed notification on channel1, however.
+  events1 = channel1->TakeAllEvents();
+  EXPECT_TRUE(base::ranges::none_of(events1, is_script_parsed));
+
+  worklet.reset();
+  task_environment_.RunUntilIdle();
+
+  // No other scriptParsed events should be on either channel.
+  events0 = channel0->TakeAllEvents();
+  events1 = channel1->TakeAllEvents();
+  EXPECT_TRUE(base::ranges::none_of(events0, is_script_parsed));
+  EXPECT_TRUE(base::ranges::none_of(events1, is_script_parsed));
+}
+
 TEST_F(BidderWorkletTest, ParseErrorV8Debug) {
-  ScopedInspectorSupport inspector_support(v8_helper_.get());
+  ScopedInspectorSupport inspector_support(v8_helper().get());
   AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                         "Invalid Javascript");
 
@@ -5336,7 +8894,7 @@ TEST_F(BidderWorkletTest, ParseErrorV8Debug) {
       CreateWorklet(interest_group_bidding_url_,
                     /*pause_for_debugger_on_start=*/true, &worklet_impl);
   GenerateBidExpectingNeverCompletes(worklet.get());
-  int id = worklet_impl->context_group_id_for_testing();
+  int id = worklet_impl->context_group_ids_for_testing()[0];
   TestChannel* channel = inspector_support.ConnectDebuggerSession(id);
 
   channel->RunCommandAndWaitForResult(
@@ -5362,12 +8920,68 @@ TEST_F(BidderWorkletTest, ParseErrorV8Debug) {
   EXPECT_EQ(interest_group_bidding_url_.spec(), *error_url);
 }
 
+TEST_F(BidderWorkletTwoThreadsTest, ParseErrorV8Debug) {
+  ScopedInspectorSupport inspector_support0(v8_helpers_[0].get());
+  ScopedInspectorSupport inspector_support1(v8_helpers_[1].get());
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        "Invalid Javascript");
+
+  BidderWorklet* worklet_impl = nullptr;
+  auto worklet =
+      CreateWorklet(interest_group_bidding_url_,
+                    /*pause_for_debugger_on_start=*/true, &worklet_impl);
+  GenerateBidExpectingNeverCompletes(worklet.get());
+  std::vector<int> ids = worklet_impl->context_group_ids_for_testing();
+  ASSERT_EQ(ids.size(), 2u);
+
+  TestChannel* channel0 = inspector_support0.ConnectDebuggerSession(ids[0]);
+  TestChannel* channel1 = inspector_support1.ConnectDebuggerSession(ids[1]);
+
+  channel0->RunCommandAndWaitForResult(
+      1, "Runtime.enable", R"({"id":1,"method":"Runtime.enable","params":{}})");
+  channel0->RunCommandAndWaitForResult(
+      2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  channel1->RunCommandAndWaitForResult(
+      1, "Runtime.enable", R"({"id":1,"method":"Runtime.enable","params":{}})");
+  channel1->RunCommandAndWaitForResult(
+      2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  // Unpause execution.
+  channel0->RunCommandAndWaitForResult(
+      3, "Runtime.runIfWaitingForDebugger",
+      R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+  channel1->RunCommandAndWaitForResult(
+      3, "Runtime.runIfWaitingForDebugger",
+      R"({"id":3,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+
+  // Worklet should disconnect with an error message.
+  EXPECT_FALSE(WaitForDisconnect().empty());
+
+  // Should have gotten a parse error notification for each channel.
+  TestChannel::Event parse_error0 =
+      channel0->WaitForMethodNotification("Debugger.scriptFailedToParse");
+  const std::string* error_url0 =
+      parse_error0.value.GetDict().FindStringByDottedPath("params.url");
+  ASSERT_TRUE(error_url0);
+  EXPECT_EQ(interest_group_bidding_url_.spec(), *error_url0);
+
+  TestChannel::Event parse_error1 =
+      channel1->WaitForMethodNotification("Debugger.scriptFailedToParse");
+  const std::string* error_url1 =
+      parse_error1.value.GetDict().FindStringByDottedPath("params.url");
+  ASSERT_TRUE(error_url1);
+  EXPECT_EQ(interest_group_bidding_url_.spec(), *error_url1);
+}
+
 TEST_F(BidderWorkletTest, BasicDevToolsDebug) {
   std::string bid_script = CreateGenerateBidScript(
       R"({ad: ["ad"], bid: this.global_bid ? this.global_bid : 1,
           render:"https://response.test/"})");
-  const char kUrl1[] = "http://example.com/first.js";
-  const char kUrl2[] = "http://example.org/second.js";
+  const char kUrl1[] = "http://example.test/first.js";
+  const char kUrl2[] = "http://example2.test/second.js";
 
   AddJavascriptResponse(&url_loader_factory_, GURL(kUrl1), bid_script);
   AddJavascriptResponse(&url_loader_factory_, GURL(kUrl2), bid_script);
@@ -5380,8 +8994,10 @@ TEST_F(BidderWorkletTest, BasicDevToolsDebug) {
   GenerateBid(worklet2.get());
 
   mojo::AssociatedRemote<blink::mojom::DevToolsAgent> agent1, agent2;
-  worklet1->ConnectDevToolsAgent(agent1.BindNewEndpointAndPassReceiver());
-  worklet2->ConnectDevToolsAgent(agent2.BindNewEndpointAndPassReceiver());
+  worklet1->ConnectDevToolsAgent(agent1.BindNewEndpointAndPassReceiver(),
+                                 /*thread_index=*/0);
+  worklet2->ConnectDevToolsAgent(agent2.BindNewEndpointAndPassReceiver(),
+                                 /*thread_index=*/0);
 
   TestDevToolsAgentClient debug1(std::move(agent1), "123",
                                  /*use_binary_protocol=*/true);
@@ -5442,7 +9058,7 @@ TEST_F(BidderWorkletTest, BasicDevToolsDebug) {
   ASSERT_TRUE(hit_breakpoints1);
   ASSERT_EQ(1u, hit_breakpoints1->size());
   ASSERT_TRUE((*hit_breakpoints1)[0].is_string());
-  EXPECT_EQ("1:0:0:http://example.com/first.js",
+  EXPECT_EQ("1:0:0:http://example.test/first.js",
             (*hit_breakpoints1)[0].GetString());
   std::string* callframe_id1 = breakpoint_hit1.value.GetDict()
                                    .FindDict("params")
@@ -5466,15 +9082,15 @@ TEST_F(BidderWorkletTest, BasicDevToolsDebug) {
       base::StringPrintf(kCommandTemplate, callframe_id1->c_str()));
 
   // Resume, setting up event loop for fixture first.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   debug1.RunCommandAndWaitForResult(
       TestDevToolsAgentClient::Channel::kIO, 6, "Debugger.resume",
       R"({"id":6,"method":"Debugger.resume","params":{}})");
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(42, bid_->bid);
-  bid_.reset();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(42, bids_[0]->bid);
+  bids_.clear();
 
   // Start #2, see that it hit its breakpoint.
   debug2.RunCommandAndWaitForResult(
@@ -5491,22 +9107,179 @@ TEST_F(BidderWorkletTest, BasicDevToolsDebug) {
   ASSERT_TRUE(hit_breakpoints2);
   ASSERT_EQ(1u, hit_breakpoints2->size());
   ASSERT_TRUE((*hit_breakpoints2)[0].is_string());
-  EXPECT_EQ("1:0:0:http://example.org/second.js",
+  EXPECT_EQ("1:0:0:http://example2.test/second.js",
             (*hit_breakpoints2)[0].GetString());
 
   // Go ahead and resume w/o messing with anything.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   debug2.RunCommandAndWaitForResult(
       TestDevToolsAgentClient::Channel::kIO, 5, "Debugger.resume",
       R"({"id":5,"method":"Debugger.resume","params":{}})");
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+}
+
+TEST_F(BidderWorkletTwoThreadsTest, BasicDevToolsDebug) {
+  std::string bid_script = CreateGenerateBidScript(
+      R"({ad: ["ad"], bid: this.global_bid ? this.global_bid : 1,
+          render:"https://response.test/"})");
+  const char kUrl1[] = "http://example.test/first.js";
+
+  AddJavascriptResponse(&url_loader_factory_, GURL(kUrl1), bid_script);
+
+  auto worklet =
+      CreateWorklet(GURL(kUrl1), /*pause_for_debugger_on_start=*/true);
+  GenerateBid(worklet.get());
+  GenerateBid(worklet.get());
+
+  mojo::AssociatedRemote<blink::mojom::DevToolsAgent> agent0, agent1;
+  worklet->ConnectDevToolsAgent(agent0.BindNewEndpointAndPassReceiver(),
+                                /*thread_index=*/0);
+  worklet->ConnectDevToolsAgent(agent1.BindNewEndpointAndPassReceiver(),
+                                /*thread_index=*/1);
+
+  TestDevToolsAgentClient debug0(std::move(agent0), "123",
+                                 /*use_binary_protocol=*/true);
+  TestDevToolsAgentClient debug1(std::move(agent1), "456",
+                                 /*use_binary_protocol=*/true);
+
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 1, "Runtime.enable",
+      R"({"id":1,"method":"Runtime.enable","params":{}})");
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 1, "Runtime.enable",
+      R"({"id":1,"method":"Runtime.enable","params":{}})");
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 2, "Debugger.enable",
+      R"({"id":2,"method":"Debugger.enable","params":{}})");
+
+  const char kBreakpointTemplate[] = R"({
+        "id":3,
+        "method":"Debugger.setBreakpointByUrl",
+        "params": {
+          "lineNumber": 0,
+          "url": "%s",
+          "columnNumber": 0,
+          "condition": ""
+        }})";
+
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 3, "Debugger.setBreakpointByUrl",
+      base::StringPrintf(kBreakpointTemplate, kUrl1));
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 3, "Debugger.setBreakpointByUrl",
+      base::StringPrintf(kBreakpointTemplate, kUrl1));
+
+  // Now resume. We should see a scriptParsed event for `debug0` and `debug1`,
+  // as the two GenerateBids are executed on the corresponding thread
+  // respectively.
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 4,
+      "Runtime.runIfWaitingForDebugger",
+      R"({"id":4,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kMain, 4,
+      "Runtime.runIfWaitingForDebugger",
+      R"({"id":4,"method":"Runtime.runIfWaitingForDebugger","params":{}})");
+
+  TestDevToolsAgentClient::Event script_parsed0 =
+      debug0.WaitForMethodNotification("Debugger.scriptParsed");
+  const std::string* url0 =
+      script_parsed0.value.GetDict().FindStringByDottedPath("params.url");
+  ASSERT_TRUE(url0);
+  EXPECT_EQ(*url0, kUrl1);
+
+  TestDevToolsAgentClient::Event script_parsed1 =
+      debug1.WaitForMethodNotification("Debugger.scriptParsed");
+  const std::string* url1 =
+      script_parsed1.value.GetDict().FindStringByDottedPath("params.url");
+  ASSERT_TRUE(url1);
+  EXPECT_EQ(*url1, kUrl1);
+
+  // The breakpoints will be hit.
+  TestDevToolsAgentClient::Event breakpoint_hit0 =
+      debug0.WaitForMethodNotification("Debugger.paused");
+  TestDevToolsAgentClient::Event breakpoint_hit1 =
+      debug1.WaitForMethodNotification("Debugger.paused");
+
+  base::Value::List* hit_breakpoints0 =
+      breakpoint_hit0.value.GetDict().FindListByDottedPath(
+          "params.hitBreakpoints");
+  ASSERT_TRUE(hit_breakpoints0);
+  ASSERT_EQ(1u, hit_breakpoints0->size());
+  ASSERT_TRUE((*hit_breakpoints0)[0].is_string());
+  EXPECT_EQ("1:0:0:http://example.test/first.js",
+            (*hit_breakpoints0)[0].GetString());
+  std::string* callframe_id0 = breakpoint_hit0.value.GetDict()
+                                   .FindDict("params")
+                                   ->FindList("callFrames")
+                                   ->front()
+                                   .GetDict()
+                                   .FindString("callFrameId");
+
+  base::Value::List* hit_breakpoints1 =
+      breakpoint_hit1.value.GetDict().FindListByDottedPath(
+          "params.hitBreakpoints");
+  ASSERT_TRUE(hit_breakpoints1);
+  ASSERT_EQ(1u, hit_breakpoints1->size());
+  ASSERT_TRUE((*hit_breakpoints1)[0].is_string());
+  EXPECT_EQ("1:0:0:http://example.test/first.js",
+            (*hit_breakpoints1)[0].GetString());
+  std::string* callframe_id1 = breakpoint_hit1.value.GetDict()
+                                   .FindDict("params")
+                                   ->FindList("callFrames")
+                                   ->front()
+                                   .GetDict()
+                                   .FindString("callFrameId");
+
+  // Override the bid value.
+  const char kCommandTemplate[] = R"({
+    "id": 5,
+    "method": "Debugger.evaluateOnCallFrame",
+    "params": {
+      "callFrameId": "%s",
+      "expression": "global_bid = 42"
+    }
+  })";
+
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kIO, 5, "Debugger.evaluateOnCallFrame",
+      base::StringPrintf(kCommandTemplate, callframe_id0->c_str()));
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kIO, 5, "Debugger.evaluateOnCallFrame",
+      base::StringPrintf(kCommandTemplate, callframe_id1->c_str()));
+
+  // Let the thread associated with `debug0` resume.
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  debug0.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kIO, 6, "Debugger.resume",
+      R"({"id":6,"method":"Debugger.resume","params":{}})");
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(42, bids_[0]->bid);
+  bids_.clear();
+
+  // Let the thread associated with `debug1` resume.
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  debug1.RunCommandAndWaitForResult(
+      TestDevToolsAgentClient::Channel::kIO, 6, "Debugger.resume",
+      R"({"id":6,"method":"Debugger.resume","params":{}})");
+  generate_bid_run_loop_->Run();
+
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(42, bids_[0]->bid);
+  bids_.clear();
 }
 
 TEST_F(BidderWorkletTest, InstrumentationBreakpoints) {
-  const char kUrl[] = "http://example.com/bid.js";
+  const char kUrl[] = "http://example.test/bid.js";
 
   AddJavascriptResponse(
       &url_loader_factory_, GURL(kUrl),
@@ -5517,7 +9290,8 @@ TEST_F(BidderWorkletTest, InstrumentationBreakpoints) {
   GenerateBid(worklet.get());
 
   mojo::AssociatedRemote<blink::mojom::DevToolsAgent> agent;
-  worklet->ConnectDevToolsAgent(agent.BindNewEndpointAndPassReceiver());
+  worklet->ConnectDevToolsAgent(agent.BindNewEndpointAndPassReceiver(),
+                                /*thread_index=*/0);
 
   TestDevToolsAgentClient debug(std::move(agent), "123",
                                 /*use_binary_protocol=*/true);
@@ -5557,20 +9331,21 @@ TEST_F(BidderWorkletTest, InstrumentationBreakpoints) {
   EXPECT_EQ("instrumentation:beforeBidderWorkletBiddingStart", *breakpoint1);
 
   // Resume and wait for bid result.
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
   debug.RunCommandAndWaitForResult(
       TestDevToolsAgentClient::Channel::kIO, 6, "Debugger.resume",
       R"({"id":6,"method":"Debugger.resume","params":{}})");
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_->Run();
 
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  bid_.reset();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  bids_.clear();
 
   // Now ask for reporting. This should hit the other breakpoint.
   base::RunLoop run_loop;
-  RunReportWinExpectingResultAsync(worklet.get(), GURL("https://foo.test/"), {},
-                                   {}, {}, run_loop.QuitClosure());
+  RunReportWinExpectingResultAsync(
+      worklet.get(), GURL("https://foo.test/"), {}, {}, {},
+      /*expected_reporting_latency_timeout=*/false, {}, run_loop.QuitClosure());
 
   TestDevToolsAgentClient::Event breakpoint_hit2 =
       debug.WaitForMethodNotification("Debugger.paused");
@@ -5590,7 +9365,7 @@ TEST_F(BidderWorkletTest, InstrumentationBreakpoints) {
 TEST_F(BidderWorkletTest, UnloadWhilePaused) {
   // Make sure things are cleaned up properly if the worklet is destroyed while
   // paused on a breakpoint.
-  const char kUrl[] = "http://example.com/bid.js";
+  const char kUrl[] = "http://example.test/bid.js";
 
   AddJavascriptResponse(
       &url_loader_factory_, GURL(kUrl),
@@ -5601,7 +9376,8 @@ TEST_F(BidderWorkletTest, UnloadWhilePaused) {
   GenerateBid(worklet.get());
 
   mojo::AssociatedRemote<blink::mojom::DevToolsAgent> agent;
-  worklet->ConnectDevToolsAgent(agent.BindNewEndpointAndPassReceiver());
+  worklet->ConnectDevToolsAgent(agent.BindNewEndpointAndPassReceiver(),
+                                /*thread_index=*/0);
 
   TestDevToolsAgentClient debug(std::move(agent), "123",
                                 /*use_binary_protocol=*/true);
@@ -5653,54 +9429,141 @@ TEST_F(BidderWorkletTest, ExecutionModeGroupByOrigin) {
       blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode;
   join_origin_ = url::Origin::Create(GURL("https://url.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
 
   // Run 2, same group.
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(2, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
 
   // Run 3, not in group.
   execution_mode_ =
       blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
   join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
 
   // Run 4, back to group.
   execution_mode_ =
       blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode;
   join_origin_ = url::Origin::Create(GURL("https://url.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(3, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(3, bids_[0]->bid);
 
   // Run 5, different group.
   join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
 
   // Run 5, different group cont'd.
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(2, bid_->bid);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
 }
 
+TEST_F(BidderWorkletTest, ExecutionModeGroupByOriginSaveMultipleGroups) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeatureWithParameters(
+      blink::features::kFledgeNumberBidderWorkletGroupByOriginContextsToKeep,
+      {{"GroupByOriginContextLimit", "2"},
+       {"IncludeFacilitatedTestingGroups", "true"}});
+
+  const char kScript[] = R"(
+    if (!('count' in globalThis))
+      globalThis.count = 0;
+    function generateBid() {
+      ++count;
+      return {ad: ["ad"], bid:count, render:"https://response.test/"};
+    }
+  )";
+
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        kScript);
+
+  // Save origin 1 context.
+  execution_mode_ =
+      blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode;
+  join_origin_ = url::Origin::Create(GURL("https://url.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+
+  // Save origin 2 context.
+  join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+
+  // Save origin 3 context. This will overwrite origin 1's context.
+  join_origin_ = url::Origin::Create(GURL("https://url3.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+
+  // Access origin 2 context which should still be saved.
+  join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+
+  // Access origin 3 context which should still be saved.
+  join_origin_ = url::Origin::Create(GURL("https://url3.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+
+  // Origin 1's context is not still saved. This will save it and overwrite
+  // origin 2's context.
+  join_origin_ = url::Origin::Create(GURL("https://url.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+
+  // Access origin 3 context which should still be saved.
+  join_origin_ = url::Origin::Create(GURL("https://url3.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(3, bids_[0]->bid);
+
+  // Access origin 2 context which is no longer saved.
+  join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+}
 TEST_F(BidderWorkletTest, ExecutionModeFrozenContext) {
   const char kScript[] = R"(
     if (!('count' in globalThis))
@@ -5718,9 +9581,9 @@ TEST_F(BidderWorkletTest, ExecutionModeFrozenContext) {
   std::string not_frozen_url = "https://response.test/?false";
 
   interest_group_ads_.emplace_back(GURL(frozen_url),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
   interest_group_ads_.emplace_back(GURL(not_frozen_url),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
   mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
   AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                         kScript);
@@ -5729,66 +9592,66 @@ TEST_F(BidderWorkletTest, ExecutionModeFrozenContext) {
   execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
   join_origin_ = url::Origin::Create(GURL("https://url.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
   EXPECT_THAT(bid_errors_, testing::ElementsAre());
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  EXPECT_EQ(frozen_url, bid_->ad_descriptor.url);
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 2, frozen.
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  EXPECT_EQ(frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 3, grouped.
   execution_mode_ =
       blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode;
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(2, bid_->bid);
-  EXPECT_EQ(not_frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+  EXPECT_EQ(not_frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 4, grouped.
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(3, bid_->bid);
-  EXPECT_EQ(not_frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(3, bids_[0]->bid);
+  EXPECT_EQ(not_frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 5, frozen.
   execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  EXPECT_EQ(frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 6, compatibility
   execution_mode_ =
       blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(2, bid_->bid);
-  EXPECT_EQ(not_frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+  EXPECT_EQ(not_frozen_url, bids_[0]->ad_descriptor.url);
 
   // Run 7, frozen
   execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
-  EXPECT_EQ(1, bid_->bid);
-  EXPECT_EQ(frozen_url, bid_->ad_descriptor.url);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_EQ(frozen_url, bids_[0]->ad_descriptor.url);
 }
 
 TEST_F(BidderWorkletTest, ExecutionModeFrozenContextFails) {
@@ -5809,12 +9672,134 @@ TEST_F(BidderWorkletTest, ExecutionModeFrozenContextFails) {
   execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
   join_origin_ = url::Origin::Create(GURL("https://url.test/"));
   GenerateBid(bidder_worklet.get());
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
   EXPECT_THAT(bid_errors_,
               testing::ElementsAre("undefined:0 Uncaught TypeError: Cannot "
                                    "DeepFreeze non-const value a."));
-  EXPECT_FALSE(bid_);
+  EXPECT_TRUE(bids_.empty());
+}
+
+TEST_F(BidderWorkletTest, AlwaysReuseBidderContext) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAlwaysReuseBidderContext);
+  const char kScript[] = R"(
+    const incrementer = (function() {
+           let a = 1;
+           return function() { a += 1; return a; };
+         })();
+    function generateBid() {
+      return {ad: ["ad"], bid:incrementer(), render:"https://response.test/"};
+    }
+  )";
+
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        kScript);
+
+  // This will not fail because the execution mode is ignored. A frozen context
+  // is not actually used.
+  execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
+  join_origin_ = url::Origin::Create(GURL("https://url.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+
+  // The context will still be reused when we switch to a different mode.
+  execution_mode_ =
+      blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(3, bids_[0]->bid);
+  execution_mode_ =
+      blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode;
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(4, bids_[0]->bid);
+
+  // The context will still be reused when using a different origin in
+  // kGroupedByOriginMode.
+  join_origin_ = url::Origin::Create(GURL("https://url2.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(5, bids_[0]->bid);
+}
+
+// Test that when `kFledgeAlwaysReuseBidderContext` is enabled, odd and even
+// `GenerateBid()` calls consistently use separate, dedicated v8 contexts if the
+// execution mode is not 'group-by-origin'. This indicates a round-robin thread
+// selection. When the execution mode is 'group-by-origin', a fixed thread is
+// used.
+TEST_F(BidderWorkletTwoThreadsTest, AlwaysReuseBidderContext) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAlwaysReuseBidderContext);
+  const char kScript[] = R"(
+    const incrementer = (function() {
+           let a = 1;
+           return function() { a += 1; return a; };
+         })();
+    function generateBid() {
+      return {ad: ["ad"], bid:incrementer(), render:"https://response.test/"};
+    }
+  )";
+
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        kScript);
+
+  // This will not fail because the execution mode is ignored. A frozen context
+  // is not actually used.
+  execution_mode_ = blink::mojom::InterestGroup::ExecutionMode::kFrozenContext;
+  join_origin_ = url::Origin::Create(GURL("https://url.test/"));
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+
+  // The second GenerateBid will run on the second thread that owns a separate
+  // context.
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(2, bids_[0]->bid);
+
+  // The context will still be reused when we switch to a different mode. This
+  // will run on the first thread.
+  execution_mode_ =
+      blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode;
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(3, bids_[0]->bid);
+
+  // This may run on either thread depending on the hash of the join_origin.
+  // The decision is non-persistent as FastHash is non-persistent. The
+  // assertion accommodates both possible scenarios.
+  execution_mode_ =
+      blink::mojom::InterestGroup ::ExecutionMode::kGroupedByOriginMode;
+  GenerateBid(bidder_worklet.get());
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+
+  int generate_bid_therad =
+      base::FastHash(last_bidder_join_origin_hash_salt_ + "https://url.test") %
+      2;
+  int expected_bid = (generate_bid_therad == 0) ? 4 : 3;
+  EXPECT_EQ(expected_bid, bids_[0]->bid);
 }
 
 // Test that cancelling the worklet before it runs but after the execution was
@@ -5833,7 +9818,7 @@ TEST_F(BidderWorkletTest, Cancelation) {
 
   // Now we no longer need it for parsing JS, wedge the V8 thread so we get a
   // chance to cancel the script *before* it actually tries running.
-  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper_.get());
+  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper().get());
 
   GenerateBidClientWithCallbacks client(
       GenerateBidClientWithCallbacks::GenerateBidNeverInvokedCallback());
@@ -5860,13 +9845,13 @@ TEST_F(BidderWorkletTest, Cancelation) {
 TEST_F(BidderWorkletTest, CancelationDtor) {
   per_buyer_timeout_ = base::Days(360);
   // ReportWin timeout isn't configurable the way generateBid is.
-  v8_helper_->v8_runner()->PostTask(
+  v8_helper()->v8_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](scoped_refptr<AuctionV8Helper> v8_helper) {
             v8_helper->set_script_timeout_for_testing(base::Days(360));
           },
-          v8_helper_));
+          v8_helper()));
 
   AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
                         "while(true) {}");
@@ -5877,28 +9862,36 @@ TEST_F(BidderWorkletTest, CancelationDtor) {
 
   // Now we no longer need it for parsing JS, wedge the V8 thread so we get a
   // chance to cancel the script *before* it actually tries running.
-  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper_.get());
+  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper().get());
 
   GenerateBid(bidder_worklet.get());
   bidder_worklet->ReportWin(
-      interest_group_name_, auction_signals_, per_buyer_signals_,
-      direct_from_seller_per_buyer_signals_,
-      direct_from_seller_auction_signals_, seller_signals_,
-      browser_signal_render_url_, browser_signal_bid_,
-      browser_signal_bid_currency_, browser_signal_highest_scoring_other_bid_,
+      is_for_additional_bid_, interest_group_name_reporting_id_,
+      buyer_reporting_id_, buyer_and_seller_reporting_id_,
+      selected_buyer_and_seller_reporting_id_, auction_signals_,
+      per_buyer_signals_, direct_from_seller_per_buyer_signals_,
+      direct_from_seller_per_buyer_signals_header_ad_slot_,
+      direct_from_seller_auction_signals_,
+      direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+      kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+      browser_signal_bid_, browser_signal_bid_currency_,
+      browser_signal_highest_scoring_other_bid_,
       browser_signal_highest_scoring_other_bid_currency_,
       browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
       browser_signal_modeling_signals_, browser_signal_join_count_,
-      browser_signal_recency_, browser_signal_seller_origin_,
-      browser_signal_top_level_seller_origin_, data_version_.value_or(0),
-      data_version_.has_value(),
+      browser_signal_recency_report_win_, browser_signal_seller_origin_,
+      browser_signal_top_level_seller_origin_,
+      browser_signal_reporting_timeout_, data_version_,
       /*trace_id=*/1,
-      base::BindOnce([](const absl::optional<GURL>& report_url,
-                        const base::flat_map<std::string, GURL>& ad_beacon_map,
-                        PrivateAggregationRequests pa_requests,
-                        const std::vector<std::string>& errors) {
-        ADD_FAILURE() << "Callback should not be invoked.";
-      }));
+      base::BindOnce(
+          [](const std::optional<GURL>& report_url,
+             const base::flat_map<std::string, GURL>& ad_beacon_map,
+             const base::flat_map<std::string, std::string>& ad_macro_map,
+             PrivateAggregationRequests pa_requests,
+             auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
+             const std::vector<std::string>& errors) {
+            ADD_FAILURE() << "Callback should not be invoked.";
+          }));
 
   // Spin the event loop to let the signals negotiation go through. This is
   // for this thread only since the V8 thread is wedged, but it's enough since
@@ -5952,130 +9945,201 @@ class BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest
 TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
        ForDebuggingOnlyReports) {
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
+      CreateBasicGenerateBidScriptWithExtraCode(
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url");
             forDebuggingOnly.reportAdAuctionWin("https://win.url"))"),
       mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{}, GURL("https://loss.url"),
       GURL("https://win.url"));
 
   // It's OK to call one API but not the other.
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
+      CreateBasicGenerateBidScriptWithExtraCode(
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url"))"),
       mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{}, GURL("https://loss.url"),
-      /*expected_debug_win_report_url=*/absl::nullopt);
+      /*expected_debug_win_report_url=*/std::nullopt);
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
+      CreateBasicGenerateBidScriptWithExtraCode(
           R"(forDebuggingOnly.reportAdAuctionWin("https://win.url"))"),
       mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
-      /*expected_errors=*/{}, /*expected_debug_loss_report_url=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{}, /*expected_debug_loss_report_url=*/std::nullopt,
       GURL("https://win.url"));
+
+  // forDebuggingOnly binding errors are collected by bidder worklets.
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(
+          R"(forDebuggingOnly.reportAdAuctionLoss())"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/:5 Uncaught TypeError: "
+       "reportAdAuctionLoss(): at least 1 argument(s) are required."},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt);
 }
 
+// Test the case the debugging report URLs are exactly match and are just above
+// the max URL length. When the length is hit, no errors are produced, but the
+// debug report URLs are ignored.
 TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
-       ForDebuggingOnlyReportsInvalidParameter) {
-  RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(forDebuggingOnly.reportAdAuctionLoss(null))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:5 Uncaught TypeError: "
-       "reportAdAuctionLoss requires 1 string parameter."});
+       ForDebuggingOnlyReportsLengthLimit) {
+  std::string almost_too_long_loss_report_url = "https://loss.url/";
+  almost_too_long_loss_report_url += std::string(
+      url::kMaxURLChars - almost_too_long_loss_report_url.size(), '1');
+  std::string too_long_loss_report_url = almost_too_long_loss_report_url + "2";
 
-  RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(forDebuggingOnly.reportAdAuctionWin([5]))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/:5 Uncaught TypeError: "
-       "reportAdAuctionWin requires 1 string parameter."});
+  std::string almost_too_long_win_report_url = "https://win.url/";
+  almost_too_long_win_report_url += std::string(
+      url::kMaxURLChars - almost_too_long_win_report_url.size(), '1');
+  std::string too_long_win_report_url = almost_too_long_win_report_url + "2";
 
-  std::vector<std::string> non_https_urls = {"http://report.url",
-                                             "file:///foo/", "Not a URL"};
-  for (const auto& url : non_https_urls) {
-    RunGenerateBidWithJavascriptExpectingResult(
-        CreateBasicGenerateBidScriptWithDebuggingReport(base::StringPrintf(
-            R"(forDebuggingOnly.reportAdAuctionLoss("%s"))", url.c_str())),
-        /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-        /*expected_data_version=*/absl::nullopt,
-        {"https://url.test/:5 Uncaught TypeError: "
-         "reportAdAuctionLoss must be passed a valid HTTPS url."});
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+  // Copying large URLs can cause flaky generateBid() timeouts with the default
+  // value, even on the standard debug bots.
+  per_buyer_timeout_ = TestTimeouts::action_max_timeout();
 
-    RunGenerateBidWithJavascriptExpectingResult(
-        CreateBasicGenerateBidScriptWithDebuggingReport(base::StringPrintf(
-            R"(forDebuggingOnly.reportAdAuctionWin("%s"))", url.c_str())),
-        /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-        /*expected_data_version=*/absl::nullopt,
-        {"https://url.test/:5 Uncaught TypeError: "
-         "reportAdAuctionWin must be passed a valid HTTPS url."});
+  // Almost too long loss report URL and too long win report URL. Mixing the too
+  // long / not-too-long cases makes sure that we don't clear both URLs when one
+  // is too longer, or check the length of the wrong URL.
+  {
+    AddJavascriptResponse(
+        &url_loader_factory_, interest_group_bidding_url_,
+        CreateBasicGenerateBidScriptWithExtraCode(
+            base::StringPrintf(R"(forDebuggingOnly.reportAdAuctionLoss("%s");
+                                  forDebuggingOnly.reportAdAuctionWin("%s"))",
+                               almost_too_long_loss_report_url.c_str(),
+                               too_long_win_report_url.c_str())));
+
+    BidderWorklet* worklet_impl;
+    auto worklet =
+        CreateWorklet(interest_group_bidding_url_,
+                      /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+    int id = worklet_impl->context_group_ids_for_testing()[0];
+    TestChannel* channel =
+        inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+    GenerateBid(worklet.get());
+    generate_bid_run_loop_->Run();
+    generate_bid_run_loop_.reset();
+
+    EXPECT_THAT(bid_errors_, testing::ElementsAre());
+    ASSERT_EQ(1u, bids_.size());
+    EXPECT_EQ(bid_debug_loss_report_url_, almost_too_long_loss_report_url);
+    EXPECT_FALSE(bid_debug_win_report_url_.has_value());
+
+    channel->WaitForAndValidateConsoleMessage(
+        "warning", /*json_args=*/
+        "[{\"type\":\"string\", "
+        "\"value\":\"reportAdAuctionWin accepts URLs of at most length "
+        "2097152.\"}]",
+        /*stack_trace_size=*/1, /*function=*/"generateBid",
+        interest_group_bidding_url_, /*line_number=*/5);
+
+    channel->ExpectNoMoreConsoleEvents();
   }
 
-  // No message if caught, but still no debug report URLs.
-  RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(try {forDebuggingOnly.reportAdAuctionLoss("http://loss.url")}
-            catch (e) {})"),
-      mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
-      /*expected_errors=*/{}, /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt);
+  // Too long loss report URL and almost too long win report URL.
+  {
+    AddJavascriptResponse(
+        &url_loader_factory_, interest_group_bidding_url_,
+        CreateBasicGenerateBidScriptWithExtraCode(
+            base::StringPrintf(R"(forDebuggingOnly.reportAdAuctionLoss("%s");
+                                  forDebuggingOnly.reportAdAuctionWin("%s"))",
+                               too_long_loss_report_url.c_str(),
+                               almost_too_long_win_report_url.c_str())));
+
+    BidderWorklet* worklet_impl;
+    auto worklet =
+        CreateWorklet(interest_group_bidding_url_,
+                      /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+    int id = worklet_impl->context_group_ids_for_testing()[0];
+    TestChannel* channel =
+        inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+    generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+    GenerateBid(worklet.get());
+    generate_bid_run_loop_->Run();
+    generate_bid_run_loop_.reset();
+
+    EXPECT_THAT(bid_errors_, testing::ElementsAre());
+    ASSERT_EQ(1u, bids_.size());
+    EXPECT_FALSE(bid_debug_loss_report_url_.has_value());
+    EXPECT_EQ(bid_debug_win_report_url_, almost_too_long_win_report_url);
+
+    channel->WaitForAndValidateConsoleMessage(
+        "warning", /*json_args=*/
+        "[{\"type\":\"string\", "
+        "\"value\":\"reportAdAuctionLoss accepts URLs of at most length "
+        "2097152.\"}]",
+        /*stack_trace_size=*/1, /*function=*/"generateBid",
+        interest_group_bidding_url_, /*line_number=*/4);
+
+    channel->ExpectNoMoreConsoleEvents();
+  }
 }
 
 TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
-       ForDebuggingOnlyReportsMultiCallsAllowed) {
+       ForDebuggingOnlyArgumentTimeout) {
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url");
-            forDebuggingOnly.reportAdAuctionLoss("https://loss.url2"))"),
-      mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
-      /*expected_errors=*/{}, GURL("https://loss.url2"),
-      /*expected_debug_win_report_url=*/absl::nullopt);
+      CreateBasicGenerateBidScriptWithExtraCode(
+          R"(forDebuggingOnly.reportAdAuctionLoss({
+              toString:() => {while(true) {}}
+          }))"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
 
   RunGenerateBidWithJavascriptExpectingResult(
-      CreateBasicGenerateBidScriptWithDebuggingReport(
-          R"(forDebuggingOnly.reportAdAuctionWin("https://win.url");
-            forDebuggingOnly.reportAdAuctionWin("https://win.url2"))"),
-      mojom::BidderWorkletBid::New(
-          "[\"ad\"]", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+      CreateBasicGenerateBidScriptWithExtraCode(
+          R"(forDebuggingOnly.reportAdAuctionWin({
+              toString:() => {while(true) {}}
+          }))"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ execution of `generateBid` timed out."});
+}
+
+// Debugging loss/win report URLs should be nullopt if generateBid() parameters
+// are invalid.
+TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
+       ForDebuggingOnlyReportsInvalidGenerateBidParameter) {
+  auction_signals_ = "invalid json";
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(
+          R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url");
+            forDebuggingOnly.reportAdAuctionWin("https://win.url"))"),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      GURL("https://win.url2"));
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt);
 }
 
 TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
@@ -6088,27 +10152,27 @@ TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url1");
             error;
             forDebuggingOnly.reportAdAuctionLoss("https://loss.url2"))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/:6 Uncaught ReferenceError: error is not defined."},
       GURL("https://loss.url1"));
 }
 
 TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
        GenerateBidInvalidReturnValue) {
-  // Keep debugging loss report URLs when generateBid() returns invalid
-  // value type.
+  // Keep debugging loss report URLs when generateBid() returns invalid value
+  // type.
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:"invalid", render:"https://response.test/"})",
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url");
             forDebuggingOnly.reportAdAuctionWin("https://win.url"))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
-      {"https://url.test/ generateBid() returned object must have numeric bid "
-       "field."},
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://url.test/ generateBid() Converting field 'bid' to a Number did "
+       "not produce a finite double."},
       GURL("https://loss.url"),
-      /*expected_debug_win_report_url=*/absl::nullopt);
+      /*expected_debug_win_report_url=*/std::nullopt);
 }
 
 // Loss report URLs before bidding script times out should be kept.
@@ -6122,33 +10186,34 @@ TEST_F(BidderWorkletBiddingAndScoringDebugReportingAPIEnabledTest,
           R"(forDebuggingOnly.reportAdAuctionLoss("https://loss.url1");
             while (1);
             forDebuggingOnly.reportAdAuctionLoss("https://loss.url2"))"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       {"https://url.test/ execution of `generateBid` timed out."},
       GURL("https://loss.url1"));
 }
 
 TEST_F(BidderWorkletTest, ReportWinRegisterAdBeacon) {
   base::flat_map<std::string, GURL> expected_ad_beacon_map = {
-      {"click", GURL("https://click.example.com/")},
-      {"view", GURL("https://view.example.com/")},
+      {"click", GURL("https://click.example.test/")},
+      {"view", GURL("https://view.example.test/")},
   };
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
-        'click': "https://click.example.com/",
-        'view': "https://view.example.com/",
+        'click': "https://click.example.test/",
+        'view': "https://view.example.test/",
       }))",
-      /*expected_report_url =*/absl::nullopt, expected_ad_beacon_map);
+      /*expected_report_url=*/std::nullopt, expected_ad_beacon_map);
 
   // Don't call twice.
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
-        'click': "https://click.example.com/",
-        'view': "https://view.example.com/",
+        'click': "https://click.example.test/",
+        'view': "https://view.example.test/",
       });
       registerAdBeacon())",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
       {"https://url.test/:15 Uncaught TypeError: registerAdBeacon may be "
        "called at most once."});
@@ -6156,85 +10221,225 @@ TEST_F(BidderWorkletTest, ReportWinRegisterAdBeacon) {
   // If called twice and the error is caught, use the first result.
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
-           'click': "https://click.example.com/",
-           'view': "https://view.example.com/",
+           'click': "https://click.example.test/",
+           'view': "https://view.example.test/",
          });
          try { registerAdBeacon() }
          catch (e) {})",
-      /*expected_report_url =*/absl::nullopt, expected_ad_beacon_map);
+      /*expected_report_url=*/std::nullopt, expected_ad_beacon_map);
 
   // If error on first call, can be called again.
   RunReportWinWithFunctionBodyExpectingResult(
       R"(try { registerAdBeacon() }
          catch (e) {}
          registerAdBeacon({
-           'click': "https://click.example.com/",
-           'view': "https://view.example.com/",
+           'click': "https://click.example.test/",
+           'view': "https://view.example.test/",
          }))",
-      /*expected_report_url =*/absl::nullopt, expected_ad_beacon_map);
+      /*expected_report_url=*/std::nullopt, expected_ad_beacon_map);
 
   // Error if no parameters
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon())",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon requires 1 "
-       "object parameter."});
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): at least "
+       "1 argument(s) are required."});
 
   // Error if parameter is not an object
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon("foo"))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon requires 1 "
-       "object parameter."});
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): Cannot "
+       "convert argument 'map' to a record since it's not an Object."});
 
-  // Error if parameter is not an object
-  RunReportWinWithFunctionBodyExpectingResult(
-      R"(registerAdBeacon("foo"))",
-      /*expected_report_url =*/absl::nullopt,
-      /*expected_ad_beacon_map=*/{},
-      /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon requires 1 "
-       "object parameter."});
-
-  // Error if parameter attributes are not strings
+  // OK if parameter attributes are not strings
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
-        'click': "https://click.example.com/",
-        1: "https://view.example.com/",
+        'click': "https://click.example.test/",
+        1: "https://view.example.test/",
       }))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/
+      {{"click", GURL("https://click.example.test/")},
+       {"1", GURL("https://view.example.test/")}},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{}, {});
+
+  // ... but keys must be convertible to strings
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(let map = {
+           'click': "https://click.example.test/"
+         }
+         map[Symbol('a')] = "https://view.example.test/";
+         registerAdBeacon(map))",
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon object "
-       "attributes must be strings."});
+      {"https://url.test/:15 Uncaught TypeError: Cannot convert a Symbol value "
+       "to a string."});
 
   // Error if invalid reporting URL
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
-        'click': "https://click.example.com/",
-        'view': "gopher://view.example.com/",
+        'click': "https://click.example.test/",
+        'view': "gopher://view.example.test/",
       }))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon invalid "
-       "reporting url for key 'view': 'gopher://view.example.com/'."});
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): invalid "
+       "reporting url for key 'view': 'gopher://view.example.test/'."});
 
   // Error if not trustworthy reporting URL
   RunReportWinWithFunctionBodyExpectingResult(
       R"(registerAdBeacon({
         'click': "https://127.0.0.1/",
-        'view': "http://view.example.com/",
+        'view': "http://view.example.test/",
       }))",
-      /*expected_report_url =*/absl::nullopt,
+      /*expected_report_url=*/std::nullopt,
       /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
       /*expected_pa_requests=*/{},
-      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon invalid "
-       "reporting url for key 'view': 'http://view.example.com/'."});
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): invalid "
+       "reporting url for key 'view': 'http://view.example.test/'."});
+
+  // Error if invalid "reserved.*" reporting event type
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdBeacon({
+        'click': "https://click.example.test/",
+        'reserved.bogus': "https://view.example.test/",
+      }))",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): Invalid "
+       "reserved type 'reserved.bogus' cannot be used."});
+
+  // Special case for error message if the key has mismatched surrogates.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdBeacon({
+        '\ud835': "http://127.0.0.1/",
+      }))",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      {"https://url.test/:11 Uncaught TypeError: registerAdBeacon(): invalid "
+       "reporting url."});
+}
+
+TEST_F(BidderWorkletTest, ReportWinRegisterAdBeaconLongUrl) {
+  // Copying large URLs can cause flaky generateBid() timeouts with the default
+  // value, even on the standard debug bots.
+  browser_signal_reporting_timeout_ = TestTimeouts::action_max_timeout();
+
+  std::string almost_too_long_beacon_url = "https://long.url.test/";
+  almost_too_long_beacon_url +=
+      std::string(url::kMaxURLChars - almost_too_long_beacon_url.size(), '1');
+  std::string too_long_beacon_url = almost_too_long_beacon_url + "2";
+
+  ScopedInspectorSupport inspector_support(v8_helper().get());
+
+  // A single beacon URL that is too long.
+  {
+    AddJavascriptResponse(
+        &url_loader_factory_, interest_group_bidding_url_,
+        CreateReportWinScript(base::StringPrintf(
+            R"(registerAdBeacon({a:"%s"}))", too_long_beacon_url.c_str())));
+
+    BidderWorklet* worklet_impl;
+    auto worklet =
+        CreateWorklet(interest_group_bidding_url_,
+                      /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+    int id = worklet_impl->context_group_ids_for_testing()[0];
+    TestChannel* channel =
+        inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+    base::RunLoop run_loop;
+    RunReportWinExpectingResultAsync(
+        worklet_impl, /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{},
+        /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
+        /*expected_reporting_latency_timeout=*/false,
+        /*expected_errors=*/{}, run_loop.QuitClosure());
+    run_loop.Run();
+
+    channel->WaitForAndValidateConsoleMessage(
+        "warning", /*json_args=*/
+        base::StringPrintf(
+            "[{\"type\":\"string\", \"value\":\"registerAdBeacon(): passed URL "
+            "of length %" PRIuS " but accepts URLs of at most length %" PRIuS
+            ".\"}]",
+            too_long_beacon_url.size(), url::kMaxURLChars),
+        /*stack_trace_size=*/1, /*function=*/"reportWin",
+        interest_group_bidding_url_, /*line_number=*/10);
+
+    channel->ExpectNoMoreConsoleEvents();
+  }
+
+  // 3 beacon URLs, two of which are too long. The other one should make it
+  // through, while the two that are too long should each display a separate
+  // warning.
+  {
+    AddJavascriptResponse(
+        &url_loader_factory_, interest_group_bidding_url_,
+        CreateReportWinScript(base::StringPrintf(
+            R"(registerAdBeacon({a:"%s", b:"%s", c:"%s"}))",
+            too_long_beacon_url.c_str(), almost_too_long_beacon_url.c_str(),
+            (too_long_beacon_url + "3").c_str())));
+
+    BidderWorklet* worklet_impl;
+    auto worklet =
+        CreateWorklet(interest_group_bidding_url_,
+                      /*pause_for_debugger_on_start=*/false, &worklet_impl);
+
+    int id = worklet_impl->context_group_ids_for_testing()[0];
+    TestChannel* channel =
+        inspector_support.ConnectDebuggerSessionAndRuntimeEnable(id);
+
+    base::RunLoop run_loop;
+    RunReportWinExpectingResultAsync(
+        worklet_impl, /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{{"b", GURL(almost_too_long_beacon_url)}},
+        /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
+        /*expected_reporting_latency_timeout=*/false,
+        /*expected_errors=*/{}, run_loop.QuitClosure());
+    run_loop.Run();
+
+    channel->WaitForAndValidateConsoleMessage(
+        "warning", /*json_args=*/
+        base::StringPrintf(
+            "[{\"type\":\"string\", \"value\":\"registerAdBeacon(): passed URL "
+            "of length %" PRIuS " but accepts URLs of at most length %" PRIuS
+            ".\"}]",
+            too_long_beacon_url.size(), url::kMaxURLChars),
+        /*stack_trace_size=*/1, /*function=*/"reportWin",
+        interest_group_bidding_url_, /*line_number=*/10);
+
+    channel->WaitForAndValidateConsoleMessage(
+        "warning", /*json_args=*/
+        base::StringPrintf(
+            "[{\"type\":\"string\", \"value\":\"registerAdBeacon(): passed URL "
+            "of length %" PRIuS " but accepts URLs of at most length %" PRIuS
+            ".\"}]",
+            too_long_beacon_url.size() + 1, url::kMaxURLChars),
+        /*stack_trace_size=*/1, /*function=*/"reportWin",
+        interest_group_bidding_url_, /*line_number=*/10);
+
+    channel->ExpectNoMoreConsoleEvents();
+  }
 }
 
 class BidderWorkletSharedStorageAPIDisabledTest : public BidderWorkletTest {
@@ -6254,14 +10459,14 @@ TEST_F(BidderWorkletSharedStorageAPIDisabledTest, SharedStorageNotExposed) {
           /*extra_code=*/R"(
           sharedStorage.clear();
         )"),
-      /*expected_bid=*/nullptr,
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/nullptr,
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/
       {"https://url.test/:6 Uncaught ReferenceError: sharedStorage is not "
        "defined."},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_update_priority_signals_overrides=*/{},
       /*expected_pa_requests=*/{});
 
@@ -6269,8 +10474,9 @@ TEST_F(BidderWorkletSharedStorageAPIDisabledTest, SharedStorageNotExposed) {
       R"(
         sharedStorage.clear();
       )",
-      /*expected_report_url =*/absl::nullopt,
-      /*expected_ad_beacon_map=*/{}, /*expected_pa_requests=*/{},
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
       /*expected_errors=*/
       {"https://url.test/:12 Uncaught ReferenceError: sharedStorage is not "
        "defined."});
@@ -6280,6 +10486,12 @@ class BidderWorkletSharedStorageAPIEnabledTest : public BidderWorkletTest {
  public:
   BidderWorkletSharedStorageAPIEnabledTest() {
     feature_list_.InitAndEnableFeature(blink::features::kSharedStorageAPI);
+
+    // Set the shared-storage permissions policy to allowed.
+    permissions_policy_state_ =
+        mojom::AuctionWorkletPermissionsPolicyState::New(
+            /*private_aggregation_allowed=*/true,
+            /*shared_storage_allowed=*/true);
   }
 
  protected:
@@ -6293,7 +10505,7 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
   {
     mojo::Receiver<auction_worklet::mojom::AuctionSharedStorageHost> receiver(
         &test_shared_storage_host);
-    shared_storage_host_remote_ = receiver.BindNewPipeAndPassRemote();
+    shared_storage_hosts_[0] = receiver.BindNewPipeAndPassRemote();
 
     RunGenerateBidWithJavascriptExpectingResult(
         CreateGenerateBidScript(
@@ -6305,18 +10517,20 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
           sharedStorage.delete('a');
           sharedStorage.clear();
         )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         /*expected_pa_requests=*/{});
 
@@ -6324,35 +10538,38 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
     // dedicated pipe.
     task_environment_.RunUntilIdle();
 
-    using RequestType =
-        auction_worklet::TestAuctionSharedStorageHost::RequestType;
     using Request = auction_worklet::TestAuctionSharedStorageHost::Request;
 
-    EXPECT_THAT(test_shared_storage_host.observed_requests(),
-                testing::ElementsAre(Request{.type = RequestType::kSet,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kSet,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = true},
-                                     Request{.type = RequestType::kAppend,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kDelete,
-                                             .key = u"a",
-                                             .value = std::u16string(),
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kClear,
-                                             .key = std::u16string(),
-                                             .value = std::u16string(),
-                                             .ignore_if_present = false}));
+    EXPECT_THAT(
+        test_shared_storage_host.observed_requests(),
+        testing::ElementsAre(
+            Request(network::mojom::SharedStorageModifierMethod::NewSetMethod(
+                        network::mojom::SharedStorageSetMethod::New(
+                            /*key=*/u"a", /*value=*/u"b",
+                            /*ignore_if_present=*/false)),
+                    mojom::AuctionWorkletFunction::kBidderGenerateBid),
+            Request(network::mojom::SharedStorageModifierMethod::NewSetMethod(
+                        network::mojom::SharedStorageSetMethod::New(
+                            /*key=*/u"a", /*value=*/u"b",
+                            /*ignore_if_present=*/true)),
+                    mojom::AuctionWorkletFunction::kBidderGenerateBid),
+            Request(
+                network::mojom::SharedStorageModifierMethod::NewAppendMethod(
+                    network::mojom::SharedStorageAppendMethod::New(
+                        /*key=*/u"a", /*value=*/u"b")),
+                mojom::AuctionWorkletFunction::kBidderGenerateBid),
+            Request(
+                network::mojom::SharedStorageModifierMethod::NewDeleteMethod(
+                    network::mojom::SharedStorageDeleteMethod::New(
+                        /*key=*/u"a")),
+                mojom::AuctionWorkletFunction::kBidderGenerateBid),
+            Request(network::mojom::SharedStorageModifierMethod::NewClearMethod(
+                        network::mojom::SharedStorageClearMethod::New()),
+                    mojom::AuctionWorkletFunction::kBidderGenerateBid)));
   }
 
   {
-    shared_storage_host_remote_ =
+    shared_storage_hosts_[0] =
         mojo::PendingRemote<mojom::AuctionSharedStorageHost>();
 
     // Set the shared-storage permissions policy to disallowed.
@@ -6367,14 +10584,14 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
             /*extra_code=*/R"(
             sharedStorage.clear();
           )"),
-        /*expected_bid=*/nullptr,
-        /*expected_data_version=*/absl::nullopt,
+        /*expected_bids=*/nullptr,
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/
         {"https://url.test/:6 Uncaught TypeError: The \"shared-storage\" "
          "Permissions Policy denied the method on sharedStorage."},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         /*expected_pa_requests=*/{});
 
@@ -6392,7 +10609,7 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
   {
     mojo::Receiver<auction_worklet::mojom::AuctionSharedStorageHost> receiver(
         &test_shared_storage_host);
-    shared_storage_host_remote_ = receiver.BindNewPipeAndPassRemote();
+    shared_storage_hosts_[0] = receiver.BindNewPipeAndPassRemote();
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
@@ -6402,43 +10619,47 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
           sharedStorage.delete('a');
           sharedStorage.clear();
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, /*expected_pa_requests=*/{},
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
         /*expected_errors=*/{});
 
     // Make sure the shared storage mojom methods are invoked as they use a
     // dedicated pipe.
     task_environment_.RunUntilIdle();
 
-    using RequestType =
-        auction_worklet::TestAuctionSharedStorageHost::RequestType;
     using Request = auction_worklet::TestAuctionSharedStorageHost::Request;
 
-    EXPECT_THAT(test_shared_storage_host.observed_requests(),
-                testing::ElementsAre(Request{.type = RequestType::kSet,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kSet,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = true},
-                                     Request{.type = RequestType::kAppend,
-                                             .key = u"a",
-                                             .value = u"b",
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kDelete,
-                                             .key = u"a",
-                                             .value = std::u16string(),
-                                             .ignore_if_present = false},
-                                     Request{.type = RequestType::kClear,
-                                             .key = std::u16string(),
-                                             .value = std::u16string(),
-                                             .ignore_if_present = false}));
+    EXPECT_THAT(
+        test_shared_storage_host.observed_requests(),
+        testing::ElementsAre(
+            Request(network::mojom::SharedStorageModifierMethod::NewSetMethod(
+                        network::mojom::SharedStorageSetMethod::New(
+                            /*key=*/u"a", /*value=*/u"b",
+                            /*ignore_if_present=*/false)),
+                    mojom::AuctionWorkletFunction::kBidderReportWin),
+            Request(network::mojom::SharedStorageModifierMethod::NewSetMethod(
+                        network::mojom::SharedStorageSetMethod::New(
+                            /*key=*/u"a", /*value=*/u"b",
+                            /*ignore_if_present=*/true)),
+                    mojom::AuctionWorkletFunction::kBidderReportWin),
+            Request(
+                network::mojom::SharedStorageModifierMethod::NewAppendMethod(
+                    network::mojom::SharedStorageAppendMethod::New(
+                        /*key=*/u"a", /*value=*/u"b")),
+                mojom::AuctionWorkletFunction::kBidderReportWin),
+            Request(
+                network::mojom::SharedStorageModifierMethod::NewDeleteMethod(
+                    network::mojom::SharedStorageDeleteMethod::New(
+                        /*key=*/u"a")),
+                mojom::AuctionWorkletFunction::kBidderReportWin),
+            Request(network::mojom::SharedStorageModifierMethod::NewClearMethod(
+                        network::mojom::SharedStorageClearMethod::New()),
+                    mojom::AuctionWorkletFunction::kBidderReportWin)));
   }
 
   {
-    shared_storage_host_remote_ =
+    shared_storage_hosts_[0] =
         mojo::PendingRemote<mojom::AuctionSharedStorageHost>();
 
     // Set the shared-storage permissions policy to disallowed.
@@ -6451,8 +10672,9 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
         R"(
           sharedStorage.clear();
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, /*expected_pa_requests=*/{},
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
         /*expected_errors=*/
         {"https://url.test/:12 Uncaught TypeError: The \"shared-storage\" "
          "Permissions Policy denied the method on sharedStorage."});
@@ -6462,18 +10684,101 @@ TEST_F(BidderWorkletSharedStorageAPIEnabledTest,
             /*private_aggregation_allowed=*/true,
             /*shared_storage_allowed=*/true);
   }
+
+  {
+    mojo::Receiver<auction_worklet::mojom::AuctionSharedStorageHost> receiver(
+        &test_shared_storage_host);
+    shared_storage_hosts_[0] = receiver.BindNewPipeAndPassRemote();
+
+    const char kBody[] = R"(
+      sharedStorage.delete({toString: () => {
+          while(true) {}
+        }
+      });
+    )";
+    AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                          CreateReportWinScript(kBody));
+
+    RunReportWinExpectingResult(
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{},
+        /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
+        /*expected_reporting_latency_timeout=*/true,
+        /*expected_errors=*/
+        {"https://url.test/ execution of `reportWin` timed out."});
+  }
+}
+
+class BidderWorkletTwoThreadsSharedStorageAPIEnabledTest
+    : public BidderWorkletSharedStorageAPIEnabledTest {
+ public:
+  size_t NumThreads() override { return 2u; }
+};
+
+TEST_F(BidderWorkletTwoThreadsSharedStorageAPIEnabledTest,
+       SharedStorageWriteInGenerateBid) {
+  auction_worklet::TestAuctionSharedStorageHost test_shared_storage_host0;
+  auction_worklet::TestAuctionSharedStorageHost test_shared_storage_host1;
+
+  mojo::Receiver<auction_worklet::mojom::AuctionSharedStorageHost> receiver0(
+      &test_shared_storage_host0);
+  shared_storage_hosts_[0] = receiver0.BindNewPipeAndPassRemote();
+
+  mojo::Receiver<auction_worklet::mojom::AuctionSharedStorageHost> receiver1(
+      &test_shared_storage_host0);
+  shared_storage_hosts_[1] = receiver1.BindNewPipeAndPassRemote();
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          R"({ad: "ad", bid:1, render:"https://response.test/" })",
+          /*extra_code=*/R"(
+          sharedStorage.set('a', 'b');
+        )"),
+      /*expected_bids=*/
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{});
+
+  // Make sure the shared storage mojom methods are invoked as they use a
+  // dedicated pipe.
+  task_environment_.RunUntilIdle();
+
+  // Expect that only the shared storage host corresponding to the thread
+  // handling the GenerateBid has observed the requests.
+  EXPECT_TRUE(test_shared_storage_host1.observed_requests().empty());
+
+  using Request = auction_worklet::TestAuctionSharedStorageHost::Request;
+
+  EXPECT_THAT(test_shared_storage_host0.observed_requests(),
+              testing::ElementsAre(Request(
+                  network::mojom::SharedStorageModifierMethod::NewSetMethod(
+                      network::mojom::SharedStorageSetMethod::New(
+                          /*key=*/u"a", /*value=*/u"b",
+                          /*ignore_if_present=*/false)),
+                  mojom::AuctionWorkletFunction::kBidderGenerateBid)));
 }
 
 class BidderWorkletPrivateAggregationEnabledTest : public BidderWorkletTest {
  public:
   BidderWorkletPrivateAggregationEnabledTest() {
-    scoped_feature_list_.InitAndEnableFeatureWithParameters(
-        blink::features::kPrivateAggregationApi,
-        {{"fledge_extensions_enabled", "true"}});
+    feature_list_.InitAndEnableFeature(blink::features::kPrivateAggregationApi);
   }
 
  private:
-  base::test::ScopedFeatureList scoped_feature_list_;
+  base::test::ScopedFeatureList feature_list_;
 };
 
 TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
@@ -6481,7 +10786,8 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
       mojom::AggregatableReportContribution::NewHistogramContribution(
           blink::mojom::AggregatableReportHistogramContribution::New(
               /*bucket=*/123,
-              /*value=*/45)),
+              /*value=*/45,
+              /*filtering_id=*/std::nullopt)),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
   mojom::PrivateAggregationRequest kExpectedRequest2(
@@ -6489,7 +10795,8 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
           blink::mojom::AggregatableReportHistogramContribution::New(
               /*bucket=*/absl::MakeInt128(/*high=*/1,
                                           /*low=*/0),
-              /*value=*/1)),
+              /*value=*/1,
+              /*filtering_id=*/std::nullopt)),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
 
@@ -6498,7 +10805,10 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
           mojom::AggregatableReportForEventContribution::New(
               /*bucket=*/mojom::ForEventSignalBucket::NewIdBucket(234),
               /*value=*/mojom::ForEventSignalValue::NewIntValue(56),
-              /*event_type=*/"reserved.win")),
+              /*filtering_id=*/std::nullopt,
+              /*event_type=*/
+              mojom::EventType::NewReserved(
+                  mojom::ReservedEventType::kReservedWin))),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
   mojom::PrivateAggregationRequest kExpectedForEventRequest2(
@@ -6508,11 +10818,14 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
                   absl::MakeInt128(/*high=*/1,
                                    /*low=*/0)),
               /*value=*/mojom::ForEventSignalValue::NewIntValue(2),
-              /*event_type=*/"reserved.win")),
+              /*filtering_id=*/std::nullopt,
+              /*event_type=*/
+              mojom::EventType::NewReserved(
+                  mojom::ReservedEventType::kReservedWin))),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
 
-  // Only sendHistogramReport() is called.
+  // Only contributeToHistogram() is called.
   {
     PrivateAggregationRequests expected_pa_requests;
     expected_pa_requests.push_back(kExpectedRequest1.Clone());
@@ -6521,25 +10834,27 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
 
-  // Only reportContributionForEvent() is called.
+  // Only contributeToHistogramOnEvent() is called.
   {
     PrivateAggregationRequests expected_pa_requests;
     expected_pa_requests.push_back(kExpectedForEventRequest1.Clone());
@@ -6548,26 +10863,28 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
 
-  // Both sendHistogramReport() and reportContributionForEvent() are called.
+  // Both contributeToHistogram() and contributeToHistogramOnEvent() are called.
   {
     PrivateAggregationRequests expected_pa_requests;
     expected_pa_requests.push_back(kExpectedRequest1.Clone());
@@ -6577,22 +10894,24 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
@@ -6602,29 +10921,59 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
     permissions_policy_state_ =
         mojom::AuctionWorkletPermissionsPolicyState::New(
             /*private_aggregation_allowed=*/false,
-            /*shared_storage_allowed=*/true);
+            /*shared_storage_allowed=*/false);
 
     RunGenerateBidWithJavascriptExpectingResult(
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
           )"),
-        /*expected_bid=*/nullptr,
-        /*expected_data_version=*/absl::nullopt,
+        /*expected_bids=*/nullptr,
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/
         {"https://url.test/:6 Uncaught TypeError: The \"private-aggregation\" "
          "Permissions Policy denied the method on privateAggregation."},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         /*expected_pa_requests=*/{});
+
+    // Currently this goes through with default flags, while it should throw.
+    // See the ContributeToHistogramOnEventPermission* tests for the story on
+    // getting it fixed.
+    PrivateAggregationRequests incorrectly_expected_pa_requests;
+    incorrectly_expected_pa_requests.push_back(
+        kExpectedForEventRequest1.Clone());
+    RunGenerateBidWithJavascriptExpectingResult(
+        CreateGenerateBidScript(
+            R"({ad: "ad", bid:1, render:"https://response.test/" })",
+            /*extra_code=*/R"(
+            privateAggregation.contributeToHistogramOnEvent(
+                "reserved.win", {bucket: 234n, value: 56});
+          )"),
+        /*expected_bids=*/
+        mojom::BidderWorkletBid::New(
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
+            blink::AdDescriptor(GURL("https://response.test/")),
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{},
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
+        /*expected_update_priority_signals_overrides=*/{},
+        /*expected_pa_requests=*/std::move(incorrectly_expected_pa_requests));
 
     permissions_policy_state_ =
         mojom::AuctionWorkletPermissionsPolicyState::New(
             /*private_aggregation_allowed=*/true,
-            /*shared_storage_allowed=*/true);
+            /*shared_storage_allowed=*/false);
   }
 
   // Large bucket
@@ -6637,23 +10986,25 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport(
+            privateAggregation.contributeToHistogram(
                 {bucket: 18446744073709551616n, value: 1});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 18446744073709551616n, value: 2});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
@@ -6670,32 +11021,34 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.sendHistogramReport(
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram(
                 {bucket: 18446744073709551616n, value: 1});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 18446744073709551616n, value: 2});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
 
-  // An unrelated exception after sendHistogramReport and
-  // reportContributionForEvent shouldn't block the reports.
+  // An unrelated exception after contributeToHistogram and
+  // contributeToHistogramOnEvent shouldn't block the reports.
   {
     PrivateAggregationRequests expected_pa_requests;
     expected_pa_requests.push_back(kExpectedRequest1.Clone());
@@ -6705,18 +11058,18 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
             error;
           )"),
-        /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-        /*expected_data_version=*/absl::nullopt,
+        /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/
         {"https://url.test/:9 Uncaught ReferenceError: error is not defined."},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
@@ -6741,23 +11094,25 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
         CreateGenerateBidScript(
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
-            privateAggregation.enableDebugMode({debug_key: 1234n});
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.enableDebugMode({debugKey: 1234n});
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
@@ -6783,22 +11138,24 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
             privateAggregation.enableDebugMode();
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.sendHistogramReport(
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram(
                 {bucket: 18446744073709551616n, value: 1});
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/{},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         std::move(expected_pa_requests));
   }
@@ -6812,17 +11169,70 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
             privateAggregation.enableDebugMode();
             privateAggregation.enableDebugMode();
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBidPtr(),
-        /*expected_data_version=*/absl::nullopt,
+        /*expected_data_version=*/std::nullopt,
         /*expected_errors=*/
         {"https://url.test/:7 Uncaught TypeError: enableDebugMode may be "
          "called at most once."},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         /*expected_pa_requests=*/{});
+  }
+
+  // Filtering IDs are specified
+  {
+    base::test::ScopedFeatureList scoped_feature_list{
+        blink::features::kPrivateAggregationApiFilteringIds};
+
+    PrivateAggregationRequests expected_pa_requests;
+    expected_pa_requests.push_back(mojom::PrivateAggregationRequest::New(
+        mojom::AggregatableReportContribution::NewHistogramContribution(
+            blink::mojom::AggregatableReportHistogramContribution::New(
+                /*bucket=*/123,
+                /*value=*/45,
+                /*filtering_id=*/0)),
+        blink::mojom::AggregationServiceMode::kDefault,
+        blink::mojom::DebugModeDetails::New()));
+    expected_pa_requests.push_back(mojom::PrivateAggregationRequest::New(
+        mojom::AggregatableReportContribution::NewForEventContribution(
+            mojom::AggregatableReportForEventContribution::New(
+                /*bucket=*/mojom::ForEventSignalBucket::NewIdBucket(234),
+                /*value=*/mojom::ForEventSignalValue::NewIntValue(56),
+                /*filtering_id=*/255,
+                /*event_type=*/
+                mojom::EventType::NewReserved(
+                    mojom::ReservedEventType::kReservedWin))),
+        blink::mojom::AggregationServiceMode::kDefault,
+        blink::mojom::DebugModeDetails::New()));
+
+    RunGenerateBidWithJavascriptExpectingResult(
+        CreateGenerateBidScript(
+            R"({ad: "ad", bid:1, render:"https://response.test/" })",
+            /*extra_code=*/R"(
+            privateAggregation.contributeToHistogram(
+                {bucket: 123n, value: 45, filteringId: 0n});
+            privateAggregation.contributeToHistogramOnEvent(
+                "reserved.win", {bucket: 234n, value: 56, filteringId: 255n});
+          )"),
+        /*expected_bid=*/
+        mojom::BidderWorkletBid::New(
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
+            blink::AdDescriptor(GURL("https://response.test/")),
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{},
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
+        /*expected_update_priority_signals_overrides=*/{},
+        std::move(expected_pa_requests));
   }
 
   // Requests where reject reason is specified and k-anonymity enforcement is
@@ -6845,7 +11255,10 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
                             /*baseValue=*/mojom::BaseValue::kBidRejectReason,
                             /*scale=*/1.0,
                             /*offset=*/0)),
-                    /*event_type=*/"reserved.loss")),
+                    /*filtering_id=*/std::nullopt,
+                    /*event_type=*/
+                    mojom::EventType::NewReserved(
+                        mojom::ReservedEventType::kReservedLoss))),
             blink::mojom::AggregationServiceMode::kDefault,
             blink::mojom::DebugModeDetails::New()));
 
@@ -6854,34 +11267,34 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, GenerateBid) {
             R"({ad: "ad", bid:1, render:"https://response.test/" })",
             /*extra_code=*/R"(
             if (interestGroup.ads.length > 0) {
-              privateAggregation.sendHistogramReport(
+              privateAggregation.contributeToHistogram(
                   {bucket: 18446744073709551616n, value: 1});
-              privateAggregation.reportContributionForEvent(
+              privateAggregation.contributeToHistogramOnEvent(
                   "reserved.win", {bucket: 18446744073709551616n, value: 2});
-              privateAggregation.reportContributionForEvent("reserved.loss", {
+              privateAggregation.contributeToHistogramOnEvent("reserved.loss", {
                 bucket: {baseValue: "highest-scoring-other-bid", offset: 0n},
                 value: 1,
               });
-              privateAggregation.reportContributionForEvent("reserved.loss", {
+              privateAggregation.contributeToHistogramOnEvent("reserved.loss", {
                 bucket: {baseValue: "winning-bid"},
                 value: {baseValue: "bid-reject-reason"},
               });
             }
           )"),
-        /*expected_bid=*/
+        /*expected_bids=*/
         mojom::BidderWorkletBid::New(
-            "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-            /*ad_cost=*/absl::nullopt,
+            auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+            /*bid_currency=*/std::nullopt,
+            /*ad_cost=*/std::nullopt,
             blink::AdDescriptor(GURL("https://response.test/")),
-            /*ad_component_descriptors=*/absl::nullopt,
-            /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-        /*expected_data_version=*/absl::nullopt,
-        /*expected_errors=*/
-        {"https://url.test/ generateBid() bid render URL "
-         "'https://response.test/' isn't one of the registered creative URLs."},
-        /*expected_debug_loss_report_url=*/absl::nullopt,
-        /*expected_debug_win_report_url=*/absl::nullopt,
-        /*expected_set_priority=*/absl::nullopt,
+            /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+            /*ad_component_descriptors=*/std::nullopt,
+            /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{},
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/std::nullopt,
         /*expected_update_priority_signals_overrides=*/{},
         /*expected_pa_requests=*/{},
         /*expected_non_kanon_pa_requests=*/
@@ -6894,14 +11307,16 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
       mojom::AggregatableReportContribution::NewHistogramContribution(
           blink::mojom::AggregatableReportHistogramContribution::New(
               /*bucket=*/123,
-              /*value=*/45)),
+              /*value=*/45,
+              /*filtering_id=*/std::nullopt)),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
   auction_worklet::mojom::PrivateAggregationRequest kExpectedRequest2(
       mojom::AggregatableReportContribution::NewHistogramContribution(
           blink::mojom::AggregatableReportHistogramContribution::New(
               /*bucket=*/absl::MakeInt128(/*high=*/1, /*low=*/0),
-              /*value=*/1)),
+              /*value=*/1,
+              /*filtering_id=*/std::nullopt)),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
   mojom::PrivateAggregationRequest kExpectedForEventRequest1(
@@ -6909,7 +11324,10 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
           mojom::AggregatableReportForEventContribution::New(
               /*bucket=*/mojom::ForEventSignalBucket::NewIdBucket(234),
               /*value=*/mojom::ForEventSignalValue::NewIntValue(56),
-              /*event_type=*/"reserved.win")),
+              /*filtering_id=*/std::nullopt,
+              /*event_type=*/
+              mojom::EventType::NewReserved(
+                  mojom::ReservedEventType::kReservedWin))),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
   mojom::PrivateAggregationRequest kExpectedForEventRequest2(
@@ -6919,7 +11337,10 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
                   absl::MakeInt128(/*high=*/1,
                                    /*low=*/0)),
               /*value=*/mojom::ForEventSignalValue::NewIntValue(2),
-              /*event_type=*/"reserved.win")),
+              /*filtering_id=*/std::nullopt,
+              /*event_type=*/
+              mojom::EventType::NewReserved(
+                  mojom::ReservedEventType::kReservedWin))),
       blink::mojom::AggregationServiceMode::kDefault,
       blink::mojom::DebugModeDetails::New());
 
@@ -6929,10 +11350,11 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 
@@ -6941,14 +11363,15 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
     permissions_policy_state_ =
         mojom::AuctionWorkletPermissionsPolicyState::New(
             /*private_aggregation_allowed=*/false,
-            /*shared_storage_allowed=*/true);
+            /*shared_storage_allowed=*/false);
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, /*expected_pa_requests=*/{},
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{},
         /*expected_errors=*/
         {"https://url.test/:12 Uncaught TypeError: The \"private-aggregation\" "
          "Permissions Policy denied the method on privateAggregation."});
@@ -6956,7 +11379,7 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
     permissions_policy_state_ =
         mojom::AuctionWorkletPermissionsPolicyState::New(
             /*private_aggregation_allowed=*/true,
-            /*shared_storage_allowed=*/true);
+            /*shared_storage_allowed=*/false);
   }
 
   // Large bucket
@@ -6966,11 +11389,12 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 18446744073709551616n,
-                                                  value: 1});
+          privateAggregation.contributeToHistogram(
+              {bucket: 18446744073709551616n, value: 1});
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 
@@ -6984,31 +11408,34 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-          privateAggregation.sendHistogramReport({bucket: 18446744073709551616n,
-                                                  value: 1});
-          privateAggregation.reportContributionForEvent(
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogram(
+              {bucket: 18446744073709551616n, value: 1});
+          privateAggregation.contributeToHistogramOnEvent(
               "reserved.win", {bucket: 234n, value: 56});
-          privateAggregation.reportContributionForEvent(
+          privateAggregation.contributeToHistogramOnEvent(
               "reserved.win", {bucket: 18446744073709551616n, value: 2});
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 
-  // An unrelated exception after sendHistogramReport shouldn't block the report
+  // An unrelated exception after contributeToHistogram shouldn't block the
+  // report
   {
     PrivateAggregationRequests expected_pa_requests;
     expected_pa_requests.push_back(kExpectedRequest1.Clone());
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
           error;
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/
         {"https://url.test/:13 Uncaught ReferenceError: error is not "
          "defined."});
@@ -7032,13 +11459,14 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-            privateAggregation.enableDebugMode({debug_key: 1234n});
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.reportContributionForEvent(
+            privateAggregation.enableDebugMode({debugKey: 1234n});
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogramOnEvent(
                 "reserved.win", {bucket: 234n, value: 56});
         )",
-        /*expected_report_url=*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 
@@ -7061,12 +11489,13 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
             privateAggregation.enableDebugMode();
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-            privateAggregation.sendHistogramReport(
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram(
                 {bucket: 18446744073709551616n, value: 1});
         )",
-        /*expected_report_url=*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 
@@ -7078,12 +11507,52 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 
     RunReportWinWithFunctionBodyExpectingResult(
         R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
-          privateAggregation.reportContributionForEvent(
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogramOnEvent(
               "reserved.win", {bucket: 234n, value: 56});
         )",
-        /*expected_report_url =*/absl::nullopt,
-        /*expected_ad_beacon_map=*/{}, std::move(expected_pa_requests),
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
+        /*expected_errors=*/{});
+  }
+
+  // Filtering IDs specified
+  {
+    base::test::ScopedFeatureList scoped_feature_list{
+        blink::features::kPrivateAggregationApiFilteringIds};
+
+    PrivateAggregationRequests expected_pa_requests;
+    expected_pa_requests.push_back(mojom::PrivateAggregationRequest::New(
+        mojom::AggregatableReportContribution::NewHistogramContribution(
+            blink::mojom::AggregatableReportHistogramContribution::New(
+                /*bucket=*/123,
+                /*value=*/45,
+                /*filtering_id=*/0)),
+        blink::mojom::AggregationServiceMode::kDefault,
+        blink::mojom::DebugModeDetails::New()));
+    expected_pa_requests.push_back(mojom::PrivateAggregationRequest::New(
+        mojom::AggregatableReportContribution::NewForEventContribution(
+            mojom::AggregatableReportForEventContribution::New(
+                /*bucket=*/mojom::ForEventSignalBucket::NewIdBucket(234),
+                /*value=*/mojom::ForEventSignalValue::NewIntValue(56),
+                /*filtering_id=*/255,
+                /*event_type=*/
+                mojom::EventType::NewReserved(
+                    mojom::ReservedEventType::kReservedWin))),
+        blink::mojom::AggregationServiceMode::kDefault,
+        blink::mojom::DebugModeDetails::New()));
+
+    RunReportWinWithFunctionBodyExpectingResult(
+        R"(
+          privateAggregation.contributeToHistogram(
+              {bucket: 123n, value: 45, filteringId: 0n});
+          privateAggregation.contributeToHistogramOnEvent(
+              "reserved.win", {bucket: 234n, value: 56, filteringId: 255n});
+        )",
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+        std::move(expected_pa_requests),
         /*expected_errors=*/{});
   }
 }
@@ -7091,12 +11560,12 @@ TEST_F(BidderWorkletPrivateAggregationEnabledTest, ReportWin) {
 class BidderWorkletPrivateAggregationDisabledTest : public BidderWorkletTest {
  public:
   BidderWorkletPrivateAggregationDisabledTest() {
-    scoped_feature_list_.InitAndDisableFeature(
+    feature_list_.InitAndDisableFeature(
         blink::features::kPrivateAggregationApi);
   }
 
  private:
-  base::test::ScopedFeatureList scoped_feature_list_;
+  base::test::ScopedFeatureList feature_list_;
 };
 
 TEST_F(BidderWorkletPrivateAggregationDisabledTest, GenerateBid) {
@@ -7104,26 +11573,27 @@ TEST_F(BidderWorkletPrivateAggregationDisabledTest, GenerateBid) {
       CreateGenerateBidScript(
           R"({ad: "ad", bid:1, render:"https://response.test/" })",
           /*extra_code=*/R"(
-            privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+            privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
           )"),
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/
       {"https://url.test/:6 Uncaught ReferenceError: privateAggregation is not "
        "defined."},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
       /*expected_pa_requests=*/{});
 }
 
 TEST_F(BidderWorkletPrivateAggregationDisabledTest, ReportWin) {
   RunReportWinWithFunctionBodyExpectingResult(
       R"(
-          privateAggregation.sendHistogramReport({bucket: 123n, value: 45});
+          privateAggregation.contributeToHistogram({bucket: 123n, value: 45});
         )",
-      /*expected_report_url =*/absl::nullopt,
-      /*expected_ad_beacon_map=*/{}, /*expected_pa_requests=*/{},
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{}, /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
       /*expected_errors=*/
       {"https://url.test/:12 Uncaught ReferenceError: privateAggregation is "
        "not defined."});
@@ -7139,8 +11609,7 @@ TEST_F(BidderWorkletTest, KAnonSimulate) {
   // Nothing returned regardless of filtering.
   RunGenerateBidWithReturnValueExpectingResult(
       "",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
-  EXPECT_FALSE(kanon_bid_);
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
 
   // Sole bid is unauthorized. The non-enforced bid is there, kanon-bid isn't.
   // Since this is simulation mode, set_priority and errors should come from the
@@ -7150,96 +11619,101 @@ TEST_F(BidderWorkletTest, KAnonSimulate) {
           R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
           kSideEffectScript),
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/11);
-  ASSERT_FALSE(kanon_bid_);
 
   // Now authorize it.
   kanon_keys_.emplace(
-      auction_worklet::mojom::KAnonKey::New(blink::KAnonKeyForAdBid(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
           url::Origin::Create(interest_group_bidding_url_),
-          interest_group_bidding_url_, GURL("https://response.test/"))),
-      true);
+          interest_group_bidding_url_, "https://response.test/")));
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
           kSideEffectScript),
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kBothKAnonModes, R"(["ad"])", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/11);
-  ASSERT_TRUE(kanon_bid_);
-  EXPECT_TRUE(kanon_bid_->is_same_as_non_enforced());
 
   // Add a second ad, not authorized yet, with script that it will try it
   // if it's in the ad vector.
   interest_group_ads_.emplace_back(GURL("https://response2.test/"),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
   // Non-enforced bid will be 2. Since this is simulated mode, other things are
   // from the same run, so expected_set_priority is 12.
-  RunGenerateBidWithJavascriptExpectingResult(
-      CreateGenerateBidScript(
-          R"({ad: ["ad"], bid:interestGroup.ads.length,
-          render:interestGroup.ads[interestGroup.ads.length - 1].renderUrl})",
-          kSideEffectScript),
-      mojom::BidderWorkletBid::New(
-          R"(["ad"])", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response2.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
-      /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/12);
-  // k-anon-enforced bid will be 1.
-  ASSERT_TRUE(kanon_bid_);
-  ASSERT_FALSE(kanon_bid_->is_same_as_non_enforced());
-  EXPECT_EQ(kanon_bid_->get_bid()->ad, R"(["ad"])");
-  EXPECT_EQ(kanon_bid_->get_bid()->bid, 1);
-  EXPECT_EQ(kanon_bid_->get_bid()->ad_descriptor.url,
-            GURL("https://response.test/"));
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(mojom::BidderWorkletBid::New(
+        auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 2,
+        /*bid_currency=*/std::nullopt,
+        /*ad_cost=*/std::nullopt,
+        blink::AdDescriptor(GURL("https://response2.test/")),
+        /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+        /*ad_component_descriptors=*/std::nullopt,
+        /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+    expected.push_back(expected[0]->Clone());
+    // k-anon-enforced bid will be 1.
+    expected[1]->bid_role = auction_worklet::mojom::BidRole::kEnforcedKAnon;
+    expected[1]->bid = 1;
+    expected[1]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response.test/"));
+
+    RunGenerateBidWithJavascriptExpectingResult(
+        CreateGenerateBidScript(
+            R"({ad: ["ad"], bid:interestGroup.ads.length,
+          render:interestGroup.ads[interestGroup.ads.length - 1].renderURL})",
+            kSideEffectScript),
+        std::move(expected),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{},
+        /*expected_debug_loss_report_url=*/std::nullopt,
+        /*expected_debug_win_report_url=*/std::nullopt,
+        /*expected_set_priority=*/12);
+  }
 
   // Authorize it.
   kanon_keys_.emplace(
-      auction_worklet::mojom::KAnonKey::New(blink::KAnonKeyForAdBid(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
           url::Origin::Create(interest_group_bidding_url_),
-          interest_group_bidding_url_, GURL("https://response2.test/"))),
-      true);
+          interest_group_bidding_url_, "https://response2.test/")));
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:interestGroup.ads.length,
-          render:interestGroup.ads[interestGroup.ads.length - 1].renderUrl})",
+          render:interestGroup.ads[interestGroup.ads.length - 1].renderURL})",
           kSideEffectScript),
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kBothKAnonModes, R"(["ad"])", 2,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response2.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/12);
-  ASSERT_TRUE(kanon_bid_);
-  EXPECT_TRUE(kanon_bid_->is_same_as_non_enforced());
 }
 
 TEST_F(BidderWorkletTest, KAnonEnforce) {
@@ -7252,110 +11726,258 @@ TEST_F(BidderWorkletTest, KAnonEnforce) {
   // Nothing returned regardless of filtering.
   RunGenerateBidWithReturnValueExpectingResult(
       "",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr());
-  EXPECT_FALSE(kanon_bid_);
+      /*expected_bids=*/mojom::BidderWorkletBidPtr());
 
   // Sole bid is unauthorized. The non-enforced bid is there, kanon-bid isn't.
-  // Since this is enforcement mode, set_priority and errors should come from
-  // the restricted run.
+  // Since this is enforcement mode there is no restricted run.
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
           kSideEffectScript),
-      /*expected_bid=*/
+      /*expected_bids=*/
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
-      /*expected_errors=*/
-      {"https://url.test/ generateBid() bid render URL 'https://response.test/'"
-       " isn't one of the registered creative URLs."},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
-      /*expected_set_priority=*/10);
-  ASSERT_FALSE(kanon_bid_);
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{},
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
+      /*expected_set_priority=*/std::nullopt);
 
   // Now authorize it.
   kanon_keys_.emplace(
-      auction_worklet::mojom::KAnonKey::New(blink::KAnonKeyForAdBid(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
           url::Origin::Create(interest_group_bidding_url_),
-          interest_group_bidding_url_, GURL("https://response.test/"))),
-      true);
+          interest_group_bidding_url_, "https://response.test/")));
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:1, render:"https://response.test/"})",
           kSideEffectScript),
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kBothKAnonModes, R"(["ad"])", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/11);
-  ASSERT_TRUE(kanon_bid_);
-  EXPECT_TRUE(kanon_bid_->is_same_as_non_enforced());
 
   // Add a second ad, not authorized yet, with script that it will try it
   // if it's in the ad vector.
   interest_group_ads_.emplace_back(GURL("https://response2.test/"),
-                                   /*metadata=*/absl::nullopt);
-  // Non-enforced bid will be 2. Since this is enforced mode, other things are
-  // from the restricted run, so expected_set_priority is 11.
+                                   /*metadata=*/std::nullopt);
+  // Non-enforced bid will be 2,  k-anon-enforced bid will be 1. Since this is
+  // enforced mode, other things are  from the restricted run, so
+  // expected_set_priority is 11.
+  std::vector<mojom::BidderWorkletBidPtr> expected;
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 2,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response2.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kEnforcedKAnon, R"(["ad"])", 1,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:interestGroup.ads.length,
-          render:interestGroup.ads[interestGroup.ads.length - 1].renderUrl})",
+          render:interestGroup.ads[interestGroup.ads.length - 1].renderURL})",
           kSideEffectScript),
-      mojom::BidderWorkletBid::New(
-          R"(["ad"])", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
-          blink::AdDescriptor(GURL("https://response2.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+      std::move(expected),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/11);
-  // k-anon-enforced bid will be 1.
-  ASSERT_TRUE(kanon_bid_);
-  ASSERT_FALSE(kanon_bid_->is_same_as_non_enforced());
-  EXPECT_EQ(kanon_bid_->get_bid()->ad, R"(["ad"])");
-  EXPECT_EQ(kanon_bid_->get_bid()->bid, 1);
-  EXPECT_EQ(kanon_bid_->get_bid()->ad_descriptor.url,
-            GURL("https://response.test/"));
 
   // Authorize it.
   kanon_keys_.emplace(
-      auction_worklet::mojom::KAnonKey::New(blink::KAnonKeyForAdBid(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
           url::Origin::Create(interest_group_bidding_url_),
-          interest_group_bidding_url_, GURL("https://response2.test/"))),
-      true);
+          interest_group_bidding_url_, "https://response2.test/")));
   RunGenerateBidWithJavascriptExpectingResult(
       CreateGenerateBidScript(
           R"({ad: ["ad"], bid:interestGroup.ads.length,
-          render:interestGroup.ads[interestGroup.ads.length - 1].renderUrl})",
+          render:interestGroup.ads[interestGroup.ads.length - 1].renderURL})",
           kSideEffectScript),
       mojom::BidderWorkletBid::New(
-          R"(["ad"])", 2, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+          auction_worklet::mojom::BidRole::kBothKAnonModes, R"(["ad"])", 2,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response2.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()),
-      /*expected_data_version=*/absl::nullopt,
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
       /*expected_errors=*/{},
-      /*expected_debug_loss_report_url=*/absl::nullopt,
-      /*expected_debug_win_report_url=*/absl::nullopt,
+      /*expected_debug_loss_report_url=*/std::nullopt,
+      /*expected_debug_win_report_url=*/std::nullopt,
       /*expected_set_priority=*/12);
-  ASSERT_TRUE(kanon_bid_);
-  EXPECT_TRUE(kanon_bid_->is_same_as_non_enforced());
+}
+
+// Test of multi-bid and k-anon: the bids are annotated with their roles
+// properly.
+TEST_F(BidderWorkletTest, KAnonClassify) {
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  multi_bid_limit_ = 3;
+  interest_group_ads_.emplace_back(GURL("https://response2.test/"),
+                                   /*metadata=*/std::nullopt);
+  interest_group_ads_.emplace_back(GURL("https://response3.test/"),
+                                   /*metadata=*/std::nullopt);
+
+  // Note: don't want an empty line in the beginning, or semi-colon insertion
+  // will be trouble.
+  const char kBids[] =
+      R"([{bid: 1, render: "https://response.test/"},
+          {bid: 2, render: "https://response2.test/"},
+          {bid: 3, render: "https://response3.test/"}]
+  )";
+
+  auto bid1 = mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+  // 3 bids none of which are k-anon. This triggers a re-run, which is skipped
+  // since there are no k-anon ads.
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(bid1.Clone());
+    expected.push_back(bid1.Clone());
+    expected.push_back(bid1.Clone());
+    expected[1]->bid_role = auction_worklet::mojom::BidRole::kUnenforcedKAnon;
+    expected[1]->bid = 2;
+    expected[1]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response2.test/"));
+    expected[2]->bid_role = auction_worklet::mojom::BidRole::kUnenforcedKAnon;
+    expected[2]->bid = 3;
+    expected[2]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response3.test/"));
+
+    RunGenerateBidWithJavascriptExpectingResult(
+        CreateGenerateBidScript(kBids), std::move(expected),
+        /*expected_data_version=*/std::nullopt,
+        /*expected_errors=*/{});
+  }
+
+  // Authorize the second one. No re-run in this case since one ad is usable.
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response2.test/")));
+  {
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(bid1.Clone());
+    expected.push_back(bid1.Clone());
+    expected.push_back(bid1.Clone());
+    expected[1]->bid_role = auction_worklet::mojom::BidRole::kBothKAnonModes;
+    expected[1]->bid = 2;
+    expected[1]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response2.test/"));
+    expected[2]->bid_role = auction_worklet::mojom::BidRole::kUnenforcedKAnon;
+    expected[2]->bid = 3;
+    expected[2]->ad_descriptor =
+        blink::AdDescriptor(GURL("https://response3.test/"));
+    RunGenerateBidWithJavascriptExpectingResult(CreateGenerateBidScript(kBids),
+                                                std::move(expected));
+  }
+}
+
+// Test for doing a re-run in multi-bid mode: returning only non-k-anon
+// bids forces a re-run.
+TEST_F(BidderWorkletTest, KAnonRerunMultiBid) {
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+  multi_bid_limit_ = 3;
+  interest_group_ads_.emplace_back(GURL("https://response2.test/"),
+                                   /*metadata=*/std::nullopt);
+  interest_group_ads_.emplace_back(GURL("https://response3.test/"),
+                                   /*metadata=*/std::nullopt);
+  interest_group_ads_.emplace_back(GURL("https://response4.test/"),
+                                   /*metadata=*/std::nullopt);
+
+  // Authorize ad 4.
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response4.test/")));
+
+  const char kScript[] = R"(
+    function generateBid(interestGroup, auctionSignals, perBuyerSignals,
+                         trustedBiddingSignals, browserSignals) {
+      if (interestGroup.ads.length == 4) {
+        // First run. Return first 3 ads.
+        if (browserSignals.multiBidLimit !== 3)
+            throw "Bad limit on first run";
+        return [{bid: 10, render: "https://response.test/"},
+                {bid: 9, render: "https://response2.test/"},
+                {bid: 8, render: "https://response3.test/"}]
+      } else {
+        // k-anon re-run.
+        if (browserSignals.multiBidLimit !== 1)
+            throw "Bad limit on re-run";
+        return [{bid: 7, render: "https://response4.test/"}];
+      }
+    }
+  )";
+
+  std::vector<mojom::BidderWorkletBidPtr> expected;
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 10,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 9,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response2.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 8,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response3.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kEnforcedKAnon, "null", 7,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response4.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  RunGenerateBidWithJavascriptExpectingResult(kScript, std::move(expected));
 }
 
 // Test for context re-use for k-anon rerun.
@@ -7366,64 +11988,194 @@ TEST_F(BidderWorkletTest, KAnonRerun) {
     function generateBid(interestGroup) {
       ++count;
       return {ad: ["ad"], bid:count,
-      render:interestGroup.ads[interestGroup.ads.length - 1].renderUrl};
+      render:interestGroup.ads[interestGroup.ads.length - 1].renderURL};
     }
   )";
 
   kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
 
   interest_group_ads_.emplace_back(GURL("https://response2.test/"),
-                                   /*metadata=*/absl::nullopt);
+                                   /*metadata=*/std::nullopt);
   kanon_keys_.emplace(
-      auction_worklet::mojom::KAnonKey::New(blink::KAnonKeyForAdBid(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
           url::Origin::Create(interest_group_bidding_url_),
-          interest_group_bidding_url_, GURL("https://response.test/"))),
-      true);
+          interest_group_bidding_url_, "https://response.test/")));
 
   for (auto execution_mode :
        {blink::mojom::InterestGroup::ExecutionMode::kCompatibilityMode,
         blink::mojom::InterestGroup::ExecutionMode::kGroupedByOriginMode}) {
     execution_mode_ = execution_mode;
     SCOPED_TRACE(execution_mode_);
-    RunGenerateBidWithJavascriptExpectingResult(
-        kScript, mojom::BidderWorkletBid::New(
-                     R"(["ad"])", 1, /*bid_currency=*/absl::nullopt,
-                     /*ad_cost=*/absl::nullopt,
-                     blink::AdDescriptor(GURL("https://response2.test/")),
-                     /*ad_component_descriptors=*/absl::nullopt,
-                     /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
-    ASSERT_TRUE(kanon_bid_);
-    ASSERT_TRUE(kanon_bid_->is_bid());
-    EXPECT_EQ(R"(["ad"])", kanon_bid_->get_bid()->ad);
-    EXPECT_EQ(2, kanon_bid_->get_bid()->bid);
-    EXPECT_EQ(GURL("https://response.test/"),
-              kanon_bid_->get_bid()->ad_descriptor.url);
+    std::vector<mojom::BidderWorkletBidPtr> expected;
+    expected.push_back(mojom::BidderWorkletBid::New(
+        auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 1,
+        /*bid_currency=*/std::nullopt,
+        /*ad_cost=*/std::nullopt,
+        blink::AdDescriptor(GURL("https://response2.test/")),
+        /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+        /*ad_component_descriptors=*/std::nullopt,
+        /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+    expected.push_back(mojom::BidderWorkletBid::New(
+        auction_worklet::mojom::BidRole::kEnforcedKAnon, R"(["ad"])", 2,
+        /*bid_currency=*/std::nullopt,
+        /*ad_cost=*/std::nullopt,
+        blink::AdDescriptor(GURL("https://response.test/")),
+        /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+        /*ad_component_descriptors=*/std::nullopt,
+        /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+    RunGenerateBidWithJavascriptExpectingResult(kScript, std::move(expected));
   }
 }
 
+TEST_F(BidderWorkletTest,
+       BidderWorkletOnlyPassesKAnonSelectableReportingIdsOnRestrictedRun) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAuctionDealSupport);
+
+  // The first time, this selects "non-k-anon-selected-id" because it's the
+  // first `selectableBuyerAndSellerReportingId`; the second time, it should
+  // select "k-anon-selected-id" because "non-k-anon-selected-id" will have been
+  // removed from that field.
+  const char kScript[] = R"(
+    function generateBid(interestGroup) {
+      return {
+          ad: ["ad"],
+          bid: interestGroup.ads[0].selectableBuyerAndSellerReportingIds.length,
+          render: interestGroup.ads[0].renderURL,
+          selectedBuyerAndSellerReportingId:
+              interestGroup.ads[0].selectableBuyerAndSellerReportingIds[0],
+      };
+    }
+  )";
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/"buyer1",
+      /*buyer_and_seller_reporting_id=*/"common1",
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"non-k-anon-selected-id", "k-anon-selected-id"});
+
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response.test/")));
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdNameReportingWithoutInterestGroup(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_name_, interest_group_bidding_url_,
+          "https://response.test/", std::string("buyer1"),
+          std::string("common1"), std::string("k-anon-selected-id"))));
+
+  std::vector<mojom::BidderWorkletBidPtr> expected;
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 2,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/"non-k-anon-selected-id",
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kEnforcedKAnon, R"(["ad"])", 1,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/"k-anon-selected-id",
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  RunGenerateBidWithJavascriptExpectingResult(kScript, std::move(expected));
+}
+
+TEST_F(BidderWorkletTest,
+       BidderWorkletRejectsNonKAnonSelectableReportingIdOnRestrictedRun) {
+  base::test::ScopedFeatureList scoped_feature_list;
+  scoped_feature_list.InitAndEnableFeature(
+      blink::features::kFledgeAuctionDealSupport);
+
+  // Here, we select the same "non-k-anon-selected-id" on both calls to
+  // `generateBid()`, which shouldn't happen because it's not not provided as
+  // one of the `selectableBuyerAndSellerReportingIds` passed in on the call to
+  // `generateBid()`. This makes the bid not k-anon for reporting, and because
+  // this bid has returned a `selectedBuyerAndSellerReportingId`, that makes
+  // this bid not k-anon, which makes it an invalid output for the k-anon
+  // restricted call. The BidderWorklet recognizes that and rejects this bid as
+  // invalid, emitting an error.
+  const char kScript[] = R"(
+    function generateBid(interestGroup) {
+      return {
+          ad: ["ad"],
+          bid: interestGroup.ads[0].selectableBuyerAndSellerReportingIds.length,
+          render: interestGroup.ads[0].renderURL,
+          selectedBuyerAndSellerReportingId: "non-k-anon-selected-id",
+      };
+    }
+  )";
+
+  kanon_mode_ = auction_worklet::mojom::KAnonymityBidMode::kEnforce;
+
+  interest_group_ads_.clear();
+  interest_group_ads_.emplace_back(
+      GURL("https://response.test/"),
+      /*metadata=*/std::nullopt, /*size_group=*/std::nullopt,
+      /*buyer_reporting_id=*/"buyer1",
+      /*buyer_and_seller_reporting_id=*/"common1",
+      /*selectable_buyer_and_seller_reporting_ids=*/
+      std::vector<std::string>{"non-k-anon-selected-id", "k-anon-selected-id"});
+
+  kanon_keys_.emplace(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_bidding_url_, "https://response.test/")));
+  kanon_keys_.emplace(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdNameReportingWithoutInterestGroup(
+          url::Origin::Create(interest_group_bidding_url_),
+          interest_group_name_, interest_group_bidding_url_,
+          "https://response.test/", std::string("buyer1"),
+          std::string("common1"), std::string("k-anon-selected-id"))));
+
+  std::vector<mojom::BidderWorkletBidPtr> expected;
+  expected.push_back(mojom::BidderWorkletBid::New(
+      auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"(["ad"])", 2,
+      /*bid_currency=*/std::nullopt,
+      /*ad_cost=*/std::nullopt,
+      blink::AdDescriptor(GURL("https://response.test/")),
+      /*selected_buyer_and_seller_reporting_id=*/"non-k-anon-selected-id",
+      /*ad_component_descriptors=*/std::nullopt,
+      /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+  RunGenerateBidWithJavascriptExpectingResult(
+      kScript, std::move(expected),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ generateBid() Invalid selected buyer and seller "
+       "reporting id"});
+}
+
 TEST_F(BidderWorkletTest, IsKAnonURL) {
-  const GURL kUrl1("https://example.com/1");
-  const GURL kUrl2("https://example.org/2");
-  const GURL kUrl3("https://example.gov/3");
-  const GURL kUrl4("https://example.gov/4");
+  const GURL kUrl1("https://example.test/1");
+  const GURL kUrl2("https://example2.test/2");
+  const GURL kUrl3("https://example3.test/3");
+  const GURL kUrl4("https://example3.test/4");
   mojom::BidderWorkletNonSharedParamsPtr params =
       mojom::BidderWorkletNonSharedParams::New();
   url::Origin owner = url::Origin::Create(interest_group_bidding_url_);
-  const std::string kUrl1KAnonKey =
-      blink::KAnonKeyForAdBid(owner, interest_group_bidding_url_, kUrl1);
-  const std::string kUrl2KAnonKey =
-      blink::KAnonKeyForAdBid(owner, interest_group_bidding_url_, kUrl2);
-  const std::string kUrl3KAnonKey =
-      blink::KAnonKeyForAdBid(owner, interest_group_bidding_url_, kUrl3);
-  const std::string kUrl4KAnonKey =
-      blink::KAnonKeyForAdBid(owner, interest_group_bidding_url_, kUrl4);
+  const std::string kUrl1KAnonKey = blink::HashedKAnonKeyForAdBid(
+      owner, interest_group_bidding_url_, kUrl1.spec());
+  const std::string kUrl2KAnonKey = blink::HashedKAnonKeyForAdBid(
+      owner, interest_group_bidding_url_, kUrl2.spec());
+  const std::string kUrl3KAnonKey = blink::HashedKAnonKeyForAdBid(
+      owner, interest_group_bidding_url_, kUrl3.spec());
+  const std::string kUrl4KAnonKey = blink::HashedKAnonKeyForAdBid(
+      owner, interest_group_bidding_url_, kUrl4.spec());
 
-  params->kanon_keys.emplace(
-      auction_worklet::mojom::KAnonKey::New(kUrl1KAnonKey), true);
-  params->kanon_keys.emplace(
-      auction_worklet::mojom::KAnonKey::New(kUrl2KAnonKey), true);
-  params->kanon_keys.emplace(
-      auction_worklet::mojom::KAnonKey::New(kUrl3KAnonKey), false);
+  params->kanon_keys.emplace_back(
+      auction_worklet::mojom::KAnonKey::New(kUrl1KAnonKey));
+  params->kanon_keys.emplace_back(
+      auction_worklet::mojom::KAnonKey::New(kUrl2KAnonKey));
 
   EXPECT_TRUE(BidderWorklet::IsKAnon(params.get(), kUrl1KAnonKey));
   EXPECT_TRUE(BidderWorklet::IsKAnon(params.get(), kUrl2KAnonKey));
@@ -7432,47 +12184,142 @@ TEST_F(BidderWorkletTest, IsKAnonURL) {
 }
 
 TEST_F(BidderWorkletTest, IsKAnonResult) {
-  const GURL kUrl1("https://example.com/1");
-  const GURL kUrl2("https://example.org/2");
-  const GURL kUrl3("https://example.gov/3");
-  const GURL kUrl4("https://example.gov/4");
+  const GURL kUrl1("https://example.test/1");
+  const GURL kUrl2("https://example2.test/2");
+  const GURL kUrl3("https://example3.test/3");
+  const GURL kUrl4("https://example3.test/4");
   mojom::BidderWorkletNonSharedParamsPtr params =
       mojom::BidderWorkletNonSharedParams::New();
   url::Origin owner = url::Origin::Create(interest_group_bidding_url_);
-  params->kanon_keys.emplace(
-      auction_worklet::mojom::KAnonKey::New(
-          blink::KAnonKeyForAdBid(owner, interest_group_bidding_url_, kUrl1)),
-      true);
-  params->kanon_keys.emplace(auction_worklet::mojom::KAnonKey::New(
-                                 blink::KAnonKeyForAdComponentBid(kUrl2)),
-                             true);
-  params->kanon_keys.emplace(auction_worklet::mojom::KAnonKey::New(
-                                 blink::KAnonKeyForAdComponentBid(kUrl3)),
-                             false);
+  params->kanon_keys.emplace_back(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          owner, interest_group_bidding_url_, kUrl1.spec())));
+  params->kanon_keys.emplace_back(auction_worklet::mojom::KAnonKey::New(
+      blink::HashedKAnonKeyForAdComponentBid(kUrl2)));
 
-  mojom::BidderWorkletBidPtr bid = mojom::BidderWorkletBid::New();
+  SetBidBindings::BidAndWorkletOnlyMetadata bid_with_metadata;
+  bid_with_metadata.bid = mojom::BidderWorkletBid::New();
+  const mojom::BidderWorkletBidPtr& bid = bid_with_metadata.bid;
 
   // k-anon ad URL.
   bid->ad_descriptor.url = kUrl1;
-  EXPECT_TRUE(
-      BidderWorklet::IsKAnon(params.get(), interest_group_bidding_url_, bid));
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
 
   // k-anon ad URL and component.
   bid->ad_component_descriptors.emplace();
   bid->ad_component_descriptors->emplace_back(kUrl2);
-  EXPECT_TRUE(
-      BidderWorklet::IsKAnon(params.get(), interest_group_bidding_url_, bid));
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+  EXPECT_TRUE(BidderWorklet::IsComponentAdKAnon(
+      params.get(), bid->ad_component_descriptors.value()[0]));
 
   // Non k-anon ad URL, k-anon component.
   bid->ad_descriptor.url = kUrl4;
-  EXPECT_FALSE(
-      BidderWorklet::IsKAnon(params.get(), interest_group_bidding_url_, bid));
+  EXPECT_FALSE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+  EXPECT_TRUE(BidderWorklet::IsComponentAdKAnon(
+      params.get(), bid->ad_component_descriptors.value()[0]));
 
   // k-anon ad URL, one of the components non-k-anon.
   bid->ad_descriptor.url = kUrl1;
   bid->ad_component_descriptors->emplace_back(kUrl3);
-  EXPECT_FALSE(
-      BidderWorklet::IsKAnon(params.get(), interest_group_bidding_url_, bid));
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+  EXPECT_TRUE(BidderWorklet::IsComponentAdKAnon(
+      params.get(), bid->ad_component_descriptors.value()[0]));
+  EXPECT_FALSE(BidderWorklet::IsComponentAdKAnon(
+      params.get(), bid->ad_component_descriptors.value()[1]));
+}
+
+TEST_F(BidderWorkletTest, IsMainAdKAnonResultWithSelectedReportingId) {
+  const GURL kUrl1("https://example.test/1");
+
+  // Every combination of these reporting IDs is k-anon.
+  constexpr char kBuyerReportingId1[] = "buyer1";
+  constexpr char kBuyerAndSellerReportingId1[] = "buyerAndSeller1";
+  constexpr char kSelectedBuyerAndSellerReportingId1[] = "selected1";
+
+  // Only "selected2" without any other reporting IDs is k-anon.
+  constexpr char kSelectedBuyerAndSellerReportingId2[] = "selected2";
+
+  // "selected3" is never k-anon.
+  constexpr char kSelectedBuyerAndSellerReportingId3[] = "selected3";
+
+  mojom::BidderWorkletNonSharedParamsPtr params =
+      mojom::BidderWorkletNonSharedParams::New();
+  url::Origin owner = url::Origin::Create(interest_group_bidding_url_);
+
+  params->kanon_keys.emplace_back(
+      auction_worklet::mojom::KAnonKey::New(blink::HashedKAnonKeyForAdBid(
+          owner, interest_group_bidding_url_, kUrl1.spec())));
+  AuthorizeKAnonForReporting(kUrl1, kBuyerReportingId1,
+                             kBuyerAndSellerReportingId1,
+                             kSelectedBuyerAndSellerReportingId1, params);
+  AuthorizeKAnonForReporting(kUrl1, std::nullopt, kBuyerAndSellerReportingId1,
+                             kSelectedBuyerAndSellerReportingId1, params);
+  AuthorizeKAnonForReporting(kUrl1, kBuyerReportingId1, std::nullopt,
+                             kSelectedBuyerAndSellerReportingId1, params);
+  AuthorizeKAnonForReporting(kUrl1, std::nullopt, std::nullopt,
+                             kSelectedBuyerAndSellerReportingId1, params);
+  AuthorizeKAnonForReporting(kUrl1, std::nullopt, std::nullopt,
+                             kSelectedBuyerAndSellerReportingId2, params);
+
+  SetBidBindings::BidAndWorkletOnlyMetadata bid_with_metadata;
+  bid_with_metadata.bid = mojom::BidderWorkletBid::New();
+  const mojom::BidderWorkletBidPtr& bid = bid_with_metadata.bid;
+  bid->ad_descriptor.url = kUrl1;
+
+  bid->selected_buyer_and_seller_reporting_id =
+      kSelectedBuyerAndSellerReportingId1;
+
+  bid_with_metadata.buyer_reporting_id = kBuyerReportingId1;
+  bid_with_metadata.buyer_and_seller_reporting_id = kBuyerAndSellerReportingId1;
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = std::nullopt;
+  bid_with_metadata.buyer_and_seller_reporting_id = kBuyerAndSellerReportingId1;
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = kBuyerReportingId1;
+  bid_with_metadata.buyer_and_seller_reporting_id = std::nullopt;
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = std::nullopt;
+  bid_with_metadata.buyer_and_seller_reporting_id = std::nullopt;
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid->selected_buyer_and_seller_reporting_id =
+      kSelectedBuyerAndSellerReportingId2;
+
+  bid_with_metadata.buyer_reporting_id = kBuyerReportingId1;
+  bid_with_metadata.buyer_and_seller_reporting_id = kBuyerAndSellerReportingId1;
+  EXPECT_FALSE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = std::nullopt;
+  bid_with_metadata.buyer_and_seller_reporting_id = kBuyerAndSellerReportingId1;
+  EXPECT_FALSE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = kBuyerReportingId1;
+  bid_with_metadata.buyer_and_seller_reporting_id = std::nullopt;
+  EXPECT_FALSE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid_with_metadata.buyer_reporting_id = std::nullopt;
+  bid_with_metadata.buyer_and_seller_reporting_id = std::nullopt;
+  EXPECT_TRUE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
+
+  bid->selected_buyer_and_seller_reporting_id =
+      kSelectedBuyerAndSellerReportingId3;
+  EXPECT_FALSE(BidderWorklet::IsMainAdKAnon(
+      params.get(), interest_group_bidding_url_, bid_with_metadata));
 }
 
 // Test of handling of FinalizeGenerateBid that comes in after the trusted
@@ -7497,7 +12344,7 @@ TEST_F(BidderWorkletTest, AsyncFinalizeGenerateBid) {
   BeginGenerateBid(bidder_worklet.get(),
                    bid_finalizer.BindNewEndpointAndPassReceiver());
   task_environment_.RunUntilIdle();
-  EXPECT_FALSE(bid_);
+  EXPECT_TRUE(bids_.empty());
 
   // Add trusted signals, too.
   AddBidderJsonResponse(&url_loader_factory_,
@@ -7507,20 +12354,22 @@ TEST_F(BidderWorkletTest, AsyncFinalizeGenerateBid) {
                         R"({"keys": {"1":123}})");
   // Not enough yet.
   task_environment_.RunUntilIdle();
-  EXPECT_FALSE(bid_);
+  EXPECT_TRUE(bids_.empty());
 
   // Now feed in the rest of the arguments.
   bid_finalizer->FinishGenerateBid(
       auction_signals_, per_buyer_signals_, per_buyer_timeout_,
       per_buyer_currency_,
-      /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-      /*direct_from_seller_auction_signals=*/absl::nullopt);
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
+      /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+      /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+      /*direct_from_seller_auction_signals=*/std::nullopt,
+      /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
   EXPECT_EQ(R"([["auction_signals"],{"1":123},["per_buyer_signals"]])",
-            bid_->ad);
-  EXPECT_EQ(1, bid_->bid);
+            bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
   EXPECT_THAT(bid_errors_, testing::ElementsAre());
 }
 
@@ -7546,16 +12395,18 @@ TEST_F(BidderWorkletTest, AsyncFinalizeGenerateBid2) {
   BeginGenerateBid(bidder_worklet.get(),
                    bid_finalizer.BindNewEndpointAndPassReceiver());
   task_environment_.RunUntilIdle();
-  EXPECT_FALSE(bid_);
+  EXPECT_TRUE(bids_.empty());
 
   // Feed in the rest of the arguments.
   bid_finalizer->FinishGenerateBid(
       auction_signals_, per_buyer_signals_, per_buyer_timeout_,
       per_buyer_currency_,
-      /*direct_from_seller_per_buyer_signals=*/absl::nullopt,
-      /*direct_from_seller_auction_signals=*/absl::nullopt);
+      /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+      /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+      /*direct_from_seller_auction_signals=*/std::nullopt,
+      /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
   task_environment_.RunUntilIdle();
-  EXPECT_FALSE(bid_);
+  EXPECT_TRUE(bids_.empty());
 
   // Add trusted signals, too.
   AddBidderJsonResponse(&url_loader_factory_,
@@ -7563,13 +12414,322 @@ TEST_F(BidderWorkletTest, AsyncFinalizeGenerateBid2) {
                              "trustedsignals?hostname=top.window.test&keys=1&"
                              "interestGroupNames=Fred"),
                         R"({"keys": {"1":123}})");
-  load_script_run_loop_ = std::make_unique<base::RunLoop>();
-  load_script_run_loop_->Run();
-  ASSERT_TRUE(bid_);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
   EXPECT_EQ(R"([["auction_signals"],{"1":123},["per_buyer_signals"]])",
-            bid_->ad);
-  EXPECT_EQ(1, bid_->bid);
+            bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
   EXPECT_THAT(bid_errors_, testing::ElementsAre());
+}
+
+class BidderWorkletLatenciesTest : public BidderWorkletTest {
+ public:
+  // We use MockTime to control the reported latencies.
+  BidderWorkletLatenciesTest()
+      : BidderWorkletTest(TaskEnvironment::TimeSource::MOCK_TIME) {}
+};
+
+TEST_F(BidderWorkletLatenciesTest,
+       PostSignalsReceivedResumeGenerateBidTimeUMA) {
+  interest_group_trusted_bidding_signals_url_ = GURL("https://signals.test/");
+  const GURL kFullSignalsUrl(
+      "https://signals.test/?hostname=top.window.test&interestGroupNames=Fred");
+
+  const char kJson[] = R"({"perInterestGroupData":
+                            {"Fred": {"priorityVector": {"foo": 1.0}}}
+                          })";
+
+  auto bidder_worklet = CreateWorklet();
+  AddJavascriptResponse(
+      &url_loader_factory_, interest_group_bidding_url_,
+      CreateGenerateBidScript(CreateBasicGenerateBidScript()));
+
+  base::HistogramTester histogram_tester;
+  base::RunLoop on_bidding_signals_received_run_loop;
+  base::OnceClosure on_bidding_signals_received_continue_callback;
+  // Pause for 10ms after receiving signals.
+  auto on_bidding_signals_received_callback = base::BindLambdaForTesting(
+      [&](const base::flat_map<std::string, double>& priority_vector,
+          base::TimeDelta trusted_signals_fetch_latency,
+          std::optional<base::TimeDelta> update_if_older_than,
+          base::OnceClosure callback) {
+        on_bidding_signals_received_run_loop.Quit();
+        on_bidding_signals_received_continue_callback = std::move(callback);
+        task_environment_.FastForwardBy(base::Milliseconds(10));
+      });
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  GenerateBid(bidder_worklet.get(),
+              GenerateBidClientWithCallbacks::Create(
+                  base::BindOnce(&BidderWorkletTest::GenerateBidCallback,
+                                 base::Unretained(this)),
+                  std::move(on_bidding_signals_received_callback)));
+
+  task_environment_.RunUntilIdle();
+  EXPECT_FALSE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson);
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(on_bidding_signals_received_run_loop.AnyQuitCalled());
+  EXPECT_FALSE(generate_bid_run_loop_->AnyQuitCalled());
+  ASSERT_TRUE(on_bidding_signals_received_continue_callback);
+
+  std::move(on_bidding_signals_received_continue_callback).Run();
+  generate_bid_run_loop_->Run();
+
+  histogram_tester.ExpectUniqueSample(
+      "Ads.InterestGroup.Auction.PostSignalsReceivedResumeGenerateBidTime", 10,
+      1);
+}
+
+TEST_F(BidderWorkletLatenciesTest, GenerateBidLatenciesAreReturned) {
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/trustedsignals");
+  interest_group_trusted_bidding_signals_keys_ = {"1"};
+
+  const char kSerializeParams[] =
+      R"({ad: [auctionSignals, trustedBiddingSignals,
+               perBuyerSignals], bid:1,
+          render:"https://response.test/"})";
+
+  // Add script, but not trusted signals yet.
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateGenerateBidScript(kSerializeParams));
+
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+  mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
+      bid_finalizer;
+  BeginGenerateBid(bidder_worklet.get(),
+                   bid_finalizer.BindNewEndpointAndPassReceiver());
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(bids_.empty());
+
+  task_environment_.FastForwardBy(base::Milliseconds(250));
+
+  // Add trusted signals, too.
+  AddBidderJsonResponse(&url_loader_factory_,
+                        GURL("https://url.test/"
+                             "trustedsignals?hostname=top.window.test&keys=1&"
+                             "interestGroupNames=Fred"),
+                        R"({"keys": {"1":123}})");
+  // Not enough yet.
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(bids_.empty());
+
+  task_environment_.FastForwardBy(base::Milliseconds(250));
+
+  // Now feed in the rest of the arguments.
+  bid_finalizer->FinishGenerateBid(
+      auction_signals_, per_buyer_signals_, per_buyer_timeout_,
+      per_buyer_currency_,
+      /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+      /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+      /*direct_from_seller_auction_signals=*/std::nullopt,
+      /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ(R"([["auction_signals"],{"1":123},["per_buyer_signals"]])",
+            bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_THAT(bid_errors_, testing::ElementsAre());
+
+  ASSERT_TRUE(generate_bid_dependency_latencies_);
+  // Any zero latency is replaced with nullopt.
+  EXPECT_FALSE(generate_bid_dependency_latencies_->code_ready_latency);
+  EXPECT_EQ(base::Milliseconds(500),
+            *generate_bid_dependency_latencies_->config_promises_latency);
+  EXPECT_FALSE(
+      generate_bid_dependency_latencies_->direct_from_seller_signals_latency);
+  EXPECT_EQ(
+      base::Milliseconds(250),
+      *generate_bid_dependency_latencies_->trusted_bidding_signals_latency);
+}
+
+TEST_F(BidderWorkletLatenciesTest, GenerateBidFetchMetrics) {
+  interest_group_wasm_url_ = GURL(kWasmUrl);
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+  mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
+      bid_finalizer;
+  BeginGenerateBid(bidder_worklet.get(),
+                   bid_finalizer.BindNewEndpointAndPassReceiver());
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(bids_.empty());
+
+  task_environment_.FastForwardBy(base::Milliseconds(250));
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateBasicGenerateBidScript());
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(bids_.empty());
+
+  task_environment_.FastForwardBy(base::Milliseconds(240));
+  AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
+              /*charset=*/std::nullopt, ToyWasm());
+  task_environment_.RunUntilIdle();
+  EXPECT_TRUE(bids_.empty());
+
+  task_environment_.FastForwardBy(base::Milliseconds(230));
+
+  // Now feed in the rest of the arguments.
+  bid_finalizer->FinishGenerateBid(
+      auction_signals_, per_buyer_signals_, per_buyer_timeout_,
+      per_buyer_currency_,
+      /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+      /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+      /*direct_from_seller_auction_signals=*/std::nullopt,
+      /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+  ASSERT_EQ(1u, bids_.size());
+  EXPECT_EQ("[\"ad\"]", bids_[0]->ad);
+  EXPECT_EQ(1, bids_[0]->bid);
+  EXPECT_THAT(bid_errors_, testing::ElementsAre());
+
+  ASSERT_TRUE(generate_bid_metrics_->js_fetch_latency.has_value());
+  EXPECT_EQ(base::Milliseconds(250), *generate_bid_metrics_->js_fetch_latency);
+  ASSERT_TRUE(generate_bid_metrics_->wasm_fetch_latency.has_value());
+  EXPECT_EQ(base::Milliseconds(490),
+            *generate_bid_metrics_->wasm_fetch_latency);
+
+  generate_bid_metrics_.reset();
+
+  // Do another call, metrics should be the same.
+  mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
+      bid_finalizer2;
+  BeginGenerateBid(bidder_worklet.get(),
+                   bid_finalizer2.BindNewEndpointAndPassReceiver());
+  bid_finalizer2->FinishGenerateBid(
+      auction_signals_, per_buyer_signals_, per_buyer_timeout_,
+      per_buyer_currency_,
+      /*direct_from_seller_per_buyer_signals=*/std::nullopt,
+      /*direct_from_seller_per_buyer_signals_header_ad_slot=*/std::nullopt,
+      /*direct_from_seller_auction_signals=*/std::nullopt,
+      /*direct_from_seller_auction_signals_header_ad_slot=*/std::nullopt);
+  generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+  generate_bid_run_loop_->Run();
+
+  ASSERT_TRUE(generate_bid_metrics_->js_fetch_latency.has_value());
+  EXPECT_EQ(base::Milliseconds(250), *generate_bid_metrics_->js_fetch_latency);
+  ASSERT_TRUE(generate_bid_metrics_->wasm_fetch_latency.has_value());
+  EXPECT_EQ(base::Milliseconds(490),
+            *generate_bid_metrics_->wasm_fetch_latency);
+}
+
+TEST_F(BidderWorkletLatenciesTest, ReportWinFetchMetrics) {
+  interest_group_wasm_url_ = GURL(kWasmUrl);
+  mojo::Remote<mojom::BidderWorklet> bidder_worklet = CreateWorklet();
+
+  base::RunLoop run_loop;
+  bidder_worklet->ReportWin(
+      is_for_additional_bid_, interest_group_name_reporting_id_,
+      buyer_reporting_id_, buyer_and_seller_reporting_id_,
+      selected_buyer_and_seller_reporting_id_, auction_signals_,
+      per_buyer_signals_, direct_from_seller_per_buyer_signals_,
+      direct_from_seller_per_buyer_signals_header_ad_slot_,
+      direct_from_seller_auction_signals_,
+      direct_from_seller_auction_signals_header_ad_slot_, seller_signals_,
+      kanon_mode_, bid_is_kanon_, browser_signal_render_url_,
+      browser_signal_bid_, browser_signal_bid_currency_,
+      browser_signal_highest_scoring_other_bid_,
+      browser_signal_highest_scoring_other_bid_currency_,
+      browser_signal_made_highest_scoring_other_bid_, browser_signal_ad_cost_,
+      browser_signal_modeling_signals_, browser_signal_join_count_,
+      browser_signal_recency_report_win_, browser_signal_seller_origin_,
+      browser_signal_top_level_seller_origin_,
+      browser_signal_reporting_timeout_, data_version_,
+
+      /*trace_id=*/1,
+      base::BindOnce(
+          [](base::OnceClosure done_closure,
+             const std::optional<GURL>& report_url,
+             const base::flat_map<std::string, GURL>& ad_beacon_map,
+             const base::flat_map<std::string, std::string>& ad_macro_map,
+             PrivateAggregationRequests pa_requests,
+             auction_worklet::mojom::BidderTimingMetricsPtr timing_metrics,
+             const std::vector<std::string>& errors) {
+            ASSERT_TRUE(timing_metrics->js_fetch_latency.has_value());
+            EXPECT_EQ(base::Milliseconds(250),
+                      *timing_metrics->js_fetch_latency);
+            ASSERT_TRUE(timing_metrics->wasm_fetch_latency.has_value());
+            EXPECT_EQ(base::Milliseconds(490),
+                      *timing_metrics->wasm_fetch_latency);
+            std::move(done_closure).Run();
+          },
+          run_loop.QuitClosure()));
+
+  task_environment_.FastForwardBy(base::Milliseconds(250));
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateBasicGenerateBidScript());
+  task_environment_.RunUntilIdle();
+
+  task_environment_.FastForwardBy(base::Milliseconds(240));
+  AddResponse(&url_loader_factory_, GURL(kWasmUrl), kWasmMimeType,
+              /*charset=*/std::nullopt, ToyWasm());
+  task_environment_.RunUntilIdle();
+  task_environment_.FastForwardBy(base::Milliseconds(230));
+  run_loop.Run();
+}
+
+// Tests both reporting latency, and default reporting timeout.
+TEST_F(BidderWorkletTest, ReportWinLatency) {
+  // We use an infinite loop since we have some notion of how long a timeout
+  // should take.
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript("while (true) {}"));
+
+  RunReportWinExpectingResult(
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/true,
+      /*expected_errors=*/
+      {"https://url.test/ execution of `reportWin` timed out."});
+}
+
+TEST_F(BidderWorkletTest, ReportWinZeroTimeout) {
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript("throw 'something'"));
+
+  browser_signal_reporting_timeout_ = base::TimeDelta();
+  RunReportWinExpectingResult(
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/true,
+      /*expected_errors=*/
+      {"reportWin() aborted due to zero timeout."});
+}
+
+TEST_F(BidderWorkletTest, ReportWinTimeoutFromAuctionConfig) {
+  // Use a very long default script timeout, and a short reporting timeout, so
+  // that if the reportWin() script with endless loop times out, we know that
+  // the reporting timeout overwrote the default script timeout and worked.
+  const base::TimeDelta kScriptTimeout = base::Days(360);
+  v8_helper()->v8_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](scoped_refptr<AuctionV8Helper> v8_helper,
+             const base::TimeDelta script_timeout) {
+            v8_helper->set_script_timeout_for_testing(script_timeout);
+          },
+          v8_helper(), kScriptTimeout));
+  // Make sure set_script_timeout_for_testing is called.
+  task_environment_.RunUntilIdle();
+
+  browser_signal_reporting_timeout_ = base::Milliseconds(50);
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateReportWinScript("while (true) {}"));
+  RunReportWinExpectingResult(
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      /*expected_ad_macro_map=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_reporting_latency_timeout=*/true,
+      /*expected_errors=*/
+      {"https://url.test/ execution of `reportWin` timed out."});
 }
 
 // The sequence when GenerateBidClient gets destroyed w/o getting to
@@ -7606,15 +12766,17 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
   // The 'render' field corresponds to an object that contains the url string.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid: 1, render: {url: "https://response.test/"}})",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'render' field corresponds to an object that contains the url string
-  // and size.
+  // and size with units.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: "ad",
@@ -7625,24 +12787,52 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "50px"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "\"ad\"", 1, /*bid_currency=*/absl::nullopt,
-          /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(
               GURL("https://response.test/"),
               blink::AdSize(100, blink::AdSize::LengthUnit::kScreenWidth, 50,
                             blink::AdSize::LengthUnit::kPixels)),
-          /*ad_component_descriptors=*/absl::nullopt,
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // The 'render' field corresponds to an object that contains the url string
+  // and size without units.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({
+          ad: "ad",
+          bid: 1,
+          render: {
+            url: "https://response.test/",
+            width: "100",
+            height: "50"
+          }
+        })",
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(
+              GURL("https://response.test/"),
+              blink::AdSize(100, blink::AdSize::LengthUnit::kPixels, 50,
+                            blink::AdSize::LengthUnit::kPixels)),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'render' field corresponds to an object with an invalid field.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid: 1, render: {foo: "https://response.test/"}})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() 'render': Required field 'url' "
+       "is undefined."});
 
   // The 'render' field corresponds to an object with an invalid field.
+  // Extra fields are just ignored.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: "ad",
@@ -7654,25 +12844,36 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             foo: 42
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(
+              GURL("https://response.test/"),
+              blink::AdSize(100, blink::AdSize::LengthUnit::kScreenWidth, 50,
+                            blink::AdSize::LengthUnit::kPixels)),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'render' field corresponds to an empty object.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid: 1, render: {}})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() 'render': Required field 'url' "
+       "is undefined."});
 
   // The 'render' field corresponds to an object without url string field.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({ad: "ad", bid: 1, render: {width: "100sw", height: "50px"}})",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() 'render': Required field 'url' "
+       "is undefined."});
 
-  // Size is not of string type.
+  // Size is not of string type, but numbers just get stringified, so count
+  // as pixels.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: "ad",
@@ -7683,9 +12884,33 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: 50
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "\"ad\"", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(
+              GURL("https://response.test/"),
+              blink::AdSize(100, blink::AdSize::LengthUnit::kPixels, 50,
+                            blink::AdSize::LengthUnit::kPixels)),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // Size is not convertible to string.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({
+          ad: "ad",
+          bid: 1,
+          render: {
+            url: "https://response.test/",
+            width: {toString:() => { return {}; } },
+            height: 50
+          }
+        })",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"undefined:0 Uncaught TypeError: Cannot convert object to primitive "
+       "value."});
 
   // Only width is specified.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7697,9 +12922,10 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             width: "100sw"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() 'render': ads that specify dimensions "
+       "must specify both."});
 
   // Only height is specified.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7711,9 +12937,10 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "100sw"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has incorrect structure."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() 'render': ads that specify dimensions "
+       "must specify both."});
 
   // Size has invalid units.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7726,23 +12953,8 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "100px"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid has invalid size for render ad."});
-
-  // Size doesn't have units.
-  RunGenerateBidWithReturnValueExpectingResult(
-      R"({
-          ad: "ad",
-          bid: 1,
-          render: {
-            url: "https://response.test/",
-            width: "100",
-            height: "100"
-          }
-        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid has invalid size for render ad."});
 
   // Size doesn't have numbers.
@@ -7756,8 +12968,8 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "px"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid has invalid size for render ad."});
 
   // Size is empty.
@@ -7771,8 +12983,8 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: ""
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid has invalid size for render ad."});
 
   // Size has zero value.
@@ -7786,8 +12998,8 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "10px"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid has invalid size for render ad."});
 
   // Size has negative value.
@@ -7801,8 +13013,8 @@ TEST_F(BidderWorkletTest, GenerateBidRenderUrlWithSize) {
             height: "10px"
           }
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid has invalid size for render ad."});
 }
 
@@ -7818,15 +13030,17 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             {url: "https://ad_component.test/"}
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{
               blink::AdDescriptor(GURL("https://ad_component.test/"))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'adComponents' field corresponds to an array of object that has the url
-  // string and size.
+  // string and size with units.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: 0,
@@ -7840,14 +13054,42 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{blink::AdDescriptor(
               GURL("https://ad_component.test/"),
               blink::AdSize(100, blink::AdSize::LengthUnit::kScreenWidth, 50,
                             blink::AdSize::LengthUnit::kPixels))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
+
+  // The 'adComponents' field corresponds to an array of object that has the url
+  // string and size without units.
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({
+          ad: 0,
+          bid: 1,
+          render: "https://response.test/",
+          adComponents: [
+            {
+              url: "https://ad_component.test/",
+              width: "100",
+              height: "50"
+            }
+          ]
+        })",
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          std::vector<blink::AdDescriptor>{blink::AdDescriptor(
+              GURL("https://ad_component.test/"),
+              blink::AdSize(100, blink::AdSize::LengthUnit::kPixels, 50,
+                            blink::AdSize::LengthUnit::kPixels))},
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'adComponents' field corresponds to an array of objects.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7866,16 +13108,18 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{
               blink::AdDescriptor(
                   GURL("https://ad_component.test/"),
                   blink::AdSize(100, blink::AdSize::LengthUnit::kScreenWidth,
                                 50, blink::AdSize::LengthUnit::kPixels)),
               blink::AdDescriptor(GURL("https://ad_component.test/"))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'adComponents' field corresponds to an array of url string and objects.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7895,9 +13139,11 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             "https://ad_component.test/"
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBid::New(
-          "0", 1, /*bid_currency=*/absl::nullopt, /*ad_cost=*/absl::nullopt,
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
           blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
           std::vector<blink::AdDescriptor>{
               blink::AdDescriptor(
                   GURL("https://ad_component.test/"),
@@ -7905,7 +13151,7 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
                                 50, blink::AdSize::LengthUnit::kPixels)),
               blink::AdDescriptor(GURL("https://ad_component.test/")),
               blink::AdDescriptor(GURL("https://ad_component.test/"))},
-          /*modeling_signals=*/absl::nullopt, base::TimeDelta()));
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'adComponents' field corresponds to an array of an object that has an
   // invalid field.
@@ -7920,14 +13166,13 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents entry: Required field "
+       "'url' is undefined."});
 
   // The 'adComponents' field corresponds to an array of an object that has an
-  // invalid field.
+  // invalid field. That's OK.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: 0,
@@ -7942,11 +13187,16 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "0", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          std::vector<blink::AdDescriptor>{blink::AdDescriptor(
+              GURL("https://ad_component.test/"),
+              blink::AdSize(100, blink::AdSize::LengthUnit::kScreenWidth, 50,
+                            blink::AdSize::LengthUnit::kPixels))},
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 
   // The 'adComponents' field corresponds to an array of an empty object.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -7958,11 +13208,10 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             {}
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents entry: Required field "
+       "'url' is undefined."});
 
   // The 'adComponents' field corresponds to an array of an object without url
   // string field.
@@ -7978,13 +13227,12 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents entry: Required field "
+       "'url' is undefined."});
 
-  // Size is not of string type.
+  // Size is not covertible to a string type.
   RunGenerateBidWithReturnValueExpectingResult(
       R"({
           ad: 0,
@@ -7992,16 +13240,15 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
           render: "https://response.test/",
           adComponents: [
             {
-              width: 100,
-              height: 50
+              url: "https://ad_component.test/",
+              width: {toString:() => { throw "oops" } },
+              height: {toString:() => { throw "oh no" } }
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/:14 Uncaught oh no."});
 
   // Only width is specified.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -8016,11 +13263,10 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents entry: ads that specify "
+       "dimensions must specify both."});
 
   // Only height is specified.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -8035,11 +13281,10 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents value must be an "
-       "array of strings or objects that contain the url string field and "
-       "optional width and height fields."});
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
+      {"https://url.test/ generateBid() adComponents entry: ads that specify "
+       "dimensions must specify both."});
 
   // Size has invalid units.
   RunGenerateBidWithReturnValueExpectingResult(
@@ -8055,27 +13300,8 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
-      {"https://url.test/ generateBid() bid adComponents have invalid size for "
-       "ad component."});
-
-  // Size doesn't have units.
-  RunGenerateBidWithReturnValueExpectingResult(
-      R"({
-          ad: 0,
-          bid: 1,
-          render: "https://response.test/",
-          adComponents: [
-            {
-              url: "https://ad_component.test/",
-              width: "100",
-              height: "100"
-            }
-          ]
-        })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid adComponents have invalid size for "
        "ad component."});
 
@@ -8094,8 +13320,8 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid adComponents have invalid size for "
        "ad component."});
 
@@ -8113,8 +13339,8 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid adComponents have invalid size for "
        "ad component."});
 
@@ -8132,8 +13358,8 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid adComponents have invalid size for "
        "ad component."});
 
@@ -8151,10 +13377,1225 @@ TEST_F(BidderWorkletTest, GenerateBidAdComponentsWithSize) {
             }
           ]
         })",
-      /*expected_bid=*/mojom::BidderWorkletBidPtr(),
-      /*expected_data_version=*/absl::nullopt, /*expected_errors=*/
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt, /*expected_errors=*/
       {"https://url.test/ generateBid() bid adComponents have invalid size for "
        "ad component."});
+}
+
+// The requested_ad_size argument to BeginGeneratingBid, which originates from
+// the auction config, should be propagated into the bidding logic JS via the
+// browserSignals property.
+TEST_F(BidderWorkletTest, AuctionRequestedSizeIsPresentInBiddingLogic) {
+  requested_ad_size_ = blink::AdSize(
+      /*width=*/1920,
+      /*width_units=*/blink::mojom::AdSize_LengthUnit::kPixels,
+      /*height=*/100,
+      /*height_units*/ blink::mojom::AdSize_LengthUnit::kScreenHeight);
+
+  RunGenerateBidExpectingExpressionIsTrue(R"(
+   (browserSignals.requestedSize.width === "1920px" &&
+      browserSignals.requestedSize.height === "100sh");
+  )");
+}
+
+TEST_F(BidderWorkletTest,
+       AuctionRequestedSizeIsAbsentFromInBiddingLogicWhenNotProvided) {
+  RunGenerateBidExpectingExpressionIsTrue(R"(
+    !browserSignals.hasOwnProperty('requestedSize');
+  )");
+}
+
+class BidderWorkletAdMacroReportingEnabledTest : public BidderWorkletTest {
+ public:
+  BidderWorkletAdMacroReportingEnabledTest() {
+    feature_list_.InitWithFeatures(
+        /*enabled_features=*/{blink::features::kAdAuctionReportingWithMacroApi},
+        /*disabled_features=*/{});
+  }
+
+ private:
+  base::test::ScopedFeatureList feature_list_;
+};
+
+TEST_F(BidderWorkletAdMacroReportingEnabledTest, ReportWinRegisterAdMacro) {
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', '111');
+        registerAdMacro('', '111');
+        registerAdMacro('empty_value', '');
+        )",
+      /*expected_report_url=*/std::nullopt, /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}, {"", "111"}, {"empty_value", ""}});
+
+  // Any additional arguments after the first 2 are ignored.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', '111', ['https://test.example'], 'a');)",
+      /*expected_report_url=*/std::nullopt, /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}});
+
+  // Type conversions happen.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', 111);)",
+      /*expected_report_url=*/std::nullopt, /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}});
+
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro(null, 234);)",
+      /*expected_report_url=*/std::nullopt, /*expected_ad_beacon_map=*/{},
+      {{"null", "234"}});
+
+  // Key is case sensitive.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', '111');
+        registerAdMacro('CAMPAIGN', '111');
+        )",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}, {"CAMPAIGN", "111"}});
+
+  // Value is case sensitive.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('uppercase', 'ABC');
+        registerAdMacro('lowercase', 'abc');
+      )",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      {{"uppercase", "ABC"}, {"lowercase", "abc"}});
+
+  // URL-encoded strings should be accepted.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('URL_ENC_KEY', 'http%3A%2F%2Fpub%2Eexample%2Fpage');
+        registerAdMacro('http%3A%2F%2Fpub%2Eexample%2Fpage', 'URL_ENC_VAL');
+        registerAdMacro('URL_ENC_KEY_http%3A%2F', 'URL_ENC_VAL_http%3A%2F');
+      )",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      {{"URL_ENC_KEY", "http%3A%2F%2Fpub%2Eexample%2Fpage"},
+       {"http%3A%2F%2Fpub%2Eexample%2Fpage", "URL_ENC_VAL"},
+       {"URL_ENC_KEY_http%3A%2F", "URL_ENC_VAL_http%3A%2F"}});
+
+  // When called multiple times for a macro name, use the last valid call's
+  // value.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', '123');
+        registerAdMacro('campaign', '111');
+        registerAdMacro('publisher', 'abc');
+        )",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}, {"publisher", "abc"}});
+
+  // If the error is caught, do not clear other successful calls data.
+  RunReportWinWithFunctionBodyExpectingResult(
+      R"(registerAdMacro('campaign', '111');
+        try { registerAdMacro('campaign', {toString: {}}) }
+        catch (e) {}
+        registerAdMacro('publisher', 'abc');)",
+      /*expected_report_url=*/std::nullopt,
+      /*expected_ad_beacon_map=*/{},
+      {{"campaign", "111"}, {"publisher", "abc"}});
+}
+
+TEST_F(BidderWorkletAdMacroReportingEnabledTest,
+       ReportWinRegisterAdMacroInvalidArgs) {
+  struct TestCase {
+    const char* call;
+    const char* expected_error;
+  } kTestCases[] = {
+      // Less than 2 parameters.
+      {R"(registerAdMacro();)",
+       "https://url.test/:11 Uncaught TypeError: registerAdMacro(): at least 2 "
+       "argument(s) are required."},
+      {R"(registerAdMacro('123');)",
+       "https://url.test/:11 Uncaught TypeError: registerAdMacro(): at least 2 "
+       "argument(s) are required."},
+      // Invalid first argument.
+      {R"(registerAdMacro({toString:{}}, '456');)",
+       "https://url.test/:11 Uncaught TypeError: Cannot convert object to "
+       "primitive value."},
+      // Invalid second argument.
+      {R"(registerAdMacro('123', {toString:{}});)",
+       "https://url.test/:11 Uncaught TypeError: Cannot convert object to "
+       "primitive value."},
+      // Invalid characters in macro key.
+      {R"(registerAdMacro('}${FOO', 'foo');)",
+       "https://url.test/:11 Uncaught TypeError: registerAdMacro macro key and "
+       "value must be URL-encoded."},
+      // Invalid characters in macro value.
+      {R"(registerAdMacro('MACRO_KEY', 'baz&foo=bar');)",
+       "https://url.test/:11 Uncaught TypeError: registerAdMacro macro key and "
+       "value must be URL-encoded."},
+  };
+  for (const auto& test_case : kTestCases) {
+    RunReportWinWithFunctionBodyExpectingResult(
+        test_case.call,
+        /*expected_report_url=*/std::nullopt,
+        /*expected_ad_beacon_map=*/{},
+        /*expected_ad_macro_map=*/{},
+        /*expected_pa_requests=*/{}, {test_case.expected_error});
+  }
+}
+
+class BidderWorkletSampleDebugReportsDisabledTest : public BidderWorkletTest {
+ public:
+  BidderWorkletSampleDebugReportsDisabledTest() {
+    feature_list_.InitAndDisableFeature(
+        blink::features::kFledgeSampleDebugReports);
+  }
+
+ private:
+  base::test::ScopedFeatureList feature_list_;
+};
+
+TEST_F(BidderWorkletSampleDebugReportsDisabledTest,
+       GenerateBidBrowserSignalForDebuggingOnlyInCooldownOrLockout) {
+  RunGenerateBidExpectingExpressionIsTrue(R"(
+    !browserSignals.hasOwnProperty('forDebuggingOnlyInCooldownOrLockout');
+  )");
+}
+
+// With the feature on, same-origin trusted signals still come in the same,
+// only there is an extra null param.
+TEST_F(BidderWorkletTest, SameOrigin) {
+  base::HistogramTester histogram_tester;
+
+  const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_keys_ =
+      std::vector<std::string>({"key1", "key2"});
+  const GURL kFullSignalsUrl(
+      "https://signals.test/"
+      "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred");
+
+  const char kJson[] = R"(
+    {
+      "keys": {
+        "key1": 1,
+        "key2": [2]
+      }
+    }
+  )";
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson,
+                        /*data_version=*/5);
+
+  RunGenerateBidExpectingExpressionIsTrue("crossOriginTrustedSignals === null",
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue("arguments.length === 7",
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue("browserSignals.dataVersion === 5",
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue(
+      "!('crossOriginDataVersion' in browserSignals)",
+      /*expected_data_version=*/5);
+
+  RunGenerateBidExpectingExpressionIsTrue("trustedBiddingSignals['key1'] === 1",
+                                          /*expected_data_version=*/5);
+
+  // Should have one sample for each test.
+  histogram_tester.ExpectUniqueSample(
+      "Ads.InterestGroup.Auction.TrustedBidderSignalsOriginRelation",
+      BidderWorklet::SignalsOriginRelation::kSameOriginSignals, 5);
+}
+
+// Cross-origin signals (and their version) come in as different parameters
+// and fields.
+TEST_F(BidderWorkletTest, CrossOrigin) {
+  base::HistogramTester histogram_tester;
+  const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = GURL("https://url.test/");
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_keys_ =
+      std::vector<std::string>({"key1", "key2"});
+  const GURL kFullSignalsUrl(
+      "https://signals.test/"
+      "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred");
+
+  const char kJson[] = R"(
+    {
+      "keys": {
+        "key1": 1,
+        "key2": [2]
+      }
+    }
+  )";
+
+  AddBidderJsonResponse(&url_loader_factory_, kFullSignalsUrl, kJson,
+                        /*data_version=*/5);
+
+  const char kValidate[] = R"(
+    function() {
+      const expected = '{"https://signals.test":{"key1":1,"key2":[2]}}';
+      const actual = JSON.stringify(crossOriginTrustedSignals);
+      if (actual === expected)
+        return true;
+      return actual + "!" + expected;
+    }();
+  )";
+
+  RunGenerateBidExpectingExpressionIsTrue(kValidate,
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue("arguments.length === 7",
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue("!('dataVersion' in browserSignals)",
+                                          /*expected_data_version=*/5);
+  RunGenerateBidExpectingExpressionIsTrue(
+      "browserSignals.crossOriginDataVersion === 5",
+      /*expected_data_version=*/5);
+
+  RunGenerateBidExpectingExpressionIsTrue("trustedBiddingSignals === null",
+                                          /*expected_data_version=*/5);
+  // Should have one sample for each test.
+  histogram_tester.ExpectUniqueSample(
+      "Ads.InterestGroup.Auction.TrustedBidderSignalsOriginRelation",
+      BidderWorklet::SignalsOriginRelation::kCrossOriginSignals, 5);
+}
+
+class BidderWorkletRealTimeReportingEnabledTest : public BidderWorkletTest {
+ public:
+  BidderWorkletRealTimeReportingEnabledTest() {
+    feature_list_.InitAndEnableFeature(
+        blink::features::kFledgeRealTimeReporting);
+  }
+
+ private:
+  base::test::ScopedFeatureList feature_list_;
+};
+
+TEST_F(BidderWorkletRealTimeReportingEnabledTest, RealTimeReporting) {
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+
+  // Worklet latency contribution is tested in ScriptTimeout.
+  // Cannot reliably test worklet latency contribution here since the script
+  // takes 0ms to run some times, which is not higher than the smallest allowed
+  // latency threshold (0ms), in which case the contribution will be dropped.
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5})
+)";
+
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(kExtraCode),
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{}, std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// Real time reporting contributions are allowed when an IG does not bid.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest, NoBid) {
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5});
+)";
+
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(R"({bid: 0})", kExtraCode),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{}, std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// Real time reporting contributions registered before script timeout are kept.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest, ScriptTimeout) {
+  // Set timeout to a small number, and use a while loop in the script to let it
+  // timeout. Then the execution time would be higher than the latency threshold
+  // of 1ms thus the latency contribution will be kept.
+  per_buyer_timeout_ = base::Milliseconds(3);
+
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+  auction_worklet::mojom::RealTimeReportingContribution
+      expected_latency_histogram(
+          /*bucket=*/200, /*priority_weight=*/2, /*latency_threshold=*/1);
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5});
+realTimeReporting.contributeToHistogram(
+    {bucket: 200, priorityWeight: 2, latencyThreshold: 1});
+while (1);
+)";
+
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+  expected_real_time_contributions.push_back(
+      expected_latency_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(kExtraCode),
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/
+      {"https://url.test/ execution of `generateBid` timed out."}, std::nullopt,
+      std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// contributeToHistogram's is dropped when the script's latency does not
+// exceed the threshold.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest,
+       NotExceedingLatencyThreshold) {
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5});
+realTimeReporting.contributeToHistogram(
+    {bucket: 200, priorityWeight: 2, latencyThreshold: 10000000})
+)";
+
+  // Only contributeToHistogram's contribution is kept.
+  // contributeToHistogram's is filtered out since the script's latency
+  // didn't exceed the threshold.
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateBasicGenerateBidScriptWithExtraCode(kExtraCode),
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "[\"ad\"]", 1,
+          /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{}, std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// A platform contribution is added when trusted bidding signals server returned
+// a non-2xx HTTP response code.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest,
+       TrustedBiddingSignalNetworkError) {
+  const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = kBaseSignalsUrl;
+  const GURL kFullSignalsUrl(
+      "https://signals.test/"
+      "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred");
+
+  const char kJson[] = R"(
+    {
+      "keys": {
+        "key1": 1,
+        "key2": [2]
+      }
+    }
+  )";
+
+  // Request with valid TrustedBiddingSignals URL and non-empty keys. Request
+  // should be made. The request fails.
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_keys_ =
+      std::vector<std::string>({"key1", "key2"});
+  url_loader_factory_.AddResponse(kFullSignalsUrl.spec(), kJson,
+                                  net::HTTP_NOT_FOUND);
+
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+  mojom::RealTimeReportingContribution expected_trusted_signal_histogram(
+      /*bucket=*/1024 + auction_worklet::RealTimeReportingPlatformError::
+                            kTrustedBiddingSignalsFailure,
+      /*priority_weight=*/1,
+      /*latency_threshold=*/std::nullopt);
+
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5})
+)";
+
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+  expected_real_time_contributions.push_back(
+      expected_trusted_signal_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          /*raw_return_value=*/
+          R"({ad: trustedBiddingSignals, bid: 1, render:"https://response.test/"})",
+          kExtraCode),
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, "null", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      {"Failed to load https://signals.test/"
+       "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred HTTP "
+       "status = 404 Not Found."},
+      std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// A platform contribution is added when trusted bidding signals server returned
+// a non-2xx HTTP response code, even though generateBid() failed.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest,
+       TrustedBiddingSignalNetworkErrorGenerateBidFailed) {
+  const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = kBaseSignalsUrl;
+  const GURL kFullSignalsUrl(
+      "https://signals.test/"
+      "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred");
+
+  const char kJson[] = R"(
+    {
+      "keys": {
+        "key1": 1,
+        "key2": [2]
+      }
+    }
+  )";
+
+  // Request with valid TrustedBiddingSignals URL and non-empty keys. Request
+  // should be made. The request fails.
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_keys_ =
+      std::vector<std::string>({"key1", "key2"});
+  url_loader_factory_.AddResponse(kFullSignalsUrl.spec(), kJson,
+                                  net::HTTP_NOT_FOUND);
+
+  mojom::RealTimeReportingContribution expected_trusted_signal_histogram(
+      /*bucket=*/1024 + auction_worklet::RealTimeReportingPlatformError::
+                            kTrustedBiddingSignalsFailure,
+      /*priority_weight=*/1,
+      /*latency_threshold=*/std::nullopt);
+
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(
+      expected_trusted_signal_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      "shrimp",
+      /*expected_bids=*/mojom::BidderWorkletBidPtr(),
+      /*expected_data_version=*/std::nullopt,
+      {"https://signals.test/:1 Uncaught ReferenceError: "
+       "shrimp is not defined.",
+       "Failed to load https://signals.test/"
+       "?hostname=top.window.test&keys=key1,key2&interestGroupNames=Fred HTTP "
+       "status = 404 Not Found."},
+      std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// No platform contribution for trusted bidding signals failure when getting the
+// signal succeeded.
+TEST_F(BidderWorkletRealTimeReportingEnabledTest,
+       TrustedBiddingSignalSucceedsNoContributionAdded) {
+  const GURL kBaseSignalsUrl("https://signals.test/");
+  interest_group_bidding_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  interest_group_trusted_bidding_signals_keys_.emplace();
+  interest_group_trusted_bidding_signals_keys_->push_back("key1");
+  AddBidderJsonResponse(
+      &url_loader_factory_,
+      GURL("https://signals.test/"
+           "?hostname=top.window.test&keys=key1&interestGroupNames=Fred"),
+      R"({"keys":{"key1":1}})");
+
+  constexpr char kExtraCode[] = R"(
+realTimeReporting.contributeToHistogram({bucket: 100, priorityWeight: 0.5})
+)";
+  auction_worklet::mojom::RealTimeReportingContribution expected_histogram(
+      /*bucket=*/100, /*priority_weight=*/0.5,
+      /*latency_threshold=*/std::nullopt);
+
+  // Only expects the API call's contribution. No platform contribution is
+  // added.
+  RealTimeReportingContributions expected_real_time_contributions;
+  expected_real_time_contributions.push_back(expected_histogram.Clone());
+
+  RunGenerateBidWithJavascriptExpectingResult(
+      CreateGenerateBidScript(
+          /*raw_return_value=*/
+          R"({ad: trustedBiddingSignals, bid: 1, render:"https://response.test/"})",
+          kExtraCode),
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon, R"({"key1":1})", 1,
+          /*bid_currency=*/std::nullopt, /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()),
+      /*expected_data_version=*/std::nullopt,
+      /*expected_errors=*/{}, std::nullopt, std::nullopt,
+      /*expected_set_priority=*/std::nullopt,
+      /*expected_update_priority_signals_overrides=*/{},
+      /*expected_pa_requests=*/{},
+      /*expected_non_kanon_pa_requests=*/{},
+      std::move(expected_real_time_contributions));
+}
+
+// Test fixture that can test both KVv2 paths - the path where requests are made
+// from the worklet process, and the path that uses a TrustedSignalsCache to
+// make requests from the browser process.
+//
+// Note that when KVv1 is removed, most of the KVv1 tests above will be need to
+// converted to use KVv2 to avoid losing test coverage.
+class BidderWorkletKVv2Test : public BidderWorkletTest,
+                              public mojom::TrustedSignalsCache {
+ public:
+  BidderWorkletKVv2Test() {
+    scoped_feature_list_.InitAndEnableFeature(
+        blink::features::kFledgeTrustedSignalsKVv2Support);
+
+    // Used only when there's no KVv2 cache.
+    public_key_ = mojom::TrustedSignalsPublicKey::New(
+        std::string(reinterpret_cast<const char*>(&kTestPublicKey[0]),
+                    sizeof(kTestPublicKey)),
+        kKeyId);
+  }
+
+  ~BidderWorkletKVv2Test() override {
+    // Any pending requests should have been taken care of.
+    EXPECT_TRUE(pending_cache_clients_.empty());
+  }
+
+  // Switches to using the TrustedSignalsCache API and a
+  // TrustedSignalsKVv2Manager for trusted signals fetches.
+  void EnableSignalsCache() {
+    trusted_signals_kvv2_manager_ = std::make_unique<TrustedSignalsKVv2Manager>(
+        cache_receiver_.BindNewPipeAndPassRemote(), v8_helper());
+    trusted_signals_cache_key_ = mojom::TrustedSignalsCacheKey::New(
+        base::UnguessableToken::Create(), /*partition_id=*/1);
+    public_key_.reset();
+  }
+
+  // TrustedSignalsCache implementation:
+  void GetTrustedSignals(
+      const base::UnguessableToken& compression_group_token,
+      mojo::PendingRemote<mojom::TrustedSignalsCacheClient> client) override {
+    bool inserted = pending_cache_clients_
+                        .try_emplace(compression_group_token, std::move(client))
+                        .second;
+    // There should be at most one request at a time for any compression group.
+    EXPECT_TRUE(inserted);
+
+    if (wait_for_cache_requests_loop_ &&
+        waiting_for_cache_requests_count_ == pending_cache_clients_.size()) {
+      wait_for_cache_requests_loop_->Quit();
+    }
+  }
+
+  void WaitForCacheRequests(size_t count) {
+    if (pending_cache_clients_.size() < count) {
+      waiting_for_cache_requests_count_ = count;
+      wait_for_cache_requests_loop_ = std::make_unique<base::RunLoop>();
+      wait_for_cache_requests_loop_->Run();
+      wait_for_cache_requests_loop_.reset();
+    }
+    EXPECT_EQ(pending_cache_clients_.size(), count);
+  }
+
+  // Waits for a request to be observed, and then sends the provided response,
+  // which should be the JSON representation of a compression group. If
+  // `trusted_signals_kvv2_manager_` is non-null, expects the request to be
+  // observed through the TrustedSignalsCache API. Otherwise, expects to see it
+  // as an encrypted network request, and the response is returned as
+  // compression group 0, in a full, encrypted KVv2 response.
+  void WaitForRequestAndSendResponse(const std::string& response_json_content) {
+    if (trusted_signals_kvv2_manager_) {
+      WaitForCacheRequests(1);
+      RespondToCacheRequest(trusted_signals_cache_key_->compression_group_token,
+                            response_json_content);
+      return;
+    }
+
+    task_environment_.RunUntilIdle();
+    const network::ResourceRequest* pending_request;
+    ASSERT_TRUE(url_loader_factory_.IsPending(
+        interest_group_trusted_bidding_signals_url_->spec(), &pending_request));
+
+    std::string request_body =
+        std::string(pending_request->request_body->elements()
+                        ->at(0)
+                        .As<network::DataElementBytes>()
+                        .AsStringPiece());
+    std::string response_body =
+        GenerateResponseBody(request_body, response_json_content);
+
+    std::string headers =
+        base::StringPrintf("%s\nContent-Type: %s", kAllowFledgeHeader,
+                           "message/ad-auction-trusted-signals-request");
+    AddResponse(&url_loader_factory_,
+                interest_group_trusted_bidding_signals_url_.value(),
+                kAdAuctionTrustedSignalsMimeType,
+                /*charset=*/std::nullopt, response_body, headers);
+  }
+
+  void RespondToCacheRequest(base::UnguessableToken compression_group_token,
+                             const std::string& response_json_content) {
+    auto client_it = pending_cache_clients_.find(compression_group_token);
+    ASSERT_TRUE(client_it != pending_cache_clients_.end());
+    mojo::Remote<mojom::TrustedSignalsCacheClient> client(
+        std::move(client_it->second));
+    pending_cache_clients_.erase(client_it);
+    client->OnSuccess(mojom::TrustedSignalsCompressionScheme::kNone,
+                      {test::ToCborVector(response_json_content)});
+  }
+
+  static std::string GenerateResponseBody(
+      const std::string& request_body,
+      const std::string& response_json_content) {
+    // Decrypt the request.
+    auto response_key_config = quiche::ObliviousHttpHeaderKeyConfig::Create(
+        kKeyId, EVP_HPKE_DHKEM_X25519_HKDF_SHA256, EVP_HPKE_HKDF_SHA256,
+        EVP_HPKE_AES_256_GCM);
+    CHECK(response_key_config.ok()) << response_key_config.status();
+
+    auto ohttp_gateway =
+        quiche::ObliviousHttpGateway::Create(
+            std::string(reinterpret_cast<const char*>(&kTestPrivateKey[0]),
+                        sizeof(kTestPrivateKey)),
+            response_key_config.value())
+            .value();
+
+    auto received_request = ohttp_gateway.DecryptObliviousHttpRequest(
+        request_body, kTrustedSignalsKVv2EncryptionRequestMediaType);
+    CHECK(received_request.ok()) << received_request.status();
+
+    // Build response body.
+    cbor::Value::MapValue compression_group;
+    compression_group.try_emplace(cbor::Value("compressionGroupId"),
+                                  cbor::Value(0));
+    compression_group.try_emplace(cbor::Value("ttlMs"), cbor::Value(100));
+    compression_group.try_emplace(
+        cbor::Value("content"),
+        cbor::Value(test::ToCborVector(response_json_content)));
+
+    cbor::Value::ArrayValue compression_groups;
+    compression_groups.emplace_back(std::move(compression_group));
+
+    cbor::Value::MapValue body_map;
+    body_map.try_emplace(cbor::Value("compressionGroups"),
+                         cbor::Value(std::move(compression_groups)));
+
+    cbor::Value body_value(std::move(body_map));
+    std::optional<std::vector<uint8_t>> maybe_body_bytes =
+        cbor::Writer::Write(body_value);
+    CHECK(maybe_body_bytes);
+
+    std::string response_body = test::CreateKVv2ResponseBody(
+        base::as_string_view(maybe_body_bytes.value()));
+    auto response_context =
+        std::move(received_request).value().ReleaseContext();
+
+    // Encrypt the response body.
+    auto maybe_response = ohttp_gateway.CreateObliviousHttpResponse(
+        response_body, response_context,
+        kTrustedSignalsKVv2EncryptionResponseMediaType);
+    CHECK(maybe_response.ok()) << maybe_response.status();
+
+    return maybe_response->EncapsulateAndSerialize();
+  }
+
+ protected:
+  base::test::ScopedFeatureList scoped_feature_list_;
+
+  // Map of compression group tokens to cache clients waiting on them.
+  std::map<base::UnguessableToken,
+           mojo::PendingRemote<mojom::TrustedSignalsCacheClient>>
+      pending_cache_clients_;
+
+  std::unique_ptr<base::RunLoop> wait_for_cache_requests_loop_;
+  size_t waiting_for_cache_requests_count_ = 0;
+
+  mojo::Receiver<mojom::TrustedSignalsCache> cache_receiver_{this};
+};
+
+// Test the case where there's an error getting signals. The specific error
+// doesn't matter, since they're all exposed in the same way to the
+// BidderWorklet.
+//
+// Similar to BidderWorkletTest.GenerateBidOnBiddingSignalsReceivedFetchFails.
+TEST_F(BidderWorkletKVv2Test, SignalsError) {
+  const std::string generate_bid_script = CreateGenerateBidScript(
+      R"({ad: trustedBiddingSignals, bid:1,
+            render:"https://response.test/"})");
+
+  // This results in an error because it's supposed to be an array, not a map.
+  const char kJson[] = "{}";
+
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/kvv2-test/");
+  interest_group_trusted_bidding_signals_keys_ = {"key1"};
+
+  for (bool use_signals_cache : {false, true}) {
+    SCOPED_TRACE(use_signals_cache);
+    if (use_signals_cache) {
+      EnableSignalsCache();
+    }
+
+    // Test the case that signals are received before the Javascript, and vice
+    // versa.
+    for (bool signals_first : {false, true}) {
+      SCOPED_TRACE(signals_first);
+      url_loader_factory_.ClearResponses();
+
+      auto bidder_worklet = CreateWorklet();
+      generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+      GenerateBid(bidder_worklet.get());
+
+      if (signals_first) {
+        AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                              generate_bid_script);
+        task_environment_.RunUntilIdle();
+        WaitForRequestAndSendResponse(kJson);
+      } else {
+        WaitForRequestAndSendResponse(kJson);
+        task_environment_.RunUntilIdle();
+        AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                              generate_bid_script);
+      }
+
+      generate_bid_run_loop_->Run();
+      generate_bid_run_loop_.reset();
+
+      EXPECT_THAT(bid_errors_,
+                  UnorderedElementsAre("Content is not type of array."));
+      ASSERT_EQ(bids_.size(), 1u);
+      auto* bid = bids_[0].get();
+      // `ad` comes from `trustedBiddingSignals`, which should be null.
+      EXPECT_EQ(bid->ad, "null");
+      EXPECT_EQ(bid->ad_descriptor.url, GURL("https://response.test/"));
+    }
+  }
+}
+
+TEST_F(BidderWorkletKVv2Test, GenerateBidTrustedBiddingSignals) {
+  const std::string generate_bid_script = CreateGenerateBidScript(
+      R"({ad: trustedBiddingSignals, bid:1,
+            render:"https://response.test/"})");
+
+  const char kJson[] =
+      R"([{
+          "id": 1,
+          "dataVersion": 101,
+          "keyGroupOutputs": [
+            {
+              "tags": [
+                "interestGroupNames"
+              ],
+              "keyValues": {
+                "Fred": {
+                  "value": "{\"priorityVector\":{\"foo\":1}}"
+                }
+              }
+            },
+            {
+              "tags": [
+                "keys"
+              ],
+              "keyValues": {
+                "key1": {
+                  "value": "1"
+                },
+                "key2": {
+                  "value": "[2]"
+                }
+              }
+            }
+          ]
+        }])";
+
+  for (bool use_signals_cache : {false, true}) {
+    SCOPED_TRACE(use_signals_cache);
+    if (use_signals_cache) {
+      EnableSignalsCache();
+    }
+
+    // Test the case that signals are received before the Javascript, and vice
+    // versa.
+    for (bool signals_first : {false, true}) {
+      SCOPED_TRACE(signals_first);
+      url_loader_factory_.ClearResponses();
+
+      interest_group_trusted_bidding_signals_url_ =
+          GURL("https://url.test/kvv2-test/");
+      interest_group_trusted_bidding_signals_keys_ =
+          std::vector<std::string>({"key1", "key2"});
+
+      auto bidder_worklet = CreateWorklet();
+      generate_bid_run_loop_ = std::make_unique<base::RunLoop>();
+      GenerateBid(bidder_worklet.get());
+
+      if (signals_first) {
+        AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                              generate_bid_script);
+        task_environment_.RunUntilIdle();
+        WaitForRequestAndSendResponse(kJson);
+      } else {
+        WaitForRequestAndSendResponse(kJson);
+        task_environment_.RunUntilIdle();
+        AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                              generate_bid_script);
+      }
+
+      generate_bid_run_loop_->Run();
+      generate_bid_run_loop_.reset();
+
+      ASSERT_EQ(0UL, bid_errors_.size());
+      ASSERT_EQ(1UL, bids_.size());
+
+      mojom::BidderWorkletBidPtr expected_bid = mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"({"key1":1,"key2":[2]})", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta());
+
+      auto actual_bid = std::move(bids_[0]);
+      EXPECT_EQ(expected_bid->bid_role, actual_bid->bid_role);
+      EXPECT_EQ(expected_bid->ad, actual_bid->ad);
+      EXPECT_EQ(expected_bid->selected_buyer_and_seller_reporting_id,
+                actual_bid->selected_buyer_and_seller_reporting_id);
+      EXPECT_EQ(expected_bid->bid, actual_bid->bid);
+      EXPECT_EQ(blink::PrintableAdCurrency(expected_bid->bid_currency),
+                blink::PrintableAdCurrency(actual_bid->bid_currency));
+      EXPECT_EQ(expected_bid->ad_descriptor.url, actual_bid->ad_descriptor.url);
+      EXPECT_EQ(expected_bid->ad_descriptor.size,
+                actual_bid->ad_descriptor.size);
+      if (!expected_bid->ad_component_descriptors) {
+        EXPECT_FALSE(actual_bid->ad_component_descriptors);
+      } else {
+        EXPECT_THAT(*actual_bid->ad_component_descriptors,
+                    ::testing::ElementsAreArray(
+                        *expected_bid->ad_component_descriptors));
+      }
+      if (!expected_bid->bid_duration.is_zero()) {
+        EXPECT_GE(actual_bid->bid_duration, expected_bid->bid_duration);
+      }
+      EXPECT_EQ(101, data_version_);
+    }
+  }
+}
+
+// Test the case where two simultaneous generateBid() calls are made with
+// different compression group tokens.
+TEST_F(BidderWorkletKVv2Test,
+       MultipleRequestsWithDifferentCompressionGroupTokens) {
+  // Compression group tokens are only a concept when using the KVv2 manager and
+  // TrustedSignalsCache.
+  EnableSignalsCache();
+
+  const std::array<const char*, 2> kCompressionGroups{
+      R"([{
+        "id": 0,
+        "dataVersion": 2,
+        "keyGroupOutputs": []
+      }])",
+      R"([{
+        "id": 1,
+        "dataVersion": 3,
+        "keyGroupOutputs": []
+      }])"};
+
+  const std::array<mojom::TrustedSignalsCacheKeyPtr, 2>
+      trusted_signals_cache_keys = {
+          mojom::TrustedSignalsCacheKey::New(base::UnguessableToken::Create(),
+                                             /*partition_id=*/0),
+          mojom::TrustedSignalsCacheKey::New(base::UnguessableToken::Create(),
+                                             /*partition_id=*/1),
+      };
+
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/kvv2-test/");
+  interest_group_trusted_bidding_signals_keys_ = {"key1"};
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateGenerateBidScript(
+                            R"({ad: browserSignals.dataVersion, bid:1,
+            render:"https://response.test/"})"));
+
+  auto bidder_worklet = CreateWorklet();
+
+  base::RunLoop run_loop;
+  int num_bids_generated = 0;
+  for (size_t i = 0; i < 2; ++i) {
+    trusted_signals_cache_key_ = trusted_signals_cache_keys[i].Clone();
+    GenerateBid(
+        bidder_worklet.get(),
+        GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
+            [&num_bids_generated, &run_loop, i](
+                std::vector<mojom::BidderWorkletBidPtr> bids,
+                std::optional<uint32_t> data_version,
+                const std::optional<GURL>& debug_loss_report_url,
+                const std::optional<GURL>& debug_win_report_url,
+                std::optional<double> set_priority,
+                base::flat_map<std::string,
+                               auction_worklet::mojom::PrioritySignalsDoublePtr>
+                    update_priority_signals_overrides,
+                PrivateAggregationRequests pa_requests,
+                PrivateAggregationRequests non_kanon_pa_requests,
+                RealTimeReportingContributions real_time_contributions,
+                mojom::BidderTimingMetricsPtr generate_bid_metrics,
+                mojom::GenerateBidDependencyLatenciesPtr
+                    generate_bid_dependency_latencies,
+                mojom::RejectReason reject_reason,
+                const std::vector<std::string>& errors) {
+              ASSERT_EQ(1u, bids.size());
+              int expected_data_version = i + 2;
+              EXPECT_EQ(data_version, expected_data_version);
+              const mojom::BidderWorkletBid* bid = bids[0].get();
+              EXPECT_EQ(bid->ad, base::NumberToString(expected_data_version));
+
+              ++num_bids_generated;
+              if (num_bids_generated == 2) {
+                run_loop.Quit();
+              }
+            })));
+  }
+  bidder_worklet->SendPendingSignalsRequests();
+
+  WaitForCacheRequests(2);
+  for (int i = 0; i < 2; ++i) {
+    RespondToCacheRequest(
+        trusted_signals_cache_keys[i]->compression_group_token,
+        kCompressionGroups[i]);
+  }
+
+  run_loop.Run();
+}
+
+// Test the case where two generateBid() calls are made with the same
+// compression group token, and the second request is made only after the first
+// request has posted a task to the V8 thread. There should only be one request
+// to the cache.
+TEST_F(BidderWorkletKVv2Test, MultipleGenerateBidCallsSingleCacheRequest) {
+  // Compression group tokens are only a concept when using the KVv2 manager and
+  // TrustedSignalsCache.
+  EnableSignalsCache();
+
+  const char kJson[] = {
+      R"([{
+        "id": 1,
+        "dataVersion": 3,
+        "keyGroupOutputs": []
+      },
+      {
+        "id": 2,
+        "dataVersion": 4,
+        "keyGroupOutputs": []
+      }])"};
+
+  interest_group_trusted_bidding_signals_url_ =
+      GURL("https://url.test/kvv2-test/");
+  interest_group_trusted_bidding_signals_keys_ = {"key1"};
+
+  AddJavascriptResponse(&url_loader_factory_, interest_group_bidding_url_,
+                        CreateGenerateBidScript(
+                            R"({ad: browserSignals.dataVersion, bid:1,
+            render:"https://response.test/"})"));
+
+  auto bidder_worklet = CreateWorklet();
+
+  // A bid finalizer is used to delay calling into V8 for the first request
+  // until after all other works has been done.
+  mojo::AssociatedRemote<auction_worklet::mojom::GenerateBidFinalizer>
+      bid_finalizer;
+
+  // Start the first generate bid call.
+  base::RunLoop run_loop1;
+  BeginGenerateBid(
+      bidder_worklet.get(), bid_finalizer.BindNewEndpointAndPassReceiver(),
+      GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
+          [&run_loop1](
+              std::vector<mojom::BidderWorkletBidPtr> bids,
+              std::optional<uint32_t> data_version,
+              const std::optional<GURL>& debug_loss_report_url,
+              const std::optional<GURL>& debug_win_report_url,
+              std::optional<double> set_priority,
+              base::flat_map<std::string,
+                             auction_worklet::mojom::PrioritySignalsDoublePtr>
+                  update_priority_signals_overrides,
+              PrivateAggregationRequests pa_requests,
+              PrivateAggregationRequests non_kanon_pa_requests,
+              RealTimeReportingContributions real_time_contributions,
+              mojom::BidderTimingMetricsPtr generate_bid_metrics,
+              mojom::GenerateBidDependencyLatenciesPtr
+                  generate_bid_dependency_latencies,
+              mojom::RejectReason reject_reason,
+              const std::vector<std::string>& errors) {
+            ASSERT_EQ(1u, bids.size());
+            EXPECT_EQ(data_version, 3);
+            const mojom::BidderWorkletBid* bid = bids[0].get();
+            EXPECT_EQ(bid->ad, "3");
+            run_loop1.Quit();
+          })));
+  bidder_worklet->SendPendingSignalsRequests();
+  WaitForRequestAndSendResponse(kJson);
+
+  // Running until idle should result in the JS and JSON being parsed and
+  // loaded, but since the finalizer's FinishGenerateBid() method has not been
+  // called, generateBid() should not having been invoked.
+  task_environment_.RunUntilIdle();
+  EXPECT_FALSE(run_loop1.AnyQuitCalled());
+
+  // Wedge the V8 thread, so can verify the signals are still cached while using
+  // them to generate a bid.
+  base::WaitableEvent* event_handle = WedgeV8Thread(v8_helper().get());
+
+  bid_finalizer->FinishGenerateBid(
+      auction_signals_, per_buyer_signals_, per_buyer_timeout_,
+      per_buyer_currency_,
+      provide_direct_from_seller_signals_late_
+          ? direct_from_seller_per_buyer_signals_
+          : std::nullopt,
+      direct_from_seller_per_buyer_signals_header_ad_slot_,
+      provide_direct_from_seller_signals_late_
+          ? direct_from_seller_auction_signals_
+          : std::nullopt,
+      direct_from_seller_auction_signals_header_ad_slot_);
+  bid_finalizer.FlushForTesting();
+
+  // Start a generate bid call that uses the other partition of the same
+  // compression group.
+  trusted_signals_cache_key_->partition_id = 2;
+  base::RunLoop run_loop2;
+  GenerateBid(
+      bidder_worklet.get(),
+      GenerateBidClientWithCallbacks::Create(base::BindLambdaForTesting(
+          [&run_loop2](
+              std::vector<mojom::BidderWorkletBidPtr> bids,
+              std::optional<uint32_t> data_version,
+              const std::optional<GURL>& debug_loss_report_url,
+              const std::optional<GURL>& debug_win_report_url,
+              std::optional<double> set_priority,
+              base::flat_map<std::string,
+                             auction_worklet::mojom::PrioritySignalsDoublePtr>
+                  update_priority_signals_overrides,
+              PrivateAggregationRequests pa_requests,
+              PrivateAggregationRequests non_kanon_pa_requests,
+              RealTimeReportingContributions real_time_contributions,
+              mojom::BidderTimingMetricsPtr generate_bid_metrics,
+              mojom::GenerateBidDependencyLatenciesPtr
+                  generate_bid_dependency_latencies,
+              mojom::RejectReason reject_reason,
+              const std::vector<std::string>& errors) {
+            ASSERT_EQ(1u, bids.size());
+            EXPECT_EQ(data_version, 4);
+            const mojom::BidderWorkletBid* bid = bids[0].get();
+            EXPECT_EQ(bid->ad, "4");
+            run_loop2.Quit();
+          })));
+  bidder_worklet->SendPendingSignalsRequests();
+  // Flush pending messages to make sure the second request reaches the
+  // BidderWorklet before the first request completes and releases the data
+  // cached by the TrustedSignalsKVv2RequestManager.
+  bidder_worklet.FlushForTesting();
+
+  // Unwedge the V8 thread.
+  event_handle->Signal();
+
+  // Both generateBid() calls should complete, having received signals from a
+  // single request to the cache.
+  run_loop1.Run();
+  run_loop2.Run();
+  EXPECT_TRUE(pending_cache_clients_.empty());
+
+  // Start another generateBid() call using the same compression group. The data
+  // from the original requests should have been discarded, as it's no longer in
+  // use, so there should be a new request to the cache.
+  GenerateBid(bidder_worklet.get(),
+              GenerateBidClientWithCallbacks::CreateNeverCompletes());
+  bidder_worklet->SendPendingSignalsRequests();
+  WaitForCacheRequests(1);
+  EXPECT_EQ(pending_cache_clients_.count(
+                trusted_signals_cache_key_->compression_group_token),
+            1u);
+
+  // Clean up state. Destroy bidder worklets first to avoid triggering the
+  // generateBid() call by destroying the pending cache client pipe. Destroying
+  // the cache pipe doesn't currently cause anything to happen, but best not to
+  // depend on that here.
+  bidder_worklets_.Clear();
+  pending_cache_clients_.clear();
+}
+
+// Test that it's still possible to request KVv1 bidding signals when there's a
+// KVv2 cache wired up.
+TEST_F(BidderWorkletKVv2Test, TrustedBiddingSignalsV1WithKVv2Cache) {
+  // Enable the cache, but don't pass a cache key to GenerateBid(), so should
+  // still use V1 signals.
+  EnableSignalsCache();
+  trusted_signals_cache_key_.reset();
+
+  interest_group_trusted_bidding_signals_keys_ =
+      std::vector<std::string>({"key"});
+  const GURL kBaseSignalsUrl("https://url.test/signals");
+  interest_group_trusted_bidding_signals_url_ = kBaseSignalsUrl;
+  const GURL kSignalsUrl(
+      "https://url.test/signals"
+      "?hostname=top.window.test&keys=key&interestGroupNames=Fred");
+
+  const char kJson[] = R"(
+    {
+      "keys": {
+        "key": "bagel"
+      }
+    }
+  )";
+
+  // Request with valid TrustedBiddingSignals URL and non-empty keys. Request
+  // should be made. The request succeeds.
+  AddBidderJsonResponse(&url_loader_factory_, kSignalsUrl, kJson);
+  RunGenerateBidWithReturnValueExpectingResult(
+      R"({ad: trustedBiddingSignals, bid:1, render:"https://response.test/"})",
+      mojom::BidderWorkletBid::New(
+          auction_worklet::mojom::BidRole::kUnenforcedKAnon,
+          R"({"key":"bagel"})", 1, /*bid_currency=*/std::nullopt,
+          /*ad_cost=*/std::nullopt,
+          blink::AdDescriptor(GURL("https://response.test/")),
+          /*selected_buyer_and_seller_reporting_id=*/std::nullopt,
+          /*ad_component_descriptors=*/std::nullopt,
+          /*modeling_signals=*/std::nullopt, base::TimeDelta()));
 }
 
 }  // namespace

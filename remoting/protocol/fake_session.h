@@ -51,9 +51,10 @@ class FakeSession : public Session {
 
   // Session interface.
   void SetEventHandler(EventHandler* event_handler) override;
-  ErrorCode error() override;
+  ErrorCode error() const override;
   const std::string& jid() override;
   const SessionConfig& config() override;
+  const Authenticator& authenticator() const override;
   void SetTransport(Transport* transport) override;
   void Close(ErrorCode error) override;
   void AddPlugin(SessionPlugin* plugin) override;
@@ -73,9 +74,9 @@ class FakeSession : public Session {
   std::string jid_;
 
   std::unique_ptr<FakeAuthenticator> authenticator_;
-  raw_ptr<Transport> transport_;
+  raw_ptr<Transport, DanglingUntriaged> transport_;
 
-  ErrorCode error_ = OK;
+  ErrorCode error_ = ErrorCode::OK;
   bool closed_ = false;
 
   base::WeakPtr<FakeSession> peer_;

@@ -19,9 +19,7 @@ import org.chromium.ui.base.WindowAndroid.IntentCallback;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 
-/**
- * The implementation of IntentRequestTracker.
- */
+/** The implementation of IntentRequestTracker. */
 /* package */ final class IntentRequestTrackerImpl implements IntentRequestTracker {
     // Constants used for intent request code bounding.
     private static final int REQUEST_CODE_PREFIX = 1000;
@@ -58,8 +56,8 @@ import java.util.HashMap;
         return requestCode;
     }
 
-    /* package */ int showCancelableIntent(
-            Intent intent, IntentCallback callback, Integer errorId) {
+    @Override
+    public int showCancelableIntent(Intent intent, IntentCallback callback, Integer errorId) {
         int requestCode = generateNextRequestCode();
 
         if (!mDelegate.startActivityForResult(intent, requestCode)) {
@@ -139,7 +137,8 @@ import java.util.HashMap;
 
     private void storeCallbackData(int requestCode, IntentCallback callback, Integer errorId) {
         mOutstandingIntents.put(requestCode, callback);
-        mIntentErrors.put(requestCode,
+        mIntentErrors.put(
+                requestCode,
                 errorId == null ? null : ContextUtils.getApplicationContext().getString(errorId));
     }
 

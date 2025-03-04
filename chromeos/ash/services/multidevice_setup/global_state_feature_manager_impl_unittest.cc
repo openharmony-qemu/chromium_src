@@ -5,6 +5,7 @@
 #include "chromeos/ash/services/multidevice_setup/global_state_feature_manager_impl.h"
 
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -25,7 +26,6 @@
 #include "chromeos/ash/services/multidevice_setup/wifi_sync_notification_controller.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace ash {
 
@@ -108,10 +108,10 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
   void TearDown() override {}
 
   void SetHostInDeviceSyncClient(
-      const absl::optional<multidevice::RemoteDeviceRef>& host_device) {
+      const std::optional<multidevice::RemoteDeviceRef>& host_device) {
     for (const auto& remote_device : test_devices_) {
       bool should_be_host =
-          host_device != absl::nullopt &&
+          host_device != std::nullopt &&
           ((!remote_device.instance_id().empty() &&
             host_device->instance_id() == remote_device.instance_id()) ||
            (!remote_device.GetDeviceId().empty() &&
@@ -135,7 +135,7 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
   }
 
   void CreateDelegate(
-      const absl::optional<multidevice::RemoteDeviceRef>& initial_host,
+      const std::optional<multidevice::RemoteDeviceRef>& initial_host,
       int initial_pending_state = kPendingNone) {
     SetHostInDeviceSyncClient(initial_host);
     test_pref_service_->SetInteger(kPendingStatePrefName,
@@ -152,10 +152,10 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
   }
 
   void SetHostWithStatus(
-      const absl::optional<multidevice::RemoteDeviceRef>& host_device) {
+      const std::optional<multidevice::RemoteDeviceRef>& host_device) {
     mojom::HostStatus host_status =
-        (host_device == absl::nullopt ? mojom::HostStatus::kNoEligibleHosts
-                                      : mojom::HostStatus::kHostVerified);
+        (host_device == std::nullopt ? mojom::HostStatus::kNoEligibleHosts
+                                     : mojom::HostStatus::kHostVerified);
     fake_host_status_provider_->SetHostWithStatus(host_status, host_device);
   }
 
@@ -237,7 +237,7 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
   }
 
   void SetHostInDeviceSyncClient(
-      const absl::optional<multidevice::RemoteDeviceRef>& host_device,
+      const std::optional<multidevice::RemoteDeviceRef>& host_device,
       bool enabled) {
     GetMutableRemoteDevice(*host_device)->software_features[kTestHostFeature] =
         (enabled ? multidevice::SoftwareFeatureState::kEnabled
@@ -245,21 +245,9 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
     fake_device_sync_client_->NotifyNewDevicesSynced();
   }
 
-  void SetFeatureFlags(bool use_v1_devicesync, bool enable_feature_flag) {
+  void SetFeatureFlags(bool enable_feature_flag) {
     std::vector<base::test::FeatureRef> enabled_features;
     std::vector<base::test::FeatureRef> disabled_features;
-
-    // These flags have no direct effect of on the GlobalStateFeatureManager;
-    // however, v2 Enrollment and DeviceSync must be enabled before v1
-    // DeviceSync can be disabled.
-    enabled_features.push_back(features::kCryptAuthV2Enrollment);
-    enabled_features.push_back(features::kCryptAuthV2DeviceSync);
-
-    if (use_v1_devicesync) {
-      disabled_features.push_back(features::kDisableCryptAuthV1DeviceSync);
-    } else {
-      enabled_features.push_back(features::kDisableCryptAuthV1DeviceSync);
-    }
 
     if (enable_feature_flag) {
       enabled_features.push_back(kTestFeatureFlag);
@@ -299,16 +287,15 @@ class MultiDeviceSetupGlobalStateFeatureManagerImplTest
       test_pref_service_;
   std::unique_ptr<device_sync::FakeDeviceSyncClient> fake_device_sync_client_;
 
-  raw_ptr<base::MockOneShotTimer, ExperimentalAsh> mock_timer_;
+  raw_ptr<base::MockOneShotTimer, DanglingUntriaged> mock_timer_;
 
   std::unique_ptr<GlobalStateFeatureManager> delegate_;
 
   base::test::ScopedFeatureList scoped_feature_list_;
 };
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Success) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Success) {
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable the feature on host device and succeed
@@ -345,10 +332,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Success) {
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        NewDevicesSyncedBeforeCallback) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable the feature on host device and succeed
@@ -373,9 +359,8 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kEnabled);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Failure) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Failure) {
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable the feature on host device and fail
@@ -413,10 +398,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest, Failure) {
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        MultipleRequests_FirstFail_ThenSucceed) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable the feature on host device and fail
@@ -454,10 +438,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kEnabled);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        PendingRequest_NoSyncedHostDevice) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable the feature on test_device 0
@@ -478,16 +461,15 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
 
   // Remove synced device. This should remove the pending request and stop the
   // retry timer.
-  SetHostInDeviceSyncClient(absl::nullopt);
-  SetHostWithStatus(absl::nullopt);
+  SetHostInDeviceSyncClient(std::nullopt);
+  SetHostWithStatus(std::nullopt);
   EXPECT_FALSE(mock_timer()->IsRunning());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        InitialPendingEnableRequest_NoInitialDevice) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */,
+  SetFeatureFlags(true /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */,
                  kPendingEnable /* initial_pending_state*/);
 
   EXPECT_EQ(0, GetSetHostNetworkRequestCallbackQueueSize());
@@ -495,10 +477,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        InitialPendingEnableRequest_Success) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */,
                  kPendingEnable /* initial_pending_state*/);
 
@@ -516,10 +497,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kEnabled);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        MultiplePendingRequests_EnableDisable) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable->disable the feature without invoking any
@@ -543,10 +523,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        PendingRequest_SyncedHostBecomesUnverified) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */,
                  kPendingEnable /* initial_pending_state */);
 
@@ -557,10 +536,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             kPendingNone);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        Retrying_SyncedHostBecomesUnverified) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   SetIsFeatureEnabled(true);
@@ -584,10 +562,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        FailureCallback_SyncedHostBecomesUnverified) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   SetIsFeatureEnabled(true);
@@ -611,10 +588,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        NoVerifiedHost_AttemptToEnable) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   fake_host_status_provider()->SetHostWithStatus(
@@ -632,10 +608,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        StatusChangedOnRemoteDevice) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
@@ -647,10 +622,9 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_TRUE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SimultaneousRequests_StartOff_ToggleOnOff) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   CreateDelegate(test_devices()[0] /* initial_host */);
 
   // Attempt to enable
@@ -681,11 +655,10 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kSupported);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_HostSetLocallyThenHostVerified) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  SetFeatureFlags(true /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */);
 
   // kHostSetLocallyButWaitingForBackendConfirmation is only possible if the
   // setup flow has been completed on the local device.
@@ -714,12 +687,11 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
             multidevice::SoftwareFeatureState::kEnabled);
 }
 
-TEST_P(
+TEST_F(
     MultiDeviceSetupGlobalStateFeatureManagerImplTest,
     SetPendingEnableOnVerify_HostSetLocallyThenHostSetNotVerifiedThenHostVerified) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  SetFeatureFlags(true /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */);
 
   // kHostSetLocallyButWaitingForBackendConfirmation is only possible if the
   // setup flow has been completed on the local device.
@@ -754,11 +726,10 @@ TEST_P(
             multidevice::SoftwareFeatureState::kEnabled);
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_FeatureFlagOff) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  false /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  SetFeatureFlags(false /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */);
 
   // kHostSetLocallyButWaitingForBackendConfirmation is only possible if the
   // setup flow has been completed on the local device.
@@ -771,13 +742,12 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_FeatureNotAllowedByPolicy) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   // Disable by policy
   test_pref_service()->SetBoolean(kFeatureAllowedPrefName, false);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  CreateDelegate(std::nullopt /* initial_host */);
 
   // kHostSetLocallyButWaitingForBackendConfirmation is only possible if the
   // setup flow has been completed on the local device.
@@ -790,11 +760,10 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_FeatureNotSupportedOnHostDevice) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  SetFeatureFlags(true /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */);
   GetMutableRemoteDevice(test_devices()[0])
       ->software_features[kTestHostFeature] =
       multidevice::SoftwareFeatureState::kNotSupported;
@@ -810,11 +779,10 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_HostRemoved) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
-  CreateDelegate(absl::nullopt /* initial_host */);
+  SetFeatureFlags(true /* enable_feature_flag */);
+  CreateDelegate(std::nullopt /* initial_host */);
 
   // kHostSetLocallyButWaitingForBackendConfirmation is only possible if the
   // setup flow has been completed on the local device.
@@ -838,16 +806,15 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   // The feature manager should stop the enable attempt because it requires a
   // paired host device that transitions from unverified to verified.
   fake_host_status_provider()->SetHostWithStatus(
-      mojom::HostStatus::kEligibleHostExistsButNoHostSet, absl::nullopt);
+      mojom::HostStatus::kEligibleHostExistsButNoHostSet, std::nullopt);
   EXPECT_EQ(test_pref_service()->GetInteger(kPendingStatePrefName),
             kPendingNone);
   EXPECT_FALSE(delegate()->IsFeatureEnabled());
 }
 
-TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
+TEST_F(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
        SetPendingEnableOnVerify_InitialPendingRequest) {
-  SetFeatureFlags(GetParam() /* use_v1_devicesync */,
-                  true /* enable_feature_flag */);
+  SetFeatureFlags(true /* enable_feature_flag */);
   fake_host_status_provider()->SetHostWithStatus(
       mojom::HostStatus::kHostVerified, test_devices()[0]);
   CreateDelegate(test_devices()[0] /* initial_host */,
@@ -865,13 +832,6 @@ TEST_P(MultiDeviceSetupGlobalStateFeatureManagerImplTest,
   EXPECT_EQ(test_devices()[0].GetSoftwareFeatureState(kTestHostFeature),
             multidevice::SoftwareFeatureState::kEnabled);
 }
-
-// Runs tests twice; once with v1 DeviceSync enabled and once with it disabled.
-// TODO(https://crbug.com/1019206): Remove when v1 DeviceSync is disabled,
-// when all devices should have an Instance ID.
-INSTANTIATE_TEST_SUITE_P(All,
-                         MultiDeviceSetupGlobalStateFeatureManagerImplTest,
-                         ::testing::Bool());
 
 }  // namespace multidevice_setup
 

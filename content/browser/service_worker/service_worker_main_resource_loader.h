@@ -13,9 +13,10 @@
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
 #include "content/browser/loader/navigation_loader_interceptor.h"
-#include "content/browser/service_worker/embedded_worker_status.h"
+#include "content/browser/service_worker/service_worker_cache_storage_matcher.h"
 #include "content/browser/service_worker/service_worker_fetch_dispatcher.h"
 #include "content/common/content_export.h"
+#include "content/common/service_worker/forwarded_race_network_request_url_loader_factory.h"
 #include "content/common/service_worker/race_network_request_url_loader_client.h"
 #include "content/common/service_worker/service_worker_resource_loader.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -24,15 +25,18 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "net/url_request/redirect_info.h"
+#include "services/network/public/mojom/network_interface_change_listener.mojom.h"
+#include "services/network/public/mojom/service_worker_router_info.mojom-shared.h"
 #include "services/network/public/mojom/url_loader.mojom.h"
-#include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
+#include "third_party/blink/public/common/service_worker/embedded_worker_status.h"
+#include "third_party/blink/public/common/service_worker/service_worker_router_rule.h"
 #include "third_party/blink/public/mojom/blob/blob.mojom.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_response.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_stream_handle.mojom.h"
 
 namespace content {
 
-class ServiceWorkerContainerHost;
+class ServiceWorkerClient;
 class ServiceWorkerVersion;
 
 // ServiceWorkerMainResourceLoader is the URLLoader used for main resource
@@ -71,8 +75,10 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
   // is used instead of NavigationURLLoaderImpl.
   ServiceWorkerMainResourceLoader(
       NavigationLoaderInterceptor::FallbackCallback fallback_callback,
-      base::WeakPtr<ServiceWorkerContainerHost> container_host,
-      int frame_tree_node_id);
+      std::string fetch_event_client_id,
+      base::WeakPtr<ServiceWorkerClient> service_worker_client,
+      FrameTreeNodeId frame_tree_node_id,
+      base::TimeTicks find_registration_start_time);
 
   ServiceWorkerMainResourceLoader(const ServiceWorkerMainResourceLoader&) =
       delete;
@@ -114,24 +120,11 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
     // occurred so the request was not handled.
     kCompleted,
   };
-  // Indicates what kind of preload request is dispatched before starting
-  // the ServiceWorker.
-  //
-  // kNone: No preload request is triggered. This is the default state.
-  // kRaceNetworkRequest:
-  //    RaceNetworkRequest is triggered.
-  //    TODO(crbug.com/1420517) This will be passed to the renderer and block
-  //    the corresponding request from the ServiceWorker.
-  // kNavigationPreload:
-  //    Enabled when Navigation Preload is triggered.
-  enum class DispatchedPreloadType {
-    kNone,
-    kRaceNetworkRequest,
-    kNavigationPreload
-  };
+
+  enum class RaceNetworkRequestMode { kDefault, kForced, kSkipped };
 
   void DidPrepareFetchEvent(scoped_refptr<ServiceWorkerVersion> version,
-                            EmbeddedWorkerStatus initial_worker_status);
+                            blink::EmbeddedWorkerStatus initial_worker_status);
   void DidDispatchFetchEvent(
       blink::ServiceWorkerStatusCode status,
       ServiceWorkerFetchDispatcher::FetchEventResult fetch_result,
@@ -154,7 +147,7 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
   void CommitResponseBody(
       const network::mojom::URLResponseHeadPtr& response_head,
       mojo::ScopedDataPipeConsumerHandle response_body,
-      absl::optional<mojo_base::BigBuffer> cached_metadata) override;
+      std::optional<mojo_base::BigBuffer> cached_metadata) override;
 
   // Creates and sends an empty response's body with the net::OK status.
   // Sends net::ERR_INSUFFICIENT_RESOURCES when it can't be created.
@@ -176,7 +169,7 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override;
+      const std::optional<GURL>& new_url) override;
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
   void PauseReadingBodyFromNet() override;
@@ -184,13 +177,20 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
 
   void OnBlobReadingComplete(int net_error);
 
+  void SetCommitResponsibility(FetchResponseFrom fetch_response_from) override;
+
   void OnConnectionClosed();
+  void InvalidateAndDeleteIfNeeded();
   void DeleteIfNeeded();
 
-  // Records loading milestones. Called only after ForwardToServiceWorker() is
-  // called and there was no error.
-  bool InitRecordTimingMetricsIfEligible(
-      const net::LoadTimingInfo& load_timing);
+  network::mojom::ServiceWorkerStatus ConvertToServiceWorkerStatus(
+      blink::EmbeddedWorkerStatus embedded_status,
+      bool is_warming_up,
+      bool is_warmed_up);
+  std::string GetInitialServiceWorkerStatusString();
+  std::string GetFrameTreeNodeTypeString();
+  bool IsEligibleForRecordingTimingMetrics();
+  void RecordFindRegistrationToCompletedTrace();
   // Called when the fetch handler handles the request.
   void RecordTimingMetricsForFetchHandlerHandledCase();
   // Called when the fetch handler doesn't handle the request (i.e. network
@@ -199,65 +199,74 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
   // Called when the response from RaceNetworkRequest is faster than the
   // response from the fetch handler.
   void RecordTimingMetricsForRaceNetworkRequestCase();
+  void RecordFindRegistrationToRequestStartTiming();
   // Time between the request is made and the request is routed to this loader.
-  void RecordStartToForwardServiceWorkerTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordRequestStartToForwardServiceWorkerTiming();
   // Time spent for service worker startup.
-  void RecordForwardServiceWorkerToWorkerReadyTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordForwardServiceWorkerToWorkerReadyTiming();
   // Browser -> Renderer IPC delay.
-  void RecordWorkerReadyToFetchHandlerStartTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordWorkerReadyToFetchHandlerStartTiming();
   // Time spent by fetch handlers.
-  void RecordFetchHandlerStartToFetchHandlerEndTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordFetchHandlerStartToFetchHandlerEndTiming();
   // Renderer -> Browser IPC delay.
-  void RecordFetchHandlerEndToResponseReceivedTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordFetchHandlerEndToResponseReceivedTiming();
   // Time spent reading response body.
-  void RecordResponseReceivedToCompletedTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordResponseReceivedToCompletedTiming();
+  void RecordFindRegistrationToCompletedTiming();
   // Time between the request is made and complete reading response body.
-  void RecordStartToCompletedTiming(const net::LoadTimingInfo& load_timing,
-                                    const std::string& initial_worker_status);
+  void RecordRequestStartToCompletedTiming(
+      const base::TimeTicks& request_start);
+  void RecordFindRegistrationToFallbackNetworkTiming();
   // Time between the request is made and network fallback.
-  void RecordStartToFallbackNetworkTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordStartToFallbackNetworkTiming();
   // Renderer -> Browser IPC delay (network fallback case).
-  void RecordFetchHandlerEndToFallbackNetworkTiming(
-      const net::LoadTimingInfo& load_timing,
-      const std::string& initial_worker_status);
+  void RecordFetchHandlerEndToFallbackNetworkTiming();
 
   // Records metrics related to the fetch event handler execution.
   void RecordFetchEventHandlerMetrics(
       ServiceWorkerFetchDispatcher::FetchEventResult fetch_result);
 
+  void RecordFindRegistrationTiming(bool is_fallback);
+
   void TransitionToStatus(Status new_status);
 
-  bool MaybeStartRaceNetworkRequest(
+  // Dispatch preloading request based on the condition and feature enablement
+  // status, and set dispatched_preload_type.
+  void MaybeDispatchPreload(
+      RaceNetworkRequestMode race_network_request_mode,
       scoped_refptr<ServiceWorkerContextWrapper> context_wrapper,
       scoped_refptr<ServiceWorkerVersion> version);
+
+  // Returns false if fails to start the race network request.
+  // The caller should run the regular path instead.
+  bool StartRaceNetworkRequest(
+      scoped_refptr<ServiceWorkerContextWrapper> context_wrapper,
+      scoped_refptr<ServiceWorkerVersion> version);
+
+  // If the feature is enabled, invoke the preload network request.
+  // See this doc for the high-level code flow in
+  // ServiceWorkerMainResourceLoader.
+  // https://docs.google.com/presentation/d/13A54OUqaBPrgkIQZE3a3CnhT3pe3C70j07HCisjNZlI/edit#slide=id.g2753dd0eed3_0_0
+  bool MaybeStartAutoPreload(
+      scoped_refptr<ServiceWorkerContextWrapper> context_wrapper,
+      scoped_refptr<ServiceWorkerVersion> version);
+
+  bool MaybeStartNavigationPreload(
+      scoped_refptr<ServiceWorkerContextWrapper> context_wrapper);
 
   NavigationLoaderInterceptor::FallbackCallback fallback_callback_;
 
   network::ResourceRequest resource_request_;
 
-  base::WeakPtr<ServiceWorkerContainerHost> container_host_;
-  const int frame_tree_node_id_;
+  base::WeakPtr<ServiceWorkerClient> service_worker_client_;
+  const FrameTreeNodeId frame_tree_node_id_;
 
   std::unique_ptr<ServiceWorkerFetchDispatcher> fetch_dispatcher_;
+  std::unique_ptr<ServiceWorkerCacheStorageMatcher> cache_matcher_;
   std::unique_ptr<StreamWaiter> stream_waiter_;
   // The blob needs to be held while it's read to keep it alive.
   mojo::Remote<blink::mojom::Blob> body_as_blob_;
 
-  DispatchedPreloadType dispatched_preload_type_ = DispatchedPreloadType::kNone;
 
   network::mojom::URLResponseHeadPtr response_head_ =
       network::mojom::URLResponseHead::New();
@@ -273,15 +282,33 @@ class CONTENT_EXPORT ServiceWorkerMainResourceLoader
   mojo::Receiver<network::mojom::URLLoader> receiver_{this};
 
   Status status_ = Status::kNotStarted;
-  absl::optional<EmbeddedWorkerStatus> initial_embedded_worker_status_;
+
+  std::optional<network::mojom::ServiceWorkerStatus>
+      initial_service_worker_status_;
+  const bool is_browser_startup_completed_;
+  enum class FrameTreeNodeType {
+    kOutermostMainFrame = 0,
+    kNotOutermostMainFrame = 1,
+    kUnknown = 2,
+    kMaxValue = kUnknown,
+  };
+  FrameTreeNodeType frame_tree_node_type_ = FrameTreeNodeType::kUnknown;
   bool is_detached_ = false;
 
   scoped_refptr<network::SharedURLLoaderFactory>
       race_network_request_url_loader_factory_;
-  mojo::PendingRemote<network::mojom::URLLoader>
-      race_network_request_url_loader_;
-  std::unique_ptr<ServiceWorkerRaceNetworkRequestURLLoaderClient>
-      race_network_request_loader_client_;
+  std::optional<ServiceWorkerRaceNetworkRequestURLLoaderClient>
+      race_network_request_url_loader_client_;
+  std::optional<ServiceWorkerForwardedRaceNetworkRequestURLLoaderFactory>
+      forwarded_race_network_request_url_loader_factory_;
+
+  base::TimeTicks find_registration_start_time_;
+
+  // FetchEvent.clientId
+  // https://w3c.github.io/ServiceWorker/#fetch-event-clientid
+  const std::string fetch_event_client_id_;
+
+  bool has_fetch_event_finished_ = false;
 
   base::WeakPtrFactory<ServiceWorkerMainResourceLoader> weak_factory_{this};
 };

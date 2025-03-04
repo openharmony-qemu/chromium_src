@@ -106,7 +106,14 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
     // Allow starting the sandbox with multiple threads already running. This
     // will enable TSYNC for seccomp-BPF, which syncs the seccomp-BPF policy
     // across all running threads.
+#if BUILDFLAG(IS_OHOS)
+    // Check the policy and eventually start the seccomp-bpf sandbox. Fine to be
+    // called with threads, as long as
+    // |options.allow_threads_during_sandbox_init| is true
+    bool allow_threads_during_sandbox_init = true;
+#else
     bool allow_threads_during_sandbox_init = false;
+#endif
 
     // Enables the CHECK for open directories. The open directory check is only
     // useful for the chroot jail (from the semantic layer of the sandbox), and
@@ -226,16 +233,9 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
   //
   // |policy| is the policy being run by the client, and is used to derive the
   // equivalent broker-side policy.
-  //
-  // |broker_side_hook| is an alternate pre-sandbox hook to be run before the
-  // broker itself gets sandboxed, to which the broker side policy and |options|
-  // are passed. Crashes the process if the broker can not be started since
-  // continuation is impossible (and presumably unsafe). This should never be
-  // destroyed, as after the sandbox is started it is vital to the process.
   void StartBrokerProcess(
       const syscall_broker::BrokerCommandSet& allowed_command_set,
       std::vector<syscall_broker::BrokerFilePermission> permissions,
-      PreSandboxHook broker_side_hook,
       const Options& options);
 
   // Returns true if the broker should handle a particular syscall indicated by
@@ -248,6 +248,9 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
   // syscalls that take pathnames, so we can enforce pathname whitelisting.
   // Only usable if StartBrokerProcess() was already called.
   bpf_dsl::ResultExpr HandleViaBroker(int sysno) const;
+
+  // Reports Landlock status through UMA metrics.
+  static void ReportLandlockStatus();
 
  private:
   friend struct base::DefaultSingletonTraits<SandboxLinux>;

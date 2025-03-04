@@ -55,17 +55,12 @@ class ProfileOAuth2TokenServiceDelegateChromeOS
   std::unique_ptr<OAuth2AccessTokenFetcher> CreateAccessTokenFetcher(
       const CoreAccountId& account_id,
       scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-      OAuth2AccessTokenConsumer* consumer) override;
+      OAuth2AccessTokenConsumer* consumer,
+      const std::string& token_binding_challenge) override;
   bool RefreshTokenIsAvailable(const CoreAccountId& account_id) const override;
   std::vector<CoreAccountId> GetAccounts() const override;
-  void LoadCredentials(const CoreAccountId& primary_account_id,
-                       bool is_syncing) override;
-  void UpdateCredentials(const CoreAccountId& account_id,
-                         const std::string& refresh_token) override;
   scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory()
       const override;
-  void RevokeCredentials(const CoreAccountId& account_id) override;
-  void RevokeAllCredentials() override;
   void UpdateAuthError(const CoreAccountId& account_id,
                        const GoogleServiceAuthError& error,
                        bool fire_auth_error_changed = true) override;
@@ -81,6 +76,16 @@ class ProfileOAuth2TokenServiceDelegateChromeOS
 
  private:
   friend class TestProfileOAuth2TokenServiceDelegateChromeOS;
+
+  // ProfileOAuth2TokenServiceDelegate implementation:
+  void LoadCredentialsInternal(const CoreAccountId& primary_account_id,
+                               bool is_syncing) override;
+  void UpdateCredentialsInternal(const CoreAccountId& account_id,
+                                 const std::string& refresh_token) override;
+  void RevokeCredentialsInternal(const CoreAccountId& account_id) override;
+  void RevokeAllCredentialsInternal(
+      signin_metrics::SourceForRefreshTokenOperation source) override;
+
   // Callback handler for `account_manager::AccountManagerFacade::GetAccounts`.
   void OnGetAccounts(const std::vector<account_manager::Account>& accounts);
 
@@ -94,8 +99,9 @@ class ProfileOAuth2TokenServiceDelegateChromeOS
                                   const GoogleServiceAuthError& error);
 
   // Non-owning pointers.
-  const raw_ptr<SigninClient> signin_client_;
-  const raw_ptr<AccountTrackerService> account_tracker_service_;
+  const raw_ptr<SigninClient, DanglingUntriaged> signin_client_;
+  const raw_ptr<AccountTrackerService, DanglingUntriaged>
+      account_tracker_service_;
   const raw_ptr<network::NetworkConnectionTracker> network_connection_tracker_;
   const raw_ptr<account_manager::AccountManagerFacade> account_manager_facade_;
 

@@ -6,7 +6,6 @@
 #define CHROMEOS_UI_BASE_CHROMEOS_UI_CONSTANTS_H_
 
 #include "base/time/time.h"
-#include "build/chromeos_buildflags.h"
 #include "third_party/skia/include/core/SkColor.h"
 
 namespace chromeos {
@@ -36,6 +35,16 @@ constexpr SkColor kDefaultFrameColor = SkColorSetRGB(0xFD, 0xFE, 0xFF);
 // The default duration for animating frame color changes.
 constexpr base::TimeDelta kDefaultFrameColorChangeAnimationDuration =
     base::Milliseconds(240);
+
+enum ViewID {
+  VIEW_ID_NONE = 0,
+
+  // ChromeOS IDs start above the range used in Chrome and Ash.
+  VIEW_ID_CHROMEOS_UI_START = 20000,
+
+  // Frame Caption Button Container used in browser and app frames.
+  VIEW_ID_CAPTION_BUTTON_CONTAINER,
+};
 
 }  // namespace chromeos
 

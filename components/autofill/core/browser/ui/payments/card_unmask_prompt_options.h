@@ -9,6 +9,7 @@
 #include "components/autofill/core/browser/data_model/credit_card.h"
 #include "components/autofill/core/browser/payments/card_unmask_challenge_option.h"
 #include "components/autofill/core/browser/payments/card_unmask_delegate.h"
+#include "components/autofill/core/browser/payments/payments_autofill_client.h"
 
 namespace autofill {
 
@@ -17,8 +18,8 @@ namespace autofill {
 struct CardUnmaskPromptOptions {
   CardUnmaskPromptOptions();
   CardUnmaskPromptOptions(
-      const absl::optional<CardUnmaskChallengeOption>& challenge_option,
-      AutofillClient::UnmaskCardReason reason);
+      const std::optional<CardUnmaskChallengeOption>& challenge_option,
+      payments::PaymentsAutofillClient::UnmaskCardReason reason);
   CardUnmaskPromptOptions(const CardUnmaskPromptOptions&);
   ~CardUnmaskPromptOptions();
 
@@ -26,10 +27,10 @@ struct CardUnmaskPromptOptions {
   // challenge option the user is presented with. In the
   // CardUnmaskPromptController, only a CardUnmaskChallengeOptionType::kCvc
   // challenge option is supported.
-  absl::optional<CardUnmaskChallengeOption> challenge_option;
+  std::optional<CardUnmaskChallengeOption> challenge_option;
 
   // The origin of the unmask request.
-  AutofillClient::UnmaskCardReason reason;
+  payments::PaymentsAutofillClient::UnmaskCardReason reason;
 };
 
 }  // namespace autofill

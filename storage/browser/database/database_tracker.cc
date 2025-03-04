@@ -4,14 +4,17 @@
 
 #include "storage/browser/database/database_tracker.h"
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "base/containers/contains.h"
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -20,6 +23,7 @@
 #include "base/location.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/metrics/user_metrics.h"
+#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
@@ -40,7 +44,6 @@
 #include "storage/browser/database/databases_table.h"
 #include "storage/browser/quota/quota_client_type.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
-#include "storage/browser/quota/special_storage_policy.h"
 #include "storage/common/database/database_identifier.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 #include "third_party/blink/public/mojom/quota/quota_types.mojom.h"
@@ -64,23 +67,19 @@ const base::FilePath::CharType kTemporaryDirectoryPrefix[] =
 const base::FilePath::CharType kTemporaryDirectoryPattern[] =
     FILE_PATH_LITERAL("DeleteMe*");
 
-#if defined(OHOS_WEBSTORAGE)
-static const std::u16string kBaseDatabaseDir =
-    base::UTF8ToUTF16("/data/storage/el2/base/");
-static const std::u16string kSuffixStr = base::UTF8ToUTF16(".db");
-#endif  // defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(IS_ARKWEB)
+const std::u16string kBaseDatabaseDir =
+    base::UTF8ToUTF16(std::string_view{"/data/storage/el2/base/"});
+const std::u16string divisionStr = base::UTF8ToUTF16(std::string_view{"/"});
+const std::u16string kSuffixStr = base::UTF8ToUTF16(std::string_view{".db"});
+#endif
 
-OriginInfo::OriginInfo() : total_size_(0) {}
+OriginInfo::OriginInfo()
+    : total_size_(0) {}
 
 OriginInfo::OriginInfo(const OriginInfo& origin_info) = default;
 
 OriginInfo::~OriginInfo() = default;
-
-void OriginInfo::GetAllDatabaseNames(
-    std::vector<std::u16string>* databases) const {
-  for (const auto& name_and_size : database_sizes_)
-    databases->push_back(name_and_size.first);
-}
 
 int64_t OriginInfo::GetDatabaseSize(const std::u16string& database_name) const {
   auto it = database_sizes_.find(database_name);
@@ -95,11 +94,10 @@ OriginInfo::OriginInfo(const std::string& origin_identifier, int64_t total_size)
 scoped_refptr<DatabaseTracker> DatabaseTracker::Create(
     const base::FilePath& profile_path,
     bool is_incognito,
-    scoped_refptr<SpecialStoragePolicy> special_storage_policy,
     scoped_refptr<QuotaManagerProxy> quota_manager_proxy) {
   auto database_tracker = base::MakeRefCounted<DatabaseTracker>(
-      profile_path, is_incognito, std::move(special_storage_policy),
-      std::move(quota_manager_proxy), base::PassKey<DatabaseTracker>());
+      profile_path, is_incognito, std::move(quota_manager_proxy),
+      base::PassKey<DatabaseTracker>());
   database_tracker->RegisterQuotaClient();
   return database_tracker;
 }
@@ -107,7 +105,6 @@ scoped_refptr<DatabaseTracker> DatabaseTracker::Create(
 DatabaseTracker::DatabaseTracker(
     const base::FilePath& profile_path,
     bool is_incognito,
-    scoped_refptr<SpecialStoragePolicy> special_storage_policy,
     scoped_refptr<QuotaManagerProxy> quota_manager_proxy,
     base::PassKey<DatabaseTracker>)
     : is_incognito_(is_incognito),
@@ -116,11 +113,9 @@ DatabaseTracker::DatabaseTracker(
                   ? profile_path_.Append(kIncognitoDatabaseDirectoryName)
                   : profile_path_.Append(kDatabaseDirectoryName)),
       db_(std::make_unique<sql::Database>(sql::DatabaseOptions{
-          .exclusive_locking = true,
           .page_size = 4096,
           .cache_size = 500,
       })),
-      special_storage_policy_(std::move(special_storage_policy)),
       quota_manager_proxy_(std::move(quota_manager_proxy)),
       task_runner_(base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
@@ -191,12 +186,14 @@ void DatabaseTracker::DatabaseOpened(const std::string& origin_identifier,
   InsertOrUpdateDatabaseDetails(origin_identifier, database_name,
                                 database_description);
   if (database_connections_.AddConnection(origin_identifier, database_name)) {
-    *database_size = SeedOpenDatabaseInfo(origin_identifier, database_name,
+    *database_size = SeedOpenDatabaseInfo(origin_identifier,
+                                          database_name,
                                           database_description);
     return;
   }
-  *database_size = UpdateOpenDatabaseInfoAndNotify(
-      origin_identifier, database_name, &database_description);
+  *database_size  = UpdateOpenDatabaseInfoAndNotify(origin_identifier,
+                                                    database_name,
+                                                    &database_description);
 }
 
 void DatabaseTracker::DatabaseModified(const std::string& origin_identifier,
@@ -343,27 +340,29 @@ base::FilePath DatabaseTracker::GetOriginDirectory(
     }
   }
 
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
   return base::FilePath::FromUTF16Unsafe(kBaseDatabaseDir + origin_directory);
 #else
   return db_dir_.Append(base::FilePath::FromUTF16Unsafe(origin_directory));
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 }
 
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
 base::FilePath DatabaseTracker::GetFullDBFilePath(
     const std::string& origin_identifier,
     const std::u16string& database_name,
     bool suffix) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DCHECK(!origin_identifier.empty());
-  if (!LazyInit())
+  if (!LazyInit()) {
     return base::FilePath();
+  }
 
   int64_t id =
       databases_table_->GetDatabaseID(origin_identifier, database_name);
-  if (id < 0)
+  if (id < 0) {
     return base::FilePath();
+  }
 
   return GetOriginDirectory(origin_identifier)
       .AppendASCII((suffix ? base::UTF16ToASCII(database_name + kSuffixStr)
@@ -386,7 +385,7 @@ base::FilePath DatabaseTracker::GetFullDBFilePath(
   return GetOriginDirectory(origin_identifier)
       .AppendASCII(base::NumberToString(id));
 }
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
 
 bool DatabaseTracker::GetOriginInfo(const std::string& origin_identifier,
                                     OriginInfo* info) {
@@ -409,7 +408,8 @@ bool DatabaseTracker::GetAllOriginIdentifiers(
   return databases_table_->GetAllOriginIdentifiers(origin_identifiers);
 }
 
-bool DatabaseTracker::GetAllOriginsInfo(std::vector<OriginInfo>* origins_info) {
+bool DatabaseTracker::GetAllOriginsInfo(
+    std::vector<OriginInfo>* origins_info) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DCHECK(origins_info);
   DCHECK(origins_info->empty());
@@ -466,8 +466,7 @@ bool DatabaseTracker::DeleteClosedDatabase(
 
   std::vector<DatabaseDetails> details;
   if (databases_table_->GetAllDatabaseDetailsForOriginIdentifier(
-          origin_identifier, &details) &&
-      details.empty()) {
+          origin_identifier, &details) && details.empty()) {
     // Try to delete the origin in case this was the last database.
     DeleteOrigin(origin_identifier, false);
   }
@@ -498,10 +497,13 @@ bool DatabaseTracker::DeleteOrigin(const std::string& origin_identifier,
   // as we can't delete the origin directory on windows if it contains opened
   // files.
   base::FilePath new_origin_dir;
-  base::CreateTemporaryDirInDir(db_dir_, kTemporaryDirectoryPrefix,
+  base::CreateTemporaryDirInDir(db_dir_,
+                                kTemporaryDirectoryPrefix,
                                 &new_origin_dir);
-  base::FileEnumerator databases(origin_dir, false,
-                                 base::FileEnumerator::FILES);
+  base::FileEnumerator databases(
+      origin_dir,
+      false,
+      base::FileEnumerator::FILES);
   for (base::FilePath database = databases.Next(); !database.empty();
        database = databases.Next()) {
     base::FilePath new_file = new_origin_dir.Append(database.BaseName());
@@ -564,9 +566,11 @@ bool DatabaseTracker::LazyInit() {
     // If there are left-over directories from failed deletion attempts, clean
     // them up.
     if (base::DirectoryExists(db_dir_)) {
-      base::FileEnumerator directories(db_dir_, false,
-                                       base::FileEnumerator::DIRECTORIES,
-                                       kTemporaryDirectoryPattern);
+      base::FileEnumerator directories(
+          db_dir_,
+          false,
+          base::FileEnumerator::DIRECTORIES,
+          kTemporaryDirectoryPattern);
       for (base::FilePath directory = directories.Next(); !directory.empty();
            directory = directories.Next()) {
         base::DeletePathRecursively(directory);
@@ -591,7 +595,7 @@ bool DatabaseTracker::LazyInit() {
     databases_table_ = std::make_unique<DatabasesTable>(db_.get());
     meta_table_ = std::make_unique<sql::MetaTable>();
 
-    is_initialized_ = (is_incognito_ ? true : base::CreateDirectory(db_dir_)) &&
+    is_initialized_ = base::CreateDirectory(db_dir_) &&
                       (db_->is_open() ||
                        (is_incognito_ ? db_->OpenInMemory()
                                       : db_->Open(kTrackerDatabaseFullPath))) &&
@@ -630,8 +634,8 @@ void DatabaseTracker::InsertOrUpdateDatabaseDetails(
     const std::u16string& database_description) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DatabaseDetails details;
-  if (!databases_table_->GetDatabaseDetails(origin_identifier, database_name,
-                                            &details)) {
+  if (!databases_table_->GetDatabaseDetails(
+          origin_identifier, database_name, &details)) {
     details.origin_identifier = origin_identifier;
     details.database_name = database_name;
     details.description = database_description;
@@ -648,14 +652,13 @@ void DatabaseTracker::ClearAllCachedOriginInfo() {
 }
 
 DatabaseTracker::CachedOriginInfo* DatabaseTracker::MaybeGetCachedOriginInfo(
-    const std::string& origin_identifier,
-    bool create_if_needed) {
+    const std::string& origin_identifier, bool create_if_needed) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   if (!LazyInit())
     return nullptr;
 
   // Populate the cache with data for this origin if needed.
-  if (origins_info_map_.find(origin_identifier) == origins_info_map_.end()) {
+  if (!base::Contains(origins_info_map_, origin_identifier)) {
     if (!create_if_needed)
       return nullptr;
 
@@ -679,11 +682,11 @@ DatabaseTracker::CachedOriginInfo* DatabaseTracker::MaybeGetCachedOriginInfo(
       origin_info.SetDatabaseSize(db.database_name, db_file_size);
 
       base::FilePath path =
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
           GetFullDBFilePath(origin_identifier, db.database_name, true);
 #else
           GetFullDBFilePath(origin_identifier, db.database_name);
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
       base::File::Info file_info;
       // TODO(jsbell): Avoid duplicate base::GetFileInfo calls between this and
       // the GetDBFileSize() call above.
@@ -700,15 +703,12 @@ int64_t DatabaseTracker::GetDBFileSize(const std::string& origin_identifier,
                                        const std::u16string& database_name) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   base::FilePath db_file_name =
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
       GetFullDBFilePath(origin_identifier, database_name, true);
 #else
       GetFullDBFilePath(origin_identifier, database_name);
-#endif  // defined(OHOS_WEBSTORAGE)
-  int64_t db_file_size = 0;
-  if (!base::GetFileSize(db_file_name, &db_file_size))
-    db_file_size = 0;
-  return db_file_size;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+  return base::GetFileSize(db_file_name).value_or(0);
 }
 
 int64_t DatabaseTracker::SeedOpenDatabaseInfo(
@@ -718,7 +718,7 @@ int64_t DatabaseTracker::SeedOpenDatabaseInfo(
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DCHECK(database_connections_.IsDatabaseOpened(origin_id, name));
   int64_t size = GetDBFileSize(origin_id, name);
-  database_connections_.SetOpenDatabaseSize(origin_id, name, size);
+  database_connections_.SetOpenDatabaseSize(origin_id, name,  size);
   CachedOriginInfo* info = MaybeGetCachedOriginInfo(origin_id, false);
   if (info) {
     info->SetDatabaseSize(name, size);
@@ -759,8 +759,8 @@ void DatabaseTracker::ScheduleDatabaseForDeletion(
     const std::string& origin_identifier,
     const std::u16string& database_name) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  DCHECK(
-      database_connections_.IsDatabaseOpened(origin_identifier, database_name));
+  DCHECK(database_connections_.IsDatabaseOpened(origin_identifier,
+                                                database_name));
   dbs_to_be_deleted_[origin_identifier].insert(database_name);
   for (auto& observer : observers_)
     observer.OnDatabaseScheduledForDeletion(origin_identifier, database_name);
@@ -821,24 +821,18 @@ void DatabaseTracker::DeleteDataModifiedSince(
   DatabaseSet to_be_deleted;
   int rv = net::OK;
   for (const auto& origin : origins_identifiers) {
-    if (special_storage_policy_.get() &&
-        special_storage_policy_->IsStorageProtected(
-            GetOriginURLFromIdentifier(origin))) {
-      continue;
-    }
-
     std::vector<DatabaseDetails> details;
     if (!databases_table_->GetAllDatabaseDetailsForOriginIdentifier(origin,
                                                                     &details)) {
       rv = net::ERR_FAILED;
     }
     for (const DatabaseDetails& db : details) {
-#if defined(OHOS_WEBSTORAGE)
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
       base::FilePath db_file =
           GetFullDBFilePath(origin, db.database_name, true);
 #else
       base::FilePath db_file = GetFullDBFilePath(origin, db.database_name);
-#endif  // defined(OHOS_WEBSTORAGE)
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
       base::File::Info file_info;
       base::GetFileInfo(db_file, &file_info);
       if (file_info.last_modified < cutoff)
@@ -935,8 +929,9 @@ void DatabaseTracker::CloseIncognitoFileHandle(
     const std::u16string& vfs_file_name) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   DCHECK(is_incognito_);
-  DCHECK(incognito_file_handles_.find(vfs_file_name) !=
-         incognito_file_handles_.end());
+  CHECK(incognito_file_handles_.find(vfs_file_name) !=
+            incognito_file_handles_.end(),
+        base::NotFatalUntil::M130);
 
   auto it = incognito_file_handles_.find(vfs_file_name);
   if (it != incognito_file_handles_.end()) {
@@ -949,8 +944,7 @@ void DatabaseTracker::CloseIncognitoFileHandle(
 bool DatabaseTracker::HasSavedIncognitoFileHandle(
     const std::u16string& vfs_file_name) const {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  return (incognito_file_handles_.find(vfs_file_name) !=
-          incognito_file_handles_.end());
+  return base::Contains(incognito_file_handles_, vfs_file_name);
 }
 
 void DatabaseTracker::DeleteIncognitoDBDirectory() {
@@ -966,48 +960,10 @@ void DatabaseTracker::DeleteIncognitoDBDirectory() {
     base::DeletePathRecursively(incognito_db_dir);
 }
 
-void DatabaseTracker::ClearSessionOnlyOrigins() {
-  DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  bool has_session_only_databases =
-      special_storage_policy_.get() &&
-      special_storage_policy_->HasSessionOnlyOrigins();
-
-  // Clearing only session-only databases, and there are none.
-  if (!has_session_only_databases)
-    return;
-
-  if (!LazyInit())
-    return;
-
-  std::vector<std::string> origin_identifiers;
-  GetAllOriginIdentifiers(&origin_identifiers);
-
-  for (const auto& origin : origin_identifiers) {
-    GURL origin_url = GetOriginURLFromIdentifier(origin);
-    if (!special_storage_policy_->IsStorageSessionOnly(origin_url))
-      continue;
-    if (special_storage_policy_->IsStorageProtected(origin_url))
-      continue;
-    OriginInfo origin_info;
-    std::vector<std::u16string> databases;
-    GetOriginInfo(origin, &origin_info);
-    origin_info.GetAllDatabaseNames(&databases);
-
-    for (const auto& database : databases) {
-      base::File file(
-          GetFullDBFilePath(origin, database),
-          base::File::FLAG_OPEN_ALWAYS | base::File::FLAG_WIN_SHARE_DELETE |
-              base::File::FLAG_DELETE_ON_CLOSE | base::File::FLAG_READ);
-    }
-    DeleteOrigin(origin, true);
-  }
-}
-
 void DatabaseTracker::Shutdown() {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   if (shutting_down_) {
     NOTREACHED();
-    return;
   }
   shutting_down_ = true;
 
@@ -1019,14 +975,14 @@ void DatabaseTracker::Shutdown() {
 
   if (is_incognito_)
     DeleteIncognitoDBDirectory();
-  else if (!force_keep_session_state_)
-    ClearSessionOnlyOrigins();
   CloseTrackerDatabaseAndClearCaches();
-}
 
-void DatabaseTracker::SetForceKeepSessionState() {
-  DCHECK(task_runner_->RunsTasksInCurrentSequence());
-  force_keep_session_state_ = true;
+  // Explicitly destroy `db_` on the correct sequence rather than waiting for
+  // the destructor, which may run on another sequence. Destroy related fields
+  // first to prevent dangling pointers. Destruction order is important.
+  meta_table_.reset();
+  databases_table_.reset();
+  db_.reset();
 }
 
 }  // namespace storage

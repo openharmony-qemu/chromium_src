@@ -36,7 +36,6 @@ ContentSetting WakeLockPermissionContext::GetPermissionStatusInternal(
       return CONTENT_SETTING_BLOCK;
     default:
       NOTREACHED();
-      return CONTENT_SETTING_BLOCK;
   }
 }
 

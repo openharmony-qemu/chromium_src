@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "components/download/internal/background_service/in_memory_download.h"
 
 #include <memory>
@@ -155,8 +160,7 @@ class InMemoryDownloadTest : public testing::Test {
     DCHECK(blob);
     int bytes_read = 0;
     int async_bytes_read = 0;
-    scoped_refptr<net::IOBuffer> buffer =
-        base::MakeRefCounted<net::IOBuffer>(expected.size());
+    auto buffer = base::MakeRefCounted<net::IOBufferWithSize>(expected.size());
 
     auto blob_reader = blob->CreateReader();
 

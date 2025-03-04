@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 // Use the <code>system.display</code> API to query display metadata.
-[modernised_enums]
 namespace system.display {
 
   dictionary Bounds {
@@ -130,6 +129,14 @@ namespace system.display {
     long yearOfManufacture;
   };
 
+  // An enum to tell if the display is detected and used by the
+  // system. The display is considered 'inactive', if it is not
+  // detected by the system (maybe disconnected, or considered
+  // disconnected due to sleep mode, etc). This state is used to keep
+  // existing display when the all displays are disconnected, for
+  // example.
+  enum ActiveState { active, inactive };
+
   dictionary DisplayUnitInfo {
     // The unique identifier of the display.
     DOMString id;
@@ -159,6 +166,9 @@ namespace system.display {
 
     // True if this display is enabled.
     boolean isEnabled;
+
+    // Active if the display is detected and used by the system.
+    ActiveState activeState;
 
     // True for all displays when in unified desktop mode. See documentation
     // for $(ref:enableUnifiedDesktop).
@@ -283,14 +293,16 @@ namespace system.display {
   // Mirror mode, i.e. different ways of how a display is mirrored to other
   // displays.
   enum MirrorMode {
-    // Use the default mode (extended or unified desktop).
+    // Specifies the default mode (extended or unified desktop).
     off,
 
-    // The default source display will be mirrored to all other displays.
+    // Specifies that the default source display will be mirrored to all other
+    // displays.
     normal,
 
-    // The specified source display will be mirrored to the provided
-    // destination displays. All other connected displays will be extended.
+    // Specifies that the specified source display will be mirrored to the
+    // provided destination displays. All other connected displays will be
+    //  extended.
     mixed
   };
 
@@ -317,13 +329,14 @@ namespace system.display {
     // Requests the information for all attached display devices.
     // |flags|: Options affecting how the information is returned.
     // |callback|: The callback to invoke with the results.
-    [supportsPromises] static void getInfo(optional GetInfoFlags flags,
-                                           DisplayInfoCallback callback);
+    static void getInfo(
+        optional GetInfoFlags flags,
+        DisplayInfoCallback callback);
 
     // Requests the layout info for all displays.
     // NOTE: This is only available to Chrome OS Kiosk apps and Web UI.
     // |callback|: The callback to invoke with the results.
-    [supportsPromises] static void getDisplayLayout(
+    static void getDisplayLayout(
         DisplayLayoutCallback callback);
 
     // Updates the properties for the display specified by |id|, according to
@@ -337,7 +350,7 @@ namespace system.display {
     // |callback|: Empty function called when the function finishes. To find out
     //     whether the function succeeded, $(ref:runtime.lastError) should be
     //     queried.
-    [supportsPromises] static void setDisplayProperties(
+    static void setDisplayProperties(
         DOMString id,
         DisplayProperties info,
         optional SetDisplayUnitInfoCallback callback);
@@ -352,7 +365,7 @@ namespace system.display {
     // |callback|: Empty function called when the function finishes. To find out
     //     whether the function succeeded, $(ref:runtime.lastError) should be
     //     queried.
-    [supportsPromises] static void setDisplayLayout(
+    static void setDisplayLayout(
         DisplayLayout[] layouts,
         optional SetDisplayLayoutCallback callback);
 
@@ -396,7 +409,7 @@ namespace system.display {
     // |callback|: Optional callback to inform the caller that the touch
     //      calibration has ended. The argument of the callback informs if the
     //      calibration was a success or not.
-    [supportsPromises] static void showNativeTouchCalibration(
+    static void showNativeTouchCalibration(
         DOMString id,
         optional NativeTouchCalibrationCallback callback);
 
@@ -432,7 +445,7 @@ namespace system.display {
     // |callback|: Empty function called when the function finishes. To find out
     //     whether the function succeeded, $(ref:runtime.lastError) should be
     //     queried.
-    [supportsPromises] static void setMirrorMode(
+    static void setMirrorMode(
         MirrorModeInfo info,
         optional SetMirrorModeCallback callback);
   };

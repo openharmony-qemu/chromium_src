@@ -1,0 +1,245 @@
+import("//arkweb/build/features/features.gni")
+
+arkweb_components_crash_core_app_sources = [
+  "//arkweb/chromium_ext/components/crash/core/app/crashpad_ohos.cc",
+]
+
+arkweb_chrome_enterprise_connectors_analysis = [
+  "//arkweb/chromium_ext/chrome/enterprise/connectors/analysis",
+]
+
+arkweb_base_ohos_sources = [
+  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext.cc",
+  "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h",
+]
+
+arkweb_base_sources = [
+  "//arkweb/chromium_ext/base/report_loss_frame_ext.cc",
+  "//arkweb/chromium_ext/base/report_loss_frame_ext.h",
+]
+
+arkweb_content_public_common_sources = [
+  "//arkweb/chromium_ext/content/public/common/content_switches_ext.cc",
+  "//arkweb/chromium_ext/content/public/common/content_switches_ext.h",
+]
+
+arkweb_content_renderer_sources = [
+  "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
+  "//arkweb/chromium_ext/content/renderer/host_proxy.h",
+  "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
+  "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client.h",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client_factory.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h",
+]
+
+arkweb_native_scroller_sources = [
+  "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.cc",
+  "//arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.h",
+]
+
+arkweb_battery_sources = [
+  "//arkweb/chromium_ext/service/device/battery/battery_status_manager_ohos.cc",
+]
+
+arkweb_screen_lock_sources = [
+  "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.cc",
+  "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/nweb_screen_lock_tracker.h",
+]
+
+if (arkweb_encrypt) {
+  arkweb_components_os_crpty_sync_source = [
+  "//arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto.cc",
+  "//arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto.h",
+  "//arkweb/chromium_ext/components/os_crypt/sync/ohos_keystore.cc",
+  "//arkweb/chromium_ext/components/os_crypt/sync/ohos_keystore.h",
+  ]
+}
+
+arkweb_content_browser_display_cutout_sources = [
+  "//arkweb/chromium_ext/content/browser/display_cutout/display_cutout_host_ohos.cc",
+  "//arkweb/chromium_ext/content/browser/display_cutout/display_cutout_host_ohos.h",
+]
+
+arkweb_components_viz_service_display_sources = [
+  "//arkweb/chromium_ext/components/viz/service/display/frame_dump_copy_output_request.cc",
+  "//arkweb/chromium_ext/components/viz/service/display/frame_dump_copy_output_request.h",
+]
+
+arkweb_components_viz_service_frame_sinks_sources = [
+  "//arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.cc",
+  "//arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h",
+]
+
+arkweb_third_patry_skia_src_ports_sources = [
+  "//arkweb/chromium_ext/third_party/skia/src/ports/FontConfig_ohos.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontMgr_ohos.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkFontStyleSet_ohos.cpp",
+  "//arkweb/chromium_ext/third_party/skia/src/ports/SkTypeface_ohos.cpp",
+]
+
+arkweb_ui_events_devices_sources = [
+  "//arkweb/chromium_ext/ui/events/devices/mmi_device_info_adapter_impl.cc",
+  "//arkweb/chromium_ext/ui/events/devices/mmi_device_info_adapter_impl.h",
+]
+
+arkweb_content_browser_media_ohos_sources = [
+  "//arkweb/chromium_ext/content/browser/media/ohos/native_web_contents_observer.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/native_web_contents_observer.h",
+]
+
+arkweb_content_public_browser_sources = [
+  "//arkweb/chromium_ext/content/public/browser/native_embed_info.cc",
+  "//arkweb/chromium_ext/content/public/browser/native_embed_info.h",
+  "//arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h",
+]
+
+arkweb_content_render_sources = []
+if (arkweb_renderer_anr_dump) {
+  arkweb_content_render_sources += [
+    "//arkweb/chromium_ext/content/renderer/anr_dumper.cc",
+    "//arkweb/chromium_ext/content/renderer/anr_dumper.h",
+  ]
+}
+
+arkweb_content_renderer_media_ohos_sources = [
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client.h",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client_factory.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client_factory.h",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_factory.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_factory.h",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_wrapper_impl.cc",
+  "//arkweb/chromium_ext/content/renderer/media/ohos/native_texture_wrapper_impl.h",
+  "//arkweb/chromium_ext/content/renderer/media/renderer_web_native_delegate.cc",
+  "//arkweb/chromium_ext/content/renderer/media/renderer_web_native_delegate.h",
+  "//arkweb/chromium_ext/content/renderer/stream_texture_host_ohos.cc",
+  "//arkweb/chromium_ext/content/renderer/stream_texture_host_ohos.h",
+]
+
+arkweb_media_base_sources = [
+  "//arkweb/chromium_ext/media/base/native_pipeline.h",
+  "//arkweb/chromium_ext/media/base/native_pipeline_impl.cc",
+  "//arkweb/chromium_ext/media/base/native_pipeline_impl.h",
+  "//arkweb/chromium_ext/media/base/native_texture_wrapper.h",
+]
+
+arkweb_media_filters_sources = [
+  "//arkweb/chromium_ext/media/filters/native_pipeline_controller.cc",
+  "//arkweb/chromium_ext/media/filters/native_pipeline_controller.h",
+]
+
+arkweb_media_mojo_mojom_sources = [
+  "//arkweb/chromium_ext/media/mojo/mojom/native_bridge.mojom",
+]
+
+arkweb_copy_option_mojom_sources = [
+  "//arkweb/chromium_ext/third_party/blink/public/mojom/copy_options.mojom",
+]
+
+arkweb_third_patry_blink_public_platform_sources = [
+  "//arkweb/chromium_ext/third_party/blink/public/platform/web_native_client.h",
+]
+
+arkweb_third_patry_blink_public_platform_media_sources = [
+  "//arkweb/chromium_ext/third_party/blink/public/platform/media/web_native_delegate.h",
+]
+
+
+arkweb_third_patry_blink_renderer_core_layout_resources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_native.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_native.h",
+]
+
+arkweb_third_patry_blink_renderer_core_paint_resources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/native_painter.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/native_painter.h",
+]
+
+arkweb_third_patry_blink_renderer_platform_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge_impl.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge_impl.h",
+]
+
+arkweb_components_policy_core_common_sources = [
+  "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos.cc",
+  "//arkweb/chromium_ext/components/policy/core/common/policy_loader_ohos.h",
+]
+
+arkweb_native_event_queue_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/native_embed_event_queue.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/native_embed_event_queue.h",
+]
+
+arkweb_content_browser_font_unique_name_lookup_sources = [
+  "//arkweb/chromium_ext/content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.cc",
+  "//arkweb/chromium_ext/content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h",
+]
+
+arkweb_content_browser_code_cache_sources = [
+  "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache.cc",
+  "//arkweb/chromium_ext/content/browser/code_cache/oh_code_cache.h",
+]
+
+arkweb_content_browser_media_sources = [
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer_web_contents_observer.h",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.h",
+]
+
+arkweb_third_patry_blink_renderer_core_loader_sources = [
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/native_loader.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/loader/native_loader.h",
+]
+
+arkweb_base_unittest_sources = [
+  "//arkweb/chromium_ext/base/message_loop/message_pump_ohos_unittest.cc",
+  "//arkweb/chromium_ext/base/memory/platform_shared_memory_mapper_ohos_unittests.cc",
+  "//arkweb/chromium_ext/base/trace_event/trace_event_ohos_unittest.cc",
+  "//arkweb/chromium_ext/base/base_paths_ohos_unittest.cc",
+  "//arkweb/chromium_ext/base/datashare_uri_utils_unittest.cc",
+  "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor_unittests.cc",
+  "//arkweb/chromium_ext/base/report_loss_frame_unittest.cc",
+  "//arkweb/chromium_ext/base/debug/stack_trace_ohos_unittest.cc",
+  "//arkweb/chromium_ext/base/files/file_util_posix_unittest.cc",
+]
+
+arkweb_base_trace_event_sources = [
+  "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc",
+  "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h",
+]
+
+arkweb_url_log_utils_sources = [
+  "//arkweb/chromium_ext/url/ohos/log_utils.cc",
+  "//arkweb/chromium_ext/url/ohos/log_utils.h",
+]
+
+arkweb_content_overscroll_controller_ohos_sources = [
+  "//arkweb/chromium_ext/content/browser/ohos/overscroll_controller_ohos.cc",
+  "//arkweb/chromium_ext/content/browser/ohos/overscroll_controller_ohos.h",
+]
+
+arkweb_content_renderer_test_sources = [
+  "//arkweb/chromium_ext/content/renderer/host_proxy_unittest.cc",
+  "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos_unittest.cc",
+]
+
+arkweb_gpu_ipc_common_test_sources = [
+  "//arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker_unittest.cc",
+]
+
+arkweb_ui_compositor_test_sources = [
+  "//arkweb/chromium_ext/ui/compositor/compositor_unittests.cc",
+]
+
+arkweb_third_party_blink_renderer_platform_widget_input_test_sources = [
+  #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/software_compositor_proxy_ohos_unittest.cc",
+  #"//arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_unittest.cc",
+]
+
+arkweb_content_common_sources = [
+  "//arkweb/chromium_ext/content/common/native_embed_first_paint_event.h",
+]

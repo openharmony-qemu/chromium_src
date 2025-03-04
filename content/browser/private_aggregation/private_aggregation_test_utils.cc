@@ -4,10 +4,12 @@
 
 #include "content/browser/private_aggregation/private_aggregation_test_utils.h"
 
+#include <memory>
 #include <tuple>
 
 #include "base/functional/callback_helpers.h"
 #include "content/browser/private_aggregation/private_aggregation_budget_key.h"
+#include "content/browser/storage_partition_impl.h"
 
 namespace content {
 
@@ -16,13 +18,20 @@ MockPrivateAggregationBudgeter::~MockPrivateAggregationBudgeter() = default;
 
 MockPrivateAggregationHost::MockPrivateAggregationHost()
     : PrivateAggregationHost(
-          /*on_report_request_received=*/base::DoNothing(),
+          /*on_report_request_details_received=*/base::DoNothing(),
           &test_browser_context_) {}
 
 MockPrivateAggregationHost::~MockPrivateAggregationHost() = default;
 
-MockPrivateAggregationManager::MockPrivateAggregationManager() = default;
-MockPrivateAggregationManager::~MockPrivateAggregationManager() = default;
+MockPrivateAggregationManagerImpl::MockPrivateAggregationManagerImpl(
+    StoragePartitionImpl* partition)
+    : PrivateAggregationManagerImpl(
+          std::make_unique<MockPrivateAggregationBudgeter>(),
+          std::make_unique<MockPrivateAggregationHost>(),
+          partition) {}
+
+MockPrivateAggregationManagerImpl::~MockPrivateAggregationManagerImpl() =
+    default;
 
 bool operator==(const PrivateAggregationBudgetKey::TimeWindow& a,
                 const PrivateAggregationBudgetKey::TimeWindow& b) {

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "gpu/command_buffer/service/gl_utils.h"
 
 #include <algorithm>
@@ -17,6 +22,7 @@
 #include "ui/gl/gl_version_info.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
+#include <sys/stat.h>
 #include "ui/gl/gl_surface_egl.h"
 #endif
 
@@ -119,8 +125,7 @@ bool PrecisionMeetsSpecForHighpFloat(GLint rangeMin,
   return (rangeMin >= 62) && (rangeMax >= 62) && (precision >= 16);
 }
 
-void QueryShaderPrecisionFormat(const gl::GLVersionInfo& gl_version_info,
-                                GLenum shader_type,
+void QueryShaderPrecisionFormat(GLenum shader_type,
                                 GLenum precision_type,
                                 GLint* range,
                                 GLint* precision) {
@@ -143,53 +148,56 @@ void QueryShaderPrecisionFormat(const gl::GLVersionInfo& gl_version_info,
       break;
     default:
       NOTREACHED();
-      break;
   }
 
-  if (gl_version_info.is_es) {
-    // This function is sometimes defined even though it's really just
-    // a stub, so we need to set range and precision as if it weren't
-    // defined before calling it.
-    // On Mac OS with some GPUs, calling this generates a
-    // GL_INVALID_OPERATION error. Avoid calling it on non-GLES2
-    // platforms.
-    glGetShaderPrecisionFormat(shader_type, precision_type, range, precision);
+  // This function is sometimes defined even though it's really just
+  // a stub, so we need to set range and precision as if it weren't
+  // defined before calling it.
+  // On Mac OS with some GPUs, calling this generates a
+  // GL_INVALID_OPERATION error. Avoid calling it on non-GLES2
+  // platforms.
+  glGetShaderPrecisionFormat(shader_type, precision_type, range, precision);
 
-    // TODO(brianderson): Make the following official workarounds.
+  // TODO(brianderson): Make the following official workarounds.
 
-    // Some drivers have bugs where they report the ranges as a negative number.
-    // Taking the absolute value here shouldn't hurt because negative numbers
-    // aren't expected anyway.
-    range[0] = abs(range[0]);
-    range[1] = abs(range[1]);
+  // Some drivers have bugs where they report the ranges as a negative number.
+  // Taking the absolute value here shouldn't hurt because negative numbers
+  // aren't expected anyway.
+  range[0] = abs(range[0]);
+  range[1] = abs(range[1]);
 
-    // If the driver reports a precision for highp float that isn't actually
-    // highp, don't pretend like it's supported because shader compilation will
-    // fail anyway.
-    if (precision_type == GL_HIGH_FLOAT &&
-        !PrecisionMeetsSpecForHighpFloat(range[0], range[1], *precision)) {
-      range[0] = 0;
-      range[1] = 0;
-      *precision = 0;
-    }
+  // If the driver reports a precision for highp float that isn't actually
+  // highp, don't pretend like it's supported because shader compilation will
+  // fail anyway.
+  if (precision_type == GL_HIGH_FLOAT &&
+      !PrecisionMeetsSpecForHighpFloat(range[0], range[1], *precision)) {
+    range[0] = 0;
+    range[1] = 0;
+    *precision = 0;
   }
 }
 
 void PopulateNumericCapabilities(Capabilities* caps,
                                  const FeatureInfo* feature_info) {
   DCHECK(caps != nullptr);
+  glGetIntegerv(GL_MAX_TEXTURE_SIZE, &caps->max_texture_size);
+}
 
-  const gl::GLVersionInfo& version_info = feature_info->gl_version_info();
-  caps->VisitPrecisions([&version_info](
-                            GLenum shader, GLenum type,
-                            Capabilities::ShaderPrecision* shader_precision) {
+void PopulateGLCapabilities(GLCapabilities* caps,
+                            const FeatureInfo* feature_info) {
+  CHECK(caps);
+
+  caps->VisitPrecisions([](GLenum shader, GLenum type,
+                           GLCapabilities::ShaderPrecision* shader_precision) {
     GLint range[2] = {0, 0};
     GLint precision = 0;
-    QueryShaderPrecisionFormat(version_info, shader, type, range, &precision);
+    QueryShaderPrecisionFormat(shader, type, range, &precision);
     shader_precision->min_range = range[0];
     shader_precision->max_range = range[1];
     shader_precision->precision = precision;
   });
+
+  glGetIntegerv(GL_MAX_TEXTURE_SIZE, &caps->max_texture_size);
 
   glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS,
                 &caps->max_combined_texture_image_units);
@@ -198,7 +206,6 @@ void PopulateNumericCapabilities(Capabilities* caps,
                 &caps->max_fragment_uniform_vectors);
   glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &caps->max_renderbuffer_size);
   glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &caps->max_texture_image_units);
-  glGetIntegerv(GL_MAX_TEXTURE_SIZE, &caps->max_texture_size);
   glGetIntegerv(GL_MAX_VARYING_VECTORS, &caps->max_varying_vectors);
   glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &caps->max_vertex_attribs);
   glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
@@ -214,7 +221,8 @@ void PopulateNumericCapabilities(Capabilities* caps,
   glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS,
                 &caps->num_compressed_texture_formats);
   glGetIntegerv(GL_NUM_SHADER_BINARY_FORMATS, &caps->num_shader_binary_formats);
-
+  glGetIntegerv(GL_BIND_GENERATES_RESOURCE_CHROMIUM,
+                &caps->bind_generates_resource_chromium);
   if (feature_info->IsWebGL2OrES3OrHigherContext()) {
     glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &caps->max_3d_texture_size);
     glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &caps->max_array_texture_layers);
@@ -255,12 +263,10 @@ void PopulateNumericCapabilities(Capabilities* caps,
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS,
                   &caps->max_vertex_uniform_components);
     glGetIntegerv(GL_MIN_PROGRAM_TEXEL_OFFSET, &caps->min_program_texel_offset);
-    glGetIntegerv(GL_NUM_EXTENSIONS, &caps->num_extensions);
     glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS,
                   &caps->num_program_binary_formats);
     glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT,
                   &caps->uniform_buffer_offset_alignment);
-    caps->major_version = 3;
     if (feature_info->IsES31ForTestingContext()) {
       glGetIntegerv(GL_MAX_ATOMIC_COUNTER_BUFFER_BINDINGS,
                     &caps->max_atomic_counter_buffer_bindings);
@@ -268,15 +274,21 @@ void PopulateNumericCapabilities(Capabilities* caps,
                     &caps->max_shader_storage_buffer_bindings);
       glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT,
                     &caps->shader_storage_buffer_offset_alignment);
-      caps->minor_version = 1;
-    } else {
-      caps->minor_version = 0;
     }
   }
   if (feature_info->feature_flags().multisampled_render_to_texture ||
       feature_info->feature_flags().chromium_framebuffer_multisample ||
       feature_info->IsWebGL2OrES3OrHigherContext()) {
     glGetIntegerv(GL_MAX_SAMPLES, &caps->max_samples);
+  }
+
+  if (feature_info->IsWebGL2OrES3OrHigherContext()) {
+    caps->major_version = 3;
+    if (feature_info->IsES31ForTestingContext()) {
+      caps->minor_version = 1;
+    } else {
+      caps->minor_version = 0;
+    }
   }
 }
 
@@ -313,19 +325,30 @@ void PopulateDRMCapabilities(Capabilities* caps,
     device_extension_set = gfx::ExtensionSet();
   }
 
+  std::string drm_render_node;
   if (gfx::HasExtension(device_extension_set,
                         "EGL_EXT_device_drm_render_node")) {
     const char* path =
         eglQueryDeviceStringEXT(egl_device, EGL_DRM_RENDER_NODE_FILE_EXT);
     if (path)
-      caps->drm_render_node = std::string(path);
+      drm_render_node = std::string(path);
   }
-  if (caps->drm_render_node.empty() &&
+  if (drm_render_node.empty() &&
       gfx::HasExtension(device_extension_set, "EGL_EXT_device_drm")) {
     const char* path =
         eglQueryDeviceStringEXT(egl_device, EGL_DRM_DEVICE_FILE_EXT);
     if (path)
-      caps->drm_render_node = std::string(path);
+      drm_render_node = std::string(path);
+  }
+
+  if (!drm_render_node.empty()) {
+    struct stat dev_stat;
+    if (stat(drm_render_node.c_str(), &dev_stat) == 0) {
+      static_assert(sizeof(dev_t) <= sizeof(caps->drm_device_id),
+                    "unexpected dev_t size");
+      DCHECK(dev_stat.st_rdev);
+      caps->drm_device_id = dev_stat.st_rdev;
+    }
   }
 
   EGLint num_formats = 0;
@@ -458,7 +481,6 @@ error::ContextLostReason GetContextLostReasonFromResetStatus(
   }
 
   NOTREACHED();
-  return error::kUnknown;
 }
 
 bool GetCompressedTexSizeInBytes(const char* function_name,
@@ -976,15 +998,6 @@ bool ValidateCopyTexFormatHelper(const FeatureInfo* feature_info,
     *output_error_msg = std::string("no valid color image");
     return false;
   }
-  // YUV formats are not valid for CopyTex[Sub]Image.
-  if (internal_format == GL_RGB_YCRCB_420_CHROMIUM ||
-      internal_format == GL_RGB_YCBCR_420V_CHROMIUM ||
-      internal_format == GL_RGB_YCBCR_P010_CHROMIUM ||
-      read_format == GL_RGB_YCRCB_420_CHROMIUM ||
-      read_format == GL_RGB_YCBCR_420V_CHROMIUM ||
-      read_format == GL_RGB_YCBCR_P010_CHROMIUM) {
-    return false;
-  }
   // Check we have compatible formats.
   uint32_t channels_exist = GLES2Util::GetChannelsForFormat(read_format);
   uint32_t channels_needed = GLES2Util::GetChannelsForFormat(internal_format);
@@ -1067,9 +1080,7 @@ CopyTextureMethod GetCopyTextureCHROMIUMMethod(const FeatureInfo* feature_info,
 #endif
     // RGB9_E5 isn't accepted by glCopyTexImage2D if underlying context is ES.
     case GL_RGB9_E5:
-      if (feature_info->gl_version_info().is_es)
-        return CopyTextureMethod::DRAW_AND_READBACK;
-      break;
+      return CopyTextureMethod::DRAW_AND_READBACK;
     // SRGB format has color-space conversion issue. WebGL spec doesn't define
     // clearly if linear-to-srgb color space conversion is required or not when
     // uploading DOM elements to SRGB textures. WebGL conformance test expects
@@ -1104,10 +1115,10 @@ CopyTextureMethod GetCopyTextureCHROMIUMMethod(const FeatureInfo* feature_info,
   // GL_RGB10_A2 attachment to an unsized internal format is valid. Most drivers
   // interpreted the explicit call out as not valid (and dEQP actually checks
   // this), so avoid DIRECT_COPY in that case.
-  if (feature_info->gl_version_info().is_es &&
-      source_internal_format == GL_RGB10_A2 &&
-      dest_internal_format != source_internal_format)
+  if (source_internal_format == GL_RGB10_A2 &&
+      dest_internal_format != source_internal_format) {
     copy_tex_image_format_valid = false;
+  }
 
   // TODO(qiankun.miao@intel.com): for WebGL 2.0 or OpenGL ES 3.0, both
   // DIRECT_DRAW path for dest_level > 0 and DIRECT_COPY path for source_level >
@@ -1224,10 +1235,6 @@ bool ValidateCopyTextureCHROMIUMInternalFormats(const FeatureInfo* feature_info,
       source_internal_format == GL_LUMINANCE_ALPHA ||
       source_internal_format == GL_BGRA_EXT ||
       source_internal_format == GL_BGRA8_EXT ||
-      source_internal_format == GL_RGB_YCRCB_420_CHROMIUM ||
-      source_internal_format == GL_RGB_YCBCR_420V_CHROMIUM ||
-      source_internal_format == GL_RGB_YCBCR_422_CHROMIUM ||
-      source_internal_format == GL_RGB_YCBCR_P010_CHROMIUM ||
       source_internal_format == GL_R16_EXT ||
       source_internal_format == GL_RG16_EXT ||
       source_internal_format == GL_RGBA16_EXT ||
@@ -1266,26 +1273,6 @@ GLenum GetTextureBindingQuery(GLenum texture_type) {
       return GL_TEXTURE_BINDING_CUBE_MAP;
     default:
       NOTREACHED();
-      return 0;
-  }
-}
-
-bool GetGFXBufferFormat(GLenum internal_format, gfx::BufferFormat* out_format) {
-  switch (internal_format) {
-    case GL_RGBA8_OES:
-      *out_format = gfx::BufferFormat::RGBA_8888;
-      return true;
-    case GL_BGRA8_EXT:
-      *out_format = gfx::BufferFormat::BGRA_8888;
-      return true;
-    case GL_RGBA16F_EXT:
-      *out_format = gfx::BufferFormat::RGBA_F16;
-      return true;
-    case GL_R8_EXT:
-      *out_format = gfx::BufferFormat::R_8;
-      return true;
-    default:
-      return false;
   }
 }
 

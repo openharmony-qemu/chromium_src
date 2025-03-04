@@ -12,6 +12,7 @@
 
 #include "base/allocator/buildflags.h"
 #include "base/logging.h"
+#include "build/blink_buildflags.h"
 #include "build/build_config.h"
 
 #if !BUILDFLAG(IS_FUCHSIA)
@@ -24,8 +25,7 @@
 #include <malloc.h>
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 #include <features.h>
 
 #include "base/numerics/safe_conversions.h"
@@ -106,8 +106,8 @@ void IncreaseFdLimitTo(unsigned int max_descriptors) {
 
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)) && !defined(__MUSL__)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 namespace {
 
 size_t GetMallocUsageMallinfo() {

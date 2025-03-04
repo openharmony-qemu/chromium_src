@@ -18,7 +18,7 @@ class FrameSinkId;
 
 class DisplayClient {
  public:
-  virtual ~DisplayClient() {}
+  virtual ~DisplayClient() = default;
   virtual void DisplayOutputSurfaceLost() = 0;
   // It is expected that |render_pass| would only be modified to insert debug
   // quads.
@@ -36,6 +36,9 @@ class DisplayClient {
   virtual base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
       const FrameSinkId& id,
       mojom::CompositorFrameSinkType* type) = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

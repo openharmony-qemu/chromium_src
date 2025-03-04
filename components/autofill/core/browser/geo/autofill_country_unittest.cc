@@ -2,13 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "components/autofill/core/browser/geo/autofill_country.h"
+
 #include <set>
 #include <string>
 
 #include "base/containers/contains.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/scoped_feature_list.h"
-#include "components/autofill/core/browser/geo/autofill_country.h"
+#include "components/autofill/core/browser/field_types.h"
+#include "components/autofill/core/browser/geo/address_i18n.h"
 #include "components/autofill/core/browser/geo/country_data.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -18,11 +21,11 @@
 #include "base/android/build_info.h"
 #endif
 
-using autofill::CountryDataMap;
-using base::ASCIIToUTF16;
-using ::i18n::addressinput::AddressField;
-
 namespace autofill {
+namespace {
+
+using ::base::ASCIIToUTF16;
+using ::i18n::addressinput::AddressField;
 
 // Test the constructor and accessors
 TEST(AutofillCountryTest, AutofillCountry) {
@@ -79,11 +82,12 @@ TEST(AutofillCountryTest, UsaAddressRequirements) {
   EXPECT_TRUE(country.requires_city());
   EXPECT_TRUE(country.requires_line1());
 
-  // The same expectations via libaddressinput AddressField.
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::POSTAL_CODE));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::ADMIN_AREA));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::LOCALITY));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::STREET_ADDRESS));
+  // The same expectations via FieldType.
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_ZIP));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STATE));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_CITY));
+  EXPECT_TRUE(
+      country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STREET_ADDRESS));
 }
 
 // Test that unknown country codes have US requirements.
@@ -114,11 +118,12 @@ TEST(AutofillCountryTest, BrAddressRequirements) {
   EXPECT_TRUE(country.requires_city());
   EXPECT_TRUE(country.requires_line1());
 
-  // The same expectations via libaddressinput AddressField.
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::POSTAL_CODE));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::ADMIN_AREA));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::LOCALITY));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::STREET_ADDRESS));
+  // The same expectations via FieldType.
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_ZIP));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STATE));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_CITY));
+  EXPECT_TRUE(
+      country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STREET_ADDRESS));
 }
 
 // Test the address requirement method for Turkey.
@@ -135,31 +140,12 @@ TEST(AutofillCountryTest, TrAddressRequirements) {
   EXPECT_TRUE(country.requires_city());
   EXPECT_TRUE(country.requires_line1());
 
-  // The same expectations via libaddressinput AddressField.
-  EXPECT_FALSE(country.IsAddressFieldRequired(AddressField::POSTAL_CODE));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::ADMIN_AREA));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::LOCALITY));
-  EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::STREET_ADDRESS));
-}
-
-// Test the full name requirement depending on the
-// kAutofillRequireNameForProfileImport feature flag.
-TEST(AutofillCountryTest, IsAddressFieldRequired_RequireName) {
-  AutofillCountry country("US", "en_US");
-
-  {
-    base::test::ScopedFeatureList scoped_feature_list;
-    scoped_feature_list.InitAndDisableFeature(
-        features::kAutofillRequireNameForProfileImport);
-    EXPECT_FALSE(country.IsAddressFieldRequired(AddressField::RECIPIENT));
-  }
-
-  {
-    base::test::ScopedFeatureList scoped_feature_list;
-    scoped_feature_list.InitAndEnableFeature(
-        features::kAutofillRequireNameForProfileImport);
-    EXPECT_TRUE(country.IsAddressFieldRequired(AddressField::RECIPIENT));
-  }
+  // The same expectations via FieldType.
+  EXPECT_FALSE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_ZIP));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STATE));
+  EXPECT_TRUE(country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_CITY));
+  EXPECT_TRUE(
+      country.IsAddressFieldRequired(FieldType::ADDRESS_HOME_STREET_ADDRESS));
 }
 
 // Test mapping all country codes to country names.
@@ -176,8 +162,9 @@ TEST(AutofillCountryTest, AllCountryCodesHaveCountryName) {
   const std::vector<std::string>& country_codes =
       CountryDataMap::GetInstance()->country_codes();
   for (const std::string& country_code : country_codes) {
-    if (base::Contains(expected_failures, country_code))
+    if (base::Contains(expected_failures, country_code)) {
       continue;
+    }
     SCOPED_TRACE("Country code '" + country_code + "' should have a name.");
     EXPECT_NE(ASCIIToUTF16(country_code),
               AutofillCountry(country_code, "en").name());
@@ -220,9 +207,17 @@ TEST(AutofillCountryTest, VerifyAddressFormatExtensions) {
       EXPECT_FALSE(rule.separator_before_label.empty());
       // `rule.type` is not part of `country_code`'s address format, but
       // `rule.placed_after` is.
-      EXPECT_FALSE(::i18n::addressinput::IsFieldUsed(rule.type, country_code));
-      EXPECT_TRUE(
-          ::i18n::addressinput::IsFieldUsed(rule.placed_after, country_code));
+      ::i18n::addressinput::AddressField libaddressinput_field;
+      bool is_valid_field =
+          i18n::FieldForType(rule.type, &libaddressinput_field);
+      EXPECT_TRUE(!is_valid_field || !::i18n::addressinput::IsFieldUsed(
+                                         libaddressinput_field, country_code));
+
+      ::i18n::addressinput::AddressField libaddressinput_place_after;
+      ASSERT_TRUE(
+          i18n::FieldForType(rule.placed_after, &libaddressinput_place_after));
+      EXPECT_TRUE(::i18n::addressinput::IsFieldUsed(libaddressinput_place_after,
+                                                    country_code));
       // `IsAddressFieldSettingAccessible` considers `rule.type`
       // setting-accessible.
       EXPECT_TRUE(country.IsAddressFieldSettingAccessible(rule.type));
@@ -230,4 +225,15 @@ TEST(AutofillCountryTest, VerifyAddressFormatExtensions) {
   }
 }
 
+// Test the address requirement method for Poland.
+TEST(AutofillCountryTest, PLAddressRequirements) {
+  AutofillCountry country("PL", "pl_PL");
+  base::test::ScopedFeatureList enabled{features::kAutofillUsePLAddressModel};
+
+  EXPECT_FALSE(country.requires_state());
+  EXPECT_TRUE(
+      country.IsAddressFieldSettingAccessible(FieldType::ADDRESS_HOME_STATE));
+}
+
+}  // namespace
 }  // namespace autofill

@@ -91,7 +91,6 @@ class MockProximityAuthPrefManager : public ProximityAuthProfilePrefManager {
   MockProximityAuthPrefManager& operator=(const MockProximityAuthPrefManager&) =
       delete;
 
-  ~MockProximityAuthPrefManager() override {}
   MOCK_CONST_METHOD0(GetLastPasswordEntryTimestampMs, int64_t());
 };
 
@@ -101,7 +100,7 @@ class TestableProximityAuthSystem : public ProximityAuthSystem {
   TestableProximityAuthSystem(
       ash::secure_channel::SecureChannelClient* secure_channel_client,
       std::unique_ptr<UnlockManager> unlock_manager,
-      ProximityAuthPrefManager* pref_manager)
+      ProximityAuthProfilePrefManager* pref_manager)
       : ProximityAuthSystem(secure_channel_client, std::move(unlock_manager)),
         life_cycle_(nullptr) {}
 
@@ -116,14 +115,14 @@ class TestableProximityAuthSystem : public ProximityAuthSystem {
  private:
   std::unique_ptr<RemoteDeviceLifeCycle> CreateRemoteDeviceLifeCycle(
       ash::multidevice::RemoteDeviceRef remote_device,
-      absl::optional<ash::multidevice::RemoteDeviceRef> local_device) override {
+      std::optional<ash::multidevice::RemoteDeviceRef> local_device) override {
     std::unique_ptr<FakeRemoteDeviceLifeCycle> life_cycle(
         new FakeRemoteDeviceLifeCycle(remote_device, local_device));
     life_cycle_ = life_cycle.get();
     return life_cycle;
   }
 
-  raw_ptr<FakeRemoteDeviceLifeCycle, ExperimentalAsh> life_cycle_;
+  raw_ptr<FakeRemoteDeviceLifeCycle, DanglingUntriaged> life_cycle_;
 };
 
 }  // namespace
@@ -208,7 +207,7 @@ class ProximityAuthSystemTest : public testing::Test {
   std::unique_ptr<ash::secure_channel::FakeSecureChannelClient>
       fake_secure_channel_client_;
   std::unique_ptr<TestableProximityAuthSystem> proximity_auth_system_;
-  raw_ptr<MockUnlockManager, ExperimentalAsh> unlock_manager_;
+  raw_ptr<MockUnlockManager> unlock_manager_;
   std::unique_ptr<MockProximityAuthPrefManager> pref_manager_;
   std::unique_ptr<ash::multidevice_setup::FakeMultiDeviceSetupClient>
       fake_multidevice_setup_client_;

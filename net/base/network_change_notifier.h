@@ -13,10 +13,15 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/observer_list_threadsafe.h"
+#include "base/strings/cstring_view.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "net/base/net_export.h"
 #include "net/base/network_handle.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "net/base/address_map_linux.h"
@@ -70,7 +75,7 @@ class NET_EXPORT NetworkChangeNotifier {
   // A Java counterpart will be generated for this enum.
   // GENERATED_JAVA_ENUM_PACKAGE: org.chromium.net
   //
-  // TODO(crbug.com/1127134): Introduce subtypes for 5G networks once they can
+  // TODO(crbug.com/40148439): Introduce subtypes for 5G networks once they can
   // be detected.
   enum ConnectionSubtype {
     SUBTYPE_UNKNOWN = 0,
@@ -332,7 +337,7 @@ class NET_EXPORT NetworkChangeNotifier {
   };
 
 #if BUILDFLAG(IS_CHROMEOS_LACROS)
-  // TODO(crbug.com/1347382): Remove this section and align the behavior
+  // TODO(crbug.com/40232923): Remove this section and align the behavior
   // with other platforms or confirm that Lacros needs to be separated.
   static constexpr ConnectionType kDefaultInitialConnectionType =
       CONNECTION_UNKNOWN;
@@ -566,7 +571,14 @@ class NET_EXPORT NetworkChangeNotifier {
   static bool IsTestNotificationsOnly() { return test_notifications_only_; }
 
   // Returns a string equivalent to |type|.
-  static const char* ConnectionTypeToString(ConnectionType type);
+  static base::cstring_view ConnectionTypeToString(ConnectionType type);
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  static const std::vector<std::string> GetDnsServers();
+#endif
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  static void BindToNetwork(int32_t network_for_dns);
+#endif
 
   // Allows a second NetworkChangeNotifier to be created for unit testing, so
   // the test suite can create a MockNetworkChangeNotifier, but platform
@@ -658,6 +670,13 @@ class NET_EXPORT NetworkChangeNotifier {
 
   virtual bool IsDefaultNetworkActiveInternal();
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual const std::vector<std::string> GetCurrentDnsServers();
+#endif
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  virtual void BindDnsToNetwork(int32_t network_for_dns);
+#endif
+
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in
   // tests.
@@ -684,13 +703,6 @@ class NET_EXPORT NetworkChangeNotifier {
   // Clears the global NetworkChangeNotifier pointer.  This should be called
   // as early as possible in the destructor to prevent races.
   void ClearGlobalPointer();
-
-  // Called whenever a new ConnectionCostObserver is added. This method is
-  // needed so that the implementation class can be notified and
-  // potentially take action when an observer gets added. Since the act of
-  // adding an observer and the observer list itself are both static, the
-  // implementation class has no direct capability to watch for changes.
-  virtual void ConnectionCostObserverAdded() {}
 
   // Listening for notifications of this type is expensive as they happen
   // frequently. For this reason, we report {de}registration to the

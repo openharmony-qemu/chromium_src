@@ -21,10 +21,6 @@
 #import "ui/display/screen_base.h"
 #endif
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace {
 
 // If true, +setUpForTestCase will be called from -setUp.  This flag is used to
@@ -36,12 +32,18 @@ bool g_needs_set_up_for_test_case = true;
 
 @implementation BaseEarlGreyTestCase
 
++ (BOOL)forceRestartAndWipe {
+  return YES;
+}
+
 + (void)setUpForTestCase {
 }
 
 + (void)setUp {
   NSArray<NSString*>* blockedURLs = @[
     @".*app-measurement\\.com.*",
+    @".*google\\.com.*",
+    @".*app-analytics-services\\.com.*",
   ];
   [[GREYConfiguration sharedConfiguration]
           setValue:blockedURLs
@@ -53,6 +55,9 @@ bool g_needs_set_up_for_test_case = true;
   [[GREYConfiguration sharedConfiguration]
           setValue:@YES
       forConfigKey:kGREYConfigKeyIgnoreHiddenAnimations];
+  [[GREYConfiguration sharedConfiguration]
+          setValue:@YES
+      forConfigKey:kGREYConfigKeyAutoUntrackMDCActivityIndicators];
 }
 
 // Invoked upon starting each test method in a test case.
@@ -60,8 +65,14 @@ bool g_needs_set_up_for_test_case = true;
 - (void)setUp {
   [super setUp];
 
-  [[AppLaunchManager sharedManager]
-      ensureAppLaunchedWithConfiguration:[self appConfigurationForTestCase]];
+  // Before starting a new test, relaunch the app and wipe the profile.
+  AppLaunchConfiguration config = [self appConfigurationForTestCase];
+  if ([BaseEarlGreyTestCase forceRestartAndWipe]) {
+    config.relaunch_policy = RelaunchPolicy::ForceRelaunchByKilling;
+    config.additional_args.push_back(std::string("-EGTestWipeProfile"));
+  }
+
+  [[AppLaunchManager sharedManager] ensureAppLaunchedWithConfiguration:config];
   [SystemAlertHandler handleSystemAlertIfVisible];
 
   NSString* logFormat = @"*********************************\nStarting test: %@";
@@ -91,10 +102,6 @@ bool g_needs_set_up_for_test_case = true;
     DCHECK(!screen->HasDisplayObservers());
   }
 #endif
-  if ([[AppLaunchManager sharedManager] appIsLaunched]) {
-    [CoverageUtils writeClangCoverageProfile];
-    [CoverageUtils resetCoverageProfileCounters];
-  }
   g_needs_set_up_for_test_case = true;
   [super tearDown];
 }

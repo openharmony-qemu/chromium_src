@@ -11,10 +11,6 @@
 #import "ios/web/public/test/fakes/fake_web_client.h"
 #import "ios/web/public/test/js_test_util.h"
 
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
-
 namespace web {
 
 class WebTestRenderProcessCrashObserver : public GlobalWebStateObserver {
@@ -27,13 +23,13 @@ class WebTestRenderProcessCrashObserver : public GlobalWebStateObserver {
   }
 };
 
-WebTest::WebTest(WebTaskEnvironment::Options options)
-    : WebTest(std::make_unique<FakeWebClient>(), options) {}
+WebTest::WebTest(WebTaskEnvironment::MainThreadType main_thread_type)
+    : WebTest(std::make_unique<FakeWebClient>(), main_thread_type) {}
 
 WebTest::WebTest(std::unique_ptr<web::WebClient> web_client,
-                 WebTaskEnvironment::Options options)
+                 WebTaskEnvironment::MainThreadType main_thread_type)
     : web_client_(std::move(web_client)),
-      task_environment_(options),
+      task_environment_(main_thread_type),
       crash_observer_(std::make_unique<WebTestRenderProcessCrashObserver>()) {}
 
 WebTest::~WebTest() {}

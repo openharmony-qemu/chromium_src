@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "content/web_test/browser/web_test_push_messaging_service.h"
+
+#include <optional>
 
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -12,7 +19,6 @@
 #include "content/web_test/browser/web_test_browser_context.h"
 #include "content/web_test/browser/web_test_content_browser_client.h"
 #include "content/web_test/browser/web_test_permission_manager.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/mojom/push_messaging/push_messaging_status.mojom.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration.mojom.h"
@@ -101,9 +107,9 @@ void WebTestPushMessagingService::SubscribeFromWorker(
         blink::mojom::PushRegistrationStatus::SUCCESS_FROM_PUSH_SERVICE);
   } else {
     std::move(callback).Run(
-        "registration_id", GURL::EmptyGURL() /* endpoint */,
-        absl::nullopt /* expiration_time */,
-        std::vector<uint8_t>() /* p256dh */, std::vector<uint8_t>() /* auth */,
+        "registration_id", GURL() /* endpoint */,
+        std::nullopt /* expiration_time */, std::vector<uint8_t>() /* p256dh */,
+        std::vector<uint8_t>() /* auth */,
         blink::mojom::PushRegistrationStatus::PERMISSION_DENIED);
   }
 }

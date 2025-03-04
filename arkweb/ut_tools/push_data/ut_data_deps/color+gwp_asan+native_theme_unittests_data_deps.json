@@ -1,0 +1,12 @@
+[
+    {
+        "is_file": true,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["location_tags.json"],
+        "src_paths": [
+            "testing"
+        ],
+        "dst_path": "testing"
+    }
+]

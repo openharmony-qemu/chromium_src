@@ -4,36 +4,32 @@
 
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_mediator.h"
 
+#import "base/memory/raw_ptr.h"
 #import "base/notreached.h"
 #import "base/scoped_multi_source_observation.h"
 #import "base/scoped_observation.h"
 #import "components/prefs/ios/pref_observer_bridge.h"
 #import "components/prefs/pref_change_registrar.h"
 #import "components/prefs/pref_service.h"
-#import "components/sessions/core/tab_restore_service.h"
-#import "ios/chrome/browser/browser_state/chrome_browser_state.h"
-#import "ios/chrome/browser/prefs/pref_names.h"
-#import "ios/chrome/browser/sessions/session_restoration_browser_agent.h"
-#import "ios/chrome/browser/sessions/session_window_ios.h"
-#import "ios/chrome/browser/snapshots/snapshot_browser_agent.h"
-#import "ios/chrome/browser/snapshots/snapshot_cache.h"
-#import "ios/chrome/browser/snapshots/snapshot_cache_observer.h"
-#import "ios/chrome/browser/snapshots/snapshot_tab_helper.h"
-#import "ios/chrome/browser/tabs/inactive_tabs/features.h"
+#import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/url/url_util.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list_observer_bridge.h"
+#import "ios/chrome/browser/snapshots/model/model_swift.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_id_wrapper.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_storage_wrapper.h"
+#import "ios/chrome/browser/snapshots/model/snapshot_tab_helper.h"
+#import "ios/chrome/browser/tabs/model/inactive_tabs/features.h"
+#import "ios/chrome/browser/tabs/model/tabs_closer.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_collection_consumer.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/grid/grid_item_identifier.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_grid/inactive_tabs/inactive_tabs_info_consumer.h"
+#import "ios/chrome/browser/ui/tab_switcher/tab_grid/toolbars/tab_grid_toolbars_configuration.h"
 #import "ios/chrome/browser/ui/tab_switcher/tab_utils.h"
 #import "ios/chrome/browser/ui/tab_switcher/web_state_tab_switcher_item.h"
-#import "ios/chrome/browser/url/url_util.h"
-#import "ios/chrome/browser/web_state_list/web_state_list.h"
-#import "ios/chrome/browser/web_state_list/web_state_list_observer_bridge.h"
 #import "ios/web/public/web_state.h"
 #import "ios/web/public/web_state_observer_bridge.h"
 #import "ui/base/device_form_factor.h"
-
-#if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
-#endif
 
 using ScopedWebStateListObservation =
     base::ScopedObservation<WebStateList, WebStateListObserver>;
@@ -57,8 +53,7 @@ NSArray* CreateItemsOrderedByRecency(WebStateList* web_state_list) {
             });
 
   for (web::WebState* web_state : web_states) {
-    [items
-        addObject:[[WebStateTabSwitcherItem alloc] initWithWebState:web_state]];
+    [items addObject:[GridItemIdentifier tabIdentifier:web_state]];
   }
   return items;
 }
@@ -78,19 +73,19 @@ void AddWebStateObservations(
 void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
                            WebStateList* web_state_list) {
   [consumer populateItems:CreateItemsOrderedByRecency(web_state_list)
-           selectedItemID:nil];
+      selectedItemIdentifier:nil];
 }
 
 }  // namespace
 
 @interface InactiveTabsMediator () <CRWWebStateObserver,
                                     PrefObserverDelegate,
-                                    SnapshotCacheObserver,
+                                    SnapshotStorageObserver,
                                     WebStateListObserving> {
   // The list of inactive tabs.
-  WebStateList* _webStateList;
-  // The snapshot cache of _webStateList.
-  __weak SnapshotCache* _snapshotCache;
+  raw_ptr<WebStateList> _webStateList;
+  // The snapshot storage of _webStateList.
+  __weak SnapshotStorageWrapper* _snapshotStorage;
   // The observers of _webStateList.
   std::unique_ptr<WebStateListObserverBridge> _webStateListObserverBridge;
   std::unique_ptr<ScopedWebStateListObservation> _scopedWebStateListObservation;
@@ -98,23 +93,14 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
   std::unique_ptr<web::WebStateObserverBridge> _webStateObserverBridge;
   std::unique_ptr<ScopedWebStateObservation> _scopedWebStateObservation;
   // Preference service from the application context.
-  PrefService* _prefService;
+  raw_ptr<PrefService> _prefService;
   // Pref observer to track changes to prefs.
   std::unique_ptr<PrefObserverBridge> _prefObserverBridge;
   // Registrar for pref changes notifications.
   PrefChangeRegistrar _prefChangeRegistrar;
-  // The saved session window just before close all tabs from regular tab grid
-  // is called.
-  SessionWindowIOS* _closedSessionWindow;
-  // The number of tabs in `_closedSessionWindow` that are synced by
-  // TabRestoreService.
-  int _syncedClosedTabsCount;
-  // Session restoration agent.
-  SessionRestorationBrowserAgent* _sessionRestorationAgent;
-  // Snapshot agent.
-  SnapshotBrowserAgent* _snapshotAgent;
-  // TabRestoreService holds the recently closed tabs.
-  sessions::TabRestoreService* _tabRestoreService;
+  // TabsClosed used to implement the "close all tabs" operation with support
+  // for undoing the operation.
+  std::unique_ptr<TabsCloser> _tabsCloser;
 }
 
 @end
@@ -123,18 +109,12 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
 
 - (instancetype)initWithWebStateList:(WebStateList*)webStateList
                          prefService:(PrefService*)prefService
-             sessionRestorationAgent:
-                 (SessionRestorationBrowserAgent*)sessionRestorationAgent
-                       snapshotAgent:(SnapshotBrowserAgent*)snapshotAgent
-                   tabRestoreService:
-                       (sessions::TabRestoreService*)tabRestoreService {
+                     snapshotStorage:(SnapshotStorageWrapper*)snapshotStorage
+                          tabsCloser:(std::unique_ptr<TabsCloser>)tabsCloser {
   CHECK(IsInactiveTabsAvailable());
   CHECK(webStateList);
   CHECK(prefService);
-  CHECK(sessionRestorationAgent);
-  CHECK(snapshotAgent);
-  CHECK(snapshotAgent->snapshot_cache());
-  CHECK(tabRestoreService);
+  CHECK(snapshotStorage);
   self = [super init];
   if (self) {
     _webStateList = webStateList;
@@ -163,18 +143,16 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
     _prefObserverBridge->ObserveChangesForPreference(
         prefs::kInactiveTabsTimeThreshold, &_prefChangeRegistrar);
 
-    _snapshotCache = snapshotAgent->snapshot_cache();
-    [_snapshotCache addObserver:self];
+    _snapshotStorage = snapshotStorage;
+    [_snapshotStorage addObserver:self];
 
-    _sessionRestorationAgent = sessionRestorationAgent;
-    _snapshotAgent = snapshotAgent;
-    _tabRestoreService = tabRestoreService;
+    _tabsCloser = std::move(tabsCloser);
   }
   return self;
 }
 
 - (void)dealloc {
-  [_snapshotCache removeObserver:self];
+  [_snapshotStorage removeObserver:self];
 }
 
 - (void)setConsumer:
@@ -206,11 +184,9 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
   _prefChangeRegistrar.RemoveAll();
   _prefObserverBridge.reset();
   _prefService = nullptr;
-  [_snapshotCache removeObserver:self];
-  _snapshotCache = nil;
-  _sessionRestorationAgent = nullptr;
-  [self discardSavedClosedItems];
-  _snapshotAgent = nullptr;
+  [_snapshotStorage removeObserver:self];
+  _snapshotStorage = nil;
+  _tabsCloser.reset();
 }
 
 #pragma mark - CRWWebStateObserver
@@ -228,9 +204,8 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
 }
 
 - (void)updateConsumerItemForWebState:(web::WebState*)webState {
-  TabSwitcherItem* item =
-      [[WebStateTabSwitcherItem alloc] initWithWebState:webState];
-  [_consumer replaceItemID:webState->GetStableIdentifier() withItem:item];
+  GridItemIdentifier* item = [GridItemIdentifier tabIdentifier:webState];
+  [_consumer replaceItem:item withReplacementItem:item];
 }
 
 #pragma mark - PrefObserverDelegate
@@ -243,101 +218,92 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
   }
 }
 
-#pragma mark - SnapshotCacheObserver
+#pragma mark - SnapshotStorageObserver
 
-- (void)snapshotCache:(SnapshotCache*)snapshotCache
-    didUpdateSnapshotForIdentifier:(NSString*)identifier {
-  web::WebState* webState =
-      GetWebState(_webStateList, WebStateSearchCriteria{
-                                     .identifier = identifier,
-                                 });
+- (void)didUpdateSnapshotStorageWithSnapshotID:(SnapshotIDWrapper*)snapshotID {
+  web::WebState* webState = nullptr;
+  for (int i = 0; i < _webStateList->count(); i++) {
+    SnapshotTabHelper* snapshotTabHelper =
+        SnapshotTabHelper::FromWebState(_webStateList->GetWebStateAt(i));
+    if (snapshotID.snapshot_id == snapshotTabHelper->GetSnapshotID()) {
+      webState = _webStateList->GetWebStateAt(i);
+      break;
+    }
+  }
   if (webState) {
     // It is possible to observe an updated snapshot for a WebState before
     // observing that the WebState has been added to the WebStateList. It is the
     // consumer's responsibility to ignore any updates before inserts.
-    TabSwitcherItem* item =
-        [[WebStateTabSwitcherItem alloc] initWithWebState:webState];
-    [_consumer replaceItemID:identifier withItem:item];
+    GridItemIdentifier* item = [GridItemIdentifier tabIdentifier:webState];
+    [_consumer replaceItem:item withReplacementItem:item];
   }
 }
 
 #pragma mark - WebStateListObserving
 
-- (void)webStateList:(WebStateList*)webStateList
-    didInsertWebState:(web::WebState*)webState
-              atIndex:(int)index
-           activating:(BOOL)activating {
-  DCHECK_EQ(_webStateList, webStateList);
-  if (_webStateList->IsBatchInProgress()) {
-    // Updates are handled in the batch operation observer methods.
-    return;
-  }
-  // Insertions are only supported for iPad multiwindow support when changing
-  // the user settings for Inactive Tabs (i.e. when picking a longer inactivity
-  // threshold).
-  DCHECK_EQ(ui::GetDeviceFormFactor(), ui::DEVICE_FORM_FACTOR_TABLET);
-
-  TabSwitcherItem* item =
-      [[WebStateTabSwitcherItem alloc] initWithWebState:webState];
-  [_consumer insertItem:item atIndex:index selectedItemID:nil];
-
-  _scopedWebStateObservation->AddObservation(webState);
-}
-
-- (void)webStateList:(WebStateList*)webStateList
-     didMoveWebState:(web::WebState*)webState
-           fromIndex:(int)fromIndex
-             toIndex:(int)toIndex {
-  NOTREACHED_NORETURN();
-}
-
-- (void)webStateList:(WebStateList*)webStateList
-    didReplaceWebState:(web::WebState*)oldWebState
-          withWebState:(web::WebState*)newWebState
-               atIndex:(int)index {
-  NOTREACHED_NORETURN();
-}
-
-- (void)webStateList:(WebStateList*)webStateList
-    willDetachWebState:(web::WebState*)webState
-               atIndex:(int)index {
+- (void)willChangeWebStateList:(WebStateList*)webStateList
+                        change:(const WebStateListChangeDetach&)detachChange
+                        status:(const WebStateListStatus&)status {
   DCHECK_EQ(_webStateList, webStateList);
   if (_webStateList->IsBatchInProgress()) {
     // Updates are handled in the batch operation observer methods.
     return;
   }
 
-  [_consumer removeItemWithID:webState->GetStableIdentifier()
-               selectedItemID:nil];
+  web::WebState* detachedWebState = detachChange.detached_web_state();
+  [_consumer removeItemWithIdentifier:[GridItemIdentifier
+                                          tabIdentifier:detachedWebState]
+               selectedItemIdentifier:nil];
 
-  _scopedWebStateObservation->RemoveObservation(webState);
+  _scopedWebStateObservation->RemoveObservation(detachedWebState);
 }
 
-- (void)webStateList:(WebStateList*)webStateList
-    didDetachWebState:(web::WebState*)webState
-              atIndex:(int)atIndex {
-  // No-op.
-}
+- (void)didChangeWebStateList:(WebStateList*)webStateList
+                       change:(const WebStateListChange&)change
+                       status:(const WebStateListStatus&)status {
+  DCHECK_EQ(_webStateList, webStateList);
+  if (_webStateList->IsBatchInProgress()) {
+    // Updates are handled in the batch operation observer methods.
+    return;
+  }
 
-- (void)webStateList:(WebStateList*)webStateList
-    willCloseWebState:(web::WebState*)webState
-              atIndex:(int)atIndex
-           userAction:(BOOL)userAction {
-  // No-op.
-}
+  switch (change.type()) {
+    case WebStateListChange::Type::kStatusOnly:
+      // Do nothing when the status in WebStateList is updated.
+      break;
+    case WebStateListChange::Type::kDetach:
+      // Do nothing when a WebState is detached.
+      break;
+    case WebStateListChange::Type::kMove:
+    case WebStateListChange::Type::kReplace:
+    case WebStateListChange::Type::kGroupCreate:
+    case WebStateListChange::Type::kGroupVisualDataUpdate:
+    case WebStateListChange::Type::kGroupMove:
+    case WebStateListChange::Type::kGroupDelete:
+      NOTREACHED();
+    case WebStateListChange::Type::kInsert: {
+      // Insertions are only supported for iPad multiwindow support when
+      // changing the user settings for Inactive Tabs (i.e. when picking a
+      // longer inactivity threshold).
+      DCHECK_EQ(ui::GetDeviceFormFactor(), ui::DEVICE_FORM_FACTOR_TABLET);
 
-- (void)webStateList:(WebStateList*)webStateList
-    didChangeActiveWebState:(web::WebState*)newWebState
-                oldWebState:(web::WebState*)oldWebState
-                    atIndex:(int)atIndex
-                     reason:(ActiveWebStateChangeReason)reason {
-  // No-op.
-}
+      const WebStateListChangeInsert& insertChange =
+          change.As<WebStateListChangeInsert>();
+      web::WebState* insertedWebState = insertChange.inserted_web_state();
+      int nextItemIndex = insertChange.index() + 1;
+      GridItemIdentifier* nextItemIdentifier;
+      if (webStateList->ContainsIndex(nextItemIndex)) {
+        nextItemIdentifier = [GridItemIdentifier
+            tabIdentifier:webStateList->GetWebStateAt(nextItemIndex)];
+      }
+      [_consumer insertItem:[GridItemIdentifier tabIdentifier:insertedWebState]
+                    beforeItemID:nextItemIdentifier
+          selectedItemIdentifier:nil];
 
-- (void)webStateList:(WebStateList*)webStateList
-    didChangePinnedStateForWebState:(web::WebState*)webState
-                            atIndex:(int)index {
-  NOTREACHED_NORETURN();
+      _scopedWebStateObservation->AddObservation(insertedWebState);
+      break;
+    }
+  }
 }
 
 - (void)webStateListWillBeginBatchOperation:(WebStateList*)webStateList {
@@ -360,137 +326,154 @@ void PopulateConsumerItems(id<TabCollectionConsumer> consumer,
 
 #pragma mark - GridCommands
 
-- (void)addNewItem {
-  NOTREACHED_NORETURN();
+- (BOOL)addNewItem {
+  NOTREACHED();
 }
 
-- (void)insertNewItemAtIndex:(NSUInteger)index {
-  NOTREACHED_NORETURN();
+- (BOOL)isItemWithIDSelected:(web::WebStateID)itemID {
+  NOTREACHED();
 }
 
-- (BOOL)isItemWithIDSelected:(NSString*)itemID {
-  NOTREACHED_NORETURN();
-}
-
-- (void)moveItemWithID:(NSString*)itemID toIndex:(NSUInteger)index {
-  NOTREACHED_NORETURN();
-}
-
-- (void)closeItemsWithIDs:(NSArray<NSString*>*)itemIDs {
-  NOTREACHED_NORETURN();
+- (void)closeItemsWithTabIDs:(const std::set<web::WebStateID>&)tabIDs
+                    groupIDs:(const std::set<tab_groups::TabGroupId>&)groupIDs
+                    tabCount:(int)tabCount {
+  NOTREACHED();
 }
 
 - (void)closeAllItems {
-  // TODO(crbug.com/1418021): Add metrics when the user closes all inactive
+  // TODO(crbug.com/40257500): Add metrics when the user closes all inactive
   // tabs.
-  _webStateList->CloseAllWebStates(WebStateList::CLOSE_USER_ACTION);
-  _snapshotAgent->RemoveAllSnapshots();
+  CloseAllWebStates(*_webStateList, WebStateList::CLOSE_USER_ACTION);
+  [_snapshotStorage removeAllImages];
 }
 
 - (void)saveAndCloseAllItems {
-  if (_webStateList->empty()) {
+  if (![self canCloseTabs]) {
     return;
   }
-  // TODO(crbug.com/1418021): Add metrics when the user closes all inactive
+
+  // TODO(crbug.com/40257500): Add metrics when the user closes all inactive
   // tabs from regular tab grid.
-  _closedSessionWindow = SerializeWebStateList(_webStateList);
-  int oldSize = _tabRestoreService ? _tabRestoreService->entries().size() : 0;
-  _webStateList->CloseAllWebStates(WebStateList::CLOSE_USER_ACTION);
-  _syncedClosedTabsCount =
-      _tabRestoreService ? _tabRestoreService->entries().size() - oldSize : 0;
+  _tabsCloser->CloseTabs();
 }
 
 - (void)undoCloseAllItems {
-  if (!_closedSessionWindow) {
+  if (![self canUndoCloseAllTabs]) {
     return;
   }
-  // TODO(crbug.com/1418021): Add metrics when the user restores all inactive
+  // TODO(crbug.com/40257500): Add metrics when the user restores all inactive
   // tabs from regular tab grid.
-  _sessionRestorationAgent->RestoreSessionWindow(
-      _closedSessionWindow, SessionRestorationScope::kRegularOnly);
-
-  _closedSessionWindow = nil;
-  [self removeEntriesFromTabRestoreService];
-  _syncedClosedTabsCount = 0;
+  _tabsCloser->UndoCloseTabs();
 }
 
 - (void)discardSavedClosedItems {
-  if (!_closedSessionWindow) {
+  if (![self canUndoCloseAllTabs]) {
     return;
   }
-  _syncedClosedTabsCount = 0;
-  _closedSessionWindow = nil;
-  _snapshotAgent->RemoveAllSnapshots();
+  _tabsCloser->ConfirmDeletion();
 }
 
-- (void)
-    showCloseItemsConfirmationActionSheetWithItems:(NSArray<NSString*>*)items
-                                            anchor:
-                                                (UIBarButtonItem*)buttonAnchor {
-  NOTREACHED_NORETURN();
+- (void)showCloseItemsConfirmationActionSheetWithItems:
+            (const std::set<web::WebStateID>&)itemIDs
+                                                anchor:(UIBarButtonItem*)
+                                                           buttonAnchor {
+  NOTREACHED();
 }
 
-- (void)shareItems:(NSArray<NSString*>*)items
+- (void)shareItems:(const std::set<web::WebStateID>&)itemIDs
             anchor:(UIBarButtonItem*)buttonAnchor {
-  NOTREACHED_NORETURN();
-}
-
-- (NSArray<UIMenuElement*>*)addToButtonMenuElementsForItems:
-    (NSArray<NSString*>*)items {
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 - (void)searchItemsWithText:(NSString*)searchText {
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
 - (void)resetToAllItems {
-  NOTREACHED_NORETURN();
+  NOTREACHED();
 }
 
-- (void)fetchSearchHistoryResultsCountForText:(NSString*)searchText
-                                   completion:(void (^)(size_t))completion {
-  NOTREACHED_NORETURN();
+- (void)selectItemWithID:(web::WebStateID)itemID
+                    pinned:(BOOL)pinned
+    isFirstActionOnTabGrid:(BOOL)isFirstActionOnTabGrid {
+  NOTREACHED();
 }
 
-#pragma mark - TabCollectionCommands
-
-- (void)selectItemWithID:(NSString*)itemID {
-  NOTREACHED_NORETURN();
+- (void)selectTabGroup:(const TabGroup*)tabGroup {
+  NOTREACHED();
 }
 
-- (void)closeItemWithID:(NSString*)itemID {
-  // TODO(crbug.com/1418021): Add metrics when the user closes an inactive tab.
-  int index = GetTabIndex(_webStateList, WebStateSearchCriteria{
-                                             .identifier = itemID,
-                                         });
+- (void)closeItemWithID:(web::WebStateID)itemID {
+  // TODO(crbug.com/40257500): Add metrics when the user closes an inactive tab.
+  int index = GetWebStateIndex(_webStateList, WebStateSearchCriteria{
+                                                  .identifier = itemID,
+                                              });
   if (index != WebStateList::kInvalidIndex) {
     _webStateList->CloseWebStateAt(index, WebStateList::CLOSE_USER_ACTION);
   }
 }
 
-- (void)setPinState:(BOOL)pinState forItemWithIdentifier:(NSString*)identifier {
-  NOTREACHED_NORETURN();
+- (void)setPinState:(BOOL)pinState forItemWithID:(web::WebStateID)itemID {
+  NOTREACHED();
 }
 
-#pragma mark - Private
+- (void)deleteTabGroup:(base::WeakPtr<const TabGroup>)group
+            sourceView:(UIView*)sourceView {
+  NOTREACHED();
+}
 
-// Removes `_syncedClosedTabsCount` most recent entries from the
-// TabRestoreService.
-- (void)removeEntriesFromTabRestoreService {
-  if (!_tabRestoreService) {
-    return;
-  }
-  std::vector<SessionID> identifiers;
-  auto iter = _tabRestoreService->entries().begin();
-  auto end = _tabRestoreService->entries().end();
-  for (int i = 0; i < _syncedClosedTabsCount && iter != end; i++) {
-    identifiers.push_back(iter->get()->id);
-    iter++;
-  }
-  for (const SessionID sessionID : identifiers) {
-    _tabRestoreService->RemoveTabEntryById(sessionID);
-  }
+- (void)closeTabGroup:(base::WeakPtr<const TabGroup>)group {
+  NOTREACHED();
+}
+
+- (void)ungroupTabGroup:(base::WeakPtr<const TabGroup>)group
+             sourceView:(UIView*)sourceView {
+  NOTREACHED();
+}
+
+#pragma mark - GridToolbarsConfigurationProvider
+
+- (TabGridToolbarsConfiguration*)toolbarsConfiguration {
+  TabGridToolbarsConfiguration* toolbarsConfiguration =
+      [[TabGridToolbarsConfiguration alloc]
+          initWithPage:TabGridPageRegularTabs];
+  toolbarsConfiguration.closeAllButton = [self canCloseTabs];
+  toolbarsConfiguration.searchButton = YES;
+  toolbarsConfiguration.undoButton = [self canUndoCloseAllTabs];
+  return toolbarsConfiguration;
+}
+
+- (BOOL)didSavedClosedTabs {
+  return [self canUndoCloseAllTabs];
+}
+
+#pragma mark - Internal
+
+- (BOOL)canCloseTabs {
+  return _tabsCloser && _tabsCloser->CanCloseTabs();
+}
+
+- (BOOL)canUndoCloseAllTabs {
+  return _tabsCloser && _tabsCloser->CanUndoCloseTabs();
+}
+
+#pragma mark - GridViewControllerMutator
+
+- (void)userTappedOnItemID:(GridItemIdentifier*)itemID {
+  // No-op
+}
+
+- (void)addToSelectionItemID:(GridItemIdentifier*)itemID {
+  NOTREACHED();
+}
+
+- (void)removeFromSelectionItemID:(GridItemIdentifier*)itemID {
+  // No-op
+}
+
+- (void)closeItemWithIdentifier:(GridItemIdentifier*)identifier {
+  CHECK(identifier.type == GridItemType::kTab);
+  [self closeItemWithID:identifier.tabSwitcherItem.identifier];
 }
 
 @end

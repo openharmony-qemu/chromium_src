@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stddef.h>
 
+#include <string_view>
 #include <utility>
 
 #include "base/containers/span.h"
@@ -23,7 +29,7 @@ namespace extensions {
 TEST(WebRequestUploadDataPresenterTest, ParsedData) {
   // Input.
   const char block[] = "key.with.dots=value";
-  net::UploadBytesElementReader element(block, sizeof(block) - 1);
+  net::UploadBytesElementReader element(base::byte_span_from_cstring(block));
 
   // Expected output.
   base::Value::List values;
@@ -35,10 +41,9 @@ TEST(WebRequestUploadDataPresenterTest, ParsedData) {
   std::unique_ptr<ParsedDataPresenter> parsed_data_presenter(
       ParsedDataPresenter::CreateForTests());
   ASSERT_TRUE(parsed_data_presenter.get() != nullptr);
-  parsed_data_presenter->FeedBytes(
-      base::StringPiece(element.bytes(), element.length()));
+  parsed_data_presenter->FeedBytes(base::as_string_view(element.bytes()));
   EXPECT_TRUE(parsed_data_presenter->Succeeded());
-  absl::optional<base::Value> result = parsed_data_presenter->TakeResult();
+  std::optional<base::Value> result = parsed_data_presenter->TakeResult();
   EXPECT_EQ(result, expected_form);
 }
 
@@ -69,7 +74,7 @@ TEST(WebRequestUploadDataPresenterTest, RawData) {
   raw_presenter.FeedNextFile(kFilename);
   raw_presenter.FeedNextBytes(block2, block2_size);
   EXPECT_TRUE(raw_presenter.Succeeded());
-  absl::optional<base::Value> result = raw_presenter.TakeResult();
+  std::optional<base::Value> result = raw_presenter.TakeResult();
   EXPECT_EQ(expected_list, result);
 }
 

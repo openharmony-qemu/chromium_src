@@ -32,7 +32,6 @@ const base::FilePath::CharType* StreamTypeToStringType(
       return FILE_PATH_LITERAL("output");
   }
   NOTREACHED();
-  return FILE_PATH_LITERAL("output");
 }
 
 // Asynchronously creates a file and passes it to |reply_callback|.

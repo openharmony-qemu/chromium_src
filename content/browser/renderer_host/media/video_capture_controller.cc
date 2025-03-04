@@ -10,6 +10,7 @@
 #include <map>
 #include <set>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
@@ -17,6 +18,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "base/token.h"
 #include "build/build_config.h"
@@ -30,6 +32,8 @@
 #include "media/capture/video/video_capture_buffer_pool.h"
 #include "media/capture/video/video_capture_buffer_tracker_factory_impl.h"
 #include "media/capture/video/video_capture_device_client.h"
+#include "media/capture/video/video_capture_metrics.h"
+#include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "content/browser/compositor/image_transport_factory.h"
@@ -51,95 +55,6 @@ static const int kInfiniteRatio = 99999;
 #define UMA_HISTOGRAM_ASPECT_RATIO(name, width, height) \
   base::UmaHistogramSparse(                             \
       name, (height) ? ((width)*100) / (height) : kInfiniteRatio);
-
-void LogVideoFrameDrop(media::VideoCaptureFrameDropReason reason,
-                       blink::mojom::MediaStreamType stream_type) {
-  const int kEnumCount =
-      static_cast<int>(media::VideoCaptureFrameDropReason::kMaxValue) + 1;
-  UMA_HISTOGRAM_ENUMERATION("Media.VideoCapture.FrameDrop", reason, kEnumCount);
-  switch (stream_type) {
-    case blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION("Media.VideoCapture.FrameDrop.DeviceCapture",
-                                reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::GUM_TAB_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION("Media.VideoCapture.FrameDrop.GumTabCapture",
-                                reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.FrameDrop.GumDesktopCapture", reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION("Media.VideoCapture.FrameDrop.DisplayCapture",
-                                reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.FrameDrop.DisplayCaptureCurrentTab", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.FrameDrop.DisplayCaptureSet", reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::NO_SERVICE:
-    case blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::GUM_TAB_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::GUM_DESKTOP_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::DISPLAY_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::NUM_MEDIA_TYPES:
-      break;
-  }
-}
-
-void LogMaxConsecutiveVideoFrameDropCountExceeded(
-    media::VideoCaptureFrameDropReason reason,
-    blink::mojom::MediaStreamType stream_type) {
-  const int kEnumCount =
-      static_cast<int>(media::VideoCaptureFrameDropReason::kMaxValue) + 1;
-  UMA_HISTOGRAM_ENUMERATION("Media.VideoCapture.MaxFrameDropExceeded", reason,
-                            kEnumCount);
-  switch (stream_type) {
-    case blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.DeviceCapture", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::GUM_TAB_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.GumTabCapture", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::GUM_DESKTOP_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.GumDesktopCapture", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.DisplayCapture", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.DisplayCaptureCurrentTab",
-          reason, kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET:
-      UMA_HISTOGRAM_ENUMERATION(
-          "Media.VideoCapture.MaxFrameDropExceeded.DisplayCaptureSet", reason,
-          kEnumCount);
-      break;
-    case blink::mojom::MediaStreamType::NO_SERVICE:
-    case blink::mojom::MediaStreamType::DEVICE_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::GUM_TAB_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::GUM_DESKTOP_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::DISPLAY_AUDIO_CAPTURE:
-    case blink::mojom::MediaStreamType::NUM_MEDIA_TYPES:
-      break;
-  }
-}
 
 void CallOnError(media::VideoCaptureError error,
                  VideoCaptureControllerEventHandler* client,
@@ -169,7 +84,11 @@ struct VideoCaptureController::ControllerClient {
         session_id(session_id),
         parameters(params),
         session_closed(false),
-        paused(false) {}
+        paused(false) {
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+    opened = false;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+  }
 
   ~ControllerClient() {}
 
@@ -199,6 +118,10 @@ struct VideoCaptureController::ControllerClient {
   // Indicates whether the client is paused, if true, VideoCaptureController
   // stops updating its buffer.
   bool paused;
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool opened;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 VideoCaptureController::BufferContext::BufferContext(
@@ -253,31 +176,25 @@ VideoCaptureController::BufferContext::CloneBufferHandle() {
     // VideoCaptureBufferPool which, among other use cases, provides decoder
     // output buffers.
     //
-    // TODO(crbug.com/793446): BroadcastingReceiver::BufferContext also defines
-    // CloneBufferHandle and independently decides on handle permissions. The
-    // permissions should be coordinated between these two classes.
+    // TODO(crbug.com/40553989): BroadcastingReceiver::BufferContext also
+    // defines CloneBufferHandle and independently decides on handle
+    // permissions. The permissions should be coordinated between these two
+    // classes.
     return media::mojom::VideoBufferHandle::NewUnsafeShmemRegion(
         buffer_handle_->get_unsafe_shmem_region().Duplicate());
   } else if (buffer_handle_->is_read_only_shmem_region()) {
     return media::mojom::VideoBufferHandle::NewReadOnlyShmemRegion(
         buffer_handle_->get_read_only_shmem_region().Duplicate());
-  } else if (buffer_handle_->is_mailbox_handles()) {
-    return media::mojom::VideoBufferHandle::NewMailboxHandles(
-        buffer_handle_->get_mailbox_handles()->Clone());
+  } else if (buffer_handle_->is_shared_image_handle()) {
+    return media::mojom::VideoBufferHandle::NewSharedImageHandle(
+        buffer_handle_->get_shared_image_handle()->Clone());
   } else if (buffer_handle_->is_gpu_memory_buffer_handle()) {
     return media::mojom::VideoBufferHandle::NewGpuMemoryBufferHandle(
         buffer_handle_->get_gpu_memory_buffer_handle().Clone());
   } else {
     NOTREACHED() << "Unexpected video buffer handle type";
-    return media::mojom::VideoBufferHandlePtr();
   }
 }
-
-VideoCaptureController::FrameDropLogState::FrameDropLogState(
-    media::VideoCaptureFrameDropReason reason)
-    : drop_count((reason == media::VideoCaptureFrameDropReason::kNone) ? 0 : 1),
-      drop_reason(reason),
-      max_log_count_exceeded(false) {}
 
 VideoCaptureController::VideoCaptureController(
     const std::string& device_id,
@@ -308,7 +225,8 @@ void VideoCaptureController::AddClient(
     const VideoCaptureControllerID& id,
     VideoCaptureControllerEventHandler* event_handler,
     const media::VideoCaptureSessionId& session_id,
-    const media::VideoCaptureParams& params) {
+    const media::VideoCaptureParams& params,
+    std::optional<url::Origin> origin) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   std::ostringstream string_stream;
   string_stream << "VideoCaptureController::AddClient(): id = " << id
@@ -339,8 +257,10 @@ void VideoCaptureController::AddClient(
   }
 
   // If this is the first client added to the controller, cache the parameters.
-  if (controller_clients_.empty())
+  if (controller_clients_.empty()) {
     video_capture_format_ = params.requested_format;
+    first_client_origin_ = origin;
+  }
 
   // Signal error in case device is already in error state.
   if (state_ == blink::VIDEO_CAPTURE_STATE_ERROR) {
@@ -352,9 +272,9 @@ void VideoCaptureController::AddClient(
 
   // Do nothing if this client has called AddClient before.
   if (FindClient(id, event_handler, controller_clients_)) {
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
     LOG(INFO) << "client is already added";
-#endif // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
     return;
   }
 
@@ -368,8 +288,6 @@ void VideoCaptureController::AddClient(
   // client.
   if (state_ != blink::VIDEO_CAPTURE_STATE_ERROR) {
     controller_clients_.push_back(std::move(client));
-    base::UmaHistogramCounts100("Media.VideoCapture.NumberOfClients",
-                                controller_clients_.size());
   }
 }
 
@@ -469,6 +387,7 @@ void VideoCaptureController::StopSession(
 
   if (client) {
     client->session_closed = true;
+    client->opened = false;
     client->event_handler->OnEnded(client->controller_id);
   }
 }
@@ -481,28 +400,25 @@ void VideoCaptureController::ReturnBuffer(
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
   ControllerClient* client = FindClient(id, event_handler, controller_clients_);
+  CHECK(client);
 
-  // If this buffer is not held by this client, or this client doesn't exist
-  // in controller, do nothing.
-  if (!client) {
-    NOTREACHED();
-    return;
-  }
   auto buffers_in_use_entry_iter =
       base::ranges::find(client->buffers_in_use, buffer_id);
-  if (buffers_in_use_entry_iter == std::end(client->buffers_in_use)) {
-    NOTREACHED();
-    return;
-  }
+  CHECK(buffers_in_use_entry_iter != std::end(client->buffers_in_use));
   client->buffers_in_use.erase(buffers_in_use_entry_iter);
 
   OnClientFinishedConsumingBuffer(client, buffer_id, feedback);
 }
 
-const absl::optional<media::VideoCaptureFormat>
+const std::optional<media::VideoCaptureFormat>
 VideoCaptureController::GetVideoCaptureFormat() const {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   return video_capture_format_;
+}
+
+const std::optional<url::Origin> VideoCaptureController::GetFirstClientOrigin()
+    const {
+  return first_client_origin_;
 }
 
 void VideoCaptureController::OnCaptureConfigurationChanged() {
@@ -528,14 +444,11 @@ void VideoCaptureController::OnNewBuffer(
 }
 
 void VideoCaptureController::OnFrameReadyInBuffer(
-    media::ReadyFrameInBuffer frame,
-    std::vector<media::ReadyFrameInBuffer> scaled_frames) {
+    media::ReadyFrameInBuffer frame) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   DCHECK_NE(frame.buffer_id, media::VideoCaptureBufferPool::kInvalidId);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureController::OnFrameReadyInBuffer");
-
-  frame_drop_log_state_ = FrameDropLogState();
 
   // Make ready buffers, get frame contexts and set their feedback IDs.
   // Transfer ownership of all the frame infos.
@@ -544,45 +457,33 @@ void VideoCaptureController::OnFrameReadyInBuffer(
       frame.buffer_id, frame.frame_feedback_id, std::move(frame.frame_info),
       &frame_context);
 
-  std::vector<BufferContext*> scaled_frame_contexts;
-  scaled_frame_contexts.reserve(scaled_frames.size());
-  std::vector<ReadyBuffer> scaled_frame_ready_buffers;
-  scaled_frame_ready_buffers.reserve(scaled_frames.size());
-  for (auto& scaled_frame : scaled_frames) {
-    BufferContext* scaled_frame_context;
-    scaled_frame_ready_buffers.push_back(MakeReadyBufferAndSetContextFeedbackId(
-        scaled_frame.buffer_id, scaled_frame.frame_feedback_id,
-        std::move(scaled_frame.frame_info), &scaled_frame_context));
-    scaled_frame_contexts.push_back(scaled_frame_context);
-  }
-
   if (state_ != blink::VIDEO_CAPTURE_STATE_ERROR) {
     // Inform all active clients of the frames.
     for (const auto& client : controller_clients_) {
       if (client->session_closed || client->paused)
         continue;
       MakeClientUseBufferContext(frame_context, client.get());
-      for (auto* scaled_frame_context : scaled_frame_contexts) {
-        MakeClientUseBufferContext(scaled_frame_context, client.get());
-      }
       client->event_handler->OnBufferReady(client->controller_id,
-                                           frame_ready_buffer,
-                                           scaled_frame_ready_buffers);
+                                           frame_ready_buffer);
     }
     // Transfer buffer read permissions to any contexts that now have consumers.
     if (frame_context->HasConsumers()) {
       frame_context->set_read_permission(
           std::move(frame.buffer_read_permission));
     }
-    for (size_t i = 0; i < scaled_frames.size(); ++i) {
-      if (!scaled_frame_contexts[i]->HasConsumers())
-        continue;
-      scaled_frame_contexts[i]->set_read_permission(
-          std::move(scaled_frames[i].buffer_read_permission));
-    }
   }
 
   if (!has_received_frames_) {
+    // Check the following group of metrics is captured only for cameras.
+    if (stream_type() == blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+      // This metric combines width and height into a single UMA metric.
+      media::LogCaptureCurrentDeviceResolution(
+          frame_ready_buffer.frame_info->coded_size.width(),
+          frame_ready_buffer.frame_info->coded_size.height());
+
+      media::LogCaptureCurrentDevicePixelFormat(
+          frame_ready_buffer.frame_info->pixel_format);
+    }
     UMA_HISTOGRAM_COUNTS_1M("Media.VideoCapture.Width",
                             frame_ready_buffer.frame_info->coded_size.width());
     UMA_HISTOGRAM_COUNTS_1M("Media.VideoCapture.Height",
@@ -602,6 +503,25 @@ void VideoCaptureController::OnFrameReadyInBuffer(
     OnLog("First frame received at VideoCaptureController");
     has_received_frames_ = true;
   }
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  if (stream_type_ == blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE ||
+      stream_type_ ==
+          blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_THIS_TAB ||
+      stream_type_ ==
+          blink::mojom::MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
+    for (const auto& client : controller_clients_) {
+      if (client->session_closed || client->opened) {
+        continue;
+      }
+      client->opened = true;
+      if (video_capture_manager_) {
+        video_capture_manager_->ScreenCaptureOpened(
+            client->session_id.ToString());
+      }
+    }
+  }
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 
 ReadyBuffer VideoCaptureController::MakeReadyBufferAndSetContextFeedbackId(
@@ -610,7 +530,8 @@ ReadyBuffer VideoCaptureController::MakeReadyBufferAndSetContextFeedbackId(
     media::mojom::VideoFrameInfoPtr frame_info,
     BufferContext** out_buffer_context) {
   auto buffer_context_iter = FindUnretiredBufferContextFromBufferId(buffer_id);
-  DCHECK(buffer_context_iter != buffer_contexts_.end());
+  CHECK(buffer_context_iter != buffer_contexts_.end(),
+        base::NotFatalUntil::M130);
   BufferContext* buffer_context = &(*buffer_context_iter);
   buffer_context->set_frame_feedback_id(frame_feedback_id);
   DCHECK(!buffer_context->HasConsumers());
@@ -648,7 +569,8 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
   auto buffer_context_iter = FindUnretiredBufferContextFromBufferId(buffer_id);
-  DCHECK(buffer_context_iter != buffer_contexts_.end());
+  CHECK(buffer_context_iter != buffer_contexts_.end(),
+        base::NotFatalUntil::M130);
 
   // If there are any clients still using the buffer, we need to allow them
   // to finish up. We need to hold on to the BufferContext entry until then,
@@ -661,46 +583,37 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
 
 void VideoCaptureController::OnError(media::VideoCaptureError error) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   EmitLogMessage(__func__, 1);
-#endif // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   state_ = blink::VIDEO_CAPTURE_STATE_ERROR;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
 }
 
 void VideoCaptureController::OnFrameDropped(
     media::VideoCaptureFrameDropReason reason) {
-  TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
-               "VideoCaptureController::OnFrameDropped");
-
-  MaybeEmitFrameDropLogMessage(reason);
-
-  if (reason == frame_drop_log_state_.drop_reason) {
-    if (frame_drop_log_state_.max_log_count_exceeded)
-      return;
-
-    if (++frame_drop_log_state_.drop_count >
-        kMaxConsecutiveFrameDropForSameReasonCount) {
-      frame_drop_log_state_.max_log_count_exceeded = true;
-      LogMaxConsecutiveVideoFrameDropCountExceeded(reason, stream_type_);
-      return;
-    }
-  } else {
-    frame_drop_log_state_ = FrameDropLogState(reason);
-  }
-
-  LogVideoFrameDrop(reason, stream_type_);
-}
-
-void VideoCaptureController::OnNewCropVersion(uint32_t crop_version) {
-  DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  EmitLogMessage(base::StringPrintf("%s(%u)", __func__, crop_version), 3);
+  // This method implements media::VideoFrameReceiver, which implements signals
+  // between the capture process and browser process. We forward this call to
+  // the renderer process where it eventually reached the MediaStreamVideoTrack.
   for (const auto& client : controller_clients_) {
     if (client->session_closed) {
       continue;
     }
-    client->event_handler->OnNewCropVersion(client->controller_id,
-                                            crop_version);
+    client->event_handler->OnFrameDropped(client->controller_id, reason);
+  }
+}
+
+void VideoCaptureController::OnNewSubCaptureTargetVersion(
+    uint32_t sub_capture_target_version) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  EmitLogMessage(
+      base::StringPrintf("%s(%u)", __func__, sub_capture_target_version), 3);
+  for (const auto& client : controller_clients_) {
+    if (client->session_closed) {
+      continue;
+    }
+    client->event_handler->OnNewSubCaptureTargetVersion(
+        client->controller_id, sub_capture_target_version);
   }
 }
 
@@ -787,7 +700,9 @@ void VideoCaptureController::OnDeviceConnectionLost() {
 void VideoCaptureController::CreateAndStartDeviceAsync(
     const media::VideoCaptureParams& params,
     VideoCaptureDeviceLaunchObserver* observer,
-    base::OnceClosure done_cb) {
+    base::OnceClosure done_cb,
+    mojo::PendingRemote<video_effects::mojom::VideoEffectsProcessor>
+        video_effects_processor) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureController::CreateAndStartDeviceAsync");
@@ -802,7 +717,7 @@ void VideoCaptureController::CreateAndStartDeviceAsync(
       device_id_, stream_type_, params, GetWeakPtrForIOThread(),
       base::BindOnce(&VideoCaptureController::OnDeviceConnectionLost,
                      GetWeakPtrForIOThread()),
-      this, std::move(done_cb));
+      this, std::move(done_cb), std::move(video_effects_processor));
 }
 
 void VideoCaptureController::ReleaseDeviceAsync(base::OnceClosure done_cb) {
@@ -868,10 +783,12 @@ void VideoCaptureController::Resume() {
   launched_device_->ResumeDevice();
 }
 
-void VideoCaptureController::Crop(
-    const base::Token& crop_id,
-    uint32_t crop_version,
-    base::OnceCallback<void(media::mojom::CropRequestResult)> callback) {
+void VideoCaptureController::ApplySubCaptureTarget(
+    media::mojom::SubCaptureTargetType type,
+    const base::Token& target,
+    uint32_t sub_capture_target_version,
+    base::OnceCallback<void(media::mojom::ApplySubCaptureTargetResult)>
+        callback) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   DCHECK(launched_device_);
 
@@ -880,11 +797,13 @@ void VideoCaptureController::Crop(
   was_crop_ever_called_ = true;
 
   if (controller_clients_.size() != 1) {
-    std::move(callback).Run(media::mojom::CropRequestResult::kNotImplemented);
+    std::move(callback).Run(
+        media::mojom::ApplySubCaptureTargetResult::kNotImplemented);
     return;
   }
 
-  launched_device_->Crop(crop_id, crop_version, std::move(callback));
+  launched_device_->ApplySubCaptureTarget(
+      type, target, sub_capture_target_version, std::move(callback));
 }
 
 void VideoCaptureController::RequestRefreshFrame() {
@@ -944,7 +863,8 @@ void VideoCaptureController::OnClientFinishedConsumingBuffer(
     const media::VideoCaptureFeedback& feedback) {
   auto buffer_context_iter =
       FindBufferContextFromBufferContextId(buffer_context_id);
-  DCHECK(buffer_context_iter != buffer_contexts_.end());
+  CHECK(buffer_context_iter != buffer_contexts_.end(),
+        base::NotFatalUntil::M130);
 
   buffer_context_iter->RecordConsumerUtilization(feedback);
   buffer_context_iter->DecreaseConsumerCount();
@@ -984,43 +904,13 @@ void VideoCaptureController::PerformForClientsWithOpenSession(
 void VideoCaptureController::EmitLogMessage(const std::string& message,
                                             int verbose_log_level) {
   DVLOG(verbose_log_level) << message;
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
   LOG(INFO) << message;
-#endif // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   emit_log_message_cb_.Run(message);
 }
 
-void VideoCaptureController::MaybeEmitFrameDropLogMessage(
-    media::VideoCaptureFrameDropReason reason) {
-  using Type = std::underlying_type<media::VideoCaptureFrameDropReason>::type;
-  static_assert(
-      static_cast<Type>(media::VideoCaptureFrameDropReason::kMaxValue) <= 100,
-      "Risk of memory overuse.");
-
-  static_assert(kMaxEmittedLogsForDroppedFramesBeforeSuppressing <
-                    kFrequencyForSuppressedLogs,
-                "");
-
-  DCHECK_GE(static_cast<Type>(reason), 0);
-  DCHECK_LE(reason, media::VideoCaptureFrameDropReason::kMaxValue);
-
-  int& occurrences = frame_drop_log_counters_[reason];
-  if (++occurrences > kMaxEmittedLogsForDroppedFramesBeforeSuppressing &&
-      occurrences % kFrequencyForSuppressedLogs != 0) {
-    return;
-  }
-
-  std::ostringstream string_stream;
-  string_stream << "Frame dropped with reason code "
-                << static_cast<Type>(reason) << ".";
-  if (occurrences == kMaxEmittedLogsForDroppedFramesBeforeSuppressing) {
-    string_stream << " Additional logs will be partially suppressed.";
-  }
-
-  EmitLogMessage(string_stream.str(), 1);
-}
-
-#if defined(OHOS_WEBRTC)
+#if BUILDFLAG(ARKWEB_WEBRTC)
 void VideoCaptureController::PauseClientBySessionId(
     const base::UnguessableToken& session_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
@@ -1056,6 +946,14 @@ void VideoCaptureController::ResumeClientBySessionId(
 
   client->paused = false;
 }
-#endif  // defined(OHOS_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+void VideoCaptureController::SetScreenCaptureListener(
+    VideoCaptureManager* video_capture_manager) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  video_capture_manager_ = video_capture_manager;
+}
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
 }  // namespace content

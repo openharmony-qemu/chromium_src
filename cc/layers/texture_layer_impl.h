@@ -6,9 +6,11 @@
 #define CC_LAYERS_TEXTURE_LAYER_IMPL_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/ptr_util.h"
@@ -17,7 +19,6 @@
 #include "cc/resources/cross_thread_shared_bitmap.h"
 #include "components/viz/common/resources/release_callback.h"
 #include "components/viz/common/resources/transferable_resource.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/hdr_metadata.h"
 
 namespace cc {
@@ -33,6 +34,7 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
 
   TextureLayerImpl& operator=(const TextureLayerImpl&) = delete;
 
+  mojom::LayerType GetLayerType() const override;
   std::unique_ptr<LayerImpl> CreateLayerImpl(
       LayerTreeImpl* layer_tree_impl) const override;
   bool IsSnappedToPixelGridInTarget() override;
@@ -46,7 +48,10 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
   void ReleaseResources() override;
   void OnPurgeMemory() override;
   gfx::ContentColorUsage GetContentColorUsage() const override;
+
+#if BUILDFLAG(ARKWEB_WEBGL)
   bool ShouldDeferImplInvalidation() const final;
+#endif
 
   // These setter methods don't cause any implicit damage, so the texture client
   // must explicitly invalidate if they intend to cause a visible change in the
@@ -59,11 +64,11 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
   void SetNearestNeighbor(bool nearest_neighbor);
   void SetUVTopLeft(const gfx::PointF& top_left);
   void SetUVBottomRight(const gfx::PointF& bottom_right);
-  void SetHDRConfiguration(gfx::HDRMode mode,
-                           absl::optional<gfx::HDRMetadata> hdr_metadata);
+  void SetHdrMetadata(const gfx::HDRMetadata& hdr_metadata);
 
   void SetTransferableResource(const viz::TransferableResource& resource,
                                viz::ReleaseCallback release_callback);
+  bool NeedSetTransferableResource() const;
 
   // These methods notify the display compositor, through the
   // CompositorFrameSink, of the existence of a SharedBitmapId and its
@@ -78,12 +83,18 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
   void RegisterSharedBitmapId(viz::SharedBitmapId id,
                               scoped_refptr<CrossThreadSharedBitmap> bitmap);
   void UnregisterSharedBitmapId(viz::SharedBitmapId id);
+  void SetInInvisibleLayerTree() override;
+  // Whether the resource may be evicted in background. If it returns true, main
+  // is responsible for making sure that the resource is imported again after a
+  // visibility change.
+  static bool MayEvictResourceInBackground(
+      viz::TransferableResource::ResourceSource source);
 
  private:
   TextureLayerImpl(LayerTreeImpl* tree_impl, int id);
 
-  const char* LayerTypeAsString() const override;
   void FreeTransferableResource();
+  void OnResourceEvicted();
 
   bool premultiplied_alpha_ = true;
   bool blend_background_color_ = false;
@@ -92,8 +103,6 @@ class CC_EXPORT TextureLayerImpl : public LayerImpl {
   bool nearest_neighbor_ = false;
   gfx::PointF uv_top_left_ = gfx::PointF();
   gfx::PointF uv_bottom_right_ = gfx::PointF(1.f, 1.f);
-  gfx::HDRMode hdr_mode_ = gfx::HDRMode::kDefault;
-  absl::optional<gfx::HDRMetadata> hdr_metadata_;
 
   // True while the |transferable_resource_| is owned by this layer, and
   // becomes false once it is passed to another layer or to the

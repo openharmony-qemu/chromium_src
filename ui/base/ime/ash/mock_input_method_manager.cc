@@ -76,7 +76,7 @@ size_t MockInputMethodManager::State::GetNumEnabledInputMethods() const {
 }
 
 void MockInputMethodManager::State::SetEnabledExtensionImes(
-    std::vector<std::string>* ids) {}
+    base::span<const std::string> ids) {}
 
 void MockInputMethodManager::State::SetInputMethodLoginDefault() {}
 
@@ -164,6 +164,9 @@ void MockInputMethodManager::ActivateInputMethodMenuItem(
 void MockInputMethodManager::ConnectInputEngineManager(
     mojo::PendingReceiver<ime::mojom::InputEngineManager> receiver) {}
 
+void MockInputMethodManager::BindInputMethodUserDataService(
+    mojo::PendingReceiver<ime::mojom::InputMethodUserDataService> receiver) {}
+
 bool MockInputMethodManager::IsISOLevel5ShiftUsedByCurrentInputMethod() const {
   return false;
 }
@@ -194,7 +197,12 @@ bool MockInputMethodManager::IsLoginKeyboard(const std::string& layout) const {
   return true;
 }
 
-bool MockInputMethodManager::MigrateInputMethods(
+std::string MockInputMethodManager::GetMigratedInputMethodID(
+    const std::string& input_method_id) {
+  return "";
+}
+
+bool MockInputMethodManager::GetMigratedInputMethodIDs(
     std::vector<std::string>* input_method_ids) {
   return false;
 }
@@ -223,10 +231,11 @@ void MockInputMethodManager::OverrideKeyboardKeyset(ImeKeyset keyset) {}
 
 void MockInputMethodManager::SetImeMenuFeatureEnabled(ImeMenuFeature feature,
                                                       bool enabled) {
-  if (enabled)
+  if (enabled) {
     features_enabled_state_ |= feature;
-  else
+  } else {
     features_enabled_state_ &= ~feature;
+  }
 }
 
 bool MockInputMethodManager::GetImeMenuFeatureEnabled(

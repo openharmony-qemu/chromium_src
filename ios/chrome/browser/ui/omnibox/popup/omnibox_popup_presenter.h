@@ -7,7 +7,12 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/shared/ui/util/layout_guide_names.h"
+#import "ios/chrome/browser/ui/toolbar/public/toolbar_omnibox_consumer.h"
+#import "ios/chrome/browser/ui/toolbar/public/toolbar_type.h"
+
 @protocol ContentProviding;
+@class LayoutGuideCenter;
 @class OmniboxPopupPresenter;
 
 @protocol OmniboxPopupPresenterDelegate
@@ -19,6 +24,15 @@
 - (UIViewController*)popupParentViewControllerForPresenter:
     (OmniboxPopupPresenter*)presenter;
 
+/// Returns the background color for the popup to match the style of the
+/// toolbar.
+- (UIColor*)popupBackgroundColorForPresenter:(OmniboxPopupPresenter*)presenter;
+
+/// Returns the layout guide name used to anchor the omnibox popup to the
+/// omnibox textfield. If nil, the popup will be fully expanded inside of the
+/// parent view, from `popupParentViewForPresenter`.
+- (GuideName*)omniboxGuideNameForPresenter:(OmniboxPopupPresenter*)presenter;
+
 /// Alert the delegate that the popup opened.
 - (void)popupDidOpenForPresenter:(OmniboxPopupPresenter*)presenter;
 
@@ -28,27 +42,28 @@
 @end
 
 /// The UI Refresh implementation of the popup presenter.
-/// TODO(crbug.com/936833): This class should be refactored to handle a nil
+/// TODO(crbug.com/40616000): This class should be refactored to handle a nil
 /// delegate.
-@interface OmniboxPopupPresenter : NSObject
+@interface OmniboxPopupPresenter : NSObject <ToolbarOmniboxConsumer>
 
 /// Whether the popup is open
 @property(nonatomic, assign, getter=isOpen) BOOL open;
 
 /// Uses the popup's intrinsic content size to add or remove the popup view
-/// if necessary.
-- (void)updatePopup;
+/// if necessary. The animation changes depending on:
+/// `isFocusingOmnibox`: Omnibox is being focused.
+- (void)updatePopupOnFocus:(BOOL)isFocusingOmnibox;
 
-/// Only called when IsIpadPopoutOmniboxEnabled is true.
 /// Tells the presenter to update, following a trait collection change.
 - (void)updatePopupAfterTraitCollectionChange;
 
-- (instancetype)initWithPopupPresenterDelegate:
-                    (id<OmniboxPopupPresenterDelegate>)presenterDelegate
-                           popupViewController:
-                               (UIViewController<ContentProviding>*)
-                                   viewController
-                                     incognito:(BOOL)incognito;
+- (instancetype)
+    initWithPopupPresenterDelegate:
+        (id<OmniboxPopupPresenterDelegate>)presenterDelegate
+               popupViewController:
+                   (UIViewController<ContentProviding>*)viewController
+                 layoutGuideCenter:(LayoutGuideCenter*)layoutGuideCenter
+                         incognito:(BOOL)incognito;
 
 @end
 

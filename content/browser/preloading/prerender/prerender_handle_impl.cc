@@ -7,13 +7,14 @@
 #include "content/browser/preloading/prerender/prerender_final_status.h"
 #include "content/browser/preloading/prerender/prerender_host.h"
 #include "content/browser/preloading/prerender/prerender_host_registry.h"
-#include "content/public/browser/prerender_trigger_type.h"
+#include "content/public/browser/preloading_trigger_type.h"
+#include "url/gurl.h"
 
 namespace content {
 
 PrerenderHandleImpl::PrerenderHandleImpl(
     base::WeakPtr<PrerenderHostRegistry> prerender_host_registry,
-    int frame_tree_node_id,
+    FrameTreeNodeId frame_tree_node_id,
     const GURL& prerendering_url)
     : prerender_host_registry_(std::move(prerender_host_registry)),
       frame_tree_node_id_(frame_tree_node_id),
@@ -24,7 +25,7 @@ PrerenderHandleImpl::PrerenderHandleImpl(
   auto* prerender_host =
       prerender_host_registry_->FindNonReservedHostById(frame_tree_node_id);
   CHECK(prerender_host);
-  CHECK_EQ(prerender_host->trigger_type(), PrerenderTriggerType::kEmbedder);
+  CHECK_EQ(prerender_host->trigger_type(), PreloadingTriggerType::kEmbedder);
 }
 
 PrerenderHandleImpl::~PrerenderHandleImpl() {
@@ -34,7 +35,7 @@ PrerenderHandleImpl::~PrerenderHandleImpl() {
   }
 }
 
-GURL PrerenderHandleImpl::GetInitialPrerenderingUrl() {
+const GURL& PrerenderHandleImpl::GetInitialPrerenderingUrl() const {
   return prerendering_url_;
 }
 

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -124,19 +129,16 @@ DownloadPathReservationTrackerTest::CreateDownloadItem(int32_t id) {
       .WillRepeatedly(Return(DownloadItem::IN_PROGRESS));
   EXPECT_CALL(*item, GetURL()).WillRepeatedly(ReturnRefOfCopy(GURL()));
 
-  base::Time::Exploded exploded_reference_time;
-  exploded_reference_time.year = 2019;
-  exploded_reference_time.month = 1;
-  exploded_reference_time.day_of_month = 23;
-  exploded_reference_time.day_of_week = 3;
-  exploded_reference_time.hour = 16;
-  exploded_reference_time.minute = 35;
-  exploded_reference_time.second = 30;
-  exploded_reference_time.millisecond = 20;
-
+  static constexpr base::Time::Exploded kReferenceTime = {.year = 2019,
+                                                          .month = 1,
+                                                          .day_of_week = 3,
+                                                          .day_of_month = 23,
+                                                          .hour = 16,
+                                                          .minute = 35,
+                                                          .second = 30,
+                                                          .millisecond = 20};
   base::Time test_time;
-  EXPECT_TRUE(
-      base::Time::FromLocalExploded(exploded_reference_time, &test_time));
+  EXPECT_TRUE(base::Time::FromLocalExploded(kReferenceTime, &test_time));
 
   EXPECT_CALL(*item, GetStartTime()).WillRepeatedly(Return(test_time));
   return item;
@@ -507,7 +509,7 @@ TEST_F(DownloadPathReservationTrackerTest, UnresolvedConflicts) {
 }
 
 #if BUILDFLAG(IS_FUCHSIA)
-// TODO(crbug.com/1314073): Re-enable when UnwriteableDirectory works on
+// TODO(crbug.com/40221275): Re-enable when UnwriteableDirectory works on
 // Fuchsia.
 #define MAYBE_UnwriteableDirectory DISABLED_UnwriteableDirectory
 #else

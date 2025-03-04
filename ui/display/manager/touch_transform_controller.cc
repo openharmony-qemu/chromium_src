@@ -95,7 +95,6 @@ bool GetCalibratedTransform(
   // only solution is to restart touch calibration and get new points from user.
   if (!product_matrix.GetInverse(&product_matrix_inverse)) {
     NOTREACHED() << "Touch Calibration failed. Determinant is zero.";
-    return false;
   }
 
   product_matrix_inverse.set_rc(3, 3, 0);
@@ -186,8 +185,8 @@ double TouchTransformController::GetTouchResolutionScale(
       touch_display.bounds_in_native().size().IsEmpty())
     return 1.0;
 
-  double display_area = touch_display.bounds_in_native().size().GetArea();
-  double touch_area = touch_device.size.GetArea();
+  double display_area = touch_display.bounds_in_native().size().Area64();
+  double touch_area = touch_device.size.Area64();
   double ratio = std::sqrt(display_area / touch_area);
 
   VLOG(2) << "Display size: "

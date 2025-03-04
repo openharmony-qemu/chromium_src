@@ -7,17 +7,8 @@
 
 @class NSString;
 
-// Key to store whether the What's New promo has been register.
-extern NSString* const kWhatsNewPromoRegistrationKey;
-
-// Key to store the date of FRE.
-extern NSString* const kWhatsNewDaysAfterFre;
-
-// Key to store the number of launches after FRE.
-extern NSString* const kWhatsNewLaunchesAfterFre;
-
-// Key to store whether a user interacted with What's New from the overflow
+// Key to store whether a user interacted with What's New M116 from the overflow
 // menu.
-extern NSString* const kWhatsNewUsageEntryKey;
+extern NSString* const kWhatsNewM116UsageEntryKey;
 
 #endif  // IOS_CHROME_BROWSER_UI_WHATS_NEW_CONSTANTS_H_

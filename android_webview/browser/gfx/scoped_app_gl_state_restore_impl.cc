@@ -7,7 +7,6 @@
 #include <string>
 
 #include "base/android/build_info.h"
-#include "base/functional/callback_helpers.h"
 #include "base/lazy_instance.h"
 #include "base/metrics/histogram_macros.h"
 #include "components/viz/common/features.h"
@@ -182,13 +181,6 @@ ScopedAppGLStateRestoreImpl::ScopedAppGLStateRestoreImpl(
 }
 
 void ScopedAppGLStateRestoreImpl::SaveHWUIState(bool save_restore) {
-  base::ScopedClosureRunner uma_runner(base::BindOnce(
-      [](base::TimeTicks start_time) {
-        UMA_HISTOGRAM_TIMES("Android.WebView.Gfx.SaveHWUIStateDuration",
-                            base::TimeTicks::Now() - start_time);
-      },
-      base::TimeTicks::Now()));
-
   if (g_supports_arm_shader_framebuffer_fetch)
     glGetBooleanv(GL_FETCH_PER_SAMPLE_ARM, &fetch_per_sample_arm_enabled_);
 
@@ -282,7 +274,7 @@ void ScopedAppGLStateRestoreImpl::SaveHWUIState(bool save_restore) {
     glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_STRIDE,
                         &vertex_attrib_[i].stride);
     glGetVertexAttribPointerv(i, GL_VERTEX_ATTRIB_ARRAY_POINTER,
-                              &vertex_attrib_[i].pointer);
+                              &vertex_attrib_[i].pointer.AsEphemeralRawAddr());
     glGetVertexAttribfv(i, GL_CURRENT_VERTEX_ATTRIB,
                         vertex_attrib_[i].current_vertex_attrib);
   }

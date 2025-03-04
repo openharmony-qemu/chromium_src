@@ -5,13 +5,15 @@
 #ifndef CC_MOJOM_RENDER_FRAME_METADATA_MOJOM_TRAITS_H_
 #define CC_MOJOM_RENDER_FRAME_METADATA_MOJOM_TRAITS_H_
 
+#include <optional>
+
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 #include "cc/mojom/render_frame_metadata.mojom-shared.h"
 #include "cc/trees/render_frame_metadata.h"
 #include "services/viz/public/cpp/compositing/local_surface_id_mojom_traits.h"
 #include "skia/public/mojom/skcolor4f_mojom_traits.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/skia/include/core/SkColor.h"
 
 namespace mojo {
@@ -38,7 +40,7 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
     return metadata.root_background_color;
   }
 
-  static const absl::optional<gfx::PointF>& root_scroll_offset(
+  static const std::optional<gfx::PointF>& root_scroll_offset(
       const cc::RenderFrameMetadata& metadata) {
     return metadata.root_scroll_offset;
   }
@@ -56,7 +58,7 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
     return metadata.is_mobile_optimized;
   }
 
-  static const absl::optional<cc::DelegatedInkBrowserMetadata>&
+  static const std::optional<cc::DelegatedInkBrowserMetadata>&
   delegated_ink_metadata(const cc::RenderFrameMetadata& metadata) {
     return metadata.delegated_ink_metadata;
   }
@@ -70,7 +72,7 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
     return metadata.viewport_size_in_pixels;
   }
 
-  static const absl::optional<viz::LocalSurfaceId>& local_surface_id(
+  static const std::optional<viz::LocalSurfaceId>& local_surface_id(
       const cc::RenderFrameMetadata& metadata) {
     return metadata.local_surface_id;
   }
@@ -98,17 +100,12 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
     return metadata.new_vertical_scroll_direction;
   }
 
-  static base::TimeDelta previous_surfaces_visual_update_duration(
+  static int64_t primary_main_frame_item_sequence_number(
       const cc::RenderFrameMetadata& metadata) {
-    return metadata.previous_surfaces_visual_update_duration;
+    return metadata.primary_main_frame_item_sequence_number;
   }
 
-  static base::TimeDelta current_surface_visual_update_duration(
-      const cc::RenderFrameMetadata& metadata) {
-    return metadata.current_surface_visual_update_duration;
-  }
-
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   static float bottom_controls_height(const cc::RenderFrameMetadata& metadata) {
     return metadata.bottom_controls_height;
   }
@@ -156,7 +153,7 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
   }
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
   static const gfx::SizeF& scrollable_viewport_size(
       const cc::RenderFrameMetadata& metadata) {
     return metadata.scrollable_viewport_size;
@@ -166,14 +163,19 @@ struct COMPONENT_EXPORT(CC_SHARED_MOJOM_TRAITS)
       const cc::RenderFrameMetadata& metadata) {
     return metadata.root_layer_size;
   }
+
+  static bool root_overflow_y_hidden(const cc::RenderFrameMetadata& metadata) {
+    return metadata.root_overflow_y_hidden;
+  }
 #endif
 
-#ifdef OHOS_CLIPBOARD
+#if BUILDFLAG(ARKWEB_MENU)
   static const gfx::Rect& clipped_selection_bounds(
-    const cc::RenderFrameMetadata& metadata) {
+      const cc::RenderFrameMetadata& metadata) {
     return metadata.clipped_selection_bounds;
   }
 #endif
+
   static bool Read(cc::mojom::RenderFrameMetadataDataView data,
                    cc::RenderFrameMetadata* out);
 };

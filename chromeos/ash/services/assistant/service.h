@@ -6,6 +6,7 @@
 #define CHROMEOS_ASH_SERVICES_ASSISTANT_SERVICE_H_
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "ash/public/cpp/assistant/assistant_state.h"
@@ -26,9 +27,9 @@
 #include "components/signin/public/identity_manager/account_info.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "net/base/backoff_entry.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 class GoogleServiceAuthError;
+class PrefService;
 
 namespace base {
 class OneShotTimer;
@@ -69,7 +70,8 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
  public:
   Service(std::unique_ptr<network::PendingSharedURLLoaderFactory>
               pending_url_loader_factory,
-          signin::IdentityManager* identity_manager);
+          signin::IdentityManager* identity_manager,
+          PrefService* pref_service);
 
   Service(const Service&) = delete;
   Service& operator=(const Service&) = delete;
@@ -141,6 +143,7 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
 
   void StopAssistantManagerService();
 
+  void OnLibassistantServiceRunning();
   void OnLibassistantServiceStopped();
   void OnLibassistantServiceDisconnected();
 
@@ -148,7 +151,7 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
 
   void UpdateListeningState();
 
-  absl::optional<AssistantManagerService::UserInfo> GetUserInfo() const;
+  std::optional<AssistantManagerService::UserInfo> GetUserInfo() const;
 
   ServiceContext* context() { return context_.get(); }
 
@@ -169,13 +172,18 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
     auto_recover_time_for_testing_ = delay;
   }
 
+  bool CanStartService() const;
+
+  void OnDataDeleted();
+
   // |ServiceContext| object passed to child classes so they can access some of
   // our functionality without depending on us.
   // Note: this is used by the other members here, so it must be defined first
   // so it is destroyed last.
   std::unique_ptr<ServiceContext> context_;
 
-  const raw_ptr<signin::IdentityManager, ExperimentalAsh> identity_manager_;
+  const raw_ptr<signin::IdentityManager> identity_manager_;
+  const raw_ptr<PrefService> pref_service_;
   std::unique_ptr<ScopedAshSessionObserver> scoped_ash_session_observer_;
   std::unique_ptr<AssistantManagerService> assistant_manager_service_;
   std::unique_ptr<base::OneShotTimer> token_refresh_timer_;
@@ -195,6 +203,8 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
   bool power_source_connected_ = false;
   // Whether the libassistant library is loaded.
   bool libassistant_loaded_ = false;
+  // Whether is deleting data.
+  bool is_deleting_data_ = false;
 
   // The value passed into |SetAssistantManagerServiceForTesting|.
   // Will be moved into |assistant_manager_service_| when the service is
@@ -202,7 +212,7 @@ class COMPONENT_EXPORT(ASSISTANT_SERVICE) Service
   std::unique_ptr<AssistantManagerService>
       assistant_manager_service_for_testing_;
 
-  absl::optional<std::string> access_token_;
+  std::optional<std::string> access_token_;
 
   // non-null until |assistant_manager_service_| is created.
   std::unique_ptr<network::PendingSharedURLLoaderFactory>

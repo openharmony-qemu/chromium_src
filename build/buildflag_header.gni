@@ -128,10 +128,15 @@ template("buildflag_header") {
                            [
                              "deps",
                              "public_deps",
+                             "public_configs",
                              "testonly",
                              "visibility",
                            ])
 
-    public_deps = [ "//build:buildflag_header_h" ]
+    if (defined(public_deps)) {
+      public_deps += [ "//build:buildflag_header_h" ]
+    } else {
+      public_deps = [ "//build:buildflag_header_h" ]
+    }
   }
 }

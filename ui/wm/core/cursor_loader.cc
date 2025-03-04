@@ -5,19 +5,18 @@
 #include "ui/wm/core/cursor_loader.h"
 
 #include <map>
+#include <optional>
 #include <vector>
 
 #include "base/check.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/time/time.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/base/cursor/cursor.h"
 #include "ui/base/cursor/cursor_factory.h"
 #include "ui/base/cursor/cursor_size.h"
 #include "ui/base/cursor/mojom/cursor_type.mojom.h"
 #include "ui/base/cursor/platform_cursor.h"
-#include "ui/base/layout.h"
 #include "ui/base/resource/resource_scale_factor.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/wm/core/cursor_util.h"
@@ -63,8 +62,6 @@ bool CursorLoader::SetDisplay(const display::Display& display) {
       ui::GetSupportedResourceScaleFactor(scale_));
 
   UnloadCursors();
-  if (use_platform_cursors_)
-    factory_->SetDeviceScaleFactor(scale_);
   return true;
 }
 
@@ -87,7 +84,7 @@ void CursorLoader::SetPlatformCursor(ui::Cursor* cursor) {
   cursor->SetPlatformCursor(CursorFromType(cursor->type()));
 }
 
-absl::optional<ui::CursorData> CursorLoader::GetCursorData(
+std::optional<ui::CursorData> CursorLoader::GetCursorData(
     const ui::Cursor& cursor) const {
   CursorType type = cursor.type();
   if (type == CursorType::kNone)
@@ -101,7 +98,7 @@ absl::optional<ui::CursorData> CursorLoader::GetCursorData(
   if (use_platform_cursors_) {
     auto cursor_data = factory_->GetCursorData(type);
     if (cursor_data) {
-      // TODO(https://crbug.com/1193775): consider either passing `scale_` to
+      // TODO(crbug.com/40175364): consider either passing `scale_` to
       // `CursorFactory::GetCursorData`, or relying on having called
       // `CursorFactory::SetDeviceScaleFactor`, instead of appending it here.
       return ui::CursorData(std::move(cursor_data->bitmaps),
@@ -109,10 +106,10 @@ absl::optional<ui::CursorData> CursorLoader::GetCursorData(
     }
   }
 
-  // TODO(https://crbug.com/1193775): use the actual `rotation_` if that makes
+  // TODO(crbug.com/40175364): use the actual `rotation_` if that makes
   // sense for the current use cases of `GetCursorData` (e.g. Chrome Remote
   // Desktop, WebRTC and VideoRecordingWatcher).
-  return wm::GetCursorData(type, size_, resource_scale_,
+  return wm::GetCursorData(type, size_, resource_scale_, std::nullopt,
                            display::Display::ROTATE_0);
 }
 
@@ -127,7 +124,7 @@ scoped_refptr<ui::PlatformCursor> CursorLoader::CursorFromType(
   // into account the different ways of creating an invisible cursor.
   scoped_refptr<ui::PlatformCursor> cursor;
   if (use_platform_cursors_ || type == CursorType::kNone) {
-    cursor = factory_->GetDefaultCursor(type);
+    cursor = factory_->GetDefaultCursor(type, scale_);
     if (cursor)
       return cursor;
     // The cursor may fail to load if the cursor theme has just been reset.
@@ -149,19 +146,20 @@ scoped_refptr<ui::PlatformCursor> CursorLoader::CursorFromType(
 
 scoped_refptr<ui::PlatformCursor> CursorLoader::LoadCursorFromAsset(
     CursorType type) {
-  absl::optional<ui::CursorData> cursor_data =
-      wm::GetCursorData(type, size_, resource_scale_, rotation_);
+  std::optional<ui::CursorData> cursor_data =
+      wm::GetCursorData(type, size_, resource_scale_, std::nullopt, rotation_);
   if (!cursor_data) {
     return nullptr;
   }
 
   if (cursor_data->bitmaps.size() == 1) {
     image_cursors_[type] = factory_->CreateImageCursor(
-        type, cursor_data->bitmaps[0], cursor_data->hotspot);
+        type, cursor_data->bitmaps[0], cursor_data->hotspot,
+        cursor_data->scale_factor);
   } else {
     image_cursors_[type] = factory_->CreateAnimatedCursor(
         type, cursor_data->bitmaps, cursor_data->hotspot,
-        kAnimatedCursorFrameDelay);
+        cursor_data->scale_factor, kAnimatedCursorFrameDelay);
   }
   return image_cursors_[type];
 }

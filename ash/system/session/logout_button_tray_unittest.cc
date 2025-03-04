@@ -74,7 +74,8 @@ TEST_F(LogoutButtonTrayTest, Visibility) {
   EXPECT_FALSE(button->GetVisible());
 }
 
-TEST_F(LogoutButtonTrayTest, ButtonPressed) {
+// TODO(crbug.com/1491544): Test is flaky.
+TEST_F(LogoutButtonTrayTest, DISABLED_ButtonPressed) {
   constexpr char kUserAction[] = "DemoMode.ExitFromShelf";
 
   LogoutButtonTray* const tray = Shell::GetPrimaryRootWindowController()
@@ -85,8 +86,8 @@ TEST_F(LogoutButtonTrayTest, ButtonPressed) {
   TestSessionControllerClient* const session_client =
       GetSessionControllerClient();
   base::UserActionTester user_action_tester;
-  const ui::MouseEvent event(ui::ET_MOUSE_PRESSED, gfx::Point(), gfx::Point(),
-                             ui::EventTimeForNow(), 0, 0);
+  const ui::MouseEvent event(ui::EventType::kMousePressed, gfx::Point(),
+                             gfx::Point(), ui::EventTimeForNow(), 0, 0);
   PrefService* const pref_service =
       Shell::Get()->session_controller()->GetUserPrefServiceForUser(
           AccountId::FromUserEmail(kUserEmail));

@@ -6,26 +6,33 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
-#include "base/command_line.h"
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
 #include "base/datashare_uri_utils.h"
 #endif
+#include "base/command_line.h"
+#include "base/containers/span.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback_helpers.h"
+#include "base/i18n/time_formatting.h"
 #include "base/memory/ptr_util.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/strings/string_piece.h"
 #include "base/strings/string_util.h"
 #include "base/strings/sys_string_conversions.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/task/bind_post_task.h"
 #include "base/task/thread_pool.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
+#include "components/file_access/scoped_file_access.h"
+#include "components/file_access/scoped_file_access_delegate.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/content_browser_client.h"
@@ -67,8 +74,8 @@
 #include "base/win/shortcut.h"
 #endif
 
-#ifdef OHOS_HAP_DECOMPRESSED
-#include "ohos_adapter_helper.h"
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 
 namespace content {
@@ -177,7 +184,7 @@ class FileURLDirectoryLoader
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override {}
+      const std::optional<GURL>& new_url) override {}
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override {}
   void PauseReadingBodyFromNet() override {}
@@ -234,7 +241,7 @@ class FileURLDirectoryLoader
     head->charset = "utf-8";
     head->response_type = response_type;
     client->OnReceiveResponse(std::move(head), std::move(consumer_handle),
-                              absl::nullopt);
+                              std::nullopt);
     client_ = std::move(client);
 
     lister_ = std::make_unique<net::DirectoryLister>(path_, this);
@@ -267,8 +274,9 @@ class FileURLDirectoryLoader
   }
 
   void MaybeDeleteSelf() {
-    if (!receiver_.is_bound() && !client_.is_bound() && !lister_)
+    if (!receiver_.is_bound() && !client_.is_bound() && !lister_) {
       delete this;
+    }
   }
 
   // net::DirectoryLister::DirectoryListerDelegate:
@@ -302,8 +310,9 @@ class FileURLDirectoryLoader
   }
 
   void MaybeTransferPendingData() {
-    if (transfer_in_progress_)
+    if (transfer_in_progress_) {
       return;
+    }
 
     transfer_in_progress_ = true;
     data_producer_->Write(
@@ -333,8 +342,9 @@ class FileURLDirectoryLoader
 
       // If there's no pending data but the lister is still active, we simply
       // wait for more listing results.
-      if (lister_)
+      if (lister_) {
         return;
+      }
 
       // At this point we know the listing is complete and all available data
       // has been transferred. We inherit the status of the listing operation.
@@ -375,7 +385,7 @@ class FileURLDirectoryLoader
   uint64_t total_bytes_written_ = 0;
 };
 
-#ifdef OHOS_HAP_DECOMPRESSED
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
 constexpr int32_t APPLICATION_API_10 = 10;
 
 int32_t GetApplicationApiVersion() {
@@ -418,7 +428,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override {}
+      const std::optional<GURL>& new_url) override {}
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override {}
   void PauseReadingBodyFromNet() override {}
@@ -447,35 +457,20 @@ class ResourceURLLoader : public network::mojom::URLLoader {
 
     if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
             switches::kOhosHapPath)) {
-      LOG(ERROR) << "kOhosHapPath not exist";
       OnClientComplete(net::ERR_FAILED, std::move(observer));
       return;
     }
     std::string resourcesPath;
     if (request.url.SchemeIs(url::kResourcesScheme)) {
       resourcesPath = "resources/";
-      resourcesPath += request.url.host() + net::UnescapePercentEncodedUrl(request.url.path());
-    } else if (request.url.SchemeIs(url::kFileScheme)) {
-      base::FilePath path;
-      if (!net::FileURLToFilePath(request.url, &path)) {
-        LOG(ERROR) << "url invalid: " << request.url.spec();
-        OnClientComplete(net::ERR_FAILED, std::move(observer));
-        return;
-      }
-      std::string strPath = path.MaybeAsASCII();
-      size_t nPos = strPath.find("resources/");
-      if (nPos == std::string::npos) {
-        LOG(ERROR) << "is not a file under the resources folder: "
-                   << request.url.spec();
-        OnClientComplete(net::ERR_FILE_NOT_FOUND, std::move(observer));
-        return;
-      }
-      resourcesPath = strPath.substr(nPos);
+      resourcesPath += request.url.host() +
+                       net::UnescapePercentEncodedUrl(request.url.path());
     } else {
       LOG(ERROR) << "url scheme error";
       OnClientComplete(net::ERR_FAILED, std::move(observer));
       return;
     }
+
     LOG(INFO) << "ResourceURLLoader url: " << request.url.spec()
               << ", path: " << resourcesPath;
     std::string hapPath =
@@ -507,7 +502,8 @@ class ResourceURLLoader : public network::mojom::URLLoader {
             hapPath);
     mojo::DataPipeProducer::DataSource::ReadResult read_result;
 
-    if (!resourceInstance->GetRawFileData(resourcesPath, length, &rawData, false)) {
+    if (!resourceInstance->GetRawFileData(resourcesPath, length, &rawData,
+                                          false)) {
       LOG(ERROR) << "ResourceURLLoader GetRawFileData failed";
       read_result.result = MOJO_RESULT_NOT_FOUND;
       if (observer) {
@@ -524,23 +520,26 @@ class ResourceURLLoader : public network::mojom::URLLoader {
     read_result.result = MOJO_RESULT_OK;
     read_result.bytes_read =
         length > net::kMaxBytesToSniff ? net::kMaxBytesToSniff : length;
-    std::vector<char> initial_read_buffer;
     std::unique_ptr<uint8_t[]> data;
     data.reset(rawData);
     char* dataPtr = reinterpret_cast<char*>(data.get());
+    std::vector<char> initial_read_buffer(net::kMaxBytesToSniff);
+    for (size_t i = 0; i < read_result.bytes_read; ++i) {
+      initial_read_buffer[i] = *(dataPtr + i);
+    }
     if (observer) {
       observer->OnRead(base::span<char>(dataPtr, length), &read_result);
     }
 
     uint64_t initial_read_size = read_result.bytes_read;
-    std::string range_header;
     net::HttpByteRange byte_range;
-    if (request.headers.GetHeader(net::HttpRequestHeaders::kRange,
-                                  &range_header)) {
+    if (std::optional<std::string> range_header =
+            request.headers.GetHeader(net::HttpRequestHeaders::kRange);
+        range_header) {
       // Handle a simple Range header for a single range.
       std::vector<net::HttpByteRange> ranges;
       bool fail = false;
-      if (net::HttpUtil::ParseRangeHeader(range_header, &ranges) &&
+      if (net::HttpUtil::ParseRangeHeader(*range_header, &ranges) &&
           ranges.size() == 1) {
         byte_range = ranges[0];
         if (!byte_range.ComputeBounds(length)) {
@@ -564,23 +563,24 @@ class ResourceURLLoader : public network::mojom::URLLoader {
     }
     total_bytes_written_ = total_bytes_to_send;
     head->content_length = base::saturated_cast<int64_t>(total_bytes_to_send);
-
     if (first_byte_to_send < initial_read_size) {
-      uint32_t write_size = std::min(
-          static_cast<uint32_t>(initial_read_size - first_byte_to_send),
-          static_cast<uint32_t>(total_bytes_to_send));
-      const uint32_t expected_write_size = write_size;
-      MojoResult result =
-          producer_handle->WriteData(dataPtr + first_byte_to_send,
-                                     &write_size, MOJO_WRITE_DATA_FLAG_NONE);
-      if (result != MOJO_RESULT_OK || write_size != expected_write_size) {
+      base::span<const uint8_t> bytes_to_write =
+          base::as_byte_span(initial_read_buffer)
+              .subspan(base::checked_cast<size_t>(first_byte_to_send));
+      bytes_to_write = bytes_to_write.first(base::checked_cast<size_t>(std::min(
+          static_cast<uint64_t>(bytes_to_write.size()), total_bytes_to_send)));
+
+      size_t actually_written_bytes = 0;
+      MojoResult result = producer_handle->WriteData(
+          bytes_to_write, MOJO_WRITE_DATA_FLAG_NONE, actually_written_bytes);
+      if (result != MOJO_RESULT_OK) {
         OnFileWritten(std::move(observer), nullptr, result);
         LOG(ERROR) << "ResourceURLLoader WriteData failed";
         return;
       }
       // Discount the bytes we just sent from the total range.
       first_byte_to_send = initial_read_size;
-      total_bytes_to_send -= write_size;
+      total_bytes_to_send -= actually_written_bytes;
     }
     const base::FilePath::CharType* resource_file_path =
         FILE_PATH_LITERAL(resourcesPath.c_str());
@@ -588,7 +588,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
                                   &head->mime_type)) {
       std::string new_type;
       net::SniffMimeType(
-          base::StringPiece(dataPtr, read_result.bytes_read),
+          std::string_view(initial_read_buffer.data(), read_result.bytes_read),
           request.url, head->mime_type,
           GetContentClient()->browser()->ForceSniffingFileUrlsForHtml()
               ? net::ForceSniffFileUrlsForHtml::kEnabled
@@ -604,24 +604,31 @@ class ResourceURLLoader : public network::mojom::URLLoader {
     LOG(INFO) << "ResourceURLLoader AddHeader mime_type " << head->mime_type;
     head->headers->AddHeader(net::HttpRequestHeaders::kContentType,
                              head->mime_type);
-    client_->OnReceiveResponse(std::move(head),
-                               std::move(consumer_handle), absl::nullopt);
+    client_->OnReceiveResponse(std::move(head), std::move(consumer_handle),
+                               std::nullopt);
     LOG(INFO) << "total_bytes_to_send: " << total_bytes_to_send;
     if (total_bytes_to_send == 0) {
       // There's definitely no more data, so we're already done.
       OnFileWritten(std::move(observer), nullptr, MOJO_RESULT_OK);
       return;
     }
+
+    // In case of a range request, seek to the appropriate position before
+    // sending the remaining bytes asynchronously. Under normal conditions
+    // (i.e., no range request) this Seek is effectively a no-op.
     if (observer) {
       observer->OnSeekComplete(first_byte_to_send);
     }
+
     data_producer_ =
         std::make_unique<mojo::DataPipeProducer>(std::move(producer_handle));
-    base::StringPiece string_piece(dataPtr + first_byte_to_send,
-                                   total_bytes_to_send);
-    data_producer_->Write(std::make_unique<mojo::FilteredDataSource>(
-            std::make_unique<mojo::StringDataSource>(string_piece,
-                mojo::StringDataSource::AsyncWritingMode::STRING_STAYS_VALID_UNTIL_COMPLETION),
+    std::string_view remaining_buffer(dataPtr + first_byte_to_send,
+                                      total_bytes_to_send);
+    data_producer_->Write(
+        std::make_unique<mojo::FilteredDataSource>(
+            std::make_unique<mojo::StringDataSource>(
+                remaining_buffer, mojo::StringDataSource::AsyncWritingMode::
+                                      STRING_STAYS_VALID_UNTIL_COMPLETION),
             std::move(observer)),
         base::BindOnce(&ResourceURLLoader::OnFileWritten,
                        base::Unretained(this), nullptr, std::move(data)));
@@ -656,7 +663,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
   }
 
   void OnFileWritten(std::unique_ptr<FileURLLoaderObserver> observer,
-                     std::unique_ptr<uint8_t[]>  write_data,
+                     std::unique_ptr<uint8_t[]> write_data,
                      MojoResult result) {
     data_producer_.reset();
     if (observer) {
@@ -684,6 +691,7 @@ class ResourceURLLoader : public network::mojom::URLLoader {
   uint64_t total_bytes_written_ = 0;
 };
 #endif
+
 class FileURLLoader : public network::mojom::URLLoader {
  public:
   static void CreateAndStart(
@@ -696,29 +704,33 @@ class FileURLLoader : public network::mojom::URLLoader {
       FileAccessPolicy file_access_policy,
       LinkFollowingPolicy link_following_policy,
       std::unique_ptr<FileURLLoaderObserver> observer,
-      scoped_refptr<net::HttpResponseHeaders> extra_response_headers) {
-#ifdef OHOS_HAP_DECOMPRESSED
+      scoped_refptr<net::HttpResponseHeaders> extra_response_headers,
+      file_access::ScopedFileAccess file_access) {
+    // Owns itself. Will live as long as its URLLoader and URLLoaderClient
+    // bindings are alive - essentially until either the client gives up or all
+    // file data has been sent to it.
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
     int32_t apiVersion = GetApplicationApiVersion();
     if (apiVersion > 0 && apiVersion < APPLICATION_API_10) {
       LOG(INFO) << "application api version: " << apiVersion;
       base::FilePath path;
       base::File::Info info;
-      if (!net::FileURLToFilePath(request.url, &path) || !base::GetFileInfo(path, &info)) {
-        ResourceURLLoader::CreateAndStart(profile_path, request, response_type, std::move(loader),
-            std::move(client_remote), std::move(observer), std::move(extra_response_headers));
+      if (!net::FileURLToFilePath(request.url, &path) ||
+          !base::GetFileInfo(path, &info)) {
+        ResourceURLLoader::CreateAndStart(
+            profile_path, request, response_type, std::move(loader),
+            std::move(client_remote), std::move(observer),
+            std::move(extra_response_headers));
         return;
       }
     }
 #endif
-    // Owns itself. Will live as long as its URLLoader and URLLoaderClient
-    // bindings are alive - essentially until either the client gives up or all
-    // file data has been sent to it.
     auto* file_url_loader = new FileURLLoader;
-    file_url_loader->Start(profile_path, request, response_type,
-                           std::move(loader), std::move(client_remote),
-                           directory_loading_policy, file_access_policy,
-                           link_following_policy, std::move(observer),
-                           std::move(extra_response_headers));
+    file_url_loader->Start(
+        profile_path, request, response_type, std::move(loader),
+        std::move(client_remote), directory_loading_policy, file_access_policy,
+        link_following_policy, std::move(observer),
+        std::move(extra_response_headers), std::move(file_access));
   }
 
   FileURLLoader(const FileURLLoader&) = delete;
@@ -729,7 +741,7 @@ class FileURLLoader : public network::mojom::URLLoader {
       const std::vector<std::string>& removed_headers,
       const net::HttpRequestHeaders& modified_headers,
       const net::HttpRequestHeaders& modified_cors_exempt_headers,
-      const absl::optional<GURL>& new_url) override {
+      const std::optional<GURL>& new_url) override {
     // |removed_headers| and |modified_headers| are unused. It doesn't make
     // sense for files. The FileURLLoader can redirect only to another file.
     std::unique_ptr<RedirectData> redirect_data = std::move(redirect_data_);
@@ -747,7 +759,8 @@ class FileURLLoader : public network::mojom::URLLoader {
           redirect_data->file_access_policy,
           redirect_data->link_following_policy,
           std::move(redirect_data->observer),
-          std::move(redirect_data->extra_response_headers));
+          std::move(redirect_data->extra_response_headers),
+          std::move(*redirect_data->file_access.release()));
     }
     MaybeDeleteSelf();
   }
@@ -773,6 +786,7 @@ class FileURLLoader : public network::mojom::URLLoader {
         LinkFollowingPolicy::kDoNotFollow;
     std::unique_ptr<FileURLLoaderObserver> observer;
     scoped_refptr<net::HttpResponseHeaders> extra_response_headers;
+    std::unique_ptr<file_access::ScopedFileAccess> file_access;
   };
 
   FileURLLoader() = default;
@@ -787,7 +801,8 @@ class FileURLLoader : public network::mojom::URLLoader {
              FileAccessPolicy file_access_policy,
              LinkFollowingPolicy link_following_policy,
              std::unique_ptr<FileURLLoaderObserver> observer,
-             scoped_refptr<net::HttpResponseHeaders> extra_response_headers) {
+             scoped_refptr<net::HttpResponseHeaders> extra_response_headers,
+             file_access::ScopedFileAccess file_access) {
     // ClusterFuzz depends on the following VLOG to get resource dependencies.
     // See crbug.com/715656.
     VLOG(1) << "FileURLLoader::Start: " << request.url;
@@ -802,6 +817,11 @@ class FileURLLoader : public network::mojom::URLLoader {
         &FileURLLoader::OnMojoDisconnect, base::Unretained(this)));
 
     client_.Bind(std::move(client_remote));
+
+    if (!file_access.is_allowed()) {
+      OnClientComplete(net::ERR_FAILED, std::move(observer));
+      return;
+    }
 
     base::FilePath path;
     if (!net::FileURLToFilePath(request.url, &path)) {
@@ -844,6 +864,9 @@ class FileURLLoader : public network::mojom::URLLoader {
       redirect_data_->response_type = response_type;
       redirect_data_->extra_response_headers =
           std::move(extra_response_headers);
+      redirect_data_->file_access =
+          std::make_unique<file_access::ScopedFileAccess>(
+              std::move(file_access));
 
       client_->OnReceiveRedirect(redirect_info, std::move(head));
       return;
@@ -871,8 +894,9 @@ class FileURLLoader : public network::mojom::URLLoader {
       }
 
       GURL new_url = net::FilePathToFileURL(shortcut_target);
-      if (info.is_directory && !path.EndsWithSeparator())
+      if (info.is_directory && !path.EndsWithSeparator()) {
         new_url = AppendUrlSeparator(new_url);
+      }
 
       net::RedirectInfo redirect_info;
       redirect_info.new_method = "GET";
@@ -891,6 +915,9 @@ class FileURLLoader : public network::mojom::URLLoader {
       redirect_data_->observer = std::move(observer);
       redirect_data_->extra_response_headers =
           std::move(extra_response_headers);
+      redirect_data_->file_access =
+          std::make_unique<file_access::ScopedFileAccess>(
+              std::move(file_access));
 
       client_->OnReceiveRedirect(redirect_info, std::move(head));
       return;
@@ -921,10 +948,11 @@ class FileURLLoader : public network::mojom::URLLoader {
     // path didn't have a trailing path separator. In that case we finish with
     // a redirect above which will in turn be handled by FileURLDirectoryLoader.
     DCHECK(!info.is_directory);
-    if (observer)
+    if (observer) {
       observer->OnStart();
+    }
 
-#if defined(OHOS_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     std::unique_ptr<mojo::FileDataSource> file_data_source;
     if (path.IsDataShareUri()) {
       file_data_source = std::make_unique<mojo::FileDataSource>(
@@ -937,11 +965,10 @@ class FileURLLoader : public network::mojom::URLLoader {
     auto file_data_source = std::make_unique<mojo::FileDataSource>(
         base::File(path, base::File::FLAG_OPEN | base::File::FLAG_READ));
 #endif
-    mojo::DataPipeProducer::DataSource* data_source = file_data_source.get();
 
     std::vector<char> initial_read_buffer(net::kMaxBytesToSniff);
     auto read_result =
-        data_source->Read(0u, base::span<char>(initial_read_buffer));
+        file_data_source->Read(0u, base::span<char>(initial_read_buffer));
     if (read_result.result != MOJO_RESULT_OK) {
       // This can happen when the file is unreadable (which can happen during
       // corruption). We need to be sure to inform the observer that we've
@@ -956,19 +983,20 @@ class FileURLLoader : public network::mojom::URLLoader {
       MaybeDeleteSelf();
       return;
     }
-    if (observer)
+    if (observer) {
       observer->OnRead(base::span<char>(initial_read_buffer), &read_result);
+    }
 
     uint64_t initial_read_size = read_result.bytes_read;
 
-    std::string range_header;
     net::HttpByteRange byte_range;
-    if (request.headers.GetHeader(net::HttpRequestHeaders::kRange,
-                                  &range_header)) {
+    if (std::optional<std::string> range_header =
+            request.headers.GetHeader(net::HttpRequestHeaders::kRange);
+        range_header) {
       // Handle a simple Range header for a single range.
       std::vector<net::HttpByteRange> ranges;
       bool fail = false;
-      if (net::HttpUtil::ParseRangeHeader(range_header, &ranges) &&
+      if (net::HttpUtil::ParseRangeHeader(*range_header, &ranges) &&
           ranges.size() == 1) {
         byte_range = ranges[0];
         if (!byte_range.ComputeBounds(info.size)) {
@@ -1002,27 +1030,30 @@ class FileURLLoader : public network::mojom::URLLoader {
       // Write any data we read for MIME sniffing, constraining by range where
       // applicable. This will always fit in the pipe (see DCHECK above, and
       // assertions near network::features::GetDataPipeDefaultAllocationSize()).
-      uint32_t write_size = std::min(
-          static_cast<uint32_t>(initial_read_size - first_byte_to_send),
-          static_cast<uint32_t>(total_bytes_to_send));
-      const uint32_t expected_write_size = write_size;
-      MojoResult result =
-          producer_handle->WriteData(&initial_read_buffer[first_byte_to_send],
-                                     &write_size, MOJO_WRITE_DATA_FLAG_NONE);
-      if (result != MOJO_RESULT_OK || write_size != expected_write_size) {
+      base::span<const uint8_t> bytes_to_write =
+          base::as_byte_span(initial_read_buffer)
+              .subspan(base::checked_cast<size_t>(first_byte_to_send));
+      bytes_to_write = bytes_to_write.first(base::checked_cast<size_t>(std::min(
+          static_cast<uint64_t>(bytes_to_write.size()), total_bytes_to_send)));
+
+      size_t actually_written_bytes = 0;
+      MojoResult result = producer_handle->WriteData(
+          bytes_to_write, MOJO_WRITE_DATA_FLAG_NONE, actually_written_bytes);
+      if (result != MOJO_RESULT_OK ||
+          actually_written_bytes != bytes_to_write.size()) {
         OnFileWritten(std::move(observer), result);
         return;
       }
 
       // Discount the bytes we just sent from the total range.
       first_byte_to_send = initial_read_size;
-      total_bytes_to_send -= write_size;
+      total_bytes_to_send -= actually_written_bytes;
     }
 
     if (!net::GetMimeTypeFromFile(full_path, &head->mime_type)) {
       std::string new_type;
       net::SniffMimeType(
-          base::StringPiece(initial_read_buffer.data(), read_result.bytes_read),
+          std::string_view(initial_read_buffer.data(), read_result.bytes_read),
           request.url, head->mime_type,
           GetContentClient()->browser()->ForceSniffingFileUrlsForHtml()
               ? net::ForceSniffFileUrlsForHtml::kEnabled
@@ -1042,7 +1073,7 @@ class FileURLLoader : public network::mojom::URLLoader {
     head->headers->AddHeader(net::HttpResponseHeaders::kLastModified,
                              base::TimeFormatHTTP(info.last_modified));
     client_->OnReceiveResponse(std::move(head), std::move(consumer_handle),
-                               absl::nullopt);
+                               std::nullopt);
 
     if (total_bytes_to_send == 0) {
       // There's definitely no more data, so we're already done.
@@ -1055,8 +1086,9 @@ class FileURLLoader : public network::mojom::URLLoader {
     // (i.e., no range request) this Seek is effectively a no-op.
     file_data_source->SetRange(first_byte_to_send,
                                first_byte_to_send + total_bytes_to_send);
-    if (observer)
+    if (observer) {
       observer->OnSeekComplete(first_byte_to_send);
+    }
 
     data_producer_ =
         std::make_unique<mojo::DataPipeProducer>(std::move(producer_handle));
@@ -1089,8 +1121,9 @@ class FileURLLoader : public network::mojom::URLLoader {
   }
 
   void MaybeDeleteSelf() {
-    if (!receiver_.is_bound() && !client_.is_bound())
+    if (!receiver_.is_bound() && !client_.is_bound()) {
       delete this;
+    }
   }
 
   void OnFileWritten(std::unique_ptr<FileURLLoaderObserver> observer,
@@ -1098,8 +1131,9 @@ class FileURLLoader : public network::mojom::URLLoader {
     // All the data has been written now. Close the data pipe. The consumer will
     // be notified that there will be no more data to read from now.
     data_producer_.reset();
-    if (observer)
+    if (observer) {
       observer->OnDone();
+    }
 
     if (result == MOJO_RESULT_OK) {
       network::URLLoaderCompletionStatus status(net::OK);
@@ -1152,7 +1186,6 @@ void FileURLLoaderFactory::CreateLoaderAndStart(
     mojo::PendingRemote<network::mojom::URLLoaderClient> client,
     const net::MutableNetworkTrafficAnnotationTag& traffic_annotation) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
   // CORS mode requires a valid |request_initiator|.
   if (network::cors::IsCorsEnabledRequestMode(request.mode) &&
       !request.request_initiator) {
@@ -1200,7 +1233,6 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
     mojo::PendingReceiver<network::mojom::URLLoader> loader,
     mojo::PendingRemote<network::mojom::URLLoaderClient> client) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-
   if (response_type == network::mojom::FetchResponseType::kCors) {
     // FileURLLoader doesn't support CORS and it's not covered by CorsURLLoader,
     // so we need to reject requests that need CORS manually.
@@ -1211,7 +1243,7 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
     return;
   }
 
-#ifdef OHOS_HAP_DECOMPRESSED
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
   if (request.url.SchemeIs(url::kResourcesScheme)) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&ResourceURLLoader::CreateAndStart,
@@ -1238,8 +1270,8 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
                        std::move(client),
                        std::unique_ptr<FileURLLoaderObserver>(), nullptr));
   } else {
-    task_runner_->PostTask(
-        FROM_HERE,
+    auto cb = base::BindPostTask(
+        task_runner_,
         base::BindOnce(&FileURLLoader::CreateAndStart, profile_path_, request,
                        response_type, std::move(loader), std::move(client),
                        DirectoryLoadingPolicy::kRespondWithListing,
@@ -1247,6 +1279,19 @@ void FileURLLoaderFactory::CreateLoaderAndStartInternal(
                        LinkFollowingPolicy::kFollow,
                        std::unique_ptr<FileURLLoaderObserver>(),
                        nullptr /* extra_response_headers */));
+    if (auto* file_access = file_access::ScopedFileAccessDelegate::Get()) {
+      // If the request has an initiator use it as source for the dlp check.
+      // Requests with no initiator e.g. user actions the request should be
+      // granted.
+      if (request.request_initiator && !request.request_initiator->opaque()) {
+        file_access->RequestFilesAccess(
+            {file_path}, request.request_initiator->GetURL(), std::move(cb));
+      } else {
+        file_access->RequestFilesAccessForSystem({file_path}, std::move(cb));
+      }
+    } else {
+      std::move(cb).Run(file_access::ScopedFileAccess::Allowed());
+    }
   }
 }
 
@@ -1275,30 +1320,40 @@ void CreateFileURLLoaderBypassingSecurityChecks(
     std::unique_ptr<FileURLLoaderObserver> observer,
     bool allow_directory_listing,
     scoped_refptr<net::HttpResponseHeaders> extra_response_headers) {
-  // TODO(crbug.com/924416): Re-evaluate how TaskPriority is set here and in
+  // TODO(crbug.com/41436919): Re-evaluate how TaskPriority is set here and in
   // other file URL-loading-related code. Some callers require USER_VISIBLE
   // (i.e., BEST_EFFORT is not enough).
-  auto task_runner = base::ThreadPool::CreateSequencedTaskRunner(
-      {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
-       base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
-  task_runner->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &FileURLLoader::CreateAndStart, base::FilePath(), request,
-          network::mojom::FetchResponseType::kBasic, std::move(loader),
-          std::move(client),
-          allow_directory_listing ? DirectoryLoadingPolicy::kRespondWithListing
-                                  : DirectoryLoadingPolicy::kFail,
-          FileAccessPolicy::kUnrestricted, LinkFollowingPolicy::kDoNotFollow,
-          std::move(observer), std::move(extra_response_headers)));
+  base::FilePath path;
+  if (net::FileURLToFilePath(request.url, &path)) {
+    auto task_runner = base::ThreadPool::CreateSequencedTaskRunner(
+        {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
+         base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
+    auto create_and_start_cb = base::BindPostTask(
+        task_runner,
+        base::BindOnce(&FileURLLoader::CreateAndStart, base::FilePath(),
+                       request, network::mojom::FetchResponseType::kBasic,
+                       std::move(loader), std::move(client),
+                       allow_directory_listing
+                           ? DirectoryLoadingPolicy::kRespondWithListing
+                           : DirectoryLoadingPolicy::kFail,
+                       FileAccessPolicy::kUnrestricted,
+                       LinkFollowingPolicy::kDoNotFollow, std::move(observer),
+                       std::move(extra_response_headers)));
+    file_access::ScopedFileAccessDelegate::RequestFilesAccessForSystemIO(
+        {path}, std::move(create_and_start_cb));
+  } else {
+    mojo::Remote<network::mojom::URLLoaderClient>(std::move(client))
+        ->OnComplete(network::URLLoaderCompletionStatus(net::ERR_INVALID_URL));
+    return;
+  }
 }
 
 mojo::PendingRemote<network::mojom::URLLoaderFactory>
 CreateFileURLLoaderFactory(
     const base::FilePath& profile_path,
     scoped_refptr<SharedCorsOriginAccessList> shared_cors_origin_access_list) {
-  // TODO(crbug.com/924416): Re-evaluate TaskPriority: Should the caller provide
-  // it?
+  // TODO(crbug.com/41436919): Re-evaluate TaskPriority: Should the caller
+  // provide it?
   return FileURLLoaderFactory::Create(profile_path,
                                       shared_cors_origin_access_list,
                                       base::TaskPriority::USER_VISIBLE);

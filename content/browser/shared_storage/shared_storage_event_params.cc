@@ -2,9 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
+
+#include "base/debug/crash_logging.h"
 #include "content/browser/shared_storage/shared_storage_event_params.h"
 
 namespace content {
+
+const size_t kSharedStorageSerializedDataLengthLimitForEventParams = 1024;
+
+std::string MaybeTruncateSerializedData(
+    const blink::CloneableMessage& serialized_data) {
+  SCOPED_CRASH_KEY_NUMBER("SharedStorageEventParams", "data_size",
+                          serialized_data.owned_encoded_message.size());
+  size_t length =
+      std::min(serialized_data.owned_encoded_message.size(),
+               kSharedStorageSerializedDataLengthLimitForEventParams);
+  return std::string(serialized_data.owned_encoded_message.begin(),
+                     serialized_data.owned_encoded_message.begin() + length);
+}
 
 SharedStorageEventParams::SharedStorageUrlSpecWithMetadata::
     SharedStorageUrlSpecWithMetadata() = default;
@@ -42,14 +58,14 @@ SharedStorageEventParams& SharedStorageEventParams::operator=(
 SharedStorageEventParams::SharedStorageEventParams() = default;
 
 SharedStorageEventParams::SharedStorageEventParams(
-    absl::optional<std::string> script_source_url,
-    absl::optional<std::string> operation_name,
-    absl::optional<std::string> serialized_data,
-    absl::optional<std::vector<SharedStorageUrlSpecWithMetadata>>
+    std::optional<std::string> script_source_url,
+    std::optional<std::string> operation_name,
+    std::optional<std::string> serialized_data,
+    std::optional<std::vector<SharedStorageUrlSpecWithMetadata>>
         urls_with_metadata,
-    absl::optional<std::string> key,
-    absl::optional<std::string> value,
-    absl::optional<bool> ignore_if_present)
+    std::optional<std::string> key,
+    std::optional<std::string> value,
+    std::optional<bool> ignore_if_present)
     : script_source_url(std::move(script_source_url)),
       operation_name(std::move(operation_name)),
       serialized_data(std::move(serialized_data)),
@@ -61,31 +77,30 @@ SharedStorageEventParams::SharedStorageEventParams(
 // static
 SharedStorageEventParams SharedStorageEventParams::CreateForAddModule(
     const GURL& script_source_url) {
-  return SharedStorageEventParams(script_source_url.spec(), absl::nullopt,
-                                  absl::nullopt, absl::nullopt, absl::nullopt,
-                                  absl::nullopt, absl::nullopt);
+  return SharedStorageEventParams(script_source_url.spec(), std::nullopt,
+                                  std::nullopt, std::nullopt, std::nullopt,
+                                  std::nullopt, std::nullopt);
 }
 
 // static
 SharedStorageEventParams SharedStorageEventParams::CreateForRun(
     const std::string& operation_name,
-    const std::vector<uint8_t>& serialized_data) {
-  return SharedStorageEventParams(
-      absl::nullopt, operation_name,
-      std::string(serialized_data.begin(), serialized_data.end()),
-      absl::nullopt, absl::nullopt, absl::nullopt, absl::nullopt);
+    const blink::CloneableMessage& serialized_data) {
+  return SharedStorageEventParams(std::nullopt, operation_name,
+                                  MaybeTruncateSerializedData(serialized_data),
+                                  std::nullopt, std::nullopt, std::nullopt,
+                                  std::nullopt);
 }
 
 // static
 SharedStorageEventParams SharedStorageEventParams::CreateForSelectURL(
     const std::string& operation_name,
-    const std::vector<uint8_t>& serialized_data,
+    const blink::CloneableMessage& serialized_data,
     std::vector<SharedStorageUrlSpecWithMetadata> urls_with_metadata) {
-  return SharedStorageEventParams(
-      absl::nullopt, operation_name,
-      std::string(serialized_data.begin(), serialized_data.end()),
-      std::move(urls_with_metadata), absl::nullopt, absl::nullopt,
-      absl::nullopt);
+  return SharedStorageEventParams(std::nullopt, operation_name,
+                                  MaybeTruncateSerializedData(serialized_data),
+                                  std::move(urls_with_metadata), std::nullopt,
+                                  std::nullopt, std::nullopt);
 }
 
 // static
@@ -93,24 +108,24 @@ SharedStorageEventParams SharedStorageEventParams::CreateForSet(
     const std::string& key,
     const std::string& value,
     bool ignore_if_present) {
-  return SharedStorageEventParams(absl::nullopt, absl::nullopt, absl::nullopt,
-                                  absl::nullopt, key, value, ignore_if_present);
+  return SharedStorageEventParams(std::nullopt, std::nullopt, std::nullopt,
+                                  std::nullopt, key, value, ignore_if_present);
 }
 
 // static
 SharedStorageEventParams SharedStorageEventParams::CreateForAppend(
     const std::string& key,
     const std::string& value) {
-  return SharedStorageEventParams(absl::nullopt, absl::nullopt, absl::nullopt,
-                                  absl::nullopt, key, value, absl::nullopt);
+  return SharedStorageEventParams(std::nullopt, std::nullopt, std::nullopt,
+                                  std::nullopt, key, value, std::nullopt);
 }
 
 // static
 SharedStorageEventParams SharedStorageEventParams::CreateForGetOrDelete(
     const std::string& key) {
-  return SharedStorageEventParams(absl::nullopt, absl::nullopt, absl::nullopt,
-                                  absl::nullopt, key, absl::nullopt,
-                                  absl::nullopt);
+  return SharedStorageEventParams(std::nullopt, std::nullopt, std::nullopt,
+                                  std::nullopt, key, std::nullopt,
+                                  std::nullopt);
 }
 
 // static

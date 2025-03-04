@@ -5,6 +5,7 @@
 #include "base/datashare_uri_utils.h"
 
 #include <string>
+
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "ohos_adapter_helper.h"
@@ -13,7 +14,7 @@ namespace base {
 
 File OpenDatashareUriForRead(const FilePath& datashare_uri) {
   std::string real_path = GetRealPath(datashare_uri);
-  LOG(INFO) << "open datashare for read invoked,uri: " << datashare_uri.value();
+  LOG(INFO) << "open datashare for read invoked, uri:" << datashare_uri.value();
   File file = File(FilePath(real_path), File::FLAG_OPEN | File::FLAG_READ);
   if (!file.IsValid()) {
     LOG(WARNING) << "open datashare for read file is not valid";
@@ -26,9 +27,11 @@ std::u16string GetFileDisplayName(const FilePath& datashare_uri) {
                                  .GetFileDisplayName(datashare_uri.value());
   return base::UTF8ToUTF16(display_name);
 }
+
 std::string GetRealPath(const FilePath& datashare_uri) {
   return OHOS::NWeb::OhosAdapterHelper::GetInstance()
       .GetDatashareInstance()
       .GetRealPath(datashare_uri.value());
 }
 }  // namespace base
+                    

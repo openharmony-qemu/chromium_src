@@ -2,13 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "chromeos/ash/services/quick_pair/fast_pair_data_parser.h"
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "ash/quick_pair/common/fast_pair/fast_pair_decoder.h"
-#include "ash/quick_pair/common/logging.h"
 #include "base/base64.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_map.h"
@@ -18,10 +23,9 @@
 #include "chromeos/ash/services/quick_pair/public/cpp/battery_notification.h"
 #include "chromeos/ash/services/quick_pair/public/cpp/not_discoverable_advertisement.h"
 #include "chromeos/ash/services/quick_pair/public/mojom/fast_pair_data_parser.mojom.h"
-#include "crypto/openssl_util.h"
+#include "components/cross_device/logging/logging.h"
 #include "device/bluetooth/public/cpp/bluetooth_address.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace {
 
@@ -64,16 +68,17 @@ constexpr int kAddressByteSize = 6;
 bool ValidateInputSizes(const std::vector<uint8_t>& aes_key_bytes,
                         const std::vector<uint8_t>& encrypted_bytes) {
   if (aes_key_bytes.size() != kAesBlockByteSize) {
-    QP_LOG(WARNING) << __func__
-                    << ": AES key should have size = " << kAesBlockByteSize
-                    << ", actual =  " << aes_key_bytes.size();
+    CD_LOG(WARNING, Feature::FP)
+        << __func__ << ": AES key should have size = " << kAesBlockByteSize
+        << ", actual =  " << aes_key_bytes.size();
     return false;
   }
 
   if (encrypted_bytes.size() != kEncryptedDataByteSize) {
-    QP_LOG(WARNING) << __func__ << ": Encrypted bytes should have size = "
-                    << kEncryptedDataByteSize
-                    << ", actual =  " << encrypted_bytes.size();
+    CD_LOG(WARNING, Feature::FP)
+        << __func__
+        << ": Encrypted bytes should have size = " << kEncryptedDataByteSize
+        << ", actual =  " << encrypted_bytes.size();
     return false;
   }
 
@@ -106,8 +111,7 @@ bool IsBatteryCharging(uint8_t battery_byte) {
 namespace ash {
 namespace quick_pair {
 
-absl::optional<mojom::MessageGroup> MessageGroupFromByte(
-    uint8_t message_group) {
+std::optional<mojom::MessageGroup> MessageGroupFromByte(uint8_t message_group) {
   switch (message_group) {
     case kBluetoothEvent:
       return mojom::MessageGroup::kBluetoothEvent;
@@ -120,11 +124,11 @@ absl::optional<mojom::MessageGroup> MessageGroupFromByte(
     case kAcknowledgementEvent:
       return mojom::MessageGroup::kAcknowledgementEvent;
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
-absl::optional<mojom::Acknowledgement> NakReasonFromByte(uint8_t nak_reason) {
+std::optional<mojom::Acknowledgement> NakReasonFromByte(uint8_t nak_reason) {
   switch (nak_reason) {
     case kNotSupportedNak:
       return mojom::Acknowledgement::kNotSupportedNak;
@@ -133,7 +137,7 @@ absl::optional<mojom::Acknowledgement> NakReasonFromByte(uint8_t nak_reason) {
     case kNotAllowedDueToCurrentStateNak:
       return mojom::Acknowledgement::kNotAllowedDueToCurrentStateNak;
     default:
-      return absl::nullopt;
+      return std::nullopt;
   }
 }
 
@@ -146,9 +150,7 @@ mojom::BatteryInfoPtr CreateBatteryInfo(uint8_t battery_byte) {
 
 FastPairDataParser::FastPairDataParser(
     mojo::PendingReceiver<mojom::FastPairDataParser> receiver)
-    : receiver_(this, std::move(receiver)) {
-  crypto::EnsureOpenSSLInit();
-}
+    : receiver_(this, std::move(receiver)) {}
 
 FastPairDataParser::~FastPairDataParser() = default;
 
@@ -158,7 +160,7 @@ void FastPairDataParser::GetHexModelIdFromServiceData(
   std::move(callback).Run(
       fast_pair_decoder::HasModelId(&service_data)
           ? fast_pair_decoder::GetHexModelIdFromServiceData(&service_data)
-          : absl::nullopt);
+          : std::nullopt);
 }
 
 void FastPairDataParser::ParseDecryptedResponse(
@@ -166,7 +168,7 @@ void FastPairDataParser::ParseDecryptedResponse(
     const std::vector<uint8_t>& encrypted_response_bytes,
     ParseDecryptedResponseCallback callback) {
   if (!ValidateInputSizes(aes_key_bytes, encrypted_response_bytes)) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
 
@@ -183,7 +185,7 @@ void FastPairDataParser::ParseDecryptedPasskey(
     const std::vector<uint8_t>& encrypted_passkey_bytes,
     ParseDecryptedPasskeyCallback callback) {
   if (!ValidateInputSizes(aes_key_bytes, encrypted_passkey_bytes)) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
 
@@ -214,7 +216,7 @@ void FastPairDataParser::ParseNotDiscoverableAdvertisement(
     ParseNotDiscoverableAdvertisementCallback callback) {
   if (service_data.empty() ||
       fast_pair_decoder::GetVersion(&service_data) != 0) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
 
@@ -268,21 +270,21 @@ void FastPairDataParser::ParseNotDiscoverableAdvertisement(
   }
 
   if (account_key_filter_bytes.empty()) {
-    std::move(callback).Run(absl::nullopt);
+    std::move(callback).Run(std::nullopt);
     return;
   }
 
   // The salt byte requirements need to stay aligned with the Fast Pair Spec:
   // https://developers.devsite.corp.google.com/nearby/fast-pair/specifications/service/provider#AccountKeyFilter
   if (salt_bytes.size() > 2) {
-    QP_LOG(WARNING) << " Parsed a salt field larger than two bytes: "
-                    << salt_bytes.size();
-    std::move(callback).Run(absl::nullopt);
+    CD_LOG(WARNING, Feature::FP)
+        << " Parsed a salt field larger than two bytes: " << salt_bytes.size();
+    std::move(callback).Run(std::nullopt);
     return;
   }
 
   if (salt_bytes.empty()) {
-    QP_LOG(INFO)
+    CD_LOG(INFO, Feature::FP)
         << __func__
         << ": missing salt field from device. Using device address instead. ";
     std::array<uint8_t, kAddressByteSize> address_bytes;
@@ -305,20 +307,21 @@ void FastPairDataParser::ParseMessageStreamMessages(
   // Fast Pair message stream format found here:
   // https://developers.google.com/nearby/fast-pair/spec#MessageStream
   if (message_bytes.size() < kMinMessageByteCount) {
-    QP_LOG(WARNING) << __func__
-                    << ": Not enough bytes to parse a MessageStreamMessage. "
-                       "Needed 4, received "
-                    << message_bytes.size() << ".";
+    CD_LOG(WARNING, Feature::FP)
+        << __func__
+        << ": Not enough bytes to parse a MessageStreamMessage. "
+           "Needed 4, received "
+        << message_bytes.size() << ".";
     std::move(callback).Run(std::move(parsed_messages));
     return;
   }
 
-  base::circular_deque<uint8_t> remaining_bytes(message_bytes.begin(),
-                                                message_bytes.end());
+  base::circular_deque<uint8_t> remaining_bytes(base::from_range,
+                                                message_bytes);
   while (remaining_bytes.size() >= kMinMessageByteCount) {
     uint8_t message_group_byte = remaining_bytes.front();
     remaining_bytes.pop_front();
-    absl::optional<mojom::MessageGroup> message_group =
+    std::optional<mojom::MessageGroup> message_group =
         MessageGroupFromByte(message_group_byte);
 
     uint8_t message_code = remaining_bytes.front();
@@ -349,8 +352,9 @@ void FastPairDataParser::ParseMessageStreamMessages(
     // message. The data was already removed above corresponding to this
     // message, and we can continue to attempt to parse the next message.
     if (!message_group.has_value()) {
-      QP_LOG(WARNING) << __func__ << ": Unknown message group. Received 0x"
-                      << std::hex << message_group_byte << ".";
+      CD_LOG(WARNING, Feature::FP)
+          << __func__ << ": Unknown message group. Received 0x" << std::hex
+          << message_group_byte << ".";
       continue;
     }
 
@@ -364,8 +368,8 @@ void FastPairDataParser::ParseMessageStreamMessages(
   }
 
   if (!remaining_bytes.empty()) {
-    QP_LOG(WARNING) << __func__ << ": " << remaining_bytes.size()
-                    << " remaining bytes not parsed.";
+    CD_LOG(WARNING, Feature::FP) << __func__ << ": " << remaining_bytes.size()
+                                 << " remaining bytes not parsed.";
   }
 
   // TODO(jackshira): Handle partial message data by returning the amount read.
@@ -408,8 +412,9 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseBluetoothEvent(
     return mojom::MessageStreamMessage::NewEnableSilenceMode(false);
   }
 
-  QP_LOG(WARNING) << __func__ << ": Unknown message code. Received 0x"
-                  << std::hex << message_code << ".";
+  CD_LOG(WARNING, Feature::FP)
+      << __func__ << ": Unknown message code. Received 0x" << std::hex
+      << message_code << ".";
   return nullptr;
 }
 
@@ -420,8 +425,9 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseCompanionAppEvent(
     return mojom::MessageStreamMessage::NewCompanionAppLogBufferFull(true);
   }
 
-  QP_LOG(WARNING) << __func__ << ": Unknown message code. Received 0x"
-                  << std::hex << message_code << ".";
+  CD_LOG(WARNING, Feature::FP)
+      << __func__ << ": Unknown message code. Received 0x" << std::hex
+      << message_code << ".";
   return nullptr;
 }
 
@@ -433,10 +439,11 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // Missing additional data containing model id value, since valid model id
     // will be length 3.
     if (additional_data.size() != 3) {
-      QP_LOG(WARNING) << __func__
-                      << ": Invalid number of additional data bytes to parse "
-                         "model id Needed 3, received "
-                      << additional_data.size();
+      CD_LOG(WARNING, Feature::FP)
+          << __func__
+          << ": Invalid number of additional data bytes to parse "
+             "model id Needed 3, received "
+          << additional_data.size();
       return nullptr;
     }
 
@@ -448,7 +455,7 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // Missing additional data containing ble address updated value, which will
     // be 6 bytes to be valid
     if (additional_data.size() != 6) {
-      QP_LOG(WARNING)
+      CD_LOG(WARNING, Feature::FP)
           << __func__
           << ": Invalid number of additional data bytes to parse BLE "
              "address. Needed 6, received "
@@ -467,10 +474,11 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // Missing additional data containing battery updated value, since valid
     // battery update size will be length 3
     if (additional_data.size() != 3) {
-      QP_LOG(WARNING) << __func__
-                      << ": Invalid number of additional data bytes to parse "
-                         "battery update. Needed 3, received "
-                      << additional_data.size();
+      CD_LOG(WARNING, Feature::FP)
+          << __func__
+          << ": Invalid number of additional data bytes to parse "
+             "battery update. Needed 3, received "
+          << additional_data.size();
       return nullptr;
     }
 
@@ -490,10 +498,11 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // Additional data contains the remaining battery time and will be 1 or 2
     // bytes.
     if (additional_data.size() != 1 && additional_data.size() != 2) {
-      QP_LOG(WARNING) << __func__
-                      << ": Invalid number of additional data bytes to parse "
-                         "remaining battery time. Needed 1 or 2, received "
-                      << additional_data.size();
+      CD_LOG(WARNING, Feature::FP)
+          << __func__
+          << ": Invalid number of additional data bytes to parse "
+             "remaining battery time. Needed 1 or 2, received "
+          << additional_data.size();
       return nullptr;
     }
 
@@ -527,10 +536,11 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // differentiating the two. See
     // https://developers.google.com/nearby/fast-pair/spec#MessageStreamActiveComponents
     if (additional_data.size() != 1) {
-      QP_LOG(WARNING) << __func__
-                      << ": Invalid number of additional data bytes to parse "
-                         "active components. Needed 1, received "
-                      << additional_data.size();
+      CD_LOG(WARNING, Feature::FP)
+          << __func__
+          << ": Invalid number of additional data bytes to parse "
+             "active components. Needed 1, received "
+          << additional_data.size();
       return nullptr;
     }
 
@@ -548,15 +558,16 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     // expanded on. See
     // https://developers.google.com/nearby/fast-pair/spec#PlatformType
     if (additional_data.size() != 2) {
-      QP_LOG(WARNING) << __func__
-                      << ": Not enough additional data bytes to parse platform "
-                         "type. Needed 2, received "
-                      << additional_data.size();
+      CD_LOG(WARNING, Feature::FP)
+          << __func__
+          << ": Not enough additional data bytes to parse platform "
+             "type. Needed 2, received "
+          << additional_data.size();
       return nullptr;
     }
 
     if (additional_data[0] != kAndroidPlatform) {
-      QP_LOG(WARNING)
+      CD_LOG(WARNING, Feature::FP)
           << __func__
           << ": Unknown platform type for MessageStreamMessage. Received 0x"
           << std::hex << additional_data[0];
@@ -567,8 +578,9 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceInformationEvent(
     return mojom::MessageStreamMessage::NewSdkVersion(sdk_version);
   }
 
-  QP_LOG(WARNING) << __func__ << ": Unknown message code. Received 0x"
-                  << std::hex << message_code << ".";
+  CD_LOG(WARNING, Feature::FP)
+      << __func__ << ": Unknown message code. Received 0x" << std::hex
+      << message_code << ".";
   return nullptr;
 }
 
@@ -586,15 +598,16 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseDeviceActionEvent(
   // what the ring value means. See
   // https://developers.google.com/nearby/fast-pair/spec#ringing_a_device
   if (additional_data.size() != 1 && additional_data.size() != 2) {
-    QP_LOG(WARNING) << __func__
-                    << ": Invalid number of additional data bytes to parse "
-                       "device action. Needed 1 or 2, received "
-                    << additional_data.size();
+    CD_LOG(WARNING, Feature::FP)
+        << __func__
+        << ": Invalid number of additional data bytes to parse "
+           "device action. Needed 1 or 2, received "
+        << additional_data.size();
     return nullptr;
   }
 
   if (message_code != kRingCode) {
-    QP_LOG(WARNING)
+    CD_LOG(WARNING, Feature::FP)
         << __func__
         << ": Unknown message code to parse DeviceAction code. Received 0x"
         << std::hex << message_code << ".";
@@ -619,7 +632,7 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
     uint8_t message_code,
     const base::span<uint8_t>& additional_data) {
   if (message_code != kAckCode && message_code != kNakCode) {
-    QP_LOG(WARNING)
+    CD_LOG(WARNING, Feature::FP)
         << __func__
         << ": Unknown message code to parse Acknowledgement code. Received 0x"
         << std::hex << message_code << ".";
@@ -630,7 +643,7 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
     // The length two of additional data contains the action message group and
     // code.
     if (additional_data.size() != 2) {
-      QP_LOG(WARNING)
+      CD_LOG(WARNING, Feature::FP)
           << __func__
           << ": Invalid number of bytes in additional data to parse "
              "Acknowledgement. Needed 2, received "
@@ -639,11 +652,12 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
     }
 
     // Get the message group pertaining to the action being acknowledged.
-    absl::optional<mojom::MessageGroup> message_group =
+    std::optional<mojom::MessageGroup> message_group =
         MessageGroupFromByte(additional_data[0]);
     if (!message_group.has_value()) {
-      QP_LOG(WARNING) << __func__ << ": Unknown message group. Received 0x"
-                      << std::hex << additional_data[0] << ".";
+      CD_LOG(WARNING, Feature::FP)
+          << __func__ << ": Unknown message group. Received 0x" << std::hex
+          << additional_data[0] << ".";
       return nullptr;
     }
 
@@ -659,7 +673,7 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
     // The length three of additional data contains the action message group and
     // code.
     if (additional_data.size() != 3) {
-      QP_LOG(WARNING)
+      CD_LOG(WARNING, Feature::FP)
           << __func__
           << ": Invalid number of bytes in additional data to parse "
              "Acknowledgement. Needed 3, received "
@@ -667,10 +681,10 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
       return nullptr;
     }
 
-    absl::optional<mojom::Acknowledgement> nak_reason =
+    std::optional<mojom::Acknowledgement> nak_reason =
         NakReasonFromByte(additional_data[0]);
     if (!nak_reason) {
-      QP_LOG(WARNING)
+      CD_LOG(WARNING, Feature::FP)
           << __func__
           << ": Unknown nak reason to parse Acknowledgement. Received 0x"
           << std::hex << additional_data[0];
@@ -678,11 +692,12 @@ mojom::MessageStreamMessagePtr FastPairDataParser::ParseAcknowledgementEvent(
     }
 
     // Get the message group pertaining to the action being nacknowledged.
-    absl::optional<mojom::MessageGroup> message_group =
+    std::optional<mojom::MessageGroup> message_group =
         MessageGroupFromByte(additional_data[1]);
     if (!message_group.has_value()) {
-      QP_LOG(WARNING) << __func__ << ": Unknown message group. Received 0x"
-                      << std::hex << additional_data[1] << ".";
+      CD_LOG(WARNING, Feature::FP)
+          << __func__ << ": Unknown message group. Received 0x" << std::hex
+          << additional_data[1] << ".";
       return nullptr;
     }
 

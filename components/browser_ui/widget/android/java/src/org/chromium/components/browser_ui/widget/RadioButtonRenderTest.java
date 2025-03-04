@@ -16,6 +16,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.chromium.base.ThreadUtils;
 import org.chromium.base.test.params.BaseJUnit4RunnerDelegate;
 import org.chromium.base.test.params.ParameterAnnotations.ClassParameter;
 import org.chromium.base.test.params.ParameterAnnotations.UseRunnerDelegate;
@@ -24,7 +25,6 @@ import org.chromium.base.test.params.ParameterizedRunner;
 import org.chromium.base.test.util.Batch;
 import org.chromium.base.test.util.Feature;
 import org.chromium.components.browser_ui.widget.test.R;
-import org.chromium.content_public.browser.test.util.TestThreadUtils;
 import org.chromium.ui.test.util.BlankUiTestActivityTestCase;
 import org.chromium.ui.test.util.NightModeTestUtils;
 import org.chromium.ui.test.util.RenderTestRule;
@@ -33,8 +33,7 @@ import java.util.List;
 
 /**
  * Render test for {@link RadioButtonWithDescription}, {@link RadioButtonWithEditText}, {@link
- * RadioButtonWithDescriptionAndAuxButton} and
- * {@link RadioButtonWithDescriptionLayout}.
+ * RadioButtonWithDescriptionAndAuxButton} and {@link RadioButtonWithDescriptionLayout}.
  */
 @RunWith(ParameterizedRunner.class)
 @UseRunnerDelegate(BaseJUnit4RunnerDelegate.class)
@@ -83,26 +82,34 @@ public class RadioButtonRenderTest extends BlankUiTestActivityTestCase {
     public void setUpTest() throws Exception {
         super.setUpTest();
         Activity activity = getActivity();
-        TestThreadUtils.runOnUiThreadBlocking(() -> {
-            View content = LayoutInflater.from(activity).inflate(
-                    R.layout.radio_button_render_test, null, false);
-            activity.setContentView(content);
+        ThreadUtils.runOnUiThreadBlocking(
+                () -> {
+                    View content =
+                            LayoutInflater.from(activity)
+                                    .inflate(R.layout.radio_button_render_test, null, false);
+                    activity.setContentView(content);
 
-            mLayout = content.findViewById(R.id.test_radio_button_layout);
-            mLayout.setBackgroundColor(mFakeBgColor);
+                    mLayout = content.findViewById(R.id.test_radio_button_layout);
+                    mLayout.setBackgroundColor(mFakeBgColor);
 
-            mRadioButtonWithDescription1 = content.findViewById(R.id.base_primary_only);
-            mRadioButtonWithDescription2 = content.findViewById(R.id.base_primary_description);
-            mRadioButtonWithDescription3 = content.findViewById(R.id.base_primary_bg_override);
-            mRadioButtonWithEditText1 = content.findViewById(R.id.edittext_primary_description);
-            mRadioButtonWithEditText2 = content.findViewById(R.id.edittext_primary_only);
-            mRadioButtonWithEditText3 = content.findViewById(R.id.edittext_hint_description);
-            mRadioButtonWithEditText4 = content.findViewById(R.id.edittext_hint_only);
-            mRadioButtonWithDescriptonAndAuxButton1 = content.findViewById(R.id.aux_primary_only);
-            mRadioButtonWithDescriptonAndAuxButton2 =
-                    content.findViewById(R.id.aux_primary_description);
-            mRadioButtonWithDescriptonAndAuxButton3 = content.findViewById(R.id.aux_bg_override);
-        });
+                    mRadioButtonWithDescription1 = content.findViewById(R.id.base_primary_only);
+                    mRadioButtonWithDescription2 =
+                            content.findViewById(R.id.base_primary_description);
+                    mRadioButtonWithDescription3 =
+                            content.findViewById(R.id.base_primary_bg_override);
+                    mRadioButtonWithEditText1 =
+                            content.findViewById(R.id.edittext_primary_description);
+                    mRadioButtonWithEditText2 = content.findViewById(R.id.edittext_primary_only);
+                    mRadioButtonWithEditText3 =
+                            content.findViewById(R.id.edittext_hint_description);
+                    mRadioButtonWithEditText4 = content.findViewById(R.id.edittext_hint_only);
+                    mRadioButtonWithDescriptonAndAuxButton1 =
+                            content.findViewById(R.id.aux_primary_only);
+                    mRadioButtonWithDescriptonAndAuxButton2 =
+                            content.findViewById(R.id.aux_primary_description);
+                    mRadioButtonWithDescriptonAndAuxButton3 =
+                            content.findViewById(R.id.aux_bg_override);
+                });
 
         Assert.assertNotNull(mLayout);
         Assert.assertNotNull(mRadioButtonWithDescription1);

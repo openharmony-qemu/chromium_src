@@ -10,11 +10,12 @@
 
 #include "base/base64.h"
 #include "base/check_op.h"
+#include "base/containers/contains.h"
 #include "base/strings/string_number_conversions.h"
 #include "extensions/browser/extension_icon_image.h"
 #include "extensions/browser/extension_icon_placeholder.h"
 #include "extensions/common/constants.h"
-#include "extensions/common/extension_icon_set.h"
+#include "extensions/common/icons/extension_icon_set.h"
 #include "extensions/common/manifest_handlers/icons_handler.h"
 #include "extensions/grit/extensions_browser_resources.h"
 #include "skia/public/mojom/bitmap.mojom.h"
@@ -34,6 +35,11 @@
 #include "ui/gfx/image/image_skia_source.h"
 #include "ui/gfx/skbitmap_operations.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_icon_image_observer.h"
+#include "ui/gfx/image/image_skia_operations.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace extensions {
 
@@ -66,7 +72,7 @@ struct IconRepresentationInfo {
 
 template <class T>
 bool HasValue(const std::map<int, T>& map, int tab_id) {
-  return map.find(tab_id) != map.end();
+  return base::Contains(map, tab_id);
 }
 
 }  // namespace
@@ -90,7 +96,8 @@ ExtensionAction::ExtensionAction(const Extension& extension,
       extension_name_(extension.name()),
       action_type_(manifest_data.type),
       default_state_(manifest_data.default_state) {
-  SetIsVisible(kDefaultTabId, default_state_ == ActionInfo::STATE_ENABLED);
+  SetIsVisible(kDefaultTabId,
+               default_state_ == ActionInfo::DefaultState::kEnabled);
   Populate(extension, manifest_data);
 }
 
@@ -110,7 +117,7 @@ bool ExtensionAction::HasPopup(int tab_id) const {
 }
 
 GURL ExtensionAction::GetPopupUrl(int tab_id) const {
-  return GetValue(&popup_url_, tab_id);
+  return GetValue(popup_url_, tab_id);
 }
 
 void ExtensionAction::SetIcon(int tab_id, const gfx::Image& image) {
@@ -128,8 +135,9 @@ ExtensionAction::IconParseResult ExtensionAction::ParseIconFromCanvasDictionary(
       bytes = item.second.GetBlob().data();
       num_bytes = item.second.GetBlob().size();
     } else if (item.second.is_string()) {
-      if (!base::Base64Decode(item.second.GetString(), &byte_string))
+      if (!base::Base64Decode(item.second.GetString(), &byte_string)) {
         return IconParseResult::kDecodeFailure;
+      }
       bytes = byte_string.c_str();
       num_bytes = byte_string.length();
     } else {
@@ -144,8 +152,9 @@ ExtensionAction::IconParseResult ExtensionAction::ParseIconFromCanvasDictionary(
 
     // Chrome helpfully scales the provided icon(s), but let's not go overboard.
     const int kActionIconMaxSize = 10 * ActionIconSize();
-    if (bitmap.drawsNothing() || bitmap.width() > kActionIconMaxSize)
+    if (bitmap.drawsNothing() || bitmap.width() > kActionIconMaxSize) {
       continue;
+    }
 
     float scale = static_cast<float>(bitmap.width()) / ActionIconSize();
     icon->AddRepresentation(gfx::ImageSkiaRep(bitmap, scale));
@@ -154,11 +163,11 @@ ExtensionAction::IconParseResult ExtensionAction::ParseIconFromCanvasDictionary(
 }
 
 gfx::Image ExtensionAction::GetExplicitlySetIcon(int tab_id) const {
-  return GetValue(&icon_, tab_id);
+  return GetValue(icon_, tab_id);
 }
 
 bool ExtensionAction::SetIsVisible(int tab_id, bool new_visibility) {
-  const bool old_visibility = GetValue(&is_visible_, tab_id);
+  const bool old_visibility = GetValue(is_visible_, tab_id);
 
   if (old_visibility == new_visibility)
     return false;
@@ -235,6 +244,35 @@ gfx::Image ExtensionAction::GetDefaultIconImage() const {
 
   return GetPlaceholderIconImage();
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+gfx::Image ExtensionAction::GetDefaultIconImageV2() const {
+  constexpr float GET_ICON_SCALE = 8.0f;
+  constexpr int NONE_TAB_ID = -1;
+  // If we have a default icon, it should be loaded before trying to use it.
+  DCHECK(!default_icon_image_ == !default_icon_);
+  if (default_icon_image_) {
+    gfx::Image icon = default_icon_image_->image();
+    if (icon.IsEmpty()) { // If the value is empty, retain the original process.
+      return icon;
+    }
+    std::vector<gfx::ImageSkiaRep> imgSkReps = icon.AsImageSkia().image_reps();
+    if (imgSkReps.empty()) {
+      gfx::ImageSkiaRep rep =
+          icon.AsImageSkia().GetRepresentation(GET_ICON_SCALE);
+      SetExtensionIconImageObserver(extension_id(), NONE_TAB_ID);
+      ExtensionIconImageObserver* observer =
+          GetExtensionIconImageObserver(extension_id());
+      if (observer) {
+        default_icon_image_->AddObserver(observer);
+      }
+      LOG(INFO) << "ImageSkiaRep is empty, scale=" << rep.scale();
+    }
+    return icon;
+  }
+  return GetPlaceholderIconImage();
+}
+#endif // #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 gfx::Image ExtensionAction::GetPlaceholderIconImage() const {
   if (placeholder_icon_image_.IsEmpty()) {
@@ -320,7 +358,7 @@ void ExtensionAction::Populate(const Extension& extension,
 // Determines which icon would be returned by |GetIcon|, and returns its width.
 int ExtensionAction::GetIconWidth(int tab_id) const {
   // If icon has been set, return its width.
-  gfx::Image icon = GetValue(&icon_, tab_id);
+  gfx::Image icon = GetValue(icon_, tab_id);
   if (!icon.IsEmpty())
     return icon.Width();
   // If there is a default icon, the icon width will be set depending on our
@@ -335,14 +373,17 @@ int ExtensionAction::GetIconWidth(int tab_id) const {
 
 bool ExtensionAction::GetIsVisibleInternal(int tab_id,
                                            bool include_declarative) const {
-  if (const bool* tab_is_visible = FindOrNull(&is_visible_, tab_id))
+  if (const bool* tab_is_visible = base::FindOrNull(is_visible_, tab_id)) {
     return *tab_is_visible;
+  }
 
   if (include_declarative && base::Contains(declarative_show_count_, tab_id))
     return true;
 
-  if (const bool* default_is_visible = FindOrNull(&is_visible_, kDefaultTabId))
+  if (const bool* default_is_visible =
+          base::FindOrNull(is_visible_, kDefaultTabId)) {
     return *default_is_visible;
+  }
 
   return false;
 }

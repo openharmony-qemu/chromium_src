@@ -12,6 +12,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "media/base/demuxer.h"
+#include "net/storage_access_api/status.h"
 #include "url/gurl.h"
 
 namespace net {
@@ -37,7 +38,7 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
                   const GURL& media_url,
                   const net::SiteForCookies& site_for_cookies,
                   const url::Origin& top_frame_origin,
-                  bool has_storage_access,
+                  net::StorageAccessApiStatus storage_access_api_status,
                   bool allow_credentials,
                   bool is_hls);
 
@@ -51,13 +52,14 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
   const MediaUrlParams& GetMediaUrlParams() const override;
   MediaResource::Type GetType() const override;
   void ForwardDurationChangeToDemuxerHost(base::TimeDelta duration) override;
+  void SetHeaders(base::flat_map<std::string, std::string> headers) override;
 
-#if defined(OHOS_CUSTOM_VIDEO_PLAYER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void ForwardBufferedEndTimeChangeToDemuxerHost(
       base::TimeDelta buffered_time) override;
   void SetPreloadType(uint32_t preload_type) override;
   void SetMediaSourceType(uint32_t media_source_type) override;
-#endif // OHOS_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // Demuxer interface.
   std::string GetDisplayName() const override;
@@ -72,7 +74,7 @@ class MEDIA_EXPORT MediaUrlDemuxer : public Demuxer {
   base::TimeDelta GetStartTime() const override;
   base::Time GetTimelineOffset() const override;
   int64_t GetMemoryUsage() const override;
-  absl::optional<container_names::MediaContainerName> GetContainerForMetrics()
+  std::optional<container_names::MediaContainerName> GetContainerForMetrics()
       const override;
   void OnEnabledAudioTracksChanged(const std::vector<MediaTrack::Id>& track_ids,
                                    base::TimeDelta curr_time,

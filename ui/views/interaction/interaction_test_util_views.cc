@@ -16,7 +16,6 @@
 #include "base/test/bind.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/accessibility/ax_action_data.h"
 #include "ui/accessibility/ax_enums.mojom-shared.h"
 #include "ui/base/ime/text_input_client.h"
@@ -38,6 +37,7 @@
 #include "ui/views/controls/tabbed_pane/tabbed_pane.h"
 #include "ui/views/controls/textfield/textfield.h"
 #include "ui/views/interaction/element_tracker_views.h"
+#include "ui/views/test/widget_activation_waiter.h"
 #include "ui/views/test/widget_test.h"
 #include "ui/views/view.h"
 #include "ui/views/view_observer.h"
@@ -46,15 +46,17 @@
 #include "ui/views/widget/any_widget_observer.h"
 #include "ui/views/window/dialog_delegate.h"
 
-#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE) && \
-    !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_OZONE)
+#include "ui/ozone/public/ozone_platform.h"
+#endif
+
+#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE) && !BUILDFLAG(IS_CHROMEOS)
 #define HANDLE_WAYLAND_FAILURE 1
 #else
 #define HANDLE_WAYLAND_FAILURE 0
 #endif
 
 #if HANDLE_WAYLAND_FAILURE
-#include "ui/ozone/public/ozone_platform.h"
 #include "ui/views/widget/widget_observer.h"
 #endif
 
@@ -99,7 +101,7 @@ class WidgetActivationWaiterWayland final : public WidgetObserver {
  private:
   // WidgetObserver:
   void OnWidgetDestroyed(Widget* widget) override {
-    NOTREACHED_NORETURN() << "Widget destroyed before observation.";
+    NOTREACHED() << "Widget destroyed before observation.";
   }
   void OnWidgetActivationChanged(Widget* widget, bool active) override {
     if (!active) {
@@ -207,7 +209,7 @@ class DropdownItemSelector {
           LOG(ERROR) << "Unable to select dropdown menu item.";
           break;
         case ui::test::ActionResult::kNotAttempted:
-          NOTREACHED_NORETURN();
+          NOTREACHED();
         case ui::test::ActionResult::kKnownIncompatible:
           LOG(WARNING)
               << "Select dropdown item not available on this platform with "
@@ -237,7 +239,7 @@ class DropdownItemSelector {
   // Searches in-order, depth-first. It is assumed that menu items will appear
   // in search order in the same order they appear visually.
   static MenuItemView* FindMenuItem(View* from, size_t& index) {
-    for (auto* child : from->children()) {
+    for (views::View* child : from->children()) {
       auto* const item = AsViewClass<MenuItemView>(child);
       if (item) {
         if (index == 0U)
@@ -250,13 +252,13 @@ class DropdownItemSelector {
     return nullptr;
   }
 
-  const base::raw_ptr<InteractionTestUtilSimulatorViews> simulator_;
+  const raw_ptr<InteractionTestUtilSimulatorViews> simulator_;
   const ui::test::InteractionTestUtil::InputType input_type_;
   const size_t item_index_;
   base::RunLoop run_loop_{base::RunLoop::Type::kNestableTasksAllowed};
   AnyWidgetObserver observer_{views::test::AnyWidgetTestPasskey()};  // IN-TEST
-  absl::optional<ui::test::ActionResult> result_;
-  base::raw_ptr<Widget> widget_ = nullptr;
+  std::optional<ui::test::ActionResult> result_;
+  raw_ptr<Widget> widget_ = nullptr;
   base::WeakPtrFactory<DropdownItemSelector> weak_ptr_factory_{this};
 };
 
@@ -275,11 +277,11 @@ bool SendDefaultAction(View* target) {
 // event handling, so use a templated approach to support both cases.
 template <class T>
 void SendMouseClick(T* target, const gfx::Point& point) {
-  ui::MouseEvent mouse_down(ui::ET_MOUSE_PRESSED, point, point,
+  ui::MouseEvent mouse_down(ui::EventType::kMousePressed, point, point,
                             ui::EventTimeForNow(), ui::EF_LEFT_MOUSE_BUTTON,
                             ui::EF_LEFT_MOUSE_BUTTON);
   target->OnMouseEvent(&mouse_down);
-  ui::MouseEvent mouse_up(ui::ET_MOUSE_RELEASED, point, point,
+  ui::MouseEvent mouse_up(ui::EventType::kMouseReleased, point, point,
                           ui::EventTimeForNow(), ui::EF_LEFT_MOUSE_BUTTON,
                           ui::EF_LEFT_MOUSE_BUTTON);
   target->OnMouseEvent(&mouse_up);
@@ -290,13 +292,13 @@ void SendMouseClick(T* target, const gfx::Point& point) {
 // event handling, so use a templated approach to support both cases.
 template <class T>
 void SendTapGesture(T* target, const gfx::Point& point) {
-  ui::GestureEventDetails press_details(ui::ET_GESTURE_TAP);
+  ui::GestureEventDetails press_details(ui::EventType::kGestureTap);
   press_details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   ui::GestureEvent press_event(point.x(), point.y(), ui::EF_NONE,
                                ui::EventTimeForNow(), press_details);
   target->OnGestureEvent(&press_event);
 
-  ui::GestureEventDetails release_details(ui::ET_GESTURE_END);
+  ui::GestureEventDetails release_details(ui::EventType::kGestureEnd);
   release_details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHSCREEN);
   ui::GestureEvent release_event(point.x(), point.y(), ui::EF_NONE,
                                  ui::EventTimeForNow(), release_details);
@@ -307,16 +309,16 @@ void SendTapGesture(T* target, const gfx::Point& point) {
 // still valid after processing the keypress.
 bool SendKeyPress(View* view, ui::KeyboardCode code, int flags = ui::EF_NONE) {
   ViewTracker tracker(view);
-  view->OnKeyPressed(
-      ui::KeyEvent(ui::ET_KEY_PRESSED, code, flags, ui::EventTimeForNow()));
+  view->OnKeyPressed(ui::KeyEvent(ui::EventType::kKeyPressed, code, flags,
+                                  ui::EventTimeForNow()));
 
   // Verify that the button is not destroyed after the key-down before trying
   // to send the key-up.
   if (!tracker.view())
     return false;
 
-  tracker.view()->OnKeyReleased(
-      ui::KeyEvent(ui::ET_KEY_RELEASED, code, flags, ui::EventTimeForNow()));
+  tracker.view()->OnKeyReleased(ui::KeyEvent(ui::EventType::kKeyReleased, code,
+                                             flags, ui::EventTimeForNow()));
 
   return tracker.view();
 }
@@ -379,8 +381,9 @@ ui::test::ActionResult InteractionTestUtilSimulatorViews::SelectMenuItem(
 #endif
       MenuController* const controller = menu_item->GetMenuController();
       controller->SelectItemAndOpenSubmenu(menu_item);
-      ui::KeyEvent key_event(ui::ET_KEY_PRESSED, kSelectMenuKeyboardCode,
-                             ui::EF_NONE, ui::EventTimeForNow());
+      ui::KeyEvent key_event(ui::EventType::kKeyPressed,
+                             kSelectMenuKeyboardCode, ui::EF_NONE,
+                             ui::EventTimeForNow());
       controller->OnWillDispatchKeyEvent(&key_event);
       break;
     }
@@ -606,24 +609,12 @@ ui::test::ActionResult InteractionTestUtilSimulatorViews::ActivateSurface(
     return ui::test::ActionResult::kNotAttempted;
 
   auto* const widget = element->AsA<TrackedElementViews>()->view()->GetWidget();
-#if HANDLE_WAYLAND_FAILURE
-  if (ui::OzonePlatform::GetPlatformNameForTest() == "wayland") {
-    WidgetActivationWaiterWayland waiter(widget);
-    widget->Activate();
-    if (!waiter.Wait()) {
-      LOG(WARNING)
-          << "Unable to activate widget due to lack of Wayland support for "
-             "widget activation; test is not meaningful on this platform.";
-      return ui::test::ActionResult::kKnownIncompatible;
-    }
-    return ui::test::ActionResult::kSucceeded;
+  if (!widget) {
+    LOG(WARNING) << "View not assocaited with a widget.";
+    return ui::test::ActionResult::kFailed;
   }
-#endif  // HANDLE_WAYLAND_FAILURE
 
-  views::test::WidgetActivationWaiter waiter(widget, true);
-  widget->Activate();
-  waiter.Wait();
-  return ui::test::ActionResult::kSucceeded;
+  return ActivateWidget(widget);
 }
 
 ui::test::ActionResult InteractionTestUtilSimulatorViews::SendAccelerator(
@@ -666,6 +657,38 @@ ui::test::ActionResult InteractionTestUtilSimulatorViews::Confirm(
   return ui::test::ActionResult::kSucceeded;
 }
 
+// static
+bool InteractionTestUtilSimulatorViews::IsWayland() {
+#if BUILDFLAG(IS_OZONE)
+  return ui::OzonePlatform::GetPlatformNameForTest() == "wayland";
+#else
+  return false;
+#endif
+}
+
+// static
+ui::test::ActionResult InteractionTestUtilSimulatorViews::ActivateWidget(
+    Widget* widget) {
+#if HANDLE_WAYLAND_FAILURE
+  if (IsWayland()) {
+    WidgetActivationWaiterWayland waiter(widget);
+    widget->Activate();
+    if (!waiter.Wait()) {
+      LOG(WARNING)
+          << "Unable to activate widget due to lack of Wayland support for "
+             "widget activation; test is not meaningful on this platform.";
+      return ui::test::ActionResult::kKnownIncompatible;
+    }
+    return ui::test::ActionResult::kSucceeded;
+  }
+#endif  // HANDLE_WAYLAND_FAILURE
+
+  widget->Activate();
+  views::test::WaitForWidgetActive(widget, true);
+  return ui::test::ActionResult::kSucceeded;
+}
+
+// static
 bool InteractionTestUtilSimulatorViews::DoDefaultAction(View* view,
                                                         InputType input_type) {
   switch (input_type) {

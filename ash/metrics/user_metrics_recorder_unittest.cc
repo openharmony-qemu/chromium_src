@@ -28,8 +28,6 @@ const char kAsh_Shelf_NumberOfPinnedItems[] = "Ash.Shelf.NumberOfPinnedItems";
 const char kAsh_Shelf_NumberOfUnpinnedItems[] =
     "Ash.Shelf.NumberOfUnpinnedItems";
 
-const char kAsh_NotificationBadgeShownPref[] = "Ash.AppNotificationBadgingPref";
-
 }  // namespace
 
 // Test fixture for the UserMetricsRecorder class. The tests manage their own
@@ -78,14 +76,7 @@ TEST_F(UserMetricsRecorderTest, VerifyIsUserInActiveDesktopEnvironmentValues) {
   // Kiosk logins are not considered active.
   client->Reset();
   client->AddUserSession("app@kiosk-apps.device-local.localhost",
-                         user_manager::USER_TYPE_KIOSK_APP);
-  client->SetSessionState(session_manager::SessionState::ACTIVE);
-  EXPECT_FALSE(test_api().IsUserInActiveDesktopEnvironment());
-
-  // Arc kiosk logins are not considered active.
-  client->Reset();
-  client->AddUserSession("app@arc-kiosk-apps.device-local.localhost",
-                         user_manager::USER_TYPE_ARC_KIOSK_APP);
+                         user_manager::UserType::kKioskApp);
   client->SetSessionState(session_manager::SessionState::ACTIVE);
   EXPECT_FALSE(test_api().IsUserInActiveDesktopEnvironment());
 }
@@ -100,7 +91,6 @@ TEST_F(UserMetricsRecorderTest,
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfItems, 0);
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfPinnedItems, 0);
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfUnpinnedItems, 0);
-  histograms().ExpectTotalCount(kAsh_NotificationBadgeShownPref, 0);
 }
 
 // Verifies that the IsUserInActiveDesktopEnvironment() dependent stats are
@@ -114,7 +104,6 @@ TEST_F(UserMetricsRecorderTest,
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfItems, 1);
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfPinnedItems, 1);
   histograms().ExpectTotalCount(kAsh_Shelf_NumberOfUnpinnedItems, 1);
-  histograms().ExpectTotalCount(kAsh_NotificationBadgeShownPref, 1);
 }
 
 // Verify the shelf item counts recorded by the

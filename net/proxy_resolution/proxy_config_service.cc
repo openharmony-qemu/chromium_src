@@ -23,6 +23,8 @@
 #include "net/proxy_resolution/proxy_config_service_linux.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "net/proxy_resolution/proxy_config_service_android.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/proxy_resolution/proxy_config_service_ohos.h"
 #endif
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX)
@@ -32,7 +34,8 @@
 namespace net {
 
 namespace {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
 constexpr net::NetworkTrafficAnnotationTag kSystemProxyConfigTrafficAnnotation =
     net::DefineNetworkTrafficAnnotation("proxy_config_system", R"(
       semantics {
@@ -132,7 +135,7 @@ ProxyConfigService::CreateSystemProxyConfigService(
       std::move(main_task_runner),
       base::SingleThreadTaskRunner::GetCurrentDefault());
 #elif BUILDFLAG(IS_FUCHSIA)
-  // TODO(crbug.com/889195): Implement a system proxy service for Fuchsia.
+  // TODO(crbug.com/42050626): Implement a system proxy service for Fuchsia.
   return std::make_unique<ProxyConfigServiceDirect>();
 #else
   LOG(WARNING) << "Failed to choose a system proxy settings fetcher "

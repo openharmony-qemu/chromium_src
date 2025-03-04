@@ -1,0 +1,249 @@
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "policy_loader_ohos.h"
+
+#include <string>
+#include <vector>
+
+#include "base/base_paths_ohos.h"
+#include "base/files/file.h"
+#include "base/json/json_string_value_serializer.h"
+#include "base/logging.h"
+#include "base/path_service.h"
+#include "components/policy/core/common/policy_bundle.h"
+#include "components/policy/core/common/policy_pref_names.h"
+#include "components/policy/core/common/policy_types.h"
+#include "components/prefs/pref_registry_simple.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+
+namespace policy {
+
+namespace {
+constexpr bool kUseTestPolicies = false;
+std::vector<PolicyLoaderOhos*> g_loaders;
+}  // namespace
+
+void RegisterBrowserPolicyProfilePrefs(PrefRegistrySimple* registry) {
+  registry->RegisterIntegerPref(policy::policy_prefs::kBrowserPolicyVersion, 0);
+}
+
+PolicyChangedEventCallback::PolicyChangedEventCallback(
+    PolicyLoaderOhos* loader) : loader_(loader) {}
+
+void PolicyChangedEventCallback::OnPolicyChanged() {
+  OnPolicyChangedImpl();
+}
+
+void PolicyChangedEventCallback::Changed() {
+  OnPolicyChangedImpl();
+}
+
+void PolicyChangedEventCallback::OnPolicyChangedImpl() {
+  LOG(INFO) << "Recv edm policy change event and reload policy.";
+  if (loader_) {
+    loader_->Reload(true);
+  }
+}
+
+bool PolicyLoaderOhos::use_browser_policy_ = false;
+bool PolicyLoaderOhos::policy_source_choosed_ = false;
+
+PolicyLoaderOhos::PolicyLoaderOhos(
+    scoped_refptr<base::SequencedTaskRunner> task_runner)
+    : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
+  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
+  g_loaders.emplace_back(this);
+  TryChoosePolicySource();
+}
+
+PolicyLoaderOhos::~PolicyLoaderOhos() {
+  auto it = std::find(g_loaders.begin(), g_loaders.end(), this);
+  if (it != g_loaders.end()) {
+      g_loaders.erase(it);
+  }
+
+  if (!policy_source_choosed_) {
+    return;
+  }
+
+  if (use_browser_policy_) {
+    policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
+        event_callback_.get());
+  } else {
+    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                      .GetEnterpriseDeviceManagementInstance()
+                      .StopObservePolicyChange();
+  }
+}
+
+// static
+void PolicyLoaderOhos::TryChoosePolicySource() {
+  if (!policy_source_choosed_) {
+    policy_source_choosed_ =
+        policy::ShouldUseBrowserPolicy(use_browser_policy_);
+    if (!policy_source_choosed_) {
+      LOG(INFO) << "PolicyLoaderOhos TryChoosePolicySource failed";
+      return;
+    }
+    LOG(INFO) << "PolicyLoaderOhos ShouldUseBrowserPolicy: "
+                << use_browser_policy_;
+  }
+
+  for (auto loader: g_loaders) {
+    if (use_browser_policy_) {
+      policy::BrowserPolicyHandler::GetInstance()->AddObserver(
+          loader->event_callback().get());
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetEnterpriseDeviceManagementInstance()
+          .RegistPolicyChangeEventCallback(loader->event_callback());
+
+      std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                        .GetEnterpriseDeviceManagementInstance()
+                        .StartObservePolicyChange();
+    }
+  }
+}
+
+void PolicyLoaderOhos::InitOnBackgroundThread() {}
+
+PolicyBundle PolicyLoaderOhos::Load() {
+  TryChoosePolicySource();
+  if (!policy_source_choosed_) {
+    LOG(ERROR) << "Load with no policy source choosed";
+    return PolicyBundle();
+  }
+
+  if (use_browser_policy_) {
+    return policy::BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
+  } else {
+    std::string policies;
+    int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                             .GetEnterpriseDeviceManagementInstance()
+                             .GetPolicies(policies);
+    LOG(INFO) << "GetPolicies error_code:" << error_code
+              << ", policies:" << policies;
+
+    if (kUseTestPolicies) {
+      policies = ReadTestPolices();
+      LOG(INFO) << "ReadTestPolices policies:" << policies;
+    }
+
+    PolicyBundle bundle;
+    std::ignore = ParsePolicy(policies, &bundle);
+    return bundle;
+  }
+}
+
+std::string PolicyLoaderOhos::ReadTestPolices() {
+  base::FilePath data_path;
+  base::PathService::Get(base::DIR_CACHE, &data_path);
+  data_path = data_path.Append("test_polices.json");
+  LOG(INFO) << "Try to read test_polices.json from " << data_path.value();
+
+  base::File tfile(data_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!tfile.IsValid()) {
+    LOG(INFO) << "test_polices.json is invalid or not exist.";
+    return "";
+  }
+
+  std::vector<char> buffer(tfile.GetLength());
+  int bytes_read = tfile.Read(0, buffer.data(), buffer.size());
+  if (bytes_read == -1) {
+    LOG(INFO) << "Read test_polices.json failed.";
+    return "";
+  }
+
+  auto buffer_str = std::string_view(buffer.data(), buffer.size());
+  auto json = base::JSONReader::Read(
+      buffer_str, base::JSON_ALLOW_TRAILING_COMMAS);
+  if (!json.has_value()) {
+    LOG(INFO) << "Read test_polices.json failed as invalid json format.";
+    return "";
+  }
+
+  return std::string(buffer_str);
+}
+
+// static
+bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
+                                   PolicyBundle* bundle) {
+  /* policy json demo
+  "InsecurePrivateNetworkRequestsAllowed": {
+    "level": "mandatory",
+    "scope": "machine",
+    "source": "platform",
+    "value": true
+  }*/
+  if (bundle == nullptr) {
+    LOG(WARNING) << "Null bundle given, parse failed";
+    return false;
+  }
+
+  base::Value::Dict dictionary_value;
+  JSONStringValueDeserializer deserializer(json);
+  std::string error_msg;
+  std::unique_ptr<base::Value> json_value =
+      deserializer.Deserialize(/*error_code=*/nullptr, &error_msg);
+  if (!json_value) {
+    LOG(WARNING) << "Unable to deserialize json data. error_msg: " << error_msg;
+    return false;
+  }
+
+  if (json_value->type() == base::Value::Type::DICT) {
+    for (auto kv : json_value->GetDict()) {
+      std::string key = kv.first;
+      if (kv.second.type() != base::Value::Type::DICT) {
+        LOG(WARNING) << "key: " << key << " type is not  DICTIONARY";
+        continue;
+      }
+      base::Value::Dict& kv_dict = kv.second.GetDict();
+      base::Value* policy_value = kv_dict.Find("value");
+      if (!policy_value) {
+        LOG(WARNING) << "key: " << key << " has no value";
+        continue;
+      }
+
+      switch (policy_value->type()) {
+        case base::Value::Type::BOOLEAN: {
+          dictionary_value.Set(key, policy_value->GetBool());
+          break;
+        }
+        case base::Value::Type::INTEGER: {
+          dictionary_value.Set(key, policy_value->GetInt());
+          break;
+        }
+        case base::Value::Type::DOUBLE: {
+          dictionary_value.Set(key, policy_value->GetDouble());
+          break;
+        }
+        case base::Value::Type::STRING: {
+          dictionary_value.Set(key, policy_value->GetString());
+          break;
+        }
+        case base::Value::Type::LIST: {
+          dictionary_value.Set(key, std::move(policy_value->GetList()));
+          break;
+        }
+        default:
+          LOG(WARNING) << "unkown type";
+      }
+    }
+  }
+
+  PolicyMap policy_map;
+  policy_map.LoadFrom(dictionary_value, POLICY_LEVEL_MANDATORY,
+                      POLICY_SCOPE_MACHINE, POLICY_SOURCE_PLATFORM);
+
+  if (policy_map.empty()) {
+    LOG(WARNING) << "Empty json object, parse failed";
+    return false;
+  }
+  bundle->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()))
+      .MergeFrom(policy_map);
+  return true;
+}
+
+}  // namespace policy

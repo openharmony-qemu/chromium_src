@@ -9,6 +9,7 @@
 
 #import <map>
 
+#import "base/memory/raw_ptr.h"
 #import "base/observer_list.h"
 
 namespace web {
@@ -19,10 +20,8 @@ class WebFrame;
 //   2. Create FakeWebFramesManager;
 //   3. Call TestWebState::SetWebFramesManager with FakeWebFramesManager;
 //   4. Manipulate WebFrames:
-//     a. Call FakeWebFramesManager::AddWebFrame then
-//        TestWebState::OnWebFrameDidBecomeAvailable;
-//     b. Call TestWebState::OnWebFrameWillBecomeUnavailable then
-//        FakeWebFramesManager::RemoveWebFrame.
+//     a. Call FakeWebFramesManager::AddWebFrame
+//     b. Call FakeWebFramesManager::RemoveWebFrame.
 class FakeWebFramesManager : public WebFramesManager {
  public:
   FakeWebFramesManager();
@@ -42,7 +41,7 @@ class FakeWebFramesManager : public WebFramesManager {
   // List of pointers to all web frames associated with WebState.
   std::map<std::string, std::unique_ptr<WebFrame>> web_frames_;
   // Reference to the current main web frame.
-  WebFrame* main_web_frame_ = nullptr;
+  raw_ptr<WebFrame> main_web_frame_ = nullptr;
   base::ObserverList<Observer, /*check_empty=*/false> observers_;
 };
 

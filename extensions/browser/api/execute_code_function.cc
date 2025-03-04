@@ -7,9 +7,11 @@
 
 #include "extensions/browser/api/execute_code_function.h"
 
+#include <optional>
 #include <utility>
 
 #include "base/functional/bind.h"
+#include "base/not_fatal_until.h"
 #include "base/ranges/algorithm.h"
 #include "extensions/browser/extension_api_frame_id_map.h"
 #include "extensions/browser/extensions_browser_client.h"
@@ -21,7 +23,6 @@
 #include "extensions/common/mojom/run_location.mojom-shared.h"
 #include "extensions/common/utils/content_script_utils.h"
 #include "extensions/common/utils/extension_types_utils.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace {
 
@@ -50,7 +51,7 @@ ExecuteCodeFunction::~ExecuteCodeFunction() {
 void ExecuteCodeFunction::DidLoadAndLocalizeFile(
     const std::string& file,
     std::vector<std::unique_ptr<std::string>> data,
-    absl::optional<std::string> load_error) {
+    std::optional<std::string> load_error) {
   if (load_error) {
     // TODO(viettrungluu): bug: there's no particular reason the path should be
     // UTF-8, in which case this may fail.
@@ -89,8 +90,7 @@ bool ExecuteCodeFunction::Execute(const std::string& code_string,
       details_->all_frames.value_or(false) ? ScriptExecutor::INCLUDE_SUB_FRAMES
                                            : ScriptExecutor::SPECIFIED_FRAMES;
 
-  root_frame_id_ =
-      details_->frame_id.value_or(ExtensionApiFrameIdMap::kTopFrameId);
+  root_frame_id_ = details_->frame_id.value_or(GetRootFrameId());
 
   ScriptExecutor::MatchAboutBlank match_about_blank =
       details_->match_about_blank.value_or(false)
@@ -113,7 +113,7 @@ bool ExecuteCodeFunction::Execute(const std::string& code_string,
   mojom::CodeInjectionPtr injection;
   bool is_css_injection = ShouldInsertCSS() || ShouldRemoveCSS();
   if (is_css_injection) {
-    absl::optional<std::string> injection_key;
+    std::optional<std::string> injection_key;
     if (host_id_.type == mojom::HostID::HostType::kExtensions) {
       injection_key = ScriptExecutor::GenerateInjectionKey(
           host_id_, script_url_, code_string);
@@ -134,6 +134,7 @@ bool ExecuteCodeFunction::Execute(const std::string& code_string,
     // scripting.executeScript does).
     injection = mojom::CodeInjection::NewJs(mojom::JSInjection::New(
         std::move(sources), mojom::ExecutionWorld::kIsolated,
+        /*world_id=*/std::nullopt,
         wants_result ? blink::mojom::WantResultOption::kWantResult
                      : blink::mojom::WantResultOption::kNoResult,
         user_gesture() ? blink::mojom::UserActivationOption::kActivate
@@ -219,7 +220,7 @@ void ExecuteCodeFunction::OnExecuteCodeFinished(
   auto root_frame_result = base::ranges::find(
       results, root_frame_id_, &ScriptExecutor::FrameResult::frame_id);
 
-  DCHECK(root_frame_result != results.end());
+  CHECK(root_frame_result != results.end(), base::NotFatalUntil::M130);
 
   // We just error out if we never injected in the root frame.
   // TODO(devlin): That's a bit odd, because other injections may have

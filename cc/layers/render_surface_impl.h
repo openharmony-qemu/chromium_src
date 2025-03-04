@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,11 +19,9 @@
 #include "cc/layers/layer_collections.h"
 #include "cc/trees/occlusion.h"
 #include "cc/trees/property_tree.h"
-#include "cc/view_transition/view_transition_element_id.h"
 #include "components/viz/common/quads/compositor_render_pass.h"
 #include "components/viz/common/quads/shared_quad_state.h"
 #include "components/viz/common/surfaces/subtree_capture_id.h"
-#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gfx/geometry/mask_filter_info.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
@@ -74,11 +73,16 @@ class CC_EXPORT RenderSurfaceImpl {
   }
   float draw_opacity() const { return draw_properties_.draw_opacity; }
 
-  void SetMaskFilterInfo(const gfx::MaskFilterInfo& mask_filter_info) {
+  void SetMaskFilterInfo(const gfx::MaskFilterInfo& mask_filter_info,
+                         bool is_fast_rounded_corner) {
     draw_properties_.mask_filter_info = mask_filter_info;
+    draw_properties_.is_fast_rounded_corner = is_fast_rounded_corner;
   }
   const gfx::MaskFilterInfo& mask_filter_info() const {
     return draw_properties_.mask_filter_info;
+  }
+  bool is_fast_rounded_corner() const {
+    return draw_properties_.is_fast_rounded_corner;
   }
 
   SkBlendMode BlendMode() const;
@@ -208,7 +212,7 @@ class CC_EXPORT RenderSurfaceImpl {
 
   const FilterOperations& Filters() const;
   const FilterOperations& BackdropFilters() const;
-  absl::optional<gfx::RRectF> BackdropFilterBounds() const;
+  std::optional<gfx::RRectF> BackdropFilterBounds() const;
   LayerImpl* BackdropMaskLayer() const;
   gfx::Transform SurfaceScale() const;
 
@@ -229,7 +233,7 @@ class CC_EXPORT RenderSurfaceImpl {
 
   // Returns true if it's required to copy the output of this surface (i.e. when
   // it has copy requests, should be cached, or has a valid subtree capture ID),
-  // and should be e.g. immune from occlusion, etc. Returns false otherise.
+  // and should be e.g. immune from occlusion, etc. Returns false otherwise.
   bool CopyOfOutputRequired() const;
 
   // These are to enable commit, where we need to snapshot these flags from the
@@ -263,8 +267,6 @@ class CC_EXPORT RenderSurfaceImpl {
   const EffectNode* OwningEffectNode() const;
   EffectNode* OwningEffectNodeMutableForTest() const;
 
-  const ViewTransitionElementId& GetViewTransitionElementId() const;
-
  private:
   void SetContentRect(const gfx::Rect& content_rect);
   gfx::Rect CalculateClippedAccumulatedContentRect();
@@ -273,6 +275,10 @@ class CC_EXPORT RenderSurfaceImpl {
   void TileMaskLayer(viz::CompositorRenderPass* render_pass,
                      viz::SharedQuadState* shared_quad_state,
                      const gfx::Rect& unoccluded_content_rect);
+
+  // Returns true if this surface should be clipped. This is false if there
+  // are copy requests, it should be cached, or is part of a view transition.
+  bool ShouldClip() const;
 
   raw_ptr<LayerTreeImpl> layer_tree_impl_;
   ElementId id_;
@@ -284,7 +290,7 @@ class CC_EXPORT RenderSurfaceImpl {
     DrawProperties();
     ~DrawProperties();
 
-    float draw_opacity;
+    float draw_opacity = 1.0f;
 
     // Transforms from the surface's own space to the space of its target
     // surface.
@@ -299,19 +305,26 @@ class CC_EXPORT RenderSurfaceImpl {
     gfx::Rect clip_rect;
 
     // True if the surface needs to be clipped by clip_rect.
-    bool is_clipped : 1;
+    bool is_clipped : 1 = false;
 
     // Contains a mask information applied to the layer. The coordinates is in
     // the target space of the render surface. The root render surface will
     // never have this set.
     gfx::MaskFilterInfo mask_filter_info;
+
+    // This information is further passed to SharedQuadState when a
+    // SharedQuadState and a quad for this layer that represents a render
+    // surface is appended. Then, it's up to the SurfaceAggregator to decide
+    // whether it can actually merge this render surface and avoid having
+    // additional render pass.
+    bool is_fast_rounded_corner : 1 = false;
   };
 
   DrawProperties draw_properties_;
 
   // Is used to calculate the content rect from property trees.
   gfx::Rect accumulated_content_rect_;
-  int num_contributors_;
+  int num_contributors_ = 0;
 
   // If this is not kInvalidPropertyNodeId, it means that some contributing
   // layer escaping the effect's clip node, and this is the the lowest common
@@ -321,23 +334,28 @@ class CC_EXPORT RenderSurfaceImpl {
   // Is used to decide if the surface is clipped.
   // TODO(wangxianzhu): Remove this when removing the
   // RenderSurfaceCommonAncestorClip feature.
-  bool has_contributing_layer_that_escapes_clip_ : 1;
+  bool has_contributing_layer_that_escapes_clip_ : 1 = false;
 
-  bool surface_property_changed_ : 1;
-  bool ancestor_property_changed_ : 1;
+  bool surface_property_changed_ : 1 = false;
+  bool ancestor_property_changed_ : 1 = false;
 
-  bool contributes_to_drawn_surface_ : 1;
-  bool is_render_surface_list_member_ : 1;
-  bool intersects_damage_under_ : 1;
+  bool contributes_to_drawn_surface_ : 1 = false;
+  bool is_render_surface_list_member_ : 1 = false;
+  bool intersects_damage_under_ : 1 = true;
 
   Occlusion occlusion_in_content_space_;
 
   // The nearest ancestor target surface that will contain the contents of this
   // surface, and that ignores outside occlusion. This can point to itself.
-  raw_ptr<const RenderSurfaceImpl, DanglingUntriaged>
-      nearest_occlusion_immune_ancestor_;
+  raw_ptr<const RenderSurfaceImpl, AcrossTasksDanglingUntriaged>
+      nearest_occlusion_immune_ancestor_ = nullptr;
 
   std::unique_ptr<DamageTracker> damage_tracker_;
+
+  // A ViewTransitionContentLayer only knows its final visible drawable rect
+  // once its originating surface's content rect has been computed. So we defer
+  // adding this contribution until that is complete.
+  std::vector<LayerImpl*> deferred_contributing_layers_;
 };
 
 }  // namespace cc

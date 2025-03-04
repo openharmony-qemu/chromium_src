@@ -8,11 +8,11 @@
  * strings and for debugging. They are not intended to be drectly user facing.
  */
 
-import {loadTimeData} from 'chrome://resources/ash/common/load_time_data.m.js';
-import {assert, assertNotReached} from 'chrome://resources/ash/common/assert.js';
-import {ActivationStateType, ApnProperties, AuthenticationType, ConfigProperties, DeviceStateProperties as MojomDeviceStateProperties, HiddenSsidMode, InhibitReason, IPConfigProperties, ManagedApnList, ManagedBoolean, ManagedInt32, ManagedProperties, ManagedString, ManagedStringList, ManagedSubjectAltNameMatchList, MatchType, NetworkStateProperties as MojomNetworkStateProperties, ProxyMode, SecurityType, SIMInfo, SIMLockStatus, SubjectAltName, SubjectAltName_Type, TetherStateProperties, TrafficCounterProperties, VpnType} from 'chrome://resources/mojo/chromeos/services/network_config/public/mojom/cros_network_config.mojom-webui.js';
-import {ConnectionStateType, DeviceStateType, IPConfigType, NetworkType, OncSource, PolicySource, PortalState} from 'chrome://resources/mojo/chromeos/services/network_config/public/mojom/network_types.mojom-webui.js';
-import {IPAddress} from 'chrome://resources/mojo/services/network/public/mojom/ip_address.mojom-webui.js';
+import {assert, assertNotReached} from '//resources/ash/common/assert.js';
+import {loadTimeData} from '//resources/ash/common/load_time_data.m.js';
+import {ActivationStateType, ApnProperties, AuthenticationType, ConfigProperties, DeviceStateProperties as MojomDeviceStateProperties, HiddenSsidMode, InhibitReason, IPConfigProperties, ManagedApnList, ManagedBoolean, ManagedInt32, ManagedProperties, ManagedString, ManagedStringList, ManagedSubjectAltNameMatchList, MatchType, NetworkStateProperties as MojomNetworkStateProperties, ProxyMode, SecurityType, SIMInfo, SIMLockStatus, SubjectAltName, SubjectAltName_Type, TetherStateProperties, TrafficCounterProperties, VpnType} from '//resources/mojo/chromeos/services/network_config/public/mojom/cros_network_config.mojom-webui.js';
+import {ConnectionStateType, DeviceStateType, IPConfigType, NetworkType, OncSource, PolicySource, PortalState} from '//resources/mojo/chromeos/services/network_config/public/mojom/network_types.mojom-webui.js';
+import {IPAddress} from '//resources/mojo/services/network/public/mojom/ip_address.mojom-webui.js';
 
 
 
@@ -100,8 +100,6 @@ export class OncMojo {
         return 'PortalSuspected';
       case PortalState.kPortal:
         return 'Portal';
-      case PortalState.kProxyAuthRequired:
-        return 'ProxyAuthRequired';
       case PortalState.kNoInternet:
         return 'NoInternet';
     }
@@ -224,6 +222,18 @@ export class OncMojo {
     }
 
     return device.inhibitReason !== InhibitReason.kNotInhibited;
+  }
+
+  /**
+   * @param {?MojomDeviceStateProperties|undefined} device
+   * @return {boolean}
+   */
+  static deviceIsFlashing(device) {
+    if (!device) {
+      return false;
+    }
+
+    return device.isFlashing;
   }
 
   /**
@@ -467,46 +477,42 @@ export class OncMojo {
   }
 
   /**
-   * @param {string} networkName
-   * @param {string|undefined} providerName
-   * @return {string}
-   */
-  static getVpnDisplayName(networkName, providerName) {
-    if (providerName) {
-      return loadTimeData.getStringF(
-          'vpnNameTemplate', providerName, networkName);
-    }
-    return networkName;
-  }
-
-  /**
+   * WARNING: The string returned by this method may contain malicious HTML and
+   * should not be used for Polymer bindings in CSS code. For additional
+   * information see b/286254915.
+   *
    * @param {!MojomNetworkStateProperties} network
    * @return {string}
    */
-  static getNetworkStateDisplayName(network) {
+  static getNetworkStateDisplayNameUnsafe(network) {
     if (!network.name) {
       return OncMojo.getNetworkTypeDisplayName(network.type);
     }
     if (network.type === NetworkType.kVPN &&
         network.typeState.vpn.providerName) {
-      return OncMojo.getVpnDisplayName(
-          network.name, network.typeState.vpn.providerName);
+      return loadTimeData.getStringF(
+          'vpnNameTemplate', network.typeState.vpn.providerName, network.name);
     }
     return network.name;
   }
 
   /**
+   * WARNING: The string returned by this method may contain malicious HTML and
+   * should not be used for Polymer bindings in CSS code. For additional
+   * information see b/286254915.
+   *
    * @param {!ManagedProperties} network
    * @return {string}
    */
-  static getNetworkName(network) {
+  static getNetworkNameUnsafe(network) {
     if (!network.name || !network.name.activeValue) {
       return OncMojo.getNetworkTypeDisplayName(network.type);
     }
     if (network.type === NetworkType.kVPN &&
         network.typeProperties.vpn.providerName) {
-      return OncMojo.getVpnDisplayName(
-          network.name.activeValue, network.typeProperties.vpn.providerName);
+      return loadTimeData.getStringF(
+          'vpnNameTemplate', network.typeProperties.vpn.providerName,
+          network.name.activeValue);
     }
     return network.name.activeValue;
   }
@@ -592,7 +598,6 @@ export class OncMojo {
       source: OncSource.kNone,
       type: type,
       typeState: {},
-      dnsQueriesMonitored: false,
     };
     switch (type) {
       case NetworkType.kCellular:
@@ -606,6 +611,8 @@ export class OncMojo {
           simLockEnabled: false,
           simLocked: false,
           simLockType: '',
+          hasNickName: false,
+          networkOperator: '',
         };
         break;
       case NetworkType.kEthernet:
@@ -637,6 +644,8 @@ export class OncMojo {
           security: SecurityType.kNone,
           signalStrength: 0,
           ssid: '',
+          passpointId: '',
+          visible: true,
         };
         break;
       default:
@@ -671,6 +680,8 @@ export class OncMojo {
         networkState.typeState.cellular.eid = cellularProperties.eid || '';
         networkState.typeState.cellular.activationState =
             cellularProperties.activationState;
+        networkState.typeState.cellular.paymentPortal =
+            cellularProperties.paymentPortal;
         networkState.typeState.cellular.networkTechnology =
             cellularProperties.networkTechnology || '';
         networkState.typeState.cellular.roaming =
@@ -679,6 +690,8 @@ export class OncMojo {
             cellularProperties.signalStrength;
         networkState.typeState.cellular.simLocked =
             cellularProperties.simLocked;
+        networkState.typeState.cellular.simLockType =
+            cellularProperties.simLockType;
         break;
       case NetworkType.kEthernet:
         networkState.typeState.ethernet.authentication =
@@ -710,6 +723,8 @@ export class OncMojo {
             wifiProperties.signalStrength;
         networkState.typeState.wifi.ssid =
             OncMojo.getActiveString(wifiProperties.ssid);
+        networkState.typeState.wifi.hiddenSsid =
+            !!OncMojo.getActiveValue(wifiProperties.hiddenSsid);
         break;
     }
     return networkState;
@@ -743,6 +758,7 @@ export class OncMojo {
             activationState: ActivationStateType.kUnknown,
             signalStrength: 0,
             simLocked: false,
+            simLockType: '',
             supportNetworkScan: false,
           },
         };
@@ -1230,7 +1246,6 @@ export class OncMojo {
         return false;
       case PortalState.kPortalSuspected:
       case PortalState.kPortal:
-      case PortalState.kProxyAuthRequired:
       case PortalState.kNoInternet:
         return true;
     }

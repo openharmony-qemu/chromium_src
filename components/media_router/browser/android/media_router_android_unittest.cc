@@ -10,13 +10,15 @@
 #include "base/test/mock_callback.h"
 #include "components/media_router/browser/android/media_router_android.h"
 #include "components/media_router/browser/android/media_router_android_bridge.h"
-#include "components/media_router/browser/android/test_jni_headers/TestMediaRouterClient_jni.h"
 #include "components/media_router/browser/test/test_helper.h"
 #include "content/public/browser/presentation_service_delegate.h"
 #include "content/public/test/browser_task_environment.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/origin.h"
+
+// Must come after all headers that specialize FromJniType() / ToJniType().
+#include "components/media_router/browser/android/test_jni_headers/TestMediaRouterClient_jni.h"
 
 using blink::mojom::PresentationConnectionState;
 using testing::_;
@@ -87,7 +89,7 @@ TEST_F(MediaRouterAndroidTest, DetachRoute) {
       .WillOnce(Return());
 
   router_->CreateRoute("source", "sink", url::Origin(), nullptr,
-                       base::DoNothing(), base::TimeDelta(), false);
+                       base::DoNothing(), base::TimeDelta());
   router_->OnRouteCreated("route", "sink", 1, false);
 
   EXPECT_NE(nullptr, router_->FindRouteBySource("source"));
@@ -106,7 +108,7 @@ TEST_F(MediaRouterAndroidTest, OnRouteTerminated) {
           .WillOnce(Return());
 
   router_->CreateRoute("source", "sink", url::Origin(), nullptr,
-                       base::DoNothing(), base::TimeDelta(), false);
+                       base::DoNothing(), base::TimeDelta());
   router_->OnRouteCreated("route", "sink", 1, false);
 
   EXPECT_NE(nullptr, router_->FindRouteBySource("source"));
@@ -135,7 +137,7 @@ TEST_F(MediaRouterAndroidTest, OnRouteClosed) {
           .WillOnce(Return());
 
   router_->CreateRoute("source", "sink", url::Origin(), nullptr,
-                       base::DoNothing(), base::TimeDelta(), false);
+                       base::DoNothing(), base::TimeDelta());
   router_->OnRouteCreated("route", "sink", 1, false);
 
   EXPECT_NE(nullptr, router_->FindRouteBySource("source"));
@@ -143,7 +145,7 @@ TEST_F(MediaRouterAndroidTest, OnRouteClosed) {
   base::CallbackListSubscription subscription =
       router_->AddPresentationConnectionStateChangedCallback("route",
                                                              callback.Get());
-  router_->OnRouteClosed("route", absl::nullopt);
+  router_->OnRouteClosed("route", std::nullopt);
 
   EXPECT_EQ(nullptr, router_->FindRouteBySource("source"));
 }
@@ -163,7 +165,7 @@ TEST_F(MediaRouterAndroidTest, OnRouteClosedWithError) {
           .WillOnce(Return());
 
   router_->CreateRoute("source", "sink", url::Origin(), nullptr,
-                       base::DoNothing(), base::TimeDelta(), false);
+                       base::DoNothing(), base::TimeDelta());
   router_->OnRouteCreated("route", "sink", 1, false);
 
   EXPECT_NE(nullptr, router_->FindRouteBySource("source"));
@@ -188,7 +190,7 @@ TEST_F(MediaRouterAndroidTest, OnRouteMediaSourceUpdated) {
       .WillOnce(Return());
 
   router_->CreateRoute(source_id, sink_id, origin, nullptr, base::DoNothing(),
-                       base::TimeDelta(), false);
+                       base::TimeDelta());
   router_->OnRouteCreated(route_id, sink_id, 1, false);
 
   EXPECT_NE(nullptr, router_->FindRouteBySource(source_id));

@@ -5,6 +5,7 @@
 #ifndef UI_GFX_NATIVE_PIXMAP_H_
 #define UI_GFX_NATIVE_PIXMAP_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/ref_counted.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/geometry/size.h"
@@ -64,9 +65,9 @@ class NativePixmap : public base::RefCountedThreadSafe<NativePixmap> {
 
   // Export the buffer for sharing across processes.
   // Any file descriptors in the exported handle are owned by the caller.
-  virtual gfx::NativePixmapHandle ExportHandle() = 0;
+  virtual gfx::NativePixmapHandle ExportHandle() const = 0;
 
-#if BUILDFLAG(ENABLE_HEIF_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   virtual void* GetWindowBuffer() { return nullptr; }
 #endif
 

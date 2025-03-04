@@ -8,9 +8,11 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "base/callback_list.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -21,6 +23,10 @@
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
+#include "remoting/base/constants.h"
+#include "remoting/base/errors.h"
+#include "remoting/base/local_session_policies_provider.h"
+#include "remoting/base/session_policies.h"
 #include "remoting/host/base/desktop_environment_options.h"
 #include "remoting/host/client_session_control.h"
 #include "remoting/host/client_session_details.h"
@@ -40,6 +46,7 @@
 #include "remoting/protocol/connection_to_client.h"
 #include "remoting/protocol/data_channel_manager.h"
 #include "remoting/protocol/display_size.h"
+#include "remoting/protocol/fractional_input_filter.h"
 #include "remoting/protocol/host_stub.h"
 #include "remoting/protocol/input_event_tracker.h"
 #include "remoting/protocol/input_filter.h"
@@ -57,7 +64,7 @@
 
 namespace remoting {
 
-class AudioStream;
+class ActiveDisplayMonitor;
 class DesktopEnvironment;
 class DesktopEnvironmentFactory;
 class InputInjector;
@@ -68,6 +75,7 @@ class RemoteWebAuthnMessageHandler;
 class ScreenControls;
 
 namespace protocol {
+class AudioStream;
 class VideoLayout;
 }  // namespace protocol
 
@@ -110,19 +118,26 @@ class ClientSession : public protocol::HostStub,
         const std::string& channel_name,
         const protocol::TransportRoute& route) = 0;
 
+    // Called when session policies are received. Returns nullopt if the session
+    // policies are valid; otherwise returns an error code, which will be used
+    // to close the session with.
+    virtual std::optional<ErrorCode> OnSessionPoliciesReceived(
+        const SessionPolicies& policies) = 0;
+
    protected:
     virtual ~EventHandler() {}
   };
 
   // |event_handler| and |desktop_environment_factory| must outlive |this|.
   // All |HostExtension|s in |extensions| must outlive |this|.
-  ClientSession(EventHandler* event_handler,
-                std::unique_ptr<protocol::ConnectionToClient> connection,
-                DesktopEnvironmentFactory* desktop_environment_factory,
-                const DesktopEnvironmentOptions& desktop_environment_options,
-                const base::TimeDelta& max_duration,
-                scoped_refptr<protocol::PairingRegistry> pairing_registry,
-                const std::vector<HostExtension*>& extensions);
+  ClientSession(
+      EventHandler* event_handler,
+      std::unique_ptr<protocol::ConnectionToClient> connection,
+      DesktopEnvironmentFactory* desktop_environment_factory,
+      const DesktopEnvironmentOptions& desktop_environment_options,
+      scoped_refptr<protocol::PairingRegistry> pairing_registry,
+      const std::vector<raw_ptr<HostExtension, VectorExperimental>>& extensions,
+      const LocalSessionPoliciesProvider* local_session_policies_provider);
 
   ClientSession(const ClientSession&) = delete;
   ClientSession& operator=(const ClientSession&) = delete;
@@ -149,7 +164,8 @@ class ClientSession : public protocol::HostStub,
 
   // protocol::ConnectionToClient::EventHandler interface.
   void OnConnectionAuthenticating() override;
-  void OnConnectionAuthenticated() override;
+  void OnConnectionAuthenticated(
+      const SessionPolicies* session_policies) override;
   void CreateMediaStreams() override;
   void OnConnectionChannelsConnected() override;
   void OnConnectionClosed(protocol::ErrorCode error) override;
@@ -220,7 +236,13 @@ class ClientSession : public protocol::HostStub,
   // Public for tests.
   void UpdateMouseClampingFilterOffset();
 
+  const SessionPolicies& effective_policies_for_tests() const {
+    return effective_policies_;
+  }
+
  private:
+  void OnLocalSessionPoliciesChanged(const SessionPolicies& new_policies);
+
   // Creates a proxy for sending clipboard events to the client.
   std::unique_ptr<protocol::ClipboardStub> CreateClipboardProxy();
 
@@ -269,6 +291,16 @@ class ClientSession : public protocol::HostStub,
                              bool& mouse_button_down,
                              protocol::ObservingInputFilter::Event event);
 
+  // Sends the new active display to the client. Called by ActiveDisplayMonitor
+  // whenever the screen id associated with the active window changes.
+  void OnActiveDisplayChanged(webrtc::ScreenId display);
+
+  // Sets the fallback geometry on `fractional_input_filter_` according to the
+  // current display-layout and selected display index. This is only used for
+  // single-stream mode, when the client provides fractional-coordinates without
+  // any screen_id.
+  void UpdateFractionalFilterFallback();
+
   raw_ptr<EventHandler> event_handler_;
 
   // Used to create a DesktopEnvironment instance for this session.
@@ -280,14 +312,15 @@ class ClientSession : public protocol::HostStub,
   // The DesktopEnvironment instance for this session.
   std::unique_ptr<DesktopEnvironment> desktop_environment_;
 
-  // Filter used as the final element in the input pipeline.
-  protocol::InputFilter host_input_filter_;
-
   // Tracker used to release pressed keys and buttons when disconnecting.
   protocol::InputEventTracker input_tracker_;
 
   // Filter used to disable remote inputs during local input activity.
   RemoteInputFilter remote_input_filter_;
+
+  // Filter used to convert any fractional coordinates to input-injection
+  // coordinates.
+  protocol::FractionalInputFilter fractional_input_filter_;
 
   // Filter used to clamp mouse events to the current display dimensions.
   protocol::MouseInputFilter mouse_clamping_filter_;
@@ -317,10 +350,6 @@ class ClientSession : public protocol::HostStub,
   // it.
   base::WeakPtrFactory<protocol::ClipboardStub> client_clipboard_factory_;
 
-  // The maximum duration of this session.
-  // There is no maximum if this value is <= 0.
-  base::TimeDelta max_duration_;
-
   // A timer that triggers a disconnect when the maximum session duration
   // is reached.
   base::OneShotTimer max_duration_timer_;
@@ -349,8 +378,8 @@ class ClientSession : public protocol::HostStub,
   DesktopDisplayInfo desktop_display_info_;
 
   // Default DPI values to use if a display reports 0 for DPI.
-  int default_x_dpi_;
-  int default_y_dpi_;
+  int default_x_dpi_ = kDefaultDpi;
+  int default_y_dpi_ = kDefaultDpi;
 
   // The index of the desktop display to show to the user.
   // Default is webrtc::kInvalidScreenScreenId because we need to perform
@@ -419,15 +448,22 @@ class ClientSession : public protocol::HostStub,
   mojo::ReceiverSet<mojom::ChromotingSessionServices>
       session_services_receivers_;
 
+  std::unique_ptr<ActiveDisplayMonitor> active_display_monitor_;
+
+  SessionPolicies effective_policies_;
+
+  raw_ptr<const LocalSessionPoliciesProvider> local_session_policies_provider_;
+
+  // If `effective_policies` does not come from local session policies, the
+  // subscription will be null and OnLocalSessionPoliciesChanged() will never
+  // be called.
+  base::CallbackListSubscription local_session_policy_update_subscription_;
+
   SEQUENCE_CHECKER(sequence_checker_);
 
   // Used to disable callbacks to |this| once DisconnectSession() has been
   // called.
-  base::WeakPtrFactory<ClientSessionControl>
-      client_session_control_weak_factory_{this};
-
-  base::WeakPtrFactory<ClientSessionEvents> client_session_events_weak_factory_{
-      this};
+  base::WeakPtrFactory<ClientSession> weak_factory_{this};
 };
 
 }  // namespace remoting

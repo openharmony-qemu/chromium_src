@@ -6,37 +6,34 @@ source_set("pinned_tabs") {
   sources = [
     "pinned_tabs_mediator.h",
     "pinned_tabs_mediator.mm",
-    "pinned_web_state_tab_switcher_item.h",
-    "pinned_web_state_tab_switcher_item.mm",
   ]
-
-  configs += [ "//build/config/compiler:enable_arc" ]
 
   deps = [
     ":constants",
     ":pinned_tabs_ui",
     "//base",
     "//components/favicon/ios:ios",
-    "//ios/chrome/browser/browser_state",
-    "//ios/chrome/browser/drag_and_drop",
-    "//ios/chrome/browser/main",
+    "//ios/chrome/browser/default_browser/model:utils",
+    "//ios/chrome/browser/drag_and_drop/model",
+    "//ios/chrome/browser/main/model",
+    "//ios/chrome/browser/shared/model/url",
+    "//ios/chrome/browser/shared/model/web_state_list",
+    "//ios/chrome/browser/shared/model/web_state_list:utils",
+    "//ios/chrome/browser/shared/public/features",
     "//ios/chrome/browser/shared/ui/symbols",
-    "//ios/chrome/browser/snapshots",
-    "//ios/chrome/browser/tabs:features",
+    "//ios/chrome/browser/snapshots/model",
     "//ios/chrome/browser/ui/tab_switcher",
-    "//ios/chrome/browser/ui/tab_switcher:tab_utils",
-    "//ios/chrome/browser/ui/tab_switcher/tab_grid:tab_collection_commands",
+    "//ios/chrome/browser/ui/tab_switcher:utils",
     "//ios/chrome/browser/ui/tab_switcher/tab_grid/grid:grid_ui",
-    "//ios/chrome/browser/url",
-    "//ios/chrome/browser/web_state_list",
-    "//ios/web",
+    "//ios/chrome/browser/url_loading/model",
+    "//ios/chrome/browser/url_loading/model:url_loading_params_header",
+    "//ios/web/public",
   ]
 
   frameworks = [ "UniformTypeIdentifiers.framework" ]
 }
 
 source_set("constants") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   sources = [
     "pinned_tabs_constants.h",
     "pinned_tabs_constants.mm",
@@ -45,10 +42,11 @@ source_set("constants") {
 }
 
 source_set("pinned_tabs_ui") {
-  configs += [ "//build/config/compiler:enable_arc" ]
   sources = [
     "pinned_cell.h",
     "pinned_cell.mm",
+    "pinned_item.h",
+    "pinned_item.mm",
     "pinned_tabs_layout.h",
     "pinned_tabs_layout.mm",
     "pinned_tabs_view_controller.h",
@@ -60,8 +58,10 @@ source_set("pinned_tabs_ui") {
     "//ios/chrome/browser/shared/ui/elements",
     "//ios/chrome/browser/shared/ui/symbols",
     "//ios/chrome/browser/shared/ui/util",
-    "//ios/chrome/browser/tabs:features",
     "//ios/chrome/browser/ui/tab_switcher",
+    "//ios/chrome/browser/ui/tab_switcher:items",
+    "//ios/chrome/browser/ui/tab_switcher:utils",
+    "//ios/chrome/browser/ui/tab_switcher/tab_grid/grid:grid_item_identifier",
     "//ios/chrome/browser/ui/tab_switcher/tab_grid/grid:grid_ui",
     "//ios/chrome/browser/ui/tab_switcher/tab_grid/grid:grid_ui_constants",
     "//ios/chrome/browser/ui/tab_switcher/tab_grid/tab_context_menu",
@@ -72,6 +72,7 @@ source_set("pinned_tabs_ui") {
     "//ios/chrome/common/ui/util",
     "//ios/public/provider/chrome/browser/modals:modals_api",
     "//ios/third_party/material_components_ios",
+    "//ios/web/public",
     "//ui/base",
   ]
 }

@@ -1,6 +1,9 @@
 #include "ui/events/native_scroller_ohos.h"
 #include <cmath>
 #include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/system/sys_info.h"
+#include "ohos_adapter_helper.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
 
 namespace ui {
@@ -41,7 +44,11 @@ void NativeScrollerOhos::Fling(float start_x,
                                base::TimeTicks start_time) {
     curr_time_ = start_time;
     start_time_ = start_time;
-    friction_ = kFriction;
+    std::string ret = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetScrollFriction();
+    double frictionTmp = 0.0;
+    base::StringToDouble(ret, &frictionTmp);
+    friction_ = !NearZero(frictionTmp) ? frictionTmp * kFrictionScale : kFriction;
+    LOG(INFO) << "NativeScrollerOhos::Fling friction_ = " << friction_;
 
     // currently only vertical fling is supported
     init_velocity_y_ = std::abs(velocity_y);

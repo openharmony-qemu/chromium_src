@@ -1,17 +1,6 @@
-/*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "content/browser/accessibility/browser_accessibility_ohos.h"
 #include <codecvt>
@@ -26,10 +15,17 @@
 
 namespace content {
 using namespace OHOS::NWeb;
-using AccessibilityIdMap =
-    std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+
+using AccessibilityIdMap = std::unordered_map<int64_t, BrowserAccessibilityOHOS*>;
+namespace {
+constexpr int NUMBER_TWO = 2;
+}
+
 base::LazyInstance<AccessibilityIdMap>::Leaky g_accessibility_id_map =
     LAZY_INSTANCE_INITIALIZER;
+
+base::LazyInstance<std::map<const BrowserAccessibilityOHOS*, bool>>::Leaky
+    g_leaf_map = LAZY_INSTANCE_INITIALIZER;
 
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
@@ -42,8 +38,7 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  accessibility_id_ =
-      BrowserAccessibilityManagerOHOS::GenerateAccessibilityId();
+  accessibility_id_ = static_cast<int64_t>(GetUniqueId().Get());
   g_accessibility_id_map.Get()[accessibility_id_] = this;
 }
 
@@ -53,6 +48,16 @@ BrowserAccessibilityOHOS::~BrowserAccessibilityOHOS() {
 
 int64_t BrowserAccessibilityOHOS::GetAccessibilityId() const {
   return accessibility_id_;
+}
+
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
+    int64_t accessibility_id) {
+  AccessibilityIdMap* unique_ids = g_accessibility_id_map.Pointer();
+  auto iter = unique_ids->find(accessibility_id);
+  if (iter != unique_ids->end())
+    return iter->second;
+
+  return nullptr;
 }
 
 bool BrowserAccessibilityOHOS::IsEnabled() const {
@@ -379,69 +384,67 @@ bool BrowserAccessibilityOHOS::IsHierarchical() const {
   return (GetRole() == ax::mojom::Role::kTree || IsHierarchicalList());
 }
 
-BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetFromAccessibilityId(
-    int64_t accessibility_id) {
-  AccessibilityIdMap* accessibility_ids = g_accessibility_id_map.Pointer();
-  auto iter = accessibility_ids->find(accessibility_id);
-  if (iter != accessibility_ids->end())
-    return iter->second;
-
-  return nullptr;
-}
-
 bool BrowserAccessibilityOHOS::HasOnlyTextChildren() const {
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
   for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
-    if (!it->IsText())
+    if (!it->IsText()) {
       return false;
+    }
   }
   return true;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetAccessibilityNodeByFocusMove(
     int32_t direction) const {
-  std::list<const BrowserAccessibilityOHOS*> nodeList;
-  const BrowserAccessibilityOHOS* resultNode = nullptr;
+  std::list<BrowserAccessibilityOHOS*> nodeList;
+  BrowserAccessibilityOHOS* resultNode = nullptr;
 
   if (!manager_) {
     return resultNode;
   }
-  auto root = static_cast<BrowserAccessibilityOHOS*>(manager_->GetBrowserAccessibilityRoot());
+  auto manager = static_cast<BrowserAccessibilityManagerOHOS*>(manager_->GetManagerForRootFrame());
+  if (!manager) {
+    return resultNode;
+  }
+  auto root = static_cast<BrowserAccessibilityOHOS*>(manager->GetBrowserAccessibilityRoot());
   if (!root) {
     return resultNode;
   }
-  root->AddFocusableNode(nodeList);
-
-  switch (direction) {
-    case FocusMoveDirection::FORWARD:
-    case FocusMoveDirection::BACKWARD:
-      resultNode = FindNodeInRelativeDirection(nodeList, direction);
-      break;
-    case FocusMoveDirection::UP:
-    case FocusMoveDirection::DOWN:
-    case FocusMoveDirection::LEFT:
-    case FocusMoveDirection::RIGHT:
-      resultNode = FindNodeInAbsoluteDirection(nodeList, direction);
-      break;
-    default:
-      break;
+  if (direction == FocusMoveDirection::FORWARD) {
+    int id = manager->FindElementType(
+        accessibility_id_, "", true, false, true);
+    if (id != 0) {
+      resultNode = GetFromAccessibilityId(id);
+    }
+  } else if (direction == FocusMoveDirection::BACKWARD) {
+    int id = manager->FindElementType(
+        accessibility_id_, "", false,
+        accessibility_id_ == root->GetAccessibilityId(), true);
+    if (id != 0) {
+      resultNode = GetFromAccessibilityId(id);
+    }
+  } else {
+    root->AddFocusableNode(nodeList);
+    resultNode = FindNodeInAbsoluteDirection(nodeList, direction);
   }
   return resultNode;
 }
 
 void BrowserAccessibilityOHOS::AddFocusableNode(
-    std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
-  for (const auto& childNode : PlatformChildren()) {
-    const BrowserAccessibilityOHOS& childNodeOHOS =
-        static_cast<const BrowserAccessibilityOHOS&>(childNode);
+    std::list<BrowserAccessibilityOHOS*>& nodeList) const {
+  for (auto& childNode : PlatformChildren()) {
+    BrowserAccessibilityOHOS& childNodeOHOS =
+        static_cast<BrowserAccessibilityOHOS&>(childNode);
     nodeList.emplace_back(&childNodeOHOS);
     childNodeOHOS.AddFocusableNode(nodeList);
   }
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   switch (direction) {
     case FocusMoveDirection::FORWARD:
@@ -455,9 +458,9 @@ BrowserAccessibilityOHOS::FindNodeInRelativeDirection(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList,
+    const std::list<BrowserAccessibilityOHOS*>& nodeList,
     int32_t direction) const {
   ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
   float dip_scale = manager_->device_scale_factor();
@@ -486,7 +489,7 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
       break;
   }
 
-  const BrowserAccessibilityOHOS* nearestNode = nullptr;
+  BrowserAccessibilityOHOS* nearestNode = nullptr;
   for (const auto& nodeItem : nodeList) {
     if (nodeItem->GetAccessibilityId() == accessibility_id_ ||
         !nodeItem->PlatformGetParent()) {
@@ -504,8 +507,8 @@ BrowserAccessibilityOHOS::FindNodeInAbsoluteDirection(
   return nearestNode;
 }
 
-const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.begin();
   for (; nodeItem != nodeList.end(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -525,9 +528,9 @@ const BrowserAccessibilityOHOS* BrowserAccessibilityOHOS::GetNextFocusableNode(
   return nullptr;
 }
 
-const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS*
 BrowserAccessibilityOHOS::GetPreviousFocusableNode(
-    const std::list<const BrowserAccessibilityOHOS*>& nodeList) const {
+    const std::list<BrowserAccessibilityOHOS*>& nodeList) const {
   auto nodeItem = nodeList.rbegin();
   for (; nodeItem != nodeList.rend(); nodeItem++) {
     if ((*nodeItem)->GetAccessibilityId() == accessibility_id_) {
@@ -763,8 +766,10 @@ std::u16string BrowserAccessibilityOHOS::GetTextContentUTF16() const {
 
 std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     absl::optional<EarlyExitPredicate> predicate) const {
-  if (ui::IsIframe(GetRole()))
+  if (ui::IsIframe(GetRole()) || GetRole() == ax::mojom::Role::kCell ||
+      GetRole() == ax::mojom::Role::kRootWebArea) {
     return std::u16string();
+  }
 
   // First, always return the |value| attribute if this is an
   // input field.
@@ -825,6 +830,26 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
     case ax::mojom::ImageAnnotationStatus::kIneligibleForAnnotation:
     case ax::mojom::ImageAnnotationStatus::kSilentlyEligibleForAnnotation:
       break;
+  }
+
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+  if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
+                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+    for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+      text += static_cast<BrowserAccessibilityOHOS*>(it.get())
+                  ->GetSubstringTextContentUTF16(predicate);
+      if (predicate && predicate.value().Run(text)) {
+        break;
+      }
+    }
+  }
+
+  if (text.empty() &&
+      (ui::IsLink(GetRole()) || ui::IsImageOrVideo(GetRole())) &&
+      !HasExplicitlyEmptyName()) {
+    std::u16string url = GetString16Attribute(ax::mojom::StringAttribute::kUrl);
+    text = ui::AXUrlBaseText(url);
   }
 
   return text;
@@ -920,6 +945,80 @@ bool BrowserAccessibilityOHOS::IsScrollSupported() const {
   }
 }
 
+bool BrowserAccessibilityOHOS::CanScrollForward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float max = GetFloatAttribute(ax::mojom::FloatAttribute::kMaxValueForRange);
+    return value < max;
+  } else {
+    return CanScrollRight() || CanScrollDown();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollBackward() const {
+  if (GetRole() == ax::mojom::Role::kSlider) {
+    const std::string& html_tag =
+        GetStringAttribute(ax::mojom::StringAttribute::kHtmlTag);
+    if (html_tag != "input")
+      return false;
+
+    float value = GetFloatAttribute(ax::mojom::FloatAttribute::kValueForRange);
+    float min = GetFloatAttribute(ax::mojom::FloatAttribute::kMinValueForRange);
+    return value > min;
+  } else {
+    return CanScrollLeft() || CanScrollUp();
+  }
+}
+
+bool BrowserAccessibilityOHOS::CanScrollUp() const {
+  return GetScrollY() > GetMinScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollDown() const {
+  return GetScrollY() < GetMaxScrollY() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollLeft() const {
+  return GetScrollX() > GetMinScrollX() && IsScrollable();
+}
+
+bool BrowserAccessibilityOHOS::CanScrollRight() const {
+  return GetScrollX() < GetMaxScrollX() && IsScrollable();
+}
+
+int BrowserAccessibilityOHOS::GetScrollX() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollX, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetScrollY() const {
+  int value = 0;
+  GetIntAttribute(ax::mojom::IntAttribute::kScrollY, &value);
+  return value;
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+}
+
+int BrowserAccessibilityOHOS::GetMinScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollX() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+}
+
+int BrowserAccessibilityOHOS::GetMaxScrollY() const {
+  return GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+}
+
 void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
   if (GetRole() == ax::mojom::Role::kSlider) {
     if (!IsEnabled()) {
@@ -951,4 +1050,309 @@ void BrowserAccessibilityOHOS::Scroll(const ax::mojom::Action& action) const {
     manager()->Scroll(*this, action);
   }
 }
+
+bool BrowserAccessibilityOHOS::IsAccessibilityGroup() const {
+  return false;
+}
+
+bool BrowserAccessibilityOHOS::Scroll(ScrollDirection direction, bool is_page_scroll) const {
+  int x_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollX);
+  int x_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMin);
+  int x_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollXMax);
+  int y_initial = GetIntAttribute(ax::mojom::IntAttribute::kScrollY);
+  int y_min = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMin);
+  int y_max = GetIntAttribute(ax::mojom::IntAttribute::kScrollYMax);
+
+  // Figure out the bounding box of the visible portion of this scrollable
+  // view so we know how much to scroll by.
+  gfx::Rect bounds = GetClippedRootFrameBoundsRect();
+
+  // Scroll by 50% of one page, or 100% for page scrolls.
+  int page_x = 0;
+  int page_y = 0;
+  if (is_page_scroll) {
+    page_x = std::max(bounds.width(), 1);
+    page_y = std::max(bounds.height(), 1);
+  } else {
+    page_x = std::max(bounds.width() / NUMBER_TWO, 1);
+    page_y = std::max(bounds.height() / NUMBER_TWO, 1);
+  }
+
+  if (direction == ScrollDirection::FORWARD)
+    direction = y_max > y_min ? ScrollDirection::DOWN : ScrollDirection::RIGHT;
+  if (direction == ScrollDirection::BACKWARD)
+    direction = y_max > y_min ? ScrollDirection::UP : ScrollDirection::LEFT;
+
+  int x = x_initial;
+  int y = y_initial;
+  switch (direction) {
+    case ScrollDirection::UP:
+      if (y_initial == y_min)
+        return false;
+      y = std::clamp(y_initial - page_y, y_min, y_max);
+      break;
+    case ScrollDirection::DOWN:
+      if (y_initial == y_max)
+        return false;
+      y = std::clamp(y_initial + page_y, y_min, y_max);
+      break;
+    case ScrollDirection::LEFT:
+      if (x_initial == x_min)
+        return false;
+      x = std::clamp(x_initial - page_x, x_min, x_max);
+      break;
+    case ScrollDirection::RIGHT:
+      if (x_initial == x_max)
+        return false;
+      x = std::clamp(x_initial + page_x, x_min, x_max);
+      break;
+    default:
+      NOTREACHED();
+  }
+
+  manager()->SetScrollOffset(*this, gfx::Point(x, y));
+  return true;
+}
+
+bool BrowserAccessibilityOHOS::IsInterestingOnOHOS() const {
+  // The root is not interesting if it doesn't have a title, even
+  // though it's focusable.
+  if (ui::IsPlatformDocument(GetRole()) &&
+      GetSubstringTextContentUTF16(NonEmptyPredicate()).empty()) {
+    return false;
+  }
+
+  // The root inside a portal is not interesting.
+  if (ui::IsPlatformDocument(GetRole()) && PlatformGetParent() &&
+      PlatformGetParent()->GetRole() == ax::mojom::Role::kPortal) {
+    return false;
+  }
+
+  // Mark as uninteresting if it's hidden, even if it is focusable.
+  if (IsInvisibleOrIgnored() || IsChildOfLeaf()) {
+    return false;
+  }
+
+  // If it's a control role, then it's interesting.
+  if (ui::IsControl(GetRole())) {
+    return true;
+  }
+
+  // Walk up the ancestry. A non-focusable child of a control is not
+  // interesting. A child of an invisible iframe is also not interesting.
+  // A link is never a leaf node so that its children can be navigated
+  // when swiping by heading, landmark, etc. So we will also mark the
+  // children of a link as not interesting to prevent double utterances.
+  const BrowserAccessibility* parent = PlatformGetParent();
+  while (parent) {
+    if (ui::IsControl(parent->GetRole()) && !IsFocusable()) {
+      return false;
+    }
+
+    if (parent->GetRole() == ax::mojom::Role::kIframe &&
+        parent->IsInvisibleOrIgnored()) {
+      return false;
+    }
+
+    if (parent->GetRole() == ax::mojom::Role::kLink) {
+      return false;
+    }
+
+    parent = parent->PlatformGetParent();
+  }
+
+  // Otherwise, focusable nodes are always interesting. Note that IsFocusable()
+  // already skips over things like iframes and child frames that are
+  // technically focusable but shouldn't be exposed as focusable on OHOS.
+  if (IsFocusable()) {
+    return true;
+  }
+
+  // Mark progress indicators as interesting, since they are not focusable and
+  // not a control, but users should be able to swipe/navigate to them.
+  if (GetRole() == ax::mojom::Role::kProgressIndicator) {
+    return true;
+  }
+
+  // If we are the direct descendant of a link and have no siblings/children,
+  // then we are not interesting, return false
+  parent = PlatformGetParent();
+  if (parent != nullptr && ui::IsLink(parent->GetRole()) &&
+      parent->PlatformChildCount() == 1 && PlatformChildCount() == 0) {
+    return false;
+  }
+
+  ui::AXOffscreenResult offscreen_result = ui::AXOffscreenResult::kOnscreen;
+  GetClippedRootFrameBoundsRect(&offscreen_result);
+  if (offscreen_result == ui::AXOffscreenResult::kOffscreen) {
+    return false;
+  }
+
+  // Otherwise, the interesting nodes are leaf nodes with non-whitespace text.
+  return (IsLeaf() || IsClickable()) &&
+         (!base::ContainsOnlyChars(GetTextContentUTF16(),
+                                   base::kWhitespaceUTF16) ||
+          (GetRole() == ax::mojom::Role::kParagraph && PlatformChildCount()));
+}
+
+bool BrowserAccessibilityOHOS::IsChildOfLeaf() const {
+  BrowserAccessibility* ancestor = InternalGetParent();
+
+  while (ancestor) {
+    if (ancestor->IsLeaf()) {
+      return true;
+    }
+    ancestor = ancestor->InternalGetParent();
+  }
+
+  return false;
+}
+
+bool BrowserAccessibilityOHOS::IsLeaf() const {
+  if (g_leaf_map.Get().find(this) != g_leaf_map.Get().end()) {
+    return g_leaf_map.Get()[this];
+  }
+
+  if (BrowserAccessibility::IsLeaf()) {
+    return true;
+  }
+
+  // Document roots (e.g. kRootWebArea and kPdfRoot), and iframes are always
+  // allowed to contain children.
+  if (ui::IsIframe(GetRole()) || ui::IsPlatformDocument(GetRole())) {
+    return false;
+  }
+
+  // Button, date and time controls should not expose their children to OHOS
+  // accessibility APIs.
+  switch (GetRole()) {
+    case ax::mojom::Role::kButton:
+    case ax::mojom::Role::kDate:
+    case ax::mojom::Role::kDateTime:
+    case ax::mojom::Role::kInputTime:
+      return true;
+    default:
+      break;
+  }
+
+  // Links are never leaves.
+  if (ui::IsLink(GetRole())) {
+    return false;
+  }
+
+  // For some nodes, we will consider children before determining if the node
+  // is a leaf. For nodes with relevant children, we will return false here
+  // and allow the child nodes to be set as a leaf.
+
+  // Headings with text can drop their children (with exceptions).
+  std::u16string name = GetSubstringTextContentUTF16(NonEmptyPredicate());
+  if (GetRole() == ax::mojom::Role::kHeading && !name.empty()) {
+    bool ret = IsLeafConsideringChildren();
+    g_leaf_map.Get()[this] = ret;
+    return ret;
+  }
+
+  // Focusable nodes with text can drop their children (with exceptions).
+  if (HasState(ax::mojom::State::kFocusable) && !name.empty()) {
+    bool ret = IsLeafConsideringChildren();
+    g_leaf_map.Get()[this] = ret;
+    return ret;
+  }
+
+  // Nodes with only static text can drop their children, with the exception
+  // that list markers have a different role and should not be dropped.
+  if (HasOnlyTextChildren() && !HasListMarkerChild()) {
+    g_leaf_map.Get()[this] = true;
+    return true;
+  }
+
+  g_leaf_map.Get()[this] = false;
+  return false;
+}
+
+// static
+void BrowserAccessibilityOHOS::ResetLeafCache() {
+  g_leaf_map.Get().clear();
+}
+
+bool BrowserAccessibilityOHOS::IsLeafConsideringChildren() const {
+  // This is called from IsLeaf, so don't call PlatformChildCount
+  // from within this!
+
+  // Check for any children that should be exposed and return false if found (by
+  // returning false we are saying the parent node is NOT a leaf and this child
+  // node should instead be the leaf).
+  //
+  // If a node has a child that meets any of these criteria, it is NOT a leaf:
+  //
+  //   * child is focusable, and NOT a menu option
+  //   * child is a table, cell, or row
+  //
+  for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
+    BrowserAccessibility* child = it.get();
+
+    if (child->HasState(ax::mojom::State::kFocusable) &&
+        child->GetRole() != ax::mojom::Role::kMenuListOption) {
+      return false;
+    }
+
+    if (child->GetRole() == ax::mojom::Role::kTable ||
+        child->GetRole() == ax::mojom::Role::kCell ||
+        child->GetRole() == ax::mojom::Role::kRow ||
+        child->GetRole() == ax::mojom::Role::kLayoutTable ||
+        child->GetRole() == ax::mojom::Role::kLayoutTableCell ||
+        child->GetRole() == ax::mojom::Role::kLayoutTableRow) {
+      return false;
+    }
+
+    // Check nested children and return false if any meet above criteria.
+    if (!static_cast<BrowserAccessibilityOHOS*>(child)
+             ->IsLeafConsideringChildren()) {
+      return false;
+    }
+  }
+
+  // If no such children were found, return true signaling the parent node can
+  // be the leaf node.
+  return true;
+}
+
+const BrowserAccessibilityOHOS*
+BrowserAccessibilityOHOS::GetSoleInterestingNodeFromSubtree() const {
+  if (IsInterestingOnOHOS()) {
+    return this;
+  }
+
+  const BrowserAccessibilityOHOS* sole_interesting_node = nullptr;
+  for (const auto& child : PlatformChildren()) {
+    const BrowserAccessibilityOHOS* interesting_node =
+        static_cast<const BrowserAccessibilityOHOS&>(child)
+            .GetSoleInterestingNodeFromSubtree();
+    if (interesting_node && sole_interesting_node) {
+      // If there are two interesting nodes, return nullptr.
+      return nullptr;
+    } else if (interesting_node) {
+      sole_interesting_node = interesting_node;
+    }
+  }
+
+  return sole_interesting_node;
+}
+
+BrowserAccessibilityOHOS::EarlyExitPredicate
+BrowserAccessibilityOHOS::NonEmptyPredicate() {
+  return base::BindRepeating(
+      [](const std::u16string& partial) { return partial.size() > 0; });
+}
+
+bool BrowserAccessibilityOHOS::CanFireEvents() const {
+  return !IsChildOfLeaf();
+}
+
+void BrowserAccessibilityOHOS::OnLocationChanged() {
+  auto* manager =
+      static_cast<BrowserAccessibilityManagerOHOS*>(this->manager());
+  manager->FireLocationChanged(this);
+}
+
 }  // namespace content

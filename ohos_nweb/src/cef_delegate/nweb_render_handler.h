@@ -184,6 +184,7 @@ class NWebRenderHandler : public CefRenderHandler {
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(const CefRenderHandler::CefNativeEmbedData& embedData);
   void SetContentSize(int width, int height);
   gfx::Size GetSize();
+  void OnAccessibilityEvent(int64_t accessibilityId, int32_t eventType) override;
 #endif
 
 #ifdef OHOS_EX_FREE_COPY

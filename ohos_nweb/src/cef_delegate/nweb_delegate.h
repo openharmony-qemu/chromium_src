@@ -74,11 +74,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
           web_app_client_extension_listener) override;
   void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
-  void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
-          accessibility_event_listener) override;
-  void RegisterAccessibilityIdGenerator(
-      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const override;
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -454,14 +449,19 @@ bool HitNativeArea(double x, double y);
  double GetBrowserZoomLevel() override;
 #endif
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-  void ExecuteAction(int64_t accessibilityId, uint32_t action,
+  bool ExecuteAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) override;
+  bool GetAccessibilityVisible(int64_t accessibilityId) override;
   std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
@@ -603,7 +603,8 @@ void NotifyForNextTouchEvent() override;
   void SendAccessibilityHoverEvent(int x, int y) override;
 
  private:
-  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
+  content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  int64_t GetRealAccessibilityId(int64_t accessibilityId) const;
   void AddAccessibilityNodeInfoAttributes(
       std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const content::BrowserAccessibilityOHOS* node) const;
@@ -618,11 +619,18 @@ void NotifyForNextTouchEvent() override;
   void AddAccessibilityNodeInfoActions(
     std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
     const content::BrowserAccessibilityOHOS* node) const;
+  float GetViewPointHeight() const;
+  int32_t GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
+    const std::string& checkKey) const;
+  void SetIsHovering(bool is_hovering) {
+    is_hovering_ = is_hovering;
+  }
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;
   float default_virtual_pixel_ratio_ = 2.0;
   float intial_scale_ = 0;
+  bool is_hovering_ = false;
   bool has_requested_visited_history = false;
   CefRefPtr<NWebApplication> nweb_app_ = nullptr;
   CefRefPtr<NWebHandlerDelegate> handler_delegate_ = nullptr;
@@ -661,8 +669,8 @@ void NotifyForNextTouchEvent() override;
   bool accessibility_state_ = false;
   bool is_discarded_ = false;
   std::string richtext_data_str_ = "";
-  std::shared_ptr<NWebAccessibilityEventCallback>
-      accessibility_event_listener_ = nullptr;
+  // The number of fingers that trigger the down event
+  int  pressing_num_ = 0;
 };
 }  // namespace OHOS::NWeb
 #endif

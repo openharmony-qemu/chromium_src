@@ -71,10 +71,6 @@ class NWebDelegateInterface
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
-  virtual void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback> accessibilityEventListener) = 0;
-  virtual void RegisterAccessibilityIdGenerator(
-      const AccessibilityIdGenerateFunc accessibilityIdGenerator) const = 0;
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
@@ -459,14 +455,19 @@ class NWebDelegateInterface
 #endif
 
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
-  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) = 0;
-  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action,
+  virtual bool ExecuteAction(int64_t accessibilityId, uint32_t action,
       const std::map<std::string, std::string>& actionArguments) = 0;
+  virtual bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                            int32_t* width,
+                                            int32_t* height,
+                                            int32_t* offsetX,
+                                            int32_t* offsetY) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
                                   bool isAccessibilityFocus) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoById(int64_t accessibilityId) = 0;
+  virtual bool GetAccessibilityVisible(int64_t accessibilityId) = 0;
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;

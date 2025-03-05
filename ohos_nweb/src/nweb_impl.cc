@@ -1409,6 +1409,15 @@ void NWebImpl::OnContinue() {
   }
 }
 
+void NWebImpl::OnDragAttach() {
+  if (inputmethod_handler_ == nullptr) {
+    LOG(ERROR) << "inputmethod_handler_ is nullptr.";
+    return;
+  }
+  inputmethod_handler_->Reattach(
+      nweb_id_, NWebInputMethodHandler::ReattachType::FROM_ONDRAG);
+}
+
 void NWebImpl::WebComponentsBlur() {
   if (nweb_delegate_ == nullptr) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";

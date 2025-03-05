@@ -348,7 +348,7 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data)
 
 NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& drag_touch_point,
     std::vector<CefPoint>& start_edge, std::vector<CefPoint>& end_edge, float device_pixel_ratio,
-    bool is_useful_selection, bool dark_mode_enable)
+    bool is_useful_selection, bool dark_mode_enable, int32_t view_port_height, bool is_drag_new_style)
     : drag_data_(drag_data), is_useful_selection_(is_useful_selection) {
   device_pixel_ratio_ = device_pixel_ratio;
   if (device_pixel_ratio_ <= 0) {
@@ -356,6 +356,8 @@ NWebDragDataImpl::NWebDragDataImpl(CefRefPtr<CefDragData> drag_data, CefPoint& d
     return;
   }
   dark_mode_enable_ = dark_mode_enable;
+  view_port_height_ = view_port_height;
+  is_drag_new_style_ = is_drag_new_style;
 
   if (drag_data_) {
     drag_image_origin_point_.x = ToOhCoordinate(drag_touch_point.x - drag_data_->GetImageHotspot().x);
@@ -583,6 +585,12 @@ bool NWebDragDataImpl::SetPixelMapSetting(const void* data, size_t len, int widt
 void NWebDragDataImpl::GetDragStartPosition(int& x, int& y) {
   x = drag_image_origin_point_.x;
   y = drag_image_origin_point_.y;
+  if (x < 0) {
+    x = 0;
+  }
+  if (y < ToOhCoordinate(view_port_height_)) {
+    y = ToOhCoordinate(view_port_height_);
+  }
 }
 
 bool NWebDragDataImpl::IsSingleImageContent() {

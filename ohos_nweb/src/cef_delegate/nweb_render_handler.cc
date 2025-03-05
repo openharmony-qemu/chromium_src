@@ -685,9 +685,18 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
           LOG(INFO) << "WebCustomKeyboard before use system keyboard, need to close custom keyboard";
           custom_keyboard_handler_->Close();
         }
-        LOG(INFO) << "WebCustomKeyboard attach system keyboard";
+
+        int32_t requestKeyboardReason = 0;
+        auto iter = attributesMap.find("requestKeyboardReason");
+        if (iter != attributesMap.end()) {
+          requestKeyboardReason = std::stoi(iter->second);
+        }
+        LOG(INFO) << "WebCustomKeyboard attach system keyboard "
+                     "requestKeyboardReason = "
+                  << requestKeyboardReason;
         inputmethod_client_->Attach(browser, text_input_info,
-                                    is_need_reset_listener, enterKeyType);
+                                    is_need_reset_listener, enterKeyType,
+                                    requestKeyboardReason);
       } else {
         if (isSystemKeyboard_) {
           LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to close system keyboard";
@@ -706,6 +715,7 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
 
       isSystemKeyboard_ = useSystemKeyboard;
     }
+
   } else {
     if (isSystemKeyboard_) {
       LOG(INFO) << "WebCustomKeyboard close system keyboard";

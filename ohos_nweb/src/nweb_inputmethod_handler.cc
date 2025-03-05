@@ -399,6 +399,14 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
+  if (type == ReattachType::FROM_ONDRAG) {
+    if (!is_editable_node_) {
+      LOG(INFO) << "ReAttchOnDrag, don't need reattach input method for non-editable node";
+      return false;
+    }
+    LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ",source=FROM_ONDRAG";
+  }
+
   composing_text_.clear();
   if (inputmethod_listener_ == nullptr) {
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);

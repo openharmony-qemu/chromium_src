@@ -37,6 +37,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   enum class ReattachType {
     FROM_ONFOCUS,
     FROM_CONTINUE,
+    FROM_ONDRAG,
   };
   NWebInputMethodHandler();
   ~NWebInputMethodHandler();

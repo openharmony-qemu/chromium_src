@@ -109,6 +109,7 @@ class NWebImpl : public NWeb {
   void PutOptimizeParserBudgetEnabled(bool enable) override;
   void OnPause() override;
   void OnContinue() override;
+  void OnDragAttach() override;
   void WebComponentsBlur() override;
   void OnOccluded() override;
   void OnUnoccluded() override;

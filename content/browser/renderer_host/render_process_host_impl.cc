@@ -3991,6 +3991,9 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
 }
 
 void RenderProcessHostImpl::OnChannelError() {
+#if BUILDFLAG(IS_OHOS)
+  LOG(ERROR) << "RenderProcessHostImpl::OnChannelError";
+#endif
   ChildProcessTerminationInfo info =
       GetChildTerminationInfo(true /* already_dead */);
   ProcessDied(info);

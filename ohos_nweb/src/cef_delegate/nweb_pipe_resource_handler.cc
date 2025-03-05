@@ -224,8 +224,24 @@ void NWebPipeResourceHandler::DidReceiveResponse(
   }
 }
 
+// In order to avoid the deadlock bug of PA lock reentrancy caused by calling the "realloc" function
+// when the thread ThreadCache is not initialized in the chromnium 114 version.
+// Here we proactively call PA's "malloc" function once to initialize ThreadCache to avoid this bug.
+static void PatchFunForPAReentrantIssue(void)
+{
+// Currently in this file, only the "malloc" function will call the memory application function of PA.
+// The "new" method will call the memory application function provided by the system's musl library
+// through the dynamic GOT table.
+  void* pa_patch_buffer = malloc(1);
+  LOG(DEBUG) << "PatchFunForPAReentrantIssue enter, buffer addr = " << pa_patch_buffer;
+  if (pa_patch_buffer) {
+    free(pa_patch_buffer);
+  }
+}
+
 void NWebPipeResourceHandler::DidReceiveData(const uint8_t* buffer,
                                              int64_t buf_len) {
+  PatchFunForPAReentrantIssue();
   base::AutoLock scoped_lock_(lock_);
   LOG(DEBUG) << "scheme_handler did receive data buf_len: " << buf_len
             << " finished: " << finished_

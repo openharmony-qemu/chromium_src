@@ -171,7 +171,7 @@ void OHOSMediaResourceGetterImpl::GetAuthCredentialsCallback(
   if (credentials) {
     std::move(callback).Run(credentials->username(), credentials->password());
   } else {
-    std::move(callback).Run(credentials->username(), credentials->password());
+    std::move(callback).Run(std::u16string(), std::u16string());
   }
 }
 

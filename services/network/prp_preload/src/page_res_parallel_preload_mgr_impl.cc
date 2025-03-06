@@ -30,8 +30,9 @@ PRPPreloadMode GetPRParallelPreloadModeInner() {
   std::string prp_preload_mode =
 	OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetPRPPreloadMode();
   bool isMobile = base::ohos::IsMobileDevice();
-  if (!isMobile) {
-	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile, NONE";
+  bool isPc = base::ohos::IsPcDevice();
+  if (!isMobile && !isPc) {
+	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile or Pc, NONE";
 	return PRPPreloadMode::NONE;
   }
 

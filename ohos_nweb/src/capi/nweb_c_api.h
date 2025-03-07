@@ -52,7 +52,10 @@ typedef struct NWebBeforeDownloadCallbackWrapper WebBeforeDownloadCallbackWrappe
 typedef struct NWebDownloadItemCallbackWrapper WebDownloadItemCallbackWrapper;
 typedef struct NWebDownloadItem NWebDownloadItem;
 typedef struct NWebScreenCaptureDelegateCallback WebScreenCaptureDelegateCallback;
-
+ 
+#ifdef OHOS_EX_DOWNLOAD
+typedef void (*ReadDownloadDataCallback)(const char* guid, const void* buffer, size_t size); 
+#endif  // BUILDFLAG(OHOS_EX_DOWNLOAD)
 typedef void (*OnDownloadBeforeStart)(NWebDownloadItem *download_item, WebBeforeDownloadCallbackWrapper *wrapper);
 typedef void (*OnDownloadDidUpdate)(NWebDownloadItem *download_item, WebDownloadItemCallbackWrapper *wrapper);
 typedef void (*OnSrceenCaptureOnStateChange)(int32_t nweb_id, const char* session_id, int32_t code);

@@ -30,6 +30,10 @@
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#ifdef OHOS_EX_DOWNLOAD
+#include "third_party/bounds_checking_function/include/securec.h"
+#endif
+
 #define CONDITIONAL_TRACE(trace)                  \
   do {                                            \
     if (download_id_ != DownloadItem::kInvalidId) \
@@ -246,6 +250,72 @@ bool BaseFile::ValidateDataInFile(int64_t offset,
 
   return memcmp(data, buffer.get(), data_len) == 0;
 }
+
+#ifdef OHOS_EX_DOWNLOAD
+bool BaseFile::ReadDataFromFile(int64_t offset,
+                                char* data,
+                                size_t data_len,
+                                const base::FilePath& file_path) {
+  LOG(DEBUG) << "BaseFile::ReadDataFromFile file_path: " << file_path;
+ 
+  bool re_open_flag = false;
+  if (!file_.IsValid()) {
+    LOG(INFO) << "BaseFile::ReadDataFromFile file not valid";
+    InitializeFile(&file_, file_path);
+    if (!file_.IsValid()) {
+      LOG(INFO) << "BaseFile::ReadDataFromFile file initialize fail";
+      return false;
+    } else {
+      re_open_flag = true;
+    }
+  }
+ 
+  // Only validate the first chunk of the file. So |offset| cannot be
+  // larger than bytes received.
+  if (offset > bytes_so_far_) {
+    LOG(ERROR) << "BaseFile::ReadDataFromFile offset:" <<
+        offset << ", bytes_so_far_:" << bytes_so_far_;
+    if (re_open_flag) {
+      file_.Close();
+    }
+    return false;
+  }
+ 
+  if (data_len <= 0) {
+    if (re_open_flag) {
+      file_.Close();
+    }
+    return true;
+  }
+ 
+  file_.Flush();
+ 
+  std::unique_ptr<char[]> buffer(new char[data_len]);
+  int bytes_read = file_.Read(offset, buffer.get(), data_len);
+ 
+  if (bytes_read < 0 || static_cast<size_t>(bytes_read) < data_len) {
+    LOG(ERROR) << "BaseFile::ReadDataFromFile bytes_read: " <<
+                  bytes_read << ", data_len: " << data_len;
+    if (re_open_flag) {
+      file_.Close();
+    }
+    return false;
+  }
+ 
+  if (memcpy_s(data, data_len, buffer.get(), data_len) != EOK) {
+    LOG(INFO) << "BaseFile::ReadDataFromFile memcpy fail";
+    if (re_open_flag) {
+      file_.Close();
+    }
+    return false;
+  }
+ 
+  if (re_open_flag) {
+    file_.Close();
+  }
+  return true;
+}
+#endif
 
 DownloadInterruptReason BaseFile::Rename(const base::FilePath& new_path) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

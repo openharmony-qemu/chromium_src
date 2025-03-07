@@ -35,6 +35,10 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
                       InputInfo inputInfo,
                       bool is_need_reset_listener,
                       int32_t enterKeyType) = 0;
+  virtual void Attach(CefRefPtr<CefBrowser> browser,
+                    InputInfo inputInfo,
+                    bool is_need_reset_listener,
+                    int32_t enterKeyType, int32_t requestKeyboardReason) = 0;
   virtual void ShowTextInput() = 0;
   virtual void HideTextInput(
       uint32_t nweb_id = 0,

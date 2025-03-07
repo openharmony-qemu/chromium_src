@@ -29,6 +29,7 @@
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/browser/thread_util.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "ui/events/keycodes/keyboard_codes_posix.h"
@@ -309,6 +310,7 @@ void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t cust
   type_text_flag_multi_line_ = false;
   show_keyboard_ = inputInfo.show_keyboard;
   input_flags_ = inputInfo.input_flags;
+  input_node_id_ = inputInfo.node_id;
   if (inputInfo.input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
       inputInfo.input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
     imf_input_mode_ = TextInputModeToIMFAdapter(inputInfo.input_mode);
@@ -321,17 +323,10 @@ void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo, int32_t cust
   }
 }
 
-void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
-                                    InputInfo inputInfo,
-                                    bool is_need_reset_listener,
-                                    int32_t enterKeyType) {
-  LOG(INFO) << "NWebInputMethodHandler::Attach";
-  ComputeEditorInfo(inputInfo, enterKeyType);
-  composing_text_.clear();
-  browser_ = browser;
+bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int32_t requestKeyboardReason) {
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
-    return;
+    return false;
   }
   if (inputmethod_listener_ == nullptr) {
     inputmethod_listener_ = std::make_shared<OnTextChangedListenerImpl>(this);
@@ -353,15 +348,21 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
                         device_pixel_ratio_);
 
-  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
-                                    textConfig, is_need_reset_listener)) {
+  bool flag = inputmethod_adapter_->AttachWithRequestKeyboardReason(
+      inputmethod_listener_, show_keyboard_, textConfig, is_need_reset_listener,
+      requestKeyboardReason);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    flag = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
+                                        textConfig, is_need_reset_listener);
+  }
+  if (!flag) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
-    return;
+    return false;
   }
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
-    if (fill_content_node_id_ == inputInfo.node_id) {
+    if (fill_content_node_id_ == input_node_id_) {
       LOG(INFO) << "send autofill cancel fill content to IMF";
       inputmethod_adapter_->SendPrivateCommand(AUTO_FILL_CANCEL_PRIVATE_COMMAND,
                                                fill_content_);
@@ -369,6 +370,30 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
     fill_content_.clear();
   }
 #endif
+  return true;
+}
+
+void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
+                                    InputInfo inputInfo,
+                                    bool is_need_reset_listener,
+                                    int32_t enterKeyType) {
+  LOG(INFO) << "NWebInputMethodHandler::Attach";
+  int32_t requestKeyboardReasonNone = 0;
+  Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReasonNone);
+}
+
+void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
+                                    InputInfo inputInfo,
+                                    bool is_need_reset_listener,
+                                    int32_t enterKeyType, int32_t requestKeyboardReason) {
+  LOG(INFO) << "NWebInputMethodHandler::Attach";
+  ComputeEditorInfo(inputInfo, enterKeyType);
+  composing_text_.clear();
+  browser_ = browser;
+
+  if (!AttachToSystemIME(is_need_reset_listener, requestKeyboardReason)) {
+    return;
+  }
 
   isAttached_ = true;
   lastAttachNWebId_ = nweb_id_;
@@ -376,7 +401,7 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
 
   if (focus_status_ && focus_rect_status_) {
     if (inputmethod_adapter_) {
-      inputmethod_adapter_->OnCursorUpdate(cursorInfo);
+      inputmethod_adapter_->OnCursorUpdate(GetCursorInfo());
     }
   }
 }

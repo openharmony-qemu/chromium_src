@@ -63,6 +63,10 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void ChangeVisibilityOfQuickMenu() {}
 #endif
 
+#ifdef OHOS_AI
+  virtual bool CloseImageOverlaySelection() { return false; }
+#endif
+
 #ifdef OHOS_DRAG_DROP
   virtual gfx::Rect GetVisibleRectToWeb();
 #endif

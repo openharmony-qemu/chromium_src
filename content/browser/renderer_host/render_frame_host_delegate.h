@@ -200,6 +200,10 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
   virtual void ChangeVisibilityOfQuickMenu() {}
 #endif
 
+#ifdef OHOS_AI
+  virtual bool CloseImageOverlaySelection() { return false; }
+#endif
+
   // A JavaScript alert, confirmation or prompt dialog should be shown.
   // Will only be called for active frames belonging to a primary page.
   virtual void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

@@ -925,6 +925,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   gfx::Rect GetImageRect();
   void OnTextSelected(bool flag);
   void OnDestroyImageAnalyzerOverlay();
+  void OnFoldStatusChanged(uint32_t foldstatus);
 #endif
 
  protected:

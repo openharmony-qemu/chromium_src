@@ -2721,6 +2721,10 @@ void RenderWidgetHostImpl::OnTextSelected(bool flag) {
 void RenderWidgetHostImpl::OnDestroyImageAnalyzerOverlay() {
   blink_frame_widget_->OnDestroyImageAnalyzerOverlay();
 }
+
+void RenderWidgetHostImpl::OnFoldStatusChanged(uint32_t foldstatus) {
+  blink_frame_widget_->OnFoldStatusChanged(foldstatus);
+}
 #endif
 
 // static

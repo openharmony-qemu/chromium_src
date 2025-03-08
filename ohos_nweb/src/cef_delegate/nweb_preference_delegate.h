@@ -164,6 +164,8 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif  // defined(OHOS_INPUT_EVENTS)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;
+  void SetIntrinsicSizeEnable(bool enable) override;
+  bool GetIntrinsicSizeEnable();
   void RegisterNativeEmbedRule(const std::string& tag, const std::string& type) override;
 
 #if defined(OHOS_VIEWPORT)
@@ -321,6 +323,7 @@ class NWebPreferenceDelegate : public NWebPreference {
   float font_weight_scale_ = 1.0f;
 #endif
   bool enable_embed_mode_{false};
+  bool enable_intrinsic_size{false};
   std::string embed_tag_{"embed"};
   std::string embed_tag_type_{"native/"};
 #if defined(OHOS_CLIPBOARD)

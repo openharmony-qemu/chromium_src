@@ -170,6 +170,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.intrinsic_size_enabled =
+      GetIntrinsicSizeEnable() ? STATE_ENABLED : STATE_DISABLED;
   str = CefString(embed_tag_);
   cef_string_set(str.c_str(), str.length(),
                  &(browser_settings.embed_tag), true);
@@ -689,6 +691,15 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
 
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
+}
+
+void NWebPreferenceDelegate::SetIntrinsicSizeEnable(bool enable) {
+  enable_intrinsic_size = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetIntrinsicSizeEnable() {
+  return enable_intrinsic_size;
 }
 
 void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,

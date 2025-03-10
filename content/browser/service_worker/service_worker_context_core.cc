@@ -1180,11 +1180,11 @@ void ServiceWorkerContextCore::OnReportConsoleMessage(
   // This is called on the IO thread, though, so we can't easily get a
   // BrowserContext and call ContentBrowserClient::IsBuiltinComponent().
   const bool is_builtin_component = HasWebUIScheme(source_url);
-
+#if !BUILDFLAG(IS_OHOS)
   LogConsoleMessage(message_level, message, line_number, is_builtin_component,
                     wrapper_->is_incognito(),
                     base::UTF8ToUTF16(source_url.spec()));
-
+#endif
   observer_list_->Notify(
       FROM_HERE, &ServiceWorkerContextCoreObserver::OnReportConsoleMessage,
       version->version_id(), version->scope(), version->key(),

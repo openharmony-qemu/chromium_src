@@ -54,6 +54,10 @@ class PowerSaveBlocker {
   void InitDisplaySleepBlocker(ui::ViewAndroid* view_android);
 #endif
 
+#if defined(OHOS_SCREEN_LOCK)
+  void InitDisplaySleepBlocker(const int32_t id);
+#endif
+
  private:
   class Delegate;
 

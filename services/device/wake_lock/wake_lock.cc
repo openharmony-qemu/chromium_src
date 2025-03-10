@@ -151,6 +151,10 @@ void WakeLock::CreateWakeLock() {
   if (native_view)
     wake_lock_.get()->InitDisplaySleepBlocker(native_view);
 #endif
+
+#if defined(OHOS_SCREEN_LOCK)
+  wake_lock_.get()->InitDisplaySleepBlocker(context_id_);
+#endif
 }
 
 void WakeLock::RemoveWakeLock() {

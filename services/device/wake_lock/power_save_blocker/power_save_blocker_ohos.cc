@@ -73,14 +73,17 @@ PowerSaveBlocker::PowerSaveBlocker(
       ui_task_runner_(ui_task_runner),
       blocking_task_runner_(blocking_task_runner),
       id_(id) {
-  if (delegate_.get()) {
-    delegate_->ApplyBlock(id);
-  }
 }
 
 PowerSaveBlocker::~PowerSaveBlocker() {
   if (delegate_.get()) {
     delegate_->RemoveBlock(id_);
+  }
+}
+
+void PowerSaveBlocker::InitDisplaySleepBlocker(const int32_t id) {
+  if (delegate_.get()) {
+    delegate_->ApplyBlock(id);
   }
 }
 

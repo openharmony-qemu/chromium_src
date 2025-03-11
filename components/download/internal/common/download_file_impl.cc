@@ -676,10 +676,10 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                 bytes_to_write;
           }
         }
-      } break;
 #ifdef OHOS_EX_DOWNLOAD
         RunCallbackIfDataReady();
 #endif
+      } break;
       case InputStream::WAIT_FOR_COMPLETION:
         source_stream->RegisterCompletionCallback(base::BindOnce(
             &DownloadFileImpl::OnStreamCompleted, weak_factory_.GetWeakPtr()));

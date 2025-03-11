@@ -2909,6 +2909,7 @@ bool DownloadItemImpl::IsBeforeInProgress() const {
       return false;
   }
 }
+
 void DownloadItemImpl::ReadDownloadData(
     const std::string& guid,
     const int32_t read_size,

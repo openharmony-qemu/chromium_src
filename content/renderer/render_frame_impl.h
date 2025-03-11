@@ -385,7 +385,7 @@ class CONTENT_EXPORT RenderFrameImpl
   void ChangeVisibilityOfQuickMenu() override;
 #endif
 #ifdef OHOS_AI
-  bool CloseImageOverlaySelection() override;
+  void CloseImageOverlaySelection() override;
 #endif
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;

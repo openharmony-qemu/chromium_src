@@ -7465,8 +7465,10 @@ void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
 #endif
 
 #ifdef OHOS_AI
-void RenderFrameHostImpl::CloseImageOverlaySelection(CloseImageOverlaySelectionCallback callback) {
-  std::move(callback).Run(delegate_ ? delegate_->CloseImageOverlaySelection() : false);
+void RenderFrameHostImpl::CloseImageOverlaySelection() {
+  if (delegate_) {
+    delegate_->CloseImageOverlaySelection();
+  }
 }
 #endif
 

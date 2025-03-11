@@ -201,7 +201,7 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
 #endif
 
 #ifdef OHOS_AI
-  virtual bool CloseImageOverlaySelection() { return false; }
+  virtual void CloseImageOverlaySelection() {}
 #endif
 
   // A JavaScript alert, confirmation or prompt dialog should be shown.

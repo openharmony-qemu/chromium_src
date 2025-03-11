@@ -2387,7 +2387,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void ChangeVisibilityOfQuickMenu() override;
 #endif
 #ifdef OHOS_AI
-  void CloseImageOverlaySelection(CloseImageOverlaySelectionCallback callback) override;
+  void CloseImageOverlaySelection() override;
 #endif
   void DidLoadResourceFromMemoryCache(
       const GURL& url,

@@ -2394,13 +2394,10 @@ void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
 #endif
 
 #ifdef OHOS_AI
-bool RenderFrameImpl::CloseImageOverlaySelection() {
+void RenderFrameImpl::CloseImageOverlaySelection() {
   if (GetFrameHost()) {
-    bool result = false;
-    GetFrameHost()->CloseImageOverlaySelection(&result);
-    return result;
+    GetFrameHost()->CloseImageOverlaySelection();
   }
-  return false;
 }
 #endif
 

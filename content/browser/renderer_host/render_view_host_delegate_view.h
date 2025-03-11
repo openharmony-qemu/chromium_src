@@ -68,7 +68,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #ifdef OHOS_AI
-  virtual bool CloseImageOverlaySelection() { return false; }
+  virtual void CloseImageOverlaySelection() {}
   virtual void OnOverlayZoomChanged() {}
 #endif
 
@@ -185,6 +185,8 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
                              const gfx::Point& touch_point) {}
+
+  virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
 #endif
 
 #ifdef OHOS_EX_PULL_TO_REFRESH

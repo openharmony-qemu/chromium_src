@@ -170,6 +170,13 @@ class FakeDownloadItem : public download::DownloadItem {
   void SetInsecureDownloadStatus(
       download::DownloadItem::InsecureDownloadStatus insecure_download_status);
 
+#if defined(OHOS_EX_DOWNLOAD)
+  void ReadDownloadData(
+      const std::string& guid,
+      const int32_t read_size,
+      base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {}
+#endif  //  OHOS_EX_DOWNLOAD
+ 
  private:
   base::ObserverList<Observer>::Unchecked observers_;
   uint32_t id_ = 0;

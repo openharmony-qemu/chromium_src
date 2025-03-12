@@ -1713,6 +1713,14 @@ void NWebDelegate::SetEnableLowerFrameRate(bool enabled) {
   GetBrowser()->GetHost()->SetEnableLowerFrameRate(enabled);
 }
 
+void NWebDelegate::SetEnableHalfFrameRate(bool enabled) {
+  LOG(DEBUG) << "NWebDelegate::SetEnableHalfFrameRate, nweb_id = " << nweb_id_;
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetEnableHalfFrameRate(enabled);
+}
 
 void NWebDelegate::InitializeCef(std::string url,
                                  bool is_enhance_surface,

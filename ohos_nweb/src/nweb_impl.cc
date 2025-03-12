@@ -1504,6 +1504,14 @@ void NWebImpl::SetEnableLowerFrameRate(bool enabled) {
   nweb_delegate_->SetEnableLowerFrameRate(enabled);
 }
 
+void NWebImpl::SetEnableHalfFrameRate(bool enabled) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr.";
+    return;
+  }
+  nweb_delegate_->SetEnableHalfFrameRate(enabled);
+}
+
 #if defined(OHOS_WEBRTC)
 void NWebImpl::StopCameraSession() const {
   OhosAdapterHelper::GetInstance().GetCameraManagerAdapter().SetForegroundFlag(false);

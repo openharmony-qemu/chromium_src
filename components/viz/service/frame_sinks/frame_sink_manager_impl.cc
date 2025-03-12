@@ -921,6 +921,14 @@ void FrameSinkManagerImpl::SetEnableLowerFrameRate(bool enabled, const FrameSink
   it->second->SetEnableLowerFrameRate(enabled);
 }
 
+void FrameSinkManagerImpl::SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id) {
+  auto it = root_sink_map_.find(frame_sink_id);
+  if (it == root_sink_map_.end()) {
+    return;
+  }
+  it->second->SetEnableHalfFrameRate(enabled);
+}
+
 void FrameSinkManagerImpl::UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) {
   auto sink_it = sink_map_.begin();
 

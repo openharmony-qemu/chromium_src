@@ -481,6 +481,10 @@ void HostFrameSinkManager::SetEnableLowerFrameRate(bool enabled, const FrameSink
   frame_sink_manager_->SetEnableLowerFrameRate(enabled, frame_sink_id);
 }
 
+void HostFrameSinkManager::SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id) {
+  frame_sink_manager_->SetEnableHalfFrameRate(enabled, frame_sink_id);
+}
+
 void HostFrameSinkManager::EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible) {
   frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
 }

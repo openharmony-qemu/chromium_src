@@ -293,6 +293,7 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(IS_OHOS)
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id) override;
+  void SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id) override;
   void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) override;
   void ResetVSyncFrequency(const FrameSinkId& frame_sink_id) override;
   void SetNeedWaitForInput(const FrameSinkId& frame_sink_id, bool need_wait_for_input) override;

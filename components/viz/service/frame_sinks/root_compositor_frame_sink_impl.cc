@@ -693,6 +693,10 @@ void RootCompositorFrameSinkImpl::SetEnableLowerFrameRate(bool enabled) {
   external_begin_frame_source_->SetEnableLowerFrameRate(enabled);
 }
 
+void RootCompositorFrameSinkImpl::SetEnableHalfFrameRate(bool enabled) {
+  external_begin_frame_source_->SetEnableHalfFrameRate(enabled);
+}
+
 void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
   TRACE_EVENT1("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers",
                "invisible", invisible);

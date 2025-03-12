@@ -239,6 +239,7 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
 #if BUILDFLAG(IS_OHOS)
   void SendInternalBeginFrame(const FrameSinkId& id);
   void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
+  void SetEnableHalfFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
   void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible);
   void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id);
   void ResetVSyncFrequency(const FrameSinkId& frame_sink_id);

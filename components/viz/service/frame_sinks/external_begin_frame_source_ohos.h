@@ -54,6 +54,9 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetEnableLowerFrameRate(bool enabled) override {
     lower_frame_rate_enabled_ = enabled;
   }
+  void SetEnableHalfFrameRate(bool enabled) override {
+    half_frame_rate_enabled_ = enabled;
+  }
   void SetDrawRect(const gfx::Rect& new_rect) override {
     draw_rect_ = new_rect;
   }
@@ -77,11 +80,13 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   FrameSinkId frame_sink_id_;
   const raw_ptr<FrameSinkManagerImpl> frame_sink_manager_;
 #endif
+  bool g_skip_vsync_ = false;
   int64_t vsync_period_ = 0;
   int64_t pre_vsync_period_ = 0;
   int64_t last_vsync_period_ = 0;
   base::TimeTicks last_dead_line_ = base::TimeTicks();
   bool lower_frame_rate_enabled_ = false;
+  bool half_frame_rate_enabled_ = false;
   gfx::Rect draw_rect_;
   base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};
   int64_t vsync_frequency_to_reset_ = 0;

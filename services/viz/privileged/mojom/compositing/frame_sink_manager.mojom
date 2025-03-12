@@ -209,6 +209,10 @@ interface FrameSinkManager {
   [EnableIf=is_ohos]
   SetEnableLowerFrameRate(bool enabled, FrameSinkId frame_sink_id);
 
+  // Set Enable half frame rate.
+  [EnableIf=is_ohos]
+  SetEnableHalfFrameRate(bool enabled, FrameSinkId frame_sink_id);
+
   // When frame is invisible, evict display back buffers
   [EnableIf=is_ohos]
   EvictFrameBackBuffers(FrameSinkId frame_sink_id, bool invisible);

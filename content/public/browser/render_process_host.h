@@ -728,6 +728,8 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
 #if defined(OHOS_RENDERER_ANR_DUMP)
   virtual void dumpCurrentJavaScriptStackInMainThread(
       base::OnceCallback<void(const std::string&)> callback) {}
+
+  virtual void InvokeRenderCrashDump() {}
 #endif
 
 #ifdef OHOS_THEME_FONT

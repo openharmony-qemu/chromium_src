@@ -5,6 +5,7 @@
 #ifndef CONTENT_BROWSER_RENDERER_HOST_INPUT_FLING_CONTROLLER_H_
 #define CONTENT_BROWSER_RENDERER_HOST_INPUT_FLING_CONTROLLER_H_
 
+#include <atomic
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "content/browser/renderer_host/input/touchpad_tap_suppression_controller.h"
@@ -202,6 +203,8 @@ class CONTENT_EXPORT FlingController {
   bool last_wheel_event_consumed_ = false;
 
   base::WeakPtrFactory<FlingController> weak_ptr_factory_{this};
+
+  static std::atomic<int> instance_count_;
 };
 
 }  // namespace content

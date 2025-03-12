@@ -143,6 +143,7 @@
 #if BUILDFLAG(ENABLE_HEIF_DECODER)
 #include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
 #endif // BUILDFLAG(ENABLE_HEIF_DECODER)
+#include "base/ohos/d_vsync/include/d_vsync_controller.h"
 #endif
 
 namespace viz {
@@ -1458,6 +1459,10 @@ void GpuServiceImpl::ReportSlidingFrameRate(int32_t frame_rate) {
 
 void GpuServiceImpl::SetLTPOStrategy(int32_t strategy) {
   base::ohos::DynamicFrameRateDecision::GetInstance().SetLTPOStrategy(strategy);
+}
+
+void GpuServiceImpl::SetIsFling(bool is_fling_enabled) {
+  base::ohos::DVsyncController::GetInstance().SetIsFling(is_fling_enabled);
 }
 #endif
 

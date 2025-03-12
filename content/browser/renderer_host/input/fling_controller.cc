@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <atomic>
 #include "content/browser/renderer_host/input/fling_controller.h"
 
 #include "base/time/default_tick_clock.h"
@@ -47,6 +48,7 @@ const char* kFlingTraceName = "FlingController::HandlingGestureFling";
 
 namespace content {
 
+std::atomic<int> FlingController::instance_count_ = 0;
 FlingController::Config::Config() {}
 
 FlingController::FlingController(
@@ -143,6 +145,17 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     return true;
   }
 
+  LOG(DEBUG) << "FlingController::ObserveAndMaybeConsumeGestureEvent::instance_count_: " << instance_count_;
+  if (gesture_event.event.GetType() == WebInputEvent::Type::kGestureFlingCancel && fling_curve_) {
+    LOG(DEBUG) << "FlingController::ObserveAndMaybeConsumeGestureEvent::dvsyncSwitch=false";
+    if (auto* host = GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        host_impl->SetIsFling(false);
+        TRACE_EVENT0("input", "ObserveAndMaybeConsumeGestureEvent::SetIsFling=false, reason=kGestureFlingCancel");
+      }
+    }
+  }
+
   if (ObserveAndFilterForTapSuppression(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilterTapSuppression",
                          TRACE_EVENT_SCOPE_THREAD);
@@ -170,6 +183,7 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
   if (gesture_event.event.GetType() ==
       WebInputEvent::Type::kGestureFlingStart) {
     std::string fling_string = "WEB_LIST_FLING";
+    instance_count_++;
     ProcessGestureFlingStart(gesture_event);
 #if BUILDFLAG(IS_OHOS)
     ReportLossFrame::GetInstance()->SetScrollState(ScrollMode::START);
@@ -179,6 +193,16 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+
+    if (instance_count_ == 1) {
+      LOG(DEBUG) << "FlingController::ObserveAndMaybeConsumeGestureEvent::dvsyncSwitch=true";
+      if (auto* host = GpuProcessHost::Get()) {
+        if (auto* host_impl = host->gpu_host()) {
+          host_impl->SetIsFling(true);
+          TRACE_EVENT0("input", "ObserveAndMaybeConsumeGestureEvent::SetIsFling=true, reason=kGestureFlingStart");
+        }
+      }
+    }
 
     LOG(DEBUG) << "start web page fling";
     if (auto* host = GpuProcessHost::Get()) {
@@ -428,6 +452,7 @@ void FlingController::GenerateAndSendFlingEndEvents(
 }
 
 void FlingController::EndCurrentFling(base::TimeTicks current_time) {
+  instance_count_--;
   last_progress_time_ = base::TimeTicks();
   std::string fling_string = "WEB_LIST_FLING";
 
@@ -437,6 +462,14 @@ void FlingController::EndCurrentFling(base::TimeTicks current_time) {
   ReportLossFrame::GetInstance()->Report();
   OHOS::NWeb::OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance()
       .FinishAsyncTrace(fling_string, 0);
+
+  LOG(DEBUG) << "FlingController::EndCurrentFling::dvsyncSwitch=false";
+  if (auto* host = GpuProcessHost::Get()) {
+    if (auto* host_impl = host->gpu_host()) {
+      host_impl->SetIsFling(false);
+      TRACE_EVENT0("input", "EndCurrentFling::SetIsFling=false, reason=EndCurrentFling");
+    }
+  }
 
   LOG(DEBUG) << "stop web page fling";
   auto frame_rate = base::ohos::SlidingObserver::GetInstance().StopFling();

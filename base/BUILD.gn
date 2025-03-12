@@ -2560,6 +2560,8 @@ component("base") {
       "system/sys_info_linux.cc",
       "ohos/scoped_native_buffer_handle.cc",
       "ohos/scoped_native_buffer_handle.h",
+      "ohos/d_vsync/include/d_vsync_controller.h",
+      "ohos/d_vsync/src/d_vsync_controller.cc",
     ]
 
     if (ohos_i18n) {

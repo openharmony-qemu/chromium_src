@@ -5885,6 +5885,10 @@ void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
          const std::string& stack) { std::move(callback).Run(stack); },
       std::move(dump_callback)));
 }
+
+void RenderProcessHostImpl::InvokeRenderCrashDump() {
+  child_process_->InvokeRenderCrashDump();
+}
 #endif
 
 #ifdef OHOS_THEME_FONT

@@ -279,6 +279,7 @@ void NWebEventHandler::SendCefMouseWheelEvent(double x,
   mouseEvent.modifiers = modifiers;
   mouseEvent.source = source;
   LOG(DEBUG) << "WebSendMouseWheelEvent modifiers = " << mouseEvent.modifiers;
+  LOG(DEBUG) << "WebSendMouseWheelEventV2 source = " << mouseEvent.source;
   if (!browser_ || !browser_->GetHost()) {
     LOG(ERROR) << "SendCefMouseWheelEvent browser_ or Host is nullptr, browser_: " << !browser_;
     return;

@@ -2256,9 +2256,9 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
 
-  static int32_t kApplicationApi16 = 16;
+  static int32_t kApplicationApi18 = 18;
   if (data && nweb_handler_ &&
-      base::ohos::ApplicationApiVersion() >= kApplicationApi16) {
+      base::ohos::ApplicationApiVersion() >= kApplicationApi18) {
     nweb_handler_->OnPageIcon(data, width, height, ImageColorType(color_type),
                               ImageAlphaType(alpha_type));
     return;

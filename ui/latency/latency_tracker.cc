@@ -236,7 +236,7 @@ void LatencyTracker::OnGpuSwapBuffersCompleted(
     } else if (latency.FindLatency(
                    INPUT_EVENT_LATENCY_SCROLL_UPDATE_ORIGINAL_COMPONENT,
                    &original_scroll_start_timestamp)) {
-      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::OriginScrollUpdate",
+      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::OriginalScrollUpdate",
                    "time",
                    (gpu_swap_begin_timestamp - original_scroll_start_timestamp)
                        .InMillisecondsF());

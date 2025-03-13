@@ -23,15 +23,15 @@
 
 namespace base {
 namespace ohos {
-DvsyncController::DvsyncController()
+DVsyncController::DVsyncController()
 {}
 
-DvsyncController::~DvsyncController()
+DVsyncController::~DVsyncController()
 {}
 
-DvsyncController& DvsyncController::GetInstance()
+DVsyncController& DVsyncController::GetInstance()
 {
-    static base::NoDestructor<DvsyncController> instance;
+    static base::NoDestructor<DVsyncController> instance;
     return *instance.get();
 }
 
@@ -51,7 +51,7 @@ void DVsyncController::SetIsFling(bool is_fling_enabled)
     }
     LOG(DEBUG) << "DVsyncController::SetIsFling: " << is_fling_enabled;
     current_task_runner_->PostTask(FROM_HERE, base::BindOnce(
-        &DvsyncController::SetIsFlingImpl,
+        &DVsyncController::SetIsFlingImpl,
         base::Unretained(this), is_fling_enabled));
 }
 

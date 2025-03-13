@@ -499,7 +499,7 @@ DownloadItemImpl::~DownloadItemImpl() {
   LOG(DEBUG) << "DownloadItemImpl::~DownloadItemImpl";
   RunCallbackIfExsitsCallback();
 #endif
-
+ 
   for (auto& observer : observers_)
     observer.OnDownloadDestroyed(this);
   delegate_->Detach();

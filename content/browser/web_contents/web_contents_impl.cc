@@ -9663,6 +9663,12 @@ void WebContentsImpl::MediaStoppedPlaying(
                              media_info, id, reason);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::OneShotPlayerMediaPlayerStopped() {
+  observers_.NotifyObservers(&WebContentsObserver::OneShotPlayerMediaPlayerStopped);
+}
+#endif
+
 void WebContentsImpl::MediaResized(const gfx::Size& size,
                                    const MediaPlayerId& id) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::MediaResized");

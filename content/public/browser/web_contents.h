@@ -1550,6 +1550,7 @@ class WebContents : public PageNavigator,
   CreateDisallowCustomCursorScope(int max_dimension_dips = 0) = 0;
 #if BUILDFLAG(IS_OHOS)
   virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0;
+  virtual void OneShotPlayerMediaPlayerStopped() = 0;
 #endif
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;

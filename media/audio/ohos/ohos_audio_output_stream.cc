@@ -538,6 +538,15 @@ void OHOSAudioOutputStream::PumpSamples() {
   if (writeFailed && weakMediaSession_ && (weakMediaSession_.get()->HasOnlyOneShotPlayersPublic() ||
       weakMediaSession_.get()->GetSessionState() == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
     LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
+    content::RenderFrameHost* renderFrameHost =
+      content::RenderFrameHost::FromID(parameters_.render_process_id(),
+                                      parameters_.render_frame_id());
+    auto webContent = content::WebContents::FromRenderFrameHost(renderFrameHost);
+    if (!webContent) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+      return;
+    }
+    webContent->OneShotPlayerMediaPlayerStopped();
     return;
   }
   SchedulePumpSamples(now);

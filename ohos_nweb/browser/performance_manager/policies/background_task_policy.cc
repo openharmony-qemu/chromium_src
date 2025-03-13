@@ -190,6 +190,21 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
   MaybeChangeBackgroundTask(page_node);
 }
 
+void BackgroundTaskPolicy::OnIsDecrementAudioNum(const PageNode* page_node) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
+  if (page_node == nullptr) {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " page_node is null return";
+    return;
+  }
+
+  audio_state_num_ -= 1;
+  if (audio_state_num_ < 0) {
+    audio_state_num_ = 0;
+  }
+  LOG(INFO) << BG_TASK_TAG << " OnIsDecrementAudioNum audio_state_num: " << audio_state_num_;
+  MaybeChangeBackgroundTask(page_node);
+}
+
 void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
   if (page_node == nullptr) {

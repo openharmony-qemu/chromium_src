@@ -5,7 +5,7 @@
 #ifndef CONTENT_BROWSER_RENDERER_HOST_INPUT_FLING_CONTROLLER_H_
 #define CONTENT_BROWSER_RENDERER_HOST_INPUT_FLING_CONTROLLER_H_
 
-#include <atomic
+#include <atomic>
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "content/browser/renderer_host/input/touchpad_tap_suppression_controller.h"

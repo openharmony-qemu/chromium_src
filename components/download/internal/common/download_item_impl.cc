@@ -494,7 +494,7 @@ DownloadItemImpl::~DownloadItemImpl() {
   // DownloadManager shutdown.
   DCHECK(!download_file_);
   CHECK(!is_updating_observers_);
-
+ 
 #ifdef OHOS_EX_DOWNLOAD
   LOG(DEBUG) << "DownloadItemImpl::~DownloadItemImpl";
   RunCallbackIfExsitsCallback();

@@ -362,7 +362,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 #ifdef OHOS_EX_DOWNLOAD
   void MaybeRunReadDownloadCallback();
 #endif
-
+ 
   // The base file instance.
   BaseFile file_;
 

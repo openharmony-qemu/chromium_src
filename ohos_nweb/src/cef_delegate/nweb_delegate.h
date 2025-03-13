@@ -450,6 +450,7 @@ void SetTransformHint(uint32_t rotation) override;
 #if defined(OHOS_EX_FREE_COPY)
   void SelectAndCopy() override;
   bool ShouldShowFreeCopy() override;
+  std::string GetSelectedTextFromContextParam() override;
 #endif
 #if defined(OHOS_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;

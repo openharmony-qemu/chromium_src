@@ -138,6 +138,7 @@ class NWebDelegateInterface
 #if defined(OHOS_EX_FREE_COPY)
   virtual void SelectAndCopy() = 0;
   virtual bool ShouldShowFreeCopy() = 0;
+  virtual std::string GetSelectedTextFromContextParam() = 0;
 #endif  // OHOS_EX_FREE_COPY
 
 #ifdef OHOS_EX_GET_ZOOM_LEVEL

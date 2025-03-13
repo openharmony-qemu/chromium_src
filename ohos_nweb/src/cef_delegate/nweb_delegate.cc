@@ -3527,6 +3527,13 @@ void NWebDelegate::PasswordSuggestionSelected(int list_index) const {
 #endif
 
 #if defined(OHOS_EX_FREE_COPY)
+std::string NWebDelegate::GetSelectedTextFromContextParam() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    return std::string();
+  }
+  return GetBrowser()->GetHost()->GetSelectedTextFromContextParam();
+}
+
 void NWebDelegate::SelectAndCopy() {
   if (GetBrowser().get()) {
     GetBrowser()->SelectAndCopy();

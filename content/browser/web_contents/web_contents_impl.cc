@@ -7541,11 +7541,10 @@ void WebContentsImpl::CollapseAllFramesSelection() {
 #endif
 
 #ifdef OHOS_AI
-bool WebContentsImpl::CloseImageOverlaySelection() {
+void WebContentsImpl::CloseImageOverlaySelection() {
   if (render_view_host_delegate_view_) {
-    return render_view_host_delegate_view_->CloseImageOverlaySelection();
+    render_view_host_delegate_view_->CloseImageOverlaySelection();
   }
-  return false;
 }
 
 void WebContentsImpl::OnOverlayZoomChanged() {

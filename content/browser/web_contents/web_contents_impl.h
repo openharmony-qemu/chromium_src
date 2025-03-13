@@ -786,7 +786,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif
 
 #ifdef OHOS_AI
-  bool CloseImageOverlaySelection() override;
+  void CloseImageOverlaySelection() override;
   void OnOverlayZoomChanged() override;
 #endif
 
@@ -981,7 +981,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       RenderFrameHost* render_frame_host,
       RenderFrameHost::LifecycleState old_state,
       RenderFrameHost::LifecycleState new_state) override;
-  void SetWindowRect(const gfx::Rect& new_bounds) override;
+void SetWindowRect(const gfx::Rect& new_bounds) override;
   void UpdateWindowPreferredSize(const gfx::Size& pref_size) override;
   std::vector<RenderFrameHostImpl*>
   GetActiveTopLevelDocumentsInBrowsingContextGroup(

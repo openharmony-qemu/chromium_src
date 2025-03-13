@@ -2746,6 +2746,10 @@ void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
                     const gfx::Rect& image_rect,
                     const gfx::Point& touch_point) {
   RenderViewHostDelegateView* view = delegate_->GetDelegateView();
+  if (!view || !GetView()) {
+    OnDestroyImageAnalyzerOverlay();
+    return;
+  }
   float scale = GetScaleFactorForView(GetView());
   gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
   view->CreateOverlay(image, image_rect, touch_point);
@@ -2767,6 +2771,19 @@ void RenderWidgetHostImpl::OnDestroyImageAnalyzerOverlay() {
 
 void RenderWidgetHostImpl::OnFoldStatusChanged(uint32_t foldstatus) {
   blink_frame_widget_->OnFoldStatusChanged(foldstatus);
+}
+
+void RenderWidgetHostImpl::NotifyOverlayStateChanged() {
+  blink_frame_widget_->NotifyOverlayStateChanged();
+}
+
+void RenderWidgetHostImpl::OnOverlayStateChanged(const gfx::Rect& image_rect) {
+  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
+  if (!view || !GetView()) {
+    OnDestroyImageAnalyzerOverlay();
+    return;
+  }
+  view->OnOverlayStateChanged(image_rect);
 }
 #endif
 

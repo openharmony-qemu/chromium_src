@@ -98,7 +98,7 @@ class PerformanceManagerTabHelper
       const content::MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) override;
 
-  void OneShotPlayerMediaPlayerStopped() override;
+  void OneShotMediaPlayerStopped() override;
 #endif
 
   // WebContentsProxyImpl overrides. Note that `LastNavigationId()` and

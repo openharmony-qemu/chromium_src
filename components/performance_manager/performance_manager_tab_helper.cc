@@ -519,9 +519,9 @@ void PerformanceManagerTabHelper::MediaStoppedPlaying(
                                 base::Unretained(primary_page_node()), false));
 }
 
-void PerformanceManagerTabHelper::OneShotPlayerMediaPlayerStopped() {
+void PerformanceManagerTabHelper::OneShotMediaPlayerStopped() {
   PerformanceManagerImpl::CallOnGraphImpl(
-      FROM_HERE, base::BindOnce(&PageNodeImpl::OneShotPlayerMediaPlayerStopped,
+      FROM_HERE, base::BindOnce(&PageNodeImpl::OneShotMediaPlayerStopped,
                                 base::Unretained(primary_page_node())));
 }
 #endif

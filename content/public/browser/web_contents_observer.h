@@ -784,8 +784,8 @@ class CONTENT_EXPORT WebContentsObserver {
       const MediaPlayerInfo& video_type,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
-#if BUILDFLAG(IS_OHOS)
-  virtual void OneShotPlayerMediaPlayerStopped() {}
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+  virtual void OneShotMediaPlayerStopped() {}
 #endif
   virtual void MediaResized(const gfx::Size& size, const MediaPlayerId& id) {}
   // Invoked when media enters or exits fullscreen. We must use a heuristic

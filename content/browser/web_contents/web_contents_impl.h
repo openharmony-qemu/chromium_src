@@ -1278,7 +1278,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const WebContentsObserver::MediaPlayerInfo& media_info,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason);
-#if BUILDFLAG(IS_OHOS)
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
   void OneShotPlayerMediaPlayerStopped() override;
 #endif
   // This will be called before playback is started, check

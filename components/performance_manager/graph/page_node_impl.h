@@ -64,7 +64,7 @@ class PageNodeImpl
   void SetIsAudible(bool is_audible);
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
   void SetIsMediaPlaying(bool is_media_playing);
-  void OneShotPlayerMediaPlayerStopped();
+  void OneShotMediaPlayerStopped();
 #endif
   void SetLoadingState(LoadingState loading_state);
   void SetUkmSourceId(ukm::SourceId ukm_source_id);

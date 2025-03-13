@@ -354,12 +354,13 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
   textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
                         device_pixel_ratio_);
 
+  bool show_keyboard = show_keyboard_ && (!isManualCloseKeyboard_);
   bool flag = inputmethod_adapter_->AttachWithRequestKeyboardReason(
-      inputmethod_listener_, show_keyboard_, textConfig, is_need_reset_listener,
+      inputmethod_listener_, show_keyboard, textConfig, is_need_reset_listener,
       requestKeyboardReason);
   if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
-    flag = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_, textConfig,
-                  is_need_reset_listener);
+    flag = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard,
+        textConfig, is_need_reset_listener);
   }
   if (!flag) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
@@ -396,6 +397,7 @@ void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
   ComputeEditorInfo(inputInfo, enterKeyType);
   composing_text_.clear();
   browser_ = browser;
+  isManualCloseKeyboard_ = false;
 
   if (!AttachToSystemIME(is_need_reset_listener, requestKeyboardReason)) {
     return;
@@ -683,11 +685,15 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     ime_text_composing_ = false;
     composing_text_.clear();
   }
+  if (status) {
+    isManualCloseKeyboard_ = false;
+  }
   ime_shown_ = status;
 }
 
 void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   LOG(INFO) << "NWebInputMethodHandler::WebBlurKeyboardHideOnUI" ;
+  isManualCloseKeyboard_ = true;
   browser_->GetHost()->SetFocusOnWeb();
 }
 

@@ -150,9 +150,9 @@ void PageNodeImpl::SetIsMediaPlaying(bool is_media_playing) {
   }
 }
 
-void PageNodeImpl::OneShotPlayerMediaPlayerStopped() {
+void PageNodeImpl::OneShotMediaPlayerStopped() {
   for (auto* observer : GetObservers()) {
-    observer->OnIsDecrementAudioNum(this);
+    observer->OnDecrementAudioNum(this);
   }
 }
 #endif

@@ -9708,9 +9708,11 @@ void WebContentsImpl::MediaPlayerGone(
   observers_.NotifyObservers(&WebContentsObserver::MediaPlayerGone,
                           media_info, id);
 }
+#endif
 
-void WebContentsImpl::OneShotPlayerMediaPlayerStopped() {
-  observers_.NotifyObservers(&WebContentsObserver::OneShotPlayerMediaPlayerStopped);
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+void WebContentsImpl::OneShotMediaPlayerStopped() {
+  observers_.NotifyObservers(&WebContentsObserver::OneShotMediaPlayerStopped);
 }
 #endif
 

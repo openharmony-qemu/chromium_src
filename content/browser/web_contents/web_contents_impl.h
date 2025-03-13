@@ -1304,7 +1304,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const MediaPlayerId& id);
 #endif
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
-  void OneShotPlayerMediaPlayerStopped() override;
+  void OneShotMediaPlayerStopped() override;
 #endif
   // This will be called before playback is started, check
   // GetCurrentlyPlayingVideoCount if you need this when playback starts.

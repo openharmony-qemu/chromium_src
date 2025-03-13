@@ -1302,6 +1302,7 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   void MediaPlayerGone(
       const WebContentsObserver::MediaPlayerInfo& media_info,
       const MediaPlayerId& id);
+  void OneShotPlayerMediaPlayerStopped() override;
 #endif
   // This will be called before playback is started, check
   // GetCurrentlyPlayingVideoCount if you need this when playback starts.

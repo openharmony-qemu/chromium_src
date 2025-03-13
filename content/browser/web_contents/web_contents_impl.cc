@@ -9708,6 +9708,10 @@ void WebContentsImpl::MediaPlayerGone(
   observers_.NotifyObservers(&WebContentsObserver::MediaPlayerGone,
                           media_info, id);
 }
+
+void WebContentsImpl::OneShotPlayerMediaPlayerStopped() {
+  observers_.NotifyObservers(&WebContentsObserver::OneShotPlayerMediaPlayerStopped);
+}
 #endif
 
 void WebContentsImpl::MediaResized(const gfx::Size& size,

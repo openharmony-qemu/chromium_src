@@ -518,6 +518,12 @@ void PerformanceManagerTabHelper::MediaStoppedPlaying(
       FROM_HERE, base::BindOnce(&PageNodeImpl::SetIsMediaPlaying,
                                 base::Unretained(primary_page_node()), false));
 }
+
+void PerformanceManagerTabHelper::OneShotPlayerMediaPlayerStopped() {
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE, base::BindOnce(&PageNodeImpl::OneShotPlayerMediaPlayerStopped,
+                                base::Unretained(primary_page_node())));
+}
 #endif
 
 void PerformanceManagerTabHelper::BindDocumentCoordinationUnit(

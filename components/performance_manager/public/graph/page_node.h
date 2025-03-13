@@ -287,6 +287,8 @@ class PageNodeObserver {
 
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
   virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
+
+  virtual void OnIsDecrementAudioNum(const PageNode* page_node) {}
 #endif
 
   // Invoked when the GetLoadingState property changes.
@@ -375,6 +377,7 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
   void OnIsVisibleChanged(const PageNode* page_node) override {}
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
   void OnIsMediaPlayingChanged(const PageNode* page_node) override{}
+  void OnIsDecrementAudioNum(const PageNode* page_node) override {}
 #endif
   void OnIsAudibleChanged(const PageNode* page_node) override {}
   void OnLoadingStateChanged(const PageNode* page_node,

@@ -51,6 +51,7 @@ class BackgroundTaskPolicy : public GraphObserver,
   void OnIsVisibleChanged(const PageNode* page_node) override;
   void OnIsMediaPlayingChanged(const PageNode* page_node) override;
   void OnIsAudibleChanged(const PageNode* page_node) override;
+  void OnIsDecrementAudioNum(const PageNode* page_node) override;
   void OnMainFrameUrlChanged(const PageNode* page_node) override;
   void OnPageStateChanged(const PageNode* page_node,
                           PageState old_state) override;

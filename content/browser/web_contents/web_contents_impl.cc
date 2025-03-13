@@ -8180,6 +8180,12 @@ PrerenderHostRegistry* WebContentsImpl::GetPrerenderHostRegistry() {
   return prerender_host_registry_.get();
 }
 
+#ifdef OHOS_NWEB_EX
+void WebContentsImpl::CleanTargetUrl() {
+  ClearTargetURL();
+}
+#endif
+
 #ifdef OHOS_EX_TOPCONTROLS
 void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
   DidStartLoading(frame_tree_node, false);

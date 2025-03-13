@@ -819,7 +819,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
                    base::i18n::TextDirection title_direction) override;
   void UpdateTargetURL(RenderFrameHostImpl* render_frame_host,
                        const GURL& url) override;
-
+#ifdef OHOS_NWEB_EX
+  void CleanTargetUrl();
+#endif
 #if defined(OHOS_ARKWEB_EXTENSIONS)
   void WebExtensionUpdateTab(
       int32_t tab_id,

@@ -81,7 +81,7 @@ ExternalBeginFrameSourceOHOS::ExternalBeginFrameSourceOHOS(
 #if BUILDFLAG(IS_OHOS)
   vsync_adapter_.SetOnVsyncCallback(ExternalBeginFrameSourceOHOS::OnVSyncCallback);
   vsync_adapter_.SetOnVsyncEndCallback(ExternalBeginFrameSourceOHOS::OnVSyncEndCallback);
-  last_dvsync_state_ = base::ohos::DvsyncController::GetInstance().GetIsFling();
+  last_dvsync_state_ = base::ohos::DVsyncController::GetInstance().GetIsFling();
 #endif
 }
 
@@ -171,7 +171,7 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
 
 #if BUILDFLAG(IS_OHOS)
 ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
-bool currentDvsyncState = base::ohos::DvsyncController::GetInstance().GetIsFling();
+bool currentDvsyncState = base::ohos::DVsyncController::GetInstance().GetIsFling();
 if (last_dvsync_state_ != currentDvsyncState) {
   LOG(INFO) << "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch: " << currentDvsyncState;
   TRACE_EVENT1("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl::SetDVSyncSwitch", "SetDVSyncSwitch",

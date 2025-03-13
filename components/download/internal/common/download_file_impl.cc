@@ -543,6 +543,84 @@ void DownloadFileImpl::Resume() {
   }
 }
 
+#ifdef OHOS_EX_DOWNLOAD
+bool DownloadFileImpl::ReadDownloadDataFromFile(
+      int64_t offset,
+      char* data,
+      size_t size) {
+  if (size == 0) {
+    return false;
+  }
+ 
+  if (!file_.ReadDataFromFile(offset, data, size, file_.full_path())) {
+    LOG(WARNING) << "DownloadFileImpl::ReadDownloadDataFromFile fail";
+    return false;
+  }
+ 
+  return true;
+}
+ 
+void DownloadFileImpl::RunCallbackIfDataReady() {
+  LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady called, TotalBytesReceived: "
+             << TotalBytesReceived();
+  if (!read_download_callback_) {
+    LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady read_download_callback_ null";
+    return;
+  }
+ 
+  if (TotalBytesReceived() < read_download_size_) {
+    return;
+  }
+ 
+  if (GetNoHoleDownloadDataSize() < read_download_size_) {
+    LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady PreDownloadSize:" << GetNoHoleDownloadDataSize();
+    return;
+  }
+ 
+  LOG(DEBUG) << "DownloadFileImpl::RunCallbackIfDataReady MaybeRunReadDownloadCallback";
+  MaybeRunReadDownloadCallback();
+}
+ 
+uint32_t DownloadFileImpl::GetNoHoleDownloadDataSize() {
+  int64_t total_received_bytes = TotalBytesReceived();
+  if (!IsSparseFile()) {
+    LOG(DEBUG) << "DownloadFileImpl::GetNoHoleDownloadDataSize not sparse file";
+    return std::min(total_received_bytes, (int64_t)read_download_size_);
+  }
+ 
+  int64_t received_no_hole_bytes = 0;
+ 
+  for (const auto& received_slice : received_slices_) {
+    received_no_hole_bytes = received_slice.offset + received_slice.received_bytes;
+    if(!received_slice.finished) {
+      LOG(DEBUG) << "DownloadFileImpl::GetNoHoleDownloadDataSize slice not finished";
+      break;
+    }
+  }
+ 
+  return std::min(received_no_hole_bytes, (int64_t)read_download_size_);
+}
+ 
+void DownloadFileImpl::RegisterReadDownloadCallback(
+    base::OnceCallback<void()> callback, uint32_t size) {
+  if (read_download_callback_) {
+    LOG(DEBUG) << "DownloadFileImpl::RegisterReadDownloadCallback callback already exsit";
+    return;
+  }
+ 
+  LOG(DEBUG) << "DownloadFileImpl::RegisterReadDownloadCallback called";
+  read_download_size_ = size;
+  read_download_callback_ = std::move(callback);
+}
+ 
+void DownloadFileImpl::MaybeRunReadDownloadCallback() {
+  if (read_download_callback_) {
+    LOG(DEBUG) << "DownloadFileImpl::MaybeRunReadDownloadCallback called";
+    std::move(read_download_callback_).Run();
+  }
+}
+#endif
+ 
 void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                                     MojoResult result) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -577,6 +655,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
         reason = ValidateAndWriteDataToFile(
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->data(), bytes_to_validate, bytes_to_write);
+#ifdef OHOS_EX_DOWNLOAD
+        RunCallbackIfDataReady();
+#endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
         if (reason == DOWNLOAD_INTERRUPT_REASON_NONE) {
@@ -595,6 +676,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                 bytes_to_write;
           }
         }
+#ifdef OHOS_EX_DOWNLOAD
+        RunCallbackIfDataReady();
+#endif
       } break;
       case InputStream::WAIT_FOR_COMPLETION:
         source_stream->RegisterCompletionCallback(base::BindOnce(

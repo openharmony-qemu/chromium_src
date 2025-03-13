@@ -68,6 +68,15 @@ class MockDownloadFile : public DownloadFile {
   MOCK_CONST_METHOD0(DebugString, std::string());
   MOCK_METHOD0(Pause, void());
   MOCK_METHOD0(Resume, void());
+  MOCK_METHOD0(RunCallbackIfDataReady, void());
+  MOCK_METHOD2(RegisterReadDownloadCallback,
+               void(base::OnceCallback<void()>,
+                    uint32_t));
+  MOCK_METHOD3(ReadDownloadDataFromFile,
+               bool(int64_t,
+                    char*,
+                    size_t));
+  MOCK_METHOD0(GetNoHoleDownloadDataSize, uint32_t());
 #if BUILDFLAG(IS_ANDROID)
   MOCK_METHOD6(RenameToIntermediateUri,
                void(const GURL& original_url,

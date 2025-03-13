@@ -493,9 +493,12 @@ class NWebImpl : public NWeb {
   static void ResumeDownloadStatic(std::shared_ptr<NWebDownloadItem> download_item);
   static void SetFileRenameOption(const int file_rename_option);
 #ifdef OHOS_EX_DOWNLOAD
+  static void ReadDownloadData(const std::string& guid,
+                               const int32_t read_size,
+                               ReadDownloadDataCallback callback);
   NWebDownloadItemState GetDownloadItemState(long item_id);
   static NWebDownloadItemState GetDownloadItemStateByGuid(const std::string& guid);
-#endif
+#endif // OHOS_EX_DOWNLOAD
 
   bool NeedSoftKeyboard() override;
 

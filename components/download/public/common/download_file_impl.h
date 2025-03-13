@@ -33,6 +33,8 @@
 #include "components/services/quarantine/public/mojom/quarantine.mojom.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
 
+#include "base/functional/callback_forward.h"
+ 
 namespace download {
 
 class DownloadDestinationObserver;
@@ -202,6 +204,21 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   void SetTaskRunnerForTesting(
       scoped_refptr<base::SequencedTaskRunner> task_runner);
 
+#ifdef OHOS_EX_DOWNLOAD
+  void RunCallbackIfDataReady() override;
+ 
+  void RegisterReadDownloadCallback(
+      base::OnceCallback<void()> callback,
+      uint32_t size) override;
+ 
+  bool ReadDownloadDataFromFile(
+      int64_t offset,
+      char* data,  //todo:jiang
+      size_t size) override;
+ 
+  uint32_t GetNoHoleDownloadDataSize() override;
+#endif
+
  protected:
   // For test class overrides.
   // Validate the first |bytes_to_validate| bytes and write the next
@@ -341,6 +358,10 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
 
   // Print the internal states for debugging.
   void DebugStates() const;
+ 
+#ifdef OHOS_EX_DOWNLOAD
+  void MaybeRunReadDownloadCallback();
+#endif
 
   // The base file instance.
   BaseFile file_;
@@ -392,6 +413,11 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFileImpl : public DownloadFile {
   bool is_paused_;
 
   uint32_t download_id_;
+
+#ifdef OHOS_EX_DOWNLOAD
+  uint32_t read_download_size_;
+  base::OnceCallback<void()> read_download_callback_;
+#endif
 
   // TaskRunner to post updates to the |observer_|.
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;

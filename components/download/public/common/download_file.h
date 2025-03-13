@@ -119,6 +119,22 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadFile {
   // the final content URI.
   virtual void PublishDownload(RenameCompletionCallback callback) = 0;
 #endif  // BUILDFLAG(IS_ANDROID)
+ 
+#ifdef OHOS_EX_DOWNLOAD
+  virtual void RunCallbackIfDataReady()  = 0;
+ 
+  virtual void RegisterReadDownloadCallback(
+      base::OnceCallback<void()> callback,
+      uint32_t size) = 0;
+ 
+  virtual bool ReadDownloadDataFromFile(
+      int64_t offset,
+      char* data,
+      size_t size) = 0;
+ 
+  virtual uint32_t GetNoHoleDownloadDataSize() = 0;
+#endif
+
 };
 
 }  // namespace download

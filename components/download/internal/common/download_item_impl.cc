@@ -495,6 +495,11 @@ DownloadItemImpl::~DownloadItemImpl() {
   DCHECK(!download_file_);
   CHECK(!is_updating_observers_);
 
+#ifdef OHOS_EX_DOWNLOAD
+  LOG(DEBUG) << "DownloadItemImpl::~DownloadItemImpl";
+  RunCallbackIfExsitsCallback();
+#endif
+
   for (auto& observer : observers_)
     observer.OnDownloadDestroyed(this);
   delegate_->Detach();
@@ -523,6 +528,9 @@ void DownloadItemImpl::UpdateObservers() {
   for (auto& observer : observers_)
     observer.OnDownloadUpdated(this);
   is_updating_observers_ = false;
+#ifdef OHOS_EX_DOWNLOAD
+  RunCallbackIfStateMatch();
+#endif
 }
 
 void DownloadItemImpl::ValidateDangerousDownload() {
@@ -2155,7 +2163,7 @@ void DownloadItemImpl::InterruptWithPartialState(
                   << last_reason_ << ", auto_resume_count_: " << auto_resume_count_
                   << ", state_: " << DebugDownloadStateString(state_) << ", guid: " << GetGuid()
                   << ", isPause: " << IsPaused()
-                  << ", is cancel: "<< IsCancellation(reason);
+                  << ", iisCancel: "<< IsCancellation(reason);
         resume_mode = ResumeMode::IMMEDIATE_CONTINUE;
         need_auto_resume = true;
       }
@@ -2900,6 +2908,154 @@ bool DownloadItemImpl::IsBeforeInProgress() const {
     default:
       return false;
   }
+}
+
+void DownloadItemImpl::ReadDownloadData(
+    const std::string& guid,
+    const int32_t read_size,
+    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+  if (GetDownloadTaskRunner()) {
+    GetDownloadTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&DownloadItemImpl::ReadDownloadDataInternal,
+        weak_ptr_factory_.GetWeakPtr(), guid, read_size, std::move(callback)));
+  }
+}
+ 
+void DownloadItemImpl::ReadDownloadDataInternal(
+    const std::string& guid,
+    const int32_t read_size,
+    base::OnceCallback<void(const std::vector<uint8_t>&)> callback) {
+  if (!read_download_callback_from_ui_) {
+    LOG(INFO) << "DownloadItemImpl::ReadDownloadData set callback";
+    read_download_callback_from_ui_ = std::move(callback);
+  }
+  read_download_size_ = read_size;
+ 
+  RegisterReadDownloadCallback(base::BindOnce(&DownloadItemImpl::ReadDownloadDataAndRunCallback,
+                                              weak_ptr_factory_.GetWeakPtr(), read_size),
+                               read_size);
+  LOG(INFO) << "DownloadItemImpl::ReadDownloadData set callback state_=" << state_;
+ 
+  if (PercentComplete() == 100) {
+    LOG(INFO) << "DownloadItemImpl::ReadDownloadData complete already";
+    RunCallbackIfExsitsCallback();
+    return;
+  }
+ 
+  if (state_ == COMPLETE_INTERNAL ||
+      state_ == COMPLETING_INTERNAL ||
+      state_ == INTERRUPTED_INTERNAL ||
+      state_ == INTERRUPTED_TARGET_PENDING_INTERNAL ||
+      state_ == CANCELLED_INTERNAL) {
+    LOG(INFO) << "DownloadItemImpl::ReadDownloadData state match";
+    RunCallbackIfExsitsCallback();
+  } else {
+    RunCallbackIfDataReady();
+  }
+}
+
+void DownloadItemImpl::ReadDownloadDataAndRunCallback(uint32_t size) {
+  if (GetDownloadTaskRunner()) {
+    GetDownloadTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal,
+        weak_ptr_factory_.GetWeakPtr(), size));
+  }
+}
+ 
+void DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal(uint32_t size) {
+  if (!read_download_callback_from_ui_) {
+    LOG(DEBUG) << "DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal called, size: "
+               << size;
+    return;
+  }
+ 
+  if (!download_file_.get()) {
+    LOG(INFO) << "DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal called, size: "
+              << size;
+    std::move(read_download_callback_from_ui_).Run(std::vector<uint8_t>());
+    return;
+  }
+ 
+  std::vector<uint8_t> data(size);
+  if (!download_file_.get()->ReadDownloadDataFromFile(
+      0, (char *)(data.data()), size)) {
+    LOG(INFO) << "DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal called, size: "
+              << size;
+    std::move(read_download_callback_from_ui_).Run(std::vector<uint8_t>());
+    return;
+  }
+ 
+  LOG(INFO) << "DownloadItemImpl::ReadDownloadDataAndRunCallbackInternal called, size: "
+            << size;
+  std::move(read_download_callback_from_ui_).Run(std::move(data));
+}
+ 
+void DownloadItemImpl::RunCallbackIfDataReady() {
+  if (download_file_.get()) {
+    LOG(INFO) << "DownloadItemImpl::RunCallbackIfDataReady called";
+    download_file_.get()->RunCallbackIfDataReady();
+  }
+}
+ 
+void DownloadItemImpl::RunCallbackIfStateMatch() {
+  if (GetDownloadTaskRunner()) {
+    GetDownloadTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&DownloadItemImpl::RunCallbackIfStateMatchInternal,
+        weak_ptr_factory_.GetWeakPtr()));
+  }
+}
+ 
+void DownloadItemImpl::RunCallbackIfStateMatchInternal() {
+  LOG(INFO) << "DownloadItemImpl::RunCallbackIfStateMatchInternal called";
+  if (state_ == COMPLETE_INTERNAL ||
+      state_ == COMPLETING_INTERNAL ||
+      state_ == INTERRUPTED_INTERNAL ||
+      state_ == INTERRUPTED_TARGET_PENDING_INTERNAL ||
+      state_ == CANCELLED_INTERNAL) {
+    uint32_t size = 0;
+ 
+    if (download_file_.get()) {
+      size = download_file_.get()->GetNoHoleDownloadDataSize();
+      LOG(INFO) << "DownloadItemImpl::RunCallbackIfStateMatchInternal size: " << size;
+    }
+ 
+    ReadDownloadDataAndRunCallback(size);
+  }
+}
+ 
+void DownloadItemImpl::RunCallbackIfExsitsCallback() {
+  if (GetDownloadTaskRunner()) {
+    GetDownloadTaskRunner()->PostTask(
+        FROM_HERE,
+        base::BindOnce(&DownloadItemImpl::RunCallbackIfExsitsCallbackInternal,
+        weak_ptr_factory_.GetWeakPtr()));
+  }
+}
+ 
+void DownloadItemImpl::RunCallbackIfExsitsCallbackInternal() {
+  uint32_t size = 0;
+  if (download_file_.get()) {
+    size = download_file_.get()->GetNoHoleDownloadDataSize();
+    LOG(INFO) << "DownloadItemImpl::RunCallbackIfExsitsCallback size: " << size;
+  }
+ 
+  ReadDownloadDataAndRunCallback(size);
+}
+ 
+void DownloadItemImpl::RegisterReadDownloadCallback(
+      base::OnceCallback<void()> callback,
+      uint32_t size) {
+  if (!download_file_) {
+    LOG(INFO) << "DownloadItemImpl::RegisterReadDownloadCallback download_file_ null";
+    RunCallbackIfExsitsCallback();
+    return;
+  }
+ 
+  download_file_.get()->RegisterReadDownloadCallback(
+      base::BindOnce(std::move(callback)), size);
 }
 
 #endif  //  OHOS_EX_DOWNLOAD

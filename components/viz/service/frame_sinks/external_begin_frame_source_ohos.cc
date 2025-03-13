@@ -155,15 +155,31 @@ void ExternalBeginFrameSourceOHOS::OnVSyncImpl(int64_t timestamp,
   }
 #if defined(OHOS_PERFORMANCE_JITTER)
   static bool isAlreadyThrottle = false;
+  static bool isHalfAlreadyThrottle = false;
   if (lower_frame_rate_enabled_) {
     if (!isAlreadyThrottle) {
       frame_sink_manager_->StartThrottlingAllFrameSinks(base::Hertz(0.01));
       isAlreadyThrottle = true;
       LOG(DEBUG) << "OnVSyncImpl StartThrottlingAllFrameSinks";
     }
-  } else if (isAlreadyThrottle) {
+  } else if (isAlreadyThrottle && !half_frame_rate_enabled_) {
     frame_sink_manager_->StopThrottlingAllFrameSinks();
     isAlreadyThrottle = false;
+  } else if (isAlreadyThrottle && half_frame_rate_enabled_) {
+    isAlreadyThrottle = false;
+  }
+
+  if (half_frame_rate_enabled_) {
+    if (!isHalfAlreadyThrottle) {
+      frame_sink_manager_->StartThrottlingAllFrameSinks(base::Hertz(30));
+      isHalfAlreadyThrottle = true;
+      LOG(DEBUG) << "OnVSyncImpl StartHalfThrottlingAllFrameSinks";
+    }
+  } else if (isHalfAlreadyThrottle && !lower_frame_rate_enabled_) {
+    frame_sink_manager_->StopThrottlingAllFrameSinks();
+    isHalfAlreadyThrottle = false;
+  } else if (isHalfAlreadyThrottle && lower_frame_rate_enabled_) {
+    isHalfAlreadyThrottle = false;
   }
 #endif
 
@@ -176,9 +192,9 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
   last_dead_line_ = deadline;
   OHOS_TRACE_EVENT2("viz", "ExternalBeginFrameSourceOHOS::OnVSyncImpl", "frame_time",
                frame_time, "deadline", deadline);
-    if (lower_frame_rate_enabled_ && g_skip_vsync) {
+    if ((lower_frame_rate_enabled_ || half_frame_rate_enabled_) && g_skip_vsync_) {
     TRACE_EVENT0("viz", "vsync skip");
-    g_skip_vsync = false;
+    g_skip_vsync_ = false;
   } else {
     TRACE_EVENT0("viz", "vsync not skip");
     auto begin_frame_args = begin_frame_args_generator_.GenerateBeginFrameArgs(
@@ -193,7 +209,7 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
       frame_sink_manager_->OnVsync(frame_sink_id_);
     }
 #endif
-    g_skip_vsync = true;
+    g_skip_vsync_ = true;
   }
 
   vsync_adapter_.RequestVsync(user_data_.release(),

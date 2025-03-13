@@ -423,6 +423,7 @@ class VIZ_COMMON_EXPORT ExternalBeginFrameSource : public BeginFrameSource {
   // Set Current display client Frame sink ID.
   virtual void SetCurrentFrameSinkId(const FrameSinkId& frame_sink_id) {}
   virtual void SetEnableLowerFrameRate(bool enabled) {}
+  virtual void SetEnableHalfFrameRate(bool enabled) {}
   virtual void SetDrawRect(const gfx::Rect& new_rect) {}
 #endif
 

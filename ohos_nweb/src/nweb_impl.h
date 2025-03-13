@@ -112,6 +112,7 @@ class NWebImpl : public NWeb {
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;
+  void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() override;
   void PutDownloadCallback(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;

@@ -148,6 +148,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;
+  void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() const override;
   std::string Title() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() const override;

@@ -200,6 +200,12 @@ class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
 
   std::string DebugString() const;
 
+#ifdef OHOS_EX_DOWNLOAD
+  bool ReadDataFromFile(int64_t offset,
+                        char* data, size_t data_len,
+                        const base::FilePath& file_path);
+#endif
+
  private:
   friend class BaseFileTest;
   FRIEND_TEST_ALL_PREFIXES(BaseFileTest, IsEmptyHash);

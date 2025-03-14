@@ -193,6 +193,10 @@ extern bool g_siteIsolationMode;
 #include "net/proxy_resolution/proxy_config_service_ohos.h"
 #include "cef/libcef/browser/net_service/proxy_config_monitor.h"
 
+#if defined(OHOS_EX_DOWNLOAD)
+#include "cef/include/cef_app.h"
+#endif
+
 #ifdef OHOS_ARKWEB_EXTENSIONS
 #include "cef_delegate/nweb_extension_context_menus_delegate_handler.h"
 #include "cef/libcef/browser/menu_manager.h"
@@ -507,6 +511,41 @@ void InitialWebEngineArgs(
 #endif  // OHOS_NWEB_EX
 }
 #endif  // defined(OHOS_API_INIT_WEB_ENGINE)
+
+#if defined(OHOS_EX_DOWNLOAD)
+typedef void(*ReadDownloadDataCallback)(const char* guid, const void* buffer, const size_t size);
+class NWebReadDownloadDataCallback : public CefReadDownloadDataCallback {
+ public:
+  NWebReadDownloadDataCallback(ReadDownloadDataCallback callback)
+  : read_download_data_callback_(callback) { }
+ 
+  ~NWebReadDownloadDataCallback() = default;
+ 
+  NO_SANITIZE("cfi")
+  void OnReadDownloadDataDone(const CefString& guid,
+                              const CefRefPtr<CefBinaryValue>& buffer) override {
+    if (!read_download_data_callback_) {
+      return;
+    }
+    if (!buffer) {
+      LOG(INFO) << "OnReadDownloadDataDone: buffer is nullptr.";
+      read_download_data_callback_(guid.ToString().c_str(), NULL, 0);
+      return;
+    }
+    size_t len = buffer->GetSize();
+    std::vector<uint8_t> dataBuffer(len);
+    buffer->GetData(&dataBuffer[0], len, 0);
+    LOG(INFO) << "OnReadDownloadDataDone: guid: " << guid.ToString() << ", buffer len: " << len;
+    read_download_data_callback_(guid.ToString().c_str(), (void *)(&dataBuffer[0]), len);
+  }
+ 
+ private:
+  ReadDownloadDataCallback read_download_data_callback_;
+ 
+  IMPLEMENT_REFCOUNTING(NWebReadDownloadDataCallback);
+};
+#endif
+
 }  // namespace
 
 namespace OHOS::NWeb {
@@ -3409,6 +3448,17 @@ void NWebImpl::SetFileRenameOption(const int file_rename_option) {
   CefSetFileRenameOption(file_rename_option);
 }
 
+#if defined(OHOS_EX_DOWNLOAD)
+void NWebImpl::ReadDownloadData(const std::string& guid,
+                                const int32_t read_size,
+                                ReadDownloadDataCallback callback) {
+  WVLOG_I("NWebImpl::ReadDownloadData: option: %{public}s", guid.c_str());
+  CefRefPtr<NWebReadDownloadDataCallback> read_download_data_callback = 
+      new NWebReadDownloadDataCallback(callback);
+  CefReadDownloaData(guid, read_size, read_download_data_callback);
+}
+#endif  // BUILDFLAG(OHOS_EX_DOWNLOAD)
+ 
 #if defined(OHOS_EX_TOPCONTROLS)
 void NWebImpl::UpdateBrowserControlsState(int constraints,
                                           int current,

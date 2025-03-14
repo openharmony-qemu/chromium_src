@@ -3525,7 +3525,7 @@ bool NWebDelegate::Discard() {
 
   is_discarded_ = GetBrowser()->GetHost()->Discard();
   LOG(DEBUG) << "NWebDelegate::Discard is_discarded_: " << is_discarded_;
-  
+
   if (handler_delegate_) {
     handler_delegate_->Discard();
   }
@@ -4460,6 +4460,26 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled(){
                   "get preference_delegate failed ";
   }
   return false;
+}
+#endif
+
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+void NWebDelegate::SetUsageScenario(int32_t usage_scenario) {
+  if (preference_delegate_) {
+    preference_delegate_->SetUsageScenario(usage_scenario);
+  } else {
+    LOG(ERROR) << "NWebDelegate::SetUsageScenario"
+                  "get preference_delegate failed ";
+  }
+}
+int32_t NWebDelegate::GetUsageScenario() {
+  if (preference_delegate_) {
+    return preference_delegate_->GetUsageScenario();
+  } else {
+    LOG(ERROR) << "NWebDelegate::GetUsageScenario"
+                  "get preference_delegate failed ";
+  }
+  return 0;
 }
 #endif
 

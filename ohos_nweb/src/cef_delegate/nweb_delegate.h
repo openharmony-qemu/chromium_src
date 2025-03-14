@@ -609,6 +609,11 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   bool IsMixedContentAutoUpgradesEnabled() override;
 #endif
 
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+  void SetUsageScenario(int32_t usage_scenario) override;
+  int32_t GetUsageScenario() override;
+#endif
+
 #ifdef OHOS_BFCACHE
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override;
 #endif

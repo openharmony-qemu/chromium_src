@@ -619,6 +619,11 @@ class NWebDelegateInterface
 
   virtual void SetPopupSurface(void* popupSurface) = 0;
 
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+  virtual void SetUsageScenario(int32_t usage_scenario) = 0;
+  virtual int32_t GetUsageScenario() = 0;
+#endif
+
 #ifdef OHOS_EX_REFRESH_IFRAME
   virtual bool WebExtensionContextMenuIsIframe() = 0;
   virtual void WebExtensionContextMenuReloadFocusedFrame() = 0;

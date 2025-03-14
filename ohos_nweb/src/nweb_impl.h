@@ -619,11 +619,11 @@ class NWebImpl : public NWeb {
   static void PutExtensionContextMenusCallback(
     std::shared_ptr<NWebExtensionContextMenusCallback> extension_context_menus_callback);
   static void RemoveExtensionContextMenusCallback();
- 
+
   static void OnClickedExtensionContextMenus(const std::string& extension_id,
                                              ContextMenusOnClickedData& data,
                                              std::optional<NWebExtensionTab>& tab);
- 
+
   static void GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
                                             std::vector<NWebContextMenusItem>& result);
   static void PutWebExtensionActionApiCallback(
@@ -725,6 +725,11 @@ class NWebImpl : public NWeb {
 
  void SetPopupSurface(void* popupSurface) override;
  void SetTransformHint(uint32_t rotation) override;
+
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+  void SetUsageScenario(int32_t usage_scenario);
+  int32_t GetUsageScenario();
+#endif // OHOS_MEDIA_CAPABILITIES_ENHANCE
 
 #ifdef BUILDFLAG(IS_OHOS)
   void OnConfigurationUpdated(

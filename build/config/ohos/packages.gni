@@ -1,6 +1,11 @@
+import("//build/config/sanitizers/sanitizers.gni")
 if (is_ohos) {
   declare_args() {
     # default package name for gitee
-    ohos_package_name = "com.ohos.arkwebcore"
+    if (is_asan) {
+      ohos_package_name = "com.ohos.arkwebcore_asan"
+    } else {
+      ohos_package_name = "com.ohos.arkwebcore"
+    }
   }
 }

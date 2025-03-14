@@ -787,6 +787,8 @@ class CONTENT_EXPORT RenderProcessHostImpl
 #if defined(OHOS_RENDERER_ANR_DUMP)
   void dumpCurrentJavaScriptStackInMainThread(
       base::OnceCallback<void(const std::string&)> dump_callback) override;
+  
+  void InvokeRenderCrashDump() override;
 #endif
 
 #ifdef OHOS_THEME_FONT

@@ -2530,6 +2530,7 @@ void RenderWidgetHostImpl::Destroy(bool also_delete) {
 void RenderWidgetHostImpl::OnInputEventAckTimeout() {
   // Since input has timed out, let the BrowserUiThreadScheduler know we are
   // done with input currently.
+  LOG(ERROR) << "OnInputEventAckTimeout";
   user_input_active_handle_.reset();
   RendererIsUnresponsive(
       base::BindRepeating(
@@ -2567,6 +2568,8 @@ void RenderWidgetHostImpl::RendererIsUnresponsive(
                                     reason
 #endif
     );
+  } else {
+    LOG(ERROR) << "RendererIsUnresponsive delegate_ nullptr";
   }
 
   // Do not add code after this since the Delegate may delete this

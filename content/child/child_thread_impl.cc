@@ -348,6 +348,17 @@ class ChildThreadImpl::IOThreadState
       dumpCurrentJavaScriptStackInMainThreadCallback callback) override {
     AnrDumper::GetInstance()->DumpCurrentJavaScriptStack(std::move(callback));
   }
+
+  void InvokeRenderCrashDump() override {
+    static int once_flag = true;
+    if (once_flag) {
+      LOG(INFO) << "dump render stack for input jank";
+      kill(getpid(), SIGINT);
+      once_flag = false;
+    } else {
+      LOG(INFO) << "only get stack once";
+    }
+  }
 #endif
 #if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)
   void EnableSystemTracingService(

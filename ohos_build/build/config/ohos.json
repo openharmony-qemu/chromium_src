@@ -566,6 +566,15 @@
     "default": "true"
 },
 {
+    "name": "OHOS_MEDIA_CAPABILITIES_ENHANCE",
+    "owner": "",
+    "desc": "",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{
     "name": "OHOS_MEDIA_MUTE_AUDIO",
     "owner": "gaolei",
     "desc": "",
@@ -673,7 +682,7 @@
     "dependence": "",
     "default": "true"
 },
-{ 
+{
     "name": "OHOS_NOTIFICATION",
     "owner": "lingfeng wangdacheng",
     "desc": "web notification",

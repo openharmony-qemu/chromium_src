@@ -216,6 +216,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.record_whole_document = GetEnableWholeWebPageDrawing();
 #endif // OHOS_SOFTWARE_COMPOSITOR
 
+#if defined(OHOS_MEDIA_CAPABILITIES_ENHANCE)
+  browser_settings.usage_scenario = GetUsageScenario();
+#endif
+
 #ifdef OHOS_ACTIVE_POLICY
   browser_settings.delay_for_background_tab_freezing = GetDelayDurationForBackgroundTabFreezing();
 #endif
@@ -966,6 +970,20 @@ void NWebPreferenceDelegate::EnableMixedContentAutoUpgrades(bool enable){
 
 bool NWebPreferenceDelegate::IsMixedContentAutoUpgradesEnabled(){
   return enable_mixed_content_auto_upgrades_;
+}
+#endif
+
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+void NWebPreferenceDelegate::SetUsageScenario(int32_t usage_scenario) {
+  if (usage_scenario_ == usage_scenario) {
+    return;
+  }
+  usage_scenario_ =  usage_scenario;
+  WebPreferencesChanged();
+}
+
+int32_t NWebPreferenceDelegate::GetUsageScenario() {
+  return usage_scenario_;
 }
 #endif
 

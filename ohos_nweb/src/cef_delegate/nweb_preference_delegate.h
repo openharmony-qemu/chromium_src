@@ -230,6 +230,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   bool IsMixedContentAutoUpgradesEnabled();
 #endif
 
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+  void SetUsageScenario(int32_t usage_scenario);
+  int32_t GetUsageScenario();
+#endif
+
 #ifdef OHOS_BFCACHE
   int GetCacheSize();
   int GetTimeToLive();
@@ -352,6 +357,10 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #ifdef OHOS_MIXED_CONTENT
   bool enable_mixed_content_auto_upgrades_{false};
+#endif
+
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+  int32_t usage_scenario_{1};
 #endif
 
 #ifdef OHOS_BFCACHE

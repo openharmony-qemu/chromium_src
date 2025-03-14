@@ -2808,13 +2808,13 @@ void NWebImpl::PutExtensionContextMenusCallback(
   NweExtensionContextMenusDelegateHandler* handler = NweExtensionContextMenusDelegateHandler::GetInstance();
   CefMenuManager::SetContextMenusHandler(handler);
 }
- 
+
 void NWebImpl::RemoveExtensionContextMenusCallback() {
   WVLOG_I("unregister extension context menus listener");
   NweExtensionContextMenusDelegateHandler::UnRegisterExtensionContextMenusListener();
   CefMenuManager::SetContextMenusHandler(nullptr);
 }
- 
+
 // static
 void NWebImpl::OnClickedExtensionContextMenus(const std::string& extension_id,
                                              ContextMenusOnClickedData& data,
@@ -2822,7 +2822,7 @@ void NWebImpl::OnClickedExtensionContextMenus(const std::string& extension_id,
   LOG(DEBUG) << "OnClickedExtensionContextMenus";
   CefMenuManager::OnClickedExtensionContextMenus(extension_id, data, tab);
 }
- 
+
 // static
 void NWebImpl::GetAllExtensionContextMenus(const std::vector<std::string>& extension_ids,
                                             std::vector<NWebContextMenusItem>& result) {
@@ -4503,6 +4503,25 @@ void NWebImpl::SetPopupSurface(void* popupSurface) {
   }
   nweb_delegate_->SetPopupSurface(popup_window);
 }
+
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+void NWebImpl::SetUsageScenario(int32_t usage_scenario) {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "IsMixedContentAutoUpgradesEnabled failed"
+                  "for nweb_delegate_ is nullptr.";
+  }
+  nweb_delegate_->SetUsageScenario(usage_scenario);
+}
+
+int32_t NWebImpl::GetUsageScenario() {
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "IsMixedContentAutoUpgradesEnabled failed"
+                  "for nweb_delegate_ is nullptr.";
+    return 0;
+  }
+  return nweb_delegate_->GetUsageScenario();
+}
+#endif // OHOS_MEDIA_CAPABILITIES_ENHANCE
 
 void NWebImpl::getTotalSize(float size) {
     totalSize_ = size;

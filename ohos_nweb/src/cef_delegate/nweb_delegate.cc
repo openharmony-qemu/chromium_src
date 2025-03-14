@@ -4537,6 +4537,26 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled(){
 }
 #endif
 
+#ifdef OHOS_MEDIA_CAPABILITIES_ENHANCE
+void NWebDelegate::SetUsageScenario(int32_t usage_scenario) {
+  if (preference_delegate_) {
+    preference_delegate_->SetUsageScenario(usage_scenario);
+  } else {
+    LOG(ERROR) << "NWebDelegate::SetUsageScenario"
+                  "get preference_delegate failed ";
+  }
+}
+int32_t NWebDelegate::GetUsageScenario() {
+  if (preference_delegate_) {
+    return preference_delegate_->GetUsageScenario();
+  } else {
+    LOG(ERROR) << "NWebDelegate::GetUsageScenario"
+                  "get preference_delegate failed ";
+  }
+  return 0;
+}
+#endif
+
 void NWebDelegate::RefreshAccessibilityManagerClickEvent() {
   if (accessibility_state_) {
     if (!GetAccessibilityManager()) {

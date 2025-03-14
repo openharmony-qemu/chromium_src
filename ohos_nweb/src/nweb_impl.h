@@ -562,6 +562,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_EX_FREE_COPY)
   void SelectAndCopy() const;
   bool ShouldShowFreeCopy() const;
+  std::string GetSelectedTextFromContextParam();
 #endif  // defined(OHOS_EX_FREE_COPY)
 
 #if defined(OHOS_EX_TOPCONTROLS)

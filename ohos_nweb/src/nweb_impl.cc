@@ -3118,6 +3118,13 @@ void NWebImpl::UpdateAcceptLanguageInternal() {
 #endif
 
 #if defined(OHOS_EX_FREE_COPY)
+std::string NWebImpl::GetSelectedTextFromContextParam() {
+  if (nweb_delegate_) {
+    return nweb_delegate_->GetSelectedTextFromContextParam();
+  }
+  return std::string();
+}
+
 void NWebImpl::SelectAndCopy() const {
   if (nweb_delegate_ == nullptr) {
     return;
@@ -3833,9 +3840,16 @@ bool NWebImpl::IsAnyNWebIntelligentTrackingPreventionEnabled() {
 
 #if defined(OHOS_CLIPBOARD)
 std::string NWebImpl::GetSelectInfo() {
-  if (inputmethod_handler_) {
+  if (inputmethod_handler_ && !inputmethod_handler_->GetSelectInfo().empty()) {
     return inputmethod_handler_->GetSelectInfo();
   }
+
+#if defined(OHOS_EX_FREE_COPY)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          ::switches::kEnableNwebExFreeCopy)) {
+    return GetSelectedTextFromContextParam();
+  }
+#endif
   return std::string();
 }
 #endif

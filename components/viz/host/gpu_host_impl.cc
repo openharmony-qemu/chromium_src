@@ -191,6 +191,10 @@ void GpuHostImpl::ReportSlidingFrameRate(int32_t frame_rate) {
 void GpuHostImpl::SetLTPOStrategy(int32_t strategy) {
   gpu_service_remote_->SetLTPOStrategy(strategy);
 }
+
+void GpuHostImpl::SetIsFling(bool is_fling_enabled) {
+  gpu_service_remote_->SetIsFling(is_fling_enabled);
+}
 #endif
 
 void GpuHostImpl::SetProcessId(base::ProcessId pid) {

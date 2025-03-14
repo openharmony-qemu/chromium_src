@@ -263,4 +263,8 @@ interface GpuService {
   // Set ltpo strategy to gpu process
   [EnableIf=is_ohos]
   SetLTPOStrategy(int32 strategy);
+
+  // Set fling state to gpu process
+  [EnableIf=is_ohos]
+  SetIsFling(bool is_flinging_enabled);
 };

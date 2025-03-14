@@ -93,6 +93,7 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   int64_t vsync_frequency_to_update_ = 30; // vsync_to_update_ >= 30 for user experience
   bool update_vsync_frequency_ = false;
   bool reset_vsync_frequency_ = false;
+  bool last_dvsync_state_ = false;
 };
 }  // namespace viz
 

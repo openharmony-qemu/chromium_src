@@ -562,6 +562,13 @@ void OHOSAudioOutputStream::PumpSamples() {
   if (writeFailed && weakMediaSession_ && (weakMediaSession_.get()->HasOnlyOneShotPlayersPublic() ||
       weakMediaSession_.get()->GetSessionState() == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
     LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+    if (!webContent_) {
+      LOG(ERROR) << "AudioOutputStream get webContent failed.";
+      return;
+    }
+    webContent_->OneShotMediaPlayerStopped();
+#endif
     return;
   }
   SchedulePumpSamples(now);

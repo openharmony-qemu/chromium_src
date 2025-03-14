@@ -9720,6 +9720,12 @@ void WebContentsImpl::MediaPlayerGone(
 }
 #endif
 
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+void WebContentsImpl::OneShotMediaPlayerStopped() {
+  observers_.NotifyObservers(&WebContentsObserver::OneShotMediaPlayerStopped);
+}
+#endif
+
 void WebContentsImpl::MediaResized(const gfx::Size& size,
                                    const MediaPlayerId& id) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::MediaResized");

@@ -838,6 +838,8 @@ bool ProxyMain::SendCommitRequestToImplThreadIfNeeded(
   bool already_posted = max_requested_pipeline_stage_ != NO_PIPELINE_STAGE;
   max_requested_pipeline_stage_ =
       std::max(max_requested_pipeline_stage_, required_stage);
+  TRACE_EVENT1("cc", "ProxyMain::SendCommitRequestToImplThreadIfNeeded",
+               "already_posted", already_posted);
   if (already_posted)
     return false;
   ImplThreadTaskRunner()->PostTask(

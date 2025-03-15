@@ -1581,6 +1581,8 @@ class CONTENT_EXPORT RenderFrameImpl
   // false, but set to true by some tests.
   bool send_content_state_immediately_ = false;
 
+  bool viewport_meta_enabled_ = false;
+
   base::WeakPtrFactory<RenderFrameImpl> weak_factory_{this};
 };
 

@@ -144,6 +144,7 @@ void Scheduler::NotifyPaintWorkletStateChange(PaintWorkletState state) {
 }
 
 void Scheduler::SetNeedsBeginMainFrame() {
+  TRACE_EVENT0("input", "Scheduler::SetNeedsBeginMainFrame");
   state_machine_.SetNeedsBeginMainFrame();
   ProcessScheduledActions();
 }
@@ -319,6 +320,8 @@ void Scheduler::StartOrStopBeginFrames() {
   }
 
   bool needs_begin_frames = state_machine_.ShouldSubscribeToBeginFrames();
+  TRACE_EVENT1("cc", "Scheduler::StartOrStopBeginFrames", "needs_begin_frames",
+               needs_begin_frames);
   if (needs_begin_frames == observing_begin_frame_source_)
     return;
 

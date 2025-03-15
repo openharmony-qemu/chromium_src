@@ -559,6 +559,7 @@ void ProxyMain::SetNeedsAnimate() {
   if (SendCommitRequestToImplThreadIfNeeded(ANIMATE_PIPELINE_STAGE)) {
     TRACE_EVENT_INSTANT0("cc", "ProxyMain::SetNeedsAnimate",
                          TRACE_EVENT_SCOPE_THREAD);
+    TRACE_EVENT0("cc", "ProxyMain::SetNeedsAnimate");
   }
 }
 
@@ -838,8 +839,6 @@ bool ProxyMain::SendCommitRequestToImplThreadIfNeeded(
   bool already_posted = max_requested_pipeline_stage_ != NO_PIPELINE_STAGE;
   max_requested_pipeline_stage_ =
       std::max(max_requested_pipeline_stage_, required_stage);
-  TRACE_EVENT1("cc", "ProxyMain::SendCommitRequestToImplThreadIfNeeded",
-               "already_posted", already_posted);
   if (already_posted)
     return false;
   ImplThreadTaskRunner()->PostTask(

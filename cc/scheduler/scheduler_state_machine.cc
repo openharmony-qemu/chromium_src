@@ -1158,8 +1158,11 @@ bool SchedulerStateMachine::BeginFrameNeeded() const {
 bool SchedulerStateMachine::ShouldSubscribeToBeginFrames() const {
   // We can't handle BeginFrames when output surface isn't initialized.
   // TODO(brianderson): Support output surface creation inside a BeginFrame.
-  if (!HasInitializedLayerTreeFrameSink())
+  if (!HasInitializedLayerTreeFrameSink()) {
+    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
+      "not HasInitializedLayerTreeFrameSink");
     return false;
+  }
 
   // The propagation of the needsBeginFrame signal to viz is inherently racy
   // with issuing the next BeginFrame. In full-pipe mode, it is important we
@@ -1170,8 +1173,11 @@ bool SchedulerStateMachine::ShouldSubscribeToBeginFrames() const {
     return true;
 
   // If we are not visible, we don't need BeginFrame messages.
-  if (!visible_)
+  if (!visible_) {
+    TRACE_EVENT0("cc", "SchedulerStateMachine::ShouldSubscribeToBeginFrames"
+      "visible_ false");
     return false;
+  }
 
   return BeginFrameRequiredForAction() || BeginFrameNeededForVideo() ||
          ProactiveBeginFrameWanted();

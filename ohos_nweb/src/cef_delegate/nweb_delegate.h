@@ -97,6 +97,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client) override;
 
+#if BUILDFLAG(IS_OHOS)
+  void SetScreenOffset(double x, double y) override;
+#endif
+
   void Resize(uint32_t width,
               uint32_t height,
               bool isKeyboard = false) override;

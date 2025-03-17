@@ -3202,10 +3202,6 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
   prefs.custom_media_player_enabled = custom_media_player_enabled_;
 #endif // OHOS_VIDEO_ASSISTANT
 
-#ifdef OHOS_LOGGER_REPORT
-  prefs.usage_scenario = usage_scenario_type;
-#endif
-
   return prefs;
 }
 

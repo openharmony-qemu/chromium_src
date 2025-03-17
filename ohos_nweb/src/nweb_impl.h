@@ -774,6 +774,7 @@ class NWebImpl : public NWeb {
 #if defined(OHOS_EDM_POLICY)
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif
+  void SetSurfaceDensity(const double& density) override;
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

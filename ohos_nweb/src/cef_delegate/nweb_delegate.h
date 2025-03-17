@@ -646,6 +646,7 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
   void MaximizeResize() override;
+  void SetSurfaceDensity(const double& density) override;
 
  public:
   int argc_;
@@ -801,6 +802,7 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   std::string richtext_data_str_ = "";
   // The number of fingers that trigger the down event
   int  pressing_num_ = 0;
+  double display_ratio_ = 0.0;
 };
 }  // namespace OHOS::NWeb
 #endif

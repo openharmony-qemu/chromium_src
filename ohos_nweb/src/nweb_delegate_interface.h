@@ -658,6 +658,7 @@ class NWebDelegateInterface
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 #endif
   virtual void MaximizeResize() = 0;
+  virtual void SetSurfaceDensity(const double& density) = 0;
 };
 }  // namespace OHOS::NWeb
 

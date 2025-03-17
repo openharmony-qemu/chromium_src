@@ -1026,7 +1026,11 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
       // Created a richtext component
       display_ratio = richtextDisplayRatio;
     } else {
-      display_ratio = display->GetVirtualPixelRatio();
+      if (display_ratio_ == 0.0) {
+        display_ratio = display->GetVirtualPixelRatio();
+      } else {
+        display_ratio = display_ratio_;
+      }
     }
     if (display_ratio <= 0) {
       LOG(ERROR) << "Invalid display_ratio, display_ratio = " << display_ratio;
@@ -4885,6 +4889,21 @@ void NWebDelegate::MaximizeResize()
 {
   if (GetBrowser().get() && GetBrowser()->GetHost()) {
     GetBrowser()->GetHost()->MaximizeResize();
+  }
+}
+
+void NWebDelegate::SetSurfaceDensity(const double& density) {
+  display_ratio_ = density;
+  SetVirtualPixelRatio(density);
+  if (display_manager_adapter_ == nullptr) {
+    LOG(ERROR) << "Get display_manager_adapter_ failed";
+    return;
+  }
+  std::shared_ptr<DisplayAdapter> display =
+      display_manager_adapter_->GetDefaultDisplay();
+  LOG(INFO) << "SetSurfaceDensity: " << density;
+  if (display != nullptr) {
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), false);
   }
 }
 }  // namespace OHOS::NWeb

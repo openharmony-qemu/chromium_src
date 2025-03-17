@@ -113,11 +113,13 @@ class MEDIA_GPU_EXPORT CodecWrapper {
   enum class QueueStatus { kOk, kError, kTryAgainLater };
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
 
-  enum class DequeueStatus { kOk, kError, kTryAgainLater };
+  enum class DequeueStatus { kOk, kError, kTryAgainLater, kNoKey };
   DequeueStatus DequeueOutputBuffer(
       base::TimeDelta* presentation_time,
       bool* end_of_stream,
       std::unique_ptr<CodecOutputBuffer>* codec_buffer);
+
+  bool SetDecryptionConfig(void *session, bool isSecure);
 
  private:
   scoped_refptr<CodecWrapperImpl> impl_;

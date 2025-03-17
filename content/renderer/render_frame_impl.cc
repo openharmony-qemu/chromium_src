@@ -2617,7 +2617,13 @@ void RenderFrameImpl::CommitNavigation(
       *common_params, *commit_params, std::move(commit_callback),
       std::move(navigation_client_impl_), request_id,
       was_initiated_in_this_frame);
-      viewport_meta_enabled_=GetBlinkPreferences().viewport_meta_enabled;
+
+#if BUILDFLAG(IS_OHOS) && !defined(OHOS_NWEB_EX)
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnabledwebEx)) {
+    viewport_meta_enabled_=GetBlinkPreferences().viewport_meta_enabled;
+  }
+#endif
 
   // Check if the navigation being committed originated as a client redirect.
   bool is_client_redirect =
@@ -3039,10 +3045,15 @@ void RenderFrameImpl::CommitFailedNavigation(
       std::move(navigation_client_impl_), blink::GenerateRequestId(),
       false /* was_initiated_in_this_frame */);
 
-  if (viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
-    document_state->set_must_reset_scroll_and_scale_state(true);
-    viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+#if BUILDFLAG(IS_OHOS) && !defined(OHOS_NWEB_EX)
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnabledwebEx)) {
+    if (viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
+      document_state->set_must_reset_scroll_and_scale_state(true);
+      viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+    }
   }
+#endif
 
   DCHECK(!pending_loader_factories_);
   pending_loader_factories_ = std::move(new_loader_factories);

@@ -113,11 +113,13 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode ReleaseOutputBuffer(uint32_t index, bool render);
   DecoderAdapterCode QueueInputBuffer(const uint8_t* data,
                                       size_t data_size,
-                                      int64_t presentation_time);
+                                      int64_t presentation_time,
+                                      const DecryptConfig* decrypt_config);
   DecoderAdapterCode QueueInputBufferEOS();
   DecoderAdapterCode DequeueOutputBuffer(base::TimeDelta* presentation_time,
                                          uint32_t& index,
                                          bool& eos);
+  DecoderAdapterCode SetDecryptionConfig(void *session, bool isSecure);
   static void DestoryNativeWindow(void* window);
   bool CheckHasCreated() { return hasCreated_; }
   int32_t GetConfigWidth() const { return width_; }
@@ -142,6 +144,7 @@ class MediaCodecDecoderBridgeImpl {
     signal_->isDecoderFlushing_ = false;
     return;
   }
+  DecoderAdapterCode SetAVCencInfo(uint32_t index, const DecryptConfig* decrypt_config);
 
   base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
   std::atomic<bool> isRunning_ = false;

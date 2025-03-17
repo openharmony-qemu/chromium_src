@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include "decoder_format_adapter_impl.h"
+#include "audio_cenc_info_adapter.h"
 
 #include "base/logging.h"
 #include "base/task/task_runner.h"
@@ -17,6 +18,8 @@
 #ifdef OHOS_VIDEO_ASSISTANT
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #endif // OHOS_VIDEO_ASSISTANT
+
+#include "media/filters/ohos/ohos_audio_decoder.h"
 
 using namespace media;
 using namespace OHOS::NWeb;
@@ -372,10 +375,64 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::PushInbufferDecEos(
   return videoDecoder_->QueueInputBufferDec(index, 0, 0, 0, bufferFlag);
 }
 
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetAVCencInfo(uint32_t index, const DecryptConfig* decrypt_config)
+{
+  if (videoDecoder_ == nullptr) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetAVCencInfo decoder is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  if (decrypt_config == nullptr) {
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+
+  std::vector<uint32_t> clearHeaderLens;
+  std::vector<uint32_t> payLoadLens;
+  std::shared_ptr<OHOSAudioCencInfo> cenc_info = std::make_shared<OHOSAudioCencInfo>();
+  cenc_info->SetKeyId(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(decrypt_config->key_id().data())));
+  cenc_info->SetKeyIdLen(decrypt_config->key_id().size());
+  cenc_info->SetIv(const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(decrypt_config->iv().data())));
+  cenc_info->SetIvLen(decrypt_config->iv().size());
+
+  switch (decrypt_config->encryption_scheme()) {
+    case EncryptionScheme::kUnencrypted:
+      cenc_info->SetAlgo(uint32_t(DrmCencAlgorithmAdapter::DRM_ALG_CENC_UNENCRYPTED));
+      break;
+    case EncryptionScheme::kCenc:
+      cenc_info->SetAlgo(uint32_t(DrmCencAlgorithmAdapter::DRM_ALG_CENC_AES_CTR));
+      break;
+    case EncryptionScheme::kCbcs:
+      cenc_info->SetAlgo(uint32_t(DrmCencAlgorithmAdapter::DRM_ALG_CENC_AES_CBC));
+      break;
+    default:
+      // Currently the kernel only supports AES-CTR and AES-CBC encryption algorithm modes
+      cenc_info->SetAlgo(uint32_t(DrmCencAlgorithmAdapter::DRM_ALG_CENC_UNENCRYPTED));
+  }
+
+  if (decrypt_config->encryption_pattern()) {
+    cenc_info->SetEncryptedBlockCount(decrypt_config->encryption_pattern()->crypt_byte_block());
+    cenc_info->SetSkippedBlockCount(decrypt_config->encryption_pattern()->skip_byte_block());
+  }
+
+  // The kernel does not involve offset, the default setting is 0
+  cenc_info->SetFirstEncryptedOffset(0);
+  for (size_t i = 0; i < decrypt_config->subsamples().size(); i++) {
+    clearHeaderLens.push_back(decrypt_config->subsamples()[i].clear_bytes);
+    payLoadLens.push_back(decrypt_config->subsamples()[i].cypher_bytes);
+  }
+
+  cenc_info->SetClearHeaderLens(clearHeaderLens);
+  cenc_info->SetPayLoadLens(payLoadLens);
+  // The web kernel sets keyid and iv by default, so DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET is selected by default here
+  cenc_info->SetMode(uint32_t(DrmCencInfoModeAdapter::DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET));
+  return videoDecoder_->SetAVCencInfo(index, cenc_info);
+}
+
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
     const uint8_t* data,
     size_t data_size,
-    int64_t presentation_time) {
+    int64_t presentation_time,
+    const DecryptConfig* decrypt_config) {
   LOG(DEBUG) << "MediaCodecDecoderBridgeImpl::QueueInputBuffer";
   if (signal_ == nullptr || signal_->isOnError_) {
     return DecoderAdapterCode::DECODER_ERROR;
@@ -398,6 +455,10 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
   if (memcpy_s(buffer.addr, bufferSize, data, inputSize) != EOK) {
     LOG(ERROR)
         << "MediaCodecDecoderBridgeImpl::QueueInputBuffer memcpy failed.";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  if (decrypt_config && SetAVCencInfo(index, decrypt_config) ==
+    DecoderAdapterCode::DECODER_ERROR) {
     return DecoderAdapterCode::DECODER_ERROR;
   }
   DecoderAdapterCode ret = PushInbufferDec(index, inputSize, presentation_time);
@@ -610,3 +671,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetVideoSurface(
       NWebNativeWindowTracker::Get()->GetNativeWindow(video_surface_id_));
 }
 #endif // OHOS_VIDEO_ASSISTANT
+
+DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetDecryptionConfig(void *session, bool isSecure)
+{
+  if (videoDecoder_ == nullptr) {
+    LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetDecryptionConfig decoder is NULL";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return videoDecoder_->SetDecryptionConfig(session, isSecure);
+}

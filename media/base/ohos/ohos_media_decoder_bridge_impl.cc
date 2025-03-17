@@ -428,7 +428,7 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetAVCencInfo(uint32_t index, co
   cenc_info->SetMode(uint32_t(DrmCencInfoModeAdapter::DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET));
   DecoderAdapterCode ret = videoDecoder_->SetAVCencInfo(index, cenc_info);
   if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
-    LOG(ERROR) << "SetDecryptionConfig api version not support";
+    LOG(ERROR) << "SetAVCencInfo api version not support";
     return DecoderAdapterCode::DECODER_ERROR;
   }
   return ret;

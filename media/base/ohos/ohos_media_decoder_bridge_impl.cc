@@ -20,6 +20,7 @@
 #endif // OHOS_VIDEO_ASSISTANT
 
 #include "media/filters/ohos/ohos_audio_decoder.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 
 using namespace media;
 using namespace OHOS::NWeb;
@@ -425,7 +426,12 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetAVCencInfo(uint32_t index, co
   cenc_info->SetPayLoadLens(payLoadLens);
   // The web kernel sets keyid and iv by default, so DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET is selected by default here
   cenc_info->SetMode(uint32_t(DrmCencInfoModeAdapter::DRM_CENC_INFO_KEY_IV_SUBSAMPLES_SET));
-  return videoDecoder_->SetAVCencInfo(index, cenc_info);
+  DecoderAdapterCode ret = videoDecoder_->SetAVCencInfo(index, cenc_info);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    LOG(ERROR) << "SetDecryptionConfig api version not support";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return ret;
 }
 
 DecoderAdapterCode MediaCodecDecoderBridgeImpl::QueueInputBuffer(
@@ -678,5 +684,10 @@ DecoderAdapterCode MediaCodecDecoderBridgeImpl::SetDecryptionConfig(void *sessio
     LOG(ERROR) << "MediaCodecDecoderBridgeImpl::SetDecryptionConfig decoder is NULL";
     return DecoderAdapterCode::DECODER_ERROR;
   }
-  return videoDecoder_->SetDecryptionConfig(session, isSecure);
+  DecoderAdapterCode ret = videoDecoder_->SetDecryptionConfig(session, isSecure);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    LOG(ERROR) << "SetDecryptionConfig api version not support";
+    return DecoderAdapterCode::DECODER_ERROR;
+  }
+  return ret;
 }

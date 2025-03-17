@@ -391,7 +391,7 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
 bool CodecWrapperImpl::SetDecryptionConfig(void *session, bool isSecure)
 {
   auto status = codec_->SetDecryptionConfig(session, isSecure);
-   return status == DecoderAdapterCode::DECODER_OK;
+  return status == DecoderAdapterCode::DECODER_OK;
 }
 
 CodecWrapper::CodecWrapper(

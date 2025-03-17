@@ -1392,7 +1392,7 @@ interface NetworkContext {
   InitPRParallelPreloadMgr();
 
   [EnableIf=is_ohos_prpp]
-  StartPage(string url, uint64 addr_web_handle) => (string page_origin_url);
+  StartPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle) => (string page_origin_url);
 
   [EnableIf=is_ohos_prpp]
   StopPage(uint64 addr_web_handle);

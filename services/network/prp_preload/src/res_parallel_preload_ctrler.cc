@@ -16,14 +16,15 @@ namespace ohos_prp_preload {
 ResParallelPreloadCtrler::ResParallelPreloadCtrler(const std::string& url,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const PRPPCtrlerTimeoutCB& timeout_cb) :
-    url_(url), sth_task_runner_(sth_task_runner), timeout_cb_(timeout_cb) { }
+    url_(url), networkAnonymizationKey_(networkAnonymizationKey),
+    sth_task_runner_(sth_task_runner), timeout_cb_(timeout_cb) { }
 
 bool ResParallelPreloadCtrler::Init(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
     const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb) {
   res_req_info_updater_ = base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
-    url_, sth_task_runner_, disk_cache_backend_factory,
+    url_, networkAnonymizationKey, sth_task_runner_, disk_cache_backend_factory,
     base::BindRepeating(&ResParallelPreloadCtrler::OnResPreloadInfos, weak_factory_.GetWeakPtr())));
   if (res_req_info_updater_ == nullptr) {
     LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::ResParallelPreloadCtrler new ResRequestInfoUpdater failed";

@@ -61,8 +61,15 @@ int DiskCacheEntry::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheEntry::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache == nullptr) {
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult create_result =
-      cache_->Backend()->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
   rv = create_result.net_error();
 
   if (rv != net::ERR_IO_PENDING) {
@@ -73,6 +80,9 @@ int DiskCacheEntry::OpenCallback(int rv) {
 
 int DiskCacheEntry::WriteCallback(int rv) {
   if (rv != net::OK) {
+    if (cache == nullptr) {
+      return rv;
+    }
     cache_->EntryWriteComplete(this);
     return rv;
   }
@@ -85,6 +95,9 @@ int DiskCacheEntry::WriteCallback(int rv) {
 }
 
 int DiskCacheEntry::IOComplete(int rv) {
+  if (cache == nullptr) {
+    return rv;
+  }
   cache_->EntryWriteComplete(this);
   return rv;
 }
@@ -142,8 +155,15 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheReadHelper::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache == nullptr) {
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult result =
-      cache_->Backend()->OpenEntry(url_, net::HIGHEST, std::move(callback));
+    backend->OpenEntry(url_, net::HIGHEST, std::move(callback));
   rv = result.net_error();
 
   if (rv != net::ERR_IO_PENDING)
@@ -156,6 +176,9 @@ int DiskCacheReadHelper::ReadCallback(int rv) {
     LOG(DEBUG) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
     if (!entry_loaded_cb_.is_null()) {
       entry_loaded_cb_.Run(std::string());
+    }
+    if (cache == nullptr) {
+      return rv;
     }
     cache_->EntryReadComplete();
     return rv;
@@ -179,6 +202,9 @@ int DiskCacheReadHelper::IOComplete(int rv) {
     }
   }
 
+  if (cache == nullptr) {
+    return rv;
+  }
   cache_->EntryReadComplete();
   return rv;
 }

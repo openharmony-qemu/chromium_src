@@ -64,6 +64,7 @@
 #include "net/ssl/ssl_config_service.h"
 
 #if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
 #include "base/logging.h"
 #include "ohos_adapter_helper.h"
 #endif

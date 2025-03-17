@@ -1819,9 +1819,10 @@ void NetworkContext::InitPRParallelPreloadMgr() {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().Init(base::SingleThreadTaskRunner::GetCurrentDefault());
 }
 
-void NetworkContext::StartPage(const std::string& url, uint64_t addr_web_handle,
+void NetworkContext::StartPage(const std::string& url,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle,
     StartPageCallback page_origin_cb) {
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartPage(url,
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartPage(url, networkAnonymizationKey,
     url_request_context()->GetWeakPtr(), addr_web_handle, std::move(page_origin_cb));
 }
 

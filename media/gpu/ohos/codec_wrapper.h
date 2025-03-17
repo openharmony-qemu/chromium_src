@@ -110,10 +110,10 @@ class MEDIA_GPU_EXPORT CodecWrapper {
 
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
 
-  enum class QueueStatus { kOk, kError, kTryAgainLater };
+  enum class QueueStatus { kOk, kError, kTryAgainLater, kNoKey };
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
 
-  enum class DequeueStatus { kOk, kError, kTryAgainLater, kNoKey };
+  enum class DequeueStatus { kOk, kError, kTryAgainLater };
   DequeueStatus DequeueOutputBuffer(
       base::TimeDelta* presentation_time,
       bool* end_of_stream,

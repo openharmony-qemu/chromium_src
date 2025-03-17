@@ -229,7 +229,7 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
 
   status = codec_->QueueInputBuffer(buffer.data(), buffer.data_size(),
                                     buffer.timestamp().ToInternalValue(),
-				    buffer.decrypt_config());
+				                            buffer.decrypt_config());
   TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result", status);                                    
   switch (status) {
     case DecoderAdapterCode::DECODER_OK:
@@ -390,8 +390,8 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
 
 bool CodecWrapperImpl::SetDecryptionConfig(void *session, bool isSecure)
 {
-    auto status = codec_->SetDecryptionConfig(session, isSecure);
-    return status == DecoderAdapterCode::DECODER_OK;
+  auto status = codec_->SetDecryptionConfig(session, isSecure);
+   return status == DecoderAdapterCode::DECODER_OK;
 }
 
 CodecWrapper::CodecWrapper(
@@ -464,8 +464,8 @@ scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
 
 bool CodecWrapper::SetDecryptionConfig(void *session, bool isSecure)
 {
-    LOG(INFO) << __func__;
-    return impl_->SetDecryptionConfig(session, isSecure);
+  LOG(INFO) << __func__;
+  return impl_->SetDecryptionConfig(session, isSecure);
 }
 
 }  // namespace media

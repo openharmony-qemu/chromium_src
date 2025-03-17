@@ -4903,7 +4903,7 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;
   if (display != nullptr) {
-    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), false);
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation());
   }
 }
 }  // namespace OHOS::NWeb

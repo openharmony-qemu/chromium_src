@@ -229,7 +229,7 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
 
   status = codec_->QueueInputBuffer(buffer.data(), buffer.data_size(),
                                     buffer.timestamp().ToInternalValue(),
-				                            buffer.decrypt_config());
+	                                  buffer.decrypt_config());
   TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result", status);                                    
   switch (status) {
     case DecoderAdapterCode::DECODER_OK:

@@ -132,6 +132,8 @@ bool MojoVideoDecoder::SupportsDecryption() const {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
   return true;
+#elif BUILDFLAG(IS_OHOS) && defined(OHOS_ENABLE_CDM)
+  return true;
 #else
   return false;
 #endif

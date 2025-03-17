@@ -206,6 +206,10 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     if (callback_) {
       callback_->OnReceiveValue(data);
     }
+    if(weakNWebDelegate_.expired()) {
+      LOG(INFO) << "weakNWebDelegate_ expired";
+      return;
+    }
     // post this instance to ui to destroy
     auto delegate = weakNWebDelegate_.lock();
     if (delegate) {

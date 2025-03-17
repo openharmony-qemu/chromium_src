@@ -197,6 +197,9 @@ void OhosVideoDecoder::Initialize(const VideoDecoderConfig& config,
   }
 
   base::BindPostTaskToCurrentDefault(std::move(init_cb)).Run(DecoderStatus::Codes::kOk);
+  if (first_init) {
+    last_width_ = width;
+  }
 }
 
 void OhosVideoDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
@@ -381,7 +384,7 @@ void OhosVideoDecoder::OnCodecConfigured(
       EnterTerminalState(State::kError, "Unable to config codec");
       return;
   }
-  if (codec->SetDecryptionConfig(mediaKeySession_, requires_secure_codec_) ==
+  if (mediaKeySession_ && codec->SetDecryptionConfig(mediaKeySession_, requires_secure_codec_) ==
       DecoderAdapterCode::DECODER_ERROR) {
     LOG(ERROR) << "OhosVideoDecoder::SetDecryptionConfig failed.";
     EnterTerminalState(State::kError, "Unable to initialize codec");

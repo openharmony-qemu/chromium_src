@@ -2620,7 +2620,7 @@ void RenderFrameImpl::CommitNavigation(
 
 #if BUILDFLAG(IS_OHOS) && !defined(OHOS_NWEB_EX)
   const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line && command_line->HasSwitch(switches::kEnabledwebEx)) {
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebEx)) {
     viewport_meta_enabled_=GetBlinkPreferences().viewport_meta_enabled;
   }
 #endif
@@ -3047,7 +3047,7 @@ void RenderFrameImpl::CommitFailedNavigation(
 
 #if BUILDFLAG(IS_OHOS) && !defined(OHOS_NWEB_EX)
   const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line && command_line->HasSwitch(switches::kEnabledwebEx)) {
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebEx)) {
     if (viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
       document_state->set_must_reset_scroll_and_scale_state(true);
       viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;

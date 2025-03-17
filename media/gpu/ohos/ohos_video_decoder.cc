@@ -138,7 +138,7 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
     // Cancel previously registered callback (if any).
     self->event_cb_registration_.reset();
     self->ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
-      self->ohos_crypto_context_ = nullptr;
+    self->ohos_crypto_context_ = nullptr;
   }
 
   if (self->reset_cb_)

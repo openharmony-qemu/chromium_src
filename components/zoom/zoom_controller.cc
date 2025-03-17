@@ -22,6 +22,9 @@
 #include "content/public/common/page_type.h"
 #include "net/base/url_util.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
+#ifdef OHOS_AI
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
 
 using content::BrowserThread;
 
@@ -397,7 +400,9 @@ void ZoomController::UpdateState(const std::string& host) {
     for (auto& observer : observers_)
       observer.OnZoomChanged(zoom_change_data);
 #ifdef OHOS_AI
-    web_contents()->OnOverlayZoomChanged();
+    if (auto impl = static_cast<content::WebContentsImpl*>(web_contents())) {
+      impl->OnOverlayZoomChanged();
+    }
 #endif
   } else {
     // TODO(wjmaclean) Should we consider having HostZoomMap send both old and

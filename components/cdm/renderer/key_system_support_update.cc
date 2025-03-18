@@ -40,6 +40,11 @@
 #include "components/cdm/renderer/android_key_system_info.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if defined(OHOS_ENABLE_WISEPLAY)
+#include "components/cdm/renderer/wiseplay_key_system_info.h"
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
+
 using media::CdmSessionType;
 using media::EmeFeatureSupport;
 using media::KeySystemInfo;
@@ -460,6 +465,68 @@ void AddWidevine(const media::mojom::KeySystemCapabilityPtr& capability,
 }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
 
+
+#if defined(OHOS_ENABLE_WISEPLAY)
+void AddWiseplay(const media::mojom::KeySystemCapabilityPtr& capability,
+                 bool can_persist_data,
+                 KeySystemInfos* key_systems) {
+  if (!can_persist_data) {
+    LOG(INFO) << "[DRM]AddWiseplay, Persistent data not supported.";
+    return;
+  }
+  if (!capability) {
+    LOG(ERROR) << "[DRM]AddWiseplay, capability is nullptr.";
+    return;
+  }
+  SupportedCodecs codecs = media::EME_CODEC_NONE;
+  SupportedCodecs hw_secure_codecs = media::EME_CODEC_NONE;
+  base::flat_set<::media::EncryptionScheme> encryption_schemes;
+  base::flat_set<::media::EncryptionScheme> hw_secure_encryption_schemes;
+  base::flat_set<CdmSessionType> session_types;
+  base::flat_set<CdmSessionType> hw_secure_session_types;
+  if (capability->sw_secure_capability) {
+    codecs = GetSupportedCodecs(capability->sw_secure_capability.value());
+    encryption_schemes = capability->sw_secure_capability->encryption_schemes;
+    session_types = UpdatePersistentLicenseSupport(
+        can_persist_data, capability->sw_secure_capability->session_types);
+    if (!base::Contains(session_types, CdmSessionType::kTemporary)) {
+      LOG(INFO) << "[DRM]AddWiseplay, Temporary sessions must be supported.";
+      return;
+    }
+    LOG(INFO) << "[DRM]AddWiseplay, Software secure Wiseplay supported";
+  }
+  if (capability->hw_secure_capability) {
+    const bool force_support_clear_lead =
+        media::kHardwareSecureDecryptionForceSupportClearLead.Get();
+    hw_secure_codecs = GetSupportedCodecs(
+        capability->hw_secure_capability.value(), !force_support_clear_lead);
+    hw_secure_encryption_schemes =
+        capability->hw_secure_capability->encryption_schemes;
+    hw_secure_session_types = UpdatePersistentLicenseSupport(
+        can_persist_data, capability->hw_secure_capability->session_types);
+    if (!base::Contains(hw_secure_session_types, CdmSessionType::kTemporary)) {
+      LOG(INFO) << "[DRM]AddWiseplay, Temporary sessions must be supported.";
+      return;
+    }
+    LOG(INFO) << "[DRM]AddWiseplay, Hardware secure Wiseplay supported";
+  }
+  using Robustness = WiseplayKeySystemInfo::Robustness;
+  auto max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  auto max_video_robustness = Robustness::SW_SECURE_DECODE;
+  auto persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  auto distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
+  persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
+  if (key_systems) {
+    key_systems->emplace_back(std::make_unique<WiseplayKeySystemInfo>(
+        codecs, encryption_schemes, session_types, hw_secure_codecs,
+        hw_secure_encryption_schemes, hw_secure_session_types,
+        max_audio_robustness, max_video_robustness, persistent_state_support,
+        distinctive_identifier_support));
+  }
+}
+#endif
+
 void AddExternalClearKey(
     const media::mojom::KeySystemCapabilityPtr& /*capability*/,
     KeySystemInfos* key_systems) {
@@ -560,6 +627,14 @@ void OnKeySystemSupportUpdated(
       continue;
     }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+
+#if defined(OHOS_ENABLE_WISEPLAY)
+    if (key_system == media::kWiseplayKeySystem) {
+      LOG(INFO) << "[DRM]" << __func__ << ", add wiseplay.";
+      AddWiseplay(capability, can_persist_data, &key_systems);
+      continue;
+    }
+#endif
 
     if (key_system == media::kExternalClearKeyKeySystem) {
       AddExternalClearKey(capability, &key_systems);

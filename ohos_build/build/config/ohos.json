@@ -341,6 +341,15 @@
     "default": "true"
 },
 {
+    "name": "OHOS_ENABLE_WISEPLAY",
+    "owner": "",
+    "desc": "",
+    "effect":"main gn blink_core other",
+    "genCommandline": "default",
+    "dependence": "",
+    "default": "true"
+},
+{
     "name": "OHOS_ENCRYPT",
     "owner": "",
     "desc": "encrypt for cookie",

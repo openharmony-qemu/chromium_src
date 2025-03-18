@@ -108,6 +108,11 @@ mojom("mojom") {
   }
 
   enabled_features = []
+
+  if (defined(ohos_enable_wiseplay) && ohos_enable_wiseplay) {
+    enabled_features += [ "ohos_enable_wiseplay" ]
+  }
+
   if (is_linux || is_chromeos) {
     enabled_features += [ "is_linux_or_chromeos" ]
   }

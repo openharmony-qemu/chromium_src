@@ -29,6 +29,9 @@
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
+#if defined(OHOS_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 
 namespace media {
 
@@ -230,6 +233,12 @@ class ClearKeyKeySystemInfo : public KeySystemInfo {
 static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {
   if (key_system == kWidevineKeySystem)
     return true;
+
+#if defined(OHOS_ENABLE_WISEPLAY)
+  if (key_system == kWiseplayKeySystem) {
+    return true;
+  }
+#endif
 
   if (key_system == kClearKeyKeySystem) {
     return true;

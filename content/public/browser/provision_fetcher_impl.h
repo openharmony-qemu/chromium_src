@@ -41,6 +41,11 @@ class CONTENT_EXPORT ProvisionFetcherImpl
   void Retrieve(const GURL& default_url,
                 const std::string& request_data,
                 RetrieveCallback callback) final;
+#if defined(OHOS_ENABLE_WISEPLAY)
+  void RetrieveWiseplayLicense(const GURL& default_url,
+                const std::string& request_data,
+                RetrieveCallback callback) final;
+#endif
 
  private:
   // Callback for media::ProvisionFetcher::Retrieve().

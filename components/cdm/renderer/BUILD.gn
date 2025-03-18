@@ -34,6 +34,13 @@ static_library("renderer") {
     ]
   }
 
+  if (defined(ohos_enable_wiseplay) && ohos_enable_wiseplay) {
+    sources += [
+      "wiseplay_key_system_info.cc",
+      "wiseplay_key_system_info.h",
+    ]
+  }
+
   if (enable_widevine) {
     sources += [
       "widevine_key_system_info.cc",

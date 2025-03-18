@@ -14,6 +14,7 @@ static constexpr base::TimeDelta MAX_FILTER_INFO_TIME = base::Seconds(2);
 
 namespace ohos_prp_preload {
 ResParallelPreloadCtrler::ResParallelPreloadCtrler(const std::string& url,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const PRPPCtrlerTimeoutCB& timeout_cb) :
     url_(url), networkAnonymizationKey_(networkAnonymizationKey),

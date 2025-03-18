@@ -52,6 +52,10 @@ class SystemProperties {
 
   bool is_emulator() { return product_model_ == kProductModeEmulator; }
 
+  bool is_wearable() {
+    return device_type_ == ProductDeviceType::DEVICE_TYPE_WEARABLE;
+  }
+
   int32_t major_version() { return major_version_; }
 
   int32_t senior_version() { return senior_version_; }
@@ -154,6 +158,10 @@ BASE_EXPORT bool IsPcDevice() {
 
 BASE_EXPORT bool IsEmulator() {
   return SystemProperties::Instance()->is_emulator();
+}
+
+BASE_EXPORT bool IsWearableDevice() {
+  return SystemProperties::Instance()->is_wearable();
 }
 
 BASE_EXPORT int32_t MajorVersion() {

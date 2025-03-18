@@ -61,7 +61,7 @@ int DiskCacheEntry::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheEntry::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
-  if (cache == nullptr) {
+  if (cache_ == nullptr) {
     return rv;
   }
   disk_cache::Backend* backend = cache_->Backend();
@@ -80,7 +80,7 @@ int DiskCacheEntry::OpenCallback(int rv) {
 
 int DiskCacheEntry::WriteCallback(int rv) {
   if (rv != net::OK) {
-    if (cache != nullptr) {
+    if (cache_ != nullptr) {
       cache_->EntryWriteComplete(this);
     }
     return rv;
@@ -94,7 +94,7 @@ int DiskCacheEntry::WriteCallback(int rv) {
 }
 
 int DiskCacheEntry::IOComplete(int rv) {
-  if (cache != nullptr) {
+  if (cache_ != nullptr) {
     cache_->EntryWriteComplete(this);
   }
   return rv;
@@ -153,7 +153,7 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheReadHelper::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
-  if (cache == nullptr) {
+  if (cache_ == nullptr) {
     return rv;
   }
   disk_cache::Backend* backend = cache_->Backend();
@@ -175,7 +175,7 @@ int DiskCacheReadHelper::ReadCallback(int rv) {
     if (!entry_loaded_cb_.is_null()) {
       entry_loaded_cb_.Run(std::string());
     }
-    if (cache != nullptr) {
+    if (cache_ != nullptr) {
       cache_->EntryReadComplete();
     }
     return rv;
@@ -199,7 +199,7 @@ int DiskCacheReadHelper::IOComplete(int rv) {
     }
   }
 
-  if (cache != nullptr) {
+  if (cache_ != nullptr) {
     cache_->EntryReadComplete();
   }
   return rv;

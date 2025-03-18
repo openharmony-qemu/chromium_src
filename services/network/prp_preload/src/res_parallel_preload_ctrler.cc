@@ -24,7 +24,7 @@ bool ResParallelPreloadCtrler::Init(const scoped_refptr<DiskCacheBackendFactory>
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb) {
   res_req_info_updater_ = base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
-    url_, networkAnonymizationKey, sth_task_runner_, disk_cache_backend_factory,
+    url_, networkAnonymizationKey_, sth_task_runner_, disk_cache_backend_factory,
     base::BindRepeating(&ResParallelPreloadCtrler::OnResPreloadInfos, weak_factory_.GetWeakPtr())));
   if (res_req_info_updater_ == nullptr) {
     LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::ResParallelPreloadCtrler new ResRequestInfoUpdater failed";

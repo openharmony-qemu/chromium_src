@@ -30,7 +30,9 @@
 #include "media/base/provision_fetcher.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
-
+#if defined(OHOS_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 #include "ohos_adapter_helper.h"
 
 namespace media {
@@ -229,9 +231,6 @@ bool OHOSDrmAdapterUtil::IsSupported2(const std::string& name,
   }
   return false;
 }
-#ifdef OHOS_ENABLE_WISEPLAY
-constexpr char kWiseplayKeySystem[] = "com.wiseplay.drm";
-#endif
 
 class KeySystemManager {
  public:
@@ -251,14 +250,10 @@ class KeySystemManager {
 KeySystemManager::KeySystemManager() {
   key_system_uuid_map_[kWidevineKeySystem] =
       UUID(kWidevineUuid, kWidevineUuid + std::size(kWidevineUuid));
-#ifdef OHOS_ENABLE_WISEPLAY
-  UUID uuidWiseplay =
-      OHOSDrmAdapterUtil::GetInstance().GetUUID(kWiseplayKeySystem);
-  if (uuidWiseplay.size() > 0) {
-    key_system_uuid_map_[kWiseplayKeySystem] = uuidWiseplay;
-  }
+#if defined(OHOS_ENABLE_WISEPLAY)
+  key_system_uuid_map_[kWiseplayKeySystem] =
+      UUID(kWiseplayUuid, kWiseplayUuid + std::size(kWiseplayUuid));
 #endif
-  // com.wiseplay.drm
   OHOSMediaDrmBridgeClient* client = GetMediaDrmBridgeClient();
   if (client) {
     client->AddKeySystemUUIDMappings(&key_system_uuid_map_);
@@ -431,6 +426,14 @@ void OHOSDrmCallback::OnStorageClearInfoForLoadFail(
   if (media_drm_bridge_) {
     media_drm_bridge_->OnStorageClearInfoForLoadFail(session_id);
   }
+}
+
+void OHOSDrmCallback::OnMediaLicenseReady(bool success) {
+#if defined(OHOS_ENABLE_WISEPLAY)
+  if (media_drm_bridge_) {
+    media_drm_bridge_->OnMediaLicenseReady(success);
+  }
+#endif
 }
 
 // static
@@ -639,6 +642,11 @@ bool OHOSMediaDrmBridge::IsSecureCodecRequired() {
   if (base::ranges::equal(scheme_uuid_, kWidevineUuid)) {
     return SECURITY_LEVEL_1 == GetSecurityLevel();
   }
+#if defined(OHOS_ENABLE_WISEPLAY)
+  if (base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    return SECURITY_LEVEL_1 == GetSecurityLevel();
+  }
+#endif
   return false;
 }
 
@@ -693,6 +701,44 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoReadyCB(
   std::move(media_crypto_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
+
+#if defined(OHOS_ENABLE_WISEPLAY)
+std::vector<uint8_t> OHOSMediaDrmBridge::GetSchemeUUID() {
+  return scheme_uuid_;
+}
+
+void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
+    OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb) {
+  LOG(INFO) << "[DRM]" << __func__;
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB,
+                       weak_factory_.GetWeakPtr(),
+                       std::move(media_crypto_and_license_ready_cb)));
+    return;
+  }
+  if (!media_crypto_and_license_ready_cb) {
+    media_crypto_and_license_ready_cb_.Reset();
+    return;
+  }
+
+  DCHECK(!media_crypto_and_license_ready_cb_);
+  media_crypto_and_license_ready_cb_ = std::move(media_crypto_and_license_ready_cb);
+
+  if (!ohos_media_key_session_) {
+    LOG(INFO) << "[DRM]" << __func__ << ", key session not ready.";
+    return;
+  }
+  if (!isLicenseReady_) {
+    LOG(INFO) << "[DRM]" << __func__ << ", license not ready.";
+    return;
+  }
+  
+  std::move(media_crypto_and_license_ready_cb_)
+      .Run(ohos_media_key_session_, IsSecureCodecRequired());
+}
+#endif
 
 void OHOSMediaDrmBridge::OnOHOSMediaCryptoReady(void* session) {
   DCHECK(task_runner_->BelongsToCurrentThread());
@@ -929,6 +975,21 @@ void OHOSMediaDrmBridge::OnSessionExpirationUpdate(
                      base::Time::FromDoubleT(expiry_time_ms / MS_IN_SECOND)));
 }
 
+#if defined(OHOS_ENABLE_WISEPLAY)
+void OHOSMediaDrmBridge::OnMediaLicenseReady(bool success) {
+  LOG(INFO) << "[DRM]" << __func__;
+  DCHECK(task_runner_->BelongsToCurrentThread());
+  isLicenseReady_ = true;
+  if (!media_crypto_and_license_ready_cb_) {
+    LOG(INFO) << "[DRM]" << __func__ << ", cb not set.";
+    return;
+  }
+
+  std::move(media_crypto_and_license_ready_cb_)
+      .Run(ohos_media_key_session_, IsSecureCodecRequired());
+}
+#endif
+
 OHOSMediaDrmBridge::OHOSMediaDrmBridge(
     const std::vector<uint8_t>& scheme_uuid,
     const std::string& origin_id,
@@ -948,7 +1009,8 @@ OHOSMediaDrmBridge::OHOSMediaDrmBridge(
       session_keys_change_cb_(session_keys_change_cb),
       session_expiration_update_cb_(session_expiration_update_cb),
       task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()),
-      media_crypto_context_(this) {
+      media_crypto_context_(this),
+      ohos_media_key_session_(nullptr) {
   LOG(INFO) << "[DRM]" << __func__;
   ohos_drm_adapter_ =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDrmAdapter();
@@ -960,10 +1022,12 @@ OHOSMediaDrmBridge::OHOSMediaDrmBridge(
     if (scheme_uuid == GetKeySystemManager()->GetUUID(kWidevineKeySystem)) {
       ohos_drm_adapter_->CreateKeySystem(kWidevineKeySystem, origin_id,
                                          security_level);
-#ifdef OHOS_ENABLE_WISEPLAY
+#if defined(OHOS_ENABLE_WISEPLAY)
     } else if (scheme_uuid ==
                GetKeySystemManager()->GetUUID(kWiseplayKeySystem)) {
-      ohos_drm_adapter_->CreateKeySystem(kWiseplayKeySystem, security_level);
+      LOG(INFO) << "[DRM]" << __func__ << ", Create wiseplay,";
+      ohos_drm_adapter_->CreateKeySystem(kWiseplayKeySystem, "",
+                                         security_level);
 #endif
     }
   }
@@ -1006,6 +1070,21 @@ void OHOSMediaDrmBridge::SendProvisioningRequest(
   DCHECK(create_fetcher_cb_);
   provision_fetcher_ = create_fetcher_cb_.Run();
 
+  if (!provision_fetcher_) {
+    LOG(ERROR) << "[DRM]" << __func__ << ", create fetcher failed.";
+    return;
+  }
+#if defined(OHOS_ENABLE_WISEPLAY)
+  if (base::ranges::equal(scheme_uuid_, kWiseplayUuid)) {
+    LOG(INFO) << "[DRM]" << __func__ << ", RetrieveWiseplayLicense.";
+    provision_fetcher_->RetrieveWiseplayLicense(
+        default_url, request_data,
+        base::BindOnce(&OHOSMediaDrmBridge::ProcessProvisionResponse,
+                       weak_factory_.GetWeakPtr()));
+    return;
+  }
+#endif
+  LOG(INFO) << "[DRM]" << __func__ << ", Retrieve.";
   provision_fetcher_->Retrieve(
       default_url, request_data,
       base::BindOnce(&OHOSMediaDrmBridge::ProcessProvisionResponse,

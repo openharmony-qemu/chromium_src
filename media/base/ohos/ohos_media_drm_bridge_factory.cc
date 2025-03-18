@@ -11,6 +11,9 @@
 #include "media/base/key_system_names.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
+#if defined(OHOS_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 
 namespace media {
 
@@ -44,18 +47,21 @@ void OHOSMediaDrmBridgeFactory::Create(
   DCHECK(!scheme_uuid_.empty());
 
   if (cdm_config.key_system == kWidevineKeySystem) {
-    LOG(INFO) << "[DRM]" << __func__;
     security_level_ = cdm_config.use_hw_secure_codecs
                           ? OHOSMediaDrmBridge::SECURITY_LEVEL_1
                           : OHOSMediaDrmBridge::SECURITY_LEVEL_3;
     LOG(INFO) << "[DRM]" << __func__ << " security_level_: " << security_level_;
-  } else if (media::IsExternalClearKey(cdm_config.key_system)) {
-    security_level_ = OHOSMediaDrmBridge::SECURITY_LEVEL_DEFAULT;
-  } else if (!cdm_config.use_hw_secure_codecs) {
+#if defined(OHOS_ENABLE_WISEPLAY)
+  } else if (cdm_config.key_system == kWiseplayKeySystem) {
+    security_level_ = cdm_config.use_hw_secure_codecs
+                          ? OHOSMediaDrmBridge::SECURITY_LEVEL_1
+                          : OHOSMediaDrmBridge::SECURITY_LEVEL_3;
+    LOG(INFO) << "[DRM]" << __func__ << " security_level_: " << security_level_;
+#endif
+  } else {
+    LOG(ERROR) << "[DRM]" << __func__ << ", invalid cdm config " << cdm_config.key_system;
     auto error_message =
-        cdm_config.key_system +
-        " may require use_video_overlay_for_embedded_encrypted_video";
-    NOTREACHED() << error_message;
+        "Invalid cdm config for " + cdm_config.key_system;
     std::move(cdm_created_cb).Run(nullptr, error_message);
     return;
   }
@@ -103,8 +109,6 @@ void OHOSMediaDrmBridgeFactory::CreateMediaDrmBridge(
     LOG(INFO) << "[DRM]" << __func__;
     return;
   }
-  LOG(INFO) << "[DRM]" << __func__;
-  std::move(cdm_created_cb_).Run(ohos_media_drm_bridge_, "");
 
   LOG(INFO) << "[DRM]" << __func__;
   ohos_media_drm_bridge_->SetOHOSMediaCryptoReadyCB(

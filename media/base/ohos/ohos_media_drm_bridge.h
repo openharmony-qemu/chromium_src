@@ -110,6 +110,12 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
                      const std::string& error_message);
 
   void SetOHOSMediaCryptoReadyCB(OHOSMediaCryptoReadyCB media_crypto_ready_cb);
+#if defined(OHOS_ENABLE_WISEPLAY)
+  std::vector<uint8_t> GetSchemeUUID();
+  void SetOHOSMediaCryptoAndLicenseReadyCB(
+      OHOSMediaCryptoReadyCB media_license_ready_cb);
+#endif
+
   void OnOHOSMediaCryptoReady(void* session);
 
   void OnProvisionRequest(const std::string& default_url,
@@ -157,6 +163,9 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   void OnSessionExpirationUpdate(const std::string& session_id,
                                  uint64_t expiry_time_ms);
 
+#if defined(OHOS_ENABLE_WISEPLAY)
+  void OnMediaLicenseReady(bool success);
+#endif
  private:
   friend class OHOSMediaDrmBridgeFactory;
   friend class base::DeleteHelper<OHOSMediaDrmBridge>;
@@ -205,6 +214,11 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   SessionExpirationUpdateCB session_expiration_update_cb_;
 
   OHOSMediaCryptoReadyCB media_crypto_ready_cb_;
+#if defined(OHOS_ENABLE_WISEPLAY)
+  OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb_;
+  bool isLicenseReady_ = false;
+#endif
+
   CallbackRegistry<EventCB::RunType> event_callbacks_;
   CdmPromiseAdapter cdm_promise_adapter_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
@@ -253,6 +267,7 @@ class OHOSDrmCallback : public OHOS::NWeb::DrmCallbackAdapter {
   void OnStorageLoadInfo(const std::string& session_id) override;
   void OnStorageClearInfoForKeyRelease(const std::string& session_id) override;
   void OnStorageClearInfoForLoadFail(const std::string& session_id) override;
+  void OnMediaLicenseReady(bool success) override;
 
  private:
   const raw_ptr<OHOSMediaDrmBridge> media_drm_bridge_;

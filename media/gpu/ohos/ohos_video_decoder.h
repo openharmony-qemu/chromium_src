@@ -30,6 +30,7 @@
 #include "media/gpu/ohos/codec_wrapper.h"
 #include "media/gpu/ohos/video_frame_factory.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#include "media/base/ohos/ohos_media_crypto_context.h"
 
 namespace media {
 
@@ -85,7 +86,7 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool NeedsBitstreamConversion() const override;
   bool CanReadWithoutStalling() const override;
   int GetMaxDecodeRequests() const override;
-
+  bool SupportsDecryption() const override { return true; }
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurface(int32_t widget_id) override;
 #endif // OHOS_VIDEO_ASSISTANT
@@ -97,6 +98,19 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
                    CodecAllocator* codec_allocator,
                    std::unique_ptr<VideoFrameFactory> video_frame_factory,
                    scoped_refptr<gpu::RefCountedLock> drdc_lock);
+
+  // Set up |cdm_context| as part of initialization.  Guarantees that |init_cb|
+  // will be called depending on the outcome, though not necessarily before this
+  // function returns.
+  void SetCdm(CdmContext* cdm_context, InitCB init_cb);
+
+  // Called when the Cdm provides |media_crypto|.  Will signal |init_cb| based
+  // on the result, and set the codec config properly.
+  void OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec);
+
+  // Callback for the CDM to notify |this|. Resets |waiting_for_key_| to false,
+  // indicating that MediaCodec might now accept buffers.
+  void OnCdmContextEvent(CdmContext::Event event);
 
   enum class State { kInitializing, kRunning, kError, kSurfaceDestroyed };
 
@@ -188,6 +202,20 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
 
   base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
   base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};
+
+  // ohos cdm object
+  raw_ptr<OHOSMediaCryptoContext> ohos_crypto_context_;
+
+  std::unique_ptr<CallbackRegistration> event_cb_registration_;
+
+  bool requires_secure_codec_ = false;
+
+  // Whether we've seen MediaCodec return MEDIA_CODEC_NO_KEY indicating that
+  // the corresponding key was not set yet, and MediaCodec will not accept
+  // buffers until OnCdmContextEvent() is called with kHasAdditionalUsableKey.
+  bool waiting_for_key_ = false;
+
+  void* mediaKeySession_ = nullptr;
 };
 
 }  // namespace media

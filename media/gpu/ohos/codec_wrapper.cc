@@ -56,6 +56,7 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
       bool* end_of_stream,
       std::unique_ptr<CodecOutputBuffer>* codec_buffer);
   bool ReleaseCodecOutputBuffer(int64_t id, bool render);
+  bool SetDecryptionConfig(void *session, bool isSecure);
 
  private:
   enum class State {
@@ -227,7 +228,8 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
   DecoderAdapterCode status;
 
   status = codec_->QueueInputBuffer(buffer.data(), buffer.data_size(),
-                                    buffer.timestamp().ToInternalValue());
+                                    buffer.timestamp().ToInternalValue(),
+	                                  buffer.decrypt_config());
   TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result", status);                                    
   switch (status) {
     case DecoderAdapterCode::DECODER_OK:
@@ -386,6 +388,12 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   return true;
 }
 
+bool CodecWrapperImpl::SetDecryptionConfig(void *session, bool isSecure)
+{
+  auto status = codec_->SetDecryptionConfig(session, isSecure);
+  return status == DecoderAdapterCode::DECODER_OK;
+}
+
 CodecWrapper::CodecWrapper(
     CodecSurfacePair codec_surface_pair,
     OutputReleasedCB output_buffer_release_cb,
@@ -452,6 +460,12 @@ void CodecWrapper::SetVideoSurface(int32_t widget_id) {
 
 scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
   return impl_->SurfaceBundle();
+}
+
+bool CodecWrapper::SetDecryptionConfig(void *session, bool isSecure)
+{
+  LOG(INFO) << __func__;
+  return impl_->SetDecryptionConfig(session, isSecure);
 }
 
 }  // namespace media

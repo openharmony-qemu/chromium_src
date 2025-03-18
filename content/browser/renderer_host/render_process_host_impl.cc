@@ -4492,6 +4492,12 @@ bool RenderProcessHostImpl::IsSuitableHost(
     RenderProcessHost* host,
     const IsolationContext& isolation_context,
     const SiteInfo& site_info) {
+#ifdef OHOS_RENDER_PROCESS_MODE
+  if (base::ohos::IsWearableDevice()) {
+    return true;
+  }
+#endif
+
   BrowserContext* browser_context =
       isolation_context.browser_or_resource_context().ToBrowserContext();
   DCHECK(browser_context);
@@ -5074,9 +5080,17 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
   // Make sure the chosen process is in the correct StoragePartition for the
   // SiteInstance.
+#ifdef OHOS_RENDER_PROCESS_MODE
+  if (!base::ohos::IsWearableDevice()) {
+    CHECK(render_process_host->InSameStoragePartition(
+        browser_context->GetStoragePartition(site_instance,
+                                             false /* can_create */)));
+  }
+#else
   CHECK(render_process_host->InSameStoragePartition(
       browser_context->GetStoragePartition(site_instance,
                                            false /* can_create */)));
+#endif
 
   MAYBEVLOG(2) << __func__ << "(" << site_info << ") selected process host "
                << render_process_host->GetID() << " using assignment \""

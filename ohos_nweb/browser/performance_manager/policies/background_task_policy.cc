@@ -190,6 +190,31 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
   MaybeChangeBackgroundTask(page_node);
 }
 
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
+  LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
+  if (page_node == nullptr) {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << " page_node is null return";
+    return;
+  }
+  LOG(INFO) << BG_TASK_TAG << "OnDecrementAudioNum IsMediaPlaying: " << page_node->IsMediaPlaying()
+            << " IsAudible: " << page_node->IsAudible();
+
+  media_playing_num_ -= static_cast<int>(page_node->IsMediaPlaying());
+  if (media_playing_num_ < 0) {
+    media_playing_num_ = 0;
+  }
+  audio_state_num_ -= static_cast<int>(page_node->IsAudible());
+  if (audio_state_num_ < 0) {
+    audio_state_num_ = 0;
+  }
+  
+  LOG(INFO) << BG_TASK_TAG << " OnDecrementAudioNum media_playing_num_: " << media_playing_num_
+            << "audio_state_num_: "<< audio_state_num_;
+  MaybeChangeBackgroundTask(page_node);
+}
+#endif
+
 void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession page_node=" << page_node;
   if (page_node == nullptr) {

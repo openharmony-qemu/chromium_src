@@ -149,6 +149,12 @@ void PageNodeImpl::SetIsMediaPlaying(bool is_media_playing) {
     is_media_playing_.SetAndMaybeNotify(this, is_media_playing);
   }
 }
+
+void PageNodeImpl::OneShotMediaPlayerStopped() {
+  for (auto* observer : GetObservers()) {
+    observer->OnDecrementAudioNum(this);
+  }
+}
 #endif
 
 void PageNodeImpl::SetUkmSourceId(ukm::SourceId ukm_source_id) {

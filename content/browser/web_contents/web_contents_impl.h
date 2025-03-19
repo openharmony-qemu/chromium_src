@@ -1292,6 +1292,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
       const WebContentsObserver::MediaPlayerInfo& media_info,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason);
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+  void OneShotMediaPlayerStopped() override;
+#endif
   // This will be called before playback is started, check
   // GetCurrentlyPlayingVideoCount if you need this when playback starts.
   void MediaResized(const gfx::Size& size, const MediaPlayerId& id);

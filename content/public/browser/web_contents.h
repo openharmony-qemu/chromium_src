@@ -1558,6 +1558,9 @@ class WebContents : public PageNavigator,
 #if BUILDFLAG(IS_OHOS)
   virtual void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) = 0;
 #endif
+#ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
+  virtual void OneShotMediaPlayerStopped() = 0;
+#endif
 #ifdef OHOS_DRAG_DROP
   virtual void ClearContextMenu() = 0;
 #endif //OHOS_DRAG_DROP

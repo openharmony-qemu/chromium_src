@@ -131,7 +131,9 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   // Set media player surface and register listener
   void SetPlayerSurface();
 
+#if defined(OHOS_MEDIA)
   uint64_t uv__get_addr_tag(void* addr);
+#endif
 
   const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;

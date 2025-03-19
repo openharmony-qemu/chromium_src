@@ -14,6 +14,10 @@
 
 namespace cc {
 
+#ifdef OHOS_SCROLLBAR
+static const float kRefreshDeltaPerFrame = 66.7f;  // floor(1000 / 15f);
+#endif
+
 std::unique_ptr<ScrollbarAnimationController>
 ScrollbarAnimationController::CreateScrollbarAnimationControllerAndroid(
     ElementId scroll_element_id,
@@ -153,6 +157,18 @@ bool ScrollbarAnimationController::Animate(base::TimeTicks now) {
     DCHECK(animation_change_ != AnimationChange::NONE);
     if (last_awaken_time_.is_null())
       last_awaken_time_ = now;
+#ifdef OHOS_SCROLLBAR
+    base::TimeDelta delta = now - last_animate_time_;
+    float progress = AnimationProgressAtTime(now);
+    // 50ms draw once
+    if (!(delta.InMillisecondsF() < kRefreshDeltaPerFrame && progress < 1.0f)) {
+      last_animate_time_ = now;
+      RunAnimationFrame(progress);
+    }
+#else
+    float progress = AnimationProgressAtTime(now);
+    RunAnimationFrame(progress);
+#endif
 
     float progress = AnimationProgressAtTime(now);
     RunAnimationFrame(progress);

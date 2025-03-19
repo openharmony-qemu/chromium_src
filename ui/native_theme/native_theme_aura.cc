@@ -45,8 +45,8 @@ namespace {
 #ifdef OHOS_SCROLLBAR
 constexpr int kOverlayScrollbarMinimumLength = 48;
 constexpr int kOverlayScrollbarBorderPatchWidth = 0;
-//Scrollbar's width,include hot zone(20) + visible width(8) + marginRight(4)
-constexpr int kOverlayScrollbarHotSize = 20;
+//Scrollbar's width,include hot zone(0) + visible width(8) + marginRight(4)
+constexpr int kOverlayScrollbarHotSize = 0;
 constexpr int kOverlayScrollbarHotSizePc = 0;
 constexpr float kOverlayScrollbarCornerRatio = 1.2f;
 int scrollbar_hot_size_ = kOverlayScrollbarHotSize;

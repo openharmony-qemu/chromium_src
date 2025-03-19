@@ -106,7 +106,9 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
       HandleHover(accessibilityId);
       break;
     case ax::mojom::Event::kLayoutComplete:
+    case ax::mojom::Event::kLocationChanged:
       HandleContentChanged(accessibilityId);
+      break;
     default:
       break;
   }
@@ -196,7 +198,7 @@ void BrowserAccessibilityManagerOHOS::HandleContentChanged(int64_t accessibility
     // node that changed.
     SendAccessibilityEvent(accessibilityId,
                            OHOS::NWeb::AccessibilityEventType::CHANGE);
-  } else if (content_changed_events_ == kMaxContentChangedEventsToFire) {
+  } else {
     // If it's equal to the max event count, fire the event on the
     // root instead.
     SendAccessibilityEvent(GetRootAccessibilityId(),

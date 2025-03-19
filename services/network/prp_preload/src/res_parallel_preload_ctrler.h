@@ -13,6 +13,7 @@ using PRPPCtrlerTimeoutCB = base::RepeatingCallback<void(const std::string& url)
 class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrler> {
  public:
   ResParallelPreloadCtrler(const std::string& url,
+                           const net::NetworkAnonymizationKey& networkAnonymizationKey,
                            const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                            const PRPPCtrlerTimeoutCB& timeout_cb);
   ~ResParallelPreloadCtrler() = default;
@@ -39,6 +40,7 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
     const std::set<std::string>& need_record_header_urls);
   void OnTimeout();
   std::string url_;
+  const net::NetworkAnonymizationKey& networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<ResRequestInfoUpdater> res_req_info_updater_;
   scoped_refptr<ResPreloadScheduler> res_preload_scheduler_;

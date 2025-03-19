@@ -9596,7 +9596,8 @@ network::mojom::NetworkContext* NavigationRequest::GetNetworkContext() const
 }
 
 using StartPageCallback__ = base::OnceCallback<void(const std::string&)>;
-void NavigationRequest::StartPage(uint64_t addr_web_handle)
+void NavigationRequest::StartPage(const net::NetworkAnonymizationKey& networkAnonymizationKey,
+                                  uint64_t addr_web_handle)
 {
   network::mojom::NetworkContext* network_context = GetNetworkContext();
   if (!network_context) {
@@ -9604,7 +9605,7 @@ void NavigationRequest::StartPage(uint64_t addr_web_handle)
   }
 
   addr_web_handle_ = addr_web_handle;
-  network_context->StartPage(common_params_->url.spec(), addr_web_handle_,
+  network_context->StartPage(common_params_->url.spec(), networkAnonymizationKey, addr_web_handle_,
     mojo::WrapCallbackWithDefaultInvokeIfNotRun(base::BindOnce(&NavigationRequest::OnGetIsolation,
     weak_factory_.GetWeakPtr()), ORIGIN));
 }

@@ -415,7 +415,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 #endif
 #if BUILDFLAG(IS_OHOS_PRPP)
   void InitPRParallelPreloadMgr() override;
-  void StartPage(const std::string& url, uint64_t addr_web_handle,
+  void StartPage(const std::string& url,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey, uint64_t addr_web_handle,
     StartPageCallback page_origin_cb) override;
   void StopPage(uint64_t addr_web_handle) override;
   void SetParam(mojom::URLLoaderFactoryParamsPtr params) override;

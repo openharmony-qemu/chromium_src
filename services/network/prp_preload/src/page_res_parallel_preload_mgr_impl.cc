@@ -87,6 +87,7 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 }
 
 void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
+	const net::NetworkAnonymizationKey& networkAnonymizationKey,
     base::WeakPtr<net::URLRequestContext> url_request_context,
 	uint64_t addr_web_handle, PageOriginCallback callback) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
@@ -126,7 +127,7 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
   }
 
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-	new (std::nothrow) ResParallelPreloadCtrler(main_url, sth_task_runner_,
+	new (std::nothrow) ResParallelPreloadCtrler(main_url, networkAnonymizationKey, sth_task_runner_,
 	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
   if (rp_preload_ctrler == nullptr ||
       !rp_preload_ctrler->Init(disk_cache_backend_factory_, net_task_runner_, url_request_context,

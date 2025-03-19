@@ -475,7 +475,9 @@ void Navigator::DidNavigate(
   FrameTreeNode* frame_tree_node = render_frame_host->frame_tree_node();
 #if BUILDFLAG(IS_OHOS_PRPP)
   if (navigation_request) {
-    navigation_request->StartPage(reinterpret_cast<int64_t>(this));
+    const net::NetworkAnonymizationKey& networkAnonymizationKey =
+        GetNetworkAnonymizationKey(frame_tree_node, navigation_request.get());
+    navigation_request->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
   }
 #endif
   FrameTree& frame_tree = frame_tree_node->frame_tree();
@@ -735,7 +737,9 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   DCHECK_EQ(&(frame_tree_node->frame_tree()), &controller_.frame_tree());
 
 #if BUILDFLAG(IS_OHOS_PRPP)
-  request->StartPage(reinterpret_cast<int64_t>(this));
+  const net::NetworkAnonymizationKey& networkAnonymizationKey =
+      GetNetworkAnonymizationKey(frame_tree_node, request.get());
+  request->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
 #endif
 
   metrics_data_ = std::make_unique<NavigationMetricsData>(
@@ -1080,7 +1084,9 @@ void Navigator::OnBeginNavigation(
       false /* is_browser_initiated_before_unload */);
 
 #if BUILDFLAG(IS_OHOS_PRPP)
-  navigation_request->StartPage(reinterpret_cast<int64_t>(this));
+  const net::NetworkAnonymizationKey& networkAnonymizationKey =
+      GetNetworkAnonymizationKey(frame_tree_node, navigation_request);
+  navigation_request->StartPage(networkAnonymizationKey, reinterpret_cast<int64_t>(this));
 #endif
 
   LogRendererInitiatedBeforeUnloadTime(

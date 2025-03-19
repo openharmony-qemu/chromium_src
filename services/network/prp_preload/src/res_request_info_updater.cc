@@ -5,6 +5,7 @@
 #include "services/network/prp_preload/src/res_request_info_updater.h"
 
 #include "base/logging.h"
+#include "base/ohos/sys_info_utils.h"
 #include "net/http/http_util.h"
 #include "services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
 
@@ -17,10 +18,11 @@ constexpr int32_t MAX_PRECONNECT_COUNT = 5;
 
 namespace ohos_prp_preload {
 ResRequestInfoUpdater::ResRequestInfoUpdater(const std::string& url,
+  const net::NetworkAnonymizationKey& networkAnonymizationKey,
   const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
   const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
   const ResPreloadInfosCB& preload_infos_cb) : preload_infos_cb_(preload_infos_cb) {
-    res_req_info_cache_mgr_ = base::WrapRefCounted(new (std::nothrow) ResReqInfoCacheMgr(url,
+    res_req_info_cache_mgr_ = base::WrapRefCounted(new (std::nothrow) ResReqInfoCacheMgr(url, networkAnonymizationKey,
       sth_task_runner, disk_cache_backend_factory,
       base::BindRepeating(&ResRequestInfoUpdater::OnResRequestInfoCacheLoaded, weak_factory_.GetWeakPtr())));
     if (res_req_info_cache_mgr_ == nullptr) {
@@ -57,7 +59,8 @@ void ResRequestInfoUpdater::Stop() {
 }
 
 void ResRequestInfoUpdater::OnResRequestInfoCacheLoaded(
-    const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list) {
+    const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey) {
   if (preload_infos_cb_.is_null()) {
     return;
   }
@@ -116,9 +119,16 @@ void ResRequestInfoUpdater::OnResRequestInfoCacheLoaded(
     }
 
     if (need_add_connect) {
-      prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
-        info->allow_credentials(),
-        net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(origin_url))});
+      if (base::ohos::IsMobileDevice() == true) {
+        prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
+          info->allow_credentials(),
+          net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(origin_url))});
+      } else {
+        prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
+          info->allow_credentials(),
+          networkAnonymizationKey});
+      }
+      
     }
 
     // build tree step

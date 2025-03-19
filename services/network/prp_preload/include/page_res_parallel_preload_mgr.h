@@ -6,6 +6,7 @@
 #define SERVICES_NETWORK_PRP_PRELOAD_INCLUDE_PAGE_RES_PARALLEL_PRELOAD_MGR_H
 
 #include "base/task/thread_pool.h"
+#include "net/base/network_anonymization_key.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 
 namespace net {
@@ -37,6 +38,7 @@ class PRParallelPreloadMgr {
 
   // start preload page sub_request
   virtual void StartPage(const std::string& url,
+                         const net::NetworkAnonymizationKey& networkAnonymizationKey,
                          base::WeakPtr<net::URLRequestContext> url_request_context,
                          uint64_t addr_web_handle,
                          PageOriginCallback callback) = 0;

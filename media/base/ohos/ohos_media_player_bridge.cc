@@ -568,6 +568,9 @@ void OHOSMediaPlayerBridge::OnPlayerInterruptEvent(int32_t value) {
 
 int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
   int32_t fd = open(path.c_str(), O_RDONLY);
+#if defined(OHOS_MEDIA)
+  fdsan_exchange_owner_tag(fd, 0, uv__get_addr_tag((void *)&fd));
+#endif // defined(OHOS_MEDIA)
   if (fd < 0) {
     LOG(ERROR) << "SetFdSource error:Open file failed";
     return -1;
@@ -580,13 +583,29 @@ int32_t OHOSMediaPlayerBridge::SetFdSource(const std::string& path) {
   }
   int64_t length = static_cast<int64_t>(buffer.st_size);
   int32_t ret = player_->SetSource(fd, 0, length);
+#if defined(OHOS_MEDIA)
+  fdsan_close_with_tag(fd, uv__get_addr_tag((void *)&fd));
+#else
   (void)close(fd);
+#endif // defined(OHOS_MEDIA)
   return ret;
 }
 
 bool OHOSMediaPlayerBridge::IsAudible(float volume) {
   return volume > 0;
 }
+
+#if defined(OHOS_MEDIA)
+uint64_t OHOSMediaPlayerBridge::uv__get_addr_tag(void* addr) {
+  uint64_t tag = 0;
+
+  if (addr != NULL) {
+    tag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_FILE, (uint64_t)addr);
+  }
+
+  return tag;
+}
+#endif // defined(OHOS_MEDIA)
 
 #ifdef OHOS_VIDEO_ASSISTANT
 void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {

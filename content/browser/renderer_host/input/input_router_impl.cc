@@ -83,7 +83,6 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
 #if BUILDFLAG(IS_OHOS)
 constexpr uint64_t GESTURE_MOVE_PERIOD = 250000000;
 const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10025;
-const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC = 10012;
 #endif
 }  // namespace
 
@@ -165,11 +164,7 @@ void InputRouterImpl::SendGestureEvent(
     prePerfTimeStamp_ = timeStamp_;
     LOG(DEBUG) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate success";
     client_->GetWidgetInputHandler()->TryStartFling();
-    if (base::ohos::IsPcDevice()) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .CreateSocPerfClientAdapter()
-        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, true);
-    } else {
+    if (base::ohos::IsMobileDevice()) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
@@ -178,11 +173,7 @@ void InputRouterImpl::SendGestureEvent(
              WebInputEvent::Type::kGestureScrollEnd) {
     LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
     client_->GetWidgetInputHandler()->TryFinishFling();
-    if (base::ohos::IsPcDevice()) {
-      OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .CreateSocPerfClientAdapter()
-        ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, false);
-    } else {
+    if (base::ohos::IsMobileDevice()) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);

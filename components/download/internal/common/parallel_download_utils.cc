@@ -6,7 +6,11 @@
 
 #include "base/metrics/field_trial_params.h"
 #include "base/strings/string_number_conversions.h"
+
+#if BUILDFLAG(IS_OHOS)
 #include "base/ohos/sys_info_utils.h"
+#endif
+
 #include "base/time/time.h"
 #include "components/download/public/common/download_features.h"
 #include "components/download/public/common/download_save_info.h"

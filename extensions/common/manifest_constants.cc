@@ -239,9 +239,9 @@ const char kBackgroundSpecificationInvalidForManifestV3[] =
 const char kCannotAccessAboutUrl[] =
     "Cannot access \"*\" at origin \"*\". Extension must have permission to "
     "access the frame's origin, and matchAboutBlank must be true.";
-const char kCannotAccessChromeUrl[] = "Cannot access a chrome:// URL";
+const char kCannotAccessChromeUrl[] = "Cannot access a arkweb:// URL";
 const char kCannotAccessExtensionUrl[] =
-    "Cannot access a chrome-extension:// URL of different extension";
+    "Cannot access a arkweb-extension:// URL of different extension";
 // This deliberately does not contain a URL. Otherwise an extension can parse
 // error messages and determine the URLs of open tabs without having appropriate
 // permissions to see these URLs.
@@ -265,7 +265,7 @@ const char kCannotScriptNtp[] = "The New Tab Page cannot be scripted.";
 const char kCannotScriptSigninPage[] =
     "The sign-in page cannot be scripted.";
 const char16_t kChromeStyleInvalidForManifestV3[] =
-    u"The chrome_style option cannot be used with manifest version 3.";
+    u"The arkweb_style option cannot be used with manifest version 3.";
 const char kChromeVersionTooLow[] =
     "This extension requires * version * or greater.";
 const char kDeclarativeNetRequestPermissionNeeded[] =
@@ -323,7 +323,7 @@ const char16_t kInvalidBackgroundPersistentNoPage[] =
 const char kInvalidBrowserAction[] =
     "Invalid value for 'browser_action'.";
 const char kInvalidChromeURLOverrides[] =
-    "Invalid value for 'chrome_url_overrides'.";
+    "Invalid value for 'arkweb_url_overrides'.";
 const char16_t kInvalidCommandsKey[] = u"Invalid value for 'commands'.";
 const char16_t kInvalidContentCapabilities[] =
     u"Invalid value for 'content_capabilities'.";
@@ -473,11 +473,9 @@ const char kInvalidLinkedAppIcons[] =
 const char kInvalidManifest[] = "Manifest file is invalid";
 const char kInvalidManifestKey[] = "Invalid value for '*'.";
 const char kInvalidManifestVersionMissingKey[] =
-    "Missing 'manifest_version' key. Its value must be an integer *. "
-    "See developer.chrome.com/*/manifestVersion for details.";
+    "Missing 'manifest_version' key. Its value must be an integer *. ";
 const char kInvalidManifestVersionUnsupported[] =
-    "Invalid value for 'manifest_version'. Must be an integer *. "
-    "See developer.chrome.com/*/manifestVersion for details.";
+    "Invalid value for 'manifest_version'. Must be an integer *. ";
 const char kInvalidMatch[] =
     "Invalid value for 'content_scripts[*].matches[*]': *";
 const char kInvalidMatchCount[] =
@@ -488,7 +486,7 @@ const char kInvalidMatches[] =
 const char16_t kInvalidMIMETypes[] = u"Invalid value for 'mime_types'";
 const char16_t kInvalidMimeTypesHandler[] = u"Invalid value for 'mime_types'.";
 const char16_t kInvalidMinimumChromeVersion[] =
-    u"Invalid value for 'minimum_chrome_version'.";
+    u"Invalid value for 'minimum_arkweb_version'.";
 const char kInvalidName[] =
     "Required value 'name' is missing or invalid.";
 const char16_t kInvalidName16[] =
@@ -517,7 +515,7 @@ const char16_t kInvalidOptionsPageInHostedApp[] =
     u"Invalid value for 'options_page'. Hosted apps must specify an "
     "absolute URL.";
 const char kInvalidOptionsUIChromeStyle[] =
-    "Invalid value for 'options_ui.chrome_style'.";
+    "Invalid value for 'options_ui.arkweb_style'.";
 const char kInvalidOptionsUIOpenInTab[] =
     "Invalid value for 'options_ui.open_in_tab'.";
 const char kInvalidPageAction[] =
@@ -542,9 +540,9 @@ const char kInvalidSandboxedPage[] =
     "Invalid value for 'sandbox.pages[*]'.";
 const char kInvalidSearchEngineMissingKeys[] =
     "Missing or invalid value for "
-    "'chrome_settings_overrides.search_provider.*.";
+    "'arkweb_settings_overrides.search_provider.*.";
 const char kInvalidSearchEngineURL[] =
-    "Invalid URL [*] for 'chrome_settings_overrides.search_provider'.";
+    "Invalid URL [*] for 'arkweb_settings_overrides.search_provider'.";
 const char16_t kInvalidShortName[] = u"Invalid value for 'short_name'.";
 const char kInvalidStartupOverrideURL[] =
     "Invalid value for overriding startup URL: '[*]'.";
@@ -646,8 +644,7 @@ const char kManifestParseError[] =
     "Manifest is not valid JSON.";
 const char kManifestUnreadable[] = "Manifest file is missing or unreadable";
 const char kManifestV2IsDeprecatedWarning[] =
-    "Manifest version 2 is deprecated, and support will be removed in 2023. "
-    "See https://developer.chrome.com/blog/mv2-transition/ for more details.";
+    "Manifest version 2 is deprecated, and support will be removed in 2023. ";
 const char kManifestVersionTooHighWarning[] =
     "The maximum currently-supported manifest version is *, but this is *.  "
     "Certain features may not work as expected.";
@@ -698,7 +695,7 @@ const char16_t kTransientBackgroundConflictsWithPersistentBackground[] =
     u"The 'transientBackground' permission cannot be used with a persistent "
     "background page.";
 const char kTtsGenderIsDeprecated[] =
-    "Voice gender is deprecated and values will be ignored starting in Chrome "
+    "Voice gender is deprecated and values will be ignored starting in arkweb "
     "71";
 const char kUnrecognizedManifestKey[] = "Unrecognized manifest key '*'.";
 const char kUnrecognizedManifestProperty[] =

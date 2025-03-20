@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors
+// Copyright 2017 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,10 +7,8 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
-#include <tuple>
 
 #include "base/compiler_specific.h"
-#include "base/memory/raw_ptr.h"
 #include "v8/include/libplatform/libplatform.h"
 #include "v8/include/v8.h"
 
@@ -50,12 +48,8 @@ class MockArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
       : v8::ArrayBuffer::Allocator(), currently_allocated_(0) {}
 
   void* Allocate(size_t length) override {
-    lock_guard<mutex> mtx_locker(mtx_);
-    if (length + currently_allocated_ > kAllocationLimit) {
-      return nullptr;
-    }
-    currently_allocated_ += length;
-    return allocator_->Allocate(length);
+    void* data = AllocateUninitialized(length);
+    return data == nullptr ? data : memset(data, 0, length);
   }
 
   void* AllocateUninitialized(size_t length) override {
@@ -64,13 +58,15 @@ class MockArrayBufferAllocator : public v8::ArrayBuffer::Allocator {
       return nullptr;
     }
     currently_allocated_ += length;
-    return allocator_->AllocateUninitialized(length);
+    return malloc(length);
   }
 
   void Free(void* ptr, size_t length) override {
     lock_guard<mutex> mtx_locker(mtx_);
     currently_allocated_ -= length;
-    return allocator_->Free(ptr, length);
+    // We need to free before we unlock, otherwise currently_allocated_ will
+    // be innacurate.
+    free(ptr);
   }
 };
 
@@ -100,6 +96,9 @@ struct Environment {
         v8::platform::InProcessStackDumping::kDisabled, nullptr);
 
     v8::V8::InitializePlatform(platform_.get());
+#ifdef V8_SANDBOX
+    v8::V8::InitializeSandbox();
+#endif
     v8::V8::Initialize();
     v8::Isolate::CreateParams create_params;
 
@@ -113,7 +112,7 @@ struct Environment {
   std::unique_ptr<MockArrayBufferAllocator> mock_arraybuffer_allocator;
   mutex mtx;
   std::thread terminator_thread;
-  raw_ptr<v8::Isolate> isolate;
+  v8::Isolate* isolate;
   std::unique_ptr<v8::Platform> platform_;
   time_point<steady_clock> start_time;
   bool is_running = true;
@@ -162,7 +161,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   env->start_time = steady_clock::now();
   env->mtx.unlock();
 
-  std::ignore = local_script->Run(context);
+  ALLOW_UNUSED_LOCAL(local_script->Run(context));
 
   lock_guard<mutex> mtx_locker(env->mtx);
   env->is_running = false;

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -423,7 +423,8 @@ class Converter {
   void WriteLut8(const ICCA2B0Lut8&);
   void WriteA2B0TagCommon();
   void WriteTagSize(const char (&tag)[4], const size_t size);
-  void WriteBigEndian(uint32_t num);
+  template <typename T>
+  void WriteBigEndian(const T num);
   void WriteTagHeader(const uint32_t tag, const uint32_t len);
 
   // Write num_fields zeroes to fill the space used by ignored or reserved

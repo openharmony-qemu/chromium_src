@@ -1,11 +1,6 @@
-// Copyright 2019 The Chromium Authors
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "testing/libfuzzer/fuzzers/mach/mach_message_converter.h"
 
@@ -14,8 +9,8 @@
 
 #include <utility>
 
-#include "base/apple/mach_logging.h"
 #include "base/containers/buffer_iterator.h"
+#include "base/mac/mach_logging.h"
 #include "base/mac/scoped_mach_msg_destroy.h"
 
 namespace mach_fuzzer {
@@ -49,7 +44,7 @@ SendablePort ConvertPort(const MachPortType& port_proto) {
   SendablePort port;
   kern_return_t kr = mach_port_allocate(
       mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
-      base::apple::ScopedMachReceiveRight::Receiver(port.receive_right).get());
+      base::mac::ScopedMachReceiveRight::Receiver(port.receive_right).get());
   MACH_CHECK(kr == KERN_SUCCESS, kr) << "mach_port_allocate";
 
   port.name = port.receive_right.get();

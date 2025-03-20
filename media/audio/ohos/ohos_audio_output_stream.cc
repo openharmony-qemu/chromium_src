@@ -318,7 +318,7 @@ void OHOSAudioOutputStream::Stop() {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
   }
-  if (!audio_renderer_->Pause()) {
+  if (!audio_renderer_->Stop()) {
     ReportError();
   }
 }
@@ -587,7 +587,7 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
 void OHOSAudioOutputStream::SchedulePumpSamples(base::TimeTicks now) {
   // the audio syterm also have a schedule to read the data,
   // so we need to write it faster to solve underrun problem.
-  auto maxSleepTime = base::Microseconds(10); 
+  auto maxSleepTime = base::Microseconds(10);
   auto sleepTime = GetCurrentStreamTime() - now;
   if (sleepTime > maxSleepTime) {
     sleepTime = maxSleepTime;
@@ -632,6 +632,6 @@ void OHOSAudioOutputStream::FlushData() {
     LOG(INFO) << "OHOSAudioOutputStream::FlushData !callback_";
     return;
   }
-  callback_->OnMoreData(delay, now, {}, audio_bus_.get());
+  (void)callback_->OnMoreData(delay, now, {}, audio_bus_.get());
 }
 }  // namespace media

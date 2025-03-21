@@ -6353,11 +6353,15 @@ NavigationRequest::CheckCredentialedSubresource() const {
   }
 
   // Warn the user about the request being blocked.
-  const char* console_message =
-      "Subresource requests whose URLs contain embedded credentials (e.g. "
-      "`https://user:pass@host/`) are blocked. See "
-      "https://www.chromestatus.com/feature/5669008342777856 for more "
-      "details.";
+#ifdef OHOS_DEVTOOLS
+  const char* console_message = "Subresource requests whose URLs contain embedded credentials (e.g. "
+                                "`https://user:pass@host/`) are blocked.";
+#else
+  const char* console_message = "Subresource requests whose URLs contain embedded credentials (e.g. "
+                                "`https://user:pass@host/`) are blocked. See "
+                                "https://www.chromestatus.com/feature/5669008342777856 for more "
+                                "details.";
+#endif
   parent->AddMessageToConsole(blink::mojom::ConsoleMessageLevel::kWarning,
                               console_message);
   return CredentialedSubresourceCheckResult::BLOCK_REQUEST;

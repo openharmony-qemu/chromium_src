@@ -7601,13 +7601,18 @@ void WebContentsImpl::RunJavaScriptDialog(
           render_frame_host->GetOutermostMainFrame()->GetLastCommittedOrigin();
       suppress_this_message |= is_different_origin_subframe;
       if (is_different_origin_subframe) {
-        GetPrimaryMainFrame()->AddMessageToConsole(
-            blink::mojom::ConsoleMessageLevel::kWarning,
+        GetPrimaryMainFrame()->AddMessageToConsole(blink::mojom::ConsoleMessageLevel::kWarning,
             base::StringPrintf(
+#ifdef OHOS_DEVTOOLS
+                "A different origin subframe tried to create a JavaScript "
+                "dialog. This is no longer allowed and was blocked."
+#else
                 "A different origin subframe tried to create a JavaScript "
                 "dialog. This is no longer allowed and was blocked. See "
                 "https://www.chromestatus.com/feature/5148698084376576 for "
-                "more details."));
+                "more details."
+#endif
+                ));
       }
     }
   }

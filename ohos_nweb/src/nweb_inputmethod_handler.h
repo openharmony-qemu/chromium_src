@@ -201,6 +201,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   int32_t composition_range_end_ = 0;
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
+  bool isManualCloseKeyboard_ = false;
 
   std::unordered_map<char16_t, int> keycode_map = {
     {'q', 0x51}, {'w', 0x57}, {'e', 0x45}, {'r', 0x52}, {'t', 0x54},

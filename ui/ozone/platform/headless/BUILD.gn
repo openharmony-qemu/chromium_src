@@ -56,4 +56,11 @@ source_set("headless") {
     ]
     deps += [ "//gpu/vulkan" ]
   }
+
+  if (is_ohos) {
+    sources += [
+      "headless_screen_ohos.cc",
+      "headless_screen_ohos.h",
+    ]
+  }
 }

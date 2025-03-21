@@ -547,6 +547,7 @@ void ProxyMain::SetNeedsAnimate() {
   if (SendCommitRequestToImplThreadIfNeeded(ANIMATE_PIPELINE_STAGE)) {
     TRACE_EVENT_INSTANT0("cc", "ProxyMain::SetNeedsAnimate",
                          TRACE_EVENT_SCOPE_THREAD);
+    TRACE_EVENT0("cc", "ProxyMain::SetNeedsAnimate");
   }
 }
 

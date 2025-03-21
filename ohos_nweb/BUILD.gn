@@ -177,6 +177,8 @@ component("cef_nweb") {
     "src/sysevent/event_reporter.h",
     "src/sysevent/oh_web_performance_timing.cc",
     "src/sysevent/oh_web_performance_timing.h",
+    "src/nweb_resize_helper.cc",
+    "src/nweb_resize_helper.h",
   ]
 
   #ifdef OHOS_ARKWEB_EXTENSIONS

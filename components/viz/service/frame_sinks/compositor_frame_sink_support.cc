@@ -563,6 +563,8 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     absl::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time,
     mojom::CompositorFrameSink::SubmitCompositorFrameSyncCallback callback) {
+  TRACE_EVENT1("viz", "CompositorFrameSinkSupport::MaybeSubmitCompositorFrame",
+      "root_scroll_offset", frame.metadata.root_scroll_offset.ToString());
   TRACE_EVENT_WITH_FLOW2(
       "viz,benchmark", "Graphics.Pipeline",
       TRACE_ID_GLOBAL(frame.metadata.begin_frame_ack.trace_id),

@@ -170,9 +170,6 @@ bool ScrollbarAnimationController::Animate(base::TimeTicks now) {
     RunAnimationFrame(progress);
 #endif
 
-    float progress = AnimationProgressAtTime(now);
-    RunAnimationFrame(progress);
-
     if (is_animating_)
       client_->SetNeedsAnimateForScrollbarAnimation();
     animated = true;

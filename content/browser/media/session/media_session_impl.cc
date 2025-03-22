@@ -1968,8 +1968,6 @@ std::vector<MediaAudioVideoState> MediaSessionImpl::GetMediaAudioVideoStates() {
         // If we have a routed frame then we should limit the players to the
         // frame so it is aligned with the media metadata.
 #ifdef OHOS_BUGFIX_CRASH
-        LOG(INFO) << "player.observer is null == " << !player.observer;
-        LOG(INFO) << "routed_rfh is null == " << !routed_rfh;
         if (!player.observer || (routed_rfh && player.observer->render_frame_host() != routed_rfh))
           return;
 #else

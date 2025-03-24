@@ -6,6 +6,11 @@
 
 #include "base/metrics/field_trial_params.h"
 #include "base/strings/string_number_conversions.h"
+
+#if defined(OHOS_EX_DOWNLOAD)
+#include "base/ohos/sys_info_utils.h"
+#endif
+
 #include "base/time/time.h"
 #include "components/download/public/common/download_features.h"
 #include "components/download/public/common/download_save_info.h"
@@ -211,7 +216,11 @@ bool IsParallelDownloadEnabled() {
   // false.
   bool enabled_parameter = GetFieldTrialParamByFeatureAsBool(
       features::kParallelDownloading, kEnableParallelDownloadFinchKey, true);
+#if defined(OHOS_EX_DOWNLOAD)
+  return feature_enabled && enabled_parameter && base::ohos::IsMobileDevice();
+#else
   return feature_enabled && enabled_parameter;
+#endif
 }
 
 }  // namespace download

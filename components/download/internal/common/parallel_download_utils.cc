@@ -7,7 +7,7 @@
 #include "base/metrics/field_trial_params.h"
 #include "base/strings/string_number_conversions.h"
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(OHOS_EX_DOWNLOAD)
 #include "base/ohos/sys_info_utils.h"
 #endif
 
@@ -216,7 +216,7 @@ bool IsParallelDownloadEnabled() {
   // false.
   bool enabled_parameter = GetFieldTrialParamByFeatureAsBool(
       features::kParallelDownloading, kEnableParallelDownloadFinchKey, true);
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(OHOS_EX_DOWNLOAD)
   return feature_enabled && enabled_parameter && base::ohos::IsMobileDevice();
 #else
   return feature_enabled && enabled_parameter;

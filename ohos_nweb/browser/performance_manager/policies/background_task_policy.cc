@@ -339,15 +339,17 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
     is_main_frame_url_changed_ = false;
     return;
   }
-  content::MediaSessionImpl* media_session =
-    content::MediaSessionImpl::FromWebContents(web_contents);
-  if (media_session) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE,
-        base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
-                       media_session->weakMediaSessionFactory_.GetWeakPtr(),
-                       show, is_special_for_audio));
-    ret = true;
+  if (!web_contents->IsBeingDestroyed()) {
+    content::MediaSessionImpl* media_session =
+      content::MediaSessionImpl::FromWebContents(web_contents);
+    if (media_session) {
+      content::GetUIThreadTaskRunner({})->PostTask(
+          FROM_HERE,
+          base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
+                        media_session->weakMediaSessionFactory_.GetWeakPtr(),
+                        show, is_special_for_audio));
+      ret = true;
+    }
   }
   is_main_frame_url_changed_ = false;
 }

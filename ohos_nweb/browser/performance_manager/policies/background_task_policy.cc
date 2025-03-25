@@ -350,6 +350,8 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
                         show, is_special_for_audio));
       ret = true;
     }
+  } else {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << "web_contents is being destroyed";
   }
   is_main_frame_url_changed_ = false;
 }

@@ -20,6 +20,7 @@
 #include "background_task_adapter.h"
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/browser/scheduler/browser_task_executor.h"
+#include "content/browser/web_contents/web_contents_impl.h"
 #include "ohos_nweb/browser/performance_manager/mechanisms/background_task_holder.h"
 
 namespace performance_manager::policies {
@@ -339,15 +340,19 @@ void BackgroundTaskPolicy::SetWebviewShow(const PageNode* page_node,
     is_main_frame_url_changed_ = false;
     return;
   }
-  content::MediaSessionImpl* media_session =
-    content::MediaSessionImpl::FromWebContents(web_contents);
-  if (media_session) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE,
-        base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
-                       media_session->weakMediaSessionFactory_.GetWeakPtr(),
-                       show, is_special_for_audio));
-    ret = true;
+  if (!web_contents->IsBeingDestroyed()) {
+    content::MediaSessionImpl* media_session =
+      content::MediaSessionImpl::FromWebContents(web_contents);
+    if (media_session) {
+      content::GetUIThreadTaskRunner({})->PostTask(
+          FROM_HERE,
+          base::BindOnce(&content::MediaSessionImpl::SetWebviewShow,
+                        media_session->weakMediaSessionFactory_.GetWeakPtr(),
+                        show, is_special_for_audio));
+      ret = true;
+    }
+  } else {
+    LOG(ERROR) << BG_TASK_TAG << __FUNCTION__ << "web_contents is being destroyed";
   }
   is_main_frame_url_changed_ = false;
 }

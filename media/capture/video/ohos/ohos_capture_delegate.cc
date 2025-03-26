@@ -18,6 +18,7 @@
 #include "video_capture_common_ohos.h"
 
 namespace media {
+const int kPixelConversionFactorFour = 4;
 
 OHOSCaptureDelegate::OHOSCaptureDelegate(
     const VideoCaptureDeviceDescriptor& device_descriptor,
@@ -149,6 +150,10 @@ void OHOSCaptureDelegate::OnBufferAvailable(
   }
   int32_t rotation = roration_info->GetRotation();
   if (client_ != nullptr) {
+#if defined(OHOS_WEBRTC)
+    capture_format_.stride =
+        ConvertToPixel(buffer->GetStride(), capture_format_.pixel_format);
+#endif
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,
         gfx::ColorSpace(), rotation, roration_info->GetIsFlipY() /* flip_y */,
@@ -417,6 +422,19 @@ void OHOSCaptureDelegate::SetErrorState(VideoCaptureError error,
                                         const std::string& reason) {
   DCHECK(capture_stask_runner_->BelongsToCurrentThread());
   client_->OnError(error, from_here, reason);
+}
+
+int OHOSCaptureDelegate::ConvertToPixel(const int byte_stride,
+                                        const VideoPixelFormat& pixel_format) {
+  LOG(DEBUG) << "Buffer ByteStride: " << byte_stride
+             << ", PixelFormat: " << VideoPixelFormatToString(pixel_format);
+  switch (pixel_format) {
+    case PIXEL_FORMAT_ARGB:
+    case PIXEL_FORMAT_ABGR:
+      return byte_stride / kPixelConversionFactorFour;
+    default:
+      return byte_stride;
+  }
 }
 
 }  // namespace media

@@ -88,6 +88,7 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   void GetFocusState(mojom::PhotoStatePtr& photo_capabilities);
   void GetFlashState(mojom::PhotoStatePtr& photo_capabilities);
   int GetCameraRotation(int surface_rotation);
+  int ConvertToPixel(const int byte_stride, const VideoPixelFormat& pixel_format);
   const scoped_refptr<base::SingleThreadTaskRunner> capture_stask_runner_;
   const VideoCaptureDeviceDescriptor device_descriptor_;
   int power_line_frequency_;

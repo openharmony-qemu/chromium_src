@@ -727,15 +727,6 @@ bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
 }
 
-void NWebPreferenceDelegate::SetIntrinsicSizeEnable(bool enable) {
-  enable_intrinsic_size = enable;
-  WebPreferencesChanged();
-}
-
-bool NWebPreferenceDelegate::GetIntrinsicSizeEnable() {
-  return enable_intrinsic_size;
-}
-
 void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
                                                      const std::string& type) {
   embed_tag_ = tag;
@@ -806,6 +797,15 @@ void NWebPreferenceDelegate::SetFitContent(bool value) {
 
 bool NWebPreferenceDelegate::IsFitContent() const {
   return fit_content_;
+}
+
+void NWebPreferenceDelegate::SetIntrinsicSizeEnable(bool enable) {
+  enable_intrinsic_size_ = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetIntrinsicSizeEnable() {
+  return enable_intrinsic_size_;
 }
 #endif
 

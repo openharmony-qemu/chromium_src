@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "content/public/browser/web_contents_delegate.h"
+#include "content/public/browser/custom_media_player_listener.h"
 
 #include <memory>
 #include <utility>

@@ -169,6 +169,8 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(IS_OHOS)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.intrinsic_size_enabled =
+      GetIntrinsicSizeEnable() ? STATE_ENABLED : STATE_DISABLED;
   str = CefString(embed_tag_);
   cef_string_set(str.c_str(), str.length(),
                  &(browser_settings.embed_tag), true);
@@ -795,6 +797,15 @@ void NWebPreferenceDelegate::SetFitContent(bool value) {
 
 bool NWebPreferenceDelegate::IsFitContent() const {
   return fit_content_;
+}
+
+void NWebPreferenceDelegate::SetIntrinsicSizeEnable(bool enable) {
+  enable_intrinsic_size_ = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetIntrinsicSizeEnable() {
+  return enable_intrinsic_size_;
 }
 #endif
 

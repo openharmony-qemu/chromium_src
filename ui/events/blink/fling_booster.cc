@@ -56,6 +56,8 @@ void LimitVelocity(gfx::Vector2dF &velocity) {
 }
 #endif // BUILDFLAG(IS_OHOS)
 
+constexpr int kStartVelocityThreshold = 1500;
+
 constexpr double Epsilon = 0.001f;
 
 inline bool NearEqual(const double left, const double right) {
@@ -91,7 +93,11 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
         std::string ret = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetScrollVelocityScale();
         double velocityScaleTmp = 0.0;
         base::StringToDouble(ret, &velocityScaleTmp);
-        velocity.Scale(1.0f, NearZero(velocityScaleTmp) ? 1.5f : velocityScaleTmp);
+        double velocityScale = 1.5f;
+        if (std::abs(fling_start.data.fling_start.velocity_y) < kStartVelocityThreshold) {
+          velocityScale = 1.2f;
+        }
+        velocity.Scale(1.0f, NearZero(velocityScaleTmp) ? velocityScale : velocityScaleTmp);
       }
     }
   #endif  // BUILDFLAG(IS_OHOS)

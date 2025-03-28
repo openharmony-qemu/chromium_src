@@ -71,6 +71,7 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
       nullptr;
   base::WeakPtrFactory<OHOSAudioCapturerSource> weak_factory_{this};
   FILE *dumpFile_ = nullptr;
+  std::atomic<bool> is_stopped_{false};
 };
 
 }  // namespace media

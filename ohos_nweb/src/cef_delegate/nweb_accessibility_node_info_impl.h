@@ -17,6 +17,7 @@
 #define NWEB_ACCESSIBILITYNODE_INFO_IMPL_H
 
 #include "nweb_accessibility_node_info.h"
+#include <vector>
 
 namespace OHOS::NWeb {
 

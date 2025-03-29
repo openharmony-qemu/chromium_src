@@ -168,7 +168,8 @@ BASE_EXPORT std::string BaseOsName() {
 }
 
 BASE_EXPORT int32_t ApplicationApiVersion() {
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+  if (base::CommandLine::ForCurrentProcess() &&
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kOhosAppApiVersion)) {
     std::string apiVersion =
         base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(

@@ -41,6 +41,7 @@ OHOSAudioCapturerSource::OHOSAudioCapturerSource(
 
 OHOSAudioCapturerSource::~OHOSAudioCapturerSource() {
   LOG(INFO) << "OHOSAudioCapturerSource::~OHOSAudioCapturerSource";
+  weak_factory_.InvalidateWeakPtrs();
 }
 
 void OHOSAudioCapturerSource::Initialize(
@@ -110,6 +111,7 @@ void OHOSAudioCapturerSource::Stop() {
     if (callback_) {
       callback_ = nullptr;
     }
+    is_stopped_.store(true);
   }
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
@@ -122,6 +124,13 @@ void OHOSAudioCapturerSource::Stop() {
 
 void OHOSAudioCapturerSource::ReadData() {
   base::AutoLock lock(callback_lock_);
+  if (!capturer_) {
+    return;
+  }
+  if (is_stopped_.load()) {
+    LOG(INFO) << "OHOSAudioCapturerSource::ReadData, has been set to stop";
+    return;
+  }
   std::shared_ptr<OHOS::NWeb::BufferDescAdapterImpl> bufferDesc =
       std::make_shared<OHOS::NWeb::BufferDescAdapterImpl>();
 

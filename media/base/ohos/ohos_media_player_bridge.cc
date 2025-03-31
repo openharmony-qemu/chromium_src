@@ -9,17 +9,19 @@
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/ohos/ohos_media_player_callback.h"
-#include "media/base/ohos/ohos_media_player_listener.h"
 #include "ohos_adapter_helper.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
-
-#ifdef OHOS_VIDEO_ASSISTANT
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
-#endif // OHOS_VIDEO_ASSISTANT
+
+#include "content/browser/gpu/gpu_process_host.h"
+
+extern "C" {
+  typedef struct NativeWindow OHNativeWindow;
+  int32_t OH_NativeWindow_CreateNativeWindowFromSurfaceId(uint64_t surfaceId, NativeWindow **window);
+}
 
 namespace media {
 
-constexpr int QUEUE_SIZE = 3;
 constexpr int MAX_TOLERABLE_SEEK_ERROR = 300;
 static constexpr int PLAYER_INIT_OK = 0;
 static constexpr int PLAYER_INIT_ERROR = -1;
@@ -58,7 +60,6 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
 }
 
 OHOSMediaPlayerBridge::~OHOSMediaPlayerBridge() {
-  cached_buffers_.clear();
 }
 
 int32_t OHOSMediaPlayerBridge::Initialize() {
@@ -79,6 +80,10 @@ int32_t OHOSMediaPlayerBridge::Initialize() {
   return PLAYER_INIT_OK;
 }
 
+void OHOSMediaPlayerBridge::SetNativeWindowSurface(int native_window_id) {
+  native_window_id_ = native_window_id;
+}
+
 void OHOSMediaPlayerBridge::OnCookiesRetrieved(const std::string& cookies) {
   cookies_ = cookies;
   pending_retrieve_cookies_ = false;
@@ -97,8 +102,10 @@ void OHOSMediaPlayerBridge::OnCookiesRetrieved(const std::string& cookies) {
     }
     auto player_headers = GetPlayerHeadersInternal();
     int32_t ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
+    LOG(INFO) << "media player SetMediaSourceHeader url";
     if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
       ret = player_->SetSource(url_.spec());
+      LOG(INFO) << "media player SetSource url";
     }
     if (ret != 0) {
       LOG(ERROR) << "SetPlayerSourceHeader error:ret= " << ret;
@@ -185,8 +192,10 @@ void OHOSMediaPlayerBridge::Prepare() {
     }
     auto player_headers = GetPlayerHeadersInternal();
     ret = player_->SetMediaSourceHeader(url_.spec(), player_headers);
+    LOG(INFO) << "media player SetMediaSourceHeader url";
     if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
       ret = player_->SetSource(url_.spec());
+      LOG(INFO) << "media player SetSource Url";
     }
   }
   if (ret != 0) {
@@ -194,7 +203,6 @@ void OHOSMediaPlayerBridge::Prepare() {
     return;
   }
   SetPlayerSurface();
-
 }
 
 void OHOSMediaPlayerBridge::SetPlayerSurface() {
@@ -202,25 +210,39 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
     LOG(ERROR) << "OHOSMediaPlayerBridge SetPlayerSurface player is null";
     return;
   }
-  consumer_surface_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                          .CreateConsumerSurfaceAdapter();
-  if (consumer_surface_ == nullptr) {
-    LOG(ERROR) << "media create consumer surface adapter failed";
+
+  SetNativeWindowFromSurfaceId();
+  if (native_window_origin_ == nullptr) {
+    LOG(ERROR) << "OHOSMediaPlayerBridge GetNativeWindow is null";
     return;
   }
-  auto listener = std::make_unique<OHOSMediaPlayerListener>(
-      task_runner_, weak_factory_.GetWeakPtr());
-  consumer_surface_->RegisterConsumerListener(std::move(listener));
-  consumer_surface_->SetUserData(
-      surfaceFormat,
-      std::to_string(OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888));
-  consumer_surface_->SetQueueSize(QUEUE_SIZE);
-  int32_t ret = player_->SetVideoSurface(consumer_surface_);
+
+  int32_t ret = -1;
+#ifdef OHOS_VIDEO_ASSISTANT
+  if (pending_new_surface_id_ > 0) {
+    LOG(INFO) << "SetPlayerSurface enter component pending_new_surface_id_:" << pending_new_surface_id_;
+    pending_new_surface_id_ = -1;
+    void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
+    if (native_window) {
+      ret = player_->SetVideoSurfaceNew(native_window);
+      if (ret != 0) {
+        LOG(ERROR) << "SetPlayerSurface SetVideoSurfaceNew error: new_surface_id_ = " << new_surface_id_
+                  << ", native_window = " << native_window;
+      }
+    }
+  } else {
+    LOG(INFO) << "SetPlayerSurface enter web surface";
+    ret = player_->SetVideoSurfaceNew(native_window_origin_);
+    if (ret != 0) {
+      LOG(ERROR) << "SetPlayerSurface enter web surface error::ret=" << ret;
+    }
+  }
+#else
+  ret = player_->SetVideoSurfaceNew(native_window_origin_);
   if (ret != 0) {
-    LOG(ERROR) << "SetVideoSurface error::ret=" << ret;
-    consumer_surface_ = nullptr;
-    return;
+    LOG(ERROR) << "SetPlayerSurface enter web surface error::ret=" << ret;
   }
+#endif // OHOS_VIDEO_ASSISTANT
 
   ret = player_->PrepareAsync();
   if (ret != 0) {
@@ -228,9 +250,38 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
   }
 }
 
+void OHOSMediaPlayerBridge::SetNativeWindowFromSurfaceId() {
+  if (native_window_id_ == -1) {
+    LOG(ERROR) << "OHOSMediaPlayerBridge native_window id is invalid";
+    return;
+  }
+
+  content::GpuProcessHost* gpu_process_host = content::GpuProcessHost::Get();
+  if (!gpu_process_host || !gpu_process_host->gpu_host()) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no gpu host";
+    return;
+  }
+
+  std::string surface_id_string = gpu_process_host->gpu_host()->GetSurfaceId(native_window_id_);
+  LOG(INFO) << "CreateMediaPlayer native_window_id_: " << native_window_id_
+            << ", surface_id_string: " << surface_id_string;
+
+  uint64_t id_of_surface = std::stoull(surface_id_string);
+  OHNativeWindow* oh_native_window = nullptr;
+  int32_t oh_ret = OH_NativeWindow_CreateNativeWindowFromSurfaceId(id_of_surface, &oh_native_window);
+  if (oh_ret != 0 || oh_native_window == nullptr) {
+    LOG(ERROR) << "CreateNativeWindowFromSurfaceId failed.";
+    return;
+  }
+
+  native_window_origin_ = oh_native_window;
+  LOG(INFO) << "CreateNativeWindowFromSurfaceId successful.";
+}
+
 void OHOSMediaPlayerBridge::StartInternal() {
   if (player_ && prepared_) {
     if (!pause_when_prepared_) {
+      LOG(INFO) << "OHOSMediaPlayerBridge, MediaPlayer Play()";
       player_->Play();
     } else {
       LOG(INFO) << "OHOSMediaPlayerBridge StartInternal start canceled, because of paused when perpared";
@@ -361,7 +412,7 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
     return;
   }
 
-  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe	
   //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {
@@ -374,29 +425,6 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
 }
 
 void OHOSMediaPlayerBridge::FinishPaint(int fd) {
-  if (!task_runner_->BelongsToCurrentThread()) {
-    task_runner_->PostTask(FROM_HERE,
-                           base::BindOnce(&OHOSMediaPlayerBridge::FinishPaint,
-                                          weak_factory_.GetWeakPtr(), fd));
-    return;
-  }
-
-  if (cached_buffers_.front()) {
-    if (cached_buffers_.front()->GetFileDescriptor() != fd) {
-      LOG(ERROR) << "match fd error render fd=" << fd << "  browser fd="
-                 << cached_buffers_.front()->GetFileDescriptor();
-    }
-    int32_t ret = consumer_surface_->ReleaseBuffer(
-        std::move(cached_buffers_.front()), -1);
-    if (ret != OHOS::NWeb::GSErrorCode::GSERROR_OK) {
-      LOG(ERROR) << "release buffer fail, ret=" << ret;
-    }
-  } else {
-    LOG(ERROR) << "cached_buffers_.front() is nullptr";
-  }
-  if (!cached_buffers_.empty()) {
-    cached_buffers_.pop_front();
-  }
 }
 
 void OHOSMediaPlayerBridge::SetPlaybackSpeed(
@@ -487,74 +515,10 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
 
 void OHOSMediaPlayerBridge::OnBufferAvailable(
     std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer) {
-  if (!task_runner_->BelongsToCurrentThread()) {
-    task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(&OHOSMediaPlayerBridge::OnBufferAvailable,
-                       weak_factory_.GetWeakPtr(), std::move(buffer)));
-    return;
-  }
-
-  int fd = buffer->GetFileDescriptor();
-  if (fd <= 0) {
-    LOG(ERROR) << "surface buffer fd error fd:" << fd;
-    int32_t ret = consumer_surface_->ReleaseBuffer(std::move(buffer), -1);
-    if (ret != OHOS::NWeb::GSErrorCode::GSERROR_OK) {
-      LOG(ERROR) << "release buffer fail, ret=" << ret;
-    }
-    return;
-  }
-
-  int32_t coded_height;
-  int32_t coded_width;
-
-  // video frame height must be 32*N
-  const int step_height = 32;
-  // argb format video frame should divided by 4
-  const int argb_stride_step = 4;
-  if (buffer->GetHeight() % step_height == 0) {
-    coded_height = buffer->GetHeight();
-  } else {
-    coded_height = (buffer->GetHeight() / step_height + 1) * step_height;
-  }
-  if (buffer->GetFormat() ==
-      OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
-    coded_width = buffer->GetStride() / argb_stride_step;
-    coded_height = buffer->GetHeight();
-  } else {
-    coded_width = buffer->GetStride();
-  }
-
-#if defined(RK3568)
-  if (!is_hls_) {
-    coded_width = buffer->GetWidth();
-    coded_height = buffer->GetHeight();
-  }
-#endif
-  client_->OnFrameAvailable(fd, buffer->GetSize(), coded_width, coded_height,
-                            buffer->GetWidth(), buffer->GetHeight(),
-                            buffer->GetFormat());
-  cached_buffers_.push_back(std::move(buffer));
 }
 
 void OHOSMediaPlayerBridge::OnVideoSizeChanged(int32_t width, int32_t height) {
-#ifdef OHOS_VIDEO_ASSISTANT
-  video_width_ = width;
-  video_height_ = height;
-  if (pending_new_surface_id_ > 0 && video_width_ > 0 && video_height_ > 0) {
-    pending_new_surface_id_ = -1;
-    void* native_window =
-        NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
-    if (native_window) {
-      int32_t ret = player_->SetVideoSurfaceNew(native_window);
-      if (ret != 0) {
-        LOG(ERROR) << "SetVideoSurfaceNew error::ret = " << ret
-          << ", new_surface_id_ = " << new_surface_id_
-          << ", native_window = " << native_window;
-      }
-    }
-  }
-#endif // OHOS_VIDEO_ASSISTANT
+  LOG(INFO) << "OHOSMediaPlayerBridge::OnVideoSizeChanged width:" << width << ", height:" << height;
   if (client_) {
     client_->OnVideoSizeChanged(width, height);
   }
@@ -609,6 +573,7 @@ uint64_t OHOSMediaPlayerBridge::uv__get_addr_tag(void* addr) {
 
 #ifdef OHOS_VIDEO_ASSISTANT
 void OHOSMediaPlayerBridge::SetVideoSurface(int32_t surface_id) {
+  LOG(INFO) << "OHOSMediaPlayerBridge::SetVideoSurface component, surface_id: " << surface_id;
   if (surface_id > 0) {
     SetVideoSurfaceNew(surface_id);
   } else {
@@ -628,17 +593,17 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceNew(int32_t surface_id) {
   }
   new_surface_id_ = surface_id;
   void* native_window = nullptr;
-  if (player_ && video_width_ > 0 && video_height_ > 0) {
+  if (player_) {
     native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
   } else {
+    LOG(INFO) << "SetVideoSurfaceNew, player is empty, has pending_new_surface_id_";
+    pending_new_surface_id_ = new_surface_id_;
     if (!player_) {
       Prepare();
     }
   }
   if (native_window) {
     player_->SetVideoSurfaceNew(native_window);
-  } else {
-    pending_new_surface_id_ = new_surface_id_;
   }
 }
 
@@ -647,7 +612,15 @@ void OHOSMediaPlayerBridge::SetVideoSurfaceOld() {
     NWebNativeWindowTracker::Get()->DestroyNativeWindow(new_surface_id_);
     new_surface_id_ = -1;
   }
-  player_->SetVideoSurface(consumer_surface_);
+  if (!player_) {
+    LOG(INFO) << "web setVideoSurface  player is nullptr";
+    return;
+  }
+  int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_);
+  if (ret != 0) {
+    LOG(ERROR) << "web SetVideoSurface error" << ret;
+    return;
+  }
 }
 #endif // OHOS_VIDEO_ASSISTANT
 }  // namespace media

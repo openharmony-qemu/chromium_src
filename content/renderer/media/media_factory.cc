@@ -646,9 +646,16 @@ MediaFactory::CreateRendererFactorySelector(
   }
 
 #if BUILDFLAG(IS_OHOS)
+  gl::ohos::TextureOwnerMode texture_owner_mode = gl::ohos::TextureOwnerMode::kNativeImageTexture;
   auto ohos_media_player_factory =
       std::make_unique<OHOSMediaPlayerRendererClientFactory>(
-          CreateMojoRendererFactory());
+        render_thread->compositor_task_runner(), CreateMojoRendererFactory(),
+        base::BindRepeating(
+          &NativeTextureWrapperImpl::Create,
+          true,
+          texture_owner_mode,
+          render_thread->GetNativeTexureFactory(),
+          render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
   factory_selector->AddFactory(RendererType::kOHOSMediaPlayer,
                                std::move(ohos_media_player_factory));
 #endif
@@ -657,8 +664,7 @@ MediaFactory::CreateRendererFactorySelector(
 #ifdef OHOS_NB_DEBUG
   LOG(INFO)<<__FUNCTION__<<" ohos_custom_media_player_factory NativeTextureWrapperImpl ";
 #endif
-  gl::ohos::TextureOwnerMode texture_owner_mode =
-      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+  texture_owner_mode = features::IsUsingVulkan() || base::ohos::IsEmulator() ||
               base::SysInfo::IsLowEndDevice()
               ? gl::ohos::TextureOwnerMode::kNativeImageTexture
               : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;

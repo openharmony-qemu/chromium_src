@@ -62,6 +62,8 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void SetPlaybackRate(double playback_rate) override;
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
+  void SetNativeWindowSurface(int native_window_id) override;
+
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurface(int32_t surface_id) override;
 #endif // OHOS_VIDEO_ASSISTANT
@@ -101,8 +103,8 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void FinishPaint(int32_t fd) override;
 
  private:
-  void CreateMediaPlayer(const media::MediaUrlParams& params,
-                         media::PipelineStatusCallback init_cb);
+  void CreateMediaPlayer();
+  void TryOrCreateMediaPlayer();
 
   void UpdateVolume();
 
@@ -133,6 +135,10 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   float volume_;
 
   bool initialized_ = false;
+
+  int native_window_id_ = -1;
+
+  std::unique_ptr<media::MediaUrlParams> url_params_;
 
   base::WeakPtr<WebContents> web_contents_ = nullptr;
 

@@ -403,6 +403,7 @@ void MojoRenderer::OnInitialized(media::RendererClient* client, bool success) {
 
 #ifdef OHOS_VIDEO_ASSISTANT
     if (!request_surface_cb_.is_null()) {
+      LOG(INFO) << "component, surface_create_CB created";
       SurfaceCreatedCB surface_create_CB = base::BindPostTaskToCurrentDefault(
           base::BindRepeating(&MojoRenderer::OnRequestVideoSurfaceDone,
                               weak_factory_.GetWeakPtr()));
@@ -449,6 +450,17 @@ void MojoRenderer::CancelPendingCallbacks() {
   if (cdm_attached_cb_)
     std::move(cdm_attached_cb_).Run(false);
 }
+
+#if defined(OHOS_MEDIA_POLICY)
+void MojoRenderer::SetNativeWindowSurface(int native_window_id) {
+  BindRemoteRendererIfNeeded();
+  if (remote_renderer_.is_bound()) {
+    remote_renderer_->SetNativeWindowSurface(native_window_id);
+  } else {
+    LOG(ERROR) << "SetNativeWindowSurface failed";
+  }
+}
+#endif // OHOS_MEDIA_POLICY
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void MojoRenderer::SetMuted(bool muted) {

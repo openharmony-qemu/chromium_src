@@ -46,6 +46,10 @@ class MojoRendererWrapper : public Renderer {
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
 
+#if defined(OHOS_MEDIA_POLICY)
+  void SetNativeWindowSurface(int native_window_id) override;
+#endif // OHOS_MEDIA_POLICY
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;

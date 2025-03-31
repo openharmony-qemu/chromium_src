@@ -58,11 +58,12 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
 #endif
   if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() &&
       (std::abs(initial_velocity.y()) > std::abs(initial_velocity.x()))) {
-    LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: " << initial_velocity.y();
+    LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: "
+               << initial_velocity.y() << " device_source: " << device_source;
     auto scroller = std::make_unique<NativeScrollerOhos>();
     scroller->Fling(0, 0, initial_velocity.x(), initial_velocity.y(), INT_MIN,
                     static_cast<float>(INT_MAX), INT_MIN,
-                    static_cast<float>(INT_MAX), base::TimeTicks());
+                    static_cast<float>(INT_MAX), base::TimeTicks(), device_source);
     return std::move(scroller);
   }
 

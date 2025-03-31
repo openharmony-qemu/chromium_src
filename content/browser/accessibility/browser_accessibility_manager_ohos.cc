@@ -26,7 +26,7 @@ constexpr int64_t kInvalidAccessibilityId = -1;
 constexpr int64_t kArkWebId = 0;
 constexpr int64_t kRootAccessibilityId = 1;
 constexpr int32_t kMaxContentChangedEventsToFire = 5;
-constexpr int32_t kAccessibilityEventDelayDefault = 100;
+constexpr int32_t kAccessibilityEventDelayDefault = 200;
 constexpr int32_t kAccessibilityEventDelayHover = 200;
 constexpr int32_t kMaxLocationChangedEventsToFire = 3;
 constexpr int32_t kShiftedBitNumber = 32;
@@ -617,6 +617,10 @@ void BrowserAccessibilityManagerOHOS::InitializeAccessibilityEventDispatcher() {
                      kAccessibilityEventDelayHover));
 
   std::unordered_set<int32_t> viewIndependentEvents;
+  viewIndependentEvents.insert(
+      static_cast<int32_t>(OHOS::NWeb::AccessibilityEventType::SCROLL_END));
+  viewIndependentEvents.insert(
+      static_cast<int32_t>(OHOS::NWeb::AccessibilityEventType::CHANGE));
 
   eventDispatcher_ = std::make_unique<AccessibilityEventDispatcher>(
       eventThrottleDelays, viewIndependentEvents, this);

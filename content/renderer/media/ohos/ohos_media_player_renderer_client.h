@@ -124,8 +124,6 @@ class OHOSMediaPlayerRendererClient
 
   int native_window_id_ = -1;
 
-  media::Renderer::NativeWindowCreatedCallback native_window_created_cb_;
-
 #ifdef OHOS_VIDEO_ASSISTANT
   media::RequestSurfaceCB request_surface_cb_;
   media::VideoDecoderChangedCB decoder_changed_cb_;

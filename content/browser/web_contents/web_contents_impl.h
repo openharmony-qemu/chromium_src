@@ -782,7 +782,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #endif
 
 #ifdef OHOS_AI
-  bool CloseImageOverlaySelection() override;
+  void CloseImageOverlaySelection() override;
+  void OnOverlayZoomChanged();
 #endif
 
   void RunJavaScriptDialog(RenderFrameHostImpl* render_frame_host,

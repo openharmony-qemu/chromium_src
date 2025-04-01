@@ -217,14 +217,14 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
     return;
   }
 
-  int32_t ret = -1;
 #ifdef OHOS_VIDEO_ASSISTANT
+  int32_t ret = -1;
   if (pending_new_surface_id_ > 0) {
     LOG(INFO) << "SetPlayerSurface enter component pending_new_surface_id_:" << pending_new_surface_id_;
     pending_new_surface_id_ = -1;
     void* native_window = NWebNativeWindowTracker::Get()->GetNativeWindow(new_surface_id_);
     if (native_window) {
-      ret = player_->SetVideoSurfaceNew(native_window);
+       ret = player_->SetVideoSurfaceNew(native_window);
       if (ret != 0) {
         LOG(ERROR) << "SetPlayerSurface SetVideoSurfaceNew error: new_surface_id_ = " << new_surface_id_
                   << ", native_window = " << native_window;
@@ -238,15 +238,15 @@ void OHOSMediaPlayerBridge::SetPlayerSurface() {
     }
   }
 #else
-  ret = player_->SetVideoSurfaceNew(native_window_origin_);
+  int32_t ret = player_->SetVideoSurfaceNew(native_window_origin_);
   if (ret != 0) {
     LOG(ERROR) << "SetPlayerSurface enter web surface error::ret=" << ret;
   }
 #endif // OHOS_VIDEO_ASSISTANT
 
-  ret = player_->PrepareAsync();
-  if (ret != 0) {
-    LOG(ERROR) << "Prepare error::ret=" << ret << " url=" << url_.spec();
+  int32_t prepare_ret = player_->PrepareAsync();
+  if (prepare_ret != 0) {
+    LOG(ERROR) << "Prepare error::ret=" << prepare_ret << " url=" << url_.spec();
   }
 }
 

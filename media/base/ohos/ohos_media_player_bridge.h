@@ -117,7 +117,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SetVideoSurfaceNew(int32_t surface_id);
   void SetVideoSurfaceOld();
 #endif // OHOS_VIDEO_ASSISTANT
-  
+
   // Callback function passed to `resource_getter_`. Called when the cookies
   // are retrieved.
   void OnCookiesRetrieved(const std::string& cookies);
@@ -133,8 +133,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   // Set media player surface and register listener
   void SetPlayerSurface();
 
-#if defined(OHOS_MEDIA)	
-  uint64_t uv__get_addr_tag(void* addr);	
+#if defined(OHOS_MEDIA)
+  uint64_t uv__get_addr_tag(void* addr);
 #endif
 
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;

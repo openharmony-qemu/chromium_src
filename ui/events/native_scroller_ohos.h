@@ -5,6 +5,7 @@
 #include "ui/events/events_base_export.h"
 #include "ui/events/gesture_curve.h"
 #include "ui/gfx/geometry/vector2d.h"
+#include "third_party/blink/public/common/input/web_gesture_device.h"
 
 namespace ui {
 class EVENTS_BASE_EXPORT NativeScrollerOhos : public GestureCurve {
@@ -21,7 +22,8 @@ class EVENTS_BASE_EXPORT NativeScrollerOhos : public GestureCurve {
                float max_x,
                float min_y,
                float max_y,
-               base::TimeTicks start_time);
+               base::TimeTicks start_time,
+               blink::WebGestureDevice device_source = blink::mojom::GestureDevice::kTouchscreen);
     
     // GestureCurve implementation
     bool ComputeScrollOffset(base::TimeTicks time,

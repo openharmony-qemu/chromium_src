@@ -3370,9 +3370,15 @@ source_set("browser") {
     }  #endif  // defined(OHOS_EX_PULL_TO_REFRESH)
 
     import("//ohos_sdk/ohos_sdk.gni")
-    lib_dirs = [ 
-      "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/aarch64-linux-ohos/"
-    ]
+    
+    lib_dirs = []
+    if (target_cpu == "arm") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/arm-linux-ohos/" ]
+    } else if (target_cpu == "arm64") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/aarch64-linux-ohos/" ]
+    } else if (target_cpu == "x86_64") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/x86_64-linux-ohos/" ]
+    }
 
     libs = [
       "native_window"

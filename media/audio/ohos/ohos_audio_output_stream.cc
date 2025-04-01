@@ -8,6 +8,7 @@
 
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "base/ohos/sys_info_utils.h"
 #include "media/audio/ohos/audio_dump.h"
 #include "media/base/audio_timestamp_helper.h"
 #include "ohos_adapter_helper.h"
@@ -598,6 +599,11 @@ void OHOSAudioOutputStream::SetUpAudioSilentState(int32_t bytesSingle)
 
 bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
 {
+  if (base::ohos::IsPcDevice()) {
+    LOG(INFO) << "OHOSAudioOutputStream::IsPreloadOrMutedMediaMode device is pc";
+    return false;
+  }
+
   if (!weakMediaSession_) {
     return false;
   }

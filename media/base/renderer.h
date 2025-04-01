@@ -85,9 +85,9 @@ class MEDIA_EXPORT Renderer {
                           DestroyTextureCB destroy_texture_cb);
 #endif
 
-#if defined(OHOS_MEDIA_POLICY)
+#if defined(OHOS_MEDIA)
   virtual void SetNativeWindowSurface(int native_window_id);
-#endif // OHOS_MEDIA_POLICY
+#endif // OHOS_MEDIA
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   virtual void SetSurfaceId(int surface_id, const gfx::Rect& rect);
@@ -164,11 +164,11 @@ class MEDIA_EXPORT Renderer {
   // Note: New implementation should update RendererType.
   virtual RendererType GetRendererType() = 0;
 
-#if defined(OHOS_MEDIA_POLICY)
+#if defined(OHOS_MEDIA)
   using OnGetRectCallback = base::RepeatingCallback<void(const gfx::Rect&)>; 
   using NativeWindowCreatedCallback = base::OnceCallback<void(OnGetRectCallback)>;
   virtual void SetNativeWindowCreatedCallback(NativeWindowCreatedCallback cb) {}
-#endif // OHOS_MEDIA_POLICY
+#endif // OHOS_MEDIA
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   struct MediaSourceInfo {

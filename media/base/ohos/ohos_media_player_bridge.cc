@@ -412,7 +412,7 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
     return;
   }
 
-  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe	
+  //When processing seek requests, there may be a maximum error of 300ms between the nearest keyframe
   //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {

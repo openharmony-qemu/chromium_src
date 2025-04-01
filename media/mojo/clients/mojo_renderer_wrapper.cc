@@ -61,11 +61,11 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
   return mojo_renderer_->GetMediaTime();
 }
 
-#if defined(OHOS_MEDIA_POLICY)
+#if defined(OHOS_MEDIA)
 void MojoRendererWrapper::SetNativeWindowSurface(int native_window_id) {
   mojo_renderer_->SetNativeWindowSurface(native_window_id);
 }
-#endif // OHOS_MEDIA_POLICY
+#endif // OHOS_MEDIA
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void MojoRendererWrapper::SetMuted(bool muted) {

@@ -451,7 +451,7 @@ void MojoRenderer::CancelPendingCallbacks() {
     std::move(cdm_attached_cb_).Run(false);
 }
 
-#if defined(OHOS_MEDIA_POLICY)
+#if defined(OHOS_MEDIA)
 void MojoRenderer::SetNativeWindowSurface(int native_window_id) {
   BindRemoteRendererIfNeeded();
   if (remote_renderer_.is_bound()) {
@@ -460,7 +460,7 @@ void MojoRenderer::SetNativeWindowSurface(int native_window_id) {
     LOG(ERROR) << "SetNativeWindowSurface failed";
   }
 }
-#endif // OHOS_MEDIA_POLICY
+#endif // OHOS_MEDIA
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void MojoRenderer::SetMuted(bool muted) {

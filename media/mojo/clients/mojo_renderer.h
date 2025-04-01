@@ -69,9 +69,9 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   base::TimeDelta GetMediaTime() override;
   RendererType GetRendererType() override;
 
-#if defined(OHOS_MEDIA_POLICY)
+#if defined(OHOS_MEDIA)
   void SetNativeWindowSurface(int native_window_id) override;
-#endif // OHOS_MEDIA_POLICY
+#endif // OHOS_MEDIA
 
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;

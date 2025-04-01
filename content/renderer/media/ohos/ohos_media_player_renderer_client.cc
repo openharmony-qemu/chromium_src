@@ -162,7 +162,6 @@ void OHOSMediaPlayerRendererClient::OnFrameAvailable() {
   auto unique_frame = media::VideoFrame::WrapVideoFrame(
     frame, frame->format(), frame->visible_rect(), frame->natural_size());
   sink_->PaintSingleFrame(std::move(unique_frame));
-
 }
 
 void OHOSMediaPlayerRendererClient::OnGetVideoRect(const gfx::Rect& rect) {

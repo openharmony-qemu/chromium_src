@@ -132,16 +132,6 @@ void OHOSMediaPlayerRendererClient::OnSurfaceCreated(int native_window_id) {
   LOG(INFO) << "OnSurfaceCreated, native_window_id:" << native_window_id;
   native_window_id_ = native_window_id;
   SetNativeWindowSurface(native_window_id_);
-
-  if (native_window_created_cb_) {
-    std::move(native_window_created_cb_).Run(
-        base::BindPostTask(media_task_runner_,
-            base::BindRepeating(
-                &OHOSMediaPlayerRendererClient::OnGetVideoRect,
-                weak_factory_.GetWeakPtr())));
-  } else {
-    OnGetVideoRect(gfx::Rect());
-  }
 }
 
 void OHOSMediaPlayerRendererClient::OnSurfaceDestroyed() {
@@ -156,15 +146,6 @@ void OHOSMediaPlayerRendererClient::OnFrameAvailable() {
   auto unique_frame = media::VideoFrame::WrapVideoFrame(
     frame, frame->format(), frame->visible_rect(), frame->natural_size());
   sink_->PaintSingleFrame(std::move(unique_frame));
-}
-
-void OHOSMediaPlayerRendererClient::OnGetVideoRect(const gfx::Rect& rect) {
-  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-
-  LOG(INFO) << "native_texture_wrapper_->UpdateTextureSize:" << rect.ToString();
-  native_texture_wrapper_->UpdateTextureSize(rect.size());
-
-  OnVideoSizeChange(rect.size());
 }
 
 void OHOSMediaPlayerRendererClient::OnVideoSizeChange(const gfx::Size& size) {

@@ -590,7 +590,7 @@ class NWebDelegateInterface
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl> GetCustomKeyboardHandler() const = 0;
 
-  virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
+  virtual void SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
 #ifdef OHOS_ARKWEB_EXTENSIONS
   virtual void WebExtensionTabCreated(int tab_id) = 0;

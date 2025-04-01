@@ -727,7 +727,7 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
     return true;
   }
 
-  void SendAccessibilityHoverEvent(int x, int y) override;
+  void SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) override;
 
  private:
   content::BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
@@ -749,10 +749,6 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   float GetViewPointHeight() const;
   int32_t GetArgumentByKey(const std::map<std::string, std::string>& actionArguments,
     const std::string& checkKey) const;
-  
-  void SetIsHovering(bool is_hovering) {
-    is_hovering_ = is_hovering;
-  }
 
   float zoom_in_factor_ = 1.25f;
   float zoom_out_factor_ = 0.8f;

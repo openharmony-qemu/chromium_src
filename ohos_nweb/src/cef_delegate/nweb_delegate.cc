@@ -108,7 +108,6 @@ const int NWebPlaybackState_NONE = 0;
 
 static const int kDefaultWebNativeProxy = -2;
 static const int64_t kRootAccessibilityId = 1;
-static const int64_t kHoveringDelayMs = 1000;
 
 #if defined(OHOS_MSGPORT)
 void ConvertCefValueToNWebMessage(CefRefPtr<CefValue> src,
@@ -884,7 +883,6 @@ void NWebDelegate::OnTouchPress(int32_t id,
                                 double x,
                                 double y,
                                 bool from_overlay) {
-  is_hovering_ = true;
   if (event_handler_ != nullptr) {
     if (pressing_num_ < 0) {
       pressing_num_ = 0;
@@ -905,9 +903,6 @@ void NWebDelegate::OnTouchRelease(int32_t id,
                                   double x,
                                   double y,
                                   bool from_overlay) {
-  CEF_POST_DELAYED_TASK(
-      CEF_UIT, base::BindOnce(&NWebDelegate::SetIsHovering, this, false),
-      kHoveringDelayMs);
   if (event_handler_ != nullptr) {
     --pressing_num_;
     event_handler_->OnTouchRelease(id, x / default_virtual_pixel_ratio_,
@@ -918,7 +913,6 @@ void NWebDelegate::OnTouchRelease(int32_t id,
 
 void NWebDelegate::OnTouchMove(const std::vector<std::shared_ptr<NWebTouchPointInfo>> &touch_point_infos,
                                bool from_overlay) {
-  is_hovering_ = true;
   if (event_handler_ == nullptr) {
     return;
   }
@@ -930,7 +924,6 @@ void NWebDelegate::OnTouchMove(int32_t id,
                                double x,
                                double y,
                                bool from_overlay) {
-  is_hovering_ = true;
   if (event_handler_ != nullptr) {
     event_handler_->OnTouchMove(id, x / default_virtual_pixel_ratio_,
                                 y / default_virtual_pixel_ratio_, from_overlay);
@@ -938,7 +931,6 @@ void NWebDelegate::OnTouchMove(int32_t id,
 }
 
 void NWebDelegate::OnTouchCancel() {
-  is_hovering_ = false;
   if (event_handler_ != nullptr) {
     --pressing_num_;
     event_handler_->OnTouchCancel();
@@ -949,7 +941,6 @@ void NWebDelegate::OnTouchCancelById(int32_t id,
                                      double x,
                                      double y,
                                      bool from_overlay) {
-  is_hovering_ = false;
   if (event_handler_ != nullptr) {
     --pressing_num_;
     event_handler_->OnTouchCancelById(id, x / default_virtual_pixel_ratio_,
@@ -3962,30 +3953,16 @@ bool NWebDelegate::GetAccessibilityNodeRectById(int64_t accessibilityId,
     return true;
   }
 
-  if (is_hovering_) {
-    auto currentId = accessibilityId;
-    do {
-      auto next = GetAccessibilityNodeInfoByFocusMove(
-          currentId, FocusMoveDirection::FORWARD);
-      if (!next) {
-        return false;
-      }
-      currentId = next->GetAccessibilityId();
-    } while (!GetAccessibilityVisible(currentId));
-
-    auto accessibilityManager = GetAccessibilityManager();
-    if (accessibilityManager != nullptr) {
-      accessibilityManager->SendAccessibilityEvent(
-          currentId, AccessibilityEventType::REQUEST_FOCUS);
-      return true;
-    }
-  }
-
   return false;
 }
 
-void NWebDelegate::SendAccessibilityHoverEvent(int x, int y) {
+void NWebDelegate::SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) {
   if (accessibility_state_) {
+    if (!isHoverEnter) {
+      is_hovering_ = false;
+      return;
+    }
+    is_hovering_ = true;
     auto* accessibilityManager = GetAccessibilityManager();
     if (accessibilityManager != nullptr) {
       auto scale = accessibilityManager->GetPageScaleFactor();

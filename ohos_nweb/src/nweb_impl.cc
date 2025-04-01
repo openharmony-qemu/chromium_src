@@ -4425,7 +4425,13 @@ bool NWebImpl::GetAccessibilityNodeRectById(int64_t accessibilityId,
 
 void NWebImpl::SendAccessibilityHoverEvent(int32_t x, int32_t y) {
   if (nweb_delegate_ != nullptr) {
-    nweb_delegate_->SendAccessibilityHoverEvent(x, y);
+    nweb_delegate_->SendAccessibilityHoverEvent(x, y, true);
+  }
+}
+
+void NWebImpl::SendAccessibilityHoverEventV2(int32_t x, int32_t y, bool isHoverEnter) {
+  if (nweb_delegate_ != nullptr) {
+    nweb_delegate_->SendAccessibilityHoverEvent(x, y, isHoverEnter);
   }
 }
 

@@ -87,12 +87,6 @@ media::RendererType OHOSMediaPlayerRendererClient::GetRendererType() {
   return media::RendererType::kOHOSMediaPlayer;
 }
 
-void OHOSMediaPlayerRendererClient::SetNativeWindowCreatedCallback(
-    media::Renderer::NativeWindowCreatedCallback cb) {
-  LOG(INFO) << "OHOSMediaPlayerRendererClient::SetNativeWindowCreatedCallback";
-  native_window_created_cb_ = std::move(cb);
-}
-
 void OHOSMediaPlayerRendererClient::OnFinishPaintCallback() {
 }
 

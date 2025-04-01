@@ -164,12 +164,6 @@ class MEDIA_EXPORT Renderer {
   // Note: New implementation should update RendererType.
   virtual RendererType GetRendererType() = 0;
 
-#if defined(OHOS_MEDIA)
-  using OnGetRectCallback = base::RepeatingCallback<void(const gfx::Rect&)>; 
-  using NativeWindowCreatedCallback = base::OnceCallback<void(OnGetRectCallback)>;
-  virtual void SetNativeWindowCreatedCallback(NativeWindowCreatedCallback cb) {}
-#endif // OHOS_MEDIA
-
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   struct MediaSourceInfo {
     std::string media_source;
@@ -183,6 +177,7 @@ class MEDIA_EXPORT Renderer {
   virtual void SetPoster(const std::string& poster_url) {}
   virtual void SetAttributes(base::flat_map<std::string, std::string> attributes) {}
   virtual void SetReferrer(const std::string& referrer) {}
+  using OnGetRectCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
   using SurfaceCreatedCallback = base::OnceCallback<void(int, OnGetRectCallback)>;
   virtual void SetSurfaceCreatedCallback(SurfaceCreatedCallback cb) {}
   using UpdatePlaybackStatusCallback = base::RepeatingCallback<void(uint32_t)>;

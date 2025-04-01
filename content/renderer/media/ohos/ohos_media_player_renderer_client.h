@@ -64,9 +64,6 @@ class OHOSMediaPlayerRendererClient
                   media::PipelineStatusCallback init_cb) override;
   media::RendererType GetRendererType() override;
 
-  void SetNativeWindowCreatedCallback(
-      media::Renderer::NativeWindowCreatedCallback cb) override;
-
   // media::mojom::MediaPlayerRendererClientExtension implementation
   void OnDurationChange(base::TimeDelta duration) override;
   void OnVideoSizeChange(const gfx::Size& size) override;
@@ -79,7 +76,6 @@ class OHOSMediaPlayerRendererClient
                                          bool success);
   void OnSurfaceCreated(int native_window_id);
   void OnSurfaceDestroyed();
-  void OnGetVideoRect(const gfx::Rect& rect);
 
   void OnRemoteRendererInitialized(media::PipelineStatus status);
   void OnFinishPaintCallback();

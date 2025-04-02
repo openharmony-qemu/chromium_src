@@ -85,6 +85,10 @@ class MEDIA_EXPORT Renderer {
                           DestroyTextureCB destroy_texture_cb);
 #endif
 
+#if defined(OHOS_MEDIA)
+  virtual void SetNativeWindowSurface(int native_window_id);
+#endif // OHOS_MEDIA
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
   virtual void SetSurfaceId(int surface_id, const gfx::Rect& rect);
   virtual void SetMediaPlayerState(bool is_suspend, int suspend_type);

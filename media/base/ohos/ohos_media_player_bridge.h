@@ -87,6 +87,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   base::TimeDelta GetMediaTime();
   void FinishPaint(int fd);
   void SetPlaybackSpeed(OHOS::NWeb::PlaybackRateMode mode);
+  void SetNativeWindowSurface(int native_window_id);
 
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurface(int32_t surface_id);
@@ -110,6 +111,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekInternal(base::TimeDelta time);
   void PropagateDuration(base::TimeDelta duration);
   bool IsAudible(float volume);
+  void SetNativeWindowFromSurfaceId();
 
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurfaceNew(int32_t surface_id);
@@ -135,11 +137,9 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   uint64_t uv__get_addr_tag(void* addr);
 #endif
 
-  const std::string surfaceFormat = "SURFACE_FORMAT";
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
-  std::deque<std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter>> cached_buffers_;
-  std::shared_ptr<OHOS::NWeb::IConsumerSurfaceAdapter> consumer_surface_ =
-      nullptr;
+  void* native_window_origin_ = nullptr;
+
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   raw_ptr<Client> client_;
   GURL url_;
@@ -171,8 +171,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 #ifdef OHOS_VIDEO_ASSISTANT
   int32_t new_surface_id_ = -1;
   int32_t pending_new_surface_id_ = -1;
-  int32_t video_width_ = 0;
-  int32_t video_height_ = 0;
 #endif // OHOS_VIDEO_ASSISTANT
 
   // HTTP Request Headers
@@ -201,7 +199,10 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
   // Whether user credentials are allowed to be passed.
   bool allow_credentials_;
-  
+
+  // NativeWindow Embed id
+  int native_window_id_ = -1;
+
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };
 }  // namespace media

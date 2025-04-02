@@ -55,6 +55,10 @@ void Renderer::Initialize(CreateTextureCB create_texture_cb,
                           DestroyTextureCB destroy_texture_cb) {}
 #endif
 
+#if defined(OHOS_MEDIA)
+void Renderer::SetNativeWindowSurface(int native_window_id) {}
+#endif // OHOS_MEDIA
+
 #if defined(OHOS_CUSTOM_VIDEO_PLAYER)
 void Renderer::SetSurfaceId(int surface_id, const gfx::Rect& rect) {}
 void Renderer::SetMediaPlayerState(bool is_suspend, int suspend_type) {}

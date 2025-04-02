@@ -90,20 +90,34 @@ void OHOSMediaPlayerRenderer::Initialize(
     return;
   }
 
-  CreateMediaPlayer(media_resource->GetMediaUrlParams(), std::move(init_cb));
+  url_params_ = std::make_unique<media::MediaUrlParams>(media_resource->GetMediaUrlParams());
+  if (!url_params_) {
+    LOG(ERROR) << "GetMediaUrlParams failed";
+    std::move(init_cb).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
+  init_cb_ = std::move(init_cb);
+  TryOrCreateMediaPlayer();
 }
 
-void OHOSMediaPlayerRenderer::CreateMediaPlayer(
-    const media::MediaUrlParams& url_params,
-    media::PipelineStatusCallback init_cb) {
+
+void OHOSMediaPlayerRenderer::CreateMediaPlayer() {
+  LOG(INFO) << "OHOSMediaPlayerRenderer::CreateMediaPlayer";
   const std::string user_agent = GetContentClient()->browser()->GetUserAgent();
+  if (!url_params_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no url_params_";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
   media_player_.reset(new media::OHOSMediaPlayerBridge(
-      url_params.media_url, url_params.site_for_cookies,
-      url_params.top_frame_origin, user_agent,
-      url_params.has_storage_access,
+      url_params_->media_url, url_params_->site_for_cookies,
+      url_params_->top_frame_origin, user_agent,
+      url_params_->has_storage_access,
       false,  // hide_url_log
-      this, url_params.allow_credentials, url_params.is_hls, url_params.headers));
-  init_cb_ = std::move(init_cb);
+      this, url_params_->allow_credentials, url_params_->is_hls, url_params_->headers));
+  media_player_->SetNativeWindowSurface(native_window_id_);
   int32_t ret = media_player_->Initialize();
   if (ret != 0) {
     LOG(ERROR) << "media player Initialize failed";
@@ -158,9 +172,26 @@ void OHOSMediaPlayerRenderer::InitiateScopedSurfaceRequest(
     InitiateScopedSurfaceRequestCallback callback) {}
 
 void OHOSMediaPlayerRenderer::FinishPaint(int32_t fd) {
-  if (media_player_) {
-    media_player_->FinishPaint(fd);
+}
+
+void OHOSMediaPlayerRenderer::SetNativeWindowSurface(int native_window_id) {
+  LOG(INFO) << "SetMediaPlayerSurface, native_window_id:" << native_window_id;
+  native_window_id_ = native_window_id;
+  TryOrCreateMediaPlayer();
+}
+
+void OHOSMediaPlayerRenderer::TryOrCreateMediaPlayer() {
+  LOG(INFO) << "TryOrCreateMediaPlayer enter";
+  bool wait_surface_created = native_window_id_ == -1;
+  if (wait_surface_created) {
+    LOG(INFO) << "TryOrCreateMediaPlayer wait_surface_created";
+    return;
   }
+  if (url_params_ == nullptr) {
+    LOG(INFO) << "TryOrCreateMediaPlayer url_params_== nullptr";
+    return;
+  }
+  CreateMediaPlayer();
 }
 
 void OHOSMediaPlayerRenderer::OnFrameAvailable(int fd,
@@ -170,19 +201,6 @@ void OHOSMediaPlayerRenderer::OnFrameAvailable(int fd,
                                                int32_t visible_width,
                                                int32_t visible_height,
                                                int32_t format) {
-  if (client_extension_) {
-    auto ohos_buffer = media::mojom::OhosSurfaceBufferHandle::New();
-    ohos_buffer->buffer_size = size;
-    base::ScopedFD buffer_fd(dup(fd));
-    ohos_buffer->fd_browser = fd;
-    ohos_buffer->coded_width = coded_width;
-    ohos_buffer->coded_height = coded_height;
-    ohos_buffer->visible_width = visible_width;
-    ohos_buffer->visible_height = visible_height;
-    ohos_buffer->format = format;
-    ohos_buffer->buffer_fd = mojo::PlatformHandle(std::move(buffer_fd));
-    client_extension_->OnFrameUpdate(std::move(ohos_buffer));
-  }
 }
 
 media::OHOSMediaResourceGetter* OHOSMediaPlayerRenderer::GetMediaResourceGetter() {
@@ -230,6 +248,7 @@ void OHOSMediaPlayerRenderer::OnError(int error) {
 }
 
 void OHOSMediaPlayerRenderer::OnVideoSizeChanged(int width, int height) {
+  LOG(INFO) << "OHOSMediaPlayerRenderer::OnVideoSizeChanged enter";
   gfx::Size new_size = gfx::Size(width, height);
   if (video_size_ != new_size) {
     video_size_ = new_size;
@@ -329,6 +348,7 @@ media::RendererType OHOSMediaPlayerRenderer::GetRendererType() {
 
 #ifdef OHOS_VIDEO_ASSISTANT
 void OHOSMediaPlayerRenderer::SetVideoSurface(int32_t surface_id) {
+  LOG(INFO) << "OHOSMediaPlayerRenderer::SetVideoSurface, component surface_id:" << surface_id;
   if (media_player_) {
     media_player_->SetVideoSurface(surface_id);
   } else {

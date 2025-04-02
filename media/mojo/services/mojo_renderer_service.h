@@ -90,7 +90,9 @@ class MEDIA_MOJO_EXPORT MojoRendererService final : public mojom::Renderer,
 #ifdef OHOS_VIDEO_ASSISTANT
   void SetVideoSurface(int32_t surface_id) override;
 #endif // OHOS_VIDEO_ASSISTANT
-
+#ifdef OHOS_MEDIA
+  void SetNativeWindowSurface(int32_t native_window_id) override;
+#endif // OHOS_MEDIA
  private:
   enum State {
     STATE_UNINITIALIZED,

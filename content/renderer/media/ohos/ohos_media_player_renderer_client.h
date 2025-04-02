@@ -11,6 +11,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "content/common/content_export.h"
+#include "media/base/native_texture_wrapper.h"
 #include "media/base/media_resource.h"
 #include "media/base/renderer.h"
 #include "media/base/renderer_client.h"
@@ -43,7 +44,9 @@ class OHOSMediaPlayerRendererClient
       mojo::PendingRemote<RendererExtention> renderer_extension_remote,
       mojo::PendingReceiver<ClientExtention> client_extension_receiver,
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,
+      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
       std::unique_ptr<media::MojoRenderer> mojo_renderer,
+      media::ScopedNativeTextureWrapper native_texture_wrapper,
       media::VideoRendererSink* sink);
   ~OHOSMediaPlayerRendererClient() override;
 
@@ -66,8 +69,14 @@ class OHOSMediaPlayerRendererClient
   void OnVideoSizeChange(const gfx::Size& size) override;
   void OnFrameUpdate(media::mojom::OhosSurfaceBufferHandlePtr
                          ohos_surface_buffer_handle) override;
+  void OnFrameAvailable();
 
  private:
+  void OnStreamTextureWrapperInitialized(media::MediaResource* media_resource,
+                                         bool success);
+  void OnSurfaceCreated(int native_window_id);
+  void OnSurfaceDestroyed();
+
   void OnRemoteRendererInitialized(media::PipelineStatus status);
   void OnFinishPaintCallback();
 
@@ -81,13 +90,16 @@ class OHOSMediaPlayerRendererClient
 
   media::MediaResource* media_resource_;
 
-  std::deque<CachedBuffer> cached_buffers_;
+  // Add native texture impl
+  media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
   media::RendererClient* client_;
 
   media::VideoRendererSink* sink_;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
 
   media::PipelineStatusCallback init_cb_;
 
@@ -109,6 +121,13 @@ class OHOSMediaPlayerRendererClient
   // Used to receive events from MediaPlayerRenderer in the browser process.
   mojo::Receiver<MediaPlayerRendererClientExtension> client_extension_receiver_{
       this};
+
+  int native_window_id_ = -1;
+
+#ifdef OHOS_VIDEO_ASSISTANT
+  media::RequestSurfaceCB request_surface_cb_;
+  media::VideoDecoderChangedCB decoder_changed_cb_;
+#endif // OHOS_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<OHOSMediaPlayerRendererClient> weak_factory_{this};

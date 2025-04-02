@@ -358,4 +358,10 @@ void MojoRendererService::SetVideoSurface(int32_t surface_id) {
   renderer_->SetVideoSurface(surface_id);
 }
 #endif // OHOS_VIDEO_ASSISTANT
+
+#ifdef OHOS_MEDIA
+void MojoRendererService::SetNativeWindowSurface(int32_t native_window_id) {
+  renderer_->SetNativeWindowSurface(native_window_id);
+}
+#endif // OHOS_MEDIA
 }  // namespace media

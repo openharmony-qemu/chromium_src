@@ -108,6 +108,9 @@ interface Renderer {
 
   [EnableIf=ohos_video_assistant]
   SetVideoSurface(int32 surface_id);
+
+  [EnableIf=ohos_media]
+  SetNativeWindowSurface(int32 native_window_id);
 };
 
 // A Mojo equivalent of media::RendererClient. See media/mojo/README.md

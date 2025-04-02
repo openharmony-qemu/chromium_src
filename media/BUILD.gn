@@ -211,7 +211,9 @@ test("media_unittests") {
     "//media/test:run_all_unittests",
     "//media/video:unit_tests",
     "//media/webrtc:unit_tests",
-    "//media/base/ohos:unit_tests"
+    "//media/base/ohos:unit_tests",
+    "//content/public/browser:browser",
+    "//cef:libcef_static",
   ]
 
   data = [
@@ -270,6 +272,23 @@ test("media_unittests") {
 
   if (is_ios) {
     deps += [ ":unit_tests_bundle_data" ]
+  }
+
+  if (is_ohos) {
+    import("//ohos_sdk/ohos_sdk.gni")
+
+    lib_dirs = []
+    if (target_cpu == "arm") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/arm-linux-ohos/" ]
+    } else if (target_cpu == "arm64") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/aarch64-linux-ohos/" ]
+    } else if (target_cpu == "x86" || target_cpu == "x64") {
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/x86_64-linux-ohos/" ]
+    }
+
+    libs = [
+      "native_window"
+    ]
   }
 }
 

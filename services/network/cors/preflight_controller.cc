@@ -57,7 +57,7 @@ int GetInitialRequestID() {
   // To avoid increasing the likelihood of overflowing the range of available
   // RequestIDs, kMax is set to a relatively low value of 2^20 (rather than
   // to something higher like 2^31).
-  const int kMin = 1 << 20;
+  const int kMin = 1 << 26;
   const int kMax = 1 << 28;
   return base::RandInt(kMin + 1, kMax);
 }

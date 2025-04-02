@@ -277,14 +277,18 @@ test("media_unittests") {
   if (is_ohos) {
     import("//ohos_sdk/ohos_sdk.gni")
 
-    libs = []
+    lib_dirs = []
     if (target_cpu == "arm") {
-      libs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/arm-linux-ohos/libnative_window.so" ]
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/arm-linux-ohos/" ]
     } else if (target_cpu == "arm64") {
-      libs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/aarch64-linux-ohos/libnative_window.so" ]
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/aarch64-linux-ohos/" ]
     } else if (target_cpu == "x86" || target_cpu == "x64") {
-      libs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/x86_64-linux-ohos/libnative_window.so" ]
+      lib_dirs += [ "//ohos_sdk/native/$ohos_sdk_version/sysroot/usr/lib/x86_64-linux-ohos/" ]
     }
+
+    libs = [
+      "native_window"
+    ]
   }
 }
 

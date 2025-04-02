@@ -279,7 +279,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       it++;
       continue;
     }
-    if (GetInterruptMode() && otherMediaSession->IsActive()) {
+    if (GetInterruptMode() && otherMediaSession->IsActive() && !IsPreloadOrMutedMediaMode()) {
       LOG(INFO) << "MediaSession is suspending the audio in other web.";
       main_task_runner_->PostTask(
           FROM_HERE,

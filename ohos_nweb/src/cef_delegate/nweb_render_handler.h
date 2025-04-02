@@ -59,9 +59,6 @@ class NWebRenderHandler : public CefRenderHandler {
 #endif
 #ifdef OHOS_SCREEN_ROTATION
   void SetScreenInfo(const NWebScreenInfo& screen_info);
-  NWebScreenInfo& GetLastScreenInfo();
-  void SetLastScreenInfo(const NWebScreenInfo& screen_info);
-  bool IsNeedCefNotifyScreenInfoChanged();
 #endif  // #ifdef OHOS_SCREEN_ROTATION
   int ContentHeight();
   void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);

@@ -372,6 +372,19 @@ void NWebRenderHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
 }
 #endif  // #if BUILDFLAG(IS_OHOS)
 
+#if BUILDFLAG(IS_OHOS)
+void NWebRenderHandler::SetScreenOffset(double x, double y) {
+  screen_x_ = x;
+  screen_y_ = y;
+}
+void NWebRenderHandler::GetScreenOffset(CefRefPtr<CefBrowser> browser,
+                                        double& x,
+                                        double& y) {
+  x = screen_x_;
+  y = screen_y_;
+}
+#endif
+
 void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   width_ = width;
   height_ = height;

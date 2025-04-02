@@ -36,6 +36,7 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
   bool SetBackbufferAllocation(bool allocated) override;
   
  private:
+  ~NativeViewGLSurfaceEGLOhos();
   EGLNativeWindowType window_;
   bool enable_debug_backgroound_color_ = false;
   bool is_first_swapbuffers_ = true;

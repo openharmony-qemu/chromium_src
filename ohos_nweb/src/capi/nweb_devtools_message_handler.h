@@ -24,21 +24,20 @@ class NWebFileSelectorParams;
 class NWebStringVectorValueCallback;
 }
 
-class NWebDevtoolsMessageHandler;
-
+template<typename T>
 struct NWebDevtoolsMessageHandlerBase {
   const size_t struct_size = sizeof(NWebDevtoolsMessageHandlerBase);
-  bool (NWebDevtoolsMessageHandler::*show_file_chooser)(
+  bool (T::*show_file_chooser)(
       std::shared_ptr<OHOS::NWeb::NWebFileSelectorParams> param,
       std::shared_ptr<OHOS::NWeb::NWebStringVectorValueCallback>
           file_path_callback) = nullptr;
-  void (NWebDevtoolsMessageHandler::*show_info_bar)(
+  void (T::*show_info_bar)(
       const std::string& message,
       const std::string& path,
       std::shared_ptr<OHOS::NWeb::NWebBoolValueCallback> callback) = nullptr;
-  bool (NWebDevtoolsMessageHandler::*bring_to_front)() = nullptr;
-  bool (NWebDevtoolsMessageHandler::*close_window)() = nullptr;
-  bool (NWebDevtoolsMessageHandler::*active_devtools_window)() = nullptr;
+  bool (T::*bring_to_front)() = nullptr;
+  bool (T::*close_window)() = nullptr;
+  bool (T::*active_devtools_window)() = nullptr;
 
   NWebDevtoolsMessageHandlerBase() = default;
   NWebDevtoolsMessageHandlerBase(
@@ -51,10 +50,10 @@ struct NWebDevtoolsMessageHandlerBase {
       NWebDevtoolsMessageHandlerBase&& other) = delete;
 };
 
-class NWebDevtoolsMessageHandler : public NWebDevtoolsMessageHandlerBase {
+class NWebDevtoolsMessageHandler : public NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler> {
  public:
-  using Base = NWebDevtoolsMessageHandlerBase;
-  NWebDevtoolsMessageHandler() : NWebDevtoolsMessageHandlerBase() {
+  using Base = NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler>;
+  NWebDevtoolsMessageHandler() : NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler>() {
     this->show_file_chooser =
         &NWebDevtoolsMessageHandler::ShowFileChooser;
     this->show_info_bar =

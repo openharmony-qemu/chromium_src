@@ -20,6 +20,7 @@
 #include <optional>
 #include <array>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "ohos_nweb/src/nweb_hilog.h"

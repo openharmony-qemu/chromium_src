@@ -36,6 +36,7 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
   bool SetBackbufferAllocation(bool allocated) override;
   
  private:
+  ~NativeViewGLSurfaceEGLOhos();
   EGLNativeWindowType window_;
 };
 

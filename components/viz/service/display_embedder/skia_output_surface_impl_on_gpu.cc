@@ -432,7 +432,11 @@ void SkiaOutputSurfaceImplOnGpu::Reshape(const SkImageInfo& image_info,
     MarkContextLost(CONTEXT_LOST_RESHAPE_FAILED);
   }
 }
-
+void SkiaOutputSurfaceImplOnGpu::SetNativeInnerWeb(bool isInnerWeb) {
+  if (output_device_) {
+    output_device_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
 void SkiaOutputSurfaceImplOnGpu::DrawOverdraw(
     sk_sp<SkDeferredDisplayList> overdraw_ddl,
     SkCanvas& canvas) {

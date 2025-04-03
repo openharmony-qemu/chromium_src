@@ -192,6 +192,8 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
       base::OnceClosure callback,
       std::vector<gpu::SyncToken> sync_tokens) override;
 
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+
  private:
   bool Initialize();
   void InitializeOnGpuThread(GpuVSyncCallback vsync_callback_runner,

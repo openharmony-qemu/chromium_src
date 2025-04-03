@@ -180,6 +180,12 @@ void DirectRenderer::Reshape(
   output_surface_->Reshape(reshape_params);
 }
 
+void DirectRenderer::SetNativeInnerWeb(bool isInnerWeb) {
+  if (output_surface_) {
+    output_surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+
 void DirectRenderer::DecideRenderPassAllocationsForFrame(
     const AggregatedRenderPassList& render_passes_in_draw_order) {
   DCHECK(render_pass_bypass_quads_.empty());

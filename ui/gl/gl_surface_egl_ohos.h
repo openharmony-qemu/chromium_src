@@ -34,8 +34,11 @@ class GL_EXPORT NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
               const gfx::ColorSpace& color_space,
               bool has_alpha) override;
   bool SetBackbufferAllocation(bool allocated) override;
+
+  void SetNativeInnerWeb(bool isInnerWeb) override;
   
  private:
+  bool isInnerWeb_ = false;
   EGLNativeWindowType window_;
 };
 

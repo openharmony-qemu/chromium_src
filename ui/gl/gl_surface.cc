@@ -342,8 +342,13 @@ gfx::SwapResult GLSurfaceAdapter::SwapBuffersWithDamage(
     gfx::FrameData data) {
   return surface_->SwapBuffersWithDamage(rects, std::move(callback), data);
 }
-#endif
 
+void GLSurfaceAdapter::SetNativeInnerWeb(bool isInnerWeb) {
+  if (surface_) {
+    surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
+#endif
 gfx::SwapResult GLSurfaceAdapter::PostSubBuffer(int x,
                                                 int y,
                                                 int width,

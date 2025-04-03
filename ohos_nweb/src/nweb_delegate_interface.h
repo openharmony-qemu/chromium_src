@@ -391,6 +391,7 @@ class NWebDelegateInterface
   virtual void SetDrawMode(int32_t mode) = 0;
   virtual bool GetPendingSizeStatus() = 0;
   virtual void SetFitContentMode(int32_t mode) = 0;
+  virtual void SetNativeInnerWeb(bool isInnerWeb) = 0;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MEDIA_POLICY)

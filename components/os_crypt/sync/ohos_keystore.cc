@@ -23,8 +23,6 @@
 #include "base/path_service.h"
 #include "ohos_adapter_helper.h"
 
-#include "ohos_adapter_helper.h"
-
 namespace crypto {
 namespace ohos {
 

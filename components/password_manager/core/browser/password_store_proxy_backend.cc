@@ -628,6 +628,12 @@ void PasswordStoreProxyBackend::UpdateLoginAsync(
   }
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void  PasswordStoreProxyBackend::UpdateLoginDisplayNameAsync(const PasswordForm& form) {
+  return;
+}
+#endif
+
 void PasswordStoreProxyBackend::RemoveLoginAsync(
     const PasswordForm& form,
     PasswordChangesOrErrorReply callback) {

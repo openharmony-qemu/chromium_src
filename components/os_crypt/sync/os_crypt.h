@@ -45,10 +45,18 @@ COMPONENT_EXPORT(OS_CRYPT)
 bool EncryptString16(const std::u16string& plaintext, std::string* ciphertext);
 COMPONENT_EXPORT(OS_CRYPT)
 bool DecryptString16(const std::string& ciphertext, std::u16string* plaintext);
+#if defined(OHOS_EX_PASSWORD)
+COMPONENT_EXPORT(OS_CRYPT)
+bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
+#endif
 COMPONENT_EXPORT(OS_CRYPT)
 bool EncryptString(const std::string& plaintext, std::string* ciphertext);
 COMPONENT_EXPORT(OS_CRYPT)
 bool DecryptString(const std::string& ciphertext, std::string* plaintext);
+#if defined(OHOS_EX_PASSWORD)
+COMPONENT_EXPORT(OS_CRYPT)
+bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
+#endif
 #if BUILDFLAG(IS_WIN)
 COMPONENT_EXPORT(OS_CRYPT)
 void RegisterLocalPrefs(PrefRegistrySimple* registry);
@@ -134,6 +142,11 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   bool DecryptString16(const std::string& ciphertext,
                        std::u16string* plaintext);
 
+#if defined(OHOS_EX_PASSWORD)
+  // Decrypt string16 for migrating passwords to password vault.
+  bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
+#endif
+
   // Encrypt a string.
   bool EncryptString(const std::string& plaintext, std::string* ciphertext);
 
@@ -141,6 +154,11 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // Note that the input (first argument) is a std::string, so you need to first
   // get your (binary) data into a string.
   bool DecryptString(const std::string& ciphertext, std::string* plaintext);
+
+#if defined(OHOS_EX_PASSWORD)
+  // Decrypt string for migrating passwords to password vault.
+  bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
+#endif
 
 #if BUILDFLAG(IS_WIN)
   // Registers preferences used by OSCryptImpl.
@@ -243,6 +261,10 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // service. Is thread-safe.
   crypto::SymmetricKey* GetPasswordV11();
 
+#if defined(OHOS_EX_PASSWORD)
+  crypto::SymmetricKey* GetPasswordV10ForMigrate();
+#endif
+
   // For password_v10, nullptr means uninitialised.
   std::unique_ptr<crypto::SymmetricKey> password_v10_cache_;
 
@@ -252,10 +274,18 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // For ota password loss, nullptr means to backend.
   std::unique_ptr<crypto::SymmetricKey> password_ota_cache_;
 
+#if defined(OHOS_EX_PASSWORD)
+  std::unique_ptr<crypto::SymmetricKey> password_migrate_cache_;
+#endif
+
   // Returns a cached. Is thread-safe for ota password loss.
   crypto::SymmetricKey*  GetPasswordForOtaFail();
 
   bool is_password_v11_cached_ = false;
+
+#if defined(OHOS_EX_PASSWORD)
+  bool is_password_migrate_cached_ = false;
+#endif
 
   // |config_| is used to initialise |password_v11_cache_| and then cleared.
   std::unique_ptr<os_crypt::Config> config_;

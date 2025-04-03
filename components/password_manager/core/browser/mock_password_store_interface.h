@@ -36,6 +36,9 @@ class MockPasswordStoreInterface : public PasswordStoreInterface {
               UpdateLoginWithPrimaryKey,
               (const PasswordForm&, const PasswordForm&, base::OnceClosure),
               (override));
+#if defined(OHOS_EX_PASSWORD)
+  MOCK_METHOD(void, UpdateLoginDisplayName, (const PasswordForm&), (override));
+#endif
   MOCK_METHOD(void, RemoveLogin, (const PasswordForm&), (override));
   MOCK_METHOD(void,
               RemoveLoginsByURLAndTime,

@@ -115,6 +115,12 @@ void FakePasswordStoreBackend::UpdateLoginAsync(
       std::move(callback));
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void FakePasswordStoreBackend::UpdateLoginDisplayNameAsync(const PasswordForm& form) {
+  return;
+}
+#endif
+
 void FakePasswordStoreBackend::RemoveLoginAsync(
     const PasswordForm& form,
     PasswordChangesOrErrorReply callback) {

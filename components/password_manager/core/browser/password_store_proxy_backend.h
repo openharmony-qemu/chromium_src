@@ -57,6 +57,9 @@ class PasswordStoreProxyBackend : public PasswordStoreBackend {
                      PasswordChangesOrErrorReply callback) override;
   void UpdateLoginAsync(const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;
+#if defined(OHOS_EX_PASSWORD)
+  void UpdateLoginDisplayNameAsync(const PasswordForm& form) override;
+#endif
   void RemoveLoginAsync(const PasswordForm& form,
                         PasswordChangesOrErrorReply callback) override;
   void RemoveLoginsByURLAndTimeAsync(

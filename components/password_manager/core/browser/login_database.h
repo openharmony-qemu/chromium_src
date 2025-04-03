@@ -85,6 +85,11 @@ class LoginDatabase : public PasswordStoreSync::MetadataStore {
       const PasswordForm& form,
       UpdateCredentialError* error = nullptr);
 
+#if defined(OHOS_EX_PASSWORD)
+  bool UpdateLoginDisplayName(const PasswordForm& form,
+                              PasswordStoreChangeList* changes);
+#endif
+
   // Removes |form| from the list of remembered password forms. Returns true if
   // |form| was successfully removed from the database. If |changes| is not be
   // null, it will be used to populate the change list of the removed forms if
@@ -361,6 +366,9 @@ class LoginDatabase : public PasswordStoreSync::MetadataStore {
   std::string blocklisted_statement_;
   std::string encrypted_password_statement_by_id_;
   std::string id_and_password_statement_;
+#if defined(OHOS_EX_PASSWORD)
+  std::string update_display_name_statement_;
+#endif
 
   // A callback to be invoked whenever all pending deletions have been processed
   // by Sync - see

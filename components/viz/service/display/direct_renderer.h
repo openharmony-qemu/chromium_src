@@ -81,6 +81,7 @@ class VIZ_SERVICE_EXPORT DirectRenderer {
 
 #if BUILDFLAG(IS_OHOS)
   void disable_partial_swap() { use_partial_swap_ = false; }
+  void SetNativeInnerWeb(bool isInnerWeb);
 #endif
 
   void SetVisible(bool visible);

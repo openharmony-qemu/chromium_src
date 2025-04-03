@@ -86,6 +86,7 @@ class InProcessContextFactory::PerCompositorData
 #endif
 #if defined(OHOS_UNITTESTS)
   void DisableSwapUntilMaximized(DisableSwapUntilMaximizedCallback callback) override {}
+  void SetNativeInnerWeb(bool isInnerWeb) override {}
 #endif
   void SetDisplayColorMatrix(const gfx::Transform& matrix) override {
     output_color_matrix_ = gfx::TransformToSkM44(matrix);

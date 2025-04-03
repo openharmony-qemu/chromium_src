@@ -645,7 +645,11 @@ void Display::RestoreRenderFitTimeElapsed() {
 void Display::SetShouldFrameSubmissionBeforeDraw(bool should) {
   scheduler_->SetShouldFrameSubmissionBeforeDraw(should);
 }
-
+void Display::SetNativeInnerWeb(bool isInnerWeb) {
+  if (renderer_) {
+    renderer_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
 void Display::SetDrawRect(const gfx::Rect& new_rect)
 {
   if (draw_mode_ == 0) {

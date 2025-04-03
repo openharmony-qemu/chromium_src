@@ -171,6 +171,18 @@ void PasswordStoreBuiltInBackend::UpdateLoginAsync(
           .Then(std::move(callback)));
 }
 
+#if defined(OHOS_EX_PASSWORD)
+void PasswordStoreBuiltInBackend::UpdateLoginDisplayNameAsync(
+    const PasswordForm& form) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  DCHECK(helper_);
+  background_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&LoginDatabaseAsyncHelper::UpdateLoginDisplayName,
+                     base::Unretained(helper_.get()), form));
+}
+#endif
+
 void PasswordStoreBuiltInBackend::RemoveLoginAsync(
     const PasswordForm& form,
     PasswordChangesOrErrorReply callback) {

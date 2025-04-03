@@ -56,6 +56,12 @@
 #include "url/origin.h"
 #include "url/url_constants.h"
 
+#if defined(OHOS_EX_PASSWORD)
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "chrome/browser/browser_process.h"
+#include "components/prefs/pref_service.h"
+#endif
+
 using autofill::GaiaIdHash;
 
 namespace password_manager {
@@ -818,7 +824,11 @@ bool LoginDatabase::Init() {
 
   if (!db_.Open(db_path_)) {
     LogDatabaseInitError(OPEN_FILE_ERROR);
-    LOG(ERROR) << "Unable to open the password store database.";
+    LOG(ERROR) << "[Autofill] Unable to open the password store database.";
+#if defined(OHOS_EX_PASSWORD)
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+#endif
     return false;
   }
 
@@ -1257,6 +1267,44 @@ PasswordStoreChangeList LoginDatabase::UpdateLogin(
 
   return list;
 }
+
+#if defined(OHOS_EX_PASSWORD)
+bool LoginDatabase::UpdateLoginDisplayName(const PasswordForm& form,
+                                           PasswordStoreChangeList* changes) {
+  TRACE_EVENT0("passwords", "LoginDatabase::UpdateLoginDisplayName");
+  if (changes) {
+    changes->clear();
+  }
+  const PrimaryKeyAndPassword old_primary_key_password =
+      GetPrimaryKeyAndPassword(form);
+  DCHECK(!update_display_name_statement_.empty());
+  sql::Statement s(
+      db_.GetCachedStatement(SQL_FROM_HERE, update_display_name_statement_.c_str()));
+  int next_param = 0;
+  s.BindString16(next_param++, form.display_name);
+
+  // WHERE starts here.
+  s.BindString(next_param++, form.url.spec());
+  s.BindString16(next_param++, form.username_element);
+  s.BindString16(next_param++, form.username_value);
+  s.BindString16(next_param++, form.password_element);
+  s.BindString(next_param++, form.signon_realm);
+  // NOTE: Add new fields here only if the field is a part of the unique key.
+  // Otherwise, add the field above "WHERE starts here" comment.
+
+  if (!s.Run() || db_.GetLastChangeCount() == 0) {
+    VLOG(0) << "Update login DisplayName failed.";
+    return false;
+  }
+
+  if (changes) {
+    changes->emplace_back(PasswordStoreChange::UPDATE, std::move(form),
+                          /*password_changed=*/true);
+  }
+
+  return true;
+}
+#endif
 
 bool LoginDatabase::RemoveLogin(const PasswordForm& form,
                                 PasswordStoreChangeList* changes) {
@@ -2026,6 +2074,11 @@ void LoginDatabase::InitializeStatementStrings(const SQLTableBuilder& builder) {
   DCHECK(id_and_password_statement_.empty());
   id_and_password_statement_ = "SELECT id, password_value FROM logins WHERE " +
                                all_unique_key_column_names;
+#if defined(OHOS_EX_PASSWORD)
+  DCHECK(update_display_name_statement_.empty());
+  update_display_name_statement_ = "UPDATE logins SET display_name=? WHERE " +
+                                   all_unique_key_column_names;
+#endif
 }
 
 void LoginDatabase::FillFormInStore(PasswordForm* form) const {

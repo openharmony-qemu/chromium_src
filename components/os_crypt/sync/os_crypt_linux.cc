@@ -24,6 +24,18 @@
 #include "crypto/encryptor.h"
 #include "crypto/symmetric_key.h"
 
+#if defined(OHOS_EX_PASSWORD)
+#include "base/feature_list.h"
+#include "base/files/file_path.h"
+#include "base/files/file_util.h"
+#include "base/path_service.h"
+#include "base/strings/string_number_conversions.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "chrome/browser/browser_process.h"
+#include "components/prefs/pref_service.h"
+#include "ohos_adapter_helper.h"
+#endif
+
 #if defined(OHOS_ENCRYPT)
 #include "ohos_crypto.h"
 #endif
@@ -47,6 +59,12 @@ constexpr size_t kIVBlockSizeAES128 = 16;
 #if defined(OHOS_ENCRYPT)
 // Size of initialization vectore for GCM
 const size_t kIVSizeAESGCM = 12;
+#endif
+
+#if defined(OHOS_EX_PASSWORD)
+constexpr base::FilePath::CharType kNWebAssetHandleDir[] =
+    FILE_PATH_LITERAL("migrate_bak");
+constexpr char kNewbAssetHandleAlias[] = "asset_data_key";
 #endif
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
 // ciphertext with this string so that future data migration can detect
@@ -84,6 +102,86 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
 
   return encryption_key;
 }
+
+#if defined(OHOS_EX_PASSWORD)
+static std::string AssetQuery(base::FilePath key_file) {
+  std::string assetHandle;
+  bool res = base::ReadFileToString(key_file, &assetHandle);
+  if (!res) {
+    LOG(ERROR) << "[Autofill] Read assethandle file failed.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  if (assetHandle.empty()) {
+    LOG(INFO) << "[Autofill] Assethandle is empty, not need to migrate.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                          .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
+  if (local_key.empty()) {
+    LOG(ERROR) << "[Autofill] Get key from asset failed.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+  LOG(INFO) << "[Autofill] get key from asset success.";
+  return local_key;
+}
+
+static std::string GetKeyFromAsset() {
+  base::FilePath cache_path;
+  base::PathService::Get(base::DIR_CACHE, &cache_path);
+  if (cache_path.empty()) {
+    return std::string();
+  }
+
+  base::FilePath key_dir =
+      cache_path.Append(FILE_PATH_LITERAL(kNWebAssetHandleDir));
+  if (!base::PathExists(key_dir)) {
+    LOG(ERROR) << "[Autofill] Assethandle dir not exist.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  base::FilePath key_file = key_dir.Append(
+    FILE_PATH_LITERAL(crypto::ohos::get_asset_handle_file_256(kNewbAssetHandleAlias)));
+  if (!base::PathExists(key_file)) {
+    LOG(ERROR) << "[Autofill] Assethandle file not exist.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  std::string local_key = AssetQuery(key_file);
+  return local_key;
+}
+
+std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForMigrate() {
+  std::string asset_key = GetKeyFromAsset();
+  if (asset_key.empty()) {
+    return nullptr;
+  }
+
+  std::vector<uint8_t> key_byte_array;
+
+  base::HexStringToBytes(asset_key, &key_byte_array);
+
+  std::unique_ptr<crypto::SymmetricKey> encryption_key(
+      crypto::SymmetricKey::Import(crypto::SymmetricKey::AES,
+                                   std::string((std::string::value_type*)(key_byte_array.data()),
+                                   key_byte_array.size())));
+
+  DCHECK(encryption_key);
+
+  return encryption_key;
+}
+#endif
 
 #if defined(OHOS_ENCRYPT)
 // Generates a newly allocated SymmetricKey object compatibility with ota.
@@ -141,12 +239,22 @@ bool EncryptString16(const std::u16string& plaintext, std::string* ciphertext) {
 bool DecryptString16(const std::string& ciphertext, std::u16string* plaintext) {
   return OSCryptImpl::GetInstance()->DecryptString16(ciphertext, plaintext);
 }
+#if defined(OHOS_EX_PASSWORD)
+bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext) {
+  return OSCryptImpl::GetInstance()->DecryptString16ForMigrate(ciphertext, plaintext);
+}
+#endif
 bool EncryptString(const std::string& plaintext, std::string* ciphertext) {
   return OSCryptImpl::GetInstance()->EncryptString(plaintext, ciphertext);
 }
 bool DecryptString(const std::string& ciphertext, std::string* plaintext) {
   return OSCryptImpl::GetInstance()->DecryptString(ciphertext, plaintext);
 }
+#if defined(OHOS_EX_PASSWORD)
+bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext) {
+  return OSCryptImpl::GetInstance()->DecryptStringForMigrate(ciphertext, plaintext);
+}
+#endif
 std::string GetRawEncryptionKey() {
   return OSCryptImpl::GetInstance()->GetRawEncryptionKey();
 }
@@ -198,6 +306,19 @@ bool OSCryptImpl::DecryptString16(const std::string& ciphertext,
   *plaintext = base::UTF8ToUTF16(utf8);
   return true;
 }
+
+#if defined(OHOS_EX_PASSWORD)
+bool OSCryptImpl::DecryptString16ForMigrate(const std::string& ciphertext,
+                                            std::u16string* plaintext) {
+  std::string utf8;
+  if (!DecryptStringForMigrate(ciphertext, &utf8)) {
+    return false;
+  }
+
+  *plaintext = base::UTF8ToUTF16(utf8);
+  return true;
+}
+#endif
 
 bool OSCryptImpl::EncryptString(const std::string& plaintext,
                                 std::string* ciphertext) {
@@ -328,6 +449,42 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
   return false;
 }
 
+#if defined(OHOS_EX_PASSWORD)
+bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
+                                          std::string* plaintext) {
+  if (ciphertext.empty()) {
+    plaintext->clear();
+    return true;
+  }
+
+  // the incoming ciphertext was encrypted and with V10 version.
+  crypto::SymmetricKey* encryption_key = GetPasswordV10ForMigrate();
+  std::string obfuscation_prefix;
+  obfuscation_prefix = kObfuscationPrefixV10;
+
+  if (!encryption_key) {
+    LOG(ERROR) << "[Autofill] Decryption failed: could not get the key";
+    return false;
+  }
+
+  if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
+    return true;
+  }
+  std::string raw_ciphertext =
+      ciphertext.substr(obfuscation_prefix.length() + kIVSizeAESGCM);
+  std::string iv =
+      ciphertext.substr(obfuscation_prefix.length(), kIVSizeAESGCM);
+
+  if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
+    return true;
+  }
+
+  LOG(ERROR) << "[Autofill] Decryption failed";
+  base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
+  return false;
+}
+#endif
+
 void OSCryptImpl::SetConfig(std::unique_ptr<os_crypt::Config> config) {
   // Setting initialisation parameters makes no sense after initializing.
   DCHECK(!is_password_v11_cached_);
@@ -443,6 +600,17 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV11() {
   }
   return password_v11_cache_.get();
 }
+
+#if defined(OHOS_EX_PASSWORD)
+crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
+  base::AutoLock auto_lock(OSCryptImpl::GetLock());
+  if (!is_password_migrate_cached_) {
+    password_migrate_cache_ = GenerateEncryptionKeyForMigrate();
+    is_password_migrate_cached_ = true;
+  }
+  return password_migrate_cache_.get();
+}
+#endif
 
 // static
 base::Lock& OSCryptImpl::GetLock() {

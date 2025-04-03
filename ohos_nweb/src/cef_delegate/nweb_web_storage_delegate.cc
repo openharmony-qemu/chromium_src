@@ -373,6 +373,15 @@ void NWebWebStorageDelegate::GetSavedPasswordsInfo(int callback_id) {
       callback->GetPasswordUrl(), callback->GetPasswordUsername(), callback_id);
 }
 
+void NWebWebStorageDelegate::MigratePasswordsInfo() {
+  CefRefPtr<CefWebStorage> web_storage = GetGlobalWebStorage();
+  if (web_storage == nullptr) {
+    return;
+  }
+  web_storage->MigratePasswordsInfo();
+  LOG(INFO) << "[Autofill] migrate password info.";
+}
+
 void NWebWebStorageDelegate::RegisterWebStorageExtensionCallback(
     std::shared_ptr<NWebStorageExtensionCallback>
         web_storage_extension_callback) {

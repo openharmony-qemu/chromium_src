@@ -50,6 +50,7 @@ class NWebWebStorageImpl : public NWebWebStorage {
                           const std::string& username,
                           int callback_id);
   void GetSavedPasswords(int callback_id);
+  void MigratePasswords();
   void ClearPassword();
   void RemovePassword(const std::string& url, const std::string& username);
   void RemovePasswordByUrl(const std::string& url);

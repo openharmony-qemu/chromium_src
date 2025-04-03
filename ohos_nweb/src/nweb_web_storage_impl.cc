@@ -117,6 +117,14 @@ void NWebWebStorageImpl::GetSavedPasswords(int callback_id) {
 #endif  // OHOS_EX_PASSWORD
 }
 
+void NWebWebStorageImpl::MigratePasswords() {
+#ifdef OHOS_EX_PASSWORD
+  if (delegate_ != nullptr) {
+    return delegate_->MigratePasswordsInfo();
+  }
+#endif
+}
+
 void NWebWebStorageImpl::ClearPassword() {
 #ifdef OHOS_EX_PASSWORD
   if (delegate_ != nullptr) {

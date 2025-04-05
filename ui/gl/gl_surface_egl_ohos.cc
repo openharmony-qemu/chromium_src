@@ -66,6 +66,10 @@ NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
     LOG(INFO) << "NativeViewGLSurfaceEGLOhos:: enable debug background color," \
       " The rendering output will be replaced with green.";
   }
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .AddNativeWindowRef(reinterpret_cast<void*>(window_));
+  LOG(INFO) << "NativeViewGLSurfaceEGLOhos add window ref.";
 }
 
 gfx::SwapResult NativeViewGLSurfaceEGLOhos::SwapBuffers(
@@ -140,6 +144,14 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
     NativeViewGLSurfaceEGL::Recreate();
   }
   return true;
+}
+
+NativeViewGLSurfaceEGLOhos::~NativeViewGLSurfaceEGLOhos() {
+  Destroy();
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .NativeWindowUnRef(reinterpret_cast<void*>(window_));
+  LOG(INFO) << "~NativeViewGLSurfaceEGLOhos unref the window.";
 }
 
 }  // namespace gl

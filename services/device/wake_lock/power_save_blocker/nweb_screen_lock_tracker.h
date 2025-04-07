@@ -7,6 +7,7 @@
 
 #define NWEB_EXPORT __attribute__((visibility("default")))
 
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 

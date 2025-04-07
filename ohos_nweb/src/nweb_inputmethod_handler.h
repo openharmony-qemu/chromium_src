@@ -147,6 +147,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
                               const CefRange& selected_range,
                               const CefRange& compositon_range);
   bool AttachToSystemIME(bool is_need_reset_listener, int32_t requestKeyboardReason = 0);
+  void SetNeedReattach(HideTextinputType hideType);
 
 #if defined(OHOS_PASSWORD_AUTOFILL)
   void AutoFillWithIMFEventOnUI(bool is_username,
@@ -202,6 +203,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   CompositionType composition_type_ = COMPOSITION_INVALID;
   int32_t composition_cursor_index_ = 0;
   bool isManualCloseKeyboard_ = false;
+  bool isAttachSuccess_ = true;
 
   std::unordered_map<char16_t, int> keycode_map = {
     {'q', 0x51}, {'w', 0x57}, {'e', 0x45}, {'r', 0x52}, {'t', 0x54},

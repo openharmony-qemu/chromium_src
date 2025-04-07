@@ -355,14 +355,14 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int3
                         device_pixel_ratio_);
 
   bool show_keyboard = show_keyboard_ && (!isManualCloseKeyboard_);
-  bool flag = inputmethod_adapter_->AttachWithRequestKeyboardReason(
+  isAttachSuccess_ = inputmethod_adapter_->AttachWithRequestKeyboardReason(
       inputmethod_listener_, show_keyboard, textConfig, is_need_reset_listener,
       requestKeyboardReason);
   if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
-    flag = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard,
+    isAttachSuccess_ = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard,
         textConfig, is_need_reset_listener);
   }
-  if (!flag) {
+  if (!isAttachSuccess_) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return false;
   }
@@ -454,6 +454,15 @@ void NWebInputMethodHandler::ShowTextInput() {
   LOG(INFO) << "NWebInputMethodHandler::ShowTextInput";
 }
 
+void NWebInputMethodHandler::SetNeedReattach(HideTextinputType hideType) {
+  if (hideType == HideTextinputType::FROM_ONPAUSE) {
+    isNeedReattachOncontinue_ = true;
+  }
+  if (hideType == HideTextinputType::FROM_ONBLUR) {
+    isNeedReattachOnfocus_ = true;
+  }
+}
+
 void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
                                            HideTextinputType hideType) {
   LOG(INFO) << "NWebInputMethodHandler::HideTextInput, isAttached_: " << isAttached_;
@@ -463,6 +472,12 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
     return;
   }
   if (!isAttached_) {
+    // when there is an attach failure occured, inputmethod need to be attached again.
+    if (!isAttachSuccess_) {
+      SetNeedReattach(hideType);
+      LOG(INFO) << "HideTextInput is triggered after an attach failure, "
+                   "need to reattach next time.";
+    }
     if (hideType != HideTextinputType::FROM_ONPAUSE) {
       LOG(INFO) << "not from switch front and background, ingnore";
       return;
@@ -491,13 +506,7 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
 
   lastCloseInputMethodTime_ = std::chrono::high_resolution_clock::now();
   isAttached_ = false;
-  if (hideType == HideTextinputType::FROM_ONPAUSE) {
-    isNeedReattachOncontinue_ = true;
-  }
-
-  if (hideType == HideTextinputType::FROM_ONBLUR) {
-    isNeedReattachOnfocus_ = true;
-  }
+  SetNeedReattach(hideType);
 }
 
 void NWebInputMethodHandler::HideTextInputForce() {

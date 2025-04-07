@@ -776,6 +776,8 @@ class NWebImpl : public NWeb {
 #endif
   void SetSurfaceDensity(const double& density) override;
 
+  void DisallowSandboxFileAccessFromFileUrl(bool disallow) const;
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

@@ -4922,4 +4922,12 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
     NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation());
   }
 }
+
+void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
+  if (!GetBrowser() || !GetBrowser()->GetHost()) {
+    LOG(ERROR) << "NWebDelegate::DisallowSandboxFileAccessFromFileUrl failed, get browser failed.";
+    return;
+  }
+  GetBrowser()->GetHost()->SetDisallowSandboxFileAccessFromFileUrl(disallow);
+}
 }  // namespace OHOS::NWeb

@@ -652,6 +652,8 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   void MaximizeResize() override;
   void SetSurfaceDensity(const double& density) override;
 
+  void DisallowSandboxFileAccessFromFileUrl(bool disallow) override;
+ 
  public:
   int argc_;
   const char** argv_;

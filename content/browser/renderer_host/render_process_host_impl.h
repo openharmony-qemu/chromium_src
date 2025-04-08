@@ -1009,8 +1009,8 @@ class CONTENT_EXPORT RenderProcessHostImpl
                            GuestsAreNotSuitableHosts);
 
 #ifdef OHOS_RENDER_PROCESS_MODE
-  static RenderProcessHost* GetExistingBackgroundProcessHost(
-      SiteInstanceImpl* site_instance);
+  static RenderProcessHost* GetExistingBackgroundProcessHost();
+  friend class DelayedRenderKiller;
 #endif
 
   // Returns a RenderProcessHost that is rendering a URL corresponding to

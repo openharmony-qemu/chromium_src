@@ -4792,9 +4792,63 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingProcessHost(
 }
 
 #ifdef OHOS_RENDER_PROCESS_MODE
+class DelayedRenderKiller {
+  public:
+    static DelayedRenderKiller* GetInstance() {
+      static DelayedRenderKiller inst_;
+      return &inst_;
+    }
+    ~DelayedRenderKiller() = default;
+    void StartTimer() {
+      if (!timer_.IsRunning()) {
+        rep_ = 0;
+        timer_.Start(FROM_HERE, base::Seconds(3),
+        base::BindRepeating(&DelayedRenderKiller::TryKillRender, base::Unretained(this)));
+      }
+    }
+    bool NeedDebug() {
+      return rep_ >= MAX_REP;
+    }
+  private:
+    DelayedRenderKiller() = default;
+    DelayedRenderKiller(const DelayedRenderKiller& i) = delete;
+    DelayedRenderKiller& operator= (const DelayedRenderKiller& i) = delete;
+
+    void TryKillRender() {
+      LOG(INFO) << "DelayedRenderKiller shot timer";
+      rep_++;
+      if (rep_ > MAX_REP) {
+        LOG(INFO) << "rep count up to limit, stop timer";
+        timer_.Stop();
+        return;
+      }
+      size_t count = RenderProcessHostImpl::GetProcessCountForLimit();
+      if (RenderProcessHost::render_process_mode() !=
+            RenderProcessMode::SINGLE_MODE &&
+        (count > RenderProcessHostImpl::GetMaxRendererProcessCount())) {
+        // Kill the idle render process.
+        RenderProcessHostImpl* render_host = static_cast<RenderProcessHostImpl*>(
+          RenderProcessHostImpl::GetExistingBackgroundProcessHost());
+        if (render_host) {
+          render_host->FastShutdownIfPossible(1u, true);
+          LOG(INFO) << "Successfully tried to fast shutdown idle render process with handle: "
+                    << render_host->GetProcess().Handle();
+        }
+      }
+
+      count = RenderProcessHostImpl::GetProcessCountForLimit();
+      if (count <= RenderProcessHostImpl::GetMaxRendererProcessCount()) {
+        timer_.Stop();
+        LOG(INFO) << "DelayedRenderKiller stop timer";
+      }
+    }
+
+    base::RepeatingTimer timer_;
+    int32_t rep_ = 0;
+    const int32_t MAX_REP = 15;
+};
 // static
-RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
-      SiteInstanceImpl* site_instance) {
+RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost() {
   // First figure out which existing renderers we can use.
   RenderProcessHost* longest_background_host;
   base::TimeDelta longest_duration;
@@ -4807,7 +4861,18 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
                                       .spare_render_process_host()) {
       continue;
     }
-    if (iter.GetCurrentValue()->IsProcessBackgrounded()) {
+
+    if (DelayedRenderKiller::GetInstance()->NeedDebug()) {
+      LOG(INFO) << "isBackground " << iter.GetCurrentValue()->IsProcessBackgrounded()
+                << " AreAllRefCountsZero " << static_cast<RenderProcessHostImpl*>
+                (iter.GetCurrentValue())->AreAllRefCountsZero()
+                << " ActiveView " << iter.GetCurrentValue()->GetActiveViewCount();
+    }
+
+    if (iter.GetCurrentValue()->IsProcessBackgrounded() &&
+      static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue())
+          ->AreAllRefCountsZero() &&
+      iter.GetCurrentValue()->GetActiveViewCount() <= 1) {
       base::TimeDelta background_duration = current_time -
         iter.GetCurrentValue()->ProcessBackgroundTime();
       if (background_duration >= longest_duration) {
@@ -4819,7 +4884,8 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
 
   // Now pick a longest time in background renderer.
   if (longest_background_host) {
-    LOG(INFO) <<  __func__ << ": Found one background render host.";
+    LOG(INFO) << ": Found one background render host "
+              << longest_background_host->GetProcess().Handle();
     return longest_background_host;
   }
 
@@ -5049,12 +5115,16 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
       // Kill the idel render process.
       RenderProcessHostImpl* render_host =
           static_cast<RenderProcessHostImpl*>(
-              RenderProcessHostImpl::GetExistingBackgroundProcessHost(
-                  site_instance));
+              RenderProcessHostImpl::GetExistingBackgroundProcessHost());
       if (render_host) {
         LOG(INFO) << "Try fast shutdown idle render process: "
                   << render_host->GetProcess().Handle() << " in the background.";
         render_host->FastShutdownIfPossible(1u, true);
+      }
+
+      if (RenderProcessHostImpl::GetProcessCountForLimit() >
+        RenderProcessHostImpl::GetMaxRendererProcessCount()) {
+        DelayedRenderKiller::GetInstance()->StartTimer();
       }
     }
 #endif // OHOS_RENDER_PROCESS_MODE

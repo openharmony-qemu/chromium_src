@@ -596,7 +596,7 @@ InitRichtextIdentifier();
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   if (display != nullptr) {
-    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), true);
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation());
     if (!richtext_data_str_.empty()) {
       // Created a richtext component
       SetVirtualPixelRatio(richtextDisplayRatio);
@@ -1030,8 +1030,7 @@ void NWebDelegate::SendMouseEvent(int x,
 }
 
 void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
-                                           DisplayOrientation orientation,
-                                           bool isWebinitialization) {
+                                           DisplayOrientation orientation) {
   if (render_handler_ != nullptr) {
     if (display_manager_adapter_ == nullptr) {
       LOG(ERROR) << "Get display_manager_adapter_ failed";
@@ -1062,13 +1061,6 @@ void NWebDelegate::NotifyScreenInfoChanged(RotationType rotation,
     int height = std::ceil(display->GetHeight() / display_ratio);
 #ifdef OHOS_SCREEN_ROTATION
     bool default_portrait = display_manager_adapter_->IsDefaultPortrait();
-    if (hidden_ && !isWebinitialization) {
-      render_handler_->SetLastScreenInfo({rotation, orientation, width, height,
-                                          display_ratio, default_portrait});
-      render_handler_->SetScreenInfo({rotation, orientation, width, height,
-                                      display_ratio, default_portrait});
-      return;
-    }
     render_handler_->SetScreenInfo({rotation, orientation, width, height,
                                     display_ratio, default_portrait});
 #endif  // #ifdef OHOS_SCREEN_ROTATION
@@ -1659,14 +1651,6 @@ void NWebDelegate::OnContinue() {
     // Set the browser as visible.
     LOG(DEBUG) << "NWebDelegate::OnContinue set unhidden, nweb_id = " << nweb_id_;
     GetBrowser()->GetHost()->WasHidden(false);
-    if (render_handler_->IsNeedCefNotifyScreenInfoChanged()) {
-      render_handler_->SetScreenInfo(render_handler_->GetLastScreenInfo());
-      auto browser = GetBrowser();
-      if (browser != nullptr && browser->GetHost() != nullptr) {
-        LOG(INFO) << "NWebDelegate::OnContinue Notify Screen Info Changed";
-        browser->GetHost()->NotifyScreenInfoChanged();
-      }
-    }
 
 #ifdef OHOS_RENDER_PROCESS_MODE
     if (GetBrowser()->GetHost()->NeedsReload()) {
@@ -4619,7 +4603,7 @@ void NWebDelegate::SetSurfaceDensity(const double& density) {
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;
   if (display != nullptr) {
-    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation(), false);
+    NotifyScreenInfoChanged(display->GetRotation(), display->GetDisplayOrientation());
   }
 }
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT

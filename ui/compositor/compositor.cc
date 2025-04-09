@@ -342,6 +342,7 @@ void Compositor::SetLayerTreeFrameSink(
   display_private_ = std::move(display_private);
 #if defined(OHOS_COMPOSITE_RENDER)
   SetDrawMode(drawMode_);
+  SetNativeInnerWeb(isInnerWeb_);
 #endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
@@ -482,6 +483,13 @@ void Compositor::SetDrawMode(const int32_t& mode) {
     TRACE_EVENT0("viz", "Compositor::SetDrawMode");
     mojo::SyncCallRestrictions::ScopedAllowSyncCall scoped_allow_sync_call;
     display_private_->SetDrawMode(mode);
+  }
+}
+
+void Compositor::SetNativeInnerWeb(bool isInnerWeb) {
+  isInnerWeb_ = isInnerWeb;
+  if (display_private_) {
+    display_private_->SetNativeInnerWeb(isInnerWeb);
   }
 }
 #endif  // defined(OHOS_COMPOSITE_RENDER)

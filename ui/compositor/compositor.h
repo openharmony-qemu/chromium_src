@@ -262,7 +262,9 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void SetShouldFrameSubmissionBeforeDraw(bool should);
   void SetDrawRect(const gfx::Rect& new_rect);
   void SetDrawMode(const int32_t& mode);
+  void SetNativeInnerWeb(bool isInnerWeb);
   int32_t drawMode_ = 0;
+  bool isInnerWeb_ = false;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
   // Sets the compositor's device scale factor and size.

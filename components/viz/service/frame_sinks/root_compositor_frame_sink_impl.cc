@@ -291,6 +291,10 @@ void RootCompositorFrameSinkImpl::SetDrawMode(int32_t mode)
    LOG(INFO) << "ootCompositorFrameSinkImpl::SetDrawMode";
    display_->SetDrawMode(mode);
 }
+
+void RootCompositorFrameSinkImpl::SetNativeInnerWeb(bool isInnerWeb) {
+  display_->SetNativeInnerWeb(isInnerWeb);
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 void RootCompositorFrameSinkImpl::Resize(const gfx::Size& size) {

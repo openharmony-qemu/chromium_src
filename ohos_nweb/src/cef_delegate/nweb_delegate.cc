@@ -3210,6 +3210,12 @@ void NWebDelegate::SetFitContentMode(int32_t mode) {
     preference_delegate_->SetFitContent(mode);
   }
 }
+
+void NWebDelegate::SetNativeInnerWeb(bool isInnerWeb) {
+  if (GetBrowser().get()) {
+    GetBrowser()->GetHost()->SetNativeInnerWeb(isInnerWeb);
+  }
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_EX_FORCE_ZOOM)

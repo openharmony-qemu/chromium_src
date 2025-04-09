@@ -221,6 +221,11 @@ bool SkiaOutputDeviceGL::Reshape(const SkImageInfo& image_info,
   return !!sk_surface_;
 }
 
+void SkiaOutputDeviceGL::SetNativeInnerWeb(bool isInnerWeb) {
+  if (gl_surface_) {
+    gl_surface_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
 void SkiaOutputDeviceGL::Present(const absl::optional<gfx::Rect>& update_rect,
                                  BufferPresentedCallback feedback,
                                  OutputSurfaceFrame frame) {

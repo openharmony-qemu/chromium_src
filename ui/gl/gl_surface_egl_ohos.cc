@@ -54,7 +54,20 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
 NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
     GLDisplayEGL* display,
     EGLNativeWindowType window)
-    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window) {}
+    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window) {
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .GetWindowAdapterInstance()
+    .AddNativeWindowRef(reinterpret_cast<void*>(window_));
+  LOG(INFO) << "NativeViewGLSurfaceEGLOhos add window ref.";
+}
+
+NativeViewGLSurfaceEGLOhos::~NativeViewGLSurfaceEGLOhos() {
+  Destroy();
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetWindowAdapterInstance()
+      .NativeWindowUnRef(reinterpret_cast<void*>(window_));
+  LOG(INFO) << "~NativeViewGLSurfaceEGLOhos unref the window.";
+}
 
 gfx::SwapResult NativeViewGLSurfaceEGLOhos::SwapBuffers(
     PresentationCallback callback,

@@ -21,6 +21,7 @@ class PolicyChangedEventCallback;
 
 class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
  public:
+  static constexpr int kUseBrowserPolicyMinApiVersion = 16;
   PolicyLoaderOhos(scoped_refptr<base::SequencedTaskRunner> task_runner);
   PolicyLoaderOhos(const PolicyLoaderOhos&) = delete;
   PolicyLoaderOhos& operator=(const PolicyLoaderOhos&) = delete;
@@ -30,15 +31,19 @@ class POLICY_EXPORT PolicyLoaderOhos : public AsyncPolicyLoader {
   void InitOnBackgroundThread() override;
   PolicyBundle Load() override;
 
-  void TryChoosePolicySource();
   static bool ParsePolicy(const std::string& json, PolicyBundle* bundle);
 
  private:
-  std::string ReadTestPolices();
-
   std::shared_ptr<PolicyChangedEventCallback> event_callback_;
+  bool callback_initialized_ = false;
+  bool reached_min_api_version_ = false;
   bool use_browser_policy_ = false;
-  bool policy_source_choosed_ = false;
+  bool prev_use_browser_policy_ = false;
+
+  std::string ReadTestPolices();
+  void InitialReadApiVersionOnce();
+  void MaybeSwitchLoadInvoker();
+  void DeterminePolicySource();
 };
 
 class PolicyChangedEventCallback

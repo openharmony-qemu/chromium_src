@@ -139,6 +139,7 @@
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
 #include "base/ohos/ltpo/include/dynamic_frame_rate_decision.h"
+#include "base/ohos/d_vsync/include/d_vsync_controller.h"
 #endif
 
 namespace viz {
@@ -1410,6 +1411,10 @@ void GpuServiceImpl::SetHasTouchPoint(bool has_touch_point) {
 
 void GpuServiceImpl::ReportSlidingFrameRate(int32_t frame_rate) {
   base::ohos::DynamicFrameRateDecision::GetInstance().ReportSlidingFrameRate(frame_rate);
+}
+
+void GpuServiceImpl::SetIsFling(bool is_fling_enabled) {
+  base::ohos::DVsyncController::GetInstance().SetIsFling(is_fling_enabled);
 }
 #endif
 

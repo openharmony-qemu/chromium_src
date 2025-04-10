@@ -278,6 +278,8 @@ class SkiaOutputSurfaceImplOnGpu
   // Called on the viz thread!
   base::ScopedClosureRunner GetCacheBackBufferCb();
 
+  void SetNativeInnerWeb(bool isInnerWeb);
+
  private:
   struct PlaneAccessData {
     PlaneAccessData();

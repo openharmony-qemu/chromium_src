@@ -225,6 +225,8 @@ class VIZ_SERVICE_EXPORT OutputSurface {
   };
   virtual void Reshape(const ReshapeParams& params) = 0;
 
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {};
+
   // Swaps the current backbuffer to the screen. For successful swaps, the
   // implementation must call OutputSurfaceClient::DidReceiveSwapBuffersAck()
   // after returning from this method in order to unblock the next frame.

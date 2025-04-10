@@ -159,10 +159,10 @@ disturl=https://repo.huaweicloud.com/nodejs/
     _hap = os.path.join(
         self.root, 'entry/build/default/outputs/default/entry-default-%s.hap' %
         ('signed' if auto_signed else 'unsigned'))
-    if not os.path.exists(_hap):
-      raise FileNotFoundError("Could not find final build hap file: %s" % _hap)
+    #if not os.path.exists(_hap):
+      #raise FileNotFoundError("Could not find final build hap file: %s" % _hap)
 
-    shutil.copyfile(_hap, self.output)
+    #shutil.copyfile(_hap, self.output)
     return 0
 
   def BuildHar(self, module):

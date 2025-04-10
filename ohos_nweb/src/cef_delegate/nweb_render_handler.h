@@ -231,6 +231,11 @@ class NWebRenderHandler : public CefRenderHandler {
   // #ifdef OHOS_HTML_SELECT
   float GetCefDeviceRatio() const { return cef_device_ratio_; }
   // #endif
+
+#if BUILDFLAG(IS_OHOS)
+  void SetScreenOffset(double x, double y);
+  void GetScreenOffset(CefRefPtr<CefBrowser> browser, double& x, double& y) override;
+#endif
   // Include the default reference counting implementation.
   IMPLEMENT_REFCOUNTING(NWebRenderHandler);
 
@@ -271,6 +276,11 @@ class NWebRenderHandler : public CefRenderHandler {
 #endif  // defined(OHOS_INPUT_EVENTS)
   bool isSystemKeyboard_ = true;
   bool gesture_event_result_ = false;
+
+#if BUILDFLAG(IS_OHOS)
+  double screen_x_ = 0;
+  double screen_y_ = 0;
+#endif
 };
 }  // namespace OHOS::NWeb
 

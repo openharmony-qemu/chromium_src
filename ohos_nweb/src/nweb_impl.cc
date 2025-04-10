@@ -2315,6 +2315,11 @@ void NWebImpl::SetScreenOffSet(double x, double y) {
   if (inputmethod_handler_) {
     inputmethod_handler_->SetScreenOffSet(x, y);
   }
+#if BUILDFLAG(IS_OHOS)
+  if (nweb_delegate_) {
+    nweb_delegate_->SetScreenOffset(x, y);
+  }
+#endif
 }
 
 void NWebImpl::SetAudioMuted(bool muted) {

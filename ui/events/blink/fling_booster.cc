@@ -95,9 +95,6 @@ gfx::Vector2dF FlingBooster::GetVelocityForFlingStart(
         double velocityScaleTmp = 0.0;
         base::StringToDouble(ret, &velocityScaleTmp);
         double velocityScale = 1.5f;
-        if (fling_start.SourceDevice() == blink::mojom::GestureDevice::kTouchpad) {
-          velocityScale = 2.25f;
-        }
         if (std::abs(fling_start.data.fling_start.velocity_y) < kStartVelocityThreshold) {
           velocityScale = 1.2f;
         }

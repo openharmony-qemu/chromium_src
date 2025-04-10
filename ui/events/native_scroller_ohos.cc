@@ -43,16 +43,18 @@ void NativeScrollerOhos::Fling(float start_x,
                                float min_y,
                                float max_y,
                                base::TimeTicks start_time,
-                               blink::WebGestureDevice device_source) {
+                               GestureDevice device_source) {
     curr_time_ = start_time;
     start_time_ = start_time;
-    if (device_source == blink::mojom::GestureDevice::kTouchpad) {
+    if (device_source == GestureDevice::kTouchpad) {
         friction_ = kTouchpadFriction * kFrictionScale;
+    } else {
+        friction_ = kFriction;
     }
     std::string ret = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetScrollFriction();
     double frictionTmp = 0.0;
     base::StringToDouble(ret, &frictionTmp);
-    friction_ = !NearZero(frictionTmp) ? frictionTmp * kFrictionScale : kFriction;
+    friction_ = !NearZero(frictionTmp) ? frictionTmp * kFrictionScale : friction_;
     LOG(INFO) << "NativeScrollerOhos::Fling friction_ = " << friction_;
 
     // currently only vertical fling is supported

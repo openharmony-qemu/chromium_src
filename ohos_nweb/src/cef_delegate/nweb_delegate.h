@@ -443,6 +443,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetDrawMode(int32_t mode) override;
   bool GetPendingSizeStatus() override;
   void SetFitContentMode(int32_t mode) override;
+  void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 #if defined(OHOS_MULTI_WINDOW)

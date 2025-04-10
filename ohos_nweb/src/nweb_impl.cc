@@ -2332,6 +2332,11 @@ void NWebImpl::SetShouldFrameSubmissionBeforeDraw(bool should) {
     nweb_delegate_->SetShouldFrameSubmissionBeforeDraw(should);
   }
 }
+void NWebImpl::SetNativeInnerWeb(bool isInnerWeb) {
+  if (nweb_delegate_) {
+    nweb_delegate_->SetNativeInnerWeb(isInnerWeb);
+  }
+}
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
 void NWebImpl::SetAudioResumeInterval(int32_t resumeInterval) {

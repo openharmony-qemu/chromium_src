@@ -126,6 +126,7 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface>,
     const std::vector<int>& rects,
     PresentationCallback callback,
     gfx::FrameData data);
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
 #endif
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
@@ -323,6 +324,7 @@ class GL_EXPORT GLSurfaceAdapter : public GLSurface {
     const std::vector<int>& rects,
     PresentationCallback callback,
     gfx::FrameData data) override;
+  void SetNativeInnerWeb(bool isInnerWeb) override;
 #endif
   void SwapBuffersAsync(SwapCompletionCallback completion_callback,
                         PresentationCallback presentation_callback,

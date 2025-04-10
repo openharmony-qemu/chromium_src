@@ -10,7 +10,7 @@
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 
 #include "ohos_adapter_helper.h"
-
+#include "base/logging.h"
 namespace gl {
 
 const std::string PRODUCT_MODEL_EMULATOR = "emulator";
@@ -73,7 +73,7 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance();
   std::string product_model = system_properties_adapter.GetDeviceInfoProductModel();
  
-  if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR) {
+  if (base::ohos::IsMobileDevice() && product_model != PRODUCT_MODEL_EMULATOR && !isInnerWeb_) {
     if (NativeViewGLSurfaceEGL::Resize(size, scale_factor, color_space, has_alpha)) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetWindowAdapterInstance()
@@ -97,7 +97,10 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
 
   return true;
 }
-
+void NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb(bool isInnerWeb) {
+  LOG(INFO)<<"NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb is "<<isInnerWeb;
+  isInnerWeb_ = isInnerWeb;
+}
 
 bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
   TRACE_EVENT1("gpu", "NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation",

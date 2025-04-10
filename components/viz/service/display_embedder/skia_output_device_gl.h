@@ -57,6 +57,8 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
 
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+
  private:
   class OverlayData;
 

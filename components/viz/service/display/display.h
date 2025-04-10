@@ -156,6 +156,7 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   void SetShouldFrameSubmissionBeforeDraw(bool should);
   void SetDrawRect(const gfx::Rect& new_rect);
   void SetDrawMode(const int32_t mode);
+  void SetNativeInnerWeb(bool isInnerWeb);
 #endif  // defined(OHOS_COMPOSITE_RENDER)
 
   // Sets the color matrix that will be used to transform the output of this

@@ -121,6 +121,9 @@ interface DisplayPrivate {
 
   [EnableIf=is_ohos, Sync]
   DisableSwapUntilMaximized() => ();
+
+  [EnableIf=is_ohos]
+  SetNativeInnerWeb(bool isInnerWeb);
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.

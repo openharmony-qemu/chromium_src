@@ -15,6 +15,7 @@
 
 #include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
 
+#include "base/auto_reset.h"
 #include "base/logging.h"
 #include "cc/trees/layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink_client.h"
@@ -160,7 +161,7 @@ bool SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
   LOG(INFO) << "SW render DemandDrawSw";
 
   in_software_draw_ = true;
-  current_sw_canvas_ = canvas;
+  base::AutoReset<SkCanvas*> canvas_resetter(&current_sw_canvas_, canvas);
   size_ = gfx::ToRoundedSize(size);
 
   gfx::Transform offset_transform;

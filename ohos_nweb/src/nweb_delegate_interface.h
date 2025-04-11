@@ -146,6 +146,10 @@ class NWebDelegateInterface
   virtual double GetBrowserZoomLevel() = 0;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetScreenOffset(double x, double y) = 0;
+#endif
+
   /* event interface */
   virtual void Resize(uint32_t width, uint32_t height, bool isKeyboard = false) = 0;
 #if defined(OHOS_INPUT_EVENTS)

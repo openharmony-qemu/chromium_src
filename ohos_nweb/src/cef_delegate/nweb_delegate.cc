@@ -825,6 +825,22 @@ void NWebDelegate::RegisterRenderCb(
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+void NWebDelegate::SetScreenOffset(double x, double y) {
+  if (display_ratio_ == 0) {
+    return;
+  }
+  if (render_handler_ != nullptr) {
+    render_handler_->SetScreenOffset(std::round(x / display_ratio_), std::round(y / display_ratio_));
+  }
+
+  auto browser = GetBrowser();
+  if (browser != nullptr && browser->GetHost() != nullptr) {
+    browser->GetHost()->NotifyScreenInfoChangedV2();
+  }
+}
+#endif
+
 void NWebDelegate::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
 #if defined(OHOS_COMPOSITE_RENDER)
   if (width == width_ && height == height_) {

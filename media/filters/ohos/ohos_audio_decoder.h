@@ -303,6 +303,8 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void InitializeNotEncrypted(InitCB init_cb);
 
+  void WaitingForLicence();
+ 
  private:
   std::string mime_type_;
 
@@ -356,6 +358,13 @@ class OHOSAudioDecoder : public AudioDecoder,
   void* mediaKeySession_ = nullptr;
 
   base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
+
+  bool waiting_for_key_ = true;
+
+  int32_t time_out_count_ = 0;
+
+  // define a timer for waiting licence
+  base::RepeatingTimer io_timer_;
 };
 
 }

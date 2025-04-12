@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "base/logging.h"
+#include "net/http/http_request_headers.h"
 #include "base/task/single_thread_task_runner.h"
 #include "media/base/ohos/ohos_media_player_callback.h"
 #include "media/base/ohos/ohos_media_player_listener.h"
@@ -123,10 +124,10 @@ void OHOSMediaPlayerBridge::OnAuthCredentialsRetrieved(const std::u16string& use
 std::map<std::string, std::string> OHOSMediaPlayerBridge::GetPlayerHeadersInternal() {
   std::map<std::string, std::string> player_headers;
   if (!cookies_.empty()) {
-    player_headers.insert(std::pair<std::string, std::string>("Cookie", cookies_));
+    player_headers.insert(std::pair<std::string, std::string>(net::HttpRequestHeaders::kCookie, cookies_));
   }
   if (!user_agent_.empty()) {
-    player_headers.insert(std::pair<std::string, std::string>("User-Agent", user_agent_));
+    player_headers.insert(std::pair<std::string, std::string>(net::HttpRequestHeaders::kUserAgent, user_agent_));
   }
   for (const auto& entry : headers_) {
     player_headers[entry.first] = entry.second;

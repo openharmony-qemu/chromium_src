@@ -722,7 +722,7 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
 
   DCHECK(!media_crypto_and_license_ready_cb_);
   media_crypto_and_license_ready_cb_ =
-      std::move(media_crypto_and_license_ready_cb);
+    std::move(media_crypto_and_license_ready_cb);
 
   if (!ohos_media_key_session_) {
     LOG(INFO) << "[DRM]" << __func__ << ", key session not ready.";

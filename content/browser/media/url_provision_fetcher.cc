@@ -98,7 +98,6 @@ void URLProvisionFetcher::RetrieveWiseplayLicense(const GURL& default_url,
     ProvisionFetcher::ResponseCB response_cb) {
   response_cb_ = std::move(response_cb);
   const std::string request_string = default_url.spec();
-  LOG(INFO) << "[DRM]" << __func__ << ": url:" << request_string;
   LOG(INFO) << "[DRM]" << __func__ << ": data size:" << request_data.length();
   DCHECK(!simple_url_loader_);
   net::NetworkTrafficAnnotationTag traffic_annotation =

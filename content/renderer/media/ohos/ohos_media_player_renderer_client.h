@@ -88,14 +88,14 @@ class OHOSMediaPlayerRendererClient
                            const int& fd,
                            const int& fd_browser);
 
-  media::MediaResource* media_resource_;
+  raw_ptr<media::MediaResource> media_resource_;
 
   // Add native texture impl
   media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
-  media::RendererClient* client_;
+  raw_ptr<media::RendererClient> client_;
 
-  media::VideoRendererSink* sink_;
+  raw_ptr<media::VideoRendererSink> sink_;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 

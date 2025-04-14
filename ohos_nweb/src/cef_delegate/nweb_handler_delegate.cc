@@ -840,6 +840,10 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
             preference_delegate_->GetVirtualPixelRatio());
         main_browser_->GetHost()->PutUserAgent(
             preference_delegate_->UserAgent());
+#if defined(OHOS_NETWORK_CONNINFO)
+        main_browser_->GetHost()->SetFileAccess(
+            preference_delegate_->EnableRawFileAccess());
+#endif
 #if defined(OHOS_BACKGROUND_COLOR)
         main_browser_->GetHost()->SetBackgroundColor(
             preference_delegate_->GetBackgroundColor());

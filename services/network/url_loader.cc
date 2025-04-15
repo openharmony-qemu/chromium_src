@@ -2408,11 +2408,15 @@ void URLLoader::PrintNetworkCacheInfo() {
   string etag;
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("network"), "URLLoader::PrintNetworkCacheInfo", "info",
                "age: " + (response_->headers->GetAgeValue(&age) ? to_string(age.InMilliseconds()) : "unset") +
-               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ? Time::ToUTCTimeString(last_modified) : "unset") +
-               ";expires: " + (response_->headers->GetExpiresValue(&expires) ? Time::ToUTCTimeString(expires) : "unset") +
-               ";cache_control: " + (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") + 
+               ";last_modified: " + (response_->headers->GetLastModifiedValue(&last_modified) ?
+               Time::ToUTCTimeString(last_modified) : "unset") +
+               ";expires: " +
+               (response_->headers->GetExpiresValue(&expires) ? Time::ToUTCTimeString(expires) : "unset") +
+               ";cache_control: " +
+               (response_->headers->GetNormalizedHeader("Cache-Control", &cache_control) ? cache_control : "unset") +
                ";etag: " + (response_->headers->GetNormalizedHeader("ETag", &etag) ? etag : "unset") +
-               ";is_zero: " + to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +
+               ";is_zero: " +
+               to_string(response_->headers->GetFreshnessLifetimes(response_->response_time).freshness.is_zero()) +
                ";was_fetched_via_cache: " + to_string(response_->was_fetched_via_cache) +
                ";load_flags: " + to_string(url_request_->load_flags()),
                "id", request_id_);

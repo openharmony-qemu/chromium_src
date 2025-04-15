@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_resource_handler.h"
 #include "net/base/io_buffer.h"
 #include "ohos_nweb/src/capi/arkweb_scheme_handler.h"
@@ -89,8 +90,8 @@ class NWebPipeResourceHandler : public CefResourceHandler {
   void* last_data_out_{nullptr};
   int last_bytes_to_read_{0};
   scoped_refptr<net::GrowableIOBuffer> data_buffer_;
-  const ArkWeb_ResourceRequest* resource_request_{nullptr};
-  const ArkWeb_ResourceHandler* resource_handler_{nullptr};
+  raw_ptr<const ArkWeb_ResourceRequest> resource_request_ = nullptr;
+  raw_ptr<const ArkWeb_ResourceHandler> resource_handler_ = nullptr;
   CefRefPtr<OHOS::NWeb::NWebSchemeHandlerFactory> factory_;
   std::string web_tag_;
   GURL url_;

@@ -12,6 +12,7 @@
 #include "base/functional/callback.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/notreached.h"
 #include "base/run_loop.h"
 #include "build/build_config.h"
@@ -66,7 +67,7 @@ class EventHandlerFileDescriptorListener
   }
 
  private:
-  MessagePumpForUI* message_pump_;
+  raw_ptr<MessagePumpForUI> message_pump_;
   int non_delayed_fd_;
   int delayed_fd_;
 };

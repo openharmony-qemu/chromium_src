@@ -24,6 +24,7 @@
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/ohos/sys_info_utils.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cef/include/cef_task.h"
@@ -139,7 +140,7 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   }
 
  private:
-  NWebInputMethodHandler* handler_;
+  raw_ptr<NWebInputMethodHandler> handler_;
 };
 
 class InputMethodTask : public CefTask {

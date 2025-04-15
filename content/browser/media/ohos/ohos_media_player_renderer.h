@@ -110,7 +110,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   mojo::Remote<ClientExtension> client_extension_;
 
-  media::RendererClient* renderer_client_;
+  raw_ptr<media::RendererClient> renderer_client_;
 
   std::unique_ptr<media::OHOSMediaPlayerBridge> media_player_;
 

@@ -13,7 +13,7 @@ namespace {
 constexpr base::TimeDelta CHECK_FLUSH_TO_DISK_TIMEOUT = base::Milliseconds(200);
 const std::string PARAM_REQUEST_INFO_TYPE = "request_info_type";
 const std::string PARAM_PAGE_ORIGIN = "page_origin";
-const std::string PARAM_ONLY_SEND_REUSE_REQUEST = "only_send_reuse_request";
+const std::string REQUEST_HEADERS_COOKIE = "Cookie";
 }  // namespace
 
 namespace ohos_prp_preload {
@@ -37,20 +37,10 @@ bool ResReqPreloadInfoListToJson(const std::string& page_origin,
     }
   }
 
-  bool only_send_reuse_request = false;
-  int visible_num = 0;
-  int none_num = 0;
   for (std::shared_ptr<PRRequestInfo> info : info_list) {
-    if (mode == PRPPreloadMode::PRELOAD && info->preload_flag() == PRPP_FLAGS_NONE) {
-      none_num++;
+    if (mode == PRPPreloadMode::PRELOAD && ((info->preload_flag() & PRPP_FLAGS_VISIBLE) != PRPP_FLAGS_VISIBLE)) {
       continue;
     }
-    if ((PRRequestFlags)(info->preload_flag() & PRPP_FLAGS_URL_DYNAMIC) == PRPP_FLAGS_URL_DYNAMIC) {
-      only_send_reuse_request = true;
-    } else if (info->preload_flag() == PRPP_FLAGS_VISIBLE) {
-      visible_num++;
-    }
-
     base::Value::Dict dict;
     list.Append(std::move(dict));
     DiskCacheInfoParser::ParseResReqPreloadInfoForPreconnect(info, list.back().GetDict());
@@ -59,12 +49,7 @@ bool ResReqPreloadInfoListToJson(const std::string& page_origin,
     }
     need_store = true;
   }
-  if (mode == PRPPreloadMode::PRELOAD) {
-    if (visible_num + none_num == (int)(info_list.size())) {
-      only_send_reuse_request = true;
-    }
-    list.front().GetDict().Set(PARAM_ONLY_SEND_REUSE_REQUEST, only_send_reuse_request);
-  }
+
   bool write_success = base::JSONWriter::Write(list, &entry_content);
   if (!write_success) {
     LOG(WARNING) << "PRPPreload.ResReqPreloadInfoListToJson failed";
@@ -106,13 +91,7 @@ void JsonToResReqPreloadInfoList(const std::string& content,
       mode = PRPPreloadMode::PRECONNECT;
     }
     origin_info->set_page_origin(*page_origin);
-    const absl::optional<bool> only_send_reuse_request =
-      (*it).GetDict().FindBool(PARAM_ONLY_SEND_REUSE_REQUEST);
-    if (!only_send_reuse_request.has_value()) {
-      LOG(WARNING) << "PRPPreload.JsonToResReqPreloadInfoList json parse only_send_reuse_request failed";
-      mode = PRPPreloadMode::PRECONNECT;
-    }
-    origin_info->set_only_send_reuse_request(only_send_reuse_request.value());
+    origin_info->set_only_send_reuse_request(true);
     info_list.push_back(origin_info);
     it++;
   }
@@ -153,14 +132,37 @@ void ResReqInfoCacheMgr::Start() {
   disk_cache_->LoadInfoAsync();
   if (sth_task_runner_ != nullptr) {
     sth_task_runner_->PostDelayedTask(FROM_HERE,
-      base::BindOnce(&ResReqInfoCacheMgr::CheckFlush, weak_factory_.GetWeakPtr()),
+      base::BindOnce(&ResReqInfoCacheMgr::CheckFlush, weak_factory_.GetWeakPtr(), false),
       CHECK_FLUSH_TO_DISK_TIMEOUT);
   }
 }
 
 void ResReqInfoCacheMgr::UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info) {
-  if (disk_cache_ == nullptr || !is_start_) {
+  if (disk_cache_ == nullptr || !is_start_ || IsRequestWithCookie(info)) {
     return;
+  }
+  std::string url_without_params = info->url().spec();
+  bool is_url_with_params = false;
+  // find the begin index of params in request url
+  size_t index = url_without_params.find('?');
+  if (index != url_without_params.npos) {
+    url_without_params = url_without_params.substr(0, index);
+    info->set_url(GURL(url_without_params));
+    is_url_with_params = true;
+  }
+  if (((info->preload_flag() & PRPP_FLAGS_UNSUPPORT) == PRPP_FLAGS_UNSUPPORT)) {
+    std::list<std::shared_ptr<PRRequestInfo>>::iterator info_it =
+      std::find(new_info_list_.begin(), new_info_list_.end(), info);
+    if (info_it != new_info_list_.end() && sth_task_runner_ != nullptr) {
+      (*info_it)->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+      sth_task_runner_->PostTask(FROM_HERE,
+        base::BindOnce(&ResReqInfoCacheMgr::CheckFlush, weak_factory_.GetWeakPtr(), true));
+      return;
+    }
+  }
+
+  if (is_url_with_params) {
+    info->or_preload_flag(PRPP_FLAGS_UNSUPPORT);
   }
   new_info_list_.push_back(info);
 }
@@ -197,20 +199,25 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
   }
 }
 
-void ResReqInfoCacheMgr::CheckFlush() {
-  if (!is_start_) {
+void ResReqInfoCacheMgr::CheckFlush(bool checkflush_immediately) {
+  if (disk_cache_ == nullptr || !is_start_) {
     return;
   }
   std::string entry_content;
-  if ((last_flush_len_ < new_info_list_.size()) &&
+  if (((last_flush_len_ < new_info_list_.size()) || checkflush_immediately) &&
       ResReqPreloadInfoListToJson(page_origin_, new_info_list_, entry_content)) {
     disk_cache_->StoreInfoAsync(entry_content);
     last_flush_len_ = new_info_list_.size();
   }
   if (sth_task_runner_ != nullptr) {
     sth_task_runner_->PostDelayedTask(FROM_HERE,
-      base::BindOnce(&ResReqInfoCacheMgr::CheckFlush, weak_factory_.GetWeakPtr()),
+      base::BindOnce(&ResReqInfoCacheMgr::CheckFlush, weak_factory_.GetWeakPtr(), false),
       CHECK_FLUSH_TO_DISK_TIMEOUT);
   }
+}
+
+bool ResReqInfoCacheMgr::IsRequestWithCookie(const std::shared_ptr<PRRequestInfo>& info) {
+  std::string cookie_value;
+  return info->extra_request_headers().GetHeader(REQUEST_HEADERS_COOKIE, &cookie_value);
 }
 }  // namespace ohos_prp_preload

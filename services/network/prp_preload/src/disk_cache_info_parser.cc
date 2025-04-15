@@ -211,7 +211,7 @@ bool DiskCacheInfoParser::GetAllowCredentialsFromJson(
   const absl::optional<bool> allow_credentials =
       json.GetDict().FindBool(param_name);
   if (!allow_credentials.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetAllowCredentialsFromJson allow_credentials is invalid";
     return false;
   }
@@ -279,7 +279,7 @@ bool DiskCacheInfoParser::GetCacheTypeFromJson(
           static_cast<int>(PRRequestCacheType::NEGOTIATION_CACHE) ||
       cache_type.value() >
           static_cast<int>(PRRequestCacheType::DISABLE_CACHE)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetCacheTypeFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetCacheTypeFromJson " <<
                     "cache_type is invalid";
     return false;
   }
@@ -300,7 +300,7 @@ bool DiskCacheInfoParser::GetETagFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* e_tag = json.GetDict().FindString(param_name);
   if (!e_tag) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetETagFromJson e_tag is invalid";
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetETagFromJson e_tag is invalid";
     return false;
   }
   info->set_e_tag(*e_tag);
@@ -321,7 +321,7 @@ bool DiskCacheInfoParser::GetFreshnessLifeTimesFromJson(
   const std::string* freshness_life_times_str =
       json.GetDict().FindString(param_name);
   if (!freshness_life_times_str || freshness_life_times_str->empty()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetFreshnessLifeTimesFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetFreshnessLifeTimesFromJson " <<
                     "fresness_life_times_str is none";
     return false;
   }
@@ -330,7 +330,7 @@ bool DiskCacheInfoParser::GetFreshnessLifeTimesFromJson(
   int64_t freshness_life_times =
       std::strtoll(freshness_life_times_str->c_str(), &end, 10);
   if (errno != 0 || !end || *end) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetFreshnessLifeTimesFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetFreshnessLifeTimesFromJson " <<
                     "freshness_life_timesr is invalid";
     return false;
   }
@@ -352,7 +352,7 @@ bool DiskCacheInfoParser::GetLastModifiedFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* last_modified = json.GetDict().FindString(param_name);
   if (!last_modified) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetLastModifiedFromJson last_modified is invalid";
     return false;
   }
@@ -380,7 +380,7 @@ bool DiskCacheInfoParser::GetCookieSettingOverridesFromJson(
       json.GetDict().FindList(param_name);
   net::CookieSettingOverrides cookie_setting_overrides;
   if (!cookie_setting_overrides_list) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetCookieSettingOverridesFromJson " <<
                     "cookie_setting_overrides is invalid";
     return false;
@@ -407,7 +407,7 @@ bool DiskCacheInfoParser::GetCorbDetachableFromJson(
   const absl::optional<bool> corb_detachable =
       json.GetDict().FindBool(param_name);
   if (!corb_detachable.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetCorbDetachableFromJson corb_detachable is invalid";
     return false;
   }
@@ -429,7 +429,7 @@ bool DiskCacheInfoParser::GetDoNotPromptForLoginFromJson(
   const absl::optional<bool> do_not_prompt_for_login =
       json.GetDict().FindBool(param_name);
   if (!do_not_prompt_for_login.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetDoNotPromptForLoginFromJson do_not_prompt_for_login is invalid";
     return false;
   }
@@ -455,7 +455,7 @@ bool DiskCacheInfoParser::GetDynamicHeaderKeysFromJson(
   const base::Value::List* dynamic_header_key_list =
       json.GetDict().FindList(param_name);
   if (!dynamic_header_key_list) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetDynamicHeaderKeysFromJson dynamic_header_keys is invalid";
     return false;
   }
@@ -489,7 +489,7 @@ bool DiskCacheInfoParser::GetExtraRequestHeadersFromJson(
       json.GetDict().FindDict(param_name);
   net::HttpRequestHeaders extra_request_headers;
   if (!extra_request_headers_dict) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetExtraRequestHeadersFromJson extra_request_headers " <<
                     "is invalid";
     return false;
@@ -522,7 +522,7 @@ bool DiskCacheInfoParser::GetFirstPartyUrlPolicyFromJson(
       first_party_url_policy.value() >
           static_cast<int>(
               net::RedirectInfo::FirstPartyURLPolicy::UPDATE_URL_ON_REDIRECT)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetFirstPartyUrlPolicyFromJson first_party_url_policy " <<
                     "is invalid";
     return false;
@@ -547,7 +547,7 @@ bool DiskCacheInfoParser::GetForceIgnoreSiteForCookiesFromJson(
   const absl::optional<bool> force_ignore_site_for_cookies =
       json.GetDict().FindBool(param_name);
   if (!force_ignore_site_for_cookies.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
         "GetForceIgnoreSiteForCookiesFromJson force_ignore_site_for_cookies " <<
         "is invalid";
     return false;
@@ -571,7 +571,7 @@ bool DiskCacheInfoParser::GetForceIgnoreTopFramePartyForCookiesFromJson(
   const absl::optional<bool> force_ignore_top_frame_party_for_cookies =
       json.GetDict().FindBool(param_name);
   if (!force_ignore_top_frame_party_for_cookies.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetForceIgnoreTopFramePartyForCookiesFromJson " <<
                     "force_ignore_top_frame_party_for_cookies " <<
                     "is invalid";
@@ -596,7 +596,7 @@ bool DiskCacheInfoParser::GetForceMainFrameForSameSiteCookiesFromJson(
   const absl::optional<bool> force_main_frame_for_same_site_cookies =
       json.GetDict().FindBool(param_name);
   if (!force_main_frame_for_same_site_cookies.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetForceMainFrameForSameSiteCookiesFromJson " <<
                     "force_main_frame_for_same_site_cookies " <<
                     "is invalid";
@@ -620,7 +620,7 @@ bool DiskCacheInfoParser::GetHasStorageAccessFromJson(
   const absl::optional<bool> has_storage_access =
       json.GetDict().FindBool(param_name);
   if (!has_storage_access.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetHasStorageAccessFromJson " <<
                     "has_storage_access " <<
                     "is invalid";
@@ -645,7 +645,7 @@ bool DiskCacheInfoParser::GetIdempotencyFromJson(
   if (!idempotency.has_value() ||
       idempotency.value() < net::Idempotency::DEFAULT_IDEMPOTENCY ||
       idempotency.value() > net::Idempotency::NOT_IDEMPOTENT) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetIdempotencyFromJson " <<
                     "idempotency " <<
                     "is invalid";
@@ -671,7 +671,7 @@ bool DiskCacheInfoParser::GetInitiatorFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* initiator = json.GetDict().FindString(param_name);
   if (!initiator) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetInitiatorFromJson " <<
                     "initiator " <<
                     "is invalid";
@@ -695,7 +695,7 @@ bool DiskCacheInfoParser::GetIsForWebsocketsFromJson(
   const absl::optional<bool> is_for_websockets =
       json.GetDict().FindBool(param_name);
   if (!is_for_websockets.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetIsForWebsocketsFromJson " <<
                     "is_for_websockets " <<
                     "is invalid";
@@ -719,7 +719,7 @@ bool DiskCacheInfoParser::GetKeepaliveFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const absl::optional<bool> keepalive = json.GetDict().FindBool(param_name);
   if (!keepalive.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetKeepaliveFromJson " <<
                     "keepalive " <<
                     "is invalid";
@@ -741,7 +741,7 @@ bool DiskCacheInfoParser::GetLoadFlagsFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const absl::optional<int> load_flags = json.GetDict().FindInt(param_name);
   if (!load_flags.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetLoadFlagsFromJson " <<
                     "load_flags " <<
                     "is invalid";
@@ -764,7 +764,7 @@ bool DiskCacheInfoParser::GetMethodFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* method = json.GetDict().FindString(param_name);
   if (!method) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetMethodFromJson method " <<
                     "is invalid";
     return false;
@@ -787,8 +787,8 @@ bool DiskCacheInfoParser::GetPreloadFlagsFromJson(
   const absl::optional<int> preload_flag = json.GetDict().FindInt(param_name);
   if (!preload_flag.has_value() ||
       preload_flag.value() < static_cast<int>(PRRequestFlags::PRPP_FLAGS_NONE) ||
-      preload_flag.value() > static_cast<int>(PRRequestFlags::PRPP_FLAGS_URL_DYNAMIC)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+      preload_flag.value() > static_cast<int>(PRRequestFlags::PRPP_FLAGS_UNSUPPORT)) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetPreloadFlagsFromJson preload_flag " <<
                     "is invalid";
     return false;
@@ -810,7 +810,7 @@ bool DiskCacheInfoParser::GetReferrerFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* referrer = json.GetDict().FindString(param_name);
   if (!referrer) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetReferrerFromJson referrer " <<
                     "is invalid";
     return false;
@@ -837,7 +837,7 @@ bool DiskCacheInfoParser::GetReferrerPolicyFromJson(
           static_cast<int>(net::ReferrerPolicy::
                                 CLEAR_ON_TRANSITION_FROM_SECURE_TO_INSECURE) ||
       referrer_policy.value() > static_cast<int>(net::ReferrerPolicy::MAX)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetReferrerPolicyFromJson referrer_policy " <<
                     "is invalid";
     return false;
@@ -861,7 +861,7 @@ bool DiskCacheInfoParser::GetRequestCredentialsModeFromJson(
   const absl::optional<int> request_credentials_mode =
       json.GetDict().FindInt(param_name);
   if (!request_credentials_mode.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestCredentialsModeFromJson request_credentials_mode " <<
                     "is invalid";
     return false;
@@ -884,7 +884,7 @@ bool DiskCacheInfoParser::GetRequestDestinationFromJson(
   const absl::optional<int> request_destination =
       json.GetDict().FindInt(param_name);
   if (!request_destination.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestDestinationFromJson request_destination " <<
                     "is invalid";
     return false;
@@ -907,7 +907,7 @@ bool DiskCacheInfoParser::GetRequestEndTimeFromJson(
   const std::string* request_end_time_str =
       json.GetDict().FindString(param_name);
   if (!request_end_time_str || request_end_time_str->empty()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestEndTimeFromJson request_end_time " <<
                     "is none";
     return false;
@@ -918,7 +918,7 @@ bool DiskCacheInfoParser::GetRequestEndTimeFromJson(
   int64_t request_end_time =
       std::strtoll(request_end_time_str->c_str(), &end, 10);
   if (errno != 0 || !end || *end) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestEndTimeFromJson request_end_time " <<
                     "is invalid";
     return false;
@@ -943,7 +943,7 @@ bool DiskCacheInfoParser::GetRequestInfoTypeFromJson(
   if (!type.has_value() ||
       type.value() < static_cast<int>(PRRequestInfoType::TYPE_DEFAULT) ||
       type.value() > static_cast<int>(PRRequestInfoType::TYPE_PAGE_PREFLIGHT)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestInfoTypeFromJson type is invalid";
     return false;
   }
@@ -963,7 +963,7 @@ bool DiskCacheInfoParser::GetRequestModeFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const absl::optional<int> request_mode = json.GetDict().FindInt(param_name);
   if (!request_mode.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetRequestModeFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetRequestModeFromJson " <<
                     "request_mode is invalid";
     return false;
   }
@@ -985,7 +985,7 @@ bool DiskCacheInfoParser::GetRequestStartTimeFromJson(
   const std::string* request_start_time_str =
       json.GetDict().FindString(param_name);
   if (!request_start_time_str || request_start_time_str->empty()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestStartTimeFromJson request_start_time " <<
                     "is none";
     return false;
@@ -996,7 +996,7 @@ bool DiskCacheInfoParser::GetRequestStartTimeFromJson(
   int64_t request_start_time =
       std::strtoll(request_start_time_str->c_str(), &end, 10);
   if (errno != 0 || !end || *end) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestStartTimeFromJson request_start_time " <<
                     "is invalid";
     return false;
@@ -1019,7 +1019,7 @@ bool DiskCacheInfoParser::GetResourceTypeFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const absl::optional<int> resource_type = json.GetDict().FindInt(param_name);
   if (!resource_type.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetResourceTypeFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetResourceTypeFromJson " <<
                     "resource_type is invalid";
     return false;
   }
@@ -1045,7 +1045,7 @@ bool DiskCacheInfoParser::GetSecureDnsPolicyFromJson(
           static_cast<int>(net::SecureDnsPolicy::kAllow) ||
       secure_dns_policy.value() >
           static_cast<int>(net::SecureDnsPolicy::kBootstrap)) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetSecureDnsPolicyFromJson secure_dns_policy " <<
                     "is invalid";
     return false;
@@ -1069,7 +1069,7 @@ bool DiskCacheInfoParser::GetSendClientCertsFromJson(
   const absl::optional<bool> send_client_certs =
       json.GetDict().FindBool(param_name);
   if (!send_client_certs.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetSendClientCertsFromJson send_client_certs " <<
                     "is invalid";
     return false;
@@ -1091,7 +1091,7 @@ bool DiskCacheInfoParser::GetUpgradeIfInsecureFromJson(
   const absl::optional<bool> upgrade_if_insecure =
       json.GetDict().FindBool(param_name);
   if (!upgrade_if_insecure.has_value()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::" <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetUpgradeIfInsecureFromJson upgrade_if_insecure " <<
                     "is invalid";
     return false;
@@ -1119,7 +1119,7 @@ bool DiskCacheInfoParser::GetUrlFromJson(
     const std::shared_ptr<PRRequestInfo>& info) {
   const std::string* url = json.GetDict().FindString(param_name);
   if (!url || url->empty()) {
-    LOG(WARNING) << "PRPPreload.DiskCacheInfoParser::GetUrlFromJson " <<
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetUrlFromJson " <<
                     "url is invalid";
     return false;
   }

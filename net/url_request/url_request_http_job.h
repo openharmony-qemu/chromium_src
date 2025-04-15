@@ -244,6 +244,10 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // set.
   bool IsPartitionedCookiesEnabled() const;
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  void InitPreloadInfoAndSetToTransaction();
+#endif
+
   RequestPriority priority_ = DEFAULT_PRIORITY;
 
   HttpRequestInfo request_info_;

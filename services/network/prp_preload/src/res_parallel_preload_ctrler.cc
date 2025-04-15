@@ -28,13 +28,13 @@ bool ResParallelPreloadCtrler::Init(const scoped_refptr<DiskCacheBackendFactory>
     url_, networkAnonymizationKey_, sth_task_runner_, disk_cache_backend_factory,
     base::BindRepeating(&ResParallelPreloadCtrler::OnResPreloadInfos, weak_factory_.GetWeakPtr())));
   if (res_req_info_updater_ == nullptr) {
-    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::ResParallelPreloadCtrler new ResRequestInfoUpdater failed";
+    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::Init new ResRequestInfoUpdater failed";
     return false;
   }
   res_preload_scheduler_ = base::WrapRefCounted(new (std::nothrow) ResPreloadScheduler(
     url_, sth_task_runner_, net_task_runner, url_request_context, on_page_origin_cb));
   if (res_preload_scheduler_ == nullptr) {
-    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::ResParallelPreloadCtrler new ResPreloadScheduler failed";
+    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::Init new ResPreloadScheduler failed";
     return false;
   }
   return true;

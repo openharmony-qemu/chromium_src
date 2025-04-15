@@ -211,7 +211,7 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
   disk_cache_backend_factory_(disk_cache_backend_factory), url_(url), entry_loaded_cb_(entry_loaded_cb) {}
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(WARNING) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
     return;
   }
@@ -220,7 +220,7 @@ void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
 }
 
 void DiskCacheFile::LoadInfoAsync() {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(DEBUG) << "PRPPreload.DiskCacheFile::LoadInfoAsync already load";
     return;
   }

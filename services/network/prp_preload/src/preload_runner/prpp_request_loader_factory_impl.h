@@ -43,6 +43,7 @@ private:
   void ReplaceHeaders(const net::HttpRequestHeaders& headers,
     const std::shared_ptr<PRRequestInfo>& info);
   void RecordPendingPRPPLoader(const std::shared_ptr<PRRequestInfo>& info);
+  void RecordNeedRecordHeaderUrls(const network::ResourceRequest& resource_request);
 
   using PRPPReqLoaderMap = std::unordered_map<std::string, std::shared_ptr<PRPPRequestLoader>>;
   std::string main_url_;

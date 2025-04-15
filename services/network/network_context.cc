@@ -718,28 +718,26 @@ void NetworkContext::CreateURLLoaderFactory(
     mojom::URLLoaderFactoryParamsPtr params,
     scoped_refptr<ResourceSchedulerClient> resource_scheduler_client) {
 #if BUILDFLAG(IS_OHOS_PRPP)
-  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() !=
-      ohos_prp_preload::PRPPreloadMode::PRELOAD || !params) {
+  if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() ==
+      ohos_prp_preload::PRPPreloadMode::PRELOAD && params) {
+    auto main_url = params->main_url;
+    auto addr_web_handle = params->addr_web_handle;
+    net::IsolationInfo isolation_info(params->isolation_info);
+    auto url_loader_factory = std::make_unique<cors::CorsURLLoaderFactory>(
+        this, std::move(params), std::move(resource_scheduler_client),
+        std::move(receiver), &cors_origin_access_list_);
+    url_loader_factories_.emplace(std::move(url_loader_factory));
+    if (addr_web_handle != 0 && !main_url.empty()) {
+      if (isolation_info.frame_origin().has_value()) {
+        ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetPageOrigin(main_url, isolation_info);
+      }
+    }
+    return;
+  }
 #endif
   url_loader_factories_.emplace(std::make_unique<cors::CorsURLLoaderFactory>(
       this, std::move(params), std::move(resource_scheduler_client),
       std::move(receiver), &cors_origin_access_list_));
-#if BUILDFLAG(IS_OHOS_PRPP)
-    return;
-  }
-  auto main_url = params->main_url;
-  auto addr_web_handle = params->addr_web_handle;
-  net::IsolationInfo isolation_info(params->isolation_info);
-  auto url_loader_factory = std::make_unique<cors::CorsURLLoaderFactory>(
-      this, std::move(params), std::move(resource_scheduler_client),
-      std::move(receiver), &cors_origin_access_list_);
-  url_loader_factories_.emplace(std::move(url_loader_factory));
-  if (addr_web_handle != 0 && !main_url.empty()) {
-    if (isolation_info.frame_origin().has_value()) {
-      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetPageOrigin(main_url, isolation_info);
-    }
-  }
-#endif
 }
 
 void NetworkContext::CreateURLLoaderFactoryForCertNetFetcher(
@@ -1830,7 +1828,7 @@ void NetworkContext::StopPage(uint64_t addr_web_handle) {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopPage(addr_web_handle);
 }
 
-void NetworkContext::SetParam(mojom::URLLoaderFactoryParamsPtr params) {
+void NetworkContext::SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) {
   ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetURLLoaderFactoryParam(std::move(params));
 }
 #endif

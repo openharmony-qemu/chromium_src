@@ -93,7 +93,7 @@ void JsonToResReqPreloadInfoList(const std::string& content,
     origin_info->set_page_origin(*page_origin);
     origin_info->set_only_send_reuse_request(true);
     info_list.push_back(origin_info);
-    it++;
+    ++it;
   }
 
   for (base::Value::List::iterator json_item = it;

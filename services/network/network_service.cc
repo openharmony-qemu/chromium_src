@@ -1064,7 +1064,7 @@ void NetworkService::SetConnectTimeout(int seconds) {
             << " second(s)";
 #ifdef OHOS_LOGGER_REPORT
   LOG_FEEDBACK(INFO) << "Network service set network timeout " << seconds
-            << " second(s)"; 
+            << " second(s)";
 #endif
   timeout_override_ = seconds;
   for (auto* network_context : network_contexts_) {

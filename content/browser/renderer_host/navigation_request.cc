@@ -9634,7 +9634,7 @@ void NavigationRequest::OnGetIsolation(const std::string& origin)
   if (params) {
     params->isolation_info = prp_isolation;
     params->main_url = common_params_->url.spec();
-    network_context->SetParam(std::move(params));
+    network_context->SetURLLoaderFactoryParam(std::move(params));
   }
 }
 #endif

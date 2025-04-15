@@ -611,11 +611,7 @@ void URLRequestHttpJob::StartTransactionInternal() {
       if (!throttling_entry_.get() ||
           !throttling_entry_->ShouldRejectRequest(*request_)) {
 #if BUILDFLAG(IS_OHOS_PRPP)
-        if (!request_->update_res_request_info_callback().is_null() && request_->preload_info()) {
-          request_->preload_info()->InitInfoFromUrlRequest(*request_);
-          transaction_->SetUpdateResRequestInfoCallback(request_->update_res_request_info_callback());
-          transaction_->SetPreloadInfo(request_->preload_info());
-        }
+        InitPreloadInfoAndSetToTransaction();
 #endif
         rv = transaction_->Start(
             &request_info_,
@@ -1873,5 +1869,17 @@ bool URLRequestHttpJob::IsPartitionedCookiesEnabled() const {
   DCHECK(cookie_partition_key_.has_value());
   return cookie_partition_key_.value().has_value();
 }
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+void URLRequestHttpJob::InitPreloadInfoAndSetToTransaction()
+{
+  if (request_ && transaction_ &&
+      !request_->update_res_request_info_callback().is_null() && request_->preload_info()) {
+    request_->preload_info()->InitInfoFromUrlRequest(*request_);
+    transaction_->SetUpdateResRequestInfoCallback(request_->update_res_request_info_callback());
+    transaction_->SetPreloadInfo(request_->preload_info());
+  }
+}
+#endif
 
 }  // namespace net

@@ -74,102 +74,110 @@ void ResRequestInfoUpdater::OnResRequestInfoCacheLoaded(
   bool only_send_reuse_request = false;
   int64_t cur_level_end_time = 0;
   for (auto info : load_info_list) {
-    if (info->type() == PRRequestInfoType::TYPE_PAGE_ORIGIN) {
-      if (need_to_build_preload_tree) {
-        only_send_reuse_request = info->only_send_reuse_request();
-        if (preload_info_tree_ == nullptr) {
-          preload_info_tree_ = std::make_shared<PRPPReqInfoTreeNode>();
-          preload_info_tree_->req_info_ = info;
-          cur_parent = preload_info_tree_;
-        }
+    if (info->type() == PRRequestInfoType::TYPE_PAGE_ORIGIN && need_to_build_preload_tree) {
+      only_send_reuse_request = info->only_send_reuse_request();
+      if (preload_info_tree_ == nullptr) {
+        preload_info_tree_ = std::make_shared<PRPPReqInfoTreeNode>();
+        preload_info_tree_->req_info_ = info;
+        cur_parent = preload_info_tree_;
       }
       continue;
     }
 
-    // build preconnect list step
-    GURL origin_url = url::Origin::Create(info->url()).GetURL();
-    bool need_connect = false;
-    bool need_add_connect = false;
-    if (!net::HttpUtil::IsMethodSafe(info->method()) ||
-        (info->cache_type() != PRRequestCacheType::FORCE_CACHE) ||
-        (base::Time::Now().ToInternalValue() > info->freshness_life_times())) {
-      need_connect = true;
-    }
-
-    std::string key = info->allow_credentials() ?
-      PRIVACY_TAG + origin_url.spec() : origin_url.spec();
-    if (preconnect_org_url_map_.count(key) != 0) {
-      PreconnectCount& cur_count = preconnect_org_url_map_[key];
-      if (cur_count.need_count_ + cur_count.reserved_count_ < MAX_PRECONNECT_COUNT) {
-        if (need_connect) {
-          cur_count.need_count_++;
-          need_add_connect = true;
-        } else if (cur_count.reserved_count_ < MAX_RESERVED_COUNT) {
-          cur_count.reserved_count_++;
-          need_add_connect = true;
-        }
-      }
-    } else {
-      need_add_connect = true;
-      if (need_connect) {
-        preconnect_org_url_map_[key] = PreconnectCount{1, 0};
-      } else {
-        preconnect_org_url_map_[key] = PreconnectCount{0, 1};
-      }
-    }
-
-    if (need_add_connect) {
-      if (base::ohos::IsMobileDevice() == true) {
-        prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
-          info->allow_credentials(),
-          net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(origin_url))});
-      } else {
-        prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
-          info->allow_credentials(),
-          networkAnonymizationKey});
-      }
-      
-    }
-
-    // build tree step
+    BuildPreconnectList(info, networkAnonymizationKey);
     if (!need_to_build_preload_tree || cur_parent == nullptr) {
       continue;
     }
-    current = std::make_shared<PRPPReqInfoTreeNode>();
-    current->req_info_ = info;
-    int64_t cur_request_start_time = current->req_info_->request_start_time();
-    int64_t cur_request_end_time = current->req_info_->request_end_time();
-    if (cur_first == nullptr) {
-      cur_first = current;
-      cur_first->parent_ = cur_parent.get();
-      cur_parent->children_.emplace_back(cur_first);
-      cur_level_end_time = cur_request_end_time;
-      continue;
-    }
-
-    if ((cur_request_start_time > cur_first->req_info_->request_start_time() + MAX_LEVEL_INTERVAL_US) ||
-        (cur_level_end_time > 0 && cur_request_start_time > cur_level_end_time)) {
-      // new level
-      cur_parent = cur_first;
-      cur_first = current;
-      cur_first->parent_ = cur_parent.get();
-      cur_parent->children_.emplace_back(cur_first);
-      cur_level_end_time = cur_request_end_time;
-    } else {
-      cur_parent->children_.emplace_back(current);
-      if (cur_request_end_time > 0) {
-        cur_level_end_time = cur_level_end_time > 0 ?
-          std::min(cur_request_end_time, cur_level_end_time) : cur_request_end_time;
-      }
-    }
-
-    if (current->req_info_->preload_flag() ==
-        (PRRequestFlags)(PRPP_FLAGS_VISIBLE | PRPP_FLAGS_HDR_DYNAMIC)) {
-      UpdateResRequestInfoForDynamicHeaders(cur_parent, current->req_info_);
-    }
+    BuildPreloadTree(info, current, cur_first, cur_parent, cur_level_end_time);
   }
   preload_infos_cb_.Run(prpp_preconnect_info_list_, preload_info_tree_,
     only_send_reuse_request, need_record_header_urls_);
+}
+
+void ResRequestInfoUpdater::BuildPreconnectList(const std::shared_ptr<PRRequestInfo>& info,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey)
+{
+  GURL origin_url = url::Origin::Create(info->url()).GetURL();
+  bool need_connect = false;
+  bool need_add_connect = false;
+  if (!net::HttpUtil::IsMethodSafe(info->method()) ||
+      (info->cache_type() != PRRequestCacheType::FORCE_CACHE) ||
+      (base::Time::Now().ToInternalValue() > info->freshness_life_times())) {
+    need_connect = true;
+  }
+
+  std::string key = info->allow_credentials() ?
+    PRIVACY_TAG + origin_url.spec() : origin_url.spec();
+  if (preconnect_org_url_map_.count(key) != 0) {
+    PreconnectCount& cur_count = preconnect_org_url_map_[key];
+    if (cur_count.need_count_ + cur_count.reserved_count_ < MAX_PRECONNECT_COUNT) {
+      if (need_connect) {
+        cur_count.need_count_++;
+        need_add_connect = true;
+      } else if (cur_count.reserved_count_ < MAX_RESERVED_COUNT) {
+        cur_count.reserved_count_++;
+        need_add_connect = true;
+      }
+    }
+  } else {
+    need_add_connect = true;
+    if (need_connect) {
+      preconnect_org_url_map_[key] = PreconnectCount{1, 0};
+    } else {
+      preconnect_org_url_map_[key] = PreconnectCount{0, 1};
+    }
+  }
+
+  if (need_add_connect) {
+    if (base::ohos::IsMobileDevice() == true) {
+      prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
+        info->allow_credentials(),
+        net::NetworkAnonymizationKey::CreateSameSite(net::SchemefulSite(origin_url))});
+    } else {
+      prpp_preconnect_info_list_.emplace_back(PRPPPreconnectInfo{origin_url,
+        info->allow_credentials(),
+        networkAnonymizationKey});
+    }
+  }
+}
+
+void ResRequestInfoUpdater::BuildPreloadTree(const std::shared_ptr<PRRequestInfo>& info,
+    std::shared_ptr<PRPPReqInfoTreeNode> current,
+    std::shared_ptr<PRPPReqInfoTreeNode> cur_first,
+    std::shared_ptr<PRPPReqInfoTreeNode> cur_parent,
+    int64_t cur_level_end_time)
+{
+  current = std::make_shared<PRPPReqInfoTreeNode>();
+  current->req_info_ = info;
+  int64_t cur_request_start_time = current->req_info_->request_start_time();
+  int64_t cur_request_end_time = current->req_info_->request_end_time();
+  if (cur_first == nullptr) {
+    cur_first = current;
+    cur_first->parent_ = cur_parent.get();
+    cur_parent->children_.emplace_back(cur_first);
+    cur_level_end_time = cur_request_end_time;
+    return;
+  }
+
+  if ((cur_request_start_time > cur_first->req_info_->request_start_time() + MAX_LEVEL_INTERVAL_US) ||
+      (cur_level_end_time > 0 && cur_request_start_time > cur_level_end_time)) {
+    // new level
+    cur_parent = cur_first;
+    cur_first = current;
+    cur_first->parent_ = cur_parent.get();
+    cur_parent->children_.emplace_back(cur_first);
+    cur_level_end_time = cur_request_end_time;
+  } else {
+    cur_parent->children_.emplace_back(current);
+    if (cur_request_end_time > 0) {
+      cur_level_end_time = cur_level_end_time > 0 ?
+        std::min(cur_request_end_time, cur_level_end_time) : cur_request_end_time;
+    }
+  }
+
+  if (((current->req_info_->preload_flag() & PRPP_FLAGS_HDR_DYNAMIC) == PRPP_FLAGS_HDR_DYNAMIC)) {
+    UpdateResRequestInfoForDynamicHeaders(cur_parent, current->req_info_);
+  }
 }
 
 void ResRequestInfoUpdater::UpdateResRequestInfoForDynamicHeaders(
@@ -182,18 +190,22 @@ void ResRequestInfoUpdater::UpdateResRequestInfoForDynamicHeaders(
     if (it->req_info_->cache_type() == PRRequestCacheType::FORCE_CACHE) {
       continue;
     }
-    bool match = true;
-    for (auto header : child_info->dynamic_header_keys()) {
-      if (!it->req_info_->extra_request_headers().HasHeader(header)) {
-        match = false;
-        break;
-      }
-    }
-    if (match) {
+    if (IsDynamicHeadersMatch(child_info, it->req_info_)) {
       child_info->set_parent_for_dynamic_header(it->req_info_->url());
       (void)need_record_header_urls_.emplace(it->req_info_->url().spec());
       return;
     }
   }
+}
+
+bool ResRequestInfoUpdater::IsDynamicHeadersMatch(const std::shared_ptr<PRRequestInfo>& child_info,
+    const std::shared_ptr<PRRequestInfo>& parent_info)
+{
+  for (auto header : child_info->dynamic_header_keys()) {
+    if (!parent_info->extra_request_headers().HasHeader(header)) {
+      return false;
+    }
+  }
+  return true;
 }
 }  // namespace ohos_prp_preload

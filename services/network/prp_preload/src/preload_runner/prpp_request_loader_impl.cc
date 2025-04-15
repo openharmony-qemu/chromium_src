@@ -13,6 +13,18 @@
 #include "services/network/prp_preload/src/page_res_parallel_preload_mgr_impl.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
+#define SET_LOADTIMING_INFO_PARAM(param) \
+  if (!load_timing_info->param.is_null()) { \
+    load_timing_info->param = base::TimeTicks(); \
+  }
+
+#define MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(param) \
+  if (!load_timing_info->param.is_null() && \
+      (load_timing_info->param.ToInternalValue() < \
+       load_timing_info->request_start.ToInternalValue())) { \
+    load_timing_info->param = load_timing_info->request_start; \
+  }
+
 namespace {
 const int32_t CACHE_BLOCK_SIZE = 64 * 1024;
 const int MAX_PRPP_BODY_CACHE_SIZE = 32;
@@ -63,7 +75,7 @@ void PRPPRequestLoaderImpl::InitAndStartUrlRequest(const std::shared_ptr<PRReque
     net::MEDIUM, this, MISSING_TRAFFIC_ANNOTATION, false);
   url_request_->set_method(info->method());
   url_request_->set_force_ignore_site_for_cookies(info->force_ignore_site_for_cookies());
-  url_request_->SetURLChain( { GURL(sub_url_) } );
+  url_request_->SetURLChain({ GURL(sub_url_) });
   url_request_->SetReferrer(info->referrer());
   url_request_->set_referrer_policy(info->referrer_policy());
   url_request_->set_upgrade_if_insecure(info->upgrade_if_insecure());
@@ -312,7 +324,12 @@ void PRPPRequestLoaderImpl::ReadMore()
     PushFailure(STATE_ERROR);
     return;
   }
-
+  // if url_request_->AbortAndCloseConnection has been called, when URLLoader called DidRead or OnResponseStarted
+  // URLRequestJob will be destroyed
+  // need to return to ensure that the URLRequest interface will not be invoked in this case
+  if (!url_request_->CanReadFromURLRequestJob()) {
+    return;
+  }
   int bytes_read = url_request_->Read(cur_write_block_.get(), cur_write_block_->RemainingCapacity());
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, true);
@@ -326,7 +343,6 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
     PushFailure(STATE_ERROR);
     return;
   }
-
   if (num_bytes == 0) {
     total_size_ += (cur_write_block_->capacity() - cur_write_block_->RemainingCapacity());
     body_cache_.push(cur_write_block_);
@@ -341,7 +357,6 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
     }
     return;
   }
-
   cur_write_block_->set_offset(cur_write_block_->offset() + num_bytes);
   if (cur_write_block_->RemainingCapacity() == 0) {
     total_size_ += cur_write_block_->capacity();
@@ -360,12 +375,10 @@ void PRPPRequestLoaderImpl::DidRead(int num_bytes, bool completed_synchronously)
         return;
     }
   }
-
   if (body_cache_.size() >= MAX_PRPP_BODY_CACHE_SIZE) {
     need_continue_read_ = true;
     return;
   }
-
   if (completed_synchronously) {
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
       base::BindOnce(&PRPPRequestLoaderImpl::ReadMore, weak_ptr_factory_.GetWeakPtr()));
@@ -442,6 +455,11 @@ void PRPPRequestLoaderImpl::DoReplay()
     LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::DoReplay, no delegate";
     return;
   }
+  ProcessMessages();
+}
+
+void PRPPRequestLoaderImpl::ProcessMessages()
+{
   PRPPRecorderMsg cur_msg = rec_msg_list_.front();
   rec_msg_list_.pop();
   switch (cur_msg) {
@@ -465,14 +483,19 @@ void PRPPRequestLoaderImpl::DoReplay()
       break;
     case MSG_RESPONSE_STARTED:
       need_do_replay_self_ = false;
+      if (!rec_msg_list_.empty() ||
+         ((preload_state_ != STATE_RESPONSE_STARTED) && (preload_state_ != STATE_RESPONSED))) {
+        base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(FROM_HERE,
+          base::BindOnce(&PRPPRequestLoaderImpl::DoReplay, weak_ptr_factory_.GetWeakPtr()));
+      }
       delegate_->OnResponseStarted(url_request_.get(), net::OK);
-      break;
+      return;
     case MSG_RESPONSE_BODY:
       break;
     case MSG_ERROR:
     default:
       delegate_->OnResponseStarted(url_request_.get(), PRPP_ERROR);
-      break;
+      return;
   }
   if (!rec_msg_list_.empty() ||
      ((preload_state_ != STATE_RESPONSE_STARTED) && (preload_state_ != STATE_RESPONSED))) {
@@ -487,21 +510,17 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
   bool need_continue = false;
   do {
     need_continue = false;
-    if (max_bytes <= 0) {
+    if (max_bytes <= 0)
       break;
-    }
-
     if (body_cache_.empty()) {
-      if (preload_state_ != STATE_RESPONSED && preload_state_ != STATE_UNSUPPORT &&
-          preload_state_ != STATE_ERROR) {
+      if (preload_state_ != STATE_RESPONSED && preload_state_ != STATE_UNSUPPORT && preload_state_ != STATE_ERROR) {
         ret = net::ERR_IO_PENDING;
       }
       break;
     }
     scoped_refptr<net::GrowableIOBuffer> cur_block = body_cache_.front();
     if (!cur_block || (cur_block->offset() <= cur_read_offset_)) {
-      LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::Read, cur block is null, cache block size:" <<
-        (int)body_cache_.size() << ", max_bytes:" << max_bytes;
+      LOG(WARNING) << "PRPPreload.PRPPRequestLoaderImpl::Read, cur block is null";
       body_cache_.pop();
       need_continue = true;
       continue;
@@ -509,21 +528,18 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
     int block_offset = -cur_block->offset() + cur_read_offset_;
     if (cur_block->offset() <= max_bytes + cur_read_offset_) {
       int len = cur_block->offset() - cur_read_offset_;
-      if (memcpy_s(buf->data(), len, cur_block->data() + block_offset, len) != EOK) {
+      if (memcpy_s(buf->data(), len, cur_block->data() + block_offset, len) != EOK)
         break;
-      }
       body_cache_.pop();
       cur_read_offset_ = 0;
       ret = len;
       break;
     }
-    if (memcpy_s(buf->data(), max_bytes, cur_block->data() + block_offset, max_bytes) != EOK) {
+    if (memcpy_s(buf->data(), max_bytes, cur_block->data() + block_offset, max_bytes) != EOK)
       break;
-    }
     cur_read_offset_ += max_bytes;
     ret = max_bytes;
   } while (need_continue);
-
   if (ret == net::ERR_IO_PENDING) {
     out_buf_ = buf;
     out_max_bytes_ = max_bytes;
@@ -536,7 +552,6 @@ int PRPPRequestLoaderImpl::Read(net::IOBuffer* buf, int max_bytes)
         base::BindOnce(&PRPPRequestLoaderImpl::ReadMore, weak_ptr_factory_.GetWeakPtr()));
     }
   }
-
   return ret;
 }
 
@@ -596,75 +611,26 @@ void PRPPRequestLoaderImpl::GetLoadTimingInfo(net::LoadTimingInfo* load_timing_i
   load_timing_info->request_start_time = load_timing_info_.request_start_time;
   load_timing_info->request_start = load_timing_info_.request_start;
 
-  if (!load_timing_info->proxy_resolve_start.is_null()) {
-    load_timing_info->proxy_resolve_start = base::TimeTicks();
-  }
-  if (!load_timing_info->proxy_resolve_end.is_null()) {
-    load_timing_info->proxy_resolve_end = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.domain_lookup_start.is_null()) {
-    load_timing_info->connect_timing.domain_lookup_start = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.domain_lookup_end.is_null()) {
-    load_timing_info->connect_timing.domain_lookup_end = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.connect_start.is_null()) {
-    load_timing_info->connect_timing.connect_start = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.connect_end.is_null()) {
-    load_timing_info->connect_timing.connect_end = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.ssl_start.is_null()) {
-    load_timing_info->connect_timing.ssl_start = base::TimeTicks();
-  }
-  if (!load_timing_info->connect_timing.ssl_end.is_null()) {
-    load_timing_info->connect_timing.ssl_end = base::TimeTicks();
-  }
+  SET_LOADTIMING_INFO_PARAM(proxy_resolve_start);
+  SET_LOADTIMING_INFO_PARAM(proxy_resolve_end);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.domain_lookup_start);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.domain_lookup_end);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.connect_start);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.connect_end);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.ssl_start);
+  SET_LOADTIMING_INFO_PARAM(connect_timing.ssl_end);
   if (load_timing_info->connect_timing.connect_end.is_null()) {
     load_timing_info->socket_reused = true;
   }
 
-  if (!load_timing_info->send_start.is_null() &&
-      (load_timing_info->send_start.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->send_start = load_timing_info->request_start;
-  }
-  if (!load_timing_info->send_end.is_null() &&
-      (load_timing_info->send_end.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->send_end = load_timing_info->request_start;
-  }
-  if (!load_timing_info->receive_headers_start.is_null() &&
-      (load_timing_info->receive_headers_start.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->receive_headers_start = load_timing_info->request_start;
-  }
-    if (!load_timing_info->receive_headers_end.is_null() &&
-      (load_timing_info->receive_headers_end.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->receive_headers_end = load_timing_info->request_start;
-  }
-  if (!load_timing_info->receive_non_informational_headers_start.is_null() &&
-      (load_timing_info->receive_non_informational_headers_start.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->receive_non_informational_headers_start =
-      load_timing_info->request_start;
-  }
-  if (!load_timing_info->first_early_hints_time.is_null() &&
-      (load_timing_info->first_early_hints_time.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->first_early_hints_time = load_timing_info->request_start;
-  }
-  if (!load_timing_info->push_start.is_null() &&
-      (load_timing_info->push_start.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->push_start = load_timing_info->request_start;
-  }
-  if (!load_timing_info->push_end.is_null() &&
-      (load_timing_info->push_end.ToInternalValue() <
-       load_timing_info->request_start.ToInternalValue())) {
-    load_timing_info->push_end = load_timing_info->request_start;
-  }
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(send_start);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(send_end);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(receive_headers_start);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(receive_headers_end);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(receive_non_informational_headers_start);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(first_early_hints_time);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(push_start);
+  MAKE_SURE_LOAD_TIMEING_INFO_PARAM_AFTER_REQUEST_START(push_end);
 }
 
 void PRPPRequestLoaderImpl::ClearLoaderCallback(bool has_devtools_request_id)

@@ -64,6 +64,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   void ReadMore();
   void DidRead(int num_bytes, bool completed_synchronously);
   void DoReplay();
+  void ProcessMessages();
   void UpdateResRequestInfo(const std::string& key, const std::shared_ptr<PRRequestInfo>& info);
   void InitAndStartUrlRequest(const std::shared_ptr<PRRequestInfo>& info,
     const net::IsolationInfo& isolation_info, bool need_reset_url_request = false);

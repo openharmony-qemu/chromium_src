@@ -30,14 +30,23 @@ class ResRequestInfoUpdater : public base::RefCounted<ResRequestInfoUpdater> {
   void Stop();
   void SetPageOrigin(const std::string& page_origin);
  private:
+  void OnResRequestInfoCacheLoaded(const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
+  void BuildPreconnectList(const std::shared_ptr<PRRequestInfo>& info,
+    const net::NetworkAnonymizationKey& networkAnonymizationKey);
+  void BuildPreloadTree(const std::shared_ptr<PRRequestInfo>& info,
+    std::shared_ptr<PRPPReqInfoTreeNode> current,
+    std::shared_ptr<PRPPReqInfoTreeNode> cur_first,
+    std::shared_ptr<PRPPReqInfoTreeNode> cur_parent,
+    int64_t cur_level_end_time);
   void UpdateResRequestInfoForDynamicHeaders(std::shared_ptr<PRPPReqInfoTreeNode> parent,
     std::shared_ptr<PRRequestInfo> child_info);
+  bool IsDynamicHeadersMatch(const std::shared_ptr<PRRequestInfo>& child_info,
+    const std::shared_ptr<PRRequestInfo>& parent_info);
   struct PreconnectCount {
     int32_t need_count_ { 0 };
     int32_t reserved_count_ { 0 };
   };
-  void OnResRequestInfoCacheLoaded(const std::list<std::shared_ptr<PRRequestInfo>>& load_info_list,
-    const net::NetworkAnonymizationKey& networkAnonymizationKey);
  
   scoped_refptr<ResReqInfoCacheMgr> res_req_info_cache_mgr_;
   PRPPPreconnectInfoList prpp_preconnect_info_list_;

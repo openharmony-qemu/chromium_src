@@ -327,7 +327,7 @@ class TestNetworkContext : public mojom::NetworkContext {
       uint64_t addr_web_handle,
       StartPageCallback page_origin_cb) override {}
   void StopPage(uint64_t addr_web_handle) override {}
-  void SetParam(mojom::URLLoaderFactoryParamsPtr params) override {}
+  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
 #endif // OHOS_UNITTESTS
 };
 

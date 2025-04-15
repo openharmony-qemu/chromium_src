@@ -2601,6 +2601,11 @@ void RenderWidgetHostImpl::OnKeyboardEventAck(
   bool processed =
       (blink::mojom::InputEventResultState::kConsumed == ack_result);
 
+#if defined(OHOS_INPUT_EVENTS)
+  if (view_ && processed && !is_hidden() && !event.event.skip_in_browser) {
+    view_->KeyboardReDispatch(event.event, true);
+  }
+#endif
   // We only send unprocessed key event upwards if we are not hidden,
   // because the user has moved away from us and no longer expect any effect
   // of this key event.

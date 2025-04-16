@@ -110,9 +110,11 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
                      const std::string& error_message);
 
   void SetOHOSMediaCryptoReadyCB(OHOSMediaCryptoReadyCB media_crypto_ready_cb);
+#if defined(OHOS_ENABLE_WISEPLAY)
   std::vector<uint8_t> GetSchemeUUID();
   void SetOHOSMediaCryptoAndLicenseReadyCB(
       OHOSMediaCryptoReadyCB media_license_ready_cb);
+#endif
 
   void OnOHOSMediaCryptoReady(void* session);
 
@@ -160,8 +162,9 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
 
   void OnSessionExpirationUpdate(const std::string& session_id,
                                  uint64_t expiry_time_ms);
-
+#if defined(OHOS_ENABLE_WISEPLAY)
   void OnMediaLicenseReady(bool success);
+#endif
  private:
   friend class OHOSMediaDrmBridgeFactory;
   friend class base::DeleteHelper<OHOSMediaDrmBridge>;
@@ -211,7 +214,9 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
 
   OHOSMediaCryptoReadyCB media_crypto_ready_cb_;
   OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb_;
+#if defined(OHOS_ENABLE_WISEPLAY)
   bool is_license_ready_ = false;
+#endif
 
   CallbackRegistry<EventCB::RunType> event_callbacks_;
   CdmPromiseAdapter cdm_promise_adapter_;

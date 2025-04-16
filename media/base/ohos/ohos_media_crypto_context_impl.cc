@@ -19,15 +19,15 @@ OHOSMediaCryptoContextImpl::OHOSMediaCryptoContextImpl(
 
 OHOSMediaCryptoContextImpl::~OHOSMediaCryptoContextImpl() = default;
 
-void OHOSMediaCryptoContextImpl::SetOHOSMediaCryptoReadyCB(	
-    OHOSMediaCryptoReadyCB media_crypto_ready_cb) {	
-  LOG(INFO) << "[DRM]" << __func__;	
-  if (!media_drm_bridge_) {	
-    LOG(ERROR) << "[DRM]media_drm_bridge_ is nullptr.";	
-    return;	
-  }	
-#if defined(OHOS_ENABLE_WISEPLAY)	
-  std::vector<uint8_t> scheme_uuid = media_drm_bridge_->GetSchemeUUID();	
+void OHOSMediaCryptoContextImpl::SetOHOSMediaCryptoReadyCB(
+    OHOSMediaCryptoReadyCB media_crypto_ready_cb) {
+  LOG(INFO) << "[DRM]" << __func__;
+  if (!media_drm_bridge_) {
+    LOG(ERROR) << "[DRM]media_drm_bridge_ is nullptr.";
+    return;
+  }
+#if defined(OHOS_ENABLE_WISEPLAY)
+  std::vector<uint8_t> scheme_uuid = media_drm_bridge_->GetSchemeUUID();
   if (base::ranges::equal(scheme_uuid, kWiseplayUuid)) {
     LOG(INFO) << "[DRM]" << __func__ << ", Wiseplay.";
     media_drm_bridge_->SetOHOSMediaCryptoAndLicenseReadyCB(

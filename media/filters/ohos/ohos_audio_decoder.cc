@@ -387,6 +387,8 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
       return false;
     }
     audio_decoder_created_ = true;
+  } else {
+    LOG(INFO) << "OHOSAudioDecoder::InitAudioDecoder already had decoder, no need create again";
   }
 
   decoder_callback_ = std::make_unique<AudioDecoderCallback>(this);
@@ -481,10 +483,11 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   bool success = decoder_loop_->TryFlush();
   input_buffer_queue_.clear();
   output_buffer_queue_.clear();
+  io_timer_.Stop();
   if (success) {
     success = CreateOhosDecoderLoop();
   }
-  io_timer_.Stop();
+
   audio_decoder_->StartDecoder();
   timestamp_helper_->SetBaseTimestamp(kNoTimestamp);
   SetState(success ? READY : ERROR);

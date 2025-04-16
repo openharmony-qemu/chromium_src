@@ -9,6 +9,14 @@
 namespace ui {
 class EVENTS_BASE_EXPORT NativeScrollerOhos : public GestureCurve {
  public:
+   //same as third_party/blink/public/mojom/input/gesture_event.mojom GestureDevice
+   enum class GestureDevice {
+      kUninitialized,
+      kTouchpad,
+      kTouchscreen,
+      kSyntheticAutoscroll,
+      kScrollbar,
+   };
     NativeScrollerOhos() = default;
     ~NativeScrollerOhos() override {}
 
@@ -21,7 +29,8 @@ class EVENTS_BASE_EXPORT NativeScrollerOhos : public GestureCurve {
                float max_x,
                float min_y,
                float max_y,
-               base::TimeTicks start_time);
+               base::TimeTicks start_time,
+               GestureDevice device_source = GestureDevice::kTouchscreen);
     
     // GestureCurve implementation
     bool ComputeScrollOffset(base::TimeTicks time,

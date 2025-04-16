@@ -34,6 +34,26 @@ using blink::WebGestureCurve;
 namespace ui {
 namespace {
 
+#ifdef USE_NATIVE_FLING_CURVE
+NativeScrollerOhos::GestureDevice ConvertNativeScrollerDeviceSource(
+    blink::WebGestureDevice device_source) {
+  switch (device_source) {
+    case blink::WebGestureDevice::kUninitialized:
+      return NativeScrollerOhos::GestureDevice::kUninitialized;
+    case blink::WebGestureDevice::kTouchpad:
+      return NativeScrollerOhos::GestureDevice::kTouchpad;
+    case blink::WebGestureDevice::kTouchscreen:
+      return NativeScrollerOhos::GestureDevice::kTouchscreen;
+    case blink::WebGestureDevice::kSyntheticAutoscroll:
+      return NativeScrollerOhos::GestureDevice::kSyntheticAutoscroll;
+    case blink::WebGestureDevice::kScrollbar:
+      return NativeScrollerOhos::GestureDevice::kScrollbar;
+    default:
+      return NativeScrollerOhos::GestureDevice::kUninitialized;
+  }
+}
+#endif
+
 constexpr float kDefaultPixelsPerInch = 96.0f;
 std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
     blink::WebGestureDevice device_source,
@@ -58,11 +78,13 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
 #endif
   if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() &&
       (std::abs(initial_velocity.y()) > std::abs(initial_velocity.x()))) {
-    LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: " << initial_velocity.y();
+    LOG(DEBUG) << "WebGestureCurveImpl DUMP_FLING_CURVE initial_velocity: "
+               << initial_velocity.y() << " device_source: " << device_source;
     auto scroller = std::make_unique<NativeScrollerOhos>();
     scroller->Fling(0, 0, initial_velocity.x(), initial_velocity.y(), INT_MIN,
                     static_cast<float>(INT_MAX), INT_MIN,
-                    static_cast<float>(INT_MAX), base::TimeTicks());
+                    static_cast<float>(INT_MAX), base::TimeTicks(),
+                    ConvertNativeScrollerDeviceSource(device_source));
     return std::move(scroller);
   }
 

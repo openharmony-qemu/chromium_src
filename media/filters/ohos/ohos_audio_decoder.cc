@@ -118,6 +118,9 @@ AudioDecoderCallback::~AudioDecoderCallback() {}
 
 void AudioDecoderCallback::OnError(int32_t errorCode) {
   LOG(ERROR) << "OHOSAudioDecoder::AudioDecoderCallback::OnError, errorCode: " << errorCode;
+  if (client_) {
+    client_->OnError(errorCode);
+  }
 }
 
 void AudioDecoderCallback::OnOutputFormatChanged() {
@@ -164,6 +167,7 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
     audio_decoder_->StopDecoder();
     audio_decoder_->ReleaseDecoder();
     audio_decoder_ = nullptr;
+    audio_decoder_created_ = false;
   }
 
   ClearInputQueue(DecoderStatus::Codes::kAborted);
@@ -375,10 +379,14 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   audioDecoderFormat->SetSampleRate(sample_rate_);
   audioDecoderFormat->SetChannelCount(channel_count_);
 
-  AudioDecoderAdapterCode ret = audio_decoder_->CreateAudioDecoderByMime(mime_type);
-  if (ret != AudioDecoderAdapterCode::DECODER_OK) {
-    LOG(ERROR) << "OHOSAudioDecoder::InitAudioDecoder CreateAudioDecoderByMime Failed mime: " << mime_type;
-    return false;
+  AudioDecoderAdapterCode ret;
+  if (!audio_decoder_created_) {
+    ret = audio_decoder_->CreateAudioDecoderByMime(mime_type);
+    if (ret != AudioDecoderAdapterCode::DECODER_OK) {
+      LOG(ERROR) << "OHOSAudioDecoder::InitAudioDecoder CreateAudioDecoderByMime Failed mime: " << mime_type;
+      return false;
+    }
+    audio_decoder_created_ = true;
   }
 
   decoder_callback_ = std::make_unique<AudioDecoderCallback>(this);
@@ -426,6 +434,17 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
     std::move(entry.second).Run(decode_status);
   }
   input_queue_.clear();
+}
+
+void OHOSAudioDecoder::OnError(int32_t errorCode) {
+  if (!waiting_for_key_) {
+    SetState(ERROR);
+    return;
+  }
+
+  if (state_ != WAITING_FOR_MEDIA_CRYPTO) {
+    SetState(WAITING_FOR_MEDIA_CRYPTO);
+  }
 }
 
 void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB decode_cb) {
@@ -586,7 +605,7 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
 }
 
 bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
-  LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedEos";
+  LOG(INFO) << "OHOSAudioDecoder::OnDecodedEos";
   if (!input_queue_.size() || !input_queue_.front().first->end_of_stream()) {
     LOG(WARNING) << "OHOSAudioDecoder::OnDecodedEos: received unexpected eos";
     return false;

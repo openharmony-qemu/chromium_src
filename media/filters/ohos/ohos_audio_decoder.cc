@@ -26,6 +26,11 @@
 #include "ohos_audio_decoder.h"
 
 namespace media {
+namespace {
+  constexpr base::TimeDelta TwoSecondTimeout = base::Seconds(2);
+  constexpr int32_t MaxTimeOutCount = 2;
+}  // namespace
+
 class AudioDecoderCallback;
 
 int32_t OHOSAudioDecoderFormat::GetSampleRate() {
@@ -113,6 +118,9 @@ AudioDecoderCallback::~AudioDecoderCallback() {}
 
 void AudioDecoderCallback::OnError(int32_t errorCode) {
   LOG(ERROR) << "OHOSAudioDecoder::AudioDecoderCallback::OnError, errorCode: " << errorCode;
+  if (client_) {
+    client_->OnError(errorCode);
+  }
 }
 
 void AudioDecoderCallback::OnOutputFormatChanged() {
@@ -143,6 +151,7 @@ OHOSAudioDecoder::OHOSAudioDecoder(scoped_refptr<base::SequencedTaskRunner> task
     pool_(base::MakeRefCounted<AudioBufferMemoryPool>()) {
   LOG(INFO) << "OHOSAudioDecoder::OHOSAudioDecoder initialize";
   TRACE_EVENT0("media", "OHOSAudioDecoder::OHOSAudioDecoder");
+  io_timer_.SetTaskRunner(scoped_refptr<base::SingleThreadTaskRunner>());
 }
 
 OHOSAudioDecoder::~OHOSAudioDecoder() {
@@ -158,9 +167,11 @@ OHOSAudioDecoder::~OHOSAudioDecoder() {
     audio_decoder_->StopDecoder();
     audio_decoder_->ReleaseDecoder();
     audio_decoder_ = nullptr;
+    audio_decoder_created_ = false;
   }
 
   ClearInputQueue(DecoderStatus::Codes::kAborted);
+  io_timer_.Stop();
 }
 
 AudioDecoderType OHOSAudioDecoder::GetDecoderType() const {
@@ -317,6 +328,9 @@ void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
     return;
   }
 
+  waiting_for_key_ = false;
+  SetState(READY);
+  io_timer_.Stop();
   if (decoder_loop_) {
     decoder_loop_->OnKeyAdded();
   }
@@ -365,10 +379,16 @@ bool OHOSAudioDecoder::InitAudioDecoder(std::string mime_type) {
   audioDecoderFormat->SetSampleRate(sample_rate_);
   audioDecoderFormat->SetChannelCount(channel_count_);
 
-  AudioDecoderAdapterCode ret = audio_decoder_->CreateAudioDecoderByMime(mime_type);
-  if (ret != AudioDecoderAdapterCode::DECODER_OK) {
-    LOG(ERROR) << "OHOSAudioDecoder::InitAudioDecoder CreateAudioDecoderByMime Failed mime: " << mime_type;
-    return false;
+  AudioDecoderAdapterCode ret;
+  if (!audio_decoder_created_) {
+    ret = audio_decoder_->CreateAudioDecoderByMime(mime_type);
+    if (ret != AudioDecoderAdapterCode::DECODER_OK) {
+      LOG(ERROR) << "OHOSAudioDecoder::InitAudioDecoder CreateAudioDecoderByMime Failed mime: " << mime_type;
+      return false;
+    }
+    audio_decoder_created_ = true;
+  } else {
+    LOG(INFO) << "OHOSAudioDecoder::InitAudioDecoder already had decoder, no need create again";
   }
 
   decoder_callback_ = std::make_unique<AudioDecoderCallback>(this);
@@ -418,6 +438,12 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
   input_queue_.clear();
 }
 
+void OHOSAudioDecoder::OnError(int32_t errorCode) {
+  if (state_ != WAITING_FOR_MEDIA_CRYPTO) {
+    SetState(WAITING_FOR_MEDIA_CRYPTO);
+  }
+}
+
 void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB decode_cb) {
   LOG(DEBUG) << "OHOSAudioDecoder::Decode";
   DecodeCB cb = base::BindPostTaskToCurrentDefault(std::move(decode_cb));
@@ -457,9 +483,11 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   bool success = decoder_loop_->TryFlush();
   input_buffer_queue_.clear();
   output_buffer_queue_.clear();
+  io_timer_.Stop();
   if (success) {
     success = CreateOhosDecoderLoop();
   }
+
   audio_decoder_->StartDecoder();
   timestamp_helper_->SetBaseTimestamp(kNoTimestamp);
   SetState(success ? READY : ERROR);
@@ -575,7 +603,7 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
 }
 
 bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
-  LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedEos";
+  LOG(INFO) << "OHOSAudioDecoder::OnDecodedEos";
   if (!input_queue_.size() || !input_queue_.front().first->end_of_stream()) {
     LOG(WARNING) << "OHOSAudioDecoder::OnDecodedEos: received unexpected eos";
     return false;
@@ -678,11 +706,50 @@ AudioDecoderAdapterCode OHOSAudioDecoder::FlushDecoder() {
   return audio_decoder_->FlushDecoder();
 }
 
+void OHOSAudioDecoder::WaitingForLicence()
+{
+  // Define a timer to check the license status, The timer will check the license status after 2 seconds,
+  // and if the license is still invalid, it will retry once more. After 2 attempts, if the license is
+  // still invalid, the timer will stop.
+  LOG(INFO) << "OHOSAudioDecoderLoop::WaitingForLicence time_out_count_ = " << time_out_count_;
+  if (!waiting_for_key_) {
+    LOG(WARNING) << "OHOSAudioDecoder::WaitingForLicence get key and stop timer";
+    io_timer_.Stop();
+    time_out_count_ = 0;
+    return;
+  }
+  if (time_out_count_ > MaxTimeOutCount) {
+    io_timer_.Stop();
+    time_out_count_ = 0;
+    LOG(WARNING) << "OHOSAudioDecoder::WaitingForLicence not get key and stop timer";
+    SetState(ERROR);
+    return;
+  }
+  time_out_count_++;
+  if (!io_timer_.IsRunning()) {
+    LOG(INFO) << "OHOSAudioDecoder::WaitingForLicence start timer";
+    io_timer_.Start(FROM_HERE, TwoSecondTimeout, this, &OHOSAudioDecoder::WaitingForLicence);
+  }
+}
+ 
 AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index, int64_t presentationTimeUs,
   uint8_t* bufferData, int32_t bufferSize, std::shared_ptr<AudioCencInfoAdapter> cencInfo, bool isEncrypted,
   BufferFlag flag) {
-  return audio_decoder_->QueueInputBufferDec(index, presentationTimeUs, bufferData,
+  if (state_ == WAITING_FOR_MEDIA_CRYPTO) {
+    LOG(DEBUG) << "OHOSAudioDecoder::QueueInputBufferDec error, state = WAITING_FOR_MEDIA_CRYPTO";
+    return AudioDecoderAdapterCode::DECODER_RETRY;
+  }
+  AudioDecoderAdapterCode ret = audio_decoder_->QueueInputBufferDec(index, presentationTimeUs, bufferData,
     bufferSize, cencInfo, isEncrypted, flag);
+  if (ret == AudioDecoderAdapterCode::DECODER_ERROR && waiting_for_key_) {
+    SetState(WAITING_FOR_MEDIA_CRYPTO);
+    LOG(WARNING) << "OHOSAudioDecoder::QueueInputBufferDec error, wait for key";
+    if (!io_timer_.IsRunning()) {
+      WaitingForLicence();
+    }
+    return AudioDecoderAdapterCode::DECODER_RETRY;
+  }
+  return ret;
 }
 
 AudioDecoderAdapterCode OHOSAudioDecoder::ReleaseOutputBufferDec(uint32_t index) {

@@ -213,8 +213,8 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   SessionExpirationUpdateCB session_expiration_update_cb_;
 
   OHOSMediaCryptoReadyCB media_crypto_ready_cb_;
-  OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb_;
 #if defined(OHOS_ENABLE_WISEPLAY)
+  OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb_;
   bool is_license_ready_ = false;
 #endif
 

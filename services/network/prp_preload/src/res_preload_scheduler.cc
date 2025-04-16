@@ -103,7 +103,6 @@ void ResPreloadScheduler::SchedulePreloads(const PRPPPreconnectInfoList& preconn
     weak_factory_.GetWeakPtr(), MAX_REQUEST_COUNT, info_list_version_));
 }
 
-
 void ResPreloadScheduler::SchedulePreconnects()
 {
   if (net_task_runner_ == nullptr || sth_task_runner_ == nullptr) {
@@ -174,13 +173,14 @@ void ResPreloadScheduler::SchedulePrerequests(uint32_t limit, int32_t info_list_
   limit = limit > MAX_REQUEST_COUNT ? MAX_REQUEST_COUNT : limit;
   idle_prerequest_count_ = 0;
   bool need_continue = false;
-
   while (cur_parent_->children_.size() > 0) {
     for (auto child = cur_node_iter_; child != cur_parent_->children_.end(); child++) {
       cur_node_iter_ = child;
       if (!net::HttpUtil::IsMethodSafe((*child)->req_info_->method()) ||
           (((*child)->req_info_->preload_flag() & PRPP_FLAGS_HDR_NOT_MATCH) ==
-            PRPP_FLAGS_HDR_NOT_MATCH)) {
+            PRPP_FLAGS_HDR_NOT_MATCH) ||
+          (((*child)->req_info_->preload_flag() & PRPP_FLAGS_UNSUPPORT) ==
+            PRPP_FLAGS_UNSUPPORT)) {
         continue;
       }
       prerequest_num++;

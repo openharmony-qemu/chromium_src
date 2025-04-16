@@ -21,7 +21,7 @@ class URLRequest;
 }
 
 namespace ohos_prp_preload {
-#define PRPP_PREFLIGHT_PREFIX "preflight://"
+#define PRPP_PREFLIGHT_PREFIX "preflight+"
 
 // Marker if need to establish connection
 enum class PRRequestCacheType {
@@ -61,6 +61,7 @@ enum PRRequestFlags : uint32_t {
   PRPP_FLAGS_VISIBLE = 1 << 1, // visible, precondition for preload
   PRPP_FLAGS_HDR_DYNAMIC = 1 << 2, // header can be predicted, send preload request
   PRPP_FLAGS_URL_DYNAMIC = 1 << 3, // URL is dynamic, do not send preload request
+  PRPP_FLAGS_UNSUPPORT = 1 << 4, // unsupport, do not send preload request
 };
 
 class PRRequestInfo {

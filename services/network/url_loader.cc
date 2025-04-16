@@ -118,6 +118,11 @@ namespace {
 // mojo::core::Core::CreateDataPipe
 constexpr size_t kBlockedBodyAllocationSize = 1;
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+// "4" means blink::mojom::ResourceType::kImage. here not depend blink.
+constexpr int RESOURCE_TYPE_Image = 4;
+#endif
+
 // A subclass of net::UploadBytesElementReader which owns
 // ResourceRequestBody.
 class BytesElementReader : public net::UploadBytesElementReader {
@@ -621,7 +626,7 @@ URLLoader::URLLoader(
   }
   if (preload_info->only_send_reuse_request() &&
       preload_info->preload_flag() == ohos_prp_preload::PRPP_FLAGS_NONE) {
-    preload_info->set_preload_flag(ohos_prp_preload::PRPP_FLAGS_URL_DYNAMIC);
+    preload_info->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_URL_DYNAMIC);
   }
   url_request_ = url_request_context_->CreateRequestForPrpp(
       GURL(request.url), request.priority, this, traffic_annotation,
@@ -1012,6 +1017,16 @@ void URLLoader::BeginTrustTokenOperationIfNecessaryAndThenScheduleStart(
       "id", request_id_);
 #endif
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
+#endif
+
   // Trust token operations other than signing cannot be served from cache
   // because it needs to send the server the Trust Tokens request header and
   // get the corresponding response header. It is okay to cache the results in
@@ -1239,8 +1254,7 @@ void URLLoader::FollowRedirect(
 void URLLoader::SetPriority(net::RequestPriority priority,
                             int32_t intra_priority_value) {
 #if BUILDFLAG(IS_OHOS_PRPP)
-  // "4" means blink::mojom::ResourceType::kImage. here not depend blink.
-  if ((resource_type_ == 4) && (priority >= net::MEDIUM) && url_request_ &&
+  if ((resource_type_ == RESOURCE_TYPE_Image) && (priority >= net::MEDIUM) && url_request_ &&
       url_request_->preload_info() &&
       (url_request_->preload_info()->preload_flag() ==
       ohos_prp_preload::PRPP_FLAGS_NONE)) {
@@ -1528,6 +1542,17 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   // for prp_preload performance tools, redirect request
   TRACE_EVENT1("net", "URLLoader::OnReceivedRedirect", "id", request_id_);
 #endif
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
+#endif
+
   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
 
   // Send the redirect response to the client, allowing them to inspect it and
@@ -1693,6 +1718,16 @@ void URLLoader::OnAuthRequired(net::URLRequest* url_request,
   TRACE_EVENT1("net", "URLLoader::OnAuthRequired", "id", request_id_);
 #endif
 
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
+#endif
+
   url_loader_network_observer_->OnAuthRequired(
       fetch_window_id_, request_id_, url_request_->url(), first_auth_attempt_,
       auth_info, url_request->response_headers(),
@@ -1727,6 +1762,17 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // for prp_preload performance tools, certificate request
   TRACE_EVENT1("net", "URLLoader::OnCertificateRequested", "id", request_id_);
 #endif
+
+#if BUILDFLAG(IS_OHOS_PRPP)
+  if (url_request_ && url_request_->preload_info()) {
+    url_request_->preload_info()->or_preload_flag(ohos_prp_preload::PRPP_FLAGS_UNSUPPORT);
+    if (already_update_info_) {
+      ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
+        url_request_->url().spec(), url_request_->preload_info());
+    }
+  }
+#endif
+
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -3088,9 +3134,8 @@ bool URLLoader::CoepAllowCredentials(const GURL& url) {
 void URLLoader::UpdateResRequestInfo(
     const std::string& key,
     const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info) {
-  // "4" means blink::mojom::ResourceType::kImage. here not depend blink.
   if ((info->preload_flag() != ohos_prp_preload::PRPP_FLAGS_NONE) ||
-      (resource_type_ == 4)) {
+      (resource_type_ == RESOURCE_TYPE_Image)) {
     already_update_info_ = true;
     ohos_prp_preload::PRParallelPreloadMgr::GetInstance().UpdateResRequestInfo(
         key, info);

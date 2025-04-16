@@ -338,13 +338,11 @@ void OHOSDrmCallback::OnProvisioningComplete(bool success) {
 }
 
 void OHOSDrmCallback::OnMediaKeySessionReady(void* session) {
-#if defined(OHOS_ENABLE_WISEPLAY)
   LOG(INFO) << "[DRM]" << __func__;
   if (media_drm_bridge_) {
     media_drm_bridge_->OnOHOSMediaCryptoReady(session);
     LOG(INFO) << "[DRM]" << __func__;
   }
-#endif
 }
 
 void OHOSDrmCallback::OnPromiseRejected(uint32_t promiseId,
@@ -431,9 +429,11 @@ void OHOSDrmCallback::OnStorageClearInfoForLoadFail(
 }
 
 void OHOSDrmCallback::OnMediaLicenseReady(bool success) {
+#if defined(OHOS_ENABLE_WISEPLAY)
   if (media_drm_bridge_) {
     media_drm_bridge_->OnMediaLicenseReady(success);
   }
+#endif
 }
 
 // static

@@ -318,6 +318,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
     if (callback_) {
       DCHECK(!timer_.IsRunning());
       FlushData();
+      Flush();
       PumpSamples();
     }
   }
@@ -338,6 +339,7 @@ void OHOSAudioOutputStream::Stop() {
   if (!audio_renderer_->Stop()) {
     ReportError();
   }
+  Flush();
 }
 
 bool OHOSAudioOutputStream::GetInterruptMode() {
@@ -358,7 +360,16 @@ void OHOSAudioOutputStream::SetInterruptMode(bool audioExclusive) {
 
 // This stream is always used with sub second buffer sizes, where it's
 // sufficient to simply always flush upon Start().
-void OHOSAudioOutputStream::Flush() {}
+void OHOSAudioOutputStream::Flush() {
+  LOG(INFO) << "OHOSAudioOutputStream::Flush";
+  if (!audio_renderer_) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Flush audio_renderer_ is null.";
+    return;
+  }
+  if (!audio_renderer_->Flush()) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Flush failed.";
+  }
+}
 
 void OHOSAudioOutputStream::SetVolume(double volume) {
   DCHECK(0.0 <= volume && volume <= 1.0) << volume;

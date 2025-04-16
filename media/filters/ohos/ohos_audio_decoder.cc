@@ -437,11 +437,6 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
 }
 
 void OHOSAudioDecoder::OnError(int32_t errorCode) {
-  if (!waiting_for_key_) {
-    SetState(ERROR);
-    return;
-  }
-
   if (state_ != WAITING_FOR_MEDIA_CRYPTO) {
     SetState(WAITING_FOR_MEDIA_CRYPTO);
   }

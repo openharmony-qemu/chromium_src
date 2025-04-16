@@ -186,6 +186,8 @@ class AudioDecoderCallback : public AudioDecoderCallbackAdapter {
 
     virtual void UpdateOutputFormat() = 0;
 
+    virtual void OnError(int32_t errorCode) = 0;
+
    protected:
     virtual ~Client() {}
   };
@@ -279,6 +281,8 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint32_t size, int64_t pts, BufferFlag flag) override;
 
+  void OnError(int32_t errorCode) override;
+
   void UpdateOutputFormat() override;
 
   void OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec);
@@ -365,6 +369,8 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   // define a timer for waiting licence
   base::RepeatingTimer io_timer_;
+
+  bool audio_decoder_created_ = false;
 };
 
 }

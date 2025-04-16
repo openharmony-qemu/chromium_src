@@ -338,11 +338,13 @@ void OHOSDrmCallback::OnProvisioningComplete(bool success) {
 }
 
 void OHOSDrmCallback::OnMediaKeySessionReady(void* session) {
+#if defined(OHOS_ENABLE_WISEPLAY)
   LOG(INFO) << "[DRM]" << __func__;
   if (media_drm_bridge_) {
     media_drm_bridge_->OnOHOSMediaCryptoReady(session);
     LOG(INFO) << "[DRM]" << __func__;
   }
+#endif
 }
 
 void OHOSDrmCallback::OnPromiseRejected(uint32_t promiseId,
@@ -700,6 +702,7 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoReadyCB(
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
 
+#if defined(OHOS_ENABLE_WISEPLAY)
 std::vector<uint8_t> OHOSMediaDrmBridge::GetSchemeUUID() {
   return scheme_uuid_;
 }
@@ -737,6 +740,7 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
+#endif
 
 void OHOSMediaDrmBridge::OnOHOSMediaCryptoReady(void* session) {
   DCHECK(task_runner_->BelongsToCurrentThread());
@@ -975,6 +979,7 @@ void OHOSMediaDrmBridge::OnSessionExpirationUpdate(
                      base::Time::FromDoubleT(expiry_time_ms / MS_IN_SECOND)));
 }
 
+#if defined(OHOS_ENABLE_WISEPLAY)
 void OHOSMediaDrmBridge::OnMediaLicenseReady(bool success) {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(task_runner_->BelongsToCurrentThread());
@@ -988,6 +993,7 @@ void OHOSMediaDrmBridge::OnMediaLicenseReady(bool success) {
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
+#endif
 
 OHOSMediaDrmBridge::OHOSMediaDrmBridge(
     const std::vector<uint8_t>& scheme_uuid,

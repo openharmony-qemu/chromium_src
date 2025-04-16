@@ -58,12 +58,8 @@ void PRRequestInfo::set_request_end_time(int64_t time)
 
 int64_t PRRequestInfo::request_end_time() const
 {
-  int64_t req_end_time = 0;
-  {
-    std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
-	req_end_time = req_end_time_;
-  }
-  return req_end_time > req_start_time_ ? req_end_time : 0;
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  return req_end_time_ > req_start_time_ ? req_end_time_ : 0;
 }
 
 void PRRequestInfo::set_preload_flag(PRRequestFlags flags)

@@ -45,13 +45,13 @@ void PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart(const std::shared_ptr
 	need_record_header_urls_ = need_record_header_urls;
   }
 
-  if (info->preload_flag() ==
-      (PRRequestFlags)(PRPP_FLAGS_VISIBLE | PRPP_FLAGS_URL_DYNAMIC) &&
+  if (((info->preload_flag() & PRPP_FLAGS_URL_DYNAMIC) == PRPP_FLAGS_URL_DYNAMIC) &&
 	  only_send_reuse_request_) {
 	(void)dynamic_urls_.emplace(sub_url);
+	return;
   }
 
-  if (info->preload_flag() == (PRRequestFlags)(PRPP_FLAGS_VISIBLE | PRPP_FLAGS_HDR_DYNAMIC)) {
+  if (((info->preload_flag() & PRPP_FLAGS_HDR_DYNAMIC) == PRPP_FLAGS_HDR_DYNAMIC)) {
 	auto item = can_reuse_headers_map_.find(info->parent_for_dynamic_header().spec());
 	if (item == can_reuse_headers_map_.end()) {
 	  RecordPendingPRPPLoader(info);
@@ -75,34 +75,22 @@ void PRPPRequestLoaderFactoryImpl::SetPRPPIsolation(const net::IsolationInfo& is
 }
 
 std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader(
-	const network::URLLoaderContext& context,
-	const network::ResourceRequest& resource_request,
+	const network::URLLoaderContext& context, const network::ResourceRequest& resource_request,
 	std::shared_ptr<PRRequestInfo> req_info_binding)
 {
-  if (need_record_header_urls_.find(resource_request.url.spec()) != need_record_header_urls_.end()) {
-	(void)can_reuse_headers_map_.emplace(resource_request.url.spec(), resource_request.headers);
-	base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-	  FROM_HERE, base::BindOnce(&PRPPRequestLoaderFactoryImpl::DoPendingCreateTask,
-	  weak_factory_.GetWeakPtr(), resource_request.url.spec()));
-	(void)need_record_header_urls_.erase(resource_request.url.spec());
-  }
-
   req_info_binding->set_only_send_reuse_request(only_send_reuse_request_);
-
+  RecordNeedRecordHeaderUrls(resource_request);
   if (!net::HttpUtil::IsMethodSafe(resource_request.method)) {
 	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader not support method:" <<
-	resource_request.method;
+	  resource_request.method;
 	return nullptr;
   }
   if (!isolation_info_.IsEmpty() && !context.GetFactoryParams().isolation_info.IsEmpty()) {
-	std::string prp_isolationinfo = isolation_info_.Serialize();
-	std::string sub_isolationinfo = context.GetFactoryParams().isolation_info.Serialize();
-	if (prp_isolationinfo != sub_isolationinfo) {
+	if (isolation_info_.Serialize() != context.GetFactoryParams().isolation_info.Serialize()) {
 	  LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader isolationinfo not match";
 	  return nullptr;
 	}
   }
-
   std::string sub_url = resource_request.url.spec();
   PRPPReqLoaderMap::iterator it = prpp_req_loaders_.end();
   if (resource_request.is_preflight) {
@@ -118,24 +106,20 @@ std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoade
 	}
 	return nullptr;
   }
-
   std::shared_ptr<PRPPRequestLoader> loader = it->second;
+  (void)prpp_req_loaders_.erase(it);
   if (!loader.get()) {
 	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader loader is null";
 	return nullptr;
   }
   if (loader->GetState() >= PRPPRequestLoader::STATE_UNSUPPORT) {
 	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader loader invalid state";
-	(void)prpp_req_loaders_.erase(it);
 	return nullptr;
   }
-
   std::shared_ptr<PRRequestInfo> info = loader->GetPRRequestInfo();
   if (!IsInfoMatched(info, context, resource_request, req_info_binding)) {
-	(void)prpp_req_loaders_.erase(it);
 	return nullptr;
   }
-  (void)prpp_req_loaders_.erase(it);
   LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader find loader success";
   return loader;
 }
@@ -210,7 +194,7 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
   }
 
   if (!match) {
-	req_info_binding->set_preload_flag(PRPP_FLAGS_HDR_DYNAMIC);
+	req_info_binding->or_preload_flag(PRPP_FLAGS_HDR_DYNAMIC);
 	req_info_binding->set_dynamic_header_keys(dynamic_header_keys);
   }
   return match;
@@ -280,6 +264,18 @@ void PRPPRequestLoaderFactoryImpl::RecordPendingPRPPLoader(const std::shared_ptr
   } else {
 	pending_prpp_loader_list_[info->parent_for_dynamic_header().spec()] =
 	  std::list<std::shared_ptr<PRRequestInfo>>({info});
+  }
+}
+
+void PRPPRequestLoaderFactoryImpl::RecordNeedRecordHeaderUrls(
+    const network::ResourceRequest& resource_request)
+{
+  if (need_record_header_urls_.find(resource_request.url.spec()) != need_record_header_urls_.end()) {
+    (void)can_reuse_headers_map_.emplace(resource_request.url.spec(), resource_request.headers);
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&PRPPRequestLoaderFactoryImpl::DoPendingCreateTask,
+      weak_factory_.GetWeakPtr(), resource_request.url.spec()));
+    (void)need_record_header_urls_.erase(resource_request.url.spec());
   }
 }
 

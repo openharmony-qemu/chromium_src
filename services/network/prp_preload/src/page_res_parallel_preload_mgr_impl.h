@@ -43,6 +43,7 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   void DoRmPageUrl(const std::string& in_org_url);
   void FindCurPreloadInfoAndRun(const std::string& key,
       std::function<void(PRParallelPreloadInfo&)> func);
+  bool IsPageAlreadyStarted(const std::string& key, PageOriginCallback& callback);
   bool is_inited_ { false };
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;

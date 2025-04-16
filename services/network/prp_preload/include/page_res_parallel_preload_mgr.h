@@ -65,7 +65,7 @@ class PRParallelPreloadMgr {
   // callback by ResPreloadScheduler
   virtual void OnPageOrigin(const std::string& url, const std::string& page_origin) = 0;
 
-  // get PRPPRequestLoaderFactory for page 
+  // get PRPPRequestLoaderFactory for page
   virtual base::WeakPtr<PRPPRequestLoaderFactory> GetRequestLoaderFactory(
     const std::string& main_url) = 0;
 

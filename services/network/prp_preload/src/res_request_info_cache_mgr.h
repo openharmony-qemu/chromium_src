@@ -29,7 +29,8 @@ class ResReqInfoCacheMgr : public base::RefCounted<ResReqInfoCacheMgr> {
   void SetPageOrigin(const std::string& page_origin);
  private:
   void OnEntryLoadedCallback(const std::string& entry_content);
-  void CheckFlush();
+  void CheckFlush(bool checkflush_immediately);
+  bool IsRequestWithCookie(const std::shared_ptr<PRRequestInfo>& info);
 
   const net::NetworkAnonymizationKey networkAnonymizationKey_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;

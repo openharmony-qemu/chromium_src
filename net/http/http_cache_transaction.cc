@@ -277,7 +277,7 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   next_state_ = STATE_GET_BACKEND;
 
 #if BUILDFLAG(IS_OHOS_PRPP)
-  if (!update_res_request_info_callback_.is_null() && preload_info_) {
+  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
     update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
   }
 #endif

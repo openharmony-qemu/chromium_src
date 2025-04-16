@@ -22,6 +22,7 @@
 namespace policy {
 
 namespace {
+constexpr int kApiMinApiVersion = 16;
 constexpr bool kUseTestPolicies = false;
 }  // namespace
 
@@ -48,44 +49,31 @@ PolicyLoaderOhos::PolicyLoaderOhos(
     : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
 
 PolicyLoaderOhos::~PolicyLoaderOhos() {
-  BrowserPolicyHandler::GetInstance()->RemoveObserver(event_callback_.get());
-  if (!use_browser_policy_) {
+  if (use_browser_policy_) {
+    policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
+        event_callback_.get());
+  } else {
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                       .GetEnterpriseDeviceManagementInstance()
                       .StopObservePolicyChange();
   }
 }
 
-void PolicyLoaderOhos::InitialReadApiVersionOnce() {
-  static bool has_read_version = false;
-  if (has_read_version) {
+void PolicyLoaderOhos::TryChoosePolicySource() {
+  if (policy_source_choosed_) {
     return;
   }
 
   int api_version = base::ohos::ApplicationApiVersion();
   LOG(INFO) << "PolicyLoaderOhos Init api version: " << api_version;
-  has_read_version = true;
-
   if (api_version < 0) {
-    LOG(ERROR) << "PolicyLoaderOhos choose source failed, using default";
+    LOG(ERROR) << "PolicyLoaderOhos choose source failed: invalid api_version";
   }
 
-  if (api_version >= kUseBrowserPolicyMinApiVersion) {
-    reached_min_api_version_ = true;
-  } else {
-    reached_min_api_version_ = false;
-  }
-}
-
-void PolicyLoaderOhos::DeterminePolicySource() {
-  InitialReadApiVersionOnce();
-  if (reached_min_api_version_ &&
-      BrowserPolicyHandler::GetInstance()->IsProvidingPolicy()) {
+  policy_source_choosed_ = true;
+  if (api_version >= kApiMinApiVersion) {
     use_browser_policy_ = true;
   } else {
-    if (reached_min_api_version_) {
-      LOG(WARNING) << "BrowserPolicyHandler is not providing policy";
-    }
     use_browser_policy_ = false;
   }
 }
@@ -93,56 +81,26 @@ void PolicyLoaderOhos::DeterminePolicySource() {
 void PolicyLoaderOhos::InitOnBackgroundThread() {
   event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
 
-  OHOS::NWeb::OhosAdapterHelper::GetInstance()
-      .GetEnterpriseDeviceManagementInstance()
-      .RegistPolicyChangeEventCallback(event_callback_);
-
-  // Always observe BrowserPolicyHandler to make sure Load() can be invoked when
-  // BrowserPolicyHandler start providing policy.
-  BrowserPolicyHandler::GetInstance()->AddObserver(event_callback_.get());
-
-  DeterminePolicySource();
-  if (!use_browser_policy_) {
-    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                      .GetEnterpriseDeviceManagementInstance()
-                      .StartObservePolicyChange();
-  }
-  prev_use_browser_policy_ = use_browser_policy_;
-  callback_initialized_ = true;
+  TryChoosePolicySource();
 
   if (use_browser_policy_) {
-    // Need a reload here because it's possible that initial SetPolicy call from
-    // browser is earlier than InitOnBackgroundThread.
-    Reload(true);
-  }
-}
+    BrowserPolicyHandler::GetInstance()->AddObserver(event_callback_.get());
+  } else {
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetEnterpriseDeviceManagementInstance()
+        .RegistPolicyChangeEventCallback(event_callback_);
 
-void PolicyLoaderOhos::MaybeSwitchLoadInvoker() {
-  if (!prev_use_browser_policy_ && use_browser_policy_) {
-    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                      .GetEnterpriseDeviceManagementInstance()
-                      .StopObservePolicyChange();
-  }
-
-  if (prev_use_browser_policy_ && !use_browser_policy_) {
-    LOG(ERROR) << "PolicyLoaderOhos dynamically stop providing policy, source "
-                  "fallback";
     std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
                       .GetEnterpriseDeviceManagementInstance()
                       .StartObservePolicyChange();
   }
-  prev_use_browser_policy_ = use_browser_policy_;
 }
 
 PolicyBundle PolicyLoaderOhos::Load() {
-  DeterminePolicySource();
-
-  if (callback_initialized_) {
-    MaybeSwitchLoadInvoker();
-  }
+  TryChoosePolicySource();
 
   if (use_browser_policy_) {
-    return BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
+    return policy::BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
   } else {
     std::string policies;
     int32_t error_code = OHOS::NWeb::OhosAdapterHelper::GetInstance()

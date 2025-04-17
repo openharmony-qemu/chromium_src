@@ -1154,6 +1154,35 @@ void NWebImpl::DragResize(uint32_t width, uint32_t height, uint32_t pre_height, 
   output_handler_->Resize(width, height);
 }
 
+void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
+                                             const std::vector<std::string>& methodName,
+                                             std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
+                                             bool isAsync,
+                                             const std::string& permission)
+{
+  if (nweb_delegate_ == nullptr) {
+    LOG(ERROR) << "nweb_delegate_ is nullptr";
+    return;
+  }
+  int len = data->GetSize();
+  std::vector<NativeJSProxyCallbackFunc> callback;
+  for (int i = 0; i < len; i++) {
+    auto lambda = [number = i, calls = data](std::vector<std::vector<uint8_t>> param,
+                                             std::vector<size_t> size) -> char* {
+      std::vector<std::string> paramVector;
+      for (std::vector<uint8_t> paramArray: param) {
+        std::string param_str (paramArray.begin(), paramArray.end());
+        paramVector.push_back(param_str);
+      }
+      calls->OnHandle(number, paramVector);
+      return nullptr;
+    };
+    callback.push_back(std::move(lambda));
+  }
+  LOG(INFO) << "NWebImpl::RegisterNativeJavaScriptProxy " << objName;
+  nweb_delegate_->RegisterNativeJSProxy(objName, methodName, std::move(callback), isAsync, permission);
+}
+
 void NWebImpl::SetDrawRect(int x, int y, int width, int height) {
   if (nweb_delegate_) {
     nweb_delegate_->SetDrawRect(x, y, width, height);

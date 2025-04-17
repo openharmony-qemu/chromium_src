@@ -1,4 +1,6 @@
 <?xml version="1.0" ?>
 <!DOCTYPE translationbundle>
 <translationbundle lang="ug">
+<translation id="IDS_ACCEPT_LANGUAGES">ug,zh,en-us,en</translation>
+<translation id="IDS_DEFAULT_ENCODING">UTF-8</translation>
 </translationbundle>

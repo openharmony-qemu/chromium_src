@@ -251,7 +251,8 @@
     <file path="strings/components_locale_settings_zh-TW.xtb" lang="zh-TW" />
     <if expr="pp_ifdef('is_ohos')">
        <file path="strings/components_locale_settings_bo-CN.xtb" lang="bo-CN" />
-        <file path="strings/components_locale_settings_ug.xtb" lang="ug" />
+       <file path="strings/components_locale_settings_ug.xtb" lang="ug" />
+       <file path="strings/components_locale_settings_zh-HK.xtb" lang="zh-HK" />
     </if>
     <!-- ar-XB falls back to ar, but we want it to fall back to english -->
     <file path="strings/components_locale_settings_ar-XB.xtb" lang="ar-XB" />

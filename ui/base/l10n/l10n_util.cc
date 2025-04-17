@@ -457,6 +457,12 @@ bool CheckAndResolveLocale(const std::string& locale,
         tmp_locale.append("-GB");
       }
     }
+#if defined(OHOS_I18N)
+      else if(base::EqualsCaseInsensitiveASCII(lang, "bo")) {
+        // Map bo or bo-xx to bo-CN
+        tmp_locale.append("-CN");
+      }
+#endif
     if (HasStringsForLocale(tmp_locale, perform_io)) {
       resolved_locale->swap(tmp_locale);
       return true;

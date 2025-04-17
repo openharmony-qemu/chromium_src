@@ -108,8 +108,6 @@ struct BindingsSystemPerContextData : public base::SupportsUserData::Data {
   base::WeakPtr<NativeExtensionBindingsSystem> bindings_system;
 };
 
-#endif
-
 // If a 'chrome' property exists on the context's global and is an object,
 // returns that.
 // If a 'chrome' property exists but isn't an object, returns an empty Local.

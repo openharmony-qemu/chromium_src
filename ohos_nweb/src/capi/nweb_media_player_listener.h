@@ -20,23 +20,23 @@
 
 #include "ohos_nweb/src/capi/common/common.h"
 
-class NWebMediaPlayerListener;
+template<typename T>
 
 struct NWebMediaPlayerListenerBase {
   const size_t struct_size = sizeof(NWebMediaPlayerListenerBase);
-  void (NWebMediaPlayerListener::*on_status_changed)(uint32_t) = nullptr;
-  void (NWebMediaPlayerListener::*on_muted_changed)(bool) = nullptr;
-  void (NWebMediaPlayerListener::*on_playback_rate_changed)(double) = nullptr;
-  void (NWebMediaPlayerListener::*on_duration_changed)(double) = nullptr;
-  void (NWebMediaPlayerListener::*on_time_update)(double) = nullptr;
-  void (NWebMediaPlayerListener::*on_buffered_end_time_changed)(double) = nullptr;
-  void (NWebMediaPlayerListener::*on_ended)() = nullptr;
-  void (NWebMediaPlayerListener::*on_fullscreen_changed)(bool) = nullptr;
-  void (NWebMediaPlayerListener::*on_seeking)() = nullptr;
-  void (NWebMediaPlayerListener::*on_seek_finished)() = nullptr;
-  void (NWebMediaPlayerListener::*on_error)(uint32_t, const std::string&) = nullptr;
-  void (NWebMediaPlayerListener::*on_video_size_changed)(int, int) = nullptr;
-  void (NWebMediaPlayerListener::*on_fullscreen_overlay_changed)(bool) = nullptr;
+  void (T::*on_status_changed)(uint32_t) = nullptr;
+  void (T::*on_muted_changed)(bool) = nullptr;
+  void (T::*on_playback_rate_changed)(double) = nullptr;
+  void (T::*on_duration_changed)(double) = nullptr;
+  void (T::*on_time_update)(double) = nullptr;
+  void (T::*on_buffered_end_time_changed)(double) = nullptr;
+  void (T::*on_ended)() = nullptr;
+  void (T::*on_fullscreen_changed)(bool) = nullptr;
+  void (T::*on_seeking)() = nullptr;
+  void (T::*on_seek_finished)() = nullptr;
+  void (T::*on_error)(uint32_t, const std::string&) = nullptr;
+  void (T::*on_video_size_changed)(int, int) = nullptr;
+  void (T::*on_fullscreen_overlay_changed)(bool) = nullptr;
 
   NWebMediaPlayerListenerBase() = default;
   NWebMediaPlayerListenerBase(
@@ -49,10 +49,11 @@ struct NWebMediaPlayerListenerBase {
       NWebMediaPlayerListenerBase&& other) = delete;
 };
 
-class NWebMediaPlayerListener : public NWebMediaPlayerListenerBase {
+class NWebMediaPlayerListener : public NWebMediaPlayerListenerBase
+<NWebMediaPlayerListener> {
  public:
-  using Base = NWebMediaPlayerListenerBase;
-  NWebMediaPlayerListener() : NWebMediaPlayerListenerBase() {
+  using Base = NWebMediaPlayerListenerBase<NWebMediaPlayerListener>;
+  NWebMediaPlayerListener() : NWebMediaPlayerListenerBase<NWebMediaPlayerListener>() {
     this->on_status_changed = &NWebMediaPlayerListener::OnStatusChanged;
     this->on_muted_changed = &NWebMediaPlayerListener::OnMutedChanged;
     this->on_playback_rate_changed = &NWebMediaPlayerListener::OnPlaybackRateChanged;

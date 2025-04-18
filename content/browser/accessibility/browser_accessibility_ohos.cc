@@ -38,7 +38,7 @@ BrowserAccessibilityOHOS::BrowserAccessibilityOHOS(
     BrowserAccessibilityManager* manager,
     ui::AXNode* node)
     : BrowserAccessibility(manager, node) {
-  accessibility_id_ = static_cast<int64_t>(GetUniqueId().Get());
+  accessibility_id_ = static_cast<int64_t>(GetUniqueId().Get()) + 1;
   g_accessibility_id_map.Get()[accessibility_id_] = this;
 }
 

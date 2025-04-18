@@ -955,7 +955,7 @@ bool NWebRenderHandler::StartDragging(CefRefPtr<CefBrowser> browser,
   }
 
   bool is_drag_new_style = true;
-  if (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice()) {
+  if (base::ohos::IsPcDevice()) {
     is_drag_new_style = false;
   }
   nweb_drag_data_ = std::make_shared<NWebDragDataImpl>(

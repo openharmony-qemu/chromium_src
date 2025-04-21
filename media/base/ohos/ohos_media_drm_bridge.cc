@@ -663,7 +663,7 @@ void OHOSMediaDrmBridge::ResolvePromise(uint32_t promise_id) {
 void OHOSMediaDrmBridge::ResolvePromiseWithSession(
     uint32_t promise_id,
     const std::string& session_id) {
-  LOG(INFO) << "[DRM]" << __func__;
+  LOG(INFO) << "[DRM]" << __func__ << ", session_id: " << session_id;
   cdm_promise_adapter_.ResolvePromise(promise_id, session_id);
 }
 
@@ -724,17 +724,19 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
   }
 
   DCHECK(!media_crypto_and_license_ready_cb_);
-  media_crypto_and_license_ready_cb_ = std::move(media_crypto_and_license_ready_cb);
+  media_crypto_and_license_ready_cb_ =
+    std::move(media_crypto_and_license_ready_cb);
 
   if (!ohos_media_key_session_) {
     LOG(INFO) << "[DRM]" << __func__ << ", key session not ready.";
     return;
   }
-  if (!isLicenseReady_) {
+  if (!is_license_ready_) {
     LOG(INFO) << "[DRM]" << __func__ << ", license not ready.";
     return;
   }
-  
+  LOG(INFO) << "[DRM]" << __func__;
+  is_license_ready_ = false;
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
@@ -742,11 +744,11 @@ void OHOSMediaDrmBridge::SetOHOSMediaCryptoAndLicenseReadyCB(
 
 void OHOSMediaDrmBridge::OnOHOSMediaCryptoReady(void* session) {
   DCHECK(task_runner_->BelongsToCurrentThread());
-  LOG(INFO) << "[DRM]" << __func__;
-
+  LOG(INFO) << "[DRM]" << __func__ << ", session:" << session;
+  ohos_media_key_session_ = session;
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSMediaDrmBridge::NotifyMediaCryptoReady,
-                                weak_factory_.GetWeakPtr(), session));
+                                weak_factory_.GetWeakPtr()));
 }
 
 void OHOSMediaDrmBridge::OnProvisionRequest(const std::string& default_url,
@@ -940,7 +942,8 @@ void OHOSMediaDrmBridge::OnSessionKeysChange(
     const std::vector<uint32_t>& statusArray,
     bool has_additional_usable_key,
     bool is_key_release) {
-  LOG(INFO) << "[DRM]" << __func__;
+  LOG(INFO) << "[DRM]" << __func__ << ", has_additional_usable_key: "
+            << has_additional_usable_key;
   CdmKeysInfo cdm_keys_info;
   if (keyIdArray.size() == statusArray.size()) {
     for (uint32_t i = 0; i < keyIdArray.size(); i++) {
@@ -959,6 +962,7 @@ void OHOSMediaDrmBridge::OnSessionKeysChange(
                      has_additional_usable_key, std::move(cdm_keys_info)));
 
   if (has_additional_usable_key) {
+    LOG(INFO) << "[DRM]" << __func__;
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSMediaDrmBridge::OnHasAdditionalUsableKey,
                                   weak_factory_.GetWeakPtr()));
@@ -979,12 +983,13 @@ void OHOSMediaDrmBridge::OnSessionExpirationUpdate(
 void OHOSMediaDrmBridge::OnMediaLicenseReady(bool success) {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(task_runner_->BelongsToCurrentThread());
-  isLicenseReady_ = true;
   if (!media_crypto_and_license_ready_cb_) {
+    is_license_ready_ = true;
     LOG(INFO) << "[DRM]" << __func__ << ", cb not set.";
     return;
   }
-
+  LOG(INFO) << "[DRM]" << __func__ << ", session:" << ohos_media_key_session_;
+  is_license_ready_ = false;
   std::move(media_crypto_and_license_ready_cb_)
       .Run(ohos_media_key_session_, IsSecureCodecRequired());
 }
@@ -1051,11 +1056,11 @@ OHOSMediaDrmBridge::SecurityLevel OHOSMediaDrmBridge::GetSecurityLevel() {
   return securityLevel;
 }
 
-void OHOSMediaDrmBridge::NotifyMediaCryptoReady(void* session) {
+void OHOSMediaDrmBridge::NotifyMediaCryptoReady() {
   LOG(INFO) << "[DRM]" << __func__;
   DCHECK(task_runner_->BelongsToCurrentThread());
-  ohos_media_key_session_ = session;
   if (!media_crypto_ready_cb_) {
+    LOG(INFO) << "[DRM]" << __func__ << ", cb is not set.";
     return;
   }
   std::move(media_crypto_ready_cb_)
@@ -1069,7 +1074,6 @@ void OHOSMediaDrmBridge::SendProvisioningRequest(
   DCHECK(!provision_fetcher_) << "At most one provision request at any time.";
   DCHECK(create_fetcher_cb_);
   provision_fetcher_ = create_fetcher_cb_.Run();
-
   if (!provision_fetcher_) {
     LOG(ERROR) << "[DRM]" << __func__ << ", create fetcher failed.";
     return;
@@ -1109,6 +1113,7 @@ void OHOSMediaDrmBridge::ProcessProvisionResponse(bool success,
 
 void OHOSMediaDrmBridge::OnHasAdditionalUsableKey() {
   DCHECK(task_runner_->BelongsToCurrentThread());
+  LOG(INFO) << "[DRM]" << __func__;
   event_callbacks_.Notify(Event::kHasAdditionalUsableKey);
 }
 }  // namespace media

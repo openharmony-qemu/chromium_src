@@ -79,7 +79,9 @@ void OHOSAudioCapturerSource::Initialize(
       std::to_string(params_.sample_rate()) + "_" +
       std::to_string(params_.channels()) + "_" +
       std::to_string(1) + "_capturer_in.pcm";
-  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
+  FILE* tempFile = dumpFile_.get();
+  DumpFileUtil::OpenDumpFile(dumpFileName, &tempFile);
+  dumpFile_ = tempFile;
 }
 
 void OHOSAudioCapturerSource::Start() {
@@ -117,7 +119,9 @@ void OHOSAudioCapturerSource::Stop() {
     LOG(ERROR) << "OHOSAudioCapturerSource::Stop stop failed";
     ReportError("Stop OHOS audio capturer failed");
   }
-  DumpFileUtil::CloseDumpFile(&dumpFile_);
+  FILE* tempFile = dumpFile_.get();
+  DumpFileUtil::CloseDumpFile(&tempFile);
+  dumpFile_ = tempFile;
 }
 
 void OHOSAudioCapturerSource::ReadData() {

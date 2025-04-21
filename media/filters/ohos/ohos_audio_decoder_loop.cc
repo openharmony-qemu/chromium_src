@@ -51,6 +51,9 @@ OHOSAudioDecoderLoop::~OHOSAudioDecoderLoop() {
 
 void OHOSAudioDecoderLoop::OnKeyAdded() {
   LOG(DEBUG) << "OHOSAudioDecoderLoop::OnKeyAdded";
+  if (state_ == WAITING_FOR_KEY) {
+    SetState(READY);
+  }
   ExpectWork();
 }
 
@@ -212,7 +215,7 @@ bool OHOSAudioDecoderLoop::EnqueueInputBuffer(const InputBuffer& input_buffer) {
   switch (code) {
     case AudioDecoderAdapterCode::DECODER_RETRY:
       LOG(DEBUG) << "OHOSAudioDecoderLoop::EnqueueInputBuffer AudioDecoderAdapterCode::DECODER_RETRY";
-      // Do not process RETRY, return directly and wait for the next cycle to write
+      SetState(WAITING_FOR_KEY);
       break;
 
     case AudioDecoderAdapterCode::DECODER_OK:

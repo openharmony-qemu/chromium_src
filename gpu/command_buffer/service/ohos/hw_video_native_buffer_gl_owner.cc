@@ -133,7 +133,7 @@ void HwVideoNativeBufferGLOwner::UpdateNativeImage() {
   DCHECK(loader_);
   int acquire_fence_fd = -1;
   void* buffer = nullptr;
- 
+
   int32_t return_code = 0;
   return_code =
       loader_->AcquireNativeWindowBuffer(&buffer, &acquire_fence_fd);
@@ -144,7 +144,7 @@ void HwVideoNativeBufferGLOwner::UpdateNativeImage() {
                << return_code;
     return;
   }
- 
+
   base::ScopedFD scoped_acquire_fence_fd(acquire_fence_fd);
   OhosWindowBuffer* image = new OhosWindowBuffer();
   image->rawbuffer = buffer;

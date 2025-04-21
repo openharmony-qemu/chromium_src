@@ -33,7 +33,7 @@ class FrameAvailableListenerImpl : public FrameAvailableListener {
   void SetOnFrameAvailableCb(OnFrameAvailableCb);
 
  private:
-  void* context_ = nullptr;
+  raw_ptr<void> context_ = nullptr;
   OnFrameAvailableCb cb_ = nullptr;
 };
 

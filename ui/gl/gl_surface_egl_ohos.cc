@@ -35,7 +35,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
 
       return scoped_refptr<NativeViewGLSurfaceEGLOhos>(
           new NativeViewGLSurfaceEGLOhos(display->GetAs<gl::GLDisplayEGL>(),
-              reinterpret_cast<EGLNativeWindowType>(surfaceInfo->window)));
+              reinterpret_cast<EGLNativeWindowType>(surfaceInfo->window.get())));
     }
   } else {
     LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: normal surface"

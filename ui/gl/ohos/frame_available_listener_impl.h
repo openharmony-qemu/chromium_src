@@ -17,6 +17,7 @@
 #define FRAME_AVAILABLE_LISTENER_IMPL_H
 
 #include "graphic_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 

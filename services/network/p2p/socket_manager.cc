@@ -34,6 +34,10 @@
 #include "third_party/webrtc/media/base/rtp_utils.h"
 #include "third_party/webrtc/media/base/turn_utils.h"
 
+#if defined(OHOS_WEBRTC)
+#include "base/trace_event/trace_event.h"
+#endif  // defined(OHOS_WEBRTC)
+
 namespace network {
 
 namespace {
@@ -54,7 +58,7 @@ const int kMaxSimultaneousSockets = 3000;
 // When more than half of the maximum sockets are running at the same time,
 // check whether these sockets are destroyed in time.
 const int kHalfOfMaxSimultaneousSockets = kMaxSimultaneousSockets / 2;
-#endif
+#endif  // defined(OHOS_WEBRTC)
 
 const size_t kMinRtcpHeaderLength = 8;
 const size_t kDtlsRecordHeaderLength = 13;
@@ -243,9 +247,14 @@ void P2PSocketManager::DestroySocket(P2PSocket* socket) {
   if (sockets_.size() > kHalfOfMaxSimultaneousSockets) {
     LOG(ERROR) << "DestroySocket, size is " << sockets_.size();
   }
-#endif
+#endif  // defined(OHOS_WEBRTC)
   auto iter = sockets_.find(socket);
   DCHECK(iter != sockets_.end());
+#if defined(OHOS_WEBRTC)
+  TRACE_EVENT2("p2p", "P2PSocketManager::DestroySocket", "P2PSocketManager",
+               reinterpret_cast<uintptr_t>(this), "socket",
+               reinterpret_cast<uintptr_t>(socket));
+#endif  // defined(OHOS_WEBRTC)
   sockets_.erase(iter);
 }
 
@@ -462,6 +471,11 @@ void P2PSocketManager::CreateSocket(
 
   P2PSocket* socket_ptr = socket.get();
   sockets_[socket_ptr] = std::move(socket);
+#if defined(OHOS_WEBRTC)
+  TRACE_EVENT2("p2p", "P2PSocketManager::CreateSocket", "P2PSocketManager",
+               reinterpret_cast<uintptr_t>(this), "socket",
+               reinterpret_cast<uintptr_t>(socket_ptr));
+#endif  // defined(OHOS_WEBRTC)
 
   // Init() may call SocketManager::DestroySocket(), so it must be called after
   // adding the socket to |sockets_|.

@@ -17,6 +17,7 @@
 #define FRAME_AVAILABLE_LISTENER_IMPL_H
 
 #include "graphic_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 
@@ -33,7 +34,7 @@ class FrameAvailableListenerImpl : public FrameAvailableListener {
   void SetOnFrameAvailableCb(OnFrameAvailableCb);
 
  private:
-  void* context_ = nullptr;
+  raw_ptr<void> context_ = nullptr;
   OnFrameAvailableCb cb_ = nullptr;
 };
 

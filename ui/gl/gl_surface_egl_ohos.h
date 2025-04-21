@@ -12,7 +12,7 @@
 
 namespace gl {
 typedef struct WindowsSurfaceInfoTag {
-  void* window;
+  raw_ptr<void> window;
   EGLDisplay display;
   EGLContext context;
   EGLSurface surface;

@@ -25,7 +25,7 @@ class TextureBase;
 // OhosWindowBuffer --- AImage
 class OhosWindowBuffer {
 public:
-    void* rawbuffer = nullptr;
+    raw_ptr<void> rawbuffer = nullptr;
 
     OhosWindowBuffer() = default;
     OhosWindowBuffer(const OhosWindowBuffer* buffer) {

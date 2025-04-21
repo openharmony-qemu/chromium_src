@@ -26,6 +26,7 @@ class PowerSaveBlocker::Delegate
   virtual ~Delegate() {}
 
   mojom::WakeLockType type_;
+  std::map<int32_t, mojom::WakeLockType> lock_map_;
 };
 
 PowerSaveBlocker::Delegate::Delegate(mojom::WakeLockType type) : type_(type) {}
@@ -34,11 +35,13 @@ void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
   switch (type_) {
     case mojom::WakeLockType::kPreventAppSuspension:
       if (id != -1) {
+        lock_map_.emplace(id, type_);
         NWebScreenLockTracker::Instance().Lock(id);
       }
       break;
     case mojom::WakeLockType::kPreventDisplaySleep:
     case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
+      lock_map_.emplace(id, type_);
       NWebScreenLockTracker::Instance().Lock(id);
       break;
     default:
@@ -47,14 +50,21 @@ void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
 }
 
 void PowerSaveBlocker::Delegate::RemoveBlock(const int32_t& id) {
+  if (lock_map_.find(id) == lock_map_.end() || type_ != lock_map_[id]) {
+    LOG(WARNING) << "The lock dose not exist, id: " << id << ", type_: " << type_;
+    return;
+  }
+
   switch (type_) {
     case mojom::WakeLockType::kPreventAppSuspension:
       if (id != -1) {
+        lock_map_.erase(id);
         NWebScreenLockTracker::Instance().UnLock(id);
       }
       break;
     case mojom::WakeLockType::kPreventDisplaySleep:
     case mojom::WakeLockType::kPreventDisplaySleepAllowDimming:
+      lock_map_.erase(id);
       NWebScreenLockTracker::Instance().UnLock(id);
       break;
     default:

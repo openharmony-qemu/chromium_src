@@ -2293,6 +2293,10 @@ void NWebHandlerDelegate::UpdateFavicon(CefRefPtr<CefBrowser> browser) {
       &data, color_type, alpha_type, width, height);
   SetFavicon(data, width, height, ImageColorType(color_type),
              ImageAlphaType(alpha_type));
+  CefString image_url;
+  browser->GetHost()->GetVisibleNavigationEntry()->GetFaviconUrl(image_url);
+
+  OnReceivedIconUrl(image_url, data, width, height, ImageColorType(color_type), ImageAlphaType(alpha_type));
 }
 #endif // OHOS_BFCACHE
 
@@ -2336,8 +2340,8 @@ void NWebHandlerDelegate::OnReceivedIconUrl(const CefString& image_url,
                                             const void* data,
                                             size_t width,
                                             size_t height,
-                                            cef_color_type_t color_type,
-                                            cef_alpha_type_t alpha_type) {
+                                            ImageColorType color_type,
+                                            ImageAlphaType alpha_type) {
   if (!data) {
     LOG(ERROR) << "OnReceivedIconUrl get error";
     return;
@@ -2351,12 +2355,21 @@ void NWebHandlerDelegate::OnReceivedIconUrl(const CefString& image_url,
   char* c_image_url = CopyCefStringToChar(image_url);
   web_app_client_extension_listener_->OnReceivedFaviconUrl(
       c_image_url, width, height,
-      TransformColorTypeToInt(TransformColorType(color_type)),
-      TransformAlphaTypeToInt(TransformAlphaType(alpha_type)),
+      TransformColorTypeToInt(color_type),
+      TransformAlphaTypeToInt(alpha_type),
       web_app_client_extension_listener_->nweb_id);
   if (c_image_url) {
     delete[] c_image_url;
   }
+}
+
+void NWebHandlerDelegate::OnReceivedIconUrl(const CefString& image_url,
+                                            const void* data,
+                                            size_t width,
+                                            size_t height,
+                                            cef_color_type_t color_type,
+                                            cef_alpha_type_t alpha_type) {
+  OnReceivedIconUrl(image_url, data, width, height, TransformColorType(color_type), TransformAlphaType(alpha_type));
 }
 
 void NWebHandlerDelegate::OnTouchIconUrlWithSizesReceived(

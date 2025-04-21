@@ -477,6 +477,12 @@ class NWebHandlerDelegate : public CefClient,
                          size_t height,
                          cef_color_type_t color_type,
                          cef_alpha_type_t alpha_type) override;
+  void OnReceivedIconUrl(const CefString& image_url,
+                         const void* data,
+                         size_t width,
+                         size_t height,
+                         ImageColorType color_type,
+                         ImageAlphaType alpha_type);
 void OnTouchIconUrlWithSizesReceived(
     const CefString& image_url,
     bool precomposed,

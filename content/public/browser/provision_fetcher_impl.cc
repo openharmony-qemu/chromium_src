@@ -45,7 +45,7 @@ void ProvisionFetcherImpl::RetrieveWiseplayLicense(
     const GURL& default_url,
     const std::string& request_data,
     RetrieveCallback callback) {
-  LOG(INFO) << "[DRM]" << __func__ << ": " << default_url;
+  LOG(INFO) << "[DRM]" << __func__;
   if (provision_fetcher_) {
     provision_fetcher_->RetrieveWiseplayLicense(
         default_url, request_data,

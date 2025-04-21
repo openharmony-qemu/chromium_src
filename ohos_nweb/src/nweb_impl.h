@@ -427,6 +427,12 @@ class NWebImpl : public NWeb {
                   uint32_t pre_height,
                   uint32_t pre_width) override;
 
+  void RegisterNativeJavaScriptProxy(const std::string& objName,
+                                     const std::vector<std::string>& methodName,
+                                     std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
+                                     bool isAsync,
+                                     const std::string& permission) override;
+
 #if defined(OHOS_INPUT_EVENTS)
   void SetVirtualKeyBoardArg(int32_t width, int32_t height, double keyboard) override;
   bool ShouldVirtualKeyboardOverlay() override;

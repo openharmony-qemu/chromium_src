@@ -4919,16 +4919,16 @@ void NWebDelegate::OnBrowserForeground() {
     LOG(ERROR) << "OnBrowserForeground can not get browser";
     return;
   }
-  LOG(INFO) << "NwebDelegate::OnBrowserForeground";
+  LOG(INFO) << "NWebDelegate::OnBrowserForeground";
   GetBrowser()->GetHost()->OnBrowserForeground();
 }
-
+ 
 void NWebDelegate::OnBrowserBackground() {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "OnBrowserBackground can not get browser";
     return;
   }
-  LOG(INFO) << "NwebDelegate::OnBrowserBackground";
+  LOG(INFO) << "NWebDelegate::OnBrowserBackground";
   GetBrowser()->GetHost()->OnBrowserBackground();
 }
 }  // namespace OHOS::NWeb

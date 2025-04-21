@@ -654,6 +654,7 @@ void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
   void SetSurfaceDensity(const double& density) override;
 
   void DisallowSandboxFileAccessFromFileUrl(bool disallow) override;
+
   void OnBrowserForeground() override;
   void OnBrowserBackground() override;
  

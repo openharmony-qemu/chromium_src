@@ -399,13 +399,13 @@ class PageNodeImpl
   ObservedProperty::NotifiesAlways<
       bool,
       &PageNodeObserver::SetBrowserForeground>
-      browser_foreground_GUARDED_BY_CONTEXT(sequence_checker_){false};
+      browser_foreground_ GUARDED_BY_CONTEXT(sequence_checker_){false};
 
   // Notify the browser is background.
   ObservedProperty::NotifiesAlways<
       bool,
       &PageNodeObserver::SetBrowserBackground>
-      browser_background_GUARDED_BY_CONTEXT(sequence_checker_){false};
+      browser_background_ GUARDED_BY_CONTEXT(sequence_checker_){false};
 
   // Storage for PageLoadTracker user data.
   std::unique_ptr<NodeAttachedData> page_load_tracker_data_

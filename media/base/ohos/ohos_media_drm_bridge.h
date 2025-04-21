@@ -162,7 +162,6 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
 
   void OnSessionExpirationUpdate(const std::string& session_id,
                                  uint64_t expiry_time_ms);
-
 #if defined(OHOS_ENABLE_WISEPLAY)
   void OnMediaLicenseReady(bool success);
 #endif
@@ -197,7 +196,7 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   ~OHOSMediaDrmBridge() override;
 
   SecurityLevel GetSecurityLevel();
-  void NotifyMediaCryptoReady(void* session);
+  void NotifyMediaCryptoReady();
   void SendProvisioningRequest(const GURL& default_url,
                                const std::string& request_data);
   void ProcessProvisionResponse(bool success, const std::string& response);
@@ -216,7 +215,7 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   OHOSMediaCryptoReadyCB media_crypto_ready_cb_;
 #if defined(OHOS_ENABLE_WISEPLAY)
   OHOSMediaCryptoReadyCB media_crypto_and_license_ready_cb_;
-  bool isLicenseReady_ = false;
+  bool is_license_ready_ = false;
 #endif
 
   CallbackRegistry<EventCB::RunType> event_callbacks_;

@@ -131,26 +131,23 @@ void HwVideoNativeBufferGLOwner::UpdateNativeImage() {
   }
 
   DCHECK(loader_);
-  OhosWindowBuffer* image = new OhosWindowBuffer();
   int acquire_fence_fd = -1;
-
+  void* buffer = nullptr;
+ 
   int32_t return_code = 0;
   return_code =
-      loader_->AcquireNativeWindowBuffer(&image->rawbuffer, &acquire_fence_fd);
-#ifdef OHOS_NB_DEBUG
-  LOG(ERROR)<<__FUNCTION__<<" AcquireNativeWindowBuffer Done!";
-#endif
+      loader_->AcquireNativeWindowBuffer(&buffer, &acquire_fence_fd);
   // If there is no new image simply return. At this point previous image will
   // still be bound to the texture.
-  if (return_code != 0 || !image->rawbuffer) {
+  if (return_code != 0 || !buffer) {
     LOG(ERROR) << "NativeImage: image is nullptr or acquire buffer fail :"
                << return_code;
-    delete image;
-    image = nullptr;
     return;
   }
-
+ 
   base::ScopedFD scoped_acquire_fence_fd(acquire_fence_fd);
+  OhosWindowBuffer* image = new OhosWindowBuffer();
+  image->rawbuffer = buffer;
 
   // Make the newly acquired image as current image.
   current_image_ref_.emplace(this, image, std::move(scoped_acquire_fence_fd));

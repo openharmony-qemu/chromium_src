@@ -137,6 +137,9 @@ void HwVideoNativeBufferGLOwner::UpdateNativeImage() {
   int32_t return_code = 0;
   return_code =
       loader_->AcquireNativeWindowBuffer(&buffer, &acquire_fence_fd);
+#ifdef OHOS_NB_DEBUG
+  LOG(ERROR)<<__FUNCTION__<<" AcquireNativeWindowBuffer Done!";
+#endif
   // If there is no new image simply return. At this point previous image will
   // still be bound to the texture.
   if (return_code != 0 || !buffer) {

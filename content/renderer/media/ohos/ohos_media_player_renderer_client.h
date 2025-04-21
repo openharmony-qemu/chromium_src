@@ -79,13 +79,13 @@ class OHOSMediaPlayerRendererClient
                            const int& fd,
                            const int& fd_browser);
 
-  media::MediaResource* media_resource_;
+  raw_ptr<media::MediaResource> media_resource_;
 
   std::deque<CachedBuffer> cached_buffers_;
 
-  media::RendererClient* client_;
+  raw_ptr<media::RendererClient> client_;
 
-  media::VideoRendererSink* sink_;
+  raw_ptr<media::VideoRendererSink> sink_;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 

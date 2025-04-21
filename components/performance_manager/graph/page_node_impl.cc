@@ -651,4 +651,13 @@ void PageNodeImpl::SetHadUserEdits(bool had_user_edits) {
   had_user_edits_.SetAndMaybeNotify(this, had_user_edits);
 }
 
+void PageNodeImpl::SetBrowserForeground(){
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  browser_foreground_.SetAndNotify(this,false);
+}
+
+void PageNodeImpl::SetBrowserBackground(){
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  browser_background_.SetAndNotify(this,false);
+}
 }  // namespace performance_manager

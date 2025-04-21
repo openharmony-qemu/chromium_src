@@ -38,7 +38,6 @@ BackgroundTaskPolicy::BackgroundTaskPolicy()
     : background_task_holder_(
           std::make_unique<mechanism::BackgroundTaskHolder>()),
       is_request_background_task_(false),
-      visible_page_num_(0),
       media_playing_num_(0),
       audio_state_num_(0) {}
 BackgroundTaskPolicy::~BackgroundTaskPolicy() = default;
@@ -70,8 +69,6 @@ void BackgroundTaskPolicy::OnPageNodeAdded(const PageNode* page_node) {
   }
 
   LOG(INFO) << BG_TASK_TAG << " OnPageNodeAdded";
-  visible_page_num_++;
-  MaybeChangeBackgroundTask(page_node);
 }
 
 void BackgroundTaskPolicy::OnBeforePageNodeRemoved(const PageNode* page_node) {}
@@ -85,12 +82,6 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
             << (page_node->IsVisible() ? "true" : "false")
             << ", IsMediaPlaying=" << (page_node->IsMediaPlaying() ? "true" : "false")
             << ", is_main_frame_url_changed_ = " << is_main_frame_url_changed_;
-
-  int visible_num = page_node->IsVisible() ? 1 : -1;
-  visible_page_num_ += visible_num;
-  if (visible_page_num_ < 0) {
-    visible_page_num_ = 0;
-  }
 
   // switch between two tabs
   if (page_node->IsVisible()) {
@@ -113,11 +104,7 @@ void BackgroundTaskPolicy::OnIsVisibleChanged(const PageNode* page_node) {
     is_main_frame_url_changed_ = false;
   }
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession IsVisibleChanged: "
-            << (visible_num > 0 ? "true" : "false")
-            << ", visible_page_num_: " << visible_page_num_
             << ", is_main_frame_url_changed_=" << is_main_frame_url_changed_;
-
-  MaybeChangeBackgroundTask(page_node);
 }
 
 void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
@@ -185,10 +172,8 @@ void BackgroundTaskPolicy::OnIsMediaPlayingChanged(const PageNode* page_node) {
             << (page_node->IsMediaPlaying() ? "true" : "false")
             << " page_node=" << page_node
             << ", media_playing_num: " << media_playing_num_
-            << " visible_page_num_=" << visible_page_num_
             << " page_node->IsVisible=" << (page_node->IsVisible() ? "true" : "false")
             << " last_avsession_page_node_=" << last_avsession_page_node_;
-  MaybeChangeBackgroundTask(page_node);
 }
 
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
@@ -209,10 +194,8 @@ void BackgroundTaskPolicy::OnDecrementAudioNum(const PageNode* page_node) {
   if (audio_state_num_ < 0) {
     audio_state_num_ = 0;
   }
-  
   LOG(INFO) << BG_TASK_TAG << " OnDecrementAudioNum media_playing_num_: " << media_playing_num_
             << "audio_state_num_: "<< audio_state_num_;
-  MaybeChangeBackgroundTask(page_node);
 }
 #endif
 
@@ -230,44 +213,6 @@ void BackgroundTaskPolicy::OnIsAudibleChanged(const PageNode* page_node) {
   LOG(INFO) << BG_TASK_TAG << " OnIsAudibleChanged "
           << (page_node->IsAudible() ? "true" : "false")
           << ", audio_state_num: " << audio_state_num_;
-  MaybeChangeBackgroundTask(page_node);
-}
-
-void BackgroundTaskPolicy::MaybeChangeBackgroundTask(const PageNode* page_node) {
-  LOG(INFO) << "BackgroundTaskPolicy::MaybeChangeBackgroundTask "
-      << " page_node=" << page_node
-      << " visible_page_num_: " << visible_page_num_
-      << " media_playing_num_: " << media_playing_num_
-      << " audio_state_num_: " << audio_state_num_
-      << " is_request_background_task_: " << is_request_background_task_;
-  RequestBackgroundTaskReason reason =
-      RequestBackgroundTaskReason::NO_CHANGE_BG_TASK;
-  if (is_request_background_task_ &&
-      (visible_page_num_ > 0 ||
-       (media_playing_num_ == 0 && audio_state_num_ == 0))) {
-    reason = RequestBackgroundTaskReason::NO_NEED_BG_TASK;
-  } else if (!is_request_background_task_ &&
-             (visible_page_num_ == 0 &&
-              (media_playing_num_ > 0 || audio_state_num_ > 0))) {
-    reason = RequestBackgroundTaskReason::NEED_BG_TASK;
-  } else {
-  }
-
-  if (reason == RequestBackgroundTaskReason::NO_CHANGE_BG_TASK) {
-    LOG(INFO) << BG_TASK_TAG << " no change return";
-    return;
-  }
-
-  bool need_request = reason == RequestBackgroundTaskReason::NEED_BG_TASK;
-  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
-      need_request, BackgroundModeAdapter::AUDIO_PLAYBACK);
-  is_request_background_task_ = need_request;
-  if (ret) {
-    LOG(INFO) << BG_TASK_TAG << " request bg task success, reason: "
-              << static_cast<int32_t>(reason);
-  } else {
-    LOG(INFO) << BG_TASK_TAG << " request bg task failed";
-  }
 }
 
 bool BackgroundTaskPolicy::IsControllable(const PageNode* page_node)
@@ -398,6 +343,28 @@ void BackgroundTaskPolicy::OnMainFrameUrlChanged(const PageNode* page_node) {
   }
 }
 
+void BackgroundTaskPolicy::SetBrowserForeground(const PageNode* page_node) {
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" <<_FUNCTION_;
+  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
+    false,BackgroundModeAdapter::AUDIO_PLAYBACK);
+    if (ret) {
+      LOG(INFO) << BG_TASK_TAG << _FUNCTION_ << " request bg task success";
+    } else {
+      LOG(INFO) << BG_TASK_TAG << _FUNCTION_ << " request bg task failed";
+    }
+}
+
+void BackgroundTaskPolicy::SetBrowserBackground(const PageNode* page_node) {
+  LOG(INFO) << BG_TASK_TAG << "BackgroundTaskPolicy::" <<_FUNCTION_;
+  bool ret = background_task_holder_->MaybeRequestBackgroundRunning(
+    true,BackgroundModeAdapter::AUDIO_PLAYBACK);
+    if (ret) {
+      LOG(INFO) << BG_TASK_TAG << _FUNCTION_ << " request bg task success";
+    } else {
+      LOG(INFO) << BG_TASK_TAG << _FUNCTION_ << " request bg task failed";
+    }
+}
+
 void BackgroundTaskPolicy::OnPageStateChanged(const PageNode* page_node,
                         PageState old_state) {
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node
@@ -473,4 +440,3 @@ void BackgroundTaskPolicy::OnFreezingVoteChanged(
   LOG(INFO) << BG_TASK_TAG << __FUNCTION__ << " media avsession in out page_node=" << page_node;
 }
 }  // namespace performance_manager::policies
-                                             

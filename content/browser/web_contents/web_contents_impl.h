@@ -2193,6 +2193,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
 #ifdef OHOS_I18N
   void UpdateRenderAcceptLanguageIfNeed(const std::string& old_accept_language);
 #endif
+
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
   // Data for core operation ---------------------------------------------------
 
   // Delegate for notifying our owner about stuff. Not owned by us.

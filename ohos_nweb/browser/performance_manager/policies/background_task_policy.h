@@ -81,7 +81,9 @@ class BackgroundTaskPolicy : public GraphObserver,
   void OnFreezingVoteChanged(
       const PageNode* page_node,
       absl::optional<freezing::FreezingVote> previous_vote) override;
-
+  void SetBrowserForeground(const PageNode* page_node) override;
+  void SetBrowserBackground(const PageNode* page_node) override;
+  
   void MaybeChangeBackgroundTask(const PageNode* page_node);
   bool IsControllable(const PageNode* page_node);
   bool IsEndOfMedia(const PageNode* page_node);

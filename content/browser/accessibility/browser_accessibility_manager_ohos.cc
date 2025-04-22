@@ -599,7 +599,7 @@ void BrowserAccessibilityManagerOHOS::OnAtomicUpdateFinished(
 
 void BrowserAccessibilityManagerOHOS::HandleNavigate(int64_t newRootId) {
   if (newRootId != kInvalidAccessibilityId) {
-    ClearAccessibilityFocus();
+    accessibilityFocusId_ = kInvalidAccessibilityId;
   }
 }
 

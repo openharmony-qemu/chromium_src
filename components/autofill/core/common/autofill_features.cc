@@ -627,6 +627,13 @@ BASE_FEATURE(kAutofillKeyboardAccessory,
              "AutofillKeyboardAccessory",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// When enabled, Autofill suggestions from keyboard accessory chips are only
+// accepted if at least 500ms have passed between showing the accessory and
+// interacting with the accessory chip.
+BASE_FEATURE(kAutofillKeyboardAccessoryAcceptanceDelayThreshold,
+    "AutofillKeyboardAccessoryAcceptanceDelayThreshold",
+    base::FEATURE_ENABLED_BY_DEFAULT);
+
 // Controls whether the Autofill manual fallback for Addresses and Payments is
 // present on Android.
 BASE_FEATURE(kAutofillManualFallbackAndroid,

@@ -765,7 +765,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (),
               (const, override));
 
-  MOCK_METHOD(void, SendAccessibilityHoverEvent, (int x, int y), (override));
+  MOCK_METHOD(void, SendAccessibilityHoverEvent, (int x, int y, bool isHoverEnter), (override));
   MOCK_METHOD(void, RefreshAccessibilityManagerClickEvent, (), (override));
 
 #ifdef OHOS_EX_SCREEN_CAPTURE

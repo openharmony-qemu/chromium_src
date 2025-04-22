@@ -742,6 +742,7 @@ class NWebImpl : public NWeb {
                                     int32_t* offsetX,
                                     int32_t* offsetY) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
+  void SendAccessibilityHoverEventV2(int32_t x, int32_t y, bool isHoverEnter) override;
 
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 

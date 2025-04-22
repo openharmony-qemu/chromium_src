@@ -435,7 +435,11 @@ void RenderWidgetHostViewChildFrame::UpdateTooltipUnderCursor(
     return;
 
   if (cursor_manager->IsViewUnderCursor(this))
+#if defined(OHOS_INPUT_EVENTS)
+    root_view->UpdateTooltipUnderCursor(tooltip_text);
+#else
     root_view->UpdateTooltip(tooltip_text);
+#endif // OHOS_INPUT_EVENTS
 }
 
 void RenderWidgetHostViewChildFrame::UpdateTooltipFromKeyboard(

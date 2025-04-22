@@ -167,6 +167,10 @@ class CC_EXPORT ScrollbarAnimationController {
 
   bool visibility_changed_ = false;
 
+#ifdef OHOS_SCROLLBAR
+  base::TimeTicks last_animate_time_;
+#endif
+
   std::unique_ptr<SingleScrollbarAnimationControllerThinning>
       vertical_controller_;
   std::unique_ptr<SingleScrollbarAnimationControllerThinning>

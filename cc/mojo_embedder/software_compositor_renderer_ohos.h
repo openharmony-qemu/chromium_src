@@ -20,6 +20,7 @@
 
 #include "cc/mojo_embedder/software_compositor_registry_ohos.h"
 
+#include "base/memory/raw_ptr.h"
 #include "cc/mojo_embedder/async_layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink_client.h"
@@ -85,7 +86,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   // weak reference  Owned by |display_|.
   // std::unique_ptr<viz::OutputSurface> output_surface_;
-  SkCanvas* current_sw_canvas_ = nullptr;
+  raw_ptr<SkCanvas> current_sw_canvas_ = nullptr;
   viz::DebugRendererSettings debug_settings_;
 
   // Draw info

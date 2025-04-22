@@ -763,7 +763,13 @@ ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
   bool is_valid = true;
   std::string cookie_content =
       cookie_manager->ReturnCookieWithHttpOnly(std::string(url), is_valid, incognito, includeHttpOnly);
+#ifdef OHOS_COOKIE
+#if defined(ADDRESS_SANITIZER)
   *cookie_value = new char[cookie_content.length() + 1];
+#else
+  *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
+#endif // ADDRESS_SANITIZER
+#endif
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {
     return ARKWEB_INVALID_URL;

@@ -380,6 +380,11 @@ void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId, int32_t ev
     handler->OnAccessibilityEvent(accessibilityId, eventType);
   }
 }
+
+void NWebRenderHandler::GetDevicePixelSize(CefRefPtr<CefBrowser> browser, CefSize& size) {
+  size.width = width_;
+  size.height = height_;
+}
 #endif
 
 void NWebRenderHandler::GetViewRect(CefRefPtr<CefBrowser> browser,

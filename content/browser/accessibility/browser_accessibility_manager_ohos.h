@@ -84,7 +84,8 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   bool MoveAccessibilityFocusToId(int64_t newAccessibilityFocusId);
 
   void SendAccessibilityEvent(int64_t accessibilityId,
-                              OHOS::NWeb::AccessibilityEventType eventType);
+                              OHOS::NWeb::AccessibilityEventType eventType,
+                              const std::string& argument = "");
 
   bool DispatchEvent(int64_t accessibilityId, int32_t eventType);
 

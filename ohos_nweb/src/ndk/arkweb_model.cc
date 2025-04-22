@@ -31,6 +31,12 @@
 #include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
+#ifdef OHOS_COOKIE
+extern "C" {
+void* __real_malloc(size_t);
+}       // extern "C"
+#endif
+
 #ifdef __cplusplus
 
 std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(

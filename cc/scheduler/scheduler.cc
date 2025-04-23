@@ -551,9 +551,14 @@ void Scheduler::BeginImplFrameWithDeadline(const viz::BeginFrameArgs& args) {
   // main_frame_to_active is fast, we should consider using
   // BeginImplFrameDeadlineMode::LATE instead to avoid putting the main
   // thread in high latency mode. See crbug.com/753146.
+  static base::TimeDelta interval = adjusted_args.interval;
+  if (state_machine_.get_is_scrolling()) {
+    interval = std::min(interval, adjusted_args.interval);
+  } else {
+    interval = adjusted_args.interval;
+  }
   base::TimeDelta bmf_to_activate_threshold =
-      adjusted_args.interval -
-      compositor_timing_history_->DrawDurationEstimate() - kDeadlineFudgeFactor;
+      interval - compositor_timing_history_->DrawDurationEstimate() - kDeadlineFudgeFactor;
 
   base::TimeDelta bmf_to_activate_estimate_critical =
       compositor_timing_history_

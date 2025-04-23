@@ -93,7 +93,7 @@ class BackgroundTaskPolicy : public GraphObserver,
   int32_t visible_page_num_;
   int32_t media_playing_num_;
   int32_t audio_state_num_;
-  PageNode* last_avsession_page_node_;
+  raw_ptr<PageNode> last_avsession_page_node_;
   bool is_main_frame_url_changed_;
 };
 }  // namespace policies

@@ -31,6 +31,12 @@
 #include "cef/libcef/browser/javascript/oh_gin_javascript_bridge_dispatcher_host.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 
+#ifdef OHOS_COOKIE
+extern "C" {
+void* __real_malloc(size_t);
+}       // extern "C"
+#endif
+
 #ifdef __cplusplus
 
 std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
@@ -763,7 +769,13 @@ ARKWEB_NDK_EXPORT ArkWeb_ErrorCode OH_CookieManager_FetchCookieSync(
   bool is_valid = true;
   std::string cookie_content =
       cookie_manager->ReturnCookieWithHttpOnly(std::string(url), is_valid, incognito, includeHttpOnly);
+#ifdef OHOS_COOKIE
+#if defined(ADDRESS_SANITIZER)
   *cookie_value = new char[cookie_content.length() + 1];
+#else
+  *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
+#endif // ADDRESS_SANITIZER
+#endif
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {
     return ARKWEB_INVALID_URL;

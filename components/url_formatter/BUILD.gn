@@ -56,6 +56,12 @@ static_library("url_formatter") {
       "//url:origin_android",
     ]
   }
+
+  #ifdef OHOS_NWEB_EX
+  if (defined(ohos_nweb_ex) && ohos_nweb_ex) {
+  deps += ["//third_party/re2"]
+  }
+  #endif
 }
 
 if (is_android) {

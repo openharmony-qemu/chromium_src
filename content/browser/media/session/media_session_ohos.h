@@ -81,11 +81,11 @@ class MediaSessionOHOS final
   std::shared_ptr<OHOS::NWeb::MediaAVSessionPositionAdapter> av_position_;
   std::unique_ptr<OHOS::NWeb::MediaAVSessionAdapter> avsession_adapter_;
   OHOS::NWeb::MediaAVSessionType media_type_;
-  base::WeakPtrFactory<MediaSessionOHOS> weak_factory_{this};
   const raw_ptr<MediaSessionImpl, DanglingUntriaged> media_session_;
   mojo::Receiver<media_session::mojom::MediaSessionObserver> observer_receiver_{this};
 
   static constexpr base::TimeDelta kReportMediaInfoInterval = base::Seconds(1);
+  base::WeakPtrFactory<MediaSessionOHOS> weak_factory_{this};
 };
 
 class OHOSMediaAVSessionCallback : public OHOS::NWeb::MediaAVSessionCallbackAdapter {

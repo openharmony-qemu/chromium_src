@@ -1003,14 +1003,15 @@ void MediaSessionImpl::OnResumeInternal(SuspendType suspend_type) {
 MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
     : WebContentsObserver(web_contents),
       WebContentsUserData<MediaSessionImpl>(*web_contents),
-#ifdef OHOS_MEDIA_POLICY
-      weakMediaSessionFactory_(this),
-#endif // OHOS_MEDIA_POLICY
       audio_focus_state_(State::INACTIVE),
       desired_audio_focus_type_(AudioFocusType::kGainTransientMayDuck),
       is_ducking_(false),
       ducking_volume_multiplier_(kDefaultDuckingVolumeMultiplier),
-      routed_service_(nullptr) {
+      routed_service_(nullptr)
+#ifdef OHOS_MEDIA_POLICY
+      , weakMediaSessionFactory_(this)
+#endif // OHOS_MEDIA_POLICY
+{
 #if BUILDFLAG(IS_ANDROID)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;

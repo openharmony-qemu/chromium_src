@@ -146,7 +146,6 @@ class MediaCodecDecoderBridgeImpl {
   }
   DecoderAdapterCode SetAVCencInfo(uint32_t index, const DecryptConfig* decrypt_config);
 
-  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
   std::atomic<bool> isRunning_ = false;
   bool isFirstDecFrame_ = true;
   std::shared_ptr<DecoderBridgeSignal> signal_ = nullptr;
@@ -161,6 +160,8 @@ class MediaCodecDecoderBridgeImpl {
   void* window_from_surface_ = nullptr;
   int32_t video_surface_id_ = -1;
 #endif // OHOS_VIDEO_ASSISTANT
+
+  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
 };
 
 }  // namespace media

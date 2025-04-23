@@ -393,7 +393,6 @@ class MediaSessionImpl : public MediaSession,
   int audioResumeInterval_ = 0;
   bool audioExclusive_ = true;
   bool isPlayingState_ = false;
-  base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
   NWebMediaSessionState sessionState_ = NWebMediaSessionState::NOINITIAL;
 #endif // defined(OHOS_MEDIA_POLICY)
 
@@ -688,6 +687,12 @@ class MediaSessionImpl : public MediaSession,
 
   media_session::mojom::RemotePlaybackMetadataPtr remote_playback_metadata_;
 
+#if defined(OHOS_MEDIA_POLICY)
+ public:
+  base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
+#endif // defined(OHOS_MEDIA_POLICY)
+
+ private:
   base::WeakPtrFactory<MediaSessionImpl> weak_factory_{this};
 
   WEB_CONTENTS_USER_DATA_KEY_DECL();

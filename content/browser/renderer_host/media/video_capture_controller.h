@@ -323,11 +323,11 @@ class CONTENT_EXPORT VideoCaptureController
   // would otherwise not line up between the various ControllerClients.
   bool was_crop_ever_called_ = false;
 
-  base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
-
 #if defined(OHOS_EX_SCREEN_CAPTURE)
   VideoCaptureManager* video_capture_manager_ = nullptr;
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
+
+  base::WeakPtrFactory<VideoCaptureController> weak_ptr_factory_{this};
 };
 
 }  // namespace content

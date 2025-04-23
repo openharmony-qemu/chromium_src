@@ -21,6 +21,8 @@
 #include <memory>
 #include <mutex>
 
+#include "base/memory/raw_ptr.h"
+
 namespace OHOS::NWeb {
 class NWebOutputHandler
     : public std::enable_shared_from_this<NWebOutputHandler> {
@@ -69,7 +71,7 @@ class NWebOutputHandler
   uint32_t height_ = 0;
   uint32_t frame_size_ = 0;
 
-  void* window_ = nullptr;
+  raw_ptr<void> window_ = nullptr;
 
   std::function<bool(const char*, uint32_t, uint32_t)> output_frame_cb_;
 

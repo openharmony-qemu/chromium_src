@@ -584,6 +584,20 @@ void PerformanceManagerTabHelper::OnMainFrameNavigation(int64_t navigation_id,
   primary_page_->first_time_favicon_set = false;
 }
 
+void PerformanceManagerTabHelper::OnBrowserForeground() {
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE,
+      base::BindOnce(&PageNodeImpl::SetBrowserForeground,
+                     base::Unretained(primary_page_node())));
+}
+ 
+void PerformanceManagerTabHelper::OnBrowserBackground() {
+  PerformanceManagerImpl::CallOnGraphImpl(
+      FROM_HERE,
+      base::BindOnce(&PageNodeImpl::SetBrowserBackground,
+                     base::Unretained(primary_page_node())));
+}
+
 WEB_CONTENTS_USER_DATA_KEY_IMPL(PerformanceManagerTabHelper);
 
 }  // namespace performance_manager

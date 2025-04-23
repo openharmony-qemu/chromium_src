@@ -28,4 +28,3 @@ void NwebPerformanceManager::CreatePoliciesAndDecorators(
       std::make_unique<performance_manager::policies::OHOSBFCachePolicy>());
 }
 }  // namespace OHOS::NWeb
-                          

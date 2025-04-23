@@ -347,6 +347,12 @@ class PageNodeObserver {
   virtual void OnFreezingVoteChanged(
       const PageNode* page_node,
       absl::optional<freezing::FreezingVote> previous_vote) = 0;
+  
+  // Invoked when the Browser is foreground.
+  virtual void SetBrowserForeground(const PageNode* page_node) = 0;    
+
+  // Invoked when the Browser is background.
+  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
 };
 
 // Default implementation of observer that provides dummy versions of each
@@ -398,6 +404,8 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
   void OnFreezingVoteChanged(
       const PageNode* page_node,
       absl::optional<freezing::FreezingVote> previous_vote) override {}
+  void SetBrowserForeground(const PageNode* page_node) override {}
+  void SetBrowserBackground(const PageNode* page_node) override {}
 };
 
 // std::ostream support for PageNode::EmbeddingType.

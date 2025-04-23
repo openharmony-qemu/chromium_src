@@ -206,6 +206,9 @@ class PageNodeImpl
     SetHadUserEdits(had_user_edits);
   }
 
+  void SetBrowserForeground();
+  void SetBrowserBackground();
+
  private:
   friend class PageNodeImplDescriber;
 
@@ -391,6 +394,18 @@ class PageNodeImpl
       PageState,
       &PageNodeObserver::OnPageStateChanged>
       page_state_ GUARDED_BY_CONTEXT(sequence_checker_){PageState::kActive};
+      
+  // Notify the browser is foreground.
+  ObservedProperty::NotifiesAlways<
+      bool,
+      &PageNodeObserver::SetBrowserForeground>
+      browser_foreground_ GUARDED_BY_CONTEXT(sequence_checker_){false};
+
+  // Notify the browser is background.
+  ObservedProperty::NotifiesAlways<
+      bool,
+      &PageNodeObserver::SetBrowserBackground>
+      browser_background_ GUARDED_BY_CONTEXT(sequence_checker_){false};
 
   // Storage for PageLoadTracker user data.
   std::unique_ptr<NodeAttachedData> page_load_tracker_data_

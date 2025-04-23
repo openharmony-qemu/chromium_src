@@ -108,6 +108,9 @@ class PerformanceManagerTabHelper
   int64_t LastNavigationId() const override;
   int64_t LastNewDocNavigationId() const override;
 
+  void OnBrowserForeground() override;
+  void OnBrowserBackground() override;
+
   void BindDocumentCoordinationUnit(
       content::RenderFrameHost* render_frame_host,
       mojo::PendingReceiver<mojom::DocumentCoordinationUnit> receiver);

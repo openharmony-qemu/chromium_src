@@ -1586,6 +1586,9 @@ class WebContents : public PageNavigator,
   virtual void OnBeforeUnloadFired(bool proceed) = 0;
 #endif // OHOS_DISPATCH_BEFORE_UNLOAD
 
+virtual void OnBrowserForeground() = 0;
+virtual void OnBrowserBackground() = 0;
+
 #if defined(OHOS_MEDIA_AVSESSION)
   void SetMediaTitle(const std::string& data) {
      media_title_ = data;

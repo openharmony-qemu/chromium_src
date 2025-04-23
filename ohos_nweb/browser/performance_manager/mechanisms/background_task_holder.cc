@@ -27,4 +27,3 @@ bool BackgroundTaskHolder::MaybeRequestBackgroundRunning(
   return BackgroundTaskAdapter::RequestBackgroundRunning(running, bgMode);
 }
 }  // namespace performance_manager::mechanism
-                                              

@@ -895,6 +895,10 @@ class CONTENT_EXPORT WebContentsObserver {
 
   virtual ~WebContentsObserver();
 
+  virtual void OnBrowserForeground() {}
+  
+  virtual void OnBrowserBackground() {}
+
   // Start observing a different WebContents; used with the default constructor.
   void Observe(WebContents* web_contents);
 

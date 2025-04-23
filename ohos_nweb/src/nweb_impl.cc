@@ -4667,3 +4667,20 @@ void NWebImpl::DisallowSandboxFileAccessFromFileUrl(bool disallow) const {
   }
   nweb_delegate_->DisallowSandboxFileAccessFromFileUrl(disallow);
 }
+void NWebImpl::OnBrowserForeground() {
+  LOG(INFO) << "NWebImpl::OnBrowserForeground.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnBrowserForeground nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnBrowserForeground();
+}
+
+void NWebImpl::OnBrowserBackground() {
+  LOG(INFO) << "NWebImpl::OnBrowserBackground.";
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("OnBrowserBackground nweb_delegate_ is null");
+    return;
+  }
+  nweb_delegate_->OnBrowserBackground();
+}

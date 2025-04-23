@@ -10972,4 +10972,13 @@ void WebContentsImpl::ReportVideoDecoderName(const std::string& decoder_name) {
 }
 #endif // OHOS_VIDEO_ASSISTANT
 
+void WebContentsImpl::OnBrowserForeground() {
+    LOG(INFO) << "WebContentsImpl::OnBrowserForeground";
+    observers_.NotifyObservers(&WebContentsObserver::OnBrowserForeground);
+}
+ 
+void WebContentsImpl::OnBrowserBackground() {
+    LOG(INFO) << "WebContentsImpl::OnBrowserBackground";
+    observers_.NotifyObservers(&WebContentsObserver::OnBrowserBackground);
+}
 }  // namespace content

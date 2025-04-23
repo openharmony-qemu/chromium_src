@@ -665,6 +665,8 @@ class NWebDelegateInterface
   virtual void MaximizeResize() = 0;
   virtual void SetSurfaceDensity(const double& density) = 0;
   virtual void DisallowSandboxFileAccessFromFileUrl(bool disallow) = 0;
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
 };
 }  // namespace OHOS::NWeb
 

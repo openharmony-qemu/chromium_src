@@ -235,6 +235,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
         bool has_audio,
         bool has_video,
         media::MediaContentType media_content_type) override;
+
+#if defined(OHOS_MEDIA_AVSESSION)
+    void OnEndAVSession(bool is_hidden) override;
+#endif // OHOS_MEDIA_AVSESSION
+
     void OnMediaPositionStateChanged(
         const media_session::MediaPosition& media_position) override;
     void OnMediaEffectivelyFullscreenChanged(

@@ -53,6 +53,10 @@ class CONTENT_EXPORT MediaSessionController
   // the MediaSession instance in sync with renderer side behavior.
   void OnPlaybackPaused(bool reached_end_of_stream);
 
+#if defined(OHOS_MEDIA_AVSESSION)
+  void OnEndAVSession(const MediaPlayerId& id, bool is_hidden);
+#endif // OHOS_MEDIA_AVSESSION
+
   // MediaSessionPlayerObserver implementation.
   void OnSuspend(int player_id) override;
   void OnResume(int player_id) override;

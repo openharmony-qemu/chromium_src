@@ -251,6 +251,15 @@ void MediaSessionController::OnMediaMutedStatusChanged(bool mute) {
   media_session_->OnMediaMutedStatusChanged(mute);
 }
 
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaSessionController::OnEndAVSession(const MediaPlayerId& id,
+                                            bool is_hidden) {
+  if (is_hidden && media_session_) {
+    media_session_->EndSessionWhenHide();
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
+
 void MediaSessionController::OnPictureInPictureAvailabilityChanged(
     bool available) {
   is_picture_in_picture_available_ = available;

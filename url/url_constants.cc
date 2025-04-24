@@ -65,6 +65,12 @@ const char16_t kResourcesScheme16[] = u"resource";
 const char kDataabilityScheme[] = "dataability";
 const char kDatashareScheme[] = "datashare";
 #endif // OHOS_FILE_UPLOAD
+
+#ifdef OHOS_NWEB_EX
+const char kArkwebScheme[] = "arkweb";
+const char16_t kArkwebScheme16[] = u"arkweb";
+#endif  // OHOS_NWEB_EX
+
 const size_t kMaxURLChars = 2 * 1024 * 1024;
 
 #ifdef OHOS_LOGGER_REPORT

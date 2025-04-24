@@ -6714,6 +6714,9 @@ void NavigationRequest::OnWillRedirectRequestProcessed(
       DCHECK(is_safe_to_delete_);
       base::AutoReset<bool> resetter(&is_safe_to_delete_, false);
 #endif
+#ifdef OHOS_NWEB_EX
+      base::AutoReset<bool> resetter2(&ua_change_requires_reload_, false);
+#endif
       GetDelegate()->DidRedirectNavigation(this);
     }
   } else {

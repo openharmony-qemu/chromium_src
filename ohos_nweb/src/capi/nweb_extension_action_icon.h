@@ -17,7 +17,6 @@
 #define NWEB_EXTENSION_ACTION_ICON_H
 
 #include <map>
-#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 

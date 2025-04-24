@@ -2832,19 +2832,14 @@ void NWebDelegate::GetScrollOffset(float* offset_x, float* offset_y) {
     return;
   }
 
-  float offsetX = 0;
-  float offsetY = 0;
-  float ratio = render_handler_->GetVirtualPixelRatio();
-  if (ratio <= 0) {
-    LOG(ERROR) << "get ratio invalid: " << ratio;
+  if (!render_handler_) {
+    LOG(ERROR) << "JSAPI GetScrollOffset render_handler_ is nullptr.";
     return;
   }
 
-  GetBrowser()->GetHost()->GetScrollOffset(&offsetX,
-                                           &offsetY);
-
-  offsetX = std::round(offsetX / ratio);
-  offsetY = std::round(offsetY / ratio);
+  float offsetX = 0;
+  float offsetY = 0;
+  render_handler_->GetScrollOffset(offsetX, offsetY);
 
   if ((nullptr == offset_x) || (nullptr == offset_y)) {
     LOG(ERROR) << "offset_x or offset_y is nullptr";
@@ -3019,7 +3014,16 @@ void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
     LOG(ERROR) << "JSAPI GetOverScrollOffset can not get browser";
     return;
   }
-  GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
+  if (!render_handler_) {
+    LOG(ERROR) << "JSAPI GetOverScrollOffset render_handler_ is nullptr.";
+    return;
+  }
+  if (render_handler_->HasOverscroll()) {
+    GetBrowser()->GetHost()->GetOverScrollOffset(offset_x, offset_y);
+  } else {
+    *offset_x = 0.0f;
+    *offset_y = 0.0f;
+  }
 }
 #endif
 

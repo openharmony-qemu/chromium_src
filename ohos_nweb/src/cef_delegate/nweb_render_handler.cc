@@ -318,6 +318,9 @@ void NWebRenderHandler::OnOverscroll(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     handler->OnOverScroll(x, y);
   }
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  has_over_scroll_ = true;
+#endif
 }
 
 void NWebRenderHandler::OnSelectionChanged(CefRefPtr<CefBrowser> browser,
@@ -360,6 +363,17 @@ void NWebRenderHandler::OnUpdateTextInputStateCalled(CefRefPtr<CefBrowser> brows
 }
 
 #endif  // defined(OHOS_INPUT_EVENTS)
+
+#if defined(OHOS_GET_SCROLL_OFFSET)
+void NWebRenderHandler::GetScrollOffset(float& x, float& y) {
+  x = scroll_offset_x_;
+  y = scroll_offset_y_;
+}
+
+bool NWebRenderHandler::HasOverscroll() {
+  return has_over_scroll_;
+}
+#endif
 
 #if BUILDFLAG(IS_OHOS)
 void NWebRenderHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
@@ -596,6 +610,10 @@ void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
     handler->OnScroll(x, y);
   }
 
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  scroll_offset_x_ = static_cast<float>(x);
+  scroll_offset_y_ = static_cast<float>(y);
+#endif
   if (on_scroll_cb_) {
     on_scroll_cb_(x, y);
   }

@@ -75,6 +75,11 @@ COMPONENT_EXPORT(URL) extern const char kResourcesScheme[];
 COMPONENT_EXPORT(URL) extern const char16_t kResourcesScheme16[];
 #endif
 
+#ifdef OHOS_NWEB_EX
+COMPONENT_EXPORT(URL) extern const char kArkwebScheme[];
+COMPONENT_EXPORT(URL) extern const char16_t kArkwebScheme16[];
+#endif  // OHOS_NWEB_EX
+
 #ifdef OHOS_FILE_UPLOAD
 COMPONENT_EXPORT(URL) extern const char kDatashareScheme[];
 COMPONENT_EXPORT(URL) extern const char kDataabilityScheme[];

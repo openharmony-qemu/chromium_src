@@ -137,6 +137,10 @@
 #include "cc/layers/toast_layer_impl.h"
 #endif // OHOS_MEDIA_NETWORK_TRAFFIC_PROMPT
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/sys_info_utils.h"
+#endif
+
 namespace cc {
 namespace {
 
@@ -547,6 +551,10 @@ LayerTreeHostImpl::LayerTreeHostImpl(
   frame_trackers_.set_custom_tracker_results_added_callback(
       base::BindRepeating(&LayerTreeHostImpl::NotifyThroughputTrackerResults,
                           weak_factory_.GetWeakPtr()));
+
+#if BUILDFLAG(IS_OHOS)
+  is_ohos_pc_ui_setting_ = base::ohos::IsPcDevice() ? true : false;
+#endif
 }
 
 LayerTreeHostImpl::~LayerTreeHostImpl() {
@@ -3967,6 +3975,8 @@ void LayerTreeHostImpl::ReleaseLayerTreeFrameSink() {
   // Windows does not have stability issues that require calling Finish.
   // To minimize risk, only avoid waiting for the UI layer tree.
   should_finish = !settings_.is_layer_tree_for_ui;
+#elif BUILDFLAG(IS_OHOS)
+  should_finish = !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
 #endif
 
   if (should_finish && layer_tree_frame_sink_->context_provider()) {

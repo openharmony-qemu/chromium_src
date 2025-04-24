@@ -17,7 +17,6 @@
 #define NWEB_EXTENSION_ACTION_ICON_H
 
 #include <map>
-#include "base/memory/raw_ptr.h"
 
 namespace OHOS::NWeb {
 
@@ -40,7 +39,7 @@ struct NWebExtensionActionIconBitmap {
   NWebExtensionActionIconAlphaType alphaType;
   int32_t width;
   int32_t height;
-  raw_ptr<uint8_t> bitmap;
+  uint8_t* bitmap;
 };
 
 struct NWebExtensionActionIcon {

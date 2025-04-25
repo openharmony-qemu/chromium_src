@@ -218,6 +218,10 @@ OnReportStatisticLogFunc
 #include "cef/include/cef_app.h"
 #endif
 
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+#include "cef/libcef/browser/ssl/ohos_https_upgrades_util.h"
+#endif
+
 namespace {
 uint32_t g_nweb_count = 0;
 const uint32_t kSurfaceMaxWidth = 7680;
@@ -4684,3 +4688,9 @@ void NWebImpl::OnBrowserBackground() {
   }
   nweb_delegate_->OnBrowserBackground();
 }
+
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  OhosHttpsUpgradesUtil::EnableHttpsUpgrades(enable);
+}
+#endif  //defined(OHOS_EX_HTTPS_UPGRADES)

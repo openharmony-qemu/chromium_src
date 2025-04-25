@@ -750,6 +750,7 @@ class NWebImpl : public NWeb {
                                     int32_t* offsetY) override;
   void SendAccessibilityHoverEvent(int32_t x, int32_t y) override;
   void SetSurfaceDensity(const double& density) override;
+  void DisallowSandboxFileAccessFromFileUrl(bool disallow) const;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
 
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)

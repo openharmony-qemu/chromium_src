@@ -940,9 +940,11 @@ bool WebRequestAPI::HasExtraHeadersListenerForTesting() {
 
 void WebRequestAPI::UpdateMayHaveProxies() {
   bool may_have_proxies = MayHaveProxies();
+#ifndef OHOS_ARKWEB_EXTENSIONS
   if (!may_have_proxies_ && may_have_proxies) {
     browser_context_->GetDefaultStoragePartition()->ResetURLLoaderFactories();
   }
+#endif
   may_have_proxies_ = may_have_proxies;
 }
 

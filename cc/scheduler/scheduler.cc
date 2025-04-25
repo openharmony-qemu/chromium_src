@@ -552,16 +552,10 @@ void Scheduler::BeginImplFrameWithDeadline(const viz::BeginFrameArgs& args) {
   // BeginImplFrameDeadlineMode::LATE instead to avoid putting the main
   // thread in high latency mode. See crbug.com/753146.
   static base::TimeDelta interval = adjusted_args.interval;
-  static int scroll_count = 0;
   if (state_machine_.get_is_scrolling()) {
-    if (scroll_count == 0) {
-      interval = adjusted_args.interval;
-    } else {
-      interval = std::min(interval, adjusted_args.interval);
-    }
+    interval = std::min(interval, adjusted_args.interval);
   } else {
     interval = adjusted_args.interval;
-    scroll_count = 0;
   }
   base::TimeDelta bmf_to_activate_threshold =
       interval - compositor_timing_history_->DrawDurationEstimate() - kDeadlineFudgeFactor;

@@ -376,7 +376,7 @@ class CC_EXPORT SchedulerStateMachine {
   }
 
   void set_is_scrolling(bool is_scrolling) { is_scrolling_ = is_scrolling; }
-  bool get_is_scrolling() { return is_scrolling_; }
+  bool get_is_scrolling() const { return is_scrolling_; }
   void set_waiting_for_scroll_event(bool waiting_for_scroll_event) {
     waiting_for_scroll_event_ = waiting_for_scroll_event;
   }

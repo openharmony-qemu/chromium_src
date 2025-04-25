@@ -492,10 +492,8 @@ class ClipboardOHOSInternal {
     if (HasFormat(ClipboardInternalFormat::kCustom)) {
       base::Pickle pickle;
       WriteCustomDataToPickle(currentData->GetCustomDataMap(), &pickle);
-      std::vector<uint8_t> custom_data_vector;
-      custom_data_vector.resize(pickle.size());
-      memcpy(const_cast<uint8_t*>(&custom_data_vector.front()),
-             pickle.data(), pickle.size());
+      auto custom_data_vector =
+      std::vector<uint8_t>(pickle.data(), pickle.data() + pickle.size());
       OHOS::NWeb::PasteCustomData custom_data_map = {
           {kMimeTypeOHOSCustomData, custom_data_vector}};
       if (record->SetCustomData(custom_data_map)) {

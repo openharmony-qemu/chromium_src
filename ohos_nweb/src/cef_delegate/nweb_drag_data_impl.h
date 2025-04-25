@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_drag_data.h"
 #include "ohos_nweb/include/nweb_drag_data.h"
 
@@ -86,7 +87,7 @@ class NWebDragDataImpl : public NWebDragData {
   void FreePixlMapData();
 
  private:
-  void* image_buffer_ = nullptr;
+  raw_ptr<void> image_buffer_ = nullptr;
   void GenerateOhosDragBitmapFromOrigin(const SkBitmap& in_bitmap, SkBitmap& out_bitmap, int& width, int& height);
   void GenerateOhosDragBitmapFromOriginForRichtext(const SkBitmap& in_bitmap, SkBitmap& out_bitmap,
                                                    int& width, int& height);

@@ -4506,6 +4506,13 @@ void NWebImpl::SetSurfaceDensity(const double& density) {
   nweb_delegate_->SetSurfaceDensity(density);
 }
 
+void NWebImpl::DisallowSandboxFileAccessFromFileUrl(bool disallow) const {
+  if(nweb_delegate_ == nullptr) {
+    return;
+  }
+  nweb_delegate_->DisallowSandboxFileAccessFromFileUrl(disallow);
+}
+
 void NWebImpl::TrimMemoryByPressureLevel(int32_t memoryLevel) {
 #ifdef OHOS_PERFORMANCE_MEMORY_THRESHOLD
   using MemoryPressureLevel = base::MemoryPressureListener::MemoryPressureLevel;

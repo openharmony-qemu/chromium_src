@@ -621,6 +621,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 void SetSurfaceDensity(const double& density) override;
 
+  void DisallowSandboxFileAccessFromFileUrl(bool disallow) override;
+
   void OpenDevtoolsWith(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate,
       std::unique_ptr<OpenDevToolsParam> param) override;

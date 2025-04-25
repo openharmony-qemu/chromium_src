@@ -57,8 +57,8 @@
 #include "url/url_constants.h"
 
 #if defined(OHOS_EX_PASSWORD)
-#include "chrome/browser/browser_process.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "chrome/browser/browser_process.h"
 #include "components/prefs/pref_service.h"
 #endif
 
@@ -824,9 +824,10 @@ bool LoginDatabase::Init() {
 
   if (!db_.Open(db_path_)) {
     LogDatabaseInitError(OPEN_FILE_ERROR);
-    LOG(ERROR) << "[Autofill] Unable to open the password store database, errorcode = 3.";
+    LOG(ERROR) << "[Autofill] Unable to open the password store database.";
 #if defined(OHOS_EX_PASSWORD)
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
 #endif
     return false;
   }

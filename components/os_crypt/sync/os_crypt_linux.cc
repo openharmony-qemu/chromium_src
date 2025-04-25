@@ -29,11 +29,11 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/path_service.h"
-#include "ohos_adapter_helper.h"
-#include "chrome/browser/browser_process.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
-#include "components/prefs/pref_service.h"
 #include "base/strings/string_number_conversions.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "chrome/browser/browser_process.h"
+#include "components/prefs/pref_service.h"
+#include "ohos_adapter_helper.h"
 #endif
 
 #if defined(OHOS_ENCRYPT)
@@ -65,8 +65,8 @@ constexpr char kDdataKeyAlias[] = "nweb_data_key";
 
 #if defined(OHOS_EX_PASSWORD)
 constexpr base::FilePath::CharType kNWebAssetHandleDir[] =
-    FILE_PATH_LITERAL("migrate");
-constexpr char kNewbAssetHandleAlias[] = "";
+    FILE_PATH_LITERAL("migrate_bak");
+constexpr char kNewbAssetHandleAlias[] = "asset_data_key";
 #endif
 
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
@@ -107,71 +107,81 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
 }
 
 #if defined(OHOS_EX_PASSWORD)
+static std::string AssetQuery(base::FilePath key_file) {
+  std::string assetHandle;
+  bool res = base::ReadFileToString(key_file, &assetHandle);
+  if (!res) {
+    LOG(ERROR) << "[Autofill] Read assethandle file failed.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  if (assetHandle.empty()) {
+    LOG(INFO) << "[Autofill] Assethandle is empty, not need to migrate.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+
+  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                          .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
+  if (local_key.empty()) {
+    LOG(ERROR) << "[Autofill] Get key from asset failed.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
+    return std::string();
+  }
+  LOG(INFO) << "[Autofill] get key from asset success.";
+  return local_key;
+}
+
 static std::string GetKeyFromAsset() {
   base::FilePath cache_path;
   base::PathService::Get(base::DIR_CACHE, &cache_path);
   if (cache_path.empty()) {
     return std::string();
   }
- 
+
   base::FilePath key_dir =
       cache_path.Append(FILE_PATH_LITERAL(kNWebAssetHandleDir));
   if (!base::PathExists(key_dir)) {
-    LOG(ERROR) << "[Autofill] Assethandle dir not exist, errorcode = 1.";
+    LOG(ERROR) << "[Autofill] Assethandle dir not exist.";
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
     return std::string();
   }
- 
+
   base::FilePath key_file = key_dir.Append(
     FILE_PATH_LITERAL(crypto::ohos::get_asset_handle_file_256(kNewbAssetHandleAlias)));
   if (!base::PathExists(key_file)) {
-    LOG(ERROR) << "[Autofill] Assethandle file not exist, errorcode = 1.";
+    LOG(ERROR) << "[Autofill] Assethandle file not exist.";
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
+    g_browser_process->local_state()->CommitPendingWrite();
     return std::string();
   }
- 
-  std::string assetHandle;
-  bool res = base::ReadFileToString(key_file, &assetHandle);
-  if (!res) {
-    LOG(ERROR) << "[Autofill] read assethandle file failed, errorcode = 2.";
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
- 
-  if (assetHandle.empty()) {
-    LOG(INFO) << "[Autofill] assethandle is empty, not need to migrate.";
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
- 
-  std::string local_key = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                          .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
-  if (local_key.empty()) {
-    LOG(ERROR) << "[Autofill] get key from asset failed, errorcode = 2.";
-    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsToPasswordVault, true);
-    return std::string();
-  }
-  LOG(INFO) << "[Autofill] get key from asset success.";
+
+  std::string local_key = AssetQuery(key_file);
   return local_key;
 }
- 
+
 std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForMigrate() {
   std::string asset_key = GetKeyFromAsset();
   if (asset_key.empty()) {
     return nullptr;
   }
- 
+
   std::vector<uint8_t> key_byte_array;
- 
+
   base::HexStringToBytes(asset_key, &key_byte_array);
- 
+
   std::unique_ptr<crypto::SymmetricKey> encryption_key(
       crypto::SymmetricKey::Import(crypto::SymmetricKey::AES,
                                    std::string((std::string::value_type*)(key_byte_array.data()),
                                    key_byte_array.size())));
- 
+
   DCHECK(encryption_key);
- 
+
   return encryption_key;
 }
 #endif
@@ -420,17 +430,17 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
     plaintext->clear();
     return true;
   }
- 
+
   // the incoming ciphertext was encrypted and with V10 version.
   crypto::SymmetricKey* encryption_key = GetPasswordV10ForMigrate();
   std::string obfuscation_prefix;
   obfuscation_prefix = kObfuscationPrefixV10;
- 
+
   if (!encryption_key) {
-    VLOG(1) << "Decryption failed: could not get the key";
+    LOG(ERROR) << "[Autofill] Decryption failed: could not get the key";
     return false;
   }
- 
+
   if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
     return true;
   }
@@ -438,12 +448,12 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
       ciphertext.substr(obfuscation_prefix.length() + kIVSizeAESGCM);
   std::string iv =
       ciphertext.substr(obfuscation_prefix.length(), kIVSizeAESGCM);
- 
+
   if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
     return true;
   }
- 
-  VLOG(1) << "Decryption failed";
+
+  LOG(ERROR) << "[Autofill] Decryption failed";
   base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
   return false;
 }

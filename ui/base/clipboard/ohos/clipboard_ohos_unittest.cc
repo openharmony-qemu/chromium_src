@@ -165,7 +165,7 @@ TEST_F(ClipboardOHOSTest, GetSource_001) {
 
 TEST_F(ClipboardOHOSTest, GetSource_002) {
   ClipboardBuffer buffer = ClipboardBuffer::kCopyPaste;
-  std::unique_ptr<ClipboardData> data(new ClipboardData());
+  std::unique_ptr<ClipboardData> data = std::make_unique<ClipboardData>();
   std::unique_ptr<DataTransferEndpoint> src(
       new DataTransferEndpoint(EndpointType::kDefault, true));
   data->set_source(std::move(src));

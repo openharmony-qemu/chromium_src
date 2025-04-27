@@ -40,7 +40,7 @@ TEST(SlidingObserverTest, GetVelocity001) {
   const float kMilliMeterPerInch = 25.4;
   float convert_unit = kMilliMeterPerInch / instance->dpi_ * instance->virtual_pixel_ratio_;
   float velocity = std::sqrt(text_velocity_x * text_velocity_x + test_velocity_y * test_velocity_y);
-  float get_result = observer.GetVelocity(text_velocity_x,test_velocity_y);
+  float get_result = observer.GetVelocity(text_velocity_x, test_velocity_y);
   EXPECT_EQ(get_result, convert_unit*velocity);
 }
 

@@ -6,7 +6,7 @@
 #define private public
 #include "base/files/memory_mapped_file.h"
 #undef private
-#else  // OHOS_UNITTESTS 
+#else  // OHOS_UNITTESTS
 #include "base/files/memory_mapped_file.h"
 #endif  // OHOS_UNITTESTS
 
@@ -39,7 +39,7 @@ bool CheckBufferContents(const uint8_t* data, size_t size, size_t offset) {
 }
 
 class MemoryMappedFileTest : public PlatformTest {
- protected:
+protected:
   void SetUp() override {
     PlatformTest::SetUp();
     CreateTemporaryFile(&temp_file_path_);
@@ -61,7 +61,7 @@ class MemoryMappedFileTest : public PlatformTest {
 
   const FilePath temp_file_path() const { return temp_file_path_; }
 
- private:
+private:
   FilePath temp_file_path_;
 };
 
@@ -248,7 +248,7 @@ TEST_F(MemoryMappedFileTest, ExtendableFile) {
 
 #if defined(OHOS_UNITTESTS)
 class MockOhosFileMapper : public OHOS::NWeb::OhosFileMapper {
- public:
+public:
   int32_t GetFd() override { return 1; }
   int32_t GetOffset() override { return 1; }
   std::string GetFileName() override { return "name"; }

@@ -226,6 +226,14 @@ class MockMediaCodecDecoderAdapter : public MediaCodecDecoderAdapter {
               SetCallbackDec,
               (std::shared_ptr<DecoderCallbackAdapter>),
               (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetDecryptionConfig,
+              (void*, bool),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetAVCencInfo,
+              (uint32_t, const std::shared_ptr<AudioCencInfoAdapter>),
+              (override));
 };
 
 class VideoFrameFactoryImplTest : public testing::Test {

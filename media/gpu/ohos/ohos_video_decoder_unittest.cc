@@ -161,6 +161,14 @@ class MockMediaCodecDecoderAdapter : public MediaCodecDecoderAdapter {
               SetCallbackDec,
               (const std::shared_ptr<DecoderCallbackAdapter> callback),
               (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetDecryptionConfig,
+              (void*, bool),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetAVCencInfo,
+              (uint32_t, const std::shared_ptr<AudioCencInfoAdapter>),
+              (override));
 };
 class MockSequencedTaskRunner : public base::SequencedTaskRunner {
  public:

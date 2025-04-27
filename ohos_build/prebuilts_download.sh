@@ -184,7 +184,7 @@ function download_toolchain() {
 
 function download_sdk() {
   sdk_item_list=("ets" "js" "native" "previewer" "toolchains")
-  sdk_version="openharmony/os/5.0-Beta1/ohos-sdk-windows_linux-public.tar.gz"
+  sdk_version="openharmony/os/5.0.3-Release/ohos-sdk-windows_linux-public.tar.gz"
   version_file=${PREBUILTS_ROOT_DIR}/ohos-sdk/.version
 
   if [[ ! -d "${PREBUILTS_ROOT_DIR}/ohos-sdk" ]] || ! (check_version $version_file $sdk_version); then
@@ -194,7 +194,7 @@ function download_sdk() {
       hwcloud_download $sdk_version $file_name
       rm -rf ohos-sdk
       mkdir ohos-sdk
-      tar -xf $file_name -C ohos-sdk/
+      tar -xf $file_name -C ./
       pushd ohos-sdk/linux > /dev/null
         for i in ${sdk_item_list[@]}; do
           echo -ne "[INFO] Unzipping ${i}...\r"

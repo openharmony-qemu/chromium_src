@@ -1106,6 +1106,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   const LayerTreeSettings settings_;
 
+#if BUILDFLAG(IS_OHOS)
+  bool is_ohos_pc_ui_setting_ = false;
+#endif
+
   // This is set to true only if:
   //  . The compositor is running single-threaded (i.e. there is no separate
   //    compositor/impl thread).

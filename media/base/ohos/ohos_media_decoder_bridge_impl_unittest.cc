@@ -127,6 +127,8 @@ public:
   MOCK_METHOD(DecoderAdapterCode, GetOutputFormatDec, (std::shared_ptr<DecoderFormatAdapter> format), (override));
   MOCK_METHOD(DecoderAdapterCode, ReleaseOutputBufferDec, (uint32_t, bool), (override));
   MOCK_METHOD(DecoderAdapterCode, SetCallbackDec, (std::shared_ptr<DecoderCallbackAdapter>), (override));
+  MOCK_METHOD(DecoderAdapterCode, SetDecryptionConfig, (void*, bool), (override));
+  MOCK_METHOD(DecoderAdapterCode, SetAVCencInfo, (uint32_t, const std::shared_ptr<AudioCencInfoAdapter>), (override));
 };
 
 class MockOhosAdapterHelper : public OhosAdapterHelper {
@@ -741,7 +743,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer) {
   const uint8_t* data = reinterpret_cast<const uint8_t*>("testdata");
   size_t data_size = strlen(reinterpret_cast<const char*>(data));
   int64_t presentation_time = 1000000;
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -751,7 +753,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer1) {
   int64_t presentation_time = 1000000;
   bridge_->signal_ = nullptr;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -761,7 +763,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer2) {
   int64_t presentation_time = 1000000;
   bridge_->signal_->isOnError_ = true;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -771,7 +773,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer3) {
   int64_t presentation_time = 1000000;
   bridge_->signal_->isDecoderFlushing_.store(true);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -785,7 +787,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer4) {
   VideoBridgeDecoderInputBuffer buffer = {10, {addr, 10}};
   bridge_->signal_->inputQueue_.push(buffer);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -799,7 +801,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer5) {
   bridge_->signal_->inputQueue_.push(buffer);
   bridge_->videoDecoder_ = nullptr;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -819,7 +821,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer6) {
   EXPECT_CALL(*video_decoder_s, ReleaseDecoder()).Times(1);
   bridge_->videoDecoder_ = std::move(video_decoder_s);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time);
+  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 

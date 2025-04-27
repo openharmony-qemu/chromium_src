@@ -42,7 +42,8 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
   virtual void ShowTextInput() = 0;
   virtual void HideTextInput(
       uint32_t nweb_id = 0,
-      HideTextinputType hideType = HideTextinputType::FROM_KERNEL) = 0;
+      HideTextinputType hideType = HideTextinputType::FROM_KERNEL,
+      bool noNeedKeyboardByInput = false) = 0;
   virtual void HideTextInputForce() = 0;
   virtual void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                                       const CefString& selected_text,

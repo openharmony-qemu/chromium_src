@@ -465,7 +465,8 @@ void NWebInputMethodHandler::SetNeedReattach(HideTextinputType hideType) {
 }
 
 void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
-                                           HideTextinputType hideType) {
+                                           HideTextinputType hideType,
+                                           bool noNeedKeyboardByInput) {
   LOG(INFO) << "NWebInputMethodHandler::HideTextInput, isAttached_: " << isAttached_;
   ClearComposingStatus();
   if (inputmethod_adapter_ == nullptr) {
@@ -478,6 +479,12 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
       SetNeedReattach(hideType);
       LOG(INFO) << "HideTextInput is triggered after an attach failure, "
                    "need to reattach next time.";
+    }
+    if (noNeedKeyboardByInput) {
+      LOG(INFO) << "inputMode is None, no need keyboard.";
+      inputmethod_adapter_->HideTextInput();
+      inputmethod_adapter_->Close();
+      return;
     }
     if (hideType != HideTextinputType::FROM_ONPAUSE) {
       LOG(INFO) << "not from switch front and background, ingnore";

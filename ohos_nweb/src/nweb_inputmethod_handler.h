@@ -54,7 +54,8 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
   void ShowTextInput() override;
   void HideTextInput(
       uint32_t nwebId = 0,
-      HideTextinputType hideType = HideTextinputType::FROM_KERNEL) override;
+      HideTextinputType hideType = HideTextinputType::FROM_KERNEL,
+      bool noNeedKeyboardByInput = false) override;
   void HideTextInputForce() override;
   void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                               const CefString& selected_text,

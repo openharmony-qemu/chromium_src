@@ -761,6 +761,11 @@ class NWebImpl : public NWeb {
   static void SetEnterprisePolicy(const std::string& policy, int version);
 #endif 
   static void SetMigrationPasswordReady(const bool migrationReady);
+
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+  static void EnableHttpsUpgrades(bool enable);
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

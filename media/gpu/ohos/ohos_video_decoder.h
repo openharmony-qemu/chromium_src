@@ -200,9 +200,6 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   int32_t pending_surface_id_ = -1;
 #endif // OHOS_VIDEO_ASSISTANT
 
-  base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
-  base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};
-
   // ohos cdm object
   raw_ptr<OHOSMediaCryptoContext> ohos_crypto_context_;
 
@@ -216,6 +213,9 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool waiting_for_key_ = false;
 
   void* mediaKeySession_ = nullptr;
+
+  base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
+  base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};
 };
 
 }  // namespace media

@@ -107,9 +107,9 @@ class CAPTURE_EXPORT OHOSCaptureDelegate final {
   // Clockwise rotation in degrees. This value should be 0, 90, 180, or 270.
   int rotation_;
 
-  base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
-
   const VideoCaptureParams capture_params_;
+
+  base::WeakPtrFactory<OHOSCaptureDelegate> weak_factory_{this};
 };
 
 }  // namespace media

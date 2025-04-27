@@ -223,10 +223,9 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   OHOSMediaCryptoContextImpl media_crypto_context_;
 
-  base::WeakPtrFactory<OHOSMediaDrmBridge> weak_factory_{this};
-
   std::unique_ptr<OHOS::NWeb::DrmAdapter> ohos_drm_adapter_;
   OHOS::NWeb::OHOSMediaKeySession ohos_media_key_session_;
+  base::WeakPtrFactory<OHOSMediaDrmBridge> weak_factory_{this};
 };
 
 class OHOSDrmCallback : public OHOS::NWeb::DrmCallbackAdapter {

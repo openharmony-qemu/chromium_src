@@ -219,6 +219,10 @@ extern bool g_siteIsolationMode;
 #include "nweb_extension_side_panel_cef_delegate.h"
 #endif // OHOS_ARKWEB_EXTENSIONS
 
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+#include "cef/libcef/browser/ssl/ohos_https_upgrades_util.h"
+#endif
+
 #if defined(OHOS_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -4646,3 +4650,9 @@ bool NWebImpl::IsNWebEx() {
   }
   return false;
 }
+
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+void NWebImpl::EnableHttpsUpgrades(bool enable) {
+  OhosHttpsUpgradesUtil::EnableHttpsUpgrades(enable);
+}
+#endif  //defined(OHOS_EX_HTTPS_UPGRADES)

@@ -783,6 +783,10 @@ class NWebImpl : public NWeb {
 #endif
   void SetSurfaceDensity(const double& density) override;
 
+#if defined(OHOS_EX_HTTPS_UPGRADES)
+  static void EnableHttpsUpgrades(bool enable);
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

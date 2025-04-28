@@ -344,6 +344,17 @@ void OHOSCustomMediaPlayerRenderer::CreateMediaPlayer() {
 
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
 
+  if (!init_cb_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, no init_cb";
+    return;
+  }
+
+  if (initialized_) {
+    LOG(ERROR) << "CreateMediaPlayer failed, already initialized";
+    std::move(init_cb_).Run(media::PIPELINE_ERROR_INITIALIZATION_FAILED);
+    return;
+  }
+
   WebContentsImpl* web_contents_impl =
       static_cast<WebContentsImpl*>(web_contents());
 

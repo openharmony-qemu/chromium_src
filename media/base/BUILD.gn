@@ -694,6 +694,18 @@ source_set("unit_tests") {
       "ohos/ohos_media_player_callback_unittest.cc",
       "ohos/ohos_media_player_listener_unittest.cc",
     ]
+    if (defined(ohos_enable_cdm) && ohos_enable_cdm) {
+      defines = [ "IS_MEDIA_IMPL" ]
+      sources += [
+        "ohos/ohos_cdm_factory_unittests.cc",
+        "ohos/ohos_media_crypto_context_impl_unittest.cc",
+        "ohos/ohos_media_drm_bridge_client_unittest.cc",
+        "ohos/ohos_media_drm_bridge_delegate_unittest.cc",
+        "ohos/ohos_media_drm_bridge_factory_unittest.cc",
+        "ohos/ohos_media_drm_bridge_unittest.cc",
+        "ohos/ohos_media_drm_storage_bridge_unittest.cc",
+      ]
+    }
   }
 
   if (is_win) {

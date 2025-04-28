@@ -45,7 +45,7 @@ constexpr int kOverlayScrollbarMinimumLength = 48;
 constexpr int kOverlayScrollbarBorderPatchWidth = 0;
 //Scrollbar's width,include hot zone(0) + visible width(8) + marginRight(4)
 constexpr int kOverlayScrollbarCenterPatchSize = 36;
-constexpr int kOverlayScrollbarHotSize = 0;
+constexpr int kOverlayScrollbarHotSize = 20;
 constexpr int kOverlayScrollbarMargin = 4;
 constexpr int kForceScrollbarActiveWidth = 8;
 constexpr int kForceScrollbarInactiveWidth = 4;

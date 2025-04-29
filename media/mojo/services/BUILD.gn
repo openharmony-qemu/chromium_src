@@ -117,7 +117,8 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if ((enable_heif_decoder) || ((defined(ohos_enable_cdm) && ohos_enable_cdm))) {
+  } else if (enable_heif_decoder ||
+             (defined(ohos_enable_cdm) && ohos_enable_cdm)) {
     sources += [ "gpu_mojo_media_client_ohos.cc" ]
   } else if (use_vaapi || use_v4l2_codec) {
     if (is_linux) {
@@ -150,7 +151,7 @@ component("services") {
     ]
   }
 
-  if ((is_ohos) && (defined(ohos_enable_cdm) && ohos_enable_cdm)) {
+  if (is_ohos && (defined(ohos_enable_cdm) && ohos_enable_cdm)) {
     sources += [
       "ohos_mojo_media_client.cc",
       "ohos_mojo_media_client.h",
@@ -258,6 +259,13 @@ source_set("unit_tests") {
     "webrtc_video_perf_history_unittest.cc",
     "webrtc_video_perf_recorder_unittest.cc",
   ]
+
+  if (is_ohos && (defined(ohos_enable_cdm) && ohos_enable_cdm)) {
+    sources += [
+      "ohos_mojo_media_client_unittests.cc",
+      "ohos_mojo_util_unittests.cc",
+    ]
+  }
 
   if (enable_playback_events_recorder) {
     sources += [ "playback_events_recorder_test.cc" ]

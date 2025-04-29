@@ -17,15 +17,15 @@
 #define private public
 #include "ohos_media_decoder_bridge_impl.h"
 #undef private
-#include "ohos_adapter_helper.h" 
-#include "testing/gmock/include/gmock/gmock.h"
-#include "testing/gtest/include/gtest/gtest.h"
 #include <memory>
 #include "base/logging.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
-#include "base/task/single_thread_task_executor.h"
 #include "media/base/ohos/decoder_format_adapter_impl.h"
+#include "ohos_adapter_helper.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
 
 #include "base/base_paths.h"
@@ -38,21 +38,22 @@
 #include "base/time/time.h"
 
 using ::testing::_;
+using ::testing::AtLeast;
 using ::testing::Eq;
+using ::testing::Invoke;
+using ::testing::MockFunction;
+using ::testing::NiceMock;
 using ::testing::Ref;
 using ::testing::Return;
-using ::testing::Invoke;
-using ::testing::AtLeast;
-using ::testing::NiceMock;
-using ::testing::MockFunction;
 using namespace OHOS::NWeb;
 using namespace std;
-const std::string PRODUCT_MODEL = "noemulator"; 
+const std::string PRODUCT_MODEL = "noemulator";
 
 namespace testing {
 
 template <>
-class NiceMock<OHOS::NWeb::OhosBufferAdapter> : public OHOS::NWeb::OhosBufferAdapter {
+class NiceMock<OHOS::NWeb::OhosBufferAdapter>
+    : public OHOS::NWeb::OhosBufferAdapter {
  public:
   MOCK_METHOD(uint8_t*, GetAddr, (), (override));
   MOCK_METHOD(uint32_t, GetBufferSize, (), (override));
@@ -71,7 +72,7 @@ class NiceMock<BufferInfoAdapter> : public BufferInfoAdapter {
 namespace media {
 
 class MockSystemPropertiesAdapter : public OHOS::NWeb::SystemPropertiesAdapter {
-public:
+ public:
   MOCK_METHOD(bool, GetResourceUseHapPathEnable, (), (override));
   MOCK_METHOD(std::string, GetDeviceInfoProductModel, (), (override));
   MOCK_METHOD(std::string, GetDeviceInfoBrand, (), (override));
@@ -88,34 +89,90 @@ public:
   MOCK_METHOD(int32_t, GetFlowBufMaxFd, (), (override));
   MOCK_METHOD(bool, GetOOPGPUEnable, (), (override));
   MOCK_METHOD(void, SetOOPGPUDisable, (), (override));
-  MOCK_METHOD(void, AttachSysPropObserver, (PropertiesKey key, SystemPropertiesObserver* observer), (override));
-  MOCK_METHOD(void, DetachSysPropObserver, (PropertiesKey key, SystemPropertiesObserver* observer), (override));
-  MOCK_METHOD(bool, GetBoolParameter, (const std::string& key, bool defaultValue), (override));
-  MOCK_METHOD(std::vector<FrameRateSetting>, GetLTPOConfig, (const std::string& settingName), (override));
+  MOCK_METHOD(void,
+              AttachSysPropObserver,
+              (PropertiesKey key, SystemPropertiesObserver* observer),
+              (override));
+  MOCK_METHOD(void,
+              DetachSysPropObserver,
+              (PropertiesKey key, SystemPropertiesObserver* observer),
+              (override));
+  MOCK_METHOD(bool,
+              GetBoolParameter,
+              (const std::string& key, bool defaultValue),
+              (override));
+  MOCK_METHOD(std::vector<FrameRateSetting>,
+              GetLTPOConfig,
+              (const std::string& settingName),
+              (override));
   MOCK_METHOD(std::string, GetOOPGPUStatus, (), (override));
-  MOCK_METHOD(bool, IsLTPODynamicApp, (const std::string& bundleName), (override));
-  MOCK_METHOD(int32_t, GetLTPOStrategy, (), (override)); 
+  MOCK_METHOD(bool,
+              IsLTPODynamicApp,
+              (const std::string& bundleName),
+              (override));
+  MOCK_METHOD(int32_t, GetLTPOStrategy, (), (override));
   MOCK_METHOD(std::string, GetUserAgentBaseOSName, (), (override));
   MOCK_METHOD(std::string, GetUserAgentOSVersion, (), (override));
   MOCK_METHOD(std::string, GetCompatibleDeviceType, (), (override));
   MOCK_METHOD(std::string, GetPRPPreloadMode, (), (override));
+  MOCK_METHOD(std::string, GetVulkanStatus, (), (override));
+  MOCK_METHOD(std::string, GetDeviceInfoApiVersion, (), (override));
+  MOCK_METHOD(std::string, GetScrollVelocityScale, (), (override));
+  MOCK_METHOD(std::string, GetScrollFriction, (), (override));
+  MOCK_METHOD(std::string, GetBundleName, (), (override));
 };
 
 class MockWindowAdapter : public WindowAdapter {
-public:
-  MOCK_METHOD(NWebNativeWindow, CreateNativeWindowFromSurface, (void* pSurface), (override));
+ public:
+  MOCK_METHOD(NWebNativeWindow,
+              CreateNativeWindowFromSurface,
+              (void* pSurface),
+              (override));
   MOCK_METHOD(void, DestroyNativeWindow, (NWebNativeWindow window), ());
-  MOCK_METHOD(int32_t, NativeWindowSetBufferGeometry, (NWebNativeWindow window, int32_t width, int32_t height), (override));
-  MOCK_METHOD(void, NativeWindowSurfaceCleanCache, (NWebNativeWindow window), (override));
-  MOCK_METHOD(void, NativeWindowSurfaceCleanCacheWithPara, (NWebNativeWindow window, bool cleanAll), (override));
+  MOCK_METHOD(int32_t,
+              NativeWindowSetBufferGeometry,
+              (NWebNativeWindow window, int32_t width, int32_t height),
+              (override));
+  MOCK_METHOD(void,
+              NativeWindowSurfaceCleanCache,
+              (NWebNativeWindow window),
+              (override));
+  MOCK_METHOD(void,
+              NativeWindowSurfaceCleanCacheWithPara,
+              (NWebNativeWindow window, bool cleanAll),
+              (override));
+  MOCK_METHOD(void,
+              SetTransformHint,
+              (uint32_t rotation, NWebNativeWindow window),
+              (override));
+  MOCK_METHOD(void,
+              AddNativeWindowRef,
+              (NWebNativeWindow window),
+              (override));
+  MOCK_METHOD(void,
+              NativeWindowUnRef,
+              (NWebNativeWindow window),
+              (override));
 };
 
 class MockMediaCodecDecoderAdapter : public MediaCodecDecoderAdapter {
-public:
-  MOCK_METHOD(DecoderAdapterCode, CreateVideoDecoderByMime, (const std::string&), (override));
-  MOCK_METHOD(DecoderAdapterCode, CreateVideoDecoderByName, (const std::string&), (override));
-  MOCK_METHOD(DecoderAdapterCode, ConfigureDecoder, (std::shared_ptr<DecoderFormatAdapter>), (override));
-  MOCK_METHOD(DecoderAdapterCode, SetParameterDecoder, (std::shared_ptr<DecoderFormatAdapter>), (override));
+ public:
+  MOCK_METHOD(DecoderAdapterCode,
+              CreateVideoDecoderByMime,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              CreateVideoDecoderByName,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              ConfigureDecoder,
+              (std::shared_ptr<DecoderFormatAdapter>),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetParameterDecoder,
+              (std::shared_ptr<DecoderFormatAdapter>),
+              (override));
   MOCK_METHOD(DecoderAdapterCode, SetOutputSurface, (void* window), (override));
   MOCK_METHOD(DecoderAdapterCode, PrepareDecoder, (), (override));
   MOCK_METHOD(DecoderAdapterCode, StartDecoder, (), (override));
@@ -123,64 +180,188 @@ public:
   MOCK_METHOD(DecoderAdapterCode, FlushDecoder, (), (override));
   MOCK_METHOD(DecoderAdapterCode, ResetDecoder, (), (override));
   MOCK_METHOD(DecoderAdapterCode, ReleaseDecoder, (), (override));
-  MOCK_METHOD(DecoderAdapterCode, QueueInputBufferDec, (uint32_t, int64_t, int32_t, int32_t, BufferFlag), (override));
-  MOCK_METHOD(DecoderAdapterCode, GetOutputFormatDec, (std::shared_ptr<DecoderFormatAdapter> format), (override));
-  MOCK_METHOD(DecoderAdapterCode, ReleaseOutputBufferDec, (uint32_t, bool), (override));
-  MOCK_METHOD(DecoderAdapterCode, SetCallbackDec, (std::shared_ptr<DecoderCallbackAdapter>), (override));
-  MOCK_METHOD(DecoderAdapterCode, SetDecryptionConfig, (void*, bool), (override));
-  MOCK_METHOD(DecoderAdapterCode, SetAVCencInfo, (uint32_t, const std::shared_ptr<AudioCencInfoAdapter>), (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              QueueInputBufferDec,
+              (uint32_t, int64_t, int32_t, int32_t, BufferFlag),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              GetOutputFormatDec,
+              (std::shared_ptr<DecoderFormatAdapter> format),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              ReleaseOutputBufferDec,
+              (uint32_t, bool),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetCallbackDec,
+              (std::shared_ptr<DecoderCallbackAdapter>),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetDecryptionConfig,
+              (void*, bool),
+              (override));
+  MOCK_METHOD(DecoderAdapterCode,
+              SetAVCencInfo,
+              (uint32_t, const std::shared_ptr<AudioCencInfoAdapter>),
+              (override));
 };
 
 class MockOhosAdapterHelper : public OhosAdapterHelper {
-public:
-  MOCK_METHOD(std::unique_ptr<AafwkAppMgrClientAdapter>, CreateAafwkAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<PowerMgrClientAdapter>, CreatePowerMgrClientAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<DisplayManagerAdapter>, CreateDisplayMgrAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<BatteryMgrClientAdapter>, CreateBatteryClientAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<NetConnectAdapter>, CreateNetConnectAdapter, (), (override));
-  MOCK_METHOD(OhosWebDataBaseAdapter&, GetOhosWebDataBaseAdapterInstance, (), (override));
+ public:
+  MOCK_METHOD(std::unique_ptr<AafwkAppMgrClientAdapter>,
+              CreateAafwkAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<PowerMgrClientAdapter>,
+              CreatePowerMgrClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DisplayManagerAdapter>,
+              CreateDisplayMgrAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<BatteryMgrClientAdapter>,
+              CreateBatteryClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NetConnectAdapter>,
+              CreateNetConnectAdapter,
+              (),
+              (override));
+  MOCK_METHOD(OhosWebDataBaseAdapter&,
+              GetOhosWebDataBaseAdapterInstance,
+              (),
+              (override));
   MOCK_METHOD(PasteBoardClientAdapter&, GetPasteBoard, (), (override));
-  MOCK_METHOD(std::unique_ptr<AudioRendererAdapter>, CreateAudioRendererAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<AudioCapturerAdapter>, CreateAudioCapturerAdapter, (), (override));
-  MOCK_METHOD(AudioSystemManagerAdapter&, GetAudioSystemManager, (), (override));
-  MOCK_METHOD(OhosWebPermissionDataBaseAdapter&, GetWebPermissionDataBaseInstance, (), (override));
+  MOCK_METHOD(std::unique_ptr<AudioRendererAdapter>,
+              CreateAudioRendererAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<AudioCapturerAdapter>,
+              CreateAudioCapturerAdapter,
+              (),
+              (override));
+  MOCK_METHOD(AudioSystemManagerAdapter&,
+              GetAudioSystemManager,
+              (),
+              (override));
+  MOCK_METHOD(OhosWebPermissionDataBaseAdapter&,
+              GetWebPermissionDataBaseInstance,
+              (),
+              (override));
   MOCK_METHOD(std::unique_ptr<MMIAdapter>, CreateMMIAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<SocPerfClientAdapter>, CreateSocPerfClientAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<OhosResourceAdapter>, GetResourceAdapter, (const std::string&), (override));
-  MOCK_METHOD(SystemPropertiesAdapter&, GetSystemPropertiesInstance, (), (override));
+  MOCK_METHOD(std::unique_ptr<SocPerfClientAdapter>,
+              CreateSocPerfClientAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<OhosResourceAdapter>,
+              GetResourceAdapter,
+              (const std::string&),
+              (override));
+  MOCK_METHOD(SystemPropertiesAdapter&,
+              GetSystemPropertiesInstance,
+              (),
+              (override));
   MOCK_METHOD(VSyncAdapter&, GetVSyncAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<OhosInitWebAdapter>, GetInitWebAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<OhosInitWebAdapter>,
+              GetInitWebAdapter,
+              (),
+              (override));
   MOCK_METHOD(KeystoreAdapter&, GetKeystoreAdapterInstance, (), (override));
-  MOCK_METHOD(EnterpriseDeviceManagementAdapter&, GetEnterpriseDeviceManagementInstance, (), (override));
+  MOCK_METHOD(EnterpriseDeviceManagementAdapter&,
+              GetEnterpriseDeviceManagementInstance,
+              (),
+              (override));
   MOCK_METHOD(DatashareAdapter&, GetDatashareInstance, (), (override));
   MOCK_METHOD(std::unique_ptr<IMFAdapter>, CreateIMFAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>, GetRootCertDataAdapter, (), (override));
-  MOCK_METHOD(AccessTokenAdapter&, GetAccessTokenAdapterInstance, (), (override));
-  MOCK_METHOD(std::unique_ptr<EventHandlerAdapter>, GetEventHandlerAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<CertManagerAdapter>,
+              GetRootCertDataAdapter,
+              (),
+              (override));
+  MOCK_METHOD(AccessTokenAdapter&,
+              GetAccessTokenAdapterInstance,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<EventHandlerAdapter>,
+              GetEventHandlerAdapter,
+              (),
+              (override));
   MOCK_METHOD(PrintManagerAdapter&, GetPrintManagerInstance, (), (override));
-  MOCK_METHOD(std::unique_ptr<IConsumerSurfaceAdapter>, CreateConsumerSurfaceAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<PlayerAdapter>, CreatePlayerAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<IConsumerSurfaceAdapter>,
+              CreateConsumerSurfaceAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<PlayerAdapter>,
+              CreatePlayerAdapter,
+              (),
+              (override));
   MOCK_METHOD(WindowAdapter&, GetWindowAdapterInstance, (), (override));
   MOCK_METHOD(HiSysEventAdapter&, GetHiSysEventAdapterInstance, (), (override));
   MOCK_METHOD(HiTraceAdapter&, GetHiTraceAdapterInstance, (), (override));
   MOCK_METHOD(NetProxyAdapter&, GetNetProxyInstance, (), (override));
   MOCK_METHOD(CameraManagerAdapter&, GetCameraManagerAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<ScreenCaptureAdapter>, CreateScreenCaptureAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<DateTimeFormatAdapter>, CreateDateTimeFormatAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<MediaCodecDecoderAdapter>, CreateMediaCodecDecoderAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<NativeImageAdapter>, CreateNativeImageAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<MediaCodecAdapter>, CreateMediaCodecEncoderAdapter, (), (override));
+  MOCK_METHOD(std::unique_ptr<ScreenCaptureAdapter>,
+              CreateScreenCaptureAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DateTimeFormatAdapter>,
+              CreateDateTimeFormatAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaCodecDecoderAdapter>,
+              CreateMediaCodecDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<NativeImageAdapter>,
+              CreateNativeImageAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaCodecAdapter>,
+              CreateMediaCodecEncoderAdapter,
+              (),
+              (override));
   MOCK_METHOD(MediaCodecListAdapter&, GetMediaCodecListAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<FlowbufferAdapter>, CreateFlowbufferAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>, CreateMediaAVSessionAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>, CreateOhosImageDecoderAdapter, (), (override));
-  MOCK_METHOD(std::unique_ptr<SensorAdapter>, CreateSensorAdapter, (), (override));
-  MOCK_METHOD(void, SetArkWebCoreHapPathOverride, (const std::string&), (override));
+  MOCK_METHOD(std::unique_ptr<FlowbufferAdapter>,
+              CreateFlowbufferAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<MediaAVSessionAdapter>,
+              CreateMediaAVSessionAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<OhosImageDecoderAdapter>,
+              CreateOhosImageDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<SensorAdapter>,
+              CreateSensorAdapter,
+              (),
+              (override));
+  MOCK_METHOD(void,
+              SetArkWebCoreHapPathOverride,
+              (const std::string&),
+              (override));
   MOCK_METHOD(OhosNativeBufferAdapter&,
               GetOhosNativeBufferAdapter,
               (),
               (override));
-
+  MOCK_METHOD(std::unique_ptr<MigrationManagerAdapter>,
+              CreateMigrationMgrAdapter,
+              (),
+              (override));
+  MOCK_METHOD(OhosDrawingTextFontAdapter&,
+              GetOhosDrawingTextFontAdapter,
+              (),
+              (override));
+  MOCK_METHOD(OhosDrawingTextTypographyAdapter&,
+              GetOhosDrawingTextTypographyAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<AudioCodecDecoderAdapter>,
+              CreateAudioCodecDecoderAdapter,
+              (),
+              (override));
+  MOCK_METHOD(std::unique_ptr<DrmAdapter>, CreateDrmAdapter, (), (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;
@@ -188,7 +369,7 @@ public:
 };
 
 class MockDecoderBridgeSignal : public DecoderBridgeSignal {
-public:
+ public:
   MOCK_METHOD(void, pop, (), ());
   MOCK_METHOD(bool, isOnError, (), ());
   MOCK_METHOD(bool, isDecoderFlushing, (), ());
@@ -199,25 +380,63 @@ public:
   MOCK_METHOD(int64_t, front_outputBufferInfo_presentationTimeUs, (), ());
   MOCK_METHOD(uint32_t, front_outputBufferIndex, (), ());
   MOCK_METHOD(BufferFlag, front_outputBufferFlag, (), ());
-  MOCK_METHOD(void, swap_inputQueue_, (std::queue<VideoBridgeDecoderInputBuffer>&), ());
-  MOCK_METHOD(void, swap_outputQueue_, (std::queue<VideoBridgeDecoderOutputBuffer>&), ());
+  MOCK_METHOD(void,
+              swap_inputQueue_,
+              (std::queue<VideoBridgeDecoderInputBuffer>&),
+              ());
+  MOCK_METHOD(void,
+              swap_outputQueue_,
+              (std::queue<VideoBridgeDecoderOutputBuffer>&),
+              ());
   MOCK_METHOD(bool, isDecoderFlushing_, (), ());
 };
 
 class MockSequencedTaskRunner : public base::SequencedTaskRunner {
-public:
-  MOCK_METHOD(bool, PostNonNestableTask, (const base::Location&, base::OnceClosure), ());
-  MOCK_METHOD(bool, PostNonNestableDelayedTask, (const base::Location&, base::OnceClosure, base::TimeDelta), (override));
-  MOCK_METHOD(base::DelayedTaskHandle, PostCancelableDelayedTask, (base::subtle::PostDelayedTaskPassKey, const base::Location&, base::OnceClosure, base::TimeDelta), (override));
-  MOCK_METHOD(base::DelayedTaskHandle, PostCancelableDelayedTaskAt, (base::subtle::PostDelayedTaskPassKey, const base::Location&, base::OnceClosure, base::TimeTicks, base::subtle::DelayPolicy), (override));
-  MOCK_METHOD(bool, PostDelayedTaskAt, (base::subtle::PostDelayedTaskPassKey, const base::Location&, base::OnceClosure, base::TimeTicks, base::subtle::DelayPolicy), (override));
+ public:
+  MOCK_METHOD(bool,
+              PostNonNestableTask,
+              (const base::Location&, base::OnceClosure),
+              ());
+  MOCK_METHOD(bool,
+              PostNonNestableDelayedTask,
+              (const base::Location&, base::OnceClosure, base::TimeDelta),
+              (override));
+  MOCK_METHOD(base::DelayedTaskHandle,
+              PostCancelableDelayedTask,
+              (base::subtle::PostDelayedTaskPassKey,
+               const base::Location&,
+               base::OnceClosure,
+               base::TimeDelta),
+              (override));
+  MOCK_METHOD(base::DelayedTaskHandle,
+              PostCancelableDelayedTaskAt,
+              (base::subtle::PostDelayedTaskPassKey,
+               const base::Location&,
+               base::OnceClosure,
+               base::TimeTicks,
+               base::subtle::DelayPolicy),
+              (override));
+  MOCK_METHOD(bool,
+              PostDelayedTaskAt,
+              (base::subtle::PostDelayedTaskPassKey,
+               const base::Location&,
+               base::OnceClosure,
+               base::TimeTicks,
+               base::subtle::DelayPolicy),
+              (override));
   MOCK_METHOD(bool, RunsTasksInCurrentSequence, (), (const, override));
-  MOCK_METHOD(bool, DeleteOrReleaseSoonInternal, (const base::Location&, void (*)(const void*), const void*), (override));
-  MOCK_METHOD(bool, PostDelayedTask, (const base::Location&, base::OnceClosure, base::TimeDelta), (override));
+  MOCK_METHOD(bool,
+              DeleteOrReleaseSoonInternal,
+              (const base::Location&, void (*)(const void*), const void*),
+              (override));
+  MOCK_METHOD(bool,
+              PostDelayedTask,
+              (const base::Location&, base::OnceClosure, base::TimeDelta),
+              (override));
 };
 
 class MockDecoderFormatAdapter : public DecoderFormatAdapter {
-public:
+ public:
   MOCK_METHOD(int32_t, GetWidth, (), (override));
   MOCK_METHOD(int32_t, GetHeight, (), (override));
   MOCK_METHOD(double, GetFrameRate, (), (override));
@@ -239,15 +458,16 @@ class InheritOhosBufferAdapter : public OhosBufferAdapter {
   uint32_t GetBufferSize() override { return 8; }
 };
 class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
-protected:
+ protected:
   void SetUp() override {
     mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
     signal_ = std::make_shared<NiceMock<MockDecoderBridgeSignal>>();
-    ohos_adapter_helper_mock_ = std::make_unique<NiceMock<MockOhosAdapterHelper>>();
+    ohos_adapter_helper_mock_ =
+        std::make_unique<NiceMock<MockOhosAdapterHelper>>();
     window_adapter_mock_ = std::make_unique<NiceMock<MockWindowAdapter>>();
     ON_CALL(*ohos_adapter_helper_mock_, GetWindowAdapterInstance())
         .WillByDefault(ReturnRef(*window_adapter_mock_));
-    
+
     bridge_ = std::make_unique<MediaCodecDecoderBridgeImpl>("video/avc");
     bridge_->videoDecoder_ = std::move(mock_adapter_);
     bridge_->signal_ = signal_;
@@ -258,9 +478,9 @@ protected:
     ON_CALL(system_properties_adapter_mock_, GetDeviceInfoProductModel())
         .WillByDefault(Return("NotAnEmulator"));
     mock_signal_ = std::make_shared<NiceMock<DecoderBridgeSignal>>();
-    callback_c = std::make_shared<CodecBridgeCallback>(mock_signal_); 
+    callback_c = std::make_shared<CodecBridgeCallback>(mock_signal_);
 
-    video_decoder_ = new testing::NiceMock<MockMediaCodecDecoderAdapter>;   
+    video_decoder_ = new testing::NiceMock<MockMediaCodecDecoderAdapter>;
   }
 
   void TearDown() override {
@@ -270,7 +490,7 @@ protected:
     signal_.reset();
     ohos_adapter_helper_mock_.reset();
     callback_.reset();
-    ohos_adapter_helper_mock_.reset();  
+    ohos_adapter_helper_mock_.reset();
     delete video_decoder_;
   }
 
@@ -346,7 +566,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByMime) {
   mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
   bridge_ = std::make_unique<MediaCodecDecoderBridgeImpl>("video/avc");
   std::string codec_name = "video/h264";
-  DecoderAdapterCode result = bridge_->CreateVideoBridgeDecoderByMime(codec_name);
+  DecoderAdapterCode result =
+      bridge_->CreateVideoBridgeDecoderByMime(codec_name);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -390,7 +611,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, CreateVideoBridgeDecoderByName) {
   mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
   bridge_ = std::make_unique<MediaCodecDecoderBridgeImpl>("video/avc");
   std::string codec_name = "video/h264";
-  DecoderAdapterCode result = bridge_->CreateVideoBridgeDecoderByName(codec_name);
+  DecoderAdapterCode result =
+      bridge_->CreateVideoBridgeDecoderByName(codec_name);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -465,14 +687,16 @@ TEST_F(MediaCodecDecoderBridgeImplTest, ConfigureBridgeDecoder1) {
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, Constructor) {
-  auto ohos_adapter_helper_mock = std::make_shared<NiceMock<MockOhosAdapterHelper>>();
+  auto ohos_adapter_helper_mock =
+      std::make_shared<NiceMock<MockOhosAdapterHelper>>();
   mock_adapter_ = std::make_unique<NiceMock<MockMediaCodecDecoderAdapter>>();
   base::RepeatingClosure on_buffers_available_cb = base::DoNothing();
   ASSERT_FALSE(bridge_->CheckHasCreated());
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, SetBridgeParameterDecoder) {
-  auto format_adapter_mock = std::make_shared<NiceMock<MockDecoderFormatAdapter>>();
+  auto format_adapter_mock =
+      std::make_shared<NiceMock<MockDecoderFormatAdapter>>();
   DecoderFormat format;
   format.width = 640;
   format.height = 480;
@@ -485,8 +709,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, SetBridgeParameterDecoder) {
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, SetBridgeParameterDecoder1) {
-  auto format_adapter_mock =
-      std::make_shared<MockDecoderFormatAdapter>();
+  auto format_adapter_mock = std::make_shared<MockDecoderFormatAdapter>();
   DecoderFormat format;
   format.width = 640;
   format.height = 480;
@@ -621,7 +844,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, FlushBridgeDecoderReturns2) {
       .WillOnce(Return(DecoderAdapterCode::DECODER_ERROR));
   EXPECT_CALL(*mock_media_player_, ReleaseDecoder()).Times(1);
   bridge_->videoDecoder_ = std::move(mock_media_player_);
-  
+
   auto result = bridge_->FlushBridgeDecoder();
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
@@ -743,7 +966,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer) {
   const uint8_t* data = reinterpret_cast<const uint8_t*>("testdata");
   size_t data_size = strlen(reinterpret_cast<const char*>(data));
   int64_t presentation_time = 1000000;
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -753,7 +977,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer1) {
   int64_t presentation_time = 1000000;
   bridge_->signal_ = nullptr;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -763,7 +988,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer2) {
   int64_t presentation_time = 1000000;
   bridge_->signal_->isOnError_ = true;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -773,7 +999,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer3) {
   int64_t presentation_time = 1000000;
   bridge_->signal_->isDecoderFlushing_.store(true);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -787,7 +1014,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer4) {
   VideoBridgeDecoderInputBuffer buffer = {10, {addr, 10}};
   bridge_->signal_->inputQueue_.push(buffer);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_RETRY);
 }
 
@@ -801,7 +1029,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer5) {
   bridge_->signal_->inputQueue_.push(buffer);
   bridge_->videoDecoder_ = nullptr;
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);
 }
 
@@ -821,7 +1050,8 @@ TEST_F(MediaCodecDecoderBridgeImplTest, QueueInputBuffer6) {
   EXPECT_CALL(*video_decoder_s, ReleaseDecoder()).Times(1);
   bridge_->videoDecoder_ = std::move(video_decoder_s);
 
-  auto result = bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
+  auto result =
+      bridge_->QueueInputBuffer(data, data_size, presentation_time, nullptr);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 
@@ -977,7 +1207,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest, DequeueOutputBuffer4) {
   VideoBridgeDecoderOutputBuffer buffer = {10, outputBufferFlag,
                                            outputBufferInfo};
   bridge_->signal_->outputQueue_.push(buffer);
-  bridge_->videoDecoder_=nullptr;
+  bridge_->videoDecoder_ = nullptr;
 
   auto result = bridge_->DequeueOutputBuffer(&presentation_time, index, eos);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_ERROR);

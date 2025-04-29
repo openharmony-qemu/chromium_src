@@ -60,7 +60,7 @@ class NWebImpl : public NWeb {
 
   bool Init(std::shared_ptr<NWebCreateInfo> create_info);
   void OnDestroy() override;
-  static void DisableBoost();
+  static void DisableBoost(uint32_t nweb_id);
 
   /* event interface */
   void Resize(uint32_t width, uint32_t height, bool isKeyboard = false) override;

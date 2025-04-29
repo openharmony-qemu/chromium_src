@@ -14,6 +14,7 @@
 #if BUILDFLAG(IS_OHOS)
 #include "base/ohos/dynamic_frame_loss_monitor.h"
 #include "base/ohos/ltpo/include/sliding_observer.h"
+#include "base/ohos/sys_info_utils.h"
 #include "content/browser/gpu/gpu_process_host.h"
 #include "base/report_loss_frame.h"
 #include "ohos_adapter_helper.h"
@@ -42,6 +43,8 @@ constexpr base::TimeDelta kMaxMicrosecondsFromFlingTimestampToFirstProgress =
 const float kMinInertialScrollDelta = 0.1f;
 
 const char* kFlingTraceName = "FlingController::HandlingGestureFling";
+
+const int SOC_PERF_WEB_SLIDE_SCROLL = 10097;
 }  // namespace
 
 namespace content {
@@ -169,9 +172,11 @@ bool FlingController::ObserveAndMaybeConsumeGestureEvent(
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetHiTraceAdapterInstance()
         .StartAsyncTrace("WEB_LIST_FLING", 0);
+    int socPerfId = base::ohos::IsPcDevice() ? SOC_PERF_WEB_SLIDE_SCROLL :
+        OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID;
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .CreateSocPerfClientAdapter()
-        ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+        ->ApplySocPerfConfigByIdEx(socPerfId, true);
 
     LOG(DEBUG) << "start web page fling";
     if (auto* host = GpuProcessHost::Get()) {

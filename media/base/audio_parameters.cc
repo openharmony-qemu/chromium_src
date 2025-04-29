@@ -172,6 +172,11 @@ AudioParameters::~AudioParameters() = default;
 AudioParameters::AudioParameters(const AudioParameters&) = default;
 AudioParameters& AudioParameters::operator=(const AudioParameters&) = default;
 
+bool AudioParameters::operator==(const AudioParameters& others) const {
+  return render_process_id_ == other.render_process_id() &&
+         render_frame_id_ == other.render_frame_id();
+}
+
 void AudioParameters::Reset(Format format,
                             ChannelLayoutConfig channel_layout_config,
                             int sample_rate,

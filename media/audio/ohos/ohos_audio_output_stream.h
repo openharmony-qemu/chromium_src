@@ -80,9 +80,9 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
   AudioOutputChangeCallback(
-    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-    AudioParameters params,
-    bool isCommunication);
+      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+      AudioParameters params,
+      bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 

@@ -275,6 +275,7 @@ class NWebRenderHandler : public CefRenderHandler {
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
+  bool noNeedKeyboardByInput_ = false;
 #endif
 #if defined(OHOS_GET_SCROLL_OFFSET)
   float scroll_offset_x_;

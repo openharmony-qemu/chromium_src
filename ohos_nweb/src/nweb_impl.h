@@ -533,6 +533,7 @@ class NWebImpl : public NWeb {
 
   bool NeedSoftKeyboard() override;
 
+  bool GetIsEditTextType();
   static std::shared_ptr<NWeb> GetNWeb(int32_t nweb_id);
   static std::shared_ptr<NWeb> CreateNWeb(std::shared_ptr<NWebCreateInfo> create_info);
   static void SetWebTag(int32_t nweb_id, const char* web_tag);

@@ -674,6 +674,14 @@ void NWebRenderHandler::OnVirtualKeyboardRequested(
     node_id_ = text_input_info.node_id;
   }
 
+  // When click Web input field.
+  // If input_mode is CEF_TEXT_INPUT_MODE_NONE, 
+  // it means that the web does not require a keyboard.
+  if (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) {
+    noNeedKeyboardByInput_ = true;
+  } else {
+    noNeedKeyboardByInput_ = false;
+  }
   bool is_hide = (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) ||
                  text_input_info.always_hide_ime;
   if (!is_hide) {
@@ -744,7 +752,8 @@ void NWebRenderHandler::HandleKeyboardAttach(
 void NWebRenderHandler::HandleKeyboardDetach() {
   if (isSystemKeyboard_) {
     LOG(INFO) << "WebCustomKeyboard close system keyboard";
-    inputmethod_client_->HideTextInput();
+    inputmethod_client_->HideTextInput(
+        0, NWebInputMethodClient::HideTextinputType::FROM_KERNEL, noNeedKeyboardByInput_);
   } else {
     if (custom_keyboard_handler_) {
       LOG(INFO) << "WebCustomKeyboard close custom keyboard";

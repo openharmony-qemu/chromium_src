@@ -257,6 +257,10 @@ class MEDIA_SHMEM_EXPORT AudioParameters {
 
   ~AudioParameters();
 
+#if defined(OHOS_MEDIA_POLICY)
+  bool operator==(const AudioParameters& other) const;
+#endif
+
   // Re-initializes all members except for |hardware_capabilities_|.
   void Reset(Format format,
              ChannelLayoutConfig channel_layout_config,

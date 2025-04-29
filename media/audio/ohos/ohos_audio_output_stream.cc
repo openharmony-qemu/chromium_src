@@ -1,4 +1,3 @@
-// ohos_audio_output_stream.cc
 // Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -15,7 +14,6 @@
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
-#include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
 
@@ -81,7 +79,7 @@ void AudioRendererCallback::OnResume() {
     return;
   }
   if (audioResumeInterval_ > 0 && std::time(nullptr) - intervalSinceLastSuspend_ <=
-          static_cast<double>(audioResumeInterval_) && OHOSAudioFocusController::IsSuspended(parameters_)) {
+      static_cast<double>(audioResumeInterval_) && OHOSAudioFocusController::IsSuspended(parameters_)) {
     if (!main_task_runner_) {
       return;
     }
@@ -101,10 +99,12 @@ void AudioRendererCallback::SetSuspendFlag(bool flag) {
 }
 
 AudioOutputChangeCallback::AudioOutputChangeCallback(
-  const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
-  AudioParameters params,
-  bool isCommunication)
-    : main_task_runner_(main_task_runner), params_(params), isCommunication_(isCommunication) {}
+    const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
+    AudioParameters params,
+    bool isCommunication)
+    : main_task_runner_(main_task_runner),
+      params_(params),
+      isCommunication_(isCommunication) {}
 
 AudioOutputChangeCallback::~AudioOutputChangeCallback() {}
 
@@ -116,11 +116,14 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
       !isCommunication_) {
     LOG(INFO)
         << "AudioOutputChangeCallback::OnOutputDeviceChange need stop session";
-    auto OutputDeviceChangeFunc =
-      [] (AudioParameters params) {
+    auto OutputDeviceChangeFunc = [] (AudioParameters params) {
       content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID(params.render_process_id(),
-                                        params.render_frame_id());
+          content::RenderFrameHost::FromID(params.render_process_id(),
+                                           params.render_frame_id());
+      if (!renderFrameHost) {
+        LOG(ERROR) << "AudioOutputStream get renderhost failed.";
+        return;
+      }
       auto webContent =
           content::WebContents::FromRenderFrameHost(renderFrameHost);
       if (!webContent) {
@@ -128,12 +131,13 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       content::MediaSessionImpl* mediaSession =
-        content::MediaSessionImpl::Get(webContent);
+          content::MediaSessionImpl::Get(webContent);
       if (!mediaSession) {
         LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
         return;
       }
-      auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+      auto weakMediaSession =
+          mediaSession->weakMediaSessionFactory_.GetWeakPtr();
       if (!weakMediaSession) {
         LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
                       "weakMediaSession get failed";
@@ -155,8 +159,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       main_task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(OutputDeviceChangeFunc, params_));
+        FROM_HERE, base::BindOnce(OutputDeviceChangeFunc, params_));
     } else {
       OutputDeviceChangeFunc(params_);
     }
@@ -287,8 +290,8 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   }
 
   OHOSAudioOutputStream::audioParameterSet_.emplace_back(parameters_);
+  callback_ = callback;
   if (StartRender()) {
-    callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
         buffer_size_bytes_, 0, buffer_size_bytes_) != EOK) {
       LOG(ERROR) << "audio data memset_s failed.";
@@ -301,6 +304,8 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       Flush();
       PumpSamples();
     }
+  } else {
+    callback_ = nullptr;
   }
 }
 
@@ -320,7 +325,7 @@ void OHOSAudioOutputStream::Stop() {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
   }
-  if (!audio_renderer_->Pause()) {
+  if (!audio_renderer_->stop()) {
     ReportError();
   }
   Flush();
@@ -373,7 +378,7 @@ base::TimeTicks OHOSAudioOutputStream::GetCurrentStreamTime() {
 
 bool OHOSAudioOutputStream::InitRender(
     const std::shared_ptr<AudioRendererOptionsAdapter> rendererOptions) {
-    int32_t ret = audio_renderer_->Create(rendererOptions);
+  int32_t ret = audio_renderer_->Create(rendererOptions);
   if (ret != 0) {
     if (!audio_renderer_->Release()) {
       LOG(ERROR) << "ohos audio render release failed.";
@@ -571,8 +576,8 @@ void OHOSAudioOutputStream::PumpSamples() {
 
 void OHOSAudioOutputStream::SetUpAudioSilentState(int32_t bytesSingle)
 {
-  if (!audio_renderer_) {
-    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get delegate or audioRender failed!";
+  if (!parameters_.IsValid() || !audio_renderer_) {
+    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get parameters or audioRender failed!";
     return;
   }
   if (isSilentMode_) {

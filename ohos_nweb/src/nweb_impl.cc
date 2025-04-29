@@ -1066,7 +1066,7 @@ void NWebImpl::DisableBoost(uint32_t nweb_id) {
   std::shared_ptr<NWebImpl> nweb_impl = GetNWebSharedPtr(nweb_id);
   if (nweb_impl) {
     nweb_impl->ResizeTime_--;
-    if(ResizeTime_ <= 0) {
+    if (nweb_impl->ResizeTime_ <= 0) {
       OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSocPerfClientAdapter()
         ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, false);
         nweb_impl->ResizeTime_ = 0;

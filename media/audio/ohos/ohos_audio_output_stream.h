@@ -61,7 +61,7 @@ class AudioRendererOptions : public AudioRendererOptionsAdapter {
 
 class AudioRendererCallback : public AudioRendererCallbackAdapter {
  public:
-  AudioRendererCallback(content::MediaSessionImpl* media_session,
+  AudioRendererCallback(const AudioParameters& params,
                         const scoped_refptr<base::SingleThreadTaskRunner>& task_runner);
   ~AudioRendererCallback();
   void OnSuspend() override;
@@ -70,18 +70,19 @@ class AudioRendererCallback : public AudioRendererCallbackAdapter {
   void SetSuspendFlag(bool flag);
 
  private:
-  content::MediaSessionImpl* media_session_;
+  AudioParameters parameters_;
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_ = nullptr;
   time_t intervalSinceLastSuspend_ = 0.0;
   bool suspendFlag_ = false;
+  int audioResumeInterval_ = 0;
 };
 
 class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
  public:
   AudioOutputChangeCallback(
-      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-      AudioParameters params,
-      bool isCommunication);
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    AudioParameters params,
+    bool isCommunication);
   ~AudioOutputChangeCallback();
   void OnOutputDeviceChange(int32_t reason) override;
 
@@ -94,6 +95,7 @@ class AudioOutputChangeCallback : public AudioOutputChangeCallbackAdapter {
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
   static const int kMaxNumOfBuffersInQueue = 2;
+  static std::vector<AudioParameters> audioParameterSet_;
 
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
@@ -148,7 +150,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool StartRender();
 
-  void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+  void Prepare(const AudioParameters& parameters);
 
   raw_ptr<OHOSAudioManager> manager_;
 
@@ -180,10 +182,6 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   SampleFormat sample_format_;
 
   std::unique_ptr<AudioRendererAdapter> audio_renderer_;
-
-  content::WebContents* webContent_ = nullptr;
-
-  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
 
   std::shared_ptr<AudioRendererCallback> rendererCallback_ = nullptr;
 

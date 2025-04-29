@@ -1,3 +1,4 @@
+// ohos_audio_output_stream.cc
 // Copyright (c) 2022 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -14,6 +15,7 @@
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
+#include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
 
@@ -52,19 +54,21 @@ AudioAdapterConcurrencyMode AudioRendererOptions::GetConcurrencyMode() {
 }
 
 AudioRendererCallback::AudioRendererCallback(
-    content::MediaSessionImpl* media_session,
+    const AudioParameters& params,
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner)
-    : media_session_(media_session), main_task_runner_(task_runner) {}
+    : parameters_(params), main_task_runner_(task_runner) {
+  audioResumeInterval_ = OHOSAudioFocusController::GetAudioResumeInterval(parameters_);
+}
 
 AudioRendererCallback::~AudioRendererCallback() {}
 
 void AudioRendererCallback::OnSuspend() {
   LOG(INFO) << "AudioRendererCallback::OnSuspend";
-  if (!media_session_) {
-    LOG(ERROR) << "AudioRendererCallback::OnSuspend media_session_ is null.";
+  if (!parameters_.IsValid()) {
+    LOG(ERROR) << "AudioRendererCallback::OnSuspend parameters_ is not valid.";
     return;
   }
-  if (media_session_->audioResumeInterval_ > 0) {
+  if (audioResumeInterval_ > 0) {
     intervalSinceLastSuspend_ = std::time(nullptr);
   }
 }
@@ -72,23 +76,19 @@ void AudioRendererCallback::OnSuspend() {
 void AudioRendererCallback::OnResume() {
   LOG(INFO) << "AudioRendererCallback::OnResume audioResumeInterval is: "
              << std::time(nullptr) - intervalSinceLastSuspend_;
-  if (!media_session_) {
-    LOG(ERROR) << "AudioRendererCallback::OnResume media_session_ is null.";
+  if (!parameters_.IsValid()) {
+    LOG(ERROR) << "AudioRendererCallback::OnResume parameters_ is not valid.";
     return;
   }
-  if (media_session_->audioResumeInterval_ > 0 &&
-      std::time(nullptr) - intervalSinceLastSuspend_ <=
-          static_cast<double>(media_session_->audioResumeInterval_) &&
-      media_session_->IsSuspended()) {
+  if (audioResumeInterval_ > 0 && std::time(nullptr) - intervalSinceLastSuspend_ <=
+          static_cast<double>(audioResumeInterval_) && OHOSAudioFocusController::IsSuspended(parameters_)) {
     if (!main_task_runner_) {
       return;
     }
-    LOG(INFO) << "AudioRendererCallback::OnResume MediaSession Resume.";
+    LOG(INFO) << "AudioRendererCallback::OnResume audio Resume.";
     main_task_runner_->PostTask(
         FROM_HERE,
-        base::BindOnce(&content::MediaSessionImpl::Resume,
-                       media_session_->weakMediaSessionFactory_.GetWeakPtr(),
-                       content::MediaSession::SuspendType::kSystem));
+        base::BindOnce(OHOSAudioFocusController::OnResume, parameters_));
   }
 }
 
@@ -101,12 +101,10 @@ void AudioRendererCallback::SetSuspendFlag(bool flag) {
 }
 
 AudioOutputChangeCallback::AudioOutputChangeCallback(
-    const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
-    AudioParameters params,
-    bool isCommunication)
-    : main_task_runner_(main_task_runner),
-      params_(params),
-      isCommunication_(isCommunication) {}
+  const scoped_refptr<base::SingleThreadTaskRunner>& main_task_runner,
+  AudioParameters params,
+  bool isCommunication)
+    : main_task_runner_(main_task_runner), params_(params), isCommunication_(isCommunication) {}
 
 AudioOutputChangeCallback::~AudioOutputChangeCallback() {}
 
@@ -118,14 +116,11 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
       !isCommunication_) {
     LOG(INFO)
         << "AudioOutputChangeCallback::OnOutputDeviceChange need stop session";
-    auto OutputDeviceChangeFunc = [](AudioParameters params) {
+    auto OutputDeviceChangeFunc =
+      [] (AudioParameters params) {
       content::RenderFrameHost* renderFrameHost =
-          content::RenderFrameHost::FromID(params.render_process_id(),
-                                           params.render_frame_id());
-      if (!renderFrameHost) {
-        LOG(ERROR) << "AudioOutputStream get renderhost failed.";
-        return;
-      }
+      content::RenderFrameHost::FromID(params.render_process_id(),
+                                        params.render_frame_id());
       auto webContent =
           content::WebContents::FromRenderFrameHost(renderFrameHost);
       if (!webContent) {
@@ -133,13 +128,12 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       content::MediaSessionImpl* mediaSession =
-          content::MediaSessionImpl::Get(webContent);
+        content::MediaSessionImpl::Get(webContent);
       if (!mediaSession) {
         LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
         return;
       }
-      auto weakMediaSession =
-          mediaSession->weakMediaSessionFactory_.GetWeakPtr();
+      auto weakMediaSession = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
       if (!weakMediaSession) {
         LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream "
                       "weakMediaSession get failed";
@@ -161,14 +155,15 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       main_task_runner_->PostTask(
-          FROM_HERE, base::BindOnce(OutputDeviceChangeFunc, params_));
+        FROM_HERE,
+        base::BindOnce(OutputDeviceChangeFunc, params_));
     } else {
       OutputDeviceChangeFunc(params_);
     }
   }
 }
 
-static std::set<content::WebContents*> WEBCONTENT_SET = {};
+std::vector<AudioParameters> OHOSAudioOutputStream::audioParameterSet_ = {};
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
                                              const AudioParameters& parameters,
@@ -177,23 +172,6 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
       parameters_(parameters),
       audio_bus_(AudioBus::Create(parameters)),
       isCommunication_(isCommunication) {
-  content::RenderFrameHost* renderFrameHost = content::RenderFrameHost::FromID(
-      parameters_.render_process_id(), parameters_.render_frame_id());
-  webContent_ = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  if (!webContent_) {
-    LOG(ERROR) << "AudioOutputStream get webContent failed.";
-  } else {
-    content::MediaSessionImpl* mediaSession =
-        content::MediaSessionImpl::Get(webContent_);
-    if (!mediaSession) {
-      LOG(ERROR) << "AudioOutputStream get mediaSession failed.";
-    } else {
-      weakMediaSession_ = mediaSession->weakMediaSessionFactory_.GetWeakPtr();
-      if (!weakMediaSession_) {
-        LOG(ERROR) << "OHOSAudioOutputStream::OHOSAudioOutputStream weakMediaSession get failed";
-      }
-    }
-  }
   audio_renderer_ =
       OhosAdapterHelper::GetInstance().CreateAudioRendererAdapter();
   sample_format_ = kSampleFormatS16;
@@ -233,11 +211,10 @@ bool OHOSAudioOutputStream::Open() {
           : AudioAdapterStreamUsage::STREAM_USAGE_MEDIA;
   rendererOptions->renderer_flags_ = 0;
   rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::INVALID;
-  if (weakMediaSession_) {
-    media::MediaContentType contentType = weakMediaSession_.get()->getMediaContentType();
-    if (contentType == media::MediaContentType::Transient) {
-      rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::DUCK_OTHERS;
-    }
+
+  media::MediaContentType contentType = OHOSAudioFocusController::GetMediaContentType(parameters_);
+  if (contentType == media::MediaContentType::Transient) {
+    rendererOptions->concurrency_mode_ = AudioAdapterConcurrencyMode::DUCK_OTHERS;
   }
 
   if (!InitRender(rendererOptions)) {
@@ -282,33 +259,36 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
                   "callback failed.";
     return;
   }
-  Prepare(weakMediaSession_);
+  Prepare(parameters_);
 
-  auto it = WEBCONTENT_SET.begin();
-  while (it != WEBCONTENT_SET.end()) {
-    auto otherMediaSession = content::MediaSessionImpl::FromWebContents(*it);
+  auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
+  while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
+    content::RenderFrameHost* renderFrameHost =
+      content::RenderFrameHost::FromID((*it).render_process_id(),
+                                       (*it).render_frame_id());
+    content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);                                   
+    auto otherMediaSession = content::MediaSessionImpl::FromWebContents(webContents);
     if (!otherMediaSession) {
-      it = WEBCONTENT_SET.erase(it);
+      it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
-    }
-    if (otherMediaSession == weakMediaSession_.get()) {
-      LOG(INFO) << "skip mediaSession control because of same mediaSession.";
+    }   
+    if ((*it).Equals(parameters_)) {
+      LOG(INFO) << "skip mediaSession control because of same audioparameters.";
       it++;
       continue;
     }
-    if (GetInterruptMode() && otherMediaSession->IsActive() && !IsPreloadOrMutedMediaMode()) {
+    if (GetInterruptMode() && !IsPreloadOrMutedMediaMode()) {
       LOG(INFO) << "MediaSession is suspending the audio in other web.";
       main_task_runner_->PostTask(
           FROM_HERE,
-          base::BindOnce(&content::MediaSessionImpl::Suspend, otherMediaSession->weakMediaSessionFactory_.GetWeakPtr(),
-                         content::MediaSession::SuspendType::kSystem));
+          base::BindOnce(OHOSAudioFocusController::OnSuspend, (*it)));
     }
     it++;
   }
 
-  WEBCONTENT_SET.insert(webContent_);
-  callback_ = callback;
+  OHOSAudioOutputStream::audioParameterSet_.emplace_back(parameters_);
   if (StartRender()) {
+    callback_ = callback;
     if (memset_s(audio_data_[active_buffer_index_],
         buffer_size_bytes_, 0, buffer_size_bytes_) != EOK) {
       LOG(ERROR) << "audio data memset_s failed.";
@@ -321,8 +301,6 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       Flush();
       PumpSamples();
     }
-  } else {
-    callback_ = nullptr;
   }
 }
 
@@ -333,12 +311,16 @@ void OHOSAudioOutputStream::Stop() {
     reference_time_ = base::TimeTicks();
   }
   timer_.Stop();
-  WEBCONTENT_SET.erase(webContent_);
+  auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
+                      OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);
+  if (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
+    OHOSAudioOutputStream::audioParameterSet_.erase(it);
+  }
   if (rendererCallback_ && rendererCallback_->GetSuspendFlag()) {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
   }
-  if (!audio_renderer_->Stop()) {
+  if (!audio_renderer_->Pause()) {
     ReportError();
   }
   Flush();
@@ -391,19 +373,18 @@ base::TimeTicks OHOSAudioOutputStream::GetCurrentStreamTime() {
 
 bool OHOSAudioOutputStream::InitRender(
     const std::shared_ptr<AudioRendererOptionsAdapter> rendererOptions) {
-  int32_t ret = audio_renderer_->Create(rendererOptions);
+    int32_t ret = audio_renderer_->Create(rendererOptions);
   if (ret != 0) {
     if (!audio_renderer_->Release()) {
       LOG(ERROR) << "ohos audio render release failed.";
     }
     return false;
   }
-  if (!weakMediaSession_) {
-    LOG(ERROR) << "OHOSAudioOutputStream::InitRender Get mediaSession failed.";
+  if (!parameters_.IsValid()) {
+    LOG(ERROR) << "OHOSAudioOutputStream::InitRender parameters_ is not valid.";
     return false;
   }
-  rendererCallback_ = std::make_shared<AudioRendererCallback>(
-      weakMediaSession_.get(), main_task_runner_);
+  rendererCallback_ = std::make_shared<AudioRendererCallback>(parameters_, main_task_runner_);
   if (!rendererCallback_) {
     LOG(ERROR)
         << "OHOSAudioOutputStream::InitRender Get rendererCallback failed.";
@@ -449,19 +430,14 @@ bool OHOSAudioOutputStream::StartRender() {
   return true;
 }
 
-void OHOSAudioOutputStream::Prepare(
-    base::WeakPtr<content::MediaSessionImpl> weakMediaSession) {
+void OHOSAudioOutputStream::Prepare(const AudioParameters& parameters) {
   LOG(INFO) << "OHOSAudioOutputStream::Prepare";
-  if (!weakMediaSession) {
-    LOG(ERROR) << "OHOSAudioOutputStream::Prepare weakMediaSession is null";
+  if (!parameters_.IsValid()) {
+    LOG(ERROR) << "OHOSAudioOutputStream::Prepare parameters_ is not valid.";
     return;
   }
-  content::MediaSessionImpl* mediaSession = weakMediaSession.get();
-  if (!mediaSession) {
-    LOG(ERROR) << "OHOSAudioOutputStream::Prepare mediaSession is null";
-    return;
-  }
-  SetInterruptMode(mediaSession->audioExclusive_);
+  bool audioExclusive = OHOSAudioFocusController::GetAudioExclusive(parameters);
+  SetInterruptMode(audioExclusive);
 }
 
 void OHOSAudioOutputStream::ReportError() {
@@ -521,7 +497,7 @@ void OHOSAudioOutputStream::PumpSamples() {
       if (!audio_renderer_->IsRendererStateRunning()) {
         rendererCallback_->SetSuspendFlag(true);
         writeFailed = true;
-        if (!weakMediaSession_) {
+        if (!parameters_.IsValid()) {
           LOG(ERROR) << "Try to suspend audio but get mediaSession failed";
           ReportError();
           std::string errorType = "audio play error";
@@ -530,7 +506,7 @@ void OHOSAudioOutputStream::PumpSamples() {
           ReportAudioPlayErrorInfo(errorType, errorCode, errorDesc);
           return;
         }
-        if (weakMediaSession_.get()->IsActive()) {
+        if (OHOSAudioFocusController::IsActive(parameters_)) {
           if (isSuspended_) {
             LOG(INFO) << "AudioStream should be restarted";
             if (!audio_renderer_->Start()) {
@@ -543,8 +519,7 @@ void OHOSAudioOutputStream::PumpSamples() {
           LOG(INFO) << "MediaSession is suspending the audio";
           main_task_runner_->PostTask(
               FROM_HERE,
-              base::BindOnce(&content::MediaSessionImpl::Suspend, weakMediaSession_,
-                             content::MediaSession::SuspendType::kSystem));
+              base::BindOnce(OHOSAudioFocusController::OnSuspend, parameters_));
         } else {
           LOG(DEBUG) << "MediaSession is suspended";
           isSuspended_ = true;
@@ -573,15 +548,21 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   stream_position_samples_ += frames_filled;
-  if (writeFailed && weakMediaSession_ && (weakMediaSession_.get()->HasOnlyOneShotPlayersPublic() ||
-      weakMediaSession_.get()->GetSessionState() == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
+  if (writeFailed && (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_) ||
+      OHOSAudioFocusController::GetSessionState(parameters_) == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
     LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK
-    if (!webContent_) {
-      LOG(ERROR) << "AudioOutputStream get webContent failed.";
-      return;
+    if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+      if (!main_task_runner_) {
+        LOG(INFO) << "main_task_runner is nullptr";
+        return;
+      }
+      main_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(OHOSAudioFocusController::OneShotMediaPlayerStopped, parameters_));
+    } else {
+      OHOSAudioFocusController::OneShotMediaPlayerStopped(parameters_);
     }
-    webContent_->OneShotMediaPlayerStopped();
 #endif
     return;
   }
@@ -590,13 +571,13 @@ void OHOSAudioOutputStream::PumpSamples() {
 
 void OHOSAudioOutputStream::SetUpAudioSilentState(int32_t bytesSingle)
 {
-  if (!weakMediaSession_ || !audio_renderer_) {
-    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get mediaSession or audioRender failed!";
+  if (!audio_renderer_) {
+    LOG(ERROR) << "OHOSAudioOutputStream: Try to set audio silent but get delegate or audioRender failed!";
     return;
   }
   if (isSilentMode_) {
-    bool is_playing = weakMediaSession_.get()->GetPlayingState() || silentFrameNum_ >= 1;
-    bool is_muted = weakMediaSession_.get()->GetMuteState();
+    bool is_playing = OHOSAudioFocusController::GetPlayingState(parameters_) || silentFrameNum_ >= 1;
+    bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
     if (is_playing && !is_muted) {
       audio_renderer_->SetAudioSilentMode(false);
       LOG(INFO) << "OHOSAudioOutputStream SetAudioSilentMode false!";
@@ -617,12 +598,12 @@ bool OHOSAudioOutputStream::IsPreloadOrMutedMediaMode()
     return false;
   }
 
-  if (!weakMediaSession_) {
+  if (!parameters_.IsValid()) {
     return false;
   }
 
-  content::MediaSessionImpl::NWebMediaSessionState sessionState = weakMediaSession_.get()->GetSessionState();
-  bool is_muted = weakMediaSession_.get()->GetMuteState();
+  content::MediaSessionImpl::NWebMediaSessionState sessionState = OHOSAudioFocusController::GetSessionState(parameters_);
+  bool is_muted = OHOSAudioFocusController::GetMuteState(parameters_);
   LOG(INFO) << "OHOSAudioOutputStream sessionState:" << static_cast<uint32_t>(sessionState)
       << ", mutedMode:" << is_muted;
 

@@ -266,12 +266,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 
   auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
   while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
-    content::RenderFrameHost* renderFrameHost =
-      content::RenderFrameHost::FromID((*it).render_process_id(),
-                                       (*it).render_frame_id());
-    content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);                                   
-    auto otherMediaSession = content::MediaSessionImpl::FromWebContents(webContents);
-    if (!otherMediaSession) {
+    if (!(*it).IsValid()) {
       it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
     }   

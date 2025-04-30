@@ -397,7 +397,11 @@ void NativeThemeAura::PaintScrollbarThumb(cc::PaintCanvas* canvas,
     cc::PaintFlags overflags;
     SkScalar radius;
     gfx::Rect aroundRRect;  // Draw rect on aroundRRect's position.
-    thumb_color = SkColorSetA(scrollbar_color, 102);
+    if (color_scheme == ColorScheme::kDark) {
+      thumb_color = SkColorSetA(SK_ColorWHITE, 102);
+    } else {
+      thumb_color = SkColorSetA(scrollbar_color, 102);
+    }
     overflags.setColor(thumb_color);
     if (state == kHovered || state == kPressed) {
       radius = SkIntToScalar(kForceScrollbarActiveRadius * ratio);

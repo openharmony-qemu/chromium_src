@@ -21,6 +21,20 @@
 
 namespace base {
 
+
+constexpr std::chrono::milliseconds kDura_10 = std::chrono::milliseconds(10);
+constexpr std::chrono::milliseconds kDura_50 = std::chrono::milliseconds(50);
+constexpr std::chrono::milliseconds kDura_120 = std::chrono::milliseconds(120);
+constexpr std::chrono::milliseconds kDura_180 = std::chrono::milliseconds(180);
+constexpr std::chrono::milliseconds kDura_300 = std::chrono::milliseconds(300);
+constexpr std::chrono::milliseconds kDura_400 = std::chrono::milliseconds(400);
+constexpr std::chrono::milliseconds kDura_500 = std::chrono::milliseconds(500);
+constexpr std::chrono::milliseconds kDura_800 = std::chrono::milliseconds(800);
+constexpr std::chrono::milliseconds kDura_1200 = std::chrono::milliseconds(1200);
+
+constexpr int64_t kVsyncPeriod_Normal = 16666667;
+constexpr int64_t kVsyncPeriod_default = 10000000;
+
 class ReportLossFrameTest : public ::testing::Test {
  protected:
   ReportLossFrame* reportLossFrame;
@@ -70,99 +84,99 @@ TEST_F(ReportLossFrameTest, Record002) {
 
 TEST_F(ReportLossFrameTest, Record003) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(16666667);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_Normal);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  std::this_thread::sleep_for(kDura_10);
   reportLossFrame->Record();
   EXPECT_FALSE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record004) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(16666667);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_Normal);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  std::this_thread::sleep_for(kDura_50);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record005) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(120));
+  std::this_thread::sleep_for(kDura_120);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record006) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(180));
+  std::this_thread::sleep_for(kDura_180);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record007) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  std::this_thread::sleep_for(kDura_300);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record008) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  std::this_thread::sleep_for(kDura_400);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record009) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  std::this_thread::sleep_for(kDura_500);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record010) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(800));
+  std::this_thread::sleep_for(kDura_800);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record011) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(10000000);
+  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_default);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  std::this_thread::sleep_for(kDura_1200);
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }

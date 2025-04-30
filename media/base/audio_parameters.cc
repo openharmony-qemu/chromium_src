@@ -174,8 +174,8 @@ AudioParameters& AudioParameters::operator=(const AudioParameters&) = default;
 
 #if defined(OHOS_MEDIA_POLICY)
 bool AudioParameters::operator==(const AudioParameters& others) const {
-  return render_process_id_ == other.render_process_id() &&
-         render_frame_id_ == other.render_frame_id();
+  return render_process_id_ == others.render_process_id() &&
+         render_frame_id_ == others.render_frame_id();
 }
 #endif
 

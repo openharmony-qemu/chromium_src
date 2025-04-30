@@ -308,6 +308,7 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void DidNativeEmbedEvent(const blink::mojom::NativeEmbedTouchEventPtr& touchEvent) {}
+  virtual void KeyboardReDispatch(const content::NativeWebKeyboardEvent& event, bool isUsed) {}
 #endif
   virtual void DidStopFlinging() {}
 

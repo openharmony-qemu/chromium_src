@@ -829,10 +829,19 @@ void NWebDelegate::SetScreenOffset(double x, double y) {
   if (display_ratio_ == 0) {
     return;
   }
-  if (render_handler_ != nullptr) {
-    render_handler_->SetScreenOffset(std::round(x / display_ratio_), std::round(y / display_ratio_));
+  if (render_handler_ == nullptr) {
+    return;
   }
 
+  double origin_x = 0;
+  double origin_y = 0;
+  render_handler_->GetScreenOffset(nullptr, origin_x, origin_y);
+  double new_x = std::round(x / display_ratio_);
+  double new_y = std::round(y / display_ratio_);
+  if (origin_x == new_x && origin_y == new_y) {
+    return;
+  }
+  render_handler_->SetScreenOffset(new_x, new_y);
   auto browser = GetBrowser();
   if (browser != nullptr && browser->GetHost() != nullptr) {
     browser->GetHost()->NotifyScreenInfoChangedV2();

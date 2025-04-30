@@ -14,6 +14,7 @@
 #include "ohos_adapter_helper.h"
 #include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
+#include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
 

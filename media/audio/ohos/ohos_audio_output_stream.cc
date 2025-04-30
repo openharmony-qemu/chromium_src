@@ -268,7 +268,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
   auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
   while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
     if (!(*it).IsValid() || ((*it).render_process_id() <= 0 || (*it).render_frame_id() <= 0)) {
-      LOG(ERROR) << "OHOSAudioOutputStream::Start parameter is not valid."
+      LOG(ERROR) << "OHOSAudioOutputStream::Start parameter is not valid.";
       it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
     }   

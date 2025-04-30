@@ -835,7 +835,8 @@ std::u16string BrowserAccessibilityOHOS::GetSubstringTextContentUTF16(
   // This is called from IsLeaf, so don't call PlatformChildCount
   // from within this!
   if (text.empty() && ((HasOnlyTextChildren() && !HasListMarkerChild()) ||
-                       (IsFocusable() && HasOnlyTextAndImageChildren()))) {
+                       (IsFocusable() && HasOnlyTextAndImageChildren()) ||
+                       GetRole() == ax::mojom::Role::kAlert)) {
     for (auto it = InternalChildrenBegin(); it != InternalChildrenEnd(); ++it) {
       text += static_cast<BrowserAccessibilityOHOS*>(it.get())
                   ->GetSubstringTextContentUTF16(predicate);

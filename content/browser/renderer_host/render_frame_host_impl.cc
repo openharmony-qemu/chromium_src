@@ -2688,11 +2688,13 @@ void RenderFrameHostImpl::ExecuteJavaScriptExt(const int fd,
       mojo::ScopedHandle(mojo::Handle(handle)), scriptLength, wants_result, std::move(callback));
 }
 
-void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId, int32_t eventType) {
+void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
+                                                 int32_t eventType,
+                                                 const std::string& argument) {
   RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
       render_view_host_->GetWidget()->GetView());
   if (view) {
-    view->SendAccessibilityEvent(accessibilityId, eventType);
+    view->SendAccessibilityEvent(accessibilityId, eventType, argument);
   }
 }
 #endif

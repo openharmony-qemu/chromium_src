@@ -147,7 +147,7 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
     OHOS::NWeb::AccessibilityEventType eventType,
     const std::string& argument) {
   if (accessibilityId == kArkWebId || argument != "") {
-    DispatchEvent(accessibilityId, static_cast<int32_t>(eventType));
+    DispatchEvent(accessibilityId, static_cast<int32_t>(eventType), argument);
   } else if (eventDispatcher_ != nullptr) {
     eventDispatcher_->EnqueueEvent(accessibilityId,
                                    static_cast<int32_t>(eventType));
@@ -155,9 +155,8 @@ void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(
 }
 
 bool BrowserAccessibilityManagerOHOS::DispatchEvent(int64_t accessibilityId,
-                                                    int32_t eventType) {
-  LOG(INFO) << "DispatchEvent accessibilityId is " << accessibilityId
-            << ", eventType is " << static_cast<uint32_t>(eventType);
+                                                    int32_t eventType,
+                                                    const std::string& argument) {
 
   auto node = BrowserAccessibilityOHOS::GetFromAccessibilityId(accessibilityId);
   if ((node != nullptr || accessibilityId == kArkWebId) &&
@@ -167,8 +166,12 @@ bool BrowserAccessibilityManagerOHOS::DispatchEvent(int64_t accessibilityId,
       if (accessibilityId == GetRootAccessibilityId()) {
         accessibilityId = kRootAccessibilityId;
       }
-      renderFrameHost->SendAccessibilityEvent(accessibilityId,
-                                              static_cast<int32_t>(eventType));
+      LOG(INFO)
+          << "BrowserAccessibilityManagerOHOS::DispatchEvent accessibilityId "
+          << accessibilityId << ", eventType " << eventType << ", argument "
+          << argument;
+      renderFrameHost->SendAccessibilityEvent(
+          accessibilityId, static_cast<int32_t>(eventType), argument);
       return true;
     }
   }

@@ -30,6 +30,7 @@
 
 #include "content/public/common/content_switches.h"
 #include "ohos_adapter_helper.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 
 #include "third_party/bounds_checking_function/include/securec.h"
 
@@ -440,9 +441,15 @@ void NWebRenderHandler::StartVibraFeedback(const std::string& vibratorType) {
   }
 }
 
-void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId, int32_t eventType) {
+void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,
+                                             int32_t eventType,
+                                             const CefString& argument) {
   if (auto handler = handler_.lock()) {
-    handler->OnAccessibilityEvent(accessibilityId, eventType);
+    handler->OnAccessibilityEventV2(accessibilityId, eventType,
+                                    argument.ToString());
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      handler->OnAccessibilityEvent(accessibilityId, eventType);
+    }
   }
 }
 #endif

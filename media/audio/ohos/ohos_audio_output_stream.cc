@@ -79,7 +79,7 @@ void AudioRendererCallback::OnResume() {
     return;
   }
   if (audioResumeInterval_ > 0 && std::time(nullptr) - intervalSinceLastSuspend_ <=
-      static_cast<double>(audioResumeInterval_) && OHOSAudioFocusController::IsSuspended(parameters_)) {
+          static_cast<double>(audioResumeInterval_) && OHOSAudioFocusController::IsSuspended(parameters_)) {
     if (!main_task_runner_) {
       return;
     }
@@ -116,7 +116,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
       !isCommunication_) {
     LOG(INFO)
         << "AudioOutputChangeCallback::OnOutputDeviceChange need stop session";
-    auto OutputDeviceChangeFunc = [] (AudioParameters params) {
+    auto OutputDeviceChangeFunc = [](AudioParameters params) {
       content::RenderFrameHost* renderFrameHost =
           content::RenderFrameHost::FromID(params.render_process_id(),
                                            params.render_frame_id());
@@ -159,7 +159,7 @@ void AudioOutputChangeCallback::OnOutputDeviceChange(int32_t reason) {
         return;
       }
       main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(OutputDeviceChangeFunc, params_));
+          FROM_HERE, base::BindOnce(OutputDeviceChangeFunc, params_));
     } else {
       OutputDeviceChangeFunc(params_);
     }
@@ -325,7 +325,7 @@ void OHOSAudioOutputStream::Stop() {
     LOG(DEBUG) << "OHOSAudioOutputStream::Stop cannot continue.";
     return;
   }
-  if (!audio_renderer_->stop()) {
+  if (!audio_renderer_->Stop()) {
     ReportError();
   }
   Flush();

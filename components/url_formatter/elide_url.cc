@@ -33,6 +33,7 @@
 #include "net/base/url_util.h"
 #include "third_party/re2/src/re2/re2.h"
 #include "url/third_party/mozilla/url_parse.h"
+#include "url/url_util.h"
 
 using url_formatter::UrlType;
 #endif  // OHOS_NWEB_EX
@@ -472,7 +473,9 @@ UrlType ParseInput(const std::u16string& input,
   }
 
   if (base::EqualsCaseInsensitiveASCII(parsed_scheme_utf8, url::kFileScheme)) {
-    if (base::StartsWith(base::UTF16ToUTF8(input), "file", base::CompareCase::SENSITIVE)) {
+    if (base::StartsWith(base::UTF16ToUTF8(input),
+                         url::kFileScheme,
+                         base::CompareCase::INSENSITIVE_ASCII)) {
       return UrlType::URL;
     }
     return UrlType::QUERY;

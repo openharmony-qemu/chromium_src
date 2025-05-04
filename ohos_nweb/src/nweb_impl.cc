@@ -3621,7 +3621,6 @@ bool NWebImpl::GetIsEditTextType() {
 
   if (hitTest->GetType() != HitTestResult::EDIT_TEXT_TYPE) {
     LOG(INFO) << "no hittest edit text, web close keyboard.";
-    inputmethod_handler_->HideTextInput();
     return false;
   }
   return true;

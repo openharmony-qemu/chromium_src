@@ -87,7 +87,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
                               OHOS::NWeb::AccessibilityEventType eventType,
                               const std::string& argument = "");
 
-  bool DispatchEvent(int64_t accessibilityId, int32_t eventType);
+  bool DispatchEvent(int64_t accessibilityId,
+                     int32_t eventType,
+                     const std::string& argument = "");
 
   void OnHoverEvent(const gfx::PointF& point);
 

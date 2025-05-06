@@ -4077,6 +4077,8 @@ bool NWebDelegate::GetAccessibilityVisible(int64_t accessibilityId) {
 std::shared_ptr<NWebAccessibilityNodeInfo>
 NWebDelegate::GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                                   int32_t direction) {
+  LOG(INFO) << "GetAccessibilityNodeInfoByFocusMove accessibilityId is "
+            << accessibilityId << ", direction is " << direction;
   content::BrowserAccessibilityOHOS* node =
       content::BrowserAccessibilityOHOS::GetFromAccessibilityId(
           GetRealAccessibilityId(accessibilityId));

@@ -92,7 +92,9 @@ class CONTENT_EXPORT RenderWidgetHostViewBase : public RenderWidgetHostView {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void SendInternalBeginFrame() {}
-  virtual void SendAccessibilityEvent(int64_t accessibilityId, int32_t eventType) {}
+  virtual void SendAccessibilityEvent(int64_t accessibilityId,
+                                      int32_t eventType,
+                                      const std::string& argument) {}
 #endif
 
   // This function takes a (possibly invalid) pointer to

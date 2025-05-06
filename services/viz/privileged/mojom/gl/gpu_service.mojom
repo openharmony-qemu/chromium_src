@@ -251,4 +251,8 @@ interface GpuService {
   // Send vsync callback to host client
   [EnableIf=is_ohos]
   ReportSlidingFrameRate(int32 frame_rate);
+
+  // Set fling state to gpu process
+  [EnableIf=is_ohos]
+  SetIsFling(bool is_flinging_enabled);
 };

@@ -2556,6 +2556,8 @@ component("base") {
       "ohos/sys_info_utils.h",
       "ohos/dynamic_frame_loss_monitor.cpp",
       "ohos/dynamic_frame_loss_monitor.h",
+      "ohos/d_vsync/include/d_vsync_controller.h",
+      "ohos/d_vsync/src/d_vsync_controller.cc",
     ]
     deps += [
       "//base/third_party/symbolize",

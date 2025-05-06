@@ -550,7 +550,7 @@ void OHOSAudioOutputStream::PumpSamples() {
   }
 
   stream_position_samples_ += frames_filled;
-  if (writeFailed && (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_) ||
+  if (writeFailed && parameters_.IsValid() && (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_) ||
       OHOSAudioFocusController::GetSessionState(parameters_) == content::MediaSessionImpl::NWebMediaSessionState::NOINITIAL)) {
     LOG(INFO) << "OHOSAudioOutputStream::PumpSamples OneShotPlayers write failed";
 #ifdef OHOS_PERFORMANCE_PERSISTENT_TASK

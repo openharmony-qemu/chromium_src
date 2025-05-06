@@ -156,7 +156,7 @@ scoped_refptr<VideoFrame> VideoRendererAlgorithm::Render(
         << "ms; this=" << (void*)this;
 
 #ifdef OHOS_LOGGER_REPORT
-    LOG_FEEDBACK(INFO) 
+    LOG_FEEDBACK(INFO)
         << "OhMedia::Render Frame drift is too far: "
         << selected_frame_drift.InMillisecondsF()
         << "ms; max_acceptable_drift_="

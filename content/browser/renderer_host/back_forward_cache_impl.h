@@ -633,12 +633,12 @@ class CONTENT_EXPORT BackForwardCacheImpl
     absl::optional<EvictionInfo> eviction_info_;
   };
 
-  base::WeakPtrFactory<BackForwardCacheImpl> weak_factory_;
-
 #ifdef OHOS_BFCACHE
   int size_ = -1;
   int time_to_live_ = 600;
 #endif
+
+  base::WeakPtrFactory<BackForwardCacheImpl> weak_factory_;
 
   // For testing:
   FRIEND_TEST_ALL_PREFIXES(BackForwardCacheMetricsTest, AllFeaturesCovered);

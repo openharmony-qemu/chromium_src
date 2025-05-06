@@ -19,6 +19,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 #include "media/base/ohos/ohos_media_resource_getter.h"
+#include "media/base/ohos/ohos_media_player_recorder.h"
 
 namespace media {
 class MEDIA_EXPORT OHOSMediaPlayerBridge {
@@ -202,6 +203,9 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
 
   // NativeWindow Embed id
   int native_window_id_ = -1;
+
+  // Media player record for live stream
+  OHOSMediaPlayerRecorder media_player_recorder_;
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };

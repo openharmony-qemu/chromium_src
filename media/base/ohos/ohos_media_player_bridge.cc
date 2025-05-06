@@ -387,8 +387,8 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   int32_t time = -1;
   int32_t ret = player_->GetCurrentTime(time);
   if (ret == 0 && time == -1) {
-    //if is livestream, return media player recorder time;
-    media_player_recorder_.GetDuration();
+    // if is livestream, return media player recorder time.
+    return media_player_recorder_.GetDuration();
   }
   return base::Milliseconds(time);
 }

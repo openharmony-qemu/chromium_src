@@ -70,6 +70,19 @@ void MediaSessionControllersManager::OnPause(const MediaPlayerId& id,
   controller->OnPlaybackPaused(reached_end_of_stream);
 }
 
+#if defined(OHOS_MEDIA_AVSESSION)
+void MediaSessionControllersManager::OnEndAVSession(const MediaPlayerId& id,
+                                                    bool is_hidden) {
+  if (!IsMediaSessionEnabled()) {
+    return;
+  }
+  auto controller = FindOrCreateController(id);
+  if (controller) {
+    controller->OnEndAVSession(id, is_hidden);
+  }
+}
+#endif // OHOS_MEDIA_AVSESSION
+
 void MediaSessionControllersManager::OnEnd(const MediaPlayerId& id) {
   if (!IsMediaSessionEnabled())
     return;

@@ -148,6 +148,10 @@ interface MediaPlayerObserver {
   [EnableIf=is_ohos]
   OnMediaPlayerGone();
 
+  // Notifies that avsession is over.
+  [EnableIf=ohos_media_avsession]
+  OnEndAVSession(bool is_hidden);
+
   // Notifies that the muted status of the media player has changed.
   OnMutedStatusChanged(bool muted);
 

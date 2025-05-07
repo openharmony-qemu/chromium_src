@@ -271,7 +271,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
       LOG(ERROR) << "OHOSAudioOutputStream::Start parameter is not valid.";
       it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
       continue;
-    }   
+    }
     if ((*it).Equals(parameters_)) {
       LOG(INFO) << "skip mediaSession control because of same audioparameters.";
       it++;

@@ -379,6 +379,7 @@ class MediaSessionImpl : public MediaSession,
   bool IsPauseByAvsession();
   void SetPauseByAvsession(bool is_pause);
   void SetWebviewShow(bool show, bool is_special_for_audio);
+  void EndSessionWhenHide();
   void SetMediaContentType(media::MediaContentType media_content_type) { media_content_type_ = media_content_type; }
   media::MediaContentType getMediaContentType() { return media_content_type_; }
 

@@ -1,3 +1,7 @@
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "media/base/audio_parameters.h"
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/public/browser/web_contents.h"

@@ -369,10 +369,14 @@ std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
 #if BUILDFLAG(ENABLE_CEF)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(switches::kUserAgentProductAndVersion)) {
-    return command_line->GetSwitchValueASCII(
-        switches::kUserAgentProductAndVersion);
+#ifdef OHOS_USERAGENT
+  if (command_line != nullptr) {
+    if (command_line->HasSwitch(switches::kUserAgentProductAndVersion)) {
+      return command_line->GetSwitchValueASCII(
+          switches::kUserAgentProductAndVersion);
+    }
   }
+#endif
 #endif
 #ifdef OHOS_USERAGENT
   std::string version_str = "Chrome/";
@@ -421,14 +425,18 @@ std::string GetUserAgentInternal(
 }
 
 absl::optional<std::string> GetUserAgentFromCommandLine() {
+#ifdef OHOS_USERAGENT
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(kUserAgent)) {
-    std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
-    if (net::HttpUtil::IsValidHeaderValue(ua)) {
-      return ua;
+  if (command_line != nullptr) {
+    if (command_line->HasSwitch(kUserAgent)) {
+      std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
+      if (net::HttpUtil::IsValidHeaderValue(ua)) {
+        return ua;
+      }
+      LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
     }
-    LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
   }
+#endif
   return absl::nullopt;
 }
 

@@ -169,8 +169,6 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 
   power_scheduler::FrameProductionPowerModeVoter power_mode_voter_;
 
-  base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
-
 #if defined(OHOS_SOFTWARE_COMPOSITOR)
   std::unique_ptr<SoftwareCompositorRendererOhos> software_renderer_ohos_;
 #endif
@@ -178,6 +176,8 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
 #if BUILDFLAG(IS_OHOS)
   bool is_first_submit_ = true;
 #endif
+
+  base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
 };
 
 }  // namespace mojo_embedder

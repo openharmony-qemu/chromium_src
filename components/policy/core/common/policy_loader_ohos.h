@@ -10,6 +10,7 @@
 #include "components/policy/core/common/async_policy_loader.h"
 #include "components/policy/policy_export.h"
 #include "enterprise_device_management_adapter.h"
+#include "base/memory/raw_ptr.h"
 
 namespace base {
 class Value;

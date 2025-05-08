@@ -275,6 +275,7 @@ void ExternalBeginFrameSourceOHOS::UpdateVSyncFrequency(int frame_rate) {
 void ExternalBeginFrameSourceOHOS::ResetVSyncFrequency() {
   reset_vsync_frequency_ = true;
   update_vsync_frequency_ = false;
+  base::ohos::DynamicFrameRateDecision::GetInstance().ReportVideoFrameRate(0);
 }
 
 void ExternalBeginFrameSourceOHOS::OnVSyncCallback()

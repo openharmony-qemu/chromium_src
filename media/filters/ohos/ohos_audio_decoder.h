@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 #include <cstring>
+#include <mutex>
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -308,7 +309,7 @@ class OHOSAudioDecoder : public AudioDecoder,
   void InitializeNotEncrypted(InitCB init_cb);
 
   void WaitingForLicence();
- 
+
  private:
   std::string mime_type_;
 
@@ -321,6 +322,10 @@ class OHOSAudioDecoder : public AudioDecoder,
   std::deque<uint32_t> input_buffer_queue_;
 
   std::deque<OutputBufferData> output_buffer_queue_;
+
+  std::mutex input_mtx_;
+
+  std::mutex output_mtx_;
 
   AudioDecoderConfig config_;
 

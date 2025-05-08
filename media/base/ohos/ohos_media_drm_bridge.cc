@@ -309,8 +309,11 @@ bool IsKeySystemSupportedWithTypeImpl(const std::string& key_system,
 }
 }  // namespace
 
-OHOSDrmCallback::OHOSDrmCallback(OHOSMediaDrmBridge* media_drm_bridge)
-    : media_drm_bridge_(media_drm_bridge) {
+OHOSDrmCallback::OHOSDrmCallback(
+  const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+  base::WeakPtr<OHOSMediaDrmBridge> media_drm_bridge)
+    : task_runner_(task_runner), media_drm_bridge_(media_drm_bridge) {
+  DCHECK(task_runner_.get());
   DCHECK(media_drm_bridge_);
 }
 
@@ -319,56 +322,79 @@ OHOSDrmCallback::~OHOSDrmCallback() {}
 void OHOSDrmCallback::OnSessionMessage(const std::string& session_id,
                                        int32_t& type,
                                        const std::vector<uint8_t>& message) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnSessionMessage(session_id, type, message);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnSessionMessage,
+        media_drm_bridge_, session_id, type, message));
   }
 }
 
 void OHOSDrmCallback::OnProvisionRequest(const std::string& default_url,
                                          const std::string& request_data) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnProvisionRequest(default_url, request_data);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnProvisionRequest,
+        media_drm_bridge_, default_url, request_data));
   }
 }
 
 void OHOSDrmCallback::OnProvisioningComplete(bool success) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnProvisioningComplete(success);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnProvisioningComplete,
+        media_drm_bridge_, success));
   }
 }
 
 void OHOSDrmCallback::OnMediaKeySessionReady(void* session) {
   LOG(INFO) << "[DRM]" << __func__;
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnOHOSMediaCryptoReady(session);
-    LOG(INFO) << "[DRM]" << __func__;
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnOHOSMediaCryptoReady,
+        media_drm_bridge_, session));
   }
 }
 
 void OHOSDrmCallback::OnPromiseRejected(uint32_t promiseId,
                                         const std::string& errorMessage) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnPromiseRejected(promiseId, errorMessage);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnPromiseRejected,
+        media_drm_bridge_, promiseId, errorMessage));
   }
 }
 
 void OHOSDrmCallback::OnPromiseResolved(uint32_t promiseId) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnPromiseResolved(promiseId);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnPromiseResolved,
+        media_drm_bridge_, promiseId));
   }
 }
 
 void OHOSDrmCallback::OnPromiseResolvedWithSession(
     uint32_t promiseId,
     const std::string& session_id) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnPromiseResolvedWithSession(promiseId, session_id);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnPromiseResolvedWithSession,
+        media_drm_bridge_, promiseId, session_id));
   }
 }
 
 void OHOSDrmCallback::OnSessionClosed(const std::string& session_id) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnSessionClosed(session_id);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnSessionClosed,
+        media_drm_bridge_, session_id));
   }
 }
 
@@ -378,23 +404,31 @@ void OHOSDrmCallback::OnSessionKeysChange(
     const std::vector<uint32_t>& statusArray,
     bool has_additional_usable_key,
     bool is_key_release) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnSessionKeysChange(session_id, keyIdArray, statusArray,
-                                           has_additional_usable_key,
-                                           is_key_release);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnSessionKeysChange,
+        media_drm_bridge_, session_id, keyIdArray, statusArray,
+        has_additional_usable_key, is_key_release));
   }
 }
 
 void OHOSDrmCallback::OnSessionExpirationUpdate(const std::string& session_id,
                                                 uint64_t expiration_time) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnSessionExpirationUpdate(session_id, expiration_time);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnSessionExpirationUpdate,
+        media_drm_bridge_, session_id, expiration_time));
   }
 }
 
 void OHOSDrmCallback::OnStorageProvisioned() {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnStorageProvisioned();
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnStorageProvisioned,
+        media_drm_bridge_));
   }
 }
 
@@ -402,36 +436,50 @@ void OHOSDrmCallback::OnStorageSaveInfo(const std::vector<uint8_t>& ketSetId,
                                         const std::string& mimeType,
                                         const std::string& session_id,
                                         int32_t key_type) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnStorageSaveInfo(ketSetId, mimeType, session_id,
-                                         key_type);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnStorageSaveInfo,
+        media_drm_bridge_, ketSetId, mimeType, session_id, key_type));
   }
 }
 
 void OHOSDrmCallback::OnStorageLoadInfo(const std::string& session_id) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnStorageLoadInfo(session_id);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnStorageLoadInfo,
+        media_drm_bridge_, session_id));
   }
 }
 
 void OHOSDrmCallback::OnStorageClearInfoForKeyRelease(
     const std::string& session_id) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnStorageClearInfoForKeyRelease(session_id);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnStorageClearInfoForKeyRelease,
+        media_drm_bridge_, session_id));
   }
 }
 
 void OHOSDrmCallback::OnStorageClearInfoForLoadFail(
     const std::string& session_id) {
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnStorageClearInfoForLoadFail(session_id);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnStorageClearInfoForLoadFail,
+        media_drm_bridge_, session_id));
   }
 }
 
 void OHOSDrmCallback::OnMediaLicenseReady(bool success) {
 #if defined(OHOS_ENABLE_WISEPLAY)
-  if (media_drm_bridge_) {
-    media_drm_bridge_->OnMediaLicenseReady(success);
+  if (task_runner_) {
+    task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(
+        &OHOSMediaDrmBridge::OnMediaLicenseReady,
+        media_drm_bridge_, success));
   }
 #endif
 }
@@ -492,8 +540,26 @@ scoped_refptr<OHOSMediaDrmBridge> OHOSMediaDrmBridge::CreateInternal(
 void OHOSMediaDrmBridge::SetServerCertificate(
     const std::vector<uint8_t>& certificate,
     std::unique_ptr<media::SimpleCdmPromise> promise) {
-  promise->reject(CdmPromise::Exception::NOT_SUPPORTED_ERROR, 0,
-                  "SetServerCertificate() is not supported.");
+  DCHECK(task_runner_->BelongsToCurrentThread());
+  LOG(INFO) << "[DRM]" << __func__ << "(" << certificate.size() << " bytes)";
+  DCHECK(!certificate.empty());
+  uint32_t promise_id =
+      cdm_promise_adapter_.SavePromise(std::move(promise), __func__);
+  if (ohos_drm_adapter_) {
+    std::string SERVER_CERTIFICATE = "serviceCertificate";
+    int32_t ret = ohos_drm_adapter_->SetConfigurationByteArray(SERVER_CERTIFICATE,
+        certificate.data(), certificate.size());
+    LOG(INFO) << "[DRM]" << __func__ << ", ret: " << ret;
+    if (ret == 0) {
+      ResolvePromise(promise_id);
+    } else {
+      RejectPromise(promise_id, CdmPromise::Exception::TYPE_ERROR,
+                    "Set server certificate failed.");
+    }
+  } else {
+    RejectPromise(promise_id, CdmPromise::Exception::TYPE_ERROR,
+                  "Set server certificate failed.");
+  }
 }
 
 std::string GenerateSessionId() {
@@ -1020,8 +1086,9 @@ OHOSMediaDrmBridge::OHOSMediaDrmBridge(
   ohos_drm_adapter_ =
       OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDrmAdapter();
   if (ohos_drm_adapter_) {
-    task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-    auto drmCallback = std::make_unique<OHOSDrmCallback>(this);
+    auto drmCallback =
+        std::make_unique<OHOSDrmCallback>(task_runner_,
+                                          weak_factory_.GetWeakPtr());
     ohos_drm_adapter_->RegistDrmCallback(std::move(drmCallback));
 
     if (scheme_uuid == GetKeySystemManager()->GetUUID(kWidevineKeySystem)) {

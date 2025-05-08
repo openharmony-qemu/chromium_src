@@ -56,7 +56,7 @@ class PolicyChangedEventCallback
 
  private:
   void OnPolicyChangedImpl();
-  PolicyLoaderOhos* loader_;
+  raw_ptr<PolicyLoaderOhos> loader_;
 };
 
 }  // namespace policy

@@ -69,7 +69,9 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
 
   OHOSMediaDrmBridge(const OHOSMediaDrmBridge&) = delete;
   OHOSMediaDrmBridge& operator=(const OHOSMediaDrmBridge&) = delete;
-
+  base::WeakPtr<OHOSMediaDrmBridge> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
   void SetServerCertificate(
       const std::vector<uint8_t>& certificate,
       std::unique_ptr<media::SimpleCdmPromise> promise) override;
@@ -230,7 +232,10 @@ class MEDIA_EXPORT OHOSMediaDrmBridge : public ContentDecryptionModule,
 
 class OHOSDrmCallback : public OHOS::NWeb::DrmCallbackAdapter {
  public:
-  OHOSDrmCallback(OHOSMediaDrmBridge* media_drm_bridge);
+  OHOSDrmCallback(
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    base::WeakPtr<OHOSMediaDrmBridge> media_drm_bridge);
+   
   virtual ~OHOSDrmCallback();
   OHOSDrmCallback(const OHOSDrmCallback&) = delete;
   OHOSDrmCallback& operator=(const OHOSDrmCallback&) = delete;
@@ -268,7 +273,8 @@ class OHOSDrmCallback : public OHOS::NWeb::DrmCallbackAdapter {
   void OnMediaLicenseReady(bool success) override;
 
  private:
-  const raw_ptr<OHOSMediaDrmBridge> media_drm_bridge_;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  base::WeakPtr<OHOSMediaDrmBridge> media_drm_bridge_;
 };
 
 }  // namespace media

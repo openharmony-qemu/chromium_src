@@ -94,7 +94,8 @@ class OHOSMediaDrmBridgeTest : public testing::Test {
     cdm_promise_adapter_ = std::make_unique<CdmPromiseAdapter>();
     media_crypto_ready_cb_ = std::make_unique<MockOHOSMediaCryptoContext>();
     ohos_drm_callback_ =
-        std::make_unique<OHOSDrmCallback>(media_drm_bridge_.get());
+        std::make_unique<OHOSDrmCallback>(task_runner,
+                                          media_drm_bridge_->GetWeakPtr());
   }
 
   void TearDown() override {

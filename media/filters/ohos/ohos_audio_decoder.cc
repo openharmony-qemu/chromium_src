@@ -481,8 +481,15 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";
   ClearInputQueue(DecoderStatus::Codes::kAborted);
   bool success = decoder_loop_->TryFlush();
-  input_buffer_queue_.clear();
-  output_buffer_queue_.clear();
+  {
+    std::unique_lock<std::mutex> lock(input_mtx_);
+    input_buffer_queue_.clear();
+  }
+  {
+    std::unique_lock<std::mutex> lock(output_mtx_);
+    output_buffer_queue_.clear();
+  }
+
   io_timer_.Stop();
   if (success) {
     success = CreateOhosDecoderLoop();
@@ -611,6 +618,7 @@ bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
   // EOS frame direct callback ok
   std::move(input_queue_.front()).second.Run(DecoderStatus::Codes::kOk);
   input_queue_.pop_front();
+  std::unique_lock<std::mutex> lock(output_mtx_);
   output_buffer_queue_.pop_front();
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedEos output_buffer_queue_ pop front ok";
   return true;
@@ -646,7 +654,10 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
 
   LOG(DEBUG) << "OHOSAudioDecoder::OnDecodedFrame audio_buffer release output buffer index: " << out.index_;
   audio_decoder_->ReleaseOutputBufferDec(out.index_);
-  output_buffer_queue_.pop_front();
+  {
+    std::unique_lock<std::mutex> lock(output_mtx_);
+    output_buffer_queue_.pop_front();
+  }
 
   const bool first_buffer = timestamp_helper_->base_timestamp() == kNoTimestamp;
   if (first_buffer) {
@@ -675,6 +686,7 @@ void OHOSAudioDecoder::OnCodecLoopError() {
 
 int32_t OHOSAudioDecoder::DequeueInputBuffer(int64_t& buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::DequeueInputBuffer";
+  std::unique_lock<std::mutex> lock(input_mtx_);
   if (!input_buffer_queue_.empty()) {
     buffer_index = input_buffer_queue_.front();
     input_buffer_queue_.pop_front();
@@ -687,11 +699,13 @@ int32_t OHOSAudioDecoder::DequeueInputBuffer(int64_t& buffer_index) {
 
 void OHOSAudioDecoder::EnqueueInputBuffer(int64_t buffer_index) {
   LOG(DEBUG) << "OHOSAudioDecoder::EnqueueInputBuffer index: " << buffer_index;
+  std::unique_lock<std::mutex> lock(input_mtx_);
   input_buffer_queue_.push_back(buffer_index);
 }
 
 int32_t OHOSAudioDecoder::DequeueOutputBuffer(OutputBufferData& out) {
   LOG(DEBUG) << "OHOSAudioDecoder::DequeueOutputBuffer";
+  std::unique_lock<std::mutex> lock(output_mtx_);
   if (!output_buffer_queue_.empty()) {
     out = output_buffer_queue_.front();
     // Output buffer queue will be popped after decoding is successful
@@ -731,7 +745,7 @@ void OHOSAudioDecoder::WaitingForLicence()
     io_timer_.Start(FROM_HERE, TwoSecondTimeout, this, &OHOSAudioDecoder::WaitingForLicence);
   }
 }
- 
+
 AudioDecoderAdapterCode OHOSAudioDecoder::QueueInputBufferDec(uint32_t index, int64_t presentationTimeUs,
   uint8_t* bufferData, int32_t bufferSize, std::shared_ptr<AudioCencInfoAdapter> cencInfo, bool isEncrypted,
   BufferFlag flag) {
@@ -758,6 +772,7 @@ AudioDecoderAdapterCode OHOSAudioDecoder::ReleaseOutputBufferDec(uint32_t index)
 
 void OHOSAudioDecoder::AddInputBuffer(uint32_t index) {
   LOG(DEBUG) << "OHOSAudioDecoder::AddInputBuffer index: " << index;
+  std::unique_lock<std::mutex> lock(input_mtx_);
   input_buffer_queue_.push_back(index);
 }
 
@@ -765,6 +780,7 @@ void OHOSAudioDecoder::AddOutputBuffer(uint32_t index, uint8_t* bufferData, uint
     int64_t pts, BufferFlag flag) {
   LOG(DEBUG) << "OHOSAudioDecoder::AddOutputBuffer index: " << index << " size: " << size << " pts: " << pts;
   OutputBufferData data(index, bufferData, size, pts, flag);
+  std::unique_lock<std::mutex> lock(output_mtx_);
   output_buffer_queue_.push_back(data);
 }
 

@@ -2727,9 +2727,6 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   int disallow_custom_cursor_scope_count_ = 0;
   base::WeakPtr<FileChooserImpl> active_file_chooser_;
 
-  base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
-  base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};
-
 #if defined(OHOS_WEBRTC)
   int nWebID_ = 0;
 #endif  // defined(OHOS_WEBRTC)
@@ -2743,6 +2740,9 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
 #endif // OHOS_VIDEO_ASSISTANT
+
+  base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
+  base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};
 };
 
 // Dangerous methods which should never be made part of the public API, so we

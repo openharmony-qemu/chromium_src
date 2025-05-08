@@ -7,6 +7,7 @@
 
 #include <list>
 #include <set>
+#include "base/memory/raw_ptr.h"
 #include "net/base/idempotency.h"
 #include "net/base/load_flags.h"
 #include "net/base/network_anonymization_key.h"
@@ -257,7 +258,7 @@ struct PRPPPreconnectInfo {
 using PRPPPreconnectInfoList = std::list<PRPPPreconnectInfo>;
 
 struct PRPPReqInfoTreeNode {
-  PRPPReqInfoTreeNode* parent_ { nullptr };
+  raw_ptr<PRPPReqInfoTreeNode> parent_ = nullptr;
   std::list<std::shared_ptr<PRPPReqInfoTreeNode>> children_;
   std::shared_ptr<PRRequestInfo> req_info_ { nullptr };
   bool already_preloading_ { false };

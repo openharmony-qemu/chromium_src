@@ -21,7 +21,7 @@
 #define NET_PROXY_RESOLUTION_PROXY_CONFIG_SERVICE_OHOS_H_
 
 #include <string>
-
+#include "base/memory/raw_ptr.h"
 #include "base/compiler_specific.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/ref_counted.h"
@@ -127,7 +127,7 @@ class NetProxyEventCallback : public OHOS::NWeb::NetProxyEventCallbackAdapter {
   void Changed(const std::string& host, const uint16_t& port, const std::string& pacUrl, const std::vector<std::string>& exclusionList) override;
 
  private:
-  ProxyConfigServiceOHOS* service_;
+  raw_ptr<ProxyConfigServiceOHOS> service_;
 };
 
 }  // namespace net

@@ -43,6 +43,7 @@ OHOSMediaPlayerBridge::OHOSMediaPlayerBridge(
       prepared_(false),
       pending_play_(false),
       seek_complete_(true),
+      fake_seek_complete_(true),
       should_seek_on_prepare_(false),
       should_set_volume_on_prepare_(false),
       seeking_on_playback_complete_(false),
@@ -315,7 +316,6 @@ void OHOSMediaPlayerBridge::Pause() {
 
 void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
   pending_seek_ = time;
-  seeking_back_complete_ = false;
 
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo time=" << time.InMilliseconds();
   if (!prepared_) {
@@ -326,12 +326,23 @@ void OHOSMediaPlayerBridge::SeekTo(base::TimeDelta time) {
 }
 
 void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
-  int32_t ret = player_->Seek(time.InMilliseconds(),
+  int32_t ret = -1;
+  if (seeking_back_complete_) {
+    ret = 0;
+    LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=FAKE_SEEK";
+  } else {
+    int32_t ret = player_->Seek(time.InMilliseconds(),
                               OHOS::NWeb::PlayerSeekMode::SEEK_CLOSEST);
+  }
+
   if (ret != 0) {
     LOG(ERROR) << "Seek error::ret=" << ret;
   } else {
+    if (!seeking_back_complete_) {
+      fake_seek_complete_ = false;
+    }
     seek_complete_ = false;
+    seeking_back_complete_ = false;
   }
 }
 
@@ -379,7 +390,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetDuration() {
 
 base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   if (!player_ || !prepared_ || seeking_on_playback_complete_ ||
-      !seek_complete_) {
+      (!seek_complete_ && !fake_seek_complete_)) {
     return pending_seek_;
   }
 
@@ -396,6 +407,7 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
 void OHOSMediaPlayerBridge::SeekDone() {
   LOG(INFO) << "OHOSMediaPlayerBridge::SeekDone()";
   seek_complete_ = true;
+  fake_seek_complete_ = true;
 }
 
 void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
@@ -417,8 +429,8 @@ void OHOSMediaPlayerBridge::OnSeekBack(base::TimeDelta extra_time) {
   //found by mediaplayer and the time point of seekTo
   if ((recording_seek_ - extra_time_) > base::Milliseconds(MAX_TOLERABLE_SEEK_ERROR)) {
     if (client_) {
-      client_->OnPlayerSeekBack(extra_time_);
       seeking_back_complete_ = true;
+      client_->OnPlayerSeekBack(extra_time_);
     }
     LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() recording_time= " << recording_seek_;
     LOG(INFO) << "OHOSMediaPlayerBridge::OnSeekBack() back_time= " << extra_time_;

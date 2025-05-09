@@ -1372,11 +1372,11 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   const bool use_dmsaa_for_tiles_;
 
+  bool is_need_draw_rect_ = false;
+
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<LayerTreeHostImpl> weak_factory_{this};
-
-  bool is_need_draw_rect_ = false;
 };
 
 }  // namespace cc

@@ -267,8 +267,10 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
 #if BUILDFLAG(IS_OHOS) && defined(OHOS_USERAGENT)
   std::string device_type_string = "Phone";
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-  if (command_line->HasSwitch(::switches::kUserAgentValue)) {
-    device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
+  if (command_line != nullptr) {
+    if (command_line->HasSwitch(::switches::kUserAgentValue)) {
+      device_type_string = command_line->GetSwitchValueASCII(::switches::kUserAgentValue);
+    }
   }
 
   int32_t ohos_major_version = base::ohos::MajorVersion();

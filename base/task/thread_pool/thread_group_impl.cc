@@ -729,7 +729,7 @@ void ThreadGroupImpl::WorkerThreadDelegateImpl::CleanupLockRequired(
   outer_->workers_.erase(worker_iter);
 
 #if BUILDFLAG(IS_OHOS)
-  outer_->destroy_workers_.push_back(worker);
+  outer_->destroy_workers_.push_back(base::WrapRefCounted(worker));
 #endif
 }
 
@@ -1006,7 +1006,7 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
 
   workers_.push_back(worker);
 #if BUILDFLAG(IS_OHOS)
-  create_workers_.push_back(worker.get());
+  create_workers_.push_back(worker);
 #endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);

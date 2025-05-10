@@ -112,7 +112,7 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   std::unique_ptr<DiskCacheReadHelper> helper_;
   std::unique_ptr<DiskCacheEntry> entry_;
   base::OnceCallback<void()> delayed_store_task_;
-  base::OnceCallback<void()> delayed_load_task;
+  base::OnceCallback<void()> delayed_load_task_;
   base::WeakPtrFactory<DiskCacheFile> weak_factory_ { this };
 };
 

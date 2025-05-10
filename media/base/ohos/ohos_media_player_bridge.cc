@@ -331,8 +331,8 @@ void OHOSMediaPlayerBridge::SeekInternal(base::TimeDelta time) {
     ret = 0;
     LOG(INFO) << "OHOSMediaPlayerBridge::SeekTo mode=FAKE_SEEK";
   } else {
-    int32_t ret = player_->Seek(time.InMilliseconds(),
-                              OHOS::NWeb::PlayerSeekMode::SEEK_CLOSEST);
+    ret = player_->Seek(time.InMilliseconds(),
+                        OHOS::NWeb::PlayerSeekMode::SEEK_CLOSEST);
   }
 
   if (ret != 0) {

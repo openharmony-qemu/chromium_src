@@ -223,7 +223,6 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
   if (!disk_cache_backend_factory_) {
-
     return;
   }
   if (!disk_cache_backend_factory_->CheckBackendAsync(

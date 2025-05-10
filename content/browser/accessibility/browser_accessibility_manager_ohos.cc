@@ -130,16 +130,20 @@ void BrowserAccessibilityManagerOHOS::MoveAccessibilityFocus(
     int64_t oldId,
     int64_t newId) const {
   auto oldNode = BrowserAccessibilityOHOS::GetFromAccessibilityId(oldId);
-  if (oldNode && oldNode->manager())
+  if (oldNode && oldNode->manager()) {
     oldNode->manager()->ClearAccessibilityFocus(*oldNode);
+  }
 
   auto node = BrowserAccessibilityOHOS::GetFromAccessibilityId(newId);
-  if (!node)
+  if (!node || node->manager() == nullptr) {
     return;
+  }
   node->manager()->SetAccessibilityFocus(*node);
 
-  if (node != node->manager()->GetBrowserAccessibilityRoot())
-    node->manager()->LoadInlineTextBoxes(*node);
+  if (node != node->manager()->GetBrowserAccessibilityRoot() &&
+      node->manager()->GetManagerForRootFrame() != nullptr) {
+    node->manager()->GetManagerForRootFrame()->LoadInlineTextBoxes(*node);
+  }
 }
 
 void BrowserAccessibilityManagerOHOS::SendAccessibilityEvent(

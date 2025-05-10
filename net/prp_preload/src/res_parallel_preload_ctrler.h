@@ -14,10 +14,7 @@ using RPPCtrlerTimeoutCB = base::RepeatingCallback<void(const std::string& url)>
 class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPreloadCtrler> {
  public:
   ResParallelPreloadCtrler(const std::string& url,
-                           base::WeakPtr<net::URLRequestContext> url_request_context,
                            const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
-                           const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
-                           const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
                            const RPPCtrlerTimeoutCB& timeout_cb);
   ~ResParallelPreloadCtrler() = default;
 

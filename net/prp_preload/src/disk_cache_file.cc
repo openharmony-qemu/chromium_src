@@ -103,7 +103,7 @@ int DiskCacheEntry::WriteCallback(int rv) {
 
 int DiskCacheEntry::IOComplete(int rv) {
   if (cache_ != nullptr) {
-    cache_->EntryWriteComplete(this); 
+    cache_->EntryWriteComplete(this);
   }
   return rv;
 }
@@ -286,7 +286,7 @@ void DiskCacheFile::BackendComplete() {
 
 void DiskCacheFile::RunStoreTask(bool clear) {
   if (clear) {
-    delayed_store_task_ = base::OnceCallback<void()>;
+    delayed_store_task_ = base::OnceCallback<void()>();
     return;
   }
   if (!delayed_store_task_.is_null()) {
@@ -296,7 +296,7 @@ void DiskCacheFile::RunStoreTask(bool clear) {
 
 void DiskCacheFile::RunLoadTask(bool clear) {
   if (clear) {
-    delayed_load_task_ = base::OnceCallback<void()>;
+    delayed_load_task_ = base::OnceCallback<void()>();
     if (!entry_loaded_cb_.is_null()) {
       entry_loaded_cb_.Run(std::string());
     }

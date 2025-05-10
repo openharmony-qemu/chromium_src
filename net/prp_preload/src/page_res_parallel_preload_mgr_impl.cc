@@ -163,7 +163,7 @@ bool PRParallelPreloadMgrImpl::RecycleRPPCtrler() {
     sth_task_runner_->PostTask(FROM_HERE,
       base::BindOnce([]
         (const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {},
-        ctrler));
+        std::move(ctrler)));
     break;
   } while (stopped_pages_.size() > 0);
   if (!recycled) {

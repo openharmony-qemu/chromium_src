@@ -113,12 +113,11 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
 	new (std::nothrow) ResParallelPreloadCtrler(main_url, networkAnonymizationKey, sth_task_runner_,
 	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, weak_factory_.GetWeakPtr())));
   if (rp_preload_ctrler == nullptr) {
-	LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage new ResParallelPreloadCtrler failed";
 	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	return;
   }
   rp_preload_ctrler->Init(net_task_runner_, url_request_context,
-	base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, weak_factory_.GetWeakPtr()))
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, weak_factory_.GetWeakPtr()));
   web_handle_pages_map_[web_handle] = main_url;
   rp_preload_ctrler->Start();
   prp_preload_info_map_[main_url].rp_preload_ctrler_ = rp_preload_ctrler;

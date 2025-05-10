@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "base/logging.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/strings/string_number_conversions.h"
@@ -101,6 +102,14 @@ void EventCreator::MaybeAddNetworkQualityChangedEventToNetLog(
   past_effective_connection_type_ = effective_connection_type;
   past_network_quality_ = network_quality;
 
+  LOG(INFO) << "event_message: network quality changed http_rtt_ms "
+            << static_cast<int>(network_quality.http_rtt().InMilliseconds())
+            << " transport_rtt_ms "
+            << static_cast<int>(network_quality.transport_rtt().InMilliseconds())
+            << " downstream_throughput_kbps "
+            << network_quality.downstream_throughput_kbps()
+            << " effective_connection_type "
+            << GetNameForEffectiveConnectionType(effective_connection_type);
   net_log_.AddEvent(NetLogEventType::NETWORK_QUALITY_CHANGED, [&] {
     return NetworkQualityChangedNetLogParams(
         network_quality.http_rtt(), network_quality.transport_rtt(),

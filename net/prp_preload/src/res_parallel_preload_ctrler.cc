@@ -8,7 +8,7 @@
 
 namespace {
 static constexpr base::TimeDelta MAX_CHECK_FLUSH_TO_DISK_TIME = base::Seconds(5);
-static scoped_refptr<DiskCacheBackendFactory> g_disk_cache_backend_factory;
+static scoped_refptr<ohos_prp_preload::DiskCacheBackendFactory> g_disk_cache_backend_factory;
 }  // namespace
 
 namespace ohos_prp_preload {
@@ -69,14 +69,14 @@ void ResParallelPreloadCtrler::DoInit(const scoped_refptr<base::SingleThreadTask
     return;
   }
   res_req_info_updater_ = base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
-    url_, sth_task_runner, g_disk_cache_backend_factory,
+    url_, sth_task_runner_, g_disk_cache_backend_factory,
     base::BindRepeating(&ResParallelPreloadCtrler::OnResRequestInfoList, weak_factory_.GetWeakPtr())));
   if (res_req_info_updater_ == nullptr) {
     LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::DoInit new ResRequestInfoUpdater failed";
     return;
   }
   res_preload_scheduler_ = base::WrapRefCounted(new (std::nothrow) ResPreloadScheduler(
-    sth_task_runner, net_task_runner, url_request_context));
+    sth_task_runner_, net_task_runner, url_request_context));
   if (res_preload_scheduler_ == nullptr) {
     LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::DoInit new ResPreloadScheduler failed";
     return;

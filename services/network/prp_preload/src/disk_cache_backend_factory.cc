@@ -6,6 +6,7 @@
 
 #include "base/logging.h"
 #include "base/path_service.h"
+#include "base/task/single_thread_task_runner.h"
 
 namespace {
 const size_t DEFAULT_PRELOAD_DISK_CACHE_BYTES = 12 * 1024 * 1024;
@@ -23,7 +24,7 @@ void DiskCacheBackendFactory::CreateBackend() {
     net::DISK_CACHE, net::CACHE_BACKEND_SIMPLE, /*file_operations=*/nullptr,
     cache_path_, DEFAULT_PRELOAD_DISK_CACHE_BYTES,
     disk_cache::ResetHandling::kResetOnError, /*net_log=*/nullptr,
-    base::BindOnce(&DiskCacheBackendFactory::CacheCreatedCallback, this));
+    base::BindOnce(&DiskCacheBackendFactory::CacheCreatedCallback, weak_factory_.GetWeakPtr()));
 
   if (rv.net_error == net::OK) {
     backend_ = std::move(rv.backend);
@@ -31,16 +32,12 @@ void DiskCacheBackendFactory::CreateBackend() {
   }
 }
 
-bool DiskCacheBackendFactory::WaitInitedTimeout() {
+bool DiskCacheBackendFactory::CheckBackendAsync(BackendCompleteCallback callback) {
   if (is_inited_) {
     return true;
   }
-  constexpr int32_t WAIT_INITED_TIME_OUT = 200; // 200ms
-  std::unique_lock<std::mutex> lk(fac_mutex_);
-  bool ret = cv_backend_ready_.wait_until(lk,
-    std::chrono::steady_clock::now() + std::chrono::milliseconds(WAIT_INITED_TIME_OUT),
-    [&] { return is_inited_.load(); });
-  return ret;
+  backend_complete_callback_list_.push_back(std::move(callback));
+  return false;
 }
 
 void DiskCacheBackendFactory::CacheCreatedCallback(disk_cache::BackendResult result) {
@@ -51,6 +48,9 @@ void DiskCacheBackendFactory::CacheCreatedCallback(disk_cache::BackendResult res
   }
   backend_ = std::move(result.backend);
   is_inited_.store(true);
-  cv_backend_ready_.notify_all();
+  for (auto& callback : backend_complete_callback_list_) {
+    std::move(callback).Run();
+  }
+  backend_complete_callback_list_.clear();
 }
 }  // namespace ohos_prp_preload

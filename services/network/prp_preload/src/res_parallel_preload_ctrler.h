@@ -10,7 +10,7 @@
 
 namespace ohos_prp_preload {
 using PRPPCtrlerTimeoutCB = base::RepeatingCallback<void(const std::string& url)>;
-class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrler> {
+class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPreloadCtrler> {
  public:
   ResParallelPreloadCtrler(const std::string& url,
                            const net::NetworkAnonymizationKey& networkAnonymizationKey,
@@ -18,8 +18,8 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
                            const PRPPCtrlerTimeoutCB& timeout_cb);
   ~ResParallelPreloadCtrler() = default;
 
-  bool Init(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
-    const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
+  static void InitDiskCacheBackendFactory();
+  void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb);
   void Start();
@@ -29,6 +29,9 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
   void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
   void UpdateIdlePrerequestCount();
  private:
+  void DoInit(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
+    base::WeakPtr<net::URLRequestContext> url_request_context,
+    const PRPPOnPageOriginCB& on_page_origin_cb);
   void DoStart();
   void DoStop();
   void DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);

@@ -37,10 +37,11 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   std::unordered_map<const void*, std::string> web_handle_pages_map_;
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
-  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
   std::atomic_bool is_inited_ { false };
   std::mutex mgr_mutex_;
   std::list<std::string> stopped_pages_;
+
+  base::WeakPtrFactory<PRParallelPreloadMgrImpl> weak_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

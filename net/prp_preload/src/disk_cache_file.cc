@@ -242,7 +242,7 @@ void DiskCacheFile::LoadInfoAsync() {
   if (!disk_cache_backend_factory_->CheckBackendAsync(
       base::BindOnce(&DiskCacheFile::BackendComplete, weak_factory_.GetWeakPtr()))) {
     LOG(DEBUG) << "PRPPreload.DiskCacheFile::LoadInfoAsync backend not ready";
-    SetDelayedLoadTask(base::BindOnce(&DiskCacheFile::DoLoadInfo, weak_factory_.GetWeakPtr(), entry_content));
+    SetDelayedLoadTask(base::BindOnce(&DiskCacheFile::DoLoadInfo, weak_factory_.GetWeakPtr()));
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(FROM_HERE, base::BindOnce(
       &DiskCacheFile::RunLoadTask, weak_factory_.GetWeakPtr(), true), base::Milliseconds(WAIT_INITED_TIME_OUT));
     return;

@@ -69,14 +69,6 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
   LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::Init ENABLE";
   if (!is_inited_) {
 	is_inited_ = true;
-	disk_cache_backend_factory_ = base::WrapRefCounted(new (std::nothrow) DiskCacheBackendFactory());
-	if (disk_cache_backend_factory_ == nullptr) {
-	  is_inited_ = false;
-	  LOG(WARNING) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed no mem";
-	  return;
-	}
-	disk_cache_backend_factory_->CreateBackend();
-
 	sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
 	  {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
 	if (sth_task_runner_ == nullptr || net_task_runner == nullptr) {
@@ -85,6 +77,7 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 	  return;
 	}
 	net_task_runner_ = net_task_runner;
+    sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory));
   }
 }
 
@@ -118,14 +111,13 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
   }
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
 	new (std::nothrow) ResParallelPreloadCtrler(main_url, networkAnonymizationKey, sth_task_runner_,
-	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
-  if (rp_preload_ctrler == nullptr ||
-      !rp_preload_ctrler->Init(disk_cache_backend_factory_, net_task_runner_, url_request_context,
-	  base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, base::Unretained(this)))) {
-	LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage new ResParallelPreloadCtrler failed";
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, weak_factory_.GetWeakPtr())));
+  if (rp_preload_ctrler == nullptr) {
 	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	return;
   }
+  rp_preload_ctrler->Init(net_task_runner_, url_request_context,
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, weak_factory_.GetWeakPtr()));
   web_handle_pages_map_[web_handle] = main_url;
   rp_preload_ctrler->Start();
   prp_preload_info_map_[main_url].rp_preload_ctrler_ = rp_preload_ctrler;

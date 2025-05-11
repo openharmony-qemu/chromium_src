@@ -74,9 +74,9 @@ class PlatformSensorOHOS : public PlatformSensor {
       base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
   std::unique_ptr<OHOS::NWeb::SensorAdapter> sensor_adapter_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-  base::WeakPtrFactory<PlatformSensorOHOS> weak_factory_{this};
   int64_t current_sampling_interval_ = 0;
   bool is_supported_ = false;
+  base::WeakPtrFactory<PlatformSensorOHOS> weak_factory_{this};
 };
 
 class OHOSSensorCallback : public OHOS::NWeb::SensorCallbackAdapter {

@@ -104,12 +104,9 @@ void EventCreator::MaybeAddNetworkQualityChangedEventToNetLog(
 
   LOG(INFO) << "event_message: network quality changed http_rtt_ms "
             << static_cast<int>(network_quality.http_rtt().InMilliseconds())
-            << " transport_rtt_ms "
-            << static_cast<int>(network_quality.transport_rtt().InMilliseconds())
-            << " downstream_throughput_kbps "
-            << network_quality.downstream_throughput_kbps()
-            << " effective_connection_type "
-            << GetNameForEffectiveConnectionType(effective_connection_type);
+            << " transport_rtt_ms " << static_cast<int>(network_quality.transport_rtt().InMilliseconds())
+            << " downstream_throughput_kbps " << network_quality.downstream_throughput_kbps()
+            << " effective_connection_type " << GetNameForEffectiveConnectionType(effective_connection_type);
   net_log_.AddEvent(NetLogEventType::NETWORK_QUALITY_CHANGED, [&] {
     return NetworkQualityChangedNetLogParams(
         network_quality.http_rtt(), network_quality.transport_rtt(),

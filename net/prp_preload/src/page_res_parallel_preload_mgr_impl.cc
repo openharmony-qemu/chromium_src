@@ -30,14 +30,6 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
   }
   bool inited = false;
   if (is_inited_.compare_exchange_strong(inited, true)) {
-    disk_cache_backend_factory_ = base::WrapRefCounted(new (std::nothrow) DiskCacheBackendFactory());
-    if (disk_cache_backend_factory_ == nullptr) {
-        is_inited_.store(false);
-        LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed no mem";
-        return;
-    }
-    disk_cache_backend_factory_->CreateBackend();
-
     sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
       {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
     if (sth_task_runner_ == nullptr) {
@@ -46,6 +38,7 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
       return;
     }
     net_task_runner_ = net_task_runner;
+    sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory));
   }
 }
 
@@ -72,14 +65,13 @@ void PRParallelPreloadMgrImpl::StartMainPage(const std::string& url,
   }
 
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-    new (std::nothrow) ResParallelPreloadCtrler(url, url_request_context,
-      sth_task_runner_, net_task_runner_, disk_cache_backend_factory_,
-      base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
+    new (std::nothrow) ResParallelPreloadCtrler(url, sth_task_runner_,
+      base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, weak_factory_.GetWeakPtr())));
   if (rp_preload_ctrler == nullptr) {
     LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage new ResParallelPreloadCtrler failed";
     return;
   }
-
+  rp_preload_ctrler->Init(net_task_runner_, url_request_context);
   auto it_web = web_handle_pages_map_.find(web_handle);
   if (it_web != web_handle_pages_map_.end()) {
     if (it_web->second != url) {
@@ -171,7 +163,7 @@ bool PRParallelPreloadMgrImpl::RecycleRPPCtrler() {
     sth_task_runner_->PostTask(FROM_HERE,
       base::BindOnce([]
         (const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {},
-        ctrler));
+        std::move(ctrler)));
     break;
   } while (stopped_pages_.size() > 0);
   if (!recycled) {

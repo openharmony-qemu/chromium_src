@@ -232,6 +232,8 @@ const int32_t kMaxResumeInterval = 60;
 #endif  // defined(OHOS_MEDIA_POLICY)
 const float richtextDisplayRatio = 1.0;
 
+const int32_t WEB_RESIZE_CLOSE_DELAY_TIME = 500;
+
 #if defined(OHOS_NWEB_EX)
 bool g_browser_service_api_enabled = false;
 std::vector<std::string> g_browser_args = {};
@@ -1060,6 +1062,18 @@ void NWebImpl::SetNWebHandler(std::shared_ptr<NWebHandler> client) {
   client->SetNWeb(shared_from_this());
 }
 
+void NWebImpl::DisableBoost(uint32_t nweb_id) {
+  std::shared_ptr<NWebImpl> nweb_impl = GetNWebSharedPtr(nweb_id);
+  if (nweb_impl) {
+    nweb_impl->ResizeTime_--;
+    if (nweb_impl->ResizeTime_ <= 0) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateSocPerfClientAdapter()
+        ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, false);
+        nweb_impl->ResizeTime_ = 0;
+    }
+  }
+}
+
 void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
   if (input_handler_ == nullptr || output_handler_ == nullptr) {
     return;
@@ -1074,6 +1088,13 @@ void NWebImpl::Resize(uint32_t width, uint32_t height, bool isKeyboard) {
     WVLOG_E("resize failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
     return;
   }
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+    .CreateSocPerfClientAdapter()
+    ->ApplySocPerfConfigByIdEx(OHOS::NWeb::SocPerfClientAdapter::SOC_PERF_WEB_GESTURE_ID, true);
+  ResizeTime_++;
+  content::GetUIThreadTaskRunner({})->PostDelayedTask(
+    FROM_HERE, base::BindOnce(&NWebImpl::DisableBoost, nweb_id_),
+    base::Milliseconds(WEB_RESIZE_CLOSE_DELAY_TIME));
   nweb_delegate_->Resize(width, height, isKeyboard);
   output_handler_->Resize(width, height);
 }

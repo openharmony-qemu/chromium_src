@@ -2827,8 +2827,13 @@ void NWebDelegate::PageDown(bool bottom) {
 
 #ifdef OHOS_GET_SCROLL_OFFSET
 void NWebDelegate::GetScrollOffset(float* offset_x, float* offset_y) {
-  if (!GetBrowser().get() || !render_handler_) {
+  if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI GetScrollOffset can not get browser";
+    return;
+  }
+
+  if (!render_handler_) {
+    LOG(ERROR) << "JSAPI GetScrollOffset render_handler_ is nullptr.";
     return;
   }
 
@@ -3005,8 +3010,12 @@ void NWebDelegate::ScrollByWithAnime(float delta_x, float delta_y, int32_t durat
 
 #if defined(OHOS_GET_SCROLL_OFFSET)
 void NWebDelegate::GetOverScrollOffset(float* offset_x, float* offset_y) {
-  if (!GetBrowser().get() || !render_handler_) {
+  if (!GetBrowser().get()) {
     LOG(ERROR) << "JSAPI GetOverScrollOffset can not get browser";
+    return;
+  }
+  if (!render_handler_) {
+    LOG(ERROR) << "JSAPI GetOverScrollOffset render_handler_ is nullptr.";
     return;
   }
   if (render_handler_->HasOverscroll()) {

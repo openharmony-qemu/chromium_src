@@ -280,8 +280,8 @@ class NWebRenderHandler : public CefRenderHandler {
   bool noNeedKeyboardByInput_ = false;
 #endif
 #if defined(OHOS_GET_SCROLL_OFFSET)
-  float scroll_offset_x_;
-  float scroll_offset_y_;
+  float scroll_offset_x_ = 0.0f;
+  float scroll_offset_y_ = 0.0f;
   bool has_over_scroll_ = false;
 #endif
 

@@ -232,6 +232,11 @@ class NWebRenderHandler : public CefRenderHandler {
   float GetCefDeviceRatio() const { return cef_device_ratio_; }
   // #endif
 
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  void GetScrollOffset(float& x, float& y);
+  bool HasOverscroll();
+#endif
+
 #if BUILDFLAG(IS_OHOS)
   void SetScreenOffset(double x, double y);
   void GetScreenOffset(CefRefPtr<CefBrowser> browser, double& x, double& y) override;
@@ -254,6 +259,12 @@ class NWebRenderHandler : public CefRenderHandler {
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
 #endif
+#if defined(OHOS_GET_SCROLL_OFFSET)
+  float scroll_offset_x_ = 0.0f;
+  float scroll_offset_y_ = 0.0f;
+  bool has_over_scroll_ = false;
+#endif
+
   int content_height_ = 0;
   int content_width_ = 0;
   NWebScreenInfo screen_info_;

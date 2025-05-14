@@ -1005,7 +1005,7 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::ErrorOverlay(int32_t
   if (!media_player_listener_) {
     return;
   }
-  LOG(INFO) << "MediaWebContentsObserver::EndedOverlay enter.";
+  LOG(INFO) << "MediaWebContentsObserver::ErrorOverlay enter.";
   media_player_listener_->OnError(error_code, error_msg);
 }
 

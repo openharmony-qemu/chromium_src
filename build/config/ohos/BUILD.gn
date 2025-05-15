@@ -95,6 +95,7 @@ config("compiler") {
 
   if (use_musl) {
     cflags += [ "--target=$abi_target" ]
+    include_dirs = []
     if (current_cpu == "x64") {
       if (defined(ohos_asan) && ohos_asan) {
         include_dirs +=

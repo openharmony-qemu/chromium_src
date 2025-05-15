@@ -9,6 +9,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "third_party/icu/source/i18n/unicode/regex.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "url/gurl.h"
@@ -29,7 +30,10 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
     if (!recordVector) {
       continue;
     }
-    auto pasteCustomData = recordVector->GetCustomData();
+    std::shared_ptr<PasteCustomData> pasteCustomData = recordVector->GetCustomDataV2();
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      pasteCustomData = recordVector->GetCustomData();
+    }
     if (pasteCustomData != nullptr && pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end()) {
       std::vector<uint8_t> customData = (*pasteCustomData)[SPAN_STRING_TAG];
       LOG(DEBUG) << "get paste custom data success, the length is " <<  customData.size();
@@ -44,11 +48,21 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
       }
     }
     ReadCustomDataFromRecord(pasteCustomData);
-    if (recordVector->GetHtmlText()) {
-      htmlString.append(*(recordVector->GetHtmlText()));
+
+    std::shared_ptr<std::string> pasteHtmlData = recordVector->GetHtmlTextV2();
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      pasteHtmlData = recordVector->GetHtmlText();
     }
-    if (recordVector->GetPlainText()) {
-      textString.append(*(recordVector->GetPlainText()));
+    if (pasteHtmlData) {
+      htmlString.append(*pasteHtmlData);
+    }
+
+    std::shared_ptr<std::string> pasteTextData = recordVector->GetPlainTextV2();
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      pasteTextData = recordVector->GetPlainText();
+    }
+    if (pasteTextData) {
+      textString.append(*pasteTextData);
     }
   }
   html_ = std::make_shared<std::string>(htmlString.c_str());

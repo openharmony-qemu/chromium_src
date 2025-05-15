@@ -195,11 +195,14 @@ extern bool g_siteIsolationMode;
 #if defined(OHOS_EX_PASSWORD)
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#include "base/files/file_path.h"
+#include "base/files/file_util.h"
+#include "base/path_service.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "chrome/browser/browser_process.h"
+#include "components/prefs/pref_service.h"
 #include "content/public/common/content_switches.h"
 #include "ohos_nweb/src/nweb_web_storage_impl.h"
-#include "chrome/browser/browser_process.h"
-#include "cef/libcef/browser/prefs/browser_prefs.h"
-#include "components/prefs/pref_service.h"
 #endif
 
 #if defined(OHOS_EDM_POLICY)
@@ -264,6 +267,12 @@ static std::string g_crashpad_target_location = "/data/storage/el2/crashpad";
 std::shared_ptr<NWebLoggerCallback> g_logger_callback;
 #endif
 bool g_logger_callback_initialized = false;
+
+#if defined(OHOS_EX_PASSWORD)
+static const int kMigrationBase = 10;
+constexpr base::FilePath::CharType kMigrateKeyFlagFile[] =
+    FILE_PATH_LITERAL("migrate/MIGRATE_ASSET_SUCCESS");
+#endif
 
 bool GetWebOptimizationValue() {
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -515,11 +524,27 @@ void InitialWebEngineArgs(
 
 #if defined(OHOS_EX_PASSWORD)
 void MigratePasswordsToPasswordVault() {
+  base::FilePath cache_path;
+  base::PathService::Get(base::DIR_CACHE, &cache_path);
+  if (cache_path.empty()) {
+    LOG(INFO) << "[Autofill] cache_path is empty.";
+    return;
+  }
+  base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
+  bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
-  if (migrateReady == true && migrateVault == false) {
-    OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
-    nweb_web_storage->MigratePasswords();
+  LOG(INFO) << "[Autofill] MigratePasswordsReady:" << migrateReady
+            << ", MigratePasswordsToPasswordVaul:" << migrateVault
+            << ", IsFlagFileExist:" << IsFlagFileExist;
+  if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
+    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCounct);
+    LOG(INFO) << "[Autofill] migration count:" << count;
+    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCounct, count + 1);
+    if (count <= kMigrationBase || count % kMigrationBase == 0) {
+      OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
+      nweb_web_storage->MigratePasswords();
+    }
   }
 }
 #endif // OHOS_EX_PASSWORD
@@ -689,6 +714,7 @@ NWebImpl::InitializeWebEngine(std::shared_ptr<NWebEngineInitArgs> init_args) {
 
 #if defined(OHOS_EX_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
+    LOG(INFO) << "[Autofill] Migrate passwords to passwordVault start.";
     MigratePasswordsToPasswordVault();
   }
 #endif
@@ -3991,8 +4017,13 @@ void NWebImpl::EnableWholeWebPageDrawing() {
 // static
 void NWebImpl::SetMigrationPasswordReady(const bool migrationReady) {
 #if defined(OHOS_EX_PASSWORD)
+  if (!base::CommandLine::ForCurrentProcess()) {
+    LOG(ERROR) << "[Autofill] InitializeWebEngine is not init.";
+    return;
+  }
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
     g_browser_process->local_state()->SetBoolean(browser_prefs::kMigratePasswordsReady, migrationReady);
+    g_browser_process->local_state()->CommitPendingWrite();
     LOG(INFO) << "[Autofill] Migrate Passwords Ready:" << migrationReady;
     if (migrationReady == true) {
       MigratePasswordsToPasswordVault();

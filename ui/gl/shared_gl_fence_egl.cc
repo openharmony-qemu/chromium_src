@@ -13,6 +13,9 @@ namespace gl {
 SharedGLFenceEGL::SharedGLFenceEGL() : egl_fence_(GLFenceEGL::Create()) {
   // GLFenceEGL::Create() is not supposed to fail.
   DCHECK(egl_fence_);
+#if BUILDFLAG(IS_OHOS)
+  gpu_version_ = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+#endif
 }
 
 SharedGLFenceEGL::~SharedGLFenceEGL() = default;
@@ -32,6 +35,13 @@ void SharedGLFenceEGL::ServerWait() {
   // If there is a fence, we do a wait on it. Once it has been waited upon, we
   // clear the fence and all future call to this method will be a no-op since we
   // do not need to wait on that same fence any more.
+#if BUILDFLAG(IS_OHOS)
+  if (gpu_version_ == "Mali-G610" && egl_fence_) {
+    egl_fence_->ClientWait();
+    egl_fence_.reset();
+    return;
+  }
+#endif
   if (egl_fence_) {
     egl_fence_->ServerWait();
     egl_fence_.reset();

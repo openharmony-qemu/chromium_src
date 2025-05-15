@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#Linker script that exports symbols except those that cannot be exported.
+
+{
+  global:
+    *;
+  local:
+    _ZdaPv;
+    _ZdaPvm;
+    _ZdaPvmSt11align_val_t;
+    _ZdaPvRKSt9nothrow_t;
+    _ZdaPvSt11align_val_t;
+    _ZdaPvSt11align_val_tRKSt9nothrow_t;
+    _ZdlPv;
+    _ZdlPvm;
+    _ZdlPvmSt11align_val_t;
+    _ZdlPvRKSt9nothrow_t;
+    _ZdlPvSt11align_val_t;
+    _ZdlPvSt11align_val_tRKSt9nothrow_t;
+    _Znam;
+    _ZnamRKSt9nothrow_t;
+    _ZnamSt11align_val_t;
+    _ZnamSt11align_val_tKSt9nothrow_t;
+    _Znwm;
+    _ZnwmRKSt9nothrow_t;
+    _ZnwmSt11align_val_t;
+    _ZnwmSt11align_val_tKSt9nothrow_t;
+};

@@ -22,6 +22,7 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "skia/ext/skia_utils_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
@@ -457,7 +458,11 @@ class ClipboardOHOSInternal {
     if (is_has_html) {
       std::shared_ptr<std::string> html =
           std::make_shared<std::string>(currentData->markup_data());
-      if (record->SetHtmlText(html)) {
+      bool htmlTextResult = record->SetHtmlTextV2(html);
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        htmlTextResult = record->SetHtmlText(html);
+      }
+      if (htmlTextResult) {
         LOG(INFO) << "set html to record success";
       } else {
         LOG(ERROR) << "set html to record failed";
@@ -470,7 +475,11 @@ class ClipboardOHOSInternal {
     if (is_has_text) {
       std::shared_ptr<std::string> text =
           std::make_shared<std::string>(currentData->text());
-      if (record->SetPlainText(text)) {
+      bool plainTextResult = record->SetPlainTextV2(text);
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        plainTextResult = record->SetPlainText(text);
+      }
+      if (plainTextResult) {
         LOG(INFO) << "set text to record success";
       } else {
         LOG(ERROR) << "set text to record failed";
@@ -496,7 +505,11 @@ class ClipboardOHOSInternal {
       std::vector<uint8_t>(pickle.data(), pickle.data() + pickle.size());
       OHOS::NWeb::PasteCustomData custom_data_map = {
           {kMimeTypeOHOSCustomData, custom_data_vector}};
-      if (record->SetCustomData(custom_data_map)) {
+      bool customDataResult = record->SetCustomDataV2(custom_data_map);
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        customDataResult = record->SetCustomData(custom_data_map);
+      }
+      if (customDataResult) {
         LOG(INFO) << "set custom data to record success";
       } else {
         LOG(ERROR) << "set custom data to record failed";
@@ -560,15 +573,27 @@ class ClipboardOHOSInternal {
     PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
     const std::string SPAN_STRING_TAG = "openharmony.styled-string";
     for (auto& record : record_vector) {
-      std::shared_ptr<std::string> html = record->GetHtmlText();
-      std::shared_ptr<std::string> text = record->GetPlainText();
+      std::shared_ptr<std::string> html = record->GetHtmlTextV2();
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        html = record->GetHtmlText();
+      }
+      std::shared_ptr<std::string> text = record->GetPlainTextV2();
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        text = record->GetPlainText();
+      }
       std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData
         = std::make_shared<ClipBoardImageDataAdapterImpl>();
 
       bool imgFlag = false;
       imgFlag = record->GetImgData(imgData);
-      std::shared_ptr<std::string> uri = record->GetUri();
-      std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
+      std::shared_ptr<std::string> uri = record->GetUriV2();
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        uri = record->GetUri();
+      }
+      std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomDataV2();
+      if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+        pasteCustomData = record->GetCustomData();
+      }
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
       }
@@ -605,7 +630,11 @@ class ClipboardOHOSInternal {
       }
       return true;
     }
-    return ReadPngByUri(record->GetUri(), img);
+    std::shared_ptr<std::string> uri = record->GetUriV2();
+    if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+      uri = record->GetUri();
+    }
+    return ReadPngByUri(uri, img);
   }
 
   // Reads image from URI

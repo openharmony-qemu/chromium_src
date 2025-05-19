@@ -307,14 +307,14 @@ if [ ${use_thin_lto} -eq 1 ]; then
   GN_ARGS="${GN_ARGS} use_thin_lto=false"
 fi
 
- # Extract ohos-sdk.
- if [ -f "src/ohos_sdk/.install" ]; then
-   bash "src/ohos_sdk/.install"
-   if [ $? -ne 0 ]; then
-     echo "ERROR: Failed to install ohos-sdk, abort!"
-     exit 1
-   fi
- fi
+# Extract ohos-sdk.
+if [ -f "src/ohos_sdk/.install" ]; then
+  bash "src/ohos_sdk/.install"
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to install ohos-sdk, abort!"
+    exit 1
+  fi
+fi
 
 if [ -f "${ROOT_DIR}/third_party/ohos_nweb_hap/BUILD.gn" ]; then
   buildargs="${buildargs}

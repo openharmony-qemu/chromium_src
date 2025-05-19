@@ -39,6 +39,9 @@ class GL_EXPORT SharedGLFenceEGL
   virtual ~SharedGLFenceEGL();
 
  private:
+#if BUILDFLAG(IS_OHOS)
+  std::string gpu_version_;
+#endif
   friend class base::RefCountedThreadSafe<SharedGLFenceEGL>;
 
   std::unique_ptr<GLFenceEGL> egl_fence_ GUARDED_BY(lock_);

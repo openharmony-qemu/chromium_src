@@ -12,7 +12,7 @@
 # limitations under the License.
 
 declare_args() {
-  ohos_package_name = "com.huawei.hmos.arkwebcore"
+  ohos_package_name = "com.ohos.arkwebcore"
 
   arkweb_accessibility = true
   arkweb_ai = true

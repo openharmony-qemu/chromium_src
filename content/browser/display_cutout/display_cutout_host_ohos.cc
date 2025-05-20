@@ -31,6 +31,7 @@ void DisplayCutoutHostOhos::NotifyViewportFitChanged(
   if (!rfh->IsInPrimaryMainFrame()) {
     return;
   }
+  mainFrameViewportFit_ = value;
   SetCurrentRenderFrameHost(rfh, value);
 }
 
@@ -55,7 +56,9 @@ void DisplayCutoutHostOhos::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   insets_ = insets;
 
   if (current_rfh_) {
-    SendSafeAreaToFrame(current_rfh_.get(), insets);
+    if (mainFrameViewportFit_ == blink::mojom::ViewportFit::kCover) {
+      SendSafeAreaToFrame(current_rfh_.get(), insets);
+    }
   }
 }
 

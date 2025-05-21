@@ -9,7 +9,6 @@
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
-#include "base/datashare_uri_utils.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
 #include "base/memory/ptr_util.h"
@@ -24,9 +23,6 @@
 #include "content/public/common/content_switches.h"
 #include "skia/ext/skia_utils_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkStream.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/clipboard/clipboard_data.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -391,12 +387,12 @@ class ClipboardOHOSInternal {
     SkBitmap img;
     PasteRecordVector record_vector = read_data_->GetPasteRecordVector();
     for (const auto& r : record_vector) {
-      if (ReadPngRecordInner(r, img)) {
+      if (ReadBitmapInternal(r, img)) {
         base::ThreadPool::PostTaskAndReplyWithResult(
             FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
             base::BindOnce(&ClipboardData::EncodeBitmapData, std::move(img)),
-            base::BindOnce(&ClipboardOHOSInternal::DidGetPng, base::Unretained(this),
-                          std::move(callback)));
+            base::BindOnce(&ClipboardOHOSInternal::DidGetPng,
+                           weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
         return;
       }
     }
@@ -422,6 +418,26 @@ class ClipboardOHOSInternal {
       }
     }
     LOG(INFO) << "no specified custom data in clipbaord";
+  }
+
+  // Reads filenames from the ClipboardOhosReadData.
+  void ReadFilenames(std::vector<ui::FileInfo>* result) {
+    if (!result) {
+      return;
+    }
+    result->clear();
+
+    UpdateClipboardData();
+    SetOutOfDateAfterRead();
+    if (!read_data_) {
+      LOG(ERROR) << "read_data is null";
+      return;
+    }
+
+    for (auto filename : read_data_->ReadFileUris()) {
+      base::FilePath path(filename);
+      result->push_back(ui::FileInfo(path, base::FilePath()));
+    }
   }
 
   void ReadData(const std::string& type, std::string* result) {
@@ -565,9 +581,7 @@ class ClipboardOHOSInternal {
       std::shared_ptr<ClipBoardImageDataAdapterImpl> imgData
         = std::make_shared<ClipBoardImageDataAdapterImpl>();
 
-      bool imgFlag = false;
-      imgFlag = record->GetImgData(imgData);
-      std::shared_ptr<std::string> uri = record->GetUri();
+      bool imgFlag = record->GetImgData(imgData);
       std::shared_ptr<PasteCustomData> pasteCustomData = record->GetCustomData();
       if (pasteCustomData && (pasteCustomData->find(SPAN_STRING_TAG) != pasteCustomData->end())) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kHtml);
@@ -578,17 +592,21 @@ class ClipboardOHOSInternal {
       if (text) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kText);
       }
-      if (imgFlag || uri) {
+      if (imgFlag) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
       }
-      if (!(read_data_->ReadCustomDatas().empty())) {
-        allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
-      }
+    }
+
+    if (read_data_->HasFileUri()) {
+      allFormat |= static_cast<int>(ClipboardInternalFormat::kFilenames);
+    }
+    if (read_data_->HasCustomData()) {
+      allFormat |= static_cast<int>(ClipboardInternalFormat::kCustom);
     }
     return allFormat & static_cast<int>(format);
   }
 
-  bool ReadPngRecordInner(const std::shared_ptr<PasteDataRecordAdapter>& record,
+  bool ReadBitmapInternal(const std::shared_ptr<PasteDataRecordAdapter>& record,
                           SkBitmap& img) {
     auto imgData = std::make_shared<ClipBoardImageDataAdapterImpl>();
     if (!imgData) {
@@ -605,43 +623,8 @@ class ClipboardOHOSInternal {
       }
       return true;
     }
-    return ReadPngByUri(record->GetUri(), img);
-  }
-
-  // Reads image from URI
-  bool ReadPngByUri(const std::shared_ptr<std::string>& uri, SkBitmap& img) {
-    if (!uri || uri->empty()) {
-      return false;
-    }
-
-    std::string uriRealPath = base::GetRealPath(base::FilePath(*uri));
-    if (uriRealPath.empty()) {
-      LOG(ERROR) << "uri real path is empty";
-      return false;
-    }
-    std::unique_ptr<SkStream> stream =
-        SkStream::MakeFromFile(uriRealPath.c_str());
-    if (!stream) {
-      LOG(ERROR) << "Couldn't read current uriRealPath";
-      return false;
-    }
-    sk_sp<SkData> data =
-        SkData::MakeFromStream(stream.get(), stream->getLength());
-    if (!data) {
-      LOG(ERROR) << "Couldn't parse stream file";
-      return false;
-    }
-    sk_sp<SkImage> image = SkImages::DeferredFromEncodedData(data);
-    if (!image) {
-      LOG(ERROR) << "invalid image, could not decode";
-      return false;
-    }
-
-    if (!image->asLegacyBitmap(&img)) {
-      LOG(ERROR) << "uri image store bitmap failed";
-      return false;
-    }
-    return true;
+    LOG(ERROR) << "get image data failed";
+    return false;
   }
 
   void ReadCustomDataFromReadData(std::string type, std::string* result) const {
@@ -695,6 +678,7 @@ class ClipboardOHOSInternal {
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 
   bool is_data_guard_enabled_ = false;
+  base::WeakPtrFactory<ClipboardOHOSInternal> weak_ptr_factory_{this};
 };
 
 std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback>
@@ -895,6 +879,10 @@ bool ClipboardOHOS::IsFormatAvailable(
     return clipboard_internal_->IsFormatAvailable(
         ClipboardInternalFormat::kWeb);
   }
+  if (format == ClipboardFormatType::FilenamesType()) {
+    return clipboard_internal_->IsFormatAvailable(
+        ClipboardInternalFormat::kFilenames);
+  }
   const ClipboardData* data = clipboard_internal_->GetData();
   return data && data->custom_data_format() == format.GetName();
 }
@@ -922,18 +910,7 @@ void ClipboardOHOS::ReadAvailableTypes(
     return;
   }
   types->clear();
-  if (IsFormatAvailable(ClipboardFormatType::PlainTextType(), buffer,
-                        data_dst)) {
-    types->push_back(
-        base::UTF8ToUTF16(ClipboardFormatType::PlainTextType().GetName()));
-  }
-  if (IsFormatAvailable(ClipboardFormatType::HtmlType(), buffer, data_dst)) {
-    types->push_back(
-        base::UTF8ToUTF16(ClipboardFormatType::HtmlType().GetName()));
-  }
-  if (IsFormatAvailable(ClipboardFormatType::BitmapType(), buffer, data_dst)) {
-    types->push_back(base::UTF8ToUTF16(kMimeTypePNG));
-  }
+  *types = GetStandardFormats(buffer, data_dst);
   if (clipboard_internal_->IsFormatAvailable(
           ClipboardInternalFormat::kCustom)) {
     clipboard_internal_->ReadAvailableCustomDataTypes(types);
@@ -1004,6 +981,7 @@ void ClipboardOHOS::ReadPng(ClipboardBuffer buffer,
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst,
                                           ClipboardInternalFormat::kPng)) {
+    LOG(ERROR) << "not allow to read when read png";
     std::move(callback).Run(std::vector<uint8_t>());
     return;
   }
@@ -1019,6 +997,7 @@ void ClipboardOHOS::ReadCustomData(ClipboardBuffer buffer,
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst,
                                           ClipboardInternalFormat::kCustom)) {
+    LOG(ERROR) << "not allow to read when read customData";
     return;
   }
 
@@ -1029,7 +1008,16 @@ void ClipboardOHOS::ReadCustomData(ClipboardBuffer buffer,
 void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
                                   const DataTransferEndpoint* data_dst,
                                   std::vector<ui::FileInfo>* result) const {
+  LOG(INFO) << "start read filenames data";
   DCHECK(CalledOnValidThread());
+  if (!clipboard_internal_->IsReadAllowed(
+          data_dst, ClipboardInternalFormat::kFilenames)) {
+    LOG(ERROR) << "not allow to read when read filenames";
+    return;
+  }
+
+  RecordRead(ClipboardFormatMetric::kFilenames);
+  clipboard_internal_->ReadFilenames(result);
 }
 
 void ClipboardOHOS::ReadBookmark(const DataTransferEndpoint* data_dst,
@@ -1044,6 +1032,7 @@ void ClipboardOHOS::ReadData(const ClipboardFormatType& format,
   LOG(INFO) << "start read data, type = " << format.GetName();
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst, absl::nullopt)) {
+    LOG(ERROR) << "not allow to read when read data";
     return;
   }
 

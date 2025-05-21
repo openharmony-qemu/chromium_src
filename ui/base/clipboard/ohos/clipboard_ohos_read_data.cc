@@ -6,6 +6,7 @@
 
 #include <map>
 
+#include "base/datashare_uri_utils.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
@@ -49,6 +50,13 @@ ClipboardOhosReadData::ClipboardOhosReadData(PasteRecordVector& record_vector)
     }
     if (recordVector->GetPlainText()) {
       textString.append(*(recordVector->GetPlainText()));
+    }
+    if (recordVector->GetUri()) {
+      std::string uri = *recordVector->GetUri();
+      std::string path = base::GetRealPath(base::FilePath(uri));
+      if (!path.empty()) {
+        file_uris_.push_back(path);
+      }
     }
   }
   html_ = std::make_shared<std::string>(htmlString.c_str());

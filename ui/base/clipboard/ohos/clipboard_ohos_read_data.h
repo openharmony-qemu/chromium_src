@@ -29,6 +29,8 @@ class ClipboardOhosReadData {
   size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
+  bool HasFileUri() { return !file_uris_.empty(); }
+  std::vector<std::string> ReadFileUris() { return file_uris_; }
   static void SetConvertHtmlCallback(
       std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
   ~ClipboardOhosReadData();
@@ -46,6 +48,7 @@ class ClipboardOhosReadData {
   bool is_in_app_ = false;
   std::shared_ptr<std::string> html_ = nullptr;
   std::shared_ptr<std::string> text_ = nullptr;
+  std::vector<std::string> file_uris_;
   static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
 }  // namespace ui

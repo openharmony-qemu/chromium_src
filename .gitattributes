@@ -62,6 +62,6 @@ build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libcodec2.so.
 build/linux/debian_bullseye_amd64-sysroot/usr/lib/x86_64-linux-gnu/libx265.so.192 filter=lfs diff=lfs merge=lfs -text
 build/linux/debian_bullseye_amd64-sysroot/.dec7a3a0fc5b83b909cba1b6d119077e0429a138eadef6bf5a0f2e03b1904631 filter=lfs diff=lfs merge=lfs -text
 build/linux/debian_bullseye_i386_sysroot.tar.xz filter=lfs diff=lfs merge=lfs -text
-build/linux/debian_bullseye_arm64_sysroot.tar.xz filter=lfs diff=lfs merge=lfs -text
+build/linux/debian_bullseye_amd64_sysroot.tar.xz filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text

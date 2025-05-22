@@ -309,7 +309,6 @@ void OHOSMediaPlayerBridge::Pause() {
       if (IsAudible(current_volume_)) {
         client_->OnAudioStateChanged(false);
       }
-      media_player_recorder_.PauseRecord();
     }
   }
 }
@@ -387,8 +386,9 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   int32_t time = -1;
   int32_t ret = player_->GetCurrentTime(time);
   if (ret == 0 && time == -1) {
-    // if is livestream, return media player recorder time.
-    return media_player_recorder_.GetDuration();
+    //if is livestream, return system time	
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;	
+    return base::Milliseconds(system_time);
   }
   return base::Milliseconds(time);
 }
@@ -474,7 +474,6 @@ void OHOSMediaPlayerBridge::OnPlayerStateUpdate(
     if (IsAudible(current_volume_)) {
       client_->OnAudioStateChanged(true);
     }
-    media_player_recorder_.StartRecord();
   }
 
   player_state_ = player_state;

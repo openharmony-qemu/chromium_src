@@ -34,8 +34,6 @@ if (is_ohos) {
       "codec_config_para_adapter_impl.h",
       "decoder_format_adapter_impl.cc",
       "decoder_format_adapter_impl.h",
-      "ohos_media_player_recorder.cc",
-      "ohos_media_player_recorder.h",
     ]
 
     if (defined(ohos_enable_cdm) && ohos_enable_cdm) {

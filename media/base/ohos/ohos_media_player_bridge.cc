@@ -386,8 +386,8 @@ base::TimeDelta OHOSMediaPlayerBridge::GetMediaTime() {
   int32_t time = -1;
   int32_t ret = player_->GetCurrentTime(time);
   if (ret == 0 && time == -1) {
-    //if is livestream, return system time	
-    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;	
+    //if is livestream, return system time
+    auto system_time = base::Time::Now().ToInternalValue() / base::Time::kMicrosecondsPerMillisecond;
     return base::Milliseconds(system_time);
   }
   return base::Milliseconds(time);

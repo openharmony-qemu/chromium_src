@@ -146,6 +146,7 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   bool prepared_;
   bool pending_play_;
   bool seek_complete_;
+  bool fake_seek_complete_;
   bool should_seek_on_prepare_;
   float volume_;
   float current_volume_ = 0;

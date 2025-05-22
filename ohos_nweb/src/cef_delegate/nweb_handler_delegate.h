@@ -843,6 +843,10 @@ void OnTouchIconUrlWithSizesReceived(
   void CustomWebMediaPlayer(bool enable);
 #endif // OHOS_VIDEO_ASSISTANT
 
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  void RegisterScreenCaptureDelegateListener(CefRefPtr<ScreenCaptureCallback> screen_capture_cb);
+#endif // OHOS_EX_SCREEN_CAPTURE
+
 #if defined(OHOS_DISPATCH_BEFORE_UNLOAD)
  void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
                           bool proceed) override;
@@ -995,6 +999,10 @@ void OnTouchIconUrlWithSizesReceived(
   std::optional<bool> video_assistant_enabled_;
   std::optional<bool> custom_web_media_player_enabled_;
 #endif // OHOS_VIDEO_ASSISTANT
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+  CefRefPtr<ScreenCaptureCallback> screen_capture_cb_ = nullptr;
+#endif // OHOS_EX_SCREEN_CAPTURE
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

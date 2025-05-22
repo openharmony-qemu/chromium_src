@@ -938,6 +938,15 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // OHOS_VIDEO_ASSISTANT
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+    if (screen_capture_cb_) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        LOG(INFO) << "nweb handler delegate resigter scrren capture callback";
+        main_browser_->GetHost()->SetNWebId(GetNWebId());
+        main_browser_->GetHost()->RegisterScreenCaptureDelegateListener(screen_capture_cb_);
+      }
+    }
+#endif // OHOS_EX_SCREEN_CAPTURE
     return;
   }
 #endif  // defined(OHOS_MULTI_WINDOW)
@@ -4225,5 +4234,13 @@ bool NWebHandlerDelegate::HasExtensionListener() {
   return !!g_extension_api_listener;
 }
 #endif // OHOS_ARKWEB_EXTENSIONS
+
+#if defined(OHOS_EX_SCREEN_CAPTURE)
+void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
+    CefRefPtr<ScreenCaptureCallback> screen_capture_cb) {
+  LOG(INFO) << "NWebHandlerDelegate RegisterScreenCaptureDelegateListener enter";
+  screen_capture_cb_ = screen_capture_cb;
+}
+#endif // OHOS_EX_SCREEN_CAPTURE
 
 }  // namespace OHOS::NWeb

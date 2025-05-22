@@ -941,7 +941,7 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #if defined(OHOS_EX_SCREEN_CAPTURE)
     if (screen_capture_cb_) {
       if (main_browser_ && main_browser_->GetHost()) {
-        LOG(INFO) << "nweb handler delegate resigter scrren capture callback";
+        LOG(INFO) << "nweb handler delegate register screen capture callback";
         main_browser_->GetHost()->SetNWebId(GetNWebId());
         main_browser_->GetHost()->RegisterScreenCaptureDelegateListener(screen_capture_cb_);
       }

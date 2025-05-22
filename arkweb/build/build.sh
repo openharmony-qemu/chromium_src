@@ -395,6 +395,14 @@ fi
 cd src
 source arkweb/build/prepare.sh $build_dir
 
+script_arch="i386"
+if [ "${buildarg_cpu}" = "target_cpu=\"arm64\"" ]; then
+  script_arch="amd64"
+fi
+if ! [ -d "build/linux/debian_bullseye_${script_arch}-sysroot/" ];then
+  python3 build/linux/sysroot_scripts/install-sysroot.py --arch=${script_arch}
+fi
+
 time_start_for_build=$(date +%s)
 time_start_for_gn=$time_start_for_build
 

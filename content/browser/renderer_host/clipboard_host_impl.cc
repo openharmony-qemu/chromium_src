@@ -593,6 +593,14 @@ void ClipboardHostImpl::WriteImage(const SkBitmap& bitmap
                                    const blink::mojom::CopyOptionMode copy_option
 #endif // defined(OHOS_CLIPBOARD)
 ) {
+#if defined(OHOS_CLIPBOARD)
+  ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+  if (clipboard) {
+    clipboard->SetCopyOptionMode(
+        clipboard_writer_->TransitionCopyOption(copy_option));
+  }
+#endif  // defined(OHOS_CLIPBOARD)
+
   clipboard_writer_->WriteImage(bitmap
 #if defined(OHOS_CLIPBOARD)
 ,

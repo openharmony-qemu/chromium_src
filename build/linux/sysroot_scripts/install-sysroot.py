@@ -130,8 +130,17 @@ def InstallSysroot(sysroots_json_path, target_platform, target_arch):
     url = "%s/%s" % (url_prefix, tarball_sha256sum)
 
     stamp = os.path.join(sysroot, ".stamp")
-    # This file is created by first class GCS deps. If this file exists,
-    # clear the entire directory and download with this script instead
+
+    local_tarball = os.path.join(linux_dir, tarball_filename)
+    print("local_tarball: ", local_tarball)
+    # 检查是否已经存在校验正确的压缩包
+    if os.path.exists(local_tarball):
+        print(f"Found valid local tarball: {local_tarball}")
+        should_extract = True
+    else:
+        should_extract = False
+
+    # 检查.stamp文件是否需要更新
     if os.path.exists(stamp) and not glob.glob(
             os.path.join(sysroot, ".*_is_first_class_gcs")):
         with open(stamp) as s:
@@ -143,27 +152,35 @@ def InstallSysroot(sysroots_json_path, target_platform, target_arch):
     if os.path.isdir(sysroot):
         shutil.rmtree(sysroot)
     os.mkdir(sysroot)
-    tarball = os.path.join(sysroot, tarball_filename)
-    print("Downloading %s" % url)
-    sys.stdout.flush()
-    sys.stderr.flush()
-    for _ in range(3):
-        try:
-            response = urlopen(url)
-            with open(tarball, "wb") as f:
-                f.write(response.read())
-            break
-        except Exception:  # Ignore exceptions.
-            pass
-    else:
-        raise Error("Failed to download %s" % url)
-    sha256sum = GetSha256(tarball)
-    if sha256sum != tarball_sha256sum:
-        raise Error("Tarball sha256sum is wrong."
-                    "Expected %s, actual: %s" % (tarball_sha256sum, sha256sum))
-    subprocess.check_call(["tar", "mxf", tarball, "-C", sysroot])
-    os.remove(tarball)
 
+    print("should_extract ", should_extract)
+    # 仅在需要时下载
+    if not should_extract:
+        print("Downloading %s" % url)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        for _ in range(3):
+            try:
+                response = urlopen(url)
+                with open(local_tarball, "wb") as f:
+                    f.write(response.read())
+                break
+            except Exception:
+                pass
+        else:
+            raise Error("Failed to download %s" % url)
+        
+        # 验证下载文件
+        sha256sum = GetSha256(local_tarball)
+        if sha256sum != tarball_sha256sum:
+            raise Error("Tarball sha256sum mismatch. Expected %s, got %s" %
+                        (tarball_sha256sum, sha256sum))
+
+    # 解压流程
+    subprocess.check_call(["tar", "mxf", local_tarball, "-C", sysroot])
+    # os.remove(local_tarball)  # 注释掉删除操作，保留本地压缩包
+
+    # 更新.stamp文件
     with open(stamp, "w") as s:
         s.write(url)
 

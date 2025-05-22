@@ -4237,7 +4237,7 @@ bool NWebHandlerDelegate::HasExtensionListener() {
 
 #if defined(OHOS_EX_SCREEN_CAPTURE)
 void NWebHandlerDelegate::RegisterScreenCaptureDelegateListener(
-    CefRefPtr<ScreenCaptureCallback> screen_capture_cb) {
+    CefRefPtr<CefScreenCaptureCallback> screen_capture_cb) {
   LOG(INFO) << "NWebHandlerDelegate RegisterScreenCaptureDelegateListener enter";
   screen_capture_cb_ = screen_capture_cb;
 }

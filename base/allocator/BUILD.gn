@@ -66,10 +66,6 @@ config("wrap_malloc_symbols") {
     "-Wl,-wrap,asprintf",
     "-Wl,-wrap,vasprintf",
   ]
-
-  ldflags += [ "-Wl,--version-script=" +
-              rebase_path("//build/ohos/ohos_only_jni_exports.lst",
-                          root_build_dir)]
 }
 
 config("mac_no_default_new_delete_symbols") {

@@ -95,7 +95,7 @@ config("compiler") {
 
   if (use_musl) {
     cflags += [ "--target=$abi_target" ]
-    include_dirs = []
+    include_dirs = [ "$ohos_toolchain_root/include/libcxx-ohos/include/c++/v1" ]
     if (current_cpu == "x64") {
       if (defined(ohos_asan) && ohos_asan) {
         include_dirs +=

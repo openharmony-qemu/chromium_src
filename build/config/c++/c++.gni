@@ -11,7 +11,8 @@ declare_args() {
   # standard library support.
   # Don't check in changes that set this to false for more platforms; doing so
   # is not supported.
-  use_custom_libcxx = true
+  use_custom_libcxx = is_fuchsia || is_android || is_apple || is_linux ||
+                      is_chromeos || (is_win && is_clang)
 
   # Use libc++ instead of stdlibc++ when using the host_cpu toolchain, even if
   # use_custom_libcxx is false. This is useful for cross-compiles where a custom
@@ -41,6 +42,11 @@ declare_args() {
 use_custom_libcxx =
     use_custom_libcxx || (use_custom_libcxx_for_host && !is_a_target_toolchain)
 use_custom_libcxx = use_custom_libcxx && !is_nacl
+
+if (is_ohos) {
+  use_custom_libcxx = false
+  use_custom_libcxx_for_host = false
+}
 
 declare_args() {
   # WARNING: Setting this to a non-default value is highly discouraged.

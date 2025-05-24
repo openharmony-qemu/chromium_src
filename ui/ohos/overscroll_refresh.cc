@@ -109,7 +109,6 @@ void OverscrollRefresh::OnOverscrolled(const cc::OverscrollBehavior& behavior) {
   bool in_y_direction = std::abs(ydelta) > std::abs(xdelta);
   bool in_x_direction = std::abs(ydelta) * kWeightAngle30 < std::abs(xdelta);
   ::OverscrollAction type = ::OverscrollAction::NONE;
-  bool navigate_forward = false;
   if (ydelta > 0 && in_y_direction) {
     // Pull-to-refresh. Check overscroll-behavior-y
     if (behavior.y != cc::OverscrollBehavior::Type::kAuto) {
@@ -126,7 +125,6 @@ void OverscrollRefresh::OnOverscrolled(const cc::OverscrollBehavior& behavior) {
       return;
     }
     type = ::OverscrollAction::HISTORY_NAVIGATION;
-    navigate_forward = xdelta < 0;
   }
 
   if (type != ::OverscrollAction::NONE) {
@@ -224,13 +222,6 @@ void OverscrollRefresh::AnimateHover(float x_delta, float y_delta) {
 }
 
 void OverscrollRefresh::AnimateReset(float x_delta, float y_delta) {
-  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
-    content::GetUIThreadTaskRunner({})->PostTask(
-        FROM_HERE, base::BindOnce(&OverscrollRefresh::AnimateReset,
-                                  base::Unretained(this), x_delta, y_delta));
-    return;
-  }
-
   pulltorefresh_scroll_ -= gfx::Vector2dF(x_delta, y_delta);
   if (pulltorefresh_scroll_.y() > kMinTriggerAnimateTwice) {
     did_stop_refresh_ = false;
@@ -267,11 +258,25 @@ OverscrollRefresh::RefreshListener::RefreshListener(
 OverscrollRefresh::RefreshListener::~RefreshListener() = default;
 
 void OverscrollRefresh::RefreshListener::onAnimationEnd() {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&OverscrollRefresh::RefreshListener::onAnimationEnd,
+                       base::Unretained(this)));
+    return;
+  }
   if (overscroll_refresh_.get()) {
     overscroll_refresh_->AnimateReset(0, 0);
   }
 }
 void OverscrollRefresh::RefreshListener::onAnimationRepeat(float delta) {
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&OverscrollRefresh::RefreshListener::onAnimationRepeat,
+                       base::Unretained(this), delta));
+    return;
+  }
   if (overscroll_refresh_.get()) {
     overscroll_refresh_->AnimateHover(0, delta);
   }

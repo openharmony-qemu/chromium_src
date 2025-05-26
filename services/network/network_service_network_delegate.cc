@@ -203,8 +203,15 @@ void NetworkServiceNetworkDelegate::RecordErrorInfo(net::URLRequest* request,
   base::TimeDelta duration_time =
       base::TimeTicks::Now() - request->creation_time();
 
+  URLLoader* url_loader = URLLoader::ForRequest(*request);
+  uint32_t resource_type = -1;
+  if (url_loader) {
+    resource_type = url_loader->GetResourceType();
+  }
+
   std::ostringstream ostr;
   ostr << ", error_code " << net_error << "(" << error_code_info
+       << ", resource_type: " << resource_type
        << ", downstream throughput kbps: " << downlink_kbps
        << ", duration_time(ms) " << duration_time.InMilliseconds();
   LOG(INFO) << "final url: *** "

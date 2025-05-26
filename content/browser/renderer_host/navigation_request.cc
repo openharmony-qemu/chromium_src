@@ -2451,9 +2451,13 @@ void NavigationRequest::BeginNavigationImpl() {
 
 #ifdef OHOS_LOG_MESSAGE
   if (frame_tree_node_->IsMainFrame()) {
-    LOG(INFO) << "INFO: start a navigation url: *** is_browser_initiated_: "
+    LOG(INFO) << "event_message: start a navigation url domain: "
+              << (common_params_ ? GetDomainAndRegistry(common_params_->url, 
+              net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES) : "")
+              << " is_browser_initiated_: "
               << commit_params_->is_browser_initiated
-              << " was_redirected_: " << was_redirected_;
+              << " was_redirected_: " << was_redirected_
+              << " " << devtools_navigation_token_;
 #ifdef OHOS_LOGGER_REPORT
     bool is_incognito = false;
     WebContents* web_contents = WebContents::FromFrameTreeNodeId(

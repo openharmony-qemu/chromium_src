@@ -72,7 +72,6 @@
 #include <ostream>
 #include <type_traits>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/check.h"
 #include "base/check_op.h"
@@ -80,6 +79,7 @@
 #include "base/numerics/clamped_math.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include <zircon/types.h>
@@ -138,9 +138,6 @@ constexpr bool isnan(double d) {
 // Clang compiler is unable to eliminate a "dead" function call to an undefined
 // `std::_Literal_zero_is_expected()` function that MSVC uses to allow
 // comparisons with literal zero without warning.
-#define MSVC_OPERATOR_3WAY_BROKEN                                           \
-  BUILDFLAG(IS_WIN) && (__cplusplus >= 202002L || _MSVC_LANG >= 202002L) && \
-      _MSVC_STL_VERSION >= 143 && _MSVC_STL_UPDATE >= 202303
 
 // TimeDelta ------------------------------------------------------------------
 
@@ -328,21 +325,8 @@ class BASE_EXPORT TimeDelta {
 
   // Comparison operators.
   friend constexpr bool operator==(TimeDelta, TimeDelta) = default;
-#if MSVC_OPERATOR_3WAY_BROKEN
-  friend constexpr std::strong_ordering operator<=>(TimeDelta lhs,
-                                                    TimeDelta rhs) {
-    if (lhs.delta_ == rhs.delta_) {
-      return std::strong_ordering::equal;
-    }
-    if (lhs.delta_ < rhs.delta_) {
-      return std::strong_ordering::less;
-    }
-    return std::strong_ordering::greater;
-  }
-#else
   friend constexpr std::strong_ordering operator<=>(TimeDelta,
                                                     TimeDelta) = default;
-#endif
 
   // Returns this delta, ceiled/floored/rounded-away-from-zero to the nearest
   // multiple of |interval|.
@@ -493,21 +477,8 @@ class TimeBase {
 
   // Comparison operators
   friend constexpr bool operator==(const TimeBase&, const TimeBase&) = default;
-#if MSVC_OPERATOR_3WAY_BROKEN
-  friend constexpr std::strong_ordering operator<=>(TimeBase lhs,
-                                                    TimeBase rhs) {
-    if (lhs.us_ == rhs.us_) {
-      return std::strong_ordering::equal;
-    }
-    if (lhs.us_ < rhs.us_) {
-      return std::strong_ordering::less;
-    }
-    return std::strong_ordering::greater;
-  }
-#else
   friend constexpr std::strong_ordering operator<=>(const TimeBase&,
                                                     const TimeBase&) = default;
-#endif
 
  protected:
   constexpr explicit TimeBase(int64_t us) : us_(us) {}
@@ -846,13 +817,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // `Microseconds()` for `TimeDelta`. http://crbug.com/634507
   static constexpr Time FromInternalValue(int64_t us) { return Time(us); }
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  // Returns the UTC time string parsed from base::Time
-  static std::string ToUTCTimeString(const base::Time& time) {
-    return ToUTCString(time);
-  }
-#endif
-
  private:
   friend class time_internal::TimeBase<Time>;
 
@@ -909,11 +873,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   // Returns the milliseconds since the Unix epoch (1970), rounding the
   // microseconds towards -infinity.
   int64_t ToRoundedDownMillisecondsSinceUnixEpoch() const;
-
-#if BUILDFLAG(ARKWEB_PRECOMPILE)
-  // Returns the UTC time string parsed from base::Time
-  static std::string ToUTCString(const base::Time& time);
-#endif
 };
 
 // Factory methods that return a TimeDelta of the given unit.

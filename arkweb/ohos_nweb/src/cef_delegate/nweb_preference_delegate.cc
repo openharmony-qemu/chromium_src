@@ -28,10 +28,11 @@
 #include "cef/include/internal/cef_string_wrappers.h"
 #include "cef/include/internal/cef_types.h"
 #include "cef/include/internal/cef_types_wrappers.h"
-#include "cef/libcef/browser/net_service/net_helpers.h"
+#include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "content/public/common/content_switches.h"
 #include "net/base/load_flags.h"
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
 
 namespace OHOS::NWeb {
 
@@ -159,6 +160,12 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.supports_multi_touch_zoom = ZoomingfunctionEnabled();
   browser_settings.user_gesture_required = GetMediaPlayGestureAccess();
   browser_settings.pinch_smooth_mode = GetPinchSmoothMode();
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  browser_settings.border_radius_top_left = border_radius_top_left_;
+  browser_settings.border_radius_top_right = border_radius_top_right_;
+  browser_settings.border_radius_bottom_left = border_radius_bottom_left_;
+  browser_settings.border_radius_bottom_right = border_radius_bottom_right_;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
@@ -167,15 +174,21 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.scroll_enabled = setting_scroll_enabled_;
   browser_settings.blur_enabled = GetBlurEnable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   browser_settings.native_embed_mode_enabled =
       GetNativeEmbedMode() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.intrinsic_size_enabled =
+      GetIntrinsicSizeEnable() ? STATE_ENABLED : STATE_DISABLED;
+  browser_settings.css_display_change_enabled =
+      GetCssDisplayChangeEnabled() ? STATE_ENABLED : STATE_DISABLED;
   str = CefString(embed_tag_);
   cef_string_set(str.c_str(), str.length(), &(browser_settings.embed_tag),
                  true);
   str = CefString(embed_tag_type_);
   cef_string_set(str.c_str(), str.length(), &(browser_settings.embed_tag_type),
                  true);
+#endif  //BUILDFLAG(ARKWEB_SAME_LAYER)
+#if BUILDFLAG(IS_OHOS)
   browser_settings.draw_mode = GetDrawMode();
   browser_settings.text_autosizing_enabled =
       IsTextAutosizingEnabled() ? STATE_ENABLED : STATE_DISABLED;
@@ -319,6 +332,20 @@ void NWebPreferenceDelegate::PutFixedFontFamilyName(const std::string& font) {
   WebPreferencesChanged();
 }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
+    double borderRadiusTopLeft,
+    double borderRadiusTopRight,
+    double borderRadiusBottomLeft,
+    double borderRadiusBottomRight)
+{
+  border_radius_top_left_ = borderRadiusTopLeft;
+  border_radius_top_right_ = borderRadiusTopRight;
+  border_radius_bottom_left_ = borderRadiusBottomLeft;
+  border_radius_bottom_right_ = borderRadiusBottomRight;
+  WebPreferencesChanged();
+}
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 void NWebPreferenceDelegate::PutForceDarkModeEnabled(int forceDark) {
   force_dark_mode_enabled_ = forceDark;
   WebPreferencesChanged();
@@ -442,6 +469,9 @@ void NWebPreferenceDelegate::PutCacheMode(CacheModeFlag flag) {
   }
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
   TRACE_EVENT1("base", "NWebPreferenceDelegate::PutCacheMode", "flag", flag);
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  net_service::NetHelpers::no_use_cache = (CacheMode() == USE_NO_CACHE);
 #endif
   browser_->GetHost()->SetCacheMode(ConvertCacheMode(flag));
 }
@@ -731,8 +761,7 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
   CefRefPtr<CefCommandLine> command_line =
       CefCommandLine::GetGlobalCommandLine();
   auto isEnableEmbed = command_line->HasSwitch(::switches::kEnableEmbedMode);
-  enable_embed_mode_ =
-      flag && (!isEnableEmbed || base::ohos::IsCompatibleMode());
+  enable_embed_mode_ = flag;
   if (enable_embed_mode_) {
     zooming_function_enabled_ = false;
   }
@@ -746,6 +775,24 @@ void NWebPreferenceDelegate::SetNativeEmbedMode(bool flag) {
 
 bool NWebPreferenceDelegate::GetNativeEmbedMode() {
   return enable_embed_mode_;
+}
+
+void NWebPreferenceDelegate::SetIntrinsicSizeEnable(bool enable) {
+  enable_intrinsic_size_ = enable;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetIntrinsicSizeEnable() {
+  return enable_intrinsic_size_;
+}
+
+void NWebPreferenceDelegate::SetCssDisplayChangeEnabled(bool enable) {
+  enable_css_display_change_ = enable;
+  WebPreferencesChanged();
+}
+ 
+bool NWebPreferenceDelegate::GetCssDisplayChangeEnabled() {
+  return enable_css_display_change_;
 }
 
 void NWebPreferenceDelegate::RegisterNativeEmbedRule(const std::string& tag,
@@ -864,7 +911,7 @@ void NWebPreferenceDelegate::PutOverlayScrollbarEnabled(bool enable) {
     LOG(DEBUG) << "Fit content and set overlayscrollbar false";
     overlay_scrollbar_enable = false;
   }
-  base::FeatureList::SetScrollbarEnable(overlay_scrollbar_enable);
+  base::FeatureListUtils::SetScrollbarEnable(overlay_scrollbar_enable);
   WebPreferencesChanged();
 }
 #endif

@@ -84,6 +84,12 @@
 #include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
 #endif  // BUILDFLAG(ARKWEB_WPT)
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
+#include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+
 namespace content {
 
 namespace {
@@ -128,6 +134,10 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
             std::move(receiver));
       },
       GetID(), widget_helper_));
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  arkweb_render_process_host_impl_utils_->AddHostUIThreadInterface(registry.get());
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 
   AddUIThreadInterface(
       registry.get(),

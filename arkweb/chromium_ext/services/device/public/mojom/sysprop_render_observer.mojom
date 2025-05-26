@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+module device.mojom;
+
+interface SysPropRenderObserver {
+  // Add a client that will get notified on system properties changes. No throttling is
+  // employed, as system properties changes are infrequent enough that there is no
+  // realistic risk of flooding.
+  Attach(pending_remote<SysPropRenderObserverClient> client);
+  Detach(pending_remote<SysPropRenderObserverClient> client);
+  
+};
+
+interface SysPropRenderObserverClient {
+  // Called on a system properties change.
+  TracePropertiesUpdate(string value);
+  DumpPropertiesUpdate(string value);
+};

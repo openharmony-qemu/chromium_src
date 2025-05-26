@@ -1,0 +1,18 @@
+export default [
+  "https://m.weibo.cn/",
+  "http://i.meituan.com/",
+  "https://m.58.com/",
+  "https://www.tmall.com/",
+  "https://m.pinduoduo.com/",
+  "https://www.baidu.com/",
+  "https://m.v.qq.com/",
+  "https://i.y.qq.com/n2/m/",
+  "https://xw.qq.com/",
+  "https://m.amap.com/",
+  "https://www.abchina.com/",
+  "http://m.icbc.com.cn/",
+  "https://m.ctrip.com/",
+  "http://m.qunar.com",
+  "https://zhidao.baidu.com/",
+  "https://m.bilibili.com/",
+]

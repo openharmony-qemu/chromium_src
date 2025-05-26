@@ -85,10 +85,6 @@
 #include "services/device/public/mojom/wake_lock.mojom.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/ocr/ocr_adapter.h"
-#endif
-
 class SkBitmap;
 
 namespace blink {
@@ -125,16 +121,7 @@ class RenderWidgetHostFactory;
 class SiteInstanceGroup;
 class SyntheticGestureController;
 class VisibleTimeRequestTrigger;
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason {
-  kOnInputEventAckTimeout = 0,
-  kRendererAnrInputTimeout = 0,
-  kNavigationRequestCommitTimeout = 1,
-  kRendererCancellationThrottleTimeout = 2,
-  kMaxValue = kRendererCancellationThrottleTimeout,
-};
-#endif
+class RenderWidgetHostImplExt;
 
 // This implements the RenderWidgetHost interface that is exposed to
 // embedders of content, and adds things only visible to content.
@@ -178,6 +165,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       public input::RenderInputRouterDelegate,
       public input::RenderInputRouterClient {
  public:
+   friend class RenderWidgetHostImplExt;
   // See the constructor for documentation.
   //
   // This static factory method is restricted to being called from the factory,
@@ -210,6 +198,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   RenderWidgetHostImpl& operator=(const RenderWidgetHostImpl&) = delete;
 
   ~RenderWidgetHostImpl() override;
+
+  virtual RenderWidgetHostImplExt* AsRenderWidgetHostImplExt() {
+    return nullptr;
+  }
 
   // Similar to RenderWidgetHost::FromID, but returning the Impl object.
   static RenderWidgetHostImpl* FromID(int32_t process_id, int32_t routing_id);
@@ -273,11 +265,6 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       const input::NativeWebKeyboardEvent& key_event) override;
   void ForwardGestureEvent(
       const blink::WebGestureEvent& gesture_event) override;
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  virtual void ForwardTouchEventWithLatencyInfo(
-      const blink::WebTouchEvent& touch_event,
-      const ui::LatencyInfo& latency);  // Virtual for testing.
-#endif
   RenderProcessHost* GetProcess() override;
   int GetRoutingID() final;
   RenderWidgetHostViewBase* GetView() override;
@@ -986,31 +973,6 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info);
 
-#if BUILDFLAG(IS_OHOS)
-  void CreateOverlay(const SkBitmap& bitmap,
-                     const gfx::Rect& image_rect,
-                     const gfx::Point& touch_point) override;
-  void OnTextRecognized(std::vector<ohos::adapter::TextWord> words);
-  gfx::Rect GetImageRect();
-  void OnTextSelected(bool flag);
-  void OnDestroyImageAnalyzerOverlay();
-  void OnFoldStatusChanged(uint32_t foldstatus);
-#endif
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  void SendCurrentLanguage(const std::string& ans) override;
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-  void GetWordSelection(const std::string& text,
-                        int8_t offset,
-                        GetWordSelectionCallback callback) override;
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override;
-#endif
-
   void StartDragging(blink::mojom::DragDataPtr drag_data,
                      const url::Origin& source_origin,
                      blink::DragOperationsMask drag_operations_mask,
@@ -1070,15 +1032,6 @@ class CONTENT_EXPORT RenderWidgetHostImpl
 
   // Requests a commit and forced redraw in the renderer compositor.
   void ForceRedrawForTesting();
-
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void DidNativeEmbedEvent(
-      blink::mojom::NativeEmbedTouchEventPtr touchEvent) override;
-#endif
 
  protected:
   // |routing_id| must not be MSG_ROUTING_NONE.
@@ -1228,10 +1181,6 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   // Give key press listeners a chance to handle this key press. This allow
   // widgets that don't have focus to still handle key presses.
   bool KeyPressListenersHandleEvent(const input::NativeWebKeyboardEvent& event);
-
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-  void ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event);
-#endif
 
   void WindowSnapshotReachedScreen(int snapshot_id);
 
@@ -1676,5 +1625,7 @@ struct ScopedObservationTraits<content::RenderWidgetHostImpl,
 };
 
 }  // namespace base
+
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_WIDGET_HOST_IMPL_H_

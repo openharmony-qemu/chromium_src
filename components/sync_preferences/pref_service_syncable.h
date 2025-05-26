@@ -110,7 +110,7 @@ class PrefServiceSyncable : public PrefService,
 
 #if BUILDFLAG(ARKWEB_PREFS)
   user_prefs::PrefRegistrySyncable* GetPrefRegistrySyncable();
-#endif  // ARKWEB_PREFS
+#endif // ARKWEB_PREFS
 
   // Do not call this after having derived an incognito or per tab pref service.
   void UpdateCommandLinePrefStore(PrefStore* cmd_line_store) override;

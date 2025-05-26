@@ -141,7 +141,9 @@ void TimeZoneMonitorOhos::NotifyClientsFromImpl(std::string& timezone) {
   NotifyClients(timezone);
 }
 
-std::unique_ptr<TimeZoneMonitor> TimeZoneMonitor::Create() {
+// static
+std::unique_ptr<TimeZoneMonitor> TimeZoneMonitor::Create(
+    scoped_refptr<base::SequencedTaskRunner> file_task_runner) {
   LOG(DEBUG) << "TimeZoneMonitor Create.";
   return std::make_unique<TimeZoneMonitorOhos>();
 }

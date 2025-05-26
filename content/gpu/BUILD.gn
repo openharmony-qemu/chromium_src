@@ -38,10 +38,13 @@ target(link_target_type, "gpu_sources") {
     "gpu_child_thread.h",
     "gpu_child_thread_receiver_bindings.cc",
     "gpu_main.cc",
+    "//arkweb/chromium_ext/content/gpu/gpu_main_ext.h",
     "gpu_service_factory.cc",
     "gpu_service_factory.h",
     "in_process_gpu_thread.cc",
     "in_process_gpu_thread.h",
+    "../../arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils.cc",
+    "../../arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils.h",
   ]
 
   configs += [ "//content:content_implementation" ]

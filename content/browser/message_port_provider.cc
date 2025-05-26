@@ -77,23 +77,7 @@ void MessagePortProvider::PostMessageToFrame(
                              std::vector<blink::MessagePortDescriptor>());
 }
 
-#if BUILDFLAG(IS_ARKWEB)
-void MessagePortProvider::OhosPostMessageToFrame(
-    Page& page,
-    const std::u16string& source_origin,
-    const std::u16string& target_origin,
-    const std::u16string& data,
-    std::vector<blink::WebMessagePort>& ports) {
-  LOG(INFO) << "JSAPI OhosPostMessageToFrame";
-  // Extract the underlying descriptors.
-  std::vector<blink::MessagePortDescriptor> descriptors;
-  for (size_t i = 0; i < ports.size(); ++i) {
-    descriptors.push_back(ports[i].PassPort());
-  }
-  PostMessageToFrameInternal(page, source_origin, target_origin, data,
-                             std::move(descriptors));
-}
-#endif
+#include "arkweb/chromium_ext/content/browser/message_port_provider_for_include.cc"
 
 #if BUILDFLAG(IS_ANDROID)
 void MessagePortProvider::PostMessageToFrame(

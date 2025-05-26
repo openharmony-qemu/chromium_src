@@ -9,10 +9,9 @@
 #include "base/component_export.h"
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
 #include "url/gurl.h"
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-#include <map>
 
-#include "url/origin.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/services/network/sec_header_helpers_for_include.h"
 #endif
 
 namespace net {
@@ -54,16 +53,6 @@ void SetFetchMetadataHeaders(
 COMPONENT_EXPORT(NETWORK_SERVICE)
 void MaybeRemoveSecHeaders(net::URLRequest* request,
                            const GURL& pending_redirect_url);
-
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-COMPONENT_EXPORT(NETWORK_SERVICE)
-std::map<std::string, std::string> GetFetchMetadataHeaders(
-    const GURL& target_url,
-    network::mojom::RequestMode mode,
-    bool has_user_activation,
-    network::mojom::RequestDestination dest,
-    const std::optional<url::Origin>& initiator);
-#endif
 
 }  // namespace network
 

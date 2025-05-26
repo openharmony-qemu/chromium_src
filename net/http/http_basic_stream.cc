@@ -192,8 +192,8 @@ void HttpBasicStream::OnHandshakeConfirmed(CompletionOnceCallback callback,
     // handshake was already confirmed or there was nothing to confirm.
     confirm_handshake_end_ = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "connectEnd",
-                 confirm_handshake_end_);
+    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+                 "connectEnd", confirm_handshake_end_);
 #endif
   }
   std::move(callback).Run(rv);

@@ -11,11 +11,13 @@
 #include "base/memory/weak_ptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "content/common/content_export.h"
+#include "media/base/native_texture_wrapper.h"
 #include "media/base/media_resource.h"
 #include "media/base/renderer.h"
 #include "media/base/renderer_client.h"
 #include "media/base/video_renderer_sink.h"
 #include "media/base/video_util.h"
+#include "media/base/video_util_ext.h"
 #include "media/mojo/clients/mojo_renderer.h"
 #include "media/mojo/clients/mojo_renderer_wrapper.h"
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
@@ -43,7 +45,9 @@ class OHOSMediaPlayerRendererClient
       mojo::PendingRemote<RendererExtention> renderer_extension_remote,
       mojo::PendingReceiver<ClientExtention> client_extension_receiver,
       scoped_refptr<base::SequencedTaskRunner> media_task_runner,
+      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
       std::unique_ptr<media::MojoRenderer> mojo_renderer,
+      media::ScopedNativeTextureWrapper native_texture_wrapper,
       media::VideoRendererSink* sink);
   ~OHOSMediaPlayerRendererClient() override;
 
@@ -54,6 +58,10 @@ class OHOSMediaPlayerRendererClient
   // Renderer implementation.
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
   media::RendererType GetRendererType() override;
 
@@ -62,8 +70,14 @@ class OHOSMediaPlayerRendererClient
   void OnVideoSizeChange(const gfx::Size& size) override;
   void OnFrameUpdate(media::mojom::OhosSurfaceBufferHandlePtr
                          ohos_surface_buffer_handle) override;
+  void OnFrameAvailable();
 
  private:
+  void OnStreamTextureWrapperInitialized(media::MediaResource* media_resource,
+                                         bool success);
+  void OnSurfaceCreated(int native_window_id);
+  void OnSurfaceDestroyed();
+
   void OnRemoteRendererInitialized(media::PipelineStatus status);
   void OnFinishPaintCallback();
 
@@ -75,15 +89,20 @@ class OHOSMediaPlayerRendererClient
                            const int& fd,
                            const int& fd_browser);
 
-  media::MediaResource* media_resource_;
+  raw_ptr<media::MediaResource> media_resource_;
+
+  // Add native texture impl
+  media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
   std::deque<CachedBuffer> cached_buffers_;
 
-  media::RendererClient* client_;
+  raw_ptr<media::RendererClient> client_;
 
-  media::VideoRendererSink* sink_;
+  raw_ptr<media::VideoRendererSink> sink_;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
 
   media::PipelineStatusCallback init_cb_;
 
@@ -105,6 +124,13 @@ class OHOSMediaPlayerRendererClient
   // Used to receive events from MediaPlayerRenderer in the browser process.
   mojo::Receiver<MediaPlayerRendererClientExtension> client_extension_receiver_{
       this};
+
+  int native_window_id_ = -1;
+ 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  media::RequestSurfaceCB request_surface_cb_;
+  media::VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // NOTE: Weak pointers must be invalidated before all other member variables.
   base::WeakPtrFactory<OHOSMediaPlayerRendererClient> weak_factory_{this};

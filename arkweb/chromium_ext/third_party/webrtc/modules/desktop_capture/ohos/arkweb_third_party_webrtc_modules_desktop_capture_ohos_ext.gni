@@ -1,0 +1,39 @@
+arkweb_third_party_webrtc_modules_desktop_capture_ohos_sources = [
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_capture_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_capture_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_enc_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_enc_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_info_adapter_impl.h",
+
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_window_capturer.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_window_capturer.h",
+
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/recorder_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/recorder_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/screen_capture_config_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/screen_capture_config_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_capture_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_capture_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_enc_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_enc_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_info_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/video_info_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_buffer_adapter_impl.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/audio_buffer_adapter_impl.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge.cc",
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_source_bridge.h",
+ 
+    "//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/base_screen_capture_read_callback.h",
+]

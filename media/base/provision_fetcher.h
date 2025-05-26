@@ -33,6 +33,11 @@ class ProvisionFetcher {
   virtual void Retrieve(const GURL& default_url,
                         const std::string& request_data,
                         ResponseCB response_cb) = 0;
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  virtual void RetrieveWiseplayLicense(const GURL& default_url,
+                                       const std::string& request_data,
+                                       ResponseCB response_cb) = 0;
+#endif
 };
 
 using CreateFetcherCB =

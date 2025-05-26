@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "content/browser/log_console_message.h"
-
 #include <codecvt>
 
 #include "arkweb/build/features/features.h"
@@ -14,8 +13,8 @@
 #include "content/public/common/content_features.h"
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "hilog_adapter.h"
+#include "arkweb/chromium_ext/content/browser/log_console_message_utils.h"
 #endif
-
 namespace content {
 
 void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
@@ -42,31 +41,7 @@ void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
     return;
 
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
-  auto priority = (resolved_level < 0) ? OHOS::NWeb::LogLevelAdapter::DEBUG
-                                       : OHOS::NWeb::LogLevelAdapter::LEVEL_MAX;
-  switch (resolved_level) {
-    case logging::LOGGING_INFO:
-      priority = OHOS::NWeb::LogLevelAdapter::INFO;
-      break;
-    case logging::LOGGING_WARNING:
-      priority = OHOS::NWeb::LogLevelAdapter::WARN;
-      break;
-    case logging::LOGGING_ERROR:
-      priority = OHOS::NWeb::LogLevelAdapter::ERROR;
-      break;
-    case logging::LOGGING_FATAL:
-      priority = OHOS::NWeb::LogLevelAdapter::FATAL;
-      break;
-    case logging::LOGGING_DEBUG:
-      priority = OHOS::NWeb::LogLevelAdapter::DEBUG;
-  }
-  std::ostringstream stream;
-  stream << "\"" << message << "\", source: " << source_id << " ("
-         << line_number << ")";
-  std::string message_str(stream.str());
-  OHOS::NWeb::HiLogAdapter::PrintConsoleLog(
-      priority, "ARKWEB-CONSOLE", "[%{public}s:%{public}d] %{public}s",
-      "CONSOLE", line_number, message_str.c_str());
+LogConsoleMessageUtils::LogConsoleMessage(resolved_level, message, line_number, source_id);
 #else
   logging::LogMessage("CONSOLE", line_number, resolved_level).stream()
       << "\"" << message << "\", source: " << source_id << " (" << line_number

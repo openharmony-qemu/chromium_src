@@ -30,6 +30,9 @@ namespace password_manager {
 class PasswordAutofillManager;
 class PasswordGenerationFrameHelper;
 class PasswordManagerInterface;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordManagerDriverExt;
+#endif
 
 // Interface that allows PasswordManager core code to interact with its driver
 // (i.e., obtain information from it and give information to it).
@@ -46,6 +49,11 @@ class PasswordManagerDriver {
   PasswordManagerDriver& operator=(const PasswordManagerDriver&) = delete;
 
   virtual ~PasswordManagerDriver() = default;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class PasswordManagerDriverExt;
+  virtual PasswordManagerDriverExt* AsPasswordManagerDriverExt() { return nullptr; }
+#endif
 
   // Returns driver id which is unique in the current tab.
   virtual int GetId() const = 0;
@@ -134,17 +142,6 @@ class PasswordManagerDriver {
   virtual void PreviewField(autofill::FieldRendererId field_id,
                             const std::u16string& value) {}
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  virtual void FillAccountSuggestion(const std::u16string& username,
-                                     const std::u16string& password) = 0;
-
-  virtual void SendParsedPasswordFormToRenderer(
-      const autofill::PasswordFormFillData&
-          parsed_form_data_without_password) = 0;
-
-  virtual void AutofillSurfaceClosed(bool show_virtual_keyboard) = 0;
-#endif
-
   // Tells the driver to preview filling form with the `username` and
   // `password`.
   virtual void PreviewSuggestion(const std::u16string& username,
@@ -209,4 +206,7 @@ class PasswordManagerDriver {
 
 }  // namespace password_manager
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_manager_driver_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_DRIVER_H_

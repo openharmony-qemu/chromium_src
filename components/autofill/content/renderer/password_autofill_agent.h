@@ -106,6 +106,9 @@ enum class FillingResult {
 class FieldDataManager;
 class RendererSavePasswordProgressLogger;
 class PasswordGenerationAgent;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  class PasswordAutofillAgentExt;
+#endif // ARKWEB_PASSWORD_AUTOFILL
 
 // This class is responsible for filling password forms.
 class PasswordAutofillAgent : public content::RenderFrameObserver,
@@ -120,6 +123,11 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   PasswordAutofillAgent& operator=(const PasswordAutofillAgent&) = delete;
 
   ~PasswordAutofillAgent() override;
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class PasswordAutofillAgentExt;
+  virtual PasswordAutofillAgentExt* AsPasswordAutofillAgentExt() { return nullptr; }
+#endif // ARKWEB_PASSWORD_AUTOFILL
 
   // Must be called prior to calling other methods.
   void Init(AutofillAgent* autofill_agent);
@@ -180,6 +188,9 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
       base::optional_ref<FormData> extracted_form = std::nullopt);
 
   // Instructs `autofill_agent_` to track the autofilled `element`.
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual
+#endif
   void TrackAutofilledElement(const blink::WebFormControlElement& element);
 
   // Previews the username and password fields of this form with the given
@@ -206,20 +217,7 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  bool RequestAutofill(const blink::WebFormControlElement& control_element,
-                       bool is_text_changed = false);
-
-  bool FillAccountSuggestion(
-      const blink::WebFormControlElement& control_element,
-      const std::u16string& username,
-      const std::u16string& password);
-
-  // mojom::PasswordAutofillAgent:
   void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
-
-  void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
-
-  bool IsPasswordAutofill(const blink::WebInputElement& input_element);
 #endif
 
   // Queries password suggestions for the given `element` and `trigger_source`.
@@ -366,12 +364,6 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
     bool password_field_suggestion_was_accepted = false;
 #endif
   };
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  using WebInputToPasswordInfoMap =
-      std::map<blink::WebInputElement, PasswordInfo>;
-  using PasswordToLoginMap =
-      std::map<blink::WebInputElement, blink::WebInputElement>;
-#endif
   // Stores information about form field structure.
   struct FormFieldInfo {
     FieldRendererId renderer_id;
@@ -610,27 +602,6 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   void NotifyPasswordManagerAboutClearedForm(
       const blink::WebFormElement& cleared_form);
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  bool OhosFindPasswordInfoForElement(const blink::WebInputElement& element,
-                                      UseFallbackData use_fallback_data,
-                                      blink::WebInputElement* username_element,
-                                      blink::WebInputElement* password_element,
-                                      PasswordInfo** password_info);
-
-  void OhosMaybeStoreFallbackData(const PasswordFormFillData& form_data);
-
-  void OhosStoreInferredInfo(const PasswordFormFillData& form_data,
-                             blink::WebInputElement username_element,
-                             blink::WebInputElement password_element);
-
-  // Indicates whether the field is filled, previewed, or not filled by
-  // autofill.
-  blink::WebAutofillState username_autofill_state_;
-  // Indicates whether the field is filled, previewed, or not filled by
-  // autofill.
-  blink::WebAutofillState password_autofill_state_;
-
-#endif
   // Notifies the PasswordManager about a field modification.
   void NotifyPasswordManagerAboutFieldModification(
       const blink::WebInputElement& element);
@@ -737,22 +708,11 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
   KeyboardReplacingSurfaceState keyboard_replacing_surface_state_ =
       KeyboardReplacingSurfaceState::kShouldShow;
 #endif
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  // The mapping between input element with parsed PasswordForm(
-  // inferred username or password).
-  WebInputToPasswordInfoMap ohos_web_input_to_password_info_;
-  // A (sort-of) reverse map to |ohos_web_input_to_password_info_|.
-  PasswordToLoginMap ohos_password_to_username_;
-  // The chronologically last insertion into |ohos_web_input_to_password_info_|.
-  WebInputToPasswordInfoMap::iterator ohos_last_supplied_password_info_iter_;
-
-  // Current ohos password autofill state of form_renderer_id.
-  std::unordered_map<std::uint64_t, mojom::OhosPasswordFormAutofillState>
-      ohos_password_form_status_map_;
-#endif
 };
 
 }  // namespace autofill
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/autofill/content/render/password_autofill_agent_ext.h"
+#endif // ARKWEB_PASSWORD_AUTOFILL
 #endif  // COMPONENTS_AUTOFILL_CONTENT_RENDERER_PASSWORD_AUTOFILL_AGENT_H_

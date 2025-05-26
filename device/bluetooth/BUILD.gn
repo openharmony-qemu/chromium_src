@@ -260,40 +260,6 @@ component("bluetooth") {
     ]
   }
 
-  if (is_ohos) {
-    sources += [
-      "ohos/bluetooth_adapter_ohos.cc",
-      "ohos/bluetooth_adapter_ohos.h",
-      "ohos/bluetooth_adapter_types.h",
-      "ohos/bluetooth_advertisement_ohos.cc",
-      "ohos/bluetooth_advertisement_ohos.h",
-      "ohos/bluetooth_classic_device_ohos.cc",
-      "ohos/bluetooth_classic_device_ohos.h",
-      "ohos/bluetooth_device_ohos.cc",
-      "ohos/bluetooth_device_ohos.h",
-      "ohos/bluetooth_discovery_manager_ohos.cc",
-      "ohos/bluetooth_discovery_manager_ohos.h",
-      "ohos/bluetooth_low_energy_adapter_ohos.cc",
-      "ohos/bluetooth_low_energy_adapter_ohos.h",
-      "ohos/bluetooth_low_energy_advertisement_manager_ohos.cc",
-      "ohos/bluetooth_low_energy_advertisement_manager_ohos.h",
-      "ohos/bluetooth_low_energy_device_ohos.cc",
-      "ohos/bluetooth_low_energy_device_ohos.h",
-      "ohos/bluetooth_low_energy_discovery_manager_ohos.cc",
-      "ohos/bluetooth_low_energy_discovery_manager_ohos.h",
-      "ohos/bluetooth_remote_gatt_characteristic_ohos.cc",
-      "ohos/bluetooth_remote_gatt_characteristic_ohos.h",
-      "ohos/bluetooth_remote_gatt_descriptor_ohos.cc",
-      "ohos/bluetooth_remote_gatt_descriptor_ohos.h",
-      "ohos/bluetooth_remote_gatt_service_ohos.cc",
-      "ohos/bluetooth_remote_gatt_service_ohos.h",
-    ]
-
-    public_deps += [
-      "//ohos/adapter:adapter",
-    ]
-  }
-
   if (is_mac) {
     sources += [
       "bluetooth_adapter_mac.h",

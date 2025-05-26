@@ -34,6 +34,10 @@
 #include "base/android/android_hardware_buffer_compat.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/host/host_gpu_memory_buffer_manager_unittest_ext.h"
+#endif
+
 namespace viz {
 
 namespace {
@@ -121,9 +125,8 @@ class TestGpuService : public mojom::GpuService {
 
   // mojom::GpuService:
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void GetSurfaceId(int32_t native_embed_id,
-                    GetSurfaceIdCallback callback) override {}
-  void SetVisible(int32_t nweb_id, bool visible) override {}
+  ARKWEB_UNITTESTS_TEST_GPU_SERVICE_PART1()
+  ARKWEB_UNITTESTS_TEST_GPU_SERVICE_PART2()
 #endif
   void EstablishGpuChannel(int32_t client_id,
                            uint64_t client_tracing_id,
@@ -272,6 +275,8 @@ class TestGpuService : public mojom::GpuService {
   void Hang() override {}
 
   void ThrowJavaException() override {}
+
+  void SetIsFling(bool is_fling_enabled) override {}
 
  private:
   base::OnceClosure connection_error_handler_;

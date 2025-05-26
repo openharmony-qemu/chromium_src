@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/lru_cache.h"
@@ -76,10 +76,6 @@
 #include "components/viz/common/surfaces/surface_range.h"
 #include "components/viz/common/view_transition_element_resource_id.h"
 #include "ui/gfx/geometry/rect.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace gfx {
 class PointF;
@@ -142,7 +138,7 @@ class LayerTreeHostImplClient {
   virtual void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) = 0;
 #if BUILDFLAG(ARKWEB_WEBGL)
   virtual void SetDeferInvalidationForFastMainFrameFromImpl(
-      bool defer_invalidation_for_fast_main_frame) = 0;
+                   bool defer_invalidation_for_fast_main_frame) = 0;
 #endif
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
@@ -211,7 +207,7 @@ class LayerTreeHostImplClient {
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {}
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
  protected:
   virtual ~LayerTreeHostImplClient() = default;
@@ -965,15 +961,15 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       uint32_t sequence_id,
       const viz::ViewTransitionElementResourceId& id,
       const gfx::RectF& rect);
-
+  
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void OnLayerRectUpdate(int id, const gfx::Rect& rect);
-
+  
   void OnLayerRectVisibilityChange(int id, bool visibility);
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   void SetupScrollBy() override;
@@ -1137,6 +1133,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
 
   const LayerTreeSettings settings_;
   const bool use_layer_context_for_display_;
+#if BUILDFLAG(IS_ARKWEB)
+  bool is_ohos_pc_ui_setting_ = false;
+#endif
 
   // This is set to true only if:
   //  . The compositor is running single-threaded (i.e. there is no separate
@@ -1411,11 +1410,13 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // was re-used.
   viz::BeginFrameArgs last_draw_active_tree_begin_frame_args_;
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  bool isNeedDrawRect_ = false;
+#endif
+
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<LayerTreeHostImpl> weak_factory_{this};
-
-  bool isNeedDrawRect_ = false;
 };
 
 }  // namespace cc

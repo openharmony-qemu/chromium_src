@@ -26,11 +26,14 @@
 
 namespace web_cache {
 
+class WebCacheManagerUtils;
+
 // Note: memory usage uses uint64_t because potentially the browser could be
 // 32 bit and the renderers 64 bits.
 class WebCacheManager : public content::RenderProcessHostCreationObserver,
                         public content::RenderProcessHostObserver {
  public:
+  friend class WebCacheManagerUtils;
   // Gets the singleton WebCacheManager object.  The first time this method
   // is called, a WebCacheManager object is constructed and returned.
   // Subsequent calls will return the same object.
@@ -61,12 +64,7 @@ class WebCacheManager : public content::RenderProcessHostCreationObserver,
   void RenderProcessHostDestroyed(content::RenderProcessHost* host) override;
 
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
-  void AddResourceToCache(
-      const std::string& url,
-      const std::string& origin,
-      const std::vector<uint8_t>& resource,
-      const std::map<std::string, std::string>& response_headers,
-      const int type);
+  WebCacheManagerUtils* webCacheManagerUtils;
 #endif
 
  private:

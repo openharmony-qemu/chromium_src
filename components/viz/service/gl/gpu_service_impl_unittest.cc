@@ -17,11 +17,6 @@
 #include "base/time/time.h"
 #include "gpu/config/gpu_info.h"
 #include "gpu/ipc/service/gpu_watchdog_thread.h"
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "gpu/ipc/common/gpu_surface_id_tracker.h"
-#endif
-
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/gpu.mojom.h"
@@ -165,77 +160,5 @@ TEST_F(GpuServiceTest, VisibilityCallbackCalled) {
   EXPECT_TRUE(visible_.has_value());
   EXPECT_FALSE(*visible_);
 }
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-TEST_F(GpuServiceTest, GetSurfaceIdNoAdd) {
-  mojo::Remote<mojom::GpuService> gpu_service_remote;
-  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
 
-  int32_t native_embed_id = 1;
-  // Retrieve non-existent surfaceId
-  gpu_service()->GetSurfaceId(native_embed_id,
-                              base::BindOnce([](const std::string& surface_id) {
-                                EXPECT_TRUE(surface_id.empty());
-                              }));
-}
-
-TEST_F(GpuServiceTest, GetSurfaceIdPositive) {
-  mojo::Remote<mojom::GpuService> gpu_service_remote;
-  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
-
-  std::string native_image_surface_id = "1";
-  gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
-      gpu::GpuSurfaceIdTracker::SurfaceRecord(0, native_image_surface_id));
-
-  int32_t native_embed_id = 1;
-  gpu_service()->GetSurfaceId(native_embed_id,
-                              base::BindOnce([](const std::string& surface_id) {
-                                EXPECT_STREQ(surface_id.c_str(), "1");
-                              }));
-}
-
-TEST_F(GpuServiceTest, GetSurfaceIdNegative) {
-  mojo::Remote<mojom::GpuService> gpu_service_remote;
-  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
-
-  std::string native_image_surface_id = "-1";
-  gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
-      gpu::GpuSurfaceIdTracker::SurfaceRecord(-1, native_image_surface_id));
-
-  int32_t native_embed_id = -1;
-  gpu_service()->GetSurfaceId(native_embed_id,
-                              base::BindOnce([](const std::string& surface_id) {
-                                EXPECT_TRUE(surface_id.empty());
-                              }));
-}
-
-TEST_F(GpuServiceTest, GetSurfaceIdZero) {
-  mojo::Remote<mojom::GpuService> gpu_service_remote;
-  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
-
-  std::string native_image_surface_id = "0";
-  gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
-      gpu::GpuSurfaceIdTracker::SurfaceRecord(0, native_image_surface_id));
-
-  int32_t native_embed_id = 0;
-  gpu_service()->GetSurfaceId(native_embed_id,
-                              base::BindOnce([](const std::string& surface_id) {
-                                EXPECT_TRUE(surface_id.empty());
-                              }));
-}
-
-TEST_F(GpuServiceTest, GetSurfaceIdNormal) {
-  mojo::Remote<mojom::GpuService> gpu_service_remote;
-  gpu_service()->Bind(gpu_service_remote.BindNewPipeAndPassReceiver());
-
-  std::string native_image_surface_id = "100";
-  gpu::GpuSurfaceIdTracker::Get()->AddSurfaceForNativeWidget(
-      gpu::GpuSurfaceIdTracker::SurfaceRecord(0, native_image_surface_id));
-
-  int32_t native_embed_id = 100;
-  gpu_service()->GetSurfaceId(native_embed_id,
-                              base::BindOnce([](const std::string& surface_id) {
-                                EXPECT_TRUE(surface_id.empty());
-                              }));
-}
-#endif
 }  // namespace viz

@@ -18,6 +18,7 @@
 
 namespace content {
 class ChildThreadImpl;
+class ChildProcessUtils;
 
 // Base class for child processes of the browser process (i.e. renderer and
 // plugin host). This is a singleton object for each child process.
@@ -47,6 +48,7 @@ class CONTENT_EXPORT ChildProcess {
   // |thread_pool_init_params| is used to start the ThreadPool. Default params
   // are used if |thread_pool_init_params| is nullptr. It is ignored if a
   // ThreadPool is already running.
+  friend class ChildProcessUtils;
   explicit ChildProcess(
       base::ThreadType io_thread_type = base::ThreadType::kDefault,
       std::unique_ptr<base::ThreadPoolInstance::InitParams>
@@ -112,9 +114,6 @@ class CONTENT_EXPORT ChildProcess {
   void ReportCompositorKeyThread(bool is_created);
 #endif
  private:
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void ReportIoThreadStatus(bool is_created);
-#endif
 
   const base::AutoReset<ChildProcess*> resetter_;
 
@@ -139,6 +138,8 @@ class CONTENT_EXPORT ChildProcess {
 
   // Whether this ChildProcess initialized ThreadPoolInstance.
   bool initialized_thread_pool_ = false;
+  
+  ChildProcessUtils* implUtils;
 };
 
 }  // namespace content

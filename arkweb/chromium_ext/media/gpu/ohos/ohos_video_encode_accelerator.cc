@@ -274,7 +274,6 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
 
     default:
       NOTREACHED();
-      break;
   }
   base::TimeDelta frame_timestamp;
   base::TimeDelta presentaion_timestamp =
@@ -302,7 +301,7 @@ void OHOSVideoEncodeAccelerator::DequeueOutput() {
         {EncoderStatus::Codes::kSystemAPICallError, "Failed to map SHM"});
     return;
   }
-  if (info.size > bitstream_buffer.size()) {
+  if (static_cast<uint32_t>(info.size) > bitstream_buffer.size()) {
     NotifyErrorStatus(
         {EncoderStatus::Codes::kEncoderFailedEncode,
          "Encoded buffer too large: " + base::NumberToString(info.size) + ">" +

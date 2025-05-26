@@ -43,6 +43,7 @@ class SharedImageInterfaceProxy;
 
 namespace ui {
 class Compositor;
+class CompositorUtils;
 }  // namespace ui
 
 namespace viz {
@@ -129,6 +130,7 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   // For preventing frame swaps of wrong size during resize on Windows.
   // (https://crbug.com/811945)
   friend class ui::Compositor;
+  friend class ui::CompositorUtils;
   // For query of whether to use SoftwareOutputDevice or not.
   friend class viz::GpuDisplayProvider;
   // For calling sync mojo API to get cdm origin. The service and the client are

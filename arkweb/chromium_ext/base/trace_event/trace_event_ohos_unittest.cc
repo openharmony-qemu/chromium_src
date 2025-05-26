@@ -15,17 +15,9 @@
 
 #include "base/trace_event/trace_event_ohos.h"
 
-#include "ohos_adapter_helper.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
-class TraceObserver;
-
-extern std::unique_ptr<TraceObserver> traceObserver;
-TEST(TraceEventOhosTest, StartObserveTraceEnable) {
-  StartObserveTraceEnable();
-  EXPECT_NE(traceObserver, nullptr);
-}
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 TEST(TraceEventOhosTest, IsOHOSBytraceEnable_True) {
   bool result = IsOHOSBytraceEnable();
@@ -41,47 +33,6 @@ TEST(TraceEventOhosTest, IsCategoryEnable) {
 
   result = IsCategoryEnable("abled-");
   EXPECT_EQ(result, true);
-}
-
-TEST(TraceEventOhosTest, GetArg_double) {
-  BytraceArg result = GetArg(1.0);
-  EXPECT_EQ(result.value.as_double, 1.0);
-  EXPECT_EQ(result.type, TYPE_NUMBER);
-}
-
-TEST(TraceEventOhosTest, GetArg_char) {
-  BytraceArg result = GetArg("test");
-  EXPECT_EQ(result.value.as_string, "test");
-  EXPECT_EQ(result.type, TYPE_STRING);
-}
-
-TEST(TraceEventOhosTest, GetStringFromArg_TYPE_NUMBER) {
-  BytraceArg number;
-  number.value.as_double = 1.0;
-  number.type = TYPE_NUMBER;
-  std::string result = GetStringFromArg(number);
-  EXPECT_EQ(result, "1.000000");
-}
-
-TEST(TraceEventOhosTest, GetStringFromArg_TYPE_STRING) {
-  BytraceArg str;
-  str.value.as_string = "test";
-  str.type = TYPE_STRING;
-  std::string result = GetStringFromArg(str);
-  EXPECT_EQ(result, "test");
-}
-
-TEST(TraceEventOhosTest, GetStringFromArg_UnsupportArgType) {
-  BytraceArg invalid_argument;
-  invalid_argument.type = TYPE_INVALID;
-  std::string result = GetStringFromArg(invalid_argument);
-  EXPECT_EQ(result, "UnsupportArgType");
-}
-
-TEST(TraceEventOhosTest, GetStringWithArgs) {
-  std::string test = "test";
-  std::string result = GetStringWithArgs(test);
-  EXPECT_EQ(result, test);
 }
 
 TEST(TraceEventOhosTest, Trace_NormalScene_01) {

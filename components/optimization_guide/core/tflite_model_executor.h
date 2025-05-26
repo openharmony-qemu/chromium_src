@@ -439,8 +439,7 @@ class TFLiteModelExecutor : public ModelExecutor<OutputType, InputType> {
   void LoadModelFileAndBatchExecute(
       BatchExecutionCallback callback_on_complete,
 #if defined(__clang__) && (__clang_major__ < 17)
-      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector
-          inputs) {
+      typename ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs) {
 #else
       ModelExecutor<OutputType, InputType>::ConstRefInputVector inputs) {
 #endif

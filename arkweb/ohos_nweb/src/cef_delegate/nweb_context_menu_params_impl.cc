@@ -81,6 +81,9 @@ const std::unordered_map<int32_t, cef_menu_id_t> KMenuCommandIdMap = {
     {CI_PASTE, MENU_ID_PASTE},
     {CI_DELETE, MENU_ID_DELETE},
     {CI_SELECT_ALL, MENU_ID_SELECT_ALL},
+    {CI_REDO, MENU_ID_REDO},
+    {CI_UNDO, MENU_ID_UNDO},
+    {CI_PASTE_AND_MATCH_STYLE, MENU_ID_PASTE_MATCH_STYLE},
 };
 
 const std::unordered_map<int, int> kCmInputFieldTypeMap = {
@@ -419,6 +422,13 @@ void NWebContextMenuParamsImpl::GetImageRect(int& x, int& y, int& w, int& h) {
     params_->AsCefCefContextMenuParamsExt()->GetImageRect(x, y, w, h);
     y += view_port_height_ * virutal_device_ratio_;
   }
+}
+
+bool NWebContextMenuParamsImpl::IsAILink() {
+  if (params_ != nullptr) {
+    return params_->AsCefCefContextMenuParamsExt()->IsAILink();
+  }
+  return false;
 }
 #endif
 

@@ -30,6 +30,7 @@
 #include "gpu/ipc/service/gpu_channel.h"
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "gpu/ipc/service/gpu_channel_shared_image_interface.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h",
 #include "media/base/media_switches.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "ui/gl/gl_bindings.h"
@@ -74,6 +75,7 @@ void DirectSharedImageVideoProvider::Initialize(GpuInitCB gpu_init_cb) {
 void DirectSharedImageVideoProvider::RequestImage(ImageReadyCB cb,
                                                   const ImageSpec& spec) {
   LOG(DEBUG) << "DirectSharedImageVideoProvider::RequestImage";
+  TRACE_EVENT0("base", "DirectSharedImageVideoProvider::RequestImage");
   gpu_factory_.AsyncCall(&GpuSharedImageVideoFactory::CreateImage)
       .WithArgs(base::BindPostTaskToCurrentDefault(std::move(cb)), spec,
                 GetDrDcLock());
@@ -113,6 +115,8 @@ void GpuSharedImageVideoFactory::Initialize(
     return;
   }
 
+  is_vulkan_ = shared_context->GrContextIsVulkan();
+
   auto scoped_current = std::make_unique<ui::ScopedMakeCurrent>(
       shared_context->context(), shared_context->surface());
   if (!shared_context->IsCurrent(nullptr)) {
@@ -139,29 +143,34 @@ void GpuSharedImageVideoFactory::CreateImage(
   auto codec_image =
       base::MakeRefCounted<CodecImage>(spec.coded_size, drdc_lock);
 
-  TRACE_EVENT0("media", "GpuSharedImageVideoFactory::CreateVideoFrame");
-
   gl::ohos::TextureOwnerMode texture_owner_mode =
-      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
-              base::SysInfo::IsLowEndDevice()
+      base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
           ? gl::ohos::TextureOwnerMode::kNativeImageTexture
           : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
 
-  scoped_refptr<gpu::GpuChannelSharedImageInterface>
-      gpu_channel_shared_image_interface =
-          stub_->channel()->shared_image_stub()->shared_image_interface();
+  TRACE_EVENT1("base", "DirectSharedImageVideoProvider::CreateImage", "texture_owner_mode", texture_owner_mode);
+
+  scoped_refptr<gpu::GpuChannelSharedImageInterfaceExt>
+      gpu_channel_shared_image_interface = stub_->channel()->
+        shared_image_stub()->AsSharedImageStubExt()->shared_image_interface_ext();
   scoped_refptr<gpu::ClientSharedImage> shared_image =
-      gpu_channel_shared_image_interface->CreateSharedImageForOhosVideo(
-          spec.coded_size, spec.color_space, codec_image, drdc_lock,
-          texture_owner_mode);
+      gpu_channel_shared_image_interface->AsGpuChannelSharedImageInterfaceExt()->
+      CreateSharedImageForOhosVideo(spec.coded_size, spec.color_space,
+        codec_image, drdc_lock, texture_owner_mode);
   if (!shared_image) {
     return;
   }
 
   SharedImageVideoProvider::ImageRecord record;
   record.shared_image = std::move(shared_image);
+  record.release_cb = base::BindOnce(
+      [](scoped_refptr<gpu::ClientSharedImage> image,
+        const gpu::SyncToken& sync_token) {
+          image->UpdateDestructionSyncToken(sync_token);
+    },
+    record.shared_image);
   record.is_vulkan = is_vulkan_;
-
+  
   // Since |codec_image|'s ref holders can be destroyed by stub destruction,
   // we create a ref to it for the MaybeRenderEarlyManager.  This is a hack;
   // we should not be sending the CodecImage at all.  The
@@ -169,7 +178,7 @@ void GpuSharedImageVideoFactory::CreateImage(
   // to be used by CodecImage, and non-GL things, to hold the output buffer,
   // etc.
   record.codec_image_holder = base::MakeRefCounted<CodecImageHolder>(
-      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image));
+      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image), std::move(drdc_lock));
 
   std::move(image_ready_cb).Run(std::move(record));
 }
@@ -205,10 +214,12 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
   }
 
   gl::ohos::TextureOwnerMode texture_owner_mode =
-      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
-              base::SysInfo::IsLowEndDevice()
+      base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
           ? gl::ohos::TextureOwnerMode::kNativeImageTexture
           : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
+
+  TRACE_EVENT1("base", "GpuSharedImageVideoFactory::CreateImageInternal", "texture_owner_mode", texture_owner_mode);
+
   auto shared_image = gpu::OhosVideoImageBacking::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
       kPremul_SkAlphaType, /*debug_label=*/"DirectSIVideo", texture_owner_mode,

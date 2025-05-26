@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
@@ -35,10 +36,6 @@
 #include "ui/base/page_transition_types.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace base {
 class RefCountedString;
@@ -504,8 +501,8 @@ class NavigationController {
   virtual void GoBack() = 0;
   virtual void GoForward() = 0;
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
-  virtual const std::string& GetOriginalUrl() = 0;
-#endif  // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+   virtual const std::string& GetOriginalUrl() = 0;
+#endif // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
 
   // Navigates to the specified absolute index. Should only be used for
   // browser-initiated navigations.

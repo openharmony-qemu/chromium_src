@@ -42,6 +42,9 @@ class DateTimeChooserOHOS : public blink::mojom::DateTimeChooser,
   blink::mojom::DateTimeDialogValuePtr& GetDialogValue() {
     return dialog_value_ptr_;
   }
+  base::WeakPtr<DateTimeChooserOHOS> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
 
  private:
   friend class content::WebContentsUserData<DateTimeChooserOHOS>;
@@ -50,6 +53,7 @@ class DateTimeChooserOHOS : public blink::mojom::DateTimeChooser,
   OpenDateTimeDialogCallback open_date_time_response_callback_;
   blink::mojom::DateTimeDialogValuePtr dialog_value_ptr_;
   mojo::Receiver<blink::mojom::DateTimeChooser> date_time_chooser_receiver_;
+  base::WeakPtrFactory<DateTimeChooserOHOS> weak_factory_{this};
   WEB_CONTENTS_USER_DATA_KEY_DECL();
 };
 }  // namespace content

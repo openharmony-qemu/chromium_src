@@ -12,16 +12,17 @@
 # limitations under the License.
 
 declare_args() {
-  ohos_package_name = "com.ohos.arkwebcore"
+  ohos_package_name = "com.huawei.hmos.arkwebcore"
 
   arkweb_accessibility = true
   arkweb_ai = true
+  arkweb_ai_write = true
   arkweb_api_init_web_engine = true
   arkweb_api_per = true
   arkweb_adblock = true
   arkweb_arkweb_extensions = true
   arkweb_notification = true
-  arkweb_asan = true
+  arkweb_asan = false
   arkweb_autofill = true
   arkweb_background_color = true
   arkweb_bfcache = true
@@ -53,13 +54,16 @@ declare_args() {
   arkweb_drag_drop = true
   arkweb_drdc = true
   arkweb_edm_policy = true
+  arkweb_enable_cdm = true
   arkweb_enable_pointer_hardened = true
   arkweb_enable_random = true
+  arkweb_enable_wiseplay = true
   arkweb_encrypt = true
   arkweb_ex_download = true
-  arkweb_ex_network_connection = true
+  arkweb_ex_network_connection = false
   arkweb_favicon = true
   arkweb_fcp = true
+  arkweb_fido = true
   arkweb_file_upload = true
   arkweb_focus = true
   arkweb_fullscreen = true
@@ -114,6 +118,7 @@ declare_args() {
   arkweb_prefs = true
   arkweb_print = true
   arkweb_prp_preload = true
+  arkweb_render_remove_binder = true
   arkweb_renderer_anr_dump = true
   arkweb_render_process_mode = true
   arkweb_render_process_share = true
@@ -123,6 +128,8 @@ declare_args() {
   arkweb_screen_lock = true
   arkweb_screen_rotation = true
   arkweb_scrollbar = true
+  arkweb_scrollbar_avoid_area = true
+  arkweb_scrollbar_avoid_corner = true
   arkweb_scroll_performance = true
   arkweb_secure_javascript_proxy = true
   arkweb_security_state = true
@@ -211,6 +218,74 @@ declare_args() {
   arkweb_ex_refresh_iframe = true
   arkweb_notification = true
   arkweb_vulkan = true
-  arkweb_pull_to_refresh = true
-  arkweb_ex_http_dns_fallback = true
+  arkweb_d_vsync = true
+  arkweb_screen_offset = true
+  arkweb_canvas_commit = true
+  arkweb_pip = true
+  arkweb_immediate_destory = true
+  arkweb_cwnd = true
 }
+
+# Features enabled in mojom bindings.
+arkweb_mojo_features = []
+
+#if BUILDFLAG(IS_ARKWEB)
+if (defined(is_arkweb) && is_arkweb) {
+  arkweb_mojo_features += [ "is_arkweb" ]
+}  #endif  // BUILDFLAG(IS_ARKWEB)
+
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+if (defined(arkweb_network_conninfo) && arkweb_network_conninfo) {
+  arkweb_mojo_features += [ "arkweb_network_conninfo" ]
+}  #endif  // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+if (defined(arkweb_prp_preload) && arkweb_prp_preload) {
+  arkweb_mojo_features += [ "arkweb_prp_preload" ]
+}  #endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+if (defined(arkweb_ex_download) && arkweb_ex_download) {
+  arkweb_mojo_features += [ "arkweb_ex_download" ]
+}  #endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+if (defined(arkweb_resource_interception) && arkweb_resource_interception) {
+  arkweb_mojo_features += [ "arkweb_resource_interception" ]
+}  #endif // BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+
+#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+if (defined(arkweb_codecache_enhance) && arkweb_codecache_enhance) {
+  arkweb_mojo_features += [ "arkweb_codecache_enhance" ]
+}  #endif // BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+if (defined(arkweb_network_load) && arkweb_network_load) {
+  arkweb_mojo_features += [ "arkweb_network_load" ]
+}  #endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+if (is_android || (defined(arkweb_cookie) && arkweb_cookie)) {
+  arkweb_mojo_features += [ "is_android_or_arkweb_cookie" ]
+}  #endif  // BUILDFLAG(ARKWEB_COOKIE)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+if (defined(arkweb_custom_dns) && arkweb_custom_dns) {
+  arkweb_mojo_features += [ "arkweb_custom_dns" ]
+}  #endif  // BUILDFLAG(ARKWEB_CUSTOM_DNS)
+
+#if BUILDFLAG(ARKWEB_EXT)
+if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
+  arkweb_mojo_features += [
+    "arkweb_ext_network_connection",
+    "arkweb_ext_http_dns_fallback",
+  ]
+}  #endif  // BUILDFLAG(ARKWEB_EXT)
+
+#if BUILDFLAG(ARKWEB_FIDO)
+if (defined(arkweb_fido) && arkweb_fido) {
+  arkweb_mojo_features += [
+    "arkweb_fido",
+  ]
+}
+#endif // BUILDFLAG(ARKWEB_FIDO)

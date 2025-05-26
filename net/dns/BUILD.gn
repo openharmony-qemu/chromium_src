@@ -5,11 +5,11 @@
 import("//net/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/protobuf/proto_library.gni")
-import("//arkweb/build/features/features.gni")
+import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
-}
+#if BUILDFLAG(IS_ARKWEB)
+import("//arkweb/chromium_ext/chromium_ext.gni")
+#endif
 
 enable_built_in_dns = use_blink
 
@@ -34,7 +34,7 @@ source_set("dns") {
     "//services/network/*",
   ]
 
-  if (defined(arkweb_ex_network_connection) && arkweb_ex_network_connection) {
+  if (arkweb_ext_network_connection) {
     defines = []
     if (target_cpu == "arm64") {
       defines += [ "ARKWEB_ARM64" ]
@@ -155,11 +155,8 @@ source_set("dns") {
       "dns_config_service_linux.cc",
       "dns_config_service_linux.h",
     ]
-  } else if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
-    sources += [
-      "dns_config_service_ohos.cc",
-      "dns_config_service_ohos.h",
-    ]
+  } else if (arkweb_ext_http_dns_fallback) {
+    sources += arkweb_net_dns_sources
   } else if (is_posix) {
     sources += [
       "dns_config_service_posix.cc",
@@ -473,7 +470,7 @@ source_set("tests") {
   } else if (is_linux) {
     sources += [ "dns_config_service_linux_unittest.cc" ]
   } else if (is_ohos) {
-    sources += [ "dns_config_service_ohos_unittest.cc" ]
+    sources += [ "//arkweb/chromium_ext/net/dns/dns_config_service_ohos_unittest.cc" ]
   } else if (is_posix) {
     sources += [ "dns_config_service_posix_unittest.cc" ]
   }

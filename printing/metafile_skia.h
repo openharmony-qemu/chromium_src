@@ -89,7 +89,7 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafileSkia : public Metafile {
 
 #if BUILDFLAG(ARKWEB_PRINT)
   bool OhosFinishDocument(std::function<bool()> checkCancel) override;
-#endif  // BUILDFLAG(ARKWEB_PRINT)
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   // Unlike FinishPage() or FinishDocument(), this is for out-of-process
   // subframe printing. It will just serialize the content into SkPicture

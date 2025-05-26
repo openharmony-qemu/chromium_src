@@ -37,6 +37,17 @@ class TestRenderWidgetHost : public RenderWidgetHostImpl {
   static mojo::PendingAssociatedRemote<blink::mojom::FrameWidget>
   CreateStubFrameWidgetRemote();
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateOverlay(const ::SkBitmap& image, const ::gfx::Rect& image_rect, const ::gfx::Point& touch_point) override {}
+  void OnOverlayStateChanged(const ::gfx::Rect& image_rect)override{}
+  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
+  void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
+  void SendCurrentLanguage(const std::string& ans) override {}
+  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {};
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+  void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr event) override {}
+#endif
+
  private:
   TestRenderWidgetHost(FrameTree* frame_tree,
                        RenderWidgetHostDelegate* delegate,

@@ -32,6 +32,10 @@
 #include "mojo/public/cpp/system/buffer.h"
 #include "mojo/public/cpp/system/handle.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include.cc"
+#endif
+
 namespace media {
 
 namespace {
@@ -494,5 +498,13 @@ void MojoVideoDecoderService::OnDecoderRequestedOverlayInfo(
   provide_overlay_info_cb_ = std::move(provide_overlay_info_cb);
   client_->RequestOverlayInfo(restart_for_transitions);
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoVideoDecoderService::SetVideoSurface(int32_t widget_id) {
+  if (decoder_) {
+    decoder_->SetVideoSurface(widget_id);
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

@@ -79,6 +79,13 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::AUDIO> {
   void OnStreamReset(DemuxerStream* stream);
   void OnOutputReady(OutputType* output);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(DecoderType* decoder, int surface_id) {}
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(DecoderType* decoder, bool enable) {}
+#endif
+
  private:
   void OnConfigChanged(const AudioDecoderConfig& config);
 
@@ -141,6 +148,13 @@ class MEDIA_EXPORT DecoderStreamTraits<DemuxerStream::VIDEO> {
   PostDecodeAction OnDecodeDone(OutputType* buffer);
   void OnStreamReset(DemuxerStream* stream);
   void OnOutputReady(OutputType* output);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(DecoderType* decoder, int surface_id);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(DecoderType* decoder, bool enable);
+#endif
 
  private:
   base::TimeDelta last_keyframe_timestamp_;

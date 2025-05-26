@@ -67,6 +67,11 @@ void OHOSMediaPlayerCallback::OnInfo(OHOS::NWeb::PlayerOnInfoType type,
           FROM_HERE,
           base::BindOnce(&OHOSMediaPlayerBridge::SeekDone, media_player_));
       break;
+    case OHOS::NWeb::PlayerOnInfoType::INFO_TYPE_RESOLUTION_CHANGE:
+      task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(&OHOSMediaPlayerBridge::OnVideoSizeChanged, media_player_, extra, value));
+      break;
     default:
       break;
   }

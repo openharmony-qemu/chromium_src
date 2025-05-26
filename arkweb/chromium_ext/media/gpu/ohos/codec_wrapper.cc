@@ -45,6 +45,9 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   bool IsDrained() const;
   bool Flush();
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t widget_id);
+#endif // ARKWEB_VIDEO_ASSISTANT
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
   DequeueStatus DequeueOutputBuffer(
@@ -52,6 +55,7 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
       bool* end_of_stream,
       std::unique_ptr<CodecOutputBuffer>* codec_buffer);
   bool ReleaseCodecOutputBuffer(int64_t id, bool render);
+  bool SetDecryptionConfig(void *session, bool isSecure);
 
  private:
   enum class State {
@@ -90,15 +94,25 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
   gfx::ColorSpace color_space_ = gfx::ColorSpace::CreateSRGB();
 
   scoped_refptr<base::SequencedTaskRunner> release_task_runner_;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool render_video_view_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
 };
 
 CodecOutputBuffer::CodecOutputBuffer(scoped_refptr<CodecWrapperImpl> codec,
                                      int64_t id,
                                      const gfx::Size& size,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                     bool render_video_view,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                      const gfx::ColorSpace& color_space)
     : codec_(std::move(codec)),
       id_(id),
       size_(size),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      render_video_view_(render_video_view),
+#endif // ARKWEB_VIDEO_ASSISTANT
       color_space_(color_space) {}
 
 CodecOutputBuffer::~CodecOutputBuffer() {
@@ -216,7 +230,8 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
   }
   DecoderAdapterCode status;
   status = codec_->QueueInputBuffer(buffer.data(), buffer.size(),
-                                    buffer.timestamp().ToInternalValue());
+                                    buffer.timestamp().ToInternalValue(),
+                                    buffer.decrypt_config());
   TRACE_EVENT1("media", "CodecWrapperImpl::QueueInputBuffer End", "result",
                status);
   switch (status) {
@@ -230,7 +245,6 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
       return QueueStatus::kTryAgainLater;
     default:
       NOTREACHED();
-      return QueueStatus::kError;
   }
 }
 
@@ -294,8 +308,11 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
               gfx::Size(codec_->GetConfigWidth(), codec_->GetConfigHeight());
         }
 
-        *codec_buffer = base::WrapUnique(
-            new CodecOutputBuffer(this, buffer_id, size_, color_space_));
+        *codec_buffer = base::WrapUnique(new CodecOutputBuffer(this, buffer_id, size_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                        render_video_view_,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                        color_space_));
         return DequeueStatus::kOk;
       }
       case DecoderAdapterCode::DECODER_RETRY: {
@@ -325,8 +342,20 @@ bool CodecWrapperImpl::SetSurface(
     return false;
   }
   surface_bundle_ = std::move(surface_bundle);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  render_video_view_ = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void CodecWrapperImpl::SetVideoSurface(int32_t widget_id) {
+    if (codec_) {
+        codec_->SetVideoSurface(widget_id);
+        render_video_view_ = widget_id > 0;
+    }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 scoped_refptr<CodecSurfaceBundle> CodecWrapperImpl::SurfaceBundle() {
   base::AutoLock l(lock_);
@@ -362,6 +391,12 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   codec_->ReleaseOutputBuffer(index, render);
   buffer_ids_.erase(buffer_it);
   return true;
+}
+
+bool CodecWrapperImpl::SetDecryptionConfig(void *session, bool isSecure)
+{
+  auto status = codec_->SetDecryptionConfig(session, isSecure);
+  return status == DecoderAdapterCode::DECODER_OK;
 }
 
 CodecWrapper::CodecWrapper(
@@ -422,9 +457,20 @@ bool CodecWrapper::SetSurface(
   return impl_->SetSurface(std::move(surface_bundle));
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void CodecWrapper::SetVideoSurface(int32_t widget_id) {
+    impl_->SetVideoSurface(widget_id);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
   return impl_->SurfaceBundle();
 }
 
+bool CodecWrapper::SetDecryptionConfig(void *session, bool isSecure)
+{
+  LOG(INFO) << __func__;
+  return impl_->SetDecryptionConfig(session, isSecure);
+}
+
 }  // namespace media
-                     

@@ -15,7 +15,7 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "net/base/network_isolation_key.h"
 #include "services/network/public/cpp/resource_request.h"
-#include "services/network/public/mojom/url_loader.mojom.h"
+#include "services/network/public/mojom/url_loader.mojom.h" 
 #include "url/gurl.h"
 
 namespace network {
@@ -103,8 +103,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) PrefetchURLLoaderClient final
   void ForwardToRealClient(Method method, Args... args);
 
 #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
-                                      uint64_t buffer_size) override {}
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
 #endif
 
   const ResourceRequest request_;

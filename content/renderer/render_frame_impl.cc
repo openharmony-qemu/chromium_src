@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/check_deref.h"
 #include "base/command_line.h"
@@ -262,12 +261,8 @@
 #include "mojo/public/cpp/bindings/self_owned_associated_receiver.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-#include "cef/ohos_cef_ext/libcef/renderer/javascript/oh_gin_javascript_bridge_dispatcher.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/render_frame_impl_before_for_include.cc"
 #endif
 
 using base::Time;
@@ -1298,6 +1293,10 @@ void InitializeFrameWidgetForFrame(
 }
 
 }  // namespace
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/renderer/render_frame_impl_for_include.cc"
+#endif
 
 // Implementation of WebFrameSerializer::MHTMLPartsGenerationDelegate that
 // 1. Bases shouldSkipResource and getContentID responses on contents of
@@ -2539,17 +2538,6 @@ void RenderFrameImpl::SetSelectedText(const std::u16string& selection_text,
                                       static_cast<uint32_t>(offset), range);
 }
 
-#if BUILDFLAG(ARKWEB_AI)
-bool RenderFrameImpl::CloseImageOverlaySelection() {
-  if (GetFrameHost()) {
-    bool result = false;
-    GetFrameHost()->CloseImageOverlaySelection(&result);
-    return result;
-  }
-  return false;
-}
-#endif  // BUILDFLAG(ARKWEB_AI)
-
 void RenderFrameImpl::AddMessageToConsole(
     blink::mojom::ConsoleMessageLevel level,
     const std::string& message) {
@@ -2761,8 +2749,7 @@ void RenderFrameImpl::CommitNavigation(
     mojom::CookieManagerInfoPtr cookie_manager_info,
     mojom::StorageInfoPtr storage_info,
     mojom::NavigationClient::CommitNavigationCallback commit_callback) {
-  LOG(INFO) << "RenderFrameImpl::CommitNavigation "
-            << devtools_navigation_token.ToString();
+  LOG(INFO) << "RenderFrameImpl::CommitNavigation " << devtools_navigation_token.ToString();
   base::ElapsedTimer timer;
   base::ScopedUmaHistogramTimer histogram_timer(kCommitRenderFrame);
   base::ScopedUmaHistogramTimer histogram_timer_frame(base::StrCat(
@@ -3579,13 +3566,6 @@ std::unique_ptr<blink::WebMediaPlayer> RenderFrameImpl::CreateMediaPlayer(
       std::move(compositor_worker_task_runner));
 }
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
-    blink::WebNativeClient* client) {
-  return media_factory_.CreateWebNativeBridge(client);
-}
-#endif
-
 std::unique_ptr<blink::WebContentSettingsClient>
 RenderFrameImpl::CreateWorkerContentSettingsClient() {
   if (!frame_ || !frame_->View())
@@ -4276,18 +4256,6 @@ void RenderFrameImpl::RunScriptsAtDocumentElementAvailable() {
   // Do not use |this|! ContentClient might have deleted them by now!
 }
 
-#if BUILDFLAG(ARKWEB_JSPROXY)
-void RenderFrameImpl::RunScriptsAtHeadReady() {
-  if (!initialized_) {
-    return;
-  }
-
-  if (GetContentClient() && GetContentClient()->renderer()) {
-    GetContentClient()->renderer()->RunScriptsAtHeadReady(this);
-  }
-}
-#endif
-
 void RenderFrameImpl::DidReceiveTitle(const blink::WebString& title) {
   // Ignore all but top level navigations.
   if (!frame_->Parent() && !title.IsEmpty()) {
@@ -4368,53 +4336,6 @@ void RenderFrameImpl::DidFinishLoadForPrinting() {
   for (auto& observer : observers_)
     observer.DidFinishLoadForPrinting();
 }
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-void RenderFrameImpl::DidSubresourceFiltered() {
-  TRACE_EVENT1("navigation,benchmark,rail",
-               "RenderFrameImpl::DidSubresourceFiltered", "frame_token",
-               frame_token_);
-  for (auto& observer : observers_) {
-    observer.DidSubresourceFiltered();
-  }
-}
-
-bool RenderFrameImpl::GetGlobalAdblockEnabled() {
-  return GetRendererPreferences().is_global_adblock_enabled;
-}
-
-void RenderFrameImpl::OnUpdateAdBlockEnabledToRender(
-    bool site_adblock_enabled) {
-  // send switch to render by RenderViewImpl
-  site_adblock_enabled = true;
-  if (GetWebView()) {
-    LOG(INFO) << "[Adblock] render frame update adblock:"
-              << site_adblock_enabled;
-    GetWebView()->OnSetAdBlockEnable(site_adblock_enabled);
-  }
-
-  if (!frame_) {
-    return;
-  }
-  WebDocumentLoader* document_loader = frame_->GetDocumentLoader();
-  if (!document_loader) {
-    return;
-  }
-  blink::WebDocumentSubresourceFilter* filter =
-      document_loader->GetWebSubresourceFilter();
-
-  blink::WebDocumentSubresourceFilter* user_filter =
-      document_loader->GetWebUserSubresourceFilter();
-  if (filter) {
-    filter->set_activation_state(site_adblock_enabled);
-    return;
-  }
-
-  if (user_filter) {
-    user_filter->set_activation_state(site_adblock_enabled);
-  }
-}
-#endif
 
 void RenderFrameImpl::DidFinishSameDocumentNavigation(
     blink::WebHistoryCommitType commit_type,
@@ -4906,6 +4827,7 @@ void RenderFrameImpl::DidCreateScriptContext(v8::Local<v8::Context> context,
     blink::WebV8Features::EnableMojoJS(context, true);
 #endif
 
+
     if (mojo_js_features_) {
       if (mojo_js_features_->file_system_access)
         blink::WebV8Features::EnableMojoJSFileSystemAccessHelper(context, true);
@@ -4959,13 +4881,12 @@ blink::WebString RenderFrameImpl::UserAgentOverride() {
                                    ->GetRendererPreferences()
                                    .user_agent_override.ua_string_override);
   }
-#if BUILDFLAG(IS_ARKWEB) && defined(ARKWEB_USERAGENT)
-  else if (GetWebView()->MainFrame()->IsWebRemoteFrame()) {
-    return WebString::FromUTF8(GetWebView()
-                                   ->GetRendererPreferences()
-                                   .user_agent_override.ua_string_override);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (auto ark_web_ua = ArkWebUserAgentOverride(this)) {
+    return *ark_web_ua;
   }
-#endif
+#endif  // BUILDFLAG(ARKWEB_USERAGENT)
 
   return blink::WebString();
 }
@@ -5283,7 +5204,7 @@ RenderFrameImpl::MakeDidCommitProvisionalLoadParams(
   const bool file_scheme_with_universal_access =
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
       (params->origin.scheme() == url::kFileScheme ||
-       params->origin.scheme() == url::kResourcesScheme) &&
+      params->origin.scheme() == url::kResourcesScheme) &&
 #else
       params->origin.scheme() == url::kFileScheme &&
 #endif
@@ -6911,14 +6832,6 @@ base::WeakPtr<media::DecoderFactory> RenderFrameImpl::GetMediaDecoderFactory() {
   return media_factory_.GetDecoderFactory();
 }
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-gfx::RectF RenderFrameImpl::ElementBoundsInWindow(
-    const blink::WebElement& element) {
-  return gfx::RectF(GetLocalRootWebFrameWidget()->BlinkSpaceToEnclosedDIPs(
-      element.BoundsInWidget()));
-}
-#endif
-
 gfx::Rect RenderFrameImpl::ConvertViewportToWindow(const gfx::Rect& rect) {
   return GetLocalRootWebFrameWidget()->BlinkSpaceToEnclosedDIPs(rect);
 }
@@ -6939,25 +6852,6 @@ bool RenderFrameImpl::DeferMediaLoad(bool has_played_media_before,
   return GetContentClient()->renderer()->DeferMediaLoad(
       this, has_played_media_before, std::move(closure));
 }
-
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-bool RenderFrameImpl::GetNewWindowWebView(const GURL& target_url,
-                                          blink::WebNavigationPolicy policy,
-                                          bool allow_popup) {
-  mojom::CreateNewWindowStatus status = mojom::CreateNewWindowStatus::kBlocked;
-  auto* frame_host = GetFrameHost();
-  if (!frame_host) {
-    return false;
-  }
-  if (!frame_host->GetCreateNewWindow(target_url,
-                                      NavigationPolicyToDisposition(policy),
-                                      allow_popup, &status) ||
-      status != mojom::CreateNewWindowStatus::kSuccess) {
-    return false;
-  }
-  return true;
-}
-#endif
 
 WebView* RenderFrameImpl::CreateNewWindow(
     const WebURLRequest& request,
@@ -7181,69 +7075,5 @@ void RenderFrameImpl::ResetMembersUsedForDurationOfCommit() {
   pending_storage_info_.reset();
   is_requesting_navigation_ = false;
 }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void RenderFrameImpl::ClearContextMenu() {
-  // It does not postTask here because contextmenu popup windows should be
-  // dismissed before drag start.
-  GetFrameHost()->OnClearContextMenu();
-}
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void RenderFrameImpl::SetZoomLevel(float magnify_delta,
-                                   const gfx::Point& anchor) {
-  auto web_frame_widget = GetLocalRootWebFrameWidget();
-  if (!web_frame_widget) {
-    return;
-  }
-  web_frame_widget->SetZoomLevel(magnify_delta, anchor);
-}
-
-void RenderFrameImpl::SetOverscrollMode(int mode) {
-  auto web_frame_widget = GetLocalRootWebFrameWidget();
-  if (!web_frame_widget) {
-    return;
-  }
-  web_frame_widget->SetOverscrollMode(mode);
-}
-
-#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
-gfx::Vector2dF RenderFrameImpl::GetOverScrollOffset() {
-  gfx::Vector2dF overscroll_offset;
-  overscroll_offset.set_x(0.0f);
-  overscroll_offset.set_y(0.0f);
-  auto web_frame_widget = GetLocalRootWebFrameWidget();
-  if (!web_frame_widget) {
-    return overscroll_offset;
-  }
-  return web_frame_widget->GetOverScrollOffset();
-}
-#endif
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-#if BUILDFLAG(ARKWEB_MENU)
-void RenderFrameImpl::MouseSelectMenuShow(bool show) {
-  if (GetFrameHost()) {
-    GetFrameHost()->MouseSelectMenuShow(show);
-  }
-}
-
-void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
-  if (GetFrameHost()) {
-    GetFrameHost()->ChangeVisibilityOfQuickMenu();
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-void RenderFrameImpl::AddNamedObject(const std::string& name,
-                                     int32_t object_id,
-                                     base::Value::List async_method_list,
-                                     bool need_update) {
-  for (auto& observer : observers_) {
-    observer.AddNamedObject(name, object_id, async_method_list, need_update);
-  }
-}
-#endif
 
 }  // namespace content

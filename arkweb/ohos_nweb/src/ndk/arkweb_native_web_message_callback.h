@@ -22,6 +22,7 @@
 #include "nweb_web_message.h"
 #include "ohos_nweb/src/capi/arkweb_model.h"
 #include "ohos_nweb/src/capi/arkweb_type.h"
+#include "nweb_hap_value.h"
 
 namespace OHOS::NWeb {
 class ArkWebNativeWebMessageCallback : public NWebMessageValueCallback {
@@ -33,6 +34,7 @@ class ArkWebNativeWebMessageCallback : public NWebMessageValueCallback {
       : callback_(callback) {}
   ~ArkWebNativeWebMessageCallback() override = default;
   void OnReceiveValue(std::shared_ptr<NWebMessage> result) override;
+  void OnReceiveValueV2(std::shared_ptr<NWebHapValue> result) override;
 
  private:
   WebMessageFunc callback_ = nullptr;

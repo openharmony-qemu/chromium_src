@@ -75,6 +75,9 @@
 #include "ui/gfx/skia_span_util.h"
 #include "ui/gl/trace_util.h"
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+static const int kMaxRenderTargetSize = 8192;
+#endif
 namespace cc {
 
 namespace {
@@ -2024,6 +2027,15 @@ int GpuImageDecodeCache::CalculateUploadScaleMipLevel(
     if (is_clipped)
       return 0;
   }
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  // Heif uses hardware-accelerated decode, scaling is not currently supported
+  // for hardware-accelerated decodes
+  const auto* image_metadata =
+      draw_image.paint_image().GetImageHeaderMetadata();
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    return 0;
+  }
+#endif
 
   gfx::Size base_size = draw_image.paint_image().GetSize(aux_image);
   // Ceil our scaled size so that the mip map generated is guaranteed to be
@@ -2975,6 +2987,19 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       draw_image.paint_image().GetImageHeaderMetadata();
   bool can_do_hardware_accelerated_decode = false;
   bool do_hardware_accelerated_decode = false;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (image_metadata && image_metadata->image_type == ImageType::kHEIF) {
+    LOG(DEBUG) << "[HeifSupport] GpuImageDecodeCache::CreateImageData "
+                  "allow_hardware_decode "
+               << allow_hardware_decode << ", mode " << (int)mode
+               << ", upload_scale_mip_level " << upload_scale_mip_level
+               << ", has_gainmap " << has_gainmap
+               << ", CanDecodeWithHardwareAcceleration "
+               << context_->ContextSupport()->CanDecodeWithHardwareAcceleration(
+                      image_metadata);
+  }
+#endif
+
   if (allow_hardware_decode && mode == DecodedDataMode::kTransferCache &&
       upload_scale_mip_level == 0 && !has_gainmap &&
       context_->ContextSupport()->CanDecodeWithHardwareAcceleration(
@@ -2996,7 +3021,10 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     if ((image_metadata->image_type == ImageType::kHEIF)) {
-      do_hardware_accelerated_decode = true;
+      if (image_metadata->image_size.width() <= kMaxRenderTargetSize &&
+          image_metadata->image_size.height() <= kMaxRenderTargetSize) {
+        do_hardware_accelerated_decode = true;
+      }
       DCHECK(!is_bitmap_backed);
     }
 #endif

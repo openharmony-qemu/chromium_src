@@ -94,6 +94,10 @@
 #include "ui/gfx/mac/scoped_cocoa_disable_screen_updates.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+
 namespace content {
 
 using LifecycleStateImpl = RenderFrameHostImpl::LifecycleStateImpl;
@@ -1181,11 +1185,9 @@ void RenderFrameHostManager::UnloadOldFrame(
     bool can_store = bfcache_eligibility.CanStore();
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     LOG(INFO) << "NativeEmbed BFCache, render frame host can_store = "
-              << can_store << ", reason = "
-              << bfcache_eligibility.flattened_reasons.ToString()
-              << ", render frame global id = "
-              << old_render_frame_host->GetGlobalId();
-#endif
+      << can_store << ", reason = " << bfcache_eligibility.flattened_reasons.ToString() << ", render frame global id = "
+      << old_render_frame_host->GetGlobalId();
+#endif    
     if (old_page_back_forward_cache_metrics &&
         old_page_back_forward_cache_metrics->had_form_data_associated()) {
       UMA_HISTOGRAM_ENUMERATION(
@@ -1202,21 +1204,11 @@ void RenderFrameHostManager::UnloadOldFrame(
                 "bfcache_eligibility",
                 bfcache_eligibility.flattened_reasons.ToString());
 
-#if BUILDFLAG(ARKWEB_BFCACHE)
-    if (back_forward_cache.ArkWebGetCacheSize() <= 0 ||
-        back_forward_cache.ArkWebGetTimeToLive() <= 0) {
-      can_store = false;
-    }
-    LOG(INFO) << "[BFCACHE] " << __func__ << " can_store: " << can_store
-              << " bfcache_eligibility.flattened_reasons:"
-              << bfcache_eligibility.flattened_reasons.ToString();
-#endif
-#ifdef ARKWEB_LOGGER_REPORT
-    LOG_FEEDBACK(INFO)
-        << "RenderFrameHostManager::" << __func__
-        << " the value of bfcache_eligibility.flattened_reasons is:"
-        << bfcache_eligibility.flattened_reasons.ToString();
-#endif
+#if BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    ArkWebUnloadOldFrame(back_forward_cache,
+                         bfcache_eligibility.flattened_reasons.ToString(),
+                         can_store);
+#endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
     if (can_store) {
       bool is_same_process =
@@ -1712,20 +1704,10 @@ RenderFrameHostManager::GetFrameHostForNavigation(
   }
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-  const std::string& shared_render_process_token =
-      delegate_->SharedRenderProcessToken();
-  if (!shared_render_process_token.empty()) {
-    RenderProcessHost* render_process =
-        RenderProcessHostImpl::GetProcessForSharedToken(
-            shared_render_process_token);
-    if (render_process) {
-      dest_site_instance->ReuseExistingProcessIfPossible(render_process);
-    } else {
-      RenderProcessHostImpl::RegisteProcessForSharedToken(
-          shared_render_process_token, dest_site_instance->GetProcess());
-    }
-  }
-#endif
+  ArkWebGetFrameHostForNavigation(delegate_->SharedRenderProcessToken(),
+                                  dest_site_instance.get());
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+
   // A subframe should always be in the same BrowsingInstance as the parent
   // (see also https://crbug.com/1107269).
   RenderFrameHostImpl* parent = frame_tree_node_->parent();

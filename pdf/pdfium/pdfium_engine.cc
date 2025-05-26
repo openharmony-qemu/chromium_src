@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -3424,6 +3425,9 @@ gfx::Rect PDFiumEngine::GetPDFiumRect(int page_index,
 
 int PDFiumEngine::GetRenderingFlags() const {
   int flags = FPDF_LCD_TEXT;
+#if BUILDFLAG(ARKWEB_PDF)
+  flags |= FPDF_REVERSE_BYTE_ORDER;
+#endif
   if (render_grayscale_)
     flags |= FPDF_GRAYSCALE;
   if (client_->IsPrintPreview())

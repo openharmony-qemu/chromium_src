@@ -30,7 +30,11 @@ class URLProvisionFetcher : public media::ProvisionFetcher {
   void Retrieve(const GURL& default_url,
                 const std::string& request_data,
                 ProvisionFetcher::ResponseCB response_cb) override;
-
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void RetrieveWiseplayLicense(const GURL& default_url,
+                const std::string& request_data,
+                ProvisionFetcher::ResponseCB response_cb) override;
+#endif
  private:
   void OnSimpleLoaderComplete(std::unique_ptr<std::string> response_body);
 

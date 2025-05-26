@@ -67,7 +67,7 @@
 #include "url/gurl.h"
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "libcef/browser/extensions/contents_extensions_util.h"
+#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 using content::BrowserContext;
@@ -650,7 +650,7 @@ void MessageService::OpenChannelToTabImpl(
       ExtensionsBrowserClient::Get()->IsSameContext(source_context, context_));
   content::WebContents* receiver_contents =
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      GetWebContentByTabId(tab_id);
+      cef::GetWebContentByTabId(tab_id);
 #else
       messaging_delegate_->GetWebContentsByTabId(source_context, tab_id);
 #endif // ARKWEB_ARKWEB_EXTENSIONS

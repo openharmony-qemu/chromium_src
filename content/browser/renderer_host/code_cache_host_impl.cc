@@ -83,8 +83,6 @@ bool CheckSecurityForAccessingCodeCacheData(
 
 #if BUILDFLAG(IS_OHOS)
   if (resource_url.SchemeIsCodeCacheEnabled()) {
-    LOG(DEBUG) << "tzw CheckSecurity scheme:" << resource_url.scheme().c_str()
-               << " is code cache enabled.";
     return true;
   }
 #endif

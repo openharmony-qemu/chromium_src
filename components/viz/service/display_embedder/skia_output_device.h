@@ -165,6 +165,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void EnsureBackbuffer();
   virtual void DiscardBackbuffer();
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {};
+#endif
+
   // Acknowledges a SwapBuffers request without actually attempting to swap.
   // This should be called when the GPU thread decides to skip a swap that was
   // invoked by the viz thread to ensure that we still run the relevant metrics
@@ -251,7 +255,7 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
       ,
       const gpu::Mailbox& primary_plane_mailbox = gpu::Mailbox()
 #endif
-  );
+      );
 
   // TODO(crbug.com/40266876): Reset device on context loss to fix dangling ptr.
   const raw_ptr<GrDirectContext, DanglingUntriaged> gr_context_;

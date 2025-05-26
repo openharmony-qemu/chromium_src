@@ -39,8 +39,7 @@ bool MockInputRouter::HasPendingEvents() const {
 }
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void MockInputRouter::DynamicFrameLossEvent(const std::string& sceneId,
-                                            bool isStart) {
+void MockInputRouter::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
   return;
 }
 #endif

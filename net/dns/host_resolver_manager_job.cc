@@ -41,12 +41,6 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/url_constants.h"
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#include "base/base_switches.h"
-#include "base/command_line.h"
-#endif
-
 namespace net {
 
 namespace {
@@ -465,7 +459,7 @@ void HostResolverManager::Job::RunNextTask() {
       StartDnsTask(false /* secure */);
       break;
     case TaskType::SECURE_DNS:
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     case TaskType::SECURE_DNS_FALLBACK:
 #endif
       StartDnsTask(true /* secure */);
@@ -675,13 +669,8 @@ void HostResolverManager::Job::OnSystemTaskComplete(
   auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                        addr_list.dns_aliases().end());
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (dns_task_error_ != OK && net_error != OK && !tasks_.empty() &&
-      tasks_.back() == TaskType::SECURE_DNS_FALLBACK) {
-    KillDnsTask();
-    RunNextTask();
-    return;
-  }
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error);
 #endif
 
   // Source unknown because the system resolver could have gotten it from a
@@ -713,17 +702,6 @@ void HostResolverManager::Job::InsecureCacheLookup() {
     RunNextTask();
   }
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void HostResolverManager::Job::InSecureCacheLookupWithoutRunTask(
-    std::optional<HostCache::Entry>& resolved) {
-  std::optional<HostCache::EntryStaleness> stale_info;
-  resolved = resolver_->MaybeServeFromCache(
-      host_cache_, key_.ToCacheKey(/*secure=*/false),
-      ResolveHostParameters::CacheUsage::STALE_ALLOWED, false, net_log_,
-      &stale_info);
-}
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 void HostResolverManager::Job::StartDnsTask(bool secure) {
   DCHECK_EQ(secure, !dispatched_);
@@ -812,30 +790,9 @@ void HostResolverManager::Job::OnDnsTaskComplete(base::TimeTicks start_time,
   }
 
   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExHttpDnsFallback)) {
-    if (dns_task_->secure()) {
-      RequestImpl* req = requests_.head()->value();
-      int index = req->parameters().only_use_secure_fallback ? 1 : 0;
-      std::optional<HostCache::Entry> insecure_resolved;
-      InSecureCacheLookupWithoutRunTask(insecure_resolved);
-      resolver_->ReportSecureFallbackDnsResult(
-          insecure_resolved, results,
-          std::string(key_.host.GetHostnameWithoutBrackets()), index, duration);
-    }
-
-    if ((dns_task_->need_to_sniff_ip_result()) &&
-        (failed_transactions_type_ ==
-             DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED ||
-         failed_transactions_type_ ==
-             DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED)) {
-      int index = dns_task_->secure() ? 1 : 0;
-      resolver_->ReportDnsTransactionResult(
-          index, std::string(key_.host.GetHostnameWithoutBrackets()),
-          resolved_result_for_ipv4_, resolved_result_for_ipv6_);
-    }
-  }
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
+                                                                   duration);
 #endif
   if (results.error() != OK) {
     OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback, results,
@@ -911,34 +868,6 @@ void HostResolverManager::Job::AddTransactionTimeQueued(
     base::TimeDelta time_queued) {
   total_transaction_time_queued_ += time_queued;
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void HostResolverManager::Job::AddTransactionResultForReport(
-    const DnsQueryType query_type,
-    int net_error) {
-  if (query_type == DnsQueryType::A) {
-    resolved_result_for_ipv4_ = net_error;
-    failed_transactions_type_ =
-        (failed_transactions_type_ ==
-         DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED)
-            ? DnsTransactionAddressFailedType::BOTH_FAILED
-            : DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED;
-  } else if (query_type == DnsQueryType::AAAA) {
-    resolved_result_for_ipv6_ = net_error;
-    failed_transactions_type_ =
-        (failed_transactions_type_ ==
-         DnsTransactionAddressFailedType::IPV4_ADDRESS_FAILED)
-            ? DnsTransactionAddressFailedType::BOTH_FAILED
-            : DnsTransactionAddressFailedType::IPV6_ADDRESS_FAILED;
-  }
-}
-
-void HostResolverManager::Job::InitReportInfoForDohFallback() {
-  failed_transactions_type_ = DnsTransactionAddressFailedType::BOTH_OK;
-  resolved_result_for_ipv4_ = 0;
-  resolved_result_for_ipv6_ = 0;
-}
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 void HostResolverManager::Job::OnServiceEndpointsUpdated() {
   // Requests could be destroyed while executing callbacks. Post tasks

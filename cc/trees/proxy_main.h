@@ -94,7 +94,7 @@ class CC_EXPORT ProxyMain : public Proxy {
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
  private:
   // Proxy implementation.

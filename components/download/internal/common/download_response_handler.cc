@@ -6,7 +6,7 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "components/download/public/common/download_stats.h"
 #include "components/download/public/common/download_url_parameters.h"
@@ -15,7 +15,13 @@
 #include "services/network/public/cpp/record_ontransfersizeupdate_utils.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
+#include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+ 
 namespace download {
 
 namespace {
@@ -209,7 +215,12 @@ void DownloadResponseHandler::OnReceiveRedirect(
     }
   }
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (is_partial_request_ &&
+      !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebExDownload)) {
+#else
   if (is_partial_request_) {
+#endif
     // A redirect while attempting a partial resumption indicates a potential
     // middle box. Trigger another interruption so that the
     // DownloadItem can retry.

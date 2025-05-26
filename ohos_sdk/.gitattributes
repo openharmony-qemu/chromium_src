@@ -1,7 +1,5 @@
-llvm.tar.gz filter=lfs diff=lfs merge=lfs -text
-rust-toolchain.tar.gz filter=lfs diff=lfs merge=lfs -text
+ohos-sdk-*.tar.gz filter=lfs diff=lfs merge=lfs -text
 ohos-sdk-linux-5.0.2.56.tar.gz.00 filter=lfs diff=lfs merge=lfs -text
 ohos-sdk-linux-5.0.2.56.tar.gz.01 filter=lfs diff=lfs merge=lfs -text
-llvm.tar.gz.0 filter=lfs diff=lfs merge=lfs -text
-llvm.tar.gz.1 filter=lfs diff=lfs merge=lfs -text
-llvm.tar.gz.2 filter=lfs diff=lfs merge=lfs -text
+llvm.tar.gz filter=lfs diff=lfs merge=lfs -text
+rust-toolchain.tar.gz filter=lfs diff=lfs merge=lfs -text

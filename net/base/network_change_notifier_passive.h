@@ -5,7 +5,6 @@
 #ifndef NET_BASE_NETWORK_CHANGE_NOTIFIER_PASSIVE_H_
 #define NET_BASE_NETWORK_CHANGE_NOTIFIER_PASSIVE_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/sequence_checker.h"
 #include "base/synchronization/lock.h"
@@ -18,10 +17,9 @@
 #include "net/base/address_map_cache_linux.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/build/features/features.h"
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace net {
@@ -32,7 +30,7 @@ namespace net {
 // state changes, but other processes want to add observers for network state.
 // It's also useful on Linux where listening for network state changes in a
 // sandboxed process requires loosening the sandbox policy too much.
-class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
+class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifierExt {
  public:
   NetworkChangeNotifierPassive(
       NetworkChangeNotifier::ConnectionType initial_connection_type,
@@ -52,11 +50,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
 #endif
 
@@ -73,6 +71,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 
  private:
   friend class NetworkChangeNotifierPassiveTest;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) ||           \
+    BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  friend class NetworkChangeNotifierPassiveUtils;
+#endif
 
   // For testing purposes, allows specifying a SystemDnsConfigChangeNotifier.
   // If |system_dns_config_notifier| is nullptr, NetworkChangeNotifier create a
@@ -101,11 +104,12 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       connection_type_;        // Guarded by |lock_|.
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   int32_t network_for_dns_ = -1;
   mutable base::Lock dns_server_lock_;
   std::vector<std::string> dns_servers_;
 #endif
+
 };
 
 }  // namespace net

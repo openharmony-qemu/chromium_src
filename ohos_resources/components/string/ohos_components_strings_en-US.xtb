@@ -11,4 +11,6 @@
 <translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">This site is not secure. Please protect your personal information.</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">Back</translation>
 <translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">Continue</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">Youth mode is on. This site can't be accessed.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">Settings</translation>
 </translationbundle>

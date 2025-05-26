@@ -49,6 +49,10 @@
 #include "components/subresource_filter/core/browser/verified_ruleset_dealer.h"
 #include "components/subresource_filter/core/common/ruleset_config.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include.h"
+#endif
+
 namespace base {
 class SequencedTaskRunner;
 }  // namespace base
@@ -57,17 +61,6 @@ namespace subresource_filter {
 
 class RulesetIndexer;
 class UnindexedRulesetStreamGenerator;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-class RulesetServiceClient {
- public:
-  RulesetServiceClient() {}
-  virtual ~RulesetServiceClient() {}
-  virtual void OnDeleteRulesetFile() = 0;
-
- private:
-};
-#endif
 
 // Contains all utility functions that govern how files pertaining to indexed
 // ruleset version should be organized on disk.
@@ -311,12 +304,11 @@ class RulesetService {
 
   const base::FilePath indexed_ruleset_base_dir_;
 
-  base::WeakPtrFactory<RulesetService> weak_ptr_factory_{this};
-
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   const base::FilePath unindexed_ruleset_base_dir_;
   const raw_ptr<RulesetServiceClient> ruleset_service_client_;
 #endif
+  base::WeakPtrFactory<RulesetService> weak_ptr_factory_{this};
 };
 
 }  // namespace subresource_filter

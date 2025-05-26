@@ -138,7 +138,7 @@ class ProfileImpl;
 class ScopedAllowBlockingForProfile;
 #if BUILDFLAG(ARKWEB_COOKIE)
 class CefCookieManagerImplExt;
-#endif  // BUILDFLAG(ARKWEB_COOKIE)
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 class StartupTabProviderImpl;
 class WebEngineBrowserMainParts;
 struct StartupProfilePathInfo;
@@ -655,7 +655,7 @@ class BASE_EXPORT ScopedAllowBlocking {
   friend class ui::DrmDisplayHostManager;
   friend class ui::ScopedAllowBlockingForGbmSurface;
   friend class ui::SelectFileDialogLinux;
-#if BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(IS_OHOS)
   friend class ui::SelectFileDialogOHOS;
 #endif
   friend class weblayer::BrowserContextImpl;
@@ -853,7 +853,7 @@ class BASE_EXPORT
   friend class android_webview::CookieManager;
 #if BUILDFLAG(ARKWEB_COOKIE)
   friend class ::CefCookieManagerImplExt;
-#endif  // BUILDFLAG(ARKWEB_COOKIE)
+#endif // BUILDFLAG(ARKWEB_COOKIE)
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
   friend class base::FileDescriptorWatcher;

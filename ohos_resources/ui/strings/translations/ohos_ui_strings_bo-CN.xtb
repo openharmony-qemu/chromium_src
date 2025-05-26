@@ -2,4 +2,7 @@
 <!DOCTYPE translationbundle>
 <translationbundle lang="bo-CN">
 <translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">དྲ་ཚིགས་ནི་ <ph name="ERROR_URL"/> ཡིན། དྲ་ངོས་ལ་གནས་སྐབས་རིང་སྦྲེལ་མི་ཐུབ་པའམ། ཡང་ན་དེ་དྲ་ཚིགས་གསར་པར་གཏན་དུ་སྤོས་ཟིན་པ་ཡིན་སྲིད།</translation>
+<translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">མྱུར་ཚད།</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">ནར་མ་སོན་པའི་མིའི་སྲུང་སྐྱོབ་སྤྱོད་འགོ་བཙུགས་ཟིན། དྲ་ངོས་འདིར་ལྟ་སྤྱོད་བྱ་རྒྱུར་བཀག་རྒྱ་ཐེབས།</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">སྒྲིག་འགོད།</translation>
 </translationbundle>

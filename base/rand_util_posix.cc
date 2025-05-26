@@ -69,8 +69,8 @@ class URandomFd {
   const int fd_;
 };
 
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-     BUILDFLAG(IS_ARKWEB)) &&                                                  \
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB))&&                        \
     !BUILDFLAG(IS_NACL)
 // TODO(pasko): Unify reading kernel version numbers in:
 // mojo/core/channel_linux.cc
@@ -78,7 +78,7 @@ class URandomFd {
 void KernelVersionNumbers(int32_t* major_version,
                           int32_t* minor_version,
                           int32_t* bugfix_version,
-                          bool* is_linux) {
+                          bool *is_linux) {
   struct utsname info;
   if (uname(&info) < 0) {
     NOTREACHED();
@@ -88,7 +88,7 @@ void KernelVersionNumbers(int32_t* major_version,
     *is_linux = false;
     return;
   }
-
+ 
   *is_linux = true;
 #endif
   int num_read = sscanf(info.release, "%d.%d.%d", major_version, minor_version,
@@ -115,8 +115,7 @@ bool KernelSupportsGetRandom() {
   if (major > 3 || (major == 3 && minor >= 17))
     return true;
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  LOG(WARNING)
-      << "linux kernel version is too olf, don't support getrandom syscall";
+  LOG(WARNING) << "linux kernel version is too olf, don't support getrandom syscall";
 #endif
   return false;
 }
@@ -135,9 +134,8 @@ bool GetRandomSyscall(void* output, size_t output_length) {
     return true;
   }
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  LOG(WARNING) << "getrandom syscall failed, ret = " << r
-               << ", output len = " << output_length
-               << ", output addr = " << output << ", errno = " << errno;
+  LOG(WARNING) << "getrandom syscall failed, ret = " << r << ", output len = " \
+    << output_length << ", output addr = " << output << ", errno = " << errno;
 #endif
   return false;
 }
@@ -156,9 +154,7 @@ BASE_FEATURE(kUseGetrandomForRandBytes,
 bool UseGetrandom() {
   return g_use_getrandom.load(std::memory_order_relaxed);
 }
-#elif (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-       BUILDFLAG(IS_ARKWEB)) &&                         \
-    !BUILDFLAG(IS_NACL)
+#elif (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)) && !BUILDFLAG(IS_NACL)
 bool UseGetrandom() {
   return true;
 }
@@ -204,9 +200,8 @@ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
     return;
   }
 #endif
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-     BUILDFLAG(IS_ARKWEB)) &&                                                  \
-    !BUILDFLAG(IS_NACL)
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)) && !BUILDFLAG(IS_NACL)
   if (avoid_allocation || UseGetrandom()) {
     // On Android it is mandatory to check that the kernel _version_ has the
     // support for a syscall before calling. The same check is made on Linux and
@@ -229,8 +224,7 @@ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
   //
   // TODO(crbug.com/40641285): When we no longer need to support old Linux
   // kernels, we can get rid of this /dev/urandom branch altogether.
-  LOG(WARNING)
-      << "getrandom syscall failed, fall through to reading from urandom";
+  LOG(WARNING) << "getrandom syscall failed, fall through to reading from urandom";
   const int urandom_fd = GetUrandomFD();
   const bool success = ReadFromFD(urandom_fd, as_writable_chars(output));
   CHECK(success);

@@ -27,8 +27,8 @@ namespace content {
 
 class RenderWidgetHostImpl;
 
-class CONTENT_EXPORT SyntheticGestureTargetBase
-    : public SyntheticGestureTarget {
+class CONTENT_EXPORT SyntheticGestureTargetBase :
+    public SyntheticGestureTarget {
  public:
   explicit SyntheticGestureTargetBase(RenderWidgetHostImpl* host);
 

@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -41,15 +41,14 @@
 #include "nweb_inputmethod_client.h"
 #include "nweb_render_handler.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 #include <memory>
 
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
+
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/build_config.h"
 
 struct OpenDevToolsParam;
 
@@ -92,11 +91,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
           web_app_client_extension_listener) override;
   void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) override;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
-          accessibility_event_listener) override;
-#endif
   void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener)
       override;
@@ -115,6 +109,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::function<void(const char*)> render_update_cb) override;
 
   void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client) override;
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  void SetScreenOffset(double x, double y) override;
+#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
 
   void Resize(uint32_t width,
               uint32_t height,
@@ -149,8 +147,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                            double deltaY) override;
   void SendMouseEvent(int x, int y, int button, int action, int count) override;
   void NotifyScreenInfoChanged(RotationType rotation,
-                               DisplayOrientation orientation,
-                               bool isWebinitialization = false) override;
+                               DisplayOrientation orientation) override;
 
   int Load(const std::string& url) override;
   bool IsNavigatebackwardAllowed() const override;
@@ -178,9 +175,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnOccluded() override;
   void OnUnoccluded() override;
   void SetEnableLowerFrameRate(bool enabled) override;
+  void SetEnableHalfFrameRate(bool enabled) override;
   std::shared_ptr<NWebPreference> GetPreference() const override;
   std::string Title() override;
   std::shared_ptr<HitTestResult> GetHitTestResult() const override;
+  std::shared_ptr<HitTestResult> GetLastHitTestResult() const override;
   int PageLoadProgress() override;
   float Scale() override;
   int Load(
@@ -214,6 +213,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
           std::vector<std::vector<uint8_t>>&,
           std::vector<size_t>&)>>&& callback,
       bool isAsync,
+      const std::string& permission) override;
+  void RegisterNativeAsyncThreadJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&,
+          std::vector<size_t>&)>>&& callback,
       const std::string& permission) override;
   void UnRegisterNativeArkJSFunction(const char* objName) override;
   void RegisterNativeLoadStartCallback(
@@ -258,6 +264,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const override;
+  void CallH5FunctionV2(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string& h5_method_name,
+      const std::vector<std::shared_ptr<NWebRomValue>>& args) const override;
 
   void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) override;
@@ -323,6 +334,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
                       const std::string& targetUri) override;
   void PostPortMessage(const std::string& port_handle,
                        std::shared_ptr<NWebMessage> data) override;
+  void PostPortMessageV2(const std::string& port_handle,
+                       std::shared_ptr<NWebRomValue> data) override;
   void SetPortMessageCallback(
       const std::string& port_handle,
       std::shared_ptr<NWebMessageValueCallback> callback) override;
@@ -408,6 +421,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   bool IsSafeBrowsingEnabled() override;
   void EnableSafeBrowsing(bool enable) override;
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
+  void OnSafeBrowsingDetectionResult(int code,
+                                     int policy,
+                                     const std::string& mappingType,
+                                     const std::string& url) override;
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -424,7 +441,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetTransformHint(uint32_t rotation) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
   int GetSecurityLevel() override;
 #endif
 
@@ -455,6 +472,13 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       double deltaX,
       double deltaY,
       const std::vector<int32_t>& pressedCodes) override;
+  void WebSendMouseWheelEventV2(
+      double x,
+      double y,
+      double deltaX,
+      double deltaY,
+      const std::vector<int32_t>& pressedCodes,
+      int32_t source) override;
   void WebSendTouchpadFlingEvent(
       double x,
       double y,
@@ -504,6 +528,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   void ShowFreeCopyMenu() override;
   bool ShouldShowFreeCopyMenu() override;
+  std::string GetSelectedTextFromContextParam() override;
 #endif
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   void SetShouldFrameSubmissionBeforeDraw(bool should) override;
@@ -516,7 +541,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetFitContentMode(int32_t mode) override;
   std::string GetCurrentLanguage() override;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void SetNativeInnerWeb(bool isInnerWeb) override;
+#endif
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   void NotifyPopupWindowResult(bool result) override;
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -551,16 +578,23 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetBrowserZoomLevel(double zoom_factor) override;
   double GetBrowserZoomLevel() override;
 #endif
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
+                              double borderRadiusTopRight,
+                              double borderRadiusBottomLeft,
+                              double borderRadiusBottomRight) override;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void SetAccessibilityState(cef_state_t accessibility_state) override;
-
-  void ExecuteAction(int64_t accessibilityId, uint32_t action) override;
-
-  void ExecuteAction(
+  bool ExecuteAction(
       int64_t accessibilityId,
       uint32_t action,
       const std::map<std::string, std::string>& actionArguments) override;
-
+  bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                    int32_t* width,
+                                    int32_t* height,
+                                    int32_t* offsetX,
+                                    int32_t* offsetY) override;
   std::shared_ptr<NWebAccessibilityNodeInfo> GetFocusedAccessibilityNodeInfo(
       int64_t accessibilityId,
       bool isAccessibilityFocus) override;
@@ -571,10 +605,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) override;
   void RefreshAccessibilityManagerClickEvent() override;
+  void SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) override;
 #endif
   void SetAutofillCallback(
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
+  void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera() override;
@@ -594,6 +630,8 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   void StopScreenCapture(int32_t nweb_id, const char* session_id) override;
+  void SetScreenCapturePickerShow() override;
+  void DisableSessionReuse() override;
   void RegisterScreenCaptureDelegateListener(
       std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) override;
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
@@ -613,6 +651,11 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
   std::string GetSelectInfo() override;
 
+#if BUILDFLAG(ARKWEB_AI_WRITE)
+  int GetSelectStartIndex() override;
+  int GetSelectEndIndex() override;
+  std::string GetAllTextInfo() override;
+#endif // ARKWEB_AI_WRITE
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay) override;
 #endif
@@ -621,6 +664,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void OnTextSelected() override;
   void OnDestroyImageAnalyzerOverlay() override;
   void OnFoldStatusChanged(FoldStatus foldstatus) override;
+  void RunDataDetectorJS() override;
+  void SetDataDetectorEnable(bool enable) override;
+  bool GetDataDetectorEnable() override;
+  std::string GetDataDetectorSelectText() override;
+  void OnDataDetectorSelectText() override;
+  void OnDataDetectorCopy(const std::vector<std::string>& recordMix) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
@@ -646,6 +695,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
+  void DisallowSandboxFileAccessFromFileUrl(bool disallow) override;
+#endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_MIXED_CONTENT)
   void EnableMixedContentAutoUpgrades(bool enable) override;
@@ -724,6 +777,20 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void MaximizeResize() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  bool SetFocusByPosition(float x, float y) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_PIP)
+  void SetPipNativeWindow(int delegate_id,
+                          int child_id,
+                          int frame_routing_id,
+                          void* window) override;
+  void SendPipEvent(int delegate_id,
+                    int child_id,
+                    int frame_routing_id,
+                    int event) override;
+#endif
+
  public:
   int argc_;
   const char** argv_;
@@ -786,14 +853,12 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable) override;
   void ExecuteVideoAssistantFunction(const std::string& cmd_id) override;
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void CustomWebMediaPlayer(bool enable) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  void SendAccessibilityHoverEvent(int x, int y) override;
-#endif
- private:
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  BrowserAccessibilityManagerOHOS* GetAccessibilityManager();
+  BrowserAccessibilityManagerOHOS* GetAccessibilityManager() const;
+  int64_t GetRealAccessibilityId(int64_t accessibilityId) const;
   void AddAccessibilityNodeInfoAttributes(
       std::shared_ptr<NWebAccessibilityNodeInfoImpl> nodeInfo,
       const BrowserAccessibilityOHOS* node) const;
@@ -879,16 +944,17 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   bool accessibility_state_ = false;
+  bool is_hovering_ = false;
 #endif
   std::string richtext_data_str_ = "";
   bool is_discarded_ = false;
   // The number of fingers that trigger the down event
   int pressing_num_ = 0;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  std::shared_ptr<NWebAccessibilityEventCallback>
-      accessibility_event_listener_ = nullptr;
-#endif
   double display_ratio_ = 0.0;
+
+#if BUILDFLAG(ARKWEB_AI)
+  bool data_detector_enable_ = false;
+#endif
 };
 }  // namespace OHOS::NWeb
 #endif

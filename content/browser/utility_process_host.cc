@@ -243,8 +243,8 @@ bool UtilityProcessHost::StartProcess() {
   started_ = true;
   process_->SetName(name_);
   process_->SetMetricsName(metrics_name_);
-
-  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
+  
+  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact   
   // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   if (true) {

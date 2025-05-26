@@ -65,16 +65,14 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
   int int_fields[7];
   gfx::Vector2dF offset;
   unsigned bitfields;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  gfx::RectF native_rect_;
-  int native_embed_id_;
-#endif
   std::unique_ptr<int> debug_info;
-
-  bool should_intercept_touch_event_;
+#if DCHECK_IS_ON()
+  bool allow_remove_for_readd;
+#endif
+  std::unique_ptr<LayerUtils> layer_utils_;
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   bool should_overlay_;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),
@@ -114,11 +112,9 @@ Layer::Layer()
       scroll_tree_index_(kInvalidPropertyNodeId),
       property_tree_sequence_number_(-1),
       ignore_set_needs_commit_for_test_(false),
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-      native_(false),
-#endif
       bitflags_(0u),
       subtree_property_changed_(false) {
+  layer_utils_ = std::make_unique<LayerUtils>(this);
 }
 
 Layer::~Layer() {
@@ -1462,9 +1458,7 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
     layer->NoteLayerPropertyChanged();
   layer->set_may_contain_video(may_contain_video());
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  layer->set_may_contain_native(may_contain_native());
-  layer->set_native_embed_id(native_embed_id());
-  layer->SetNativeRect(native_rect_);
+  layer_utils_->PushPropertiesToImpl(layer);
 #endif
   layer->SetTouchActionRegion(inputs.touch_action_region);
   layer->SetContentsOpaque(inputs.contents_opaque);
@@ -1506,8 +1500,6 @@ void Layer::PushPropertiesTo(LayerImpl* layer,
   // Reset any state that should be cleared for the next update.
   subtree_property_changed_.Write(*this) = false;
   update_rect_.Write(*this) = gfx::Rect();
-
-  layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
 }
 
 void Layer::TakeCopyRequests(
@@ -1684,21 +1676,5 @@ gfx::Transform Layer::ScreenSpaceTransform() const {
       this, layer_tree_host()->property_trees()->transform_tree());
 }
 
-void Layer::SetNativeEmbedId(int embedId) {
-  if (native_embed_id() == embedId) {
-    return;
-  }
-  native_embed_id_.Write(*this) = embedId;
-  SetNeedsPushProperties();
-}
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-bool Layer::ShouldOverlay() {
-  return should_overlay_;
-}
-void Layer::SetShouldOverlay(bool should_overlay) {
-  should_overlay_ = should_overlay;
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace cc

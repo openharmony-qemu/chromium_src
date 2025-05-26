@@ -7,7 +7,6 @@
 #ifndef BASE_BASE_SWITCHES_H_
 #define BASE_BASE_SWITCHES_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 
@@ -65,19 +64,8 @@ extern const char kSchedulerBoostUrgent[];
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)
-// virtual pixel ratio for ohos scrollbar
-extern const char kPixelRatio[];
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-extern const char kBundleInstallationDir[];
-extern const char kForTest[];
-extern const char kBundleName[];
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-extern const char kEnableVideoAssistant[];
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#include "arkweb/chromium_ext/base/base_switches_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
 
 }  // namespace switches
 

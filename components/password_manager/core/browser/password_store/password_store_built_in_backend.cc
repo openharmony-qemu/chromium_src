@@ -334,6 +334,18 @@ void PasswordStoreBuiltInBackend::UpdateLoginAsync(
           .Then(std::move(callback)));
 }
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+void PasswordStoreBuiltInBackend::UpdateLoginDisplayNameAsync(
+    const PasswordForm& form) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  DCHECK(helper_);
+  background_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&LoginDatabaseAsyncHelper::UpdateLoginDisplayName,
+                     base::Unretained(helper_.get()), form));
+}
+#endif
+
 void PasswordStoreBuiltInBackend::RemoveLoginAsync(
     const base::Location& location,
     const PasswordForm& form,

@@ -67,7 +67,10 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
                         gfx::Size natural_size,
                         OnceOutputCB output_cb) override;
   void RunAfterPendingVideoFrames(base::OnceClosure closure) override;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+  bool IsPipEnable();
+#endif
  private:
   void RequestImage(std::unique_ptr<CodecOutputBufferRenderer> buffer_renderer,
                     ImageWithInfoReadyCB image_ready_cb);
@@ -97,6 +100,9 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
 
   bool video_frame_copy_required_ = features::IsUsingVulkan() ||
                                     base::ohos::IsEmulator() ||
+#if BUILDFLAG(ARKWEB_PIP)
+                                    IsPipEnable() ||
+#endif
                                     base::SysInfo::IsLowEndDevice();
 
   std::unique_ptr<FrameInfoHelper> frame_info_helper_;
@@ -106,6 +112,9 @@ class MEDIA_GPU_EXPORT VideoFrameFactoryImpl
   SEQUENCE_CHECKER(sequence_checker_);
 
   base::WeakPtrFactory<VideoFrameFactoryImpl> weak_factory_{this};
+#if BUILDFLAG(ARKWEB_PIP)
+  bool pip_enable_ = false;
+#endif
 };
 
 }  // namespace media

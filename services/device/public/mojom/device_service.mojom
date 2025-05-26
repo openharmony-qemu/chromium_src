@@ -12,9 +12,11 @@ import "services/device/public/mojom/geolocation_control.mojom";
 import "services/device/public/mojom/geolocation_internals.mojom";
 import "services/device/public/mojom/power_monitor.mojom";
 import "services/device/public/mojom/public_ip_address_geolocation_provider.mojom";
+import "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom";
 import "services/device/public/mojom/screen_orientation.mojom";
 import "services/device/public/mojom/sensor_provider.mojom";
 import "services/device/public/mojom/serial.mojom";
+import "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom";
 import "services/device/public/mojom/time_zone_monitor.mojom";
 import "services/device/public/mojom/usb_manager.mojom";
 import "services/device/public/mojom/usb_manager_test.mojom";
@@ -89,6 +91,9 @@ interface DeviceService {
   BindPublicIpAddressGeolocationProvider(
       pending_receiver<PublicIpAddressGeolocationProvider> receiver);
 
+  // Binds an AudioDataReport endpoint.
+  BindResSchedReport(pending_receiver<ResSchedReport> receiver);
+
   // Binds a ScreenOrientationListener endpoint.
   BindScreenOrientationListener(
       pending_receiver<ScreenOrientationListener> receiver);
@@ -98,6 +103,9 @@ interface DeviceService {
 
   // binds a SerialPortManager endpoint.
   BindSerialPortManager(pending_receiver<SerialPortManager> receiver);
+
+  // Binds a SysPropRenderObserver endpoint.
+  BindSysPropRenderObserver(pending_receiver<SysPropRenderObserver> receiver);
 
   // Binds a TimeZoneMonitor endpoint.
   BindTimeZoneMonitor(pending_receiver<TimeZoneMonitor> receiver);

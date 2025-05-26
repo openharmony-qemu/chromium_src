@@ -18,7 +18,6 @@ using PRPPOnPageOriginCB = base::RepeatingCallback<void(const std::string& url,
 class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
  public:
   ResPreloadScheduler(const std::string& url,
-    const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
     const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context,
     const PRPPOnPageOriginCB& on_page_origin_cb);
@@ -29,7 +28,6 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   void SetPRPPReqLoaderFac(base::WeakPtr<PRPPRequestLoaderFactory> loader_fac_weak);
   void SchedulePreloads(const PRPPPreconnectInfoList& preconnect_info_list,
     const std::shared_ptr<PRPPReqInfoTreeNode>& preload_info_tree,
-    bool only_send_reuse_request,
     const std::set<std::string>& need_record_header_urls);
   void UpdateIdlePrerequestCount();
  private:
@@ -43,7 +41,6 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   const std::string& url_;
   std::list<std::shared_ptr<PRRequestInfo>> prerequest_info_list_;
   std::unordered_map<std::string, int> idle_connect_list_;
-  scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
   base::WeakPtr<net::URLRequestContext> url_request_context_;
   bool preload_triggered_ { false };
@@ -54,7 +51,6 @@ class ResPreloadScheduler : public base::RefCounted<ResPreloadScheduler> {
   std::shared_ptr<PRPPReqInfoTreeNode> preload_info_tree_;
   std::shared_ptr<PRPPReqInfoTreeNode> cur_parent_;
   std::list<std::shared_ptr<PRPPReqInfoTreeNode>>::iterator cur_node_iter_;
-  bool only_send_reuse_request_ { false };
   std::set<std::string> need_record_header_urls_;
   PRPPOnPageOriginCB on_page_origin_cb_;
   base::WeakPtrFactory<ResPreloadScheduler> weak_factory_{this};

@@ -42,6 +42,7 @@ class NWebContextMenuParamsImpl : public NWebContextMenuParams {
   std::string GetSelectionText() override;
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void GetImageRect(int& x, int& y, int& w, int& h) override;
+  bool IsAILink() override;
 #endif
 
  private:

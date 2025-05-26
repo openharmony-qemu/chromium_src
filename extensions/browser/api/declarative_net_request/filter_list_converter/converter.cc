@@ -510,14 +510,15 @@ class DNRJsonRuleOutputStream : public subresource_filter::RuleOutputStream {
         ProtoToJSONRuleConverter::Convert(rule, rule_id_, &error);
 
     if (json_rule_value.is_none()) {
-      if (noisy_) {
+      if(noisy_) {
         LOG(ERROR) << base::StringPrintf("Error for id %d: %s", rule_id_,
-                                         error.c_str());
+                                          error.c_str());
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-        LOG_FEEDBACK(ERROR) << base::StringPrintf("Error for id %d: %s",
-                                                  rule_id_, error.c_str());
+        LOG_FEEDBACK(ERROR) << base::StringPrintf("Error for id %d: %s", rule_id_,
+                                          error.c_str());
 #endif
+
       }
       return false;
     }

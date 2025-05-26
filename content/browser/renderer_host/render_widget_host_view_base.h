@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/gtest_prod_util.h"
 #include "base/i18n/rtl.h"
@@ -54,8 +55,8 @@
 #include "ui/gfx/range/range.h"
 #include "ui/surface/transport_dib.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_base_interface.h"
 #endif
 
 namespace blink {
@@ -86,6 +87,9 @@ class SyntheticGestureTarget;
 // Basic implementation shared by concrete RenderWidgetHostView subclasses.
 class CONTENT_EXPORT RenderWidgetHostViewBase
     : public RenderWidgetHostView,
+#if BUILDFLAG(IS_ARKWEB)
+      public RenderWidgetHostViewBaseInterface,
+#endif
       public input::RenderWidgetHostViewInput {
  public:
   // The TooltipObserver is used in browser tests only.
@@ -95,12 +99,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
 
     virtual void OnTooltipTextUpdated(const std::u16string& tooltip_text) = 0;
   };
-
-#if BUILDFLAG(IS_ARKWEB)
-  virtual void SendInternalBeginFrame() {}
-  virtual void SendAccessibilityEvent(int64_t accessibilityId,
-                                      int32_t eventType) {}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   RenderWidgetHostViewBase(const RenderWidgetHostViewBase&) = delete;
   RenderWidgetHostViewBase& operator=(const RenderWidgetHostViewBase&) = delete;
@@ -474,16 +472,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   TextInputManager* GetTextInputManager();
 
   virtual void DidNavigate();
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
-  }
-#endif
-// TODO
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void DidNativeEmbedEvent(
-      const blink::mojom::NativeEmbedTouchEventPtr& touchEvent) {}
-#endif
-
   // Called when the RenderWidgetHostImpl establishes a connection to the
   // renderer process Widget.
   virtual void OnRendererWidgetCreated() {}
@@ -524,17 +512,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   }
 
   virtual viz::SurfaceId GetFallbackSurfaceIdForTesting() const;
-
-#if BUILDFLAG(ARKWEB_AI)
-  virtual std::vector<int8_t> GetWordSelection(const std::string& text,
-                                               int8_t offset) {
-    return {-1, -1};
-  }
-#endif
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  virtual void SendCurrentLanguage(const std::string& ans) {}
-#endif
 
  protected:
   explicit RenderWidgetHostViewBase(RenderWidgetHost* host);

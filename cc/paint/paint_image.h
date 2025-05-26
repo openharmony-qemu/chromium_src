@@ -9,10 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/scoped_refptr.h"
-#include "build/build_config.h"
 #include "cc/paint/deferred_paint_record.h"
 #include "cc/paint/frame_metadata.h"
 #include "cc/paint/image_animation_count.h"
@@ -28,6 +26,8 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 class SkBitmap;
 class SkColorSpace;
@@ -43,19 +43,11 @@ class PaintImageGenerator;
 class PaintWorkletInput;
 class TextureBacking;
 
-enum class ImageType {
-  kPNG,
-  kJPEG,
-  kWEBP,
-  kGIF,
-  kICO,
-  kBMP,
-  kAVIF,
+enum class ImageType { kPNG, kJPEG, kWEBP, kGIF, kICO, kBMP, kAVIF,
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  kHEIF,
+ kHEIF,
 #endif
-  kInvalid
-};
+ kInvalid };
 
 // An encoded image may include several auxiliary images within it. This enum
 // is used to index those images. Auxiliary images can have different sizes and

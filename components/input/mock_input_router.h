@@ -67,11 +67,12 @@ class MockInputRouter : public InputRouter {
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   void SetGestureEventResult(bool result, bool stopPropagation) override {}
   void SetNativeEmbedMode(bool flag) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
 #endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ScrollBy(float delta_x, float delta_y) override {}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   bool sent_mouse_event_;
   bool sent_wheel_event_;

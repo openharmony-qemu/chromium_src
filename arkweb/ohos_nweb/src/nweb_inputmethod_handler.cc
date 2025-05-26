@@ -23,14 +23,16 @@
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
+#include "base/memory/raw_ptr.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cef/include/cef_task.h"
 #include "content/public/browser/browser_thread.h"
-#include "libcef/browser/thread_util.h"
 #include "nweb_imf_cursor_info_adapter_impl.h"
 #include "nweb_imf_input_attribute_adapter_impl.h"
 #include "nweb_imf_selection_range_adapter_impl.h"
 #include "nweb_imf_text_config_adapter_impl.h"
+#include "libcef/browser/thread_util.h"
+#include "ohos_glue/base/include/ark_web_errno.h"
 #include "ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "ui/events/keycodes/keyboard_codes_posix.h"
@@ -140,7 +142,7 @@ class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
   }
 
  private:
-  NWebInputMethodHandler* handler_;
+  raw_ptr<NWebInputMethodHandler> handler_;
 };
 
 class InputMethodTask : public CefTask {
@@ -307,12 +309,28 @@ IMFAdapterEnterKeyType NWebInputMethodHandler::TextInputActionToIMFAdapter(
   }
 }
 
+void NWebInputMethodHandler::HandleSecurityLayer() {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
+        &NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI, this));
+    browser_->GetHost()->PostTaskToUIThread(task);
+  }
+}
+
+void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
+  if (browser_ != nullptr && browser_->GetHost() != nullptr) {
+    browser_->GetHost()->UpdateSecurityLayer(input_is_password_);
+  }
+}
+
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
                                                int32_t customEnterKeyType) {
   type_text_flag_multi_line_ = false;
   show_keyboard_ = inputInfo.show_keyboard;
   input_flags_ = inputInfo.input_flags;
   input_node_id_ = inputInfo.node_id;
+  cef_text_input_mode_ = inputInfo.input_mode;
+  input_is_password_ = (inputInfo.input_type == CEF_TEXT_INPUT_TYPE_PASSWORD);
   if (inputInfo.input_mode != CEF_TEXT_INPUT_MODE_DEFAULT &&
       inputInfo.input_type != CEF_TEXT_INPUT_TYPE_PASSWORD) {
     imf_input_mode_ = TextInputModeToIMFAdapter(inputInfo.input_mode);
@@ -325,7 +343,7 @@ void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
   }
 }
 
-bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener) {
+bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener, int32_t requestKeyboardReason) {
   if (inputmethod_adapter_ == nullptr) {
     LOG(ERROR) << "inputmethod_adapter_ is nullptr";
     return false;
@@ -356,11 +374,19 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener) {
   textConfig->SetHeight((focus_rect_.y + focus_rect_.height + AVOID_OFFSET) *
                         device_pixel_ratio_);
 
-  if (!inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard_,
-                                    textConfig, is_need_reset_listener)) {
+  bool show_keyboard = NeedKeyboardShow();
+  isAttachSuccess_ = inputmethod_adapter_->AttachWithRequestKeyboardReason(
+      inputmethod_listener_, show_keyboard, textConfig, is_need_reset_listener,
+      requestKeyboardReason);
+  if (ArkWebGetErrno() != ArkWebInterfaceResult::RESULT_OK) {
+    isAttachSuccess_ = inputmethod_adapter_->Attach(inputmethod_listener_, show_keyboard,
+                                                    textConfig, is_need_reset_listener);
+  }
+  if (!isAttachSuccess_) {
     LOG(ERROR) << "inputmethod_adapter_ attach failed";
     return false;
   }
+  isFocusSwitchOnBlur_ = false;
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   if (!fill_content_.empty()) {
@@ -375,16 +401,40 @@ bool NWebInputMethodHandler::AttachToSystemIME(bool is_need_reset_listener) {
   return true;
 }
 
+bool NWebInputMethodHandler::NeedKeyboardShow() {
+  // if the keyboard is closed manually, the keyboard will not show automatically.
+  // if the inputmode is none, the system keyboard will not show.
+  return show_keyboard_ && !isManualCloseKeyboard_ &&
+         (cef_text_input_mode_ != CEF_TEXT_INPUT_MODE_NONE);
+}
+ 
+bool NWebInputMethodHandler::IsKeyboardShow() {
+  // If the inputmethod is attached successfully and the keyboard is needed, then the
+  // keyboard is shown.
+  return isAttachSuccess_ && NeedKeyboardShow();
+}
+
 void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
                                     InputInfo inputInfo,
                                     bool is_need_reset_listener,
                                     int32_t enterKeyType) {
   LOG(INFO) << "NWebInputMethodHandler::Attach";
+  int32_t requestKeyboardReasonNone = 0;
+  Attach(browser, inputInfo, is_need_reset_listener, enterKeyType, requestKeyboardReasonNone);
+}
+
+void NWebInputMethodHandler::Attach(CefRefPtr<CefBrowser> browser,
+                                    InputInfo inputInfo,
+                                    bool is_need_reset_listener,
+                                    int32_t enterKeyType,
+                                    int32_t requestKeyboardReason) {
+  LOG(INFO) << "NWebInputMethodHandler::Attach";
   ComputeEditorInfo(inputInfo, enterKeyType);
   composing_text_.clear();
   browser_ = browser;
+  isManualCloseKeyboard_ = false;
 
-  if (!AttachToSystemIME(is_need_reset_listener)) {
+  if (!AttachToSystemIME(is_need_reset_listener, requestKeyboardReason)) {
     return;
   }
   isAttached_ = true;
@@ -416,8 +466,17 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
     isNeedReattachOnfocus_ = false;
   }
 
-  LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
-            << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue");
+  if (type == ReattachType::FROM_ONDRAG) {
+    if (!is_editable_node_) {
+      LOG(INFO) << "ReAttchOnDrag, don't need reattach input method for non-editable node.";
+      return false;
+    }
+    LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source=FROM_ONDRAG";
+  } else {
+    LOG(INFO) << "Trigger reattach, nwebId=" << nwebId << ", source="
+              << (type == ReattachType::FROM_ONFOCUS ? "focus" : "continue");
+  }
+
   composing_text_.clear();
   ClearComposingStatus();
   if (!show_keyboard_ && isAttached_ && imf_input_mode_ != lastInputMode_) {
@@ -428,6 +487,8 @@ bool NWebInputMethodHandler::Reattach(uint32_t nwebId, ReattachType type) {
   if (!AttachToSystemIME(false)) {
     return false;
   }
+
+  HandleSecurityLayer();
   isAttached_ = true;
   lastAttachNWebId_ = nwebId;
   lastInputMode_ = imf_input_mode_;
@@ -439,8 +500,18 @@ void NWebInputMethodHandler::ShowTextInput() {
   LOG(INFO) << "NWebInputMethodHandler::ShowTextInput";
 }
 
+void NWebInputMethodHandler::SetNeedReattach(HideTextinputType hideType) {
+  if (hideType == HideTextinputType::FROM_ONPAUSE) {
+    isNeedReattachOncontinue_ = true;
+  }
+  if (hideType == HideTextinputType::FROM_ONBLUR) {
+    isNeedReattachOnfocus_ = true;
+  }
+}
+
 void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
-                                           HideTextinputType hideType) {
+                                           HideTextinputType hideType,
+                                           bool noNeedKeyboardByInput) {
   LOG(INFO) << "NWebInputMethodHandler::HideTextInput, isAttached_: "
             << isAttached_;
   ClearComposingStatus();
@@ -449,6 +520,17 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
     return;
   }
   if (!isAttached_) {
+    // when there is an attach failure occured, inputmethod need to be attached again.
+    if (!isAttachSuccess_) {
+      SetNeedReattach(hideType);
+      LOG(INFO) << "HideTextInput is triggered after an attach failure, "
+                   "need to reattach next time.";
+    }
+    if (noNeedKeyboardByInput) {
+      LOG(INFO) << "inputMode is None, no need keyboard.";
+      inputmethod_adapter_->HideTextInput();
+      return;
+    }
     if (hideType != HideTextinputType::FROM_ONPAUSE) {
       LOG(INFO) << "not from switch front and background, ingnore";
       return;
@@ -466,6 +548,10 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
     }
     return;
   }
+  if (isFocusSwitchOnBlur_) {
+    LOG(INFO) << "triggered by focus switch, inputmethod is not attached, do not need hidetextinput";
+    return;
+  }
 
   if (lastAttachNWebId_ == 0 || lastAttachNWebId_ == nwebId ||
       hideType == HideTextinputType::FROM_KERNEL) {
@@ -477,13 +563,7 @@ void NWebInputMethodHandler::HideTextInput(uint32_t nwebId,
 
   lastCloseInputMethodTime_ = std::chrono::high_resolution_clock::now();
   isAttached_ = false;
-  if (hideType == HideTextinputType::FROM_ONPAUSE) {
-    isNeedReattachOncontinue_ = true;
-  }
-
-  if (hideType == HideTextinputType::FROM_ONBLUR) {
-    isNeedReattachOnfocus_ = true;
-  }
+  SetNeedReattach(hideType);
 }
 
 void NWebInputMethodHandler::HideTextInputForce() {
@@ -552,13 +632,14 @@ bool NWebInputMethodHandler::IsTextInputStateChange(
     return true;
   }
 
-  if ((selected_range.from != selected_from_) ||
-      (selected_range.to != selected_to_)) {
+  if ((selected_range.from != static_cast<uint32_t>(selected_from_)) ||
+      (selected_range.to != static_cast<uint32_t>(selected_to_))) {
     return true;
   }
 
-  if ((compositon_range.from != composition_range_start_) ||
-      (compositon_range.to != composition_range_end_)) {
+  if ((compositon_range.from !=
+       static_cast<uint32_t>(composition_range_start_)) ||
+      (compositon_range.to != static_cast<uint32_t>(composition_range_end_))) {
     return true;
   }
 
@@ -596,7 +677,7 @@ void NWebInputMethodHandler::OnUpdateTextInputStateCalled(
     composition_range_end_ = compositon_range.to;
     int32_t preview_length = composition_range_end_ - composition_range_start_;
     if (!text.ToString16().empty() &&
-        (composition_range_end_ <= text.ToString16().length())) {
+        (static_cast<uint32_t>(composition_range_end_) <= text.ToString16().length())) {
       preview_text_cache_ =
           text.ToString16().substr(composition_range_start_, preview_length);
     }
@@ -671,11 +752,15 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     ime_text_composing_ = false;
     composing_text_.clear();
   }
+  if (status) {
+    isManualCloseKeyboard_ = false;
+  }
   ime_shown_ = status;
 }
 
 void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
   LOG(INFO) << "NWebInputMethodHandler::WebBlurKeyboardHideOnUI";
+  isManualCloseKeyboard_ = true;
   browser_->GetHost()->SetFocusOnWeb();
 }
 
@@ -812,12 +897,12 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
   }
   is_need_notify_all_ = false;
   text_cursor_length_ = length;
-  selected_from_ = selected_from_ >= whole_text_.size() ? whole_text_.size()
-                                                        : selected_from_;
+  int size = static_cast<int>(whole_text_.size());
+  selected_from_ = selected_from_ >= size ? size : selected_from_;
   LOG(DEBUG)
       << "NWebInputMethodHandler::DeleteForwardHandlerOnUI selected_from_ "
       << selected_from_;
-  if (whole_text_.substr(selected_from_).size() <= length) {
+  if (static_cast<int32_t>(whole_text_.substr(selected_from_).size()) <= length) {
     text_cursor_length_ = whole_text_.substr(selected_from_).size();
     if (selected_from_ == 0) {
       is_need_notify_all_ = true;
@@ -842,7 +927,7 @@ void NWebInputMethodHandler::DeleteForwardHandlerOnUI(int32_t length) {
 void NWebInputMethodHandler::DeleteBackwardHandlerOnUI(int32_t length) {
   CefKeyEvent keyEvent;
   keyEvent.windows_key_code = ui::VKEY_BACK;
-  keyEvent.native_key_code = 0x2A; // ScanKeyCode::BACKSPACE_SCAN_CODE
+  keyEvent.native_key_code = static_cast<int>(ScanKeyCode::BACKSPACE_SCAN_CODE);
   keyEvent.modifiers = 0;
   keyEvent.is_system_key = false;
   keyEvent.character = keyEvent.unmodified_character = DEL_CHAR;
@@ -1349,6 +1434,27 @@ std::string NWebInputMethodHandler::GetSelectInfo() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI_WRITE)
+int NWebInputMethodHandler::GetSelectStartIndex()
+{
+  LOG(INFO) << "NWebInputMethodHandler::GetSelectStartIndex selected_from_:" << selected_from_;
+  return selected_from_;
+}
+
+int NWebInputMethodHandler::GetSelectEndIndex()
+{
+  LOG(INFO) << "NWebInputMethodHandler::GetSelectStartIndex selected_to_:" << selected_to_;
+  return selected_to_;
+}
+
+std::string NWebInputMethodHandler::GetAllTextInfo()
+{
+  std::string whole_str = base::UTF16ToUTF8(whole_text_);
+  LOG(INFO) << "NWebInputMethodHandler::GetSelectStartIndex whole_str:" << whole_str;
+  return whole_str;
+}
+#endif // ARKWEB_AI_WRITE
+
 void NWebInputMethodHandler::SetWindowIdForIME(uint32_t windowId) {
   LOG(INFO) << "NWebInputMethodHandler::SetWindowIdForIME windowId: "
             << windowId;
@@ -1368,7 +1474,7 @@ bool NWebInputMethodHandler::IsCorrectParam(int32_t number,
   if (selectBegin > selectEnd) {
     std::swap(selectBegin, selectEnd);
   }
-  if (selectEnd > whole_text_.size()) {
+  if (selectEnd > static_cast<int32_t>(whole_text_.size())) {
     LOG(ERROR) << "param error, end:" << selectEnd;
     return false;
   }

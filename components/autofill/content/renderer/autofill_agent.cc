@@ -68,10 +68,6 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif
-
 using blink::WebAutofillClient;
 using blink::WebAutofillState;
 using blink::WebDocument;
@@ -99,13 +95,6 @@ constexpr char kSubmissionSourceHistogram[] =
 // Time to wait in ms to ensure that only a single select or datalist change
 // will be acted upon, instead of multiple in close succession (debounce time).
 constexpr base::TimeDelta kWaitTimeForOptionsChanges = base::Milliseconds(50);
-
-#if BUILDFLAG(ARKWEB_AUTOFILL)
-constexpr base::TimeDelta kWaitTimeForScrollIntoViewMs =
-    base::Milliseconds(700);
-constexpr base::TimeDelta kWaitTimeForRequestAutoFillMs =
-    base::Milliseconds(50);
-#endif
 
 using FormAndField = std::pair<FormData, raw_ref<const FormFieldData>>;
 
@@ -481,48 +470,11 @@ void AutofillAgent::DidDispatchDOMContentLoadedEvent() {
   ExtractFormsUnthrottled(/*callback=*/{});
 }
 
-#if BUILDFLAG(ARKWEB_AUTOFILL)
-bool AutofillAgent::OhAutoFillDidChangeScrollOffset() {
-  WebFormControlElement last_queried_element = last_queried_element_.GetField();
-  if (!last_queried_element) {
-    return false;
-  }
-  const WebInputElement input_element =
-      last_queried_element.DynamicTo<WebInputElement>();
-  if (input_element.IsNull()) {
-    return false;
-  }
-  auto is_password_autofill =
-      password_autofill_agent_->IsPasswordAutofill(input_element);
-  if (is_need_to_created_popup_ && !is_password_autofill &&
-      base::TimeTicks::Now() > created_popup_time_ &&
-      base::TimeTicks::Now() <
-          created_popup_time_ + kWaitTimeForScrollIntoViewMs) {
-    if (autofill_scroll_timer_.IsRunning()) {
-      autofill_scroll_timer_.Stop();
-    }
-    autofill_scroll_timer_.Start(FROM_HERE, kWaitTimeForRequestAutoFillMs,
-                                 base::BindOnce(
-                                     [](base::WeakPtr<AutofillAgent> self) {
-                                       if (!self) {
-                                         return;
-                                       }
-                                       self->HidePopup();
-                                       self->HandleFocusChangeComplete(true);
-                                     },
-                                     weak_ptr_factory_.GetWeakPtr()));
-    return true;
-  }
-  return false;
-}
-#endif
-
 void AutofillAgent::DidChangeScrollOffset() {
   if (!config_.focus_requires_scroll) {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-    if (OhAutoFillDidChangeScrollOffset()) {
+    if (AsAutofillAgentExt()->OhAutoFillDidChangeScrollOffset())
       return;
-    }
 #endif
     // Post a task here since scroll offset may change during layout.
     // TODO(crbug.com/40559425): Do not cancel other tasks and do not invalidate
@@ -535,10 +487,9 @@ void AutofillAgent::DidChangeScrollOffset() {
                                     weak_ptr_factory_.GetWeakPtr(),
                                     last_queried_element_.GetId()));
     }
-#if BUILDFLAG(ARKWEB_DATALIST)
-  } else if (!is_popup_possibly_visible_) {
-#else
   } else {
+#if BUILDFLAG(ARKWEB_DATALIST)
+    if (!is_popup_possibly_visible_)
 #endif
     HidePopup();
   }
@@ -569,7 +520,7 @@ void AutofillAgent::DidChangeScrollOffsetImpl(FieldRendererId element_id) {
   // Ignore subsequent scroll offset changes.
   HidePopup();
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  is_need_to_created_popup_ = false;
+  AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
 #endif
 }
 
@@ -586,8 +537,8 @@ void AutofillAgent::FocusedElementChanged(
 
   HidePopup();
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  is_popup_created_by_focus_change_ = false;
-  is_need_to_created_popup_ = false;
+  AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(false);
+  AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
 #endif
 
   // This behavior was introduced for to fix http://crbug.com/1105254. It's
@@ -609,9 +560,9 @@ void AutofillAgent::FocusedElementChanged(
           /*focused_node_was_last_clicked=*/focused_node_was_last_clicked);
 #if BUILDFLAG(ARKWEB_AUTOFILL)
       if (focused_node_was_last_clicked) {
-        is_popup_created_by_focus_change_ = true;
-        is_need_to_created_popup_ = true;
-        created_popup_time_ = base::TimeTicks::Now();
+        AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(true);
+        AsAutofillAgentExt()->SetIsNeedToCreatedPopup(true);
+        AsAutofillAgentExt()->SetCreatedPopupTime(base::TimeTicks::Now());
       }
 #endif
     }
@@ -810,9 +761,8 @@ void AutofillAgent::TextFieldDidEndEditing(const WebInputElement& element) {
     return;
   }
 #if BUILDFLAG(ARKWEB_DATALIST)
-  if (is_popup_possibly_visible_) {
+  if (is_popup_possibly_visible_)
     return;
-  }
 #endif
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     autofill_driver->DidEndTextFieldEditing();
@@ -870,8 +820,7 @@ void AutofillAgent::OnTextFieldDidChange(const WebFormControlElement& element) {
 
   if (input_element) {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-    ShowSuggestions(
-        element, AutofillSuggestionTriggerSource::kFormControlElementClicked);
+    ShowSuggestions(element, AutofillSuggestionTriggerSource::kFormControlElementClicked);
 #else
     ShowSuggestions(element,
                     AutofillSuggestionTriggerSource::kTextFieldDidChange);
@@ -927,8 +876,7 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
 void AutofillAgent::OpenTextDataListChooser(const WebInputElement& element) {
   DCHECK(form_util::MaybeWasOwnedByFrame(element, unsafe_render_frame()));
 #if BUILDFLAG(ARKWEB_DATALIST)
-  if (is_popup_possibly_visible_ ||
-      last_left_mouse_down_or_gesture_tap_in_node_caused_focus_) {
+  if (is_popup_possibly_visible_ || last_left_mouse_down_or_gesture_tap_in_node_caused_focus_) {
     return;
   }
 #endif
@@ -1178,44 +1126,8 @@ void AutofillAgent::ApplyFieldAction(
           }
           case mojom::FieldActionType::kReplaceAll: {
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-            LOG(INFO) << "FillFieldWithValue";
-            WebFormControlElement last_queried_element =
-                last_queried_element_.GetField();
-            if (!last_queried_element) {
+            if (AsAutofillAgentExt()->FillFieldWithValue(field_id, value))
               return;
-            }
-
-            if (field_id !=
-                form_util::GetFieldRendererId(last_queried_element)) {
-              // oh supports fill multiple form fields, including unfocused
-              // field
-              WebFormElement form = last_queried_element.Form();
-              if (form.IsNull()) {
-                WebDocument document = GetDocument();
-                if (document.IsNull()) {
-                  return;
-                }
-                WebFormControlElement fillElement =
-                    form_util::GetFormControlByRendererId(field_id);
-                if (fillElement.IsNull()) {
-                  return;
-                }
-                DoFillFieldWithValue(value, fillElement,
-                                     WebAutofillState::kAutofilled);
-                return;
-              }
-              for (WebFormControlElement& formElement :
-                   form.GetFormControlElements()) {
-                if (formElement.IsNull() ||
-                    form_util::GetFieldRendererId(formElement) != field_id) {
-                  continue;
-                }
-                DoFillFieldWithValue(value, formElement,
-                                     WebAutofillState::kAutofilled);
-                break;
-              }
-              return;
-            }
 #endif
             DoFillFieldWithValue(value, form_control,
                                  WebAutofillState::kAutofilled);
@@ -1335,16 +1247,8 @@ void AutofillAgent::AcceptDataListSuggestion(
 }
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-void AutofillAgent::FillAccountSuggestion(const std::u16string& username,
-                                          const std::u16string& password) {
-  WebFormControlElement last_queried_element = last_queried_element_.GetField();
-  if (!last_queried_element) {
-    return;
-  }
-
-  bool handled = password_autofill_agent_->FillAccountSuggestion(
-      last_queried_element, username, password);
-  DCHECK(handled);
+void AutofillAgent::FillAccountSuggestion(const std::u16string& username, const std::u16string& password) {
+  AsAutofillAgentExt()->ArkFillAccountSuggestion(username, password);
 }
 #endif
 
@@ -1509,7 +1413,7 @@ void AutofillAgent::QueryAutofillSuggestions(
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   const WebInputElement input_element = element.DynamicTo<WebInputElement>();
-  if (password_autofill_agent_->IsPasswordAutofill(input_element)) {
+  if (password_autofill_agent_->AsPasswordAutofillAgentExt()->IsPasswordAutofill(input_element)) {
     LOG(INFO) << "[Autofill] Is password autofill, skip form fill.";
     return;
   }
@@ -1517,14 +1421,13 @@ void AutofillAgent::QueryAutofillSuggestions(
   is_popup_possibly_visible_ = true;
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     if (auto* render_frame = unsafe_render_frame()) {
-      autofill_driver->AskForValuesToFill(
-          form, field->renderer_id(),
+      autofill_driver->AskForValuesToFill(form, field->renderer_id(),
 #if BUILDFLAG(ARKWEB_DATALIST)
-          render_frame->ConvertViewportToWindow(element.BoundsInWidget()),
+                                          render_frame->ConvertViewportToWindow(element.BoundsInWidget()),
 #else
-          GetCaretBounds(*render_frame),
+                                          GetCaretBounds(*render_frame),
 #endif
-          trigger_source);
+                                          trigger_source);
     }
   }
 }
@@ -1712,47 +1615,6 @@ void AutofillAgent::DidCompleteFocusChangeInFrame() {
   last_left_mouse_down_or_gesture_tap_in_node_caused_focus_ = false;
 }
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-void AutofillAgent::OhFormControlElementClicked() {
-  WebElement focused_element =
-      unsafe_render_frame()->GetWebFrame()->GetDocument().FocusedElement();
-  if (!focused_element.IsNull() && focused_element.IsFormControlElement()) {
-    WebFormControlElement focused_form_control_element =
-        focused_element.To<WebFormControlElement>();
-    if (form_util::IsTextAreaElementOrTextInput(focused_form_control_element)) {
-      LOG(INFO) << "[Autofill] Mouse down triggers RequestAutofill";
-      bool result = password_autofill_agent_->RequestAutofill(
-          focused_form_control_element);
-      if (result && base::ohos::IsPcDevice()) {
-        is_popup_possibly_visible_ = true;
-      }
-    }
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_AUTOFILL)
-void AutofillAgent::OhAutoFillFormControlElementClicked(const WebNode& node) {
-  WebInputElement input_element = node.DynamicTo<WebInputElement>();
-  if (input_element.IsNull() || !node.Focused()) {
-    return;
-  }
-  auto is_password_autofill =
-      password_autofill_agent_->IsPasswordAutofill(input_element);
-  if (is_password_autofill) {
-    return;
-  }
-  if (is_popup_created_by_focus_change_) {
-    is_popup_created_by_focus_change_ = false;
-    return;
-  }
-  HidePopup();
-  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
-  is_need_to_created_popup_ = true;
-  created_popup_time_ = base::TimeTicks::Now();
-}
-#endif
-
 void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
     const WebNode& node) {
   DCHECK(node);
@@ -1762,11 +1624,11 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
                          contenteditable.Focused());
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  OhFormControlElementClicked();
+  AsAutofillAgentExt()->OhFormControlElementClicked();
 #endif
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
-  OhAutoFillFormControlElementClicked(node);
+  AsAutofillAgentExt()->OhAutoFillFormControlElementClicked(node);
 #endif
 
 #if defined(ANDROID)
@@ -1883,7 +1745,6 @@ void AutofillAgent::HandleFocusChangeComplete(
             focused_control);
       }
 #endif
-
       ShowSuggestions(
           focused_control,
           AutofillSuggestionTriggerSource::kFormControlElementClicked);

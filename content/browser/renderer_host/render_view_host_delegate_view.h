@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "content/common/buildflags.h"
@@ -17,11 +18,9 @@
 #include "third_party/blink/public/mojom/drag/drag.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "ui/gfx/geometry/rect.h"
 #endif
-
 namespace blink {
 class WebGestureEvent;
 }
@@ -54,7 +53,7 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
 class WebContents;
 #endif
 
@@ -76,11 +75,12 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
-  virtual bool CloseImageOverlaySelection() { return false; }
+  virtual void CloseImageOverlaySelection() {}
+  virtual void OnOverlayZoomChanged() {}
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual gfx::Rect GetVisibleRectToWeb();
+  virtual gfx::Rect GetVisibleRectToWeb() {return gfx::Rect();}
 #endif
 
   // The user started dragging content of the specified type within the
@@ -192,16 +192,17 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets);
+  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets) {}
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_AI)
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
                              const gfx::Point& touch_point) {}
+  virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
 #endif
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
   virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 

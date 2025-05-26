@@ -358,8 +358,7 @@ bool FrameSinkImpl::DoBeginFrame(const viz::BeginFrameArgs& begin_frame_args) {
           });
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
       OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                        std::to_string(begin_frame_args.trace_id), "step",
-                        "SubmitCompositorFrame");
+                       std::to_string(begin_frame_args.trace_id), "step", "SubmitCompositorFrame");
 #endif
       frame_sink_->SubmitCompositorFrame(
           local_surface_id_, std::move(frame),

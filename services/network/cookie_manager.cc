@@ -12,7 +12,6 @@
 #include <optional>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
@@ -35,6 +34,10 @@
 #include "services/network/session_cleanup_cookie_store.h"
 #include "services/network/tpcd/metadata/manager.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "arkweb/chromium_ext/services/network/cookie_manager_for_include.cc"
+#endif
 
 using CookieDeletionInfo = net::CookieDeletionInfo;
 using CookieDeleteSessionControl = net::CookieDeletionInfo::SessionControl;
@@ -346,9 +349,8 @@ void CookieManager::AllowFileSchemeCookies(
     AllowFileSchemeCookiesCallback callback) {
   OnSettingsWillChange();
 
-  if (!allow) {
+  if (!allow)
     return;
-  }
   cookie_store_->AddCookieableSchemes({url::kFileScheme}, std::move(callback));
 }
 
@@ -450,31 +452,4 @@ CookieDeletionInfo DeletionFilterToInfo(mojom::CookieDeletionFilterPtr filter) {
   return delete_info;
 }
 
-#if BUILDFLAG(ARKWEB_COOKIE)
-void CookieManager::SetCanonicalCookieSync(
-    const net::CanonicalCookie& cookie,
-    const GURL& source_url,
-    const net::CookieOptions& cookie_options,
-    SetCanonicalCookieCallback callback) {
-  SetCanonicalCookie(cookie, source_url, cookie_options, std::move(callback));
-}
-
-void CookieManager::GetCookieListSync(
-    const GURL& url,
-    const net::CookieOptions& cookie_options,
-    const net::CookiePartitionKeyCollection& cookie_partition_key_collection,
-    GetCookieListCallback callback) {
-  GetCookieList(url, cookie_options, cookie_partition_key_collection,
-                std::move(callback));
-}
-
-void CookieManager::GetAllCookiesSync(GetAllCookiesCallback callback) {
-  GetAllCookies(std::move(callback));
-}
-
-void CookieManager::DeleteCookiesSync(mojom::CookieDeletionFilterPtr filter,
-                                      DeleteCookiesCallback callback) {
-  DeleteCookies(std::move(filter), std::move(callback));
-}
-#endif
 }  // namespace network

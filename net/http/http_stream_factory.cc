@@ -246,7 +246,12 @@ std::unique_ptr<HttpStreamRequest> HttpStreamFactory::RequestStreamInternal(
 }
 
 void HttpStreamFactory::PreconnectStreams(int num_streams,
-                                          HttpRequestInfo& request_info) {
+                                          HttpRequestInfo& request_info
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+                                          bool from_preload
+#endif
+) {
   // Ignore invalid URLs. This matches the behavior of
   // URLRequestJobFactory::CreateJob(). Passing very long valid GURLs over Mojo
   // can result in invalid URLs, so can't rely on callers sending only valid
@@ -266,6 +271,11 @@ void HttpStreamFactory::PreconnectStreams(int num_streams,
           .quic_context->params()
           ->delay_main_job_with_available_spdy_session,
       /*allowed_bad_certs=*/std::vector<SSLConfig::CertAndStatus>());
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (from_preload) {
+    job_controller->SetFromPreload(true);
+  }
+#endif
   JobController* job_controller_raw_ptr = job_controller.get();
   job_controller_set_.insert(std::move(job_controller));
   job_controller_raw_ptr->Preconnect(num_streams);

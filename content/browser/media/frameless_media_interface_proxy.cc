@@ -21,6 +21,9 @@
 #include "media/base/media_switches.h"
 #include "mojo/public/cpp/bindings/message.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/content/browser/media/frameless_media_interface_proxy_for_include.cc"
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace content {
 
@@ -174,6 +177,7 @@ void FramelessMediaInterfaceProxy::CreateFlingingRenderer(
         client_extenion,
     mojo::PendingReceiver<media::mojom::Renderer> receiver) {}
 #endif  // BUILDFLAG(IS_ANDROID)
+
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 void FramelessMediaInterfaceProxy::CreateMediaPlayerRenderer(
     mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
@@ -182,16 +186,6 @@ void FramelessMediaInterfaceProxy::CreateMediaPlayerRenderer(
     mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
         renderer_extension_receiver) {}
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void FramelessMediaInterfaceProxy::CreateCustomMediaPlayerRenderer(
-    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
-        client_extension_remote,
-    mojo::PendingReceiver<media::mojom::Renderer> receiver,
-    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
-        renderer_extension_receiver,
-    int player_id) {}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_WIN)
 // Unimplemented method as this requires CDM and media::Renderer services with

@@ -23,6 +23,10 @@
 #include "device/fido/prf_input.h"
 #include "device/fido/public_key_credential_descriptor.h"
 
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "device/fido/ctap_get_assertion_request_extra.h"
+#endif // BUILDFLAG(ARKWEB_FIDO)
+
 namespace cbor {
 class Value;
 }
@@ -149,6 +153,10 @@ struct COMPONENT_EXPORT(DEVICE_FIDO) CtapGetAssertionRequest {
   // in getAssertion requests.
   bool large_blob_extension_read = false;
   std::optional<LargeBlob> large_blob_extension_write;
+
+#if BUILDFLAG(ARKWEB_FIDO)
+  std::optional<CtapGetAssertionRequestExtra> extra;
+#endif // BUILDFLAG(ARKWEB_FIDO)
 };
 
 struct CtapGetNextAssertionRequest {};

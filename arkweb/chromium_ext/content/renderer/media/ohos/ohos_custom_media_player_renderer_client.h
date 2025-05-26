@@ -50,6 +50,10 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   // media::Renderer implementation
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
 
   media::RendererType GetRendererType() override;
@@ -83,13 +87,13 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClient
   void OnSurfaceCreated(int surface_id);
   void OnSurfaceDestroyed();
 
-  media::MediaResource* media_resource_;
+  raw_ptr<media::MediaResource> media_resource_;
 
   media::ScopedNativeTextureWrapper native_texture_wrapper_;
 
-  media::RendererClient* client_;
+  raw_ptr<media::RendererClient> client_;
 
-  media::VideoRendererSink* sink_;
+  raw_ptr<media::VideoRendererSink> sink_;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner_;
 

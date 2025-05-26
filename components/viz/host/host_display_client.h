@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
 #include "components/viz/host/viz_host_export.h"
@@ -16,6 +15,7 @@
 #include "services/viz/privileged/mojom/compositing/display_private.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 

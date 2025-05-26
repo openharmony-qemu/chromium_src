@@ -46,6 +46,9 @@ class MEDIA_GPU_EXPORT VideoFrameFactory {
       OnceOutputCB output_cb) = 0;
 
   virtual void RunAfterPendingVideoFrames(base::OnceClosure closure) = 0;
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void PipEnable(bool enable) = 0;
+#endif
 };
 
 }  // namespace media

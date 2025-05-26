@@ -321,9 +321,12 @@ void BrowserChildProcessHostImpl::LaunchWithoutExtraCommandLineSwitches(
   const base::CommandLine& browser_command_line =
       *base::CommandLine::ForCurrentProcess();
   static const char* const kForwardSwitches[] = {
-      switches::kDisableInProcessStackTraces, switches::kDisableBestEffortTasks,
-      switches::kIPCConnectionTimeout,        switches::kLogBestEffortTasks,
-      switches::kPerfettoDisableInterning,    switches::kTraceToConsole,
+      switches::kDisableInProcessStackTraces,
+      switches::kDisableBestEffortTasks,
+      switches::kIPCConnectionTimeout,
+      switches::kLogBestEffortTasks,
+      switches::kPerfettoDisableInterning,
+      switches::kTraceToConsole,
 #if BUILDFLAG(IS_OHOS)
       switches::kBundleInstallationDir,
 #endif

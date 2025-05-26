@@ -11,7 +11,6 @@
 #include <tuple>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/containers/span.h"
@@ -49,6 +48,7 @@
 #include "services/network/throttling/throttling_network_interceptor.h"
 #include "services/network/websocket_factory.h"
 #include "services/network/websocket_interceptor.h"
+#include "arkweb/build/features/features.h"
 
 namespace network {
 namespace {
@@ -388,7 +388,8 @@ void WebSocket::WebSocketEventHandler::OnSSLCertificateError(
   impl_->url_loader_network_observer_->OnSSLCertificateError(
       url, net_error, ssl_info, fatal,
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      url, url.spec(),
+      url,
+      url.spec(),
 #endif
       base::BindOnce(&WebSocket::OnSSLCertificateErrorResponse,
                      impl_->weak_ptr_factory_.GetWeakPtr(),

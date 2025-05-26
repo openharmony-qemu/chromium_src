@@ -74,7 +74,7 @@ scoped_refptr<base::SingleThreadTaskRunner> TaskRunner::GetTaskRunner() {
   if (!task_runner_) {
     task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
         {base::MayBlock(), base::WithBaseSyncPrimitives(),
-         base::TaskPriority::BEST_EFFORT},
+         base::TaskPriority::USER_VISIBLE},
         base::SingleThreadTaskRunnerThreadMode::DEDICATED);
   }
 
@@ -263,7 +263,7 @@ bool ResponseCache::ReadMetadata() {
 
     // Check the count of metadata.
     // Each resource must has 7 metadata(url、response、headers...)
-    int item_count = 7;
+    unsigned long item_count = 7;
     if (it != std::sregex_iterator() && it->size() == item_count) {
       metadata_out_->url_hash_ = (*it)[1].str();
       metadata_out_->content_length_ = (*it)[2].str();

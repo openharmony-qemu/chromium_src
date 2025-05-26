@@ -232,8 +232,7 @@ std::unique_ptr<FFmpegDemuxerStream> FFmpegDemuxerStream::Create(
                                      "a valid/supported audio decoder "
                                      "configuration from muxed stream, config:"
                                   << video_config->AsHumanReadableString()
-                                  << " OhMedia::FFmpegDemuxer unsupported "
-                                     "video decoder type with codec "
+                                  << " OhMedia::FFmpegDemuxer unsupported video decoder type with codec "
                                   << (int)video_config->codec();
       return nullptr;
     }
@@ -1267,8 +1266,7 @@ void FFmpegDemuxer::OnOpenContextDone(bool result) {
     return;
   }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   if (glue_->detected_hls()) {
     MEDIA_LOG(INFO, media_log_)
         << GetDisplayName() << ": detected HLS manifest";

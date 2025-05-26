@@ -5,6 +5,7 @@
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
 component("fido") {
   # These source files represent the minimal subset of files used for passkey
@@ -334,6 +335,26 @@ component("fido") {
         "//chromeos/dbus/u2f",
         "//chromeos/dbus/u2f:u2f_proto",
         "//dbus",
+      ]
+    }
+
+    if (defined(arkweb_fido) && arkweb_fido) {
+      sources += [
+        "//arkweb/chromium_ext/device/fido/authenticator_credential_response_extra_common.h",
+        "//arkweb/chromium_ext/device/fido/ctap_get_assertion_request_extra.h",
+        "//arkweb/chromium_ext/device/fido/ctap_make_credential_request_extra.h",
+        "//arkweb/chromium_ext/device/fido/ctap_request_extra_common.h",
+        "//arkweb/chromium_ext/device/fido/ohos/fido2_api.h",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator.cpp",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_authenticator.h",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_fido_discovery.cpp",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_fido_discovery.h",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api.cpp",
+        "//arkweb/chromium_ext/device/fido/ohos/ohos_webauthn_api.h",
+        "//arkweb/chromium_ext/device/fido/ohos/type_conversions.cpp",
+        "//arkweb/chromium_ext/device/fido/ohos/type_conversions.h",
+        "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils.cpp",
+        "//arkweb/chromium_ext/device/fido/ohos/fido2_api_utils.h",
       ]
     }
   }

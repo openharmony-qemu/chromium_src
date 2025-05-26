@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/chromium_ext/content/browser/notifications/blink_notification_service_impl_ext.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -29,11 +31,6 @@
 #include "third_party/blink/public/common/notifications/platform_notification_data.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "third_party/blink/public/common/service_worker/service_worker_status_code.h"
-
-#if BUILDFLAG(ARKWEB_NOTIFICATION)
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#endif // ARKWEB_NOTIFICATION
 
 namespace content {
 
@@ -130,12 +127,8 @@ void BlinkNotificationServiceImpl::GetPermissionStatus(
   }
 
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx)) {
-    CheckPermissionStatusAsync(std::move(callback));
-  } else {
-    std::move(callback).Run(CheckPermissionStatus());
-  }
+  AsBlinkNotificationServiceImplExt()->GetPermissionStatusExt(
+      std::move(callback));
 #else
   std::move(callback).Run(CheckPermissionStatus());
 #endif // ARKWEB_NOTIFICATION
@@ -210,10 +203,8 @@ void BlinkNotificationServiceImpl::CloseNonPersistentNotification(
 
   if (CheckPermissionStatus() != blink::mojom::PermissionStatus::GRANTED)
     return;
-
   if (!IsValidForNonPersistentNotification())
     return;
-
   std::string notification_id =
       notification_context_->notification_id_generator()
           ->GenerateForNonPersistentNotification(storage_key_.origin(), token);
@@ -411,38 +402,5 @@ void BlinkNotificationServiceImpl::DidGetNotifications(
 
   std::move(callback).Run(std::move(ids), std::move(datas));
 }
-
-#if BUILDFLAG(ARKWEB_NOTIFICATION)
-void BlinkNotificationServiceImpl::CheckPermissionStatusAsync(
-    GetPermissionStatusCallback callback) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
-  // TODO(crbug.com/987654): It is odd that a service instance can be created
-  // for cross-origin subframes, yet the instance is completely oblivious of
-  // whether it is serving a top-level browsing context or an embedded one.
-  if (creator_type_ ==
-      RenderProcessHost::NotificationServiceCreatorType::kDocument) {
-    RenderFrameHost* rfh = weak_document_ptr_.AsRenderFrameHostIfValid();
-    if (!rfh) {
-      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
-      return;
-    }
-    browser_context_->GetPermissionController()
-        ->GetPermissionStatusAsync(
-            blink::PermissionType::NOTIFICATIONS, true, (void*)rfh,
-            rfh->GetLastCommittedOrigin(), std::move(callback));
-  } else {
-    RenderProcessHost* rph = RenderProcessHost::FromID(render_process_host_id_);
-    if (!rph) {
-      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
-      return;
-    }
-    browser_context_->GetPermissionController()
-        ->GetPermissionStatusAsync(
-            blink::PermissionType::NOTIFICATIONS, false, (void*)rph,
-            storage_key_.origin(), std::move(callback));
-  }
-}
-#endif // ARKWEB_NOTIFICATION
 
 }  // namespace content

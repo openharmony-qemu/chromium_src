@@ -7,11 +7,6 @@
 #include "base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
-#define SAFE_RUN_GET_ISOLATION_CB(callback, origin) \
-  if (!callback.is_null()) { \
-	std::move(callback).Run(origin); \
-  }
-
 namespace {
 static ohos_prp_preload::PRParallelPreloadMgrImpl g_prp_preload_mgr_impl;
 const size_t MAX_PAGE_COUNT = 100;
@@ -21,6 +16,13 @@ const std::string PRP_PRELOAD_MODE_PRELOAD = "preload";
 } // namespace
 
 namespace ohos_prp_preload {
+static inline void SafeRunGetIsolationCB(PageOriginCallback& callback, const std::string& origin)
+{
+  if (!callback.is_null()) {
+	std::move(callback).Run(origin);
+  }
+}
+
 PRParallelPreloadMgr& PRParallelPreloadMgr::GetInstance() {
   return g_prp_preload_mgr_impl;
 }
@@ -30,8 +32,9 @@ PRPPreloadMode GetPRParallelPreloadModeInner() {
   std::string prp_preload_mode =
 	OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetPRPPreloadMode();
   bool isMobile = base::ohos::IsMobileDevice();
-  if (!isMobile) {
-	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile, NONE";
+  bool isPc = base::ohos::IsPcDevice();
+  if (!isMobile && !isPc) {
+	LOG(INFO) << "PRPPreload.GetPRParallelPreloadModeInner is not Mobile or PC, NONE";
 	return PRPPreloadMode::NONE;
   }
 
@@ -66,14 +69,6 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
   LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::Init ENABLE";
   if (!is_inited_) {
 	is_inited_ = true;
-	disk_cache_backend_factory_ = base::WrapRefCounted(new (std::nothrow) DiskCacheBackendFactory());
-	if (disk_cache_backend_factory_ == nullptr) {
-	  is_inited_ = false;
-	  LOG(WARNING) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed no mem";
-	  return;
-	}
-	disk_cache_backend_factory_->CreateBackend();
-
 	sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
 	  {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
 	if (sth_task_runner_ == nullptr || net_task_runner == nullptr) {
@@ -82,17 +77,21 @@ void PRParallelPreloadMgrImpl::Init(const scoped_refptr<base::SingleThreadTaskRu
 	  return;
 	}
 	net_task_runner_ = net_task_runner;
+	sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory));
   }
 }
 
 void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
+	const net::NetworkAnonymizationKey& networkAnonymizationKey,
     base::WeakPtr<net::URLRequestContext> url_request_context,
-	uint64_t addr_web_handle, PageOriginCallback callback) {
+	uint64_t addr_web_handle, PageOriginCallback callback, bool use_no_cache) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
   LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage, is_inited = " << is_inited_ <<
-	", current page num = " << prp_preload_info_map_.size() << ", web_handle_valid = " << !web_handle;
-  if (url.empty() || web_handle == nullptr || !is_inited_ || prp_preload_info_map_.size() >= MAX_PAGE_COUNT) {
-	SAFE_RUN_GET_ISOLATION_CB(callback, CANCEL_ORIGIN);
+    ", current page num = " << prp_preload_info_map_.size() << ", web_handle_valid = " << !web_handle <<
+	", use_no_cache = " << use_no_cache;
+  if (use_no_cache || url.empty() || web_handle == nullptr || !is_inited_ ||
+      prp_preload_info_map_.size() >= MAX_PAGE_COUNT) {
+	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	return;
   }
   std::string main_url = url;
@@ -113,15 +112,14 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
 	}
   }
   scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-	new (std::nothrow) ResParallelPreloadCtrler(main_url, sth_task_runner_,
-	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
-  if (rp_preload_ctrler == nullptr ||
-      !rp_preload_ctrler->Init(disk_cache_backend_factory_, net_task_runner_, url_request_context,
-	  base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, base::Unretained(this)))) {
-	LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage new ResParallelPreloadCtrler failed";
-	SAFE_RUN_GET_ISOLATION_CB(callback, CANCEL_ORIGIN);
+	new (std::nothrow) ResParallelPreloadCtrler(main_url, networkAnonymizationKey, sth_task_runner_,
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, weak_factory_.GetWeakPtr())));
+  if (rp_preload_ctrler == nullptr) {
+	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	return;
   }
+  rp_preload_ctrler->Init(net_task_runner_, url_request_context,
+	base::BindRepeating(&PRParallelPreloadMgrImpl::OnPageOrigin, weak_factory_.GetWeakPtr()));
   web_handle_pages_map_[web_handle] = main_url;
   rp_preload_ctrler->Start();
   prp_preload_info_map_[main_url].rp_preload_ctrler_ = rp_preload_ctrler;
@@ -131,7 +129,7 @@ void PRParallelPreloadMgrImpl::StartPage(const std::string& url,
 	prp_preload_info_map_[main_url].prpp_req_loader_fac_ =
 	  PRPPRequestLoaderFactory::CreatePRPPRequestLoaderFactory(main_url, url_request_context);
   } else {
-	SAFE_RUN_GET_ISOLATION_CB(callback, CANCEL_ORIGIN);
+	SafeRunGetIsolationCB(callback, CANCEL_ORIGIN);
 	prp_preload_info_map_[main_url].prpp_req_loader_fac_ = nullptr;
   }
 }
@@ -230,14 +228,14 @@ void PRParallelPreloadMgrImpl::StopPageInternal(const std::string& url) {
   if (it != prp_preload_info_map_.end() && it->second.start_page_) {
 	it->second.rp_preload_ctrler_->Stop();
 	it->second.start_page_ = false;
-	  SAFE_RUN_GET_ISOLATION_CB(it->second.callback_, CANCEL_ORIGIN);
+	  SafeRunGetIsolationCB(it->second.callback_, CANCEL_ORIGIN);
 	  auto ctrler = it->second.rp_preload_ctrler_;
 	  it->second.prpp_req_loader_fac_ = nullptr;
 	  DoRmPageUrl(it->first);
 	  (void)prp_preload_info_map_.erase(it);
     if (sth_task_runner_ != nullptr) {
 	  sth_task_runner_->PostTask(FROM_HERE, base::BindOnce([]
-		(const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {}, ctrler));
+		(const scoped_refptr<ResParallelPreloadCtrler>& ctrler) {}, std::move(ctrler)));
     }
   }
 }
@@ -263,9 +261,9 @@ void PRParallelPreloadMgrImpl::OnPageOrigin(const std::string& url, const std::s
 
   FindCurPreloadInfoAndRun(url, [&](PRParallelPreloadInfo& prp_preload_info) {
     if (page_origin.empty()) {
-	  SAFE_RUN_GET_ISOLATION_CB(prp_preload_info.callback_, CANCEL_ORIGIN);
+	  SafeRunGetIsolationCB(prp_preload_info.callback_, CANCEL_ORIGIN);
 	} else {
-	  SAFE_RUN_GET_ISOLATION_CB(prp_preload_info.callback_, page_origin);
+	  SafeRunGetIsolationCB(prp_preload_info.callback_, page_origin);
 	}
   });
 }
@@ -341,11 +339,19 @@ bool PRParallelPreloadMgrImpl::IsPageAlreadyStarted(const std::string& key,
   auto it = prp_preload_info_map_.find(key);
   if (it != prp_preload_info_map_.end()) {
 	LOG(DEBUG) << "PRPPreload.PRParallelPreloadMgrImpl::StartPage already";
-	SAFE_RUN_GET_ISOLATION_CB(it->second.callback_, CANCEL_ORIGIN);
+	SafeRunGetIsolationCB(it->second.callback_, CANCEL_ORIGIN);
 	it->second.callback_ = std::move(callback);
 	return true;
   }
   return false;
+}
+
+void PRParallelPreloadMgrImpl::RemoveCache(base::Time start_time, base::Time end_time)
+{
+  if (sth_task_runner_ == nullptr) {
+    return;
+  }
+  sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::RemoveCache, start_time, end_time));
 }
 
 } // namespace ohos_prp_preload

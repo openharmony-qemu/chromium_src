@@ -42,6 +42,7 @@ class ContentSubresourceFilterWebContentsHelper;
 class PageLoadStatistics;
 class ProfileInteractionManager;
 class SubresourceFilterProfileContext;
+class ArkWebContentSubresourceFilterThrottleManagerExt;
 
 // This enum backs a histogram. Make sure new elements are only added to the
 // end. Keep histograms.xml up to date with any changes.
@@ -110,7 +111,7 @@ class ContentSubresourceFilterThrottleManager
     : public base::SupportsUserData::Data,
       public mojom::SubresourceFilterHost
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-    ,
+      ,
       public mojom::UserSubresourceFilterHost
 #endif
 {
@@ -122,13 +123,6 @@ class ContentSubresourceFilterThrottleManager
   static void BindReceiver(mojo::PendingAssociatedReceiver<
                                mojom::SubresourceFilterHost> pending_receiver,
                            content::RenderFrameHost* render_frame_host);
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  static void BindUserReceiver(
-      mojo::PendingAssociatedReceiver<mojom::UserSubresourceFilterHost>
-          pending_receiver,
-      content::RenderFrameHost* render_frame_host);
-#endif
 
   // Creates a ThrottleManager instance from the given parameters.
   // NOTE: Short-circuits out if the kSafeBrowsingSubresourceFilter feature is
@@ -179,6 +173,10 @@ class ContentSubresourceFilterThrottleManager
       const ContentSubresourceFilterThrottleManager&) = delete;
   ContentSubresourceFilterThrottleManager& operator=(
       const ContentSubresourceFilterThrottleManager&) = delete;
+
+  virtual ArkWebContentSubresourceFilterThrottleManagerExt *AsArkWebContentSubresourceFilterThrottleManagerExt() {
+    return nullptr;
+  }
 
   // This method inspects `navigation_handle` and attaches navigation throttles
   // appropriately, based on the current state of frame activation.
@@ -271,6 +269,7 @@ class ContentSubresourceFilterThrottleManager
 
  private:
   friend ContentSubresourceFilterWebContentsHelper;
+  friend ArkWebContentSubresourceFilterThrottleManagerExt;
 
   FRIEND_TEST_ALL_PREFIXES(ContentSubresourceFilterThrottleManagerTest,
                            SubframeNavigationTaggedAsAdByRenderer);
@@ -340,25 +339,6 @@ class ContentSubresourceFilterThrottleManager
   void SetDocumentLoadStatistics(
       mojom::DocumentLoadStatisticsPtr statistics) override;
   void OnAdsViolationTriggered(mojom::AdsViolation violation) override;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  void UserAdScriptDidCreateFencedFrame(
-      const blink::RemoteFrameToken& placeholder_token) override;
-  void FrameWasCreatedByUserAdScript() override;
-
-  void FrameIsUserAd() override;
-
-  void DidDisallowFirstUserSubresource() override;
-
-  void SetStatisticsAfterDocumentLoad(
-      mojom::DocumentLoadStatisticsPtr statistics) override;
-
-  void UserSetStatisticsAfterDocumentLoad(
-      mojom::DocumentLoadStatisticsPtr statistics) override;
-
-  void UserSetDocumentLoadStatistics(
-      mojom::DocumentLoadStatisticsPtr statistics) override;
-#endif
 
   // Gets a filter for the navigation from `throttle`, creates and returns a new
   // filter, or returns `nullptr`. Also updates `frame_host_filter_map_` as

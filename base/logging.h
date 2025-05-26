@@ -13,7 +13,6 @@
 #include <string>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "base/dcheck_is_on.h"
@@ -23,6 +22,7 @@
 #include "base/strings/utf_ostream_operators.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include <cstdio>
@@ -380,28 +380,28 @@ BASE_EXPORT LogMessageHandlerFunction GetLogMessageHandler();
 // by LOG() and LOG_IF, etc. Since these are used all over our code, it's
 // better to have compact code for these operations.
 // #if BUILDFLAG(ARKWEB_DFX_LOGGING).
-#define COMPACT_GOOGLE_LOG_EX_DEBUG(ClassName, ...)    \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_DEBUG, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DEBUG(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DEBUG, \
+                       ##__VA_ARGS__)
 // #endif
-#define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)     \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_INFO, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)  \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_WARNING, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)    \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_ERROR, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)    \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_FATAL, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)   \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_DFATAL, ##__VA_ARGS__)
-#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)   \
-  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, \
-                       ::logging::LOGGING_DCHECK, ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_INFO(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_INFO, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_WARNING(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_WARNING, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_ERROR(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_ERROR, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_FATAL(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_FATAL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DFATAL(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DFATAL, \
+                       ##__VA_ARGS__)
+#define COMPACT_GOOGLE_LOG_EX_DCHECK(ClassName, ...)                  \
+  ::logging::ClassName(LOGGING_TAG __FILE__, __LINE__, ::logging::LOGGING_DCHECK, \
+                       ##__VA_ARGS__)
 
 // #if BUILDFLAG(ARKWEB_DFX_LOGGING).
 #define COMPACT_GOOGLE_LOG_DEBUG COMPACT_GOOGLE_LOG_EX_DEBUG(LogMessage)

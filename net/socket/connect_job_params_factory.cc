@@ -167,7 +167,7 @@ ConnectJobParams CreateProxyParams(
     SecureDnsPolicy secure_dns_policy,
     const CommonConnectJobParams* common_connect_job_params,
     const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -237,7 +237,7 @@ ConnectJobParams CreateProxyParams(
         proxy_server.host_port_pair(), proxy_dns_network_anonymization_key,
         secure_dns_policy, resolution_callback,
         SupportedProtocolsFromSSLConfig(proxy_server_ssl_config)
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
             ,
         secure_dns_only
 #endif
@@ -248,7 +248,7 @@ ConnectJobParams CreateProxyParams(
         proxy_chain_index - 1, proxy_annotation_tag, resolution_callback,
         endpoint_network_anonymization_key, secure_dns_policy,
         common_connect_job_params, proxy_dns_network_anonymization_key
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
         ,
         secure_dns_only
 #endif
@@ -301,7 +301,7 @@ ConnectJobParams ConstructConnectJobParams(
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
     const NetworkAnonymizationKey& proxy_dns_network_anonymization_key
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -334,7 +334,7 @@ ConnectJobParams ConstructConnectJobParams(
         ToTransportEndpoint(endpoint), endpoint_network_anonymization_key,
         secure_dns_policy, resolution_callback,
         SupportedProtocolsFromSSLConfig(ssl_config)
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
             ,
         secure_dns_only
 #endif
@@ -350,7 +350,7 @@ ConnectJobParams ConstructConnectJobParams(
         resolution_callback, endpoint_network_anonymization_key,
         secure_dns_policy, common_connect_job_params,
         proxy_dns_network_anonymization_key
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
         ,
         secure_dns_only
 #endif

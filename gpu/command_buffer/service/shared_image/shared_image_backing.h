@@ -105,8 +105,10 @@ enum class SharedImageBackingType {
   kWrappedGraphiteTexture = 18,
 #if BUILDFLAG(ARKWEB_VULKAN)
   kOHOSNativeBuffer = 19,
-#endif
+  kMaxValue = kOHOSNativeBuffer
+#else
   kMaxValue = kWrappedGraphiteTexture
+#endif
 };
 
 #if BUILDFLAG(IS_WIN)

@@ -19,7 +19,7 @@
 #include "components/url_pattern_index/proto/rules.pb.h"
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "base/strings/string_number_conversions.h"
+#include "arkweb/chromium_ext/components/subresource_filter/tools/rule_parser_for_include.cc"
 #endif
 
 namespace subresource_filter {
@@ -255,14 +255,8 @@ RuleType RuleParser::Parse(std::string_view line) {
     const char next_char = part[css_separator_pos + 1];
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-    if (css_separator_pos + 2 < part.size()) {
-      // skip "#?#", extended css selector not supported yet
-      // and "#?##" should not be considered normal css rule.
-      const char next_next_char = part[css_separator_pos + 2];
-      if (next_char == '?' && next_next_char == '#') {
-        css_separator_pos = std::string_view::npos;
-        break;
-      }
+    if (!ParseExt(css_separator_pos, part, next_char)) {
+      break;
     }
 #endif
 

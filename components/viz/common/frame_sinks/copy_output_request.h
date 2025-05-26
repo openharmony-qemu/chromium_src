@@ -10,7 +10,6 @@
 #include <string>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/unguessable_token.h"
@@ -22,6 +21,7 @@
 #include "mojo/public/cpp/bindings/struct_traits.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -61,9 +61,7 @@ class VIZ_COMMON_EXPORT CopyOutputRequest {
   // kNativeTextures is currently not supported.
   CopyOutputRequest(ResultFormat result_format,
                     ResultDestination result_destination,
-                    CopyOutputRequestCallback result_callback,
-                    uint64_t id = 0,
-                    const std::string& dump_path = "");
+                    CopyOutputRequestCallback result_callback, uint64_t id = 0, const std::string& dump_path = "");
 #else
   // Creates new CopyOutputRequest. I420_PLANES format returned via
   // kNativeTextures is currently not supported.

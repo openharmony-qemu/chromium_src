@@ -181,6 +181,7 @@ class PepperPluginInstanceImpl;
 class RendererPpapiHost;
 class RenderAccessibilityManager;
 class RenderFrameObserver;
+class ArkwebMediaFactoryExt;
 
 class CONTENT_EXPORT RenderFrameImpl
     : public RenderFrame,
@@ -189,7 +190,11 @@ class CONTENT_EXPORT RenderFrameImpl
       public mojom::Frame,
       mojom::FrameBindingsControl,
       mojom::MhtmlFileWriter,
+#if BUILDFLAG(IS_ARKWEB)
+      public blink::WebLocalFrameClientExt,
+#else
       public blink::WebLocalFrameClient,
+#endif
       service_manager::mojom::InterfaceProvider {
  public:
   // Creates a new RenderFrame as the main frame of `web_view`. Note that not
@@ -411,7 +416,7 @@ class CONTENT_EXPORT RenderFrameImpl
                        size_t offset,
                        const gfx::Range& range) override;
 #if BUILDFLAG(ARKWEB_AI)
-  bool CloseImageOverlaySelection() override;
+  void CloseImageOverlaySelection() override;
 #endif  // BUILDFLAG(ARKWEB_AI)
 
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
@@ -432,7 +437,7 @@ class CONTENT_EXPORT RenderFrameImpl
   void SetRenderFrameMediaPlaybackOptions(
       const RenderFrameMediaPlaybackOptions& opts) override;
   void SetAllowsCrossBrowsingInstanceFrameLookup() override;
-  // TODO(ARKWEB_PASSWORD_AUTOFILL)
+  //TODO(ARKWEB_PASSWORD_AUTOFILL)
   gfx::RectF ElementBoundsInWindow(const blink::WebElement& element) override;
 
   [[nodiscard]] gfx::Rect ConvertViewportToWindow(
@@ -1501,7 +1506,7 @@ class CONTENT_EXPORT RenderFrameImpl
   std::unique_ptr<NavigationClient> navigation_client_impl_;
 
   // Creates various media clients.
-  MediaFactory media_factory_;
+  ArkwebMediaFactoryExt media_factory_;
 
   blink::AssociatedInterfaceRegistry associated_interfaces_;
   // `remote_associated_interfaces_` cannot be constructed/bound at
@@ -1713,5 +1718,5 @@ class CONTENT_EXPORT RenderFrameImpl
 };
 
 }  // namespace content
-
+#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_RENDER_FRAME_IMPL_H_

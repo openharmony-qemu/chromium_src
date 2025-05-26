@@ -12,7 +12,6 @@
 #include <set>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/dcheck_is_on.h"
 #include "base/files/file_path.h"
@@ -55,6 +54,7 @@
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/mojom/dom_storage/dom_storage.mojom.h"
 #include "third_party/blink/public/mojom/frame/remote_frame.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace leveldb_proto {
 class ProtoDatabaseProvider;

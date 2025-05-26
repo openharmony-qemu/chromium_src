@@ -12,7 +12,6 @@
 #include <optional>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
@@ -40,10 +39,7 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gl/gl_share_group.h"
 #include "ui/gl/gpu_preference.h"
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "ui/gl/ohos/native_buffer_utils.h"
-#endif
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class WaitableEvent;
@@ -60,15 +56,22 @@ class Scheduler;
 class SharedImageStub;
 class StreamTexture;
 class SyncPointManager;
+class GpuChannelExt;
 
 // Encapsulates an IPC channel between the GPU process and one renderer
 // process. On the renderer side there's a corresponding GpuChannelHost.
 class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
                                           public IsolationKeyProvider {
  public:
+  friend class GpuChannelExt;
+
   GpuChannel(const GpuChannel&) = delete;
   GpuChannel& operator=(const GpuChannel&) = delete;
   ~GpuChannel() override;
+
+  virtual gpu::GpuChannelExt* AsGpuChannelExt() {
+    return nullptr;
+  }
 
   static std::unique_ptr<GpuChannel> Create(
       GpuChannelManager* gpu_channel_manager,
@@ -204,18 +207,6 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
       const gpu::Mailbox& mailbox);
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  int32_t CreateNativeTexture(
-      int32_t native_id,
-      gl::ohos::TextureOwnerMode texture_owner_mode,
-      mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver);
-
-  // Called by StreamTexture to remove the GpuChannel's reference to the
-  // StreamTexture.
-  void DestroyNativeTexture(int32_t stream_id);
-  int32_t current_native_embed_id(int32_t native_id);
-#endif
-
   SharedImageStub* shared_image_stub() const {
     return shared_image_stub_.get();
   }
@@ -312,11 +303,6 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
   base::flat_map<int32_t, scoped_refptr<DCOMPTexture>> dcomp_textures_;
 #endif
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  // Set of active NativeTextures.
-  base::flat_map<int32_t, scoped_refptr<StreamTexture>> native_textures_;
-#endif
-
   // State shared with the IO thread. Receives all GpuChannel interface messages
   // and schedules tasks for them appropriately.
   const scoped_refptr<GpuChannelMessageFilter> filter_;
@@ -328,5 +314,4 @@ class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
 };
 
 }  // namespace gpu
-
 #endif  // GPU_IPC_SERVICE_GPU_CHANNEL_H_

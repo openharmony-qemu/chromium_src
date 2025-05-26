@@ -213,27 +213,6 @@ target(link_target_type, "renderer") {
     sources += [ "renderer_main_platform_delegate_linux.cc" ]
   }
 
-  if (is_arkweb) {
-    sources += [
-      "renderer_main_platform_delegate_ohos.cc",
-    ]
-  }
-
-  if (is_arkweb) {
-    sources += arkweb_content_render_sources
-  }
- 
-  if (arkweb_same_layer) {
-    sources += arkweb_content_renderer_media_ohos_sources
-  }
-
-  #if defined(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  if (defined(arkweb_custom_video_player) && arkweb_custom_video_player) {
-    import("//arkweb/chromium_ext/content/renderer/media/ohos/arkweb_content_renderer_media_ohos.gni")
-    sources += arkweb_content_renderer_media_ohos_custom_media_player_sources
-  }
-  #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-
   if (is_mac) {
     sources += [
       "renderer_main_platform_delegate_mac.mm",
@@ -371,7 +350,7 @@ target(link_target_type, "renderer") {
   ]
   allow_circular_includes_from = []
 
-  if (enable_arkweb) {
+  if (is_arkweb) {
     include_dirs = ohos_src_includes
 
     deps += [
@@ -379,10 +358,8 @@ target(link_target_type, "renderer") {
     ]
 
     sources += arkweb_content_renderer_sources
-    
-    sources -= [
-      "renderer_main_platform_delegate_ohos.cc",
-    ]
+    sources += arkweb_content_render_sources
+
     sources += [
       "renderer_main_platform_delegate_linux.cc",
     ]

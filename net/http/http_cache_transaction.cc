@@ -41,7 +41,6 @@
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
 #include "base/trace_event/trace_event.h"
 #endif
-#include "arkweb/build/features/features.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/values.h"
 #include "net/base/auth.h"
@@ -66,11 +65,16 @@
 #include "net/log/net_log_event_type.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
 #include "base/logging.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
+#include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
 
 using base::Time;
 using base::TimeTicks;
@@ -186,6 +190,7 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
     : trace_id_(GetNextTraceId(cache)),
       priority_(priority),
       cache_(cache->GetWeakPtr()) {
+  http_transation_utils_ = new HttpTransactionUtils(this);
   static_assert(HttpCache::Transaction::kNumValidationHeaders ==
                     std::size(kValidationHeaders),
                 "invalid number of validation headers");
@@ -211,6 +216,7 @@ HttpCache::Transaction::~Transaction() {
       cache_->RemovePendingTransaction(this);
     }
   }
+  delete http_transation_utils_;
 }
 
 HttpCache::Transaction::Mode HttpCache::Transaction::mode() const {
@@ -259,7 +265,7 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   next_state_ = STATE_GET_BACKEND;
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  if (!update_res_request_info_callback_.is_null()  && request_ && preload_info_) {
+  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
     update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
   }
 #endif
@@ -275,45 +281,10 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   return rv;
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 int HttpCache::Transaction::RestartWithSecureDnsOnly(
     CompletionOnceCallback callback) {
-  // Ensure that we only have one asynchronous call at a time.
-  DCHECK(callback_.is_null());
-
-  if (!cache_.get()) {
-    return ERR_UNEXPECTED;
-  }
-
-  int rv = RestartNetworkRequestWithSecureDnsOnly();
-  if (rv == ERR_IO_PENDING) {
-    callback_ = std::move(callback);
-  }
-
-  return rv;
-}
-
-int HttpCache::Transaction::RestartNetworkRequestWithSecureDnsOnly() {
-  DCHECK(mode_ & WRITE || mode_ == NONE);
-  DCHECK(network_trans_.get());
-  DCHECK_EQ(STATE_NONE, next_state_);
-
-  next_state_ = STATE_SEND_REQUEST_COMPLETE;
-  if (request_ != initial_request_ && custom_request_) {
-    custom_request_->secure_dns_only = true;
-    #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-        LOG_FEEDBACK(INFO)
-            << "RestartNetworkRequestWithSecureDnsOnly secure_dns_only "
-            << request_->secure_dns_only
-            << ", url: " <<
-            url::LogUtils::ConvertUrlWithMask(request_->url.spec());
-    #endif
-  }
-  int rv = network_trans_->RestartWithSecureDnsOnly(io_callback_);
-  if (rv != ERR_IO_PENDING) {
-    return DoLoop(rv);
-  }
-  return rv;
+  return http_transation_utils_->RestartWithSecureDnsOnly(callback);
 }
 #endif
 
@@ -1244,8 +1215,8 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "requestStart",
-               first_cache_access_since_);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", first_cache_access_since_);
 #endif
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
@@ -1695,8 +1666,8 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "responseStart",
-               read_headers_since_);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", read_headers_since_);
 #endif
 
   if (result != read_buf_->size() ||
@@ -2064,7 +2035,7 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   if (request_ && request_->allow_preload_record && preload_info_ &&
       !UpdateAndReportCacheability(*new_response->headers)) {
-    UpdateCacheInfo(*new_response);
+    http_transation_utils_->UpdateCacheInfo(*new_response);
   }
 #endif
 
@@ -2579,8 +2550,8 @@ int HttpCache::Transaction::DoCacheReadData() {
   }
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData", "url",
-               request_ ? request_->url.spec() : "");
+  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
+               "url", request_ ? request_->url.spec() : "");
 #endif
 
   TRACE_EVENT_INSTANT("net", "HttpCacheTransaction::DoCacheReadData",
@@ -2821,7 +2792,7 @@ int HttpCache::Transaction::BeginCacheValidation() {
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   if (request_ && request_->allow_preload_record && preload_info_ && skip_validation) {
-    UpdateCacheInfo(response_);
+    http_transation_utils_->UpdateCacheInfo(response_);
   }
 #endif
 
@@ -4156,40 +4127,4 @@ void HttpCache::Transaction::EndDiskCacheAccessTimeCount(
   last_disk_cache_access_start_time_ = TimeTicks();
 }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-void HttpCache::Transaction::UpdateCacheInfo(const HttpResponseInfo& response) {
-  if (preload_info_ == nullptr || response.headers == nullptr) {
-    return;
-  }
- 
-  ohos_prp_preload::PRRequestCacheType cache_type =
-    ohos_prp_preload::PRRequestCacheType::DISABLE_CACHE;
-  int64_t freshness_life_times = 0;
-  base::TimeDelta freshnessLifetimes = response.headers->
-      GetFreshnessLifetimes(response.response_time).freshness;
-  if (!freshnessLifetimes.is_zero()) {
- 
- 
- 
-    freshness_life_times = (response.response_time +
-                            freshnessLifetimes -
-                            response.headers
-                              ->GetCurrentAge(response.request_time,
-                                              response.response_time,
-                                              response.response_time)).ToInternalValue();
-    cache_type = ohos_prp_preload::PRRequestCacheType::FORCE_CACHE;
-  } else if (response.headers->HasHeader("etag") ||
-             response.headers->HasHeader("last-modified")) {
-    cache_type = ohos_prp_preload::PRRequestCacheType::NEGOTIATION_CACHE;
-  }
- 
-  std::string e_tag;
-  response.headers->EnumerateHeader(nullptr, "etag", &e_tag);
- 
-  std::string last_modified;
-  response.headers->EnumerateHeader(nullptr, "last-modified", &last_modified);
- 
-  preload_info_->set_cache_info(cache_type, freshness_life_times, e_tag, last_modified);
-}
-#endif
 }  // namespace net

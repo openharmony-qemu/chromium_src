@@ -65,12 +65,12 @@ class CC_EXPORT SurfaceLayer : public Layer {
   using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
   void SetVideoRectChangeCallback(RectChangeCallback callback);
   void OnLayerRectUpdate(const gfx::Rect& rect) override;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   using LayerBoundsChangeCallback =
       base::RepeatingCallback<void(const gfx::Rect&)>;
   void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // Layer overrides.
   std::unique_ptr<LayerImpl> CreateLayerImpl(
@@ -82,7 +82,7 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
   }
@@ -135,10 +135,10 @@ class CC_EXPORT SurfaceLayer : public Layer {
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   RectChangeCallback video_rect_change_callback_;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   LayerBoundsChangeCallback layer_bounds_change_callback_;
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 };
 
 }  // namespace cc

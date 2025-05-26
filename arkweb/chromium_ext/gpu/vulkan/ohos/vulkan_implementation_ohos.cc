@@ -104,6 +104,7 @@ VulkanImplementationOhos::GetOptionalDeviceExtensions() {
       VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
       VK_OHOS_EXTERNAL_MEMORY_EXTENSION_NAME,
+      VK_OHOS_NATIVE_BUFFER_EXTENSION_NAME,
       VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
       VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
   };
@@ -118,7 +119,6 @@ std::unique_ptr<gfx::GpuFence>
 VulkanImplementationOhos::ExportVkFenceToGpuFence(VkDevice vk_device,
                                                   VkFence vk_fence) {
   NOTREACHED();
-  return nullptr;
 }
 
 VkExternalSemaphoreHandleTypeFlagBits
@@ -143,6 +143,45 @@ VulkanImplementationOhos::CreateImageFromGpuMemoryHandle(
   // CreateVkImageAndImportAHB().
   NOTIMPLEMENTED();
   return nullptr;
+}
+
+bool VulkanImplementationOhos::GetSamplerYcbcrConversionInfo(
+    const VkDevice& vk_device,
+    ScopedNativeBufferHandle ahb_handle,
+    VulkanYCbCrInfo* ycbcr_info)
+{
+  DCHECK(ycbcr_info);
+ 
+  VkNativeBufferFormatPropertiesOHOS nb_format_props = {
+      VK_STRUCTURE_TYPE_NATIVE_BUFFER_FORMAT_PROPERTIES_OHOS};
+  VkNativeBufferPropertiesOHOS nb_props = {
+      .sType =  VK_STRUCTURE_TYPE_NATIVE_BUFFER_PROPERTIES_OHOS,
+      .pNext = &nb_format_props,
+  };
+ 
+  VkResult result = vkGetNativeBufferPropertiesOHOS(vk_device,
+      static_cast<OH_NativeBuffer*>(ahb_handle.get()), &nb_props);
+  if (result != VK_SUCCESS) {
+    LOG(ERROR) << "vkGetNativeBufferPropertiesOHOS failed : " << result;
+    return false;
+  }
+ 
+  LOG(DEBUG) << "VulkanImplementationOhos::GetSamplerYcbcrConversionInfo"
+    << " nb_format_props.format = " << nb_format_props.format
+    << " nb_format_props.externalFormat = "<<nb_format_props.externalFormat
+    << " nb_format_props.suggestedYcbcrModel = "<<nb_format_props.suggestedYcbcrModel
+    << " nb_format_props.suggestedYcbcrRange = "<<nb_format_props.suggestedYcbcrRange
+    << " nb_format_props.suggestedXChromaOffset = "<<nb_format_props.suggestedXChromaOffset
+    << " nb_format_props.suggestedYChromaOffset = "<<nb_format_props.suggestedYChromaOffset
+    << " nb_format_props.formatFeatures = "<<nb_format_props.formatFeatures;
+
+  *ycbcr_info = VulkanYCbCrInfo(
+      VK_FORMAT_UNDEFINED, nb_format_props.externalFormat,
+      nb_format_props.suggestedYcbcrModel,
+      nb_format_props.suggestedYcbcrRange,
+      nb_format_props.suggestedXChromaOffset,
+      nb_format_props.suggestedYChromaOffset, nb_format_props.formatFeatures);
+  return true;
 }
 
 }  // namespace gpu

@@ -11,6 +11,10 @@
 #include "gpu/ipc/common/gpu_channel.mojom.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/gpu/ipc/common/mock_gpu_channel_ext.h"
+#endif
+
 namespace gpu {
 
 class MockGpuChannel : public mojom::GpuChannel {
@@ -51,16 +55,12 @@ class MockGpuChannel : public mojom::GpuChannel {
                void(int32_t, DestroyCommandBufferCallback));
   MOCK_METHOD2(ScheduleImageDecode,
                void(mojom::ScheduleImageDecodeParamsPtr, uint64_t));
-  MOCK_METHOD4(CreateNativeTexture,
-               bool(int32_t,
-                    int32_t,
-                    mojo::PendingAssociatedReceiver<mojom::StreamTexture>,
-                    int32_t*));
-  MOCK_METHOD4(CreateNativeTexture,
-               void(int32_t,
-                    int32_t,
-                    mojo::PendingAssociatedReceiver<mojom::StreamTexture>,
-                    CreateNativeTextureCallback));
+
+ #if BUILDFLAG(ARKWEB_UNITTESTS)
+   ARKWEB_UNITTESTS_MOCK_METHOD4_BOOL();
+   ARKWEB_UNITTESTS_MOCK_METHOD4_VOILD();
+ #endif
+
   MOCK_METHOD2(FlushDeferredRequests,
                void(std::vector<mojom::DeferredRequestPtr>, uint32_t));
   MOCK_METHOD4(CreateGpuMemoryBuffer,

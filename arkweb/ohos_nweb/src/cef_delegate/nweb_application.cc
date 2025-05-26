@@ -19,17 +19,13 @@
 #include <thread>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "cef/include/wrapper/cef_helpers.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/common/content_switches.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_impl.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_INIT_CALLBACK)
 #include "cef/include/wrapper/cef_closure_task.h"

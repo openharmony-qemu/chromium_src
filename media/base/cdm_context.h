@@ -6,7 +6,7 @@
 #define MEDIA_BASE_CDM_CONTEXT_H_
 
 #include <optional>
-
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/unguessable_token.h"
@@ -29,6 +29,9 @@ namespace media {
 class CallbackRegistration;
 class Decryptor;
 class MediaCryptoContext;
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+class OHOSMediaCryptoContext;
+#endif
 
 #if BUILDFLAG(IS_FUCHSIA)
 class FuchsiaCdmContext;
@@ -111,6 +114,10 @@ class MEDIA_EXPORT CdmContext {
 #if BUILDFLAG(IS_ANDROID)
   // Returns a MediaCryptoContext that can be used by MediaCodec based decoders.
   virtual MediaCryptoContext* GetMediaCryptoContext();
+#endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  virtual OHOSMediaCryptoContext* GetOHOSMediaCryptoContext();
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)

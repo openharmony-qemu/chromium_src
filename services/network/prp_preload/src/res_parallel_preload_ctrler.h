@@ -48,9 +48,10 @@ class ResParallelPreloadCtrler : public base::RefCountedThreadSafe<ResParallelPr
   scoped_refptr<ResRequestInfoUpdater> res_req_info_updater_;
   scoped_refptr<ResPreloadScheduler> res_preload_scheduler_;
   PRPPCtrlerTimeoutCB timeout_cb_;
-  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
   bool start_filter_info_ { false };
   uint32_t filter_count_ { 0 };
+  
+  base::WeakPtrFactory<ResParallelPreloadCtrler> weak_factory_{this};
 };
 
 }  // namespace ohos_prp_preload

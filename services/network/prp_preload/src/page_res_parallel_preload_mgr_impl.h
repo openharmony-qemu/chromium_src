@@ -49,8 +49,9 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
   std::unordered_map<std::string, PRParallelPreloadInfo> prp_preload_info_map_;
   std::unordered_map<const void*, std::string> web_handle_pages_map_;
-  base::WeakPtrFactory<PRParallelPreloadMgrImpl> weak_factory_ { this };
   std::unordered_map<std::string, std::string> prp_page_url_;
+
+  base::WeakPtrFactory<PRParallelPreloadMgrImpl> weak_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

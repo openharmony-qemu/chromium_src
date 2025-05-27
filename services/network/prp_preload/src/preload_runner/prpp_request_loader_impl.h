@@ -107,7 +107,6 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   scoped_refptr<net::GrowableIOBuffer> cur_write_block_;
   int cur_read_offset_ { 0 };
   uint32_t total_size_ { 0 };
-  base::WeakPtrFactory<PRPPRequestLoaderImpl> weak_ptr_factory_ { this };
   std::queue<PRPPRecorderMsg> rec_msg_list_;
   net::CompletionOnceCallback completion_once_callback_;
   net::RequestHeadersCallback request_headers_callback_;
@@ -122,6 +121,8 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   net::LoadTimingInfo load_timing_info_;
   uint32_t real_load_flags_ { 0 };
   bool need_continue_read_ { false };
+
+  base::WeakPtrFactory<PRPPRequestLoaderImpl> weak_ptr_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

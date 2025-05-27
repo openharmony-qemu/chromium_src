@@ -32,8 +32,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -113,11 +112,10 @@ HlsFallbackImplementation SelectHlsFallbackImplementation() {
   return HlsFallbackImplementation::kNone;
 #endif
 
-#endif  // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif // BUILDFLAG(ARKWEB_MEDIA_HLS)
 }
 
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) ||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 #if BUILDFLAG(ENABLE_FFMPEG)
 // Returns true if `url` represents (or is likely to) a local file.
@@ -182,7 +180,7 @@ void DemuxerManager::RestartClientForPrimitive() {
     LOG(WARNING) << "RestartClientForPrimitive failed";
   }
 }
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
@@ -196,23 +194,21 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
       data_source_->Stop();
     }
 
-    FreeResourcesAfterMediaThreadWait(
-        base::BindOnce(&DemuxerManager::RestartClientForPrimitive,
-                       weak_factory_.GetWeakPtr()));
+    FreeResourcesAfterMediaThreadWait(base::BindOnce(
+        &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
     return;
   }
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_MEDIA)
   LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
-#endif  // BUILDFLAG(ARKWEB_MEDIA)
+#endif // BUILDFLAG(ARKWEB_MEDIA)
 
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
   }
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   bool can_play_hls =
       SelectHlsFallbackImplementation() != HlsFallbackImplementation::kNone;
   if (can_play_hls && error == DEMUXER_ERROR_DETECTED_HLS) {
@@ -232,8 +228,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
 
     return;
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) ||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   client_->OnError(std::move(error));
 }
@@ -270,8 +265,7 @@ const GURL& DemuxerManager::LoadedUrl() const {
   return loaded_url_;
 }
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 void DemuxerManager::PopulateHlsHistograms(bool cryptographic_url) {
   DCHECK(data_source_);
@@ -344,8 +338,7 @@ PipelineStatus DemuxerManager::SelectHlsFallbackMechanism(
   return OkStatus();
 }
 
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) ||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 std::optional<double> DemuxerManager::GetDemuxerDuration() {
   if (!demuxer_) {
@@ -420,7 +413,7 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     bool should_create_custom_renderer,
     uint32_t initial_preload,
     uint32_t media_source_type,
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     DemuxerManager::DemuxerCreatedCB on_demuxer_created,
     base::flat_map<std::string, std::string> headers) {
   // TODO(crbug.com/40243452) return a better error
@@ -438,7 +431,7 @@ PipelineStatus DemuxerManager::CreateDemuxer(
              /*is_streaming = */ false,
              /*is_static = */ false);
   }
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // We can only do a universal suspend for posters, unless the flag is enabled.
   auto suspended_mode = Pipeline::StartType::kSuspendAfterMetadataForAudioOnly;
@@ -509,13 +502,11 @@ PipelineStatus DemuxerManager::CreateDemuxer(
       .Run(demuxer_.get(), suspended_mode, IsStreaming(), is_static);
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
 void DemuxerManager::SetAllowMediaPlayerRendererCredentials(bool allow) {
   allow_media_player_renderer_credentials_ = allow;
 }
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 DataSource* DemuxerManager::GetDataSourceForTesting() const {
   return data_source_.get();

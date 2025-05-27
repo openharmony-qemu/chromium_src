@@ -108,6 +108,7 @@ class NetToMojoPendingBuffer;
 class ScopedThrottlingToken;
 class SharedDictionaryManager;
 class SlopBucket;
+class URLLoaderUtils;
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
     : public mojom::URLLoader,
@@ -116,6 +117,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       public mojom::ClientCertificateResponder {
  public:
   using DeleteCallback = base::OnceCallback<void(URLLoader* loader)>;
+  friend class URLLoaderUtils;
 
   // Holds a sync and async implementation of URLLoaderClient. The sync
   // implementation can be used if present to avoid posting a task to call back
@@ -353,6 +355,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       const ResourceRequest& request);
 
  private:
+  std::unique_ptr<URLLoaderUtils> url_loader_utils_;
   // This class is used to set the URLLoader as user data on a URLRequest. This
   // is used instead of URLLoader directly because SetUserData requires a
   // std::unique_ptr. This is safe because URLLoader owns the URLRequest, so is
@@ -567,11 +570,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
                bool completed_synchronously,
                bool into_slop_bucket);
   void NotifyCompleted(int error_code);
-#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
-  std::string InMilliseconds(base::TimeTicks time);
-  void PrintNetworkTimingInfo();
-  void PrintNetworkCacheInfo();
-#endif
   void OnMojoDisconnect();
   void OnResponseBodyStreamConsumerClosed(MojoResult result);
   void OnResponseBodyStreamReady(MojoResult result);
@@ -667,60 +665,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
   // Records metrics about GET requests.
   void RecordRequestMetrics();
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  void UpdateResRequestInfo(
-      const std::string& key,
-      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info);
-
-  // Configures `url_request_rollback_`, including registering callbacks.
-  void ConfigureRequestForRollback(
-      const GURL& url,
-      std::string_view method,
-      const net::SiteForCookies& site_for_cookies,
-      bool force_ignore_site_for_cookies,
-      const std::vector<GURL>& url_chain,
-      const GURL& referrer,
-      net::ReferrerPolicy referrer_policy,
-      bool upgrade_if_insecure,
-      bool is_ad_tagged,
-      std::optional<net::IsolationInfo> isolation_info,
-      bool force_main_frame_for_same_site_cookies,
-      net::SecureDnsPolicy secure_dns_policy,
-      net::HttpRequestHeaders extra_request_headers,
-      const std::optional<std::vector<net::SourceStream::SourceType>>&
-          accepted_stream_types,
-      const std::optional<url::Origin>& initiator,
-      net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,
-      int request_load_flags,
-      bool priority_incremental,
-      net::CookieSettingOverrides cookie_setting_overrides,
-      std::optional<net::SharedDictionaryGetter> shared_dictionary_getter);
-
-  void InitUrlRequestForRollback(
-      URLLoaderContext& context,
-      const ResourceRequest& request,
-      const net::NetworkTrafficAnnotationTag& traffic_annotation,
-      SharedDictionaryManager* shared_dictionary_manager,
-      const std::string& org_main_url,
-      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info);
-  void SetUrlRequestForPRPP(
-      const ResourceRequest& request,
-      const std::shared_ptr<net::URLRequest>& url_request,
-      const std::string& org_main_url,
-      std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info);
-  void RollbackFromPPRP();
-  void ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request);
-#endif
-
   const raw_ptr<net::URLRequestContext> url_request_context_;
 
   const raw_ptr<mojom::NetworkContextClient> network_context_client_;
   DeleteCallback delete_callback_;
 
   int32_t options_;
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  const bool corb_detachable_;
-#endif
   const int resource_type_;
   const bool is_load_timing_enabled_;
   bool has_received_response_ = false;
@@ -937,13 +887,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
 
   // Keeps the result of IsSharedDictionaryReadAllowed(). Used only for metrics.
   bool shared_dictionary_allowed_check_passed_ = false;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader_ { nullptr };
-  bool redirect_updated_ { false };
-  bool already_update_info_ { false };
-  std::shared_ptr<net::URLRequest> url_request_rollback_;
-#endif
 
   base::WeakPtrFactory<URLLoader> weak_ptr_factory_{this};
 };

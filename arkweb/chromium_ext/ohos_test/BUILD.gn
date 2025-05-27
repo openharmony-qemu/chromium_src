@@ -44,6 +44,7 @@ fuzzer_test("nweb_impl_createweb") {
     "//ohos_nweb/src",
   ]
   deps = [
+    "//arkweb/ohos_adapter_ndk:adapter_ndk_stub",
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
@@ -188,6 +189,8 @@ fuzzer_test("clipboard_fuzzer") {
   deps = [
     "//base",
     "//content/browser",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
   ]
   include_dirs = [
     "//cef",
@@ -198,7 +201,7 @@ fuzzer_test("clipboard_fuzzer") {
 }
 
 fuzzer_test("nweb_inputmethod_fuzzer") {
-  sources = [ "fuzztest/ohos_mweb/nweb_inputmethod_fuzzer.cc" ]
+  sources = [ "fuzztest/ohos_nweb/nweb_inputmethod_fuzzer.cc" ]
   include_dirs = [
     "//cef",
     "//cef/include",
@@ -207,11 +210,13 @@ fuzzer_test("nweb_inputmethod_fuzzer") {
   deps = [
     "//cef:libcef_static",
     "//ohos_nweb:nweb_sources",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
   ]
 }
 
 fuzzer_test("nweb_delegate_fuzzer") {
-  sources = [ "fuzztest/ohos_mweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
+  sources = [ "fuzztest/ohos_nweb/cef_delegate/nweb_delegate_fuzzer.cc" ]
   include_dirs = [
     "//cef",
     "//ohos_nweb/include",

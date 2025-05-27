@@ -9,7 +9,6 @@
 #include <string>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/threading/thread_checker.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -17,6 +16,8 @@
 #include "mojo/public/cpp/bindings/remote_set.h"
 #include "services/device/public/mojom/time_zone_monitor.mojom.h"
 #include "third_party/icu/source/common/unicode/uversion.h"
+
+#include "arkweb/build/features/features.h"
 
 template <class T>
 class scoped_refptr;
@@ -55,10 +56,6 @@ class TimeZoneMonitor : public device::mojom::TimeZoneMonitor {
   // operations on it when necessary.
   static std::unique_ptr<TimeZoneMonitor> Create(
       scoped_refptr<base::SequencedTaskRunner> file_task_runner);
-#if BUILDFLAG(ARKWEB_TIME_ZONE)
-  // On ArkWeb, Monitor get timezone from Time_service subsystem.
-  static std::unique_ptr<TimeZoneMonitor> Create();
-#endif
 
   TimeZoneMonitor(const TimeZoneMonitor&) = delete;
   TimeZoneMonitor& operator=(const TimeZoneMonitor&) = delete;

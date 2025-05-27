@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <sys/mman.h>
+#include "base/memory/platform_shared_memory_mapper.h"
 
 #include "base/logging.h"
-#include "base/memory/platform_shared_memory_mapper.h"
 #include "base/numerics/safe_conversions.h"
+
+#include <sys/mman.h>
 
 namespace base {
 
@@ -28,9 +29,8 @@ std::optional<span<uint8_t>> PlatformSharedMemoryMapper::Map(
 }
 
 void PlatformSharedMemoryMapper::Unmap(span<uint8_t> mapping) {
-  if (munmap(mapping.data(), mapping.size()) < 0) {
+  if (munmap(mapping.data(), mapping.size()) < 0)
     DPLOG(ERROR) << "munmap";
-  }
 }
 
 }  // namespace base

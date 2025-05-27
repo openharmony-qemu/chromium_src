@@ -38,9 +38,15 @@ DownloadFile* DownloadFileFactory::CreateFile(
 #endif  // BUILDFLAG(IS_ANDROID)
     return new DownloadFileWithCopy(duplicate_download_file_path, observer);
   } else {
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    return new ArkWebDownloadFileImplExt(
+        std::move(save_info), default_downloads_directory, std::move(stream),
+        download_id, observer);
+#else
     return new DownloadFileImpl(std::move(save_info),
                                 default_downloads_directory, std::move(stream),
                                 download_id, observer);
+#endif
   }
 }
 

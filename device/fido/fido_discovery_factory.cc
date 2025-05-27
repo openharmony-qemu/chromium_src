@@ -38,6 +38,10 @@
 #include "device/fido/cros/discovery.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "device/fido/ohos/ohos_fido_discovery.h"
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
 namespace device {
 
 FidoDiscoveryFactory::FidoDiscoveryFactory() = default;
@@ -84,6 +88,16 @@ std::vector<std::unique_ptr<FidoDiscoveryBase>> FidoDiscoveryFactory::Create(
         }
       }
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_FIDO)
+      {
+        bool ohos_handles_hybrid = true;
+        if (ohos_handles_hybrid) {
+          LOG(INFO) << "Not starting hybrid because OHOS handles it.";
+          return {};
+        }
+      }
+#include "device/fido/ohos/ohos_fido_discovery.h"
+#endif  // BUILDFLAG(ARKWEB_FIDO)
       if (device::BluetoothAdapterFactory::Get()->IsLowEnergySupported() &&
           (cable_data_.has_value() || qr_generator_key_.has_value())) {
         auto v1_discovery = std::make_unique<FidoCableDiscovery>(
@@ -213,6 +227,12 @@ FidoDiscoveryFactory::MaybeCreateWinWebAuthnApiDiscovery() {
              : nullptr;
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_FIDO)
+std::unique_ptr<FidoDiscoveryBase> FidoDiscoveryFactory::CreateOhosFidoDiscovery() {
+  return std::make_unique<OhosFidoDiscovery>();
+}
+#endif  // BUILDFLAG(ARKWEB_FIDO)
 
 #if BUILDFLAG(IS_MAC)
 std::vector<std::unique_ptr<FidoDiscoveryBase>>

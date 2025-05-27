@@ -130,7 +130,8 @@ bool CrashReporterClient::EnableBreakpadForProcess(
 }
 
 void CrashReporterClient::GetCrashOptionalArguments(
-    std::vector<std::string>* arguments) {}
+    std::vector<std::string>* arguments) {
+}
 
 #if BUILDFLAG(IS_WIN)
 std::wstring CrashReporterClient::GetCrashExternalHandler(
@@ -160,8 +161,7 @@ bool CrashReporterClient::ShouldWriteMinidumpToLog() {
 
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
 void CrashReporterClient::GetSanitizationInformation(
     const char* const** allowed_annotations,
     void** target_module,

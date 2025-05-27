@@ -10,13 +10,13 @@
 #include <memory>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/traced_value.h"
 #include "base/trace_event/typed_macros.h"
 #include "cc/base/base_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace cc {
 namespace devtools_instrumentation {
@@ -72,19 +72,11 @@ class CC_BASE_EXPORT ScopedLayerTask {
 
 class CC_BASE_EXPORT ScopedImageTask {
  public:
-  enum class ImageType {
-    kAvif,
-    kBmp,
-    kGif,
+  enum class ImageType { kAvif, kBmp, kGif,
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    kHeif,
-#endif
-    kIco,
-    kJpeg,
-    kPng,
-    kWebP,
-    kOther
-  };
+   kHeif,
+#endif  
+   kIco, kJpeg, kPng, kWebP, kOther };
 
   explicit ScopedImageTask(ImageType image_type)
       : image_type_(image_type), start_time_(base::TimeTicks::Now()) {}

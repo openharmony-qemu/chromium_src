@@ -194,6 +194,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   std::string GetSurfaceId(int32_t native_embed_id);
   void SetTransformHint(uint32_t rotation, uint32_t window_id);
   void DestroyNativeWindow(uint32_t native_window_id);
+  void Discard(uint32_t native_window_id);
 #endif
   void SetChannelDiskCacheHandle(int client_id,
                                  const gpu::GpuDiskCacheHandle& handle);
@@ -241,6 +242,10 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   void SetHasTouchPoint(bool has_touch_point);
   void ReportSlidingFrameRate(int32_t frame_rate);
   void SetLTPOStrategy(int32_t strategy);
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetIsFling(bool is_fling_enabled);
 #endif
 
  private:

@@ -89,7 +89,7 @@ class InterfaceFactoryImpl final
       mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
       int player_id) final;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

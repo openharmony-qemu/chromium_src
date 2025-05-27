@@ -10,7 +10,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "components/viz/common/resources/resource_id.h"
 #include "components/viz/common/resources/shared_bitmap.h"
@@ -23,6 +22,7 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "arkweb/build/features/features.h"
 
 namespace gpu {
 class ClientSharedImage;

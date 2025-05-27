@@ -357,7 +357,7 @@ int MockNetworkTransaction::RestartIgnoringLastError(
 
 int MockNetworkTransaction::RestartWithSecureDnsOnly(
     CompletionOnceCallback callback) {
-  return ERR_FAILED;
+  return ERR_FAILED;      
 }
 
 int MockNetworkTransaction::RestartWithCertificate(

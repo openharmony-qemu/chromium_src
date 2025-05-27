@@ -30,6 +30,10 @@ bool IsSafeSuffix(const std::u16string& suffix) {
 }
 }
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "arkweb/chromium_ext/storage/browser/database/database_util_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 const char DatabaseUtil::kJournalFileSuffix[] = "-journal";
 
 bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
@@ -40,48 +44,8 @@ bool DatabaseUtil::CrackVfsFileName(const std::u16string& vfs_file_name,
   // <suffix> is optional.
   DCHECK(!vfs_file_name.empty());
 #if BUILDFLAG(ARKWEB_WEBSTORAGE)
-  size_t first_slash_index = vfs_file_name.rfind('/');
-  if (first_slash_index == std::u16string::npos) {
-    LOG(ERROR) << "DatabaseUtil::CrackVfsFileName not find /";
-    return false;
-  }
-  std::u16string dbnameAndSuffix = vfs_file_name.substr(
-      first_slash_index + 1, vfs_file_name.length() - first_slash_index - 1);
-  size_t last_pound_index = dbnameAndSuffix.rfind('.');
-  if (last_pound_index == std::u16string::npos) {
-    LOG(ERROR) << "DatabaseUtil::CrackVfsFileName not find .";
-    return false;
-  }
-  std::u16string suffix = dbnameAndSuffix.substr(
-      last_pound_index, dbnameAndSuffix.length() - last_pound_index);
-  if (!IsSafeSuffix(suffix)) {
-    LOG(ERROR) << "DatabaseUtil::CrackVfsFileName IsSafeSuffix failed";
-    return false;
-  }
-  std::u16string path = vfs_file_name.substr(0, first_slash_index);
-  first_slash_index = path.rfind('/');
-  if (first_slash_index == std::u16string::npos) {
-    LOG(ERROR) << "DatabaseUtil::CrackVfsFileName not find /";
-    return false;
-  }
-  std::u16string name = dbnameAndSuffix.substr(0, last_pound_index);
-  std::string origin_id = base::UTF16ToASCII(path.substr(
-      first_slash_index + 1, path.length() - first_slash_index - 1));
-  if (!IsValidOriginIdentifier(origin_id)) {
-    LOG(ERROR)
-        << "DatabaseUtil::CrackVfsFileName IsValidOriginIdentifier failed";
-    return false;
-  }
-  if (sqlite_suffix) {
-    *sqlite_suffix = suffix;
-  }
-  if (database_name) {
-    *database_name = name;
-  }
-  if (origin_identifier) {
-    *origin_identifier = origin_id;
-  }
-  return true;
+  return CrackVfsFileNameExt(vfs_file_name, origin_identifier, database_name,
+                             sqlite_suffix);
 #else
   size_t first_slash_index = vfs_file_name.find('/');
   size_t last_pound_index = vfs_file_name.rfind('#');

@@ -75,7 +75,7 @@ struct StructTraits<viz::mojom::BeginFrameArgsDataView, viz::BeginFrameArgs> {
   static bool internal_frame(const viz::BeginFrameArgs& args) {
     return args.internal_frame;
   }
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   static bool Read(viz::mojom::BeginFrameArgsDataView data,
                    viz::BeginFrameArgs* out);

@@ -49,7 +49,7 @@ constexpr perfetto::protos::pbzero::EventLatency::EventType ToProtoEnum(
     CASE(kGestureLongPress, GESTURE_LONG_PRESS);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
     CASE(kGestureDragLongPress, GESTURE_DRAG_LONG_PRESS);
-#endif  // #ifdef ARKWEB_DRAG_DROP
+#endif // #ifdef ARKWEB_DRAG_DROP
     CASE(kGestureLongTap, GESTURE_LONG_TAP);
     CASE(kGestureShowPress, GESTURE_SHOW_PRESS);
     CASE(kGestureTap, GESTURE_TAP);

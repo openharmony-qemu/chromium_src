@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
 #include "content/public/common/main_function_params.h"
@@ -80,7 +81,7 @@ class CONTENT_EXPORT ContentMainDelegate {
   // path.
   virtual void ProcessExiting(const std::string& process_type) {}
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
   // Tells the embedder that the zygote process is starting, and allows it to
   // specify one or more zygote delegates if it wishes by storing them in
   // |*delegates|.

@@ -28,180 +28,15 @@
 #include "net/base/network_change_notifier_linux.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "base/base_switches.h"
 #include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "net/dns/public/dns_protocol.h"
 #endif
 
-namespace {
+#include "arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include.cc"
 
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-net::NetworkChangeNotifier::ConnectionType ConvertOhosConnTypeToNetBaseConnType(
-    const OHOS::NWeb::NetConnectType& netConnectType) {
-  return static_cast<net::NetworkChangeNotifier::ConnectionType>(
-      netConnectType);
-}
-
-net::NetworkChangeNotifier::ConnectionSubtype
-ConvertOhosConnSubtypeToNetBaseConnSubtype(
-    const OHOS::NWeb::NetConnectSubtype& subtype) {
-  return static_cast<net::NetworkChangeNotifier::ConnectionSubtype>(subtype);
-}
-
-class NetConnCallbackImpl : public OHOS::NWeb::NetConnCallback {
- public:
-  NetConnCallbackImpl(
-      net::NetworkChangeNotifierPassive* network_change_notifier_posix)
-      : network_change_notifier_posix_(network_change_notifier_posix) {}
-  virtual ~NetConnCallbackImpl() = default;
-  int32_t NetAvailable() override;
-  int32_t NetCapabilitiesChange(
-      const OHOS::NWeb::NetConnectType& netConnectType,
-      const OHOS::NWeb::NetConnectSubtype& netConnectSubtype) override;
-  int32_t NetConnectionPropertiesChange() override;
-  int32_t NetUnavailable() override;
-  int32_t OnNetCapabilitiesChanged(
-      const std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities)
-      override;
-  int32_t OnNetConnectionPropertiesChanged(
-      const std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter>
-          properties) override;
-  void BindDnsToNetwork(int32_t network_for_dns);
-
- private:
-  void ConnectionTypeChangedTo(int32_t net_id,
-                               OHOS::NWeb::NetConnectType type,
-                               OHOS::NWeb::NetConnectSubtype subtype);
-
-  net::NetworkChangeNotifierPassive* network_change_notifier_posix_ = nullptr;
-  std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities_ = nullptr;
-  std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter> properties_ =
-      nullptr;
-  int32_t net_id_ = -1;
-  int32_t network_for_dns_ = -1;
-  OHOS::NWeb::NetConnectType type_ =
-      OHOS::NWeb::NetConnectType::CONNECTION_UNKNOWN;
-  OHOS::NWeb::NetConnectSubtype subtype_ =
-      OHOS::NWeb::NetConnectSubtype::SUBTYPE_UNKNOWN;
-};
-
-int32_t NetConnCallbackImpl::NetAvailable() {
-  LOG(INFO) << "ohos_network NetAvailable";
-  capabilities_ = nullptr;
-  properties_ = nullptr;
-  return 0;
-}
-
-int32_t NetConnCallbackImpl::NetCapabilitiesChange(
-    const OHOS::NWeb::NetConnectType& netConnectType,
-    const OHOS::NWeb::NetConnectSubtype& netConnectSubtype) {
-  LOG(INFO) << "ohos_network NetCapabilitiesChange "
-            << static_cast<int>(netConnectType);
-  if (network_change_notifier_posix_) {
-    network_change_notifier_posix_->OnConnectionChanged(
-        ConvertOhosConnTypeToNetBaseConnType(netConnectType));
-    network_change_notifier_posix_->OnConnectionSubtypeChanged(
-        ConvertOhosConnTypeToNetBaseConnType(netConnectType),
-        ConvertOhosConnSubtypeToNetBaseConnSubtype(netConnectSubtype));
-  }
-  return 0;
-}
-
-int32_t NetConnCallbackImpl::NetConnectionPropertiesChange() {
-  if (network_change_notifier_posix_) {
-    network_change_notifier_posix_->OnDNSChanged();
-    network_change_notifier_posix_->OnIPAddressChanged();
-  }
-  return 0;
-}
-
-int32_t NetConnCallbackImpl::NetUnavailable() {
-  LOG(INFO) << "ohos_network NetUnavailable";
-  capabilities_ = nullptr;
-  properties_ = nullptr;
-  if (network_change_notifier_posix_) {
-    ConnectionTypeChangedTo(-1, OHOS::NWeb::NetConnectType::CONNECTION_NONE,
-                            OHOS::NWeb::NetConnectSubtype::SUBTYPE_NONE);
-  }
-  return 0;
-}
-
-int32_t NetConnCallbackImpl::OnNetCapabilitiesChanged(
-    const std::shared_ptr<OHOS::NWeb::NetCapabilitiesAdapter> capabilities) {
-  capabilities_ = capabilities;
-  if (capabilities_) {
-    LOG(INFO) << "ohos_network NetCapabilitiesChange, net_id "
-              << capabilities_->GetNetId() << ", connectType "
-              << (int)capabilities_->GetConnectType() << ", subtype "
-              << (int)capabilities_->GetConnectSubtype();
-  }
-  if (network_change_notifier_posix_ && capabilities_ && properties_) {
-    ConnectionTypeChangedTo(capabilities_->GetNetId(),
-                            capabilities_->GetConnectType(),
-                            capabilities_->GetConnectSubtype());
-  }
-  return 0;
-}
-
-int32_t NetConnCallbackImpl::OnNetConnectionPropertiesChanged(
-    const std::shared_ptr<OHOS::NWeb::NetConnectionPropertiesAdapter>
-        properties) {
-  properties_ = properties;
-  if (properties_) {
-    LOG(INFO) << "ohos_network NetConnectionPropertiesChange, net_id "
-              << properties_->GetNetId();
-  }
-  if (network_change_notifier_posix_ && capabilities_ && properties_) {
-    ConnectionTypeChangedTo(properties_->GetNetId(),
-                            capabilities_->GetConnectType(),
-                            capabilities_->GetConnectSubtype());
-  }
-  return 0;
-}
-
-void NetConnCallbackImpl::BindDnsToNetwork(int32_t network_for_dns) {
-  LOG(INFO) << "NetConnCallbackImpl::BindDnsToNetwork, network_for_dns "
-            << network_for_dns;
-  network_for_dns_ = network_for_dns;
-}
-
-void NetConnCallbackImpl::ConnectionTypeChangedTo(
-    int32_t net_id,
-    OHOS::NWeb::NetConnectType type,
-    OHOS::NWeb::NetConnectSubtype subtype) {
-  if (network_for_dns_ != -1 && net_id != network_for_dns_) {
-    LOG(INFO) << "ohos_network ConnectionTypeChangedTo ret, net_id " << net_id
-              << ", network_for_dns_ " << network_for_dns_;
-    return;
-  }
-
-  if (net_id_ != net_id || type_ != type) {
-    LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
-              << ", net_id " << net_id << ", type_ " << (int)type_ << ", type "
-              << (int)type << ", network_for_dns_ " << network_for_dns_;
-    net_id_ = net_id;
-    type_ = type;
-    network_change_notifier_posix_->OnIPAddressChanged();
-    network_change_notifier_posix_->OnConnectionChanged(
-        ConvertOhosConnTypeToNetBaseConnType(type));
-  }
-
-  if (subtype_ != subtype) {
-    LOG(INFO) << "ohos_network ConnectionTypeChangedTo, net_id_ " << net_id_
-              << ", subtype_ " << (int)subtype_ << ", subtype " << (int)subtype;
-    subtype_ = subtype;
-    network_change_notifier_posix_->OnConnectionSubtypeChanged(
-        ConvertOhosConnTypeToNetBaseConnType(type),
-        ConvertOhosConnSubtypeToNetBaseConnSubtype(subtype));
-  }
-}
-
-std::shared_ptr<NetConnCallbackImpl> g_net_connect_callback = nullptr;
-int32_t g_callback_id = -1;
-#endif
-}  // namespace
 namespace net {
 
 NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
@@ -215,8 +50,8 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
     NetworkChangeNotifier::ConnectionType initial_connection_type,
     NetworkChangeNotifier::ConnectionSubtype initial_connection_subtype,
     SystemDnsConfigChangeNotifier* system_dns_config_notifier)
-    : NetworkChangeNotifier(NetworkChangeCalculatorParamsPassive(),
-                            system_dns_config_notifier),
+    : ArkwebNetworkChangeNotifierExt(NetworkChangeCalculatorParamsPassive(),
+                                     system_dns_config_notifier),
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
       ohos_net_conn_adapter_(OHOS::NWeb::OhosAdapterHelper::GetInstance()
                                  .CreateNetConnectAdapter()),
@@ -226,27 +61,15 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
           NetworkChangeNotifier::GetMaxBandwidthMbpsForConnectionSubtype(
               initial_connection_subtype)) {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  g_net_connect_callback = std::make_shared<NetConnCallbackImpl>(this);
-  if (ohos_net_conn_adapter_) {
-    g_callback_id =
-        ohos_net_conn_adapter_->RegisterNetConnCallback(g_net_connect_callback);
-    if (g_callback_id < 0) {
-      LOG(ERROR) << "register ohos net connect callback failed.";
-    }
-  }
+  NetworkChangeNotifierPassiveUtils::RegisterOhosNetConnCallback(this);
 #endif
 }
+
 
 NetworkChangeNotifierPassive::~NetworkChangeNotifierPassive() {
   ClearGlobalPointer();
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  if (ohos_net_conn_adapter_) {
-    int32_t ret =
-        ohos_net_conn_adapter_->UnregisterNetConnCallback(g_callback_id);
-    if (ret != 0) {
-      LOG(ERROR) << "unregister ohos net connect callback failed.";
-    }
-  }
+  NetworkChangeNotifierPassiveUtils::UnRegisterOhosNetConnCallback(this);
 #endif
 }
 
@@ -267,20 +90,8 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
     connection_type_ = connection_type;
   }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  std::vector<std::string> dns_servers;
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExHttpDnsFallback)) {
-    if (ohos_net_conn_adapter_) {
-      LOG(INFO) << "OnConnectionChanged, network_for_dns_ " << network_for_dns_;
-      dns_servers =
-          ohos_net_conn_adapter_->GetDnsServersByNetId(network_for_dns_);
-    }
-  }
-  {
-    base::AutoLock scoped_lock(dns_server_lock_);
-    dns_servers_ = std::move(dns_servers);
-  }
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  NetworkChangeNotifierPassiveUtils::SetDnsServers(this);
 #endif
 
   NetworkChangeNotifier::NotifyObserversOfConnectionTypeChange();
@@ -341,24 +152,5 @@ NetworkChangeNotifierPassive::NetworkChangeCalculatorParamsPassive() {
 #endif
   return params;
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-const std::vector<std::string>
-NetworkChangeNotifierPassive::GetCurrentDnsServers() {
-  base::AutoLock scoped_lock(dns_server_lock_);
-  return dns_servers_;
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
-  if (g_net_connect_callback) {
-    g_net_connect_callback->BindDnsToNetwork(network_for_dns);
-  }
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  network_for_dns_ = network_for_dns;
-#endif
-}
-#endif
 
 }  // namespace net

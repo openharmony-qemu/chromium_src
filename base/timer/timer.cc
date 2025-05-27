@@ -248,11 +248,6 @@ void RetainingOneShotTimer::RunUserTask() {
   // Make a local copy of the task to run in case the task destroys the timer
   // instance.
   RepeatingClosure task = user_task_;
-#if BUILDFLAG(IS_ARKWEB)
-  if (!task) {
-    return;
-  }
-#endif
   Stop();
   task.Run();
   // No more member accesses here: |this| could be deleted at this point.

@@ -156,19 +156,18 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-#include "base/ohos/ltpo/include/sliding_observer.h"
-#include "content/browser/gpu/gpu_process_host.h"
-#endif
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
 #include "base/ohos/sys_info_utils_ext.h"
-#include "content/public/browser/web_contents_delegate.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_log.h"
 #endif
 
 using blink::DragOperationsMask;
@@ -180,10 +179,6 @@ using blink::WebMouseWheelEvent;
 
 namespace content {
 namespace {
-#if BUILDFLAG(IS_OHOS)
-// One pixel of the picture is made up of four bits of binary data.
-constexpr int kImagePixelMap = 4;
-#endif
 
 constexpr gfx::Rect kInvalidScreenRect(std::numeric_limits<int>::max(),
                                        std::numeric_limits<int>::max(),
@@ -380,7 +375,7 @@ std::unique_ptr<RenderWidgetHostImpl> RenderWidgetHostImpl::Create(
     bool hidden,
     bool renderer_initiated_creation,
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
-  return base::WrapUnique(new RenderWidgetHostImpl(
+  return base::WrapUnique(new RenderWidgetHostImplExt(
       frame_tree, /*self_owned=*/false, frame_sink_id, delegate,
       std::move(site_instance_group), routing_id, hidden,
       renderer_initiated_creation, std::move(frame_token_message_queue)));
@@ -397,7 +392,7 @@ RenderWidgetHostImpl* RenderWidgetHostImpl::CreateSelfOwned(
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
   viz::FrameSinkId frame_sink_id =
       DefaultFrameSinkId(*site_instance_group, routing_id);
-  return new RenderWidgetHostImpl(frame_tree, /*self_owned=*/true,
+  return new RenderWidgetHostImplExt(frame_tree, /*self_owned=*/true,
                                   frame_sink_id, delegate,
                                   std::move(site_instance_group), routing_id,
                                   hidden, /*renderer_initiated_creation=*/true,
@@ -1611,14 +1606,6 @@ void RenderWidgetHostImpl::ForwardGestureEvent(
                                                              ui::LatencyInfo());
 }
 
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-void RenderWidgetHostImpl::ForwardTouchEventWithLatencyInfo(
-    const blink::WebTouchEvent& touch_event,
-    const ui::LatencyInfo& latency) {
-  // TODO(ARKWEB)
-}
-#endif
-
 void RenderWidgetHostImpl::ForwardKeyboardEvent(
     const input::NativeWebKeyboardEvent& key_event) {
   ui::LatencyInfo latency_info;
@@ -2391,6 +2378,9 @@ void RenderWidgetHostImpl::Destroy(bool also_delete) {
 void RenderWidgetHostImpl::OnInputEventAckTimeout() {
   // Since input has timed out, let the BrowserUiThreadScheduler know we are
   // done with input currently.
+#if BUILDFLAG(IS_OHOS)
+  LOG(ERROR) << "OnInputEventAckTimeout";
+#endif
   user_input_active_handle_.reset();
   RendererIsUnresponsive(
       RendererIsUnresponsiveReason::kOnInputEventAckTimeout,
@@ -2456,6 +2446,12 @@ void RenderWidgetHostImpl::OnKeyboardEventAck(
 
   bool processed =
       (blink::mojom::InputEventResultState::kConsumed == ack_result);
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (view_ && processed && !is_hidden() && !event.event.skip_if_unhandled) {
+    view_->KeyboardReDispatch(event.event, true);
+  }
+#endif
 
   // We only send unprocessed key event upwards if we are not hidden,
   // because the user has moved away from us and no longer expect any effect
@@ -2715,105 +2711,6 @@ void RenderWidgetHostImpl::UpdateBrowserControlsState(
   GetWidgetInputHandler()->UpdateBrowserControlsState(
       constraints, current, animate, offset_tags_info);
 }
-
-#if BUILDFLAG(IS_OHOS)
-const ohos::adapter::OcrImage ConvertImage(const gfx::ImageSkia* image) {
-  if (image == nullptr || image->bitmap() == nullptr) {
-    LOG(INFO) << "parse ocr image pixel fail image is nullptr!";
-    return {};
-  }
-  const SkBitmap* bitmap = image->bitmap();
-  int width = bitmap->width();
-  int height = bitmap->height();
-  size_t row_bytes = width * kImagePixelMap;
-  size_t buffer_size = bitmap->computeByteSize();
-  std::unique_ptr<char[]> buff = std::make_unique<char[]>(buffer_size);
-  SkPixmap pixmap(SkImageInfo::MakeN32Premul(width, height), buff.get(),
-                  row_bytes);
-  image->bitmap()->peekPixels(&pixmap);
-  if (pixmap.readPixels(SkImageInfo::MakeN32Premul(width, height), buff.get(),
-                        row_bytes, 0, 0)) {
-    return {width, height, std::move(buff)};
-  } else {
-    LOG(ERROR) << "parse ocr image pixel fail!";
-    return {};
-  }
-}
-
-void RenderWidgetHostImpl::CreateOverlay(const SkBitmap& bitmap,
-                                         const gfx::Rect& image_rect,
-                                         const gfx::Point& touch_point) {
-  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
-  float scale = GetScaleFactorForView(GetView());
-  gfx::ImageSkia image = gfx::ImageSkia::CreateFromBitmap(bitmap, scale);
-  view->CreateOverlay(image, image_rect, touch_point);
-}
-
-void RenderWidgetHostImpl::OnTextRecognized(
-    std::vector<ohos::adapter::TextWord> words) {
-  std::vector<blink::mojom::TextRecognizeResultPtr> res;
-  for (auto& word : words) {
-    std::string raw_value = word.value;
-    gfx::RectF bounding_box;
-    std::vector<::gfx::PointF> corner_points;
-    for (auto& point : word.cornerPoints) {
-      gfx::PointF pointf = ::gfx::PointF(static_cast<float>(point.x),
-                                         static_cast<float>(point.y));
-      corner_points.push_back(pointf);
-    }
-    blink::mojom::TextRecognizeResultPtr line =
-        blink::mojom::TextRecognizeResult::New(raw_value, bounding_box,
-                                               corner_points);
-    res.emplace_back(std::move(line));
-  }
-
-  float scale = GetScaleFactorForView(GetView());
-  blink_frame_widget_->OnTextRecognized(std::move(res), scale);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-void RenderWidgetHostImpl::GetWordSelection(const std::string& text,
-                                            int8_t offset,
-                                            GetWordSelectionCallback callback) {
-  if (!view_) {
-    return;
-  }
-  std::vector<int8_t> select = view_->GetWordSelection(text, offset);
-  std::move(callback).Run(select);
-}
-
-gfx::Rect RenderWidgetHostImpl::GetImageRect() {
-  gfx::Rect image_rect;
-  blink_frame_widget_->GetImageRect(&image_rect);
-  return image_rect;
-}
-
-void RenderWidgetHostImpl::OnTextSelected(bool flag) {
-  blink_frame_widget_->OnTextSelected(flag);
-}
-
-void RenderWidgetHostImpl::OnDestroyImageAnalyzerOverlay() {
-  blink_frame_widget_->OnDestroyImageAnalyzerOverlay();
-}
-
-void RenderWidgetHostImpl::OnFoldStatusChanged(uint32_t foldstatus) {
-  blink_frame_widget_->OnFoldStatusChanged(foldstatus);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void RenderWidgetHostImpl::GetVisibleRectToWeb(
-    GetVisibleRectToWebCallback callback) {
-  RenderViewHostDelegateView* view = delegate_->GetDelegateView();
-  if (!view || !GetView()) {
-    std::move(callback).Run(gfx::Rect());
-    return;
-  }
-  auto rect = view->GetVisibleRectToWeb();
-  std::move(callback).Run(rect);
-}
-#endif
 
 void RenderWidgetHostImpl::StartDragging(
     blink::mojom::DragDataPtr drag_data,
@@ -3347,39 +3244,6 @@ bool RenderWidgetHostImpl::KeyPressListenersHandleEvent(
   return false;
 }
 
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-void RenderWidgetHostImpl::ReportSlidingFrameRate(
-    const blink::WebGestureEvent& gesture_event) {
-  int32_t preferred_frame_rate = 0;
-  if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
-    base::ohos::SlidingObserver::GetInstance().StartSliding();
-  } else if (gesture_event.GetType() ==
-             WebInputEvent::Type::kGestureScrollEnd) {
-    preferred_frame_rate =
-        base::ohos::SlidingObserver::GetInstance().StopSliding();
-  } else if (gesture_event.GetType() ==
-             WebInputEvent::Type::kGestureScrollUpdate) {
-    preferred_frame_rate =
-        base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(
-            gesture_event.data.scroll_update.delta_x,
-            gesture_event.data.scroll_update.delta_y);
-  }
-
-  auto* host = GpuProcessHost::Get();
-  viz::GpuHostImpl* host_impl = nullptr;
-  if (host) {
-    host_impl = host->gpu_host();
-  }
-
-  if (host_impl && preferred_frame_rate >= 0) {
-    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd ||
-        gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
-      host_impl->ReportSlidingFrameRate(preferred_frame_rate);
-    }
-  }
-}
-#endif
-
 void RenderWidgetHostImpl::IncrementInFlightEventCount() {
   ++in_flight_event_count_;
   if (in_flight_event_count_ == 1) {
@@ -3531,28 +3395,17 @@ void RenderWidgetHostImpl::OnWheelEventAck(
 
 bool RenderWidgetHostImpl::IsIgnoringWebInputEvents(
     const blink::WebInputEvent& event) const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  IGNORING_WEB_INPUT_FOR_EVENTS_RETURN(event);
+#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreWebInputEvents(event);
+#endif
 }
 
 bool RenderWidgetHostImpl::IsIgnoringInputEvents() const {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (agent_scheduling_group_->GetProcess()->IsBlocked()) {
-    LOG(INFO) << "IsIgnoringInputEvents for gpu blocked";
-    return true;
-  }
-
-  if (!delegate_) {
-    LOG(INFO) << "IsIgnoringInputEvents for delegate_ null";
-    return true;
-  }
-
-  if (delegate_->ShouldIgnoreInputEvents()) {
-    LOG(INFO) << "IsIgnoringInputEvents for ShouldIgnoreInputEvents";
-    return true;
-  }
-
-  return false;
+  IGNORING_WEB_INPUT_EVENTS_RETURN();
 #else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreInputEvents();
@@ -4103,24 +3956,6 @@ void RenderWidgetHostImpl::SetViewIsFrameSinkIdOwner(bool is_owner) {
   }
 }
 
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void RenderWidgetHostImpl::DynamicFrameLossEvent(const std::string& sceneId,
-                                                 bool isStart) {
-  if (view_) {
-    view_->DynamicFrameLossEvent(sceneId, isStart);
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void RenderWidgetHostImpl::DidNativeEmbedEvent(
-    blink::mojom::NativeEmbedTouchEventPtr touchEvent) {
-  if (view_) {
-    view_->DidNativeEmbedEvent(touchEvent);
-  }
-}
-#endif
-
 RenderWidgetHostImpl::MainFramePropagationProperties::
     MainFramePropagationProperties() = default;
 
@@ -4227,12 +4062,4 @@ void RenderWidgetHostImpl::CompositorMetricRecorder::TryToRecordMetrics() {
         base::Milliseconds(1), base::Minutes(10), 50);
   }
 }
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-void RenderWidgetHostImpl::SendCurrentLanguage(const std::string& ans) {
-  if (view_) {
-    view_->SendCurrentLanguage(ans);
-  }
-}
-#endif
 }  // namespace content

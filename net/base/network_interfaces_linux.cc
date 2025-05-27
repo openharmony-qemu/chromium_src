@@ -44,7 +44,7 @@
 #include "net/base/network_interfaces_getifaddrs.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "net/base/network_interfaces_getifaddrs.h"
 #endif
 
@@ -249,12 +249,11 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
   }
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool ret = internal::GetNetworkListUsingGetifaddrs(networks, policy);
   // Use GetInterfaceConnectionType() to sharpen up interface types.
-  for (NetworkInterface& network : *networks) {
+  for (NetworkInterface& network : *networks)
     network.type = internal::GetInterfaceConnectionType(network.name);
-  }
   return ret;
 #else
 

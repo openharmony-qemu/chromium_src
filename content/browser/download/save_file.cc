@@ -38,9 +38,9 @@ download::DownloadInterruptReason SaveFile::Initialize() {
 #if BUILDFLAG(IS_OHOS)
   base::FilePath path;
   base::PathService::Get(chrome::DIR_DEFAULT_DOWNLOADS, &path);
-  download::DownloadInterruptReason reason =
-      file_.Initialize(base::FilePath(), path, base::File(), 0, std::string(),
-                       nullptr, false, &bytes_wasted);
+  download::DownloadInterruptReason reason = file_.Initialize(
+      base::FilePath(), path, base::File(), 0, std::string(),
+      nullptr, false, &bytes_wasted);
 #else
   download::DownloadInterruptReason reason = file_.Initialize(
       /*full_path=*/base::FilePath(), /*default_directory=*/base::FilePath(),

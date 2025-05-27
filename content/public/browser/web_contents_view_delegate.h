@@ -5,8 +5,9 @@
 #ifndef CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_VIEW_DELEGATE_H_
 #define CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_VIEW_DELEGATE_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+
+#include "arkweb/build/features/features.h"
 
 #if defined(__OBJC__)
 #if BUILDFLAG(IS_MAC)
@@ -62,7 +63,7 @@ class CONTENT_EXPORT WebContentsViewDelegate {
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   virtual void ClearContextMenu() {}
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   // Dismiss the context menu if one exists.
   virtual void DismissContextMenu();

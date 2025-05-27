@@ -14,6 +14,9 @@ class TestPasswordAutofillAgent : public PasswordAutofillAgent {
   TestPasswordAutofillAgent(content::RenderFrame* render_frame,
                             blink::AssociatedInterfaceRegistry* registry);
   ~TestPasswordAutofillAgent() override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void AutofillSurfaceClosed(bool show_virtual_keyboard) override {}
+#endif
 
  private:
   // Always returns true. This allows browser tests with "data: " URL scheme to

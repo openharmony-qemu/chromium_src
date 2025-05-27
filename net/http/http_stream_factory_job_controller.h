@@ -170,6 +170,12 @@ class HttpStreamFactory::JobController
     return main_job_wait_time_;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
+
+  bool IsFromPreload() const { return from_preload_; }
+#endif
+
  private:
   friend class test::JobControllerPeer;
 
@@ -387,6 +393,10 @@ class HttpStreamFactory::JobController
   // At the point where a Job is irrevocably tied to |request_|, we set this.
   // It will be nulled when the |request_| is finished.
   raw_ptr<Job> bound_job_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
 
   State next_state_ = STATE_RESOLVE_PROXY;
   std::unique_ptr<ProxyResolutionRequest> proxy_resolve_request_;

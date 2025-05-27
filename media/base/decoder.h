@@ -8,9 +8,9 @@
 #include <ostream>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "media/base/media_export.h"
 #include "media/base/status.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -28,8 +28,13 @@ enum class AudioDecoderType : int {
   kMediaFoundation = 8,  // MediaFoundationAudioDecoder
   kPassthroughDTS = 9,   // Passthrough DTS audio
 
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  kOhos = 10,
+  kMaxValue = kOhos,
+#else
   // Keep this at the end and equal to the last entry.
   kMaxValue = kPassthroughDTS,
+#endif
 };
 
 // List of known VideoDecoder implementations; recorded to UKM, always add new
@@ -57,7 +62,7 @@ enum class VideoDecoderType : int {
   kOutOfProcess = 18,  // OOPVideoDecoder (Linux and ChromeOS)
   kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
 
-// Keep this at the end and equal to the last entry.
+  // Keep this at the end and equal to the last entry.
 #if BUILDFLAG(ARKWEB_MEDIA_CODEC)
   kOHOS = 20,
   kMaxValue = kOHOS

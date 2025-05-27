@@ -56,10 +56,6 @@
 #include "content/public/common/zygote/zygote_handle.h"  // nogncheck
 #endif
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-
 namespace base {
 class CommandLine;
 
@@ -67,6 +63,10 @@ class CommandLine;
 class MachPortRendezvousServerIOS;
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+class AafwkAppMgrClientAdapter;
+#endif
 
 namespace content {
 
@@ -82,6 +82,9 @@ class PosixFileDescriptorInfo;
 
 namespace internal {
 
+#if BUILDFLAG(IS_ARKWEB)
+class ArkwebChildProcessLauncherHelperUtils;
+#endif
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 using FileMappedForLaunch = PosixFileDescriptorInfo;
 #else
@@ -105,6 +108,9 @@ class ProcessStorageBase {
 class ChildProcessLauncherHelper
     : public base::RefCountedThreadSafe<ChildProcessLauncherHelper> {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebChildProcessLauncherHelperUtils;
+#endif
   // Abstraction around a process required to deal in a platform independent way
   // between Linux (which can use zygotes) and the other platforms.
   struct Process {
@@ -291,14 +297,6 @@ class ChildProcessLauncherHelper
   static void ForceNormalProcessTerminationSync(
       ChildProcessLauncherHelper::Process process);
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  static base::TerminationStatus GetProcessStatusByExitCode(int status,
-                                                            bool known_dead);
-  static bool TerminateProcessByAppMgr(const base::Process& process);
-  static std::string GetExitReasonByTerminationStatus(
-      base::TerminationStatus status);
-#endif
-
 #if BUILDFLAG(IS_ANDROID)
   void set_java_peer_available_on_client_thread() {
     java_peer_avaiable_on_client_thread_ = true;
@@ -317,7 +315,7 @@ class ChildProcessLauncherHelper
   std::optional<base::ProcessId> process_id_ = std::nullopt;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
   // The priority of the process. The state is stored to avoid changing the
   // setting repeatedly.
   std::optional<base::Process::Priority> priority_;
@@ -366,7 +364,6 @@ class ChildProcessLauncherHelper
   std::unique_ptr<OHOS::NWeb::AafwkAppMgrClientAdapter> app_mgr_client_adapter_{
       nullptr};
 #endif
-
 #if BUILDFLAG(IS_WIN)
   // Only valid if the host process has logging enabled.
   base::win::ScopedHandle log_handle_;
@@ -381,6 +378,9 @@ class ChildProcessLauncherHelper
   // Creation time of the helper, used for metrics.
   // TODO(crbug.com/40287847): Remove when parallel launching is finished.
   base::TimeTicks init_start_time_;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  std::unique_ptr<ArkwebChildProcessLauncherHelperUtils> arkweb_child_process_launcher_helper_utils_;
+#endif
 };
 
 }  // namespace internal

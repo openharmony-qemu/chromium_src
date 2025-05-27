@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
 static_library("common") {
@@ -53,6 +55,10 @@ static_library("common") {
   ]
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_document_subresource_filter_sources
+  }
 }
 
 static_library("test_support") {

@@ -44,6 +44,10 @@
 #include "content/public/browser/render_process_host.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include.cc"
+#endif
+
 namespace subresource_filter {
 
 namespace {
@@ -143,12 +147,7 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
   for (base::FilePath format_dir = format_dirs.Next(); !format_dir.empty();
        format_dir = format_dirs.Next()) {
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-    if (format_dir != current_format_dir) {
-      base::DeletePathRecursively(format_dir);
-      LOG(INFO) << "[Adblock] Delete obsolete indexed rulesets:"
-                << format_dir.value();
-      has_different_format = true;
-    }
+    DeleteObsoleteRulesetsExt(has_different_format, format_dir, current_format_dir);
 #else
     if (format_dir != current_format_dir)
       base::DeletePathRecursively(format_dir);
@@ -180,18 +179,7 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
   }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  // Upgrading case, should also remove unindexed file when format or version
-  // change.
-  if (has_different_format || has_different_version) {
-    LOG(INFO) << "[AdBlock] Delete obsolete unindexed rulesets:"
-              << unindexed_ruleset_base_dir.value();
-    base::DeletePathRecursively(unindexed_ruleset_base_dir);
-  }
-  if (has_different_format) {
-    if (client) {
-      client->OnDeleteRulesetFile();
-    }
-  }
+    DeleteObsoleteRulesetsClientExt(has_different_format, has_different_version, unindexed_ruleset_base_dir, client);
 #endif
 }
 
@@ -244,8 +232,8 @@ std::unique_ptr<RulesetService> RulesetService::Create(
           .Append(::subresource_filter::kUnindexedRulesetBaseDirectoryName);
   return std::make_unique<RulesetService>(
       config, local_state, std::move(background_task_runner),
-      indexed_ruleset_base_dir, unindexed_ruleset_base_dir, client,
-      std::move(blocking_task_runner), publisher_factory);
+      indexed_ruleset_base_dir, unindexed_ruleset_base_dir,
+      client, std::move(blocking_task_runner), publisher_factory);
 #else
   return std::make_unique<RulesetService>(
       config, local_state, std::move(background_task_runner),
@@ -297,51 +285,6 @@ RulesetService::RulesetService(
                                 weak_ptr_factory_.GetWeakPtr()));
 #endif
 }
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-RulesetService::RulesetService(
-    const RulesetConfig& config,
-    PrefService* local_state,
-    scoped_refptr<base::SequencedTaskRunner> background_task_runner,
-    const base::FilePath& indexed_ruleset_base_dir,
-    const base::FilePath& unindexed_ruleset_base_dir,
-    RulesetServiceClient* client,
-    scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
-    const RulesetPublisher::Factory& publisher_factory)
-    : config_(config),
-      local_state_(local_state),
-      background_task_runner_(std::move(background_task_runner)),
-      is_initialized_(false),
-      indexed_ruleset_base_dir_(indexed_ruleset_base_dir),
-      unindexed_ruleset_base_dir_(unindexed_ruleset_base_dir),
-      ruleset_service_client_(client) {
-  CHECK_NE(local_state_->GetInitializationStatus(),
-           PrefService::INITIALIZATION_STATUS_WAITING,
-           base::NotFatalUntil::M129);
-  publisher_ = publisher_factory.Create(this, std::move(blocking_task_runner));
-  IndexedRulesetVersion most_recently_indexed_version(config.filter_tag);
-  most_recently_indexed_version.ReadFromPrefs(local_state_);
-  TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("loading"),
-               "RulesetService::RulesetService", "prefs_version",
-               most_recently_indexed_version.ToTracedValue());
-  if (most_recently_indexed_version.IsValid() &&
-      most_recently_indexed_version.IsCurrentFormatVersion()) {
-    OpenAndPublishRuleset(most_recently_indexed_version);
-  } else {
-    IndexedRulesetVersion(config.filter_tag).SaveToPrefs(local_state_);
-  }
-
-  CHECK(publisher_->BestEffortTaskRunner()->BelongsToCurrentThread(),
-        base::NotFatalUntil::M129);
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  FinishInitialization();
-#else
-  publisher_->BestEffortTaskRunner()->PostTask(
-      FROM_HERE, base::BindOnce(&RulesetService::FinishInitialization,
-                                weak_ptr_factory_.GetWeakPtr()));
-#endif
-}
-#endif
 
 RulesetService::~RulesetService() = default;
 
@@ -434,7 +377,11 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   // Crashes or errors occurring here will leave behind a sentinel file that
   // will prevent this version of the ruleset from ever being indexed again.
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebRulesetIndexerExt indexer;
+#else
   RulesetIndexer indexer;
+#endif
   if (!(*g_index_ruleset_func)(config, &unindexed_ruleset_stream_generator,
                                &indexer)) {
     RecordIndexAndWriteRulesetResult(
@@ -496,7 +443,7 @@ bool RulesetService::IndexRuleset(
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
     for (const auto& rule : ruleset_chunk.css_rules()) {
-      if (!indexer->AddCssRule(rule)) {
+      if (!indexer->AsArkWebRulesetIndexerExt()->AddCssRule(rule)) {
         ++num_unsupported_css_rules;
       } else {
         ++num_supported_css_rules;
@@ -630,6 +577,16 @@ void RulesetService::OpenAndPublishRuleset(
 }
 
 void RulesetService::OnRulesetSet(RulesetFilePtr file) {
+#ifdef BUILDFLAG(ARKWEB_ADBLOCK)
+  auto task = content::GetUIThreadTaskRunner({base::TaskPriority::USER_BLOCKING});
+  LOG(DEBUG) << "[adblock] RulesetService::OnRulesetSet, check ui thread:"
+             << task->BelongsToCurrentThread();
+  if (!task->BelongsToCurrentThread()) {
+    task->PostTask(FROM_HERE, base::BindOnce(&RulesetService::OnRulesetSet,
+            weak_ptr_factory_.GetWeakPtr(), std::move(file)));
+    return;
+  }
+#endif
   // The file has just been successfully written, so a failure here is unlikely
   // unless |indexed_ruleset_base_dir_| has been tampered with or there are disk
   // errors. Still, restore the invariant that a valid version in preferences

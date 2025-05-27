@@ -2,21 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "content/browser/child_process_launcher_helper.h"
-
-#include <execinfo.h>
-
-#include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-#include "base/base_switches.h"
-#endif
+#include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
 #include "base/command_line.h"
-#include "base/logging.h"
 #include "base/path_service.h"
 #include "base/posix/global_descriptors.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "content/browser/child_process_launcher.h"
+#include "content/browser/child_process_launcher_helper.h"
 #include "content/browser/child_process_launcher_helper_posix.h"
 #include "content/browser/sandbox_host_linux.h"
 #include "content/browser/zygote_host/zygote_host_impl_linux.h"
@@ -33,23 +26,8 @@
 #include "content/public/common/zygote/zygote_handle.h"
 #include "sandbox/policy/linux/sandbox_linux.h"
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
-#include "content/public/common/content_descriptors.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-#include "arkweb/chromium_ext/content/renderer/host_proxy.h"
-#endif
-#endif
-
 namespace content {
 namespace internal {
-#if BUILDFLAG(IS_ARKWEB)
-static bool save_browser_connect_{false};
-#endif
 
 std::optional<mojo::NamedPlatformChannel>
 ChildProcessLauncherHelper::CreateNamedPlatformChannelOnLauncherThread() {
@@ -70,24 +48,14 @@ ChildProcessLauncherHelper::GetFilesToMap() {
 }
 
 bool ChildProcessLauncherHelper::IsUsingLaunchOptions() {
-#if BUILDFLAG(USE_ZYGOTE)
   return !GetZygoteForLaunch();
-#else
-  return true;
-#endif
-}
-
-int GetSandboxFD() {
-  return kSandboxIPCChannel + base::GlobalDescriptors::kBaseDescriptor;
 }
 
 bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
     PosixFileDescriptorInfo& files_to_register,
     base::LaunchOptions* options) {
   if (options) {
-#if BUILDFLAG(USE_ZYGOTE)
     DCHECK(!GetZygoteForLaunch());
-#endif
     // Convert FD mapping to FileHandleMappingVector
     options->fds_to_remap = files_to_register.GetMappingWithIDAdjustment(
         base::GlobalDescriptors::kBaseDescriptor);
@@ -99,9 +67,7 @@ bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
 
     options->environment = delegate_->GetEnvironment();
   } else {
-#if !BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
     DCHECK(GetZygoteForLaunch());
-#endif
     // Environment variables could be supported in the future, but are not
     // currently supported when launching with the zygote.
     DCHECK(delegate_->GetEnvironment().empty());
@@ -118,7 +84,6 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
     int* launch_result) {
   *is_synchronous_launch = true;
   Process process;
-#if BUILDFLAG(USE_ZYGOTE)
   ZygoteCommunication* zygote_handle = GetZygoteForLaunch();
   if (zygote_handle) {
     // TODO(crbug.com/40448989): If chrome supported multiple zygotes they could
@@ -142,64 +107,9 @@ ChildProcessLauncherHelper::LaunchProcessOnLauncherThread(
 
     process.process = base::Process(handle);
     process.zygote = zygote_handle;
-  } else
-#endif
-
-  {
+  } else {
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-    bool for_test =
-       base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kForTest);
-    if (for_test) {
-     process.process = base::LaunchProcess(*command_line(), *options);
-   } else 
-    {
-      const std::vector<std::string> argv_str = command_line()->argv();
-      std::stringstream argv_ss;
-      const char separator = '#';
-      for (auto& item : argv_str) {
-        argv_ss << item << separator;
-      }
-      argv_ss << argv_str[argv_str.size() - 1];
-      constexpr int SHARED_FD_INDEX = 0;
-      constexpr int IPC_FD_INDEX = 1;
-      constexpr int CRASH_SIGNAL_FD_INDEX = 2;
-      int32_t shared_fd = options->fds_to_remap[SHARED_FD_INDEX].first;
-      int32_t ipc_fd = options->fds_to_remap[IPC_FD_INDEX].first;
-      int32_t crash_signal_fd =
-          options->fds_to_remap[CRASH_SIGNAL_FD_INDEX].first;
-      pid_t render_pid = 0;
-      if (app_mgr_client_adapter_ == nullptr) {
-        app_mgr_client_adapter_ =
-            OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
-      }
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-      if (!save_browser_connect_) {
-        auto browser_host = std::make_shared<content::HostProxy>();
-        app_mgr_client_adapter_->SaveBrowserConnect(browser_host);
-        save_browser_connect_ = true;
-      }
-#endif
-
-      LOG(INFO)
-          << "Initiate a request to AMS to create a child process, child type: "
-          << GetProcessType();
-      int ret = app_mgr_client_adapter_->StartChildProcess(
-          argv_ss.str(), ipc_fd, shared_fd, crash_signal_fd, render_pid,
-          GetProcessType());
-      if (ret != 0) {
-        LOG(ERROR) << "start render process error, ret=" << ret
-                   << ", render pid=" << render_pid
-                   << ", process type=" << GetProcessType();
-        process.process = base::Process();
-      } else {
-        process.process = base::Process(render_pid);
-        OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
-            OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED, render_pid,
-            render_pid, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-        LOG(DEBUG) << "report render process create event success, render pid: "
-                   << render_pid << ", process type = " << GetProcessType();
-      }
-    }
+    arkweb_child_process_launcher_helper_utils_->LaunchChildProcess(command_line(), options, process);
 #else
     process.process = base::LaunchProcess(*command_line(), *options);
 #endif
@@ -225,107 +135,16 @@ void ChildProcessLauncherHelper::AfterLaunchOnLauncherThread(
   file_data_.reset();
 }
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-#define RENDER_NORMAL_KILLED 0x10000000
-base::TerminationStatus ChildProcessLauncherHelper::GetProcessStatusByExitCode(
-    int status,
-    bool known_dead) {
-  if (WIFSIGNALED(status)) {
-    switch (WTERMSIG(status)) {
-      case SIGABRT:
-      case SIGBUS:
-      case SIGFPE:
-      case SIGILL:
-      case SIGSEGV:
-      case SIGTRAP:
-      case SIGSYS:
-        return base::TERMINATION_STATUS_PROCESS_CRASHED;
-      case SIGKILL:
-        if (!known_dead) {
-          return base::TERMINATION_STATUS_NORMAL_TERMINATION;
-        }
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
-        // On ChromeOS, only way a process gets kill by SIGKILL
-        // is by oom-killer.
-        return TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM;
-#endif
-      case SIGINT:
-      case SIGTERM:
-        return base::TERMINATION_STATUS_PROCESS_WAS_KILLED;
-      default:
-        break;
-    }
-  }
-
-  if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-    return base::TERMINATION_STATUS_ABNORMAL_TERMINATION;
-  }
-
-  return base::TERMINATION_STATUS_NORMAL_TERMINATION;
-}
-
-std::string ChildProcessLauncherHelper::GetExitReasonByTerminationStatus(
-    base::TerminationStatus status) {
-  std::string reason;
-  switch (status) {
-    case base::TERMINATION_STATUS_NORMAL_TERMINATION:
-      reason = "process normal termination";
-      break;
-    case base::TERMINATION_STATUS_ABNORMAL_TERMINATION:
-      reason = "process abnormal termination";
-      break;
-    case base::TERMINATION_STATUS_PROCESS_CRASHED:
-      reason = "process crashed";
-      break;
-    case base::TERMINATION_STATUS_PROCESS_WAS_KILLED:
-      reason = "process was killed";
-      break;
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
-    case base::TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM:
-      reason = "process out of memory";
-      break;
-#endif
-    default:
-      reason = "process exit unknown";
-      break;
-  }
-  return reason;
-}
-#endif
-
 ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
     const ChildProcessLauncherHelper::Process& process,
     bool known_dead) {
   ChildProcessTerminationInfo info;
-#if !BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
- if (process.zygote) {
-   info.status = process.zygote->GetTerminationStatus(
-       process.process.Handle(), known_dead, &info.exit_code);
-  } else
-#else
-  if (app_mgr_client_adapter_) {
-    if (known_dead) {
-      int exitStatus;
-      int ret = app_mgr_client_adapter_->GetRenderProcessTerminationStatus(
-          process.process.Handle(), exitStatus);
-      if (ret != 0) {
-        LOG(ERROR) << "GetTermination get render process termination status "
-                      "failed, errno = "
-                   << ret;
-      } else if (exitStatus < 0) {
-        LOG(ERROR) << "GetTermination get render process termination status "
-                      "success, invalid status = "
-                   << exitStatus;
-      } else {
-        info.status = GetProcessStatusByExitCode(exitStatus, known_dead);
-        LOG(INFO) << "GetTermination known_dead pid: "
-                  << process.process.Handle() << " exitStatus: " << exitStatus
-                  << " exitReason: "
-                  << GetExitReasonByTerminationStatus(info.status);
-      }
-    } else {
-      info.status = base::TERMINATION_STATUS_STILL_RUNNING;
-    }
+  if (process.zygote) {
+    info.status = process.zygote->GetTerminationStatus(
+        process.process.Handle(), known_dead, &info.exit_code);
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+  } if (app_mgr_client_adapter_) {
+  arkweb_child_process_launcher_helper_utils_->GetTerminationInfoArkweb(process.process, known_dead, info);
 #endif
   } else if (known_dead) {
     info.status = base::GetKnownDeadTerminationStatus(process.process.Handle(),
@@ -337,42 +156,13 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
   return info;
 }
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-bool ChildProcessLauncherHelper::TerminateProcessByAppMgr(
-    const base::Process& process) {
-  auto app_mgr_client_adapter =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateAafwkAdapter();
-  if (app_mgr_client_adapter == nullptr) {
-    LOG(ERROR) << "GetTermination get app manager client adapter failed";
-    return false;
-  }
-
-  std::string renderExitReason;
-  int exitStatus;
-  int ret = app_mgr_client_adapter->GetRenderProcessTerminationStatus(
-      process.Handle(), exitStatus);
-  if (ret != 0) {
-    LOG(ERROR) << "GetTermination process termination status failed, pid "
-               << process.Handle() << " error = " << ret;
-    return false;
-  }
-
-  renderExitReason = GetExitReasonByTerminationStatus(
-      GetProcessStatusByExitCode(exitStatus, false));
-  LOG(INFO) << "GetTermination pid: " << process.Handle()
-            << " exitStatus: " << exitStatus
-            << " exitReason: " << renderExitReason;
-  return true;
-}
-#endif
-
 // static
 bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
                                                   int exit_code) {
   // TODO(crbug.com/40565504): Determine whether we should also call
   // EnsureProcessTerminated() to make sure of process-exit, and reap it.
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  return TerminateProcessByAppMgr(process);
+  return ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process);
 #else
   return process.Terminate(exit_code, false);
 #endif
@@ -385,7 +175,7 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
                "ChildProcessLauncherHelper::ForceNormalProcessTerminationSync");
   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
-  TerminateProcessByAppMgr(process.process);
+  ArkwebChildProcessLauncherHelperUtils::TerminateProcessByAppMgr(process.process);
   return;
 #else
   process.process.Terminate(RESULT_CODE_NORMAL_EXIT, false);
@@ -403,22 +193,18 @@ void ChildProcessLauncherHelper::ForceNormalProcessTerminationSync(
 void ChildProcessLauncherHelper::SetProcessPriorityOnLauncherThread(
     base::Process process,
     base::Process::Priority priority) {
-#if BUILDFLAG(USE_ZYGOTE)
   DCHECK(CurrentlyOnProcessLauncherTaskRunner());
   if (process.CanSetPriority() && priority_ != priority) {
     priority_ = priority;
     process.SetPriority(priority);
   }
-#endif
 }
 
-#if BUILDFLAG(USE_ZYGOTE)
 ZygoteCommunication* ChildProcessLauncherHelper::GetZygoteForLaunch() {
   return base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kNoZygote)
              ? nullptr
              : delegate_->GetZygote();
 }
-#endif
 
 base::File OpenFileToShare(const base::FilePath& path,
                            base::MemoryMappedFile::Region* region) {

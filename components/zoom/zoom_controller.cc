@@ -24,6 +24,11 @@
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
+#include "content/browser/web_contents/web_contents_impl.h"
+#endif
+
 using content::BrowserThread;
 
 namespace zoom {
@@ -400,6 +405,11 @@ void ZoomController::UpdateState(const std::string& host) {
         can_show_bubble_ && !host.empty() && changed_from_default;
     for (auto& observer : observers_)
       observer.OnZoomChanged(zoom_change_data);
+#if BUILDFLAG(ARKWEB_AI)
+    if (auto impl = static_cast<content::WebContentsImpl*>(web_contents())) {
+      impl->AsWebContentsImplExt()->OnOverlayZoomChanged();
+    }
+#endif
   } else {
     // TODO(wjmaclean) Should we consider having HostZoomMap send both old and
     // new zoom levels here?

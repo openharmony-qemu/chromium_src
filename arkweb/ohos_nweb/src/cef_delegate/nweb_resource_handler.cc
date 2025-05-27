@@ -317,6 +317,9 @@ void NWebResourceHandler::GetResponseHeaders(CefRefPtr<CefResponse> response,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (response_->ResponseDataType() == NWebResponseDataType::NWEB_STRING_TYPE) {
+	if (data_.empty()) {
+	  data_ = response_->ResponseData();
+	}
     response_length = data_.length();
     LOG(DEBUG) << "intercept NWEB_STRING_TYPE response_length="
                << response_length;
@@ -358,10 +361,9 @@ const std::string NWebResourceHandler::GetResponseData() {
   return response_->ResponseData();
 }
 
-size_t NWebResourceHandler::GetResponseDataBuffer(char* data,
-                                                  size_t dest_size) {
-  if (response_ == nullptr ||
-      response_->ResponseDataType() != NWebResponseDataType::NWEB_BUFFER_TYPE) {
+size_t NWebResourceHandler::GetResponseDataBuffer(char* data, size_t dest_size) {
+  if (data == nullptr || response_ == nullptr
+    || response_->ResponseDataType() != NWebResponseDataType::NWEB_BUFFER_TYPE) {
     return 0;
   }
   size_t buffer_size = response_->GetResponseDataBufferSize();

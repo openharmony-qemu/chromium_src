@@ -183,6 +183,7 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                     GetSurfaceIdCallback callback) override;
   void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
   void DestroyNativeWindow(uint32_t native_window_id) override;
+  void Discard(uint32_t native_window_id) override;
 #endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
@@ -450,6 +451,10 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void StartMonitor() override;
   void StopMonitor() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  void SetIsFling(bool is_fling_enabled) override;
 #endif
 
  private:

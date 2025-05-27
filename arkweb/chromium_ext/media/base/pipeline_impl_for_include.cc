@@ -1,0 +1,84 @@
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef MEDIA_BASE_PIPELINE_IMPL_H_
+#error "must be in include form MEDIA_BASE_PIPELINE_IMPL_H_"
+#endif
+
+namespace media {
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void PipelineImpl::RendererWrapper::SetMediaPlayerState(
+    bool is_suspend, int suspend_type) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  if (shared_state_.renderer) {
+    shared_state_.renderer->SetMediaPlayerState(is_suspend, suspend_type);
+  }
+}
+
+void PipelineImpl::SetMediaPlayerState(bool is_suspend,
+                                       int suspend_type) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::SetMediaPlayerState,
+                                base::Unretained(renderer_wrapper_.get()),
+                                is_suspend, suspend_type));
+}
+
+void PipelineImpl::RendererWrapper::SetPlaybackRateWithReason(
+    double playback_rate, ActionReason reason) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+
+  playback_rate_ = playback_rate;
+  if (state_ == State::kPlaying)
+    shared_state_.renderer->SetPlaybackRateWithReason(playback_rate_, reason);
+
+  if (state_ != State::kCreated && state_ != State::kStopping && state_ != State::kStopped) {
+    DCHECK(demuxer_);
+    demuxer_->SetPlaybackRate(playback_rate);
+  }
+}
+
+void PipelineImpl::SetPlaybackRateWithReason(
+    double playback_rate, ActionReason reason) {
+  DVLOG(2) << __func__ << "(" << playback_rate << ")";
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  // Not checking IsRunning() so we can set the playback rate before Start().
+
+  if (playback_rate < 0.0) {
+    DVLOG(1) << __func__ << ": Invalid playback rate " << playback_rate;
+    return;
+  }
+
+  playback_rate_ = playback_rate;
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::SetPlaybackRateWithReason,
+                                base::Unretained(renderer_wrapper_.get()),
+                                playback_rate_, reason));
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_PIP)
+void PipelineImpl::RendererWrapper::PipEnable(bool enable) {
+  DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
+  DVLOG(2) << __func__  << "PIC PipelineImpl::RendererWrapper:: enable:" << enable;
+
+  if (shared_state_.renderer) {
+    shared_state_.renderer->PipEnable(enable);
+  }
+}
+
+void PipelineImpl::PipEnable(bool enable) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  DVLOG(2) << __func__  << "PIC PipelineImpl::PipEnable enable:" << enable;
+  media_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&RendererWrapper::PipEnable,
+                                base::Unretained(renderer_wrapper_.get()),
+                                enable));
+}
+#endif
+}

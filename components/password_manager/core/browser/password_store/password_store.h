@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/cancelable_callback.h"
 #include "base/functional/callback.h"
@@ -83,6 +84,9 @@ class PasswordStore : public PasswordStoreInterface {
       const PasswordForm& new_form,
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) override;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  void UpdateLoginDisplayName(const PasswordForm& form) override;
+#endif
   void RemoveLogin(const base::Location& location,
                    const PasswordForm& form) override;
   void RemoveLoginsByURLAndTime(

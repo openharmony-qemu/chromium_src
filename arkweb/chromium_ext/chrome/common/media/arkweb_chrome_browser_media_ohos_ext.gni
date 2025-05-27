@@ -1,0 +1,4 @@
+arkweb_chrome_common_media_ohos_sources = [
+  "//arkweb/chromium_ext/chrome/common/media/chrome_media_drm_bridge_client_ohos.cc",
+  "//arkweb/chromium_ext/chrome/common/media/chrome_media_drm_bridge_client_ohos.h",
+]

@@ -65,12 +65,7 @@ AwWebContentsDelegate::~AwWebContentsDelegate() = default;
 void AwWebContentsDelegate::RendererUnresponsive(
     content::WebContents* source,
     content::RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-    ,
-    content::RendererIsUnresponsiveReason reason
-#endif
-) {
+    base::RepeatingClosure hang_monitor_restarter) {
   AwContents* aw_contents = AwContents::FromWebContents(source);
   if (!aw_contents)
     return;

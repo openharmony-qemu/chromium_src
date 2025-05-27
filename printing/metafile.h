@@ -9,13 +9,13 @@
 
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/containers/span.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "build/build_config.h"
 #include "printing/mojom/print.mojom-forward.h"
 #include "printing/native_drawing_context.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -64,7 +64,7 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafilePlayer {
 
 #if BUILDFLAG(ARKWEB_PRINT)
   virtual bool OhosFinishDocument(std::function<bool()> checkCancel) = 0;
-#endif  // BUILDFLAG(ARKWEB_PRINT)
+#endif // BUILDFLAG(ARKWEB_PRINT)
 
   // Populates the buffer with the underlying data. This function should ONLY be
   // called after the metafile is closed. Returns true if writing succeeded.

@@ -5,6 +5,7 @@
 #ifndef MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 #define MEDIA_AUDIO_OHOS_AUDIO_OUTPUT_STREAM_H_
 
+#include "third_party/ohos_ndk/includes/ohos_adapter/audio_renderer_adapter.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
@@ -14,12 +15,20 @@
 #include "ohaudio/native_audiorenderer.h"
 #include "ohaudio/native_audiostreambuilder.h"
 
+namespace content {
+  class WebContents;
+  class MediaSessionImpl;
+}
+
 namespace media {
+
+using namespace OHOS::NWeb;
 
 class OHOSAudioManager;
 
 class OHOSAudioOutputStream : public AudioOutputStream {
  public:
+ static std::set<content::WebContents*> webContentSet_;
   OHOSAudioOutputStream(const OHOSAudioOutputStream&) = delete;
   OHOSAudioOutputStream& operator=(const OHOSAudioOutputStream&) = delete;
 
@@ -36,14 +45,27 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   void SetVolume(double volume) override;
   void GetVolume(double* volume) override;
   void Close() override;
+  bool GetInterruptMode();
   void SetInterruptMode(bool audioExclusive);
   void Refresh();
 
   // Requests data from AudioSourceCallback
-  void PumpSamples(void* buffer, int32_t length);
-
+  void OnWriteData(void* buffer, int32_t length);
+ 
+  void PumpSamples();
   // Resets internal state and reports an error to |callback_|.
   void ReportError();
+
+  void OnSuspend();
+ 
+  void OnResume();
+
+  bool isNeedResume(int32_t resumeInterval);
+
+  void SchedulePumpSamples();
+
+  // Call to set audio_render silentMode
+  void SetUpAudioSilentState();
 
  private:
   ~OHOSAudioOutputStream() override;
@@ -54,7 +76,15 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   bool StartRender();
 
-  OHOSAudioManager* manager_;
+  void Prepare(base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+
+  void SuspendOtherMediaSession(
+      base::WeakPtr<content::MediaSessionImpl> weakMediaSession);
+
+  // Call to determine whether media is preload
+  bool IsPreloadOrMutedMediaMode();
+
+  raw_ptr<OHOSAudioManager> manager_;
 
   AudioParameters parameters_;
 
@@ -65,7 +95,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   // reallocating the memory every time.
   std::unique_ptr<AudioBus> audio_bus_;
 
-  AudioSourceCallback* callback_ = nullptr;
+  raw_ptr<AudioSourceCallback> callback_ = nullptr;
 
   double volume_ = 1.0;
 
@@ -77,13 +107,35 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   SampleFormat sample_format_;
 
-  OH_AudioRenderer* audio_renderer_ = nullptr;
+  raw_ptr<OH_AudioRenderer> audio_renderer_ = nullptr;
 
-  OH_AudioStreamBuilder* audio_stream_builder_ = nullptr;
+  raw_ptr<OH_AudioStreamBuilder> audio_stream_builder_ = nullptr;
 
   bool isCommunication_ = false;
 
+  base::Lock lock_;
+  // Timer that's scheduled to call PumpSamples().
+  base::OneShotTimer timer_;
+ 
+  bool isSuspended_ = false;
+ 
+  bool running_ = false;
+ 
+  time_t intervalSinceLastSuspend_ = 0.0;
+ 
+  base::TimeDelta time_per_buffer_ = base::Microseconds(0);
+
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
+   
+  content::WebContents* webContent_ = nullptr;
+ 
+  base::WeakPtr<content::MediaSessionImpl> weakMediaSession_ = nullptr;
+
+  bool audioExclusive_ = false;
+
+  bool isSilentMode_ = false;
+
+  std::atomic<bool> isDestroyed_ = {false};
 };
 
 }  // namespace media

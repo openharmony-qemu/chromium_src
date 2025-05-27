@@ -14,6 +14,7 @@
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "third_party/abseil-cpp/absl/strings/str_format.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 
@@ -81,6 +82,10 @@ void StringAppendF(std::string* dst,
 PRINTF_FORMAT(2, 0)
 BASE_EXPORT
 void StringAppendV(std::string* dst, const char* format, va_list ap);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void StringAppendVHelper(std::basic_string<char>* out, const char* format, ...);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace base
 

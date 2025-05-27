@@ -10,7 +10,6 @@
 #include <string_view>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/check_deref.h"
 #include "base/check_op.h"
 #include "base/debug/alias.h"
@@ -33,6 +32,7 @@
 #include "components/prefs/json_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_registry.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
 #include "components/prefs/value_map_pref_store.h"
@@ -703,7 +703,7 @@ const base::Value* PrefService::GetPreferenceValue(
   if (!pref_registry_ || !pref_registry_->defaults()) {
     return nullptr;
   }
-
+ 
   if (!pref_value_store_) {
     return nullptr;
   }

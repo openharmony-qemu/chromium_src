@@ -19,9 +19,8 @@
 #include <gtest/gtest.h>
 
 #include <memory>
-
-#include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_ohos.h"
-#include "sandbox/linux/seccomp-bpf-helpers/seccomp_starter_ohos.h"
+#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/baseline_policy_ohos.h"
+#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/seccomp_starter_ohos.h"
 
 // Mock classes for testing
 namespace sandbox {
@@ -54,4 +53,3 @@ TEST(SetRendererSeccompPolicyTest, SetRendererSeccompPolicy_002) {
   EXPECT_TRUE(result);
 #endif
 }
- 

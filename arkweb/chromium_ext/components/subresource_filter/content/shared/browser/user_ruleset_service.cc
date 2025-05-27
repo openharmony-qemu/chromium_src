@@ -1,0 +1,583 @@
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+// Based on ruleset_service.cc originally written by
+// Copyright 2016 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "components/subresource_filter/content/shared/browser/user_ruleset_service.h"
+
+#include <utility>
+
+#include "base/check_op.h"
+#include "base/files/file_enumerator.h"
+#include "base/files/file_util.h"
+#include "base/files/scoped_temp_dir.h"
+#include "base/functional/bind.h"
+#include "base/location.h"
+#include "base/metrics/histogram_functions.h"
+#include "base/metrics/histogram_macros.h"
+#include "base/numerics/safe_conversions.h"
+#include "base/strings/strcat.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/task/sequenced_task_runner.h"
+#include "base/task/thread_pool.h"
+#include "base/threading/scoped_blocking_call.h"
+#include "base/trace_event/trace_event.h"
+#include "base/trace_event/traced_value.h"
+#include "components/prefs/pref_registry_simple.h"
+#include "components/prefs/pref_service.h"
+#include "components/subresource_filter/content/shared/browser/ruleset_publisher.h"
+#include "components/subresource_filter/core/common/copying_file_stream.h"
+#include "components/subresource_filter/core/browser/subresource_filter_features.h"
+#include "components/subresource_filter/core/common/common_features.h"
+#include "components/subresource_filter/core/common/indexed_ruleset.h"
+#include "components/subresource_filter/core/common/time_measurements.h"
+#include "components/subresource_filter/core/common/unindexed_ruleset.h"
+#include "components/url_pattern_index/proto/rules.pb.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#include "content/public/browser/render_process_host.h"
+#include "components/subresource_filter/content/shared/browser/user_ruleset_publisher.h"
+#include "components/subresource_filter/content/shared/browser/user_unindexed_ruleset_stream_generator.h"
+#include "components/subresource_filter/core/browser/user_subresource_filter_constants.h"
+#include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h"
+#include "components/subresource_filter/core/browser/user_ruleset_version.h"
+
+namespace subresource_filter {
+
+namespace {
+
+// Implements operations on a `sentinel file`, which is used as a safeguard to
+// prevent crash-looping if ruleset indexing crashes right after start-up.
+//
+// The sentinel file is placed in the ruleset version directory just before
+// indexing commences, and removed afterwards. Therefore, if a sentinel file is
+// found on next start-up, it is an indication that the previous indexing
+// operation may have crashed, and indexing will not be attempted again.
+//
+// After the first failed indexing attempt, the sentinel file will not be
+// removed unless |RulesetIndexer::kIndexedFormatVersion| is incremented. It is
+// expected that by that time, either the indexing logic or the ruleset contents
+// will be fixed. The consumed disk space is negligible as no ruleset data will
+// be written to disk when indexing fails.
+//
+// Admittedly, this approach errs on the side of caution, and false positives
+// can happen. For example, the sentinel file may fail to be removed in case of
+// an unclean shutdown, or an unrelated crash as well. This should not be a
+// problem, however, as the sentinel file only affects one version of the
+// ruleset, and it is expected that version updates will be frequent enough.
+class SentinelFile {
+ public:
+  explicit SentinelFile(const base::FilePath& version_directory)
+      : path_(
+            UserIndexedRulesetLocator::GetSentinelFilePath(version_directory)) {
+  }
+
+  bool IsPresent() { return base::PathExists(path_); }
+  bool Create() { return base::WriteFile(path_, std::string_view()); }
+  bool Remove() { return base::DeleteFile(path_); }
+
+ private:
+  base::FilePath path_;
+};
+
+}  // namespace
+
+// UserIndexedRulesetLocator
+// ------------------------------------------------------
+
+// static
+base::FilePath UserIndexedRulesetLocator::GetSubdirectoryPathForVersion(
+    const base::FilePath& base_dir,
+    const UserIndexedRulesetVersion& version) {
+  return base_dir.AppendASCII(base::NumberToString(version.format_version))
+      .AppendASCII(version.content_version);
+}
+
+// static
+base::FilePath UserIndexedRulesetLocator::GetRulesetDataFilePath(
+    const base::FilePath& version_directory) {
+  return version_directory.Append(kUserRulesetDataFileName);
+}
+
+// static
+base::FilePath UserIndexedRulesetLocator::GetLicenseFilePath(
+    const base::FilePath& version_directory) {
+  return version_directory.Append(kUserLicenseFileName);
+}
+
+// static
+base::FilePath UserIndexedRulesetLocator::GetSentinelFilePath(
+    const base::FilePath& version_directory) {
+  return version_directory.Append(kUserSentinelFileName);
+}
+
+// static
+void UserIndexedRulesetLocator::DeleteObsoleteRulesets(
+    const base::FilePath& indexed_ruleset_base_dir,
+    const base::FilePath& unindexed_ruleset_base_dir,
+    UserRulesetServiceClient* client,
+    const UserIndexedRulesetVersion& most_recent_version) {
+  bool has_different_format = false;
+  base::FilePath current_format_dir(indexed_ruleset_base_dir.AppendASCII(
+      base::NumberToString(UserIndexedRulesetVersion::CurrentFormatVersion())));
+
+  // First delete all directories containing rulesets of obsolete formats.
+  base::FileEnumerator format_dirs(indexed_ruleset_base_dir,
+                                   false /* recursive */,
+                                   base::FileEnumerator::DIRECTORIES);
+  for (base::FilePath format_dir = format_dirs.Next(); !format_dir.empty();
+       format_dir = format_dirs.Next()) {
+    if (format_dir != current_format_dir) {
+      LOG(INFO) << "[User AdBlock] Delete obsolete indexed rulesets:"
+                << format_dir.value();
+      base::DeletePathRecursively(format_dir);
+      has_different_format = true;
+    }
+  }
+
+  base::FilePath most_recent_version_dir =
+      most_recent_version.IsValid()
+          ? UserIndexedRulesetLocator::GetSubdirectoryPathForVersion(
+                indexed_ruleset_base_dir, most_recent_version)
+          : base::FilePath();
+
+  // Then delete all indexed rulesets of the current format with obsolete
+  // content versions, except those with a sentinel file present.
+  base::FileEnumerator version_dirs(current_format_dir, false /* recursive */,
+                                    base::FileEnumerator::DIRECTORIES);
+  for (base::FilePath version_dir = version_dirs.Next(); !version_dir.empty();
+       version_dir = version_dirs.Next()) {
+    if (SentinelFile(version_dir).IsPresent()) {
+      continue;
+    }
+    if (version_dir == most_recent_version_dir) {
+      continue;
+    }
+    LOG(INFO) << "[User AdBlock] Delete obsolete indexed rulesets:"
+              << version_dir.value();
+    base::DeletePathRecursively(version_dir);
+  }
+
+  if (has_different_format) {
+    if (client) {
+      client->OnDeleteUserRulesetFile();
+    }
+  }
+}
+
+// UserRulesetService
+// -------------------------------------------------------------
+
+// static
+decltype(&UserRulesetService::IndexRuleset)
+    UserRulesetService::g_index_ruleset_func =
+        &UserRulesetService::IndexRuleset;
+
+// static
+decltype(&base::ReplaceFile) UserRulesetService::g_replace_file_func =
+    &base::ReplaceFile;
+
+// static
+std::unique_ptr<UserRulesetService> UserRulesetService::Create(
+    const RulesetConfig& config,
+    PrefService* local_state,
+    const base::FilePath& user_data_dir,
+    UserRulesetServiceClient* client,
+    const UserRulesetPublisher::Factory& publisher_factory) {
+  if (!base::FeatureList::IsEnabled(kSafeBrowsingSubresourceFilter)) {
+    return nullptr;
+  }
+
+  // Runner for tasks critical for user experience.
+  scoped_refptr<base::SequencedTaskRunner> blocking_task_runner(
+      base::ThreadPool::CreateSequencedTaskRunner(
+          {base::MayBlock(), base::TaskPriority::USER_BLOCKING,
+           base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
+
+  // Runner for tasks that do not influence user experience.
+  scoped_refptr<base::SequencedTaskRunner> background_task_runner(
+      base::ThreadPool::CreateSequencedTaskRunner(
+          {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
+           base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
+
+  base::FilePath indexed_ruleset_base_dir =
+      user_data_dir.Append(config.top_level_directory)
+          .Append(kUserIndexedRulesetBaseDirectoryName);
+
+  base::FilePath unindexed_ruleset_base_dir =
+      user_data_dir.Append(::subresource_filter::kUserTopLevelDirectoryName)
+          .Append(::subresource_filter::kUserUnindexedRulesetBaseDirectoryName);
+  return std::make_unique<UserRulesetService>(
+      config, local_state, background_task_runner, indexed_ruleset_base_dir,
+      unindexed_ruleset_base_dir, client, blocking_task_runner, publisher_factory);
+}
+
+UserRulesetService::UserRulesetService(
+    const RulesetConfig& config,
+    PrefService* local_state,
+    scoped_refptr<base::SequencedTaskRunner> background_task_runner,
+    const base::FilePath& indexed_ruleset_base_dir,
+    const base::FilePath& unindexed_ruleset_base_dir,
+    UserRulesetServiceClient* client,
+    scoped_refptr<base::SequencedTaskRunner> blocking_task_runner,
+    const UserRulesetPublisher::Factory& publisher_factory)
+    : config_(config),
+      local_state_(local_state),
+      background_task_runner_(std::move(background_task_runner)),
+      is_initialized_(false),
+      indexed_ruleset_base_dir_(indexed_ruleset_base_dir),
+      unindexed_ruleset_base_dir_(unindexed_ruleset_base_dir),
+      ruleset_service_client_(client) {
+  CHECK_NE(local_state_->GetInitializationStatus(),
+            PrefService::INITIALIZATION_STATUS_WAITING,
+            base::NotFatalUntil::M129);
+  publisher_ = publisher_factory.Create(this, std::move(blocking_task_runner));
+  UserIndexedRulesetVersion most_recently_indexed_version(config.filter_tag);
+  most_recently_indexed_version.ReadFromPrefs(local_state_);
+  TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("loading"),
+               "UserRulesetService::UserRulesetService", "prefs_version",
+               most_recently_indexed_version.ToTracedValue());
+  if (most_recently_indexed_version.IsValid() &&
+      most_recently_indexed_version.IsCurrentFormatVersion()) {
+    LOG(INFO)
+        << "[User AdBlock] Ruleset service open and publish ruleset, content "
+           "version is "
+        << most_recently_indexed_version.content_version;
+    OpenAndPublishRuleset(most_recently_indexed_version);
+  } else {
+    UserIndexedRulesetVersion(config.filter_tag).SaveToPrefs(local_state_);
+  }
+  DCHECK(publisher_->BestEffortTaskRunner()->BelongsToCurrentThread());
+  publisher_->BestEffortTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&UserRulesetService::FinishInitialization,
+                     weak_ptr_factory_.GetWeakPtr()));
+}
+
+UserRulesetService::~UserRulesetService() {}
+
+void UserRulesetService::IndexAndStoreAndPublishRulesetIfNeeded(
+    const UserUnindexedRulesetInfo& unindexed_ruleset_info) {
+  if (unindexed_ruleset_info.content_version.empty()) {
+    return;
+  }
+
+  // Trying to store a ruleset with the same version for a second time would
+  // not only be futile, but would fail on Windows due to "File System
+  // Tunneling" as long as the previously stored copy of the rules is still
+  // in use.
+  UserIndexedRulesetVersion most_recently_indexed_version(config_.filter_tag);
+  most_recently_indexed_version.ReadFromPrefs(local_state_);
+
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
+  if (most_recently_indexed_version.IsCurrentFormatVersion() &&
+      most_recently_indexed_version.content_version ==
+          unindexed_ruleset_info.content_version) {
+    return;
+  }
+#endif
+
+  // Before initialization, retain information about the most recently supplied
+  // unindexed ruleset, to be processed during initialization.
+  if (!is_initialized_) {
+    queued_unindexed_ruleset_info_ = unindexed_ruleset_info;
+    return;
+  }
+
+  IndexAndStoreRuleset(
+      unindexed_ruleset_info,
+      base::BindOnce(&UserRulesetService::OpenAndPublishRuleset,
+                     weak_ptr_factory_.GetWeakPtr()));
+}
+
+UserIndexedRulesetVersion UserRulesetService::GetMostRecentlyIndexedVersion()
+    const {
+  UserIndexedRulesetVersion version(config_.filter_tag);
+  version.ReadFromPrefs(local_state_);
+  return version;
+}
+
+// static
+UserIndexedRulesetVersion UserRulesetService::IndexAndWriteRuleset(
+    const RulesetConfig& config,
+    const base::FilePath& indexed_ruleset_base_dir,
+    const UserUnindexedRulesetInfo& unindexed_ruleset_info) {
+  base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
+                                                base::BlockingType::MAY_BLOCK);
+
+  UserUnindexedRulesetStreamGenerator unindexed_ruleset_stream_generator(
+      unindexed_ruleset_info);
+
+  if (!unindexed_ruleset_stream_generator.ruleset_stream()) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  UserIndexedRulesetVersion indexed_version(
+      unindexed_ruleset_info.content_version,
+      UserIndexedRulesetVersion::CurrentFormatVersion(), config.filter_tag);
+  base::FilePath indexed_ruleset_version_dir =
+      UserIndexedRulesetLocator::GetSubdirectoryPathForVersion(
+          indexed_ruleset_base_dir, indexed_version);
+
+  if (!base::CreateDirectory(indexed_ruleset_version_dir)) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  SentinelFile sentinel_file(indexed_ruleset_version_dir);
+  if (sentinel_file.IsPresent()) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  if (!sentinel_file.Create()) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  // --- Begin of guarded section.
+  //
+  // Crashes or errors occurring here will leave behind a sentinel file that
+  // will prevent this version of the ruleset from ever being indexed again.
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebRulesetIndexerExt indexer;
+#else
+  RulesetIndexer indexer;
+#endif
+  if (!(*g_index_ruleset_func)(config, &unindexed_ruleset_stream_generator,
+                               &indexer)) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  // --- End of guarded section.
+  indexed_version.checksum = indexer.GetChecksum();
+  if (!sentinel_file.Remove()) {
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  IndexAndWriteRulesetResult result = WriteRuleset(
+      indexed_ruleset_version_dir, unindexed_ruleset_info.license_path,
+      indexer.data());
+  if (result != IndexAndWriteRulesetResult::SUCCESS) {
+    LOG(ERROR) << "[User AdBlock] Index and write ruleset result failed";
+    return UserIndexedRulesetVersion(config.filter_tag);
+  }
+
+  LOG(INFO) << "[User AdBlock] Index and write ruleset result success";
+  CHECK(indexed_version.IsValid());
+
+  return indexed_version;
+}
+
+// static
+bool UserRulesetService::IndexRuleset(
+    const RulesetConfig& config,
+    UserUnindexedRulesetStreamGenerator* unindexed_ruleset_stream_generator,
+    RulesetIndexer* indexer) {
+  base::ScopedUmaHistogramTimer scoped_timer(
+      base::StrCat({config.uma_tag, ".IndexRuleset.WallDuration"}));
+  ScopedUmaHistogramThreadTimer scoped_thread_timer(
+      base::StrCat({config.uma_tag, ".IndexRuleset.CPUDuration"}));
+
+  int64_t unindexed_ruleset_size =
+      unindexed_ruleset_stream_generator->ruleset_size();
+  if (unindexed_ruleset_size < 0) {
+    return false;
+  }
+  UnindexedRulesetReader reader(
+      unindexed_ruleset_stream_generator->ruleset_stream());
+
+  size_t num_supported_url_rules = 0;
+  size_t num_supported_css_rules = 0;
+  size_t num_unsupported_rules = 0;
+  size_t num_unsupported_css_rules = 0;
+  url_pattern_index::proto::FilteringRules ruleset_chunk;
+  while (reader.ReadNextChunk(&ruleset_chunk)) {
+    for (const auto& rule : ruleset_chunk.url_rules()) {
+      if (!indexer->AddUrlRule(rule)) {
+        ++num_unsupported_rules;
+      } else {
+        ++num_supported_url_rules;
+      }
+    }
+
+    for (const auto& rule : ruleset_chunk.css_rules()) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      if (!indexer->AsArkWebRulesetIndexerExt()->AddCssRule(rule)) {
+#else
+      if (!indexer->AddCssRule(rule)) {
+#endif
+        ++num_unsupported_css_rules;
+      } else {
+        ++num_supported_css_rules;
+      }
+    }
+  }
+  indexer->Finish();
+
+  UMA_HISTOGRAM_COUNTS_10000(
+      base::StrCat({config.uma_tag, ".IndexRuleset.NumUnsupportedRules"}),
+      num_unsupported_rules);
+
+  LOG(INFO) << "[User AdBlock] reader.num_bytes_read="
+            << reader.num_bytes_read()
+            << ", unindexed_ruleset_size=" << unindexed_ruleset_size
+            << ", num_unsupported_url_rules=" << num_unsupported_rules
+            << ", num_unsupported_css_rules=" << num_unsupported_css_rules
+            << ", num_supported_url_rules=" << num_supported_url_rules
+            << ", num_supported_css_rules=" << num_supported_css_rules;
+
+  return reader.num_bytes_read() == unindexed_ruleset_size;
+}
+
+// static
+UserRulesetService::IndexAndWriteRulesetResult UserRulesetService::WriteRuleset(
+    const base::FilePath& indexed_ruleset_version_dir,
+    const base::FilePath& license_source_path,
+    base::span<const uint8_t> indexed_ruleset_data) {
+  base::ScopedTempDir scratch_dir;
+  if (!scratch_dir.CreateUniqueTempDirUnderPath(
+          indexed_ruleset_version_dir.DirName())) {
+    return IndexAndWriteRulesetResult::FAILED_CREATING_SCRATCH_DIR;
+  }
+
+  static_assert(sizeof(uint8_t) == sizeof(char), "Expected char = byte.");
+  if (!base::WriteFile(
+          UserIndexedRulesetLocator::GetRulesetDataFilePath(scratch_dir.GetPath()),
+          indexed_ruleset_data)) {
+    LOG(INFO) << "[User AdBlock] Failed writing ruleset data";
+    return IndexAndWriteRulesetResult::FAILED_WRITING_RULESET_DATA;
+  }
+
+  if (base::PathExists(license_source_path) &&
+      !base::CopyFile(license_source_path,
+                      UserIndexedRulesetLocator::GetLicenseFilePath(
+                          scratch_dir.GetPath()))) {
+    return IndexAndWriteRulesetResult::FAILED_WRITING_LICENSE;
+  }
+
+  // Creating a temporary directory also makes sure the path (except for the
+  // final segment) gets created. ReplaceFile would not create the path.
+  DCHECK(base::PathExists(indexed_ruleset_version_dir.DirName()));
+
+  // Need to userly delete the previously stored ruleset with the same
+  // version, if any, as ReplaceFile would not overwrite a non-empty directory.
+  // Due to the same-version check in IndexAndStoreAndPublishRulesetIfNeeded, we
+  // would not normally find a pre-existing copy at this point unless the
+  // previous write was interrupted.
+  if (!base::DeletePathRecursively(indexed_ruleset_version_dir)) {
+    return IndexAndWriteRulesetResult::FAILED_DELETE_PREEXISTING;
+  }
+
+  base::FilePath scratch_dir_with_new_indexed_ruleset = scratch_dir.Take();
+  base::File::Error error;
+  if (!(*g_replace_file_func)(scratch_dir_with_new_indexed_ruleset,
+                              indexed_ruleset_version_dir, &error)) {
+    base::DeletePathRecursively(scratch_dir_with_new_indexed_ruleset);
+    // While enumerators of base::File::Error all have negative values, the
+    // histogram records the absolute values.
+    UMA_HISTOGRAM_ENUMERATION("SubresourceFilter.WriteRuleset.ReplaceFileError",
+                              -error, -base::File::FILE_ERROR_MAX);
+    return IndexAndWriteRulesetResult::FAILED_REPLACE_FILE;
+  }
+
+  return IndexAndWriteRulesetResult::SUCCESS;
+}
+
+void UserRulesetService::FinishInitialization() {
+  is_initialized_ = true;
+
+  UserIndexedRulesetVersion most_recently_indexed_version(config_.filter_tag);
+  most_recently_indexed_version.ReadFromPrefs(local_state_);
+  background_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&UserIndexedRulesetLocator::DeleteObsoleteRulesets,
+                     indexed_ruleset_base_dir_, unindexed_ruleset_base_dir_,
+                     ruleset_service_client_, most_recently_indexed_version));
+
+  if (!queued_unindexed_ruleset_info_.content_version.empty()) {
+    IndexAndStoreRuleset(
+        queued_unindexed_ruleset_info_,
+        base::BindOnce(&UserRulesetService::OpenAndPublishRuleset,
+                       weak_ptr_factory_.GetWeakPtr()));
+    queued_unindexed_ruleset_info_ = UserUnindexedRulesetInfo();
+  }
+}
+
+void UserRulesetService::IndexAndStoreRuleset(
+    const UserUnindexedRulesetInfo& unindexed_ruleset_info,
+    WriteRulesetCallback success_callback) {
+  DCHECK(!unindexed_ruleset_info.content_version.empty());
+  background_task_runner_->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&UserRulesetService::IndexAndWriteRuleset, config_,
+                     indexed_ruleset_base_dir_, unindexed_ruleset_info),
+      base::BindOnce(&UserRulesetService::OnWrittenRuleset,
+                     weak_ptr_factory_.GetWeakPtr(),
+                     std::move(success_callback)));
+}
+
+void UserRulesetService::OnWrittenRuleset(
+    WriteRulesetCallback result_callback,
+    const UserIndexedRulesetVersion& version) {
+  DCHECK(!result_callback.is_null());
+  if (!version.IsValid()) {
+    LOG(INFO) << "[User AdBlock] Indexed finished but version is invalid, "
+                 "format_version is "
+              << version.format_version << ", content_version is "
+              << version.content_version;
+    return;
+  }
+  version.SaveToPrefs(local_state_);
+  UserIndexedRulesetVersion most_recently_indexed_version(config_.filter_tag);
+  most_recently_indexed_version.ReadFromPrefs(local_state_);
+  background_task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&UserIndexedRulesetLocator::DeleteObsoleteRulesets,
+                     indexed_ruleset_base_dir_, unindexed_ruleset_base_dir_,
+                     ruleset_service_client_, most_recently_indexed_version));
+  std::move(result_callback).Run(version);
+}
+
+void UserRulesetService::OpenAndPublishRuleset(
+    const UserIndexedRulesetVersion& version) {
+  const base::FilePath file_path =
+      UserIndexedRulesetLocator::GetRulesetDataFilePath(
+          UserIndexedRulesetLocator::GetSubdirectoryPathForVersion(
+              indexed_ruleset_base_dir_, version));
+  LOG(INFO) << "[User AdBlock] Try to open and set ruleset file, path="
+            << file_path.value();
+  publisher_->TryOpenAndSetRulesetFile(
+      file_path, version.checksum,
+      base::BindOnce(&UserRulesetService::OnRulesetSet,
+                     weak_ptr_factory_.GetWeakPtr()));
+}
+
+void UserRulesetService::OnRulesetSet(RulesetFilePtr file) {
+#ifdef BUILDFLAG(ARKWEB_ADBLOCK)
+  auto task = content::GetUIThreadTaskRunner({base::TaskPriority::USER_BLOCKING});
+  LOG(DEBUG) << "[adblock] UserRulesetService::OnRulesetSet, check ui thread:"
+             << task->BelongsToCurrentThread();
+  if (!task->BelongsToCurrentThread()) {
+    task->PostTask(FROM_HERE, base::BindOnce(&UserRulesetService::OnRulesetSet,
+            weak_ptr_factory_.GetWeakPtr(), std::move(file)));
+    return;
+  }
+#endif
+  // The file has just been successfully written, so a failure here is unlikely
+  // unless |indexed_ruleset_base_dir_| has been tampered with or there are disk
+  // errors. Still, restore the invariant that a valid version in preferences
+  // always points to an existing version of disk by invalidating the prefs.
+  if (!file->IsValid()) {
+    LOG(ERROR) << "[User AdBlock] file is not valid and clean local prefs";
+    UserIndexedRulesetVersion(config_.filter_tag).SaveToPrefs(local_state_);
+    return;
+  }
+
+  LOG(INFO) << "[User AdBlock] Publish new ruleset version";
+  publisher_->PublishNewRulesetVersion(std::move(file));
+}
+
+}  // namespace subresource_filter

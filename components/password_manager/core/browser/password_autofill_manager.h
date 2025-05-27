@@ -43,9 +43,14 @@ class PasswordManagerClient;
 class PasswordManagerDriver;
 class PasswordManualFallbackMetricsRecorder;
 class PasswordSuggestionGenerator;
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordAutofillManagerExt;
+#endif
 // This class is responsible for filling password forms.
 class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class PasswordAutofillManagerExt;
+#endif
  public:
   PasswordAutofillManager(PasswordManagerDriver* password_manager_driver,
                           autofill::AutofillClient* autofill_client,
@@ -56,6 +61,9 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate {
 
   ~PasswordAutofillManager() override;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual PasswordAutofillManagerExt* AsWebPasswordAutofillManagerExt() { return nullptr; }
+#endif
   // AutofillSuggestionDelegate implementation.
   absl::variant<autofill::AutofillDriver*, PasswordManagerDriver*> GetDriver()
       override;
@@ -130,14 +138,6 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate {
   }
 
   base::WeakPtr<PasswordAutofillManager> GetWeakPtr();
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  bool CanFillAccountSuggestion(const GURL& page_url);
-
-  void FillAccountSuggestion(const GURL& page_url,
-                             const std::u16string& username,
-                             const std::u16string& password);
-#endif
 
  private:
   // Validates and forwards the given objects to the autofill client.
@@ -254,5 +254,7 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate {
 };
 
 }  // namespace password_manager
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_AUTOFILL_MANAGER_H_

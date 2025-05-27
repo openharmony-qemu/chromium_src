@@ -10,7 +10,6 @@
 #include <iterator>
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/memory/singleton.h"
 #include "base/metrics/histogram_functions.h"
@@ -25,8 +24,8 @@
 #include "crypto/encryptor.h"
 #include "crypto/symmetric_key.h"
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-#include "arkweb/chromium_ext/components/os_crypt/sync/ohos_crypto.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
 #endif
 
 namespace {
@@ -45,12 +44,6 @@ constexpr size_t kEncryptionIterations = 1;
 constexpr size_t kIVBlockSizeAES128 = 16;
 #endif
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-// Size of initialization vectore for GCM
-const size_t kIVSizeAESGCM = 12;
-
-constexpr char kDataKeyAlias[] = "nweb_data_key";
-#endif
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
 // ciphertext with this string so that future data migration can detect
 // this and migrate to full encryption without data loss. kObfuscationPrefixV10
@@ -88,41 +81,14 @@ std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKey(
   return encryption_key;
 }
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-// Generates a newly allocated SymmetricKey object compatibility with ota.
-// Ownership of the key is passed to the caller. Returns null key if a key
-// generation error occurs.
-std::unique_ptr<crypto::SymmetricKey> GenerateEncryptionKeyForOtaFail() {
-  std::unique_ptr<crypto::SymmetricKey> encryption_key(
-      crypto::SymmetricKey::Import(
-          crypto::SymmetricKey::AES,
-          crypto::ohos::get_symmetric_key_256_for_ota(kDataKeyAlias)));
-  DCHECK(encryption_key);
-
-  return encryption_key;
-}
-#endif  // BUILDFLAG(ARKWEB_ENCRYPT)
-
 // Decrypt `ciphertext` using `encryption_key` and store the result in
 // `encryption_key`.
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-bool DecryptWithIv(const std::string& ciphertext,
-                   crypto::SymmetricKey* encryption_key,
-                   std::string* plaintext,
-                   std::string& iv) {
-  crypto::Encryptor encryptor;
-  if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
-    return false;
-  }
 
-  return encryptor.Decrypt(ciphertext, plaintext);
-}
-
-#else
+#if !BUILDFLAG(ARKWEB_ENCRYPT)
 bool DecryptWith(const std::string& ciphertext,
                  crypto::SymmetricKey* encryption_key,
                  std::string* plaintext) {
-  std::string iv(kIVBlockSizeAES128, ' ');
+  const std::string iv(kIVBlockSizeAES128, ' ');
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::CBC, iv)) {
     return false;
@@ -175,6 +141,10 @@ void SetEncryptionPasswordForTesting(const std::string& password) {
 #endif
 }  // namespace OSCrypt
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.cc"
+#endif
+
 OSCryptImpl* OSCryptImpl::GetInstance() {
   return base::Singleton<OSCryptImpl,
                          base::LeakySingletonTraits<OSCryptImpl>>::get();
@@ -225,7 +195,7 @@ bool OSCryptImpl::EncryptString(const std::string& plaintext,
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::GCM, iv)) {
 #else
-  std::string iv(kIVBlockSizeAES128, ' ');
+  const std::string iv(kIVBlockSizeAES128, ' ');
   crypto::Encryptor encryptor;
   if (!encryptor.Init(encryption_key, crypto::Encryptor::CBC, iv)) {
 #endif
@@ -294,25 +264,18 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
       ciphertext.substr(obfuscation_prefix.length(), kIVSizeAESGCM);
 #else
   // Strip off the versioning prefix before decrypting.
-  std::string raw_ciphertext = ciphertext.substr(obfuscation_prefix.length());
+  const std::string raw_ciphertext =
+      ciphertext.substr(obfuscation_prefix.length());
 #endif
 
 #if BUILDFLAG(ARKWEB_ENCRYPT)
-  if (DecryptWithIv(raw_ciphertext, encryption_key, plaintext, iv)) {
-    return true;
-  } else {
-    // Retry use before second encrypted key to decrypt password
-    crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
-    if (!encryption_key_ota) {
-      VLOG(1) << "Decryption failed: could not get the key in ota";
-      return false;
-    }
-    if (DecryptWithIv(raw_ciphertext, encryption_key_ota, plaintext, iv)) {
-      LOG(INFO) << "decryption success with ota compatible key";
-      return true;
-    }
+  bool result = false;
+  // Retry use before second encrypted key to decrypt password
+  crypto::SymmetricKey* encryption_key_ota = GetPasswordForOtaFail();
+  if (DecryptWithIvForInclude(raw_ciphertext, encryption_key,
+                              encryption_key_ota, plaintext, iv, result)) {
+    return result;
   }
-
 #else
   if (DecryptWith(raw_ciphertext, encryption_key, plaintext)) {
     base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
@@ -407,16 +370,6 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10() {
   return password_v10_cache_.get();
 }
 
-#if BUILDFLAG(ARKWEB_ENCRYPT)
-crypto::SymmetricKey* OSCryptImpl::GetPasswordForOtaFail() {
-  base::AutoLock auto_lock(OSCryptImpl::GetLock());
-  if (!password_ota_cache_.get()) {
-    password_ota_cache_ = GenerateEncryptionKeyForOtaFail();
-  }
-  return password_ota_cache_.get();
-}
-
-#endif
 // Caches and returns the password from the KeyStorage or null if there is no
 // service. Is thread-safe.
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV11(bool probe) {
@@ -426,7 +379,7 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV11(bool probe) {
     if (!config_) {
       return nullptr;
     }
-#endif  // BUILDFLAG(ARKWEB_COOKIE)
+#endif // BUILDFLAG(ARKWEB_COOKIE)
     return password_v11_cache_.get();
   }
 

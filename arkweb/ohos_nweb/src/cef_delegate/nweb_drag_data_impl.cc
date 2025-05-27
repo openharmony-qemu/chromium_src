@@ -34,6 +34,8 @@
 using namespace OHOS::NWeb;
 
 namespace {
+constexpr int MIN_ROUND_RECT_RATIO = 4;
+constexpr int MIN_BOUND_RECT_RATIO = 8;
 constexpr int DEAFULT_ROUND_RECT_RATIO = 12;
 constexpr int IMAGE_ROUND_RECT_RATIO = 8;
 constexpr int ADD_BOUND_RECT_RATIO = 12;
@@ -63,6 +65,11 @@ float NWebDragDataImpl::ToOhCoordinate(int origin) {
   }
 
   return 1;
+}
+
+float NWebDragDataImpl::GetClippedRectRoundRatio(const float& handle_half_height) {
+  return std::max(std::min(handle_half_height, ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO)),
+      ToOhCoordinate(MIN_ROUND_RECT_RATIO));
 }
 
 SkPath NWebDragDataImpl::ClipLeftTopCorner(SkPath& origin_path,
@@ -188,11 +195,11 @@ SkPath NWebDragDataImpl::GetClippedPath(bool is_start_line_compelete,
 SkPath NWebDragDataImpl::GetShadowPath(int width, int height) {
   SkPath out_path;
   SkRect out_rect = SkRect::MakeXYWH(0, 0, width, height);
-  out_path.addRoundRect(out_rect, ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-                        ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
+  auto default_round_rect_ratio = ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO);
   if (!is_useful_selection_) {
     // todo: need to process multi-row when width less min width
     LOG(INFO) << "unuseful selection info, return compelete round rect";
+    out_path.addRoundRect(out_rect, default_round_rect_ratio, default_round_rect_ratio);
     return out_path;
   }
 
@@ -242,63 +249,46 @@ SkPath NWebDragDataImpl::GetShadowPath(int width, int height) {
   if (is_oneline || is_both_out_clip_region ||
       (is_start_line_compelete && is_end_line_compelete)) {
     LOG(INFO) << "return compelete round rect";
+    out_path.addRoundRect(out_rect, default_round_rect_ratio, default_round_rect_ratio);
     return out_path;
   } else {
     SkPath clipped_path;
+    auto start_rect_ratio = is_start_line_compelete ? default_round_rect_ratio :
+        GetClippedRectRoundRatio((start_edge_bottom_.y - start_edge_top_.y) / DOUBLE_RATIO);
+    auto end_rect_ratio = is_end_line_compelete ? default_round_rect_ratio :
+        GetClippedRectRoundRatio((end_edge_bottom_.y - end_edge_top_.y) / DOUBLE_RATIO);
+    auto buond_rect_ratio = std::max(std::min(start_rect_ratio, end_rect_ratio), ToOhCoordinate(MIN_BOUND_RECT_RATIO));
+    out_path.addRoundRect(out_rect, buond_rect_ratio, buond_rect_ratio);
     if (!Op(out_path,
             GetClippedPath(is_start_line_compelete, is_end_line_compelete),
             SkPathOp::kDifference_SkPathOp, &clipped_path)) {
       LOG(ERROR) << "get clipped path failed";
-      clipped_path.addRoundRect(out_rect,
-                                ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-                                ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
+      clipped_path.addRoundRect(out_rect, default_round_rect_ratio, default_round_rect_ratio);
       return clipped_path;
     }
     SkPath final_path = clipped_path;
     if (!is_start_line_compelete) {
-      final_path = ClipLeftTopCorner(
-          final_path,
-          start_edge_top_.x + ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO) -
-              drag_image_origin_point_.x,
-          ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
-      final_path = ClipLeftTopCorner(
-          final_path, ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          start_edge_bottom_.y - start_edge_top_.y +
-              ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
+      final_path = ClipLeftTopCorner(final_path,
+          start_edge_top_.x + start_rect_ratio - drag_image_origin_point_.x, start_rect_ratio, start_rect_ratio);
+      final_path = ClipLeftTopCorner(final_path,
+          buond_rect_ratio, start_edge_bottom_.y - start_edge_top_.y + buond_rect_ratio, buond_rect_ratio);
       AddRightBottomCorner(final_path,
-                           start_edge_top_.x - drag_image_origin_point_.x -
-                               ToOhCoordinate(ADD_BOUND_RECT_RATIO),
-                           start_edge_bottom_.y - start_edge_top_.y -
-                               ToOhCoordinate(ADD_BOUND_RECT_RATIO),
-                           ToOhCoordinate(ADD_BOUND_RECT_RATIO));
+          start_edge_top_.x - drag_image_origin_point_.x - start_rect_ratio,
+          start_edge_bottom_.y - start_edge_top_.y - start_rect_ratio, start_rect_ratio);
     }
     if (!is_end_line_compelete) {
-      final_path = ClipRightBottomCorner(
-          final_path,
-          drag_clip_width_ + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO -
-              ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          drag_clip_height_ + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO -
-              (end_edge_bottom_.y - end_edge_top_.y) -
-              ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
-      final_path = ClipRightBottomCorner(
-          final_path,
-          end_edge_top_.x + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO -
-              ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO) -
-              drag_image_origin_point_.x,
-          drag_clip_height_ + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO -
-              ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO),
-          ToOhCoordinate(DEAFULT_ROUND_RECT_RATIO));
-      AddLeftTopCorner(
-          final_path,
-          end_edge_top_.x + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO +
-              ToOhCoordinate(ADD_BOUND_RECT_RATIO) - drag_image_origin_point_.x,
-          drag_clip_height_ + ToOhCoordinate(TEXT_PADDING) * DOUBLE_RATIO -
-              (end_edge_bottom_.y - end_edge_top_.y) +
-              ToOhCoordinate(ADD_BOUND_RECT_RATIO),
-          ToOhCoordinate(ADD_BOUND_RECT_RATIO));
+      auto padding_double = ToOhCoordinate(TEXT_PADDING)  * DOUBLE_RATIO;
+      final_path = ClipRightBottomCorner(final_path,
+          drag_clip_width_ + padding_double - buond_rect_ratio,
+          drag_clip_height_ + padding_double - (end_edge_bottom_.y - end_edge_top_.y) - buond_rect_ratio,
+          buond_rect_ratio);
+      final_path = ClipRightBottomCorner(final_path,
+          end_edge_top_.x + padding_double - end_rect_ratio - drag_image_origin_point_.x,
+          drag_clip_height_ + padding_double - end_rect_ratio, end_rect_ratio);
+      AddLeftTopCorner(final_path,
+          end_edge_top_.x + padding_double + end_rect_ratio - drag_image_origin_point_.x,
+          drag_clip_height_ + padding_double - (end_edge_bottom_.y - end_edge_top_.y) + end_rect_ratio,
+          end_rect_ratio);
     }
     return final_path;
   }

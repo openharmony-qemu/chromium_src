@@ -6,7 +6,6 @@
 
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -15,6 +14,7 @@
 #include "build/chromeos_buildflags.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 

@@ -14,6 +14,9 @@
 #include "media/base/audio_decoder_config.h"
 #include "media/base/video_decoder.h"
 #include "media/base/video_frame.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/filters/decoder_stream_traits_for_include.cc"
+#endif
 
 namespace media {
 
@@ -317,5 +320,14 @@ void DecoderStreamTraits<DemuxerStream::VIDEO>::OnOutputReady(
   buffer->metadata().processing_time =
       base::TimeTicks::Now() - *buffer->metadata().decode_begin_time;
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void DecoderStreamTraits<DemuxerStream::VIDEO>::SetVideoSurface(
+    DecoderType* decoder, int surface_id) {
+  if (decoder) {
+    decoder->SetVideoSurface(surface_id);
+  }
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

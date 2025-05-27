@@ -99,14 +99,9 @@ class CONTENT_EXPORT ChildProcessHostImpl : public ChildProcessHost,
   void Ping(PingCallback callback) override;
   void BindHostReceiver(mojo::GenericPendingReceiver receiver) override;
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void ReportKeyThread(int32_t status,
-                       int32_t process_id,
-                       int32_t thread_id,
-                       int32_t role) override;
-  void ReportKeyThreadIds(int32_t status,
-                          int32_t process_id,
-                          const std::vector<int32_t>& thread_ids,
-                          int32_t role) override {}
+  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
+  void ReportKeyThreadIds(int32_t status, int32_t process_id,
+       const std::vector<int32_t>& thread_ids, int32_t role) override {}
 #endif
 
   // IPC::Listener methods:

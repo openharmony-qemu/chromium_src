@@ -21,14 +21,11 @@
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
 #include "services/network/url_loader_context.h"
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "arkweb/chromium_ext/services/network/prp_preload/include/preload_runner/prpp_request_loader_factory.h"
-#endif
-
 namespace network {
 
 class NetworkContext;
 class ResourceSchedulerClient;
+class URLLoaderFactoryUtils;
 
 namespace cors {
 class CorsURLLoaderFactory;
@@ -53,6 +50,10 @@ class URLLoader;
 class URLLoaderFactory : public mojom::URLLoaderFactory,
                          public URLLoaderContext {
  public:
+  friend class URLLoaderFactoryUtils;
+
+  std::unique_ptr<URLLoaderFactoryUtils> factoryUtils_;
+
   // NOTE: |context| must outlive this instance.
   URLLoaderFactory(
       NetworkContext* context,
@@ -154,10 +155,6 @@ class URLLoaderFactory : public mojom::URLLoaderFactory,
 
   base::OneShotTimer update_load_info_timer_;
   bool waiting_on_load_state_ack_ = false;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-    base::WeakPtr<ohos_prp_preload::PRPPRequestLoaderFactory> weak_prpp_req_loader_fac_;
-#endif
 };
 
 }  // namespace network

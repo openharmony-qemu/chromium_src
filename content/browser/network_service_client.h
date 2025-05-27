@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
@@ -23,6 +22,7 @@
 #include "services/network/public/mojom/network_service.mojom.h"
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
 #include "url/gurl.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/application_status_listener.h"
@@ -97,7 +97,7 @@ class NetworkServiceClient
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
                              const GURL& origin_url,
                              const std::string& referrer,
-#endif
+#endif                             
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,

@@ -6,12 +6,16 @@
 #define MEDIA_BASE_OHOS_MEDIA_PLAYER_BRIDGE_H_
 
 #include <deque>
+#include <map>
 
 #include "base/memory/weak_ptr.h"
+#include "base/containers/flat_map.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/timer/timer.h"
 #include "media/base/media_export.h"
+#include "media/base/ohos/ohos_media_resource_getter.h"
 #include "net/cookies/site_for_cookies.h"
+#include "net/storage_access_api/status.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/media_adapter.h"
 #include "url/gurl.h"
@@ -48,6 +52,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
     virtual void OnAudioStateChanged(bool isAudible) = 0;
 
     virtual void OnPlayerSeekBack(base::TimeDelta back_time) = 0;
+
+    virtual OHOSMediaResourceGetter* GetMediaResourceGetter() = 0;
   };
 
   enum MediaErrorType {
@@ -62,10 +68,13 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
                         const net::SiteForCookies& site_for_cookies,
                         const url::Origin& top_frame_origin,
                         const std::string& user_agent,
+                        net::StorageAccessApiStatus storage_access_api_status,
                         bool hide_url_log,
                         Client* client,
                         bool allow_credentials,
-                        bool is_hls);
+                        bool is_hls,
+                        const base::flat_map<std::string, std::string> headers,
+                        const std::vector<std::string>& grantMediaFileAccessDirs);
   virtual ~OHOSMediaPlayerBridge();
 
   OHOSMediaPlayerBridge(const OHOSMediaPlayerBridge&) = delete;
@@ -80,6 +89,11 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   base::TimeDelta GetMediaTime();
   void FinishPaint(int fd);
   void SetPlaybackSpeed(OHOS::NWeb::PlaybackRateMode mode);
+  void SetNativeWindowSurface(int native_window_id);
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t surface_id);
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   void OnEnd();
   void OnError(int32_t errorCode);
@@ -92,6 +106,9 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekDone();
   void OnSeekBack(base::TimeDelta extra_time);
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable);
+#endif
  private:
   int32_t SetFdSource(const std::string& path);
   void Prepare();
@@ -99,12 +116,36 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   void SeekInternal(base::TimeDelta time);
   void PropagateDuration(base::TimeDelta duration);
   bool IsAudible(float volume);
+  bool CheckIsPathValid(const std::string& path);
+  void SetNativeWindowFromSurfaceId();
 
-  const std::string surfaceFormat = "SURFACE_FORMAT";
+  // Callback function passed to `resource_getter_`. Called when the cookies
+  // are retrieved.
+  void OnCookiesRetrieved(const std::string& cookies);
+ 
+  // Callback function passed to `resource_getter_`. Called when the auth
+  // credentials are retrieved.
+  void OnAuthCredentialsRetrieved(const std::u16string& username,
+                                  const std::u16string& password);
+ 
+  // Get media player header
+  std::map<std::string, std::string> GetPlayerHeadersInternal();
+ 
+  // Set media player surface and register listener
+  void SetPlayerSurface();
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  uint64_t uv__get_addr_tag(void* addr);
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurfaceNew(int32_t surface_id);
+  void SetVideoSurfaceOld();
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   std::unique_ptr<OHOS::NWeb::PlayerAdapter> player_ = nullptr;
-  std::deque<std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter>> cached_buffers_;
-  std::shared_ptr<OHOS::NWeb::IConsumerSurfaceAdapter> consumer_surface_ =
-      nullptr;
+  void* native_window_origin_ = nullptr;
+
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   raw_ptr<Client> client_;
   GURL url_;
@@ -120,7 +161,8 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   base::TimeDelta duration_;
   base::TimeDelta pending_seek_;
   base::TimeDelta recording_seek_;
-  OHOS::NWeb::PlayerAdapter::PlayerStates player_state_;
+  OHOS::NWeb::PlayerAdapter::PlayerStates player_state_ =
+      OHOS::NWeb::PlayerAdapter::PlayerStates::PLAYER_IDLE;
 
   // MediaPlayer is unable to handle Seek request when playback end. We should
   // pending the SeekTo request until its playback state changed.
@@ -128,9 +170,45 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
   base::TimeDelta extra_time_;
   // It is a sign of rollback and SEEK_CLOSEST failure.
   bool seeking_back_complete_;
+  // MediaPlayer File Access config
+  std::vector<std::string> grantMediaFileAccessDirs_;
 #if defined(RK3568)
   bool is_hls_;
 #endif
+
+  // HTTP Request Headers
+  base::flat_map<std::string, std::string> headers_;
+ 
+  // User agent string to be used for media player.
+  const std::string user_agent_;
+ 
+  // Used to determine if cookies are accessed in a third-party context.
+  net::SiteForCookies site_for_cookies_;
+ 
+  // Waiting to retrieve cookies for `url_`.
+  bool pending_retrieve_cookies_;
+ 
+  // Whether to prepare after cookies retrieved.
+  bool should_prepare_on_retrieved_cookies_;
+ 
+  // Used when determining if first-party cookies may be accessible in a third-party context.
+  net::StorageAccessApiStatus storage_access_api_status_;
+ 
+  // Cookies for `url_`.
+  std::string cookies_;
+ 
+  // Used to check for cookie content settings.
+  url::Origin top_frame_origin_;
+ 
+  // Whether user credentials are allowed to be passed.
+  bool allow_credentials_;
+
+  int32_t native_window_id_ = -1;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  int32_t new_surface_id_ = -1;
+  int32_t pending_new_surface_id_ = -1;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   base::WeakPtrFactory<OHOSMediaPlayerBridge> weak_factory_{this};
 };

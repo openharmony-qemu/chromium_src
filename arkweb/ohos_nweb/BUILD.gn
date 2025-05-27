@@ -19,10 +19,7 @@ import("//tools/grit/grit_rule.gni")
 import("//tools/grit/repack.gni")
 import("//cef/libcef/features/features.gni")
 import("//arkweb/build/features/features.gni")
-
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
-}
+import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 
 if (is_arkweb) {
   import("//arkweb/build/features/features.gni")
@@ -112,6 +109,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_controller_handler_impl.h",
     "src/cef_delegate/nweb_cookie_manager_delegate.cc",
     "src/cef_delegate/nweb_cookie_manager_delegate.h",
+    "src/cef_delegate/nweb_core_value.cc",
+    "src/cef_delegate/nweb_core_value.h",
     "src/cef_delegate/nweb_cursor_info_impl.cc",
     "src/cef_delegate/nweb_cursor_info_impl.h",
     "src/cef_delegate/nweb_data_resubmission_callback_impl.cc",
@@ -162,6 +161,8 @@ component("cef_nweb") {
     "src/cef_delegate/nweb_js_ssl_select_cert_result_impl.h",
     "src/cef_delegate/nweb_gesture_event_result_impl.cc",
     "src/cef_delegate/nweb_gesture_event_result_impl.h",
+    "src/cef_delegate/nweb_mouse_event_result_impl.cc",
+    "src/cef_delegate/nweb_mouse_event_result_impl.h",
     "src/cef_delegate/nweb_key_event_impl.cc",
     "src/cef_delegate/nweb_key_event_impl.h",
     "src/cef_delegate/nweb_preference_delegate.cc",
@@ -305,6 +306,7 @@ component("cef_nweb") {
 
   deps += [
     "//base:base",
+    "//chrome:strings",
     "//content/public/common",
     "//ui/events/keycodes:x11",
   ]
@@ -439,6 +441,7 @@ component("nweb_sources") {
     ]
   }
 
+  #if BUILDFLAG(ARKWEB_NOTIFICATION)
   if (defined(arkweb_notification) && arkweb_notification) {
     sources += [
       "src/nweb_access_query.h",
@@ -496,6 +499,24 @@ component("nweb_sources") {
   deps += [
     "//ohos_glue:ohos_adapter_glue_source",
   ]
+
+  if (defined(arkweb_ai) && arkweb_ai) {
+    deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+  }
+
+  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (defined(arkweb_video_assistant) && arkweb_video_assistant) {
+    sources += [
+      "src/capi/common/common.h",
+      "src/capi/nweb_media_player_controller.h",
+      "src/capi/nweb_media_player_listener.h",
+      "src/cef_delegate/nweb_media_player_for_vast.cc",
+      "src/cef_delegate/nweb_media_player_for_vast.h",
+      "src/video_assistant/nweb_media_player_controller_impl.cc",
+      "src/video_assistant/nweb_media_player_controller_impl.h",
+    ]
+  }
+  #endif ARKWEB_VIDEO_ASSISTANT
 }
 
 #################################################
@@ -513,6 +534,24 @@ config("ohosnweb_core_config") {
   ]
 
   include_dirs += ohos_src_includes
+}
+
+action("check_ndk_symbol") {
+  script = "//arkweb/ohos_adapter_ndk/ndk_tools/check_ndk.py"
+  
+  inputs = [
+    "//arkweb/ohos_adapter_ndk/ndk_tools/adapter_ndk_api.json",
+  ]
+  
+  outputs = [
+    "$target_out_dir/check_ndk_symbol.stamp",
+  ]
+
+  args = [
+      "--input", rebase_path(inputs[0], root_build_dir),
+  ]
+
+  deps = [ "//cef:libarkweb_engine" ]
 }
 
 shared_library("libarkweb_render") {
@@ -535,6 +574,7 @@ shared_library("libarkweb_render") {
     ":nweb_hilog",
     "//cef:libcef_dll_wrapper",
     "//cef:libarkweb_engine",
+    ":check_ndk_symbol",
     "//sandbox:sandbox",
     "//cef/libcef/features",
   ]

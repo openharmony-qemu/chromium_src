@@ -8,7 +8,6 @@
 #include "base/threading/hang_watcher.h"
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
-
 namespace base {
 
 BooleanWithOptionalStack::BooleanWithOptionalStack(bool value) : value_(value) {
@@ -235,6 +234,9 @@ ScopedAllowBlocking::ScopedAllowBlocking(const Location& from_here)
         ctx.event()->set_source_location_iid(
             base::trace_event::InternedSourceLocation::Get(&ctx, from_here));
       });
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_BEGIN("base", "ScopedAllowBlocking");
+#endif
 }
 
 ScopedAllowBlocking::~ScopedAllowBlocking() {

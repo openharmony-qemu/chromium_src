@@ -141,8 +141,8 @@ static_assert(sizeof(void*) == 8);
 // - PA_BUILDFLAG(DCHECKS_ARE_ON) due to runtime cost
 // - thread_local TLS to simplify the implementation
 // - Not on Android due to bot failures
-#if PA_BUILDFLAG(DCHECKS_ARE_ON) &&                             \
-    PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) &&              \
+#if PA_BUILDFLAG(DCHECKS_ARE_ON) &&                \
+    PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && \
     PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID) && \
     !PA_BUILDFLAG(IS_OHOS)
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 1

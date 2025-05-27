@@ -102,9 +102,13 @@ int InitSocketPoolHelper(
     HttpNetworkSession::SocketPoolType socket_pool_type,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only = false
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    bool from_preload = false
 #endif
 ) {
   DCHECK(endpoint.IsValid());
@@ -123,14 +127,16 @@ int InitSocketPoolHelper(
   ClientSocketPool::GroupId connection_group(
       std::move(endpoint), privacy_mode, std::move(network_anonymization_key),
       secure_dns_policy, disable_cert_network_fetches
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
 #endif
   );
   scoped_refptr<ClientSocketPool::SocketParams> socket_params =
       CreateSocketParams(connection_group, allowed_bad_certs);
-
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  socket_params->SetFromPreload(from_preload);
+#endif
   ClientSocketPool* pool =
       session->GetSocketPool(socket_pool_type, proxy_info.proxy_chain());
   ClientSocketPool::RespectLimits respect_limits =
@@ -244,9 +250,13 @@ int InitSocketHandleForHttpRequest(
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    bool from_preload
 #endif
 ) {
   DCHECK(socket_handle);
@@ -256,9 +266,13 @@ int InitSocketHandleForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
       std::move(callback), proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      from_preload
 #endif
   );
 }
@@ -307,7 +321,12 @@ int PreconnectSocketsForHttpRequest(
     SecureDnsPolicy secure_dns_policy,
     const NetLogWithSource& net_log,
     int num_preconnect_streams,
-    CompletionOnceCallback callback) {
+    CompletionOnceCallback callback
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    bool from_preload
+#endif
+    ) {
   // Expect websocket schemes (ws and wss) to be converted to the http(s)
   // equivalent.
   DCHECK(endpoint.scheme() == url::kHttpScheme ||
@@ -319,7 +338,16 @@ int PreconnectSocketsForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, SocketTag(),
       net_log, num_preconnect_streams, nullptr,
       HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
-      ClientSocketPool::ProxyAuthCallback());
+      ClientSocketPool::ProxyAuthCallback()
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+,
+      false
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      from_preload
+#endif
+      );
 }
 
 }  // namespace net

@@ -77,6 +77,8 @@ struct NWebExtensionActionApiCallback {
   void (*OnSetIcon)(const char* extension_id,
                     OHOS::NWeb::NWebExtensionActionIcon* icon,
                     int tab_id);
+  void (*OnDisable)(const std::string& extensionId, std::optional<int>& tabId);
+  void (*OnEnable)(const std::string& extensionId, std::optional<int>& tabId);
 };
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_API_CALLBACK_H_

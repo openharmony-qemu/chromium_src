@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "components/autofill/core/common/password_generation_util.h"
 #include "components/device_reauth/device_authenticator.h"
@@ -49,21 +48,6 @@ bool PasswordManagerClient::IsReauthBeforeFillingRequired(
     device_reauth::DeviceAuthenticator*) {
   return false;
 }
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-void PasswordManagerClient::FillAccountSuggestion(
-    const GURL& page_url,
-    const std::u16string& username,
-    const std::u16string& password) {}
-
-void PasswordManagerClient::OnRequestAutofill(
-    PasswordManagerDriver* driver,
-    const GURL& page_url,
-    autofill::FormRendererId form_id,
-    const autofill::mojom::OhosPasswordFormAutofillState state,
-    const autofill::InputFillRequestData& username_data,
-    const autofill::InputFillRequestData& password_data) {}
-#endif
 
 std::unique_ptr<device_reauth::DeviceAuthenticator>
 PasswordManagerClient::GetDeviceAuthenticator() {

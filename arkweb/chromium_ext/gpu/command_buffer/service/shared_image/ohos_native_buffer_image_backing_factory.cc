@@ -264,7 +264,10 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
   configAdapter->SetBufferHeight(size.height());
   configAdapter->SetBufferUsage(
       gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_HW_RENDER |
-      gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_HW_TEXTURE);
+      gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_HW_TEXTURE |
+      gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_MEM_DMA |
+      gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_CPU_READ |
+      gpu::OH_NativeBuffer_Usage::NATIVEBUFFER_USAGE_CPU_WRITE);
 
   // Allocate a NativeBuffer.
   OHOS::NWeb::OhosNativeBufferAdapter& adapter =
@@ -319,11 +322,18 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
     initial_upload_fd = base::ScopedFD(fence);
   }
 
+  // Calculate SharedImage size in bytes.
+  auto estimated_size = format.MaybeEstimatedSizeInBytes(size);
+  if (!estimated_size) {
+    LOG(ERROR) << "Failed to calculate SharedImage size";
+    return nullptr;
+  }
+
   // Create the OHOSNativeBufferImageBacking object
   auto backing = std::make_unique<OhosNativeBufferImageBacking>(
       mailbox, format, size, color_space, surface_origin, alpha_type, usage,
       /*debug_label=*/"OhosNativeBuffer", std::move(handle),
-      0 /*estimated_size*/, is_thread_safe, std::move(initial_upload_fd),
+      estimated_size.value() /*estimated_size*/, is_thread_safe, std::move(initial_upload_fd),
       false /*use_passthrough_*/, gl_format_caps_);
 
   // If we uploaded initial data, set the backing as cleared.

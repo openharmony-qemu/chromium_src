@@ -19,6 +19,10 @@
 #include "device/fido/public_key_credential_descriptor.h"
 #include "device/fido/public_key_credential_user_entity.h"
 
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "device/fido/authenticator_credential_response_extra_common.h"
+#endif // BUILDFLAG(ARKWEB_FIDO)
+
 namespace device {
 
 // Represents response from authenticators for AuthenticatorGetAssertion and
@@ -88,6 +92,10 @@ class COMPONENT_EXPORT(DEVICE_FIDO) AuthenticatorGetAssertionResponse {
   // The transport used to generate this response. This is unknown when using
   // the Windows WebAuthn API.
   std::optional<FidoTransportProtocol> transport_used;
+
+#if BUILDFLAG(ARKWEB_FIDO)
+  std::optional<AuthenticatorGetAssertionResponseExtra> response_extra;
+#endif // BUILDFLAG(ARKWEB_FIDO)
 };
 
 }  // namespace device

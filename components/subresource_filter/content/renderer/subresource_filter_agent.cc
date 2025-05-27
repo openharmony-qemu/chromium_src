@@ -342,7 +342,7 @@ void SubresourceFilterAgent::ConstructFilter(
 #if BUILDFLAG(ARKWEB_ADBLOCK)
       || activation_state.user_subresource_filter_replace
 #endif
-  ) {
+      ) {
     return;
   }
   scoped_refptr<const MemoryMappedRuleset> ruleset =
@@ -363,7 +363,7 @@ void SubresourceFilterAgent::ConstructFilter(
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   // This calc will only allowed after SetSubresourceFilterForCommittedLoad
   // which already finish web_frame->GetDocumentLoader()->SetSubresourceFilter
-  CalcElementHidingTypeOption(render_frame());
+  AsArkWebSubresourceFilterAgentExt()->CalcElementHidingTypeOption(render_frame());
 #endif
 }
 
@@ -422,116 +422,4 @@ void SubresourceFilterAgent::DidCreateFencedFrame(
     GetSubresourceFilterHost()->AdScriptDidCreateFencedFrame(placeholder_token);
   }
 }
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-void SubresourceFilterAgent::SendStatisticsAfterDocumentLoad(
-    const mojom::DocumentLoadStatistics& statistics) {
-  GetSubresourceFilterHost()->SetStatisticsAfterDocumentLoad(
-      statistics.Clone());
-}
-
-void SubresourceFilterAgent::DidSubresourceFiltered() {
-  if (!filter_for_last_created_document_) {
-    return;
-  }
-  if (did_load_finished_ == false) {
-    return;
-  }
-
-  const auto& statistics =
-      filter_for_last_created_document_->filter().statistics();
-  SendStatisticsAfterDocumentLoad(statistics);
-  filter_for_last_created_document_->ClearStatistics();
-}
-
-void SubresourceFilterAgent::CalcElementHidingTypeOption(
-    content::RenderFrame* render_frame) {
-  // this render frame will never be null
-  if (!render_frame) {
-    LOG(ERROR) << "[AdBlock] render frame is null, will not calculate element "
-                  "hiding type option";
-    return;
-  }
-
-  blink::WebLocalFrame* web_local_frame = render_frame->GetWebFrame();
-  if (!web_local_frame) {
-    return;
-  }
-
-  blink::WebDocument document = web_local_frame->GetDocument();
-  if (!document.Url().ProtocolIs("https") &&
-      !document.Url().ProtocolIs("http")) {
-    return;
-  }
-
-  blink::WebDocumentSubresourceFilter* filter =
-      web_local_frame->GetDocumentLoader()->GetWebSubresourceFilter();
-  if (!filter) {
-    LOG(ERROR) << "[AdBlock] subresource filter is null, will not calculate"
-                  "element hiding type option";
-    return;
-  }
-
-  base::TimeTicks start = base::TimeTicks::Now();
-
-  blink::WebDocument parent_document = document;
-  blink::WebLocalFrame* parent_web_local_frame = nullptr;
-  blink::WebFrame* parent_web_frame = web_local_frame->Parent();
-  if (parent_web_frame && parent_web_frame->IsWebLocalFrame()) {
-    parent_web_local_frame = parent_web_frame->ToWebLocalFrame();
-    if (parent_web_local_frame) {
-      parent_document = parent_web_local_frame->GetDocument();
-    }
-  }
-
-  bool has_document_type_option = false;
-  bool has_elemhide_type_option = false;
-  bool has_generichide_type_option = false;
-
-  bool parent_has_document_type_option = false;
-  bool parent_has_elemhide_type_option = false;
-  bool parent_has_generichide_type_option = false;
-
-  // Assuming that parent frame will be created first
-  if (parent_web_local_frame) {
-    parent_has_document_type_option =
-        parent_web_local_frame->GetHasDocumentTypeOption();
-    parent_has_elemhide_type_option =
-        parent_web_local_frame->GetHasElemHideTypeOption();
-    parent_has_generichide_type_option =
-        parent_web_local_frame->GetHasGenericHideTypeOption();
-  }
-
-  if (parent_has_document_type_option == true) {
-    has_document_type_option = parent_has_document_type_option;
-  } else {
-    has_document_type_option = filter->HasDocumentTypeOption(
-        document.Url(), url::Origin::Create(parent_document.Url()));
-  }
-
-  web_local_frame->SetHasDocumentTypeOption(has_document_type_option);
-  if (parent_has_elemhide_type_option == true) {
-    has_elemhide_type_option = parent_has_elemhide_type_option;
-  } else {
-    has_elemhide_type_option = filter->HasElemHideTypeOption(
-        document.Url(), url::Origin::Create(parent_document.Url()));
-  }
-
-  web_local_frame->SetHasElemHideTypeOption(has_elemhide_type_option);
-
-  if (parent_has_generichide_type_option == true) {
-    has_generichide_type_option = parent_has_generichide_type_option;
-  } else {
-    has_generichide_type_option = filter->HasGenericHideTypeOption(
-        document.Url(), url::Origin::Create(parent_document.Url()));
-  }
-
-  web_local_frame->SetHasGenericHideTypeOption(has_generichide_type_option);
-  base::TimeDelta duration = base::TimeTicks::Now() - start;
-  VLOG(2) << "[AdBlock] Calculate $document =" << has_document_type_option
-          << ", $elemhide =" << has_elemhide_type_option
-          << ", $generichide = " << has_generichide_type_option << " assumming "
-          << duration.InMicroseconds() << " microseconds";
-}
-#endif
 }  // namespace subresource_filter

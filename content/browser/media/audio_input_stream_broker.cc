@@ -53,6 +53,12 @@ AudioInputStreamBroker::AudioInputStreamBroker(
       deleter_(std::move(deleter)),
       processing_config_(std::move(processing_config)),
       renderer_factory_client_(std::move(renderer_factory_client)) {
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  media::AudioParameters preParams = params;
+  preParams.set_render_process_id(render_process_id);
+  preParams.set_render_frame_id(render_frame_id);
+  params_ = preParams;
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   DCHECK(renderer_factory_client_);
   DCHECK(deleter_);

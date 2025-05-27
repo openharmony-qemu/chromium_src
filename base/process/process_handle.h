@@ -82,17 +82,12 @@ std::ostream& operator<<(std::ostream& os, const UniqueProcId& obj);
 // processes (use GetUniqueIdForProcess if uniqueness is required).
 BASE_EXPORT ProcessId GetCurrentProcId();
 
-#if BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
-// Returns the global id of the current process.
-BASE_EXPORT ProcessId GetCurrentRealPid();
-#endif
-
 // Returns a unique ID for the current process. The ID will be unique across all
 // currently running processes within the chrome session, but IDs of terminated
 // processes may be reused.
 BASE_EXPORT UniqueProcId GetUniqueIdForProcess();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 // When a process is started in a different PID namespace from the browser
 // process, this function must be called with the process's PID in the browser's
 // PID namespace in order to initialize its unique ID. Not thread safe.

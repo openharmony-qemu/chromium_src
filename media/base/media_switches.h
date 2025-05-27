@@ -9,7 +9,6 @@
 
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
 #include "build/build_config.h"
@@ -18,6 +17,7 @@
 #include "media/gpu/buildflags.h"
 #include "media/media_buildflags.h"
 #include "ui/gl/angle_implementation.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class CommandLine;
@@ -37,7 +37,7 @@ MEDIA_EXPORT extern const char kDisableAudioOutput[];
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
 MEDIA_EXPORT extern const char kDisableAudioInput[];
-#endif  // BUILDFLAG(ARKWEB_WEBRTC)
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
 MEDIA_EXPORT extern const char kFailAudioStreamCreation[];
 

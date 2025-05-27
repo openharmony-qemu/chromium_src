@@ -23,6 +23,10 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/skia/modules/skcms/skcms.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/common/quads/render_pass_io_unittest_ext.h"
+#endif
+
 namespace gfx {
 struct HDRMetadata;
 }
@@ -319,9 +323,7 @@ TEST(RenderPassIOTest, CompositorRenderPassList) {
   // Validate recorded render pass list data from https://www.espn.com/.
   base::FilePath test_data_dir;
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ASSERT_TRUE(base::PathService::Get(Paths::DIR_TEST_DATA, &test_data_dir)
-                  ? true
-                  : base::GetCurrentDirectory(&test_data_dir));
+  ARKWEB_UNITTESTS_ASSERT_TRUE();
 #else
   ASSERT_TRUE(base::PathService::Get(Paths::DIR_TEST_DATA, &test_data_dir));
 #endif
@@ -364,9 +366,7 @@ TEST(RenderPassIOTest, CompositorFrameData) {
   // https://www.youtube.com/ focused, and 4 other tabs in the background.
   base::FilePath test_data_dir;
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  ASSERT_TRUE(base::PathService::Get(Paths::DIR_TEST_DATA, &test_data_dir)
-                  ? true
-                  : base::GetCurrentDirectory(&test_data_dir));
+  ARKWEB_UNITTESTS_ASSERT_TRUE();
 #else
   ASSERT_TRUE(base::PathService::Get(Paths::DIR_TEST_DATA, &test_data_dir));
 #endif

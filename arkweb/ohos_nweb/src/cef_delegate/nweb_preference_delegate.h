@@ -134,6 +134,12 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetFitContent(bool value);
   bool IsFitContent() const;
 #endif
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
+                              double borderRadiusTopRight,
+                              double borderRadiusBottomLeft,
+                              double borderRadiusBottomRight);
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 #if BUILDFLAG(ARKWEB_CSS_FONT)
   void SetFontWeightScale(float size) override;
   float GetFontWeightScale() const;
@@ -162,10 +168,17 @@ class NWebPreferenceDelegate : public NWebPreference {
   void SetBlurOnKeyboardHideMode(int enable) override;
   int GetBlurEnable();
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   void SetNativeEmbedMode(bool flag) override;
   bool GetNativeEmbedMode() override;
   void RegisterNativeEmbedRule(const std::string& tag,
                                const std::string& type) override;
+  void SetIntrinsicSizeEnable(bool enable) override;
+  bool GetIntrinsicSizeEnable();
+  void SetCssDisplayChangeEnabled(bool enable) override;
+  bool GetCssDisplayChangeEnabled();
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
 #if BUILDFLAG(ARKWEB_VIEWPORT)
   void SetViewportEnable(bool enable) override;
@@ -299,6 +312,12 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   uint32_t scrollbar_color_{0};
 #endif  // ARKWEB_SCROLLBAR
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  double border_radius_top_left_{0.0};
+  double border_radius_top_right_{0.0};
+  double border_radius_bottom_left_{0.0};
+  double border_radius_bottom_right_{0.0};
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   float virtual_pixel_ratio_ = 2.0;
 #endif
@@ -325,9 +344,15 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_CSS_FONT)
   float font_weight_scale_ = 1.0f;
 #endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
   bool enable_embed_mode_{false};
+  bool enable_intrinsic_size_{false};
+  bool enable_css_display_change_{false};
   std::string embed_tag_{"embed"};
   std::string embed_tag_type_{"native/"};
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   CopyOptionMode copy_option_{CopyOptionMode::CROSS_DEVICE};
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)

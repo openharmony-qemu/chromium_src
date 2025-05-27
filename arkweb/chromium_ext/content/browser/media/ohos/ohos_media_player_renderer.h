@@ -51,6 +51,10 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   // media::Renderer implementation
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  media::RequestSurfaceCB request_surface_cb,
+                  media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
@@ -59,6 +63,11 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void SetPlaybackRate(double playback_rate) override;
   void SetVolume(float volume) override;
   base::TimeDelta GetMediaTime() override;
+  void SetNativeWindowSurface(int native_window_id) override;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t surface_id) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
   // media::OHOSMediaPlayerBridge::Client implementation
   void OnFrameAvailable(int fd,
@@ -68,6 +77,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
                         int32_t visible_width,
                         int32_t visible_height,
                         int32_t format) override;
+  media::OHOSMediaResourceGetter* GetMediaResourceGetter() override;
   void OnMediaDurationChanged(base::TimeDelta duration) override;
   void OnPlaybackComplete() override;
   void OnError(int error) override;
@@ -79,7 +89,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void OnWebContentsDestroyed();
   void OnAudioStateChanged(bool isAudible) override;
   void OnPlayerSeekBack(base::TimeDelta back_time) override;
-
+  bool isNeedResume(int32_t resumeInterval);
   // media::mojom::MediaPlayerRendererExtension implementation.
   //
   // Registers a request in the content::ScopedSurfaceRequestManager, and
@@ -92,16 +102,21 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void InitiateScopedSurfaceRequest(
       InitiateScopedSurfaceRequestCallback callback) override;
   void FinishPaint(int32_t fd) override;
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
 
  private:
-  void CreateMediaPlayer(const media::MediaUrlParams& params,
-                         media::PipelineStatusCallback init_cb);
+  void CreateMediaPlayer();
+  void TryOrCreateMediaPlayer();
 
   void UpdateVolume();
 
+  void GetGrantMediaFileAccessDirs(std::vector<std::string>& grantMediaFileAccessDirs);
+
   mojo::Remote<ClientExtension> client_extension_;
 
-  media::RendererClient* renderer_client_;
+  raw_ptr<media::RendererClient> renderer_client_;
 
   std::unique_ptr<media::OHOSMediaPlayerBridge> media_player_;
 
@@ -113,11 +128,23 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   gfx::Size video_size_;
 
+  // Identifiers to find the RenderFrameHost that created |this|.
+  // NOTE: We store these IDs rather than a RenderFrameHost* because we do not
+  // know when the RenderFrameHost is destroyed.
+  int render_process_id_;
+  int routing_id_;
+
+  std::unique_ptr<media::OHOSMediaResourceGetter> media_resource_getter_;
+
   bool web_contents_muted_;
   raw_ptr<OHOSMediaPlayerRendererWebContentsObserver> web_contents_observer_;
   float volume_;
 
   bool initialized_ = false;
+
+  int native_window_id_ = -1;
+
+  std::unique_ptr<media::MediaUrlParams> url_params_;
 
   base::WeakPtr<WebContents> web_contents_ = nullptr;
 

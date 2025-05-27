@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_STORE_LOGIN_DATABASE_ASYNC_HELPER_H_
 #define COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_STORE_LOGIN_DATABASE_ASYNC_HELPER_H_
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -68,6 +69,9 @@ class LoginDatabaseAsyncHelper : public PasswordStoreSync {
 
   PasswordChangesOrError AddLogin(const PasswordForm& form);
   PasswordChangesOrError UpdateLogin(const PasswordForm& form);
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  void UpdateLoginDisplayName(const PasswordForm& form);
+#endif
   PasswordChangesOrError RemoveLogin(const base::Location& location,
                                      const PasswordForm& form);
   PasswordChangesOrError RemoveLoginsCreatedBetween(

@@ -96,6 +96,8 @@
 #include "gpu/command_buffer/service/drm_modifiers_filter_dawn.h"
 #endif
 
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_init_ext.h"
+
 namespace gpu {
 
 namespace {
@@ -1127,13 +1129,9 @@ void GpuInit::InitializeInProcess(base::CommandLine* command_line,
 #endif
 
 #if BUILDFLAG(ARKWEB_VULKAN)
-  if (features::IsUsingVulkan()) {
-    bool result = InitializeVulkan();
-    // There is no fallback for webview.
-    CHECK(result);
-  } else {
+  CHECK_IS_USING_VULKAN_AND_INITIAL()
 #endif
-    DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
+  DisableInProcessGpuVulkan(&gpu_feature_info_, &gpu_preferences_);
 #if BUILDFLAG(ARKWEB_VULKAN)
   }
 #endif

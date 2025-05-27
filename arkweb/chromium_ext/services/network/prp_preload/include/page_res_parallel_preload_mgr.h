@@ -6,6 +6,7 @@
 #define SERVICES_NETWORK_PRP_PRELOAD_INCLUDE_PAGE_RES_PARALLEL_PRELOAD_MGR_H
 
 #include "base/task/thread_pool.h"
+#include "net/base/network_anonymization_key.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 
 namespace net {
@@ -37,9 +38,11 @@ class PRParallelPreloadMgr {
 
   // start preload page sub_request
   virtual void StartPage(const std::string& url,
+                         const net::NetworkAnonymizationKey& networkAnonymizationKey,
                          base::WeakPtr<net::URLRequestContext> url_request_context,
                          uint64_t addr_web_handle,
-                         PageOriginCallback callback) = 0;
+                         PageOriginCallback callback,
+                         bool no_use_cache) = 0;
 
   // stop preload page
   virtual void StopPage(uint64_t addr_web_handle) = 0;
@@ -69,6 +72,9 @@ class PRParallelPreloadMgr {
 
   // update the count of prerequest can be send to scheduler
   virtual void UpdateIdlePrerequestCount(const std::string& key) = 0;
+
+  // remove_cache, called when excute removeCache of ets
+  virtual void RemoveCache(base::Time start_time, base::Time end_time) = 0;
 };
 
 }  // namespace ohos_prp_preload

@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <cstring>
 
-#include "arkweb/build/features/features.h"
 #include "partition_alloc/build_config.h"
 #include "partition_alloc/buildflags.h"
 #include "partition_alloc/oom.h"
@@ -23,9 +22,10 @@
 #include "partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
 #include "partition_alloc/partition_alloc_check.h"
 #include "partition_alloc/thread_isolation/thread_isolation.h"
+#include "arkweb/build/features/features.h"
 
-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(ARKWEB_PER_DFX)
+
+#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_PER_DFX)
 #include <sys/prctl.h>
 #endif
 

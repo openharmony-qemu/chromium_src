@@ -1,0 +1,1133 @@
+{
+    "ohaudio": {
+        "apiList": {
+            "14": [
+                "OH_AudioStream_Result OH_AudioRenderer_GetFramesWritten(OH_AudioRenderer* renderer, int64_t* frames)",
+                "OH_AudioStream_Result OH_AudioRenderer_GetTimestamp(OH_AudioRenderer* renderer, clockid_t clockId, int64_t* framePosition, int64_t* timestamp)",
+                "OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer* renderer)",
+                "OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer* renderer)",
+                "OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer* renderer)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_Destroy(OH_AudioStreamBuilder* builder)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuilder* builder, OH_AudioRenderer** audioRenderer)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetChannelCount(OH_AudioStreamBuilder* builder, int32_t channelCount)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetFrameSizeInCallback(OH_AudioStreamBuilder* builder, int32_t frameSize)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder* builder, OH_AudioStream_LatencyMode latencyMode)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererCallback(OH_AudioStreamBuilder* builder, OH_AudioRenderer_Callbacks callbacks, void* userData)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptMode(OH_AudioStreamBuilder* builder, OH_AudioInterrupt_Mode mode)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetSamplingRate(OH_AudioStreamBuilder* builder, int32_t rate)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder, OH_AudioStream_EncodingType encodingType)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetSampleFormat(OH_AudioStreamBuilder* builder, OH_AudioStream_SampleFormat format)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_SourceType sourceType)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_GenerateCapturer(OH_AudioStreamBuilder* builder, OH_AudioCapturer** audioCapturer)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetCapturerCallback(OH_AudioStreamBuilder* builder, OH_AudioCapturer_Callbacks callbacks, void* userData)",
+                "OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer)",
+                "OH_AudioStream_Result OH_AudioCapturer_Stop(OH_AudioCapturer* capturer)",
+                "OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer)",
+                "OH_AudioStream_Result OH_AudioCapturer_GetFrameSizeInCallback(OH_AudioCapturer* capturer, int32_t* frameSize)",
+                "OH_AudioStream_Result OH_AudioCapturer_GetTimestamp(OH_AudioCapturer* capturer, clockid_t clockId, int64_t* framePosition, int64_t* timestamp)",
+                "OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceRole(OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioDevice_Role *deviceRole)",
+                "OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceType(OH_AudioDeviceDescriptor *audioDeviceDescriptor, OH_AudioDevice_Type *deviceType)",
+                "OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceId(OH_AudioDeviceDescriptor *audioDeviceDescriptor, uint32_t *id)",
+                "OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceName(OH_AudioDeviceDescriptor *audioDeviceDescriptor, char **name)",
+                "OH_AudioCommon_Result OH_AudioDeviceDescriptor_GetDeviceAddress(OH_AudioDeviceDescriptor *audioDeviceDescriptor, char **address)",
+                "OH_AudioCommon_Result OH_GetAudioManager(OH_AudioManager **audioManager)",
+                "OH_AudioCommon_Result OH_GetAudioScene(OH_AudioManager* manager, OH_AudioScene *scene)",
+                "OH_AudioCommon_Result OH_AudioManager_GetAudioRoutingManager(OH_AudioRoutingManager **audioRoutingManager)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_GetDevices(OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_Flag deviceFlag, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_GetAvailableDevices(OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_Usage deviceUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_GetPreferredOutputDevice(OH_AudioRoutingManager *audioRoutingManager, OH_AudioStream_Usage streamUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_GetPreferredInputDevice(OH_AudioRoutingManager *audioRoutingManager, OH_AudioStream_SourceType sourceType, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_RegisterDeviceChangeCallback(OH_AudioRoutingManager *audioRoutingManager, OH_AudioDevice_Flag deviceFlag, OH_AudioRoutingManager_OnDeviceChangedCallback callback)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(OH_AudioRoutingManager *audioRoutingManager, OH_AudioRoutingManager_OnDeviceChangedCallback callback)",
+                "OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(OH_AudioRoutingManager *audioRoutingManager, OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_Create(OH_AudioStreamBuilder** builder, OH_AudioStream_Type type)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_GenerateRenderer(OH_AudioStreamBuilder* builder, OH_AudioRenderer** audioRenderer)",
+                "OH_AudioStream_Result OH_AudioRenderer_SetDefaultOutputDevice(OH_AudioRenderer* renderer, OH_AudioDevice_Type deviceType)",
+                "OH_AudioStream_Result OH_AudioRenderer_SetSilentModeAndMixWithOthers(OH_AudioRenderer *renderer, bool on)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilder* builder, OH_AudioStream_EncodingType encodingType)",
+                "OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInfo(OH_AudioStreamBuilder* builder, OH_AudioStream_Usage usage)"
+            ]
+        },
+        "includes": [
+            "ohaudio/native_audio_device_base.h",
+            "ohaudio/native_audio_manager.h",
+            "ohaudio/native_audio_routing_manager.h",
+            "ohaudio/native_audiostreambuilder.h"
+        ]
+    },
+    "native_avscreen_capture": {
+        "apiList": {
+            "14": [
+                "OH_AVScreenCapture *OH_AVScreenCapture_Create()",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_Init(OH_AVScreenCapture *capture, OH_AVScreenCaptureConfig config)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_Release(OH_AVScreenCapture *capture)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetMicrophoneEnabled(OH_AVScreenCapture *capture, bool isMicrophone)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_StartScreenCapture(OH_AVScreenCapture *capture)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_StopScreenCapture(OH_AVScreenCapture *capture)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetErrorCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnError callback, void *userData)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetDataCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnBufferAvailable callback, void *userData)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetStateCallback(OH_AVScreenCapture *capture, OH_AVScreenCapture_OnStateChange callback, void *userData)",
+                "OH_AVSCREEN_CAPTURE_ErrCode OH_AVScreenCapture_SetCanvasRotation(OH_AVScreenCapture *capture, bool canvasRotation)"
+            ]
+        },
+        "includes": []
+    },
+    "native_media_core": {
+        "apiList": {
+            "14": [
+                "OH_NativeBuffer *OH_AVBuffer_GetNativeBuffer(OH_AVBuffer *buffer)"
+            ]
+        },
+        "includes": []
+    },
+    "native_buffer": {
+        "apiList": {
+            "14": [
+                "void OH_NativeBuffer_GetConfig(OH_NativeBuffer *buffer, OH_NativeBuffer_Config* config)",
+                "int32_t OH_NativeBuffer_Unreference(OH_NativeBuffer *buffer)",
+                "uint8_t *OH_AVBuffer_GetAddr(OH_AVBuffer *buffer)",
+                "int32_t OH_AVBuffer_GetCapacity(OH_AVBuffer *buffer)",
+                "OH_AVErrCode OH_AVBuffer_GetBufferAttr(OH_AVBuffer *buffer, OH_AVCodecBufferAttr *attr)"
+            ]
+        },
+        "includes": []
+    },
+    "native_media_codecbase": {
+        "apiList": {
+            "14":[
+                "OH_AVCapability *OH_AVCodec_GetCapability(const char *mime, bool isEncoder)",
+                "OH_AVErrCode OH_AVCapability_GetVideoWidthRange(OH_AVCapability *capability, OH_AVRange *widthRange)",
+                "OH_AVErrCode OH_AVCapability_GetVideoHeightRange(OH_AVCapability *capability, OH_AVRange *heightRange)",
+                "OH_AVErrCode OH_AVCapability_GetVideoFrameRateRange(OH_AVCapability *capability, OH_AVRange *frameRateRange)"
+            ]
+        },
+        "includes": [
+            "multimedia/player_framework/native_avcapability.h",
+            "multimedia/player_framework/native_averrors.h",
+            "multimedia/player_framework/native_avformat.h"
+        ]
+    },
+    "multimedia": {
+        "apiList":{
+            "14":[
+                "OH_AVPlayer *OH_AVPlayer_Create(void)",
+                "OH_AVErrCode OH_AVPlayer_SetURLSource(OH_AVPlayer *player, const char *url)",
+                "OH_AVErrCode OH_AVPlayer_SetFDSource(OH_AVPlayer *player, int32_t fd, int64_t offset, int64_t size)",
+                "OH_AVErrCode OH_AVPlayer_Prepare(OH_AVPlayer *player)",
+                "OH_AVErrCode OH_AVPlayer_Play(OH_AVPlayer *player)",
+                "OH_AVErrCode OH_AVPlayer_Pause(OH_AVPlayer *player)",
+                "OH_AVErrCode OH_AVPlayer_Stop(OH_AVPlayer *player)",
+                "OH_AVErrCode OH_AVPlayer_Release(OH_AVPlayer *player)",
+                "OH_AVErrCode OH_AVPlayer_SetVolume(OH_AVPlayer *player, float leftVolume, float rightVolume)",
+                "OH_AVErrCode OH_AVPlayer_Seek(OH_AVPlayer *player, int32_t mSeconds, AVPlayerSeekMode mode)",
+                "OH_AVErrCode OH_AVPlayer_GetCurrentTime(OH_AVPlayer *player, int32_t *currentTime)",
+                "OH_AVErrCode OH_AVPlayer_SetOnInfoCallback(OH_AVPlayer *player, OH_AVPlayerOnInfoCallback callback, void *userData)",
+                "OH_AVErrCode OH_AVPlayer_SetOnErrorCallback(OH_AVPlayer *player, OH_AVPlayerOnErrorCallback callback, void *userData)",
+                "OH_AVErrCode OH_AVPlayer_GetDuration(OH_AVPlayer *player, int32_t *duration)",
+                "OH_AVErrCode OH_AVPlayer_SetPlaybackSpeed(OH_AVPlayer *player, AVPlaybackSpeed speed)",
+                "OH_AVErrCode OH_AVPlayer_SetVideoSurface(OH_AVPlayer *player, OHNativeWindow *window)",
+                "bool OH_AVFormat_GetIntValue(struct OH_AVFormat *format, const char *key, int32_t *out)",
+                "extern const char* OH_PLAYER_STATE()",
+                "extern const char* OH_PLAYER_CURRENT_POSITION()",
+                "extern const char* OH_PLAYER_AUDIO_INTERRUPT_HINT()",
+                "extern const char* OH_PLAYER_VIDEO_WIDTH()",
+                "extern const char* OH_PLAYER_VIDEO_HEIGHT()",
+                "int32_t OH_NativeWindow_CreateNativeWindowFromSurfaceId(uint64_t surfaceId, OHNativeWindow **window)"
+            ]
+        },
+        "includes": []
+    },
+    "ohcamera": {
+        "apiList": {
+            "14":[
+                "Camera_ErrorCode OH_Camera_DeleteCameraManager(Camera_Manager* cameraManager);",
+                "Camera_ErrorCode OH_Camera_GetCameraManager(Camera_Manager** cameraManager);",
+                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameras(Camera_Manager* cameraManager, Camera_Device* cameras, uint32_t size);",
+                "Camera_ErrorCode OH_CameraManager_GetSupportedCameras(Camera_Manager* cameraManager, Camera_Device** cameras, uint32_t* size);",
+                "Camera_ErrorCode OH_CameraManager_DeleteSupportedCameraOutputCapability(Camera_Manager* cameraManager, Camera_OutputCapability* cameraOutputCapability);",
+                "Camera_ErrorCode OH_CameraManager_GetSupportedCameraOutputCapability(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_OutputCapability** cameraOutputCapability);",
+                "Camera_ErrorCode OH_CameraManager_CreateCameraInput(Camera_Manager* cameraManager, const Camera_Device* camera, Camera_Input** cameraInput);",
+                "Camera_ErrorCode OH_CameraManager_CreatePreviewOutput(Camera_Manager* cameraManager, const Camera_Profile* profile, const char* surfaceId, Camera_PreviewOutput** previewOutput);",
+                "Camera_ErrorCode OH_CameraManager_RegisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback);",
+                "Camera_ErrorCode OH_CameraManager_UnregisterCallback(Camera_Manager* cameraManager, CameraManager_Callbacks* callback);",
+                "Camera_ErrorCode OH_CameraManager_CreateCaptureSession(Camera_Manager* cameraManager, Camera_CaptureSession** captureSession);",
+                "Camera_ErrorCode OH_CameraInput_Open(Camera_Input* cameraInput);",
+                "Camera_ErrorCode OH_CameraInput_Release(Camera_Input* cameraInput);",
+                "Camera_ErrorCode OH_CameraDevice_GetCameraOrientation(Camera_Device* camera, uint32_t* orientation);",
+                "Camera_ErrorCode OH_CaptureSession_IsExposureModeSupported(Camera_CaptureSession* session, Camera_ExposureMode exposureMode, bool* isSupported);",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureMode(Camera_CaptureSession* session, Camera_ExposureMode* exposureMode);",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureBiasRange(Camera_CaptureSession* session, float* minExposureBias, float* maxExposureBias, float* step);",
+                "Camera_ErrorCode OH_CaptureSession_GetExposureBias(Camera_CaptureSession* session, float* exposureBias);",
+                "Camera_ErrorCode OH_CaptureSession_IsFocusModeSupported(Camera_CaptureSession* session, Camera_FocusMode focusMode, bool* isSupported);",
+                "Camera_ErrorCode OH_CaptureSession_GetFocusMode(Camera_CaptureSession* session, Camera_FocusMode* focusMode);",
+                "Camera_ErrorCode OH_CaptureSession_IsFlashModeSupported(Camera_CaptureSession* session, Camera_FlashMode flashMode, bool* isSupported);",
+                "Camera_ErrorCode OH_CaptureSession_BeginConfig(Camera_CaptureSession* session);",
+                "Camera_ErrorCode OH_CaptureSession_AddInput(Camera_CaptureSession* session, Camera_Input* cameraInput);",
+                "Camera_ErrorCode OH_CaptureSession_AddPreviewOutput(Camera_CaptureSession* session, Camera_PreviewOutput* previewOutput);",
+                "Camera_ErrorCode OH_CaptureSession_CommitConfig(Camera_CaptureSession* session);",
+                "Camera_ErrorCode OH_CaptureSession_Start(Camera_CaptureSession* session);",
+                "Camera_ErrorCode OH_CaptureSession_Stop(Camera_CaptureSession* session);",
+                "Camera_ErrorCode OH_CaptureSession_Release(Camera_CaptureSession* session);",
+                "Camera_ErrorCode OH_PreviewOutput_Stop(Camera_PreviewOutput* previewOutput);",
+                "Camera_ErrorCode OH_PreviewOutput_Release(Camera_PreviewOutput* previewOutput);"
+            ]
+        },
+        "includes": [
+        ]
+    },
+    "hilog_ndk": {
+        "apiList": {
+            "14": [
+                "int OH_LOG_Print(LogType type, LogLevel level, unsigned int domain, const char *tag, const char *fmt, ...)"
+            ]
+        },
+        "includes": [
+            "hilog/log.h"
+        ]
+    },
+    "ohinputmethod": {
+        "apiList": {
+            "14": [
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetSendEnterKeyFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_SendEnterKeyFunc sendEnterKeyFunc)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetFinishTextPreviewFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_FinishTextPreviewFunc finishTextPreviewFunc)",
+                "InputMethod_ErrorCode OH_TextConfig_SetPreviewTextSupport(InputMethod_TextConfig *config, bool supported)",
+                "InputMethod_TextEditorProxy *OH_TextEditorProxy_Create(void)",
+                "InputMethod_ErrorCode OH_TextConfig_IsPreviewTextSupported(InputMethod_TextConfig *config, bool *supported)",
+                "InputMethod_ErrorCode OH_TextConfig_SetInputType(InputMethod_TextConfig *config, InputMethod_TextInputType inputType)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetGetLeftTextOfCursorFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_GetLeftTextOfCursorFunc getLeftTextOfCursorFunc)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_ShowKeyboard(InputMethod_InputMethodProxy *inputMethodProxy)",
+                "InputMethod_ErrorCode OH_InputMethodController_Attach(InputMethod_TextEditorProxy *textEditorProxy,InputMethod_AttachOptions *options, InputMethod_InputMethodProxy **inputMethodProxy)",
+                "InputMethod_PrivateCommand *OH_PrivateCommand_Create(char key[], size_t keyLength)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetReceivePrivateCommandFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_ReceivePrivateCommandFunc receivePrivateCommandFunc)",
+                "InputMethod_ErrorCode OH_PrivateCommand_GetStrValue(InputMethod_PrivateCommand *command, const char **value, size_t *valueLength)",
+                "InputMethod_ErrorCode OH_TextConfig_GetEnterKeyType(InputMethod_TextConfig *config, InputMethod_EnterKeyType *enterKeyType)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetInsertTextFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_InsertTextFunc insertTextFunc)",
+                "InputMethod_ErrorCode OH_CursorInfo_SetRect(InputMethod_CursorInfo *cursorInfo, double left, double top, double width, double height)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_NotifySelectionChange(InputMethod_InputMethodProxy *inputMethodProxy, char16_t text[], size_t length, int start, int end)",
+                "InputMethod_ErrorCode OH_PrivateCommand_GetKey(InputMethod_PrivateCommand *command, const char **key, size_t *keyLength)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetGetTextConfigFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_GetTextConfigFunc getTextConfigFunc)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_SendPrivateCommand(InputMethod_InputMethodProxy *inputMethodProxy, InputMethod_PrivateCommand *privateCommand[], size_t size)",
+                "void OH_TextConfig_Destroy(InputMethod_TextConfig *config)",
+                "InputMethod_ErrorCode OH_TextAvoidInfo_GetPositionY(InputMethod_TextAvoidInfo *info, double *positionY)",
+                "InputMethod_ErrorCode OH_TextConfig_SetEnterKeyType(InputMethod_TextConfig *config, InputMethod_EnterKeyType enterKeyType)",
+                "InputMethod_TextConfig *OH_TextConfig_Create(void)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetMoveCursorFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_MoveCursorFunc moveCursorFunc)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_NotifyConfigurationChange(InputMethod_InputMethodProxy *inputMethodProxy,InputMethod_EnterKeyType enterKey, InputMethod_TextInputType textType)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetDeleteBackwardFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_DeleteBackwardFunc deleteBackwardFunc)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetSendKeyboardStatusFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_SendKeyboardStatusFunc sendKeyboardStatusFunc)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetHandleExtendActionFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_HandleExtendActionFunc handleExtendActionFunc)",
+                "InputMethod_ErrorCode OH_PrivateCommand_SetStrValue(InputMethod_PrivateCommand *command, char value[], size_t valueLength)",
+                "InputMethod_ErrorCode OH_TextAvoidInfo_SetPositionY(InputMethod_TextAvoidInfo *info, double positionY)",
+                "InputMethod_ErrorCode OH_TextConfig_GetInputType(InputMethod_TextConfig *config, InputMethod_TextInputType *inputType)",
+                "InputMethod_ErrorCode OH_InputMethodController_Detach(InputMethod_InputMethodProxy *inputMethodProxy)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetDeleteForwardFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_DeleteForwardFunc deleteForwardFunc)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_HideKeyboard(InputMethod_InputMethodProxy *inputMethodProxy)",
+                "InputMethod_AttachOptions *OH_AttachOptions_Create(bool showKeyboard)",
+                "InputMethod_ErrorCode OH_TextAvoidInfo_SetHeight(InputMethod_TextAvoidInfo *info, double height)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetHandleSetSelectionFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_HandleSetSelectionFunc handleSetSelectionFunc)",
+                "InputMethod_ErrorCode OH_TextConfig_GetWindowId(InputMethod_TextConfig *config, int32_t *windowId)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetGetRightTextOfCursorFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_GetRightTextOfCursorFunc getRightTextOfCursorFunc)",
+                "InputMethod_ErrorCode OH_TextConfig_SetWindowId(InputMethod_TextConfig *config, int32_t windowId)",
+                "void OH_TextEditorProxy_Destroy(InputMethod_TextEditorProxy *proxy)",
+                "InputMethod_ErrorCode OH_TextConfig_GetSelection(InputMethod_TextConfig *config, int32_t *start, int32_t *end)",
+                "InputMethod_ErrorCode OH_CursorInfo_GetRect(InputMethod_CursorInfo *cursorInfo, double *left, double *top, double *width, double *height)",
+                "InputMethod_ErrorCode OH_TextConfig_GetTextAvoidInfo(InputMethod_TextConfig *config, InputMethod_TextAvoidInfo **avoidInfo)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetGetTextIndexAtCursorFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_GetTextIndexAtCursorFunc getTextIndexAtCursorFunc)",
+                "InputMethod_ErrorCode OH_TextAvoidInfo_GetHeight(InputMethod_TextAvoidInfo *info, double *height)",
+                "InputMethod_ErrorCode OH_TextEditorProxy_SetSetPreviewTextFunc(InputMethod_TextEditorProxy *proxy, OH_TextEditorProxy_SetPreviewTextFunc setPreviewTextFunc)",
+                "InputMethod_ErrorCode OH_InputMethodProxy_NotifyCursorUpdate(InputMethod_InputMethodProxy *inputMethodProxy, InputMethod_CursorInfo *cursorInfo)",
+                "InputMethod_ErrorCode OH_TextConfig_GetCursorInfo(InputMethod_TextConfig *config, InputMethod_CursorInfo **cursorInfo)",
+                "InputMethod_ErrorCode OH_TextConfig_SetSelection(InputMethod_TextConfig *config, int32_t start, int32_t end)"
+            ]
+        },
+        "includes": []
+    },
+    "oh-pasteboard": {
+        "apiList": {
+            "13": [
+                "OH_PasteboardObserver* OH_PasteboardObserver_Create()",
+                "void OH_Pasteboard_Destroy(OH_Pasteboard* pasteboard)",
+                "OH_Pasteboard* OH_Pasteboard_Create()",
+                "int OH_Pasteboard_Subscribe(OH_Pasteboard* pasteboard, int type, const OH_PasteboardObserver* observer)",
+                "int OH_PasteboardObserver_Destroy(OH_PasteboardObserver* observer)",
+                "int OH_PasteboardObserver_Destroy(OH_PasteboardObserver* observer)",
+                "int OH_PasteboardObserver_SetData(OH_PasteboardObserver* observer, void* context, const Pasteboard_Notify callback, const Pasteboard_Finalize finalize)",
+                "int OH_Pasteboard_Unsubscribe(OH_Pasteboard* pasteboard, int type, const OH_PasteboardObserver* observer)",
+                "int OH_Pasteboard_SetData(OH_Pasteboard* pasteboard, OH_UdmfData* data)",
+                "OH_UdmfData* OH_Pasteboard_GetData(OH_Pasteboard* pasteboard, int* status)",
+                "int OH_Pasteboard_ClearData(OH_Pasteboard* pasteboard)",
+                "bool OH_Pasteboard_HasData(OH_Pasteboard* pasteboard)"
+            ],
+            "15": [
+                "Pasteboard_GetDataParams *OH_Pasteboard_GetDataParams_Create()",
+                "void OH_Pasteboard_GetDataParams_Destroy(Pasteboard_GetDataParams* params)",
+                "void OH_Pasteboard_GetDataParams_SetProgressIndicator(Pasteboard_GetDataParams* params, Pasteboard_ProgressIndicator progressIndicator)",
+                "void OH_Pasteboard_GetDataParams_SetDestUri(Pasteboard_GetDataParams* params, const char* destUri, uint32_t destUriLen)",
+                "void OH_Pasteboard_GetDataParams_SetFileConflictOptions(Pasteboard_GetDataParams* params, Pasteboard_FileConflictOptions option)",
+                "OH_UdmfData* OH_Pasteboard_GetDataWithProgress(OH_Pasteboard* pasteboard, Pasteboard_GetDataParams* params, int* status)"
+            ]
+        },
+        "includes": []
+    },
+    "udmf": {
+        "apiList": {
+            "12": [
+                "int OH_UdmfRecord_GetGeneralEntry(OH_UdmfRecord* pThis, const char* typeId, unsigned char** entry, unsigned int* count)",
+                "const char* OH_UdsPlainText_GetContent(OH_UdsPlainText* pThis)",
+                "int OH_UdmfRecord_AddGeneralEntry(OH_UdmfRecord* pThis, const char* typeId, unsigned char* entry, unsigned int count)",
+                "char** OH_UdmfRecord_GetTypes(OH_UdmfRecord* pThis, unsigned int* count)",
+                "void OH_UdsPlainText_Destroy(OH_UdsPlainText* pThis)",
+                "int OH_UdmfRecord_GetPlainText(OH_UdmfRecord* pThis, OH_UdsPlainText* plainText)",
+                "OH_UdmfData* OH_UdmfData_Create()",
+                "OH_UdsHtml* OH_UdsHtml_Create()",
+                "void OH_UdmfRecord_Destroy(OH_UdmfRecord* pThis)",
+                "int OH_UdmfRecord_GetHtml(OH_UdmfRecord* pThis, OH_UdsHtml* html)",
+                "int OH_UdmfData_AddRecord(OH_UdmfData* pThis, OH_UdmfRecord* record)",
+                "void OH_UdsHtml_Destroy(OH_UdsHtml* pThis)",
+                "OH_UdmfRecord** OH_UdmfData_GetRecords(OH_UdmfData* pThis, unsigned int* count)",
+                "int OH_UdsHtml_SetContent(OH_UdsHtml* pThis, const char* content)",
+                "OH_UdmfRecord* OH_UdmfRecord_Create()",
+                "OH_UdsPlainText* OH_UdsPlainText_Create()",
+                "int OH_UdsPlainText_SetContent(OH_UdsPlainText* pThis, const char* content)",
+                "const char* OH_UdsHtml_GetContent(OH_UdsHtml* pThis)",
+                "int OH_UdmfRecord_AddHtml(OH_UdmfRecord* pThis, OH_UdsHtml* html)",
+                "int OH_UdmfRecord_AddPlainText(OH_UdmfRecord* pThis, OH_UdsPlainText* plainText)",
+                "void OH_UdmfData_Destroy(OH_UdmfData* pThis)"
+            ],
+            "13": [
+                "int OH_UdmfRecord_AddPixelMap(OH_UdmfRecord* pThis, OH_UdsPixelMap* pixelMap)",
+                "void OH_UdsPixelMap_GetPixelMap(OH_UdsPixelMap* pThis, OH_PixelmapNative* pixelmapNative)",
+                "const char* OH_UdsFileUri_GetFileUri(OH_UdsFileUri* pThis)",
+                "int OH_UdmfRecord_GetPixelMap(OH_UdmfRecord* pThis, OH_UdsPixelMap* pixelMap)",
+                "OH_UdsFileUri* OH_UdsFileUri_Create()",
+                "int OH_UdmfRecord_GetFileUri(OH_UdmfRecord* pThis, OH_UdsFileUri* fileUri)",
+                "void OH_UdsPixelMap_Destroy(OH_UdsPixelMap* pThis)",
+                "void OH_UdsFileUri_Destroy(OH_UdsFileUri* pThis)",
+                "OH_UdsPixelMap* OH_UdsPixelMap_Create()",
+                "int OH_UdsPixelMap_SetPixelMap(OH_UdsPixelMap* pThis, OH_PixelmapNative* pixelmapNative)",
+                "int OH_UdsFileUri_SetFileUri(OH_UdsFileUri* pThis, const char* fileUri)",
+                "int OH_UdmfRecord_AddFileUri(OH_UdmfRecord* pThis, OH_UdsFileUri* fileUri)",
+                "bool OH_UdmfData_IsLocal(OH_UdmfData* data)"
+            ]
+        },
+        "includes": []
+    },
+    "pixelmap": {
+        "apiList": {
+            "12": [
+                "Image_ErrorCode OH_PixelmapInitializationOptions_SetWidth(OH_Pixelmap_InitializationOptions *options, uint32_t width)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_Release(OH_Pixelmap_InitializationOptions *options)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_Create(OH_Pixelmap_InitializationOptions **options)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_SetHeight(OH_Pixelmap_InitializationOptions *options, uint32_t height)",
+                "Image_ErrorCode OH_PixelmapNative_CreatePixelmap(uint8_t *data, size_t dataLength, OH_Pixelmap_InitializationOptions *options, OH_PixelmapNative **pixelmap)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_SetAlphaType(OH_Pixelmap_InitializationOptions *options, int32_t alphaType)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_SetSrcPixelFormat(OH_Pixelmap_InitializationOptions *options, int32_t srcpixelFormat)",
+                "Image_ErrorCode OH_PixelmapNative_Release(OH_PixelmapNative *pixelmap)",
+                "Image_ErrorCode OH_PixelmapImageInfo_Release(OH_Pixelmap_ImageInfo *info)",
+                "Image_ErrorCode OH_PixelmapNative_CreateEmptyPixelmap(OH_Pixelmap_InitializationOptions *options, OH_PixelmapNative **pixelmap)",
+                "Image_ErrorCode OH_PixelmapNative_GetImageInfo(OH_PixelmapNative *pixelmap, OH_Pixelmap_ImageInfo *imageInfo)",
+                "Image_ErrorCode OH_PixelmapNative_ReadPixels(OH_PixelmapNative *pixelmap, uint8_t *destination, size_t *bufferSize)",
+                "Image_ErrorCode OH_PixelmapImageInfo_GetWidth(OH_Pixelmap_ImageInfo *info, uint32_t *width)",
+                "Image_ErrorCode OH_PixelmapImageInfo_Create(OH_Pixelmap_ImageInfo **info)",
+                "Image_ErrorCode OH_PixelmapImageInfo_GetAlphaType(OH_Pixelmap_ImageInfo *info, int32_t *alphaType)",
+                "Image_ErrorCode OH_PixelmapImageInfo_GetRowStride(OH_Pixelmap_ImageInfo *info, uint32_t *rowStride)",
+                "Image_ErrorCode OH_PixelmapImageInfo_GetPixelFormat(OH_Pixelmap_ImageInfo *info, int32_t *pixelFormat)",
+                "Image_ErrorCode OH_PixelmapNative_GetNativeBuffer(OH_PixelmapNative *pixelmap, OH_NativeBuffer **nativeBuffer)",
+                "Image_ErrorCode OH_PixelmapImageInfo_GetHeight(OH_Pixelmap_ImageInfo *info, uint32_t *height)",
+                "Image_ErrorCode OH_PixelmapInitializationOptions_SetPixelFormat(OH_Pixelmap_InitializationOptions *options, int32_t pixelFormat)"
+            ]
+        },
+        "includes": []
+    },
+    "native_image": {
+        "apiList": {
+            "12": [
+                "OH_NativeImage* OH_NativeImage_Create(uint32_t textureId, uint32_t textureTarget)",
+                "OHNativeWindow* OH_NativeImage_AcquireNativeWindow(OH_NativeImage* image)",
+                "int32_t OH_NativeImage_AttachContext(OH_NativeImage* image, uint32_t textureId)",
+                "int32_t OH_NativeImage_DetachContext(OH_NativeImage* image)",
+                "int32_t OH_NativeImage_UpdateSurfaceImage(OH_NativeImage* image)",
+                "int64_t OH_NativeImage_GetTimestamp(OH_NativeImage* image)",
+                "int32_t OH_NativeImage_GetTransformMatrix(OH_NativeImage* image, float matrix[16])",
+                "int32_t OH_NativeImage_GetSurfaceId(OH_NativeImage* image, uint64_t* surfaceId)",
+                "int32_t OH_NativeImage_SetOnFrameAvailableListener(OH_NativeImage* image, OH_OnFrameAvailableListener listener)",
+                "int32_t OH_NativeImage_UnsetOnFrameAvailableListener(OH_NativeImage* image)",
+                "void OH_NativeImage_Destroy(OH_NativeImage** image)",
+                "OH_NativeImage* OH_ConsumerSurface_Create(void)",
+                "int32_t OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd)",
+                "int32_t OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer *nativeWindowBuffer, OH_NativeBuffer **buffer)",
+                "int32_t OH_NativeBuffer_MapPlanes(OH_NativeBuffer *buffer, void **virAddr, OH_NativeBuffer_Planes *outPlanes)",
+                "int32_t OH_NativeBuffer_Unreference(OH_NativeBuffer *buffer)",
+                "OHNativeWindowBuffer* OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(OH_NativeBuffer* nativeBuffer)",
+                "void OH_NativeWindow_DestroyNativeWindowBuffer(OHNativeWindowBuffer* buffer)",
+                "int32_t OH_NativeImage_ReleaseNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer* nativeWindowBuffer, int fenceFd)",
+                "BufferHandle *OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)",
+                "int32_t OH_ConsumerSurface_SetDefaultUsage(OH_NativeImage* image, uint64_t usage)"
+            ]
+        },
+        "includes": [
+            "native_image/native_image.h",
+            "native_window/external_window.h",
+            "native_buffer/native_buffer.h",
+            "native_image/graphic_error_code.h"
+        ]
+    },
+    "native_buffer": {
+        "apiList": {
+            "12": [
+                "int32_t OH_NativeBuffer_Reference(OH_NativeBuffer *buffer)",
+                "int32_t OH_NativeBuffer_Unreference(OH_NativeBuffer *buffer)",
+                "int32_t OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer *nativeWindowBuffer, OH_NativeBuffer **buffer)",
+                "OH_NativeBuffer* OH_NativeBuffer_Alloc(const OH_NativeBuffer_Config* config)",
+                "void OH_NativeBuffer_GetConfig(OH_NativeBuffer *buffer, OH_NativeBuffer_Config* config)",
+                "int32_t OH_NativeBuffer_Map(OH_NativeBuffer *buffer, void **virAddr)",
+                "int32_t OH_NativeBuffer_Unmap(OH_NativeBuffer *buffer)",
+                "uint32_t OH_NativeBuffer_GetSeqNum(OH_NativeBuffer *buffer)"
+            ]
+        },
+        "includes": []
+    },
+    "native_window": {
+        "apiList": {
+            "12": [
+                "BufferHandle *OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)",
+                "int32_t OH_NativeImage_AcquireNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer** nativeWindowBuffer, int* fenceFd)",
+                "int32_t OH_NativeImage_ReleaseNativeWindowBuffer(OH_NativeImage* image, OHNativeWindowBuffer* nativeWindowBuffer, int fenceFd)",
+                "OH_NativeImage* OH_NativeImage_Create(uint32_t textureId, uint32_t textureTarget)",
+                "void OH_NativeImage_Destroy(OH_NativeImage** image)",
+                "int32_t OH_NativeImage_SetOnFrameAvailableListener(OH_NativeImage* image, OH_OnFrameAvailableListener listener)",
+                "int32_t OH_NativeWindow_NativeWindowHandleOpt(OHNativeWindow *window, int code, ...)",
+                "int32_t OH_NativeWindow_NativeWindowRequestBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buffer, int *fenceFd)",
+                "int32_t OH_NativeWindow_NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer, int fenceFd, Region region)",
+                "void OH_NativeWindow_DestroyNativeWindow(OHNativeWindow* window)",
+                "OHNativeWindow* OH_NativeWindow_CreateNativeWindow(void* pSurface)",
+                "int32_t OH_NativeWindow_GetSurfaceId(OHNativeWindow *window, uint64_t *surfaceId)",
+                "int32_t OH_NativeWindow_NativeObjectUnreference(void *obj)",
+                "int32_t OH_NativeWindow_NativeObjectReference(void *obj)"
+            ]
+        },
+        "includes": [
+            "native_image/native_image.h",
+            "native_window/external_window.h",
+            "native_buffer/native_buffer.h"
+        ]
+    },
+    "native_vsync": {
+        "apiList": {
+            "10": [
+                "void OH_NativeVSync_Destroy(OH_NativeVSync* nativeVsync)",
+                "OH_NativeVSync* OH_NativeVSync_Create(const char* name, unsigned int length)",
+                "int OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVsync, OH_NativeVSync_FrameCallback callback, void* data)",
+                "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)"
+            ]
+        },
+        "includes": [
+            "native_vsync/graphic_error_code.h"
+        ]
+    },
+    "ffrt": {
+        "apiList": {
+            "14": [
+                "FFRT_C_API ffrt_loop_t ffrt_loop_create(ffrt_queue_t queue)",
+                "FFRT_C_API int ffrt_loop_destroy(ffrt_loop_t loop)",
+                "FFRT_C_API int ffrt_loop_run(ffrt_loop_t loop)",
+                "FFRT_C_API void ffrt_loop_stop(ffrt_loop_t loop)",
+                "FFRT_C_API int ffrt_loop_epoll_ctl(ffrt_loop_t loop, int op, int fd, uint32_t events, void *data, ffrt_poller_cb cb)",
+                "FFRT_C_API ffrt_timer_t ffrt_loop_timer_start(ffrt_loop_t loop, uint64_t timeout, void* data, ffrt_timer_cb cb, bool repeat)",
+                "FFRT_C_API int ffrt_loop_timer_stop(ffrt_loop_t loop, ffrt_timer_t handle)",
+                "FFRT_C_API int ffrt_queue_attr_init(ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_attr_destroy(ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_attr_set_qos(ffrt_queue_attr_t* attr, ffrt_qos_t qos)",
+                "FFRT_C_API ffrt_qos_t ffrt_queue_attr_get_qos(const ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_attr_set_timeout(ffrt_queue_attr_t* attr, uint64_t timeout_us)",
+                "FFRT_C_API uint64_t ffrt_queue_attr_get_timeout(const ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_attr_set_callback(ffrt_queue_attr_t* attr, ffrt_function_header_t* f)",
+                "FFRT_C_API ffrt_function_header_t* ffrt_queue_attr_get_callback(const ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_attr_set_max_concurrency(ffrt_queue_attr_t* attr, const int max_concurrency)",
+                "FFRT_C_API int ffrt_queue_attr_get_max_concurrency(const ffrt_queue_attr_t* attr)",
+                "FFRT_C_API ffrt_queue_t ffrt_queue_create(ffrt_queue_type_t type, const char* name, const ffrt_queue_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_destroy(ffrt_queue_t queue)",
+                "FFRT_C_API void ffrt_queue_submit(ffrt_queue_t queue, ffrt_function_header_t* f, const ffrt_task_attr_t* attr)",
+                "FFRT_C_API ffrt_task_handle_t ffrt_queue_submit_h(ffrt_queue_t queue, ffrt_function_header_t* f, const ffrt_task_attr_t* attr)",
+                "FFRT_C_API void ffrt_queue_wait(ffrt_task_handle_t handle)",
+                "FFRT_C_API int ffrt_queue_cancel(ffrt_task_handle_t handle)",
+                "FFRT_C_API ffrt_queue_t ffrt_get_main_queue()",
+                "FFRT_C_API ffrt_queue_t ffrt_get_current_queue()"
+            ]
+        },
+        "includes": []
+    },
+    "net_ssl": {
+        "apiList": {
+            "14": [
+                "uint32_t OH_NetStack_CertVerification(const struct NetStack_CertBlob *cert, const struct NetStack_CertBlob *caCert)",
+                "int32_t OH_NetStack_GetPinSetForHostName(const char *hostname, NetStack_CertificatePinning *pin)",
+                "int32_t OH_NetStack_GetCertificatesForHostName(const char *hostname, NetStack_Certificates *certs)",
+                "void OH_Netstack_DestroyCertificatesContent(NetStack_Certificates *certs)"
+            ]
+        },
+        "includes": []
+    },
+
+    "ohfileuri":{
+        "apiList": {
+            "14": [
+                "FileManagement_ErrCode OH_FileUri_GetPathFromUri(const char *uri, unsigned int length, char **result)",
+                "FileManagement_ErrCode OH_FileUri_GetFileName(const char *uri, unsigned int length, char **result)"
+            ]
+        },
+        "includes": []
+    },
+
+    "native_rdb":{
+        "apiList": {
+            "14": [
+                "OH_Cursor *OH_Rdb_Query(OH_Rdb_Store *store, OH_Predicates *predicates, const char *const *columnNames, int length)",
+                "int OH_Rdb_SetVersion(OH_Rdb_Store *store, int version)",
+                "OH_Rdb_Store *OH_Rdb_GetOrOpen(const OH_Rdb_Config *config, int *errCode)",
+                "OH_Cursor *OH_Rdb_ExecuteQuery(OH_Rdb_Store *store, const char *sql)",
+                "OH_Predicates *OH_Rdb_CreatePredicates(const char *table)",
+                "int OH_Rdb_CloseStore(OH_Rdb_Store *store)",
+                "OH_VBucket *OH_Rdb_CreateValuesBucket()",
+                "OH_VObject *OH_Rdb_CreateValueObject()",
+                "int OH_Rdb_Delete(OH_Rdb_Store *store, OH_Predicates *predicates)",
+                "int OH_Rdb_GetVersion(OH_Rdb_Store *store, int *version)",
+                "int OH_Rdb_Execute(OH_Rdb_Store *store, const char *sql)",
+                "int OH_Rdb_Insert(OH_Rdb_Store *store, const char *table, OH_VBucket *valuesBucket)"
+            ]
+        },
+        "includes": []
+    },
+
+    "ability_runtime":{
+        "apiList": {
+            "14": [
+                "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextGetCacheDir(char* buffer, int32_t bufferSize, int32_t* writeLength)",
+                "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextGetBundleName(char* buffer, int32_t bufferSize, int32_t* writeLength)",
+                "AbilityRuntime_ErrorCode OH_AbilityRuntime_ApplicationContextGetAreaMode(AbilityRuntime_AreaMode* areaMode)"
+
+            ]
+        },
+        "includes": []
+    },
+
+    "ability_access":{
+        "apiList": {
+            "14": [
+                "bool OH_AT_CheckSelfPermission(const char *permission)"
+            ]
+        },
+        "includes": []
+    },
+    "multimodalinputnew": {
+        "apiList": {
+            "13": [
+                "Input_Result OH_Input_RegisterDeviceListener(Input_DeviceListener* listener)",
+                "Input_Result OH_Input_UnregisterDeviceListener(Input_DeviceListener* listener)",
+                "Input_Result OH_Input_GetKeyboardType(int32_t deviceId, int32_t *keyboardType)",
+                "Input_Result OH_Input_GetDeviceIds(int32_t *deviceIds, int32_t inSize, int32_t *outSize)",
+                "Input_Result OH_Input_GetDevice(int32_t deviceId, Input_DeviceInfo **deviceInfo)",
+                "Input_Result OH_Input_GetDeviceProduct(Input_DeviceInfo *deviceInfo, int32_t *product)",
+                "Input_Result OH_Input_GetDeviceVersion(Input_DeviceInfo *deviceInfo, int32_t *version)",
+                "Input_Result OH_Input_GetDeviceId(Input_DeviceInfo *deviceInfo, int32_t *id)",
+                "Input_Result OH_Input_GetDeviceName(Input_DeviceInfo *deviceInfo, char **name)",
+                "Input_Result OH_Input_GetDeviceAddress(Input_DeviceInfo *deviceInfo, char **address)",
+                "Input_Result OH_Input_GetCapabilities(Input_DeviceInfo *deviceInfo, int32_t *capabilities)",
+                "Input_Result OH_Input_GetDeviceVendor(Input_DeviceInfo *deviceInfo, int32_t *vendor)",
+                "Input_DeviceInfo* OH_Input_CreateDeviceInfo(void)",
+                "void OH_Input_DestroyDeviceInfo(Input_DeviceInfo **deviceInfo)"
+            ]
+        },
+        "includes": []
+    },
+    "oh_display_manager": {
+        "apiList": {
+            "12": [
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayId(uint64_t *displayId)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayWidth(int32_t *displayWidth)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayHeight(int32_t *displayHeight)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayRotation(NativeDisplayManager_Rotation *displayRotation)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayOrientation(NativeDisplayManager_Orientation *displayOrientation)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayVirtualPixelRatio(float *virtualPixels)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayRefreshRate(uint32_t *refreshRate)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayDensityDpi(int32_t *densityDpi)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayDensityPixels(float *densityPixels)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayScaledDensity(float *scaledDensity)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayDensityXdpi(float *xDpi)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetDefaultDisplayDensityYdpi(float *yDpi)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_CreateDefaultDisplayCutoutInfo(NativeDisplayManager_CutoutInfo **cutoutInfo)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_DestroyDefaultDisplayCutoutInfo(NativeDisplayManager_CutoutInfo *cutoutInfo)",
+                "bool OH_NativeDisplayManager_IsFoldable()",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_GetFoldDisplayMode(NativeDisplayManager_FoldDisplayMode *displayMode)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_RegisterDisplayChangeListener(OH_NativeDisplayManager_DisplayChangeCallback displayChangeCallback, uint32_t *listenerIndex)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_UnregisterDisplayChangeListener(uint32_t listenerIndex)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_RegisterFoldDisplayModeChangeListener(OH_NativeDisplayManager_FoldDisplayModeChangeCallback displayModeChangeCallback, uint32_t *listenerIndex)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_UnregisterFoldDisplayModeChangeListener(uint32_t listenerIndex)"
+            ],
+            "14": [
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_CreateAllDisplays(NativeDisplayManager_DisplaysInfo **allDisplays)",
+                "void OH_NativeDisplayManager_DestroyAllDisplays(NativeDisplayManager_DisplaysInfo *allDisplays)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_CreateDisplayById(uint32_t displayId,NativeDisplayManager_DisplayInfo **displayInfo)",
+                "void OH_NativeDisplayManager_DestroyDisplay(NativeDisplayManager_DisplayInfo *displayInfo)",
+                "NativeDisplayManager_ErrorCode OH_NativeDisplayManager_CreatePrimaryDisplay(NativeDisplayManager_DisplayInfo **displayInfo)"
+            ]
+        },
+        "includes": [
+            "window_manager/oh_display_info.h"
+        ]
+    },
+    "deviceinfo": {
+        "apiList": {
+            "10": [
+                "char *OH_GetDeviceType(void)"
+            ]
+        },
+        "includes": []
+    },
+    "oh_media_codec_decoder":{
+        "apiList": {
+            "14": [
+                "OH_AVCapability *OH_AVCodec_GetCapability(const char *mime, bool isEncoder)",
+                "const char *OH_AVCapability_GetName(OH_AVCapability *capability)",
+                "struct OH_AVCodec *OH_VideoDecoder_CreateByMime(const char *mime)",
+                "struct OH_AVCodec *OH_VideoDecoder_CreateByName(const char *name)",
+                "OH_AVErrCode OH_VideoDecoder_Destroy(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_Configure(struct OH_AVCodec *codec, struct OH_AVFormat *format)",
+                "OH_AVErrCode OH_VideoDecoder_Prepare(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_Start(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_Stop(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_Flush(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_Reset(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_SetSurface(OH_AVCodec *codec, OHNativeWindow *window)",
+                "OH_AVErrCode OH_VideoDecoder_PushInputBuffer(struct OH_AVCodec *codec, uint32_t index)",
+                "OH_AVFormat *OH_VideoDecoder_GetOutputDescription(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoDecoder_FreeOutputBuffer(struct OH_AVCodec *codec, uint32_t index)",
+                "OH_AVErrCode OH_VideoDecoder_RenderOutputBuffer(struct OH_AVCodec *codec, uint32_t index)",
+                "OH_AVErrCode OH_VideoDecoder_SetParameter(struct OH_AVCodec *codec, struct OH_AVFormat *format)",
+                "OH_AVErrCode OH_VideoDecoder_RegisterCallback(struct OH_AVCodec *codec, struct OH_AVCodecCallback callback, void *userData)",
+                "OH_AVErrCode OH_VideoDecoder_SetDecryptionConfig(OH_AVCodec *codec, MediaKeySession *mediaKeySession, bool secureVideoPath)",
+                "OH_AVCapability *OH_AVCodec_GetCapabilityByCategory(const char *mime, bool isEncoder, OH_AVCodecCategory category)",
+                "bool OH_AVCapability_IsVideoSizeSupported(OH_AVCapability *capability, int32_t width, int32_t height)",
+                "struct OH_AVFormat *OH_AVFormat_Create(void)",
+                "bool OH_AVFormat_SetIntValue(struct OH_AVFormat *format, const char *key, int32_t value)",
+                "bool OH_AVFormat_GetIntValue(struct OH_AVFormat *format, const char *key, int32_t *out)",
+                "void OH_AVFormat_Destroy(struct OH_AVFormat *format)",
+                "int32_t OH_NativeWindow_NativeWindowHandleOpt(OHNativeWindow *window, int code, ...);",
+                "OH_AVErrCode OH_AVBuffer_SetBufferAttr(OH_AVBuffer *buffer, const OH_AVCodecBufferAttr *attr)",
+                "uint8_t *OH_AVBuffer_GetAddr(OH_AVBuffer *buffer)",
+                "int32_t OH_AVBuffer_GetCapacity(OH_AVBuffer *buffer)",
+                "OH_AVErrCode OH_AVCencInfo_SetAlgorithm(OH_AVCencInfo *cencInfo, enum DrmCencAlgorithm algo)",
+                "OH_AVErrCode OH_AVCencInfo_SetKeyIdAndIv(OH_AVCencInfo *cencInfo, uint8_t *keyId, uint32_t keyIdLen, uint8_t *iv, uint32_t ivLen)",
+                "OH_AVErrCode OH_AVCencInfo_SetSubsampleInfo(OH_AVCencInfo *cencInfo, uint32_t encryptedBlockCount, uint32_t skippedBlockCount, uint32_t firstEncryptedOffset, uint32_t subsampleCount, DrmSubsample *subsamples)",
+                "OH_AVErrCode OH_AVCencInfo_SetMode(OH_AVCencInfo *cencInfo, enum DrmCencInfoMode mode)",
+                "OH_AVErrCode OH_AVCencInfo_SetAVBuffer(OH_AVCencInfo *cencInfo, OH_AVBuffer *buffer)",
+                "OH_AVCencInfo *OH_AVCencInfo_Create()",
+                "OH_AVErrCode OH_AVCencInfo_Destroy(OH_AVCencInfo *cencInfo)",
+                "OH_AVErrCode OH_AVBuffer_GetBufferAttr(OH_AVBuffer *buffer, OH_AVCodecBufferAttr *attr)",
+                "const char *OH_MD_KEY_WIDTH()",
+                "const char *OH_MD_KEY_HEIGHT()",
+                "const char *OH_MD_KEY_VIDEO_PIC_WIDTH()",
+                "const char *OH_MD_KEY_VIDEO_PIC_HEIGHT()"
+            ]
+        },
+        "includes": [
+        ]
+    },
+    "oh_audio_codec_decoder":{
+        "apiList": {
+            "14": [
+                "struct OH_AVCodec *OH_AudioCodec_CreateByMime(const char *mime, bool isEncoder)",
+                "struct OH_AVCodec *OH_AudioCodec_CreateByName(const char *name)",
+                "OH_AVErrCode OH_AudioCodec_Destroy(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_Configure(struct OH_AVCodec *codec, const OH_AVFormat *format)",
+                "OH_AVErrCode OH_AudioCodec_Start(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_Stop(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_Flush(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_Reset(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_PushInputBuffer(struct OH_AVCodec *codec, uint32_t index)",
+                "OH_AVFormat *OH_AudioCodec_GetOutputDescription(struct OH_AVCodec *codec)",
+                "OH_AVErrCode OH_AudioCodec_FreeOutputBuffer(struct OH_AVCodec *codec, uint32_t index)",
+                "OH_AVErrCode OH_AudioCodec_SetParameter(struct OH_AVCodec *codec, const OH_AVFormat *format)",
+                "OH_AVErrCode OH_AudioCodec_RegisterCallback(OH_AVCodec *codec, OH_AVCodecCallback callback, void *userData)",
+                "OH_AVErrCode OH_AudioCodec_SetDecryptionConfig(OH_AVCodec *codec, MediaKeySession *mediaKeySession, bool secureAudio)",
+                "struct OH_AVFormat *OH_AVFormat_Create(void)",
+                "bool OH_AVFormat_SetIntValue(struct OH_AVFormat *format, const char *key, int32_t value)",
+                "bool OH_AVFormat_GetIntValue(struct OH_AVFormat *format, const char *key, int32_t *out)",
+                "void OH_AVFormat_Destroy(struct OH_AVFormat *format)",
+                "OH_AVErrCode OH_AVCencInfo_SetAlgorithm(OH_AVCencInfo *cencInfo, enum DrmCencAlgorithm algo)",
+                "OH_AVErrCode OH_AVCencInfo_SetKeyIdAndIv(OH_AVCencInfo *cencInfo, uint8_t *keyId, uint32_t keyIdLen, uint8_t *iv, uint32_t ivLen)",
+                "OH_AVErrCode OH_AVCencInfo_SetSubsampleInfo(OH_AVCencInfo *cencInfo, uint32_t encryptedBlockCount, uint32_t skippedBlockCount, uint32_t firstEncryptedOffset, uint32_t subsampleCount, DrmSubsample *subsamples)",
+                "OH_AVErrCode OH_AVCencInfo_SetMode(OH_AVCencInfo *cencInfo, enum DrmCencInfoMode mode)",
+                "OH_AVErrCode OH_AVCencInfo_SetAVBuffer(OH_AVCencInfo *cencInfo, OH_AVBuffer *buffer)",
+                "OH_AVCencInfo *OH_AVCencInfo_Create()",
+                "OH_AVErrCode OH_AVCencInfo_Destroy(OH_AVCencInfo *cencInfo)",
+                "OH_AVErrCode OH_AVBuffer_GetBufferAttr(OH_AVBuffer *buffer, OH_AVCodecBufferAttr *attr)",
+                "uint8_t *OH_AVBuffer_GetAddr(OH_AVBuffer *buffer)",
+                "OH_AVErrCode OH_AVBuffer_SetBufferAttr(OH_AVBuffer *buffer, const OH_AVCodecBufferAttr *attr)",
+                "bool OH_AVFormat_GetBuffer(struct OH_AVFormat *format, const char *key, uint8_t **addr, size_t *size)",
+                "OH_AVErrCode OH_AudioCodec_Prepare(struct OH_AVCodec *codec)",
+                "bool OH_AVFormat_GetLongValue(struct OH_AVFormat *format, const char *key, int64_t *out)",
+                "const char *OH_MD_KEY_CODEC_CONFIG()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_G711MU()",
+                "const char *OH_MD_KEY_AUDIO_SAMPLE_FORMAT()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_AMR_WB()",
+                "const char *OH_MD_KEY_IDENTIFICATION_HEADER()",
+                "const char *OH_MD_KEY_SETUP_HEADER()",
+                "const char *OH_MD_KEY_AUD_CHANNEL_COUNT()",
+                "const char *OH_MD_KEY_MAX_INPUT_SIZE()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_AMR_NB()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_APE()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_VORBIS()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_FLAC()",
+                "const char *OH_MD_KEY_AUD_SAMPLE_RATE()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_AAC()",
+                "const char *OH_AVCODEC_MIMETYPE_AUDIO_MPEG()",
+                "const char *OH_MD_KEY_BITRATE()",
+                "const char *OH_MD_KEY_AAC_IS_ADTS()"
+            ]
+        },
+        "includes": []
+    },
+    "ohpreferences":{
+        "apiList": {
+            "14": [
+                "OH_Preferences *OH_Preferences_Open(OH_PreferencesOption *option, int *errCode)",
+                "const OH_PreferencesValue *OH_PreferencesPair_GetPreferencesValue(const OH_PreferencesPair *pairs, uint32_t index)",
+                "Preference_ValueType OH_PreferencesValue_GetValueType(const OH_PreferencesValue *object)",
+                "const char *OH_PreferencesPair_GetKey(const OH_PreferencesPair *pairs, uint32_t index)",
+                "int OH_PreferencesOption_SetFileName(OH_PreferencesOption *option, const char *fileName)",
+                "int OH_PreferencesOption_SetBundleName(OH_PreferencesOption *option, const char *bundleName)",
+                "int OH_PreferencesValue_GetString(const OH_PreferencesValue *object, char **value, uint32_t *valueLen)",
+                "int OH_PreferencesOption_Destroy(OH_PreferencesOption* option)",
+                "OH_PreferencesOption* OH_PreferencesOption_Create()",
+                "void OH_Preferences_FreeString(char *string)",
+                "int OH_Preferences_Close(OH_Preferences *preference)",
+                "int OH_Preferences_GetInt(OH_Preferences *preference, const char *key, int *value)",
+                "int OH_Preferences_GetBool(OH_Preferences *preference, const char *key, bool *value)",
+                "int OH_Preferences_GetString(OH_Preferences *preference, const char *key, char **value, uint32_t *valueLen)",
+                "int OH_Preferences_SetInt(OH_Preferences *preference, const char *key, int value)",
+                "int OH_Preferences_SetBool(OH_Preferences *preference, const char *key, bool value)",
+                "int OH_Preferences_SetString(OH_Preferences *preference, const char *key, const char *value)",
+                "int OH_Preferences_Delete(OH_Preferences *preference, const char *key)",
+                "int OH_Preferences_RegisterDataObserver(OH_Preferences *preference, void *context, OH_PreferencesDataObserver observer, const char *keys[], uint32_t keyCount)",
+                "int OH_Preferences_UnregisterDataObserver(OH_Preferences *preference, void *context, OH_PreferencesDataObserver observer, const char *keys[], uint32_t keyCount)"
+            ]
+        },
+        "includes": []
+    },
+    "bundle_ndk":{
+        "apiList": {
+            "14": [
+                "char* OH_NativeBundle_GetCompatibleDeviceType()"
+            ]
+        },
+        "includes": []
+    },
+    "deviceinfo_ndk":{
+        "apiList": {
+            "14": [
+                "const char *OH_GetBrand()",
+                "const char *OH_GetProductModel(void)",
+                "const char *OH_GetDistributionOSName(void)",
+                "const char *OH_GetOSFullName(void)"
+            ]
+        },
+        "includes": []
+    },
+    "ohsensor":{
+        "apiList": {
+            "14": [
+                "Sensor_Result OH_Sensor_GetInfos(Sensor_Info **infos, uint32_t *count)",
+                "Sensor_Result OH_Sensor_Subscribe(const Sensor_SubscriptionId *id, const Sensor_SubscriptionAttribute *attribute, const Sensor_Subscriber *subscriber)",
+                "Sensor_Result OH_Sensor_Unsubscribe(const Sensor_SubscriptionId *id, const Sensor_Subscriber *subscriber)",
+                "Sensor_Info **OH_Sensor_CreateInfos(uint32_t count)",
+                "int32_t OH_Sensor_DestroyInfos(Sensor_Info **sensors, uint32_t count)",
+                "int32_t OH_SensorInfo_GetName(Sensor_Info* sensor, char *sensorName, uint32_t *length)",
+                "int32_t OH_SensorInfo_GetVendorName(Sensor_Info* sensor, char *vendorName, uint32_t *length)",
+                "int32_t OH_SensorInfo_GetType(Sensor_Info* sensor, Sensor_Type *sensorType)",
+                "int32_t OH_SensorInfo_GetResolution(Sensor_Info* sensor, float *resolution)",
+                "int32_t OH_SensorInfo_GetMinSamplingInterval(Sensor_Info* sensor, int64_t *minSamplingInterval)",
+                "int32_t OH_SensorInfo_GetMaxSamplingInterval(Sensor_Info* sensor, int64_t *maxSamplingInterval)",
+                "int32_t OH_SensorEvent_GetType(Sensor_Event* sensorEvent, Sensor_Type *sensorType)",
+                "int32_t OH_SensorEvent_GetTimestamp(Sensor_Event* sensorEvent, int64_t *timestamp)",
+                "int32_t OH_SensorEvent_GetAccuracy(Sensor_Event* sensorEvent, Sensor_Accuracy *accuracy)",
+                "int32_t OH_SensorEvent_GetData(Sensor_Event* sensorEvent, float **data, uint32_t *length)",
+                "Sensor_SubscriptionId *OH_Sensor_CreateSubscriptionId()",
+                "int32_t OH_Sensor_DestroySubscriptionId(Sensor_SubscriptionId *id)",
+                "int32_t OH_SensorSubscriptionId_GetType(Sensor_SubscriptionId* id, Sensor_Type *sensorType)",
+                "int32_t OH_SensorSubscriptionId_SetType(Sensor_SubscriptionId* id, const Sensor_Type sensorType)",
+                "Sensor_SubscriptionAttribute *OH_Sensor_CreateSubscriptionAttribute()",
+                "int32_t OH_Sensor_DestroySubscriptionAttribute(Sensor_SubscriptionAttribute *attribute)",
+                "int32_t OH_SensorSubscriptionAttribute_SetSamplingInterval(Sensor_SubscriptionAttribute* attribute, const int64_t samplingInterval)",
+                "int32_t OH_SensorSubscriptionAttribute_GetSamplingInterval(Sensor_SubscriptionAttribute* attribute, int64_t *samplingInterval)",
+                "Sensor_Subscriber *OH_Sensor_CreateSubscriber()",
+                "int32_t OH_Sensor_DestroySubscriber(Sensor_Subscriber *subscriber)",
+                "int32_t OH_SensorSubscriber_SetCallback(Sensor_Subscriber* subscriber, const Sensor_EventCallback callback)",
+                "int32_t OH_SensorSubscriber_GetCallback(Sensor_Subscriber* subscriber, Sensor_EventCallback *callback)",
+                "int32_t OH_Vibrator_PlayVibration(int32_t duration, Vibrator_Attribute attribute)",
+                "int32_t OH_Vibrator_PlayVibrationCustom(Vibrator_FileDescription fileDescription, Vibrator_Attribute vibrateAttribute)",
+                "int32_t OH_Vibrator_Cancel()"
+            ]
+        },
+        "includes": []
+    },
+    "ohprint":{
+        "apiList": {
+            "14": [
+                "Print_ErrorCode OH_Print_Init()",
+                "Print_ErrorCode OH_Print_Release()",
+                "Print_ErrorCode OH_Print_StartPrinterDiscovery(Print_PrinterDiscoveryCallback callback)",
+                "Print_ErrorCode OH_Print_StopPrinterDiscovery()",
+                "Print_ErrorCode OH_Print_ConnectPrinter(const char *printerId)",
+                "Print_ErrorCode OH_Print_StartPrintJob(const Print_PrintJob *printJob)",
+                "Print_ErrorCode OH_Print_RegisterPrinterChangeListener(Print_PrinterChangeCallback callback)",
+                "void OH_Print_UnregisterPrinterChangeListener()",
+                "Print_ErrorCode OH_Print_QueryPrinterList(Print_StringList *printerIdList)",
+                "void OH_Print_ReleasePrinterList(Print_StringList *printerIdList)",
+                "Print_ErrorCode OH_Print_QueryPrinterInfo(const char *printerId, Print_PrinterInfo **printerInfo)",
+                "void OH_Print_ReleasePrinterInfo(Print_PrinterInfo *printerInfo)",
+                "Print_ErrorCode OH_Print_LaunchPrinterManager()",
+                "Print_ErrorCode OH_Print_QueryPrinterProperties(const char *printerId, const Print_StringList *propertyKeyList, Print_PropertyList *propertyList)",
+                "void OH_Print_ReleasePrinterProperties(Print_PropertyList *propertyList)",
+                "Print_ErrorCode OH_Print_UpdatePrinterProperties(const char *printerId, const Print_PropertyList *propertyList)",
+                "Print_ErrorCode OH_Print_RestorePrinterProperties(const char *printerId, const Print_StringList *propertyKeyList)",
+                "Print_ErrorCode OH_Print_StartPrintByNative(const char *printJobName, Print_PrintDocCallback printDocCallback, void *context)",
+                "long OH_CommonEvent_GetLongFromParameters(const CommonEvent_Parameters* para, const char* key, const long defaultValue)"
+            ]
+        },
+        "includes": []
+    },
+    "net_proxy":{
+        "apiList": {
+            "14": [
+                "Telephony_RadioResult OH_Telephony_GetNetworkState(Telephony_NetworkState *state)",
+                "Telephony_RadioResult OH_Telephony_GetNetworkStateForSlot(int32_t slotId, Telephony_NetworkState *state)",
+                "int32_t OH_Telephony_GetDefaultCellularDataSlotId(void)"
+            ]
+        },
+        "includes": []
+    },
+    "net_connect":{
+        "apiList": {
+            "14": [
+                "int32_t OH_NetConn_HasDefaultNet(int32_t *hasDefaultNet)",
+                "int32_t OH_NetConn_GetNetCapabilities(NetConn_NetHandle *netHandle, NetConn_NetCapabilities *netCapabilities)",
+                "int32_t OH_NetConn_GetDefaultNet(NetConn_NetHandle *netHandle)",
+                "int32_t OH_NetConn_IsDefaultNetMetered(int32_t *isMetered)",
+                "int32_t OH_NetConn_GetConnectionProperties(NetConn_NetHandle *netHandle, NetConn_ConnectionProperties *prop)",
+                "int32_t OH_NetConn_GetDefaultHttpProxy(NetConn_HttpProxy *httpProxy)",
+                "int32_t OH_NetConn_GetAddrInfo(char *host, char *serv, struct addrinfo *hint, struct addrinfo **res, int32_t netId)",
+                "int32_t OH_NetConn_FreeDnsResult(struct addrinfo *res)",
+                "int32_t OH_NetConn_GetAllNets(NetConn_NetHandleList *netHandleList)",
+                "int32_t OHOS_NetConn_RegisterDnsResolver(OH_NetConn_CustomDnsResolver resolver)",
+                "int32_t OHOS_NetConn_UnregisterDnsResolver(void)",
+                "int32_t OH_NetConn_BindSocket(int32_t socketFd, NetConn_NetHandle *netHandle)",
+                "int32_t OH_NetConn_SetAppHttpProxy(NetConn_HttpProxy *httpProxy)",
+                "int32_t OH_NetConn_RegisterAppHttpProxyCallback(OH_NetConn_AppHttpProxyChange appHttpProxyChange, uint32_t *callbackId)",
+                "void OH_NetConn_UnregisterAppHttpProxyCallback(uint32_t callbackId)",
+                "int32_t OH_NetConn_RegisterNetConnCallback(NetConn_NetSpecifier *specifier, NetConn_NetConnCallback *netConnCallback, uint32_t timeout, uint32_t *callbackId)",
+                "int32_t OH_NetConn_RegisterDefaultNetConnCallback(NetConn_NetConnCallback *netConnCallback, uint32_t *callbackId)",
+                "int32_t OH_NetConn_UnregisterNetConnCallback(uint32_t callBackId)"
+            ]
+        },
+        "includes": []
+    },
+    "ohbattery_info":{
+        "apiList": {
+            "14": [
+                "int32_t OH_BatteryInfo_GetCapacity()",
+                "BatteryInfo_BatteryPluggedType OH_BatteryInfo_GetPluggedType()"
+            ]
+        },
+        "includes": []
+    },
+    "ohcommonevent":{
+        "apiList": {
+            "14": [
+                "CommonEvent_SubscribeInfo* OH_CommonEvent_CreateSubscribeInfo(const char* events[], int32_t eventsNum)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublisherPermission(CommonEvent_SubscribeInfo* info, const char* permission)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublisherBundleName(CommonEvent_SubscribeInfo* info, const char* bundleName)",
+                "void OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info)",
+                "CommonEvent_Subscriber* OH_CommonEvent_CreateSubscriber(const CommonEvent_SubscribeInfo* info, CommonEvent_ReceiveCallback callback)",
+                "void OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber)",
+                "CommonEvent_ErrCode OH_CommonEvent_Subscribe(const CommonEvent_Subscriber* subscriber)",
+                "CommonEvent_ErrCode OH_CommonEvent_UnSubscribe(const CommonEvent_Subscriber* subscriber)",
+                "const char* OH_CommonEvent_GetEventFromRcvData(const CommonEvent_RcvData* rcvData)",
+                "int32_t OH_CommonEvent_GetCodeFromRcvData(const CommonEvent_RcvData* rcvData)",
+                "const char* OH_CommonEvent_GetDataStrFromRcvData(const CommonEvent_RcvData* rcvData)",
+                "const char* OH_CommonEvent_GetBundleNameFromRcvData(const CommonEvent_RcvData* rcvData)",
+                "const CommonEvent_Parameters* OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData* rcvData)",
+                "CommonEvent_PublishInfo* OH_CommonEvent_CreatePublishInfo(bool ordered)",
+                "void OH_CommonEvent_DestroyPublishInfo(CommonEvent_PublishInfo* info)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublishInfoBundleName(CommonEvent_PublishInfo* info, const char* bundleName)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublishInfoPermissions(CommonEvent_PublishInfo* info, const char* permissions[], int32_t num)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublishInfoCode(CommonEvent_PublishInfo* info, int32_t code)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublishInfoData(CommonEvent_PublishInfo* info, const char* data, size_t length)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetPublishInfoParameters(CommonEvent_PublishInfo* info, CommonEvent_Parameters* param)",
+                "CommonEvent_Parameters* OH_CommonEvent_CreateParameters()",
+                "void OH_CommonEvent_DestroyParameters(CommonEvent_Parameters* param)",
+                "bool OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters* para, const char* key)",
+                "int OH_CommonEvent_GetIntFromParameters(const CommonEvent_Parameters* para, const char* key, const int defaultValue)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetIntToParameters(CommonEvent_Parameters* param, const char* key, int value)",
+                "int32_t OH_CommonEvent_GetIntArrayFromParameters(const CommonEvent_Parameters* para, const char* key, int** array)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetIntArrayToParameters(CommonEvent_Parameters* param, const char* key, const int* value, size_t num)",
+                "long OH_CommonEvent_GetLongFromParameters(const CommonEvent_Parameters* para, const char* key, const long defaultValue)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetLongToParameters(CommonEvent_Parameters* param, const char* key, long value)",
+                "int32_t OH_CommonEvent_GetLongArrayFromParameters(const CommonEvent_Parameters* para, const char* key, long** array)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetLongArrayToParameters(CommonEvent_Parameters* param, const char* key, const long* value, size_t num)",
+                "bool OH_CommonEvent_GetBoolFromParameters(const CommonEvent_Parameters* para, const char* key, const bool defaultValue)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetBoolToParameters(CommonEvent_Parameters* param, const char* key, bool value)",
+                "int32_t OH_CommonEvent_GetBoolArrayFromParameters(const CommonEvent_Parameters* para, const char* key, bool** array)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetBoolArrayToParameters(CommonEvent_Parameters* param, const char* key, const bool* value, size_t num)",
+                "char OH_CommonEvent_GetCharFromParameters(const CommonEvent_Parameters* para, const char* key, const char defaultValue)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetCharToParameters(CommonEvent_Parameters* param, const char* key, char value)",
+                "int32_t OH_CommonEvent_GetCharArrayFromParameters(const CommonEvent_Parameters* para, const char* key, char** array)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetCharArrayToParameters(CommonEvent_Parameters* param, const char* key, const char* value, size_t num)",
+                "double OH_CommonEvent_GetDoubleFromParameters(const CommonEvent_Parameters* para, const char* key, const double defaultValue)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetDoubleToParameters(CommonEvent_Parameters* param, const char* key, double value)",
+                "int32_t OH_CommonEvent_GetDoubleArrayFromParameters(const CommonEvent_Parameters* para, const char* key, double** array)",
+                "CommonEvent_ErrCode OH_CommonEvent_SetDoubleArrayToParameters(CommonEvent_Parameters* param, const char* key, const double* value, size_t num)",
+                "CommonEvent_ErrCode OH_CommonEvent_Publish(const char* event)",
+                "CommonEvent_ErrCode OH_CommonEvent_PublishWithInfo(const char* event, const CommonEvent_PublishInfo* info)",
+                "bool OH_CommonEvent_IsOrderedCommonEvent(const CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_FinishCommonEvent(CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_GetAbortCommonEvent(const CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_AbortCommonEvent(CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_ClearAbortCommonEvent(CommonEvent_Subscriber* subscriber)",
+                "int32_t OH_CommonEvent_GetCodeFromSubscriber(const CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_SetCodeToSubscriber(CommonEvent_Subscriber* subscriber, int32_t code)",
+                "const char* OH_CommonEvent_GetDataFromSubscriber(const CommonEvent_Subscriber* subscriber)",
+                "bool OH_CommonEvent_SetDataToSubscriber(CommonEvent_Subscriber* subscriber, const char* data, size_t length)"
+            ]
+        },
+        "includes": []
+    },
+    "ohdrm":{
+        "apiList": {
+            "14": [
+                "Drm_ErrCode OH_MediaKeySession_GenerateMediaKeyRequest(MediaKeySession *mediaKeySession, DRM_MediaKeyRequestInfo *info, DRM_MediaKeyRequest *mediaKeyRequest)",
+                "Drm_ErrCode OH_MediaKeySession_ProcessMediaKeyResponse(MediaKeySession *mediaKeySession, uint8_t *response, int32_t responseLen, uint8_t *offlineMediaKeyId, int32_t *offlineMediaKeyIdLen)",
+                "Drm_ErrCode OH_MediaKeySession_CheckMediaKeyStatus(MediaKeySession *mediaKeySession, DRM_MediaKeyStatus *mediaKeyStatus)",
+                "Drm_ErrCode OH_MediaKeySession_ClearMediaKeys(MediaKeySession *mediaKeySession)",
+                "Drm_ErrCode OH_MediaKeySession_GenerateOfflineReleaseRequest(MediaKeySession *mediaKeySession, uint8_t *offlineMediaKeyId, int32_t offlineMediaKeyIdLen, uint8_t *releaseRequest, int32_t *releaseRequestLen)",
+                "Drm_ErrCode OH_MediaKeySession_ProcessOfflineReleaseResponse(MediaKeySession *mediaKeySession, uint8_t *offlineMediaKeyId, int32_t offlineMediaKeyIdLen, uint8_t *releaseReponse, int32_t releaseReponseLen)",
+                "Drm_ErrCode OH_MediaKeySession_RestoreOfflineMediaKeys(MediaKeySession *mediaKeySession, uint8_t *offlineMediaKeyId, int32_t offlineMediaKeyIdLen)",
+                "Drm_ErrCode OH_MediaKeySession_GetContentProtectionLevel(MediaKeySession *mediaKeySession, DRM_ContentProtectionLevel *contentProtectionLevel)",
+                "Drm_ErrCode OH_MediaKeySession_RequireSecureDecoderModule(MediaKeySession *mediaKeySession, const char *mimeType, bool *status)",
+                "Drm_ErrCode OH_MediaKeySession_SetMediaKeySessionCallback(MediaKeySession *mediaKeySession, MediaKeySession_Callback *callback)",
+                "Drm_ErrCode OH_MediaKeySession_SetCallback(MediaKeySession *mediaKeySession, OH_MediaKeySession_Callback *callback)",
+                "Drm_ErrCode OH_MediaKeySession_Destroy(MediaKeySession *mediaKeySession)",
+                "Drm_ErrCode OH_MediaKeySystem_SetCallback(MediaKeySystem *mediaKeySystem, OH_MediaKeySystem_Callback callback)",
+                "Drm_ErrCode  OH_MediaKeySystem_GetMediaKeySystems(DRM_MediaKeySystemDescription *descs, uint32_t *count)",
+                "bool OH_MediaKeySystem_IsSupported(const char *name)",
+                "bool OH_MediaKeySystem_IsSupported2(const char *name, const char *mimeType)",
+                "bool OH_MediaKeySystem_IsSupported3(const char *name, const char *mimeType, DRM_ContentProtectionLevel contentProtectionLevel)",
+                "Drm_ErrCode OH_MediaKeySystem_Create(const char *name, MediaKeySystem **mediaKeySystem)",
+                "Drm_ErrCode OH_MediaKeySystem_SetConfigurationString(MediaKeySystem *mediaKeySystem, const char *configName, const char *value)",
+                "Drm_ErrCode OH_MediaKeySystem_GetConfigurationString(MediaKeySystem *mediaKeySystem, const char *configName, char *value, int32_t valueLen)",
+                "Drm_ErrCode OH_MediaKeySystem_SetConfigurationByteArray(MediaKeySystem *mediaKeySystem, const char *configName, uint8_t *value, int32_t valueLen)",
+                "Drm_ErrCode OH_MediaKeySystem_GetConfigurationByteArray(MediaKeySystem *mediaKeySystem, const char *configName, uint8_t *value, int32_t *valueLen)",
+                "Drm_ErrCode OH_MediaKeySystem_GetStatistics(MediaKeySystem *mediaKeySystem, DRM_Statistics *statistics)",
+                "Drm_ErrCode OH_MediaKeySystem_GetMaxContentProtectionLevel(MediaKeySystem *mediaKeySystem, DRM_ContentProtectionLevel *contentProtectionLevel)",
+                "Drm_ErrCode OH_MediaKeySystem_SetMediaKeySystemCallback(MediaKeySystem *mediaKeySystem, MediaKeySystem_Callback callback)",
+                "Drm_ErrCode OH_MediaKeySystem_CreateMediaKeySession(MediaKeySystem *mediaKeySystem, DRM_ContentProtectionLevel *level, MediaKeySession **mediaKeySession)",
+                "Drm_ErrCode OH_MediaKeySystem_GenerateKeySystemRequest(MediaKeySystem *mediaKeySystem, uint8_t *request, int32_t *requestLen, char *defaultUrl, int32_t defaultUrlLen)",
+                "Drm_ErrCode OH_MediaKeySystem_ProcessKeySystemResponse(MediaKeySystem *mediaKeySystem, uint8_t *response, int32_t responseLen)",
+                "Drm_ErrCode OH_MediaKeySystem_GetOfflineMediaKeyIds(MediaKeySystem *mediaKeySystem, DRM_OfflineMediakeyIdArray *offlineMediaKeyIds)",
+                "Drm_ErrCode OH_MediaKeySystem_GetOfflineMediaKeyStatus(MediaKeySystem *mediaKeySystem, uint8_t *offlineMediaKeyId, int32_t offlineMediaKeyIdLen, DRM_OfflineMediaKeyStatus *status)",
+                "Drm_ErrCode OH_MediaKeySystem_ClearOfflineMediaKeys(MediaKeySystem *mediaKeySystem, uint8_t *offlineMediaKeyId, int32_t offlineMediaKeyIdLen)",
+                "Drm_ErrCode OH_MediaKeySystem_GetCertificateStatus(MediaKeySystem *mediaKeySystem, DRM_CertificateStatus *certStatus)",
+                "Drm_ErrCode OH_MediaKeySystem_Destroy(MediaKeySystem *mediaKeySystem)"
+            ]
+        },
+        "includes": []
+    },
+    "image_source":{
+        "apiList": {
+            "14": [
+                "Image_ErrorCode OH_DecodingOptions_Release(OH_DecodingOptions *options)",
+                "Image_ErrorCode OH_ImageSourceNative_CreateFromData(uint8_t *data, size_t dataSize, OH_ImageSourceNative **res)",
+                "Image_ErrorCode OH_ImageSourceInfo_Create(OH_ImageSource_Info **info)",
+                "Image_ErrorCode OH_ImageSourceNative_GetImageInfo(OH_ImageSourceNative *source, int32_t index, OH_ImageSource_Info *info)",
+                "Image_ErrorCode OH_ImageSourceInfo_GetWidth(OH_ImageSource_Info *info, uint32_t *width)",
+                "Image_ErrorCode OH_ImageSourceInfo_GetHeight(OH_ImageSource_Info *info, uint32_t *height)",
+                "Image_ErrorCode OH_DecodingOptions_Create(OH_DecodingOptions **options)",
+                "Image_ErrorCode OH_DecodingOptions_SetPixelFormat(OH_DecodingOptions *options, int32_t pixelFormat)",
+                "Image_ErrorCode OH_ImageSourceNative_CreatePixelmap(OH_ImageSourceNative *source, OH_DecodingOptions *options, OH_PixelmapNative **pixelmap)",
+                "Image_ErrorCode OH_ImageSourceNative_Release(OH_ImageSourceNative *source)",
+                "Image_ErrorCode OH_ImageSourceInfo_Release(OH_ImageSource_Info *info)"
+            ],
+            "15": [
+                "Image_ErrorCode OH_ImageSourceNative_CreatePixelmapUsingAllocator(OH_ImageSourceNative *source, OH_DecodingOptions *options, IMAGE_ALLOCATOR_TYPE allocator, OH_PixelmapNative **pixelmap)"
+            ]
+        },
+        "includes": []
+    },
+    "keystore": {
+        "apiList": {
+            "14": [
+                "struct OH_Huks_Result OH_Huks_GetSdkVersion(struct OH_Huks_Blob *sdkVersion)",
+                "struct OH_Huks_Result OH_Huks_GenerateKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSetIn, struct OH_Huks_ParamSet *paramSetOut)",
+                "struct OH_Huks_Result OH_Huks_ImportKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet, const struct OH_Huks_Blob *key)",
+                "struct OH_Huks_Result OH_Huks_ImportWrappedKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_Blob *wrappingKeyAlias, const struct OH_Huks_ParamSet *paramSet, const struct OH_Huks_Blob *wrappedKeyData)",
+                "struct OH_Huks_Result OH_Huks_ExportPublicKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet, struct OH_Huks_Blob *key)",
+                "struct OH_Huks_Result OH_Huks_DeleteKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet)",
+                "struct OH_Huks_Result OH_Huks_GetKeyItemParamSet(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSetIn, struct OH_Huks_ParamSet *paramSetOut)",
+                "struct OH_Huks_Result OH_Huks_IsKeyItemExist(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet)",
+                "struct OH_Huks_Result OH_Huks_AttestKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet, struct OH_Huks_CertChain *certChain)",
+                "struct OH_Huks_Result OH_Huks_AnonAttestKeyItem(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet, struct OH_Huks_CertChain *certChain)",
+                "struct OH_Huks_Result OH_Huks_InitSession(const struct OH_Huks_Blob *keyAlias, const struct OH_Huks_ParamSet *paramSet, struct OH_Huks_Blob *handle, struct OH_Huks_Blob *token)",
+                "struct OH_Huks_Result OH_Huks_UpdateSession(const struct OH_Huks_Blob *handle, const struct OH_Huks_ParamSet *paramSet, const struct OH_Huks_Blob *inData, struct OH_Huks_Blob *outData)",
+                "struct OH_Huks_Result OH_Huks_FinishSession(const struct OH_Huks_Blob *handle, const struct OH_Huks_ParamSet *paramSet, const struct OH_Huks_Blob *inData, struct OH_Huks_Blob *outData)",
+                "struct OH_Huks_Result OH_Huks_AbortSession(const struct OH_Huks_Blob *handle, const struct OH_Huks_ParamSet *paramSet)",
+                "struct OH_Huks_Result OH_Huks_InitParamSet(struct OH_Huks_ParamSet **paramSet)",
+                "struct OH_Huks_Result OH_Huks_AddParams(struct OH_Huks_ParamSet *paramSet, const struct OH_Huks_Param *params, uint32_t paramCnt)",
+                "struct OH_Huks_Result OH_Huks_BuildParamSet(struct OH_Huks_ParamSet **paramSet)",
+                "void OH_Huks_FreeParamSet(struct OH_Huks_ParamSet **paramSet)",
+                "struct OH_Huks_Result OH_Huks_CopyParamSet(const struct OH_Huks_ParamSet *fromParamSet, uint32_t fromParamSetSize, struct OH_Huks_ParamSet **paramSet)",
+                "struct OH_Huks_Result OH_Huks_GetParam(const struct OH_Huks_ParamSet *paramSet, uint32_t tag, struct OH_Huks_Param **param)",
+                "struct OH_Huks_Result OH_Huks_FreshParamSet(struct OH_Huks_ParamSet *paramSet, bool isCopy)",
+                "struct OH_Huks_Result OH_Huks_IsParamSetTagValid(const struct OH_Huks_ParamSet *paramSet)",
+                "struct OH_Huks_Result OH_Huks_IsParamSetValid(const struct OH_Huks_ParamSet *paramSet, uint32_t size)",
+                "struct OH_Huks_Result OH_Huks_CheckParamMatch(const struct OH_Huks_Param *baseParam, const struct OH_Huks_Param *param)"
+            ]
+        },
+        "includes": []
+    },
+    "asset": {
+        "apiList": {
+            "14": [
+                "int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)",
+                "int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt)",
+                "int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt, const Asset_Attr *attributesToUpdate, uint32_t updateCnt)", 
+                "int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)",
+                "int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet)",
+                "int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)",
+                "Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)",
+                "void OH_Asset_FreeBlob(Asset_Blob *blob)",
+                "void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet)"
+            ]
+        },
+        "includes": []
+    },
+    "time_service":{
+        "apiList": {
+            "12": [
+                "TimeService_ErrCode OH_TimeService_GetTimeZone(char *timeZone, uint32_t len)"
+            ]
+        },
+        "includes": []
+    },
+    "bundle_ndk": {
+        "apiList": {
+            "14": [
+                "OH_NativeBundle_ElementName OH_NativeBundle_GetMainElementName()"
+            ]
+        },
+        "includes": []
+    },
+    "ohavsession": {
+        "apiList": {
+            "14": [
+                "AVMetadata_Result OH_AVMetadataBuilder_Create(OH_AVMetadataBuilder** builder)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetAssetId(OH_AVMetadataBuilder* builder, const char* assetId)",
+                "AVMetadata_Result OH_AVMetadataBuilder_GenerateAVMetadata(OH_AVMetadataBuilder* builder, OH_AVMetadata** avMetadata)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetArtist(OH_AVMetadataBuilder* builder, const char* artist)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetAlbum(OH_AVMetadataBuilder* builder, const char* album)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetDuration(OH_AVMetadataBuilder* builder, int64_t duration)",
+                "AVMetadata_Result OH_AVMetadataBuilder_SetTitle(OH_AVMetadataBuilder* builder, const char* title)",
+                "AVMetadata_Result OH_AVMetadataBuilder_Destroy(OH_AVMetadataBuilder* builder)",
+                "AVMetadata_Result OH_AVMetadata_Destroy(OH_AVMetadata* avMetadata)",
+                "AVSession_ErrCode OH_AVSession_Destroy(OH_AVSession* avsession)",
+                "AVSession_ErrCode OH_AVSession_RegisterCommandCallback(OH_AVSession* avsession, AVSession_ControlCommand command, OH_AVSessionCallback_OnCommand callback, void* userData)",
+                "AVSession_ErrCode OH_AVSession_RegisterSeekCallback(OH_AVSession* avsession, OH_AVSessionCallback_OnSeek callback, void* userData)",
+                "AVSession_ErrCode OH_AVSession_Activate(OH_AVSession* avsession)",
+                "AVSession_ErrCode OH_AVSession_Deactivate(OH_AVSession* avsession)",
+                "AVSession_ErrCode OH_AVSession_SetAVMetadata(OH_AVSession* avsession, OH_AVMetadata* avmetadata)",
+                "AVSession_ErrCode OH_AVSession_SetPlaybackState(OH_AVSession* avsession, AVSession_PlaybackState playbackState)",
+                "AVSession_ErrCode OH_AVSession_SetAVMetadata(OH_AVSession* avsession, OH_AVMetadata* avmetadata)",
+                "AVSession_ErrCode OH_AVSession_SetPlaybackPosition(OH_AVSession* avsession, AVSession_PlaybackPosition* playbackPosition)",
+                "AVSession_ErrCode OH_AVSession_Create(AVSession_Type sessionType, const char* sessionTag, const char* bundleName, const char* abilityName, OH_AVSession** avsession)"
+            ]
+        },
+        "includes": []
+    },
+    "oh_media_codec_encoder": {
+        "apiList": {
+            "14": [
+                "OH_AVCodec* OH_VideoEncoder_CreateByMime(const char *mime)",
+                "OH_AVCodec* OH_VideoEncoder_CreateByName(const char *name)",
+                "OH_AVErrCode OH_VideoEncoder_RegisterCallback(OH_AVCodec *codec, OH_AVCodecCallback callback, void *userData)",
+                "OH_AVErrCode OH_VideoEncoder_Configure(OH_AVCodec *codec, OH_AVFormat *format)",
+                "OH_AVErrCode OH_VideoEncoder_Prepare(OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoEncoder_Start(OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoEncoder_Stop(OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoEncoder_Reset(OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoEncoder_Destroy(OH_AVCodec *codec)",
+                "OH_AVErrCode OH_VideoEncoder_GetSurface(OH_AVCodec *codec, OHNativeWindow ** window)",
+                "OH_AVErrCode OH_VideoEncoder_FreeOutputBuffer(OH_AVCodec *codec, uint32_t index)",
+                "OH_AVErrCode OH_VideoEncoder_SetParameter(OH_AVCodec *codec, OH_AVFormat *format)",
+                "bool OH_AVFormat_SetDoubleValue(struct OH_AVFormat *format, const char *key, double value)",
+                "bool OH_AVFormat_SetLongValue(struct OH_AVFormat *format, const char *key, int64_t value)",
+                "void OH_NativeWindow_DestroyNativeWindow(OHNativeWindow* window)",
+                "const char* OH_MD_KEY_VIDEO_ENCODE_BITRATE_MODE()",
+                "const char* OH_MD_KEY_REQUEST_I_FRAME()",
+                "const char* OH_MD_KEY_PIXEL_FORMAT()",
+                "const char* OH_MD_KEY_FRAME_RATE()"
+            ]
+        },
+        "includes": []
+    },
+    "location_ndk":{
+        "apiList": {
+            "14": [
+                "Location_ResultCode OH_Location_IsLocatingEnabled(bool* enabled)",
+                "Location_ResultCode OH_Location_StartLocating(const Location_RequestConfig* requestConfig)",
+                "Location_ResultCode OH_Location_StopLocating(const Location_RequestConfig* requestConfig)",
+                "Location_BasicInfo OH_LocationInfo_GetBasicInfo(Location_Info* location)",
+                "Location_ResultCode OH_LocationInfo_GetAdditionalInfo(Location_Info* location, char* additionalInfo, uint32_t length)",
+                "Location_RequestConfig* OH_Location_CreateRequestConfig(void)",
+                "void OH_Location_DestroyRequestConfig(Location_RequestConfig* requestConfig)",
+                "void OH_LocationRequestConfig_SetUseScene(Location_RequestConfig* requestConfig, Location_UseScene useScene)",
+                "void OH_LocationRequestConfig_SetPowerConsumptionScene(Location_RequestConfig* requestConfig, Location_PowerConsumptionScene powerConsumptionScene)",
+                "void OH_LocationRequestConfig_SetInterval(Location_RequestConfig* requestConfig, int interval)",
+                "void OH_LocationRequestConfig_SetCallback(Location_RequestConfig* requestConfig, Location_InfoCallback callback, void* userData)"
+
+            ]
+        },
+        "includes": []
+    },
+        
+    "hitrace_ndk": {
+        "apiList": {
+            "14": [
+                "void OH_HiTrace_CountTrace()",
+                "void OH_HiTrace_StartTrace()",
+                "void OH_HiTrace_FinishAsyncTrace()",
+                "void OH_HiTrace_FinishTrace()",
+                "void OH_HiTrace_StartAsyncTrace()"
+            ]
+        },
+        "includes": []
+    },
+    "draw_text":{
+        "apiList": {
+            "12": [
+                "void OH_Drawing_DestroyFontDescriptor(OH_Drawing_FontDescriptor* descriptor)",
+                "OH_Drawing_FontConfigInfo* OH_Drawing_GetSystemFontConfigInfo(OH_Drawing_FontConfigInfoErrorCode* errorCode)",
+                "void OH_Drawing_DestroySystemFontConfigInfo(OH_Drawing_FontConfigInfo* drawFontCfgInfo)"
+            ],
+            "14": [
+                "OH_Drawing_Array* OH_Drawing_GetSystemFontFullNamesByType(OH_Drawing_SystemFontType fontType)",
+                "OH_Drawing_FontDescriptor* OH_Drawing_GetFontDescriptorByFullName(const OH_Drawing_String* fullName, OH_Drawing_SystemFontType fontType)",
+                "const OH_Drawing_String* OH_Drawing_GetSystemFontFullNameByIndex(OH_Drawing_Array* fullNameArray, size_t index)",
+                "void OH_Drawing_DestroySystemFontFullNames(OH_Drawing_Array* fullNameArray)",             
+                "size_t OH_Drawing_GetDrawingArraySize(OH_Drawing_Array* drawingArray)"
+            ]
+        },
+        "includes": []
+    }
+
+
+}

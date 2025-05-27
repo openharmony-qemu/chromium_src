@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "base/metrics/crc32.h"
-
 #include "cef/libcef/features/features.h"
 
 #if !BUILDFLAG(IS_NACL) && !BUILDFLAG(IS_CEF_SANDBOX_BUILD)

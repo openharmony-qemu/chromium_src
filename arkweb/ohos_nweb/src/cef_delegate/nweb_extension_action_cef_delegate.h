@@ -33,9 +33,16 @@ class NWebExtensionActionCefDelegate {
   static void RegisterWebExtensionApiListener(
     std::shared_ptr<NWebExtensionActionApiCallback> action_api_listener);
   static void UnRegisterWebExtensionApiListener();
+  static NWebExtensionActionCefDelegate* GetInstance();
   static void OnSetIcon(std::string extension_id,
                         const gfx::Image& icon_image,
                         int32_t tab_id);
+  void OnDisable(const std::string& extensionId, std::optional<int>& tabId);
+  void OnEnable(const std::string& extensionId, std::optional<int>& tabId);
+
+ private:
+  static std::unique_ptr<NWebExtensionActionCefDelegate> instance;
+  static std::mutex mtx;
 };
 
 }  // namespace OHOS::NWeb

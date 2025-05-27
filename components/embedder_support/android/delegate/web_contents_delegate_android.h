@@ -65,15 +65,10 @@ class WebContentsDelegateAndroid : public content::WebContentsDelegate {
   void ActivateContents(content::WebContents* contents) override;
   void LoadingStateChanged(content::WebContents* source,
                            bool should_show_loading_ui) override;
-  void RendererUnresponsive(content::WebContents* source,
-                            content::RenderWidgetHost* render_widget_host,
-                            base::RepeatingClosure hang_monitor_restarter
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                            ,
-                            content::RendererIsUnresponsiveReason reason
-#endif
-
-                            ) override;
+  void RendererUnresponsive(
+      content::WebContents* source,
+      content::RenderWidgetHost* render_widget_host,
+      base::RepeatingClosure hang_monitor_restarter) override;
   void RendererResponsive(
       content::WebContents* source,
       content::RenderWidgetHost* render_widget_host) override;

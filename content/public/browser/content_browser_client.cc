@@ -8,7 +8,6 @@
 #include <string_view>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
@@ -89,6 +88,7 @@
 #include "ui/shell_dialogs/select_file_policy.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/tts_environment_android.h"
@@ -100,6 +100,7 @@
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "base/system/sys_info.h"
 #endif
+ 
 
 using AttributionReportType =
     content::ContentBrowserClient::AttributionReportingOsRegistrar;
@@ -169,13 +170,7 @@ bool ContentBrowserClient::ShouldUseMobileFlingCurve() {
     LOG(DEBUG) << "low device do not trigger fling";
     return false;
   }
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || \
-    (BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ) &&    \
-     BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
   return true;
-#else
-  return false;
-#endif
 }
 #endif
 

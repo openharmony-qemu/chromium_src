@@ -508,7 +508,8 @@ void GpuDataManagerImplPrivate::StartUmaTimer() {
       &GpuDataManagerImplPrivate::RecordCompositingMode);
 }
 #if BUILDFLAG(IS_OHOS)
-void SetVulkanIcdAddress() {
+void SetVulkanIcdAddress()
+{
   // Set the configuration file lookup address of swiftshader
   // used by local libvulkan
   base::FilePath result;
@@ -524,8 +525,7 @@ void GpuDataManagerImplPrivate::InitializeGpuModes() {
   // Android and Chrome OS can't switch to software compositing. If the GPU
   // process initialization fails or GPU process is too unstable then crash the
   // browser process to reset everything.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH) && \
-    !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS_ASH) && !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   fallback_modes_.push_back(gpu::GpuMode::DISPLAY_COMPOSITOR);
   if (SwiftShaderAllowed())
     fallback_modes_.push_back(gpu::GpuMode::SWIFTSHADER);

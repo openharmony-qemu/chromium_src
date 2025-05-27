@@ -9,7 +9,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "components/viz/common/quads/compositor_frame_metadata.h"
 #include "components/viz/common/quads/offset_tag.h"
@@ -25,6 +24,7 @@
 #include "ui/gfx/mojom/delegated_ink_metadata_mojom_traits.h"
 #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
 #include "ui/gfx/mojom/overlay_transform_mojom_traits.h"
+#include "arkweb/build/features/features.h"
 
 namespace mojo {
 

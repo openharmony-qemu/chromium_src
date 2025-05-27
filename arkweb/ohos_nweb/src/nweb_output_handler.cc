@@ -29,6 +29,7 @@
 #include "base/trace_event/trace_event.h"
 #include "nweb_hilog.h"
 #include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 
 namespace OHOS::NWeb {
 namespace {
@@ -117,10 +118,9 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
     }
 
     if (!is_initialized_resize_) {
-      int32_t ret = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                        .GetWindowAdapterInstance()
+      int32_t ret = OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
                         .NativeWindowSetBufferGeometry(
-                            reinterpret_cast<void*>(window_), width, height);
+                            reinterpret_cast<void*>(window_.get()), width, height);
       if (ret == OHOS::NWeb::GSErrorCode::GSERROR_OK) {
         is_initialized_resize_ = true;
         WVLOG_I(
@@ -286,8 +286,7 @@ bool NWebOutputHandler::IsSizeValid() {
 }
 
 void* NWebOutputHandler::GetNativeWindowFromSurface(void* surface) {
-  window_ = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                .GetWindowAdapterInstance()
+  window_ = OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
                 .CreateNativeWindowFromSurface(surface);
   return window_;
 }

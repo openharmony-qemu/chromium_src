@@ -11,7 +11,6 @@
 #include <optional>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/atomic_sequence_num.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
@@ -24,6 +23,7 @@
 #include "third_party/skia/include/private/SkGainmapInfo.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/hdr_metadata.h"
+#include "arkweb/build/features/features.h"
 
 class GrDirectContext;
 class SkColorSpace;
@@ -156,10 +156,9 @@ class CC_PAINT_EXPORT ServiceImageTransferCacheEntry final
                                      bool needs_mips);
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  bool BuildFromRGBAHardwareDecodedImage(
-      GrDirectContext* context,
-      std::vector<sk_sp<SkImage>> plane_images,
-      size_t buffer_byte_size);
+  bool BuildFromRGBAHardwareDecodedImage(GrDirectContext* context,
+                                         std::vector<sk_sp<SkImage>> plane_images,
+                                         size_t buffer_byte_size);
 #endif
 
   // ServiceTransferCacheEntry implementation:

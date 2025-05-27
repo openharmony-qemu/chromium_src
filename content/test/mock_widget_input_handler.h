@@ -10,12 +10,12 @@
 #include <memory>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "cc/input/browser_controls_offset_tags_info.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -292,10 +292,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetGestureEventResult(bool result, bool stopPropagation) override {}
   void SetNativeEmbedMode(bool flag) override {}
-  void AttachSoftwareCompositorOhos(
-      ::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
-          compositor_request) override {}
+  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
+    compositor_request) override {}
   void ScrollBy(float delta_x, float delta_y) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
 #endif
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
   MessageVector GetAndResetDispatchedMessages();

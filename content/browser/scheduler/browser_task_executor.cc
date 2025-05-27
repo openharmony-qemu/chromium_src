@@ -84,6 +84,7 @@ scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForOHOSMainThread(
 }
 #endif
 
+
 }  // namespace
 
 BaseBrowserTaskExecutor::BaseBrowserTaskExecutor() = default;
@@ -239,10 +240,8 @@ BrowserTaskExecutor::OnUserInputStart() {
 
 // static
 void BrowserTaskExecutor::Shutdown() {
-  if (!g_browser_task_executor ||
-      !g_browser_task_executor->ui_thread_executor_) {
+  if (!g_browser_task_executor || !g_browser_task_executor->ui_thread_executor_)
     return;
-  }
 
   DCHECK(Get()->ui_thread_executor_);
   DCHECK(Get()->io_thread_executor_);

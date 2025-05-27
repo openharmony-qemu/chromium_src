@@ -99,7 +99,7 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       bool disable_cert_network_fetches,
       const CommonConnectJobParams* common_connect_job_params,
       ConnectJob::Delegate* delegate
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       ,
       bool secure_dns_only = false
 #endif
@@ -139,7 +139,7 @@ class NET_EXPORT_PRIVATE ConnectJobFactory {
       bool disable_cert_network_fetches,
       const CommonConnectJobParams* common_connect_job_params,
       ConnectJob::Delegate* delegate
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       ,
       bool secure_dns_only = false
 #endif

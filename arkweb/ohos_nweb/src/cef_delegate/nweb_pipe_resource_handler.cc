@@ -59,6 +59,7 @@ NWebPipeResourceHandler::NWebPipeResourceHandler(
 bool NWebPipeResourceHandler::Open(CefRefPtr<CefRequest> request,
                                    bool& handle_request,
                                    CefRefPtr<CefCallback> callback) {
+  base::AutoLock scoped_lock_(lock_);
   if (response_) {
     handle_request = true;
     LOG(DEBUG)

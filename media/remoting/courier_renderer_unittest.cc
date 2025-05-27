@@ -330,6 +330,9 @@ class CourierRendererTest : public testing::Test {
     RunPendingTasks();
     renderer_->Initialize(
         media_resource_.get(), render_client_.get(),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        RequestSurfaceCB(), VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
         base::BindOnce(&RendererClientImpl::OnPipelineStatus,
                        base::Unretained(render_client_.get())));
     RunPendingTasks();

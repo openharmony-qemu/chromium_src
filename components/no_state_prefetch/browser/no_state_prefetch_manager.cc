@@ -20,7 +20,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
-
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
@@ -263,21 +263,6 @@ NoStatePrefetchManager::StartPrefetchingFromLinkRelPrerender(
       origin, url, referrer, initiator_origin, gfx::Rect(size),
       session_storage_namespace, attempt ? attempt->GetWeakPtr() : nullptr);
 }
-
-#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-std::unique_ptr<NoStatePrefetchHandle>
-NoStatePrefetchManager::StartOhPrefetchingFromOmnibox(
-    const GURL& url,
-    SessionStorageNamespace* session_storage_namespace,
-    const gfx::Size& size,
-    PreloadingAttempt* attempt,
-    const std::string& extra_headers) {
-  return StartPrefetchingWithPreconnectFallback(
-      ORIGIN_OMNIBOX, url, content::Referrer(), std::nullopt, gfx::Rect(size),
-      session_storage_namespace, attempt ? attempt->GetWeakPtr() : nullptr,
-      extra_headers);
-}
-#endif  // defined(ARKWEB_NO_STATE_PREFETCH)
 
 std::unique_ptr<NoStatePrefetchHandle>
 NoStatePrefetchManager::AddSameOriginSpeculation(
@@ -677,6 +662,11 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
   // create a new one.
   if (content::RenderProcessHost::IsProcessLimitReached() &&
       !content::RenderProcessHost::run_renderer_in_process()) {
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    if (!MayHitOmniboxUrl(url, origin, attempt)) {
+      return nullptr;
+    }
+#else
     SkipNoStatePrefetchContentsAndMaybePreconnect(
         url, origin, FINAL_STATUS_TOO_MANY_PROCESSES);
     // Since it is possible that the NSP enabled group uses more processes, we
@@ -688,6 +678,7 @@ NoStatePrefetchManager::StartPrefetchingWithPreconnectFallback(
           ToPreloadingFailureReason(FINAL_STATUS_TOO_MANY_PROCESSES));
     }
     return nullptr;
+#endif
   }
 
   // Record the URL in the prefetch list, even when in full prerender mode, to
@@ -1070,5 +1061,9 @@ void NoStatePrefetchManager::SetNoStatePrefetchContentsFactoryForTest(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   no_state_prefetch_contents_factory_.reset(no_state_prefetch_contents_factory);
 }
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "arkweb/chromium_ext/components/no_state_prefetch/browser/ark_web_no_state_prefetch_manager_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
 }  // namespace prerender

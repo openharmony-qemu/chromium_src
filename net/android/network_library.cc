@@ -321,8 +321,7 @@ MarshmallowGetAddrInfoForNetwork GetMarshmallowGetAddrInfoForNetwork() {
 
 }  // namespace
 
-NO_SANITIZE("cfi-icall")
-NET_EXPORT_PRIVATE int GetAddrInfoForNetwork(handles::NetworkHandle network,
+NO_SANITIZE("cfi-icall") NET_EXPORT_PRIVATE int GetAddrInfoForNetwork(handles::NetworkHandle network,
                                              const char* node,
                                              const char* service,
                                              const struct addrinfo* hints,

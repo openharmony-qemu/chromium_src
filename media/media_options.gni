@@ -49,7 +49,7 @@ declare_args() {
 
   # Enable usage of libvpx within the media library. Used for software based
   # decoding of VP9 and VP8A type content.
-  media_use_libvpx = true
+  media_use_libvpx = false
 
   # non-blink builds doesn't use ffmpeg, libvpx.
   if (!use_blink) {
@@ -113,7 +113,7 @@ declare_args() {
 
   # Enable browser managed persistent metadata storage for EME persistent
   # session and persistent usage record session.
-  enable_media_drm_storage = is_android || is_castos
+  enable_media_drm_storage = is_android || is_castos || is_arkweb
 
   # Enable HLS manifest parser and demuxer.
   if (arkweb_media_hls) {
@@ -246,7 +246,7 @@ declare_args() {
   # media/cdm/api/content_decryption_module.h. If true, the actually library CDM
   # will be hosted in the mojo CDM service running in the CDM (utility) process.
   # Used for all desktop platforms.
-  enable_library_cdms = toolkit_views && !is_castos
+  enable_library_cdms = toolkit_views && !is_castos && !is_arkweb
 }
 
 # Use another declare_args() to allow dependence on `enable_library_cdms`.
@@ -285,7 +285,7 @@ _default_mojo_media_host = ""
 if (is_cast_media_device) {
   _default_mojo_media_services = cast_mojo_media_services
   _default_mojo_media_host = cast_mojo_media_host
-} else if (is_android) {
+} else if (is_android || arkweb_media_codec || arkweb_enable_cdm) {
   _default_mojo_media_services = [
     "cdm",
     "audio_decoder",

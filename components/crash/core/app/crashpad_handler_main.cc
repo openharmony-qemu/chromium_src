@@ -59,7 +59,7 @@ __attribute__((visibility("default"), used)) int CrashpadHandlerMain(
 #if BUILDFLAG(ARKWEB_CRASHPAD)
   LOG(INFO) << "crashpad::HandlerMain start";
 #endif
-
+ 
   return crashpad::HandlerMain(argc, argv, &user_stream_data_sources);
 }
 

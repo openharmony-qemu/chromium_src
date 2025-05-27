@@ -26,8 +26,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-#include "content/browser/renderer_host/frame_tree_node.h"
-#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/profile_interaction_manager_for_include.cc"
 #endif
 
 namespace subresource_filter {
@@ -88,25 +87,8 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
   // TODO(crbug.com/40721691): Add support for enabling ads interventions
   // separately for different ads violations.
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  if (profile_context_) {
-    const GURL& url = rfh->GetLastCommittedURL();
-    std::optional<AdsInterventionManager::LastAdsIntervention>
-        last_intervention = profile_context_->ads_intervention_manager()
-                                ->GetLastAdsIntervention(url);
-    // TODO(crbug.com/40721691): If a host triggers multiple times on a single
-    // navigate and the durations don't match, we'll use the last duration
-    // rather than the longest. The metadata should probably store the
-    // activation with the longest duration.
-    if (last_intervention &&
-        last_intervention->duration_since <
-            AdsInterventionManager::GetInterventionDuration(
-                last_intervention->ads_violation)) {
-      return;
-    }
-
-    profile_context_->ads_intervention_manager()
-        ->TriggerAdsInterventionForUrlOnSubsequentLoads(url,
-                                                        triggered_violation);
+  if (!ProfileInteractionManagerUtil::OnAdsViolationTriggeredExt(this, rfh, triggered_violation)) {
+    return;
   }
 #else
   const GURL& url = rfh->GetLastCommittedURL();
@@ -134,61 +116,29 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
     mojom::ActivationLevel initial_activation_level,
     ActivationDecision* decision) {
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  LOG(DEBUG) << "[Adblock] OnPageActivationComputed url : ***";
-  CHECK(IsInSubresourceFilterRoot(navigation_handle),
-        base::NotFatalUntil::M129);
-
-  mojom::ActivationLevel effective_activation_level = initial_activation_level;
-  const GURL& url(navigation_handle->GetURL());
-  if (url.SchemeIsHTTPOrHTTPS()) {
-    effective_activation_level =
-        subresource_filter::mojom::ActivationLevel::kEnabled;
-  }
-
-  content::RenderFrameHost* rfh = navigation_handle->GetRenderFrameHost();
-
-  if (rfh == NULL) {
-    LOG(DEBUG) << "[Adblock] OnPageActivationComputed url22 : ***"
-               << effective_activation_level;
-    return subresource_filter::mojom::ActivationLevel::kDisabled;
-  } else {
-    content::FrameTreeNode* node =
-        static_cast<content::RenderFrameHostImpl*>(rfh)->frame_tree_node();
-
-    if (node == NULL || !node->is_adblock_enabled() ||
-        !navigation_handle->GetWebContents()->IsAdsBlockEnabled()) {
-      LOG(DEBUG) << "[Adblock] OnPageActivationComputed url11 : ***"
-                 << effective_activation_level;
-      return subresource_filter::mojom::ActivationLevel::kDisabled;
-    }
-  }
-  LOG(DEBUG) << "[Adblock] OnPageActivationComputed url : ***"
-             << effective_activation_level;
-  return effective_activation_level;
+  return OnPageActivationComputedExt(navigation_handle, initial_activation_level);
 #else
   CHECK(IsInSubresourceFilterRoot(navigation_handle),
         base::NotFatalUntil::M129);
 
   mojom::ActivationLevel effective_activation_level = initial_activation_level;
 
-  if (profile_context_ &&
-      profile_context_->ads_intervention_manager()->ShouldActivate(
+  if (profile_context_->ads_intervention_manager()->ShouldActivate(
           navigation_handle)) {
     effective_activation_level = mojom::ActivationLevel::kEnabled;
     *decision = ActivationDecision::ACTIVATED;
   }
 
   const GURL& url(navigation_handle->GetURL());
-  if (profile_context_ && url.SchemeIsHTTPOrHTTPS()) {
+  if (url.SchemeIsHTTPOrHTTPS()) {
     profile_context_->settings_manager()->SetSiteMetadataBasedOnActivation(
         url, effective_activation_level == mojom::ActivationLevel::kEnabled,
         SubresourceFilterContentSettingsManager::ActivationSource::
             kSafeBrowsing);
   }
 
-  if (profile_context_ &&
-      profile_context_->settings_manager()->GetSitePermission(url) ==
-          CONTENT_SETTING_ALLOW) {
+  if (profile_context_->settings_manager()->GetSitePermission(url) ==
+      CONTENT_SETTING_ALLOW) {
     if (effective_activation_level == mojom::ActivationLevel::kEnabled) {
       *decision = ActivationDecision::URL_ALLOWLISTED;
     }

@@ -172,6 +172,7 @@ BASE_FEATURE(kOpaqueResponseBlockingV02,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
 
+
 // Treat ORB blocked responses to script-initiated fetches as errors too.
 // Complements ORB v0.2, which exempts script-initiated fetches.
 // Implementing ORB in Chromium is tracked in https://crbug.com/1178928

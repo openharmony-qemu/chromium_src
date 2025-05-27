@@ -9,6 +9,7 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "build/build_config.h"
@@ -22,10 +23,6 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/range/range.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/webshare/webshare.mojom.h"

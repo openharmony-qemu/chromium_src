@@ -54,9 +54,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
@@ -794,7 +792,8 @@ int URLRequest::DoCancel(int error, const SSLInfo& ssl_info) {
       net_log_.AddEventWithNetErrorCode(NetLogEventType::CANCELLED,
                                         error == ERR_ABORTED ? OK : error);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-      LOG(INFO) << "DoCancel the url_request, url: ***" << ", error " << error;
+      LOG(INFO) << "DoCancel the url_request, url: ***"
+                << ", error " << error;
 #endif
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
       LOG_FEEDBACK(INFO) << "DoCancel the url_request, url: "

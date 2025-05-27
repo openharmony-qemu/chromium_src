@@ -420,6 +420,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return request.is_preflight;
   }
 #endif  //  ARKWEB_PRP_PRELOAD
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  static bool is_sync_mode(const network::ResourceRequest& request) {
+    return request.is_sync_mode;
+  }
+#endif  //  ARKWEB_RESOURCE_INTERCEPTION
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   static bool is_download_request(const network::ResourceRequest& request) {
     return request.is_download_request;

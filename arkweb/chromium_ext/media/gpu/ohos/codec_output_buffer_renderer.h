@@ -67,6 +67,10 @@ class MEDIA_GPU_EXPORT CodecOutputBufferRenderer
     return output_buffer_.get();
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool RenderVideoView();
+#endif // ARKWEB_VIDEO_ASSISTANT
+
  private:
   friend class FrameInfoHelperTest;
 

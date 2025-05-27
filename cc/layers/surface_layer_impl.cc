@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/trace_event/traced_value.h"
@@ -20,6 +19,10 @@
 #include "components/viz/common/quads/solid_color_draw_quad.h"
 #include "components/viz/common/quads/surface_draw_quad.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) 
+#include "arkweb/chromium_ext/cc/layer/surface_layer_impl_for_include.cc"
+#endif
 
 namespace cc {
 
@@ -229,11 +232,11 @@ void SurfaceLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   deadline_in_frames_ = 0u;
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   OnLayerBoundsUpdate(visible_quad_rect);
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   OnLayerRectUpdate(visible_quad_rect);
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   if (!base::FeatureList::IsEnabled(
           features::kAlignSurfaceLayerImplToPixelGrid)) {
     return;
@@ -360,24 +363,4 @@ void SurfaceLayerImpl::AsValueInto(base::trace_event::TracedValue* dict) const {
   dict->SetString("surface_range", surface_range_.ToString());
 }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-void SurfaceLayerImpl::OnLayerBoundsUpdate(gfx::Rect visible_quad_rect) {
-  gfx::Rect layer_bounds = ScreenSpaceTransform().MapRect(visible_quad_rect);
-  if (!layer_bounds_.ApproximatelyEqual(layer_bounds, 1)) {
-    layer_bounds_ = layer_bounds;
-    layer_tree_impl()->OnLayerBoundsUpdate(id(), layer_bounds);
-  }
-}
-#endif  // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void SurfaceLayerImpl::OnLayerRectUpdate(gfx::Rect visible_quad_rect) {
-  visible_quad_rect.set_origin(
-      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
-  if (!visible_quad_rect_.ApproximatelyEqual(visible_quad_rect, 1)) {
-    visible_quad_rect_ = visible_quad_rect;
-    layer_tree_impl()->OnLayerRectUpdate(id(), visible_quad_rect);
-  }
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }  // namespace cc

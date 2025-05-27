@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/logging.h"
 #include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
 
 #include <chrono>
@@ -53,7 +54,7 @@ void ReportLossFrame::Report() {
   }
 #if defined(REPORT_SYS_EVENT)
   int64_t now = GetCurrentTimestampMS();
-  int duration = now - start_time_for_scroll_;
+  int64_t duration = now - start_time_for_scroll_;
   base::ThreadPool::PostTask(
       FROM_HERE, {base::TaskPriority::LOWEST},
       base::BindOnce(&ReportJankStats, start_time_for_scroll_, duration,
@@ -74,16 +75,16 @@ void ReportLossFrame::Record() {
   }
 
   int64_t now = GetCurrentTimestampMS();
-  int duration = now - start_time_;
+  int64_t duration = now - start_time_;
   // ns->ms
-  double period = vsync_period_ / 1000000.0;
+  double period = static_cast<double>(vsync_period_) / 1000000.0;
   start_time_ = now;
 
   if (duration <= period * 2) {
     return;
   }
 
-  double loss_frame = duration / period;
+  double loss_frame = static_cast<double>(duration) / period;
   LOG(DEBUG) << "ReportLossFrame: period: " << period
              << " duration:" << duration << " loss_frame: " << loss_frame;
   TRACE_EVENT2("base", "WEBVIEW::JANK_STATS_APP", "DURATION", duration,

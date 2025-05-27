@@ -7,6 +7,7 @@
 #include <map>
 #include <utility>
 
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/containers/map_util.h"
 #include "base/feature_list.h"
 #include "base/task/bind_post_task.h"
@@ -272,7 +273,8 @@ void AgentSchedulingGroup::CreateView(mojom::CreateViewParamsPtr params) {
   renderer.SetScrollAnimatorEnabled(
       params->web_preferences.enable_scroll_animator, PassKey());
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  renderer.SetDrawMode(params->web_preferences.draw_mode, PassKey());
+  renderer.SetDrawMode(
+      params->web_preferences.draw_mode, PassKey());
 #endif
 
   CreateWebView(std::move(params),

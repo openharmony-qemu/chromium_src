@@ -35,7 +35,7 @@ class CRYPTO_EXPORT Encryptor {
 #if BUILDFLAG(ARKWEB_ENCRYPT)
     GCM,
 #endif
-
+ 
   };
 
   Encryptor();
@@ -99,11 +99,11 @@ class CRYPTO_EXPORT Encryptor {
                                  base::span<uint8_t> output);
 #if BUILDFLAG(ARKWEB_ENCRYPT)
   std::optional<size_t> EncryptGCM(base::span<const uint8_t> input,
-                                   base::span<uint8_t> output,
-                                   std::string* tag);
+                                    base::span<uint8_t> output,
+                                    std::string* tag);
   std::optional<size_t> DecryptGCM(const std::string& input,
-                                   base::span<uint8_t> output,
-                                   std::string* tag);
+                                    base::span<uint8_t> output,
+                                    std::string* tag);
 #endif
 
   // In CBC mode, the IV passed to Init(). In CTR mode, the counter value passed

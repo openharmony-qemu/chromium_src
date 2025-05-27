@@ -13,7 +13,6 @@
 
 #include <algorithm>
 
-#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/scoped_blocking_call.h"
@@ -24,6 +23,9 @@
 
 #if BUILDFLAG(ARKWEB_VULKAN)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
+#include "arkweb/chromium_ext/gpu/vulkan/vulkan_surface_ext.h"
+#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 #endif
 
 namespace gpu {
@@ -88,6 +90,9 @@ uint32_t kMinImageCount = 3u;
 
 VulkanSurface::~VulkanSurface() {
   DCHECK_EQ(static_cast<VkSurfaceKHR>(VK_NULL_HANDLE), surface_);
+#if BUILDFLAG(ARKWEB_VULKAN)
+  UNREF_VULKAN_WINDOW(window_);
+#endif
 }
 
 VulkanSurface::VulkanSurface(VkInstance vk_instance,
@@ -109,7 +114,7 @@ VulkanSurface::VulkanSurface(VkInstance vk_instance,
         base::TimeTicks(), base::Seconds(1) / 60);
   }
 #if BUILDFLAG(ARKWEB_VULKAN)
-  swap_chain_ = nullptr;
+  ADDREF_VULKAN_WINDOW(swap_chain_, window_, accelerated_widget);
 #endif
 }
 
@@ -265,11 +270,7 @@ base::TimeDelta VulkanSurface::GetDisplayRefreshInterval() {
 bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
                                     gfx::OverlayTransform transform) {
 #if BUILDFLAG(ARKWEB_VULKAN)
-  Finish();
-  if (swap_chain_) {
-    swap_chain_->Destroy();
-    swap_chain_ = nullptr;
-  }
+  SWAP_CHAIN_DESTROY(swap_chain_);
 #endif
   // Get Surface Information.
   VkSurfaceCapabilitiesKHR surface_caps;
@@ -353,10 +354,7 @@ bool VulkanSurface::CreateSwapChain(const gfx::Size& size,
   // Create swap chain.
   auto min_image_count = std::max(surface_caps.minImageCount, kMinImageCount);
 #if BUILDFLAG(ARKWEB_VULKAN)
-  uint32_t imageCount = base::ohos::IsMobileDevice() ? 5u : 4u;
-  min_image_count = std::max(min_image_count, imageCount);
-  LOG(INFO) << "VulkanSurface::CreateSwapChain min_image_count = "
-            << min_image_count;
+  GET_IMAGE_COUNT(min_image_count, window_);
 #endif
   if (!swap_chain->Initialize(device_queue_, surface_, surface_format_,
                               image_size_, min_image_count, image_usage_flags_,

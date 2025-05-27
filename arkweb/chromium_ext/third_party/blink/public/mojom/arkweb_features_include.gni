@@ -1,0 +1,126 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//arkweb/build/features/features.gni")
+import("//build/config/features.gni")
+
+mojom_platform_enabled_features = []
+mojom_core_enabled_features = []
+
+if (is_android || is_arkweb) {
+  mojom_platform_enabled_features += [ "is_android_or_arkweb" ]
+}
+
+if (is_arkweb) {
+  mojom_platform_enabled_features += [ "is_arkweb" ]
+}
+
+if (arkweb_clipboard) {
+  mojom_platform_enabled_features += [ "arkweb_clipboard" ]
+}
+
+if (arkweb_copy_option) {
+  mojom_platform_enabled_features += [ "arkweb_copy_option" ]
+}
+
+if (arkweb_same_layer) {
+  mojom_platform_enabled_features += [ "arkweb_same_layer" ]
+}
+
+if (arkweb_drag_drop) {
+  mojom_platform_enabled_features += [ "arkweb_drag_drop" ]
+}
+
+if (arkweb_ai) {
+  mojom_platform_enabled_features += [ "arkweb_ai" ]
+}
+
+if (arkweb_zoom) {
+  mojom_platform_enabled_features += [ "arkweb_zoom" ]
+}
+
+if (arkweb_active_policy) {
+  mojom_platform_enabled_features += [ "arkweb_active_policy" ]
+}
+
+if (arkweb_input_events) {
+  mojom_platform_enabled_features += [ "arkweb_input_events" ]
+}
+
+if (arkweb_scrollbar) {
+  mojom_platform_enabled_features += [ "arkweb_scrollbar" ]
+}
+
+if (arkweb_composite_render) {
+  mojom_platform_enabled_features += [ "arkweb_composite_render" ]
+}
+
+if (arkweb_css_font) {
+  mojom_platform_enabled_features += [ "arkweb_css_font" ]
+}
+
+if (arkweb_custom_video_player) {
+  mojom_platform_enabled_features += [ "arkweb_custom_video_player" ]
+}
+
+if (arkweb_video_assistant) {
+  mojom_platform_enabled_features += [ "arkweb_video_assistant" ]
+}
+
+if (arkweb_media_capabilities_enhance) {
+  mojom_platform_enabled_features += [ "arkweb_media_capabilities_enhance" ]
+}
+
+if (arkweb_file_upload) {
+  mojom_platform_enabled_features += [ "arkweb_file_upload" ]
+}
+
+if (arkweb_performance_inc_freq) {
+  mojom_platform_enabled_features += [ "arkweb_performance_inc_freq" ]
+}
+
+if (arkweb_menu) {
+  mojom_platform_enabled_features += [ "arkweb_menu" ]
+}
+
+if (arkweb_precompile) {
+  mojom_core_enabled_features += [ "arkweb_precompile" ]
+}
+
+if (arkweb_menu || arkweb_nweb_ex) {
+  mojom_core_enabled_features += [ "arkweb_menu_or_nweb_ex" ]
+}
+
+if (arkweb_ai) {
+  mojom_core_enabled_features += [ "arkweb_ai" ]
+}
+
+if (arkweb_network_base) {
+  mojom_core_enabled_features += [ "arkweb_network_base" ]
+}
+
+if (arkweb_drag_drop) {
+  mojom_core_enabled_features += [ "arkweb_drag_drop" ]
+}
+
+if (defined(arkweb_adblock) && arkweb_adblock) {
+  mojom_core_enabled_features += [ "arkweb_adblock" ]
+}
+
+if (arkweb_custom_video_player) {
+  mojom_core_enabled_features += [ "arkweb_custom_video_player" ]
+}
+
+if (arkweb_video_assistant) {
+  mojom_core_enabled_features += [ "arkweb_video_assistant" ]
+}

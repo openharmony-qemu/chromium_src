@@ -35,7 +35,7 @@ bool IsSupportedImageSize(
   DCHECK(image_data);
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  if (image_data->image_type == cc::ImageType::kHEIF) {
+  if(image_data->image_type == cc::ImageType::kHEIF) {
     LOG(INFO) << "[HeifSupport] Heif type, no need to check size.";
     return true;
   }
@@ -142,7 +142,7 @@ bool ImageDecodeAcceleratorProxy::IsImageSupported(
     case cc::ImageType::kHEIF:
       image_type = ImageDecodeAcceleratorType::kHeif;
       break;
-#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#endif // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     default:
       return false;
   }

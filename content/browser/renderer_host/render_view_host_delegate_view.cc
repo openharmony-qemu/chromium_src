@@ -5,15 +5,8 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-#include "ui/gfx/geometry/rect.h"
-#endif
+#include "build/build_config.h"
 
 namespace content {
 
@@ -60,23 +53,4 @@ bool RenderViewHostDelegateView::OnlyExpandTopControlsAtPageTop() const {
 void RenderViewHostDelegateView::GestureEventAck(
     const blink::WebGestureEvent& event,
     blink::mojom::InputEventResultState ack_result) {}
-
-#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-void RenderViewHostDelegateView::OnSafeInsetsChange(
-    const gfx::Insets& safe_insets) {}
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-void CreateOverlay(const gfx::ImageSkia& image,
-                   const gfx::Rect& image_rect,
-                   const gfx::Point& touch_point,
-                   const gfx::Rect& screen_rect) {}
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-gfx::Rect RenderViewHostDelegateView::GetVisibleRectToWeb() {
-  return gfx::Rect();
-}
-#endif
-
 }  //  namespace content

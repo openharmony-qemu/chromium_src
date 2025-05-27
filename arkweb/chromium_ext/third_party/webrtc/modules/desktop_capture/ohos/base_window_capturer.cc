@@ -7,7 +7,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. 
 
-#include "base_window_capturer.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/base_window_capturer.h"
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -19,35 +19,35 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "audio_capture_info_adapter_impl.h"
-#include "audio_enc_info_adapter_impl.h"
-#include "audio_info_adapter_impl.h"
 #include "base/logging.h"
 #include "base/memory/platform_shared_memory_region.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/task/single_thread_task_runner.h"
-#include "base/task/task_runner.h"
+#include "media/audio/ohos/audio_dump.h"
+#include "media/base/audio_bus.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
-#include "recorder_info_adapter_impl.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/time_utils.h"
-#include "screen_capture_config_adapter_impl.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#include "third_party/webrtc/api/scoped_refptr.h"
-#include "video_capture_info_adapter_impl.h"
-#include "video_enc_info_adapter_impl.h"
-#include "video_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/audio_buffer_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/audio_capture_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/audio_enc_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/audio_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/base_audio_capturer_source.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/recorder_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/screen_capture_config_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/video_capture_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/video_enc_info_adapter_impl.h"
+#include "third_party/webrtc/modules/desktop_capture/ohos/video_info_adapter_impl.h"
 
 namespace webrtc {
 namespace {
-constexpr int32_t kAudioSampleRate = 16000;
-constexpr int32_t kAudioChannels = 2;
 
 class SharedMemoryImpl : public webrtc::SharedMemory {
  public:
@@ -111,55 +111,17 @@ class SharedMemoryFactoryImpl : public webrtc::SharedMemoryFactory {
 };
 }  // namespace
 
-class OHOSScreenCaptureCallback
-    : public OHOS::NWeb::ScreenCaptureCallbackAdapter {
- public:
-  OHOSScreenCaptureCallback(
-      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-      base::WeakPtr<BaseWindowCapturer> capturer)
-      : task_runner_(task_runner), capturer_(capturer) {
-    DCHECK(task_runner_.get());
-    DCHECK(capturer_);
+WindowCapturerReadCallback::WindowCapturerReadCallback(
+    const OnReadDataCallback& readDataCallback)
+    : readDataCallback_(readDataCallback) {}
+ 
+WindowCapturerReadCallback::~WindowCapturerReadCallback() {}
+ 
+void WindowCapturerReadCallback::OnReadData() {
+  if (!readDataCallback_.is_null()) {
+    readDataCallback_.Run();
   }
-
-  OHOSScreenCaptureCallback(const OHOSScreenCaptureCallback&) = delete;
-  OHOSScreenCaptureCallback& operator=(const OHOSScreenCaptureCallback&) =
-      delete;
-
-  virtual ~OHOSScreenCaptureCallback() {}
-
-  void OnError(int32_t errorCode) override {
-    LOG(ERROR) << "OnError errorCode: " << errorCode;
-    return;
-  }
-
-  void OnAudioBufferAvailable(
-      bool isReady,
-      OHOS::NWeb::AudioCaptureSourceTypeAdapter type) override {
-    return;
-  }
-
-  void OnVideoBufferAvailable(bool isReady) override {
-    if (!isReady) {
-      LOG(ERROR) << "OnVideoBufferAvailable isReady is false";
-      return;
-    }
-    task_runner_->PostTask(
-        FROM_HERE,
-        base::BindOnce(&BaseWindowCapturer::HandleBuffer, capturer_));
-  }
-
-  void OnStateChange(
-      OHOS::NWeb::ScreenCaptureStateCodeAdapter stateCode) override {
-    task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&BaseWindowCapturer::SetScreenCaptureState,
-                                  capturer_, stateCode));
-  }
-
- private:
-  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-  base::WeakPtr<BaseWindowCapturer> capturer_;
-};
+}
 
 void BaseWindowCapturer::SetSharedMemoryFactory(
     std::unique_ptr<SharedMemoryFactory> shared_memory_factory) {
@@ -167,101 +129,47 @@ void BaseWindowCapturer::SetSharedMemoryFactory(
   factory_ = std::move(shared_memory_factory);
 }
 
-BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type)
+BaseWindowCapturer::BaseWindowCapturer(CaptureSourceType source_type, bool is_picker_show, int nweb_id)
     : capture_source_type_(source_type) {
   portal_init_failed_ = true;
-#if false
-  task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-#endif
-  task_runner_ = nullptr;
-  if (!task_runner_) {
-    LOG(ERROR) << "get task runner failed";
-    return;
-  }
-  auto displayMgr =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
-  if (!displayMgr) {
-    LOG(ERROR) << "create display manager Adapter failed";
-    return;
-  }
-  auto display = displayMgr->GetDefaultDisplay();
-  if (!display) {
-    LOG(ERROR) << "display manager GetDefaultDisplay failed";
-    return;
-  }
-  int32_t videoFrameWidth = display->GetWidth();
-  int32_t videoFrameHeight = display->GetHeight();
-  LOG(INFO) << "screen capture videoFrameWidth: " << videoFrameWidth
-            << "; videoFrameHeight: " << videoFrameHeight;
 
-  screen_capture_adapter_ =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().CreateScreenCaptureAdapter();
-  if (!screen_capture_adapter_) {
-    LOG(ERROR) << "create screen capture adapter failed";
-    return;
+  LOG(INFO) << "BaseWindowCapturer, CreateBaseScreenCaptureSource: "
+            << &BaseScreenCaptureSource::GetInstance();
+  nweb_id_ = nweb_id;
+  BaseScreenCaptureSource::GetInstance().SetScreenCapturePickerShow(is_picker_show);
+  if (!BaseScreenCaptureSource::GetInstance().SetScreenCaptureConfig(nweb_id_)) {
+      LOG(ERROR) << "BaseWindowCapturer init failed";
+      return;
   }
 
-  std::shared_ptr<OHOS::NWeb::AudioCaptureInfoAdapterImpl> micCapInfo =
-      std::make_shared<OHOS::NWeb::AudioCaptureInfoAdapterImpl>();
-  micCapInfo->SetAudioSampleRate(kAudioSampleRate);
-  micCapInfo->SetAudioChannels(kAudioChannels);
-  micCapInfo->SetAudioSource(
-      OHOS::NWeb::AudioCaptureSourceTypeAdapter::SOURCE_DEFAULT);
-
-  std::shared_ptr<OHOS::NWeb::AudioInfoAdapterImpl> audioInfo =
-      std::make_shared<OHOS::NWeb::AudioInfoAdapterImpl>();
-  audioInfo->SetMicCapInfo(micCapInfo);
-
-  std::shared_ptr<OHOS::NWeb::VideoCaptureInfoAdapterImpl> videoCapInfo =
-      std::make_shared<OHOS::NWeb::VideoCaptureInfoAdapterImpl>();
-  videoCapInfo->SetVideoFrameWidth(videoFrameWidth);
-  videoCapInfo->SetVideoFrameHeight(videoFrameHeight);
-  videoCapInfo->SetVideoSourceType(
-      OHOS::NWeb::VideoSourceTypeAdapter::VIDEO_SOURCE_SURFACE_RGBA);
-
-  std::shared_ptr<OHOS::NWeb::VideoInfoAdapterImpl> videoInfo =
-      std::make_shared<OHOS::NWeb::VideoInfoAdapterImpl>();
-  videoInfo->SetVideoCapInfo(videoCapInfo);
-
-  std::shared_ptr<OHOS::NWeb::ScreenCaptureConfigAdapterImpl> config =
-      std::make_shared<OHOS::NWeb::ScreenCaptureConfigAdapterImpl>();
-  config->SetCaptureMode(OHOS::NWeb::CaptureModeAdapter::CAPTURE_HOME_SCREEN);
-  config->SetDataType(OHOS::NWeb::DataTypeAdapter::ORIGINAL_STREAM_DATA_TYPE);
-  config->SetAudioInfo(audioInfo);
-  config->SetVideoInfo(videoInfo);
-
-  if (screen_capture_adapter_->Init(config) != 0) {
-    screen_capture_adapter_ = nullptr;
-    LOG(ERROR) << "screen capture init failed";
+  WindowCapturerReadCallback_ =
+      std::make_shared<WindowCapturerReadCallback>(base::BindRepeating(
+          &BaseWindowCapturer::HandleBuffer, weak_factory_.GetWeakPtr()));
+  if (!WindowCapturerReadCallback_) {
+    LOG(ERROR) << "window capturer read callback is nullptr";
     return;
   }
-  screen_capture_adapter_->SetMicrophoneEnable(false);
-  auto callback = std::make_shared<OHOSScreenCaptureCallback>(
-      task_runner_, weak_factory_.GetWeakPtr());
-  if (screen_capture_adapter_->SetCaptureCallback(callback) != 0) {
-    screen_capture_adapter_ = nullptr;
-    LOG(ERROR) << "screen capture set capture callback failed";
-    return;
-  }
+  BaseScreenCaptureSource::GetInstance().RegisterWindowCaptureCallback(WindowCapturerReadCallback_, nweb_id_);
+
   LOG(INFO) << "BaseWindowCapturer init success";
   portal_init_failed_ = false;
 }
 
 BaseWindowCapturer::~BaseWindowCapturer() {
   LOG(DEBUG) << "BaseWindowCapturer::~BaseWindowCapturer";
-  if (screen_capture_adapter_) {
-    screen_capture_adapter_->StopCapture();
-  }
+  BaseScreenCaptureSource::GetInstance().StopCapture(nweb_id_);
+  BaseScreenCaptureSource::GetInstance().ReleaseCapture(nweb_id_);
 }
 
 void BaseWindowCapturer::HandleBuffer() {
-  if (portal_init_failed_ || !screen_capture_adapter_) {
+  if (portal_init_failed_ || !BaseScreenCaptureSource::GetInstance().ScreenCaptureAdapterIsExist(nweb_id_) ||
+    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_] == nullptr) {
     LOG(ERROR) << "init failed";
     return;
   }
 
   std::shared_ptr<OHOS::NWeb::SurfaceBufferAdapter> buffer =
-      screen_capture_adapter_->AcquireVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->AcquireVideoBuffer();
   if (!buffer) {
     LOG(ERROR) << "acquire video buffer failed";
     return;
@@ -270,7 +178,7 @@ void BaseWindowCapturer::HandleBuffer() {
   int32_t format = buffer->GetFormat();
   if (format != OHOS::NWeb::PixelFormatAdapter::PIXEL_FMT_RGBA_8888) {
     LOG(ERROR) << "buffer format error";
-    screen_capture_adapter_->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
     return;
   }
   int32_t width = buffer->GetWidth();
@@ -280,9 +188,9 @@ void BaseWindowCapturer::HandleBuffer() {
   LOG(DEBUG) << "screen capture buffer, width: " << width
              << ", height: " << height << "; buffSize: " << buffSize
              << ", stride:" << stride;
-  if (buffSize < height * stride) {
+  if (buffSize < static_cast<uint32_t>(height * stride)) {
     LOG(ERROR) << "screen capture buff size error";
-    screen_capture_adapter_->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
     return;
   }
 
@@ -303,13 +211,13 @@ void BaseWindowCapturer::HandleBuffer() {
   char* pSrcData = (char*)(buffer->GetVirAddr());
   if (!pData || !pSrcData) {
     LOG(ERROR) << "data or GetVirAddr failed";
-    screen_capture_adapter_->ReleaseVideoBuffer();
+    BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
     return;
   }
   for (int32_t i = 0; i < height; i++) {
     if (memcpy_s(pData, frameStride, pSrcData, frameStride) != EOK) {
       LOG(ERROR) << "data memcpy_s failed";
-      screen_capture_adapter_->ReleaseVideoBuffer();
+      BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
       return;
     }
     pData += frameStride;
@@ -322,15 +230,7 @@ void BaseWindowCapturer::HandleBuffer() {
     webrtc::MutexLock lock(&current_frame_lock_);
     current_frame_ = std::move(current_frame);
   }
-  screen_capture_adapter_->ReleaseVideoBuffer();
-}
-
-void BaseWindowCapturer::SetScreenCaptureState(
-    const OHOS::NWeb::ScreenCaptureStateCodeAdapter& stateCode) {
-  {
-    webrtc::MutexLock lock(&current_frame_lock_);
-    capture_state_code_ = stateCode;
-  }
+  BaseScreenCaptureSource::GetInstance().screen_capture_adapter_map_[nweb_id_]->ReleaseVideoBuffer();
 }
 
 void BaseWindowCapturer::Start(Callback* callback) {
@@ -346,7 +246,7 @@ void BaseWindowCapturer::Start(Callback* callback) {
     LOG(INFO) << "already started, no need to start again";
     return;
   }
-  if (screen_capture_adapter_->StartCapture() != 0) {
+  if (BaseScreenCaptureSource::GetInstance().StartCapture(nweb_id_) != 0) {
     LOG(ERROR) << "start capture failed";
     return;
   }
@@ -385,7 +285,11 @@ void BaseWindowCapturer::CaptureFrame() {
   OHOS::NWeb::ScreenCaptureStateCodeAdapter capture_state_code;
   {
     webrtc::MutexLock lock(&current_frame_lock_);
-    capture_state_code = capture_state_code_;
+    capture_state_code = OHOS::NWeb::ScreenCaptureStateCodeAdapter::SCREEN_CAPTURE_STATE_INVLID;
+    auto it = BaseScreenCaptureSource::GetInstance().capture_state_code_map_.find(nweb_id_);
+    if (it != BaseScreenCaptureSource::GetInstance().capture_state_code_map_.end()) {
+      capture_state_code = it->second;
+    }
     current_frame = std::move(current_frame_);
   }
   DesktopCapturer::Result result = HandleCaptureStateCode(capture_state_code);
@@ -421,7 +325,7 @@ bool BaseWindowCapturer::SelectSource(SourceId id) {
 std::unique_ptr<DesktopCapturer> BaseWindowCapturer::CreateRawCapturer(
     const DesktopCaptureOptions& options,
     const BaseWindowCapturer::CaptureSourceType& type) {
-  return std::make_unique<BaseWindowCapturer>(type);
+  return std::make_unique<BaseWindowCapturer>(type, options.get_picker_show(), options.get_nweb_id());
 }
 
 }  // namespace webrtc

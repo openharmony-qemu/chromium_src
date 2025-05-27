@@ -116,10 +116,9 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
     params->is_orb_enabled = false;
   } else if (allow_universal_access_from_file_urls &&
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-             (origin.scheme() == url::kFileScheme ||
-              origin.scheme() == url::kResourcesScheme)) {
+            (origin.scheme() == url::kFileScheme || origin.scheme() == url::kResourcesScheme)) {        
 #else
-             origin.scheme() == url::kFileScheme) {
+           origin.scheme() == url::kFileScheme) {  
 #endif
     // allow_universal_access_from_file_urls disables ORB (via
     // `is_orb_enabled`) and CORS (via `disable_web_security`) for requests

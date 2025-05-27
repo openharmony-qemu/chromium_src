@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/scoped_mach_port.h"
@@ -182,8 +182,7 @@ void OverridePlatformValue(const std::string& platform_value);
     BUILDFLAG(IS_OHOS)
 // Logs message and immediately crashes the current process without triggering a
 // crash dump.
-// [[noreturn]] void CrashWithoutDumping(const std::string& message); TODO:
-// IS_OHOS
+// [[noreturn]] void CrashWithoutDumping(const std::string& message); TODO: IS_OHOS
 void CrashWithoutDumping(const std::string& message);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
         // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)

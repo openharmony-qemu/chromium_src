@@ -122,6 +122,7 @@ class PageNodeImpl
   void SetIsAudible(bool is_audible);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void SetIsMediaPlaying(bool is_media_playing);
+  void OneShotMediaPlayerStopped();
 #endif
   void SetHasPictureInPicture(bool has_picture_in_picture);
   void SetLoadingState(LoadingState loading_state);

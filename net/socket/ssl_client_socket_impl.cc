@@ -1161,8 +1161,9 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
   DCHECK(has_ssl_info);
   uint16_t cipher_suite =
       SSLConnectionStatusToCipherSuite(ssl_info.connection_status);
-  if (result == OK && (SSL_version(ssl_.get()) < kDefaultSSLVersionMinWarn ||
-                       cipher_suite == k3DESCipher)) {
+  if (result == OK &&
+      (SSL_version(ssl_.get()) < kDefaultSSLVersionMinWarn ||
+        cipher_suite == k3DESCipher)) {
     server_cert_verify_result_.cert_status |= CERT_STATUS_LEGACY_TLS;
 
     // Only set the resulting net error if it hasn't been previously bypassed.

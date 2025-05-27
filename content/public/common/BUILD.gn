@@ -14,14 +14,10 @@ import("//ppapi/buildflags/buildflags.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
-}
-
-import("//arkweb/build/features/features.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 buildflag_header("buildflags") {
@@ -61,7 +57,7 @@ source_set("content_descriptor_keys") {
 
 # This target allows other targets to depend on sandbox_support_linux.h which is
 # a header-only dependency, without bringing in all of content.
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || arkweb_render_process_startup) {
   source_set("sandbox_support_linux") {
     public = [
       "//content/common/content_export.h",
@@ -122,6 +118,7 @@ source_set("switches") {
 
   if (is_arkweb) {
     sources += arkweb_content_public_common_sources
+    visibility += [ "//storage:storage_unittests" ]
   }
 
   # Deps required by the above header.

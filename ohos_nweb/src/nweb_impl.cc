@@ -536,7 +536,7 @@ void MigratePasswordsToPasswordVault() {
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);
   bool migrateVault = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsToPasswordVault);
   LOG(INFO) << "[Autofill] MigratePasswordsReady:" << migrateReady
-            << ", MigratePasswordsToPasswordVaul:" << migrateVault
+            << ", MigratePasswordsToPasswordVault:" << migrateVault
             << ", IsFlagFileExist:" << IsFlagFileExist;
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
     int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCounct);

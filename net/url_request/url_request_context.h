@@ -386,11 +386,11 @@ class NET_EXPORT URLRequestContext final {
 
   handles::NetworkHandle bound_network_;
 
+  THREAD_CHECKER(thread_checker_);
+
 #if BUILDFLAG(IS_OHOS)
  base::WeakPtrFactory<URLRequestContext> weak_factory_{this};
 #endif
-
-  THREAD_CHECKER(thread_checker_);
 };
 
 }  // namespace net

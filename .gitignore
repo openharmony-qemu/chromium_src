@@ -19,6 +19,7 @@ testing/libfuzzer/fuzzers/wasm_corpus
 /ohos_sdk/.version
 /ohos_sdk/14/
 /ohos_sdk/18
+/ohos_sdk/20
 /ohos_sdk/ets/
 /ohos_sdk/js/
 /ohos_sdk/llvm/

@@ -441,7 +441,7 @@ if ! [ -d "${CUR_DIR}/deps_code" ]; then
   cd deps_code
 # use ssh download deps_code
 # git clone ssh://git@szv-open.codehub.huawei.com:2222/OpenSourceCenter_CR/openharmony/web_webview.git -b huawei/EMUI/HarmonyOS/hmos_trunk_dev_20241221/OpenHarmony-v5.0.0-Release
-  git clone https://szv-open.codehub.huawei.com/OpenSourceCenter_CR/openharmony/web_webview.git -b huawei/EMUI/HarmonyOS/hmos_trunk_dev_20250213/OpenHarmony-Trunk
+  git clone https://gitee.com/openharmony/web_webview.git -b master
   mv web_webview webview
   cd ..
 fi

@@ -4,30 +4,36 @@ base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 cd ${base_dir}
 echo ${base_dir}
 
-prebuilts_sdk_path="../../prebuilts/ohos-sdk/linux"
-target_dir=$(find "$prebuilts_sdk_path" -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n 1)
-max_api_version=$(basename "$target_dir")
+prebuilts_native_path="native-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_ets_path="ets-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_js_path="js-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_previewer_path="previewer-linux-x64-6.0.0.34-Canary1.zip"
+prebuilts_toolchains_path="toolchains-linux-x64-6.0.0.34-Canary1.zip"
 
-prebuilts_llvm_path="../../prebuilts/llvm/llvm/llvm.tar.gz"
-prebuilts_rust_path="../../prebuilts/rust/rust/rust-toolchain.tar.gz"
+prebuilts_llvm_path="llvm-linux-x86_64_stripped.tar.gz"
+prebuilts_rust_path="rust-toolchain.tar.gz"
 
 sdk_upgrade() {
   if [ ! -d "openharmony" ]; then
     mkdir -p "openharmony"
-    if [ $? -ne 0 ]; then
-      echo "ERROR: Failed to init SDK, result: ${rc}"
-      return ${rc}
-    fi
-    find ${target_dir} -name "*.zip" -print0 | xargs -0 -I {} unzip -q {} -d openharmony/
+    pushd openharmony
+      unzip ../$prebuilts_ets_path
+      unzip ../$prebuilts_native_path
+      unzip ../$prebuilts_js_path
+      unzip ../$prebuilts_previewer_path
+      unzip ../$prebuilts_toolchains_path
+    popd
   fi
 
-  if [ ! -d "$max_api_version" ]; then
-    mkdir -p "$max_api_version"
+  api_version=$(grep -o '"apiVersion": *"[^"]*"' 'openharmony/ets/oh-uni-package.json' | grep -o '"[^"]*"$' | tr -d '"')
+
+  if [ ! -d "$api_version" ]; then
+    mkdir -p "$api_version"
     if [ $? -ne 0 ]; then
       echo "ERROR: Failed to init SDK, result: ${rc}"
       return ${rc}
     fi
-    cp -r openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer $max_api_version
+    cp -r openharmony/ets openharmony/js openharmony/toolchains openharmony/previewer $api_version
   fi
 
   if [ ! -d "ohos-sdk" ]; then
@@ -63,10 +69,6 @@ llvm_upgrade() {
  
 rust_upgrade() {
   if [ ! -d "rust-toolchain" ]; then
-    if [ -f "rust-toolchain.tar.gz" ]; then
-      rm -f "rust-toolchain.tar.gz"
-    fi
-    cp $prebuilts_rust_path .
     tar zxf "rust-toolchain.tar.gz"
     rc=$?
     if [ ${rc} -ne 0 ]; then

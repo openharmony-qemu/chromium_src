@@ -281,7 +281,7 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
   return rv;
 }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 int HttpCache::Transaction::RestartWithSecureDnsOnly(
     CompletionOnceCallback callback) {
   return http_transation_utils_->RestartWithSecureDnsOnly(callback);

@@ -305,7 +305,7 @@ int HostResolverManager::RequestImpl::DoGetParameters() {
                                           parameters_, source_net_log_,
                                           job_key_, ip_address_);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (parameters_.only_use_secure_fallback) {
     next_state_ = STATE_START_JOB;
     if (resolver_->CanUseSecureDnsFallback(resolve_context())) {
@@ -416,10 +416,10 @@ void HostResolverManager::RequestImpl::LogStartRequest() {
                  network_anonymization_key_.ToDebugString());
         dict.Set("secure_dns_policy",
                  base::strict_cast<int>(parameters_.secure_dns_policy));
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
         dict.Set("only_use_secure_fallback",
                  parameters_.only_use_secure_fallback);
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
         return dict;
       });
 }

@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "content/common/buildflags.h"
@@ -18,6 +17,11 @@
 #include "third_party/blink/public/mojom/drag/drag.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
 #include "ui/gfx/geometry/rect.h"
 #endif
@@ -53,7 +57,7 @@ class RenderWidgetHostImpl;
 struct ContextMenuParams;
 struct DropData;
 
-#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
 class WebContents;
 #endif
 
@@ -202,7 +206,7 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
   virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
   virtual WebContents* GetWebContents() { return nullptr; }
 #endif
 

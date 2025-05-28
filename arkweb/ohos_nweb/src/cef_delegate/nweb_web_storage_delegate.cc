@@ -19,7 +19,6 @@
 #include <thread>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/time/time.h"
@@ -27,6 +26,10 @@
 #include "cef/libcef/common/time_util.h"
 #include "nweb_web_storage_origin_impl.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 using namespace OHOS::NWeb;
 using base::WaitableEvent;

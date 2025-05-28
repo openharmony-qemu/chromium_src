@@ -37,7 +37,10 @@
 #include "net/log/net_log_with_source.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/scheme_host_port.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -433,11 +436,11 @@ class NET_EXPORT HostResolver {
     // Controls the resolver's Secure DNS behavior for this request.
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     // If /true/, the dns task type of the request is only secure dns fallback
     // type.
     bool only_use_secure_fallback = false;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   };
 
   // Handler for an ongoing MDNS listening operation. Created by
@@ -542,7 +545,7 @@ class NET_EXPORT HostResolver {
   virtual const URLRequestContext* GetContextForTesting() const;
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   virtual bool CanUseSecureDnsFallback() const { return false; }
 #endif
 

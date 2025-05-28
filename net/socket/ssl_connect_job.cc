@@ -35,7 +35,7 @@
 #include "third_party/boringssl/src/include/openssl/pool.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 #include "arkweb/chromium_ext/net/socket/ssl_connect_job_for_include.cc"
 #endif
 
@@ -296,7 +296,7 @@ int SSLConnectJob::DoSOCKSConnect() {
   nested_connect_job_ = std::make_unique<SOCKSConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetSocksProxyConnectionParams(), this, &net_log());
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return nested_connect_job_->Connect();
@@ -321,7 +321,7 @@ int SSLConnectJob::DoTunnelConnect() {
   nested_connect_job_ = std::make_unique<HttpProxyConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetHttpProxyConnectionParams(), this, &net_log());
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return nested_connect_job_->Connect();

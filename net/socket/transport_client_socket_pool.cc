@@ -999,7 +999,7 @@ TransportClientSocketPool::Group* TransportClientSocketPool::GetOrCreateGroup(
 void TransportClientSocketPool::RemoveGroup(const GroupId& group_id) {
   auto it = group_map_.find(group_id);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
     if (it == group_map_.end()) {

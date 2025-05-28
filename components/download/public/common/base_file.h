@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/check.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
@@ -31,6 +30,10 @@
 #include "net/base/net_errors.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace download {
 

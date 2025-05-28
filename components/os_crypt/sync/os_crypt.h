@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback.h"
 #include "base/task/single_thread_task_runner.h"
@@ -16,6 +15,10 @@
 #include "build/chromecast_buildflags.h"
 #include "crypto/symmetric_key.h"
 #include "components/os_crypt/sync/key_storage_config_linux.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 class KeyStorageLinux;

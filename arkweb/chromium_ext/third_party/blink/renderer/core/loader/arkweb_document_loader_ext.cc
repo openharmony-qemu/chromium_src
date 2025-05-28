@@ -34,7 +34,6 @@
 #include <optional>
 #include <utility>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/containers/flat_map.h"
 #include "base/debug/dump_without_crashing.h"
@@ -189,6 +188,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_view.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_MENU)
 #include "base/logging.h"

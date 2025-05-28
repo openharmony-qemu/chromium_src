@@ -24,7 +24,10 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -83,7 +86,7 @@ struct NET_EXPORT HttpRequestInfo {
   // Secure DNS Tag for the request.
   SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool secure_dns_only = false;
 #endif
 

@@ -43,7 +43,7 @@ URLRequestContextExt::URLRequestContextExt(base::PassKey<URLRequestContextBuilde
   : URLRequestContext(pass_key) {
 }
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void URLRequestContextExt::SetConnectTimeout(int seconds)
 {
   HttpTransactionFactory* transaction_factory = http_transaction_factory();
@@ -56,7 +56,7 @@ void URLRequestContextExt::SetConnectTimeout(int seconds)
   }
   network_session->SetConnectTimeout(seconds);
 }
-
+ 
 void URLRequestContextExt::BindDnsToNetwork(handles::NetworkHandle network)
 {
   HttpTransactionFactory* transaction_factory = http_transaction_factory();
@@ -71,8 +71,8 @@ void URLRequestContextExt::BindDnsToNetwork(handles::NetworkHandle network)
   bound_network_for_dns_ = network;
 }
 #endif
-
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+ 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 void URLRequestContextExt::SetConnectJobWithSecureDnsOnlyTimeout(int second)
 {
   HttpTransactionFactory* transaction_factory = http_transaction_factory();
@@ -85,7 +85,7 @@ void URLRequestContextExt::SetConnectJobWithSecureDnsOnlyTimeout(int second)
   }
   network_session->SetConnectJobWithSecureDnsOnlyTimeout(second);
 }
-
+ 
 bool URLRequestContextExt::CanUseSecureDnsFallback() const
 {
   if (!host_resolver()) {

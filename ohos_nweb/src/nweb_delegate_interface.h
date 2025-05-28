@@ -213,6 +213,7 @@ class NWebDelegateInterface
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
+  virtual std::shared_ptr<HitTestResult> GetLastHitTestResult() const = 0;
   virtual int PageLoadProgress() = 0;
   virtual float Scale() = 0;
   virtual int Load(

@@ -456,6 +456,7 @@ class NWebImpl : public NWeb {
   void SetBrowserUserAgentString(const std::string& user_agent);
   void OpenDevtools(std::unique_ptr<OpenDevToolsParam> param);
   void CloseDevtools();
+  std::shared_ptr<HitTestResult> GetLastHitTestResultForBrowser();
 #endif  // defined(OHOS_NWEB_EX)
 
 #if defined(OHOS_VIDEO_ASSISTANT)

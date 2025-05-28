@@ -2858,6 +2858,14 @@ void NWebImpl::CloseDevtools() {
   }
   nweb_delegate_->CloseDevtools();
 }
+
+std::shared_ptr<HitTestResult> NWebImpl::GetLastHitTestResultForBrowser() {
+  if (nweb_delegate_ == nullptr) {
+    WVLOG_E("get last hit test result failed, nweb delegate is nullptr, nweb_id = %{public}u", nweb_id_);
+    return std::make_shared<HitTestResultImpl>();
+  }
+  return nweb_delegate_->GetLastHitTestResult();
+}
 #endif  // defined(OHOS_NWEB_EX)
 
 #ifdef OHOS_EX_NETWORK_CONNECTION

@@ -2029,6 +2029,20 @@ std::shared_ptr<HitTestResult> NWebDelegate::GetHitTestResult() const {
   return data;
 }
 
+std::shared_ptr<HitTestResult> NWebDelegate::GetLastHitTestResult() const {
+  std::shared_ptr<HitTestResultImpl> data =
+      std::make_shared<HitTestResultImpl>();
+  if (!GetBrowser().get()) {
+    return data;
+  }
+  int type;
+  CefString extra_data;
+  GetBrowser()->GetHost()->GetLastHitData(type, extra_data);
+  data->SetType(type);
+  data->SetExtra(extra_data.ToString());
+  return data;
+}
+
 int NWebDelegate::PageLoadProgress() {
   if (!GetBrowser().get()) {
     return 0;

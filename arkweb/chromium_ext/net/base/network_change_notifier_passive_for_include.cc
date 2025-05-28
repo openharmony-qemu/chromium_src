@@ -211,7 +211,7 @@ class NetworkChangeNotifierPassiveUtils {
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   static void SetDnsServers(raw_ptr<NetworkChangeNotifierPassive> obj) {
     std::vector<std::string> dns_servers;
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -231,7 +231,7 @@ class NetworkChangeNotifierPassiveUtils {
 #endif
 };
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 const std::vector<std::string>
 NetworkChangeNotifierPassive::GetCurrentDnsServers() {
   base::AutoLock scoped_lock(dns_server_lock_);
@@ -239,12 +239,12 @@ NetworkChangeNotifierPassive::GetCurrentDnsServers() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void NetworkChangeNotifierPassive::BindDnsToNetwork(int32_t network_for_dns) {
   if (g_net_connect_callback) {
     g_net_connect_callback->BindDnsToNetwork(network_for_dns);
   }
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   network_for_dns_ = network_for_dns;
 #endif
 }

@@ -14,7 +14,9 @@
  */
 
 #include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_ARKWEB) || BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
 #include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"

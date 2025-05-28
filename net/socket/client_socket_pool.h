@@ -40,8 +40,8 @@ struct NetworkTrafficAnnotationTag;
 class ProxyChain;
 struct SSLConfig;
 class StreamSocket;
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
-    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 class ArkWebClientSocketPoolExt;
 #endif
 
@@ -116,7 +116,7 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
             NetworkAnonymizationKey network_anonymization_key,
             SecureDnsPolicy secure_dns_policy,
             bool disable_cert_network_fetches
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
             ,
             bool secure_dns_only = false
 #endif
@@ -142,14 +142,14 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       return disable_cert_network_fetches_;
     }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool secure_dns_only() const { return secure_dns_only_; }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
     // Returns the group ID as a string, for logging.
     std::string ToString() const;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool operator==(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
                       secure_dns_policy_, disable_cert_network_fetches_,
@@ -168,9 +168,9 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
                       other.secure_dns_policy_,
                       other.disable_cert_network_fetches_);
     }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool operator<(const GroupId& other) const {
       return std::tie(destination_, privacy_mode_, network_anonymization_key_,
                       secure_dns_policy_, disable_cert_network_fetches_,
@@ -189,7 +189,7 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
                       other.secure_dns_policy_,
                       other.disable_cert_network_fetches_);
     }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
    private:
     // The endpoint of the final destination (not the proxy).
@@ -209,9 +209,9 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
     // scripts (e.g., PAC fetches).
     bool disable_cert_network_fetches_;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool secure_dns_only_ = false;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   };
 
   // Parameters that, in combination with GroupId, proxy, websocket information,
@@ -267,8 +267,8 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
   ~ClientSocketPool() override;
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
-    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   std::unique_ptr<ArkWebClientSocketPoolExt> utils;
 #endif
 
@@ -446,8 +446,8 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
 }  // namespace net
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
-    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/net/socket/arkweb_client_socket_pool_ext.h"
 #endif
 

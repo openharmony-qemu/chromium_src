@@ -21,7 +21,9 @@
 #include <memory>
 #include <string>
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/functional/callback_forward.h"
 #include "build/build_config.h"
 

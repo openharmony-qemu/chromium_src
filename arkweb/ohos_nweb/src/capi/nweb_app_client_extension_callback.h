@@ -22,9 +22,13 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/build_config.h"
 #include "ohos_nweb/src/capi/nweb_native_embed_first_frame_paint_event.h"
 #include "ohos_nweb/src/capi/nweb_permission_request.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "arkweb/ohos_nweb/src/capi/nweb_icon_size.h"
@@ -90,7 +94,7 @@ struct NWebAppClientExtensionCallback {
   void (*OnActivateContent)(int nweb_id);
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
   bool (*OnPullToRefreshAction)(int action, int nweb_id);
   void (*OnPullToRefreshPull)(float offset_x, float offset_y, int nweb_id);
 #endif

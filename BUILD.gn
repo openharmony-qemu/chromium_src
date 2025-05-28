@@ -41,7 +41,10 @@ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/gl/features.gni")
 import("//v8/gni/v8.gni")
-import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -131,7 +134,6 @@ group("gn_all") {
       "//url:url_unittests",
     ]
 
-    #if BUILDFLAG(ARKWEB_NWEB_EX)
     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
       deps += [
         "//ohos_browser_shell",

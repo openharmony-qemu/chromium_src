@@ -13,18 +13,20 @@
  * limitations under the License.
  */
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void HttpNetworkSession::SetConnectTimeout(int seconds) {
   normal_socket_pool_manager_->SetConnectTimeout(seconds);
   websocket_socket_pool_manager_->SetConnectTimeout(seconds);
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 void HttpNetworkSession::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
   normal_socket_pool_manager_->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
 }

@@ -440,13 +440,20 @@ if ! [ -d "${CUR_DIR}/deps_code" ]; then
   echo "create new deps_code dir"
   cd deps_code
 # use ssh download deps_code
-# git clone ssh://git@szv-open.codehub.huawei.com:2222/OpenSourceCenter_CR/openharmony/web_webview.git -b huawei/EMUI/HarmonyOS/hmos_trunk_dev_20241221/OpenHarmony-v5.0.0-Release
   git clone https://gitee.com/openharmony/web_webview.git -b master
   mv web_webview webview
   cd ..
 fi
 cd src
 source arkweb/build/prepare.sh $build_dir
+
+script_arch="i386"
+if [ "${buildarg_cpu}" = "target_cpu=\"arm64\"" ]; then
+  script_arch="amd64"
+fi
+if ! [ -d "build/linux/debian_bullseye_${script_arch}-sysroot/" ];then
+  python3 build/linux/sysroot_scripts/install-sysroot.py --arch=${script_arch}
+fi
 
 cd cef/tools
 bash ./translator.sh

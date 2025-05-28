@@ -134,9 +134,9 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,

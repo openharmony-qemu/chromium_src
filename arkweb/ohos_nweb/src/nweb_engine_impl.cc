@@ -224,11 +224,14 @@ void NWebEngineImpl::SetUserAgentForHosts(
 #endif
 }
 
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebEngineImpl::SetWholeWebDrawing() {
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   NWebImpl::SetWholeWebDrawing();
 #endif
 }
+#endif
 
 std::shared_ptr<NWebAdsBlockManager> NWebEngineImpl::GetAdsBlockManager() {
   return NWebAdsBlockManagerImpl::GetInstance();

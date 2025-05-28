@@ -46,7 +46,7 @@
 # When writing build files, to do something only for the host:
 #   if (current_toolchain == host_toolchain) { ...
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
+#if BUILDFLAG(IS_ARKWEB_EXT)
 declare_args() {
   ohos_nweb_ex_config_name = ""
 }

@@ -102,7 +102,7 @@ int InitSocketPoolHelper(
     HttpNetworkSession::SocketPoolType socket_pool_type,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only = false
 #endif
@@ -127,7 +127,7 @@ int InitSocketPoolHelper(
   ClientSocketPool::GroupId connection_group(
       std::move(endpoint), privacy_mode, std::move(network_anonymization_key),
       secure_dns_policy, disable_cert_network_fetches
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
 #endif
@@ -250,7 +250,7 @@ int InitSocketHandleForHttpRequest(
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -266,7 +266,7 @@ int InitSocketHandleForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
       std::move(callback), proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
 #endif

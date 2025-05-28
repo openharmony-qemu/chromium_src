@@ -50,7 +50,9 @@
 #include "net/url_request/url_request_context.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace network {
 

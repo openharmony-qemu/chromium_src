@@ -25,7 +25,7 @@
 #include "net/dns/public/util.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -33,7 +33,7 @@
 
 namespace net {
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 void ArkWebHostResolverDnsTaskExt::ArkWebSetNotNeedQueryType(int legacy_results_error, DnsQueryType dns_query_type) {
   if (legacy_results_error == OK &&
       base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -110,6 +110,6 @@ void ArkWebHostResolverDnsTaskExt::SetNotNeedMoreAttemptIPQueryType(
     }
   }
 }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 }  // namespace net

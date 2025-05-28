@@ -59,7 +59,7 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
                                    bool use_alternative_getifaddrs);
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
                                    int policy);
 #endif

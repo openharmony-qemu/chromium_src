@@ -5,7 +5,9 @@
 #ifndef CC_INPUT_BROWSER_CONTROLS_OFFSET_MANAGER_CLIENT_H_
 #define CC_INPUT_BROWSER_CONTROLS_OFFSET_MANAGER_CLIENT_H_
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace gfx {
 class PointF;

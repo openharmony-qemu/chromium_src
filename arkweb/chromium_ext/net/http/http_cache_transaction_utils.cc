@@ -14,9 +14,13 @@
  */
 #include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/logging.h"
 #include "net/http/http_cache.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/net/base/page_res_request_info.h"
 #endif
@@ -63,7 +67,7 @@ void HttpTransactionUtils::UpdateCacheInfo(const HttpResponseInfo& response)
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 int HttpTransactionUtils::RestartWithSecureDnsOnly(
     CompletionOnceCallback& callback)
 {

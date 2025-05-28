@@ -21,7 +21,6 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/task/thread_pool.h"
@@ -34,6 +33,7 @@
 #include "content/browser/gpu/gpu_process_host.h"
 #include "content/public/browser/browser_thread.h"
 #include "libcef/common/arkweb_request_impl_ext.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "net/base/net_errors.h"
 #include "net/cookies/site_for_cookies.h"
 #include "net/cookies/static_cookie_policy.h"
@@ -126,8 +126,10 @@
 #include "content/browser/gpu/gpu_process_host.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
+#endif
 #include "cef/ohos_cef_ext/include/arkweb_frame_ext.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX) && BUILDFLAG(ARKWEB_CRASHPAD)
@@ -2439,7 +2441,7 @@ bool NWebHandlerDelegate::DoBrowserControlsShrinkRendererSize() {
 }
 // BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 
-#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
 bool NWebHandlerDelegate::OnPullToRefreshAction(int action) {
   if (web_app_client_extension_listener_ == nullptr ||
       web_app_client_extension_listener_->OnPullToRefreshAction == nullptr) {
@@ -4476,7 +4478,7 @@ void NWebHandlerDelegate::SetPopupSurface(void* popup_window) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 void NWebHandlerDelegate::OnUpdateTargetURL(CefRefPtr<CefBrowser> browser,
                                             const CefString& url) {
   if (web_app_client_extension_listener_ != nullptr &&
@@ -4485,7 +4487,9 @@ void NWebHandlerDelegate::OnUpdateTargetURL(CefRefPtr<CefBrowser> browser,
         url.ToString(), web_app_client_extension_listener_->nweb_id);
   }
 }
+#endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 // static
 void NWebHandlerDelegate::RegisterWebExtensionApiListener(
     std::shared_ptr<NWebExtensionApiCallback> web_extension_api_listener) {

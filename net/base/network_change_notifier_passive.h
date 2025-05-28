@@ -18,7 +18,11 @@
 #endif
 
 #include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
@@ -50,11 +54,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifi
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   const std::vector<std::string> GetCurrentDnsServers() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   void BindDnsToNetwork(int network_for_dns) override;
 #endif
 
@@ -104,7 +108,7 @@ class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifi
       connection_type_;        // Guarded by |lock_|.
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int32_t network_for_dns_ = -1;
   mutable base::Lock dns_server_lock_;
   std::vector<std::string> dns_servers_;

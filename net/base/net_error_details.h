@@ -9,7 +9,10 @@
 #include "net/http/http_connection_info.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_error_codes.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_types.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -38,9 +41,9 @@ struct NET_EXPORT NetErrorDetails {
   bool quic_port_migration_detected = false;
   bool quic_connection_migration_attempted = false;
   bool quic_connection_migration_successful = false;
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool stream_created = false;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 };
 
 }  // namespace net

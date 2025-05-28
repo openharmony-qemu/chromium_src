@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "arkweb/build/features/features.h"
-
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #if BUILDFLAG(IS_ARKWEB)
 #include "third_party/blink/public/common/messaging/web_message_port.h"
 #endif

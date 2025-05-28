@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <string>
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
@@ -31,6 +30,10 @@
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 #include "arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include.cc"

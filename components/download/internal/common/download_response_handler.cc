@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "components/download/public/common/download_stats.h"
 #include "components/download/public/common/download_url_parameters.h"
@@ -16,6 +15,10 @@
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
 #include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/command_line.h"

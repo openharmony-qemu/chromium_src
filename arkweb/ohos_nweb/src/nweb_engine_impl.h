@@ -16,6 +16,8 @@
 #ifndef NWEB_ENGINE_IMPL_H
 #define NWEB_ENGINE_IMPL_H
 
+#include "build/build_config.h"
+#include "build/buildflag.h"
 #include "nweb_engine.h"
 
 namespace OHOS::NWeb {
@@ -91,7 +93,10 @@ class NWebEngineImpl : public NWebEngine {
 
   std::shared_ptr<NWebAdsBlockManager> GetAdsBlockManager() override;
 
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
   void SetWholeWebDrawing() override;
+#endif
 
   void TrimMemoryByPressureLevel(int32_t memoryLevel) override;
 

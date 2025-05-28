@@ -15,7 +15,7 @@
 
 namespace network {
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 int ThrottlingNetworkTransaction::RestartWithSecureDnsOnly(
     net::CompletionOnceCallback callback) {
   if (CheckFailed()) {

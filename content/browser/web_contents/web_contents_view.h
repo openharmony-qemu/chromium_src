@@ -7,11 +7,14 @@
 
 #include <string>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "build/build_config.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_widget_types.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace content {
 
@@ -128,7 +131,7 @@ class CONTENT_EXPORT WebContentsView {
   virtual BackForwardTransitionAnimationManager*
   GetBackForwardTransitionAnimationManager() = 0;
 
-#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
   virtual void DidStopRefresh() {}
 #endif
 

@@ -295,6 +295,8 @@ if (!enable_arkweb) {
   arkweb_ex_refresh_iframe = false
   arkweb_notification = false
   arkweb_vulkan = false
+  arkweb_pull_to_refresh = false
+  arkweb_ex_http_dns_fallback = false
   arkweb_screen_offset = false
   arkweb_canvas_commit = false
   arkweb_pip = true
@@ -515,6 +517,28 @@ buildflag_header("features") {
     "ARKWEB_PIP=$arkweb_pip",
     "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",
     "ARKWEB_CWND=$arkweb_cwnd"
+    "ARKWEB_PULL_TO_REFRESH=$arkweb_pull_to_refresh",
+    "ARKWEB_EX_HTTP_DNS_FALLBACK=$arkweb_ex_http_dns_fallback",
+
+    # ARKWEB_EXT dafault value
+    "ARKWEB_EXT_BLANK_TARGET_POPUP_INTERCEPT=false",
+    "ARKWEB_EXT_COOKIE_JS_SETTINGS=false",
+    "ARKWEB_EXT_DOWNLOAD=false",
+    "ARKWEB_EXT_ERROR_PAGE=false",
+    "ARKWEB_EXT_EXCEPTION_LIST=false",
+    "ARKWEB_EXT_FORCE_ZOOM=false",
+    "ARKWEB_EXT_FREE_COPY=false",
+    "ARKWEB_EXT_GET_ZOOM_LEVEL=false",
+    "ARKWEB_EXT_PASSWORD=false",
+    "ARKWEB_EXT_PERMISSION=false",
+    "ARKWEB_EXT_TOPCONTROLS=false",
+    "ARKWEB_EXT_UA=false",
+    "ARKWEB_EXT_URL_FORMATTER=false",
+    "ARKWEB_EXT_LOG_MESSAGE=false",
+    "ARKWEB_NWEB_EX=false",
+    "ARKWEB_EXT_NAVIGATION=false",
+    "ARKWEB_EXT_SECURITY_STATE=false",
+    "ARKWEB_EXT_PULL_TO_REFRESH=false",
   ]
 
   public_configs = [ ":arkweb_global_config" ]

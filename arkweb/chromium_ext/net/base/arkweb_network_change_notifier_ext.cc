@@ -35,7 +35,7 @@ namespace net {
 
 ArkwebNetworkChangeNotifierExt* g_network_change_notifier = nullptr;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 // static
 const std::vector<std::string> ArkwebNetworkChangeNotifierExt::GetDnsServers()
 {
@@ -53,7 +53,7 @@ const std::vector<std::string> ArkwebNetworkChangeNotifierExt::GetCurrentDnsServ
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static
 void ArkwebNetworkChangeNotifierExt::BindToNetwork(int32_t network_for_dns)
 {

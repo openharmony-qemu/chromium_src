@@ -16,12 +16,15 @@
 #ifndef NWEB_COOKIE_MANAGER_DELEGATE_H
 #define NWEB_COOKIE_MANAGER_DELEGATE_H
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "cef/include/cef_base.h"
 #include "cef/ohos_cef_ext/include/cef_web_storage.h"
 #include "nweb_errors.h"
 #include "nweb_value_callback.h"
 #include "nweb_web_storage_delegate_interface.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace OHOS::NWeb {
 class NWebWebStorageDelegate : public NWebWebStorageDelegateInterface {

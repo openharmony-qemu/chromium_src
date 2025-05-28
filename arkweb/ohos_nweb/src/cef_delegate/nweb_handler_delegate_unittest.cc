@@ -20,13 +20,17 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/build_config.h"
 #include "cef_browser.h"
 #include "include/cef_base.h"
 #include "include/cef_browser.h"
 #include "nweb_file_selector_params_impl.h"
 #include "nweb_handler.h"
 #include "nweb_js_dialog_result_impl.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #define private public
 #include "nweb_handler_delegate.h"

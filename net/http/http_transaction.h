@@ -98,7 +98,7 @@ class NET_EXPORT_PRIVATE HttpTransaction {
                     CompletionOnceCallback callback,
                     const NetLogWithSource& net_log) = 0;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   virtual int RestartWithSecureDnsOnly(CompletionOnceCallback callback) = 0;
 #endif
 

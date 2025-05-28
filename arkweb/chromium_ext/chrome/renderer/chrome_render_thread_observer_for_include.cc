@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 void ChromeRenderThreadObserver::SetContentSettingRules(

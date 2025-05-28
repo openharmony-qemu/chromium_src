@@ -28,7 +28,10 @@
 #include "net/net_buildflags.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/url_request.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT) 
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 class CertVerifier;

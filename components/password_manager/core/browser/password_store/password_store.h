@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/cancelable_callback.h"
 #include "base/functional/callback.h"
@@ -31,6 +30,10 @@
 #include "components/password_manager/core/browser/password_store/password_store_change.h"
 #include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/password_manager/core/browser/password_store/smart_bubble_stats_store.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 class PrefService;
 

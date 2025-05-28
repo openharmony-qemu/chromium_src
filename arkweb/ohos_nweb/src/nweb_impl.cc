@@ -38,7 +38,6 @@
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/base/report_loss_frame_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "components/web_cache/browser/web_cache_manager.h"
@@ -54,9 +53,9 @@
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
 #include "cef_delegate/nweb_download_handler_delegate.h"
+#include "cef/libcef/browser/chrome/chrome_browser_context.h"
 #include "arkweb/chromium_ext/content/renderer/host_proxy.h"
 #include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "ndk/arkweb_native_object.h"
 #include "nweb_delegate_adapter.h"
 #include "nweb_export.h"
@@ -70,7 +69,7 @@
 #include "ui/base/clipboard/ohos/clipboard_ohos.h"
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "event_reporter.h"
 #endif
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
@@ -84,7 +83,7 @@
 #include "services/network/network_service.h"
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)
 
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
 #include "components/security_state/core/security_state.h"
 #endif  // BUILDFLAG(ARKWEB_SECURITY_STATE)
 
@@ -107,7 +106,7 @@
 #include "content/public/common/content_paths.h"
 #endif  // BUILDFLAG(ARKWEB_COOKIE)
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 #include "content/public/browser/network_service_instance.h"
 #include "services/network/network_service.h"
 #endif
@@ -116,12 +115,13 @@
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_cloud_config.h"
 #endif
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
-#include "cef/libcef/browser/chrome/chrome_browser_context.h"
 #include "chrome/browser/ui/zoom/chrome_zoom_level_prefs.h"
 #include "third_party/blink/public/common/page/page_zoom.h"
 #endif
@@ -287,7 +287,7 @@ std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 // For maximum count of nweb instance
 uint32_t g_nweb_max_count = 0;
 #endif
@@ -530,7 +530,7 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--disable-pdf-extension");
     web_engine_args.emplace_back(
         "--disable-blink-features=NonAdvancedSecurityMode");
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     ReportLockdownModeStatus();
 #endif
   }
@@ -665,7 +665,7 @@ std::shared_ptr<NWeb> NWebImpl::CreateNWeb(
   nweb->AddNWebToMap(nweb_id, nweb);
   ++g_nweb_count;
   WVLOG_E("CreateNWeb NWebId: %{public}u successfully", nweb_id);
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   // Report nweb instance count
   if (g_nweb_count > g_nweb_max_count) {
     g_nweb_max_count = g_nweb_count;
@@ -875,7 +875,8 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   OHOS::NWeb::ResSchedClientAdapter::ReportSiteIsolationMode(
       g_siteIsolationMode);
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  ReportSiteIsolationMode(std::to_string(g_siteIsolationMode));
+  ReportSiteIsolationMode(
+    std::to_string(g_siteIsolationMode));
 #endif
 #endif
 
@@ -943,7 +944,7 @@ void NWebImpl::OnDestroy() {
       .StopListen();
 #endif
 
-#if defined(REPORT_SYS_EVENT)
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   // Report nweb instance count
   ReportMultiInstanceStats(nweb_id_, g_nweb_count, g_nweb_max_count);
 #endif
@@ -2042,6 +2043,8 @@ void NWebImpl::RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, "");
 }
 
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::RegisterArkJSfunctionV2(
     const std::string& object_name,
     const std::vector<std::string>& method_list,
@@ -2055,6 +2058,7 @@ void NWebImpl::RegisterArkJSfunctionV2(
   return nweb_delegate_->RegisterArkJSfunction(
       object_name, method_list, async_method_list, object_id, permission);
 }
+#endif
 
 void NWebImpl::UnregisterArkJSfunction(
     const std::string& object_name,
@@ -3310,7 +3314,7 @@ void NWebImpl::GetExtensionInfoByTabId(int32_t tabId, std::vector<WebExtensionIn
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 // static
 void NWebImpl::SetConnectTimeout(int32_t seconds) {
   content::GetNetworkService()->SetConnectTimeout(seconds);
@@ -3380,7 +3384,7 @@ void NWebImpl::SetBrowserUAConfigPolicy(int ua_config_policy) {
 }
 #endif  // ARKWEB_EXT_UA
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT) && BUILDFLAG(IS_ARKWEB_EXT)
 // static
 void NWebImpl::UpdateBrowserEngineConfig(const std::string& file_path,
                                          const std::string& version) {
@@ -5096,6 +5100,8 @@ void NWebImpl::EnableMediaNetworkTrafficPrompt(bool enable) {
 }
 #endif  // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
 
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::SetSurfaceDensity(const double& density) {
   device_pixel_ratio_ = density;
   if (!inputmethod_handler_) {
@@ -5109,6 +5115,7 @@ void NWebImpl::SetSurfaceDensity(const double& density) {
   }
   nweb_delegate_->SetSurfaceDensity(density);
 }
+#endif
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 void NWebImpl::getTotalSize(float size) {
@@ -5321,12 +5328,13 @@ void NWebImpl::SetEnterprisePolicy(const std::string& policy, int version) {
 }
 #endif
 
+// todo: check webview
+#if BUILDFLAG(IS_ARKWEB_EXT)
 void NWebImpl::RegisterNativeJavaScriptProxy(const std::string& objName,
                                              const std::vector<std::string>& methodName,
                                              std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
                                              bool isAsync,
-                                             const std::string& permission)
-{
+                                             const std::string& permission) {
   if (nweb_delegate_ != nullptr) {
     int len = data->GetSize();
     std::vector<NativeJSProxyCallbackFunc> callback;

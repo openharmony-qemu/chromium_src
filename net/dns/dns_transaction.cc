@@ -1252,12 +1252,12 @@ class DnsTransactionImpl final : public DnsTransaction {
     request_priority_ = priority;
   }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   void SetNotNeedMoreAttemptIPQueryType(
       uint16_t not_need_more_attempt_query_type) override {
     not_need_more_attempt_query_type_ = not_need_more_attempt_query_type;
   }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
  private:
   // Wrapper for the result of a DnsUDPAttempt.
@@ -1444,7 +1444,7 @@ class DnsTransactionImpl final : public DnsTransaction {
     size_t doh_server_index = dns_server_iterator_->GetNextAttemptIndex();
 
     unsigned attempt_number = attempts_.size();
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     if (resolve_context_->IsHttpsDnsFallbackEnabled()) {
       LOG(INFO) << "DOH-Fallback make http fallback attempt for " << hostname_;
     }
@@ -1596,12 +1596,12 @@ class DnsTransactionImpl final : public DnsTransaction {
     if (had_tcp_retry_)
       return false;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     // AAAA/A类型的请求在重试前需要查看A/AAAA类型的请求是否成功,如果成功,此处就不需要重试了
     if (not_need_more_attempt_query_type_ == qtype_) {
       return false;
     }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
     return dns_server_iterator_->AttemptAvailable();
   }
@@ -1795,9 +1795,9 @@ class DnsTransactionImpl final : public DnsTransaction {
   base::OneShotTimer timer_;
   std::unique_ptr<base::ElapsedTimer> time_from_start_;
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   uint16_t not_need_more_attempt_query_type_ = dns_protocol::kTypeANY;
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
   base::SafeRef<ResolveContext> resolve_context_;
   RequestPriority request_priority_ = DEFAULT_PRIORITY;

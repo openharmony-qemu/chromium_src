@@ -18,9 +18,12 @@
 
 #include "third_party/blink/renderer/core/paint/paint_layer_scrollable_area.h"
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 #include "ui/gfx/geometry/rect.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace gfx {
 class RectF;

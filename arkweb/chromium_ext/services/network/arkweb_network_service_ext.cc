@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/debug/crash_logging.h"
@@ -96,6 +95,10 @@
 #include "services/network/tpcd/metadata/manager.h"
 #include "services/network/url_loader.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID) && defined(ARCH_CPU_ARMEL)
 #include "third_party/boringssl/src/include/openssl/cpu.h"
 #endif
@@ -119,11 +122,11 @@
 #include "services/network/sct_auditing/sct_auditing_cache.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 #include "net/socket/client_socket_pool.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "content/public/common/content_switches.h"
@@ -153,7 +156,7 @@ ArkWebNetworkServiceExt::ArkWebNetworkServiceExt(
 
 ArkWebNetworkServiceExt::~ArkWebNetworkServiceExt() = default;
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void ArkWebNetworkServiceExt::SetURLRequestContext(
     NetworkContext* network_context) {
   net::URLRequestContext* url_request_context =
@@ -171,7 +174,7 @@ void ArkWebNetworkServiceExt::SetURLRequestContext(
         timeout_override_);
     url_request_context->AsURLRequestContextExt()->BindDnsToNetwork(
         network_for_dns_);
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     url_request_context->AsURLRequestContextExt()
         ->SetConnectJobWithSecureDnsOnlyTimeout(
             connect_job_with_secure_dns_only_timeout_);
@@ -205,7 +208,7 @@ void ArkWebNetworkServiceExt::BindDnsToNetwork(int network) {
     // TODO(ARKWEB_LOGGER_REPORT)
     host_resolver_manager_->InvalidateCachesForTesting();
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool http_dns_enabled = false;
     std::string http_dns_servers_template;
     if (network == -1) {
@@ -226,7 +229,7 @@ void ArkWebNetworkServiceExt::BindDnsToNetwork(int network) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 void ArkWebNetworkServiceExt::SetHttpsDnsFallbackData(
     mojom::HttpsDnsFallbackConfigPtr config) {
   bool https_dns_fallback_enabled = false;
@@ -332,7 +335,7 @@ net::DnsConfigOverrides ArkWebNetworkServiceExt::ConfigureStubHostResolverExt(
     net::SecureDnsMode secure_dns_mode,
     const net::DnsOverHttpsConfig& dns_over_https_config) {
   net::DnsConfigOverrides overrides;
-#if !BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if !BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   // Since the system dnsconfig is not obtained and null in OHOS, so override
   // the full config with default.
   overrides = net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();

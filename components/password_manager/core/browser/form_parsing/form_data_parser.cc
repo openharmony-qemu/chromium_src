@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -39,6 +38,10 @@
 #include "components/password_manager/core/common/password_manager_constants.h"
 #include "components/password_manager/core/common/password_manager_features.h"
 #include "components/password_manager/core/common/password_manager_util.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"

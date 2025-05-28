@@ -17,7 +17,7 @@
 
 namespace net {
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 void SSLConnectJob::SetConnectTimeout(int timeout_override) {
   timeout_override_for_nested_job_ = timeout_override;
   timeout_override_ = base::TimeDelta();

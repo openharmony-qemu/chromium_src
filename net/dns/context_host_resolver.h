@@ -93,7 +93,7 @@ class NET_EXPORT ContextHostResolver : public HostResolver {
     return resolve_context_.get();
   }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool CanUseSecureDnsFallback() const override;
 #endif
 

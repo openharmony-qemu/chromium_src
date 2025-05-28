@@ -94,7 +94,7 @@ class NET_EXPORT HttpStreamFactory {
     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
     SocketTag socket_tag;
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     bool secure_dns_only = false;
 #endif
   };

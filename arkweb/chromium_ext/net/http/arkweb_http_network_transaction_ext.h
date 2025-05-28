@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
@@ -39,6 +38,10 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class HttpNetworkSession;
@@ -56,12 +59,12 @@ class NET_EXPORT_PRIVATE ArkWebHttpNetworkTransactionExt : public HttpNetworkTra
 
   ArkWebHttpNetworkTransactionExt *AsArkWebHttpNetworkTransactionExt() override { return this; }
 
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override;
 #endif
 
  private:
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   int DoCreateFallbackStreamWithSecureDnsOnly();
   int DoCreateFallbackStreamWithSecureDnsOnlyComplete(int result);
 #endif

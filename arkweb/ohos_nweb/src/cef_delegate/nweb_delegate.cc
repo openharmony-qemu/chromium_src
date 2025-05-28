@@ -20,7 +20,6 @@
 #include "nweb_accessibility_utils.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/command_line.h"
 #include "base/check.h"
 #include "base/logging.h"
@@ -34,11 +33,16 @@
 #include "cef/include/internal/cef_string_map.h"
 #include "cef/ohos_cef_ext/include/arkweb_frame_ext.h"
 #include "content/public/common/content_switches.h"
+#include "securec.h"
 #include "nweb_application.h"
 #include "nweb_handler_delegate.h"
 #include "nweb_hit_test_result_impl.h"
 #include "nweb_render_handler.h"
 #include "nweb_value_convert.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 #include "event_reporter.h"
@@ -80,15 +84,13 @@
 #include <cmath>
 #endif
 
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
 #include "components/security_state/core/security_state.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_I18N)
 #include "arkweb/chromium_ext/base/ohos/locale_utils.h"
 #endif
-
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
@@ -4044,7 +4046,7 @@ void NWebDelegate::SetBorderRadiusFromWeb(double borderRadiusTopLeft,
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
-#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_SECURITY_STATE)
 int NWebDelegate::GetSecurityLevel() {
   if (GetBrowser() == nullptr) {
     LOG(ERROR) << "NWebDelegate::GetSecurityLevel failed.";

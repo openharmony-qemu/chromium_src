@@ -11,9 +11,12 @@
 #define ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace switches {
 
@@ -62,19 +65,22 @@ CONTENT_EXPORT extern const char kOhosSubresourceFilter[];
 CONTENT_EXPORT extern const char kOhosCustomScheme[];
 #endif
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+CONTENT_EXPORT extern const char kEnableNwebExHttpDnsFallback[];
+CONTENT_EXPORT extern const char kEnableNwebExDownload[];
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
 CONTENT_EXPORT extern const char kEnableNwebEx[];
 CONTENT_EXPORT extern const char kEnableMediaAvsession[];
 CONTENT_EXPORT extern const char kEnableNwebExReportCrashpad[];
 CONTENT_EXPORT extern const char kEnableNwebExTopControls[];
 CONTENT_EXPORT extern const char kEnableNwebExFreeCopy[];
 CONTENT_EXPORT extern const char kEnableNwebExPermission[];
-CONTENT_EXPORT extern const char kEnableNwebExHttpDnsFallback[];
 CONTENT_EXPORT extern const char kEnableNwebExExceptionList[];
 CONTENT_EXPORT extern const char kEnableNwebExPassword[];
 CONTENT_EXPORT extern const char kEnableNwebExUa[];
 CONTENT_EXPORT extern const char kEnableNwebExNetworkLoad[];
-CONTENT_EXPORT extern const char kEnableNwebExDownload[];
 CONTENT_EXPORT extern const char kEnableNwebExGetZoomLevel[];
 CONTENT_EXPORT extern const char kEnableNwebExPullToRefresh[];
 #endif

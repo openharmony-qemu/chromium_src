@@ -21,7 +21,7 @@
 #include "nweb_hilog.h"
 #include "services/network/network_service.h"
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
 #include "nweb_impl.h"
 #endif
 
@@ -45,10 +45,10 @@ void NWebDownloadManagerImpl::SetHttpDns(
 }
 
 void NWebDownloadManagerImpl::SetConnectionTimeout(const int& timeout) {
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   net_service::NetHelpers::connection_timeout = timeout;
   NWebImpl::SetConnectionTimeout(timeout);
-#endif  // ARKWEB_EXT_NETWORK_CONNECTION
+#endif  // ARKWEB_EX_NETWORK_CONNECTION
 }
 
 }  // namespace OHOS::NWeb

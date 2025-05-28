@@ -31,7 +31,10 @@
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -54,7 +57,7 @@ TransportSocketParams::TransportSocketParams(
     SecureDnsPolicy secure_dns_policy,
     OnHostResolutionCallback host_resolution_callback,
     base::flat_set<std::string> supported_alpns
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -64,7 +67,7 @@ TransportSocketParams::TransportSocketParams(
       secure_dns_policy_(secure_dns_policy),
       host_resolution_callback_(std::move(host_resolution_callback)),
       supported_alpns_(std::move(supported_alpns))
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only_(secure_dns_only)
 #endif
@@ -104,7 +107,7 @@ std::unique_ptr<TransportConnectJob> TransportConnectJob::Factory::Create(
     const scoped_refptr<TransportSocketParams>& params,
     Delegate* delegate,
     const NetLogWithSource* net_log) {
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   return std::make_unique<ArkWebTransportConnectJobExt>(priority, socket_tag,
 #else
   return std::make_unique<TransportConnectJob>(priority, socket_tag,
@@ -270,11 +273,11 @@ int TransportConnectJob::DoResolveHost() {
   HostResolver::ResolveHostParameters parameters;
   parameters.initial_priority = priority();
   parameters.secure_dns_policy = params_->secure_dns_policy();
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (host_resolver()->CanUseSecureDnsFallback()) {
     parameters.only_use_secure_fallback = params_->secure_dns_only();
   }
-#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (absl::holds_alternative<url::SchemeHostPort>(params_->destination())) {
     request_ = host_resolver()->CreateRequest(
         absl::get<url::SchemeHostPort>(params_->destination()),

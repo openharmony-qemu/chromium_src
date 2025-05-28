@@ -76,7 +76,7 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
     ConnectJob::Delegate* delegate
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -87,7 +87,7 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
       resolution_callback, request_priority, socket_tag,
       network_anonymization_key, secure_dns_policy,
       disable_cert_network_fetches, common_connect_job_params, delegate
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
 #endif
@@ -134,7 +134,7 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
     bool disable_cert_network_fetches,
     const CommonConnectJobParams* common_connect_job_params,
     ConnectJob::Delegate* delegate
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
@@ -145,7 +145,7 @@ std::unique_ptr<ConnectJob> ConnectJobFactory::CreateConnectJob(
       network_anonymization_key, secure_dns_policy,
       disable_cert_network_fetches, common_connect_job_params,
       proxy_dns_network_anonymization_key_
-#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
 #endif

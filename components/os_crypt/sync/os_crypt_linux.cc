@@ -128,6 +128,8 @@ static std::string AssetQuery(base::FilePath key_file) {
                           .GetKeystoreAdapterInstance().AssetQuery(assetHandle);
   if (local_key.empty()) {
     LOG(ERROR) << "[Autofill] Get key from asset failed.";
+    g_browser_process->local_state()->SetBoolean(browser_prefs::kMigrationQueryAssetfailure, true);
+    g_browser_process->local_state()->CommitPendingWrite();
     return std::string();
   }
   LOG(INFO) << "[Autofill] get key from asset success.";

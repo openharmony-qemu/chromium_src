@@ -20,9 +20,6 @@ import("//url/features.gni")
 if (is_arkweb) {
   import("//arkweb/build/features/features.gni")
   import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
@@ -1491,7 +1488,7 @@ component("net") {
   }
 
   # Use getifaddrs() on POSIX platforms, except Linux.
-  if ((is_posix || arkweb_ex_http_dns_fallback) && !is_linux && !is_chromeos) {
+  if ((is_posix || arkweb_ext_http_dns_fallback) && !is_linux && !is_chromeos) {
     sources += [
       "base/network_interfaces_getifaddrs.cc",
       "base/network_interfaces_getifaddrs.h",

@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/span.h"
 #include "base/memory/ref_counted.h"
@@ -30,10 +31,6 @@
 #include "url/scheme_host_port.h"
 
 #include "net/socket/transport_connect_job.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -69,7 +66,7 @@ class NET_EXPORT_PRIVATE ArkWebTransportConnectJobExt : public TransportConnectJ
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   void SetFromPreload(bool from_preload) override;
 #endif
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void SetConnectTimeout(int timeout_override) override;
 #endif
 

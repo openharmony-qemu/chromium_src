@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/component_export.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
@@ -64,11 +65,11 @@
 #include "services/network/public/mojom/ct_log_info.mojom.h"
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
 #endif
 
@@ -92,13 +93,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkServiceExt
 
   ArkWebNetworkServiceExt* AsArkWebNetworkServiceExt() override { return this; }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void SetURLRequestContext(NetworkContext* network_context);
   void SetConnectTimeout(int seconds) override;
   void BindDnsToNetwork(int network) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   void SetHttpsDnsFallbackData(
       mojom::HttpsDnsFallbackConfigPtr config) override;
 #endif
@@ -115,12 +116,12 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) ArkWebNetworkServiceExt
 #endif
 
  private:
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   void SetHttpsDnsHostResolver(bool enabled,
                                const std::string& server_template);
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   int timeout_override_ = 0;
   net::handles::NetworkHandle network_for_dns_{
       net::handles::kInvalidNetworkHandle};

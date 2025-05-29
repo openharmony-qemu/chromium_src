@@ -28,10 +28,7 @@
 #include "net/socket/connection_attempts.h"
 #include "third_party/abseil-cpp/absl/types/variant.h"
 #include "url/scheme_host_port.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -61,7 +58,7 @@ class NET_EXPORT_PRIVATE TransportSocketParams
                         SecureDnsPolicy secure_dns_policy,
                         OnHostResolutionCallback host_resolution_callback,
                         base::flat_set<std::string> supported_alpns
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
                         ,
                         bool secure_dns_only = false
 #endif
@@ -81,7 +78,7 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const base::flat_set<std::string>& supported_alpns() const {
     return supported_alpns_;
   }
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool secure_dns_only() const { return secure_dns_only_; }
 #endif
 
@@ -94,7 +91,7 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const SecureDnsPolicy secure_dns_policy_;
   const OnHostResolutionCallback host_resolution_callback_;
   const base::flat_set<std::string> supported_alpns_;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   const bool secure_dns_only_;
 #endif
 };
@@ -181,7 +178,7 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
   void SetFromPreload(bool from_preload) override {}
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void SetConnectTimeout(int timeout_override) override {}
 #endif
  private:

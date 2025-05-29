@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/logging.h"
 #include "base/notreached.h"
 #include "base/sys_byteorder.h"
@@ -19,10 +20,6 @@
 #include "net/base/address_list.h"
 #include "net/base/net_errors.h"
 #include "net/base/sys_addrinfo.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "net/android/network_library.h"

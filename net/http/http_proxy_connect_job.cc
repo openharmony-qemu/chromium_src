@@ -933,7 +933,7 @@ SpdySessionKey HttpProxyConnectJob::CreateSpdySessionKey() const {
       /*disable_cert_verification_network_fetches=*/true);
 }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 void HttpProxyConnectJob::SetConnectTimeout(int timeout_override) {
   timeout_override_for_nested_job_ = timeout_override;
   timeout_override_ = base::TimeDelta();

@@ -20,9 +20,7 @@
 #include "services/network/cookie_settings.h"
 #include "services/network/network_context.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 class CookieInclusionStatus;

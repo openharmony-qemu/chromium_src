@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/memory/ptr_util.h"
@@ -41,10 +42,6 @@
 #include "net/ssl/ssl_config_service.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job_factory.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ENABLE_REPORTING)
 #include "net/network_error_logging/network_error_logging_service.h"

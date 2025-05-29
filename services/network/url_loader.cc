@@ -17,6 +17,7 @@
 #include "arkweb/chromium_ext/services/network/url_loader_utils.h"
 #include "arkweb/chromium_ext/services/network/url_loader_ext.h"
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/files/file.h"
@@ -117,9 +118,7 @@
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"

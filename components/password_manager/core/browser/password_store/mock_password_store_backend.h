@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -16,10 +17,6 @@
 #include "components/sync/model/proxy_data_type_controller_delegate.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "url/gurl.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace password_manager {
 

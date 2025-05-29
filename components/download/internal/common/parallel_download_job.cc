@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/not_fatal_until.h"
@@ -16,10 +17,6 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/referrer_policy.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/command_line.h"

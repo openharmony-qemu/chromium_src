@@ -155,14 +155,14 @@ int SOCKSConnectJob::DoTransportConnect() {
   DCHECK(!transport_connect_job_);
 
   next_state_ = STATE_TRANSPORT_CONNECT_COMPLETE;
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   transport_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
 #else
   transport_connect_job_ = std::make_unique<TransportConnectJob>(
 #endif
       priority(), socket_tag(), common_connect_job_params(),
       socks_params_->transport_params(), this, &net_log());
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   transport_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return transport_connect_job_->Connect();
@@ -224,7 +224,7 @@ void SOCKSConnectJob::ChangePriorityInternal(RequestPriority priority) {
     transport_connect_job_->ChangePriority(priority);
 }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 void SOCKSConnectJob::SetConnectTimeout(int timeout_override) {
   timeout_override_for_nested_job_ = timeout_override;
   timeout_override_ = base::TimeDelta();

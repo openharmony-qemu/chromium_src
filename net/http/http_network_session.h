@@ -38,10 +38,7 @@
 #include "net/spdy/spdy_session_pool.h"
 #include "net/ssl/ssl_client_session_cache.h"
 #include "net/third_party/quiche/src/quiche/http2/core/spdy_protocol.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace base {
 class Value;
@@ -318,10 +315,10 @@ class NET_EXPORT HttpNetworkSession {
   CommonConnectJobParams CreateCommonConnectJobParams(
       bool for_websockets = false);
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   void SetConnectTimeout(int seconds);
 #endif
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
 #endif
 

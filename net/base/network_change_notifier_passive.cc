@@ -28,7 +28,7 @@
 #include "net/base/network_change_notifier_linux.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
@@ -90,7 +90,7 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
     connection_type_ = connection_type;
   }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   NetworkChangeNotifierPassiveUtils::SetDnsServers(this);
 #endif
 

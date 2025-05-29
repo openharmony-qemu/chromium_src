@@ -459,7 +459,7 @@ void HostResolverManager::Job::RunNextTask() {
       StartDnsTask(false /* secure */);
       break;
     case TaskType::SECURE_DNS:
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     case TaskType::SECURE_DNS_FALLBACK:
 #endif
       StartDnsTask(true /* secure */);
@@ -669,7 +669,7 @@ void HostResolverManager::Job::OnSystemTaskComplete(
   auto aliases = std::set<std::string>(addr_list.dns_aliases().begin(),
                                        addr_list.dns_aliases().end());
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error);
 #endif
 
@@ -790,7 +790,7 @@ void HostResolverManager::Job::OnDnsTaskComplete(base::TimeTicks start_time,
   }
 
   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
                                                                    duration);
 #endif

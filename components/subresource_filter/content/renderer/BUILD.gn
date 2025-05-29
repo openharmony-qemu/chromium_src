@@ -35,10 +35,11 @@ static_library("renderer") {
     "//third_party/blink/public/common",
   ]
 
+  #if BUILDFLAG(ARKWEB_ADBLOCK)
   if (defined(arkweb_adblock) && arkweb_adblock) {
     sources += arkweb_components_subresource_filter_content_renderer_sources
     deps += [ "//components/subresource_filter/core/browser" ]
-  }  // BUILDFLAG(ARKWEB_ADBLOCK)
+  }  #endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 source_set("unit_tests") {

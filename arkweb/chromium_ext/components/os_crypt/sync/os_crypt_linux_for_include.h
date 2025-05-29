@@ -16,9 +16,7 @@
 #ifndef COMPONENTS_OS_CRYPT_SYNC_OS_CRYPT_FOR_INCLUDE_H_
 #define COMPONENTS_OS_CRYPT_SYNC_OS_CRYPT_FOR_INCLUDE_H_
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
 #include "base/feature_list.h"

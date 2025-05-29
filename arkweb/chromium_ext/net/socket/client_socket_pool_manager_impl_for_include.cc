@@ -15,7 +15,7 @@
 
 namespace net {
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 void ClientSocketPoolManagerImpl::SetConnectTimeout(int seconds) {
   timeout_override_ = seconds;
   for (const auto& it : socket_pools_) {
@@ -24,10 +24,10 @@ void ClientSocketPoolManagerImpl::SetConnectTimeout(int seconds) {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 void ClientSocketPoolManagerImpl::SetConnectJobWithSecureDnsOnlyTimeout(
     int seconds) {
-connect_job_with_secure_dns_timeout_ = seconds;
+  connect_job_with_secure_dns_timeout_ = seconds;
   for (const auto& it : socket_pools_) {
     it.second->utils->SetConnectJobWithSecureDnsOnlyTimeout(seconds);
   }

@@ -22,9 +22,7 @@
 #include <memory>
 #include <string>
 
-#endif
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 #include "base/check.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"

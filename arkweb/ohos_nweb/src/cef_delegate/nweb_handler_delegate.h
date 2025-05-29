@@ -26,7 +26,7 @@
 #include <unordered_set>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_extension_api_callback.h"
 #include "capi/nweb_extension_callback.h"
@@ -53,10 +53,6 @@
 #include "nweb_preference_delegate.h"
 #include "nweb_render_handler.h"
 #include "nweb_value.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "custom_media_player_impl.h"
@@ -894,7 +890,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnActivateContent() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
   bool OnPullToRefreshAction(int action) override;
   void OnPullToRefreshPull(float offset_x, float offset_y) override;
 #endif

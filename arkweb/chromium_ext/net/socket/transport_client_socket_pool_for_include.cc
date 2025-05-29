@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -39,8 +37,8 @@ class TransportClientSocketPoolUtils {
       const ClientSocketPool::GroupId& group_id,
       std::unique_ptr<ConnectJob>& connect_job,
       raw_ptr<TransportClientSocketPool> obj) {
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     if (group_id.secure_dns_only()) {
       connect_job->SetConnectTimeout(
           obj->utils->GetConnectJobWithSecureDnsOnlyTimeout());
@@ -49,8 +47,8 @@ class TransportClientSocketPoolUtils {
     }
 #else
     connect_job.get()->SetConnectTimeout(obj->utils->GetConnectTimeout());
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#endif  // BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   }
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
@@ -78,8 +76,8 @@ class TransportClientSocketPoolUtils {
       const ClientSocketPool::GroupId& group_id,
       ConnectJob* backup_job,
       raw_ptr<TransportClientSocketPool::Group> obj) {
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     if (group_id.secure_dns_only()) {
       backup_job->SetConnectTimeout(
           obj->client_socket_pool_->utils

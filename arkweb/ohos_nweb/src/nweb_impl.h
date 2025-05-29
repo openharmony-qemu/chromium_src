@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_api_callback.h"
@@ -37,11 +37,6 @@
 // #ifdef OHOS_EX_PERMISSION
 #include "capi/nweb_permission_request.h"
 // #endif
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 #include "capi/nweb_screencapture_delegate_callback.h"
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
@@ -206,15 +201,12 @@ class NWebImpl : public NWeb {
                              const std::vector<std::string>& method_list,
                              const std::vector<std::string>& async_method_list,
                              const int32_t object_id) override;
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   void RegisterArkJSfunctionV2(
       const std::string& object_name,
       const std::vector<std::string>& method_list,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission) override;
-#endif
   void UnregisterArkJSfunction(
       const std::string& object_name,
       const std::vector<std::string>& method_list) override;
@@ -586,7 +578,7 @@ class NWebImpl : public NWeb {
   void CustomWebMediaPlayer(bool enable);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   static void SetConnectTimeout(int32_t seconds);
   static void BindToNetwork(int network_id);
   static void SetConnectionTimeout(int32_t timeout);
@@ -915,10 +907,7 @@ class NWebImpl : public NWeb {
                                      int32_t y,
                                      bool isHoverEnter) override;
   static void TrimMemoryByPressureLevel(int32_t memoryLevel);
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   void SetSurfaceDensity(const double& density) override;
-#endif
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   void getTotalSize(float size);
   float DumpGpuInfo() override;
@@ -1035,16 +1024,11 @@ class NWebImpl : public NWeb {
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   void RegisterNativeJavaScriptProxy(const std::string& objName,
                                      const std::vector<std::string>& methodName,
                                      std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data,
                                      bool isAsync,
                                      const std::string& permission) override;
-#endif
-
-  void OnTouchCancelById(int32_t id, double x, double y, bool from_overlay) override {};
 };
 }  // namespace OHOS::NWeb
 

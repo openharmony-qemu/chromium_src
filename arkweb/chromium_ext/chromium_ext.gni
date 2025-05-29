@@ -882,14 +882,9 @@ arkweb_net_gn_sources =
     arkweb_net_http_cache_sources
 arkweb_net_gn_deps = [
   "//arkweb/build/features",
+  "//arkweb/ohos_nweb_ex/build/features",
   "//ohos/adapter:adapter",
 ]
-
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
-  arkweb_net_gn_deps += [
-    "//arkweb/ohos_nweb_ex/build/features",
-  ]
-}
 
 arkweb_components_subresource_filter_content_shared_browser = [
   "//arkweb/chromium_ext/components/subresource_filter/content/shared/browser/user_ruleset_publisher.cc",

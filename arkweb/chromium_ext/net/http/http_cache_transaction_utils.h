@@ -31,9 +31,9 @@ class HttpTransactionUtils {
   int RestartWithSecureDnsOnly(CompletionOnceCallback& callback);
 
  private:
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   int RestartNetworkRequestWithSecureDnsOnly();
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 };
 }  // namespace net
 

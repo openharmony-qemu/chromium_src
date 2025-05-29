@@ -106,7 +106,7 @@ void WebDownload_Continue(const NWebBeforeDownloadCallbackWrapper* wrapper,
 
 void WebDownload_CancelBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Cancel();
   }
@@ -115,7 +115,7 @@ void WebDownload_CancelBeforeDownload(
 
 void WebDownload_PauseBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Pause();
   }
@@ -124,7 +124,7 @@ void WebDownload_PauseBeforeDownload(
 
 void WebDownload_ResumeBeforeDownload(
     const NWebBeforeDownloadCallbackWrapper* wrapper) {
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILGFLAG(ARKWEB_EX_DOWNLOAD)
   if (wrapper) {
     wrapper->Resume();
   }

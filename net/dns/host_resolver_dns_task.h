@@ -81,11 +81,11 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
     virtual void AddTransactionTimeQueued(base::TimeDelta time_queued) = 0;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     virtual void AddTransactionResultForReport(const DnsQueryType query_type,
                                                int net_error) = 0;
     virtual void InitReportInfoForDohFallback() = 0;
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
    protected:
     Delegate() = default;
@@ -119,9 +119,9 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
   bool secure() const { return secure_; }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
   void StartNextTransaction();
 
@@ -272,7 +272,7 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   // transactions should timeout more quickly.
   bool fallback_available_;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool need_to_sniff_ip_result_ = false;
   std::unique_ptr<ArkWebHostResolverDnsTaskExt> utils;
 #endif

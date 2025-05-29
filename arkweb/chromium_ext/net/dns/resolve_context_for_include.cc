@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 void ResolveContext::NotifyDohStatsInit() {
   if (!is_https_dns_fallback_enabled_) {
     return;

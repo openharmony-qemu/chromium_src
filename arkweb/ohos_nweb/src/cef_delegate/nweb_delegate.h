@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "cef/include/cef_command_line.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -41,15 +41,14 @@
 #include "nweb_inputmethod_client.h"
 #include "nweb_render_handler.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 #include <memory>
 
 #include "capi/nweb_download_delegate_callback.h"
 #endif  //  ARKWEB_EX_DOWNLOAD
+
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/build_config.h"
 
 struct OpenDevToolsParam;
 
@@ -442,7 +441,7 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void SetTransformHint(uint32_t rotation) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
   int GetSecurityLevel() override;
 #endif
 

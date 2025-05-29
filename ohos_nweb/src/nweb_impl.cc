@@ -539,9 +539,10 @@ void MigratePasswordsToPasswordVault() {
             << ", MigratePasswordsToPasswordVault:" << migrateVault
             << ", IsFlagFileExist:" << IsFlagFileExist;
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
-    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCounct);
+    int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
     LOG(INFO) << "[Autofill] migration count:" << count;
-    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCounct, count + 1);
+    g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
+    g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {
       OHOS::NWeb::NWebWebStorageImpl* nweb_web_storage = new OHOS::NWeb::NWebWebStorageImpl();
       nweb_web_storage->MigratePasswords();

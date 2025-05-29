@@ -568,7 +568,9 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV11() {
 #if defined(OHOS_EX_PASSWORD)
 crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
-  if (!is_password_migrate_cached_) {
+  int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+  if (!is_password_migrate_cached_ || migration_count_ < count) {
+    migration_count_ = count;
     password_migrate_cache_ = GenerateEncryptionKeyForMigrate();
     is_password_migrate_cached_ = true;
   }

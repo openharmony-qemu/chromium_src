@@ -123,7 +123,6 @@ class FontConfig_OHOS {
   void buildNameToFamilyMap();
   void buildStyleNameToFamilyMap(
       OHOS::NWeb::ArkWeb_Drawing_SystemFontType fontType);
-  int checkNewFontengineISOK();
 
   SkTypeface_OHOS* getTypeface(int styleIndex,
                                int index,
@@ -231,17 +230,8 @@ class FontConfig_OHOS {
   VariationMap variationMap;      // to save variation information temporarily
   TtcIndexMap ttcIndexMap;        // to save 'index' information temporarily
 
-  int parseConfig(const char* fname);
-  int checkConfigFile(const char* fname, Json::Value& root);
-  int parseFontDir(const Json::Value& root);
-  int parseGeneric(const Json::Value& root);
-  int parseFallback(const Json::Value& root);
-  int parseFallbackItem(const Json::Value& root);
-  int parseAlias(const Json::Value& root, std::vector<AliasInfo>& aliasSet);
-  int parseAdjust(const Json::Value& root, std::vector<AdjustInfo>& adjustSet);
   int parseVariation(const Json::Value& root,
                      std::vector<VariationInfo>& variationSet);
-  int parseTtcIndex(const Json::Value& root, const SkString& familyName);
   void getAxisValues(const AxisDefinitions& axisDefinitions,
                      const VariationInfo& variation,
                      FontInfo& font) const;
@@ -257,8 +247,6 @@ class FontConfig_OHOS {
   int scanFonts(const SkFontScanner& fontScanner,
                 const SkString& path,
                 const bool& installedOrStyle);
-  int loadFontBackup(const SkFontScanner& scanner, const char* fname);
-  int scanFontsBackup(const SkFontScanner& fontScanner);
   void resetGenericValue();
   void buildSubTypefaceSet(const std::shared_ptr<TypefaceSet>& typefaceSet,
                            std::shared_ptr<TypefaceSet>& subSet,
@@ -272,7 +260,6 @@ class FontConfig_OHOS {
   static void sortTypefaceSet(std::shared_ptr<TypefaceSet>& typefaceSet);
   static uint32_t getFontStyleDifference(const SkFontStyle& style1,
                                          const SkFontStyle& style2);
-  static char* getFileData(const char* fname, int& size);
   FontConfig_OHOS(const FontConfig_OHOS&) = delete;
   FontConfig_OHOS& operator=(const FontConfig_OHOS&) = delete;
   FontConfig_OHOS(FontConfig_OHOS&&) = delete;

@@ -92,7 +92,7 @@ void HandleTraceEventByOHHiTrace(base::trace_event::TraceEvent* trace_event) {
       break;
   };
 }
-} // namespace
+}  // namespace
 #endif
 
 using TraceLog = base::trace_event::TraceLog;

@@ -206,7 +206,7 @@ ImageDecodeAcceleratorSupportedProfileToProtocol(
     case gpu::ImageDecodeAcceleratorType::kHeif:
       image_type = SystemInfo::ImageTypeEnum::Unknown;
       break;
-#endif // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       image_type = SystemInfo::ImageTypeEnum::Unknown;
       break;

@@ -460,20 +460,6 @@ source_set("unit_tests") {
     "//url",
   ]
 
-  if (arkweb_media_audio) {
-    import("//arkweb/chromium_ext/chromium_ext.gni")
-    include_dirs = ohos_src_includes
-    sources += [ 
-      "//arkweb/ohos_nweb/src/sysevent/event_reporter.cc",
-      "//arkweb/ohos_nweb/src/sysevent/event_reporter.h",
-    ]
-    sources += arkweb_content_renderer_sources
-    deps += [
-      "//content/public/browser:browser",
-      "//cef:libcef_static"
-    ]
-  }
-
   configs += [
     ":platform_config",
     "//media:media_config",

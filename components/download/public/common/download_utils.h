@@ -36,6 +36,13 @@ struct DownloadCreateInfo;
 struct DownloadSaveInfo;
 class DownloadUrlParameters;
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+enum FileRenameOptions {
+  RENAME_AND_UNIQUIFY_MODE = 1,
+  OVERWRITE_MODE = 2,
+};
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+
 // Used to check if the URL is safe. For most cases, this is
 // ChildProcessSecurityPolicy::CanRequestURL.
 using URLSecurityPolicy =
@@ -49,6 +56,12 @@ HandleRequestCompletionStatus(net::Error error_code,
                               net::CertStatus cert_status,
                               bool is_partial_request,
                               DownloadInterruptReason abort_reason);
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+COMPONENTS_DOWNLOAD_EXPORT FileRenameOptions GetFileRenameOptions();
+
+COMPONENTS_DOWNLOAD_EXPORT void SetFileRenameOptions(FileRenameOptions options);
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 
 // Parse the HTTP server response code.
 // If |fetch_error_body| is true, most of HTTP response codes will be accepted
@@ -171,7 +184,4 @@ bool IsContentDispositionAttachmentInHead(
 
 }  // namespace download
 
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-#include "arkweb/chromium_ext/components/download/public/common/arkweb_download_utils_ext.h"
-#endif
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_DOWNLOAD_UTILS_H_

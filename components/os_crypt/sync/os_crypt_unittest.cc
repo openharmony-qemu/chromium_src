@@ -149,7 +149,15 @@ TEST_F(OSCryptTest, DecryptError) {
   plaintext = "hello";
   ASSERT_TRUE(OSCrypt::EncryptString(plaintext, &ciphertext));
   EXPECT_NE(plaintext, ciphertext);
+#if BUILDFLAG(IS_OHOS)
+  // The ohos huks framework can parse ciphertext even if the IV is
+  // inconsistent, and the parsing result is inconsistent with the metadata. The
+  // first sixteen numbers in the encrypted data is IV
+  const int change_cookie = 20;
+  ciphertext[change_cookie] = ciphertext[change_cookie] + 1;
+#else
   ciphertext[3] = ciphertext[3] + 1;
+#endif
   EXPECT_FALSE(OSCrypt::DecryptString(ciphertext, &result));
   EXPECT_NE(plaintext, result);
   EXPECT_TRUE(result.empty());

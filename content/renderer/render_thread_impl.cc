@@ -231,10 +231,22 @@
 #include "base/test/clang_profiling.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/renderer/render_thread_impl_ext.cc"
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+#include "third_party/blink/renderer/platform/fonts/font_cache.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#endif  // ARKWEB_THEME_FONT
+
+#if BUILDFLAG(ARKWEB_I18N)
+#include "ui/base/resource/resource_bundle.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/renderer/media/ohos/native_texture_factory.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_HTML_SELECT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 namespace content {
 
 namespace {
@@ -913,14 +925,21 @@ void RenderThreadImpl::InitializeWebKit(mojo::BinderMap* binders) {
   RenderThreadImpl::RegisterSchemes();
 
   RenderMediaClient::Initialize();
-  
+
   // Hook up blink's codecs so skia can call them. Since only the renderer
   // processes should be doing image decoding, this is not done in the common
   // skia initialization code for the GPU.
   SkGraphics::SetImageGeneratorFromEncodedDataFactory(
       blink::WebImageGenerator::CreateAsSkImageGenerator);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  InitializeWebKitExt(compositor_task_runner_);
+  if (!compositor_task_runner_) {
+    LOG(WARNING) << "compositor task runner is nullptr";
+  } else {
+    compositor_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&ChildProcess::ReportCompositorKeyThread,
+                       base::Unretained(ChildProcess::current()), true));
+  }
 #endif
 }
 
@@ -1290,6 +1309,21 @@ RenderThreadImpl::GetOverlayStateServiceProvider() {
 }
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+scoped_refptr<NativeTextureFactory> RenderThreadImpl::GetNativeTexureFactory() {
+  DCHECK(IsMainThread());
+  if (!native_texture_factory_ || native_texture_factory_->IsLost()) {
+    scoped_refptr<gpu::GpuChannelHost> channel = EstablishGpuChannelSync();
+    if (!channel) {
+      native_texture_factory_ = nullptr;
+      return nullptr;
+    }
+    native_texture_factory_ = NativeTextureFactory::Create(std::move(channel));
+  }
+  return native_texture_factory_;
+}
+#endif
+
 base::WaitableEvent* RenderThreadImpl::GetShutdownEvent() {
   return ChildProcess::current()->GetShutDownEvent();
 }
@@ -1458,6 +1492,14 @@ void RenderThreadImpl::SetIsLockedToSite() {
   DCHECK(blink_platform_impl_);
   blink_platform_impl_->SetIsLockedToSite();
 }
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+void RenderThreadImpl::SetDrawMode(int mode,
+                                   base::PassKey<AgentSchedulingGroup>) {
+  DCHECK(blink_platform_impl_);
+  blink_platform_impl_->SetDrawMode(mode);
+}
+#endif
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 void RenderThreadImpl::WriteClangProfilingProfile(
@@ -1937,6 +1979,37 @@ void RenderThreadImpl::OnMemoryPressureFromBrowserReceived(
     return;
   }
   blink::RequestUserLevelMemoryPressureSignal();
+}
+
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
+  blink::FontCache::Get().Invalidate();
+  skia::DefaultFontMgr().get()->InvalidateThemeFont(
+      theme_font.GetPlatformFile());
+  blink::FontCache::Get().InvalidateSystemFontFamily();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_I18N)
+void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
+  if (!ui::ResourceBundle::HasSharedInstance() ||
+      !ui::ResourceBundle::LocaleDataPakExists(locale)) {
+    LOG(ERROR) << "render thread update locale failed";
+    return;
+  }
+  std::string origin_locale =
+      ui::ResourceBundle::GetSharedInstance().GetLoadedLocaleForTesting();
+  if (origin_locale == locale) {
+    LOG(WARNING) << "render thread no need to update locale";
+    return;
+  }
+  std::string result =
+      ui::ResourceBundle::GetSharedInstance().ReloadLocaleResources(locale);
+  if (result.empty()) {
+    LOG(ERROR) << "CefFrameImpl update locale failed";
+  }
 }
 #endif
 

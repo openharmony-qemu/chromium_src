@@ -455,7 +455,7 @@ void PageLoadTracker::PageHidden() {
                           /*permit_forwarding=*/false);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   LOG(INFO) << "event_message: PageHidden source_id_ value: " << source_id_;
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::PageShown() {
@@ -486,7 +486,7 @@ void PageLoadTracker::PageShown() {
       /*permit_forwarding=*/false);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   LOG(INFO) << "event_message: PageShown source_id_ value: " << source_id_;
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::RenderFrameDeleted(content::RenderFrameHost* rfh) {
@@ -522,9 +522,10 @@ void PageLoadTracker::WillProcessNavigationResponse(
   DCHECK(!navigation_request_id_.has_value());
   navigation_request_id_ = navigation_handle->GetGlobalRequestID();
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  LOG(INFO) << "event_message: WillProcessNavigationResponse source_id: " << source_id_
-            << " navigation_handle id: " << navigation_handle->GetNavigationId();
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "event_message: WillProcessNavigationResponse source_id: "
+            << source_id_ << " navigation_handle id: "
+            << navigation_handle->GetNavigationId();
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::Commit(content::NavigationHandle* navigation_handle) {
@@ -590,8 +591,9 @@ void PageLoadTracker::Commit(content::NavigationHandle* navigation_handle) {
                           /*permit_forwarding=*/false);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   LOG(INFO) << "event_message: Commit source_id: " << source_id_
-            << " navigation_handle id: " << navigation_handle->GetNavigationId();
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+            << " navigation_handle id: "
+            << navigation_handle->GetNavigationId();
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::DidActivatePrerenderedPage(
@@ -714,8 +716,9 @@ void PageLoadTracker::FailedProvisionalLoad(
       navigation_handle->GetNavigationDiscardReason().value());
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   LOG(INFO) << "event_message: FailedProvisionalLoad source_id: " << source_id_
-            << " navigation_handle id: " << navigation_handle->GetNavigationId();
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+            << " navigation_handle id: "
+            << navigation_handle->GetNavigationId();
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::DidUpdateNavigationHandleTiming(
@@ -1422,8 +1425,9 @@ void PageLoadTracker::OnEnterBackForwardCache() {
     PageHidden();
   }
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  LOG(INFO) << "event_message: OnEnterBackForwardCache source_id: " << source_id_;
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "event_message: OnEnterBackForwardCache source_id: "
+            << source_id_;
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::OnRestoreFromBackForwardCache(
@@ -1451,9 +1455,10 @@ void PageLoadTracker::OnRestoreFromBackForwardCache(
   page_end_reason_ = END_NONE;
   page_end_time_ = base::TimeTicks();
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
-  LOG(INFO) << "event_message: OnRestoreFromBackForwardCache source_id: " << source_id_
-            << " navigation_handle id: " << navigation_handle->GetNavigationId();
-#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "event_message: OnRestoreFromBackForwardCache source_id: "
+            << source_id_ << " navigation_handle id: "
+            << navigation_handle->GetNavigationId();
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 }
 
 void PageLoadTracker::OnV8MemoryChanged(

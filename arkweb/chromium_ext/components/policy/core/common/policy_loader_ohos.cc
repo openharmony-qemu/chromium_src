@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "components/policy/core/common/policy_loader_ohos.h"
+#include "policy_loader_ohos.h"
 
 #include <string>
 #include <vector>
@@ -11,7 +11,6 @@
 #include "base/files/file.h"
 #include "base/json/json_string_value_serializer.h"
 #include "base/logging.h"
-#include "base/ohos/sys_info_utils_ext.h"
 #include "base/path_service.h"
 #include "components/policy/core/common/policy_bundle.h"
 #include "components/policy/core/common/policy_pref_names.h"
@@ -22,8 +21,8 @@
 namespace policy {
 
 namespace {
-constexpr int kApiMinApiVersion = 16;
 constexpr bool kUseTestPolicies = false;
+std::vector<PolicyLoaderOhos*> g_loaders;
 }  // namespace
 
 void RegisterBrowserPolicyProfilePrefs(PrefRegistrySimple* registry) {
@@ -48,11 +47,27 @@ void PolicyChangedEventCallback::OnPolicyChangedImpl() {
   }
 }
 
+bool PolicyLoaderOhos::use_browser_policy_ = false;
+bool PolicyLoaderOhos::policy_source_choosed_ = false;
+
 PolicyLoaderOhos::PolicyLoaderOhos(
     scoped_refptr<base::SequencedTaskRunner> task_runner)
-    : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {}
+    : AsyncPolicyLoader(task_runner, /*periodic_updates*/ false) {
+  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
+  g_loaders.emplace_back(this);
+  TryChoosePolicySource();
+}
 
 PolicyLoaderOhos::~PolicyLoaderOhos() {
+  auto it = std::find(g_loaders.begin(), g_loaders.end(), this);
+  if (it != g_loaders.end()) {
+      g_loaders.erase(it);
+  }
+
+  if (!policy_source_choosed_) {
+    return;
+  }
+
   if (use_browser_policy_) {
     policy::BrowserPolicyHandler::GetInstance()->RemoveObserver(
         event_callback_.get());
@@ -63,45 +78,43 @@ PolicyLoaderOhos::~PolicyLoaderOhos() {
   }
 }
 
+// static
 void PolicyLoaderOhos::TryChoosePolicySource() {
-  if (policy_source_choosed_) {
-    return;
+  if (!policy_source_choosed_) {
+    policy_source_choosed_ =
+        policy::ShouldUseBrowserPolicy(use_browser_policy_);
+    if (!policy_source_choosed_) {
+      LOG(INFO) << "PolicyLoaderOhos TryChoosePolicySource failed";
+      return;
+    }
+    LOG(INFO) << "PolicyLoaderOhos ShouldUseBrowserPolicy: "
+                << use_browser_policy_;
   }
 
-  int api_version = base::ohos::ApplicationApiVersion();
-  LOG(INFO) << "PolicyLoaderOhos Init api version: " << api_version;
-  if (api_version < 0) {
-    LOG(ERROR) << "PolicyLoaderOhos choose source failed: invalid api_version";
-  }
+  for (auto loader: g_loaders) {
+    if (use_browser_policy_) {
+      policy::BrowserPolicyHandler::GetInstance()->AddObserver(
+          loader->event_callback().get());
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetEnterpriseDeviceManagementInstance()
+          .RegistPolicyChangeEventCallback(loader->event_callback());
 
-  policy_source_choosed_ = true;
-  if (api_version >= kApiMinApiVersion) {
-    use_browser_policy_ = true;
-  } else {
-    use_browser_policy_ = false;
-  }
-}
-
-void PolicyLoaderOhos::InitOnBackgroundThread() {
-  event_callback_ = std::make_shared<PolicyChangedEventCallback>(this);
-
-  TryChoosePolicySource();
-
-  if (use_browser_policy_) {
-    BrowserPolicyHandler::GetInstance()->AddObserver(event_callback_.get());
-  } else {
-    OHOS::NWeb::OhosAdapterHelper::GetInstance()
-        .GetEnterpriseDeviceManagementInstance()
-        .RegistPolicyChangeEventCallback(event_callback_);
-
-    std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                      .GetEnterpriseDeviceManagementInstance()
-                      .StartObservePolicyChange();
+      std::ignore = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                        .GetEnterpriseDeviceManagementInstance()
+                        .StartObservePolicyChange();
+    }
   }
 }
+
+void PolicyLoaderOhos::InitOnBackgroundThread() {}
 
 PolicyBundle PolicyLoaderOhos::Load() {
   TryChoosePolicySource();
+  if (!policy_source_choosed_) {
+    LOG(ERROR) << "Load with no policy source choosed";
+    return PolicyBundle();
+  }
 
   if (use_browser_policy_) {
     return policy::BrowserPolicyHandler::GetInstance()->GetPolicyBundle();
@@ -215,7 +228,7 @@ bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
           break;
         }
         default:
-          LOG(WARNING) << "unknown type";
+          LOG(WARNING) << "unkown type";
       }
     }
   }
@@ -223,6 +236,11 @@ bool PolicyLoaderOhos::ParsePolicy(const std::string& json,
   PolicyMap policy_map;
   policy_map.LoadFrom(dictionary_value, POLICY_LEVEL_MANDATORY,
                       POLICY_SCOPE_MACHINE, POLICY_SOURCE_PLATFORM);
+
+  if (policy_map.empty()) {
+    LOG(WARNING) << "Empty json object, parse failed";
+    return false;
+  }
   bundle->Get(PolicyNamespace(POLICY_DOMAIN_CHROME, std::string()))
       .MergeFrom(policy_map);
   return true;

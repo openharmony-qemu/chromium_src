@@ -75,7 +75,6 @@ class FileErrorData : public base::trace_event::ConvertableToTraceFormat {
   int os_error_;
   DownloadInterruptReason interrupt_reason_;
 };
-}  // namespace
 
 void InitializeFile(base::File* file, const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
@@ -97,7 +96,6 @@ void InitializeFile(base::File* file, const base::FilePath& file_path) {
           base::File::FLAG_WIN_SHARE_DELETE);
 }
 
-namespace {
 void DeleteFileWrapper(const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
   if (file_path.IsContentUri()) {
@@ -135,8 +133,16 @@ DownloadInterruptReason BaseFile::Initialize(
   DCHECK(!detached_);
 
 #if BUILDFLAG(ARKWEB_DOWNLOAD)
-  base::FilePath save_directory =
-      AsArkWebBaseFileExt()->GetSaveDirectory(default_directory);
+  base::FilePath save_directory;
+  if (default_directory.empty()) {
+    base::GetTempDir(&save_directory);
+    save_directory = save_directory.AppendASCII("Download");
+    if (!base::DirectoryExists(save_directory)) {
+      base::CreateDirectory(save_directory);
+    }
+  } else {
+    save_directory = default_directory;
+  }
 #endif
 
   if (full_path.empty()) {

@@ -27,7 +27,6 @@
 #include "base/threading/thread.h"
 #include "content/browser/browser_thread_impl.h"
 #include "ui/compositor/test/test_context_factories.h"
-#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 namespace ui {
 namespace {
 std::shared_ptr<Compositor> g_compositor = nullptr;
@@ -80,7 +79,7 @@ void CompositorTest::TearDown(void) {
 TEST_F(CompositorTest, SetDrawRect) {
   ASSERT_NE(g_compositor, nullptr);
   gfx::Rect rect(10, 20, 30, 40);
-  g_compositor->Utils()->SetDrawRect(rect);
+  g_compositor->SetDrawRect(rect);
 }
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 }  // namespace ui

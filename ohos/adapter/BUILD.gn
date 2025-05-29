@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/config/ohos/config.gni")
-# import("//ohos/adapter/aki_hook.gni")
+import("//ohos/adapter/aki_hook.gni")
 
-if (!is_ohos) {
+if (is_ohos) {
   shared_library("adapter") {
     sources = [
       "native_initializer.cc",
@@ -62,10 +62,7 @@ if (!is_ohos) {
       "//ohos/adapter/xcomponent:xcomponent",
     ]
 
-    public_deps = [
-      "//third_party:huawei_securec",
-      "//third_party/aki:aki_jsbind",
-    ]
+    public_deps = [ "//third_party/aki:aki_jsbind" ]
 
     ldflags = [
       "-l:libc++_static.a",
@@ -80,8 +77,5 @@ if (!is_ohos) {
       "time_service_ndk",
       "child_process"
     ]
-  }
-} else {
-  group("adapter") {
   }
 }

@@ -60,8 +60,8 @@ constexpr const MappedElementType* FindPtrOrNull(const Map& map,
 #if defined(__clang__) && (__clang_major__ < 17)
 template <typename Map,
           typename Key,
-          typename MappedElementType =
-              typename std::pointer_traits<internal::MappedType<Map>>::element_type>
+          typename MappedElementType = typename std::pointer_traits<
+              internal::MappedType<Map>>::element_type>
 #else
 template <typename Map,
           typename Key,

@@ -41,11 +41,7 @@ bool ShouldUpdateTextInputState(const ui::mojom::TextInputState& old_state,
 
 }  // namespace
 
-TextInputManager::TextInputManager() : active_view_(nullptr) {
-#if BUILDFLAG(ARKWEB_MENU)
-  imp_utils_ = std::make_unique<TextInputManagerUtils>(this);
-#endif
-}
+TextInputManager::TextInputManager() : active_view_(nullptr) {}
 
 TextInputManager::~TextInputManager() {
   // If there is an active view, we should unregister it first so that the
@@ -255,7 +251,14 @@ void TextInputManager::UpdateTextInputState(
   NotifyObserversAboutInputStateUpdate(view, changed);
 
 #if BUILDFLAG(ARKWEB_MENU)
-  imp_utils_->ArkWebUpdateSelectionMap(view, text_input_state);
+  if (text_selection_map_.find(view) != text_selection_map_.end() &&
+      text_input_state.value.has_value() &&
+      text_selection_map_[view].text().empty()) {
+    LOG(INFO) << "update text_selection_map_ text value";
+    text_selection_map_[view].SetSelection(text_input_state.value.value(),
+                                           text_selection_map_[view].offset(),
+                                           text_selection_map_[view].range());
+  }
 #endif
 }
 

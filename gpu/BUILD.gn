@@ -12,6 +12,7 @@ import("//testing/test.gni")
 import("//third_party/angle/gni/angle.gni")
 import("//third_party/protobuf/proto_library.gni")
 import("//ui/gl/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 if (is_android) {
   # Pull in enable_chrome_android_internal.
@@ -577,6 +578,18 @@ test("gpu_unittests") {
     ]
   }
 
+  if(arkweb_unittests){
+    sources += arkweb_gpu_ipc_common_test_sources
+    import("//arkweb/chromium_ext/gpu/command_buffer/service/arkweb_gpu_command_buffer_service_ext.gni")
+    import("//arkweb/chromium_ext/gpu/command_buffer/service/ohos/arkweb_gpu_command_buffer_service_ohos_ext.gni")
+    import("//arkweb/chromium_ext/gpu/config/arkweb_gpu_config_ext.gni")
+    sources += arkweb_gpu_command_buffer_service_ohos_sources
+    sources += arkweb_gpu_command_buffer_service_ohos_unittest
+    sources += arkweb_gpu_command_buffer_service_sources
+    sources += arkweb_gpu_command_buffer_service_unittest
+    sources += arkweb_gpu_config_unittest
+  }
+
   if (is_linux || is_chromeos || is_android) {
     sources += [ "command_buffer/service/gpu_fence_manager_unittest.cc" ]
   }
@@ -660,6 +673,25 @@ test("gpu_unittests") {
     "//ui/gl:test_support",
     "//url",
   ]
+  
+  if (is_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+  
+  if (use_static_angle) {
+    deps += [ "//third_party/angle:translator" ]
+  } else {
+    deps += [ "//third_party/angle:translator_gl_d3d_only" ]
+  }
+
+
+  if (arkweb_unittests) {
+    deps += [
+      "//content/renderer",
+      "//ohos_nweb:cef_nweb",
+      "//content/browser",
+    ]
+  }
 
   if (is_android) {
     deps += [ "//ui/android:ui_java" ]
@@ -683,11 +715,6 @@ test("gpu_unittests") {
     bundle_deps =
         [ "//testing/buildbot/filters:gpu_unittests_filters_bundle_data" ]
   }
-
-  import("//arkweb/chromium_ext/gpu/gpu_ext.gni")
-  sources += gpu_unittests_ext.sources
-  sources -= gpu_unittests_ext.sources_del
-  deps += gpu_unittests_ext.deps
 }
 
 test("gpu_perftests") {

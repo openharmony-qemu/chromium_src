@@ -48,7 +48,6 @@
 #include "ui/gl/gl_switches.h"
 #include "ui/native_theme/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
-#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
@@ -504,8 +503,8 @@ void SetRuntimeFeaturesFromCommandLine(const base::CommandLine& command_line) {
       {wrf::EnableWebGPUExperimentalFeatures, switches::kEnableUnsafeWebGPU,
        true},
 #if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
-      {wrf::EnableNonAdvancedSecurityMode, switches::kDisableNonAdvancedSecurityMode,
-       false},
+      {wrf::EnableNonAdvancedSecurityMode,
+       switches::kDisableNonAdvancedSecurityMode, false},
 #endif
       {wrf::EnableWebAudioBypassOutputBufferingOptOut,
        blink::switches::kWebAudioBypassOutputBufferingOptOut, true},

@@ -13,17 +13,33 @@
 #include "cc/layers/layer.h"
 #include "media/base/video_transformation.h"
 
+namespace media {
+class VideoFrame;
+}
+
 namespace cc {
 
 class VideoFrameProvider;
 class VideoLayerImpl;
-class VideoLayerExt;
 
 // A Layer that contains a Video element.
 class CC_EXPORT VideoLayer : public Layer {
  public:
   static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
                                           media::VideoTransformation transform);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
+  using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;
+  static scoped_refptr<VideoLayer> Create(VideoFrameProvider* provider,
+                                          media::VideoTransformation transform,
+                                          RectChangeCallback callback);
+  static scoped_refptr<VideoLayer> Create(
+      VideoFrameProvider* provider,
+      media::VideoTransformation transform,
+      RectChangeCallback callback,
+      RectVisibilityChangeCallback visibilitycallback);
+#endif
+
   VideoLayer(const VideoLayer&) = delete;
   VideoLayer& operator=(const VideoLayer&) = delete;
 
@@ -32,17 +48,27 @@ class CC_EXPORT VideoLayer : public Layer {
   bool RequiresSetNeedsDisplayOnHdrHeadroomChange() const override;
   bool Update() override;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectUpdate(const gfx::Rect& rect) override;
+  void OnLayerRectVisibilityChange(bool visibility) override;
+  void ResetLayerRectCallback();
+#endif
+
   // Clears |provider_| to ensure it is not used after destruction.
   void StopUsingProvider();
 
-  virtual VideoLayerExt* AsExt() {
-    return nullptr;
-  }
-
  private:
-  friend class VideoLayerExt;
   VideoLayer(VideoFrameProvider* provider,
              media::VideoTransformation transform);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  VideoLayer(VideoFrameProvider* provider,
+             media::VideoTransformation transform,
+             RectChangeCallback callback);
+  VideoLayer(VideoFrameProvider* provider,
+             media::VideoTransformation transform,
+             RectChangeCallback callback,
+             RectVisibilityChangeCallback visibilitycallback);
+#endif
   ~VideoLayer() override;
 
   // This pointer is only for passing to VideoLayerImpl's constructor. It should
@@ -50,6 +76,11 @@ class CC_EXPORT VideoLayer : public Layer {
   ProtectedSequenceReadable<raw_ptr<VideoFrameProvider>> provider_;
 
   const media::VideoTransformation transform_;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+  base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
+#endif
 };
 
 }  // namespace cc

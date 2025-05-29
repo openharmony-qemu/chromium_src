@@ -12,6 +12,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
@@ -84,7 +85,6 @@
 #include "third_party/blink/public/mojom/mediastream/media_stream.mojom.h"
 #include "url/gurl.h"
 #include "url/origin.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "base/win/scoped_com_initializer.h"
@@ -639,7 +639,6 @@ class MediaStreamManager::DeviceRequest {
 #if BUILDFLAG(ARKWEB_WEBRTC)
   int GetTargetProcessId() const { return target_process_id_; }
   int GetTargetFrameId() const { return target_frame_id_; }
-  GlobalRenderFrameHostId GetTargetRenderFrameHostId() const { return target_render_frame_host_id_; }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   void SetAudioRawId(std::string id) { audio_raw_id_ = std::move(id); }
@@ -1532,7 +1531,7 @@ void MediaStreamManager::SendMessageToNativeLog(const std::string& message) {
   LOG(INFO) << message;
 #else
   VLOG(1) << message;
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   if (!media_stream_manager) {
     // MediaStreamManager hasn't been initialized. This is allowed in tests.
@@ -1748,6 +1747,11 @@ void MediaStreamManager::GenerateStreams(
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   SendLogMessage(GetGenerateStreamsLogString(render_frame_host_id, requester_id,
                                              page_request_id));
+  // LOG(INFO) << "MediaStreamManager::GenerateStream render_id " <<
+  // render_process_id <<
+  //   ", frame_id: " << render_frame_id <<
+  //   ", requester_id " << requester_id <<
+  //   ", page_request_id " << page_request_id;
   std::unique_ptr<DeviceRequest> request =
       std::make_unique<GenerateStreamsRequest>(
           render_frame_host_id, requester_id, page_request_id, user_gesture,
@@ -3287,7 +3291,7 @@ void MediaStreamManager::InitializeMaybeAsync(
   // and the device managers.
   base::CurrentThread::Get()->AddDestructionObserver(this);
 
-  video_capture_manager_ = base::MakeRefCounted<VideoCaptureManagerExt>(
+  video_capture_manager_ = base::MakeRefCounted<VideoCaptureManager>(
       std::move(video_capture_provider),
       base::BindRepeating(&SendVideoCaptureLogMessage));
   video_capture_manager_->RegisterListener(this);
@@ -3420,14 +3424,14 @@ void MediaStreamManager::Closed(
                                     capture_session_id.ToString().c_str()));
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  AsMediaStreamManagerExt()->SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_STOPED);
+  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_STOPED);
   std::lock_guard<std::mutex> lock(nweb_id_mutex_);
   auto nweb_id_it = nweb_id_maps_.find(capture_session_id.ToString());
   if (nweb_id_it == nweb_id_maps_.end()) {
     return;
   }
   nweb_id_maps_.erase(nweb_id_it);
-#endif // defined(ARKWEB_EX_SCREEN_CAPTURE)
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 
 void MediaStreamManager::DevicesEnumerated(
@@ -3481,7 +3485,7 @@ void MediaStreamManager::Aborted(
       StreamTypeToString(stream_type), capture_session_id.ToString().c_str()));
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  AsMediaStreamManagerExt()->SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_ABORTED);
+  SendScreenCaptureState(capture_session_id.ToString(), SCREEN_CAPTURE_ABORTED);
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   StopDevice(stream_type, capture_session_id);
 }
@@ -3660,13 +3664,12 @@ void MediaStreamManager::HandleAccessRequestResponse(
       device.set_session_id(GetDeviceManager(device.type)->Open(device));
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
-      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
-        device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
+      if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE) {
         auto* web_contents = static_cast<WebContentsImpl*>(
             WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetRenderFrameHostId()));
+                request->GetTargetProcessId(), request->GetTargetFrameId()));
         if (web_contents) {
-          video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(
+          video_capture_manager()->BindSessionIdToNWebId(
               device.session_id(), web_contents->GetNWebId());
         }
       }
@@ -3678,13 +3681,13 @@ void MediaStreamManager::HandleAccessRequestResponse(
           device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE_SET) {
         auto* web_contents = static_cast<WebContentsImpl*>(
             WebContentsImpl::FromRenderFrameHostID(
-                request->GetTargetRenderFrameHostId()));
+                request->GetTargetProcessId(), request->GetTargetFrameId()));
         if (web_contents) {
           std::lock_guard<std::mutex> lock(nweb_id_mutex_);
           std::string session_id_str = device.session_id().ToString();
           auto nweb_id_it = nweb_id_maps_.find(session_id_str);
           if (nweb_id_it == nweb_id_maps_.end()) {
-            AsMediaStreamManagerExt()->PopSessionIdState(web_contents->GetNWebId(), session_id_str);
+            PopSessionIdState(web_contents->GetNWebId(), session_id_str);
           }
           nweb_id_maps_[session_id_str] = web_contents->GetNWebId();
         }
@@ -4680,4 +4683,93 @@ void MediaStreamManager::OnVideoCaptureHostConnectionError() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+// static
+MediaStreamManager::ScreenCaptureCallback
+    MediaStreamManager::screen_capture_callback_;
+// static
+void MediaStreamManager::SetScreenCaptureDelegateCallback(
+    ScreenCaptureCallback callback) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaStreamManager::SetScreenCaptureDelegateCallback,
+                       std::move(callback)));
+    return;
+  }
+
+  screen_capture_callback_ = std::move(callback);
+}
+
+void MediaStreamManager::StopScreenCapture(int32_t nweb_id,
+                                           const std::string& session_id) {
+  if (!video_capture_manager_) {
+    LOG(ERROR) << "videoCaptureManager null";
+    return;
+  }
+
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    return;
+  } else {
+    if (nweb_id_it->second != nweb_id) {
+      return;
+    }
+  }
+  video_capture_manager_->StopScreenCapture(session_id);
+}
+
+void MediaStreamManager::SendScreenCaptureState(const std::string& session_id,
+                                                int32_t state) {
+  std::lock_guard<std::mutex> lock(nweb_id_mutex_);
+  auto nweb_id_it = nweb_id_maps_.find(session_id);
+  if (nweb_id_it == nweb_id_maps_.end()) {
+    SessionIdState session_id_state;
+    session_id_state.session_id = session_id;
+    session_id_state.state = static_cast<ScreenCaptureState>(state);
+    session_id_state_.push_back(session_id_state);
+    return;
+  }
+  MediaStreamManager::SendScreenCaptureStateToNative(nweb_id_it->second,
+                                                     session_id, state);
+}
+
+// static
+void MediaStreamManager::SendScreenCaptureStateToNative(
+    int32_t nweb_id,
+    const std::string& session_id,
+    int32_t state) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+    GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaStreamManager::SendScreenCaptureStateToNative,
+                       nweb_id, session_id, state));
+    return;
+  }
+
+  if (!screen_capture_callback_.is_null()) {
+    screen_capture_callback_.Run(nweb_id, session_id.c_str(), state);
+  }
+}
+
+void MediaStreamManager::PopSessionIdState(int32_t nweb_id,
+                                           const std::string& session_id) {
+  for (auto state_it = session_id_state_.begin();
+       state_it != session_id_state_.end();) {
+    if (state_it->session_id == session_id) {
+      MediaStreamManager::SendScreenCaptureStateToNative(
+          nweb_id, state_it->session_id, state_it->state);
+      state_it = session_id_state_.erase(state_it);
+    } else {
+      state_it++;
+    }
+  }
+}
+
+void MediaStreamManager::OnScreenCaptureOpened(const std::string& session_id) {
+  DCHECK_CURRENTLY_ON(BrowserThread::IO);
+  SendScreenCaptureState(session_id, SCREEN_CAPTURE_OPENED);
+}
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }  // namespace content

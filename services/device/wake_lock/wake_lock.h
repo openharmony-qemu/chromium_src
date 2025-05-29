@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/sequenced_task_runner.h"
@@ -18,7 +19,6 @@
 #include "services/device/public/mojom/wake_lock.mojom.h"
 #include "services/device/wake_lock/power_save_blocker/power_save_blocker.h"
 #include "ui/gfx/native_widget_types.h"
-#include "arkweb/build/features/features.h"
 
 namespace device {
 

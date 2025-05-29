@@ -12,6 +12,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/format_macros.h"
 #include "base/strings/stringprintf.h"
@@ -188,6 +189,18 @@ int64_t Time::ToRoundedDownMillisecondsSinceUnixEpoch() const {
   const int64_t submillis = us_ % kMicrosecondsPerMillisecond;
   return millis - kEpochOffsetMillis - (submillis < 0);
 }
+
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+std::string Time::ToUTCString(const base::Time& time) {
+  Time::Exploded exploded;
+  time.UTCExplode(&exploded);
+  std::string time_string =
+      StringPrintf("%04d-%02d-%02d %02d:%02d:%02d.%03d UTC", exploded.year,
+                   exploded.month, exploded.day_of_month, exploded.hour,
+                   exploded.minute, exploded.second, exploded.millisecond);
+  return time_string;
+}
+#endif
 
 std::ostream& operator<<(std::ostream& os, Time time) {
   Time::Exploded exploded;

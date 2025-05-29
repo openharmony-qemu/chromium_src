@@ -26,7 +26,6 @@
 #include "content/public/common/content_switches.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_gesture_event_result_impl.h"
-#include "nweb_mouse_event_result_impl.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
 #include "ohos_adapter_helper.h"
@@ -271,110 +270,6 @@ class NWebNativeEmbedTouchEventImpl : public NWebNativeEmbedTouchEvent {
   std::shared_ptr<NWebGestureEventResult> result_;
 };
 
-class NWebNativeEmbedMouseEventImpl : public NWebNativeEmbedMouseEvent {
- public:
-  NWebNativeEmbedMouseEventImpl() = default;
-  ~NWebNativeEmbedMouseEventImpl() = default;
-
-  float GetX() override {
-    return x_;
-  }
-
-  void SetX(float x) {
-    x_ = x;
-  }
-
-  float GetY() override {
-    return y_;
-  }
-
-  void SetY(float y) {
-    y_ = y;
-  }
-
-  bool IsHitNativeArea() override {
-    return isHitNativeArea_;
-  }
-
-  void SetIsHitNativeArea(bool isHitNativeArea) {
-    isHitNativeArea_ = isHitNativeArea;
-  }
-
-  MouseType GetType() override {
-    return type_;
-  }
-
-  void SetType(MouseType type) {
-    type_ = type;
-  }
-
-  MouseButton GetButton() override {
-    return button_;
-  }
-
-  void SetButton(MouseButton button) {
-    button_ = button;
-  }
-
-  float GetOffsetX() override {
-    return offsetX_;
-  }
-
-  void SetOffsetX(float offsetX) {
-    offsetX_ = offsetX;
-  }
-
-  float GetOffsetY() override {
-    return offsetY_;
-  }
-
-  void SetOffsetY(float offsetY) {
-    offsetY_ = offsetY;
-  }
-
-  float GetScreenX() override {
-    return screenX_;
-  }
-
-  void SetScreenX(float screenX) {
-    screenX_ = screenX;
-  }
-
-  float GetScreenY() override {
-    return screenY_;
-  }
-
-  void SetScreenY(float screenY) {
-    screenY_ = screenY;
-  }
-
-  std::string GetEmbedId() override {
-    return embedId_;
-  }
-
-  void SetEmbedId(const std::string &embedId) {
-    embedId_ = embedId;
-  }
-
-  std::shared_ptr<NWebMouseEventResult> GetResult() override { return result_;}
-  void SetResult(const std::shared_ptr<NWebMouseEventResult> result) {
-    result_ = result;
-  }
-
- private:
-  std::string embedId_;
-  bool isHitNativeArea_ = false;
-  float x_ = 0;
-  float y_ = 0;
-  float offsetX_ = 0;
-  float offsetY_ = 0;
-  float screenX_ = 0;
-  float screenY_ = 0;
-  MouseType type_ = MouseType::PRESS;
-  MouseButton button_ = MouseButton::NONE_BUTTON;
-  std::shared_ptr<NWebMouseEventResult> result_;
-};
-
 // static
 CefRefPtr<NWebRenderHandler> NWebRenderHandler::Create() {
   CefRefPtr<NWebRenderHandler> renderHandler(new NWebRenderHandler());
@@ -425,9 +320,6 @@ void NWebRenderHandler::OnOverscroll(CefRefPtr<CefBrowser> browser,
   if (auto handler = handler_.lock()) {
     handler->OnOverScroll(x, y);
   }
-#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
-  has_over_scroll_ = true;
-#endif
 }
 
 void NWebRenderHandler::OnSelectionChanged(CefRefPtr<CefBrowser> browser,
@@ -473,17 +365,6 @@ void NWebRenderHandler::OnUpdateTextInputStateCalled(
 
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
-#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
-void NWebRenderHandler::GetScrollOffset(float& x, float& y) {
-  x = scroll_offset_x_;
-  y = scroll_offset_y_;
-}
-
-bool NWebRenderHandler::HasOverscroll() {
-  return has_over_scroll_;
-}
-#endif
-
 #if BUILDFLAG(IS_OHOS)
 void NWebRenderHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
                                           bool is_editable_node) {
@@ -494,19 +375,6 @@ void NWebRenderHandler::OnEditableChanged(CefRefPtr<CefBrowser> browser,
   inputmethod_client_->OnEditableChanged(browser, is_editable_node);
 }
 #endif  // #if BUILDFLAG(IS_OHOS)
-
-#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
-void NWebRenderHandler::SetScreenOffset(double x, double y)
-{
-  screen_x_ = x;
-  screen_y_ = y;
-}
-void NWebRenderHandler::GetScreenOffset(CefRefPtr<CefBrowser> browser, double& x, double& y)
-{
-  x = screen_x_;
-  y = screen_y_;
-}
-#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
 
 void NWebRenderHandler::Resize(uint32_t width, uint32_t height) {
   width_ = width;
@@ -623,13 +491,6 @@ void NWebRenderHandler::GetVisibleViewportRect(CefRefPtr<CefBrowser> browser,
     rect.height = 1;
   }
 }
-
-void NWebRenderHandler::UpdateSecurityLayer(bool isNeedSecurityLayer) {
-  auto handler = handler_.lock();
-  if (handler) {
-    handler->EnableSecurityLayer(isNeedSecurityLayer);
-  }
-}
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
@@ -647,6 +508,23 @@ void NWebRenderHandler::SetScreenInfo(const NWebScreenInfo& screen_info) {
   if (delegete) {
     delegete->SetVirtualPixelRatio(screen_info_.display_ratio);
   }
+}
+
+void NWebRenderHandler::SetLastScreenInfo(const NWebScreenInfo& screen_info) {
+  last_screen_info_ = screen_info;
+}
+
+NWebScreenInfo& NWebRenderHandler::GetLastScreenInfo() {
+  return last_screen_info_;
+}
+
+bool NWebRenderHandler::IsNeedCefNotifyScreenInfoChanged() {
+  if (last_screen_info_.display_ratio <= 0 || screen_info_.display_ratio <= 0) {
+    return false;
+  }
+  return last_screen_info_.display_ratio != screen_info_.display_ratio ||
+         last_screen_info_.width != screen_info_.width ||
+         last_screen_info_.height != screen_info_.height;
 }
 // #endif  // #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
 
@@ -719,10 +597,6 @@ void NWebRenderHandler::OnScrollOffsetChanged(CefRefPtr<CefBrowser> browser,
     handler->OnScroll(x, y);
   }
 
-#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
-  scroll_offset_x_ = static_cast<float>(x);
-  scroll_offset_y_ = static_cast<float>(y);
-#endif
   if (on_scroll_cb_) {
     on_scroll_cb_(x, y);
   }
@@ -783,24 +657,12 @@ void NWebRenderHandler::OnVirtualKeyboardRequestedEx(
   if (text_input_info.node_id > 0) {
     node_id_ = text_input_info.node_id;
   }
-  // When click Web input field.
-  // If input_mode is CEF_TEXT_INPUT_MODE_NONE,
-  // it means that the web does not require a keyboard.
-  if (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) {
-    noNeedKeyboardByInput_ = true;
-  } else {
-    noNeedKeyboardByInput_ = false;
-  }
 
-  bool is_hide = (text_input_info.node_id == 0) || text_input_info.always_hide_ime;
+  bool is_hide = (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE) ||
+                 text_input_info.always_hide_ime;
   if (!is_hide) {
     auto delegate = delegate_interface_.lock();
     if (delegate && delegate->OnFocus()) {
-      // If the inputmode is none and keyboard exists, the keyboard should be hide.
-      if (text_input_info.input_mode == CEF_TEXT_INPUT_MODE_NONE &&
-          inputmethod_client_->IsKeyboardShow()) {
-        HandleKeyboardDetach();
-      }
       HandleKeyboardAttach(browser, text_input_info, is_need_reset_listener,
                            attributesMap);
     }
@@ -824,12 +686,6 @@ void NWebRenderHandler::HandleKeyboardAttach(
         std::make_shared<NWebCustomKeyboardHandlerImpl>(handler);
   }
   if (handler && text_input_info.show_keyboard) {
-    auto isPassWord = attributesMap.find("type");
-    if (isPassWord != attributesMap.end() && isPassWord->second == "password") {
-        UpdateSecurityLayer(true);
-    } else {
-        UpdateSecurityLayer(false);
-    }
     handler->OnInterceptKeyboardAttach(custom_keyboard_handler_, attributesMap,
                                        useSystemKeyboard, enterKeyType);
     LOG(INFO) << "WebCustomKeyboard OnInterceptKeyboardAttach return, "
@@ -839,23 +695,18 @@ void NWebRenderHandler::HandleKeyboardAttach(
 
   if (useSystemKeyboard) {
     if (!isSystemKeyboard_ && custom_keyboard_handler_) {
-      LOG(INFO) << "WebCustomKeyboard before use system keyboard, need to close custom keyboard";
+      LOG(INFO) << "WebCustomKeyboard before use system keyboard, need to "
+                   "close custom keyboard";
       custom_keyboard_handler_->Close();
     }
-    int32_t requestKeyboardReason = 0;
-    auto iter = attributesMap.find("requestKeyboardReason");
-    if (iter != attributesMap.end()) {
-      requestKeyboardReason = std::stoi(iter->second);
-    }
-    LOG(INFO) << "WebCustomKeyboard attach system keyboard requestKeyboardReason = " << requestKeyboardReason;
+    LOG(INFO) << "WebCustomKeyboard attach system keyboard";
     inputmethod_client_->Attach(browser, text_input_info,
-                                is_need_reset_listener, enterKeyType, requestKeyboardReason);
+                                is_need_reset_listener, enterKeyType);
   } else {
     if (isSystemKeyboard_) {
       LOG(INFO) << "WebCustomKeyboard before use custom keyboard, need to "
                    "close system keyboard";
-      inputmethod_client_->HideTextInput(0, NWebInputMethodClient::HideTextinputType::FROM_KERNEL,
-                                         noNeedKeyboardByInput_);
+      inputmethod_client_->HideTextInput();
     }
     // need to colse system forcely from native input change to custom keyboard
     // input
@@ -881,7 +732,6 @@ void NWebRenderHandler::HandleKeyboardDetach() {
       custom_keyboard_handler_->Close();
     }
   }
-  UpdateSecurityLayer(false);
 }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
@@ -1224,30 +1074,6 @@ bool NWebRenderHandler::FilterScrollEvent(CefRefPtr<CefBrowser> browser,
   }
   return false;
 }
-
-bool NWebRenderHandler::OnNestedScroll(CefRefPtr<CefBrowser> browser,
-                                       float& x,
-                                       float& y,
-                                       float& fling_x,
-                                       float& fling_y,
-                                       bool& isAvailable)
-{
-  if (auto handler = handler_.lock()) {
-    // Value multiplied by virtual pixel ratio.
-    x = x * screen_info_.display_ratio;
-    y = y * screen_info_.display_ratio;
-    fling_x = fling_x * screen_info_.display_ratio;
-    fling_y = fling_y * screen_info_.display_ratio;
-    bool consumed = handler->OnNestedScroll(x, y, fling_x, fling_y, isAvailable);
-    x = x / screen_info_.display_ratio;
-    y = y / screen_info_.display_ratio;
-    fling_x = fling_x / screen_info_.display_ratio;
-    fling_y = fling_y / screen_info_.display_ratio;
-    return consumed;
-  }
-  return false;
-}
-
 void NWebRenderHandler::OnNativeEmbedGestureEvent(
     CefRefPtr<CefBrowser> browser,
     const CefEmbedTouchEvent& touchEvent,
@@ -1269,30 +1095,6 @@ void NWebRenderHandler::OnNativeEmbedGestureEvent(
 
     info->SetResult(result);
     handler->OnNativeEmbedGestureEvent(info);
-  }
-}
-
-void NWebRenderHandler::OnNativeEmbedMouseEvent(
-    CefRefPtr<CefBrowser> browser,
-    const CefEmbedMouseEvent& mouseEvent,
-    CefRefPtr<CefMouseEventCallback> callback) {
-  if (auto handler = handler_.lock()) {
-    std::shared_ptr<NWebNativeEmbedMouseEventImpl> info =
-        std::make_shared<NWebNativeEmbedMouseEventImpl>();
-    info->SetX(mouseEvent.x);
-    info->SetY(mouseEvent.y);
-    info->SetEmbedId(mouseEvent.embedId);
-    info->SetIsHitNativeArea(mouseEvent.isHitNativeArea);
-    info->SetOffsetX(mouseEvent.offsetX);
-    info->SetOffsetY(mouseEvent.offsetY);
-    info->SetScreenX(mouseEvent.screenX);
-    info->SetScreenY(mouseEvent.screenY);
-    info->SetType(static_cast<OHOS::NWeb::MouseType>(mouseEvent.type));
-    info->SetButton(static_cast<OHOS::NWeb::MouseButton>(mouseEvent.button));
-    std::shared_ptr<NWebMouseEventResult> result = std::make_shared<NWebMouseEventResultImpl>(callback);
-
-    info->SetResult(result);
-    handler->OnNativeEmbedMouseEvent(info);
   }
 }
 
@@ -1424,14 +1226,6 @@ void NWebRenderHandler::OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
         cef_image_rect.width, cef_image_rect.height);
   }
 }
-
-bool NWebRenderHandler::GetDataDetectorEnable() {
-  auto delegate = delegate_interface_.lock();
-  if (delegate) {
-    return delegate->GetDataDetectorEnable();
-  }
-  return false;
-}
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
@@ -1444,15 +1238,4 @@ void NWebRenderHandler::RestoreRenderFit() {
   handler->RestoreRenderFit();
 }
 #endif  // ARKWEB_MAXIMIZE_RESIZE
-
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,
-                                             int32_t eventType,
-                                             const CefString& argument) {
-  if (auto handler = handler_.lock()) {
-    handler->OnAccessibilityEventV2(accessibilityId, eventType,
-                                    argument.ToString());
-  }
-}
-#endif
 }  // namespace OHOS::NWeb

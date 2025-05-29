@@ -64,7 +64,6 @@
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -325,7 +324,7 @@ SharedImageFactory::SharedImageFactory(
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformRuntimeProperties()
           .supports_native_pixmaps) {
-    auto ozone_factory = std::make_unique<OzoneImageBackingFactoryExt>(
+    auto ozone_factory = std::make_unique<OzoneImageBackingFactory>(
         context_state_, workarounds_, gpu_preferences_);
     factories_.push_back(std::move(ozone_factory));
   }
@@ -452,10 +451,10 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
 #else
       DVLOG(1)
 #endif
-               << "CreateSharedImageBackedByBuffer[" << backing->GetName()
-               << "] size=" << size.ToString()
-               << " usage=" << CreateLabelForSharedImageUsage(usage)
-               << " format=" << format.ToString();
+          << "CreateSharedImageBackedByBuffer[" << backing->GetName()
+          << "] size=" << size.ToString()
+          << " usage=" << CreateLabelForSharedImageUsage(usage)
+          << " format=" << format.ToString();
     }
   } else {
     // If native buffers are not supported, try to create shared memory based
@@ -510,10 +509,10 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
 #else
         DVLOG(1)
 #endif
-                 << "CreateSharedImageBackedByBuffer[" << backing->GetName()
-                 << "] with pixels size=" << size.ToString()
-                 << " usage=" << CreateLabelForSharedImageUsage(usage)
-                 << " format=" << format.ToString();
+            << "CreateSharedImageBackedByBuffer[" << backing->GetName()
+            << "] size=" << size.ToString()
+            << " usage=" << CreateLabelForSharedImageUsage(usage)
+            << " format=" << format.ToString();
         backing->OnWriteSucceeded();
       }
     }
@@ -553,10 +552,10 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
 #else
     DVLOG(1)
 #endif
-             << "CreateSharedImagePixels[" << backing->GetName()
-             << "] with pixels size=" << size.ToString()
-             << " usage=" << CreateLabelForSharedImageUsage(usage)
-             << " format=" << format.ToString();
+        << "CreateSharedImagePixels[" << backing->GetName()
+        << "] with pixels size=" << size.ToString()
+        << " usage=" << CreateLabelForSharedImageUsage(usage)
+        << " format=" << format.ToString();
 
     backing->OnWriteSucceeded();
   }
@@ -614,16 +613,61 @@ bool SharedImageFactory::CreateSharedImage(
 #else
     DVLOG(1)
 #endif
-             << "CreateSharedImageWithBuffer[" << backing->GetName()
-             << "] size=" << size.ToString()
-             << " usage=" << CreateLabelForSharedImageUsage(usage)
-             << " format=" << format.ToString()
-             << " gmb_type=" << GmbTypeToString(gmb_type);
+        << "CreateSharedImageWithBuffer[" << backing->GetName()
+        << "] size=" << size.ToString()
+        << " usage=" << CreateLabelForSharedImageUsage(usage)
+        << " format=" << format.ToString()
+        << " gmb_type=" << GmbTypeToString(gmb_type);
 
     backing->OnWriteSucceeded();
   }
   return RegisterBacking(std::move(backing));
 }
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
+                                           gfx::GpuMemoryBufferHandle handle,
+                                           gfx::BufferFormat format,
+                                           gfx::BufferPlane plane,
+                                           const gfx::Size& size,
+                                           const gfx::ColorSpace& color_space,
+                                           GrSurfaceOrigin surface_origin,
+                                           SkAlphaType alpha_type,
+                                           uint32_t usage,
+                                           void* window_buffer) {
+#if false
+  auto si_format =
+      viz::SharedImageFormat::SinglePlane(viz::GetResourceFormat(format));
+#endif
+  auto si_format = viz::GetSharedImageFormat(format);
+  gfx::GpuMemoryBufferType gmb_type = handle.type;
+
+  SharedImageUsageSet usage_set(usage);
+
+  auto* factory = GetFactoryByUsage(usage_set, si_format, size,
+                                    /*pixel_data=*/{}, gmb_type);
+  std::string debug_label = "ZGLEE";
+  if (!factory) {
+    LogGetFactoryFailed(usage_set, si_format, gmb_type, debug_label);
+    return false;
+  }
+
+  std::unique_ptr<SharedImageBacking> backing;
+  backing = factory->CreateSharedImage(mailbox, std::move(handle), format,
+                                       plane, size, color_space, surface_origin,
+                                       alpha_type, usage, window_buffer);
+  if (backing) {
+    LOG(DEBUG) << "[HeifSupport] CreateSharedImage[" << backing->GetName()
+               << "] from handle size=" << size.ToString()
+               << " usage=" << CreateLabelForSharedImageUsage(usage_set)
+               << " buffer_format=" << gfx::BufferFormatToString(format)
+               << " gmb_type=" << GmbTypeToString(gmb_type);
+    backing->OnWriteSucceeded();
+  }
+
+  return RegisterBacking(std::move(backing));
+}
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
 bool SharedImageFactory::UpdateSharedImage(const Mailbox& mailbox) {
   return UpdateSharedImage(mailbox, nullptr);

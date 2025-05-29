@@ -24,20 +24,38 @@ class NWebFileSelectorParams;
 class NWebStringVectorValueCallback;
 }
 
-template<typename T>
+class NWebDevtoolsMessageHandler;
+
+template <class T, typename MethodPointer>
+bool CheckValid(T* obj, MethodPointer* pointer) {
+  if (!obj || !pointer) {
+    return false;
+  }
+  typename T::Base* base = static_cast<typename T::Base*>(obj);
+  uintptr_t start_pos = reinterpret_cast<intptr_t>(base);
+  uintptr_t method_pos = reinterpret_cast<intptr_t>(pointer);
+  if (start_pos + obj->struct_size < method_pos + sizeof(MethodPointer)) {
+    return false;
+  }
+  if (!(*pointer)) {
+    return false;
+  }
+  return true;
+}
+
 struct NWebDevtoolsMessageHandlerBase {
   const size_t struct_size = sizeof(NWebDevtoolsMessageHandlerBase);
-  bool (T::*show_file_chooser)(
+  bool (NWebDevtoolsMessageHandler::*show_file_chooser)(
       std::shared_ptr<OHOS::NWeb::NWebFileSelectorParams> param,
       std::shared_ptr<OHOS::NWeb::NWebStringVectorValueCallback>
           file_path_callback) = nullptr;
-  void (T::*show_info_bar)(
+  void (NWebDevtoolsMessageHandler::*show_info_bar)(
       const std::string& message,
       const std::string& path,
       std::shared_ptr<OHOS::NWeb::NWebBoolValueCallback> callback) = nullptr;
-  bool (T::*bring_to_front)() = nullptr;
-  bool (T::*close_window)() = nullptr;
-  bool (T::*active_devtools_window)() = nullptr;
+  bool (NWebDevtoolsMessageHandler::*bring_to_front)() = nullptr;
+  bool (NWebDevtoolsMessageHandler::*close_window)() = nullptr;
+  bool (NWebDevtoolsMessageHandler::*active_devtools_window)() = nullptr;
 
   NWebDevtoolsMessageHandlerBase() = default;
   NWebDevtoolsMessageHandlerBase(
@@ -50,10 +68,10 @@ struct NWebDevtoolsMessageHandlerBase {
       NWebDevtoolsMessageHandlerBase&& other) = delete;
 };
 
-class NWebDevtoolsMessageHandler : public NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler> {
+class NWebDevtoolsMessageHandler : public NWebDevtoolsMessageHandlerBase {
  public:
-  using Base = NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler>;
-  NWebDevtoolsMessageHandler() : NWebDevtoolsMessageHandlerBase<NWebDevtoolsMessageHandler>() {
+  using Base = NWebDevtoolsMessageHandlerBase;
+  NWebDevtoolsMessageHandler() : NWebDevtoolsMessageHandlerBase() {
     this->show_file_chooser =
         &NWebDevtoolsMessageHandler::ShowFileChooser;
     this->show_info_bar =

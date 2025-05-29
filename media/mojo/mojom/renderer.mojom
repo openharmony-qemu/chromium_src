@@ -113,15 +113,6 @@ interface Renderer {
 
   [EnableIf=arkweb_custom_video_player]
   SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
-
-  [EnableIf=arkweb_video_assistant]
-  SetVideoSurface(int32 surface_id);
-
-  [EnableIf=arkweb_media]
-  SetNativeWindowSurface(int32 native_window_id);
-
-  [EnableIf=arkweb_pip]
-  PipEnable(bool enable);
 };
 
 // A Mojo equivalent of media::RendererClient. See media/mojo/README.md

@@ -76,12 +76,6 @@ AudioOutputStreamBroker::AudioOutputStreamBroker(
       client_(std::move(client)),
       observer_(render_process_id, render_frame_id, stream_id),
       observer_receiver_(&observer_) {
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media::AudioParameters preParams = params;
-  preParams.set_render_process_id(render_process_id);
-  preParams.set_render_frame_id(render_frame_id);
-  params_ = preParams;
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   DCHECK(client_);
   DCHECK(deleter_);
   DCHECK(group_id_);

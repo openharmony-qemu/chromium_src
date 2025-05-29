@@ -28,11 +28,6 @@ class TestFrameSinkImpl::TestMojoCompositorFrameSink
   void SetNeedsBeginFrame(bool needs_begin_frame) override {}
   void SetWantsAnimateOnlyBeginFrames() override {}
   void SetWantsBeginFrameAcks() override {}
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
-                          int32_t process_id,
-                          bool is_created) override {}
-#endif
   void SetAutoNeedsBeginFrame() override {}
   void SubmitCompositorFrame(
       const viz::LocalSurfaceId& local_surface_id,

@@ -41,7 +41,6 @@ OHOSAudioCapturerSource::OHOSAudioCapturerSource(
 
 OHOSAudioCapturerSource::~OHOSAudioCapturerSource() {
   LOG(INFO) << "OHOSAudioCapturerSource::~OHOSAudioCapturerSource";
-  weak_factory_.InvalidateWeakPtrs();
 }
 
 void OHOSAudioCapturerSource::Initialize(
@@ -80,9 +79,7 @@ void OHOSAudioCapturerSource::Initialize(
                              std::to_string(params_.sample_rate()) + "_" +
                              std::to_string(params_.channels()) + "_" +
                              std::to_string(1) + "_capturer_in.pcm";
-  FILE* tempFile = dumpFile_.get();
-  DumpFileUtil::OpenDumpFile(dumpFileName, &tempFile);
-  dumpFile_ = tempFile;
+  DumpFileUtil::OpenDumpFile(dumpFileName, &dumpFile_);
 }
 
 void OHOSAudioCapturerSource::Start() {
@@ -113,7 +110,6 @@ void OHOSAudioCapturerSource::Stop() {
     if (callback_) {
       callback_ = nullptr;
     }
-    is_stopped_.store(true);
   }
 
   DCHECK(capturer_task_runner_->BelongsToCurrentThread());
@@ -121,18 +117,12 @@ void OHOSAudioCapturerSource::Stop() {
     LOG(ERROR) << "OHOSAudioCapturerSource::Stop stop failed";
     ReportError("Stop OHOS audio capturer failed");
   }
-  FILE* tempFile = dumpFile_.get();
-  DumpFileUtil::CloseDumpFile(&tempFile);
-  dumpFile_ = tempFile;
+  DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 void OHOSAudioCapturerSource::ReadData() {
   base::AutoLock lock(callback_lock_);
   if (!capturer_) {
-    return;
-  }
-  if (is_stopped_.load()) {
-    LOG(INFO) << "OHOSAudioCapturerSource::ReadData, has been set to stop";
     return;
   }
   std::shared_ptr<OHOS::NWeb::BufferDescAdapterImpl> bufferDesc =

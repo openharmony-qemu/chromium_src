@@ -51,7 +51,6 @@ VideoLayerImpl::VideoLayerImpl(
       provider_client_impl_(std::move(provider_client_impl)),
       video_transform_(video_transform) {
   set_may_contain_video(true);
-  videoImplUtils_ = new VideoLayerImplUtils(this);
 }
 
 VideoLayerImpl::~VideoLayerImpl() {
@@ -82,14 +81,42 @@ bool VideoLayerImpl::WillDraw(DrawMode draw_mode,
     return false;
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  videoImplUtils_->VisibilityChange();
+  if (may_contain_native()) {
+    bool visibility = false;
+    if (visible_layer_rect().IsEmpty()) {
+      visibility = false;
+    } else {
+      visibility = true;
+    }
+    if (visibility != visibility_) {
+      visibility_ = visibility;
+      LOG(INFO) << "[NativeEmbed] rect visibility: " << visibility;
+      layer_tree_impl()->OnLayerRectVisibilityChange(id(), visibility);
+    }
+  }
 #endif
 
   if (!LayerImpl::WillDraw(draw_mode, resource_provider))
     return false;
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  videoImplUtils_->LayerRectUpdate();
+  gfx::Transform transform = DrawTransform();
+  gfx::Rect bounds_quad_rect(bounds());
+  Occlusion occlusion_in_video_space =
+      draw_properties()
+          .occlusion_in_content_space.GetOcclusionWithGivenDrawTransform(
+              transform);
+  gfx::Rect visible_quad_rect =
+      occlusion_in_video_space.GetUnoccludedContentRect(bounds_quad_rect);
+  bounds_quad_rect.set_origin(
+      ScreenSpaceTransform().MapPoint(visible_quad_rect.origin()));
+  if (!bounds_quad_rect_.ApproximatelyEqual(bounds_quad_rect, 1)) {
+    bounds_quad_rect_ = bounds_quad_rect;
+    LOG(DEBUG) << "[NativeEmbed] visible quad rect: "
+               << visible_quad_rect.ToString()
+               << ", bounds quad rect: " << bounds_quad_rect.ToString();
+    layer_tree_impl()->OnLayerRectUpdate(id(), bounds_quad_rect);
+  }
 #endif
 
   // Explicitly acquire and release the provider mutex so it can be held from
@@ -176,9 +203,6 @@ void VideoLayerImpl::AppendQuads(viz::CompositorRenderPass* render_pass,
   if (is_clipped()) {
     clip_rect_opt = clip_rect();
   }
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  updater_->SetHasNativeLayer(videoImplUtils_->HasNativeLayer());
-#endif
   updater_->AppendQuad(render_pass, frame_, transform, quad_rect,
                        visible_quad_rect, draw_properties().mask_filter_info,
                        clip_rect_opt, contents_opaque(), draw_opacity(),

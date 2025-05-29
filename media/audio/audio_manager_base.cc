@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -29,7 +30,6 @@
 #include "media/audio/fake_audio_input_stream.h"
 #include "media/audio/fake_audio_output_stream.h"
 #include "media/base/media_switches.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -315,15 +315,6 @@ AudioInputStream* AudioManagerBase::MakeAudioInputStream(
     params.set_format(AudioParameters::AUDIO_FAKE);
   }
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-      if (input_params.render_process_id() != params.render_process_id()) {
-        params.set_render_process_id(input_params.render_process_id());
-      }
-      if (input_params.render_frame_id() != params.render_frame_id()) {
-        params.set_render_frame_id(input_params.render_frame_id());
-      }
-#endif // defined(OHOS_MEDIA_POLICY)
-
   SendLogMessage(log_callback, "%s({device_id=%s}, {params=[%s]})", __func__,
                  device_id.c_str(), params.AsHumanReadableString().c_str());
 
@@ -446,14 +437,7 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
         // Turn off effects that weren't requested.
         output_params.set_effects(params.effects() & output_params.effects());
       }
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-      if (params.render_process_id() != output_params.render_process_id()) {
-        output_params.set_render_process_id(params.render_process_id());
-      }
-      if (params.render_frame_id() != output_params.render_frame_id()) {
-        output_params.set_render_frame_id(params.render_frame_id());
-      }
-#endif // defined(OHOS_MEDIA_POLICY)
+
       uma_stream_format = STREAM_FORMAT_PCM_LOW_LATENCY;
     } else {
       // We've received invalid audio output parameters, so switch to a mock
@@ -560,9 +544,6 @@ void AudioManagerBase::ReleaseOutputStream(AudioOutputStream* stream) {
   // streams.
   --num_output_streams_;
   delete stream;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  stream = nullptr;
-#endif // defined(OHOS_MEDIA_POLICY)
 }
 
 void AudioManagerBase::ReleaseInputStream(AudioInputStream* stream) {
@@ -611,7 +592,7 @@ AudioParameters AudioManagerBase::GetInputStreamParameters(
   return GetPreferredInputStreamParameters(device_id);
 #else
   NOTREACHED();
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 }
 
 std::string AudioManagerBase::GetAssociatedOutputDeviceID(

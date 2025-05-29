@@ -7,9 +7,6 @@
 #include <cmath>
 
 #include "base/logging.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/system/sys_info.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "ui/events/gesture_detection/gesture_configuration.h"
 
 namespace ui {
@@ -21,10 +18,6 @@ constexpr float kDefaultMultiplier = 60.0f;
 constexpr float kThresholdForFlingEnd = 1.0f;
 constexpr double Epsilon = 0.001f;
 constexpr double kFriction = kDefaultFriction * kFrictionScale;
-constexpr int kStartVelocityThreshold = 1500;
-constexpr double kVelocityScale = 1.2;
-constexpr float kSlowFriction = 1.0f;
-constexpr float kTouchpadFriction = 1.2f;
 
 inline bool NearEqual(const double left, const double right) {
   return (std::abs(left - right) <= Epsilon);
@@ -47,32 +40,14 @@ void NativeScrollerOhos::Fling(float start_x,
                                float max_x,
                                float min_y,
                                float max_y,
-                               base::TimeTicks start_time,
-                               GestureDevice device_source) {
+                               base::TimeTicks start_time) {
   curr_time_ = start_time;
   start_time_ = start_time;
-  if (device_source == GestureDevice::kTouchpad) {
-    friction_ = kTouchpadFriction * kFrictionScale;
-  } else {
-    friction_ = kFriction;
-  }
-  std::string ret = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetScrollFriction();
-  double frictionTmp = 0.0;
-  base::StringToDouble(ret, &frictionTmp);
-  friction_ = !NearZero(frictionTmp) ? frictionTmp * kFrictionScale : friction_;
-  LOG(INFO) << "NativeScrollerOhos::Fling friction_ = " << friction_;
+  friction_ = kFriction;
 
   // currently only vertical fling is supported
   init_velocity_y_ = std::abs(velocity_y);
   init_y_ = start_y;
-
-  if (init_velocity_y_ < kStartVelocityThreshold * kVelocityScale) {
-    friction_ = kSlowFriction * kFrictionScale;
-  }
-
-  LOG(INFO) << "DUMP_FLING_CURVE init_velocity_y_ after scale: "
-            << init_velocity_y_ << ", friction_: "
-            << friction_ / kFrictionScale;
 
   float pixel_ratio =
       ui::GestureConfiguration::GetInstance()->virtual_pixel_ratio();

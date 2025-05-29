@@ -59,7 +59,7 @@ constexpr bool kInitFromDataCopyData = true;
 
 #if BUILDFLAG(ARKWEB_PRINT)
 constexpr int kCheckCancelCount = 5;
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 bool WriteAssetToBuffer(const SkStreamAsset* asset, void* buffer, size_t size) {
   // Calling duplicate() keeps original asset state unchanged.
@@ -474,11 +474,13 @@ void MetafileSkia::CustomDataToSkPictureCallback(SkCanvas* canvas,
 #if BUILDFLAG(ARKWEB_PRINT)
 bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
   // If we've already set the data in InitFromData, leave it be.
-  if (data_->data_stream)
+  if (data_->data_stream) {
     return false;
+  }
 
-  if (data_->recorder.getRecordingCanvas())
+  if (data_->recorder.getRecordingCanvas()) {
     FinishPage();
+  }
 
   SkDynamicMemoryWStream stream;
   sk_sp<SkDocument> doc;
@@ -490,7 +492,7 @@ bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
       break;
     case mojom::SkiaDocumentType::kMSKP:
       SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
-                                              data_->typeface_content_info);
+                                               data_->typeface_content_info);
       doc = SkMultiPictureDocument::Make(&stream, &procs);
       // It is safe to use base::Unretained(this) because the callback
       // is only used by `canvas` in the following loop which has shorter
@@ -520,6 +522,6 @@ bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
   return true;
 }
 
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 }  // namespace printing

@@ -62,6 +62,7 @@ bool TextureLayerImpl::ShouldDeferImplInvalidation() const {
   if (!transferable_resource_.enable_defer_impl_invalidation_workaround) {
     return false;
   }
+
   TRACE_EVENT0("cc", "TextureLayerImpl::ShouldDeferImplInvalidation");
   return true;
 }

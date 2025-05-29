@@ -16,7 +16,7 @@
 #include "event_reporter.h"
 
 #include "oh_web_performance_timing.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;

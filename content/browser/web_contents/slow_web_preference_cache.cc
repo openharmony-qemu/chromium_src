@@ -157,10 +157,10 @@ bool SlowWebPreferenceCache::Update() {
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
 
 #if BUILDFLAG(IS_ARKWEB)
-    if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kOhosDisableTouchEvent)) {
-      touch_enabled_default_switch = switches::kTouchEventFeatureDetectionEnabled;
-    }
+    touch_enabled_default_switch = switches::kTouchEventFeatureDetectionEnabled;
+  }
 #endif  // BUILDFLAG(IS_ARKWEB)
   const std::string touch_enabled_switch =
       command_line.HasSwitch(switches::kTouchEventFeatureDetection)

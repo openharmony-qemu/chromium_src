@@ -7,6 +7,7 @@
 #include <set>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
@@ -37,7 +38,6 @@
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -120,7 +120,7 @@ void SSLManager::OnSSLCertificateError(
     const GURL& origin_url,
     const std::string& referrer
 #endif
-    ) {
+) {
   DCHECK(delegate.get());
   DVLOG(1) << "OnSSLCertificateError() cert_error: " << net_error
            << " url: " << url.spec() << " cert_status: " << std::hex
@@ -139,9 +139,8 @@ void SSLManager::OnSSLCertificateError(
       web_contents, delegate, is_primary_main_frame_request, url, net_error,
       ssl_info, fatal
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-                          ,
-                          origin_url,
-                          referrer
+      ,
+      origin_url, referrer
 #endif
       );
 
@@ -398,8 +397,7 @@ void SSLManager::OnCertErrorInternal(std::unique_ptr<SSLErrorHandler> handler) {
       web_contents, cert_error, ssl_info, request_url,
       is_primary_main_frame_request, fatal,
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      origin_url,
-      referrer,
+      origin_url, referrer,
 #endif
       base::BindOnce(std::move(callback), true));
 }

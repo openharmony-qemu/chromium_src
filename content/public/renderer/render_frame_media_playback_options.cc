@@ -9,7 +9,7 @@
 
 namespace content {
 
-#if (BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)) || BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
 const bool kIsBackgroundMediaSuspendEnabled = true;
 #else
 const bool kIsBackgroundMediaSuspendEnabled = false;

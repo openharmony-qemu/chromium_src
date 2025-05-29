@@ -11,7 +11,6 @@
 
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
 
@@ -60,7 +59,7 @@ CONTENT_EXPORT std::string GetCorsExemptRequestedWithHeaderName();
 // any kind, including the values returned by RenderProcessHost::GetID().
 static constexpr int kInvalidChildProcessUniqueId = -1;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 // The OOM score adj constants
 // The highest and lowest assigned OOM score adjustment (oom_score_adj) for
 // renderers and extensions used by the OomPriority Manager.

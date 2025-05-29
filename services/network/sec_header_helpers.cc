@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
@@ -236,7 +235,44 @@ void MaybeRemoveSecHeaders(net::URLRequest* request,
     }
   }
 }
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-#include "arkweb/chromium_ext/services/network/sec_header_helpers_ext.cc"
+std::map<std::string, std::string> GetFetchMetadataHeaders(
+    const GURL& target_url,
+    network::mojom::RequestMode mode,
+    bool has_user_activation,
+    network::mojom::RequestDestination dest,
+    const absl::optional<url::Origin>& initiator) {
+  std::map<std::string, std::string> headers;
+  if (!IsUrlPotentiallyTrustworthy(target_url)) {
+    return headers;
+  }
+
+  // Other requests default to `kSameOrigin`, and walk through the request's URL
+  // chain to calculate the correct value.
+  auto header_value = SecFetchSiteValue::kSameOrigin;
+  if (!initiator.has_value()) {
+    header_value = SecFetchSiteValue::kNoOrigin;
+  } else {
+    header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
+                                              target_url, initiator.value()));
+  }
+
+  headers[std::string(kSecFetchSite)] =
+      GetSecFetchSiteHeaderString(header_value);
+
+  headers[std::string(kSecFetchMode)] = RequestModeToString(mode);
+
+  if (has_user_activation) {
+    headers[std::string(kSecFetchUser)] = "?1";
+  }
+
+  std::string destination_value = dest == mojom::RequestDestination::kEmpty
+                                      ? "empty"
+                                      : RequestDestinationToString(dest);
+  headers[std::string(kSecFetchDest)] = destination_value;
+  return headers;
+}
 #endif
+
 }  // namespace network

@@ -22,7 +22,6 @@
 #include "base/functional/callback.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
-#include "base/memory/raw_ptr.h"
 #include "base/notreached.h"
 #include "base/run_loop.h"
 #include "build/build_config.h"
@@ -77,7 +76,7 @@ class EventHandlerFileDescriptorListener
   }
 
  private:
-  raw_ptr<MessagePumpForUI> message_pump_;
+  MessagePumpForUI* message_pump_;
   int non_delayed_fd_;
   int delayed_fd_;
 };
@@ -151,7 +150,7 @@ void MessagePumpForUI::OnDelayedLooperCallback() {
 
   // Clear the fd.
   uint64_t value;
-  long ret = read(delayed_fd_, &value, sizeof(value));
+  int ret = read(delayed_fd_, &value, sizeof(value));
 
   DPCHECK(ret >= 0 || errno == EAGAIN);
   DoDelayedLooperWork();
@@ -182,7 +181,7 @@ void MessagePumpForUI::OnNonDelayedLooperCallback() {
   }
 
   uint64_t value = 0;
-  long ret = read(non_delayed_fd_, &value, sizeof(value));
+  int ret = read(non_delayed_fd_, &value, sizeof(value));
   DPCHECK(ret >= 0);
   DCHECK_GT(value, 0U);
   bool do_idle_work = value == kTryNativeTasksBeforeIdleBit;
@@ -269,7 +268,7 @@ void MessagePumpForUI::ScheduleWork() {
 
 void MessagePumpForUI::ScheduleWorkInternal(bool do_idle_work) {
   uint64_t value = do_idle_work ? kTryNativeTasksBeforeIdleBit : 1;
-  long ret = write(non_delayed_fd_, &value, sizeof(value));
+  int ret = write(non_delayed_fd_, &value, sizeof(value));
   DPCHECK(ret >= 0);
 }
 

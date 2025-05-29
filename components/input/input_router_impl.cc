@@ -6,13 +6,15 @@
 
 #include <math.h>
 
+#include <string>
 #include <utility>
 
-#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h"
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/tracing/protos/chrome_track_event.pbzero.h"
@@ -27,6 +29,8 @@
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom-shared.h"
 #include "third_party/blink/public/mojom/input/touch_event.mojom.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #include "ui/events/blink/blink_event_util.h"
 #include "ui/events/blink/blink_features.h"
 #include "ui/events/blink/did_overscroll_params.h"
@@ -34,7 +38,11 @@
 #include "ui/events/event.h"
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "ui/latency/latency_info.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
+#endif
 
 namespace input {
 
@@ -73,6 +81,11 @@ std::unique_ptr<blink::WebCoalescedInputEvent> ScaleEvent(
       std::vector<std::unique_ptr<WebInputEvent>>(),
       std::vector<std::unique_ptr<WebInputEvent>>(), latency_info);
 }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+constexpr uint64_t GESTURE_MOVE_PERIOD = 250000000;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID = 10025;
+const int SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC = 10012;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 }  // namespace
 
 InputRouterImpl::InputRouterImpl(
@@ -91,8 +104,6 @@ InputRouterImpl::InputRouterImpl(
                            fling_scheduler_client,
                            config.gesture_config),
       device_scale_factor_(1.f) {
-  arkweb_input_router_impl_utils_ =
-      std::make_unique<ArkwebInputRouterImplUtils>(this);
   weak_this_ = weak_ptr_factory_.GetWeakPtr();
 
   DCHECK(client);
@@ -146,9 +157,51 @@ void InputRouterImpl::SendGestureEvent(
   input_stream_validator_.Validate(original_gesture_event.event);
 
   GestureEventWithLatencyInfo gesture_event(original_gesture_event);
-
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  arkweb_input_router_impl_utils_->SendGestureEventEx(gesture_event);
+  timeStamp_ = ::base::subtle::TimeTicksNowIgnoringOverride()
+                   .since_origin()
+                   .InNanoseconds();
+  if (gesture_event.event.GetType() ==
+          WebInputEvent::Type::kGestureScrollUpdate &&
+      timeStamp_ - prePerfTimeStamp_ > GESTURE_MOVE_PERIOD) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    prePerfTimeStamp_ = timeStamp_;
+    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollUpdate "
+                 "success";
+    client_->GetWidgetInputHandler()->TryStartFling();
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .CreateSocPerfClientAdapter()
+          ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, true);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .CreateSocPerfClientAdapter()
+          ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, true);
+    }
+  } else if (gesture_event.event.GetType() ==
+             WebInputEvent::Type::kGestureScrollEnd) {
+    LOG(INFO) << "InputRouterImpl::SendGestureEvent type=kGestureScrollEnd";
+    client_->GetWidgetInputHandler()->TryFinishFling();
+    if (base::ohos::IsPcDevice()) {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .CreateSocPerfClientAdapter()
+          ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID_PC, false);
+    } else {
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .CreateSocPerfClientAdapter()
+          ->ApplySocPerfConfigByIdEx(SOC_PERF_SLIDE_NORMAL_CONFIG_ID, false);
+    }
+    prePerfTimeStamp_ = 0;
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+    if (auto* host = content::GpuProcessHost::Get()) {
+      if (auto* host_impl = host->gpu_host()) {
+        host_impl->StopMonitor();
+      }
+    }
+#endif  // BUILDFLAG(WEB_SLIDE_LTPO)
+#endif
+  }
 #endif
   if (gesture_event_queue_.PassToFlingController(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilteredForFling", TRACE_EVENT_SCOPE_THREAD);
@@ -384,6 +437,24 @@ void InputRouterImpl::DidOverscroll(
   client_->DidOverscroll(fling_updated_params);
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void InputRouterImpl::SetGestureEventResult(bool result, bool stopPropagation) {
+  native_result_ = result;
+  client_->GetWidgetInputHandler()->SetGestureEventResult(result,
+                                                          stopPropagation);
+}
+
+void InputRouterImpl::SetNativeEmbedMode(bool flag) {
+  client_->GetWidgetInputHandler()->SetNativeEmbedMode(flag);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void InputRouterImpl::ScrollBy(float delta_x, float delta_y) {
+  client_->GetWidgetInputHandler()->ScrollBy(delta_x, delta_y);
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 void InputRouterImpl::DidStartScrollingViewport() {
   client_->DidStartScrollingViewport();
 }
@@ -535,6 +606,13 @@ gfx::Size InputRouterImpl::GetRootWidgetViewportSize() {
   return client_->GetRootWidgetViewportSize();
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void InputRouterImpl::DynamicFrameLossEvent(const std::string& sceneId,
+                                            bool isStart) {
+  return client_->DynamicFrameLossEvent(sceneId, isStart);
+}
+#endif
+
 void InputRouterImpl::SendMouseWheelEventImmediately(
     const MouseWheelEventWithLatencyInfo& wheel_event,
     MouseWheelEventQueueClient::MouseWheelEventHandledCallback
@@ -585,19 +663,26 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     const WebInputEvent& input_event,
     const ui::LatencyInfo& latency_info,
     blink::mojom::WidgetInputHandler::DispatchEventCallback callback) {
+  OHOS_TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent",
+                    "type", WebInputEvent::GetName(input_event.GetType()));
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-  arkweb_input_router_impl_utils_->TracingAndSceneReport(input_event, latency_info);
-#else
-  TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
-               WebInputEvent::GetName(input_event.GetType()));
-
+  OHOS_TRACE_EVENT2("input,benchmark,devtools.timeline,latencyInfo",
+                    "LatencyInfo.Flow", "trace_id",
+                    std::to_string(latency_info.trace_id()), "step",
+                    "STEP_SEND_INPUT_EVENT_UI");
 #endif
+  if (input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    OHOS::NWeb::ResSchedClientAdapter::ReportScene(
+        OHOS::NWeb::ResSchedStatusAdapter::WEB_SCENE_ENTER,
+        OHOS::NWeb::ResSchedSceneAdapter::SLIDE);
+  }
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
+#if defined(ARKWEB_INPUT_EVENTS)
+    LOG(INFO) << "event was filtered for "
+              << InputEventResultStateToString(filtered_state);
     TRACE_EVENT1("input", "InputEventFiltered", "filtered_state",
                  InputEventResultStateToString(filtered_state));
 #else
@@ -610,9 +695,19 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     }
     return;
   }
-
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  arkweb_input_router_impl_utils_->ProcessFilteredEvent(input_event);
+  if (!(input_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate ||
+        input_event.GetType() == WebInputEvent::Type::kTouchMove ||
+        input_event.GetType() == WebInputEvent::Type::kGesturePinchUpdate)) {
+    LOG(INFO) << "InputRouterImpl::FilterAndSendWebInputEvent type="
+              << WebInputEvent::GetName(input_event.GetType());
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (input_event.GetType() == WebInputEvent::Type::kTouchStart) {
+    native_result_ = false;
+  }
 #endif
   std::unique_ptr<blink::WebCoalescedInputEvent> event =
       ScaleEvent(input_event, device_scale_factor_, latency_info);
@@ -635,14 +730,12 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
                 if (input_router)
                   input_router->client_->OnInvalidInputEventSource();
                 return;
+              }
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-              }
-              if (input_router &&
-              (input_router->GetNativeResult() || input_router->GetMouseNativeResult())) {
+              if (input_router && input_router->GetNativeResult()) {
                 state = blink::mojom::InputEventResultState::kConsumed;
-#endif
               }
-
+#endif
               std::move(callback).Run(source, latency, state,
                                       std::move(overscroll),
                                       std::move(touch_action));
@@ -688,6 +781,20 @@ void InputRouterImpl::KeyboardEventHandled(
   // TODO(jdduke): crbug.com/274029 - Make ack-triggered shutdown async.
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+static bool FilterLogEvent(WebInputEvent::Type type) {
+  switch (type) {
+    case WebInputEvent::Type::kMouseUp:
+    case WebInputEvent::Type::kMouseDown:
+    case WebInputEvent::Type::kTouchStart:
+    case WebInputEvent::Type::kTouchEnd:
+      return true;
+    default:
+      return false;
+  }
+}
+#endif
+
 void InputRouterImpl::MouseEventHandled(
     const MouseEventWithLatencyInfo& event,
     MouseEventCallback event_result_callback,
@@ -699,11 +806,13 @@ void InputRouterImpl::MouseEventHandled(
   TRACE_EVENT2("input", "InputRouterImpl::MouseEventHandled", "type",
                WebInputEvent::GetName(event.event.GetType()), "ack",
                InputEventResultStateToString(state));
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (blink::InputEventOhos::FilterLogEvent(event.event))
+  if (FilterLogEvent(event.event.GetType())) {
     LOG(INFO) << "InputRouterImpl::TouchEventHandled type:"
-              << blink::InputEventOhos::GetWebEventName(event.event) << " ack "
+              << WebInputEvent::GetName(event.event.GetType()) << " ack "
               << InputEventResultStateToString(state);
+  }
 #endif
 
   if (source != blink::mojom::InputEventResultSource::kBrowser)

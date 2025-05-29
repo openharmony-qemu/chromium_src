@@ -57,10 +57,10 @@ OverscrollRefresh::OverscrollRefresh(ui::OverscrollRefreshHandler* handler,
       scroll_consumption_state_(DISABLED),
       edge_width_(edge_width),
       handler_(handler),
-      deceleration_animator_(new DecelerationAnimator(2.f, nullptr)) {
+      deceleration_animator_(std::make_unique<DecelerationAnimator>(
+          2.f,
+          std::make_unique<RefreshListener>(this))) {
   DCHECK(handler);
-  deceleration_animator_->setRefreshListener(
-      std::make_unique<RefreshListener>(GetWeakPtr()));
 }
 
 OverscrollRefresh::OverscrollRefresh()
@@ -167,6 +167,7 @@ bool OverscrollRefresh::WillHandleScrollUpdate(
   }
 
   NOTREACHED() << "Invalid overscroll state: " << scroll_consumption_state_;
+  return false;
 }
 
 void OverscrollRefresh::ReleaseWithoutActivation() {
@@ -253,12 +254,8 @@ void OverscrollRefresh::DidStopRefresh() {
   did_stop_refresh_ = true;
 }
 
-base::WeakPtr<OverscrollRefresh> OverscrollRefresh::GetWeakPtr() {
-  return weak_factory_.GetWeakPtr();
-}
-
 OverscrollRefresh::RefreshListener::RefreshListener(
-    base::WeakPtr<ui::OverscrollRefresh> overscroll_refresh)
+    OverscrollRefresh* overscroll_refresh)
     : overscroll_refresh_(overscroll_refresh) {}
 
 OverscrollRefresh::RefreshListener::RefreshListener(
@@ -267,12 +264,12 @@ OverscrollRefresh::RefreshListener::RefreshListener(
 OverscrollRefresh::RefreshListener::~RefreshListener() = default;
 
 void OverscrollRefresh::RefreshListener::onAnimationEnd() {
-  if (overscroll_refresh_.get()) {
+  if (overscroll_refresh_) {
     overscroll_refresh_->AnimateReset(0, 0);
   }
 }
 void OverscrollRefresh::RefreshListener::onAnimationRepeat(float delta) {
-  if (overscroll_refresh_.get()) {
+  if (overscroll_refresh_) {
     overscroll_refresh_->AnimateHover(0, delta);
   }
 }

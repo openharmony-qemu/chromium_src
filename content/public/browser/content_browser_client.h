@@ -105,7 +105,7 @@
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
 #include "content/common/frame.mojom.h"
-#endif // BUILDFLAG(ARKWEB_MULTI_WINDOW)
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 namespace net {
 class SiteForCookies;
@@ -429,7 +429,7 @@ class CONTENT_EXPORT ContentBrowserClient {
   // the address bar (rather than whether it was typed) to permit the pasting of
   // debug URLs.
   virtual bool IsExplicitNavigation(ui::PageTransition transition);
-  
+
   // Returns whether gesture fling events should use the mobile-behavior gesture
   // curve for scrolling.
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
@@ -1377,9 +1377,7 @@ class CONTENT_EXPORT ContentBrowserClient {
 
   // Called to report the result of new window creation after CanCreateWindow()
   // returns true. There are cases where the new window may still be canceled.
-  virtual void CreateWindowResult(
-      RenderFrameHost* opener,
-      bool success) {}
+  virtual void CreateWindowResult(RenderFrameHost* opener, bool success) {}
 
   // Allows the embedder to return a delegate for the SpeechRecognitionManager.
   // The delegate will be owned by the manager. It's valid to return nullptr.

@@ -16,7 +16,6 @@
 #ifndef OHOS_NWEB_SRC_NWEB_SCHEME_HANDLER_FACTORY_H
 #define OHOS_NWEB_SRC_NWEB_SCHEME_HANDLER_FACTORY_H
 
-#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_browser.h"
 #include "cef/include/cef_frame.h"
@@ -56,7 +55,7 @@ class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
   std::string GetWebTag(CefRefPtr<CefBrowser> browser);
   mutable base::Lock lock_;
   SchemeHandlerMap scheme_handler_map_;
-  raw_ptr<ArkWeb_SchemeHandler> scheme_handler_for_sw_ = nullptr;
+  ArkWeb_SchemeHandler* scheme_handler_for_sw_{nullptr};
 
   IMPLEMENT_REFCOUNTING(NWebSchemeHandlerFactory);
 };

@@ -51,6 +51,6 @@ CERT_STATUS_FLAG(KNOWN_INTERCEPTION_BLOCKED, 1 << 26)
 
 #if BUILDFLAG(IS_OHOS)
 CERT_STATUS_FLAG(DEPTH_ZERO_SELF_SIGNED_CERT, 1 << 27)
-//a legacy TLS version is allowed, but needs to be warned
+// a legacy TLS version is allowed, but needs to be warned
 CERT_STATUS_FLAG(LEGACY_TLS, 1 << 28)
 #endif

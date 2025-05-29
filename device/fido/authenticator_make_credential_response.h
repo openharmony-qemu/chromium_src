@@ -18,10 +18,6 @@
 #include "device/fido/fido_constants.h"
 #include "device/fido/fido_transport_protocol.h"
 
-#if BUILDFLAG(ARKWEB_FIDO)
-#include "device/fido/authenticator_credential_response_extra_common.h"
-#endif // BUILDFLAG(ARKWEB_FIDO)
-
 namespace device {
 
 // Attestation object which includes attestation format, authentication
@@ -95,10 +91,6 @@ class COMPONENT_EXPORT(DEVICE_FIDO) AuthenticatorMakeCredentialResponse {
 
   // Contains the output of the `prf` extension.
   std::optional<std::vector<uint8_t>> prf_results;
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  std::optional<AuthenticatorMakeCredentialResponseExtra> response_extra;
-#endif // BUILDFLAG(ARKWEB_FIDO)
 };
 
 // Through cbor::Writer, produces a CTAP style CBOR-encoded byte array

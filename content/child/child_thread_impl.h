@@ -138,7 +138,10 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   void DisconnectChildProcessHost();
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t roleAdapter);
+  void ReportKeyThread(int32_t status,
+                       int32_t process_id,
+                       int32_t thread_id,
+                       int32_t roleAdapter);
 #endif
 
   virtual void BindServiceInterface(mojo::GenericPendingReceiver receiver);

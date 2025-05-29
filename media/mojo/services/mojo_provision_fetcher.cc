@@ -27,21 +27,6 @@ void MojoProvisionFetcher::Retrieve(const GURL& default_url,
                      weak_factory_.GetWeakPtr(), std::move(response_cb)));
 }
 
-#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
-void MojoProvisionFetcher::RetrieveWiseplayLicense(
-    const GURL& default_url,
-    const std::string& request_data,
-    ResponseCB response_cb) {
-  LOG(INFO) << "[DRM]" << __func__;
-  if (provision_fetcher_) {
-    provision_fetcher_->RetrieveWiseplayLicense(
-        default_url, request_data,
-        base::BindOnce(&MojoProvisionFetcher::OnResponse,
-                       weak_factory_.GetWeakPtr(), std::move(response_cb)));
-  }
-}
-#endif
-
 void MojoProvisionFetcher::OnResponse(ResponseCB response_cb,
                                       bool success,
                                       const std::string& response) {

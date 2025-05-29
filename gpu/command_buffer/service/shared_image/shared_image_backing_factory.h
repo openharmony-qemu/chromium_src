@@ -20,7 +20,6 @@
 #include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/gpu_memory_buffer.h"
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_backing_factory_ext.h"
 
 namespace gfx {
 class Size;
@@ -31,9 +30,8 @@ namespace gpu {
 class SharedImageBacking;
 struct Mailbox;
 
-class GPU_GLES2_EXPORT SharedImageBackingFactory : public SharedImageBackingFactoryExt {
+class GPU_GLES2_EXPORT SharedImageBackingFactory {
  public:
-  using SharedImageBackingFactoryExt::CreateSharedImage;
   // Mask for all valid usage flags.
   static constexpr SharedImageUsageSet kUsageAll =
       SharedImageUsageSet((LAST_SHARED_IMAGE_USAGE << 1) - 1);
@@ -96,6 +94,21 @@ class GPU_GLES2_EXPORT SharedImageBackingFactory : public SharedImageBackingFact
       std::string debug_label,
       bool is_thread_safe,
       gfx::BufferUsage buffer_usage);
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  virtual std::unique_ptr<SharedImageBacking> CreateSharedImage(
+      const Mailbox& mailbox,
+      gfx::GpuMemoryBufferHandle handle,
+      gfx::BufferFormat format,
+      gfx::BufferPlane plane,
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      GrSurfaceOrigin surface_origin,
+      SkAlphaType alpha_type,
+      uint32_t usage,
+      void* window_buffer) {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
   // Returns true if the factory is supported
   bool CanCreateSharedImage(SharedImageUsageSet usage,

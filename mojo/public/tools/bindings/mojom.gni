@@ -15,7 +15,6 @@ import("//build/config/cast.gni")
 # consistent across toolchains and which is affected by branded vs non-branded
 # Chrome builds. Ideally we could create some generic knobs here that could be
 # flipped elsewhere though.
-import("//arkweb/build/features/features.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
@@ -794,12 +793,11 @@ template("mojom") {
       enabled_features += [ "is_apple" ]
     }
 
-    if (is_arkweb) {
-      if (defined(arkweb_mojo_features)) {
-        foreach(feature, arkweb_mojo_features) {
-          enabled_features += [ feature ]
-        }
-      }
+    if(is_arkweb){
+      enabled_features += [ 
+        "is_arkweb",
+        "arkweb_network_conninfo" 
+      ]
     }
 
     action(parser_target_name) {

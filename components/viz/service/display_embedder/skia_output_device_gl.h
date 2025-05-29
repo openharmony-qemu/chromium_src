@@ -28,11 +28,9 @@ class FeatureInfo;
 }  // namespace gpu
 
 namespace viz {
-class SkiaOutputDeviceGLUtils;
 
 class SkiaOutputDeviceGL final : public SkiaOutputDevice {
  public:
- friend class SkiaOutputDeviceGLUtils;
   SkiaOutputDeviceGL(
       gpu::SharedContextState* context_state,
       scoped_refptr<gl::GLSurface> gl_surface,
@@ -55,10 +53,6 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetNativeInnerWeb(bool isInnerWeb) override;
-#endif
-
  private:
   class MultiSurfaceSwapBuffersTracker;
 
@@ -77,6 +71,9 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   const raw_ptr<gpu::SharedContextState> context_state_;
   scoped_refptr<gl::GLSurface> gl_surface_;
   const bool supports_async_swap_;
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  bool supports_damage_region_;
+#endif
 
   uint64_t backbuffer_estimated_size_ = 0;
 
@@ -84,8 +81,6 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
 
   std::unique_ptr<MultiSurfaceSwapBuffersTracker>
       multisurface_swapbuffers_tracker_;
-
-  std::unique_ptr<SkiaOutputDeviceGLUtils> implUtils_;
 
   base::WeakPtrFactory<SkiaOutputDeviceGL> weak_ptr_factory_{this};
 };

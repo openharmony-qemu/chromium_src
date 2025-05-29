@@ -19,8 +19,6 @@
 #include <memory>
 
 #include "cef_browser.h"
-#include "include/cef_client.h"
-#include "include/cef_devtools_message_handler_delegate.h"
 #include "nweb_input_delegate.h"
 #include "ui/events/keycodes/keyboard_code_conversion_x.h"
 #include "ui/events/keycodes/keysym_to_unicode.h"
@@ -51,7 +49,6 @@ class MockMMIAdapter : public MMIAdapter {
               GetDeviceInfo,
               (int32_t, std::shared_ptr<MMIDeviceInfoAdapter>),
               (override));
-  MOCK_METHOD(int32_t, GetMaxTouchPoints, (), (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {
@@ -68,7 +65,7 @@ class MockNWebTouchPointInfo : public NWebTouchPointInfo {
   double y_;
 };
 
-class MockCefBrowserHost : public ArkWebBrowserHostExt {
+class MockCefBrowserHost : public CefBrowserHost {
  public:
   bool CreateBrowser(const CefWindowInfo& windowInfo,
                      CefRefPtr<CefClient> client,
@@ -92,8 +89,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   CefRefPtr<CefBrowser> GetBrowser() override { return nullptr; }
 
   void CloseBrowser(bool force_close) override {}
-
-  void SetDisallowSandboxFileAccessFromFileUrl(bool disallow) override {}
 
   bool TryCloseBrowser() override { return false; }
 
@@ -122,7 +117,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void DownloadImage(const CefString& image_url,
                      bool is_favicon,
-                     uint32_t max_image_size,
+                     uint32 max_image_size,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) override {}
 
@@ -135,7 +130,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void Find(const CefString& searchText,
             bool forward,
             bool matchCase,
-            bool findNext) override {}
+            bool findNext,
+            bool newSession) override {}
 
   void StopFinding(bool clearSelection) override {}
 
@@ -260,6 +256,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                             const CefSize& min_size,
                             const CefSize& max_size) override {}
 
+  CefRefPtr<CefExtension> GetExtension() override { return nullptr; }
+
+  bool IsBackgroundHost() override { return false; }
+
   void SetAudioMuted(bool mute) override {}
 
   bool IsAudioMuted() override { return false; }
@@ -275,7 +275,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                          bool extention) override {}
 
   void ExecuteJavaScriptExt(const int fd,
-                            const uint64_t scriptLength,
+                            const uint64 scriptLength,
                             CefRefPtr<CefJavaScriptResultCallback> callback,
                             bool extention) override {}
 
@@ -285,11 +285,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(int command_id) override {}
+  void GetImageForContextNode() override {}
 
-  void GetImageFromCache(const CefString& url, int command_id) override {}
-
-  void GetImageFromCacheEx(const CefString& url, int command_id) override {}
+  void GetImageFromCache(const CefString& url) override {}
 
   void ExitFullScreen() override {}
 
@@ -350,14 +348,15 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                       std::vector<CefString>& ports,
                       CefString& targetUri) override {}
 
-  void ClosePort(const CefString& port_handle) override {}
+  void ClosePort(CefString& port_handle) override {}
 
   void DestroyAllWebMessagePorts() override {}
 
-  void PostPortMessage(const CefString &port_handle, CefRefPtr<CefValue> message) override {}
+  void PostPortMessage(CefString& port_handle,
+                       CefRefPtr<CefValue> message) override {}
 
   void SetPortMessageCallback(
-      const CefString& port_handle,
+      CefString& port_handle,
       CefRefPtr<CefWebMessageReceiver> callback) override {}
 
   void GetHitData(int& type, CefString& extra_data) override {}
@@ -382,8 +381,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void ResumeDownload(const CefString& url,
                       const CefString& full_path,
-                      int64_t received_bytes,
-                      int64_t total_bytes,
+                      int64 received_bytes,
+                      int64 total_bytes,
                       const CefString& etag,
                       const CefString& mime_type,
                       const CefString& last_modified,
@@ -438,28 +437,20 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnDocumentStart(
       const CefString& script,
-      const std::vector<CefString>& script_rules,
-      bool is_transfer_finished) override {}
+      const std::vector<CefString>& script_rules) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
 
   void JavaScriptOnDocumentEnd(
       const CefString& script,
-      const std::vector<CefString>& script_rules,
-      bool is_transfer_finished) override {}
+      const std::vector<CefString>& script_rules) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnDataDetectorSelectText() override {}
-  std::string GetDataDetectorSelectText() override { return std::string(); }
-#endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void JavaScriptOnHeadReady(
       const CefString& script,
-      const std::vector<CefString>& script_rules,
-      bool is_transfer_finished) override {}
+      const std::vector<CefString>& script_rules) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}
 #endif
@@ -512,7 +503,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetWakeLockHandler(int32_t windowId,
                           CefRefPtr<CefSetLockCallback> callback) override {}
 
-  CefRefPtr<CefDownloadItem> GetDownloadItem(uint32_t item_id) override { return nullptr; }
+  CefRefPtr<CefDownloadItem> GetDownloadItem(uint32 item_id) override {
+    return nullptr;
+  }
+
+  void NotifyNeedsReload(bool needs_reload) override {}
 
   bool NeedsReload() override { return false; }
 
@@ -573,185 +568,24 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void ScrollFocusedEditableNodeIntoView() override {}
 
-  void ProcessAutofillCancel(const CefString& fillContent) override {}
+  void ProcessAutofillCancel(const std::string& fillContent) override {}
 
   void AutoFillWithIMFEvent(bool is_username,
                             bool is_other_account,
                             bool is_new_password,
-                            const CefString& content) override {}
+                            const std::string& content) override {}
   void CreateToPDF(const CefPdfPrintSettings& settings,
                    CefRefPtr<CefPdfValueCallback> callback) override {}
 
   void SetPopupWindow(cef_native_window_t window) override {}
-  
-  bool IsReadyToBeClosed() override { return false; }
-
-  int GetOpenerIdentifier() override { return 0; }
-
-  bool CanZoom(cef_zoom_command_t command) override { return true; }
-
-  void Zoom(cef_zoom_command_t command) override {}
-
-  double GetDefaultZoomLevel() override { return 0.0f; }
-
-  void ShowDevToolsWith(
-      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
-      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
-      const CefPoint& inspect_element_at) override {}
-
-  bool IsFullscreen() override { return false; }
-
-  void ExitFullscreen(bool will_cause_resize) override {}
-
-  bool CanExecuteChromeCommand(int command_id) override { return false; }
-
-  void ExecuteChromeCommand(
-      int command_id,
-      cef_window_open_disposition_t disposition) override {}
-
-  bool IsRenderProcessUnresponsive() override { return false; }
-
-  cef_runtime_style_t GetRuntimeStyle() override { return CEF_RUNTIME_STYLE_DEFAULT; }
-
-  void EnableVideoAssistant(bool enable) override { return false; }
-
-  void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
-  
-  bool IsIframe() override { return false; }
-
-  void ReloadFocusedFrame() override {}
-
-  void StopScreenCapture(int32_t nweb_id, const CefString &session_id) override {}
-
-  void SetScreenCapturePickerShow() override {}
-
-  void DisableSessionReuse() override {}
-
-  void RegisterScreenCaptureDelegateListener(
-      CefRefPtr<CefScreenCaptureCallback> listener) override {}
-
-  void CustomWebMediaPlayer(bool enable) override {}
-
-  bool IsValid() override { return false; }
-
-  MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
-  bool CanGoBack() override { return false; }
-  void GoBack() override {}
-  bool CanGoForward() override { return false; }
-  void GoForward() override {}
-  bool IsLoading() override { return false; }
-  void Reload() override {}
-  void ReloadIgnoreCache() override {}
-  void StopLoad() override {}
-  int GetIdentifier() override { return 0; }
-  bool IsSame(CefRefPtr<CefBrowser> that) override { return false; }
-  bool IsPopup() override { return false; }
-  bool HasDocument() override { return false; }
-  CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
-  CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
-  size_t GetFrameCount() override { return 0; }
-  void GetFrameIdentifiers(std::vector<CefString>& identifiers) override {}
-  void GetFrameNames(std::vector<CefString>& names) override {}
-  CefRefPtr<CefBrowserPermissionRequestDelegate> GetPermissionRequestDelegate() override { return nullptr; }
-  CefRefPtr<CefGeolocationAcess> GetGeolocationPermissions() override {
-    return nullptr;
-  }
-#if BUILDFLAG(IS_OHOS)
-  bool CanGoBackOrForward(int num_steps) override { return false; }
-  void GoBackOrForward(int num_steps) override {}
-  void DeleteHistory() override {}
-  void PasswordSuggestionSelected(int list_index) override {}
-  void UpdateBrowserControlsState(int constraints,
-                                  int current,
-                                  bool animate) override {}
-  void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
-  }
-  void ReloadOriginalUrl() override {}
-  bool CanStoreWebArchive() override { return false; }
-  void SetBrowserUserAgentString(const CefString& user_agent) override {}
-  bool ShouldShowLoadingUI() override { return false; }
-  void SetForceEnableZoom(bool forceEnableZoom) override {}
-  bool GetForceEnableZoom() override { return false; }
-  int GetNWebId() override { return 0; }
-  bool GetSavePasswordAutomatically() override { return false; }
-  void SetSavePasswordAutomatically(bool enable) override {}
-  void SaveOrUpdatePassword(bool is_update) override {}
-  bool GetSavePassword() override { return false; }
-  void SetSavePassword(bool enable) override {}
-  int GetSecurityLevel() override { return 0; }
-  void EnableSafeBrowsing(bool enable) override {}
-  bool IsSafeBrowsingEnabled() override { return false; }
-  void EnableIntelligentTrackingPrevention(bool enable) override {}
-  bool IsIntelligentTrackingPreventionEnabled() override { return false; }
-  bool IsAdsBlockEnabled() override { return false; }
-  bool IsAdsBlockEnabledForCurPage() override { return false; }
-  void EnableAdsBlock(bool enable) override {}
-  int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                CefString& detailErrMsg) override {
-    return 0;
-  }
-  void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
-  CefRefPtr<CefFrame> GetFrameByName(const CefString& name) override { return nullptr; }
-  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
-  void DispatchBeforeUnload() override {}
-  void ShowFreeCopyMenu() override {}
-  bool ShouldShowFreeCopyMenu() override { return false; }
-  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override { return 0; }
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
-  void ClearForwardList() override {}
-  void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
-  uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
-  void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
-  void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
-  void SetFocusOnWeb() override {}
-  void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
-  CefString GetCustomUserAgent() override { return CefString(); }
-  void GetLastHitData(int& type, CefString& extra_data) override {}
-  std::string GetSelectedTextFromContextParam() override { return ""; }
-  void SetNeedsReload(bool needs_reload) override {}
-  void SetOptimizeParserBudgetEnabled(bool enable) override {}
-  void OnDestroyImageAnalyzerOverlay() override {}
-  void GetScrollOffset(float* offset_x, float* offset_y) override {}
-  void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
-  void OnFoldStatusChanged(uint32_t foldStatus) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              const CefString &url) override {}
-  void WebExtensionTabUpdated(int tab_id, const std::vector<CefString> &changed_property_names,
-                              std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override {}
-  void WebExtensionTabActivated(int tab_id, int window_id) override {}
-  void WebExtensionActionClicked(std::string extensionId, const NWebExtensionTab *tab) override {}
-  void SetNativeEmbedMode(bool flag) override {}
-  void SetNativeInnerWeb(bool isInnerWeb) override {}
-  void ScaleGestureChangeV2(int type, float scale, float originScale, float width, float height) override {}
-  virtual std::string GetCurrentLanguage() override { return ""; }
-  void MaximizeResize() override {}
-  void PutWebMediaAVSessionEnabled(bool enable) override {}
-  void SetEnableHalfFrameRate(bool enabled) override {}
-  bool SetFocusByPosition(float x, float y) override { return false; }
-#if BUILDFLAG(ARKWEB_PIP)
-  void SetPipNativeWindow(int delegate_id,
-                          int child_id,
-                          int frame_routing_id,
-                          cef_native_window_t window) override {}
-  void SendPipEvent(int delegate_id,
-                    int child_id,
-                    int frame_routing_id,
-                    int event) override {}
-#endif
-  CefRefPtr<CefFrame> GetFrameByIdentifier(
-      const CefString& identifier) override {  return nullptr; }
-#endif  // BUILDFLAG(IS_OHOS)
 };
 
-class MockCefBrowser : public ArkWebBrowserExt {
+class MockCefBrowser : public CefBrowser {
  public:
   bool IsValid() override { return false; }
 
   MockCefBrowser(CefRefPtr<CefBrowserHost> host) : host_(host) {}
-  MOCK_METHOD(CefRefPtr<ArkWebBrowserHostExt>, GetHost, (), (override));
+  MOCK_METHOD(CefRefPtr<CefBrowserHost>, GetHost, (), (override));
   bool CanGoBack() override { return false; }
   void GoBack() override {}
   bool CanGoForward() override { return false; }
@@ -766,8 +600,12 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool HasDocument() override { return false; }
   CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
   CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(int64 identifier) override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(const CefString& name) override {
+    return nullptr;
+  }
   size_t GetFrameCount() override { return 0; }
-  void GetFrameIdentifiers(std::vector<CefString>& identifiers) override {}
+  void GetFrameIdentifiers(std::vector<int64>& identifiers) override {}
   void GetFrameNames(std::vector<CefString>& names) override {}
   CefRefPtr<CefBrowserPermissionRequestDelegate> GetPermissionRequestDelegate()
       override {
@@ -784,6 +622,8 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool CanGoBackOrForward(int num_steps) override { return false; }
   void GoBackOrForward(int num_steps) override {}
   void DeleteHistory() override {}
+  void SelectAndCopy() override {}
+  bool ShouldShowFreeCopy() override { return false; }
   void PasswordSuggestionSelected(int list_index) override {}
   void UpdateBrowserControlsState(int constraints,
                                   int current,
@@ -798,6 +638,8 @@ class MockCefBrowser : public ArkWebBrowserExt {
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
   int GetNWebId() override { return 0; }
+  void SetEnableBlankTargetPopupIntercept(
+      bool enableBlankTargetPopup) override {}
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
   void SaveOrUpdatePassword(bool is_update) override {}
@@ -816,22 +658,6 @@ class MockCefBrowser : public ArkWebBrowserExt {
     return 0;
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
-
-  CefRefPtr<CefFrame> GetFrameByName(const CefString& name) override { return nullptr; }
-  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
-  void DispatchBeforeUnload() override {}
-  void ShowFreeCopyMenu() override {}
-  bool ShouldShowFreeCopyMenu() override { return false; }
-  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override { return 0; }
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override { return 0; }
-  void ClearForwardList() override {}
-  void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override { return 0; }
-  uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
-  void SetAdBlockEnabledForSite(bool is_adblock_enabled, int main_frame_tree_node_id) override {}
-  CefRefPtr<CefFrame> GetFrameByIdentifier(
-      const CefString& identifier) override {  return nullptr; }
 #endif  // BUILDFLAG(IS_OHOS)
  private:
   CefRefPtr<CefBrowserHost> host_;
@@ -1589,4 +1415,4 @@ TEST_F(NWebEventHandlerTest, NotifyForNextTouchEvent_TEST001) {
   ASSERT_NE(handler, nullptr);
 }
 }  // namespace OHOS::NWeb
-
+                         

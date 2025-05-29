@@ -5,7 +5,6 @@
 #ifndef SANDBOX_POLICY_SWITCHES_H_
 #define SANDBOX_POLICY_SWITCHES_H_
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
 #include "printing/buildflags/buildflags.h"
@@ -88,7 +87,7 @@ SANDBOX_POLICY_EXPORT extern const char kDisableSetuidSandbox[];
 SANDBOX_POLICY_EXPORT extern const char kGpuSandboxAllowSysVShm[];
 SANDBOX_POLICY_EXPORT extern const char kGpuSandboxFailuresFatal[];
 SANDBOX_POLICY_EXPORT extern const char kNoSandbox[];
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 SANDBOX_POLICY_EXPORT extern const char kNoZygoteSandbox[];
 #endif
 #if BUILDFLAG(IS_WIN)

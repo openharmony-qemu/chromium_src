@@ -148,12 +148,6 @@ class MockDownloadItem : public DownloadItem {
   MOCK_METHOD1(SimulateErrorForTesting, void(DownloadInterruptReason));
   MOCK_METHOD2(Rename, void(const base::FilePath&, RenameDownloadCallback));
   MOCK_METHOD1(OnAsyncScanningCompleted, void(DownloadDangerType));
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-  MOCK_METHOD3(ReadDownloadData,
-               void(const std::string&,
-                    const int32_t,
-                    base::OnceCallback<void(const std::vector<uint8_t>&)>));
-#endif
 
  private:
   base::ObserverList<Observer> observers_;

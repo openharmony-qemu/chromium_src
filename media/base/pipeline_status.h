@@ -11,13 +11,13 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/time/time.h"
 #include "media/base/decoder.h"
 #include "media/base/media_export.h"
 #include "media/base/status.h"
 #include "media/base/timestamp_constants.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 namespace gfx {
@@ -81,7 +81,7 @@ enum PipelineStatusCodes : StatusCodeType {
 #else
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = PIPELINE_ERROR_DISCONNECTED,
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 struct PipelineStatusTraits {
@@ -208,17 +208,9 @@ using StatisticsCB = base::RepeatingCallback<void(const PipelineStatistics&)>;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 using RectChangedCB = base::RepeatingCallback<void(const gfx::Rect&)>;
 using RectVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
-using LayerRemovedVisibilityChangedCB = base::RepeatingCallback<void(bool)>;
 using CreateTextureCB = base::OnceCallback<void(RectChangedCB, int)>;
 using DestroyTextureCB = base::OnceCallback<void()>;
 #endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-using SurfaceCreatedCB = base::RepeatingCallback<void(int)>;
-using RequestSurfaceCB =
-    base::OnceCallback<void(SurfaceCreatedCB, bool, std::string)>;
-using VideoDecoderChangedCB = base::RepeatingCallback<void(bool, std::string)>;
-#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media
 

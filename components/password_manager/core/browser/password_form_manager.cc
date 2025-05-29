@@ -66,10 +66,6 @@
 #include "components/os_crypt/sync/os_crypt.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
-#endif
-
 using autofill::FieldDataManager;
 using autofill::FieldRendererId;
 using autofill::FormData;
@@ -1174,8 +1170,11 @@ void PasswordFormManager::FillNow() {
       *parsed_observed_form_.get());
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  driver_->AsPasswordManagerDriverExt()->SendParsedPasswordFormToRenderer(
-      CreatePasswordFormFillDataWithoutPasswordInfo(*parsed_observed_form_.get()));
+  // Send Parsed PasswordForm to renderer
+  autofill::PasswordFormFillData parsed_fill_data_without_password =
+      CreatePasswordFormFillDataWithoutPasswordInfo(
+          *parsed_observed_form_.get());
+  driver_->SendParsedPasswordFormToRenderer(parsed_fill_data_without_password);
 #endif
 
   if (form_parsing_result.is_new_password_reliable && !IsBlocklisted()) {

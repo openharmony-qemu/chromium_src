@@ -17,7 +17,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/files/scoped_file.h"
 #include "base/linux_util.h"
@@ -146,10 +145,10 @@ void SandboxIPCHandler::HandleMakeSharedMemorySegment(
   if (!iter.ReadBool(&executable))
     return;
   base::ScopedFD shm_fd;
-#if BUILDFLAG(ARKWEB_LOAD_PER)
+#if BUILDFLAG(IS_OHOS)
   base::subtle::PlatformSharedMemoryRegion region =
-        base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
-    shm_fd = region.PassPlatformHandle();
+      base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
+  shm_fd = region.PassPlatformHandle();
 #else
   if (executable) {
     shm_fd =

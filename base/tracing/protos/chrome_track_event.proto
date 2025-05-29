@@ -2160,11 +2160,11 @@ message ChromeLatencyInfo2 {
 
     // #if BUILDFLAG(ARKWEB_DRAG_DROP)
     GESTURE_DRAG_LONG_PRESS_EVENT = 43;
-    // #endif 
+    // #endif
 
     // #if BUILDFLAG(ARKWEB_AI)
     GESTURE_CREATE_OVERLAY_EVENT = 44;
-    // #endif 
+    // #endif
   }
 
   // The type of input corresponding to this `ChromeLatencyInfo`.

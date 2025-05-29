@@ -755,7 +755,7 @@ void ExtensionDownloader::OnManifestLoadComplete(
     ParseUpdateManifest(*response_body, std::move(callback));
   } else {
     LOG(INFO) << "Failed to fetch manifest '" << url.possibly_invalid_spec()
-            << "' response code:" << response_code;
+              << "' response code:" << response_code;
     RetryRequestOrHandleFailureOnManifestFetchFailure(std::move(request),
                                                       *loader, response_code);
   }
@@ -888,11 +888,11 @@ ExtensionDownloader::GetUpdateAvailability(
     if (VLOG_IS_ON(2)) {
       if (update_version_str.empty())
         LOG(INFO) << "Manifest indicates " << extension_id
-                << " has no update (info: " << update->info.value_or("no info")
-                << ")";
+                  << " has no update (info: "
+                  << update->info.value_or("no info") << ")";
       else
         LOG(INFO) << "Manifest indicates " << extension_id
-                << " latest version is '" << update_version_str << "'";
+                  << " latest version is '" << update_version_str << "'";
     }
 
     if (!is_extension_pending) {
@@ -909,14 +909,14 @@ ExtensionDownloader::GetUpdateAvailability(
       const base::Version update_version(update_version_str);
       if (!update_version.IsValid()) {
         LOG(INFO) << extension_id << " has invalid version '"
-                << update_version_str << "'";
+                  << update_version_str << "'";
         continue;
       }
 
       const base::Version existing_version(extension_version);
       if (update_version.CompareTo(existing_version) <= 0) {
         LOG(INFO) << extension_id << " version is not older than '"
-                << update_version_str << "'";
+                  << update_version_str << "'";
         bool can_rollback =
             update_version.CompareTo(existing_version) < 0 &&
             (delegate_->RequestRollback(extension_id) ==
@@ -984,7 +984,7 @@ void ExtensionDownloader::DetermineUpdates(
     DCHECK(!possible_candidates.empty());
 
     LOG(INFO) << "Manifest has " << possible_candidates.size()
-            << " update entries for " << extension_id;
+              << " update entries for " << extension_id;
 
     UpdateManifestResult* update_result = nullptr;
     UpdateAvailability update_availability = GetUpdateAvailability(
@@ -1087,7 +1087,7 @@ void ExtensionDownloader::FetchUpdatedExtension(
   if (!fetch_data->url.is_valid()) {
     // TODO(asargent): This can sometimes be invalid. See crbug.com/130881.
     LOG(INFO) << "Invalid URL: '" << fetch_data->url.possibly_invalid_spec()
-                  << "' for extension " << fetch_data->id;
+              << "' for extension " << fetch_data->id;
     delegate_->OnExtensionDownloadStageChanged(
         fetch_data->id, ExtensionDownloaderDelegate::Stage::FINISHED);
     if (fetch_data->url.is_empty()) {

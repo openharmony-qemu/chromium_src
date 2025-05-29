@@ -43,7 +43,8 @@ bool StructTraits<network::mojom::URLLoaderCompletionStatusDataView,
   out->should_report_orb_blocking = data.should_report_orb_blocking();
   out->should_collapse_initiator = data.should_collapse_initiator();
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  out->abort_due_to_cef_browser_destroyed = data.abort_due_to_cef_browser_destroyed();
+  out->abort_due_to_cef_browser_destroyed =
+      data.abort_due_to_cef_browser_destroyed();
 #endif  //  ARKWEB_EX_DOWNLOAD
   return true;
 }

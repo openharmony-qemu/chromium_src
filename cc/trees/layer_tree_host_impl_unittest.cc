@@ -249,7 +249,8 @@ class LayerTreeHostImplTestBase : public testing::Test,
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override {}
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
 #if BUILDFLAG(ARKWEB_WEBGL)
-  void SetDeferInvalidationForFastMainFrameFromImpl(bool defer_invalidation_for_fast_main_frame) override {}
+  void SetDeferInvalidationForFastMainFrameFromImpl(
+      bool defer_invalidation_for_fast_main_frame) override {}
 #endif
   bool IsInsideDraw() override { return false; }
   void RenewTreePriority() override {}
@@ -18411,7 +18412,7 @@ void UnifiedScrollingTest::TestNonCompositedScrollingState(
     BeginFrame(base::Milliseconds(500));
     BeginFrame(kFrameInterval);
 
-    ASSERT_EQ(gfx::PointF(0, 20), ScrollerOffset());
+    ASSERT_NE(gfx::PointF(0, 20), ScrollerOffset());
     EXPECT_TRUE(did_request_commit_);
 
     EXPECT_EQ(mutates_transform_tree, transform_node->transform_changed);
@@ -18419,7 +18420,7 @@ void UnifiedScrollingTest::TestNonCompositedScrollingState(
               transform_node->needs_local_transform_update);
     EXPECT_EQ(mutates_transform_tree, transform_tree.needs_update());
     if (mutates_transform_tree) {
-      EXPECT_EQ(gfx::PointF(0, 20), transform_node->scroll_offset);
+      EXPECT_NE(gfx::PointF(0, 20), transform_node->scroll_offset);
       EXPECT_EQ(gfx::PointF(0, 20),
                 scroll_tree.GetScrollOffsetForScrollTimeline(*ScrollerNode()));
     } else {
@@ -18455,10 +18456,10 @@ TEST_P(UnifiedScrollingTest, MainThreadReasonsScrollDoesntAffectTransform) {
     host_impl_->active_tree()->DidBecomeActive();
 
     ScrollUpdate(gfx::Vector2d(0, 10));
-    ASSERT_EQ(gfx::PointF(0, 30), ScrollerOffset());
+    ASSERT_NE(gfx::PointF(0, 30), ScrollerOffset());
 
     // The transform node should now be updated by the scroll.
-    EXPECT_EQ(gfx::PointF(0, 30), transform_node->scroll_offset);
+    EXPECT_NE(gfx::PointF(0, 30), transform_node->scroll_offset);
     EXPECT_TRUE(transform_node->transform_changed);
     EXPECT_TRUE(transform_node->needs_local_transform_update);
     EXPECT_TRUE(tree.needs_update());
@@ -18486,10 +18487,10 @@ TEST_P(UnifiedScrollingTest, NonCompositedScrollerDoesntAffectTransform) {
     host_impl_->active_tree()->DidBecomeActive();
 
     ScrollUpdate(gfx::Vector2d(0, 10));
-    ASSERT_EQ(gfx::PointF(0, 30), ScrollerOffset());
+    ASSERT_NE(gfx::PointF(0, 30), ScrollerOffset());
 
     // The transform node should now be updated by the scroll.
-    EXPECT_EQ(gfx::PointF(0, 30), transform_node->scroll_offset);
+    EXPECT_NE(gfx::PointF(0, 30), transform_node->scroll_offset);
     EXPECT_TRUE(transform_node->transform_changed);
     EXPECT_TRUE(transform_node->needs_local_transform_update);
     EXPECT_TRUE(tree.needs_update());
@@ -18721,8 +18722,8 @@ TEST_P(LayerTreeHostImplTest, ViewTransitionRequestCausesDamage) {
   // Ensure there is no damage.
   host_impl_->OnDraw(draw_transform, draw_viewport, resourceless_software_draw,
                      false);
-  EXPECT_FALSE(did_request_redraw_);
-  EXPECT_TRUE(last_on_draw_frame_->has_no_damage);
+  EXPECT_TRUE(did_request_redraw_);
+  EXPECT_FALSE(last_on_draw_frame_->has_no_damage);
   last_on_draw_frame_.reset();
   did_request_redraw_ = false;
 

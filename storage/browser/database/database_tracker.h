@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/files/file.h"
 #include "base/files/file_path.h"
@@ -31,8 +32,6 @@
 #include "net/base/completion_once_callback.h"
 #include "storage/browser/database/database_connections.h"
 #include "url/origin.h"
-
-#include "arkweb/build/features/features.h"
 
 namespace sql {
 class Database;

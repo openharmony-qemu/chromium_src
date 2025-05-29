@@ -47,7 +47,8 @@ bool URLLoaderCompletionStatus::operator==(
          blocked_by_response_reason == rhs.blocked_by_response_reason &&
          should_report_orb_blocking == rhs.should_report_orb_blocking &&
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-         abort_due_to_cef_browser_destroyed == rhs.abort_due_to_cef_browser_destroyed &&
+         abort_due_to_cef_browser_destroyed ==
+             rhs.abort_due_to_cef_browser_destroyed &&
 #endif  //  ARKWEB_EX_DOWNLOAD
          should_collapse_initiator == rhs.should_collapse_initiator;
 }

@@ -388,14 +388,20 @@ void FeatureList::AssociateReportingFieldTrial(
 
   // Only one associated field trial is supported per feature. This is generally
   // enforced server-side.
-  OverrideEntry* entry = &overrides_.find(feature_name)->second;
-  if (entry->field_trial) {
-    NOTREACHED() << "Feature " << feature_name
-                 << " already has trial: " << entry->field_trial->trial_name()
-                 << ", associating trial: " << field_trial->trial_name();
-  }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  {
+#endif
+    OverrideEntry* entry = &overrides_.find(feature_name)->second;
+    if (entry->field_trial) {
+      NOTREACHED() << "Feature " << feature_name
+                   << " already has trial: " << entry->field_trial->trial_name()
+                   << ", associating trial: " << field_trial->trial_name();
+    }
 
-  entry->field_trial = field_trial;
+    entry->field_trial = field_trial;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  }
+#endif
 }
 
 void FeatureList::RegisterFieldTrialOverride(const std::string& feature_name,
@@ -424,7 +430,6 @@ void FeatureList::RegisterExtraFeatureOverrides(
 
 void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
   DCHECK(initialized_);
-
   for (const auto& override : overrides_) {
     Pickle pickle;
     pickle.WriteString(override.first);
@@ -443,6 +448,58 @@ void FeatureList::AddFeaturesToAllocator(PersistentMemoryAllocator* allocator) {
     allocator->MakeIterable(entry);
   }
 }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+void FeatureList::ModifyFeaturesToAllocator(
+    PersistentMemoryAllocator* allocator) {
+  DCHECK(initialized_);
+  LOG(INFO) << "scrollbar modify features";
+  PersistentMemoryAllocator::Iterator iter(allocator);
+  const FeatureEntry* entry;
+  while ((entry = iter.GetNextOfObject<FeatureEntry>()) != nullptr) {
+    std::string_view feature_name;
+    std::string_view trial_name;
+    if (!entry->GetFeatureAndTrialName(&feature_name, &trial_name)) {
+      continue;
+    }
+    if (feature_name == "OverlayScrollbar" ||
+        feature_name == "ForceScrollbar") {
+      allocator->Delete(entry);
+    }
+  }
+  AddFeatureToField(allocator, "");
+}
+
+void FeatureList::AddFeatureToField(PersistentMemoryAllocator* allocator,
+                                    std::string feature_name) {
+  for (const auto& override : overrides_) {
+    if (override.first != "OverlayScrollbar" &&
+        override.first != "ForceScrollbar") {
+      continue;
+    }
+    Pickle pickle;
+    pickle.WriteString(override.first);
+    if (override.second.field_trial) {
+      pickle.WriteString(override.second.field_trial->trial_name());
+    }
+
+    size_t total_size = sizeof(FeatureEntry) + pickle.size();
+    FeatureEntry* entry = allocator->New<FeatureEntry>(total_size);
+    if (!entry) {
+      LOG(ERROR) << "AddFeatureToField allocator error";
+      return;
+    }
+
+    entry->override_state = override.second.overridden_state;
+    entry->pickle_size = pickle.size();
+
+    char* dst = reinterpret_cast<char*>(entry) + sizeof(FeatureEntry);
+    memcpy(dst, pickle.data(), pickle.size());
+
+    allocator->MakeIterable(entry);
+  }
+}
+#endif
 
 void FeatureList::GetFeatureOverrides(std::string* enable_overrides,
                                       std::string* disable_overrides,
@@ -473,6 +530,24 @@ bool FeatureList::IsEnabled(const Feature& feature) {
 bool FeatureList::IsValidFeatureOrFieldTrialName(std::string_view name) {
   return IsStringASCII(name) && name.find_first_of(",<*") == std::string::npos;
 }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+// static
+void FeatureList::SetScrollbarEnable(bool enable) {
+  if (g_feature_list_instance) {
+    OverrideState state = OVERRIDE_ENABLE_FEATURE;
+    if (enable) {
+      state = OVERRIDE_DISABLE_FEATURE;
+    }
+    LOG(INFO) << "set Scrollbar:" << enable << " state:" << state;
+    g_feature_list_instance->SetOverrideStateByFeatureName("OverlayScrollbar",
+                                                           state);
+    g_feature_list_instance->SetOverrideStateByFeatureName("ForceScrollbar",
+                                                           state);
+  } else {
+    LOG(ERROR) << "set Scrollbar error";
+  }
+}
+#endif
 
 // static
 std::optional<bool> FeatureList::GetStateIfOverridden(const Feature& feature) {
@@ -743,8 +818,16 @@ void FeatureList::FinalizeInitialization() {
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-  if (std::string(feature.name) == "ForceScrollbar")
+  if (std::string(feature.name) == "OverlayScrollbar") {
+    LOG(DEBUG) << "Overlay Scrollbar:" << overridden_state << " : "
+               << (overridden_state == OVERRIDE_ENABLE_FEATURE);
+    // OverlayScrollbar using native process.
+  }
+  if (std::string(feature.name) == "ForceScrollbar") {
+    LOG(DEBUG) << "Force Scrollbar:" << overridden_state << " : "
+               << (overridden_state == OVERRIDE_DISABLE_FEATURE);
     return overridden_state == OVERRIDE_DISABLE_FEATURE;
+  }
 #endif
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT)
@@ -803,7 +886,6 @@ FeatureList::OverrideState FeatureList::GetOverrideStateByFeatureName(
     std::string_view feature_name) const {
   DCHECK(initialized_);
   DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
-
   if (const OverrideEntry* entry =
           GetOverrideEntryByFeatureName(feature_name)) {
     // Activate the corresponding field trial, if necessary.
@@ -819,6 +901,20 @@ FeatureList::OverrideState FeatureList::GetOverrideStateByFeatureName(
   return OVERRIDE_USE_DEFAULT;
 }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+void FeatureList::SetOverrideStateByFeatureName(std::string_view feature_name,
+                                                OverrideState state) {
+  DCHECK(initialized_);
+  DCHECK(IsValidFeatureOrFieldTrialName(feature_name)) << feature_name;
+  auto it = overrides_.find(feature_name);
+  if (it == overrides_.end()) {
+    LOG(INFO) << "scroll add feature: " << feature_name << " state:" << state;
+    overrides_.emplace(std::string(feature_name),
+                       OverrideEntry(state, nullptr));
+  }
+}
+#endif
+
 FieldTrial* FeatureList::GetAssociatedFieldTrial(const Feature& feature) const {
   DCHECK(initialized_);
   DCHECK(CheckFeatureIdentity(feature)) << feature.name;
@@ -829,7 +925,6 @@ FieldTrial* FeatureList::GetAssociatedFieldTrial(const Feature& feature) const {
 const base::FeatureList::OverrideEntry*
 FeatureList::GetOverrideEntryByFeatureName(std::string_view name) const {
   DCHECK(IsValidFeatureOrFieldTrialName(name)) << name;
-
   auto it = overrides_.find(name);
   if (it != overrides_.end()) {
     const OverrideEntry& entry = it->second;
@@ -851,7 +946,6 @@ FieldTrial* FeatureList::GetAssociatedFieldTrialByFeatureName(
 bool FeatureList::HasAssociatedFieldTrialByFeatureName(
     std::string_view name) const {
   DCHECK(!initialized_);
-
   const OverrideEntry* entry = GetOverrideEntryByFeatureName(name);
   return entry && entry->field_trial;
 }
@@ -939,7 +1033,6 @@ void FeatureList::GetFeatureOverridesImpl(std::string* enable_overrides,
 
   enable_overrides->clear();
   disable_overrides->clear();
-
   // Note: Since |overrides_| is a std::map, iteration will be in alphabetical
   // order. This is not guaranteed to users of this function, but is useful for
   // tests to assume the order.
@@ -1029,7 +1122,3 @@ bool FeatureList::Accessor::GetParamsByFeatureName(
 }
 
 }  // namespace base
-
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-#include "arkweb/chromium_ext/base/feature_list_utils.cc"
-#endif

@@ -15,7 +15,6 @@
 
 #include "nweb_file_selector_params_impl.h"
 
-#include "base/datashare_uri_utils.h"
 #include "base/logging.h"
 
 namespace OHOS::NWeb {
@@ -35,21 +34,6 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
   }
   for (auto& c : mime_type) {
     mime_type_.push_back(c.ToString());
-  }
-}
-
-FileSelectorParamsImpl::FileSelectorParamsImpl(
-    FileSelectorMode mode,
-    const std::string& title,
-    const std::vector<CefString>& accept_type,
-    const std::string& default_filename,
-    bool is_capture)
-    : mode_(mode),
-      title_(title),
-      default_filename_(default_filename),
-      is_capture_(is_capture) {
-  for (auto& c : accept_type) {
-    accept_type_.push_back(c.ToString());
   }
 }
 
@@ -91,7 +75,7 @@ void FileSelectorCallbackImpl::OnReceiveValue(
       if (c.empty()) {
         continue;
       }
-      file_path_.push_back(base::GetRealPath(base::FilePath(c)));
+      file_path_.push_back(CefString(c));
     }
     callback_->Continue(file_path_);
   }

@@ -12,11 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/location.h"
 #include "base/time/time.h"
 #include "components/viz/common/viz_common_export.h"
-
-#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
 #include "ui/gfx/geometry/rect.h"
 #endif
@@ -247,7 +246,7 @@ struct VIZ_COMMON_EXPORT BeginFrameArgs {
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool internal_frame = false;
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
  private:
   BeginFrameArgs(uint64_t source_id,

@@ -114,21 +114,15 @@ class MediaCodecDecoderBridgeImpl {
   DecoderAdapterCode ReleaseOutputBuffer(uint32_t index, bool render);
   DecoderAdapterCode QueueInputBuffer(const uint8_t* data,
                                       size_t data_size,
-                                      int64_t presentation_time,
-                                      const DecryptConfig* decrypt_config);
+                                      int64_t presentation_time);
   DecoderAdapterCode QueueInputBufferEOS();
   DecoderAdapterCode DequeueOutputBuffer(base::TimeDelta* presentation_time,
                                          uint32_t& index,
                                          bool& eos);
-  DecoderAdapterCode SetDecryptionConfig(void *session, bool isSecure);
   static void DestoryNativeWindow(void* window);
   bool CheckHasCreated() { return hasCreated_; }
   int32_t GetConfigWidth() const { return width_; }
   int32_t GetConfigHeight() const { return height_; }
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  DecoderAdapterCode SetVideoSurface(int32_t widget_id);
-#endif // ARKWEB_VIDEO_ASSISTANT
 
  private:
   MediaCodecDecoderBridgeImpl(const std::string codec_type,
@@ -145,8 +139,8 @@ class MediaCodecDecoderBridgeImpl {
     signal_->isDecoderFlushing_ = false;
     return;
   }
-  DecoderAdapterCode SetAVCencInfo(uint32_t index, const DecryptConfig* decrypt_config);
 
+  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
   std::atomic<bool> isRunning_ = false;
   bool isFirstDecFrame_ = true;
   std::shared_ptr<DecoderBridgeSignal> signal_ = nullptr;
@@ -156,12 +150,6 @@ class MediaCodecDecoderBridgeImpl {
   scoped_refptr<base::SequencedTaskRunner> decoder_task_runner_ = nullptr;
   int32_t width_;
   int32_t height_;
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void* window_from_surface_ = nullptr;
-  int32_t video_surface_id_ = -1;
-#endif // ARKWEB_VIDEO_ASSISTANT
-  base::WeakPtrFactory<MediaCodecDecoderBridgeImpl> weak_factory_{this};
 };
 
 }  // namespace media

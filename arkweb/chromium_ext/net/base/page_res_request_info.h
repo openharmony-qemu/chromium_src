@@ -18,16 +18,12 @@
 #include "net/log/net_log_with_source.h"
 #include "net/url_request/redirect_info.h"
 
-namespace {
-  constexpr int32_t MAX_PRECONNECT_COUNT = 6;
-}  // namespace
-
 namespace net {
 class URLRequest;
 }
 
 namespace ohos_prp_preload {
-#define PRPP_PREFLIGHT_PREFIX "preflight+"
+#define PRPP_PREFLIGHT_PREFIX "preflight://"
 
 // Marker if need to establish connection
 enum class PRRequestCacheType {
@@ -57,7 +53,6 @@ enum class PRRequestInfoType {
   TYPE_DEFAULT, // default request
   TYPE_PAGE_ORIGIN, // record page origin
   TYPE_PAGE_PREFLIGHT, // preflight request
-  TYPE_PAGE_PRECONNECT_LIMIT, // preconnect limit info
 };
 
 // Mark if preload request need to be send
@@ -66,8 +61,8 @@ enum PRRequestFlags : uint32_t {
   PRPP_FLAGS_HDR_NOT_MATCH = 1 << 0, // header param is unstable, do not send preload request
   PRPP_FLAGS_VISIBLE = 1 << 1, // visible, precondition for preload
   PRPP_FLAGS_HDR_DYNAMIC = 1 << 2, // header can be predicted, send preload request
-  PRPP_FLAGS_UNSUPPORT = 1 << 3, // unsupport, do not send preload request
-  PRPP_FLAGS_MAX_VALUE = PRPP_FLAGS_HDR_NOT_MATCH | PRPP_FLAGS_VISIBLE | PRPP_FLAGS_HDR_DYNAMIC | PRPP_FLAGS_UNSUPPORT,
+  PRPP_FLAGS_URL_DYNAMIC = 1 << 3, // URL is dynamic, do not send preload request
+  PRPP_FLAGS_UNSUPPORT = 1 << 4, // unsupport, do not send preload request
 };
 
 class PRRequestInfo {
@@ -109,8 +104,10 @@ class PRRequestInfo {
   void set_storage_access_status(std::optional<net::cookie_util::StorageAccessStatus> storage_access_status) {
     storage_access_status_ = storage_access_status;
   }
-  net::HttpRequestHeaders extra_request_headers();
-  void set_extra_request_headers(const net::HttpRequestHeaders& extra_request_headers);
+  net::HttpRequestHeaders& extra_request_headers() { return extra_request_headers_; }
+  void set_extra_request_headers(const net::HttpRequestHeaders& extra_request_headers) {
+	  extra_request_headers_ = extra_request_headers;
+  }
   int load_flags() const { return load_flags_; }
   void set_load_flags(int load_flags) { load_flags_ = load_flags; }
   net::SecureDnsPolicy secure_dns_policy() const { return secure_dns_policy_; }
@@ -202,25 +199,6 @@ class PRRequestInfo {
   void set_preload_flag(PRRequestFlags flags);
   void or_preload_flag(PRRequestFlags flags);
   PRRequestFlags preload_flag() const;
-
-  void set_page_index(int64_t page_index) { page_index_ = page_index; }
-  int64_t page_index() const { return page_index_; }
-  void set_preload_seq_num(const std::string& preload_seq_num) { preload_seq_num_ = preload_seq_num; }
-  const std::string& preload_seq_num() const { return preload_seq_num_; }
-  void set_limit_num(int64_t limit_num) { limit_num_ = limit_num; }
-  int64_t limit_num() const { return limit_num_; }
-  void compute_limit_num();
-  void set_preconnect_num(int64_t preconnect_num) { preconnect_num_ = preconnect_num; }
-  int64_t preconnect_num() const { return preconnect_num_; }
-  void add_preconnect_num(bool add);
-  void set_reused_preconnect_num(int64_t reused_preconnect_num) { reused_preconnect_num_ = reused_preconnect_num; }
-  int64_t reused_preconnect_num() const { return reused_preconnect_num_; }
-  void add_reused_preconnect_num(bool add);
-  // for multi-thread read/write scenarios
-  void set_is_preconnect(bool is_preconnect);
-  bool is_preconnect() const;
-  void set_is_reused_sokcet(bool is_reused_sokcet);
-  bool is_reused_sokcet() const;
  private:
   mutable std::mutex cache_info_mutex_; // lock for update request info after request start
   GURL url_;
@@ -264,13 +242,6 @@ class PRRequestInfo {
   PRRequestFlags preload_flags_ { PRRequestFlags::PRPP_FLAGS_NONE }; // updated by network thread, need to lock
   GURL parent_for_dynamic_header_;
   std::set<std::string> dynamic_header_keys_;
-  int64_t page_index_;
-  std::string preload_seq_num_;
-  int64_t limit_num_ { 0 };
-  int64_t preconnect_num_ { 0 };
-  int64_t reused_preconnect_num_ { 0 };
-  bool is_preconnect_ { false }; // updated by network thread, need to lock
-  bool is_reused_sokcet_ { false }; // updated by network thread, need to lock
 };
 
 struct PRPPPreconnectInfo {
@@ -282,7 +253,7 @@ struct PRPPPreconnectInfo {
 using PRPPPreconnectInfoList = std::list<PRPPPreconnectInfo>;
 
 struct PRPPReqInfoTreeNode {
-  raw_ptr<PRPPReqInfoTreeNode> parent_ = nullptr ;
+  PRPPReqInfoTreeNode* parent_ { nullptr };
   std::list<std::shared_ptr<PRPPReqInfoTreeNode>> children_;
   std::shared_ptr<PRRequestInfo> req_info_ { nullptr };
   bool already_preloading_ { false };

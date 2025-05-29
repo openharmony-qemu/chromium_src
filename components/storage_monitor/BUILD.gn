@@ -4,7 +4,6 @@
 
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 static_library("storage_monitor") {
   sources = [
@@ -103,7 +102,7 @@ static_library("storage_monitor") {
   }
 
   if (is_ohos) {
-    sources += arkweb_storage_monitor_source
+    sources += [ "storage_monitor_ohos.cc" ]
   }
 }
 

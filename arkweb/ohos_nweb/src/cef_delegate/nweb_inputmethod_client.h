@@ -36,15 +36,10 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
                       InputInfo inputInfo,
                       bool is_need_reset_listener,
                       int32_t enterKeyType) = 0;
-  virtual void Attach(CefRefPtr<CefBrowser> browser,
-                    InputInfo inputInfo,
-                    bool is_need_reset_listener,
-                    int32_t enterKeyType, int32_t requestKeyboardReason) = 0;
   virtual void ShowTextInput() = 0;
   virtual void HideTextInput(
       uint32_t nweb_id = 0,
-      HideTextinputType hideType = HideTextinputType::FROM_KERNEL,
-      bool noNeedKeyboardByInput = false) = 0;
+      HideTextinputType hideType = HideTextinputType::FROM_KERNEL) = 0;
   virtual void HideTextInputForce() = 0;
   virtual void OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                                       const CefString& selected_text,
@@ -66,7 +61,6 @@ class NWebInputMethodClient : public virtual CefBaseRefCounted {
       const CefRange& selected_range,
       const CefRange& compositon_range) = 0;
   virtual bool IsAttached() = 0;
-  virtual bool IsKeyboardShow() = 0;
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   virtual void SetFillContent(const std::string& content, int32_t node_id) = 0;

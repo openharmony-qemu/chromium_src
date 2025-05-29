@@ -9,6 +9,7 @@
 #include <tuple>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/check.h"
 #include "base/command_line.h"
@@ -119,8 +120,14 @@
 #include "sandbox/policy/sandbox_type.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/gpu/gpu_main_ext.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include <dirent.h>
+
+#include <fstream>
+
+#include "base/trace_event/trace_event_ohos.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
@@ -135,6 +142,12 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
 bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
 #elif BUILDFLAG(IS_OHOS)
 bool StartSandboxOHOS(gpu::GpuWatchdogThread*);
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+int32_t GetTidListByName(int32_t pid, const std::string& thread_name);
+bool LoadStringFromFile(const std::string& file_path, std::string& content);
+const int MAX_FILE_LENGTH = 32 * 1024 * 1024;
 #endif
 
 class ContentSandboxHelper : public gpu::GpuSandboxHelper {
@@ -447,9 +460,27 @@ int GpuMain(MainFunctionParams parameters) {
       switches::kGpuProcess);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  retry_times = 0;
-  TryForReportThread();
-#endif //!BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  using namespace OHOS::NWeb;
+
+  auto pid = base::GetCurrentProcId();
+  int32_t tid = GetTidListByName(pid, "gpu-work-server");
+  if (tid < 0) {
+    tid = GetTidListByName(pid, "mali-cmar-backe");
+  }
+  if (tid > 0) {
+    auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+        switches::kProcessType);
+    if (type == switches::kGpuProcess) {
+      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(), tid,
+          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    } else {
+      ResSchedClientAdapter::ReportKeyThread(
+          ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(), tid,
+          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+    }
+  }
+#endif  //! BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   base::HighResolutionTimerManager hi_res_timer_manager;
 
   // Adds support of wall-time based TimerKeeper metrics for the main GPU thread
@@ -579,6 +610,64 @@ bool StartSandboxOHOS(gpu::GpuWatchdogThread* watchdog_thread) {
   return res;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+int32_t GetTidListByName(int32_t pid, const std::string& thread_name) {
+  int32_t tid = -1;
+  if (pid <= 0) {
+    return tid;
+  }
+
+  std::string path_name =
+      std::string("/proc/").append(std::to_string(pid)).append("/task");
+  DIR* dir = opendir(path_name.c_str());
+  if (!dir) {
+    LOG(ERROR) << "opendir " << path_name << " failed, errno: " << errno;
+    return tid;
+  }
+
+  struct dirent* de = nullptr;
+  while ((de = readdir(dir))) {
+    if (!(de->d_type & DT_DIR) || !isdigit(de->d_name[0])) {
+      continue;
+    }
+    std::string comm_path =
+        path_name + std::string("/").append(de->d_name).append("/comm");
+    std::string comm;
+    if (!LoadStringFromFile(comm_path, comm)) {
+      continue;
+    }
+    if (tid < 0 && comm.find(thread_name) != std::string::npos) {
+      tid = atoi(de->d_name);
+      if (tid >= 0) {
+        break;
+      }
+    }
+  }
+  closedir(dir);
+  return tid;
+}
+
+bool LoadStringFromFile(const std::string& file_path, std::string& content) {
+  std::ifstream file(file_path.c_str());
+  if (!file.is_open()) {
+    LOG(ERROR) << "open file failed! file path: " << file_path;
+    return false;
+  }
+
+  file.seekg(0, std::ios::end);
+  int file_length = file.tellg();
+  if (file_length > MAX_FILE_LENGTH) {
+    LOG(ERROR) << "invalid file length: " << file_length;
+    return false;
+  }
+  content.clear();
+  file.seekg(0, std::ios::beg);
+  std::copy(std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>(), std::back_inserter(content));
+  return true;
+}
+#endif  // !BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 }  // namespace.
 

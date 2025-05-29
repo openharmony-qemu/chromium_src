@@ -187,6 +187,7 @@ fuzzer_test("trust_token_key_commitment_parser_fuzzer") {
     "//base",
     "//net:net_fuzzer_test_support",
     "//services/network/public/mojom",
+    "//cef:libcef_static",
   ]
   dict = "test/trust_token_key_commitment_parser_fuzzer.dict"
   seed_corpus = "//third_party/grpc/src/test/core/json/corpus/"

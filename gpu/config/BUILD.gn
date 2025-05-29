@@ -149,8 +149,6 @@ source_set("config_sources") {
     "gpu_feature_type.h",
     "gpu_finch_features.cc",
     "gpu_finch_features.h",
-    "//arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.cc",
-    "//arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h",
     "gpu_info.cc",
     "gpu_info.h",
     "gpu_info_collector.cc",

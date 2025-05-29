@@ -9,8 +9,8 @@ import("//ui/gl/features.gni")
 
 import("//cc/cc.gni")
 
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
+if (is_arkweb){
+  import("//arkweb/build/features/features.gni")
 }
 
 if (is_android) {
@@ -511,15 +511,15 @@ cc_component("cc") {
     deps += [ ":cc_jni_headers" ]
   }
 
-  if (is_arkweb) {
-    sources += arkweb_cc_layer_source
-    sources += arkweb_cc_scheduler_sources
-    sources += arkweb_cc_input_source
-    sources += arkweb_cc_trees_source
-    deps += [ "//arkweb/build/features" ]
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
   }
 
   defines = [ "CC_IMPLEMENTATION=1" ]
+
+  if (arkweb_webgl) {
+    deps += [ "//arkweb/build/features" ]
+  }
 }
 
 cc_test_static_library("test_support") {
@@ -715,14 +715,6 @@ cc_test_static_library("test_support") {
     deps += [
       "//third_party/dawn/src/dawn:proc",
       "//third_party/dawn/src/dawn/native",
-    ]
-  }
-  if (arkweb_unittests) {
-    deps += [
-      "//base/test:test_trace_processor",
-      "//cef:libcef_static",
-      "//content/public/browser",
-      "//ohos_nweb:nweb_sources",
     ]
   }
 }

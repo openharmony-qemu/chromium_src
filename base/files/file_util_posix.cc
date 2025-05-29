@@ -1022,19 +1022,19 @@ bool GetFileInfo(const FilePath& file_path, File::Info* results) {
   stat_wrapper_t file_info;
 
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
-    if (file_path.IsDataShareUri()) {
-      File file = OpenDatashareUriForRead(file_path);
-      if (!file.IsValid()) {
-        return false;
-      }
-      return file.GetInfo(results);
-    } else {
-#endif  // #ifdef ARKWEB_FILE_UPLOAD
-      if (File::Stat(file_path, &file_info) != 0) {
-        return false;
-      }
-#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (file_path.IsDataShareUri()) {
+    File file = OpenDatashareUriForRead(file_path);
+    if (!file.IsValid()) {
+      return false;
     }
+    return file.GetInfo(results);
+  } else {
+#endif  // #ifdef ARKWEB_FILE_UPLOAD
+    if (File::Stat(file_path, &file_info) != 0) {
+      return false;
+    }
+#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  }
 #endif  // #ifdef ARKWEB_FILE_UPLOAD
 
   results->FromStat(file_info);

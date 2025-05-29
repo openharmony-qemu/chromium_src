@@ -153,8 +153,9 @@ int ParseStatus(std::string_view status, std::string& append_to) {
   RemoveLeadingSpaces(&status);
 
 #if BUILDFLAG(IS_OHOS)
-  auto first_non_digit = std::find_if(
-      status.begin(), status.end(), [](char c) { return !base::IsAsciiDigit(c); });
+  auto first_non_digit = std::find_if(status.begin(), status.end(), [](char c) {
+    return !base::IsAsciiDigit(c);
+  });
 #else
   auto first_non_digit = std::ranges::find_if(
       status, [](char c) { return !base::IsAsciiDigit(c); });

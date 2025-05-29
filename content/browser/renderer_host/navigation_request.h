@@ -98,7 +98,6 @@ class PrerenderHostRegistry;
 class RenderFrameHostCSPContext;
 class ServiceWorkerMainResourceHandle;
 class SubframeHistoryNavigationThrottle;
-class NavigationRequestUtils;
 
 // The primary implementation of NavigationHandle.
 //
@@ -115,8 +114,6 @@ class CONTENT_EXPORT NavigationRequest
       private network::mojom::TrustTokenAccessObserver,
       private network::mojom::SharedDictionaryAccessObserver {
  public:
- friend class NavigationRequestUtils;
- std::unique_ptr<NavigationRequestUtils> nav_request_utils_;
   // Keeps track of the various stages of a NavigationRequest.
   // To see what state transitions are allowed, see |SetState|.
   enum NavigationState {
@@ -1378,6 +1375,12 @@ class CONTENT_EXPORT NavigationRequest
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
   }
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  uint64_t GetAddrWebHandle() { return addr_web_handle_; }
+  network::mojom::NetworkContext* GetNetworkContext() const;
+  void StartPage(uint64_t addr_web_handle);
+  void OnGetIsolation(const std::string& origin);
+#endif
 
  private:
   friend class NavigationRequestTest;
@@ -1528,7 +1531,9 @@ class CONTENT_EXPORT NavigationRequest
       NavigationThrottle::ThrottleCheckResult result);
   void OnWillCommitWithoutUrlLoaderChecksComplete(
       NavigationThrottle::ThrottleCheckResult result);
-
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  void RemoveUserAgentHeaderForDevTools(bool devtools_useragent_override);
+#endif
   // Runs CommitDeferringConditions.
   //
   // For prerendered page activation, this is called at the beginning of the
@@ -2935,6 +2940,9 @@ class CONTENT_EXPORT NavigationRequest
   // commit, and was restarted as a cross-document navigation. See
   // `blink::mojom::CommitResult::RestartCrossDocument`.
   bool was_reset_for_cross_document_restart_ = false;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  uint64_t addr_web_handle_;
+#endif
 
   base::WeakPtrFactory<NavigationRequest> weak_factory_{this};
 };

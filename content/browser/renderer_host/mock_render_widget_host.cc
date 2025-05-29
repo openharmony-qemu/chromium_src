@@ -16,7 +16,7 @@ MockRenderWidgetHost::~MockRenderWidgetHost() {}
 
 void MockRenderWidgetHost::ExpectForceEnableZoom(bool enable) {
   EXPECT_EQ(enable, render_input_router_->GetForceEnableZoom());
- 
+
   input::InputRouterImpl* input_router_impl =
       static_cast<input::InputRouterImpl*>(input_router());
   EXPECT_EQ(enable, input_router_impl->touch_action_filter_.force_enable_zoom_);
@@ -51,7 +51,6 @@ std::unique_ptr<MockRenderWidgetHost> MockRenderWidgetHost::Create(
 
 input::RenderInputRouter* MockRenderWidgetHost::GetRenderInputRouter() {
   return render_input_router_.get();
- 
 }
 
 void MockRenderWidgetHost::NotifyNewContentRenderingTimeoutForTesting() {
@@ -95,3 +94,4 @@ void MockRenderWidgetHost::SetupMockRenderInputRouter() {
 }
 
 }  // namespace content
+                       

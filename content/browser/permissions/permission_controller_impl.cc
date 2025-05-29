@@ -4,7 +4,6 @@
 
 #include "content/browser/permissions/permission_controller_impl.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "content/browser/permissions/permission_service_context.h"
 #include "content/browser/permissions/permission_util.h"
@@ -821,8 +820,46 @@ void PermissionControllerImpl::NotifyEventListener() {
     onchange_listeners_callback_for_tests_.Run();
   }
 }
+
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
-#include "arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_ext.cc"
+void PermissionControllerImpl::GetPermissionStatusAsync(
+    blink::PermissionType permission, bool isFromDocument,
+    void* render_host, const url::Origin& origin,
+    base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {
+  if (!render_host) {
+    LOG(ERROR) << "GetPermissionStatusAsync render_host is null";
+    std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+    return;
+  }
+
+  std::optional<blink::mojom::PermissionStatus> status =
+      permission_overrides_.Get(origin, permission);
+  if (status.has_value()) {
+    LOG(INFO) << "GetPermissionStatusAsync permission_overrides status="
+              << (int)(*status);
+    std::move(callback).Run(*status);
+    return;
+  }
+
+  PermissionControllerDelegate* delegate =
+      browser_context_->GetPermissionControllerDelegate();
+  if (!delegate) {
+    std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+    return;
+  }
+
+  if (isFromDocument) {
+    RenderFrameHost* render_frame_host = (RenderFrameHost*)render_host;
+    if (VerifyContextOfCurrentDocument(permission, render_frame_host).status ==
+        blink::mojom::PermissionStatus::DENIED) {
+      LOG(INFO) << "GetPermissionStatusAsync VerifyContextOfCurrentDocument return";
+      std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
+      return;
+    }
+  }
+
+  delegate->GetPermissionStatusAsync(permission, origin.GetURL(), std::move(callback));
+}
 #endif // ARKWEB_NOTIFICATION
 
 }  // namespace content

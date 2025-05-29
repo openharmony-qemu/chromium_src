@@ -48,7 +48,7 @@ void NWebRenderHandlerTest::TearDown(void) {
 #if BUILDFLAG(IS_OHOS)
 TEST_F(NWebRenderHandlerTest, OnNativeEmbedLifecycleChange) {
   CefRefPtr<CefBrowser> browser = nullptr;
-  CefNativeEmbedData data_info;
+  CefRenderHandler::CefNativeEmbedData data_info;
   data_info.status = CREATE;
   data_info.surfaceId = "";
   data_info.embedId = "";

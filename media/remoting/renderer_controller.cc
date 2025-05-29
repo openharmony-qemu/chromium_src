@@ -4,6 +4,7 @@
 
 #include "media/remoting/renderer_controller.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
@@ -13,7 +14,6 @@
 #include "build/build_config.h"
 #include "media/base/remoting_constants.h"
 #include "media/remoting/metrics.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "media/base/android/media_codec_util.h"

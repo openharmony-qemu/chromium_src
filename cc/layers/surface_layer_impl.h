@@ -84,10 +84,10 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void OnLayerBoundsUpdate(gfx::Rect visible_quad_rect);
-#endif // ARKWEB_VIDEO_ASSISTANT
+#endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void OnLayerRectUpdate(gfx::Rect visible_quad_rect);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   UpdateSubmissionStateCB update_submission_state_callback_;
   viz::SurfaceRange surface_range_;
@@ -105,10 +105,10 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   gfx::Rect layer_bounds_;
-#endif // ARKWEB_VIDEO_ASSISTANT
+#endif  // ARKWEB_VIDEO_ASSISTANT
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   gfx::Rect visible_quad_rect_;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace cc

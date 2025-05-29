@@ -61,7 +61,7 @@ class MEDIA_EXPORT RendererFactory {
       media::RequestOverlayInfoCB request_overlay_info_cb,
       const gfx::ColorSpace& target_color_space,
       int player_id);
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

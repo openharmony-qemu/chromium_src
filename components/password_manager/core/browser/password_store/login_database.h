@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
@@ -113,11 +112,6 @@ class LoginDatabase : public EncryptDecryptInterface {
   [[nodiscard]] PasswordStoreChangeList UpdateLogin(
       const PasswordForm& form,
       UpdateCredentialError* error = nullptr);
-
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  bool UpdateLoginDisplayName(const PasswordForm& form,
-                              PasswordStoreChangeList* changes);
-#endif
 
   // Removes |form| from the list of remembered password forms. Returns true if
   // |form| was successfully removed from the database. If |changes| is not be
@@ -422,9 +416,6 @@ class LoginDatabase : public EncryptDecryptInterface {
   std::string created_statement_;
   std::string blocklisted_statement_;
   std::string id_and_password_statement_;
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  std::string update_display_name_statement_;
-#endif
 };
 
 #if BUILDFLAG(IS_IOS)

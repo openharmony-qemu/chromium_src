@@ -127,7 +127,7 @@ class GPU_GLES2_EXPORT HwVideoNativeBufferGLOwner
   AImageRefMap image_refs_ GUARDED_BY(lock_);
 
   // reference to the class instance which is used to dynamically
-  // load the functions in ohos libraries at runtime.
+  // load the functions in android libraries at runtime.
   scoped_refptr<gl::OhosNativeImage> loader_;
 
   // The context and surface that were used to create |texture_id_|.

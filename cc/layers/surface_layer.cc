@@ -12,10 +12,6 @@
 #include "cc/layers/surface_layer_impl.h"
 #include "cc/trees/layer_tree_host.h"
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-#include "arkweb/chromium_ext/cc/layer/surface_layer_for_include.cc"
-#endif
-
 namespace cc {
 
 scoped_refptr<SurfaceLayer> SurfaceLayer::Create() {
@@ -145,6 +141,12 @@ void SurfaceLayer::SetMayContainVideo(bool may_contain_video) {
   SetNeedsCommit();
 }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayer::SetVideoRectChangeCallback(RectChangeCallback callback) {
+  video_rect_change_callback_ = std::move(callback);
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
 std::unique_ptr<LayerImpl> SurfaceLayer::CreateLayerImpl(
     LayerTreeImpl* tree_impl) const {
   auto layer_impl = SurfaceLayerImpl::Create(
@@ -210,5 +212,25 @@ void SurfaceLayer::PushPropertiesTo(
     callback_layer_tree_host_changed_.Write(*this) = false;
   }
 }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void SurfaceLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
+  if (video_rect_change_callback_) {
+    video_rect_change_callback_.Run(rect);
+  }
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void SurfaceLayer::SetLayerBoundsChangeCallback(
+    LayerBoundsChangeCallback callback) {
+  layer_bounds_change_callback_ = std::move(callback);
+}
+void SurfaceLayer::OnLayerBoundsUpdate(const gfx::Rect& bounds) {
+  if (layer_bounds_change_callback_) {
+    layer_bounds_change_callback_.Run(bounds);
+  }
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

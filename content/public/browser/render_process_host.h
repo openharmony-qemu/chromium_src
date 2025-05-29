@@ -131,9 +131,9 @@ class Renderer;
 
 #if BUILDFLAG(IS_ARKWEB)
 enum class RenderProcessMode {
-    SINGLE_MODE = 0,
-    MULTIPLE_MODE = 1,
-    DEFAULT_MODE = 2,
+  SINGLE_MODE = 0,
+  MULTIPLE_MODE = 1,
+  DEFAULT_MODE = 2,
 };
 #endif
 
@@ -790,8 +790,6 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
   virtual void dumpCurrentJavaScriptStackInMainThread(
       base::OnceCallback<void(const std::string&)> callback) {}
-
-  virtual void InvokeRenderCrashDump() {}
 #endif
   // Static management functions -----------------------------------------------
 
@@ -853,6 +851,10 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
   // Counts current RenderProcessHost(s), ignoring all spare processes.
   static int GetCurrentRenderProcessCountForTesting();
 
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  static size_t GetOffTheRecordRenderProcessCount();
+#endif
+
 #if BUILDFLAG(ARKWEB_I18N)
   static void OnLocaleChangedToRenderer(const std::string& update_locale);
 #endif
@@ -870,20 +872,19 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
 #if BUILDFLAG(IS_ARKWEB)
   static void SetRenderProcessMode(RenderProcessMode mode);
   static RenderProcessMode render_process_mode();
- 
+
   enum class RenderType {
     kExtension = 0,
     kPdf = 1,
     kWebUI = 2,
   };
- 
-  std::map<RenderType, unsigned> special_render_numbers_ {
-    {RenderType::kExtension, 0},
-    {RenderType::kPdf, 0},
-    {RenderType::kWebUI, 0},
+
+  std::map<RenderType, unsigned> special_render_numbers_{
+      {RenderType::kExtension, 0},
+      {RenderType::kPdf, 0},
+      {RenderType::kWebUI, 0},
   };
 #endif
-
 };
 
 }  // namespace content

@@ -9,6 +9,7 @@
 #include <ostream>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/observer_list_types.h"
 #include "components/performance_manager/public/graph/node.h"
@@ -18,7 +19,6 @@
 #include "components/performance_manager/public/resource_attribution/page_context.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
-#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -303,7 +303,6 @@ class PageNodeObserver : public base::CheckedObserver {
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
-  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
 #endif
 
   // Invoked when the GetLoadingState property changes.
@@ -384,8 +383,6 @@ class PageNode::ObserverDefaultImpl : public PageNodeObserver {
   void OnIsVisibleChanged(const PageNode* page_node) override {}
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void OnIsMediaPlayingChanged(const PageNode* page_node) override {}
-
-  void OnDecrementAudioNum(const PageNode* page_node) override {}
 #endif
   void OnIsAudibleChanged(const PageNode* page_node) override {}
   void OnHasPictureInPictureChanged(const PageNode* page_node) override {}

@@ -51,9 +51,6 @@ bool IsGpmPasskeyAuthenticator(const FidoAuthenticator& authenticator) {
     case AuthenticatorType::kChromeOS:
     case AuthenticatorType::kPhone:
     case AuthenticatorType::kICloudKeychain:
-#if BUILDFLAG(ARKWEB_FIDO)
-    case AuthenticatorType::kOhosNative:
-#endif // BUILDFLAG(ARKWEB_FIDO)
     case AuthenticatorType::kOther:
       return false;
     case AuthenticatorType::kEnclave:
@@ -228,20 +225,6 @@ void FidoRequestHandlerBase::InitDiscoveries(
     });
   }
 #endif  // BUILDFLAG(IS_WIN)
-
-#if BUILDFLAG(ARKWEB_FIDO)
-  auto ohos_discovery =
-      fido_discovery_factory->CreateOhosFidoDiscovery();
-  if (ohos_discovery) {
-    ohos_discovery->set_observer(this);
-    discoveries_.push_back(std::move(ohos_discovery));
-
-    // On OHOS all authenticators in one fido discovery.
-    base::EraseIf(available_transports, [](auto transport) {
-      return transport != FidoTransportProtocol::kHybrid;
-    });
-  }
-#endif // BUILDFLAG(ARKWEB_FIDO)
 
   transport_availability_info_.available_transports = available_transports;
   for (const auto transport : available_transports) {

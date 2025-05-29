@@ -119,10 +119,10 @@ class BASE_EXPORT SimpleThread : public PlatformThread::Delegate {
   PlatformThreadId tid();
 
 #if BUILDFLAG(IS_ARKWEB)
-  // Returns the thread global id, only valid after the thread has started. If the
-  // thread was started using Start(), then this will be valid after the call to
-  // Start(). If StartAsync() was used to start the thread, then this must not
-  // be called before HasBeenStarted() returns True.
+  // Returns the thread global id, only valid after the thread has started. If
+  // the thread was started using Start(), then this will be valid after the
+  // call to Start(). If StartAsync() was used to start the thread, then this
+  // must not be called before HasBeenStarted() returns True.
   PlatformThreadId RealTid();
 #endif
 
@@ -160,7 +160,8 @@ class BASE_EXPORT SimpleThread : public PlatformThread::Delegate {
   WaitableEvent event_;          // Signaled if Start() was ever called.
   PlatformThreadId tid_ = kInvalidThreadId;  // The backing thread's id.
 #if BUILDFLAG(IS_ARKWEB)
-  PlatformThreadId realTid_ = kInvalidThreadId;  // The backing thread's global id.
+  PlatformThreadId realTid_ =
+      kInvalidThreadId;  // The backing thread's global id.
 #endif
   bool joined_ = false;                      // True if Join has been called.
   // Set to true when the platform-thread creation has started.

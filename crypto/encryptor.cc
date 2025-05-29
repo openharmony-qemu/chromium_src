@@ -50,8 +50,7 @@ const EVP_CIPHER* GetCipherForKeyGCM(const SymmetricKey* key) {
   }
 }
 #endif
- 
- 
+
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
@@ -282,20 +281,20 @@ std::optional<size_t> Encryptor::CryptCTR(bool do_encrypt,
 
 #if BUILDFLAG(ARKWEB_ENCRYPT)
 std::optional<size_t> Encryptor::EncryptGCM(base::span<const uint8_t> input,
-                                             base::span<uint8_t> output,
-                                             std::string* tag) {
+                                            base::span<uint8_t> output,
+                                            std::string* tag) {
   DCHECK(key_);
   DCHECK(output.data());
- 
+
   const EVP_CIPHER* cipher = GetCipherForKeyGCM(key_);
   DCHECK(cipher);
- 
+
   const std::string& key = key_->key();
   DCHECK_EQ(EVP_CIPHER_iv_length(cipher), iv_.size());
   DCHECK_EQ(EVP_CIPHER_key_length(cipher), key.size());
- 
+
   OpenSSLErrStackTracer err_tracer(FROM_HERE);
- 
+
   bssl::ScopedEVP_CIPHER_CTX ctx;
   /* Initialise the encryption operation */
   if (!EVP_EncryptInit_ex(ctx.get(), cipher, nullptr, nullptr, nullptr)) {
@@ -352,8 +351,8 @@ std::optional<size_t> Encryptor::EncryptGCM(base::span<const uint8_t> input,
 }
 
 std::optional<size_t> Encryptor::DecryptGCM(const std::string& input,
-                                             base::span<uint8_t> output,
-                                             std::string* tag) {
+                                            base::span<uint8_t> output,
+                                            std::string* tag) {
   DCHECK(key_);
   DCHECK(output.data());
 

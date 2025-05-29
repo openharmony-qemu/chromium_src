@@ -11,20 +11,20 @@
 #include <queue>
 
 #include "arkweb/build/features/features.h"
+#include "base/component_export.h"
 #include "base/containers/flat_map.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "cc/input/touch_action.h"
 #include "components/input/gesture_event_queue.h"
-#include "components/input/mouse_wheel_event_queue.h"
-#include "components/input/passthrough_touch_event_queue.h"
-#include "components/input/touchpad_pinch_event_queue.h"
-#include "base/component_export.h"
 #include "components/input/input_event_stream_validator.h"
 #include "components/input/input_router.h"
 #include "components/input/input_router_client.h"
+#include "components/input/mouse_wheel_event_queue.h"
+#include "components/input/passthrough_touch_event_queue.h"
 #include "components/input/touch_action_filter.h"
+#include "components/input/touchpad_pinch_event_queue.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
@@ -44,8 +44,6 @@ class SitePerProcessBrowserTouchActionTest;
 
 namespace input {
 
-class ArkwebInputRouterImplUtils;
-class ArkwebInputRouterImplExt;
 class InputDispositionHandler;
 
 // A default implementation for browser input event routing.
@@ -58,11 +56,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
       public TouchpadPinchEventQueueClient,
       public blink::mojom::WidgetInputHandlerHost {
  public:
-  friend class ArkwebInputRouterImplUtils;
-  friend class ArkwebInputRouterImplExt;
-  virtual ArkwebInputRouterImplExt* AsArkwebInputRouterImplExt() {
-    return nullptr;
-  }
   InputRouterImpl(InputRouterClient* client,
                   InputDispositionHandler* disposition_handler,
                   FlingControllerSchedulerClient* fling_scheduler_client,
@@ -101,9 +94,13 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void SetPanAction(blink::mojom::PanAction pan_action) override;
   void DidOverscroll(blink::mojom::DidOverscrollParamsPtr params) override;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result, bool stopPropagation) override;
+  void SetNativeEmbedMode(bool flag) override;
   bool GetNativeResult() { return native_result_; }
-  bool GetMouseNativeResult() { return mouse_native_result_; }
 #endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ImeCancelComposition() override;
   void DidStartScrollingViewport() override;
   void ImeCompositionRangeChanged(
@@ -170,6 +167,9 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void SendGeneratedGestureScrollEvents(
       const GestureEventWithLatencyInfo& gesture_event) override;
   gfx::Size GetRootWidgetViewportSize() override;
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
+#endif
 
   // MouseWheelEventQueueClient
   void SendMouseWheelEventImmediately(
@@ -283,12 +283,14 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   // The host receiver associated with the widget input handler from
   // the widget.
   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
-  base::WeakPtr<InputRouterImpl> weak_this_;
-  base::WeakPtrFactory<InputRouterImpl> weak_ptr_factory_{this};
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   bool native_result_ = false;
-  bool mouse_native_result_ = false;
-  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
+#endif
+  base::WeakPtr<InputRouterImpl> weak_this_;
+  base::WeakPtrFactory<InputRouterImpl> weak_ptr_factory_{this};
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  uint64_t timeStamp_ = 0;
+  uint64_t prePerfTimeStamp_ = 0;
 #endif
 };
 

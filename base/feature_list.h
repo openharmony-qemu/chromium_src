@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "base/containers/flat_map.h"
@@ -26,7 +27,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "build/build_config.h"
-#include "arkweb/build/features/features.h"
 
 namespace base {
 
@@ -34,9 +34,6 @@ class FieldTrial;
 class FieldTrialList;
 class PersistentMemoryAllocator;
 class FeatureVisitor;
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-class FeatureListUtils;
-#endif
 
 // Specifies whether a given feature is enabled or disabled by default.
 // NOTE: The actual runtime state may be different, due to a field trial or a
@@ -273,12 +270,6 @@ class BASE_EXPORT FeatureList {
   FeatureList& operator=(const FeatureList&) = delete;
   ~FeatureList();
 
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-  friend class FeatureListUtils;
-  std::shared_ptr<FeatureListUtils> feature_list_utils_ = nullptr;
-  std::shared_ptr<FeatureListUtils> GetUtils() { return feature_list_utils_; }
-#endif
-
   // Used by common test fixture classes to prevent abuse of ScopedFeatureList
   // after multiple threads have started.
   class BASE_EXPORT ScopedDisallowOverrides {
@@ -315,6 +306,12 @@ class BASE_EXPORT FeatureList {
     // default value associated.
     FeatureList::OverrideState GetOverrideStateByFeatureName(
         std::string_view feature_name);
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    // set feature by name.
+    void SetOverrideStateByFeatureName(std::string_view feature_name,
+                                       OverrideState state);
+#endif
 
     // Look up the feature, and, if present, populate |params|.
     // See GetFieldTrialParams in field_trial_params.h for more documentation.
@@ -414,7 +411,11 @@ class BASE_EXPORT FeatureList {
 
   // Loops through feature overrides and serializes them all into |allocator|.
   void AddFeaturesToAllocator(PersistentMemoryAllocator* allocator);
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  void ModifyFeaturesToAllocator(PersistentMemoryAllocator* allocator);
+  void AddFeatureToField(PersistentMemoryAllocator* allocator,
+                         std::string feature_name);
+#endif
   // Returns comma-separated lists of feature names (in the same format that is
   // accepted by InitFromCommandLine()) corresponding to features that
   // have been overridden - either through command-line or via FieldTrials. For
@@ -478,6 +479,11 @@ class BASE_EXPORT FeatureList {
   // A feature with a given name must only have a single corresponding Feature
   // instance, which is checked in builds with DCHECKs enabled.
   static bool IsEnabled(const Feature& feature);
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // set scroll bar resident.
+  static void SetScrollbarEnable(bool enable);
+#endif
 
   // Some characters are not allowed to appear in feature names or the
   // associated field trial names, as they are used as special characters for
@@ -601,18 +607,6 @@ class BASE_EXPORT FeatureList {
                            StoreAndRetrieveFeaturesFromSharedMemory);
   FRIEND_TEST_ALL_PREFIXES(FeatureListTest,
                            StoreAndRetrieveAssociatedFeaturesFromSharedMemory);
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, ModifyFeaturesToAllocator);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, AddFeaturesToAllocator);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, AddFeatureToField);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, SetScrollbarEnableTest002);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, SetScrollbarEnableTest003);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled001);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled002);
-  FRIEND_TEST_ALL_PREFIXES(FeatureListTest, IsFeatureEnabled003);
-#endif
-
   // Allow Accessor to access GetOverrideStateByFeatureName().
   friend class Accessor;
 
@@ -643,6 +637,12 @@ class BASE_EXPORT FeatureList {
   // |name| or null if the feature is not found.
   const base::FeatureList::OverrideEntry* GetOverrideEntryByFeatureName(
       std::string_view name) const;
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // set state by feature name.
+  void SetOverrideStateByFeatureName(std::string_view feature_name,
+                                     OverrideState state);
+#endif
 
   // Finalizes the initialization state of the FeatureList, so that no further
   // overrides can be registered. This is called by SetInstance() on the
@@ -717,6 +717,9 @@ class BASE_EXPORT FeatureList {
   // features in `allowed_feature_names_` can be checked.
   bool AllowFeatureAccess(const Feature& feature) const;
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // mutable Lock overrides_lock_;
+#endif
   // Map from feature name to an OverrideEntry struct for the feature, if it
   // exists.
   base::flat_map<std::string, OverrideEntry> overrides_;

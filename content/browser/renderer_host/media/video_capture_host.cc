@@ -6,10 +6,6 @@
 
 #include <memory>
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h"
-#endif
-
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_forward.h"
@@ -28,6 +24,9 @@
 #include "media/capture/mojom/video_capture_types.mojom.h"
 #include "media/capture/mojom/video_effects_manager.mojom.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
 namespace content {
 
 namespace {
@@ -116,13 +115,10 @@ VideoCaptureHost::VideoCaptureHost(GlobalRenderFrameHostId render_frame_host_id,
     : VideoCaptureHost(
           std::make_unique<RenderFrameHostDelegateImpl>(render_frame_host_id),
           media_stream_manager) {
-#if BUILDFLAG(IS_ARKWEB)
-  implUtils = new VideoCaptureHostUtils(this);
-#endif
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  implUtils->SetRenderFrameHostId(render_frame_host_id);
+  render_frame_host_id_ = render_frame_host_id;
 #endif
-          }
+}
 
 VideoCaptureHost::VideoCaptureHost(
     std::unique_ptr<RenderFrameHostDelegate> delegate,
@@ -131,7 +127,6 @@ VideoCaptureHost::VideoCaptureHost(
       media_stream_manager_(media_stream_manager) {
   DVLOG(1) << __func__;
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  implUtils = new VideoCaptureHostUtils(this);
 }
 
 // static
@@ -167,10 +162,15 @@ VideoCaptureHost::~VideoCaptureHost() {
 
   NotifyAllStreamsRemoved();
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  implUtils->ReportStopScreenCapture();
-#endif
-#if BUILDFLAG(IS_ARKWEB)
-  delete implUtils;
+  RenderProcessHost* host =
+      RenderProcessHost::FromID(render_frame_host_id_.child_id);
+  if (host) {
+    LOG(INFO) << __func__
+              << " stop screen capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+        OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP,
+        host->GetProcess().Pid());
+  }
 #endif
 }
 
@@ -314,8 +314,8 @@ void VideoCaptureHost::Start(
     const media::VideoCaptureParams& params,
     mojo::PendingRemote<media::mojom::VideoCaptureObserver> observer) {
   LOG(INFO) << __func__ << " session_id=" << session_id
-           << ", device_id=" << device_id << ", format="
-           << media::VideoCaptureFormat::ToString(params.requested_format);
+            << ", device_id=" << device_id << ", format="
+            << media::VideoCaptureFormat::ToString(params.requested_format);
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureHost::Start");
@@ -330,7 +330,15 @@ void VideoCaptureHost::Start(
   observer_in_map.Bind(std::move(observer));
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  implUtils->ReportStartScreenCapture();
+  RenderProcessHost* host =
+      RenderProcessHost::FromID(render_frame_host_id_.child_id);
+  if (host) {
+    LOG(DEBUG) << __func__
+               << " start screen_capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+        OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START,
+        host->GetProcess().Pid());
+  }
 #endif
 
   const VideoCaptureControllerID controller_id(device_id);
@@ -360,7 +368,15 @@ void VideoCaptureHost::Stop(const base::UnguessableToken& device_id) {
                "VideoCaptureHost::Stop");
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  implUtils->ReportStopScreenCapture();
+  RenderProcessHost* host =
+      RenderProcessHost::FromID(render_frame_host_id_.child_id);
+  if (host) {
+    LOG(DEBUG) << __func__
+               << " start screen_capture, pid: " << host->GetProcess().Pid();
+    OHOS::NWeb::ResSchedClientAdapter::ReportScreenCapture(
+        OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_START,
+        host->GetProcess().Pid());
+  }
 #endif
 
   const VideoCaptureControllerID& controller_id(device_id);

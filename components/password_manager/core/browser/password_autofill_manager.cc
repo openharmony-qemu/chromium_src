@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/span.h"
 #include "base/functional/bind.h"
@@ -515,6 +516,30 @@ bool PasswordAutofillManager::FillSuggestionForTest(
     const std::u16string& username) {
   return FillSuggestion(username, autofill::SuggestionType::kPasswordEntry);
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+bool PasswordAutofillManager::CanFillAccountSuggestion(const GURL& page_url) {
+  url::Origin current_origin =
+      url::Origin::Create(password_manager_driver_->GetLastCommittedURL());
+  url::Origin request_origin = url::Origin::Create(page_url);
+  if (current_origin.IsSameOriginWith(request_origin)) {
+    return true;
+  }
+  return false;
+}
+
+void PasswordAutofillManager::FillAccountSuggestion(
+    const GURL& page_url,
+    const std::u16string& username,
+    const std::u16string& password) {
+  if (!CanFillAccountSuggestion(page_url)) {
+    LOG(INFO) << "Can not fill account suggestion cross origin.";
+    return;
+  }
+
+  password_manager_driver_->FillAccountSuggestion(username, password);
+}
+#endif
 
 bool PasswordAutofillManager::PreviewSuggestionForTest(
     const std::u16string& username) {

@@ -16,7 +16,6 @@
 #ifndef CC_MOJO_EMBEDDER_SOFTWARE_COMPOSITOR_RENDERER_OHOS_H_
 #define CC_MOJO_EMBEDDER_SOFTWARE_COMPOSITOR_RENDERER_OHOS_H_
 
-#include "base/memory/raw_ptr.h"
 #include "cc/mojo_embedder/async_layer_tree_frame_sink.h"
 #include "cc/mojo_embedder/mojo_embedder_export.h"
 #include "cc/mojo_embedder/software_compositor_registry_ohos.h"
@@ -84,7 +83,7 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
 
   // weak reference  Owned by |display_|.
   // std::unique_ptr<viz::OutputSurface> output_surface_;
-  raw_ptr<SkCanvas> current_sw_canvas_ = nullptr;
+  SkCanvas* current_sw_canvas_ = nullptr;
   viz::DebugRendererSettings debug_settings_;
 
   // Draw info

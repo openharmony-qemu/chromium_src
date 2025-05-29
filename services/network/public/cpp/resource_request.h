@@ -238,10 +238,6 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   GURL main_url;
   bool is_preflight = false;
 #endif
-
-#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  bool is_sync_mode = false;
-#endif
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
   bool is_download_request = false;
 #endif  //  ARKWEB_EX_DOWNLOAD

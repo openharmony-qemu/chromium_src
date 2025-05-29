@@ -10180,9 +10180,6 @@ class OnScreenshotCapturedWaiter : public mojom::FrameSinkManagerClient {
       const std::vector<int32_t>& thread_ids,
       VerifyThreadIdsDoNotBelongToHostCallback callback) override {}
 #endif
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-  void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override {}
-#endif
   void OnScreenshotCaptured(
       const blink::SameDocNavigationScreenshotDestinationToken&
           destination_token,

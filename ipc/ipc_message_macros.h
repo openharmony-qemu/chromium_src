@@ -198,6 +198,7 @@
 
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/export_template.h"
 #include "base/hash/md5_constexpr.h"
 #include "base/notreached.h"
@@ -205,8 +206,6 @@
 #include "ipc/ipc_message_templates.h"
 #include "ipc/ipc_message_utils.h"
 #include "ipc/param_traits_macros.h"
-
-#include "arkweb/build/features/features.h"
 
 // Convenience macro for defining structs without inheritance. Should not need
 // to be subsequently redefined.
@@ -352,11 +351,24 @@
       ipc_message__.set_dispatch_error();                        \
   } break;
 
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#define IPC_MESSAGE_FORWARD_PARAM(msg_class, obj, member_func)         \
+  case msg_class::ID: {                                                \
+    IPC_TASK_ANNOTATOR_CONTEXT(msg_class)                              \
+    if (!msg_class::Dispatch_Param(&ipc_message__, obj, this, param__, \
+                                   &member_func))                      \
+      ipc_message__.set_dispatch_error();                              \
+  } break;
+#endif
+
 #define IPC_MESSAGE_HANDLER(msg_class, member_func) \
   IPC_MESSAGE_FORWARD(msg_class, this, _IpcMessageHandlerClass::member_func)
 
-
-#include "arkweb/chromium_ext/ipc/ipc_message_macros_ext.h"
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+#define IPC_MESSAGE_HANDLER_PARAM(msg_class, member_func) \
+  IPC_MESSAGE_FORWARD_PARAM(msg_class, this,              \
+                            _IpcMessageHandlerClass::member_func)
+#endif
 
 #define IPC_MESSAGE_FORWARD_DELAY_REPLY(msg_class, obj, member_func) \
   case msg_class::ID: {                                              \

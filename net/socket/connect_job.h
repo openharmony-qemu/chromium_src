@@ -30,7 +30,10 @@
 #include "net/socket/ssl_client_socket.h"
 #include "net/ssl/ssl_config.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace net {
 
@@ -269,20 +272,10 @@ class NET_EXPORT_PRIVATE ConnectJob {
 
   const NetLogWithSource& net_log() const { return net_log_; }
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   virtual void SetConnectTimeout(int timeout_override) = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  virtual void SetFromPreload(bool from_preload) {
-    from_preload_ = from_preload;
-  }
-
-  bool IsFromPreload() const {
-    return from_preload_;
-  }
-#endif
- 
  protected:
   const SocketTag& socket_tag() const { return socket_tag_; }
   ClientSocketFactory* client_socket_factory() {
@@ -333,14 +326,14 @@ class NET_EXPORT_PRIVATE ConnectJob {
   // TODO(mmenke): This should be private.
   LoadTimingInfo::ConnectTiming connect_timing_;
 
-#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
   base::TimeDelta timeout_override_ = base::TimeDelta();
 #endif
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
   bool multi_ip_enabled_{true};
   base::TimeDelta multi_connect_interval_time_ = base::Milliseconds(300);
 #endif
- 
+
  private:
   virtual int ConnectInternal() = 0;
 
@@ -371,10 +364,6 @@ class NET_EXPORT_PRIVATE ConnectJob {
   // This is called when |this| is deleted.
   base::ScopedClosureRunner done_closure_;
   const NetLogEventType net_log_connect_event_type_;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool from_preload_ = false;
-#endif
 };
 
 }  // namespace net

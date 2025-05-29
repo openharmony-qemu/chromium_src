@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/notreached.h"
@@ -283,7 +282,7 @@ void URLRequestContextBuilder::BindToNetwork(
 }
 
 std::unique_ptr<URLRequestContext> URLRequestContextBuilder::Build() {
-  auto context = std::make_unique<URLRequestContextExt>(
+  auto context = std::make_unique<URLRequestContext>(
       base::PassKey<URLRequestContextBuilder>());
 
   context->set_enable_brotli(enable_brotli_);

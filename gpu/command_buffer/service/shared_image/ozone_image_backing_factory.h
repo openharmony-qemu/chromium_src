@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_refptr.h"
@@ -19,20 +20,16 @@
 
 namespace gpu {
 class SharedContextState;
-class OzoneImageBackingFactoryExt;
 
 // Implementation of SharedImageBackingFactory that produces NativePixmap
 // backed SharedImages.
 class GPU_GLES2_EXPORT OzoneImageBackingFactory
     : public SharedImageBackingFactory {
  public:
-  friend class OzoneImageBackingFactoryExt;
-  virtual gpu::OzoneImageBackingFactoryExt* AsOzoneImageBackingFactoryExt() {
-    return nullptr;
-  }
   explicit OzoneImageBackingFactory(
       scoped_refptr<SharedContextState> shared_context_state,
-      const GpuDriverBugWorkarounds& workarounds);
+      const GpuDriverBugWorkarounds& workarounds,
+      const GpuPreferences& gpu_preferences);
 
   ~OzoneImageBackingFactory() override;
 
@@ -85,6 +82,20 @@ class GPU_GLES2_EXPORT OzoneImageBackingFactory
       bool is_thread_safe,
       gfx::BufferUsage buffer_usage) override;
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  std::unique_ptr<SharedImageBacking> CreateSharedImage(
+      const Mailbox& mailbox,
+      gfx::GpuMemoryBufferHandle handle,
+      gfx::BufferFormat format,
+      gfx::BufferPlane plane,
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      GrSurfaceOrigin surface_origin,
+      SkAlphaType alpha_type,
+      uint32_t usage,
+      void* window_buffer) override;
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+
   bool IsSupported(SharedImageUsageSet usage,
                    viz::SharedImageFormat format,
                    const gfx::Size& size,
@@ -102,7 +113,9 @@ class GPU_GLES2_EXPORT OzoneImageBackingFactory
   bool CanWebGPUSynchronizeGpuFence();
 
   const scoped_refptr<SharedContextState> shared_context_state_;
+  scoped_refptr<base::RefCountedData<DawnProcTable>> dawn_procs_;
   const GpuDriverBugWorkarounds workarounds_;
+  bool use_passthrough_;
 
   // This method optionally takes BufferUsage as a parameter.
   // TODO(crbug.com/40276844) : BufferUsage will be eventually merged into

@@ -2146,5 +2146,44 @@ TEST_F(LayerTest, UpdatingRoundedCorners) {
       node_5->mask_filter_info.rounded_corner_bounds());
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MockLayer : public Layer {
+ public:
+  MOCK_METHOD(void, WaitForProtectedSequenceCompletion, (), (const override));
+};
+
+TEST_F(LayerTest, SetNativeEmbedId_NoChange) {
+  MockLayer layer_test1;
+  int initialEmbedId = 50;
+  int temp = 50;
+  EXPECT_CALL(layer_test1, WaitForProtectedSequenceCompletion()).Times(1);
+  layer_test1.SetNativeEmbedId(initialEmbedId);
+  Mock::VerifyAndClearExpectations(&layer_test1);
+  EXPECT_EQ(layer_test1.native_embed_id(), initialEmbedId)
+      << "The embed ID should be 50.";
+  EXPECT_CALL(layer_test1, WaitForProtectedSequenceCompletion()).Times(0);
+  layer_test1.SetNativeEmbedId(temp);
+  Mock::VerifyAndClearExpectations(&layer_test1);
+  EXPECT_EQ(layer_test1.native_embed_id(), temp)
+      << "The embed ID should be 50.";
+}
+
+TEST_F(LayerTest, SetNativeEmbedId_Change) {
+  MockLayer layer_test2;
+  int initialEmbedId = 100;
+  int temp = 50;
+  EXPECT_CALL(layer_test2, WaitForProtectedSequenceCompletion()).Times(1);
+  layer_test2.SetNativeEmbedId(initialEmbedId);
+
+  Mock::VerifyAndClearExpectations(&layer_test2);
+  EXPECT_EQ(layer_test2.native_embed_id(), initialEmbedId)
+      << "The embed ID should be 100.";
+  EXPECT_CALL(layer_test2, WaitForProtectedSequenceCompletion()).Times(1);
+  layer_test2.SetNativeEmbedId(temp);
+  Mock::VerifyAndClearExpectations(&layer_test2);
+  EXPECT_NE(layer_test2.native_embed_id(), initialEmbedId)
+      << "The embed ID should not be " << initialEmbedId << ".";
+}
+#endif
 }  // namespace
 }  // namespace cc

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,7 +12,6 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -43,7 +41,6 @@
 #include "components/viz/service/surfaces/pending_copy_output_request.h"
 #include "components/viz/service/surfaces/surface.h"
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -98,7 +95,6 @@ FrameSinkManagerImpl::FrameSinkManagerImpl(const InitParams& params)
       debug_settings_(params.debug_renderer_settings),
       host_process_id_(params.host_process_id),
       hint_session_factory_(params.hint_session_factory) {
-  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(this);
   surface_manager_.AddObserver(&hit_test_manager_);
   surface_manager_.AddObserver(this);
 
@@ -452,7 +448,7 @@ void FrameSinkManagerImpl::EvictSurfaces(
   }
 
   // Trigger garbage collection immediately, otherwise the surface may not be
-  // evicted for a long time (e.g. not before a frame is produced).
+  // evicted for a long time (e.g. not before a frame is produced)F
   surface_manager_.GarbageCollectSurfaces();
 }
 
@@ -991,14 +987,24 @@ void FrameSinkManagerImpl::StopThrottlingAllFrameSinks() {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
-  root_sink_map_[id]->AsExt()->SendInternalBeginFrame();
+  root_sink_map_[id]->SendInternalBeginFrame();
 }
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
 void FrameSinkManagerImpl::EvictFrameBackBuffers(
     const FrameSinkId& root_frame_sink_id,
     bool invisible) {
-    managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id, invisible);
+  TRACE_EVENT1("viz", "FrameSinkManagerImpl::EvictFrameBackBuffers",
+               "root_frame_sink_id", root_frame_sink_id.ToString());
+
+  auto root_it = root_sink_map_.find(root_frame_sink_id);
+  if (root_it != root_sink_map_.end()) {
+    if (!root_it->second) {
+      LOG(ERROR) << "RootCompositorFrameSinkImpl is null";
+      return;
+    }
+    root_it->second->EvictFrameBackBuffers(invisible);
+  }
 }
 #endif
 
@@ -1220,34 +1226,54 @@ void FrameSinkManagerImpl::RequestBeginFrameForGpuService(bool toggle) {
 void FrameSinkManagerImpl::SetEnableLowerFrameRate(
     bool enabled,
     const FrameSinkId& frame_sink_id) {
-    managerImplUtils->SetEnableLowerFrameRate(enabled, frame_sink_id);
-}
-
-void FrameSinkManagerImpl::SetEnableHalfFrameRate(
-    bool enabled,
-    const FrameSinkId& frame_sink_id) {
-    managerImplUtils->SetEnableHalfFrameRate(enabled, frame_sink_id);
+  auto it = root_sink_map_.find(frame_sink_id);
+  if (it == root_sink_map_.end()) {
+    return;
   }
+  it->second->SetEnableLowerFrameRate(enabled);
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
 void FrameSinkManagerImpl::UpdateVSyncFrequency(
     const FrameSinkId& frame_sink_id,
     uint32_t client_id) {
-    managerImplUtils->UpdateVSyncFrequency(frame_sink_id, client_id);
+  auto sink_it = sink_map_.begin();
+
+  int frame_rate = 0;
+  while (sink_it != sink_map_.end()) {
+    if (sink_it->first.client_id() == client_id) {
+      int fr = sink_it->second->GetFrameRate();
+      frame_rate = std::max(frame_rate, fr);
+    }
+    ++sink_it;
+  }
+
+  auto root_sink_it = root_sink_map_.find(frame_sink_id);
+  if (root_sink_it == root_sink_map_.end()) {
+    LOG(ERROR) << "UpdateVSyncFrequency Fail, no vaild root sink";
+    return;
+  }
+  root_sink_it->second->UpdateVSyncFrequency(frame_rate);
 }
+
 void FrameSinkManagerImpl::ResetVSyncFrequency(
     const FrameSinkId& frame_sink_id) {
-    managerImplUtils->ResetVSyncFrequency(frame_sink_id);
+  auto root_sink_it = root_sink_map_.find(frame_sink_id);
+  if (root_sink_it == root_sink_map_.end()) {
+    LOG(ERROR) << "ResetVSyncFrequency Fail, no vaild root sink";
+    return;
+  }
+  root_sink_it->second->ResetVSyncFrequency();
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_PIP)
-void FrameSinkManagerImpl::SetPipActive(
-    bool active,
-    const FrameSinkId& frame_sink_id) {
-    managerImplUtils->SetPipActive(active, frame_sink_id);
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void FrameSinkManagerImpl::RestoreRenderFit(const FrameSinkId& frame_sink_id) {
+  if (client_) {
+    client_->RestoreRenderFit(frame_sink_id.client_id(),
+                              frame_sink_id.sink_id());
+  }
 }
-#endif
-
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 }  // namespace viz

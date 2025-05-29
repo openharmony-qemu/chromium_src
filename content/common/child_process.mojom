@@ -140,7 +140,4 @@ interface ChildProcess {
   
   [EnableIf=arkweb_renderer_anr_dump]
   dumpCurrentJavaScriptStackInMainThread() => (string js_stack);
-
-  [EnableIf=arkweb_renderer_anr_dump]
-  InvokeRenderCrashDump();
 };

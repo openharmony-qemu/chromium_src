@@ -152,4 +152,10 @@ FakeRenderWidgetHost::GetFrameWidgetInputHandler() {
   return frame_widget_input_handler_.get();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void CreateOverlay(const ::SkBitmap& image,
+                   const ::gfx::Rect& image_rect,
+                   const ::gfx::Point& touch_point) {}
+#endif
+
 }  // namespace content

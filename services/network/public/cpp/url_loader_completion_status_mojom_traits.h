@@ -61,7 +61,8 @@ class COMPONENT_EXPORT(NETWORK_CPP_BASE)
   }
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
+  static bool abort_due_to_cef_browser_destroyed(
+      const network::URLLoaderCompletionStatus& status) {
     return status.abort_due_to_cef_browser_destroyed;
   }
 #endif  //  ARKWEB_EX_DOWNLOAD

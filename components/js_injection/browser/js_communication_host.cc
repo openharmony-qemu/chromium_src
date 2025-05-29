@@ -18,9 +18,9 @@
 #include "content/public/browser/web_contents.h"
 #include "mojo/public/cpp/bindings/pending_associated_remote.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
-#include "arkweb/chromium_ext/components/js_injection/js_communication_host_utils.h"
 
 namespace js_injection {
+namespace {
 
 std::string ConvertToNativeAllowedOriginRulesWithSanityCheck(
     const std::vector<std::string>& allowed_origin_rules_strings,
@@ -52,6 +52,8 @@ void ForEachRenderFrameHostWithinSameWebContents(
       });
 }
 
+}  // namespace
+
 struct JsObject {
   JsObject(const std::u16string& name,
            OriginMatcher allowed_origin_rules,
@@ -75,6 +77,15 @@ DocumentStartJavaScript::DocumentStartJavaScript(
     : script_(std::move(script)),
       allowed_origin_rules_(allowed_origin_rules),
       script_id_(script_id) {}
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+DocumentEndJavaScript::DocumentEndJavaScript(std::u16string script,
+                                             OriginMatcher allowed_origin_rules,
+                                             int32_t script_id)
+    : script_(std::move(script)),
+      allowed_origin_rules_(allowed_origin_rules),
+      script_id_(script_id) {}
+#endif
 
 JsCommunicationHost::AddScriptResult::AddScriptResult() = default;
 JsCommunicationHost::AddScriptResult::AddScriptResult(
@@ -116,9 +127,7 @@ class JsCommunicationHost::JsToBrowserMessagingList
 };
 
 JsCommunicationHost::JsCommunicationHost(content::WebContents* web_contents)
-    : content::WebContentsObserver(web_contents) {
-      js_communication_host_utils_ = std::make_unique<JsCommunicationHostUtils>(this);
-    }
+    : content::WebContentsObserver(web_contents) {}
 
 JsCommunicationHost::~JsCommunicationHost() = default;
 
@@ -167,6 +176,94 @@ const std::vector<DocumentStartJavaScript>&
 JsCommunicationHost::GetDocumentStartJavascripts() const {
   return scripts_;
 }
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+JsCommunicationHost::AddScriptResult
+JsCommunicationHost::AddDocumentEndJavaScript(
+    const std::u16string& script,
+    const std::vector<std::string>& allowed_origin_rules) {
+  OriginMatcher origin_matcher;
+  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+      allowed_origin_rules, origin_matcher);
+  AddScriptResult result;
+  if (!error_message.empty()) {
+    result.error_message = std::move(error_message);
+    return result;
+  }
+
+  document_end_scripts_.emplace_back(script, origin_matcher, next_script_id_++);
+
+  ForEachRenderFrameHostWithinSameWebContents(
+      web_contents()->GetPrimaryMainFrame(),
+      [this](content::RenderFrameHost* render_frame_host) {
+        NotifyFrameForAddDocumentEndJavaScript(&*document_end_scripts_.rbegin(),
+                                               render_frame_host);
+      });
+  result.script_id = document_end_scripts_.rbegin()->script_id_;
+  return result;
+}
+
+bool JsCommunicationHost::RemoveDocumentEndJavaScript(int script_id) {
+  for (auto it = document_end_scripts_.begin();
+       it != document_end_scripts_.end(); ++it) {
+    if (it->script_id_ == script_id) {
+      document_end_scripts_.erase(it);
+      ForEachRenderFrameHostWithinSameWebContents(
+          web_contents()->GetPrimaryMainFrame(),
+          [this, script_id](content::RenderFrameHost* render_frame_host) {
+            NotifyFrameForRemoveDocumentEndJavaScript(script_id,
+                                                      render_frame_host);
+          });
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+JsCommunicationHost::AddScriptResult
+JsCommunicationHost::AddHeadReadyJavaScript(
+    const std::u16string& script,
+    const std::vector<std::string>& allowed_origin_rules) {
+  OriginMatcher origin_matcher;
+  std::string error_message = ConvertToNativeAllowedOriginRulesWithSanityCheck(
+      allowed_origin_rules, origin_matcher);
+  AddScriptResult result;
+  if (!error_message.empty()) {
+    result.error_message = std::move(error_message);
+    return result;
+  }
+
+  head_ready_scripts_.emplace_back(script, origin_matcher, next_script_id_++);
+
+  ForEachRenderFrameHostWithinSameWebContents(
+      web_contents()->GetPrimaryMainFrame(),
+      [this](content::RenderFrameHost* render_frame_host) {
+        NotifyFrameForAddHeadReadyJavaScript(&*head_ready_scripts_.rbegin(),
+                                             render_frame_host);
+      });
+  result.script_id = head_ready_scripts_.rbegin()->script_id_;
+  return result;
+}
+
+bool JsCommunicationHost::RemoveHeadReadyJavaScript(int script_id) {
+  for (auto it = head_ready_scripts_.begin(); it != head_ready_scripts_.end();
+       ++it) {
+    if (it->script_id_ == script_id) {
+      head_ready_scripts_.erase(it);
+      ForEachRenderFrameHostWithinSameWebContents(
+          web_contents()->GetPrimaryMainFrame(),
+          [this, script_id](content::RenderFrameHost* render_frame_host) {
+            NotifyFrameForRemoveHeadReadyJavaScript(script_id,
+                                                    render_frame_host);
+          });
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 std::u16string JsCommunicationHost::AddWebMessageHostFactory(
     std::unique_ptr<WebMessageHostFactory> factory,
@@ -254,7 +351,7 @@ void JsCommunicationHost::RenderFrameCreated(
   NotifyFrameForWebMessageListener(render_frame_host);
   NotifyFrameForAllDocumentStartJavaScripts(render_frame_host);
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
-  js_communication_host_utils_->NotifyFrameForAllDocumentEndsJavaScripts(render_frame_host);
+  NotifyFrameForAllDocumentEndsJavaScripts(render_frame_host);
 #endif
 }
 
@@ -287,11 +384,19 @@ void JsCommunicationHost::NotifyFrameForAllDocumentStartJavaScripts(
     NotifyFrameForAddDocumentStartJavaScript(&script, render_frame_host);
   }
 #if BUILDFLAG(ARKWEB_JSPROXY)
-  for (const auto& script : js_communication_host_utils_->head_ready_scripts_) {
-    js_communication_host_utils_->NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
+  for (const auto& script : head_ready_scripts_) {
+    NotifyFrameForAddHeadReadyJavaScript(&script, render_frame_host);
   }
 #endif
 }
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void JsCommunicationHost::NotifyFrameForAllDocumentEndsJavaScripts(
+    content::RenderFrameHost* render_frame_host) {
+  for (const auto& script : document_end_scripts_) {
+    NotifyFrameForAddDocumentEndJavaScript(&script, render_frame_host);
+  }
+}
+#endif
 
 void JsCommunicationHost::NotifyFrameForWebMessageListener(
     content::RenderFrameHost* render_frame_host) {
@@ -385,4 +490,47 @@ void JsCommunicationHost::NotifyFrameForRemoveDocumentStartJavaScript(
   configurator_remote->RemoveDocumentStartScript(script_id);
 }
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void JsCommunicationHost::NotifyFrameForAddDocumentEndJavaScript(
+    const DocumentEndJavaScript* script,
+    content::RenderFrameHost* render_frame_host) {
+  DCHECK(script);
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddDocumentEndScript(mojom::DocumentEndJavaScript::New(
+      script->script_id_, script->script_, script->allowed_origin_rules_));
+}
+
+void JsCommunicationHost::NotifyFrameForRemoveDocumentEndJavaScript(
+    int32_t script_id,
+    content::RenderFrameHost* render_frame_host) {
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->RemoveDocumentEndScript(script_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunicationHost::NotifyFrameForAddHeadReadyJavaScript(
+    const DocumentStartJavaScript* script,
+    content::RenderFrameHost* render_frame_host) {
+  DCHECK(script);
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->AddHeadReadyScript(mojom::DocumentStartJavaScript::New(
+      script->script_id_, script->script_, script->allowed_origin_rules_));
+}
+
+void JsCommunicationHost::NotifyFrameForRemoveHeadReadyJavaScript(
+    int32_t script_id,
+    content::RenderFrameHost* render_frame_host) {
+  mojo::AssociatedRemote<mojom::JsCommunication> configurator_remote;
+  render_frame_host->GetRemoteAssociatedInterfaces()->GetInterface(
+      &configurator_remote);
+  configurator_remote->RemoveHeadReadyScript(script_id);
+}
+#endif
 }  // namespace js_injection

@@ -504,11 +504,7 @@ class BASE_EXPORT FilePath {
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Return true if the path is a datashare uri or dataability, or false
   // otherwise
-  bool IsDataShareUri(std::string bundleName = "") const;
-
-  void SetBundleName(const std::string& bundleName) const {
-    bundleName_ = bundleName;
-  }
+  bool IsDataShareUri() const;
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -527,7 +523,6 @@ class BASE_EXPORT FilePath {
   void StripTrailingSeparatorsInternal();
 
   StringType path_;
-  mutable std::string bundleName_;
 };
 
 BASE_EXPORT std::ostream& operator<<(std::ostream& out,

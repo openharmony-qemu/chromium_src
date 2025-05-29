@@ -14,6 +14,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "base/logging.h"
+#endif
+
 namespace subresource_filter {
 
 namespace {
@@ -64,8 +68,26 @@ static_assert(url_pattern_index::kUrlPatternIndexFormatVersion == 15,
               "kUrlPatternIndexFormatVersion has changed, make sure you've "
               "also updated RulesetIndexer::kIndexedFormatVersion above.");
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+// This static assert is meant to catch cases where
+// url_pattern_index:：kCssPatternIndexFormatVersion is incremented without
+// updating RulesetIndexer::kIndexedFormatVersion.
+static_assert(url_pattern_index::kCssPatternIndexFormatVersion == 1,
+              "kCssPatternIndexFormatVersion has changed, make sure you've "
+              "also updated RulesetIndexer::kIndexedFormatVersion above.");
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+RulesetIndexer::RulesetIndexer()
+    : blocklist_(&builder_),
+      allowlist_(&builder_),
+      deactivation_(&builder_),
+      css_blocklist_(&builder_),
+      css_allowlist_(&builder_) {}
+#else
 RulesetIndexer::RulesetIndexer()
     : blocklist_(&builder_), allowlist_(&builder_), deactivation_(&builder_) {}
+#endif
 
 RulesetIndexer::~RulesetIndexer() = default;
 
@@ -91,13 +113,67 @@ bool RulesetIndexer::AddUrlRule(const proto::UrlRule& rule) {
   return true;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+bool RulesetIndexer::AddCssRule(const proto::CssRule& rule) {
+  auto offset =
+      url_pattern_index::SerializeCssRule(rule, &builder_, &domain_map_);
+  // Note:A zero offset.o means a "nullptr"offset. It is returned when the
+  // rule has not been serialized.
+  if (!offset.o) {
+    LOG(ERROR) << "[AdBlock] Fail to serialize css rule:"
+               << rule.css_selector();
+    return false;
+  }
+
+  if (rule.semantics() == proto::RULE_SEMANTICS_BLOCKLIST) {
+    css_blocklist_.IndexCssRule(offset);
+  } else {
+    css_allowlist_.IndexCssRule(offset);
+  }
+
+  return true;
+}
+#endif
+
 void RulesetIndexer::Finish() {
   auto blocklist_offset = blocklist_.Finish();
   auto allowlist_offset = allowlist_.Finish();
   auto deactivation_offset = deactivation_.Finish();
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  auto url_rules_index_offset = AsArkWebRulesetIndexerExt()->CallCreateIndexedRuleset();
+  auto css_blocklist_offset = css_blocklist_.Finish();
+  auto css_allowlist_offset = css_allowlist_.Finish();
+  LOG(INFO) << "[AdBlock] url whitelist fallback_rule size:"
+            << allowlist_.GetFallbackRuleListSize();
+  LOG(INFO) << "[AdBlock] url whitelist hash table size:"
+            << allowlist_.GetNGramHashTableSize();
+  LOG(INFO) << "[AdBlock] url blacklist fallback rule.size:"
+            << blocklist_.GetFallbackRuleListSize();
+  LOG(INFO) << "[AdBlock] url blacklist hash table size:"
+            << blocklist_.GetNGramHashTableSize();
+  LOG(INFO) << "[AdBlock] deactivation fallback rule size:"
+            << deactivation_.GetFallbackRuleListSize();
+  LOG(INFO) << "[AdBlock] deactivation hash table size:"
+            << deactivation_.GetNGramHashTableSize();
+  LOG(INFO) << "[AdBlock] css whitelist fallback rule size:"
+            << css_allowlist_.GetFallbackRuleListSize();
+  LOG(INFO) << "[AdBlock] css whitelist hash table size:"
+            << css_allowlist_.GetNGramHashTableSize();
+  LOG(INFO) << "[AdBlock] css whitelist no domain rule size:"
+            << css_allowlist_.GetNoDomainRuleListSize();
+  LOG(INFO) << "[AdBlock] css_blacklist fallback rule size:"
+            << css_blocklist_.GetFallbackRuleListSize();
+  LOG(INFO) << "[AdBlock] css_blacklist hash table size:"
+            << css_blocklist_.GetNGramHashTableSize();
+  LOG(INFO) << "[AdBlock] css_blacklist no domain rule size:"
+            << css_blocklist_.GetNoDomainRuleListSize();
+  LOG(INFO) << "[AdBlock] css_blacklist hash table actual used:"
+            << css_blocklist_.GetNGramHashTableUsedSize();
+  // LOG(INFO) << "[AdBlock] easylist version_in indexed ruleset = "
+  //           << easylist_version_;
+  auto url_rules_index_offset = flat::CreateIndexedRuleset(
+      builder_, blocklist_offset, allowlist_offset, deactivation_offset,
+      css_blocklist_offset, css_allowlist_offset);
 #else
   auto url_rules_index_offset = flat::CreateIndexedRuleset(
       builder_, blocklist_offset, allowlist_offset, deactivation_offset);
@@ -129,11 +205,21 @@ bool IndexedRulesetMatcher::Verify(base::span<const uint8_t> buffer,
          status == VerifyStatus::kPassChecksumZero;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+IndexedRulesetMatcher::IndexedRulesetMatcher(base::span<const uint8_t> buffer)
+    : root_(flat::GetIndexedRuleset(buffer.data())),
+      blocklist_(root_->blocklist_index()),
+      allowlist_(root_->allowlist_index()),
+      deactivation_(root_->deactivation_index()),
+      css_blocklist_(root_->css_blocklist_index()),
+      css_allowlist_(root_->css_allowlist_index()) {}
+#else
 IndexedRulesetMatcher::IndexedRulesetMatcher(base::span<const uint8_t> buffer)
     : root_(flat::GetIndexedRuleset(buffer.data())),
       blocklist_(root_->blocklist_index()),
       allowlist_(root_->allowlist_index()),
       deactivation_(root_->deactivation_index()) {}
+#endif
 
 bool IndexedRulesetMatcher::ShouldDisableFilteringForDocument(
     const GURL& document_url,
@@ -203,5 +289,110 @@ const url_pattern_index::flat::UrlRule* IndexedRulesetMatcher::MatchedUrlRule(
   auto* allowlist_rule = find_match(allowlist_);
   return allowlist_rule ? allowlist_rule : blocklist_rule;
 }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
+IndexedRulesetMatcher::MatchedCssRule(const GURL& document_url,
+                                      bool disable_generic_rules) const {
+  std::vector<const url_pattern_index::flat::CssRule*> blocklist_rules =
+      css_blocklist_.FindMatchInSpecialRules(document_url);
+
+  std::vector<const url_pattern_index::flat::CssRule*> allowlist_rules =
+      css_allowlist_.FindMatchInSpecialRules(document_url);
+
+  std::unique_ptr<std::vector<const url_pattern_index::flat::CssRule*>>
+      match_result = std::make_unique<
+          std::vector<const url_pattern_index::flat::CssRule*>>();
+
+  for (auto* blocklist_rule : blocklist_rules) {
+    bool is_hit_whitelist = false;
+    for (auto* allowlist_rule : allowlist_rules) {
+      if (!blocklist_rule || !allowlist_rule) {
+        continue;
+      }
+
+      if (!(blocklist_rule->css_selector()) ||
+          !(allowlist_rule->css_selector())) {
+        continue;
+      }
+
+      if (blocklist_rule->css_selector()->str() ==
+          allowlist_rule->css_selector()->str()) {
+        is_hit_whitelist = true;
+        break;
+      }
+    }
+
+    if (!is_hit_whitelist) {
+      match_result->push_back(blocklist_rule);
+    }
+  }
+
+  if (!disable_generic_rules) {
+    const url_pattern_index::FlatCssRuleList* generic_blocklist_rules =
+        css_blocklist_.GetGenericCssRules();
+
+    if (generic_blocklist_rules) {
+      for (auto* blocklist_rule : *generic_blocklist_rules) {
+        bool is_hit_whitelist = false;
+        for (auto* allowlist_rule : allowlist_rules) {
+          if (!blocklist_rule || !allowlist_rule) {
+            continue;
+          }
+
+          if (!(blocklist_rule->css_selector()) ||
+              !(allowlist_rule->css_selector())) {
+            continue;
+          }
+
+          if (blocklist_rule->css_selector()->str() ==
+              allowlist_rule->css_selector()->str()) {
+            is_hit_whitelist = true;
+            break;
+          }
+        }
+        if (!is_hit_whitelist) {
+          match_result->push_back(blocklist_rule);
+        }
+      }
+    }
+  }
+
+  return match_result;
+}
+
+bool IndexedRulesetMatcher::HasGenericHideOption(
+    const GURL& document_url,
+    const url::Origin& parent_document_origin) const {
+  return !!deactivation_.FindMatch(
+      document_url, parent_document_origin, proto::ELEMENT_TYPE_UNSPECIFIED,
+      url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE,
+      FirstPartyOrigin::IsThirdParty(document_url, parent_document_origin),
+      false, EmbedderConditionsMatcher(), FindRuleStrategy::kAny,
+      {} /* disabled_rule_ids */);
+}
+
+bool IndexedRulesetMatcher::HasElemHideOption(
+    const GURL& document_url,
+    const url::Origin& parent_document_origin) const {
+  return !!deactivation_.FindMatch(
+      document_url, parent_document_origin, proto::ELEMENT_TYPE_UNSPECIFIED,
+      url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE,
+      FirstPartyOrigin::IsThirdParty(document_url, parent_document_origin),
+      false, EmbedderConditionsMatcher(), FindRuleStrategy::kAny,
+      {} /* disabled rule ids */);
+}
+
+bool IndexedRulesetMatcher::HasDocumentOption(
+    const GURL& document_url,
+    const url::Origin& parent_document_origin) const {
+  return !!deactivation_.FindMatch(
+      document_url, parent_document_origin, proto::ELEMENT_TYPE_UNSPECIFIED,
+      url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT,
+      FirstPartyOrigin::IsThirdParty(document_url, parent_document_origin),
+      false, EmbedderConditionsMatcher(), FindRuleStrategy::kAny,
+      {} /* disabled_rule_ids */);
+}
+#endif
 
 }  // namespace subresource_filter

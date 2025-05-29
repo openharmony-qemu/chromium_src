@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "components/js_injection/common/interfaces.mojom.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents_observer.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 class RenderFrameHost;
@@ -25,7 +25,6 @@ namespace js_injection {
 class OriginMatcher;
 struct JsObject;
 class WebMessageHostFactory;
-class JsCommunicationHostUtils;
 
 struct DocumentStartJavaScript {
   DocumentStartJavaScript(std::u16string script,
@@ -42,6 +41,23 @@ struct DocumentStartJavaScript {
   int32_t script_id_;
 };
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+struct DocumentEndJavaScript {
+  DocumentEndJavaScript(std::u16string script,
+                        OriginMatcher allowed_origin_rules,
+                        int32_t script_id);
+
+  DocumentEndJavaScript(DocumentEndJavaScript&) = delete;
+  DocumentEndJavaScript& operator=(DocumentEndJavaScript&) = delete;
+  DocumentEndJavaScript(DocumentEndJavaScript&&) = default;
+  DocumentEndJavaScript& operator=(DocumentEndJavaScript&&) = default;
+
+  std::u16string script_;
+  OriginMatcher allowed_origin_rules_;
+  int32_t script_id_;
+};
+#endif
+
 // This class is 1:1 with WebContents, when AddWebMessageListener() is called,
 // it stores the information in this class and send them to renderer side
 // JsCommunication if there is any. When RenderFrameCreated() gets called, it
@@ -56,8 +72,6 @@ class JsCommunicationHost : public content::WebContentsObserver {
 
   ~JsCommunicationHost() override;
 
-  friend class JsCommunicationHostUtils;
-  std::unique_ptr<JsCommunicationHostUtils> js_communication_host_utils_;
   // Captures the result of adding script. There are two possibilities when
   // adding script: there was an error, in which case |error_message| is set,
   // otherwise the add was successful and |script_id| is set.
@@ -79,8 +93,28 @@ class JsCommunicationHost : public content::WebContentsObserver {
 
   bool RemoveDocumentStartJavaScript(int script_id);
 
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  // Native side AddDocumentEndJavaScript, returns an error message if the
+  // parameters didn't pass necessary checks.
+  AddScriptResult AddDocumentEndJavaScript(
+      const std::u16string& script,
+      const std::vector<std::string>& allowed_origin_rules);
+
+  bool RemoveDocumentEndJavaScript(int script_id);
+#endif
+
   const std::vector<DocumentStartJavaScript>& GetDocumentStartJavascripts()
       const;
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  // Native side AddHeadReadyJavaScript, returns an error message if the
+  // parameters didn't pass necessary checks.
+  AddScriptResult AddHeadReadyJavaScript(
+      const std::u16string& script,
+      const std::vector<std::string>& allowed_origin_rules);
+
+  bool RemoveHeadReadyJavaScript(int script_id);
+#endif
 
   // Adds a new WebMessageHostFactory. For any urls that match
   // |allowed_origin_rules|, |js_object_name| is registered as a JS object that
@@ -119,15 +153,42 @@ class JsCommunicationHost : public content::WebContentsObserver {
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAllDocumentStartJavaScripts(
       content::RenderFrameHost* render_frame_host);
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void NotifyFrameForAllDocumentEndsJavaScripts(
+      content::RenderFrameHost* render_frame_host);
+#endif
+
   void NotifyFrameForAddDocumentStartJavaScript(
       const DocumentStartJavaScript* script,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveDocumentStartJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void NotifyFrameForAddDocumentEndJavaScript(
+      const DocumentEndJavaScript* script,
+      content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForRemoveDocumentEndJavaScript(
+      int32_t script_id,
+      content::RenderFrameHost* render_frame_host);
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void NotifyFrameForAddHeadReadyJavaScript(
+      const DocumentStartJavaScript* script,
+      content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForRemoveHeadReadyJavaScript(
+      int32_t script_id,
+      content::RenderFrameHost* render_frame_host);
+#endif
 
   int32_t next_script_id_ = 0;
   std::vector<DocumentStartJavaScript> scripts_;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  std::vector<DocumentEndJavaScript> document_end_scripts_;
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  std::vector<DocumentStartJavaScript> head_ready_scripts_;
+#endif
   std::vector<std::unique_ptr<JsObject>> js_objects_;
   std::map<content::GlobalRenderFrameHostId,
            std::unique_ptr<JsToBrowserMessagingList>>

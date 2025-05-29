@@ -32,7 +32,8 @@ class PRPPRequestLoaderFactory {
 
   // create preload loader and start
   virtual void CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info,
-	    std::set<std::string> need_record_header_urls) = 0;
+	    bool only_send_reuse_request,
+	    const std::set<std::string>& need_record_header_urls) = 0;
 
   // set isolation info created with cached origin
   virtual void SetPRPPIsolation(const net::IsolationInfo& isl) = 0;

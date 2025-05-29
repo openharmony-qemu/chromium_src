@@ -99,10 +99,6 @@ class PlaybackCommandForwardingRendererTest : public testing::Test {
         });
 
     renderer_->Initialize(&mock_media_resource_, &mock_renderer_client_,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                          media::RequestSurfaceCB(),
-                          media::VideoDecoderChangedCB(),
-#endif // OHOS_VIDEO_ASSISTANT
                           std::move(init_cb));
   }
 

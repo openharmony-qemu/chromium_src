@@ -16,7 +16,6 @@
 
 #include "gtest/gtest.h"
 
-#include "cef/ohos_cef_ext/include/arkweb_request_ext.h"
 #define private public
 #include "include/cef_response.h"
 #include "nweb_pipe_resource_handler.h"
@@ -62,15 +61,11 @@ class MockCefRequest : public CefRequest {
   MOCK_METHOD(void, SetFirstPartyForCookies, (const CefString&), (override));
   MOCK_METHOD(ResourceType, GetResourceType, (), (override));
   MOCK_METHOD(TransitionType, GetTransitionType, (), (override));
-  MOCK_METHOD(uint64_t, GetIdentifier, (), (override));
-};
-
-class MockCefRequestExt : public ArkWebRequestExt {
- public:
+  MOCK_METHOD(uint64, GetIdentifier, (), (override));
   MOCK_METHOD(bool, IsMainFrame, (), (override));
   MOCK_METHOD(bool, IsRedirect, (), (override));
   MOCK_METHOD(bool, HasUserGesture, (), (override));
-  MOCK_METHOD(CefRefPtr<ArkWebCefPostDataStream>, GetUploadStream, (), (override));
+  MOCK_METHOD(CefRefPtr<CefPostDataStream>, GetUploadStream, (), (override));
 };
 
 class MockCefCallback : public CefCallback {
@@ -86,9 +81,8 @@ class MockCefResourceReadCallback : public CefResourceReadCallback {
 
 class MockCefResourceSkipCallback : public CefResourceSkipCallback {
  public:
-  MOCK_METHOD(void, Continue, (int64_t bytes_skipped), (override));
+  MOCK_METHOD(void, Continue, (int64 bytes_skipped), (override));
 };
-
 class MockCefResponse : public CefResponse {
  public:
   MOCK_METHOD(bool, IsReadOnly, (), (override));
@@ -155,7 +149,7 @@ TEST_F(NWebPipeResourceHandlerTest, TestGetResponseHeadersWithError) {
   CefRefPtr<CefResponse> response = CefResponse::Create();
   handler_->response_ = response;
   response->SetError(ERR_FAILED);
-  int64_t response_length = 1;
+  int64 response_length = 1;
   CefString redirectUrl;
   handler_->GetResponseHeaders(response, response_length, redirectUrl);
   EXPECT_EQ(response_length, 0);
@@ -167,8 +161,8 @@ TEST_F(NWebPipeResourceHandlerTest, TestCancel) {
 }
 
 TEST_F(NWebPipeResourceHandlerTest, TestSkip) {
-  int64_t bytes_to_skip = 100;
-  int64_t bytes_skipped;
+  int64 bytes_to_skip = 100;
+  int64 bytes_skipped;
   CefRefPtr<MockCefResourceSkipCallback> callback;
   bool ret = handler_->Skip(bytes_to_skip, bytes_skipped, callback);
   EXPECT_EQ(ret, false);

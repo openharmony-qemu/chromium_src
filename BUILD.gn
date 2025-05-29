@@ -41,7 +41,10 @@ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/gl/features.gni")
 import("//v8/gni/v8.gni")
-import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -97,14 +100,10 @@ group("gn_all") {
     }
   } else {
     deps = [
-      "//arkweb/build/unittests:oh_base_unittests",
-      "//arkweb/build/unittests:oh_core_unittests",
-      "//arkweb/build/unittests:oh_smoke_unittests",
       "//base:base_perftests",
       "//base:base_unittests",
       "//codelabs",
       "//components:components_unittests",
-      "//ohos_nweb/test:ohos_nweb_unittests",
       "//components/gwp_asan:gwp_asan_unittests",
       "//infra/orchestrator:orchestrator_all",
       "//net:net_unittests",
@@ -125,13 +124,11 @@ group("gn_all") {
       "//tools/ipc_fuzzer:ipc_fuzzer_all",
       "//tools/metrics:metrics_metadata",
       "//ui/base:ui_base_unittests",
-      "//ui/color:color_unittests",
       "//ui/gfx:gfx_unittests",
       "//ui/tests:ui_unittests",
       "//url:url_unittests",
     ]
 
-    #if BUILDFLAG(ARKWEB_NWEB_EX)
     if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
       deps += [
         "//ohos_browser_shell",
@@ -140,7 +137,7 @@ group("gn_all") {
         "//third_party/ohos_nweb_hap",
       ]
     deps += [
-      "//arkweb/chromium_ext/ohos_test",
+     # "//ohos_test",
     ]
     }  # endif // ARKWEB_NWEB_EX
 
@@ -1523,7 +1520,7 @@ if (use_blink && !is_cronet_build) {
       # === Test Case Folders Ends ===
     ]
   }
-  
+
   group("blink_web_tests_expectations") {
     testonly = true
 
@@ -1875,7 +1872,6 @@ if (is_chromeos_ash && enable_js_type_check) {
     ]
   }
 }
-
 
 # Write debug logs to gn_logs.txt.
 _lines = [

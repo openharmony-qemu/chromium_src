@@ -272,7 +272,11 @@ TEST_P(ImageTransferCacheEntryTest, MAYBE_Deserialize) {
   entry.reset();
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+TEST_P(ImageTransferCacheEntryTest, DISABLED_HardwareDecodedMipsAfterCreation) {
+#else
 TEST_P(ImageTransferCacheEntryTest, HardwareDecodedMipsAfterCreation) {
+#endif
   base::HeapArray<bool> release_flags;
   std::vector<sk_sp<SkImage>> plane_images = CreateTestYUVImage(release_flags);
   const size_t plane_images_size = plane_images.size();

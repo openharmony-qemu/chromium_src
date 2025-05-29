@@ -36,7 +36,6 @@
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "gpu/vulkan/vulkan_device_queue.h"
 #endif  // BUILDFLAG(ENABLE_VULKAN)
-#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h"
 
 namespace gpu {
 namespace {
@@ -79,10 +78,18 @@ constexpr SharedImageUsageSet kSupportedUsage =
 
 OzoneImageBackingFactory::OzoneImageBackingFactory(
     scoped_refptr<SharedContextState> shared_context_state,
-    const GpuDriverBugWorkarounds& workarounds)
+    const GpuDriverBugWorkarounds& workarounds,
+    const GpuPreferences& gpu_preferences)
     : SharedImageBackingFactory(kSupportedUsage),
       shared_context_state_(std::move(shared_context_state)),
-      workarounds_(workarounds) {}
+      workarounds_(workarounds),
+      use_passthrough_(gpu_preferences.use_passthrough_cmd_decoder &&
+                       gles2::PassthroughCommandDecoderSupported()) {
+#if BUILDFLAG(USE_DAWN)
+  dawn_procs_ = base::MakeRefCounted<base::RefCountedData<DawnProcTable>>(
+      dawn::native::GetProcs());
+#endif  // BUILDFLAG(USE_DAWN)
+}
 
 OzoneImageBackingFactory::~OzoneImageBackingFactory() = default;
 
@@ -232,6 +239,48 @@ std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
                                    color_space, surface_origin, alpha_type,
                                    usage, std::move(debug_label), buffer_usage);
 }
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+std::unique_ptr<SharedImageBacking> OzoneImageBackingFactory::CreateSharedImage(
+    const Mailbox& mailbox,
+    gfx::GpuMemoryBufferHandle handle,
+    gfx::BufferFormat buffer_format,
+    gfx::BufferPlane plane,
+    const gfx::Size& size,
+    const gfx::ColorSpace& color_space,
+    GrSurfaceOrigin surface_origin,
+    SkAlphaType alpha_type,
+    uint32_t usage,
+    void* window_buffer) {
+  DCHECK_EQ(handle.type, gfx::NATIVE_PIXMAP);
+  ui::SurfaceFactoryOzone* surface_factory =
+      ui::OzonePlatform::GetInstance()->GetSurfaceFactoryOzone();
+  scoped_refptr<gfx::NativePixmap> pixmap =
+      surface_factory->CreateNativePixmapFromHandle(
+          kNullSurfaceHandle, size, buffer_format,
+          std::move(handle.native_pixmap_handle), window_buffer);
+  if (!pixmap) {
+    LOG(ERROR) << "[HeifSupport] OzoneImageBackingFactory::CreateSharedImage "
+                  "pixmap is null.";
+    return nullptr;
+  }
+  const gfx::Size plane_size = gpu::GetPlaneSize(plane, size);
+  auto si_format =
+      viz::GetSharedImageFormat(GetPlaneBufferFormat(plane, buffer_format));
+#if false
+  const viz::ResourceFormat plane_format =
+      viz::GetResourceFormat(GetPlaneBufferFormat(plane, buffer_format));
+#endif
+  std::string debug_label = "ZGLEE";
+  auto backing = std::make_unique<OzoneImageBacking>(
+      mailbox, si_format, plane_size, color_space, surface_origin, alpha_type,
+      SharedImageUsageSet(usage), std::move(debug_label), shared_context_state_,
+      std::move(pixmap), workarounds_);
+  backing->SetCleared();
+
+  return backing;
+}
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 
 bool OzoneImageBackingFactory::IsSupported(
     SharedImageUsageSet usage,

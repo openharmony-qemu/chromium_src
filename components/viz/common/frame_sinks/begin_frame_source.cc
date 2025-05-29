@@ -577,7 +577,8 @@ void ExternalBeginFrameSource::OnBeginFrame(const BeginFrameArgs& args) {
       continue;
     if (!CheckBeginFrameContinuity(obs, args))
       continue;
-    TRACE_EVENT0("viz", "ExternalBeginFrameSource::OnBeginFrame Process non-root");
+    TRACE_EVENT0("viz",
+                 "ExternalBeginFrameSource::OnBeginFrame Process non-root");
     FilterAndIssueBeginFrame(obs, args);
   }
   // Process root observers.

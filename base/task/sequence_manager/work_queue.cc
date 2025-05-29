@@ -7,6 +7,10 @@
 #include <optional>
 
 #include "base/debug/alias.h"
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+#include "base/json/json_writer.h"
+#endif
+#include "arkweb/build/features/features.h"
 #include "base/task/sequence_manager/fence.h"
 #include "base/task/sequence_manager/sequence_manager_impl.h"
 #include "base/task/sequence_manager/task_order.h"
@@ -203,6 +207,20 @@ Task WorkQueue::TakeTaskFromWorkQueue() {
     }
     // Since the queue is empty, now is a good time to consider reducing it's
     // capacity if we're wasting memory.
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+#define MAX_QUE_SIZE (1 << 20)
+    if (tasks_.max_size() >= MAX_QUE_SIZE) {
+      LOG(ERROR) << "QTL, QueueName: " << task_queue_->GetName() << " : "
+                 << work_queue_sets_->GetName() << " : " << name_;
+      LOG(ERROR) << "QTL, max_size is " << tasks_.max_size()
+                 << " last task post from:"
+                 << pending_task.posted_from.ToString();
+      TimeTicks now = task_queue_->sequence_manager()->NowTicks();
+      std::string QueueDump;
+      JSONWriter::Write(task_queue_->AsValue(now, false), &QueueDump);
+      LOG(ERROR) << "QTL, Queue Dump: " << QueueDump;
+    }
+#endif
     tasks_.MaybeShrinkQueue();
   }
 

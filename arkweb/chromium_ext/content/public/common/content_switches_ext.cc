@@ -5,7 +5,7 @@
 // Based on content_switches.cc originally written by
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// found in the LICENSE file. 
 
 #include "content_switches_ext.h"
 
@@ -45,6 +45,7 @@ const char kDisableNonAdvancedSecurityMode[] =
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 const char kOhosHapPath[] = "user-hap-path";
+const char kOhosAppApiVersion[] = "user-api-version";
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -62,7 +63,7 @@ const char kOhosCustomScheme[] = "ohos-custom-scheme";
 const char kOhSchemeHandlerCustomScheme[] = "ohos-scheme-handler-custom-scheme";
 #endif
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
+#if BUILDFLAG(IS_ARKWEB)
 const char kEnableMediaAvsession[] = "enable-nweb-media-avsession";
 const char kEnableNwebEx[] = "enable-nweb-ex";
 const char kEnableNwebExReportCrashpad[] = "enable-nweb-ex-report-crashpad";
@@ -76,6 +77,8 @@ const char kEnableNwebExUa[] = "enable-nweb-ex-ua";
 const char kEnableNwebExNetworkLoad[] = "enable-nweb-ex-network-load";
 const char kEnableNwebExDownload[] = "enable-nweb-ex-download";
 const char kEnableNwebExGetZoomLevel[] = "enable-nweb-ex-get-zoom-level";
+#endif
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
 const char kEnableNwebExPullToRefresh[] = "enable-nweb-ex-pull-to-refresh";
 #endif
 

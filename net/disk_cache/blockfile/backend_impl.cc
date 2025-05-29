@@ -53,7 +53,7 @@
 
 using base::Time;
 using base::TimeTicks;
-using namespace OHOS::NWeb;
+
 namespace {
 
 const char kIndexName[] = "index";
@@ -119,6 +119,7 @@ class CacheThread : public base::Thread {
     CHECK(
         StartWithOptions(base::Thread::Options(base::MessagePumpType::IO, 0)));
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
         ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
         GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
@@ -129,6 +130,7 @@ class CacheThread : public base::Thread {
     // We don't expect to be deleted, but call Stop() in dtor 'cause docs
     // say we should.
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+    using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
         ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
         GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);

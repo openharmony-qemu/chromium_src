@@ -15,7 +15,9 @@
 
 #include "nweb_web_storage_impl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "nweb_hilog.h"
 #include "nweb_web_storage_delegate.h"
 
@@ -118,14 +120,6 @@ void NWebWebStorageImpl::GetSavedPasswords(int callback_id) {
     return delegate_->GetSavedPasswordsInfo(callback_id);
   }
 #endif  // ARKWEB_EXT_PASSWORD
-}
-
-void NWebWebStorageImpl::MigratePasswords() {
-#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
-  if (delegate_ != nullptr) {
-    return delegate_->MigratePasswordsInfo();
-  }
-#endif
 }
 
 void NWebWebStorageImpl::ClearPassword() {

@@ -119,11 +119,6 @@ mojom("mojom") {
   }
 
   enabled_features = []
-
-  if (arkweb_enable_wiseplay) {
-    enabled_features += [ "arkweb_enable_wiseplay" ]
-  }
-
   if (is_linux || is_chromeos) {
     enabled_features += [ "is_linux_or_chromeos" ]
   }
@@ -151,10 +146,6 @@ mojom("mojom") {
 
   if (allow_oop_video_decoder) {
     enabled_features += [ "allow_oop_video_decoder" ]
-  }
-
-  if (arkweb_pip) {
-    enabled_features += ["arkweb_pip"]
   }
 
   # Help select ServiceSandbox for media_service.mojom.

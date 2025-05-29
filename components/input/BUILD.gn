@@ -5,7 +5,6 @@
 import("//build/config/ui.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 
 assert(
     use_blink,
@@ -25,8 +24,6 @@ component("input") {
     "features.h",
     "fling_controller.cc",
     "fling_controller.h",
-    "//arkweb/chromium_ext/components/input/fling_controller_for_include.h",
-    "//arkweb/chromium_ext/components/input/fling_controller_for_include_impl.h",
     "fling_scheduler_base.h",
     "gesture_event_queue.cc",
     "gesture_event_queue.h",
@@ -89,9 +86,6 @@ component("input") {
     "web_touch_event_traits.cc",
     "web_touch_event_traits.h",
   ]
-  if (arkweb_input_events) {
-    sources += arkweb_input_router_impl_sources
-  }
   public_deps = [ "//ui/base/mojom:ui_base_types" ]
   deps = [
     ":mojom",

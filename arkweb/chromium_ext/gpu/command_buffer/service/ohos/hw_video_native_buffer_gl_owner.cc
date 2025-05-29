@@ -132,27 +132,26 @@ void HwVideoNativeBufferGLOwner::UpdateNativeImage() {
   }
 
   DCHECK(loader_);
+  OhosWindowBuffer* image = new OhosWindowBuffer();
   int acquire_fence_fd = -1;
-  void *buffer = nullptr;
 
   int32_t return_code = 0;
   return_code =
-      loader_->AcquireNativeWindowBuffer(&buffer, &acquire_fence_fd);
+      loader_->AcquireNativeWindowBuffer(&image->rawbuffer, &acquire_fence_fd);
   // If there is no new image simply return. At this point previous image will
   // still be bound to the texture.
-  if (return_code != 0 || !buffer) {
+  if (return_code != 0 || !image->rawbuffer) {
     LOG(ERROR) << "NativeImage: image is nullptr or acquire buffer fail :"
                << return_code;
+    delete image;
+    image = nullptr;
     return;
   }
 
   base::ScopedFD scoped_acquire_fence_fd(acquire_fence_fd);
-  OhosWindowBuffer* image = new OhosWindowBuffer();
-  if (image) {
-    image->rawbuffer = buffer;
-    // Make the newly acquired image as current image.
-    current_image_ref_.emplace(this, image, std::move(scoped_acquire_fence_fd));
-  }
+
+  // Make the newly acquired image as current image.
+  current_image_ref_.emplace(this, image, std::move(scoped_acquire_fence_fd));
 }
 
 std::unique_ptr<ScopedNativeBufferFenceSync>
@@ -227,13 +226,9 @@ void HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked(
     return;
   }
 
-  TRACE_EVENT1("base", "HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked", "fd", image_ref.release_fence_fd.get());
   if (image_ref.release_fence_fd.is_valid()) {
     loader_->ReleaseNativeWindowBuffer(
         image->rawbuffer, std::move(image_ref.release_fence_fd.release()));
-  } else {
-    loader_->ReleaseNativeWindowBuffer(
-        image->rawbuffer, -1);
   }
 
   image_refs_.erase(it);
@@ -269,8 +264,8 @@ gl::GLSurface* HwVideoNativeBufferGLOwner::GetSurface() const {
 
 void HwVideoNativeBufferGLOwner::RunWhenBufferIsAvailable(
     base::OnceClosure callback) {
-  TRACE_EVENT0("base", "HwVideoNativeBufferGLOwner::RunWhenBufferIsAvailable");
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
+  // TODO: This doesn't work as expected.
   int image_refs_size = 0;
   {
     base::AutoLock auto_lock(lock_);
@@ -364,7 +359,6 @@ HwVideoNativeBufferGLOwner::ScopedCurrentImageRef::GetReadyFence() const {
 }
 
 void* HwVideoNativeBufferGLOwner::AquireOhosNativeWindow() const {
-  TRACE_EVENT0("base", "HwVideoNativeBufferGLOwner::AquireOhosNativeWindow");
   DCHECK_CALLED_ON_VALID_THREAD(gpu_main_thread_checker_);
 
   if (loader_ != nullptr) {

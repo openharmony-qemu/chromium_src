@@ -647,12 +647,18 @@ fuzzer_test("coop_fuzzer") {
 fuzzer_test("xfo_fuzzer") {
   sources = [ "x_frame_options_parser_fuzzer.cc" ]
   dict = "x_frame_options.dict"
-  deps = [ ":cpp" ]
+  deps = [
+    ":cpp",
+    "//cef:libcef_static",
+  ]
 }
 
 fuzzer_test("cors_fuzzer") {
   sources = [ "cors/cors_fuzzer.cc" ]
-  deps = [ ":cpp" ]
+  deps = [
+    ":cpp",
+    "//cef:libcef_static",
+  ]
   seed_corpus = "//services/network/public/cpp/cors/corpus"
 }
 
@@ -662,6 +668,7 @@ fuzzer_test("client_hints_fuzzer") {
     ":cpp",
     "//base",
     "//base:i18n",
+    "//cef:libcef_static",
   ]
 }
 

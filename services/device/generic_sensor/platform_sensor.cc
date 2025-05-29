@@ -284,6 +284,10 @@ bool PlatformSensor::IsSignificantlyDifferent(const SensorReading& lhs,
 #endif
       return !base::ranges::equal(lhs.raw.values, rhs.raw.values);
   }
+#if BUILDFLAG(ARKWEB_SENSOR)
+  NOTREACHED();
+  return false;
+#endif
 }
 
 base::WeakPtr<PlatformSensor> PlatformSensor::AsWeakPtr() {

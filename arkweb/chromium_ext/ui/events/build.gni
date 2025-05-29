@@ -1,7 +1,0 @@
-events_unittests_sources = [ 
-  "//content/browser/browser_thread_impl.cc", 
-  "//content/browser/scheduler/browser_task_executor.cc",
-  "//content/public/common/content_features.cc",
-  "//content/public/common/content_switches.cc",
-  "//content/common/features.cc",
-]

@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//arkweb/build/features/features.gni")
-import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//build/config/features.gni")
 
 static_library("browser") {
@@ -20,10 +18,15 @@ static_library("browser") {
     "ruleset_service.h",
     "unindexed_ruleset_stream_generator.cc",
     "unindexed_ruleset_stream_generator.h",
+    "user_ruleset_publisher.cc",
+    "user_ruleset_publisher.h",
+    "user_ruleset_service.cc",
+    "user_ruleset_service.h",
+    "user_unindexed_ruleset_stream_generator.cc",
+    "user_unindexed_ruleset_stream_generator.h",
     "utils.cc",
     "utils.h",
   ]
-  sources += arkweb_components_subresource_filter_content_shared_browser
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   public_deps = [
     "//base",
@@ -41,10 +44,6 @@ static_library("browser") {
     "//third_party/protobuf:protobuf_lite",
     "//ui/base",
   ]
-
-  if (arkweb_adblock) {
-    sources += arkweb_page_load_statistics_sources
-  }
 }
 
 static_library("test_support") {

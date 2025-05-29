@@ -4,6 +4,7 @@
 
 #include "media/capture/video/video_capture_metrics.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/containers/flat_set.h"
@@ -12,7 +13,6 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "ui/gfx/geometry/size.h"
-#include "arkweb/build/features/features.h"
 
 namespace {
 
@@ -168,11 +168,11 @@ void LogCaptureDeviceMetrics(
     for (const auto& format : device.supported_formats) {
 #if BUILDFLAG(ARKWEB_WEBRTC)
       LOG(DEBUG) << "Device supports "
-                 << media::VideoPixelFormatToString(format.pixel_format) << " at "
-                 << format.frame_size.ToString() << " ("
+                 << media::VideoPixelFormatToString(format.pixel_format)
+                 << " at " << format.frame_size.ToString() << " ("
                  << static_cast<int>(ResolutionNameFromSize(format.frame_size))
                  << ")";
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
       media::VideoPixelFormat pixel_format = format.pixel_format;
       bool inserted = supported_pixel_formats.insert(pixel_format).second;
       if (inserted) {

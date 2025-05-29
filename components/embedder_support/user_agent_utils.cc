@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/debug/stack_trace.h"
 #include "base/feature_list.h"
@@ -34,7 +35,6 @@
 #include "net/http/http_util.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -349,14 +349,10 @@ std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
 #if BUILDFLAG(ENABLE_CEF)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  if (command_line != nullptr) {
-    if (command_line->HasSwitch(switches::kUserAgentProductAndVersion)) {
-      return command_line->GetSwitchValueASCII(
-          switches::kUserAgentProductAndVersion);
-    }
+  if (command_line->HasSwitch(switches::kUserAgentProductAndVersion)) {
+    return command_line->GetSwitchValueASCII(
+        switches::kUserAgentProductAndVersion);
   }
-#endif
 #endif
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -375,17 +371,13 @@ std::string GetProductAndVersion(
 
 std::optional<std::string> GetUserAgentFromCommandLine() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  if (command_line != nullptr) {
-    if (command_line->HasSwitch(kUserAgent)) {
-      std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
-      if (net::HttpUtil::IsValidHeaderValue(ua)) {
-        return ua;
-      }
-      LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
+  if (command_line->HasSwitch(kUserAgent)) {
+    std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
+    if (net::HttpUtil::IsValidHeaderValue(ua)) {
+      return ua;
     }
+    LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
   }
-#endif
   return std::nullopt;
 }
 

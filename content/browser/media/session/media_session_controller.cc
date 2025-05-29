@@ -35,9 +35,6 @@ void MediaSessionController::SetMetadata(
     bool has_audio,
     bool has_video,
     media::MediaContentType media_content_type) {
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  media_session_->SetMediaContentType(media_content_type);
-#endif
   has_audio_ = has_audio;
   has_video_ = has_video;
   media_content_type_ = media_content_type;
@@ -71,6 +68,23 @@ void MediaSessionController::OnResume(int player_id) {
       ->GetMediaPlayerRemote(id_)
       ->RequestPlay();
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+void MediaSessionController::OnSetHtmlPlayEnabled(int player_id, bool enabled) {
+  DCHECK_EQ(player_id_, player_id);
+  if (!web_contents_) {
+    return;
+  }
+  auto web_contents_observer = web_contents_->media_web_contents_observer();
+  if (!web_contents_observer) {
+    return;
+  }
+  if (web_contents_observer->IsPlayerIdInMediaPlayerRemotesMap(id_)) {
+    web_contents_observer->GetMediaPlayerRemote(id_)->SetHtmlPlayEnabled(
+        enabled);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionController::OnSeekForward(int player_id,
                                            base::TimeDelta seek_time) {
@@ -209,10 +223,10 @@ void MediaSessionController::OnPlaybackPaused(bool reached_end_of_stream) {
     AddOrRemovePlayer();
   }
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-    if (media_session_) {
-      media_session_->SetEndOfMedia(reached_end_of_stream);
-    }
-#endif // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (media_session_) {
+    media_session_->SetEndOfMedia(reached_end_of_stream);
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // We check for suspension here since the renderer may issue its own pause
   // in response to or while a pause from the browser is in flight.
@@ -228,6 +242,12 @@ void MediaSessionController::PictureInPictureStateChanged(
 void MediaSessionController::WebContentsMutedStateChanged(bool muted) {
   AddOrRemovePlayer();
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+void MediaSessionController::SetHtmlPlayEnabled(bool enabled) {
+  OnSetHtmlPlayEnabled(player_id_, enabled);
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
 void MediaSessionController::OnMediaPositionStateChanged(
     const media_session::MediaPosition& position) {
@@ -277,10 +297,11 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (media_content_type_ == media::MediaContentType::kTransient) {
-    LOG(INFO) << __func__<< ", media_content_type_: media::MediaContentType::Transient";
+    LOG(INFO) << __func__
+              << ", media_content_type_: media::MediaContentType::Transient";
     return false;
   }
-#endif // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
   // If the media content has an associated Remote Playback session started, we
   // should request audio focus regardless of whether the tab is muted.
@@ -298,9 +319,7 @@ bool MediaSessionController::IsMediaSessionNeeded() const {
 
 bool MediaSessionController::AddOrRemovePlayer() {
   const bool needs_session = IsMediaSessionNeeded();
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  AsMediaSessionControllerExt()->SetSessionStateIfNeed(needs_session);
-#endif // ARKWEB_MEDIA_POLICY
+
   if (needs_session) {
     // Attempt to add a session even if we already have one.  MediaSession
     // expects AddPlayer() to be called after OnPlaybackPaused() to reactivate

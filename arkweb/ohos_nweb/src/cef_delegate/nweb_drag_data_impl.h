@@ -18,7 +18,6 @@
 
 #include <vector>
 
-#include "base/memory/raw_ptr.h"
 #include "cef/include/cef_drag_data.h"
 #include "ohos_nweb/include/nweb_drag_data.h"
 #include "third_party/skia/include/core/SkBitmap.h"
@@ -92,7 +91,7 @@ class NWebDragDataImpl : public NWebDragData {
   void FreePixlMapData();
 
  private:
-  raw_ptr<void> image_buffer_ = nullptr;
+  void* image_buffer_ = nullptr;
   void GenerateOhosDragBitmapFromOrigin(const SkBitmap& in_bitmap,
                                         SkBitmap& out_bitmap,
                                         int& width,
@@ -122,7 +121,6 @@ class NWebDragDataImpl : public NWebDragData {
   void AddLeftTopCorner(SkPath& origin_path, int pos_x, int pos_y, int radius);
   SkPath GetShadowPath(int width, int height);
   float ToOhCoordinate(int origin);
-  float GetClippedRectRoundRatio(const float& handle_half_height);
   CefRefPtr<CefDragData> drag_data_ = nullptr;
   CefPoint drag_image_origin_point_;
   CefPoint start_edge_top_;

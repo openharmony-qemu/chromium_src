@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -55,7 +56,6 @@
 #include "third_party/webrtc/modules/desktop_capture/fake_desktop_capturer.h"
 #include "third_party/webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
 #include "ui/gfx/icc_profile.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -536,7 +536,7 @@ void DesktopCaptureDevice::Core::OnCaptureResult(
       resolution_chooser_.capture_size().height() & ~1);
   LOG(DEBUG) << "screen capture output_size: " << output_size.width() << ", "
              << output_size.height();
-      
+
   if (output_size.is_empty()) {
     // Even RESOLUTION_POLICY_ANY_WITHIN_LIMIT is used, a non-empty size should
     // be guaranteed.
@@ -648,9 +648,9 @@ void DesktopCaptureDevice::Core::OnCaptureResult(
           requested_frame_rate_,
 #if BUILDFLAG(ARKWEB_WEBRTC)
           media::PIXEL_FORMAT_ABGR),
-#else 
+#else
           media::PIXEL_FORMAT_ARGB),
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
       frame_color_space, 0 /* clockwise_rotation */, false /* flip_y */, now,
       now - first_ref_time_, std::nullopt);
 
@@ -756,13 +756,8 @@ base::TimeTicks DesktopCaptureDevice::Core::NowTicks() const {
 }
 
 // static
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
-    const DesktopMediaID& source, bool is_picker_show, int nweb_id) {
-#else
 std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
     const DesktopMediaID& source) {
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   VLOG(1) << __func__ << "(source=" << source.ToString() << ")";
   auto options = desktop_capture::CreateDesktopCaptureOptions();
   std::unique_ptr<webrtc::DesktopCapturer> capturer;
@@ -825,10 +820,6 @@ std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
 
   switch (source.type) {
     case DesktopMediaID::TYPE_SCREEN: {
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-      options.set_picker_show(is_picker_show);
-      options.set_nweb_id(nweb_id);
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
       std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
           webrtc::DesktopCapturer::CreateScreenCapturer(options));
       if (screen_capturer && screen_capturer->SelectSource(source.id)) {

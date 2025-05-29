@@ -14,6 +14,7 @@
 #include "components/web_cache/public/mojom/web_cache.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace web_cache {
 
@@ -48,11 +49,12 @@ class WebCacheImpl : public mojom::WebCache {
 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
   // mojom::WebCache methods:
   // Add resource into MemoryCache
-  void AddResourceToCache(const std::string& url,
-                          const std::string& origin,
-                          const std::vector<uint8_t>& resource,
-                          const base::flat_map<std::string, std::string>& response_headers,
-                          const uint64_t type) override;
+  void AddResourceToCache(
+      const std::string& url,
+      const std::string& origin,
+      const std::vector<uint8_t>& resource,
+      const base::flat_map<std::string, std::string>& response_headers,
+      const uint64_t type) override;
 #endif
 
   // Records status regarding the sequence of navigation event and

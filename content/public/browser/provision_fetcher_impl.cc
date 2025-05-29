@@ -40,20 +40,6 @@ void ProvisionFetcherImpl::Retrieve(const GURL& default_url,
                      weak_factory_.GetWeakPtr(), std::move(callback)));
 }
 
-#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
-void ProvisionFetcherImpl::RetrieveWiseplayLicense(
-    const GURL& default_url,
-    const std::string& request_data,
-    RetrieveCallback callback) {
-  if (provision_fetcher_) {
-    provision_fetcher_->RetrieveWiseplayLicense(
-        default_url, request_data,
-        base::BindOnce(&ProvisionFetcherImpl::OnResponse,
-                       weak_factory_.GetWeakPtr(), std::move(callback)));
-  }
-}
-#endif
-
 void ProvisionFetcherImpl::OnResponse(RetrieveCallback callback,
                                       bool success,
                                       const std::string& response) {

@@ -100,6 +100,10 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
     : layer_id_(id),
       layer_tree_impl_(tree_impl),
       will_always_push_properties_(will_always_push_properties),
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      may_contain_native_(false),
+      native_embed_id_(false),
+#endif
       transform_tree_index_(kInvalidPropertyNodeId),
       effect_tree_index_(kInvalidPropertyNodeId),
       clip_tree_index_(kInvalidPropertyNodeId),
@@ -109,8 +113,6 @@ LayerImpl::LayerImpl(LayerTreeImpl* tree_impl,
 
   DCHECK(layer_tree_impl_);
   layer_tree_impl_->RegisterLayer(this);
-
-  layer_impl_utils_ = std::make_unique<LayerImplUtils>(this);
 
   SetNeedsPushProperties();
 }
@@ -395,7 +397,10 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   layer->clip_tree_index_ = clip_tree_index_;
   layer->scroll_tree_index_ = scroll_tree_index_;
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  layer_impl_utils_->LayerImplPushPropertiesTo(layer);
+  layer->may_contain_native_ = may_contain_native_;
+  layer->native_embed_id_ = native_embed_id_;
+  layer->SetNativeRect(native_rect_);
+  layer->SetInitScale(init_scale_);
 #endif
   if (layer_property_changed_not_from_property_trees_ ||
       layer_property_changed_from_property_trees_)
@@ -421,10 +426,7 @@ void LayerImpl::PushPropertiesTo(LayerImpl* layer) {
   // Reset any state that should be cleared for the next update.
   ResetChangeTracking();
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  layer->layer_impl_utils()->SetShouldInterceptTouchEvent(
-      layer_impl_utils_->ShouldInterceptTouchEvent());
-#endif
+  layer->SetShouldInterceptTouchEvent(ShouldInterceptTouchEvent());
 
   if (layer_tree_impl()->settings().UseLayerContextForDisplay()) {
     // Ensure updates also propagate to the display tree on its next update.
@@ -1010,6 +1012,51 @@ int LayerImpl::CalculateJitter() {
   }
   return jitter;
 }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+gfx::RectF LayerImpl::NativeRect() const {
+  if (!may_contain_native()) {
+    return native_rect_;
+  }
+
+  auto viewport_bounds_delta = gfx::ToCeiledVector2d(
+      GetPropertyTrees()->inner_viewport_scroll_bounds_delta());
+  return gfx::RectF(native_rect_.x(), native_rect_.y(),
+                    native_rect_.width() + viewport_bounds_delta.x(),
+                    native_rect_.height() + viewport_bounds_delta.y());
+}
+
+void LayerImpl::SetNativeRect(const gfx::RectF& rect) {
+  if (native_rect_ == rect) {
+    return;
+  }
+  native_rect_ = rect;
+  if (init_scale_ == -1.0f) {
+    init_scale_ = GetIdealContentsScaleKey();
+  }
+
+  NoteLayerPropertyChanged();
+}
+
+void LayerImpl::SetInitScale(float scale) {
+  if (init_scale_ == scale) {
+    return;
+  }
+  init_scale_ = scale;
+}
+
+gfx::RectF LayerImpl::GetNativeRect() {
+  if (!may_contain_native()) {
+    return native_rect_;
+  }
+  gfx::Transform transform = ScreenSpaceTransform();
+  gfx::RectF rf = NativeRect();
+  if (rf.IsEmpty()) {
+    rf.set_width(bounds().width());
+    rf.set_height(bounds().height());
+  }
+  return transform.MapRect(rf);
+}
+#endif
 
 std::string LayerImpl::DebugName() const {
   return debug_info_ ? debug_info_->name : "";
@@ -1022,6 +1069,14 @@ gfx::ContentColorUsage LayerImpl::GetContentColorUsage() const {
 viz::ViewTransitionElementResourceId LayerImpl::ViewTransitionResourceId()
     const {
   return viz::ViewTransitionElementResourceId();
+}
+
+void LayerImpl::SetShouldInterceptTouchEvent(bool intercept) {
+  should_intercept_touch_event_ = intercept;
+}
+
+bool LayerImpl::ShouldInterceptTouchEvent() const {
+  return should_intercept_touch_event_;
 }
 
 }  // namespace cc

@@ -42,8 +42,9 @@ TEST_F(GLOOBAttribTest, DrawUsingOOBMatrixAttrib) {
   }
 
 #if BUILDFLAG(IS_OHOS)
-  // TODO: ohos cannot use vulkan so that cannot enable use_passthrough_cmd_decoder
-  // mac/linux/windows both enable use_passthrough_cmd_decoder,so this test direct return.
+  // TODO: ohos cannot use vulkan so that cannot enable
+  // use_passthrough_cmd_decoder mac/linux/windows both enable
+  // use_passthrough_cmd_decoder,so this test direct return.
   return;
 #else
   const char kVertexShader[] =

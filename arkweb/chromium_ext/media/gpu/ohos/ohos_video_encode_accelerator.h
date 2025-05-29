@@ -77,6 +77,7 @@ class MEDIA_GPU_EXPORT OHOSVideoEncodeAccelerator
 
   SEQUENCE_CHECKER(sequence_checker_);
 
+  std::unique_ptr<base::WeakPtrFactory<Client>> client_ptr_factory_;
   std::unique_ptr<OHOSMediaCodecBridge> media_codec_;
   using PendingFrames =
       base::queue<std::tuple<scoped_refptr<VideoFrame>, bool, base::Time>>;
@@ -98,7 +99,6 @@ class MEDIA_GPU_EXPORT OHOSVideoEncodeAccelerator
   // True if there is encoder error.
   bool error_occurred_ = false;
   base::TimeDelta frame_timestamp_last_;
-  std::unique_ptr<base::WeakPtrFactory<Client>> client_ptr_factory_;
 };
 
 }  // namespace media

@@ -176,16 +176,18 @@ void ShellBrowserMainParts::ToolkitInitialized() {
 #if BUILDFLAG(IS_LINUX)
   ui::LinuxUi::SetInstance(ui::GetDefaultLinuxUi());
 #elif BUILDFLAG(IS_OHOS)
-  std::shared_ptr<ohos::adapter::native_theme::ThemeSourceEventCallback> theme_source_event_callback =
-    std::make_shared<ui::ThemeSourceEventCallbackImpl>();
+  std::shared_ptr<ohos::adapter::native_theme::ThemeSourceEventCallback>
+      theme_source_event_callback =
+          std::make_shared<ui::ThemeSourceEventCallbackImpl>();
   if (!theme_source_event_callback) {
     return;
   }
   ohos::adapter::native_theme::NativeThemeAdapter::GetInstance()
       .RegisterThemeSourceEvent(theme_source_event_callback);
   ohos::adapter::native_theme::NativeThemeAdapter::GetInstance()
-      .NotifyThemeSourceEvent(ohos::adapter::native_theme::NativeThemeAdapter
-        ::GetInstance().GetSystemThemeSource());
+      .NotifyThemeSourceEvent(
+          ohos::adapter::native_theme::NativeThemeAdapter ::GetInstance()
+              .GetSystemThemeSource());
 #endif
 }
 

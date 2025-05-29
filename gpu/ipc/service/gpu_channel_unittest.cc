@@ -2,12 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include <cstddef>
+
+#include "command_buffer/service/ohos/native_image_texture_owner.h"
+#define private public
+#include "gpu/ipc/service/gpu_channel.cc"
 #include "gpu/ipc/service/gpu_channel.h"
+#undef private
+#else
+#include "gpu/ipc/service/gpu_channel.h"
+#endif  // ARKWEB_UNITTESTS
 
 #include <stdint.h>
 
 #include "base/run_loop.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define protected public
+#endif  // ARKWEB_UNITTESTS
+#include "base/test/bind.h"
 #include "base/test/test_simple_task_runner.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef protected
+#endif  // ARKWEB_UNITTESTS
 #include "build/build_config.h"
 #include "gpu/ipc/common/command_buffer_id.h"
 #include "gpu/ipc/common/gpu_channel.mojom.h"
@@ -255,8 +272,9 @@ TEST_F(GpuChannelExitForContextLostTest,
   base::RunLoop().RunUntilIdle();
 
   // If the channel is destroyed, then skip the test.
-  if (!channel_manager()->LookupChannel(kClientId))
+  if (!channel_manager()->LookupChannel(kClientId)) {
     return;
+  }
 
   // Try to create a context.
   int32_t kRouteId =
@@ -307,5 +325,196 @@ TEST_F(GpuChannelExitForContextLostTest,
   EXPECT_EQ(result, gpu::ContextResult::kTransientFailure);
   EXPECT_FALSE(channel->LookupCommandBuffer(kRouteId));
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+TEST_F(GpuChannelTest, ExecuteDeferredRequest1) {
+  mojom::DeferredRequestParamsPtr param;
+  auto params = mojom::DeferredRequestParamsPtr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  param.ptr_ = nullptr;
+  channel->ExecuteDeferredRequest(std::move(param));
+  EXPECT_FALSE(params.get());
+}
+
+TEST_F(GpuChannelTest, ExecuteDeferredRequest2) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  params->tag_ = mojom::DeferredRequestParams::Tag::kDestroyNativeTexture;
+  channel->ExecuteDeferredRequest(std::move(params));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("Trying to destroy a non-existent native texture"),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, CreateNativeTexture1) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int result = channel->CreateNativeTexture(1, std::move(receiver));
+  EXPECT_NE(result, -1);
+}
+
+TEST_F(GpuChannelTest, CreateNativeTexture2) {
+  testing::internal::CaptureStderr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  channel->CreateNativeTexture(1, std::move(receiver));
+  channel->CreateNativeTexture(1, std::move(receiver));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("[NativeEmbed] Trying to create a StreamTexture "
+                            "with an existing native_id."),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, DestroyNativeTexture1) {
+  testing::internal::CaptureStderr();
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  int32_t native_id = 10;
+  channel->DestroyNativeTexture(native_id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(
+      log_output.find(
+          "[NativeEmbed] Trying to destroy a non-existent native texture."),
+      std::string::npos);
+}
+
+TEST_F(GpuChannelTest, DestroyNativeTexture2) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  int32_t native_id = 1;
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  channel->CreateNativeTexture(native_id, std::move(receiver));
+  channel->DestroyNativeTexture(native_id);
+  auto found = channel->native_textures_.find(native_id);
+  EXPECT_TRUE(found == channel->native_textures_.end());
+}
+
+TEST_F(GpuChannelTest, ExecuteDeferredRequest3) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  uint32_t num = 5;
+  params->tag_ = (mojom::DeferredRequestParams::Tag)num;
+  channel->ExecuteDeferredRequest(std::move(params));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("Trying to destroy a non-existent native texture"),
+            std::string::npos);
+}
+
+TEST_F(GpuChannelTest, TryCreateNativeTexture1) {
+  base::WeakPtr<GpuChannel> channel;
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int32_t result = TryCreateNativeTexture(channel, 1, std::move(receiver));
+  EXPECT_EQ(result, -1);
+}
+
+TEST_F(GpuChannelTest, TryCreateNativeTexture2) {
+  int32_t kClientId = 1;
+  GpuChannel* channel = CreateChannel(kClientId, false);
+  base::WeakPtr<GpuChannel> channell = channel->AsWeakPtr();
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  int32_t result = TryCreateNativeTexture(channell, 1, std::move(receiver));
+  EXPECT_NE(result, -1);
+}
+
+TEST_F(GpuChannelTest, FlushDeferredRequests1) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  std::vector<mojom::DeferredRequestPtr> requests;
+  std::vector<SyncToken> sync_token_fences;
+  params->tag_ = mojom::DeferredRequestParams::Tag::kDestroyNativeTexture;
+  requests.push_back(mojom::DeferredRequest::New(std::move(params),
+                                                 std::move(sync_token_fences)));
+  gpu_filter.FlushDeferredRequests(std::move(requests));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(log_output.find("Trying to destroy a non-existent nativetexture"),
+            std::string::npos);
+  delete scheduler;
+}
+
+TEST_F(GpuChannelTest, FlushDeferredRequests2) {
+  testing::internal::CaptureStderr();
+  auto command_buffer_request = mojom::DeferredCommandBufferRequest::New();
+  auto params = mojom::DeferredRequestParams::NewCommandBufferRequest(
+      std::move(command_buffer_request));
+  params->set_destroy_native_texture(1);
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  std::vector<mojom::DeferredRequestPtr> requests;
+  std::vector<SyncToken> sync_token_fences;
+  uint32_t tag = 5;
+  params->tag_ = (mojom::DeferredRequestParams::Tag)tag;
+  requests.push_back(mojom::DeferredRequest::New(std::move(params),
+                                                 std::move(sync_token_fences)));
+  gpu_filter.FlushDeferredRequests(std::move(requests));
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_TRUE(requests.empty());
+  delete scheduler;
+}
+
+TEST_F(GpuChannelTest, CreateNativeTextureF2) {
+  int32_t kClientId = 1;
+  bool is_gpu_host = true;
+  GpuChannel* channel = CreateChannel(kClientId, is_gpu_host);
+  const base::UnguessableToken channel_token = base::UnguessableToken::Create();
+  const GpuPreferences gpu_preferences;
+  Scheduler* scheduler = new Scheduler(new SyncPointManager(), gpu_preferences);
+  ImageDecodeAcceleratorWorker* image_decode_accelerator_worker = nullptr;
+  scoped_refptr<base::SingleThreadTaskRunner> main_task_runner(
+      new base::TestSimpleTaskRunner());
+  GpuChannelMessageFilter gpu_filter(channel, channel_token, scheduler,
+                                     image_decode_accelerator_worker,
+                                     main_task_runner);
+  mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver;
+  gpu_filter.CreateNativeTexture(
+      kClientId, std::move(receiver),
+      base::BindLambdaForTesting([](int32_t value) {}));
+  EXPECT_TRUE(gpu_filter.main_task_runner_);
+}
+#endif  // ARKWEB_UNITTESTS
 
 }  // namespace gpu

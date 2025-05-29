@@ -1,4 +1,4 @@
-// Copyright 2024 The Chromium Authors
+// Copyright 2024 The Chromium Authorsrender_input_rout
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "build/build_config.h"
 #include "components/input/input_router_client.h"
@@ -60,9 +61,9 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouterClient {
       ) = 0;
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+  virtual void DynamicFrameLossEvent(const std::string& sceneId,
+                                     bool isStart) = 0;
 #endif
-
 };
 
 }  // namespace input

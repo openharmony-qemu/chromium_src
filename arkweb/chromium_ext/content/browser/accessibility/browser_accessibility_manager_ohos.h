@@ -5,8 +5,6 @@
 #ifndef CONTENT_BROWSER_ACCESSIBILITY_BROWSER_ACCESSIBILITY_MANAGER_OHOS_H_
 #define CONTENT_BROWSER_ACCESSIBILITY_BROWSER_ACCESSIBILITY_MANAGER_OHOS_H_
 
-#include <unordered_set>
-
 #include "absl/types/optional.h"
 #include "browser_accessibility_ohos.h"
 #include "content/common/content_export.h"
@@ -14,42 +12,14 @@
 #include "ui/accessibility/platform/ax_platform_tree_manager_delegate.h"
 #include "ui/accessibility/platform/browser_accessibility.h"
 #include "ui/accessibility/platform/browser_accessibility_manager.h"
-#include "ui/accessibility/platform/one_shot_accessibility_tree_search.h"
-
 #if false
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #endif
+
 namespace ui {
-
-class BrowserAccessibility;
-class BrowserAccessibilityManagerOHOS;
-class BrowserAccessibilityOHOS;
-class WebContentsImpl;
-
-class AccessibilityEventDispatcher {
-public:
-    explicit AccessibilityEventDispatcher(const std::unordered_map<int32_t, int32_t> &eventThrottleDelays,
-                                          const std::unordered_set<int32_t> &viewIndependentEvents,
-                                          BrowserAccessibilityManagerOHOS *manager)
-        : eventThrottleDelays_(std::move(eventThrottleDelays)),
-          viewIndependentEvents_(std::move(viewIndependentEvents)),
-          manager_(manager)
-    {
-    }
-    void EnqueueEvent(int64_t accessibilityId, int32_t eventType);
-
-private:
-    int64_t Uuid(int64_t accessibilityId, int32_t eventType);
-    void RunTask(int64_t accessibilityId, int32_t eventType, int64_t uuid);
-
-    std::unordered_map<int32_t, int32_t> eventThrottleDelays_;
-    std::unordered_set<int32_t> viewIndependentEvents_;
-    BrowserAccessibilityManagerOHOS *manager_;
-    std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
-    std::unordered_map<int64_t, base::DelayedTaskHandle> pendingEvents_;
-};
-
 // Manages a tree of BrowserAccessibility objects.
+class WebContentsImpl;
+class BrowserAccessibilityOHOS;
 class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
     : public BrowserAccessibilityManager {
  public:
@@ -68,7 +38,7 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   ~BrowserAccessibilityManagerOHOS() = default;
 
-     void FireAriaNotificationEvent(
+  void FireAriaNotificationEvent(
       BrowserAccessibility* node,
       const std::string& announcement,
       const std::string& notification_id,
@@ -94,43 +64,16 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   bool MoveAccessibilityFocusToId(int64_t newAccessibilityFocusId);
 
   void SendAccessibilityEvent(int64_t accessibilityId,
-                              OHOS::NWeb::AccessibilityEventType eventType,
-                              const std::string& argument = "");
-
-  bool DispatchEvent(int64_t accessibilityId,
-                     int32_t eventType,
-                     const std::string& argument = "");
+                              OHOS::NWeb::AccessibilityEventType eventType);
 
   void OnHoverEvent(const gfx::PointF& point);
 
   void FireGeneratedEvent(AXEventGenerator::Event event_type,
                           const AXNode* node) override;
+
   void Copy();
   void Paste();
   void Cut();
-
-  int64_t GetRootAccessibilityId() const;
-
-  bool JumpToElementType(int64_t accessibility_id,
-                         const std::string& element_type,
-                         bool forwards,
-                         bool can_wrap);
-
-  AXNode* RetargetForEvents(AXNode* node,
-                                RetargetEventType type) const override;
-
-  void ScrollToMakeNodeVisible(int64_t accessibility_id);
-
-  int64_t FindElementType(int64_t start_id,
-                          const std::string& element_type,
-                          bool forwards,
-                          bool can_wrap,
-                          bool use_default_predicate);
-
-  void FireLocationChanged(BrowserAccessibility* node);
-
-  void SendLocationChangeEvents(
-       const std::vector<AXLocationChange>& changes) override;
 
  private:
   void HandleHover(int64_t accessibilityId);
@@ -144,39 +87,22 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
 
   void HandleContentChanged(int64_t accessibilityId);
 
-  void HandleScrollPositionChanged(int64_t accessibilityId);
+  int64_t GetRootAccessibilityId() const;
 
-  void HandleDialogModalOpened(int64_t accessibiltyId);
+  bool IsIgnoredEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
+                      const int64_t& accessibilityId);
 
-  void SendDelayedWindowContentChangedEvent();
-
-  void InitSearchKeyToPredicateMapIfNeeded();
-
-  void AddToPredicateMap(const char* search_key_ascii,
-                       AccessibilityMatchPredicate predicate);
-
-  AccessibilityMatchPredicate PredicateForSearchKey(const std::u16string& element_type);
-
-  static bool AllInterestingNodesPredicate(BrowserAccessibility* start,
-    BrowserAccessibility* node);
-
-  // AXTreeObserver overrides.
-  void OnAtomicUpdateFinished(
-      AXTree* tree,
-      bool root_changed,
-      const std::vector<AXTreeObserver::Change>& changes) override;
-
-  void HandleNavigate(int64_t newRootId);
-
-  void InitializeAccessibilityEventDispatcher();
+  bool IsFrequentlyEvent(std::map<int64_t, int64_t>& lastEventFiredTimes,
+                         int64_t intervalMs,
+                         const int64_t& accessibilityId);
 
   int64_t lastHoverId_ = -1;
 
   int64_t accessibilityFocusId_ = -1;
 
-  int32_t content_changed_events_ = 0;
-
-  std::unique_ptr<AccessibilityEventDispatcher> eventDispatcher_ = nullptr;
+  std::map<int64_t, int64_t> lastScrollEventFiredTimes_;
+  std::map<int64_t, int64_t> lastContentUpdateEventFiredTimes_;
+  std::map<int64_t, int64_t> lastHoverEnterEventFiredTimes_;
 };
 }  // namespace ui
 

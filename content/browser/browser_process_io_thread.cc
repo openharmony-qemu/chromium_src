@@ -33,7 +33,7 @@
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
-using namespace OHOS::NWeb;
+
 namespace content {
 
 BrowserProcessIOThread::BrowserProcessIOThread()
@@ -44,6 +44,7 @@ BrowserProcessIOThread::BrowserProcessIOThread()
 
 BrowserProcessIOThread::~BrowserProcessIOThread() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
       ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
       GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
@@ -89,6 +90,7 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  using namespace OHOS::NWeb;
   ResSchedClientAdapter::ReportKeyThread(
       ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
       GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);

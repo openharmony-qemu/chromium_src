@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//services/screen_ai/buildflags/features.gni")

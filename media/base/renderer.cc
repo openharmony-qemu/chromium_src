@@ -33,7 +33,7 @@ std::string GetRendererName(RendererType renderer_type) {
       return "EmbedderDefined";
     case RendererType::kTest:
       return "Media Renderer Implementation For Testing";
-#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_MEDIA) || BUILDFLAG(ARKWEB_MEDIA_HLS)
     case RendererType::kNative:
       return "Native";
     case RendererType::kOHOSMediaPlayer:
@@ -42,13 +42,23 @@ std::string GetRendererName(RendererType renderer_type) {
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     case RendererType::kOHOSCustomMediaPlayer:
       return "OHOSCustomMediaPlayerRednerer";
-#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#endif  // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   }
 }
 
 Renderer::Renderer() = default;
 
 Renderer::~Renderer() = default;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void Renderer::Initialize(CreateTextureCB create_texture_cb,
+                          DestroyTextureCB destroy_texture_cb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void Renderer::SetSurfaceId(int surface_id, const gfx::Rect& rect) {}
+void Renderer::SetMediaPlayerState(bool is_suspend, int suspend_type) {}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 void Renderer::SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) {
   DLOG(WARNING) << "CdmContext is not supported.";

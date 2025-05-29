@@ -6,13 +6,11 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/threading/platform_thread.h"
 #include "base/trace_event/trace_event.h"
+#include "content/public/common/content_switches.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
-#include "arkweb/ohos_adapter_ndk/graphic_adapter/window_adapter_impl.h"
 
 namespace gl {
 
@@ -35,7 +33,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
       return scoped_refptr<NativeViewGLSurfaceEGLOhos>(
           new NativeViewGLSurfaceEGLOhos(
               display->GetAs<gl::GLDisplayEGL>(),
-              reinterpret_cast<EGLNativeWindowType>(surfaceInfo->window.get())));
+              reinterpret_cast<EGLNativeWindowType>(surfaceInfo->window)));
     }
   } else {
     LOG(INFO) << "CreateNativeViewGLSurfaceEGLOhos:: normal surface"
@@ -62,12 +60,7 @@ NativeViewGLSurfaceEGLOhos::CreateNativeViewGLSurfaceEGLOhos(
 NativeViewGLSurfaceEGLOhos::NativeViewGLSurfaceEGLOhos(
     GLDisplayEGL* display,
     EGLNativeWindowType window)
-    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window)
-{
-  OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
-      .AddNativeWindowRef(reinterpret_cast<void*>(window_));
-  LOG(INFO) << "NativeViewGLSurfaceEGLOhos add window ref.";
-}
+    : NativeViewGLSurfaceEGL(display, window, nullptr), window_(window) {}
 
 gfx::SwapResult NativeViewGLSurfaceEGLOhos::SwapBuffers(
     PresentationCallback callback,
@@ -127,7 +120,8 @@ bool NativeViewGLSurfaceEGLOhos::Resize(const gfx::Size& size,
   TRACE_EVENT0("gpu", "NativeViewGLSurfaceEGLOhos::Resize");
 #endif
   int32_t ret =
-      OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetWindowAdapterInstance()
           .NativeWindowSetBufferGeometry(reinterpret_cast<void*>(window_),
                                          size.width(), size.height());
   if (ret != OHOS::NWeb::GSErrorCode::GSERROR_OK) {
@@ -150,8 +144,9 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
     return true;
   }
 
-  // EglDestroy has notified the bufferqueue associated with the OHNativeWindow to clean cache
-  if (!allocated && NWebNativeWindowTracker::GetInstance()->CheckNativeWindow(reinterpret_cast<void*>(window_))) {
+  // EglDestroy has notified the bufferqueue associated with the OHNativeWindow
+  // to clean cache
+  if (!allocated) {
     if (NativeViewGLSurfaceEGL::Recreate()) {
       // Notify the bufferqueue associated with the OHNativeWindow to clean
       // cache
@@ -164,18 +159,4 @@ bool NativeViewGLSurfaceEGLOhos::SetBackbufferAllocation(bool allocated) {
 }
 #endif
 
-NativeViewGLSurfaceEGLOhos::~NativeViewGLSurfaceEGLOhos()
-{
-  Destroy();
-  OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
-      .NativeWindowUnRef(reinterpret_cast<void*>(window_));
-  LOG(INFO) << "~NativeViewGLSurfaceEGLOhos unref the window.";
-}
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb(bool isInnerWeb) {
-  LOG(INFO)<<"NativeViewGLSurfaceEGLOhos::SetNativeInnerWeb is "<<isInnerWeb;
-  isInnerWeb_ = isInnerWeb;
-}
-#endif
 }  // namespace gl

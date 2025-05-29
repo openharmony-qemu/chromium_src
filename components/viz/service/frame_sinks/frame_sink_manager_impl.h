@@ -14,6 +14,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
@@ -54,7 +55,6 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_video_capture.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/public/mojom/compositing/video_detector_observer.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -67,7 +67,6 @@ class InputManager;
 class OutputSurfaceProvider;
 class SharedBitmapManager;
 class SharedImageInterfaceProvider;
-class FrameSinkManagerImplUtils;
 struct VideoCaptureTarget;
 
 // FrameSinkManagerImpl manages BeginFrame hierarchy. This is the implementation
@@ -82,9 +81,6 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
       public SurfaceManagerDelegate,
       public HitTestDataProvider {
  public:
-  friend class FrameSinkManagerImplUtils;
-  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
-  
   struct VIZ_SERVICE_EXPORT InitParams {
     InitParams();
     explicit InitParams(
@@ -207,7 +203,7 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SendInternalBeginFrame(const FrameSinkId& id) override;
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void StartOverdrawTracking(const FrameSinkId& root_frame_sink_id,
                              base::TimeDelta bucket_size) override;
   void StopOverdrawTracking(const FrameSinkId& root_frame_sink_id,
@@ -396,18 +392,17 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 #if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
   void SetEnableLowerFrameRate(bool enabled,
                                const FrameSinkId& frame_sink_id) override;
-  void SetEnableHalfFrameRate(bool enabled,
-                               const FrameSinkId& frame_sink_id) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) override;
+  void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id,
+                            uint32_t client_id) override;
   void ResetVSyncFrequency(const FrameSinkId& frame_sink_id) override;
 #endif
 
-#if BUILDFLAG(ARKWEB_PIP)
-  void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override;
-#endif
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(const FrameSinkId& frame_sink_id);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
  private:
   friend class FrameSinkManagerTest;

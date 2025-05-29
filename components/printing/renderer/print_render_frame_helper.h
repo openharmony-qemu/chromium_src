@@ -438,7 +438,7 @@ class PrintRenderFrameHelper
 
 #if BUILDFLAG(ARKWEB_PRINT)
   bool CheckCancel();
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   // `settings` must be valid.
   void SetPrintPagesParams(const mojom::PrintPagesParams& settings);
@@ -651,8 +651,6 @@ class PrintRenderFrameHelper
 
   void SetupOnStopLoadingTimeout();
   void PrintRequestedPagesInternal(bool already_notified_frame);
-  bool PrintQuitLoop(blink::WebLocalFrame* web_frame);
-  void ArkWebPrintNode(const blink::WebNode& node);
 
   ScriptingThrottler scripting_throttler_;
 

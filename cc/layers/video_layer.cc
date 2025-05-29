@@ -14,6 +14,68 @@ scoped_refptr<VideoLayer> VideoLayer::Create(
   return base::WrapRefCounted(new VideoLayer(provider, transform));
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+scoped_refptr<VideoLayer> VideoLayer::Create(
+    VideoFrameProvider* provider,
+    media::VideoTransformation transform,
+    RectChangeCallback callback) {
+  return base::WrapRefCounted(
+      new VideoLayer(provider, transform, std::move(callback)));
+}
+
+scoped_refptr<VideoLayer> VideoLayer::Create(
+    VideoFrameProvider* provider,
+    media::VideoTransformation transform,
+    RectChangeCallback callback,
+    RectVisibilityChangeCallback visibilitycallback) {
+  return base::WrapRefCounted(new VideoLayer(
+      provider, transform, std::move(callback), std::move(visibilitycallback)));
+}
+
+VideoLayer::VideoLayer(VideoFrameProvider* provider,
+                       media::VideoTransformation transform,
+                       RectChangeCallback callback)
+    : provider_(provider),
+      transform_(transform),
+      rect_change_callback_(std::move(callback)) {
+  SetMayContainVideo(true);
+  DCHECK(provider_.Read(*this));
+}
+
+VideoLayer::VideoLayer(VideoFrameProvider* provider,
+                       media::VideoTransformation transform,
+                       RectChangeCallback callback,
+                       RectVisibilityChangeCallback visibilitycallback)
+    : provider_(provider),
+      transform_(transform),
+      rect_change_callback_(std::move(callback)),
+      rect_visibility_change_callback_(std::move(visibilitycallback)) {
+  SetMayContainVideo(true);
+  DCHECK(provider_.Read(*this));
+}
+
+void VideoLayer::OnLayerRectUpdate(const gfx::Rect& rect) {
+  if (!rect_change_callback_.is_null()) {
+    rect_change_callback_.Run(rect);
+  }
+}
+
+void VideoLayer::OnLayerRectVisibilityChange(bool visibility) {
+  if (!rect_visibility_change_callback_.is_null()) {
+    rect_visibility_change_callback_.Run(visibility);
+  }
+}
+
+void VideoLayer::ResetLayerRectCallback() {
+  if (!rect_change_callback_.is_null()) {
+    rect_change_callback_.Reset();
+  }
+  if (!rect_visibility_change_callback_.is_null()) {
+    rect_visibility_change_callback_.Reset();
+  }
+}
+#endif
+
 VideoLayer::VideoLayer(VideoFrameProvider* provider,
                        media::VideoTransformation transform)
     : provider_(provider), transform_(transform) {

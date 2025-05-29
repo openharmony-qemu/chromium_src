@@ -13,10 +13,4 @@ arkweb_gpu_command_buffer_service_shared_image_sources = [
 
     "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.cc",
     "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h",
-
-    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_util.cc",
-    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_util.h",
-
-    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_hw_video_native_buffer_image_representation.cc",
-    "//arkweb/chromium_ext/gpu/command_buffer/service/shared_image/skia_vk_hw_video_native_buffer_image_representation.h",
 ]

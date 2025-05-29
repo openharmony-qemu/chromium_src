@@ -11,14 +11,13 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "gpu/config/gpu_info.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_memory_buffer.h"
-
-#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #include "base/synchronization/waitable_event.h"
 #endif

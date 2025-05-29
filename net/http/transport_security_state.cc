@@ -65,6 +65,11 @@ const TransportSecurityStateSource* const kDefaultHSTSSource = &kHSTSSource;
 const TransportSecurityStateSource* const kDefaultHSTSSource = nullptr;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+const std::string_view kSha256Slash = "sha256/";
+const std::string_view kSha256SlashOhos = "sha256//";
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+
 const TransportSecurityStateSource* g_hsts_source = kDefaultHSTSSource;
 
 TransportSecurityState::HashedHost HashHost(
@@ -320,13 +325,48 @@ bool TransportSecurityState::ShouldUpgradeToSSL(
   return GetSSLUpgradeDecision(host, net_log) != SSLUpgradeDecision::kNoUpgrade;
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+TransportSecurityState::PKPStatus
+TransportSecurityState::CheckPublicKeyPinsOhos(
+    const HostPortPair& host_port_pair,
+    const HashValueVector& public_key_hashes) {
+  auto RootCertDataAdapter =
+      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetRootCertDataAdapter();
+  std::vector<std::string> pins;
+  if (!RootCertDataAdapter->GetPinSetForHostName(host_port_pair.host(), pins) ||
+      pins.empty()) {
+    return PKPStatus::OK;
+  }
+  for (auto& public_key_hash : public_key_hashes) {
+    std::string public_key_hash_string = public_key_hash.ToString();
+    if (!public_key_hash_string.starts_with(kSha256Slash)) {
+      continue;
+    }
+    std::string public_key_hash_string_code =
+        public_key_hash_string.substr(kSha256Slash.size());
+    auto it = find_if(pins.begin(), pins.end(),
+                      [&public_key_hash_string_code](const std::string& pin) {
+                        if (!pin.starts_with(kSha256SlashOhos)) {
+                          return false;
+                        }
+                        return public_key_hash_string_code ==
+                               pin.substr(kSha256SlashOhos.size());
+                      });
+    if (it != pins.end()) {
+      return PKPStatus::OK;
+    }
+  }
+  LOG(INFO) << "CheckPublicKeyPinsOhos ssl pinning PKPStatus::VIOLATED";
+  return PKPStatus::VIOLATED;
+}
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+
 TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     const HostPortPair& host_port_pair,
     bool is_issued_by_known_root,
     const HashValueVector& public_key_hashes) {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-  return AsArkWebTransportSecurityStateExt()->CheckPublicKeyPinsOhos(
-      host_port_pair, public_key_hashes);
+  return CheckPublicKeyPinsOhos(host_port_pair, public_key_hashes);
 #endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Perform pin validation only if the server actually has public key pins.
   if (!HasPublicKeyPins(host_port_pair.host())) {

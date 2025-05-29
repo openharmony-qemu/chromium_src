@@ -15,7 +15,6 @@
 
 #include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
 
-#include "base/auto_reset.h"
 #include "base/logging.h"
 #include "cc/trees/layer_tree_frame_sink.h"
 #include "cc/trees/layer_tree_frame_sink_client.h"
@@ -66,8 +65,7 @@ class SoftwareDisplayClientOhos : public viz::DisplayClient {
 
 class SoftwareOutputDeviceOhos : public viz::SoftwareOutputDevice {
  public:
-  SoftwareOutputDeviceOhos(raw_ptr<SkCanvas>* canvas) : canvas_(canvas) {}
-  SoftwareOutputDeviceOhos& operator=(raw_ptr<SkCanvas>* canvas) = delete;
+  SoftwareOutputDeviceOhos(SkCanvas** canvas) : canvas_(canvas) {}
   SoftwareOutputDeviceOhos(const SoftwareOutputDeviceOhos&) = delete;
   SoftwareOutputDeviceOhos& operator=(const SoftwareOutputDeviceOhos&) = delete;
 
@@ -81,7 +79,7 @@ class SoftwareOutputDeviceOhos : public viz::SoftwareOutputDevice {
   void EndPaint() override {}
 
  private:
-  raw_ptr<raw_ptr<SkCanvas>> canvas_;
+  SkCanvas** canvas_;
 };
 
 SoftwareCompositorRendererOhos::SoftwareCompositorRendererOhos(
@@ -165,7 +163,7 @@ bool SoftwareCompositorRendererOhos::DemandDrawSw(SkCanvas* canvas,
   LOG(INFO) << "SW render DemandDrawSw";
 
   in_software_draw_ = true;
-  base::AutoReset<raw_ptr<SkCanvas>> canvas_resetter(&current_sw_canvas_, canvas);
+  current_sw_canvas_ = canvas;
   size_ = gfx::ToRoundedSize(size);
 
   gfx::Transform offset_transform;

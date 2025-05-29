@@ -236,10 +236,6 @@ class HttpStreamFactory::Job
 
   NetErrorDetails* net_error_details() { return &net_error_details_; }
 
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
-#endif
-
  private:
   friend class test::HttpStreamFactoryJobPeer;
 
@@ -481,10 +477,6 @@ class HttpStreamFactory::Job
   ResolveErrorInfo resolve_error_info_;
 
   std::unique_ptr<SpdySessionPool::SpdySessionRequest> spdy_session_request_;
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  bool from_preload_ = false;
-#endif
 
   base::WeakPtrFactory<Job> ptr_factory_{this};
 };

@@ -49,18 +49,11 @@ class MEDIA_GPU_EXPORT CodecOutputBuffer {
 
   const gfx::ColorSpace& color_space() const { return color_space_; }
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  bool RenderVideoView() { return render_video_view_; }
-#endif // ARKWEB_VIDEO_ASSISTANT
-
  private:
   friend class CodecWrapperImpl;
   CodecOutputBuffer(scoped_refptr<CodecWrapperImpl> codec,
                     int64_t id,
                     const gfx::Size& size,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                    bool render_video_view,
-#endif // ARKWEB_VIDEO_ASSISTANT
                     const gfx::ColorSpace& color_space);
 
   scoped_refptr<CodecWrapperImpl> codec_;
@@ -68,9 +61,6 @@ class MEDIA_GPU_EXPORT CodecOutputBuffer {
   bool was_rendered_ = false;
   gfx::Size size_;
   base::OnceClosure render_cb_;
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  bool render_video_view_ = false;
-#endif // ARKWEB_VIDEO_ASSISTANT
   gfx::ColorSpace color_space_;
 };
 
@@ -102,13 +92,9 @@ class MEDIA_GPU_EXPORT CodecWrapper {
 
   bool SetSurface(scoped_refptr<CodecSurfaceBundle> surface_bundle);
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void SetVideoSurface(int32_t widget_id);
-#endif // ARKWEB_VIDEO_ASSISTANT
-
   scoped_refptr<CodecSurfaceBundle> SurfaceBundle();
 
-  enum class QueueStatus { kOk, kError, kTryAgainLater, kNoKey };
+  enum class QueueStatus { kOk, kError, kTryAgainLater };
   QueueStatus QueueInputBuffer(const DecoderBuffer& buffer);
 
   enum class DequeueStatus { kOk, kError, kTryAgainLater };
@@ -116,8 +102,6 @@ class MEDIA_GPU_EXPORT CodecWrapper {
       base::TimeDelta* presentation_time,
       bool* end_of_stream,
       std::unique_ptr<CodecOutputBuffer>* codec_buffer);
-
-  bool SetDecryptionConfig(void *session, bool isSecure);
 
  private:
   scoped_refptr<CodecWrapperImpl> impl_;

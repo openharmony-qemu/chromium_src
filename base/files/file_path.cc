@@ -8,16 +8,16 @@
 #endif
 
 #include "base/files/file_path.h"
-#include "arkweb/build/features/features.h"
 
 #include <string.h>
 
 #include <algorithm>
 #include <string_view>
 
-#include "base/logging.h"
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/files/safe_base_name.h"
+#include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/pickle.h"
 #include "base/ranges/algorithm.h"
@@ -1421,10 +1421,29 @@ bool FilePath::IsContentUri() const {
 #endif
 
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "arkweb/chromium_ext/base/files/file_path_ext.cc"
+bool FilePath::IsDataShareUri() const {
+  return StartsWith(path_, "datashare://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(path_, "dataability://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(path_, "file://media/",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(path_, "file://docs/",
+                    base::CompareCase::INSENSITIVE_ASCII);
+}
+
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-#include "arkweb/chromium_ext/base/files/file_path_sta_ext.cc"
+// static
+bool FilePath::IsDataShareUrl(const StringType& url) {
+  return StartsWith(url, "datashare://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "dataability://",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "file://media/",
+                    base::CompareCase::INSENSITIVE_ASCII) ||
+         StartsWith(url, "file://docs/", base::CompareCase::INSENSITIVE_ASCII);
+}
 #endif
 }  // namespace base

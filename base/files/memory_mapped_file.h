@@ -12,9 +12,6 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/base_export.h"
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#undef private
-#endif  // ARKWEB_UNITTESTS
 #include "base/containers/span.h"
 #include "base/files/file.h"
 #include "base/memory/raw_ptr_exclusion.h"
@@ -24,13 +21,10 @@
 #include "base/win/scoped_handle.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-#include "arkweb/chromium_ext/base/files/memory_mapped_file_ext.h"
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#define private public
-#endif  // ARKWEB_UNITTESTS
 
 namespace base {
 
@@ -132,7 +126,23 @@ class BASE_EXPORT MemoryMappedFile {
   // Is file_ a valid file handle that points to an open, memory mapped file?
   bool IsValid() const;
 
-#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+#if BUILDFLAG(IS_ARKWEB) && \
+    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  void SetDataAndLength(std::unique_ptr<uint8_t[]>& data, size_t length) {
+    if (IsValid() && !customizeData_) {
+      CloseHandles();
+    }
+    if (mapper_ == nullptr && data_ != nullptr) {
+      delete[] data_;
+      data_ = nullptr;
+    }
+    mapper_.reset();
+    customizeData_ = true;
+    data_ = data.release();
+    length_ = length;
+    bytes_ = span<uint8_t>(data.release(), length);
+  }
+
   void SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper);
 #endif
 
@@ -170,17 +180,16 @@ class BASE_EXPORT MemoryMappedFile {
   RAW_PTR_EXCLUSION span<uint8_t> bytes_;
 #if BUILDFLAG(IS_ARKWEB) && \
     (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-  base::MemoryMappedFileExt mapper_file_ext_;
+  bool customizeData_ = false;
+  std::shared_ptr<OHOS::NWeb::OhosFileMapper> mapper_;
+  raw_ptr<uint8_t, DanglingUntriaged | AllowPtrArithmetic> data_ = nullptr;
+  size_t length_ = 0;
 #endif
 
 #if BUILDFLAG(IS_WIN)
   win::ScopedHandle file_mapping_;
 #endif
 };
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#undef private
-#endif  // ARKWEB_UNITTESTS
 
 }  // namespace base
 

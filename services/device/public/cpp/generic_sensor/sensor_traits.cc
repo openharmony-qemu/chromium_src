@@ -47,6 +47,7 @@ double GetSensorMaxAllowedFrequency(SensorType type) {
   }
 #if BUILDFLAG(ARKWEB_SENSOR)
   NOTREACHED() << "Unknown sensor type " << type;
+  return SensorTraits<SensorType::kMaxValue>::kMaxAllowedFrequency;
 #endif
 }
 
@@ -88,6 +89,7 @@ double GetSensorDefaultFrequency(mojom::SensorType type) {
   }
 #if BUILDFLAG(ARKWEB_SENSOR)
   NOTREACHED() << "Unknown sensor type " << type;
+  return SensorTraits<SensorType::kMaxValue>::kDefaultFrequency;
 #endif
 }
 

@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_OPTIMIZATION_GUIDE_CORE_BASE_MODEL_EXECUTOR_H_
 #define COMPONENTS_OPTIMIZATION_GUIDE_CORE_BASE_MODEL_EXECUTOR_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/types/expected.h"
 #include "components/optimization_guide/core/base_model_executor_helpers.h"
@@ -13,7 +14,6 @@
 #include "components/optimization_guide/core/tflite_model_executor.h"
 #include "components/optimization_guide/core/tflite_op_resolver.h"
 #include "components/optimization_guide/machine_learning_tflite_buildflags.h"
-#include "arkweb/build/features/features.h"
 #include "third_party/tflite_support/src/tensorflow_lite_support/cc/task/core/base_task_api.h"
 
 namespace optimization_guide {

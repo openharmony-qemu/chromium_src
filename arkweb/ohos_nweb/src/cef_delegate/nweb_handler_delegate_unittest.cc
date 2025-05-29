@@ -20,13 +20,17 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "build/build_config.h"
 #include "cef_browser.h"
 #include "include/cef_base.h"
 #include "include/cef_browser.h"
 #include "nweb_file_selector_params_impl.h"
 #include "nweb_handler.h"
 #include "nweb_js_dialog_result_impl.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #define private public
 #include "nweb_handler_delegate.h"
@@ -47,8 +51,7 @@ class MockNWebInputMethodClient : public NWebInputMethodClient {
 
   void HideTextInput(
       uint32_t nweb_id = 0,
-      HideTextinputType hideType = HideTextinputType::FROM_KERNEL,
-      bool noNeedKeyboardByInput = false) override {}
+      HideTextinputType hideType = HideTextinputType::FROM_KERNEL) override {}
 
   void HideTextInputForce() override {}
 
@@ -142,10 +145,10 @@ class MockWebAppClientExtensionListener
   MOCK_METHOD3(OnSaveOrUpdatePassword, void(bool, const std::string&, int));
 };
 
-class MockCefBrowser : public ArkWebBrowserExt {
+class MockCefBrowser : public CefBrowser {
  public:
   bool IsValid() override { return false; }
-  MOCK_METHOD0(GetHost, CefRefPtr<ArkWebBrowserHostExt>());
+  MOCK_METHOD0(GetHost, CefRefPtr<CefBrowserHost>());
   bool CanGoBack() override { return false; }
   void GoBack() override {}
   bool CanGoForward() override { return false; }
@@ -160,12 +163,12 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool HasDocument() override { return false; }
   CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
   CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrameByIdentifier(const CefString& identifier) override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrameByName(const CefString& name) override {
+  CefRefPtr<CefFrame> GetFrame(int64 identifier) override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(const CefString& name) override {
     return nullptr;
   }
   size_t GetFrameCount() override { return 0; }
-  void GetFrameIdentifiers(std::vector<CefString>& identifiers) override {}
+  void GetFrameIdentifiers(std::vector<int64>& identifiers) override {}
   void GetFrameNames(std::vector<CefString>& names) override {}
   CefRefPtr<CefBrowserPermissionRequestDelegate> GetPermissionRequestDelegate()
       override {
@@ -182,8 +185,8 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool CanGoBackOrForward(int num_steps) override { return false; }
   void GoBackOrForward(int num_steps) override {}
   void DeleteHistory() override {}
-  void SelectAndCopy() {}
-  bool ShouldShowFreeCopy() { return false; }
+  void SelectAndCopy() override {}
+  bool ShouldShowFreeCopy() override { return false; }
   void PasswordSuggestionSelected(int list_index) override {}
   void UpdateBrowserControlsState(int constraints,
                                   int current,
@@ -199,7 +202,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
   bool GetForceEnableZoom() override { return false; }
   int GetNWebId() override { return 0; }
   void SetEnableBlankTargetPopupIntercept(
-      bool enableBlankTargetPopup) {}
+      bool enableBlankTargetPopup) override {}
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
   void SaveOrUpdatePassword(bool is_update) override {}
@@ -219,19 +222,6 @@ class MockCefBrowser : public ArkWebBrowserExt {
   }
   void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
 #endif  // BUILDFLAG(IS_OHOS)
-  bool NeedToFireBeforeUnloadOrUnloadEvents() override {}
-  void DispatchBeforeUnload() override {}
-  void ShowFreeCopyMenu() override {}
-  bool ShouldShowFreeCopyMenu() override {}
-  void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
-  int InsertBackForwardEntry(int index, const CefString& url) override {}
-  int UpdateNavigationEntryUrl(int index, const CefString& url) override {}
-  void ClearForwardList() override {}
-  void ExtensionSetTabId(int tab_id) override {}
-  int ExtensionGetTabId() const override {}
-  uint32_t GetAcceleratedWidget(bool isPopup) override {}
-  void SetAdBlockEnabledForSite(bool is_adblock_enabled,
-                                        int main_frame_tree_node_id) override {}
 };
 
 class NWebHandlerDelegateTest : public ::testing::Test {
@@ -249,6 +239,7 @@ class NWebHandlerDelegateTest : public ::testing::Test {
   CefKeyEvent event_;
   CefRefPtr<CefBrowser> browser_ = nullptr;
   CefEventHandle os_event_ = nullptr;
+  CefString url_;
   CefString message_text_;
   bool is_reload_ = false;
   bool suppress_message = true;
@@ -439,6 +430,17 @@ TEST_F(NWebHandlerDelegateTest, ShowPasswordDialog_TEST002) {
       .Times(1);
   delegate->ShowPasswordDialog(false, "http://example.com");
 }
+
+TEST_F(NWebHandlerDelegateTest, ShowPasswordDialog_TEST003) {
+  delegate->web_app_client_extension_listener_ = nullptr;
+  EXPECT_NO_THROW(delegate->ShowPasswordDialog(true, "http://example.com"));
+}
+
+TEST_F(NWebHandlerDelegateTest, ShowPasswordDialog_TEST004) {
+  delegate->web_app_client_extension_listener_->OnSaveOrUpdatePassword =
+      nullptr;
+  EXPECT_NO_THROW(delegate->ShowPasswordDialog(true, "http://example.com"));
+}
 #endif  // ARKWEB_EXT_PASSWORD
 
 #if BUILDFLAG(ARKWEB_FOCUS)
@@ -545,7 +547,7 @@ TEST_F(NWebHandlerDelegateTest, OnJSDialog_TEST005) {
 
 TEST_F(NWebHandlerDelegateTest, OnBeforeUnloadDialog) {
   mock_handler_ = nullptr;
-  bool result = delegate->OnBeforeUnloadDialog(browser_, message_text_,
+  bool result = delegate->OnBeforeUnloadDialog(browser_, url_, message_text_,
                                                is_reload_, callback_);
   EXPECT_FALSE(result);
 }
@@ -554,16 +556,11 @@ TEST_F(NWebHandlerDelegateTest, OnFileDialog) {
   CefString title = "Select a file";
   CefString default_path = "default_path";
   std::vector<CefString> accept_filters = {"*.txt", "*.jpg"};
-  std::vector<CefString> accept_extensions;
-  std::vector<CefString> accept_descriptions;
-  std::vector<CefString> mime_filters;
   bool capture = false;
   CefRefPtr<CefFileDialogCallback> callback;
 
-
   EXPECT_FALSE(delegate->OnFileDialog(browser_, FILE_DIALOG_OPEN, title,
-                                      default_path, accept_filters, accept_extensions,
-                                      accept_descriptions, capture, mime_filters,
+                                      default_path, accept_filters, capture,
                                       callback));
 }
 

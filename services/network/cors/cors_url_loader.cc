@@ -694,12 +694,17 @@ void CorsURLLoader::CheckTainted(const net::RedirectInfo& redirect_info) {
 }
 
 #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-void CorsURLLoader::OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) {
+void CorsURLLoader::OnTransferDataWithSharedMemory(
+    base::ReadOnlySharedMemoryRegion region,
+    uint64_t buffer_size) {
   DCHECK(network_loader_);
   DCHECK(forwarding_client_);
- 
-  LOG(DEBUG) << "shared-memory CorsURLLoader::OnTransferDataWithSharedMemory buffer_size=" << buffer_size;
-  forwarding_client_->OnTransferDataWithSharedMemory(std::move(region), buffer_size);
+
+  LOG(DEBUG) << "shared-memory CorsURLLoader::OnTransferDataWithSharedMemory "
+                "buffer_size="
+             << buffer_size;
+  forwarding_client_->OnTransferDataWithSharedMemory(std::move(region),
+                                                     buffer_size);
 }
 #endif
 

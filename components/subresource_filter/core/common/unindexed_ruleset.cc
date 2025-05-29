@@ -4,11 +4,15 @@
 
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/not_fatal_until.h"
 #include "base/numerics/safe_conversions.h"
-#include "arkweb/chromium_ext/components/subresource_filter/core/common/unindexed_ruleset_for_include.cc"
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "base/logging.h"
+#endif
 
 namespace subresource_filter {
 
@@ -56,6 +60,19 @@ bool UnindexedRulesetWriter::AddUrlRule(const proto::UrlRule& rule) {
   return true;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+bool UnindexedRulesetWriter::AddCssRule(const proto::CssRule& rule) {
+  DCHECK(!had_error());
+  pending_chunk_.add_css_rules()->CopyFrom(rule);
+  if (pending_chunk_.css_rules_size() >= max_rules_per_chunk_) {
+    DCHECK_EQ(pending_chunk_.css_rules_size(), max_rules_per_chunk_);
+    return WritePendingChunk();
+  }
+
+  return true;
+}
+#endif
+
 bool UnindexedRulesetWriter::Finish() {
   CHECK(!had_error(), base::NotFatalUntil::M129);
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -74,7 +91,8 @@ bool UnindexedRulesetWriter::Finish() {
 bool UnindexedRulesetWriter::WritePendingChunk() {
   CHECK(!had_error(), base::NotFatalUntil::M129);
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);
+  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(),
+            0);
 #else
   CHECK_GT(pending_chunk_.url_rules_size(), 0, base::NotFatalUntil::M129);
 #endif

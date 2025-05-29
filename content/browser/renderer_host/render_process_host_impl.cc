@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+#include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/command_line.h"
@@ -288,8 +288,24 @@
 #include "content/public/common/profiling_utils.h"
 #endif
 
+#ifdef BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
+
 #if BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
 #include "content/public/browser/browser_message_filter.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+#include "base/files/file.h"
+#include "base/json/json_reader.h"
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 // VLOG additional statements in Fuchsia release builds.
@@ -299,22 +315,21 @@
 #define MAYBEVLOG DVLOG
 #endif
 
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-size_t g_max_renderer_count_override = 0;
-#endif
 namespace content {
 
 namespace {
 
 using perfetto::protos::pbzero::ChromeTrackEvent;
 
-#if !BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 // Stores the maximum number of renderer processes the content module can
 // create. Only applies if it is set to a non-zero value.
 size_t g_max_renderer_count_override = 0;
-#endif
 
 bool g_run_renderer_in_process = false;
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+RenderProcessMode g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
+#endif
 
 RendererMainThreadFactoryFunction g_renderer_main_thread_factory = nullptr;
 
@@ -351,6 +366,15 @@ std::list<RenderProcessHostCreationObserver*>& GetAllCreationObservers() {
       s_all_creation_observers;
   return *s_all_creation_observers;
 }
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+// the global list of all renderer processes
+SharedProcessTokenToProcessMap& GetAllSharedProcessHosts() {
+  static base::NoDestructor<SharedProcessTokenToProcessMap>
+      s_all_shared_process_hosts;
+  return *s_all_shared_process_hosts;
+}
+#endif
 
 // Returns |host|'s PID if the process is valid and "no-process" otherwise.
 std::string GetRendererPidAsString(RenderProcessHost* host) {
@@ -1253,6 +1277,13 @@ bool IsKeepAliveRefCountAllowed() {
              blink::features::kAttributionReportingInBrowserMigration);
 }
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+static constexpr char kExtensionScheme[] = "chrome-extension";
+static constexpr char kArkwebExtensionScheme[] = "arkweb-extension";
+
+constexpr int kSingleRenderProcessCount = 1;
+constexpr int kMinMultipleRenderProcessCount = 5;
+#endif
 }  // namespace
 
 RenderProcessHostImpl::IOThreadHostImpl::IOThreadHostImpl(
@@ -1289,8 +1320,12 @@ void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThread(
     int32_t process_id,
     int32_t thread_id,
     int32_t role) {
-  ArkwebRenderProcessHostImplUtils::ReportKeyThreadEx(status, process_id,
-                                                      thread_id, role);
+  using namespace OHOS::NWeb;
+  LOG(INFO) << "TEST0324 ReportKeyThread pid = " << process_id
+            << ", tid = " << thread_id << ", role = " << role;
+  ResSchedClientAdapter::ReportKeyThread(
+      static_cast<ResSchedStatusAdapter>(status), process_id, thread_id,
+      static_cast<ResSchedRoleAdapter>(role));
 }
 
 void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThreadIds(
@@ -1298,8 +1333,12 @@ void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThreadIds(
     int32_t process_id,
     const std::vector<int32_t>& thread_ids,
     int32_t role) {
-  ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(status, process_id,
-                                                         thread_ids, role);
+  using namespace OHOS::NWeb;
+  for (auto thread_id : thread_ids) {
+    ResSchedClientAdapter::ReportKeyThread(
+        static_cast<ResSchedStatusAdapter>(status), process_id, thread_id,
+        static_cast<ResSchedRoleAdapter>(role));
+  }
 }
 #endif
 
@@ -1327,15 +1366,27 @@ size_t RenderProcessHostImpl::GetPlatformMaxRendererProcessCount() {
 // static
 size_t RenderProcessHost::GetMaxRendererProcessCount() {
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  return ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx();
-#else
+  if (render_process_mode() == RenderProcessMode::SINGLE_MODE) {
+    return kSingleRenderProcessCount;
+  }
+#endif
+
   if (g_max_renderer_count_override)
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    return std::max(kMinMultipleRenderProcessCount,
+                    (int)(g_max_renderer_count_override * 0.9));
+#else
     return g_max_renderer_count_override;
+#endif
 
   size_t client_override =
       GetContentClient()->browser()->GetMaxRendererProcessCountOverride();
   if (client_override)
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    return client_override * 0.9;
+#else
     return client_override;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // On Android we don't maintain a limit of renderer process hosts - we are
@@ -1384,8 +1435,11 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
                            kMaxRendererProcessCount);
     MAYBEVLOG(1) << __func__ << ": Calculated max " << max_count;
   }
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  return max_count * 0.9;
+#else
   return max_count;
-#endif
+#endif  // ARKWEB_RENDER_PROCESS_MODE
 #endif
 }
 
@@ -1401,6 +1455,23 @@ void RenderProcessHost::SetMaxRendererProcessCount(size_t count) {
         SpareRendererDispatchResult::kDestroyedProcessLimit);
   }
 }
+
+#ifdef BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+// static
+size_t RenderProcessHost::GetOffTheRecordRenderProcessCount() {
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  size_t count = 0;
+  while (!it.IsAtEnd()) {
+    RenderProcessHost* host = it.GetCurrentValue();
+    if (host->GetBrowserContext()->IsOffTheRecord() &&
+        !static_cast<RenderProcessHostImpl*>(host)->is_dead()) {
+      count++;
+    }
+    it.Advance();
+  }
+  return count;
+}
+#endif
 
 // static
 int RenderProcessHost::GetCurrentRenderProcessCountForTesting() {
@@ -1461,13 +1532,8 @@ RenderProcessHost* RenderProcessHostImpl::CreateRenderProcessHost(
     flags |= RenderProcessFlags::kSkiaFontManager;
   }
 #endif
-#if BUILDFLAG(IS_ARKWEB)
-  return new ArkwebRenderProcessHostImplExt(browser_context, storage_partition_impl,
-                                   flags);
-#else
   return new RenderProcessHostImpl(browser_context, storage_partition_impl,
                                    flags);
-#endif
 }
 
 // static
@@ -1498,7 +1564,7 @@ RenderProcessHostImpl::RenderProcessHostImpl(
                 base::TimeTicks::Now()
 #endif
 #if !BUILDFLAG(IS_ANDROID)
-                ,
+                    ,
                 std::nullopt
 #endif
                 ),
@@ -1514,9 +1580,6 @@ RenderProcessHostImpl::RenderProcessHostImpl(
       channel_connected_(false),
       sent_render_process_ready_(false),
       shutdown_exit_code_(-1) {
-#if BUILDFLAG(IS_ARKWEB)
-  arkweb_render_process_host_impl_utils_ = std::make_unique<ArkwebRenderProcessHostImplUtils>(this);
-#endif
   CHECK(!browser_context->ShutdownStarted());
   TRACE_EVENT("shutdown", "RenderProcessHostImpl",
               ChromeTrackEvent::kRenderProcessHost, *this);
@@ -2597,9 +2660,21 @@ const base::TimeTicks& RenderProcessHostImpl::GetLastInitTime() {
   return last_init_time_;
 }
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+bool RenderProcessHostImpl::IsProcessBackgrounded() {
+  return priority_.is_background();
+}
+#endif
+
 base::Process::Priority RenderProcessHostImpl::GetPriority() {
   return priority_.GetProcessPriority();
 }
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+const base::TimeTicks& RenderProcessHostImpl::ProcessBackgroundTime() {
+  return priority_.background_time;
+}
+#endif  // ARKWEB_RENDER_PROCESS_MODE
 
 void RenderProcessHostImpl::IncrementKeepAliveRefCount(uint64_t handle_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
@@ -3524,13 +3599,16 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kLacrosUseChromeosProtectedMedia,
       switches::kLacrosUseChromeosProtectedAv1,
 #endif
-#if BUILDFLAG(IS_OHOS)
-      switches::kBundleInstallationDir,
-#endif
 #if BUILDFLAG(IS_ARKWEB)
+      switches::kBundleInstallationDir,
       switches::kBundleName,
       switches::kPixelRatio,
+#endif
+#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
       switches::kOhSchemeHandlerCustomScheme,
+
+#endif
+#if BUILDFLAG(ARKWEB_VULKAN)
       switches::kOhosEnableVulkan,
 #endif
   };
@@ -3685,7 +3763,8 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   }
 
   if (!child_process_launcher_.get()) {
-    LOG(INFO) << "Discard failed; Render process hasn't started or is probably crashed";
+    LOG(INFO) << "Discard failed; Render process hasn't started or is probably "
+                 "crashed";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kNoProcess);
     return false;  // Render process hasn't started or is probably crashed.
   }
@@ -3820,9 +3899,10 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
 #endif
 
     ProvideSwapFileForRenderer();
+
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-    if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
-      ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, theme_font->font_file.Duplicate());
+    if (auto* theme_font = EnsureThemeFont()) {
+      UpdateThemeFontFile(theme_font->font_file.Duplicate());
     }
 #endif
   }
@@ -4295,8 +4375,9 @@ void RenderProcessHostImpl::UnregisterHost(int host_id) {
   GetAllHosts().Remove(host_id);
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-  ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(host);
+  RemoveFromSharedRenderProcessMap(host);
 #endif
+
   // Log after updating the GetAllHosts() list but before deleting the host.
   MAYBEVLOG(3) << __func__ << "(" << host_id << ")" << std::endl
                << GetCurrentHostMapDebugString(
@@ -4381,10 +4462,6 @@ bool RenderProcessHostImpl::IsSuitableHost(
     RenderProcessHost* host,
     const IsolationContext& isolation_context,
     const SiteInfo& site_info) {
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  if (base::ohos::IsWearableDevice())
-    return true;
-#endif
   BrowserContext* browser_context =
       isolation_context.browser_or_resource_context().ToBrowserContext();
   DCHECK(browser_context);
@@ -4420,8 +4497,18 @@ bool RenderProcessHostImpl::IsSuitableHost(
     return false;
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  if (ArkwebRenderProcessHostImplUtils::IsSuitableHostForArkweb(host, site_info)) return true;
+  if (site_info.is_pdf()) {
+    return host->special_render_numbers_[RenderType::kPdf] > 0;
+  }
+  if (site_info.site_url().SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || site_info.site_url().SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
+    return host->special_render_numbers_[RenderType::kExtension] > 0;
+  }
 #endif  // ARKWEB_RENDER_PROCESS_MODE
+
   // Check whether the given host and the intended site_info will be using the
   // same StoragePartition, since a RenderProcessHost can only support a
   // single StoragePartition.  This is relevant for packaged apps.
@@ -4620,9 +4707,24 @@ size_t RenderProcessHostImpl::GetProcessCountForLimit() {
   // too soon.
   size_t process_count_to_ignore =
       GetContentClient()->browser()->GetProcessCountToIgnoreForLimit();
-  CHECK_LE(process_count_to_ignore, RenderProcessHostImpl::GetProcessCount());
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  return ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(process_count_to_ignore);
+  CHECK_LE(process_count_to_ignore, RenderProcessHostImpl::GetProcessCount());
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  size_t count = 0;
+  while (!it.IsAtEnd()) {
+    RenderProcessHostImpl* host =
+        static_cast<RenderProcessHostImpl*>(it.GetCurrentValue());
+
+    if (!host->is_dead()) {
+      count++;
+    }
+    it.Advance();
+  }
+#if BUILDFLAG(IS_ARKWEB)
+  LOG(DEBUG) << "RenderProcessHostImpl::GetProcessCount count: " << count
+             << ", process_count_to_ignore:" << process_count_to_ignore;
+#endif  // BUILDFLAG(IS_ARKWEB)
+  return count - process_count_to_ignore;
 #else
   return RenderProcessHostImpl::GetProcessCount() - process_count_to_ignore;
 #endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
@@ -4698,6 +4800,87 @@ RenderProcessHost* RenderProcessHostImpl::GetExistingProcessHost(
 
   return nullptr;
 }
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+// static
+RenderProcessHost* RenderProcessHostImpl::GetExistingBackgroundProcessHost(
+    SiteInstanceImpl* site_instance) {
+  // First figure out which existing renderers we can use.
+  RenderProcessHost* longest_background_host;
+  base::TimeDelta longest_duration;
+  base::TimeTicks current_time = base::TimeTicks::Now();
+
+  for (iterator iter(AllHostsIterator()); !iter.IsAtEnd(); iter.Advance()) {
+    // The spare RenderProcessHost will have been considered by this point.
+    // Ensure it is not added to the collection of suitable renderers.
+    if (iter.GetCurrentValue()->IsSpare()) {
+      continue;
+    }
+
+    if (iter.GetCurrentValue()->IsProcessBackgrounded() &&
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue())
+            ->AreAllRefCountsZero()) {
+      base::TimeDelta background_duration =
+          current_time - iter.GetCurrentValue()->ProcessBackgroundTime();
+      if (background_duration >= longest_duration) {
+        longest_background_host = iter.GetCurrentValue();
+        longest_duration = background_duration;
+      }
+    }
+  }
+
+  // Now pick a longest time in background renderer.
+  if (longest_background_host) {
+    LOG(INFO) << __func__ << ": Found one background render process host.";
+    return longest_background_host;
+  }
+
+  LOG(WARNING) << __func__
+               << ": It has no background render process host to shutdown.";
+  return nullptr;
+}
+
+// static
+void RenderProcessHost::SetRenderProcessMode(RenderProcessMode mode) {
+  g_render_process_mode = mode;
+  LOG(INFO) << "SetRenderProcessMode g_render_process_mode:"
+            << (int)g_render_process_mode;
+}
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+void RenderProcessHostImpl::Refresh() {
+  RenderProcessHost::iterator it = RenderProcessHost::AllHostsIterator();
+  if (it.IsAtEnd()) {
+    return;
+  }
+  do {
+    RenderProcessHostImpl* host =
+        static_cast<RenderProcessHostImpl*>(it.GetCurrentValue());
+    if (!host) {
+      return;
+    }
+    auto temp_set = host->render_frame_host_id_set_;
+
+    for (auto rfh_id : temp_set) {
+      auto rfh = RenderFrameHostImpl::FromID(rfh_id);
+      if (rfh && rfh->IsActive()) {
+        rfh->Reload();
+      }
+    }
+  } while (0);
+}
+#endif
+
+// static
+RenderProcessMode RenderProcessHost::render_process_mode() {
+  if (g_render_process_mode == RenderProcessMode::DEFAULT_MODE) {
+    return (base::ohos::IsPcDevice() || base::ohos::IsTabletDevice())
+               ? RenderProcessMode::MULTIPLE_MODE
+               : RenderProcessMode::SINGLE_MODE;
+  }
+  return g_render_process_mode;
+}
+#endif  // ARKWEB_RENDER_PROCESS_MODE
 
 // static
 RenderProcessHost* RenderProcessHostImpl::GetSoleProcessHostForSite(
@@ -4900,13 +5083,44 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
     site_instance->set_process_assignment(
         SiteInstanceProcessAssignment::CREATED_NEW_PROCESS);
+
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
-    render_process_host,
-    site_info,
-    browser_context,
-    count,
-    site_instance);
+
+    if (site_info.site_url().SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || site_info.site_url().SchemeIs(kArkwebExtensionScheme)
+#endif
+    ) {
+        render_process_host->special_render_numbers_[RenderType::kExtension]++;
+        int extensionCount =
+            render_process_host->special_render_numbers_[RenderType::kExtension];
+    }
+    if (site_info.is_pdf()) {
+      render_process_host->special_render_numbers_[RenderType::kPdf]++;
+      int pdfCount =
+          render_process_host->special_render_numbers_[RenderType::kPdf];
+    }
+    if (WebUIControllerFactoryRegistry::GetInstance()->UseWebUIForURL(
+            browser_context, site_info.site_url())) {
+      render_process_host->special_render_numbers_[RenderType::kWebUI]++;
+      int webuiCount =
+          render_process_host->special_render_numbers_[RenderType::kWebUI];
+    }
+
+    if (RenderProcessHost::render_process_mode() !=
+            RenderProcessMode::SINGLE_MODE &&
+        (count >= RenderProcessHostImpl::GetMaxRendererProcessCount())) {
+      // Kill the idel render process.
+      RenderProcessHostImpl* render_host = static_cast<RenderProcessHostImpl*>(
+          RenderProcessHostImpl::GetExistingBackgroundProcessHost(
+              site_instance));
+      if (render_host) {
+        render_host->FastShutdownIfPossible(1u, true);
+        LOG(INFO) << "Successfully tried to fast shutdown idle render process "
+                     "with handle: "
+                  << render_host->GetProcess().Handle();
+      }
+    }
 #endif  // ARKWEB_RENDER_PROCESS_MODE
   }
 
@@ -4933,13 +5147,9 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
   // Make sure the chosen process is in the correct StoragePartition for the
   // SiteInstance.
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
-  if (!base::ohos::IsWearableDevice()) {
   CHECK(render_process_host->InSameStoragePartition(
       browser_context->GetStoragePartition(site_instance,
                                            false /* can_create */)));
-  }
-#endif
 
   MAYBEVLOG(2) << __func__ << "(" << site_info << ") selected process host "
                << render_process_host->GetID() << " using assignment \""
@@ -5031,12 +5241,13 @@ void RenderProcessHostImpl::ProcessDied(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED, process_id,
       process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
 #endif
+
   child_process_launcher_.reset();
   is_dead_ = true;
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
   RenderProcessHost* host = GetAllHosts().Lookup(GetID());
   if (host) {
-    ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(host);
+    RemoveFromSharedRenderProcessMap(host);
   }
 #endif
   // Make sure no IPCs or mojo calls from the old process get dispatched after
@@ -5776,6 +5987,27 @@ void RenderProcessHostImpl::ProvideSwapFileForRenderer() {
           std::move(allocator)));
 }
 
+#if BUILDFLAG(ARKWEB_I18N)
+void RenderProcessHostImpl::NotifyLocaleChanged(
+    const std::string& update_locale) {
+  GetRendererInterface()->NotifyLocaleChanged(update_locale);
+}
+
+// static
+void RenderProcessHost::OnLocaleChangedToRenderer(
+    const std::string& update_locale) {
+  iterator iter(AllHostsIterator());
+  while (!iter.IsAtEnd()) {
+    RenderProcessHostImpl* host =
+        static_cast<RenderProcessHostImpl*>(iter.GetCurrentValue());
+    if (host && host->IsInitializedAndNotDead()) {
+      host->NotifyLocaleChanged(update_locale);
+    }
+    iter.Advance();
+  }
+}
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 
 void RenderProcessHostImpl::NotifyMemoryPressureToRenderer(
@@ -5791,5 +6023,170 @@ void RenderProcessHostImpl::GetBoundInterfacesForTesting(
       .WithArgs(std::ref(out));
   io_thread_host_impl_->FlushPostedTasksForTesting();  // IN-TEST
 }
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+const base::FilePath::CharType kAppThemePathA[] =
+    FILE_PATH_LITERAL("/data/themes/a/app");
+const base::FilePath::CharType kAppThemePathB[] =
+    FILE_PATH_LITERAL("/data/themes/b/app");
+const base::FilePath::CharType kAppThemeFontsDirName[] =
+    FILE_PATH_LITERAL("fonts");
+const base::FilePath::CharType kAppThemeFlagFileName[] =
+    FILE_PATH_LITERAL("flag");
+const base::FilePath::CharType kAppThemeFontsManifest[] =
+    FILE_PATH_LITERAL("manifest.json");
+
+std::unique_ptr<ThemeFont> RenderProcessHostImpl::g_theme_font_ = nullptr;
+
+// static
+bool RenderProcessHostImpl::IsThemeFontValid() {
+  if (!g_theme_font_ || !base::PathExists(g_theme_font_->flag_path) ||
+      !base::PathExists(g_theme_font_->manifest_path) ||
+      !base::PathExists(g_theme_font_->font_path) ||
+      !g_theme_font_->font_file.IsValid()) {
+    return false;
+  }
+
+  return true;
+}
+
+// static
+ThemeFont* RenderProcessHostImpl::EnsureThemeFont() {
+  if (IsThemeFontValid()) {
+    return g_theme_font_.get();
+  }
+
+  g_theme_font_.reset();
+
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  if (!base::PathExists(
+          base::FilePath(kAppThemePathA).Append(kAppThemeFlagFileName))) {
+    if (!base::PathExists(
+            base::FilePath(kAppThemePathB).Append(kAppThemeFlagFileName))) {
+      LOG(DEBUG) << "[themefont] flag file occurs error";
+      return nullptr;
+    }
+    theme_path = base::FilePath(base::FilePath(kAppThemePathB));
+    theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  }
+
+  std::string input_json;
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  if (!base::PathExists(manifest_path) ||
+      !base::ReadFileToString(manifest_path, &input_json) ||
+      input_json.empty()) {
+    LOG(DEBUG) << "[themefont] manifest file occurs error";
+    return nullptr;
+  }
+
+  auto parsed_json = base::JSONReader::ReadAndReturnValueWithError(input_json);
+  if (!parsed_json.has_value() || !parsed_json->is_dict()) {
+    LOG(ERROR) << "[themefont] manifest file occurs error:"
+               << parsed_json.error().message;
+    return nullptr;
+  }
+  // Two example for the manifest.json:
+  // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
+  // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
+  const base::Value::Dict& dict = parsed_json->GetDict();
+  const std::string* origin = dict.FindString("origin");
+  if (!origin || origin->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no origin tag";
+    return nullptr;
+  }
+  if (*origin != std::string("online")) {
+    LOG(DEBUG) << "[themefont] manifest file's origin tag is not online";
+    return nullptr;
+  }
+
+  const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
+  if (!absolte_font_path || absolte_font_path->empty()) {
+    LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
+    return nullptr;
+  }
+
+  base::FilePath font_path =
+      theme_font_path.Append(base::FilePath(*absolte_font_path).BaseName());
+  if (!base::PathExists(font_path)) {
+    LOG(ERROR) << "[themefont] font file not exist:" << font_path.value();
+    return nullptr;
+  }
+
+  base::File font_file(font_path,
+                       base::File::FLAG_OPEN | base::File::FLAG_READ);
+  if (!font_file.IsValid()) {
+    LOG(ERROR) << "[themefont] font file not valid";
+    return nullptr;
+  }
+
+  base::FilePath flag_path = theme_path.Append(kAppThemeFlagFileName);
+  g_theme_font_ = std::make_unique<ThemeFont>();
+  g_theme_font_->flag_path = flag_path;
+  g_theme_font_->manifest_path = manifest_path;
+  g_theme_font_->font_path = font_path;
+  g_theme_font_->font_file = std::move(font_file);
+
+  LOG(INFO) << "[themefont] valid font:" << font_path;
+
+  return g_theme_font_.get();
+}
+
+void RenderProcessHostImpl::OnThemeFontChange() {
+  if (auto* theme_font = EnsureThemeFont()) {
+    UpdateThemeFontFile(theme_font->font_file.Duplicate());
+  } else {
+    UpdateThemeFontFile(base::File());
+  }
+}
+
+void RenderProcessHostImpl::UpdateThemeFontFile(base::File theme_font_file) {
+  GetRendererInterface()->UpdateThemeFontFile(std::move(theme_font_file));
+}
+#endif  // ARKWEB_THEME_FONT
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+RenderProcessHost* RenderProcessHostImpl::GetProcessForSharedToken(
+    const std::string& shared_render_process_token) {
+  SharedProcessTokenToProcessMap& processes = GetAllSharedProcessHosts();
+  auto process = processes.find(shared_render_process_token);
+  if (process == processes.end()) {
+    return nullptr;
+  }
+  return process->second;
+}
+
+void RenderProcessHostImpl::RegisteProcessForSharedToken(
+    const std::string& shared_render_process_token,
+    RenderProcessHost* renderProcessHost) {
+  GetAllSharedProcessHosts().emplace(shared_render_process_token,
+                                     renderProcessHost);
+}
+
+void RenderProcessHostImpl::RemoveFromSharedRenderProcessMap(
+    RenderProcessHost* renderProcessHost) {
+  SharedProcessTokenToProcessMap& processes = GetAllSharedProcessHosts();
+  if (processes.empty()) {
+    return;
+  }
+  auto iter = processes.begin();
+  for (; iter != processes.end(); ++iter) {
+    if (iter->second == renderProcessHost) {
+      processes.erase(iter);
+      break;
+    }
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+void RenderProcessHostImpl::dumpCurrentJavaScriptStackInMainThread(
+    base::OnceCallback<void(const std::string&)> dump_callback) {
+  child_process_->dumpCurrentJavaScriptStackInMainThread(base::BindOnce(
+      [](base::OnceCallback<void(const std::string&)> callback,
+         const std::string& stack) { std::move(callback).Run(stack); },
+      std::move(dump_callback)));
+}
+#endif
 
 }  // namespace content

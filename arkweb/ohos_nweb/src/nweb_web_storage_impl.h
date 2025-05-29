@@ -16,12 +16,15 @@
 #ifndef NWEB_WEB_STORAGE_IMPL_H
 #define NWEB_WEB_STORAGE_IMPL_H
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_storage_extension_callback.h"
 #include "nweb_errors.h"
 #include "nweb_web_storage.h"
 #include "nweb_web_storage_delegate_interface.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace OHOS::NWeb {
 class NWebWebStorageImpl : public NWebWebStorage {
@@ -48,7 +51,6 @@ class NWebWebStorageImpl : public NWebWebStorage {
                           const std::string& username,
                           int callback_id);
   void GetSavedPasswords(int callback_id);
-  void MigratePasswords();
   void ClearPassword();
   void RemovePassword(const std::string& url, const std::string& username);
   void RemovePasswordByUrl(const std::string& url);

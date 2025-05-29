@@ -124,9 +124,6 @@ interface DisplayPrivate {
 
   [EnableIf=arkweb_maximize_resize, Sync]
   DisableSwapUntilMaximized() => ();
-
-  [EnableIf=arkweb_same_layer]
-  SetNativeInnerWeb(bool isInnerWeb);
 };
 
 // DisplayClient allows privileged clients to receive events from the Display.

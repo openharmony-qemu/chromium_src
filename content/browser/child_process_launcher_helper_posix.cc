@@ -61,25 +61,16 @@ std::unique_ptr<PosixFileDescriptorInfo> CreateDefaultPosixFilesToMap(
 
 // Mac shared memory doesn't use file descriptors.
 #if !BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_ANDROID)
-  // Android's endpoint may be a file descriptor or a binder. If it's a binder
-  // we share it by other means.
-  const bool share_channel_fd =
-      !mojo_channel_remote_endpoint.platform_handle().is_binder();
-#else
-  const bool share_channel_fd = true;
-#endif
 #if BUILDFLAG(IS_ARKWEB)
-  int fd = base::FieldTrialListUtils::GetFieldTrialDescriptor();
+  int fd = base::FieldTrialList::GetFieldTrialDescriptor();
   DCHECK_NE(fd, -1);
   files_to_register->Share(kFieldTrialDescriptor, fd);
 #endif
-  if (share_channel_fd) {
-    DCHECK(mojo_channel_remote_endpoint.is_valid());
-    files_to_register->Share(
-        kMojoIPCChannel,
-        mojo_channel_remote_endpoint.platform_handle().GetFD().get());
-  }
+
+  DCHECK(mojo_channel_remote_endpoint.is_valid());
+  files_to_register->Share(
+      kMojoIPCChannel,
+      mojo_channel_remote_endpoint.platform_handle().GetFD().get());
 
   // TODO(jcivelli): remove this "if defined" by making
   // GetAdditionalMappedFilesForChildProcess a no op on Mac.

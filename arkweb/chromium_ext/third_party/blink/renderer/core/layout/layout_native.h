@@ -63,7 +63,7 @@ class LayoutNative final : public LayoutImage {
     NOT_DESTROYED();
     return true;
   }
-
+ 
   void PaintReplaced(const PaintInfo&,
                      const PhysicalOffset& paint_offset) const override;
 
@@ -82,4 +82,5 @@ struct DowncastTraits<LayoutNative> {
 };
 
 }  // namespace blink
+
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_LAYOUT_NATIVE_H_

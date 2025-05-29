@@ -40,7 +40,9 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
-#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 
 namespace gfx {
 class Size;
@@ -68,7 +70,6 @@ class SoftwareRenderer;
 class DumpFrameObserver;
 #endif
 class OcclusionCuller;
-class ArkwebDisplayUtils;
 
 class VIZ_SERVICE_EXPORT DisplayObserver {
  public:
@@ -155,6 +156,20 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // may be run immediately.
   void DisableSwapUntilResize(base::OnceClosure no_pending_swaps_callback);
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void DisableSwapUntilMaximized();
+  void RestoreRenderFitTimeElapsed();
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  void SetShouldFrameSubmissionBeforeDraw(bool should);
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawRect(const gfx::Rect& new_rect);
+  void SetDrawMode(const int32_t mode);
+#endif
+
   // Sets the color matrix that will be used to transform the output of this
   // display. This is only supported for GPU compositing.
   void SetColorMatrix(const SkM44& matrix);
@@ -169,8 +184,10 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   bool DrawAndSwap(const DrawAndSwapParams& params) override;
   void DidFinishFrame(const BeginFrameAck& ack) override;
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
-#endif // ARKWEB_MAXIMIZE_RESIZE
+  void ReenableSwapCheck(const SurfaceId& surface_id,
+                         int width,
+                         int height) override;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
   // OutputSurfaceClient implementation.
   void DidReceiveSwapBuffersAck(const gpu::SwapBuffersCompleteParams& params,
@@ -254,13 +271,8 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   // calls.
   OverdrawTracker::OverdrawTimeSeries StopTrackingOverdraw();
 
-  ArkwebDisplayUtils* display_utils() {
-    return display_utils_.get();
-  }
-
  protected:
   friend class DisplayTest;
-  friend class ArkwebDisplayUtils;
   // PresentationGroupTiming stores rendering pipeline stage timings associated
   // with a call to Display::DrawAndSwap along with a list of
   // Surface::PresentationHelper's for each aggregated Surface that will be
@@ -326,6 +338,14 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
   bool visible_ = false;
   bool swapped_since_resize_ = false;
   bool output_is_secure_ = false;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  gfx::Rect draw_rect_;
+  int32_t draw_mode_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  std::unique_ptr<DumpFrameObserver> dump_frame_observer_;
+#endif
 
 #if DCHECK_IS_ON()
   std::unique_ptr<gpu::ScopedAllowScheduleGpuTask>
@@ -375,6 +395,17 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
       pending_presentation_group_timings_;
 
   bool disable_swap_until_resize_ = true;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  enum class TempIdleState : uint32_t {
+    INIT,
+    DISABLE_SWAP,
+    REENABLE_SWAP,
+    RESTORE_RENDERFIT,
+  };
+  TempIdleState temp_idle_state_ = TempIdleState::RESTORE_RENDERFIT;
+  std::unique_ptr<base::RetainingOneShotTimer> reset_init_timer_;
+  std::unique_ptr<base::RetainingOneShotTimer> reenable_swap_timer_;
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
   // Callback that will be run after all pending swaps have acked.
   base::OnceClosure no_pending_swaps_callback_;
@@ -388,8 +419,6 @@ class VIZ_SERVICE_EXPORT Display : public DisplaySchedulerClient,
 
   // A subsampler for potential quad information logging.
   base::MetricsSubSampler metrics_subsampler_;
-
-  std::unique_ptr<ArkwebDisplayUtils> display_utils_;
 };
 
 }  // namespace viz

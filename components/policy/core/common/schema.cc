@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
@@ -38,7 +39,6 @@
 #include "components/policy/core/common/json_schema_constants.h"
 #include "components/policy/core/common/schema_internal.h"
 #include "third_party/re2/src/re2/re2.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
 #include "base/logging.h"

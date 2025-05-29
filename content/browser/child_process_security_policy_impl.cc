@@ -527,8 +527,22 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
 #endif
 
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-#include "arkweb/chromium_ext/content/browser/child_process_security_policy_impl_for_include.cc"
-#endif
+  // Determine if the certain permissions have been granted to a datashare URI.
+  bool HasPermissionsForDatashareUri(const base::FilePath& file,
+                                     int permissions) {
+    DCHECK(!file.empty());
+    DCHECK(file.IsDataShareUri());
+    if (!permissions) {
+      return false;
+    }
+    base::FilePath file_path = file.StripTrailingSeparators();
+    FileMap::const_iterator it = file_permissions_.find(file_path);
+    if (it != file_permissions_.end()) {
+      return (it->second & permissions) == permissions;
+    }
+    return false;
+  }
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
 
   void GrantBindings(BindingsPolicySet bindings) {
     enabled_bindings_.PutAll(bindings);
@@ -619,13 +633,6 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
 #if BUILDFLAG(IS_ANDROID)
     if (file.IsContentUri())
       return HasPermissionsForContentUri(file, permissions);
-#endif
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-    auto bundleName = OHOS::NWeb::OhosAdapterHelper::GetInstance().
-         GetSystemPropertiesInstance().GetBundleName();
-    if (file.IsDataShareUri(bundleName)) {
-      return HasPermissionsForDatashareUri(file, permissions);
-    }
 #endif
     if (!permissions || file.empty() || !file.IsAbsolute())
       return false;

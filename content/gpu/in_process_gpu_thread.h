@@ -5,6 +5,7 @@
 #ifndef CONTENT_GPU_IN_PROCESS_GPU_THREAD_H_
 #define CONTENT_GPU_IN_PROCESS_GPU_THREAD_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/threading/thread.h"
 #include "content/common/content_export.h"

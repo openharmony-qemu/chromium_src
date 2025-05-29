@@ -124,9 +124,6 @@ class MEDIA_EXPORT VideoResourceUpdater
 
   viz::SharedImageFormat YuvSharedImageFormat(int bits_per_channel);
   scoped_refptr<gpu::ClientSharedImageInterface> shared_image_interface() const;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void SetHasNativeLayer(bool has_native_layer);
-#endif
 
  private:
   class PlaneResource;
@@ -246,10 +243,6 @@ class MEDIA_EXPORT VideoResourceUpdater
   std::vector<std::unique_ptr<PlaneResource>> all_resources_;
 
   base::WeakPtrFactory<VideoResourceUpdater> weak_ptr_factory_{this};
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  bool has_native_layer_ = false;
-#endif
 };
 
 }  // namespace media

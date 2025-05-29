@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
 #include "nweb_display_listener.h"
 
 #include "base/logging.h"
@@ -24,7 +23,7 @@ DisplayScreenListener::DisplayScreenListener(
     std::shared_ptr<NWebDelegateInterface> nweb)
     : nweb_(std::weak_ptr<NWebDelegateInterface>(nweb)) {
   display_manager_adapter_ =
-      OhosAdapterHelperExt::CreateDisplayMgrAdapter();
+      OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
 }
 
 void DisplayScreenListener::OnCreate(DisplayId id) {}
@@ -55,7 +54,7 @@ FoldStatusScreenListener::FoldStatusScreenListener(
     std::shared_ptr<NWebDelegateInterface> nweb)
     : nweb_(std::weak_ptr<NWebDelegateInterface>(nweb)) {
   foldstatus_manager_adapter_ =
-      OhosAdapterHelperExt::CreateDisplayMgrAdapter();
+      OhosAdapterHelper::GetInstance().CreateDisplayMgrAdapter();
 }
 
 void FoldStatusScreenListener::OnFoldStatusChanged(FoldStatus foldstatus) {

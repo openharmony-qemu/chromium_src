@@ -3,15 +3,12 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h"
-#include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 #include <algorithm>
 #include <utility>
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/overloaded.h"
 #include "base/logging.h"
@@ -34,7 +31,6 @@
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/geometry/skia_conversions.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_android.h"
@@ -161,10 +157,9 @@ RootCompositorFrameSinkImpl::Create(
     hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
         std::make_unique<ExternalBeginFrameSourceIOS>(restart_id);
-#elif BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PERFORMANCE_JITTER))
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
     external_begin_frame_source =
-        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id,
-                                                       frame_sink_manager);
+        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id);
 #else
 #if BUILDFLAG(IS_CHROMEOS_ASH)
     hw_support_for_multiple_refresh_rates =
@@ -251,7 +246,7 @@ RootCompositorFrameSinkImpl::Create(
     external_begin_frame_source_mojo->SetDisplay(display.get());
 
   // base::WrapUnique instead of std::make_unique because the ctor is private.
-  auto impl = base::WrapUnique(new RootCompositorFrameSinkImplExt(
+  auto impl = base::WrapUnique(new RootCompositorFrameSinkImpl(
       frame_sink_manager, params->frame_sink_id,
       std::move(params->compositor_frame_sink),
       std::move(params->compositor_frame_sink_client),
@@ -302,7 +297,6 @@ RootCompositorFrameSinkImpl::Create(
 RootCompositorFrameSinkImpl::~RootCompositorFrameSinkImpl() {
   support_->frame_sink_manager()->UnregisterBeginFrameSource(
       begin_frame_source());
-  delete managerImplUtils;
 }
 
 bool RootCompositorFrameSinkImpl::WillEvictSurface(
@@ -329,6 +323,32 @@ void RootCompositorFrameSinkImpl::DisableSwapUntilResize(
   display_->DisableSwapUntilResize(std::move(callback));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+void RootCompositorFrameSinkImpl::SetDrawRect(const gfx::Rect& new_rect) {
+  external_begin_frame_source_->SetDrawRect(new_rect);
+  display_->SetDrawRect(new_rect);
+}
+
+void RootCompositorFrameSinkImpl::SetDrawMode(int32_t mode) {
+  LOG(INFO) << "rootCompositorFrameSinkImpl::SetDrawMode";
+  display_->SetDrawMode(mode);
+}
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+void RootCompositorFrameSinkImpl::SetShouldFrameSubmissionBeforeDraw(
+    bool should,
+    SetShouldFrameSubmissionBeforeDrawCallback callback) {
+  TRACE_EVENT1(
+      "viz", "RootCompositorFrameSinkImpl::SetShouldFrameSubmissionBeforeDraw",
+      "should", should);
+  display_->SetShouldFrameSubmissionBeforeDraw(should);
+  if (callback) {
+    std::move(callback).Run();
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 void RootCompositorFrameSinkImpl::Resize(const gfx::Size& size) {
   if (!display_->resize_based_on_root_surface())
@@ -657,7 +677,6 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
       !display_->OutputSurfaceSupportsSetFrameRate();
 #endif
   UpdateFrameIntervalDeciderSettings();
-  managerImplUtils = new FrameSinkManagerImplUtils(frame_sink_manager);
 }
 
 void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {
@@ -835,6 +854,37 @@ void RootCompositorFrameSinkImpl::DisplayAddChildWindowToBrowser(
 #endif
 }
 
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void RootCompositorFrameSinkImpl::SetEnableLowerFrameRate(bool enabled) {
+  external_begin_frame_source_->SetEnableLowerFrameRate(enabled);
+}
+
+void RootCompositorFrameSinkImpl::EvictFrameBackBuffers(bool invisible) {
+  TRACE_EVENT1("viz", "RootCompositorFrameSinkImpl::EvictFrameBackBuffers",
+               "invisible", invisible);
+  if (invisible) {
+    SetDisplayVisible(false);
+  } else {
+    SetDisplayVisible(true);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+void RootCompositorFrameSinkImpl::UpdateVSyncFrequency(int frame_rate) {
+  external_begin_frame_source_->UpdateVSyncFrequency(frame_rate);
+}
+
+void RootCompositorFrameSinkImpl::ResetVSyncFrequency() {
+  external_begin_frame_source_->ResetVSyncFrequency();
+}
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void RootCompositorFrameSinkImpl::SendInternalBeginFrame() {
+  external_begin_frame_source_->SendInternalBeginFrame();
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 void RootCompositorFrameSinkImpl::SetWideColorEnabled(bool enabled) {
 #if BUILDFLAG(IS_ANDROID)
   if (display_client_)
@@ -916,4 +966,31 @@ void RootCompositorFrameSinkImpl::SetMaxVSyncAndVrr(
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
   UpdateFrameIntervalDeciderSettings();
 }
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+void RootCompositorFrameSinkImpl::SetCurrentFrameSinkId(
+    const FrameSinkId& frame_sink_id) {
+  external_begin_frame_source_->SetCurrentFrameSinkId(frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void RootCompositorFrameSinkImpl::DisableSwapUntilMaximized(
+    DisableSwapUntilMaximizedCallback callback) {
+  if (display_) {
+    display_->DisableSwapUntilMaximized();
+  }
+  if (callback) {
+    std::move(callback).Run();
+  }
+}
+
+void RootCompositorFrameSinkImpl::RestoreRenderFit(
+    const FrameSinkId& frame_sink_id) {
+  if (support_ && support_->frame_sink_manager()) {
+    support_->frame_sink_manager()->RestoreRenderFit(frame_sink_id);
+  }
+}
+#endif  // ARKWEB_MAXIMIZE_RESIZE
+
 }  // namespace viz

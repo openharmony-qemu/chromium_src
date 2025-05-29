@@ -66,7 +66,6 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
-#include "cc/trees/layer_tree_impl_utils.h"
 
 namespace cc {
 namespace {
@@ -177,7 +176,6 @@ LayerTreeImpl::LayerTreeImpl(
       top_controls_shown_ratio_(std::move(top_controls_shown_ratio)),
       bottom_controls_shown_ratio_(std::move(bottom_controls_shown_ratio)) {
   property_trees()->set_is_main_thread(false);
-  utils_ = std::make_unique<LayerTreeImplUtils>(this);
 }
 
 LayerTreeImpl::~LayerTreeImpl() {
@@ -765,7 +763,8 @@ void LayerTreeImpl::PullLayerTreePropertiesFrom(CommitState& commit_state) {
   RegisterSelection(commit_state.selection);
 
 #if BUILDFLAG(ARKWEB_MENU)
-  utils_->RegisterClippedVisualViewportSelectionBounds(commit_state.clipped_selection_bounds);
+  RegisterClippedVisualViewportSelectionBounds(
+      commit_state.clipped_selection_bounds);
 #endif
 
   PushPageScaleFromMainThread(commit_state.page_scale_factor,
@@ -911,8 +910,8 @@ void LayerTreeImpl::PushPropertiesTo(LayerTreeImpl* target_tree) {
   target_tree->RegisterSelection(selection_);
 
 #if BUILDFLAG(ARKWEB_MENU)
-  target_tree->layer_tree_impl_utils()->RegisterClippedVisualViewportSelectionBounds(
-    utils_->GetClippedVisualViewportSelectionBounds());
+  target_tree->RegisterClippedVisualViewportSelectionBounds(
+      clipped_selection_bounds_);
 #endif
 
   // This should match the property synchronization in
@@ -1969,14 +1968,20 @@ const gfx::Rect LayerTreeImpl::ViewportRectForTilePriority() const {
   const gfx::Rect& viewport_rect_for_tile_priority =
       host_impl_->viewport_rect_for_tile_priority();
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
-  return utils_->ViewportRectForTilePriority(viewport_rect_for_tile_priority);
+  if (viewport_rect_for_tile_priority.IsEmpty()) {
+    const gfx::Rect& deviceViewPort = GetDeviceViewport();
+    if (deviceViewPort.height() > MAX_VIEWPORT_HEIGHT) {
+      return gfx::Rect(0, 0, deviceViewPort.width(), MAX_VIEWPORT_HEIGHT);
+    }
+    return deviceViewPort;
+  }
+  return viewport_rect_for_tile_priority;
 #else
   return viewport_rect_for_tile_priority.IsEmpty()
              ? GetDeviceViewport()
              : viewport_rect_for_tile_priority;
 #endif
 }
-
 
 std::unique_ptr<ScrollbarAnimationController>
 LayerTreeImpl::CreateScrollbarAnimationController(ElementId scroll_element_id,
@@ -2505,14 +2510,15 @@ LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPoint(
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 struct HitTestFunctorNative {
   bool operator()(LayerImpl* layer) const {
-    return layer->layer_impl_utils()->may_contain_native();
+    return layer->may_contain_native();
   }
 };
- 
+
 LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPointNative(
     const gfx::PointF& screen_space_point) {
-  if (layer_list_.empty())
+  if (layer_list_.empty()) {
     return nullptr;
+  }
   bool update_tiles = !features::IsCCSlimmingEnabled();
   if (!UpdateDrawProperties(update_tiles,
                             /*update_image_animation_controller=*/true)) {
@@ -2520,8 +2526,7 @@ LayerImpl* LayerTreeImpl::FindLayerThatIsHitByPointNative(
   }
   FindClosestMatchingLayerState state;
   FindClosestMatchingLayer(screen_space_point, layer_list_[0].get(),
-                           HitTestFunctorNative(),
-                           &state);
+                           HitTestFunctorNative(), &state);
   return state.closest_match;
 }
 #endif
@@ -2822,6 +2827,22 @@ void LayerTreeImpl::RegisterSelection(const LayerSelection& selection) {
   selection_ = selection;
 }
 
+#if BUILDFLAG(ARKWEB_MENU)
+void LayerTreeImpl::RegisterClippedVisualViewportSelectionBounds(
+    const gfx::Rect& clipped_selection_bounds) {
+  if (clipped_selection_bounds_ == clipped_selection_bounds) {
+    return;
+  }
+
+  handle_visibility_changed_ = true;
+  clipped_selection_bounds_ = clipped_selection_bounds;
+}
+
+gfx::Rect LayerTreeImpl::GetClippedVisualViewportSelectionBounds() const {
+  return clipped_selection_bounds_;
+}
+#endif
+
 void LayerTreeImpl::ResetHandleVisibilityChanged() {
   handle_visibility_changed_ = false;
 }
@@ -3055,5 +3076,21 @@ bool LayerTreeImpl::IsReadyToActivate() const {
 void LayerTreeImpl::RequestImplSideInvalidationForRerasterTiling() {
   host_impl_->RequestImplSideInvalidationForRerasterTiling();
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void LayerTreeImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  host_impl_->OnLayerRectUpdate(id, rect);
+}
+
+void LayerTreeImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
+  host_impl_->OnLayerRectVisibilityChange(id, visibility);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void LayerTreeImpl::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  host_impl_->OnLayerBoundsUpdate(id, bounds);
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

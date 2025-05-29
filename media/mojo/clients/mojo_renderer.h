@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/default_tick_clock.h"
@@ -22,7 +23,6 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -56,10 +56,6 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                  RequestSurfaceCB request_surface_cb,
-                  VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
   void SetCdm(CdmContext* cdm_context, CdmAttachedCB cdm_attached_cb) override;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
@@ -70,10 +66,6 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   base::TimeDelta GetMediaTime() override;
   RendererType GetRendererType() override;
 
-#if BUILDFLAG(ARKWEB_MEDIA)
-  void SetNativeWindowSurface(int native_window_id) override;
-#endif // ARKWEB_MEDIA
-
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void SetMuted(bool muted) override;
   void SetSurfaceId(int surface_id, const gfx::Rect& rect) override;
@@ -81,20 +73,17 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   void SetMediaSourceList(
       const std::vector<MediaSourceInfo>& source_infos) override;
   void SetMediaControls(bool show_media_controls,
-      const std::vector<std::string>& controls_list) override;
+                        const std::vector<std::string>& controls_list) override;
   void SetPoster(const std::string& poster_url) override;
   void SetAttributes(
       base::flat_map<std::string, std::string> attributes) override;
   void SetReferrer(const std::string& referrer) override;
   void SetIsAudio(bool is_audio) override;
   void SetPlaybackRateWithReason(double playback_rate,
-      ActionReason reason) override;
+                                 ActionReason reason) override;
   bool IsAudio();
-  void InitializeRendererFromUrlExt();
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-#if BUILDFLAG(ARKWEB_PIP)
-  void PipEnable(bool enable) override;
-#endif
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
  private:
   // mojom::RendererClient implementation, dispatched on the |task_runner_|.
   void OnTimeUpdate(base::TimeDelta time,
@@ -137,11 +126,6 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   void OnCdmAttached(bool success);
 
   void CancelPendingCallbacks();
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnRequestVideoSurfaceDone(int32_t surface_id);
-  void OnInitializedExt();
-#endif // ARKWEB_VIDEO_ASSISTANT
 
   // |task_runner| on which all methods are invoked, except for GetMediaTime(),
   // which can be called on any thread.
@@ -209,12 +193,6 @@ class MojoRenderer : public Renderer, public mojom::RendererClient {
   bool is_audio_ = false;
   bool muted_ = false;
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  RequestSurfaceCB request_surface_cb_;
-  VideoDecoderChangedCB decoder_changed_cb_;
-  base::WeakPtrFactory<MojoRenderer> weak_factory_{this};
-#endif  // ARKWEB_VIDEO_ASSISTANT
 };
 
 }  // namespace media

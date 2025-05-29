@@ -250,13 +250,7 @@ bool AudioParameters::Equals(const AudioParameters& other) const {
          channel_layout() == other.channel_layout() &&
          channels() == other.channels() &&
          frames_per_buffer_ == other.frames_per_buffer() &&
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-         effects_ == other.effects() && mic_positions_ == other.mic_positions_ &&
-         render_process_id_ == other.render_process_id() &&
-         render_frame_id_ == other.render_frame_id();
-#else
          effects_ == other.effects() && mic_positions_ == other.mic_positions_;
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 }
 
 bool AudioParameters::IsBitstreamFormat() const {

@@ -32,11 +32,7 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
                          const std::string& default_filename,
                          bool is_capture,
                          const std::vector<CefString>& mime_type);
-  FileSelectorParamsImpl(FileSelectorMode mode,
-                         const std::string& title,
-                         const std::vector<CefString>& accept_type,
-                         const std::string& default_filename,
-                         bool is_capture);
+
   const std::string Title() override;
   NWebFileSelectorParams::FileSelectorMode Mode() override;
   const std::string DefaultFilename() override;

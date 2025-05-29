@@ -41,7 +41,7 @@
 
 #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 #include "components/download/public/common/download_utils.h"
-#endif // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#endif  // BUILDFLAG(ARKWEB_EX_DOWNLOAD)
 
 namespace download {
 
@@ -87,6 +87,10 @@ void UnHideFile(const base::FilePath& path) {
     chflags(path.value().c_str(), stat.st_flags);
   }
 }
+#endif
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+static constexpr base::TimeDelta kTimeout = base::Seconds(60);
 #endif
 }  // namespace
 
@@ -632,8 +636,10 @@ void DownloadFileImpl::Pause() {
   if (update_timer_ && update_timer_->IsRunning())
     update_timer_->Stop();
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  AsArkWebDownloadFileImplExt()->StopDownloadJobTimer();
+#if defined(ARKWEB_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_->Stop();
+  }
 #endif
 }
 
@@ -654,8 +660,10 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (is_paused_)
     return;
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-  AsArkWebDownloadFileImplExt()->ResetDownloadJobTimer();
+#if defined(ARKWEB_EX_DOWNLOAD)
+  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+    download_job_timer_.reset();
+  }
 #endif
   base::TimeTicks start(base::TimeTicks::Now());
   base::TimeTicks now;
@@ -682,13 +690,9 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
             CalculateBytesToWrite(source_stream, incoming_data_size,
                                   &bytes_to_validate, &bytes_to_write);
         DCHECK_GE(incoming_data_size, bytes_to_write);
-        LOG(DEBUG) << "DownloadFileImpl::StreamActive called";
         reason = ValidateAndWriteDataToFile(
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->data(), bytes_to_validate, bytes_to_write);
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
-#endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
         if (reason == DOWNLOAD_INTERRUPT_REASON_NONE) {
@@ -707,9 +711,6 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
                 bytes_to_write;
           }
         }
-#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
-        AsArkWebDownloadFileImplExt()->RunCallbackIfDataReady();
-#endif
       } break;
       case InputStream::WAIT_FOR_COMPLETION:
         source_stream->RequestCompletionNotification(
@@ -737,8 +738,14 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
     source_stream->RegisterDataReadyCallback(
         base::BindRepeating(&DownloadFileImpl::StreamActive, weak_factory_.GetWeakPtr(),
                    source_stream));
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-    AsArkWebDownloadFileImplExt()->CreateDownloadJobTimer(source_stream);
+#if defined(ARKWEB_EX_DOWNLOAD)
+    download_job_timer_ = std::make_unique<base::OneShotTimer>();
+    download_job_timer_->Start(
+        FROM_HERE, kTimeout,
+        base::BindOnce(&DownloadFileImpl::OnTimeout, base::Unretained(this),
+                       source_stream,
+                       DOWNLOAD_INTERRUPT_REASON_NETWORK_DISCONNECTED,
+                       InputStream::COMPLETE, true));
 #endif
   }
 
@@ -757,6 +764,19 @@ void DownloadFileImpl::OnStreamCompleted(SourceStream* source_stream) {
   SendUpdate();
   NotifyObserver(source_stream, reason, InputStream::COMPLETE, false);
 }
+
+#if defined(ARKWEB_EX_DOWNLOAD)
+void DownloadFileImpl::OnTimeout(SourceStream* source_stream,
+                                 DownloadInterruptReason reason,
+                                 InputStream::StreamState stream_state,
+                                 bool should_terminate) {
+  LOG(INFO) << "download time out";
+  if (download_job_timer_) {
+    download_job_timer_.reset();
+  }
+  NotifyObserver(source_stream, reason, stream_state, should_terminate);
+}
+#endif
 
 void DownloadFileImpl::NotifyObserver(SourceStream* source_stream,
                                       DownloadInterruptReason reason,

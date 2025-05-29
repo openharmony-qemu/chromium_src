@@ -5,12 +5,12 @@
 #include "base/datashare_uri_utils.h"
 
 #include <string>
+
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "ohos_adapter_helper.h"
 
 namespace base {
-
 
 File OpenDatashareUriForRead(const FilePath& datashare_uri) {
   std::string real_path = GetRealPath(datashare_uri);
@@ -34,3 +34,4 @@ std::string GetRealPath(const FilePath& datashare_uri) {
       .GetRealPath(datashare_uri.value());
 }
 }  // namespace base
+                    

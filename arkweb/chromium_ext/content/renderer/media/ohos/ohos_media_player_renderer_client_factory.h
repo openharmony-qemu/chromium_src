@@ -11,13 +11,8 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "content/common/content_export.h"
-#include "media/base/native_texture_wrapper.h"
 #include "media/base/renderer_factory.h"
 #include "media/mojo/clients/mojo_renderer_factory.h"
-
-namespace media {
-class MojoRendererFactory;
-}
 
 namespace content {
 
@@ -26,14 +21,8 @@ namespace content {
 class CONTENT_EXPORT OHOSMediaPlayerRendererClientFactory
     : public media::RendererFactory {
  public:
-  using GetNativeTextureWrapperCB =
-      base::RepeatingCallback<media::ScopedNativeTextureWrapper()>;
- 
   OHOSMediaPlayerRendererClientFactory(
-      scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner,
-      std::unique_ptr<media::MojoRendererFactory> mojo_renderer_factory,
-      const GetNativeTextureWrapperCB& get_native_texture_wrapper_cb);
-
+      std::unique_ptr<media::MojoRendererFactory> mojo_renderer_factory);
   ~OHOSMediaPlayerRendererClientFactory() override;
 
   std::unique_ptr<media::Renderer> CreateRenderer(
@@ -48,10 +37,6 @@ class CONTENT_EXPORT OHOSMediaPlayerRendererClientFactory
   media::MediaResource::Type GetRequiredMediaResourceType() override;
 
  private:
-  GetNativeTextureWrapperCB get_native_texture_wrapper_cb_;
- 
-  scoped_refptr<base::SingleThreadTaskRunner> compositor_task_runner_;
-
   std::unique_ptr<media::MojoRendererFactory> mojo_renderer_factory_;
 };
 

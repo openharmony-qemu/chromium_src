@@ -19,12 +19,15 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_storage_extension_callback.h"
 #include "nweb_value_callback.h"
 #include "nweb_web_storage.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace OHOS::NWeb {
 class NWebWebStorageDelegateInterface {
@@ -53,7 +56,6 @@ class NWebWebStorageDelegateInterface {
                                   const std::string& username,
                                   int callback_id) = 0;
   virtual void GetSavedPasswordsInfo(int callback_id) = 0;
-  virtual void MigratePasswordsInfo() = 0;
   virtual void ClearPassword() = 0;
   virtual void RemovePassword(const std::string& url,
                               const std::string& username) = 0;

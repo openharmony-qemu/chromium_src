@@ -8,7 +8,6 @@
 #include <string>
 #include <utility>
 
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback.h"
@@ -26,14 +25,25 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "base/containers/flat_map.h"
+#include "components/content_settings/core/common/content_settings.h"
+#include "third_party/blink/public/platform/web_security_origin.h"
+#include "third_party/blink/public/platform/web_url.h"
+#include "third_party/blink/public/web/web_frame.h"
+#include "ui/base/page_transition_types.h"
+#endif
+
 namespace blink {
 class WebFrame;
 class WebURL;
 }  // namespace blink
 
 namespace content_settings {
-
-class ArkWebContentSettingsAgentImplExt;
 
 // This class serves as an agent of the browser-side content settings machinery
 // to implement browser-specified rules directly within the renderer process.
@@ -73,9 +83,6 @@ class ContentSettingsAgentImpl
 
   ~ContentSettingsAgentImpl() override;
 
-  friend class ArkWebContentSettingsAgentImplExt;
-  virtual ArkWebContentSettingsAgentImplExt *AsArkWebContentSettingsAgentImplExt() { return nullptr; }
-
   // Sends an IPC notification that the specified content type was blocked.
   void DidBlockContentType(ContentSettingsType settings_type);
 
@@ -95,6 +102,23 @@ class ContentSettingsAgentImpl
   bool AllowRunningInsecureContent(bool allowed_per_settings,
                                    const blink::WebURL& url) override;
   bool ShouldAutoupgradeMixedContent() override;
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  bool ShouldAllowlistForContentSettings() const;
+
+  // Helpers.
+  // True if |render_frame()| contains content that is white-listed for content
+  // settings.
+  bool IsWhitelistedForContentSettings() const;
+
+  // Exposed for unit tests.
+  static bool IsWhitelistedForContentSettings(
+      const blink::WebSecurityOrigin& origin,
+      const blink::WebURL& document_url);
+
+  void SetContentSettingRules(
+      const RendererContentSettingRules* content_setting_rules);
+#endif
 
   bool allow_running_insecure_content() const {
     return allow_running_insecure_content_;
@@ -158,6 +182,5 @@ class ContentSettingsAgentImpl
 };
 
 }  // namespace content_settings
-#include "arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.h"
 
 #endif  // COMPONENTS_CONTENT_SETTINGS_RENDERER_CONTENT_SETTINGS_AGENT_IMPL_H_

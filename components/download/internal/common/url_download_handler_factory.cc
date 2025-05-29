@@ -4,6 +4,7 @@
 
 #include "components/download/public/common/url_download_handler_factory.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "components/download/internal/common/resource_downloader.h"
@@ -12,7 +13,6 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "services/device/public/mojom/wake_lock_provider.mojom.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
-#include "arkweb/build/features/features.h"
 
 namespace download {
 

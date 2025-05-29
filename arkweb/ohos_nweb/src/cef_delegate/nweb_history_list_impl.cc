@@ -90,7 +90,7 @@ int32_t NWebHistoryListImpl::GetCurrentIndex() {
 }
 
 std::shared_ptr<NWebHistoryItem> NWebHistoryListImpl::GetItem(int32_t index) {
-  if (index < 0 || index >= static_cast<int32_t>(item_list_.size())) {
+  if (index < 0 || index >= item_list_.size()) {
     return nullptr;
   }
   return item_list_[index];

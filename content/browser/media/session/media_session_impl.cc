@@ -51,6 +51,11 @@
 #include "content/public/common/content_features.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "content/browser/media/session/media_session_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+
 namespace content {
 
 using blink::mojom::MediaSessionPlaybackState;
@@ -512,12 +517,6 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
   one_shot_players_.erase(identifier);
   hidden_players_.erase(identifier);
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
-  if (has_normal_player && (normal_players_.size() == 0)) {
-    SetWebviewShow(false, false);
-  }
-#endif // ARKWEB_MEDIA_AVSESSION
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
 
@@ -551,12 +550,6 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
       ++it;
   }
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  bool has_normal_player = normal_players_.size() > 0;
-  if (has_normal_player && (normal_players_.size() == 0)) {
-    SetWebviewShow(false, false);
-  }
-#endif // ARKWEB_MEDIA_AVSESSION
   if (guarding_player_id_ && guarding_player_id_->observer == observer)
     ResetDurationUpdateGuard();
 
@@ -604,7 +597,6 @@ void MediaSessionImpl::OnPlayerPaused(MediaSessionPlayerObserver* observer,
   // Otherwise, suspend the session.
   // The session might not have audio focus if it was paused prior to being
   // suspended, which is fine.
-  implUtils_->DoEndSessionWhenHide();
   OnSuspendInternal(SuspendType::kContent, State::SUSPENDED);
 }
 
@@ -638,7 +630,11 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
   }
 
   if (position == position_) {
-    implUtils_->CheckPosition(position);
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+    if (session_ohos_) {
+      session_ohos_->MediaSessionPositionChanged(position);
+    }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
     return;
   }
 
@@ -668,8 +664,9 @@ void MediaSessionImpl::RebuildAndNotifyMediaPositionChanged() {
 
 void MediaSessionImpl::Resume(SuspendType suspend_type) {
 #if BUILDFLAG(ARKWEB_MEDIA)
-  if (!IsSuspended())
+  if (!IsSuspended()) {
     return;
+  }
 #endif
 
   // If the site has registered an action handler for play, we should pass it to
@@ -990,21 +987,25 @@ void MediaSessionImpl::OnResumeInternal(SuspendType suspend_type) {
 MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
     : WebContentsObserver(web_contents),
       WebContentsUserData<MediaSessionImpl>(*web_contents),
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      weakMediaSessionFactory_(this),
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
       audio_focus_state_(State::INACTIVE),
       desired_audio_focus_type_(AudioFocusType::kGainTransientMayDuck),
       is_ducking_(false),
       ducking_volume_multiplier_(kDefaultDuckingVolumeMultiplier),
-      routed_service_(nullptr)
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-      , weakMediaSessionFactory_(this)
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-{
-  implUtils_ = new MediaSessionImplUtils(this);
+      routed_service_(nullptr) {
 #if BUILDFLAG(IS_ANDROID)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
 #endif  // BUILDFLAG(IS_ANDROID)
-  CreateSessionOhos();
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess &&
+      !currentProcess->HasSwitch(switches::kEnableMediaAvsession)) {
+    session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+  }
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {
     focused_ = web_contents->GetPrimaryMainFrame()->GetView()->HasFocus();
@@ -1034,10 +1035,6 @@ AudioFocusDelegate::AudioFocusResult MediaSessionImpl::RequestSystemAudioFocus(
   // |kGainTransient| is not used in MediaSessionImpl.
   DCHECK_NE(media_session::mojom::AudioFocusType::kGainTransient,
             audio_focus_type);
-
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  LOG(INFO) << "RequestSystemAudioFocus" << static_cast<int32_t>(audio_focus_type);
-#endif // ARKWEB_MEDIA_POLICY
 
   AudioFocusDelegate::AudioFocusResult result =
       delegate_->RequestAudioFocus(audio_focus_type);
@@ -1299,6 +1296,91 @@ void MediaSessionImpl::EnterPictureInPicture() {
   uma_helper_.RecordEnterPictureInPicture(
       MediaSessionUmaHelper::EnterPictureInPictureType::kDefaultHandler);
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+MediaSessionImpl::NWebPlaybackState MediaSessionImpl::NWebGetState() {
+  if (GetMediaAudioVideoStates().empty()) {
+    return NWebPlaybackState::NONE;
+  }
+  if (IsSuspended()) {
+    return NWebPlaybackState::PAUSED;
+  }
+  if (IsActive()) {
+    return NWebPlaybackState::PLAYING;
+  } else {
+    return NWebPlaybackState::STOP;
+  }
+}
+
+bool MediaSessionImpl::IsEndOfMedia() {
+  bool ret = true;
+  if (position_) {
+    ret = position_->end_of_media();
+    if (ret) {
+      return ret;
+    }
+  }
+
+  if (session_ohos_) {
+    ret = session_ohos_->IsEndOfMedia();
+    if (ret) {
+      return ret;
+    }
+  }
+  return ret;
+}
+
+void MediaSessionImpl::SetEndOfMedia(bool end_of_media) {
+  if (session_ohos_) {
+    session_ohos_->SetEndOfMedia(end_of_media);
+  }
+}
+
+bool MediaSessionImpl::GetPlayingState() {
+  return isPlayingState_;
+}
+
+void MediaSessionImpl::SetPlayingState(bool playingState) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  RebuildAndNotifyMetadataChanged();
+#endif  // ARKWEB_MEDIA_AVSESSION
+  isPlayingState_ = playingState;
+}
+
+bool MediaSessionImpl::GetMuteState() {
+  return is_muted_;
+}
+
+bool MediaSessionImpl::IsPauseByAvsession() {
+  bool ret = false;
+  if (session_ohos_) {
+    ret = session_ohos_->IsPauseByAvsession();
+  }
+  return ret;
+}
+
+void MediaSessionImpl::SetPauseByAvsession(bool is_pause) {
+  if (session_ohos_) {
+    session_ohos_->SetPauseByAvsession(is_pause);
+  }
+}
+
+void MediaSessionImpl::SetWebviewShow(bool show, bool is_special_for_audio) {
+  if (session_ohos_) {
+    session_ohos_->SetWebviewShow(show, is_special_for_audio);
+  }
+}
+
+void MediaSessionImpl::SetSessionState(
+    MediaSessionImpl::NWebMediaSessionState sessionState) {
+  sessionState_ = sessionState;
+}
+
+MediaSessionImpl::NWebMediaSessionState MediaSessionImpl::GetSessionState() {
+  return sessionState_;
+}
+
+#endif
 
 void MediaSessionImpl::ExitPictureInPicture() {
   static_cast<WebContentsImpl*>(web_contents())->ExitPictureInPicture();
@@ -1852,7 +1934,12 @@ void MediaSessionImpl::RebuildAndNotifyMetadataChanged() {
   media_session::MediaMetadata metadata;
   BuildMetadata(metadata, artwork);
 
-  implUtils_->PushBackMediaImage(artwork);
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  std::string attrib_image_url = web_contents()->GetVideoPoster();
+  media_session::MediaImage mediaImage;
+  mediaImage.src = GURL(attrib_image_url);
+  artwork.push_back(mediaImage);
+#endif  // ARKWEB_MEDIA_AVSESSION
 
   // If we have no artwork in |images_| or the arwork has changed then we should
   // update it with the latest artwork from the routed service.
@@ -1928,7 +2015,15 @@ void MediaSessionImpl::BuildMetadata(
   if (metadata.title.empty()) {
     metadata.title = SanitizeMediaTitle(web_contents()->GetTitle());
   }
-  implUtils_->SetMediaTitle(metadata);
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (web_contents()) {
+    std::u16string u16title =
+        base::UTF8ToUTF16(web_contents()->GetMediaTitle());
+    if (!u16title.empty()) {
+      metadata.title = u16title;
+    }
+  }
+#endif  // ARKWEB_MEDIA_AVSESSION
 
   ContentClient* content_client = GetContentClient();
   const GURL& url = web_contents()->GetLastCommittedURL();
@@ -2033,6 +2128,8 @@ std::vector<MediaAudioVideoState> MediaSessionImpl::GetMediaAudioVideoStates() {
   // If we have a routed frame then we should limit the players to the
   // frame so it is aligned with the media metadata.
 #if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+        LOG(INFO) << "player.observer is null == " << !player.observer;
+        LOG(INFO) << "routed_rfh is null == " << !routed_rfh;
         if (!player.observer ||
             (routed_rfh && player.observer->render_frame_host() != routed_rfh))
           return;
@@ -2134,6 +2231,34 @@ bool MediaSessionImpl::HasImageCacheForTest(const GURL& image_url) const {
   return GetPageData(web_contents()->GetPrimaryPage()).GetImageCache(image_url);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+void MediaSessionImpl::PutWebMediaAVSessionEnabled(bool enable) {
+  LOG(INFO) << "media avsession MediaSessionImpl::PutWebMediaAVSessionEnabled "
+               "enable is: "
+            << enable;
+  bool isWebMediaAVSessionSwitch = false;
+  auto currentProcess = base::CommandLine::ForCurrentProcess();
+  if (currentProcess &&
+      !currentProcess->HasSwitch(switches::kEnableMediaAvsession)) {
+    isWebMediaAVSessionSwitch = true;
+  }
+  if (enable) {
+    if (isWebMediaAVSessionSwitch && !session_ohos_) {
+      session_ohos_ = std::make_unique<MediaSessionOHOS>(this);
+      if (web_contents() && web_contents()->GetPrimaryMainFrame() &&
+          web_contents()->GetPrimaryMainFrame()->GetView()) {
+        focused_ = web_contents()->GetPrimaryMainFrame()->GetView()->HasFocus();
+      }
+    }
+  } else {
+    if (session_ohos_) {
+      session_ohos_.reset();
+    }
+  }
+  RebuildAndNotifyMetadataChanged();
+}
+#endif  // ARKWEB_MEDIA_AVSESSION
+
 MediaSessionImpl::PageData::PageData(content::Page& page)
     : PageUserData(page) {}
 
@@ -2149,7 +2274,3 @@ PAGE_USER_DATA_KEY_IMPL(MediaSessionImpl::PageData);
 WEB_CONTENTS_USER_DATA_KEY_IMPL(MediaSessionImpl);
 
 }  // namespace content
-
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/session/media_session_impl_for_include.cc"
-#endif

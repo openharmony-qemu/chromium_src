@@ -24,7 +24,7 @@ void DecelerationAnimator::startAnimate(float distance,
   if (task_runner_) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&DecelerationAnimator::animate,
-                                  base::RetainedRef(this), distance, duration));
+                                  base::Unretained(this), distance, duration));
   }
 }
 
@@ -56,11 +56,6 @@ void DecelerationAnimator::animate(float distance, base::TimeDelta duration) {
 void DecelerationAnimator::resetAnimate() {
   listener_.reset();
   task_runner_.reset();
-}
-
-void DecelerationAnimator::setRefreshListener(
-    std::unique_ptr<DecelerationAnimatorListener> listener) {
-  listener_ = std::move(listener);
 }
 
 }  // namespace ui

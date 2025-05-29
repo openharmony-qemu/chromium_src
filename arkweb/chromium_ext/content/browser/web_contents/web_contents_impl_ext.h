@@ -20,9 +20,7 @@
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "content/browser/media/video_assistant/video_assistant.h"
-#include "content/public/browser/media_player_controller.h"
-#include "content/public/browser/media_player_listener.h"
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
 namespace content {
 
@@ -45,21 +43,11 @@ class CustomMediaPlayerListener;
 enum class RendererIsUnresponsiveReason;
 #endif
 
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-class MediaPlayerListener;
-class VideoAssistant;
-#endif  // ARKWEB_VIDEO_ASSISTANT
-
 class WebContentsImplExt : public WebContentsImpl {
  public:
   WebContentsImplExt(BrowserContext* browser_context);
-  ~WebContentsImplExt() override;
 
-  content::WebContentsImplExt* AsWebContentsImplExt() override { return this; }
-
-  // WebContents ------------------------------------------------------
-  void SetDelegate(WebContentsDelegate* delegate) override;
-  void MediaDestroyed(const MediaPlayerId& id);
+  content::WebContentsImplExt* AsWebContentsImplExt() override { return this; };
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   void StartCamera(int nWebID) override;
@@ -168,8 +156,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
-  void CloseImageOverlaySelection() override;
-  void OnOverlayZoomChanged();
+  bool CloseImageOverlaySelection() override;
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -195,12 +182,11 @@ class WebContentsImplExt : public WebContentsImpl {
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  bool is_safe_browsing_config_ = false;
   bool is_safe_browsing_enabled_ = true;
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override;
-  bool IsSafeBrowsingDetectionConfig() override;
-  bool IsSafeBrowsingDetectionStrict() override;
-  bool IsSafeBrowsingDetectionDisabled() override;
+  bool IsSafeBrowsingDetectionEnabled() override {
+    return is_safe_browsing_enabled_;
+  }
 #endif
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
@@ -223,127 +209,6 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
   const std::string& SharedRenderProcessToken() override;
-#endif
-
-#if BUILDFLAG(ARKWEB_DATALIST)
-  void ShowAutofillPopup(const gfx::RectF& element_bounds,
-                         bool is_rtl,
-                         const std::vector<autofill::Suggestion>& suggestions,
-                         bool is_password_popup_type) override;
-  void HideAutofillPopup() override;
-#endif // BUILDFLAG(ARKWEB_DATALIST)
-#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-  bool is_selectable_;
-  void SetShouldShowFreeCopyMenu(bool is_selectable) {
-    is_selectable_ = is_selectable;
-  }
-  bool ShouldShowFreeCopyMenu() override { return is_selectable_; }
-#endif
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  void OnShareFile(const std::string& filePath,
-                   const std::string& utdTypeId) override;
-#endif
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  void CollapseAllFramesSelection() override;
-#endif
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionUpdateTab(
-      int32_t tab_id,
-      const NWebExtensionTabUpdateProperties* update_properties) override;
-#endif
-#if BUILDFLAG(ARKWEB_MENU)
-  void SelectRangeV2(const gfx::Point& position, bool is_base) override;
-#endif
-#if BUILDFLAG(ARKWEB_USERAGENT)
-  void SetCustomUA(std::string custom_user_agent) override;
-  std::string GetCustomUA() override;
-#endif
-#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-  void OneShotMediaPlayerStopped() override;
-#endif
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  NativeWebContentsObserver* native_web_contents_observer() {
-    return native_web_contents_observer_.get();
-  }
-#endif
-#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
-  void OnBeforeUnloadFired(bool proceed) override;
-#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  void StopScreenCapture(int32_t nweb_id, const std::string& session_id) override;
-  void SetScreenCapturePickerShow() override;
-  void DisableSessionReuse() override;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-  void EnterFullscreenMode(
-      RenderFrameHostImpl* requesting_frame,
-      const blink::mojom::FullscreenOptions& options) override;
-  void ExitFullscreenMode(bool will_cause_resize) override;
-  void RenderViewReady(RenderViewHost* render_view_host) override;
-  void DidFinishNavigation(NavigationHandle* navigation_handle) override;
-  void RenderWidgetCreated(RenderWidgetHostImpl* render_widget_host) override;
-  RenderViewHostImpl* GetRenderViewHost() override;
-  void UpdateBrowserControlsState(
-    cc::BrowserControlsState constraints,
-    cc::BrowserControlsState current,
-    bool animate,
-    const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
-    override;
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-friend class WebContentsImpl;
-friend class WebContentsImplUtils;
-private:
-  std::unique_ptr<VideoAssistant> video_assistant_;
-  bool custom_media_player_enabled_ = false;
-  std::map<MediaPlayerId, int32_t> surface_widget_map_;
-public:
-  void EnableVideoAssistant(bool enable) override;
-  void ExecuteVideoAssistantFunction(const std::string& cmdId) override;
-  void OnShowToast(double duration, const std::string& toast);
-  void OnShowVideoAssistant(const std::string& videoAssistantItems);
-  void OnReportStatisticLog(const std::string& content);
-  void CustomWebMediaPlayer(bool enable) override;
-  void PopluateVideoAssistantConfig(
-      media::mojom::VideoAssistantConfigPtr& config);
-  void OnVideoPlaying(media::mojom::VideoAttributesForVASTPtr video_attributes,
-                      const MediaPlayerId& id);
-  void OnUpdateVideoAttributes(
-      media::mojom::VideoAttributesForVASTPtr video_attributes,
-      const MediaPlayerId& id);
-  void OnVideoDestroyed(const MediaPlayerId& id);
-  std::unique_ptr<MediaPlayerListener> OnFullScreenOverlayEnter(
-      media::mojom::MediaInfoForVASTPtr media_info,
-      const MediaPlayerId& media_player_id);
-
-  void SetVideoSurface(const MediaPlayerId& id, int32_t surface_widget);
-  void DelVideoSurface(int32_t surface_id);
-  void DelAllVideoSurfaces();
-  void ReportVideoDecoderName(const std::string& decoder_name);
-#endif  // ARKWEB_VIDEO_ASSISTANT
-private:
-  std::string custom_user_agent_;
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-  bool safe_browsing_strict_mode_ = false;
-#endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  std::unique_ptr<NativeWebContentsObserver> native_web_contents_observer_;
-  std::map<std::string,gfx::Rect> native_embed_rect_info_map_;
-#endif
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-  bool touch_insert_handle_menu_show_ = false;
-#endif
-#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
-  std::string user_agent_{""};
-#endif  // ARKWEB_EXT_UA
-#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
-  cc::BrowserControlsState browser_controls_state_ =
-      cc::BrowserControlsState::kBoth;
-  cc::BrowserControlsState controls_state_fullscreen_ =
-      cc::BrowserControlsState::kBoth;
-  cc::BrowserControlsState controls_state_current_fullscreen_ =
-      cc::BrowserControlsState::kBoth;
-#endif
-#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-  std::string shared_render_process_token_;
 #endif
 };
 }  // namespace content

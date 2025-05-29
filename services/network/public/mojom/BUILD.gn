@@ -3,12 +3,15 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
-import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/dcheck_always_on.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 import("//net/features.gni")
 import("//services/network/public/cpp/features.gni")
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
 
 # These interfaces are put in their own target to avoid a circular dependency,
 # which comes from the fact that proxy_resolver service uses these interfaces,
@@ -555,6 +558,38 @@ mojom("url_loader_base") {
     export_define_blink = "BLINK_PLATFORM_IMPLEMENTATION=1"
     export_header_blink = "third_party/blink/public/platform/web_common.h"
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (arkweb_prp_preload) {
+    enabled_features += [ "arkweb_prp_preload" ]
+  }
+#endif
+
+  #if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  if (enable_arkweb) {
+    enabled_features += [ "arkweb_ex_download" ]
+  }
+
+  #endif
+
+  #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  if (enable_arkweb) {
+    enabled_features += [ "arkweb_resource_interception" ]
+  }
+
+  #endif
+
+  #if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+  if (enable_arkweb) {
+    enabled_features += [ "arkweb_codecache_enhance" ]
+  }
+
+  #endif
+
+  #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  enabled_features += [ "arkweb_network_load" ]
+
+  #endif
 
   # Shared by cpp_typemaps and blink_cpp_typemaps.
   shared_typemaps = [
@@ -1501,6 +1536,10 @@ mojom("mojom") {
     "url_loader_factory.mojom",
   ]
 
+  if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
+    sources += [ "//arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom" ]
+  }
+
   public_deps = [
     ":cookies_mojom",
     ":mojom_first_party_sets",
@@ -1529,15 +1568,24 @@ mojom("mojom") {
     "//url/mojom:url_mojom_scheme_host_port",
   ]
 
-  if (arkweb_ext_http_dns_fallback) {
-    public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
-  }
-
   if (is_win) {
     public_deps += [ "//services/proxy_resolver_win/public/mojom" ]
   }
 
   enabled_features = []
+
+  #if BUILDFLAG(ARKWEB_COOKIE)
+  if (is_android || (defined(arkweb_cookie) && arkweb_cookie)) {
+    enabled_features += [ "is_android_or_arkweb_cookie" ]
+  }
+
+  #endif
+
+  if (arkweb_custom_dns) {
+    enabled_features += [ "arkweb_custom_dns" ]
+  }
+
+  enabled_features += [ "is_arkweb" ]
 
   # TODO(crbug.com/40083944): When moving the service implementation to
   # //services/network, add the correct values for export_class_attribute /
@@ -1556,6 +1604,12 @@ mojom("mojom") {
     ]
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (arkweb_prp_preload) {
+    enabled_features += [ "arkweb_prp_preload" ]
+  }
+#endif
+
   has_dchecks = is_debug || dcheck_always_on
   if (has_dchecks && is_win) {
     enabled_features += [ "win_permissions_validation" ]
@@ -1568,6 +1622,13 @@ mojom("mojom") {
     if (enable_reporting) {
       enabled_features += [ "enable_reporting" ]
     }
+  }
+
+  if (is_arkweb) {
+    enabled_features += [
+      "arkweb_ex_network_connection",
+      "arkweb_ex_http_dns_fallback",
+    ]
   }
 
   if (is_linux) {

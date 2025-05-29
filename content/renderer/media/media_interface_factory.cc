@@ -14,10 +14,6 @@
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "arkweb/chromium_ext/content/renderer/media_interface_factory_for_include.cc"
-#endif
-
 namespace content {
 
 MediaInterfaceFactory::MediaInterfaceFactory(
@@ -163,7 +159,32 @@ void MediaInterfaceFactory::CreateMediaPlayerRenderer(
       std::move(client_extension_remote), std::move(receiver),
       std::move(renderer_extension_receiver));
 }
-#endif // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void MediaInterfaceFactory::CreateCustomMediaPlayerRenderer(
+    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    mojo::PendingReceiver<media::mojom::Renderer> receiver,
+    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+        renderer_extension_receiver,
+    int player_id) {
+  if (!task_runner_->BelongsToCurrentThread()) {
+    task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&MediaInterfaceFactory::CreateCustomMediaPlayerRenderer,
+                       weak_this_, std::move(client_extension_remote),
+                       std::move(receiver),
+                       std::move(renderer_extension_receiver), player_id));
+    return;
+  }
+
+  DVLOG(1) << __func__;
+  GetMediaInterfaceFactory()->CreateCustomMediaPlayerRenderer(
+      std::move(client_extension_remote), std::move(receiver),
+      std::move(renderer_extension_receiver), player_id);
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_ANDROID)
 void MediaInterfaceFactory::CreateFlingingRenderer(

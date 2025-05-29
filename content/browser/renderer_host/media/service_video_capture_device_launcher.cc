@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "build/build_config.h"
@@ -20,7 +21,6 @@
 #include "services/video_capture/public/cpp/receiver_media_to_mojo_adapter.h"
 #include "services/video_capture/public/mojom/video_frame_handler.mojom.h"
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
-#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "media/base/media_switches.h"
@@ -95,7 +95,7 @@ void ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync(
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   LOG(INFO) << "ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync";
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
   auto scoped_trace = ScopedCaptureTrace::CreateIfEnabled(
       "ServiceVideoCaptureDeviceLauncher::LaunchDeviceAsync");

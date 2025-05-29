@@ -303,7 +303,7 @@ bool FontUniqueNameLookup::PersistToFile() {
 
 void FontUniqueNameLookup::ScheduleLoadOrUpdateTable() {
   base::ThreadPool::PostTask(FROM_HERE,
-                             {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
+                             {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
                               base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
                              base::BindOnce(
                                  [](FontUniqueNameLookup* instance) {

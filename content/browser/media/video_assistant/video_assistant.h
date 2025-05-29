@@ -43,10 +43,8 @@ class VideoAssistant {
       media::mojom::VideoAttributesForVASTPtr video_attributes,
       const MediaPlayerId& id);
   virtual void OnVideoDestroyed(const MediaPlayerId& id);
-
-  virtual void ReportVideoDecoderName(const std::string& decoder_name);
 };
 
-} // namespace
+}  // namespace content
 
-#endif // CONTENT_BROWSER_MEDIA_VIDEO_ASSISTANT_VIDEO_ASSISTANT_H_
+#endif  // CONTENT_BROWSER_MEDIA_VIDEO_ASSISTANT_VIDEO_ASSISTANT_H_

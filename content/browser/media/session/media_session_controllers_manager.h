@@ -9,11 +9,11 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/web_contents_observer.h"  // For MediaPlayerId.
 #include "services/media_session/public/mojom/media_session.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace media {
 enum class MediaContentType;
@@ -60,11 +60,6 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when the given player |id| has paused.
   void OnPause(const MediaPlayerId& id, bool reached_end_of_stream);
 
-#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
-  // Called when the given player |id| has destroyed media AVSession.
-  void OnEndAVSession(const MediaPlayerId& id, bool is_hidden);
-#endif // ARKWEB_MEDIA_AVSESSION
-
   // Called when the given player |id| has been destroyed.
   void OnEnd(const MediaPlayerId& id);
 
@@ -83,7 +78,7 @@ class CONTENT_EXPORT MediaSessionControllersManager {
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   // Set whether to the HTML play can be used to control media
   void SetHtmlPlayEnabled(bool enabled);
-#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Called when the player's mute status changed.
   void OnMediaMutedStatusChanged(const MediaPlayerId& id, bool mute);
@@ -109,10 +104,6 @@ class CONTENT_EXPORT MediaSessionControllersManager {
   // Called when video visibility for the player |id| has changed.
   void OnVideoVisibilityChanged(const MediaPlayerId& id,
                                 bool meets_visibility_threshold);
-
-#if BUILDFLAG(ARKWEB_PIP)
-  void OnPictureInPictureStateChanged(const MediaPlayerId& id, uint32_t state);
-#endif
 
  private:
   using ControllersMap =

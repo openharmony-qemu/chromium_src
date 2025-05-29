@@ -3,6 +3,4 @@
 <translationbundle lang="zh-CN">
 <translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">网址为 <ph name="ERROR_URL"/> 网页可能暂时无法连接，或者它已永久性地移动到了新网址</translation>
 <translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">倍速</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">已启用未成年人保护，此网页被限制访问。</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">设置</translation>
 </translationbundle>

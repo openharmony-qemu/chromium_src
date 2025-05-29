@@ -16,11 +16,9 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   ~PRParallelPreloadMgrImpl() = default;
   void Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner) override;
   void StartPage(const std::string& url,
-                     const net::NetworkAnonymizationKey& networkAnonymizationKey,
                      base::WeakPtr<net::URLRequestContext> url_request_context,
                      uint64_t addr_web_handle,
-                     PageOriginCallback callback,
-                     bool no_use_cache) override;
+                     PageOriginCallback callback) override;
   void StopPage(uint64_t addr_web_handle) override;
   void UpdateResRequestInfo(const std::string& key,
                             const std::shared_ptr<PRRequestInfo>& info) override;
@@ -30,7 +28,6 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   void SetURLLoaderFactoryParam(network::mojom::URLLoaderFactoryParamsPtr params) override;
   base::WeakPtr<PRPPRequestLoaderFactory> GetRequestLoaderFactory(const std::string& main_url) override;
   void UpdateIdlePrerequestCount(const std::string& key) override;
-  void RemoveCache(base::Time start_time, base::Time end_time) override;
  private:
   struct PRParallelPreloadInfo {
     scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler_;
@@ -49,11 +46,11 @@ class PRParallelPreloadMgrImpl : public PRParallelPreloadMgr {
   bool is_inited_ { false };
   scoped_refptr<base::SingleThreadTaskRunner> sth_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> net_task_runner_;
+  scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
   std::unordered_map<std::string, PRParallelPreloadInfo> prp_preload_info_map_;
   std::unordered_map<const void*, std::string> web_handle_pages_map_;
-  std::unordered_map<std::string, std::string> prp_page_url_;
-
   base::WeakPtrFactory<PRParallelPreloadMgrImpl> weak_factory_ { this };
+  std::unordered_map<std::string, std::string> prp_page_url_;
 };
 
 }  // namespace ohos_prp_preload

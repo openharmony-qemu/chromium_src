@@ -2215,11 +2215,6 @@ config("chromium_code") {
       "-Wunreachable-code-aggressive",
     ]
 
-    if (is_component_build) {
-      # FIXME(AR20250313353352): Should be turn on after re-factoring
-      cflags += [ "-w" ]
-    }
-
     # Thread safety analysis is broken under nacl: https://crbug.com/982423.
     if (!is_nacl || is_nacl_saigo) {
       cflags += [
@@ -2657,7 +2652,7 @@ config("optimize") {
     # vectorization while otherwise optimizing for size.
     rustflags = [ "-Copt-level=s" ]
   } else {
-    cflags = [ "-Oz" ] + common_optimize_on_cflags
+    cflags = [ "-O2" ] + common_optimize_on_cflags
 
     # The `-O3` for clang turns on extra optimizations compared to the standard
     # `-O2`. But for rust, `-Copt-level=3` is the default and is thus reliable

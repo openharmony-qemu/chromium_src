@@ -798,11 +798,7 @@ OH_CookieManager_FetchCookieSync(const char* url,
   }
 
 #if BUILDFLAG(ARKWEB_COOKIE)
-#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
-  *cookie_value = new char[cookie_content.length() + 1];
-#else
   *cookie_value = (char*)__real_malloc(cookie_content.length() + 1);
-#endif // ADDRESS_SANITIZER
 #endif
   strcpy((*cookie_value), cookie_content.c_str());
   if (cookie_content == "" && !is_valid) {
@@ -956,64 +952,6 @@ ARKWEB_NDK_EXPORT void OH_ArkWeb_RegisterAsyncJavaScriptProxyEx(
   RegisterJavaScriptProxy(webTag, proxyObject, true, permission);
 }
 
-ARKWEB_NDK_EXPORT void OH_NativeArkWeb_RegisterAsyncThreadJavaScriptProxy(
-    const char* webTag,
-    const ArkWeb_ProxyObjectWithResult* proxyObject,
-    const char* permission) {
-  if (!webTag || !proxyObject) {
-    return;
-  }
-
-  if (proxyObject == nullptr) {
-    LOG(ERROR) << "NativeArkWeb proxy object is nullptr";
-    return;
-  }
-
-  if (proxyObject->objName == nullptr) {
-    LOG(ERROR) << "NativeArkWeb proxy object name is nullptr";
-    return;
-  }
-
-  auto webObjectPtr =
-      OHOS::NWeb::ArkWebNativeObject::GetWebInstanceByWebTag(webTag);
-  if (!webObjectPtr) {
-    LOG(ERROR) << "NativeArkWeb object pointer is nullptr";
-    return;
-  }
-
-  if (auto nwebSharedPtr = webObjectPtr->GetWebSharedPtr()) {
-    int32_t size = proxyObject->size;
-    std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
-        std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>
-            callbackList(size);
-    const ArkWeb_ProxyMethodWithResult* methodList = proxyObject->methodList;
-    if (methodList == nullptr) {
-      LOG(ERROR) << "NativeArkWeb method list is nullptr";
-      return;
-    }
-
-    std::vector<std::string> methodNameList(size);
-    for (int32_t i = 0; i < size; i++) {
-      auto methodNameObject = methodList[i];
-      methodNameList[i] = methodNameObject.methodName;
-      auto proxyCallback = CreateProxyCallback(
-          methodNameObject.callback, std::string(webTag), methodNameObject.userData);
-      callbackList[i] = std::move(proxyCallback);
-    }
-    if (permission) {
-      nwebSharedPtr->RegisterNativeAsyncThreadArkJSFunctionWithResult(
-          proxyObject->objName, methodNameList, std::move(callbackList), permission);
-    } else {
-      nwebSharedPtr->RegisterNativeAsyncThreadArkJSFunctionWithResult(
-          proxyObject->objName, methodNameList, std::move(callbackList), "");
-    }
-  } else {
-    LOG(ERROR)
-        << "NativeArkWeb RegisterJavaScriptProxy get nweb null: %{public}s"
-        << webTag;
-  }
-}
-
 ARKWEB_NDK_EXPORT ArkWeb_JavaScriptValuePtr
 OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
                                     void* data,
@@ -1026,26 +964,22 @@ OH_JavaScript_CreateJavaScriptValue(ArkWeb_JavaScriptValueType type,
 
   if (!data) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue nullptr error";
-    delete value;
     return nullptr;
   }
 
   if (dataLength == 0) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue data size error";
-    delete value;
     return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_NONE) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type none";
-    delete value;
     return nullptr;
   }
 
   if (type == ArkWeb_JavaScriptValueType::ARKWEB_JAVASCRIPT_BOOL &&
       dataLength != 1) {
     LOG(ERROR) << "NativeArkWeb CreateJavaScriptValue type bool length error";
-    delete value;
     return nullptr;
   }
 

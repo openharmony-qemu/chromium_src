@@ -167,7 +167,8 @@ class BASE_EXPORT PlatformThreadBase {
   static PlatformThreadId CurrentId();
 
 #if BUILDFLAG(IS_ARKWEB)
-  // Gets the current thread global id, which may be useful for logging purposes.
+  // Gets the current thread global id, which may be useful for logging
+  // purposes.
   static PlatformThreadId CurrentRealId();
 #endif
 

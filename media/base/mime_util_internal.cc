@@ -439,9 +439,7 @@ void MimeUtil::AddSupportedMediaFormats() {
 
 #if BUILDFLAG(ARKWEB_MEDIA)
   if (base::FeatureList::IsEnabled(kCanPlayHls)) {
-    CodecSet hls_codecs{H264,
-                        MP3,
-                        MPEG4_AAC};
+    CodecSet hls_codecs{H264, MP3, MPEG4_AAC};
     AddContainerWithCodecs("application/x-mpegurl", hls_codecs);
   }
 #endif

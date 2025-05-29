@@ -69,6 +69,11 @@
 #include "media/cdm/win/media_foundation_cdm.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "content/browser/media/ohos/ohos_media_player_renderer.h"
+#include "media/mojo/services/mojo_renderer_service.h"  // nogncheck
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/media/android/media_player_renderer.h"
 #include "content/browser/media/flinging_renderer.h"
@@ -81,9 +86,9 @@
 #include "mojo/public/cpp/bindings/message.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/media_interface_proxy_for_include.cc"
-#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "content/browser/media/ohos/ohos_custom_media_player_renderer.h"
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace content {
 
@@ -409,6 +414,28 @@ void MediaInterfaceProxy::CreateMediaPlayerRenderer(
       std::move(receiver));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void MediaInterfaceProxy::CreateCustomMediaPlayerRenderer(
+    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+        client_extension_remote,
+    mojo::PendingReceiver<media::mojom::Renderer> receiver,
+    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+        renderer_extension_receiver,
+    int player_id) {
+  DCHECK(thread_checker_.CalledOnValidThread());
+
+  media::MojoRendererService::Create(
+      nullptr,
+      std::make_unique<OHOSCustomMediaPlayerRenderer>(
+          render_frame_host().GetProcess()->GetID(),
+          render_frame_host().GetRoutingID(), player_id,
+          WebContents::FromRenderFrameHost(&render_frame_host()),
+          std::move(renderer_extension_receiver),
+          std::move(client_extension_remote)),
+      std::move(receiver));
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(IS_WIN)
 void MediaInterfaceProxy::CreateMediaFoundationRenderer(

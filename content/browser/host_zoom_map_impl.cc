@@ -36,10 +36,18 @@
 // Must come after all headers that specialize FromJniType() / ToJniType().
 #include "content/public/android/content_jni_headers/HostZoomMapImpl_jni.h"
 #endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/build/features/features.h"
+#endif
 
 namespace content {
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+const int64_t ZOOM_FREQUENCY_LIMIT = 30;
+#endif
+
 std::string GetHostFromProcessFrame(RenderFrameHostImpl* rfh) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   if (!rfh)
@@ -123,9 +131,6 @@ HostZoomMapImpl::HostZoomMapImpl()
     : default_zoom_level_(0.0),
       clock_(base::DefaultClock::GetInstance()) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  imp_utils_ = std::make_unique<HostZoomMapImplUtils>(this);
-#endif
 }
 
 void HostZoomMapImpl::CopyFrom(HostZoomMap* copy_interface) {
@@ -245,11 +250,19 @@ void HostZoomMapImpl::SetZoomLevelForHostInternal(const std::string& host,
                                                   double level,
                                                   base::Time last_modified) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  if (imp_utils_->IsZoomTooFast(last_modified, level)) {
+
+#if defined(OHOS_INPUT_EVENTS)
+  base::TimeDelta elapsed = last_modified - last_modified_;
+  int64_t elapsed_ms = elapsed.InMilliseconds();
+  if (elapsed_ms < ZOOM_FREQUENCY_LIMIT) {
+    LOG(INFO) << "Throw zoom event because frequency limit";
     return;
   }
+  last_modified_ = last_modified;
+  TRACE_EVENT1("cc", "HostZoomMapImpl::SetZoomLevelForHostInternal",
+               "zoom_level", level);
 #endif
+
   if (blink::ZoomValuesEqual(level, default_zoom_level_)) {
     host_zoom_levels_.erase(host);
   } else {

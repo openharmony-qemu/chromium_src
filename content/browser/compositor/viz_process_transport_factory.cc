@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -199,9 +198,9 @@ void VizProcessTransportFactory::ConnectHostFrameSinkManager() {
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void VizProcessTransportFactory::SendInternalBeginFrame(
     const viz::FrameSinkId& id) {
-  GetHostFrameSinkManager()->managerUtils->SendInternalBeginFrame(id);
+  GetHostFrameSinkManager()->SendInternalBeginFrame(id);
 }
-#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 void VizProcessTransportFactory::CreateLayerTreeFrameSink(
     base::WeakPtr<ui::Compositor> compositor) {

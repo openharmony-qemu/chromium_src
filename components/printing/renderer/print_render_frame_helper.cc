@@ -119,7 +119,7 @@ enum PrintPreviewHelperEvents {
 
 #if BUILDFLAG(ARKWEB_PRINT)
 constexpr int kCheckCancelCount = 10;
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 #if BUILDFLAG(ENABLE_PRINT_PREVIEW)
 bool g_is_preview_enabled = true;
@@ -639,11 +639,7 @@ void RenderPageContent(blink::WebLocalFrame* frame,
 
 class HeaderAndFooterContext {
  public:
-#if BUILDFLAG(IS_ARKWEB)
-  class HeaderAndFooterClient final : public blink::WebLocalFrameClientExt {
-#else
   class HeaderAndFooterClient final : public blink::WebLocalFrameClient {
-#endif
    public:
     // WebLocalFrameClient:
     void BindToFrame(blink::WebNavigationControl* frame) override {
@@ -793,15 +789,29 @@ void ClosuresForMojoResponse::RunScriptedPrintPreviewQuitClosure() {
   std::move(scripted_print_preview_quit_closure_).Run();
 }
 
+#if BUILDFLAG(ARKWEB_PRINT)
+void ClosuresForMojoResponse::SetPrintRequestedPreviewQuitClosure(
+    base::OnceClosure quit_print_preview) {
+  DCHECK(!print_requested_preview_quit_closure_);
+  print_requested_preview_quit_closure_ = std::move(quit_print_preview);
+}
+
+void ClosuresForMojoResponse::RunPrintRequestedPreviewQuitClosure() {
+  if (!print_requested_preview_quit_closure_) {
+    return;
+  }
+
+  std::move(print_requested_preview_quit_closure_).Run();
+}
+
+blink::WebLocalFrame* PrintRenderFrameHelper::static_web_frame_ = nullptr;
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
 // Class that calls the Begin and End print functions on the frame and changes
 // the size of the view temporarily to support full page printing..
 class PrepareFrameAndViewForPrint : public blink::WebViewClient,
                                     public blink::WebNonCompositedWidgetClient,
-#if BUILDFLAG(IS_ARKWEB)
-                                    public blink::WebLocalFrameClientExt {
-#else
                                     public blink::WebLocalFrameClient {
-#endif
  public:
   PrepareFrameAndViewForPrint(blink::WebLocalFrame* frame,
                               const blink::WebNode& node);
@@ -1220,9 +1230,25 @@ void PrintRenderFrameHelper::ScriptedPrint(bool user_initiated) {
   if (!web_frame->GetDocument().GetFrame())
     return;
 
-  if (PrintQuitLoop(web_frame)) {
+#if BUILDFLAG(ARKWEB_PRINT)
+  if (delegate_->IsScriptedPrintEnabled()) {
+    LOG(INFO) << "OhosPrintManager delegate isScriptedPrintEnabled";
+    web_frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+
+    static_web_frame_ = web_frame;
+
+    base::RunLoop loop{base::RunLoop::Type::kNestableTasksAllowed};
+    closures_for_mojo_responses_->SetPrintRequestedPreviewQuitClosure(
+        loop.QuitClosure());
+    GetPrintManagerHost()->PrintRequested(base::BindOnce(
+        &ClosuresForMojoResponse::RunPrintRequestedPreviewQuitClosure,
+        closures_for_mojo_responses_));
+    loop.Run();
+    LOG(INFO) << "OhosPrintManager loop quit";
+    web_frame->DispatchAfterPrintEvent();
     return;
   }
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   if (print_in_progress_) {
     return;
@@ -1296,7 +1322,7 @@ void PrintRenderFrameHelper::PrintRequestedPagesInternal(
 
 #if BUILDFLAG(ARKWEB_PRINT)
   frame = static_web_frame_;
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   if (!already_notified_frame) {
     frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
@@ -1630,6 +1656,38 @@ void PrintRenderFrameHelper::PrintNodeUnderContextMenu() {
   ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
   PrintNode(render_frame()->GetWebFrame()->ContextMenuNode());
 }
+
+#if BUILDFLAG(ARKWEB_PRINT)
+void PrintRenderFrameHelper::DidDispatchPrintEvent(bool isBefore) {
+  blink::WebLocalFrame* web_frame = render_frame()->GetWebFrame();
+  if (!web_frame) {
+    return;
+  }
+  if (isBefore) {
+    web_frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+  } else {
+    web_frame->DispatchAfterPrintEvent();
+  }
+}
+
+void PrintRenderFrameHelper::ApplicationPrintRequestedPages() {
+  ScopedIPC scoped_ipc(weak_ptr_factory_.GetWeakPtr());
+  if (ipc_nesting_level_ > kAllowedIpcDepthForPrint) {
+    return;
+  }
+  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
+  // Don't print if the RenderFrame is gone.
+  if (render_frame_gone_) {
+    return;
+  }
+
+  // If we are printing a frame with an internal PDF plugin element, find the
+  // plugin node and print that instead.
+  auto plugin = delegate_->GetPdfElement(frame);
+
+  Print(frame, plugin, PrintRequestType::kRegular);
+}
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
 void PrintRenderFrameHelper::UpdateFrameMarginsCssInfo(
     const base::Value::Dict& settings) {
@@ -2029,7 +2087,15 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
   }
 
 #if BUILDFLAG(ARKWEB_PRINT)
-  ArkWebPrintNode(node);
+  blink::WebNode duplicate_node(node);
+
+  blink::WebLocalFrame* frame = duplicate_node.GetDocument().GetFrame();
+  if (!frame) {
+    return;
+  }
+
+  frame->DispatchBeforePrintEvent(/*print_client=*/nullptr);
+  GetPrintManagerHost()->PrintPdfRequested();
 #else
   if (print_in_progress_) {
     // This can happen as a result of processing sync messages when printing
@@ -2082,7 +2148,7 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
   }
 
   print_in_progress_ = false;
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 }
 
 void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
@@ -2109,7 +2175,7 @@ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
     LOG(ERROR) << "OhosPrintManager stop print";
     return;
   }
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   // Some full screen plugins can say they don't want to print.
   if (!expected_page_count || expected_page_count > kMaxPageCount) {
@@ -2249,7 +2315,7 @@ void PrintRenderFrameHelper::PrintPages() {
     LOG(ERROR) << "OhosPrintManager stop print";
     return;
   }
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   uint32_t page_count = prep_frame_view_->GetPageCount();
   if (!page_count || page_count > kMaxPageCount) {
@@ -2287,7 +2353,7 @@ bool PrintRenderFrameHelper::PrintPagesNative(
     LOG(ERROR) << "OhosPrintManager stop print";
     return;
   }
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
   const mojom::PrintPagesParams& params = *print_pages_params_;
   const mojom::PrintParams& print_params = *params.params;
 
@@ -2348,7 +2414,7 @@ bool PrintRenderFrameHelper::PrintPagesNative(
         LOG(ERROR) << "OhosPrintManager stop print";
         return false;
       }
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
       PrintPageInternalResult result =
           PrintPageInternal(print_params, printed_page, page_count, frame,
                             header_footer_frame, &metafile);
@@ -2363,10 +2429,11 @@ bool PrintRenderFrameHelper::PrintPagesNative(
   FinishFramePrinting();
 
 #if BUILDFLAG(ARKWEB_PRINT)
-  metafile.OhosFinishDocument(std::bind(&PrintRenderFrameHelper::CheckCancel, this));
+  metafile.OhosFinishDocument(
+      std::bind(&PrintRenderFrameHelper::CheckCancel, this));
 #else
   metafile.FinishDocument();
-#endif // BUILDFLAG(ARKWEB_PRINT)
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   if (!CopyMetafileDataToDidPrintContentParams(metafile,
                                                page_params->content.get())) {
@@ -3190,5 +3257,12 @@ void PrintRenderFrameHelper::ScriptingThrottler::Reset() {
   count_ = 0;
 }
 
-#include "arkweb/chromium_ext/components/printing/renderer/print_render_frame_helper_include.cc"
+#if BUILDFLAG(ARKWEB_PRINT)
+bool PrintRenderFrameHelper::CheckCancel() {
+  bool cancel = false;
+  GetPrintManagerHost()->CheckCancel(&cancel);
+  return cancel;
+}
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
 }  // namespace printing

@@ -13,13 +13,18 @@
  * limitations under the License.
  */
 
+#define private public
+#define protected public
 #include "base/message_loop/message_pump_ohos.h"
+#undef private
+#undef protected
 
 #include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
 #include "base/message_loop/message_pump.h"
-#include <limits>
+#undef private
 #include <memory>
 #include <mutex>
 
@@ -29,7 +34,8 @@
 #include "third_party/ohos_ndk/includes/ohos_adapter/pasteboard_client_adapter.h"
 #endif  // ARKWEB_UNITTESTS
 
-#include "base/gtest_prod_util.h"
+#include <limits>
+
 #include "base/message_loop/message_pump_type.h"
 #include "base/run_loop.h"
 #include "base/test/task_environment.h"
@@ -59,10 +65,9 @@ class MockMessagePumpDelegate : public MessagePump::Delegate {
   MOCK_METHOD(void, OnEndWorkItem, (int run_level_depth), (override));
   MOCK_METHOD(int, RunDepth, (), (override));
   MOCK_METHOD(void, BeforeWait, (), (override));
-  MOCK_METHOD(void, BeginNativeWorkBeforeDoWork, (), (override));
 
   MOCK_METHOD(MessagePump::Delegate::NextWorkInfo, DoWork, (), (override));
-  MOCK_METHOD(void, DoIdleWork, (), (override));
+  MOCK_METHOD(bool, DoIdleWork, (), (override));
 };
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
@@ -369,7 +374,7 @@ TEST_F(MessagePumpForUITest, DoIdleWork_False_End) {
   EXPECT_CALL(*delegate, DoIdleWork).Times(1).WillOnce(Invoke([] {
     return false;
   }));
-  message_pump_for_ui_->delegate_->DoIdleWork();
+  message_pump_for_ui_->DoIdleWork();
 }
 
 TEST_F(MessagePumpForUITest, DoIdleWork_True_Do_Schedule_End) {
@@ -380,7 +385,7 @@ TEST_F(MessagePumpForUITest, DoIdleWork_True_Do_Schedule_End) {
   EXPECT_CALL(*delegate, DoIdleWork).Times(1).WillOnce(Invoke([] {
     return true;
   }));
-  message_pump_for_ui_->delegate_->DoIdleWork();
+  message_pump_for_ui_->DoIdleWork();
 
   uint64_t value;
   int ret = read(message_pump_for_ui_->non_delayed_fd_, &value, sizeof(value));

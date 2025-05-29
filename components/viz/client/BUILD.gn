@@ -10,7 +10,6 @@ viz_component("client") {
     "client_resource_provider.h",
     "frame_eviction_manager.cc",
     "frame_eviction_manager.h",
-    "//arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h",
     "frame_evictor.cc",
     "frame_evictor.h",
     "shared_bitmap_reporter.cc",

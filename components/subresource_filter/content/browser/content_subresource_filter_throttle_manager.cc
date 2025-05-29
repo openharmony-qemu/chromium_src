@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
-#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
 
 #include <utility>
 
@@ -69,6 +68,19 @@ void ContentSubresourceFilterThrottleManager::BindReceiver(
     manager->receiver_.Bind(render_frame_host, std::move(pending_receiver));
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+// static
+void ContentSubresourceFilterThrottleManager::BindUserReceiver(
+    mojo::PendingAssociatedReceiver<mojom::UserSubresourceFilterHost>
+        pending_receiver,
+    content::RenderFrameHost* render_frame_host) {
+  if (auto* manager = FromPage(render_frame_host->GetPage())) {
+    manager->user_receiver_.Bind(render_frame_host,
+                                 std::move(pending_receiver));
+  }
+}
+#endif
+
 // static
 std::unique_ptr<ContentSubresourceFilterThrottleManager>
 ContentSubresourceFilterThrottleManager::CreateForNewPage(
@@ -83,7 +95,7 @@ ContentSubresourceFilterThrottleManager::CreateForNewPage(
   if (!base::FeatureList::IsEnabled(kSafeBrowsingSubresourceFilter))
     return nullptr;
 
-  return std::make_unique<ArkWebContentSubresourceFilterThrottleManagerExt>(
+  return std::make_unique<ContentSubresourceFilterThrottleManager>(
       profile_context, database_manager, dealer_handle, web_contents_helper,
       initiating_navigation_handle);
 }
@@ -119,7 +131,8 @@ ContentSubresourceFilterThrottleManager::
       profile_interaction_manager_(
           std::make_unique<subresource_filter::ProfileInteractionManager>(
               profile_context)),
-      web_contents_helper_(web_contents_helper) {}
+      web_contents_helper_(web_contents_helper) {
+}
 
 ContentSubresourceFilterThrottleManager::
     ~ContentSubresourceFilterThrottleManager() {
@@ -221,8 +234,26 @@ ContentSubresourceFilterThrottleManager::ActivationStateForNextCommittedLoad(
       navigation_handle->IsInMainFrame() &&
       navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
       navigation_handle->GetWebContents()) {
-    return AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockActivationStateForNextCommittedLoad(
-        navigation_handle, throttle);
+    mojom::ActivationLevel activation_level = mojom::ActivationLevel::kDisabled;
+    LOG(DEBUG) << "[Adblock] navigation url : ***";
+
+    subresource_filter::ActivationDecision decision;
+    mojom::ActivationState state;
+    state.activation_level =
+        profile_interaction_manager_->OnPageActivationComputed(
+            navigation_handle, activation_level, &decision);
+
+    OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+    state.user_subresource_filter_replace =
+        OHOS::adblock::AdBlockConfig::GetInstance()
+            ->GetUserEasylistReplaceSwitch();
+    throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
+
+    if (state.activation_level == mojom::ActivationLevel::kDisabled) {
+      return mojom::ActivationState();
+    }
+    throttle->WillSendActivationToRenderer();
+    return state;
   }
 #endif
 
@@ -353,12 +384,12 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
     statistics_.reset();
     if (filter) {
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-      statistics_ = std::make_unique<PageLoadStatisticsExt>(
+      statistics_ = std::make_unique<PageLoadStatistics>(
           filter->activation_state(), navigation_handle->GetWebContents());
 #else
       statistics_ = std::make_unique<PageLoadStatistics>(
           filter->activation_state(), kSafeBrowsingRulesetConfig.uma_tag);
-#endif // BUILDFLAG(ARKWEB_ADBLOCK)
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
       if (filter->activation_state().enable_logging) {
         CHECK(filter->activation_state().activation_level !=
                   mojom::ActivationLevel::kDisabled,
@@ -370,7 +401,16 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
     }
 #if BUILDFLAG(ARKWEB_ADBLOCK)
     else {
-      AsArkWebContentSubresourceFilterThrottleManagerExt()->StatisticActivationState(navigation_handle);
+      if (!statistics_) {
+        mojom::ActivationState state;
+        state.activation_level = mojom::ActivationLevel::kEnabled;
+        OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+        state.user_subresource_filter_replace =
+            OHOS::adblock::AdBlockConfig::GetInstance()
+                ->GetUserEasylistReplaceSwitch();
+        statistics_ = std::make_unique<PageLoadStatistics>(
+            state, navigation_handle->GetWebContents());
+      }
     }
 #endif
 
@@ -532,7 +572,29 @@ void ContentSubresourceFilterThrottleManager::DidFinishLoad(
   statistics_->OnDidFinishLoad();
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  AsArkWebContentSubresourceFilterThrottleManagerExt()->ReportSubresourceMap(render_frame_host, validated_url);
+  // 数据上报 loads_disallowed_url_map 来mojom文件； 需要转换为std:map
+  std::map<std::string, int32_t> subresource_map;
+  for (auto& pair : statistics_->getAggregatedDocumentStatistics()
+                        .loads_disallowed_url_map) {
+    subresource_map.insert(pair);
+  }
+
+  for (auto& pair : statistics_->getUserAggregatedDocumentStatistics()
+                        .loads_disallowed_url_map) {
+    subresource_map.insert(pair);
+  }
+
+  LOG(INFO) << "[AdBlock] subresource map.size():" << subresource_map.size();
+
+  if (subresource_map.size() > 0) {
+    content::WebContents::FromRenderFrameHost(render_frame_host)
+        ->OnAdsBlocked(validated_url.spec(), subresource_map,
+                       statistics_->IsFirstReport());
+
+    if (statistics_->IsFirstReport()) {
+      statistics_->SetReported();
+    }
+  }
 #endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
@@ -575,7 +637,27 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
       navigation_handle->IsInMainFrame() &&
       navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
       navigation_handle->GetWebContents()) {
-    return AsArkWebContentSubresourceFilterThrottleManagerExt()->OnPageAdBlockActivationState(navigation_handle);
+    mojom::ActivationLevel activation_level = mojom::ActivationLevel::kDisabled;
+    LOG(DEBUG) << "[Adblock] navigation url : ***";
+
+    subresource_filter::ActivationDecision decision;
+    mojom::ActivationState state;
+    state.activation_level =
+        profile_interaction_manager_->OnPageActivationComputed(
+            navigation_handle, activation_level, &decision);
+
+    OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+    state.user_subresource_filter_replace =
+        OHOS::adblock::AdBlockConfig::GetInstance()
+            ->GetUserEasylistReplaceSwitch();
+
+    if (state.activation_level == mojom::ActivationLevel::kDisabled) {
+      ongoing_activation_throttles_.erase(it);
+      return;
+    }
+
+    it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
+    return;
   }
 #endif
 
@@ -730,8 +812,22 @@ ContentSubresourceFilterThrottleManager::
     }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-    AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockMaybeCreateActivationState(
-        navigation_handle, throttle);
+    if (navigation_handle && !navigation_handle->IsDownload() &&
+        navigation_handle->IsInMainFrame() &&
+        navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+        navigation_handle->GetWebContents()) {
+      LOG(DEBUG) << "[Adblock] navigation url: ***";
+
+      mojom::ActivationState state;
+      state.activation_level = mojom::ActivationLevel::kEnabled;
+
+      OHOS::adblock::AdBlockConfig::GetInstance()->ReadFromPrefService();
+      state.user_subresource_filter_replace =
+          OHOS::adblock::AdBlockConfig::GetInstance()
+              ->GetUserEasylistReplaceSwitch();
+
+      throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(), state);
+    }
 #endif
 
     return throttle;
@@ -898,6 +994,84 @@ void ContentSubresourceFilterThrottleManager::DidDisallowFirstSubresource() {
   MaybeShowNotification(receiver_.GetCurrentTargetFrame());
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void ContentSubresourceFilterThrottleManager::
+    DidDisallowFirstUserSubresource() {
+  MaybeShowNotification(user_receiver_.GetCurrentTargetFrame());
+}
+
+void ContentSubresourceFilterThrottleManager::FrameIsUserAd() {
+  // `FrameIsAd()` can only be called for an initial empty document. As it won't
+  // pass through `ReadyToCommitNavigation()` (and has not yet passed through
+  // `DidFinishNavigation()`), we know it won't be updated further.
+  //
+  // The fenced frame root will not report this for the initial empty document
+  // as the fenced frame is isolated from the embedder cannot be scripted. In
+  // that case we do can rely on passing through ReadyToCommitNavigation and we
+  // do so since fenced frame ad tagging varies significantly from regular
+  // iframes, see `AdScriptDidCreateFencedFrame`.
+  content::RenderFrameHost* render_frame_host =
+      user_receiver_.GetCurrentTargetFrame();
+  CHECK(!render_frame_host->IsFencedFrameRoot(), base::NotFatalUntil::M129);
+  OnFrameIsAd(user_receiver_.GetCurrentTargetFrame());
+}
+
+void ContentSubresourceFilterThrottleManager::FrameWasCreatedByUserAdScript() {
+  OnChildFrameWasCreatedByAdScript(user_receiver_.GetCurrentTargetFrame());
+}
+
+void ContentSubresourceFilterThrottleManager::UserAdScriptDidCreateFencedFrame(
+    const blink::RemoteFrameToken& placeholder_token) {
+  if (!blink::features::IsFencedFramesEnabled()) {
+    mojo::ReportBadMessage(
+        "AdScriptDidCreateFencedFrame can only be called when fenced frames "
+        "are enabled.");
+    return;
+  }
+
+  // This method is called from the renderer when it creates a new MPArch-based
+  // fenced frame while an ad script was on the v8 stack.
+  //
+  // Normal frames compute this when the new RenderFrame initializes since that
+  // happens synchronously during the CreateFrame call. At that time,
+  // SubresourceFilterAgent calls FrameWasCreatedByAdScript if needed.  However,
+  // creating an MPArch-based FencedFrame doesn't create a RenderFrame in the
+  // calling process; it creates a RenderFrame in another renderer via IPC at
+  // which point we cannot inspect the v8 stack so we use this special path for
+  // fenced frames.
+
+  content::RenderFrameHost* owner_frame =
+      user_receiver_.GetCurrentTargetFrame();
+  CHECK(owner_frame, base::NotFatalUntil::M129);
+
+  auto* fenced_frame_root = content::RenderFrameHost::FromPlaceholderToken(
+      owner_frame->GetProcess()->GetID(), placeholder_token);
+
+  if (!fenced_frame_root) {
+    return;
+  }
+
+  if (!fenced_frame_root->IsFencedFrameRoot()) {
+    mojo::ReportBadMessage(
+        "AdScriptDidCreateFencedFrame received token for frame that isn't a "
+        "fenced frame root.");
+    return;
+  }
+
+  if (fenced_frame_root->GetParentOrOuterDocument() != owner_frame) {
+    mojo::ReportBadMessage(
+        "AdScriptDidCreateFencedFrame called from non-embedder of fenced "
+        "frame.");
+    return;
+  }
+
+  CHECK(!base::Contains(tracked_ad_evidence_,
+                        fenced_frame_root->GetFrameTreeNodeId()),
+        base::NotFatalUntil::M129);
+  OnChildFrameWasCreatedByAdScript(fenced_frame_root);
+}
+#endif
+
 void ContentSubresourceFilterThrottleManager::FrameIsAd() {
   // `FrameIsAd()` can only be called for an initial empty document. As it won't
   // pass through `ReadyToCommitNavigation()` (and has not yet passed through
@@ -1026,5 +1200,29 @@ ContentSubresourceFilterThrottleManager::EnsureFrameAdEvidence(
                                                parent_frame_tree_node_id))
       .first->second;
 }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void ContentSubresourceFilterThrottleManager::SetStatisticsAfterDocumentLoad(
+    mojom::DocumentLoadStatisticsPtr statistics) {
+  if (statistics_) {
+    statistics_->OnStatisticsAfterDocumentLoad(*statistics);
+  }
+}
+
+void ContentSubresourceFilterThrottleManager::
+    UserSetStatisticsAfterDocumentLoad(
+        mojom::DocumentLoadStatisticsPtr statistics) {
+  if (statistics_) {
+    statistics_->OnUserStatisticsAfterDocumentLoad(*statistics);
+  }
+}
+
+void ContentSubresourceFilterThrottleManager::UserSetDocumentLoadStatistics(
+    mojom::DocumentLoadStatisticsPtr statistics) {
+  if (statistics_) {
+    statistics_->OnUserDocumentLoadStatistics(*statistics);
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 
 }  // namespace subresource_filter

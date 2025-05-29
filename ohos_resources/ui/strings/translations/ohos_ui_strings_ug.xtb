@@ -2,7 +2,4 @@
 <!DOCTYPE translationbundle>
 <translationbundle lang="ug">
 <translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">توربەت (<ph name="ERROR_URL"/>) ھازىرچە ئۇلانمىدى ياكى ئادرېسى ئۆزگەرگەن بولۇشى مۇمكىن.</translation>
-<translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">تېزلىك</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">ئۆسمۈر ھالىتى ئوچۇق، بۇ توربەت چەكلەنگەن.</translation>
-<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">تەڭشەك</translation>
 </translationbundle>

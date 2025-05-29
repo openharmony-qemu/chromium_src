@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
-#include "arkweb/chromium_ext/services/network/network_service_network_delegate_ext.h"
 #include "base/barrier_closure.h"
 #include "base/base64.h"
 #include "base/build_time.h"
@@ -951,11 +950,7 @@ std::unique_ptr<NetworkContext> NetworkContext::CreateForTesting(
     mojom::NetworkContextParamsPtr params,
     OnURLRequestContextBuilderConfiguredCallback
         on_url_request_context_builder_configured) {
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  return std::make_unique<ArkWebNetworkContextExt>(
-#else
   return std::make_unique<NetworkContext>(
-#endif
       base::PassKey<NetworkContext>(), network_service, std::move(receiver),
       std::move(params), OnConnectionCloseCallback(),
       std::move(on_url_request_context_builder_configured));
@@ -974,9 +969,18 @@ void NetworkContext::CreateURLLoaderFactory(
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
   if (ohos_prp_preload::PRParallelPreloadMgr::GetInstance().GetPRParallelPreloadMode() ==
       ohos_prp_preload::PRPPreloadMode::PRELOAD && params) {
-    AsArkWebNetworkContextExt()->PRPPreloadCreateURLLoaderFactory(
-        std::move(receiver), std::move(params),
-        std::move(resource_scheduler_client), this);
+    auto main_url = params->main_url;
+    auto addr_web_handle = params->addr_web_handle;
+    net::IsolationInfo isolation_info(params->isolation_info);
+    auto url_loader_factory = std::make_unique<PrefetchMatchingURLLoaderFactory>(
+        this, std::move(params), std::move(resource_scheduler_client),
+        std::move(receiver), &cors_origin_access_list_, prefetch_cache_.get());
+    url_loader_factories_.emplace(std::move(url_loader_factory));
+    if (addr_web_handle != 0 && !main_url.empty()) {
+      if (isolation_info.frame_origin().has_value()) {
+        ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetPageOrigin(main_url, isolation_info);
+      }
+    }
     return;
   }
 #endif
@@ -1346,9 +1350,6 @@ void NetworkContext::ClearHttpCache(base::Time start_time,
       url_request_context_, std::move(filter), start_time, end_time,
       base::BindOnce(&NetworkContext::OnHttpCacheCleared,
                      base::Unretained(this), std::move(callback))));
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().RemoveCache(start_time, end_time);
-#endif
 }
 
 void NetworkContext::ComputeHttpCacheSize(
@@ -1998,6 +1999,56 @@ void NetworkContext::ResolveHost(
       std::move(optional_parameters), std::move(response_client));
 }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+void NetworkContext::SetHostIP(const std::string& host_name,
+                               const std::vector<std::string>& address,
+                               uint32_t alive_time) {
+  auto host_cache = url_request_context_->host_resolver()->GetHostCache();
+  if (host_cache) {
+    std::vector<net::IPEndPoint> expected;
+    for (auto& it : address) {
+      net::IPAddress ip;
+      bool result = ip.AssignFromIPLiteral(it);
+      DCHECK(result);
+      expected.push_back(net::IPEndPoint(ip, 0));
+    }
+    host_cache->Set(
+        net::HostCache::Key(url::SchemeHostPort("http", host_name, 80),
+                            net::DnsQueryType::UNSPECIFIED, 0,
+                            net::HostResolverSource::ANY,
+                            net::NetworkAnonymizationKey(false)),
+        net::HostCache::Entry(
+            net::OK, expected, std::set<std::string>({host_name}),
+            net::HostCache::Entry::SOURCE_UNKNOWN, base::Seconds(alive_time)),
+        base::TimeTicks::Now(), base::Seconds(alive_time));
+    host_cache->Set(
+        net::HostCache::Key(url::SchemeHostPort("https", host_name, 443),
+                            net::DnsQueryType::UNSPECIFIED, 0,
+                            net::HostResolverSource::ANY,
+                            net::NetworkAnonymizationKey(false)),
+        net::HostCache::Entry(
+            net::OK, expected, std::set<std::string>({host_name}),
+            net::HostCache::Entry::SOURCE_UNKNOWN, base::Seconds(alive_time)),
+        base::TimeTicks::Now(), base::Seconds(alive_time));
+  }
+}
+
+void NetworkContext::ClearHostIP(const std::string& host_name) {
+  net::HostCache* host_cache =
+      url_request_context_->host_resolver()->GetHostCache();
+  DCHECK(host_cache);
+  if (host_name == "") {
+    return;
+  }
+
+  std::set<std::string> filter_domains;
+  filter_domains.insert(host_name);
+  host_cache->ClearForHosts(base::BindRepeating(
+      &MatchesDomainFilter, mojom::ClearDataFilter_Type::DELETE_MATCHES,
+      std::move(filter_domains)));
+}
+#endif
+
 void NetworkContext::CreateHostResolver(
     const std::optional<net::DnsConfigOverrides>& config_overrides,
     mojo::PendingReceiver<mojom::HostResolver> receiver) {
@@ -2034,6 +2085,26 @@ void NetworkContext::CreateHostResolver(
       internal_resolver, std::move(private_internal_resolver),
       url_request_context_->net_log()));
 }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+void NetworkContext::InitPRParallelPreloadMgr() {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().Init(base::SingleThreadTaskRunner::GetCurrentDefault());
+}
+ 
+void NetworkContext::StartPage(const std::string& url, uint64_t addr_web_handle,
+    StartPageCallback page_origin_cb) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartPage(url,
+    url_request_context()->GetWeakPtr(), addr_web_handle, std::move(page_origin_cb));
+}
+ 
+void NetworkContext::StopPage(uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopPage(addr_web_handle);
+}
+ 
+void NetworkContext::SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().SetURLLoaderFactoryParam(std::move(params));
+}
+#endif
 
 void NetworkContext::VerifyCertForSignedExchange(
     const scoped_refptr<net::X509Certificate>& certificate,
@@ -2605,7 +2676,7 @@ URLRequestContextOwner NetworkContext::MakeURLRequestContext(
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
   std::unique_ptr<NetworkServiceNetworkDelegate> network_delegate =
-      std::make_unique<NetworkServiceNetworkDelegateExt>(
+      std::make_unique<NetworkServiceNetworkDelegate>(
           params_->enable_referrers,
           params_->validate_referrer_policy_on_initial_request,
           std::move(params_->proxy_error_client), this);

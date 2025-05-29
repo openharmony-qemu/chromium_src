@@ -8,6 +8,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/unique_ptr_adapters.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -36,7 +37,6 @@
 #include "services/network/public/cpp/url_loader_factory_builder.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
 #include "services/network/public/mojom/url_loader.mojom.h"
-#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -184,7 +184,8 @@ class URLLoaderClientInterceptor : public network::mojom::URLLoaderClient {
   }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {};
+  void OnTransferDataWithSharedMemory(::base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override{};
 #endif
 
  private:

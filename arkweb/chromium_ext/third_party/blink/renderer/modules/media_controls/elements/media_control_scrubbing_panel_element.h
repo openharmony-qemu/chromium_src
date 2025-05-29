@@ -27,8 +27,6 @@ class MODULES_EXPORT MediaControlScrubbingPanelElement final
     : public MediaControlDivElement {
  public:
   explicit MediaControlScrubbingPanelElement(MediaControlsImpl&);
-
-  void SetIsWanted(bool) final;
 };
 
 }  // namespace blink

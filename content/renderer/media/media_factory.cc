@@ -137,7 +137,26 @@
 #include "media/mojo/mojom/speech_recognition_service.mojom.h"
 #endif  // BUILDFLAG(IS_WIN)
 
-#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_utils.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/renderer/media/ohos/native_renderer_client_factory.h"
+#include "arkweb/chromium_ext/content/renderer/media/ohos/native_texture_wrapper_impl.h"
+#include "arkweb/chromium_ext/content/renderer/media/renderer_web_native_delegate.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge_impl.h"
+#include "base/system/sys_info.h"
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA)
+#include "content/renderer/media/ohos/ohos_media_player_renderer_client_factory.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#if !BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "base/system/sys_info.h"
+#endif
+#include "content/renderer/media/ohos/ohos_custom_media_player_renderer_client_factory.h"
+#include "gpu/config/gpu_finch_features.h"
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 namespace {
 
@@ -308,9 +327,7 @@ MediaFactory::MediaFactory(
     RenderFrameImpl* render_frame,
     media::RequestRoutingTokenCallback request_routing_token_cb)
     : render_frame_(render_frame),
-      request_routing_token_cb_(std::move(request_routing_token_cb)) {
-  media_factory_utils_ = std::make_unique<ArkwebMediaFactoryUtils>(this);
-}
+      request_routing_token_cb_(std::move(request_routing_token_cb)) {}
 
 MediaFactory::~MediaFactory() {
   // Release the DecoderFactory to the media thread since it may still be in use
@@ -518,6 +535,65 @@ std::unique_ptr<blink::WebMediaPlayer> MediaFactory::CreateMediaPlayer(
       blink::Platform::Current()->GetBrowserInterfaceBroker());
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+blink::WebNativeBridge* MediaFactory::CreateWebNativeBridge(
+    blink::WebNativeClient* client) {
+  LOG(INFO) << "[NativeEmbed] MediaFactory::CreateWebNativeBridge.";
+  blink::WebLocalFrame* web_frame = render_frame_->GetWebFrame();
+  RenderThreadImpl* render_thread = RenderThreadImpl::current();
+  // Render thread may not exist in tests, returning nullptr if it does not.
+  if (!render_thread) {
+    return nullptr;
+  }
+
+  auto factory_selector = std::make_unique<media::RendererFactorySelector>();
+  gl::ohos::TextureOwnerMode texture_owner_mode =
+      base::ohos::IsEmulator() || base::SysInfo::IsLowEndDevice()
+          ? gl::ohos::TextureOwnerMode::kNativeImageTexture
+          : gl::ohos::TextureOwnerMode::kSameLayerNativeBuffer;
+  auto native_factory = std::make_unique<NativeRendererClientFactory>(
+      render_thread->compositor_task_runner(),
+      base::BindRepeating(
+          &NativeTextureWrapperImpl::Create,
+          base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice() /*enable_texture_copy*/,
+          texture_owner_mode, render_thread->GetNativeTexureFactory(),
+          render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+
+  factory_selector->AddBaseFactory(media::RendererType::kNative,
+                                   std::move(native_factory));
+
+  scoped_refptr<base::SequencedTaskRunner> media_task_runner =
+      render_thread->GetMediaSequencedTaskRunner();
+
+  if (!media_task_runner) {
+    // If the media thread failed to start, we will receive a null task runner.
+    // Fail the creation by returning null, and let callers handle the error.
+    // See https://crbug.com/775393.
+    return nullptr;
+  }
+
+  // TODO: Consider to use surface layer mode.
+  auto video_frame_compositor_task_runner =
+      render_thread->compositor_task_runner();
+  auto vfc = std::make_unique<blink::VideoFrameCompositor>(
+      video_frame_compositor_task_runner, nullptr);
+
+  auto* web_native_bridge = new blink::WebNativeBridgeImpl(
+      web_frame, client, GetWebNativeDelegate(), std::move(factory_selector),
+      std::move(vfc), std::move(media_task_runner),
+      std::move(video_frame_compositor_task_runner));
+  return web_native_bridge;
+}
+
+media::RendererWebNativeDelegate* MediaFactory::GetWebNativeDelegate() {
+  if (!web_native_delegate_) {
+    web_native_delegate_ = new media::RendererWebNativeDelegate(render_frame_);
+  }
+  return web_native_delegate_;
+}
+#endif
+
 blink::WebEncryptedMediaClient* MediaFactory::EncryptedMediaClient() {
   if (!web_encrypted_media_client_) {
     web_encrypted_media_client_ = std::make_unique<
@@ -570,7 +646,33 @@ MediaFactory::CreateRendererFactorySelector(
                                      std::move(factory));
   }
 
-  media_factory_utils_->AddOhosAndCustomMediaFactory(factory_selector.get(), render_thread);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  auto ohos_media_player_factory =
+      std::make_unique<OHOSMediaPlayerRendererClientFactory>(
+          CreateMojoRendererFactory());
+  factory_selector->AddFactory(RendererType::kOHOSMediaPlayer,
+                               std::move(ohos_media_player_factory));
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  gl::ohos::TextureOwnerMode texture_owner_mode =
+      features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+              base::SysInfo::IsLowEndDevice()
+          ? gl::ohos::TextureOwnerMode::kNativeImageTexture
+          : gl::ohos::TextureOwnerMode::kHwVideoZeroCopyNativeBuffer;
+  auto ohos_custom_media_player_factory =
+      std::make_unique<OHOSCustomMediaPlayerRendererClientFactory>(
+          render_thread->compositor_task_runner(), CreateMojoRendererFactory(),
+          base::BindRepeating(
+              &NativeTextureWrapperImpl::Create,
+              features::IsUsingVulkan() || base::ohos::IsEmulator() ||
+                  base::SysInfo::IsLowEndDevice(),
+              texture_owner_mode, render_thread->GetNativeTexureFactory(),
+              render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia)));
+  factory_selector->AddFactory(RendererType::kOHOSCustomMediaPlayer,
+                               std::move(ohos_custom_media_player_factory));
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
 #if BUILDFLAG(IS_ANDROID)
   // MediaPlayerRendererClientFactory setup. It is used for HLS playback.
   auto media_player_factory =

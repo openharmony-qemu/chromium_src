@@ -40,9 +40,9 @@ inline constexpr LogSeverity LOGGING_DFATAL = LOGGING_ERROR;
 #if !defined(LOGGING_TAG)
 #define LOGGING_TAG "chromium#"
 #endif
-#else // BUILDFLAG(IS_ARKWEB)
+#else  // BUILDFLAG(IS_ARKWEB)
 #define LOGGING_TAG
-#endif // BUILDFLAG(IS_ARKWEB)
+#endif  // BUILDFLAG(IS_ARKWEB)
 
 }  // namespace logging
 

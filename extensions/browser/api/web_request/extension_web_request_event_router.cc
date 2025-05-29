@@ -1751,8 +1751,8 @@ void WebRequestEventRouter::OnEventHandled(
   listener->blocked_requests.erase(request_id);
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   LOG(INFO) << kWebRequestApiLogTag
-            << " webRequest.OnEventHandled:" << event_name << " by extension:"
-            << extension_id;
+            << " webRequest.OnEventHandled:" << event_name
+            << " by extension:" << extension_id;
 #endif
   DecrementBlockCount(browser_context, extension_id, event_name, request_id,
                       std::move(response), listener->extra_info_spec);

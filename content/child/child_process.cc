@@ -19,11 +19,11 @@
 #include "build/config/compiler/compiler_buildflags.h"
 #include "content/child/child_thread_impl.h"
 #include "content/common/process_visibility_tracker.h"
+#include "content/public/common/content_switches.h"
 #include "mojo/public/cpp/bindings/interface_endpoint_client.h"
 #include "sandbox/policy/sandbox_type.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "third_party/blink/public/common/features.h"
-#include "content/public/common/content_switches.h"
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 #include "base/test/clang_profiling.h"
@@ -36,8 +36,11 @@
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include "content/child/sandboxed_process_thread_type_handler.h"
 #endif
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/child/child_process_utils.h"
+
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
+#include "base/threading/platform_thread.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
 namespace content {
@@ -123,22 +126,20 @@ ChildProcess::ChildProcess(base::ThreadType io_thread_type,
   base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
   thread_options.thread_type = io_thread_type;
 // TODO(crbug.com/40226692): Figure out whether IS_ANDROID can be lifted here.
-#if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
+#if BUILDFLAG(IS_ANDROID) || \
+    (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
   // TODO(reveman): Remove this in favor of setting it explicitly for each type
   // of process.
   thread_options.thread_type = base::ThreadType::kDisplayCritical;
 #endif
   CHECK(io_thread_->StartWithOptions(std::move(thread_options)));
   io_thread_runner_ = io_thread_->task_runner();
-  implUtils = new ChildProcessUtils(this);
 }
 
 ChildProcess::ChildProcess(
     scoped_refptr<base::SingleThreadTaskRunner> io_thread_runner)
     : resetter_(&child_process, this, nullptr),
-      io_thread_runner_(std::move(io_thread_runner)) {
-  implUtils = new ChildProcessUtils(this);
-}
+      io_thread_runner_(std::move(io_thread_runner)) {}
 
 ChildProcess::~ChildProcess() {
   DCHECK_EQ(child_process, this);
@@ -150,9 +151,9 @@ ChildProcess::~ChildProcess() {
   shutdown_event_.Signal();
 
   if (main_thread_) {  // null in unittests.
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-    implUtils->ReportIoThreadStatus(false, main_thread_->IsInBrowserProcess());
-#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#if BUILDFLAG(IS_ARKWEB)
+    ReportIoThreadStatus(false);
+#endif
     main_thread_->Shutdown();
     if (main_thread_->ShouldBeDestroyed()) {
       main_thread_.reset();
@@ -179,16 +180,73 @@ ChildProcess::~ChildProcess() {
   // doesn't get lost if the process is fast killed.
   base::WriteClangProfilingProfile();
 #endif
-  delete implUtils;
 }
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void ChildProcess::ReportCompositorKeyThread(bool is_created) {
-  if (implUtils) {
-    implUtils->ReportCompositorKeyThread(is_created, main_thread_->IsInBrowserProcess());
+void ChildProcess::ReportIoThreadStatus(bool is_created) {
+  if (!main_thread_) {
+    return;
+  }
+
+  using namespace OHOS::NWeb;
+  ResSchedStatusAdapter status = is_created
+                                     ? ResSchedStatusAdapter::THREAD_CREATED
+                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+      switches::kProcessType);
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  // If this thread is in browser process, then report key thread info to RSS
+  // directly. Otherwise, report key thread info to the browser process firstly.
+  if (main_thread_->IsInBrowserProcess()) {
+    ResSchedClientAdapter::ReportKeyThread(status, base::GetCurrentRealPid(),
+                                           io_thread_->GetThreadRealId(),
+                                           ResSchedRoleAdapter::USER_INTERACT);
+  }
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  else if (type == switches::kGpuProcess) {
+    if (NWebNativeWindowTracker::Get() &&
+        NWebNativeWindowTracker::Get()->g_browser_client_) {
+      LOG(DEBUG) << "get native window success pid:"
+                 << base::GetCurrentRealPid()
+                 << ", tid = " << io_thread_->GetThreadRealId();
+      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
+          status, base::GetCurrentRealPid(), io_thread_->GetThreadRealId(),
+          ResSchedRoleAdapter::USER_INTERACT);
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  else {
+    main_thread_->ReportKeyThread(
+        static_cast<int32_t>(status), base::GetCurrentRealPid(),
+        io_thread_->GetThreadRealId(),
+        static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
   }
 }
-#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+void ChildProcess::ReportCompositorKeyThread(bool is_created) {
+  if (!main_thread_) {
+    LOG(WARNING) << "main thread is nullptr, can not report key"
+                 << base::PlatformThread::CurrentRealId()
+                 << " id created: " << is_created;
+    return;
+  }
+  if (main_thread_->IsInBrowserProcess()) {
+    return;
+  }
+  using namespace OHOS::NWeb;
+  ResSchedStatusAdapter status = is_created
+                                     ? ResSchedStatusAdapter::THREAD_CREATED
+                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
+  main_thread_->ReportKeyThread(
+      static_cast<int32_t>(status), base::GetCurrentRealPid(),
+      base::PlatformThread::CurrentRealId(),
+      static_cast<int32_t>(ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+  LOG(DEBUG) << "child process pid: " << base::GetCurrentRealPid()
+             << ", tid: " << base::PlatformThread::CurrentRealId()
+             << " id created: " << is_created;
+}
+#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 ChildThreadImpl* ChildProcess::main_thread() {
   return main_thread_.get();
@@ -197,8 +255,8 @@ ChildThreadImpl* ChildProcess::main_thread() {
 void ChildProcess::set_main_thread(ChildThreadImpl* thread) {
   main_thread_.reset(thread);
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  implUtils->ReportIoThreadStatus(true, main_thread_->IsInBrowserProcess());
-#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  ReportIoThreadStatus(true);
+#endif
 }
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)

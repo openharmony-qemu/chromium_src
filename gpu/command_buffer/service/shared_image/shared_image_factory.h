@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "build/build_config.h"
@@ -28,8 +29,6 @@
 #include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gl/gl_bindings.h"
 
-#include "arkweb/build/features/features.h"
-
 namespace gpu {
 class MemoryTracker;
 class SharedContextState;
@@ -37,16 +36,9 @@ class SharedImageBackingFactory;
 class D3DImageBackingFactory;
 struct GpuFeatureInfo;
 struct GpuPreferences;
-class SharedImageFactoryExt;
 
 class GPU_GLES2_EXPORT SharedImageFactory {
  public:
-  friend class SharedImageFactoryExt;
-
-  virtual gpu::SharedImageFactoryExt* AsSharedImageFactoryExt() {
-      return nullptr;
-  }
-
   // All objects passed are expected to outlive this class.
   SharedImageFactory(const GpuPreferences& gpu_preferences,
                      const GpuDriverBugWorkarounds& workarounds,
@@ -55,7 +47,7 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                      SharedImageManager* manager,
                      MemoryTracker* tracker,
                      bool is_for_display_compositor);
-  virtual ~SharedImageFactory();
+  ~SharedImageFactory();
 
   bool CreateSharedImage(const Mailbox& mailbox,
                          viz::SharedImageFormat si_format,
@@ -94,6 +86,18 @@ class GPU_GLES2_EXPORT SharedImageFactory {
                          SharedImageUsageSet usage,
                          std::string debug_label,
                          gfx::GpuMemoryBufferHandle buffer_handle);
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  bool CreateSharedImage(const Mailbox& mailbox,
+                         gfx::GpuMemoryBufferHandle handle,
+                         gfx::BufferFormat format,
+                         gfx::BufferPlane plane,
+                         const gfx::Size& size,
+                         const gfx::ColorSpace& color_space,
+                         GrSurfaceOrigin surface_origin,
+                         SkAlphaType alpha_type,
+                         uint32_t usage,
+                         void* window_buffer);
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   bool UpdateSharedImage(const Mailbox& mailbox);
   bool UpdateSharedImage(const Mailbox& mailbox,
                          std::unique_ptr<gfx::GpuFence> in_fence);

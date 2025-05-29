@@ -27,7 +27,6 @@
 namespace content {
 
 class WebContents;
-struct MediaInfo;
 
 class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
     : public media::Renderer,
@@ -56,10 +55,6 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   // media::Renderer implementation
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                  media::RequestSurfaceCB request_surface_cb,
-                  media::VideoDecoderChangedCB decoder_changed_cb,
-#endif // ARKWEB_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
   void SetLatencyHint(absl::optional<base::TimeDelta> latency_hint) override;
   void Flush(base::OnceClosure flush_cb) override;
@@ -105,7 +100,6 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
   void InitiateScopedSurfaceRequest(
       InitiateScopedSurfaceRequestCallback callback) override {}
   void FinishPaint(int32_t fd) override {}
-  media::OHOSMediaResourceGetter* GetMediaResourceGetter() override;
 
   void OnTimeUpdate(base::TimeDelta media_time);
   void OnBufferingStateChange(media::BufferingState state);
@@ -123,7 +117,6 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRenderer
 
   void TryCreateMediaPlayer();
   void CreateMediaPlayer();
-  MediaInfo BuildMediaInfo(const std::string& surface_id_string);
 
   void UpdateVolume();
 

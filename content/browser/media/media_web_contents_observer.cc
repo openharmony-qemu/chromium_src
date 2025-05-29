@@ -7,6 +7,7 @@
 #include <memory>
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -27,7 +28,7 @@
 #include "third_party/blink/public/common/mediastream/media_devices.h"
 #include "third_party/blink/public/platform/web_fullscreen_video_status.h"
 #include "ui/gfx/geometry/size.h"
-#include "arkweb/build/features/features.h"
+
 namespace content {
 
 namespace {
@@ -86,11 +87,8 @@ class MediaWebContentsObserver::PlayerInfo {
   bool IsAudible() const { return has_audio_ && is_playing_ && !muted_; }
 
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-  void SetIsPlayerGone() {
-    NotifyPlayerGone();
-  }
+  void SetIsPlayerGone() { NotifyPlayerGone(); }
 #endif
-
   GlobalRenderFrameHostId GetHostId() { return id_.frame_routing_id; }
 
  private:
@@ -305,6 +303,12 @@ void MediaWebContentsObserver::DidUpdateAudioMutingState(bool muted) {
   session_controllers_manager_->WebContentsMutedStateChanged(muted);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+void MediaWebContentsObserver::SetHtmlPlayEnabled(bool enabled) {
+  session_controllers_manager_->SetHtmlPlayEnabled(enabled);
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
 void MediaWebContentsObserver::GetHasPlayedBefore(
     GetHasPlayedBeforeCallback callback) {
   std::move(callback).Run(has_played_before_);
@@ -388,20 +392,12 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
   media_web_contents_observer_->web_contents_impl()->MediaMutedStatusChanged(
       media_player_id_, muted);
 
-#if !BUILDFLAG(ARKWEB_MEDIA)
   media_web_contents_observer_->session_controllers_manager()
       ->OnMediaMutedStatusChanged(media_player_id_, muted);
-#endif // !BUILDFLAG(ARKWEB_MEDIA)
 
   PlayerInfo* player_info = GetPlayerInfo();
   if (!player_info)
     return;
-
-#if BUILDFLAG(ARKWEB_MEDIA)
-  media_web_contents_observer_->session_controllers_manager()
-      ->OnMediaMutedStatusChanged(media_player_id_, muted);
-  LOG(INFO) << "OhMedia::" << __func__ << ", muted=" << muted;
-#endif // BUILDFLAG(ARKWEB_MEDIA)
 
   player_info->set_muted(muted);
   NotifyAudioStreamMonitorIfNeeded();
@@ -519,7 +515,19 @@ void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnMediaPaused(
 
   NotifyAudioStreamMonitorIfNeeded();
 }
- 
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnMediaPlayerGone() {
+  PlayerInfo* player_info = GetPlayerInfo();
+  if (!player_info) {
+    return;
+  }
+
+  player_info->SetIsPlayerGone();
+}
+#endif
+
 void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
     NotifyAudioStreamMonitorIfNeeded() {
   PlayerInfo* player_info = GetPlayerInfo();
@@ -637,12 +645,24 @@ MediaWebContentsObserver::GetMediaPlayerRemote(const MediaPlayerId& player_id) {
   return media_player_remotes_.at(player_id);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+bool MediaWebContentsObserver::IsPlayerIdInMediaPlayerRemotesMap(
+    const MediaPlayerId& player_id) {
+  auto it = media_player_remotes_.find(player_id);
+  if (it != media_player_remotes_.end()) {
+    return true;
+  }
+
+  return false;
+}
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
 void MediaWebContentsObserver::OnMediaPlayerObserverDisconnected(
     const MediaPlayerId& player_id) {
   DCHECK(media_player_observer_hosts_.contains(player_id));
   media_player_observer_hosts_.erase(player_id);
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  web_contents_impl()->AsWebContentsImplExt()->OnVideoDestroyed(player_id);
+  web_contents_impl()->OnVideoDestroyed(player_id);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }
 
@@ -772,8 +792,149 @@ MediaWebContentsObserver::GetWeakPtrForFrame(
       std::make_unique<base::WeakPtrFactory<MediaWebContentsObserver>>(this)));
   return result.first->second->GetWeakPtr();
 }
-}  // namespace content
 
-#if BUILDFLAG(IS_ARKWEB)
-#include "arkweb/chromium_ext/content/browser/media/media_web_contents_observer_for_include.cc"
-#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::UpdateLayerRect(
+    const gfx::Rect& rect) {
+  media_web_contents_observer_->web_contents_impl()
+      ->AsWebContentsImplExt()
+      ->UpdateLayerRect(media_player_id_, rect);
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::FullscreenChanged(
+    bool is_fullscreen) {
+  media_web_contents_observer_->web_contents_impl()
+      ->AsWebContentsImplExt()
+      ->FullScreenChanged(media_player_id_, is_fullscreen);
+}
+
+void MediaWebContentsObserver::RequestEnterFullscreen(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    LOG(WARNING) << "RequestEnterFullscreen failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif  // ARKWEB_LOGGER_REPORT
+    return;
+  }
+  iter->second->RequestEnterFullscreen();
+}
+
+void MediaWebContentsObserver::RequestExitFullscreen(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    LOG(WARNING) << "RequestExitFullscreen failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING) << "RequestEnterFullscreen failed";
+#endif  // ARKWEB_LOGGER_REPORT
+    return;
+  }
+  iter->second->RequestExitFullscreen();
+}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetMediaTitle(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle(data);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnGetVideoPoster(
+    const std::string& data) {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster(data);
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnInitMediaTitle() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetMediaTitle("");
+  }
+}
+
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnInitVideoPoster() {
+  if (media_web_contents_observer_ &&
+      media_web_contents_observer_->web_contents_impl()) {
+    media_web_contents_observer_->web_contents_impl()->SetVideoPoster("");
+  }
+}
+#endif  // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+bool MediaWebContentsObserver::IsMediaPlaying(const MediaPlayerId& player_id) {
+  auto player_info = GetPlayerInfo(player_id);
+  return player_info && player_info->is_playing();
+}
+
+void MediaWebContentsObserver::SetPlaybackRate(double playback_rate,
+                                               const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->SetPlaybackRate(playback_rate);
+}
+
+void MediaWebContentsObserver::RequestFullScreen(
+    bool enable,
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  if (enable) {
+    iter->second->RequestEnterFullscreen();
+  } else {
+    iter->second->RequestExitFullscreen();
+  }
+}
+
+void MediaWebContentsObserver::RequestDownloadUrl(
+    const MediaPlayerId& player_id) {
+  const auto iter = media_player_remotes_.find(player_id);
+  if (iter == media_player_remotes_.end()) {
+    return;
+  }
+
+  iter->second->RequestDownloadUrl();
+}
+
+void MediaWebContentsObserver::MediaPlayerHostImpl::RequestVideoAssistantConfig(
+    RequestVideoAssistantConfigCallback callback) {
+  LOG(INFO) << "RequestVideoAssistantConfig";
+  auto config = media::mojom::VideoAssistantConfig::New(
+      true, true, media::mojom::VideoAssistantDownloadButton::kDownloadPerPage);
+  auto* web_contents_impl = media_web_contents_observer_->web_contents_impl();
+  web_contents_impl->PopluateVideoAssistantConfig(config);
+  std::move(callback).Run(std::move(config));
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnVideoPlaying";
+  media_web_contents_observer_->web_contents_impl()->OnVideoPlaying(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::
+    OnUpdateVideoAttributes(
+        media::mojom::VideoAttributesForVASTPtr video_attributes) {
+  LOG(INFO) << "OnUpdateVideoAttributes";
+  media_web_contents_observer_->web_contents_impl()->OnUpdateVideoAttributes(
+      std::move(video_attributes), media_player_id_);
+}
+void MediaWebContentsObserver::MediaPlayerObserverHostImpl::OnVideoDestroyed() {
+  LOG(INFO) << "OnVideoDestroyed";
+  media_web_contents_observer_->web_contents_impl()->OnVideoDestroyed(
+      media_player_id_);
+}
+#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+}  // namespace content

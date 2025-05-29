@@ -525,7 +525,8 @@ base::cstring_view NetworkChangeNotifier::ConnectionTypeToString(
   return kConnectionTypeNames[type];
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(ARKWEB_NETWORK_BASE)
 // static
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwner() {
   return g_network_change_notifier
@@ -871,7 +872,8 @@ NetworkChangeNotifier::NetworkChangeNotifier(
   }
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(ARKWEB_NETWORK_BASE)
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwnerInternal() {
   return nullptr;
 }
@@ -1102,5 +1104,51 @@ NetworkChangeNotifier::ObserverList& NetworkChangeNotifier::GetObserverList() {
   static base::NoDestructor<NetworkChangeNotifier::ObserverList> observers;
   return *observers;
 }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+// static
+const std::vector<std::string> NetworkChangeNotifier::GetDnsServers() {
+  std::vector<std::string> dns_servers;
+  if (!g_network_change_notifier) {
+    return dns_servers;
+  }
+  dns_servers = g_network_change_notifier->GetCurrentDnsServers();
+  return dns_servers;
+}
+
+const std::vector<std::string> NetworkChangeNotifier::GetCurrentDnsServers() {
+  return std::vector<std::string>();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+// static
+void NetworkChangeNotifier::BindToNetwork(int32_t network_for_dns) {
+  if (g_network_change_notifier) {
+    g_network_change_notifier->BindDnsToNetwork(network_for_dns);
+  } else {
+    LOG(ERROR) << "NetworkChangeNotifier bindDnsToNetwork failed, "
+                  "network_for_dns "
+               << network_for_dns;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "NetworkChangeNotifier bindDnsToNetwork failed, "
+                           "network_for_dns "
+                        << network_for_dns;
+#endif
+  }
+}
+
+void NetworkChangeNotifier::BindDnsToNetwork(int32_t network_for_dns) {
+  LOG(INFO) << "NetworkChangeNotifier bindDnsToNetwork, network_for_dns "
+            << network_for_dns;
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO)
+      << "NetworkChangeNotifier bindDnsToNetwork, network_for_dns "
+      << network_for_dns;  
+#endif
+  return;
+}
+#endif
 
 }  // namespace net

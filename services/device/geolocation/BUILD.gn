@@ -6,9 +6,6 @@ import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//arkweb/build/features/features.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -74,7 +71,10 @@ source_set("geolocation") {
   ]
 
  if (defined(arkweb_geolocation) && arkweb_geolocation) {
-    sources += arkweb_geolocation_sources
+    sources += [
+      "ohos/location_provider_ohos.cc",
+      "ohos/location_provider_ohos.h",
+    ]
     import("//build/config/ohos/config.gni")
     include_dirs = ohos_src_includes
     deps += [

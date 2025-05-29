@@ -9,9 +9,6 @@ import("//mojo/public/tools/bindings/mojom.gni")
 import("//net/features.gni")
 import("//services/network/public/cpp/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
-if (is_arkweb) {
-  import("//arkweb/chromium_ext/chromium_ext.gni")
-}
 
 component("network_service") {
   sources = [
@@ -218,8 +215,6 @@ component("network_service") {
     "url_loader_context.h",
     "url_loader_factory.cc",
     "url_loader_factory.h",
-    "//arkweb/chromium_ext/services/network/url_loader_factory_utils.h",
-    "//arkweb/chromium_ext/services/network/url_loader_factory_utils.cc",    
     "url_request_context_builder_mojo.cc",
     "url_request_context_builder_mojo.h",
     "url_request_context_owner.cc",
@@ -234,11 +229,6 @@ component("network_service") {
     "web_transport.cc",
     "web_transport.h",
   ]
-  if (is_arkweb) {
-    sources += arkweb_services_network_sources
-    sources += arkweb_network_service_network_delegate_sources
-    sources += [ "//arkweb/chromium_ext/services/network/ark_web_chunked_data_pipe_upload_data_stream.cc" ]
-  }
 
   if (is_p2p_enabled) {
     sources += [
@@ -360,7 +350,6 @@ component("network_service") {
     "//third_party/liburlpattern",
     "//third_party/re2",
     "//url",
-    "//arkweb/chromium_ext/services/network:network_service",
   ]
 
   if (is_linux || is_chromeos || is_ohos) {

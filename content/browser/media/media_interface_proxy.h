@@ -79,7 +79,7 @@ class MediaInterfaceProxy final : public DocumentUserData<MediaInterfaceProxy>,
       mojo::PendingRemote<media::mojom::FlingingRendererClientExtension>
           client_extension,
       mojo::PendingReceiver<media::mojom::Renderer> receiver) final;
-#endif // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID)
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
   void CreateMediaPlayerRenderer(
       mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
@@ -90,13 +90,14 @@ class MediaInterfaceProxy final : public DocumentUserData<MediaInterfaceProxy>,
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void CreateCustomMediaPlayerRenderer(
-      mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
+      mojo::PendingRemote<
+          media::mojom::CustomMediaPlayerRendererClientExtension>
           client_extension_remote,
       mojo::PendingReceiver<media::mojom::Renderer> receiver,
       mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
           renderer_extension_receiver,
       int player_id) final;
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_WIN)
   void CreateMediaFoundationRenderer(
       mojo::PendingRemote<media::mojom::MediaLog> media_log_remote,

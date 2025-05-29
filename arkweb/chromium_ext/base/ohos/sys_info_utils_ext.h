@@ -36,8 +36,6 @@ BASE_EXPORT bool IsPcDevice();
 
 BASE_EXPORT bool IsEmulator();
 
-BASE_EXPORT bool IsWearableDevice();
-
 BASE_EXPORT int32_t MajorVersion();
 
 BASE_EXPORT int32_t SeniorVersion();
@@ -54,9 +52,6 @@ BASE_EXPORT bool IsCompatibleMode();
 
 BASE_EXPORT int32_t ApplicationApiVersion();
 
-BASE_EXPORT void SetPageScale(bool status);
- 
-BASE_EXPORT bool IsPageScale();
 }  // namespace ohos
 }  // namespace base
 

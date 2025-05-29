@@ -860,10 +860,6 @@ DevToolsHttpHandler::DevToolsHttpHandler(
       base::SplitString(remote_allow_origins, ",", base::TRIM_WHITESPACE,
                         base::SPLIT_WANT_NONEMPTY);
   remote_allow_origins_.insert(origins.begin(), origins.end());
-
-#if BUILDFLAG(ARKWEB_DEVTOOLS)
-  remote_allow_origins_.insert("*");
-#endif // ARKWEB_DEVTOOLS
 }
 
 void DevToolsHttpHandler::ServerStarted(

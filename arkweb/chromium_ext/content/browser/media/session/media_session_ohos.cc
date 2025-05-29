@@ -197,10 +197,10 @@ void MediaSessionOHOS::MediaSessionImagesChanged(
 }
 
 void MediaSessionOHOS::MediaSessionPositionChanged(
-    const std::optional<media_session::MediaPosition>& position) { 
-  if (!avsession_adapter_ || !position || !av_position_) {
+    const std::optional<media_session::MediaPosition>& position) {
+  if (!avsession_adapter_ || !position) {
     LOG(WARNING) << __FUNCTION__
-                 << " media avsession avsession_adapter_ or position or av_position_ null";
+                 << " media avsession avsession_adapter_ or position null";
     return;
   }
   if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID) {
@@ -302,18 +302,6 @@ void MediaSessionOHOS::SetWebviewShow(bool show, bool is_special_for_audio) {
       media_type_ = OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_INVALID;
     }
   }
-}
-
-bool MediaSessionOHOS::IsPlayingAudio() {
-  bool ret = false;
-  if (!media_session_ || !avsession_adapter_) {
-    return ret;
-  }
-
-  if (media_type_ == OHOS::NWeb::MediaAVSessionType::MEDIA_TYPE_AUDIO) {
-    ret = true;
-  }
-  return ret;
 }
 
 OHOSMediaAVSessionCallback::OHOSMediaAVSessionCallback(

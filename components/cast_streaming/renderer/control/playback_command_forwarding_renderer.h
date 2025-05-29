@@ -50,10 +50,6 @@ class PlaybackCommandForwardingRenderer : public media::Renderer,
   // Calls into |real_renderer_|'s method of the same name.
   void Initialize(media::MediaResource* media_resource,
                   media::RendererClient* client,
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-                  media::RequestSurfaceCB request_surface_cb,
-                  media::VideoDecoderChangedCB decoder_changed_cb,
-#endif // OHOS_VIDEO_ASSISTANT
                   media::PipelineStatusCallback init_cb) override;
 
   // Further Renderer overrides as no-ops. In the remoting scenario, these

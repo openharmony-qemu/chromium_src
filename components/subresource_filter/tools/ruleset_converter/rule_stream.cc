@@ -451,9 +451,9 @@ bool DeleteUrlRuleOrAmend(url_pattern_index::proto::UrlRule* rule,
   rule->set_activation_types(
       rule->activation_types() &
       (url_pattern_index::proto::ACTIVATION_TYPE_DOCUMENT |
-      url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE |
-      url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE |
-      url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
+       url_pattern_index::proto::ACTIVATION_TYPE_ELEMHIDE |
+       url_pattern_index::proto::ACTIVATION_TYPE_GENERICHIDE |
+       url_pattern_index::proto::ACTIVATION_TYPE_GENERICBLOCK));
 #else
   rule->set_activation_types(
       rule->activation_types() &

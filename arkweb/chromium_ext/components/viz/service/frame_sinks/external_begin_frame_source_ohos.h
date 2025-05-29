@@ -13,23 +13,17 @@
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
 #include "components/viz/service/viz_service_export.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/graphic_adapter.h"
-#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 namespace viz {
-class FrameSinkManagerImplUtils;
 class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
     : public ExternalBeginFrameSource,
       public ExternalBeginFrameSourceClient {
  public:
- friend class FrameSinkManagerImplUtils;
- FrameSinkManagerImplUtils* managerImplUtils;
-#if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
   explicit ExternalBeginFrameSourceOHOS(
       uint32_t restart_id,
       FrameSinkManagerImpl* frame_sink_manager);
-#else
+
   explicit ExternalBeginFrameSourceOHOS(uint32_t restart_id);
-#endif
 
   ~ExternalBeginFrameSourceOHOS() override;
   ExternalBeginFrameSourceOHOS(const ExternalBeginFrameSourceOHOS&) = delete;
@@ -63,15 +57,6 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   void SetEnableLowerFrameRate(bool enabled) override {
     lower_frame_rate_enabled_ = enabled;
   }
-  void SetEnableHalfFrameRate(bool enabled) override {
-    half_frame_rate_enabled_ = enabled;
-  }
-#endif
-
-#if BUILDFLAG(ARKWEB_PIP)
-  void SetPipActive(bool active) override {
-    pip_active_ = active;
-  }
 #endif
 
  private:
@@ -91,30 +76,19 @@ class VIZ_SERVICE_EXPORT ExternalBeginFrameSourceOHOS
   FrameSinkId frame_sink_id_;
   const raw_ptr<FrameSinkManagerImpl> frame_sink_manager_;
 #endif
-  bool g_skip_vsync_ = false;
   int64_t vsync_period_ = 0;
   int64_t pre_vsync_period_ = 0;
   int64_t last_vsync_period_ = 0;
   base::TimeTicks last_dead_line_ = base::TimeTicks();
   bool lower_frame_rate_enabled_ = false;
-  bool half_frame_rate_enabled_ = false;
   gfx::Rect draw_rect_;
+  base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};
 #if BUILDFLAG(ARKWEB_VIDEO_LTPO)
   int64_t vsync_frequency_to_reset_ = 0;
   int64_t vsync_frequency_to_update_ = 30; // vsync_to_update_ >= 30 for user experience
   bool update_vsync_frequency_ = false;
   bool reset_vsync_frequency_ = false;
 #endif
-
-#if BUILDFLAG(ARKWEB_D_VSYNC)
-  bool last_dvsync_state_ = false;
-#endif
-
-#if BUILDFLAG(ARKWEB_PIP)
-  bool pip_active_ = false;
-#endif
-
-base::WeakPtrFactory<ExternalBeginFrameSourceOHOS> weak_factory_{this};
 };
 }  // namespace viz
 

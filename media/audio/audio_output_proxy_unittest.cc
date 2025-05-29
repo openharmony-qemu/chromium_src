@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "media/audio/audio_output_proxy.h"
+
 #include <stdint.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_runner.h"
@@ -16,14 +19,12 @@
 #include "media/audio/audio_manager.h"
 #include "media/audio/audio_manager_base.h"
 #include "media/audio/audio_output_dispatcher_impl.h"
-#include "media/audio/audio_output_proxy.h"
 #include "media/audio/audio_output_resampler.h"
 #include "media/audio/fake_audio_log_factory.h"
 #include "media/audio/fake_audio_output_stream.h"
 #include "media/audio/test_audio_thread.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "arkweb/build/features/features.h"
 
 using ::testing::_;
 using ::testing::AllOf;
@@ -172,8 +173,8 @@ class MockAudioManager : public AudioManagerBase {
 
 #if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_WEBRTC)
   AudioParameters GetPreferredInputStreamParameters(
-      const std::string& input_device_id) override {}
-#endif // BUILDFLAG(ARKWEB_WEBRTC)
+      const std::string& input_device_id) override{};
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
  private:
   media::FakeAudioLogFactory fake_audio_log_factory_;

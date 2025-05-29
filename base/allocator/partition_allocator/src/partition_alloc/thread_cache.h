@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 
+#include "build/build_config.h"
 #include "partition_alloc/build_config.h"
 #include "partition_alloc/buildflags.h"
 #include "partition_alloc/lightweight_quarantine.h"
@@ -270,6 +271,11 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) ThreadCache {
   }
 
   static bool IsValid(ThreadCache* tcache) {
+    #if BUILDFLAG(IS_ARKWEB)
+        if (reinterpret_cast<uintptr_t>(tcache) < kInvalidPointer) {
+          return false;
+        }
+    #endif
     // Do not MTE-untag, as it'd mess up the sentinel value.
     return reinterpret_cast<uintptr_t>(tcache) & kTombstoneMask;
   }
@@ -433,6 +439,9 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) ThreadCache {
   // nullptr and kTombstone at the same time.
   static constexpr uintptr_t kTombstone = 0x1;
   static constexpr uintptr_t kTombstoneMask = ~kTombstone;
+  #if BUILDFLAG(IS_ARKWEB)
+    static constexpr uintptr_t kInvalidPointer = 0x1000;
+  #endif
 
   static uint8_t global_limits_[kBucketCount];
   // Index of the largest active bucket. Not all processes/platforms will use

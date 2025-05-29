@@ -15,7 +15,11 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#define protected public
+#define private public
 #include "base/debug/stack_trace_ohos.cc"
+#undef private
+#undef protected
 
 class StackTraceOhosTest : public testing::Test {
  public:

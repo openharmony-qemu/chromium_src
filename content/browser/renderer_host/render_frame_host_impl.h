@@ -495,13 +495,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void ExecuteJavaScriptExt(const int fd,
                             const uint64_t scriptLength,
                             JavaScriptResultCallback callback) override;
-#endif
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  void SendAccessibilityEvent(int64_t accessibilityId,
-                              int32_t eventType,
-                              const std::string& argument);
-#endif
 
+  void SendAccessibilityEvent(int64_t accessibilityId, int32_t eventType);
+#endif
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
@@ -2484,7 +2480,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
           context_menu_client,
       const blink::UntrustworthyContextMenuParams& params) override;
 #if BUILDFLAG(ARKWEB_AI)
-  void CloseImageOverlaySelection() override;
+  void CloseImageOverlaySelection(
+      CloseImageOverlaySelectionCallback callback) override;
 #endif  // BUILDFLAG(ARKWEB_AI)
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
@@ -2593,7 +2590,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
                          blink::mojom::WindowFeaturesPtr window_features,
                          bool user_gesture,
                          ShowCreatedWindowCallback callback) override;
-  
+
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   void GetCreateNewWindow(const GURL& target_url,
                           WindowOpenDisposition disposition,
@@ -2601,11 +2598,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
                           GetCreateNewWindowCallback callback) override;
 #endif
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
-  void GenerateCodeCache(const std::string& url,
-                         const std::string& script,
-                         const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
-                         CodeCacheCallback callback) override;
-#endif            
+  void GenerateCodeCache(
+      const std::string& url,
+      const std::string& script,
+      const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+      CodeCacheCallback callback) override;
+#endif
 
   void SetWindowRect(const gfx::Rect& bounds,
                      SetWindowRectCallback callback) override;
@@ -2946,7 +2944,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void OnClearContextMenu() override;
-#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   using JavaScriptResultAndTypeCallback =
       base::OnceCallback<void(blink::mojom::JavaScriptExecutionResultType,

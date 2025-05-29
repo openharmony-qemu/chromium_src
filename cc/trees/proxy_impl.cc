@@ -233,7 +233,14 @@ void ProxyImpl::SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) {
     scheduler_->SetDeferBeginMainFrame(ShouldDeferBeginMainFrame());
 }
 
-#include "arkweb/chromium_ext/cc/trees/proxy_impl_for_include.cc"
+#if BUILDFLAG(ARKWEB_WEBGL)
+void ProxyImpl::SetDeferInvalidationForFastMainFrameFromImpl(
+    bool defer_invalidation_for_fast_main_frame) {
+  DCHECK(IsImplThread());
+  scheduler_->SetDeferInvalidationForFastMainFrame(
+      defer_invalidation_for_fast_main_frame);
+}
+#endif
 
 void ProxyImpl::SetNeedsRedrawOnImpl(const gfx::Rect& damage_rect) {
   DCHECK(IsImplThread());
@@ -276,6 +283,13 @@ void ProxyImpl::SetVisibleOnImpl(bool visible) {
   host_impl_->SetVisible(visible);
   scheduler_->SetVisible(visible);
 }
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+void ProxyImpl::SetPinchSmoothModeOnImpl(bool isEnable) {
+  DCHECK(IsImplThread());
+  pinch_smooth_ = isEnable;
+}
+#endif
 
 void ProxyImpl::SetShouldWarmUpOnImpl() {
   TRACE_EVENT0("cc", "ProxyImpl::SetShouldWarmUpOnImpl");
@@ -510,6 +524,14 @@ void ProxyImpl::SetVideoNeedsBeginFrames(bool needs_begin_frames) {
   if (scheduler_)
     scheduler_->SetVideoNeedsBeginFrames(needs_begin_frames);
 }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void ProxyImpl::HandleScrollUpdateForInternalBeginFrame(
+    const viz::BeginFrameArgs& args) {
+  DCHECK(IsImplThread());
+  host_impl_->HandleScrollUpdateForInternalBeginFrame(args);
+}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 bool ProxyImpl::IsInsideDraw() {
   return inside_draw_;
@@ -761,7 +783,8 @@ void ProxyImpl::ScheduledActionSendBeginMainFrame(
         });
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
     OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                      std::to_string(args.trace_id), "step", "SendBeginMainFrame");
+                      std::to_string(args.trace_id), "step",
+                      "SendBeginMainFrame");
 #endif
   }
   MainThreadTaskRunner()->PostTask(
@@ -1088,5 +1111,30 @@ ProxyImpl::DataForCommit::~DataForCommit() = default;
 bool ProxyImpl::DataForCommit::IsValid() const {
   return commit_completion_event.get() && commit_state.get() && unsafe_state;
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void ProxyImpl::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  DCHECK(IsImplThread());
+  MainThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerRectUpdate,
+                                proxy_main_weak_ptr_, id, rect));
+}
+
+void ProxyImpl::OnLayerRectVisibilityChange(int id, bool visibility) {
+  DCHECK(IsImplThread());
+  MainThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerRectVisibilityChange,
+                                proxy_main_weak_ptr_, id, visibility));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void ProxyImpl::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  DCHECK(IsImplThread());
+  MainThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyMain::OnLayerBoundsUpdate,
+                                proxy_main_weak_ptr_, id, bounds));
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

@@ -14,11 +14,12 @@
  */
 
 #include "testing/gtest/include/gtest/gtest.h"
-
+#define private public
 #include "base/files/file_util.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wheader-hygiene"
 #include "base/files/file_util_posix.cc"
+#undef private
 
 namespace base {
 TEST(FileUtilPosixTest, MakeAbsoluteFilePath_001) {
@@ -38,20 +39,20 @@ TEST(FileUtilPosixTest, PathExists) {
 
 TEST(FileUtilPosixTest, ReadFromFD_001) {
   int fd = 10;
-  const size_t bytes = 20;
-  char array[bytes] = {0};
-  std::span<char> buf(array, bytes);
-  bool result = ReadFromFD(fd, buf);
+  char buffer = 'd';
+  char* buffer_ptr = &buffer;
+  size_t bytes = 20;
+  bool result = ReadFromFD(fd, buffer_ptr, bytes);
   EXPECT_EQ(result, false);
 }
 
 TEST(FileUtilPosixTest, ReadFromFD_002) {
   const char* filename = "example.txt";
   int fd = open(filename, O_RDONLY);
-  const size_t bytes = 1024;
-  char buffer[bytes] = {0};
-  std::span<char> buf(buffer, bytes);
-  bool result = ReadFromFD(fd, buffer);
+  char buffer[1024];
+  char* buffer_ptr = buffer;
+  size_t bytes = sizeof(buffer);
+  bool result = ReadFromFD(fd, buffer_ptr, bytes);
   EXPECT_EQ(result, false);
 }
 

@@ -362,39 +362,6 @@ void ServiceTransferCache::DeleteAllEntriesForDecoder(int decoder_id) {
   }
 }
 
-#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-bool ServiceTransferCache::CreateLockedRGBAHardwareDecodedImageEntry(
-    int decoder_id,
-    uint32_t entry_id,
-    ServiceDiscardableHandle handle,
-    GrDirectContext* context,
-    std::vector<sk_sp<SkImage>> plane_images,
-    size_t buffer_byte_size) {
-  EntryKey key(decoder_id, cc::TransferCacheEntryType::kImage, entry_id);
-  auto found = entries_.Peek(key);
-  if (found != entries_.end()) {
-    return false;
-  }
-
-  // Create the service-side image transfer cache entry.
-  auto entry = std::make_unique<cc::ServiceImageTransferCacheEntry>();
-  if (!entry->BuildFromRGBAHardwareDecodedImage(
-          context, std::move(plane_images), buffer_byte_size)) {
-    return false;
-  }
-
-  // Insert it in the transfer cache.
-  total_size_ += entry->CachedSize();
-  if (key.entry_type == cc::TransferCacheEntryType::kImage) {
-    total_image_count_++;
-    total_image_size_ += entry->CachedSize();
-  }
-  entries_.Put(key, CacheEntryInternal(handle, std::move(entry)));
-  EnforceLimits();
-  return true;
-}
-#endif
-
 bool ServiceTransferCache::CreateLockedHardwareDecodedImageEntry(
     int decoder_id,
     uint32_t entry_id,

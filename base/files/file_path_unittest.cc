@@ -7,6 +7,7 @@
 #pragma allow_unsafe_buffers
 #endif
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 
 #include <stddef.h>
@@ -14,7 +15,6 @@
 #include <sstream>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "base/files/safe_base_name.h"
 #include "base/strings/utf_ostream_operators.h"
 #include "base/strings/utf_string_conversions.h"
@@ -497,18 +497,27 @@ TEST_F(FilePathTest, IsAbsolute) {
     FilePath::StringPieceType input;
     bool expected_is_absolute;
   } cases[] = {
-      {FPL(""), false},    {FPL("a"), false},     {FPL("c:"), false},
-      {FPL("c:a"), false}, {FPL("a/b"), false},   {FPL("//"), true},
-      {FPL("//a"), true},  {FPL("c:a/b"), false}, {FPL("?:/a"), false},
-      {FPL("/"), true},    {FPL("/a"), true},     {FPL("/."), true},
-      {FPL("/.."), true},  {FPL("c:/"), false},
+    { FPL(""),       false},
+    { FPL("a"),      false },
+    { FPL("c:"),     false },
+    { FPL("c:a"),    false },
+    { FPL("a/b"),    false },
+    { FPL("//"),     true },
+    { FPL("//a"),    true },
+    { FPL("c:a/b"),  false },
+    { FPL("?:/a"),   false },
+    { FPL("/"),      true },
+    { FPL("/a"),     true },
+    { FPL("/."),     true },
+    { FPL("/.."),    true },
+    { FPL("c:/"),    false },
   };
 
   for (size_t i = 0; i < std::size(cases); ++i) {
     FilePath input(cases[i].input);
     bool observed_is_absolute = input.IsAbsolute();
-    EXPECT_EQ(cases[i].expected_is_absolute, observed_is_absolute)
-        << "i: " << i << ", input: " << input.value();
+    EXPECT_EQ(cases[i].expected_is_absolute, observed_is_absolute) <<
+              "i: " << i << ", input: " << input.value();
   }
 
   FilePath input_true("datashare://abc");
@@ -517,20 +526,20 @@ TEST_F(FilePathTest, IsAbsolute) {
 }
 
 TEST_F(FilePathTest, IsDataShareUri) {
-  FilePath input_datashare("datashare://abc");
-  EXPECT_TRUE(input_datashare.IsDataShareUri());
+    FilePath input_datashare("datashare://abc");
+    EXPECT_TRUE(input_datashare.IsDataShareUri());
 
-  FilePath input_dataability("dataability://abc");
-  EXPECT_TRUE(input_dataability.IsDataShareUri());
+    FilePath input_dataability("dataability://abc");
+    EXPECT_TRUE(input_dataability.IsDataShareUri());
 
-  FilePath input_media("file://media/abc");
-  EXPECT_TRUE(input_media.IsDataShareUri());
+    FilePath input_media("file://media/abc");
+    EXPECT_TRUE(input_media.IsDataShareUri());
 
-  FilePath input_docs("file://media/abc");
-  EXPECT_TRUE(input_docs.IsDataShareUri());
+    FilePath input_docs("file://media/abc");
+    EXPECT_TRUE(input_docs.IsDataShareUri());
 
-  FilePath input_false("abc::/def");
-  EXPECT_FALSE(input_false.IsDataShareUri());
+    FilePath input_false("abc::/def");
+    EXPECT_FALSE(input_false.IsDataShareUri());
 }
 #endif
 
@@ -1191,81 +1200,80 @@ TEST_F(FilePathTest, MatchesFinalExtension) {
 
 TEST_F(FilePathTest, CompareIgnoreCase) {
   const struct BinaryIntTestData cases[] = {
-      {{FPL("foo"), FPL("foo")}, 0},
-      {{FPL("FOO"), FPL("foo")}, 0},
-      {{FPL("foo.ext"), FPL("foo.ext")}, 0},
-      {{FPL("FOO.EXT"), FPL("foo.ext")}, 0},
-      {{FPL("Foo.Ext"), FPL("foo.ext")}, 0},
-      {{FPL("foO"), FPL("foo")}, 0},
-      {{FPL("foo"), FPL("foO")}, 0},
-      {{FPL("fOo"), FPL("foo")}, 0},
-      {{FPL("foo"), FPL("fOo")}, 0},
-      {{FPL("bar"), FPL("foo")}, -1},
-      {{FPL("foo"), FPL("bar")}, 1},
-      {{FPL("BAR"), FPL("foo")}, -1},
-      {{FPL("FOO"), FPL("bar")}, 1},
-      {{FPL("bar"), FPL("FOO")}, -1},
-      {{FPL("foo"), FPL("BAR")}, 1},
-      {{FPL("BAR"), FPL("FOO")}, -1},
-      {{FPL("FOO"), FPL("BAR")}, 1},
-      // German "Eszett" (lower case and the new-fangled upper case)
-      // Note that uc(<lowercase eszett>) => "SS", NOT <uppercase eszett>!
-      // However, neither Windows nor Mac OSX converts these.
-      // (or even have glyphs for <uppercase eszett>)
-      {{FPL("\u00DF"), FPL("\u00DF")}, 0},
-      {{FPL("\u1E9E"), FPL("\u1E9E")}, 0},
+    {{FPL("foo"), FPL("foo")}, 0},
+    {{FPL("FOO"), FPL("foo")}, 0},
+    {{FPL("foo.ext"), FPL("foo.ext")}, 0},
+    {{FPL("FOO.EXT"), FPL("foo.ext")}, 0},
+    {{FPL("Foo.Ext"), FPL("foo.ext")}, 0},
+    {{FPL("foO"), FPL("foo")}, 0},
+    {{FPL("foo"), FPL("foO")}, 0},
+    {{FPL("fOo"), FPL("foo")}, 0},
+    {{FPL("foo"), FPL("fOo")}, 0},
+    {{FPL("bar"), FPL("foo")}, -1},
+    {{FPL("foo"), FPL("bar")}, 1},
+    {{FPL("BAR"), FPL("foo")}, -1},
+    {{FPL("FOO"), FPL("bar")}, 1},
+    {{FPL("bar"), FPL("FOO")}, -1},
+    {{FPL("foo"), FPL("BAR")}, 1},
+    {{FPL("BAR"), FPL("FOO")}, -1},
+    {{FPL("FOO"), FPL("BAR")}, 1},
+    // German "Eszett" (lower case and the new-fangled upper case)
+    // Note that uc(<lowercase eszett>) => "SS", NOT <uppercase eszett>!
+    // However, neither Windows nor Mac OSX converts these.
+    // (or even have glyphs for <uppercase eszett>)
+    {{FPL("\u00DF"), FPL("\u00DF")}, 0},
+    {{FPL("\u1E9E"), FPL("\u1E9E")}, 0},
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-      {{FPL("\u00DF"), FPL("\u1E9E")}, 1},
+    {{FPL("\u00DF"), FPL("\u1E9E")}, 1},
 #else
-      {{FPL("\u00DF"), FPL("\u1E9E")}, -1},
+    {{FPL("\u00DF"), FPL("\u1E9E")}, -1},
 #endif
-      {{FPL("SS"), FPL("\u00DF")}, -1},
-      {{FPL("SS"), FPL("\u1E9E")}, -1},
+    {{FPL("SS"), FPL("\u00DF")}, -1},
+    {{FPL("SS"), FPL("\u1E9E")}, -1},
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE)
-      // Umlauts A, O, U: direct comparison, and upper case vs. lower case
-      {{FPL("\u00E4\u00F6\u00FC"), FPL("\u00E4\u00F6\u00FC")}, 0},
-      {{FPL("\u00C4\u00D6\u00DC"), FPL("\u00E4\u00F6\u00FC")}, 0},
-      // C with circumflex: direct comparison, and upper case vs. lower case
-      {{FPL("\u0109"), FPL("\u0109")}, 0},
-      {{FPL("\u0108"), FPL("\u0109")}, 0},
-      // Cyrillic letter SHA: direct comparison, and upper case vs. lower case
-      {{FPL("\u0428"), FPL("\u0428")}, 0},
-      {{FPL("\u0428"), FPL("\u0448")}, 0},
-      // Greek letter DELTA: direct comparison, and upper case vs. lower case
-      {{FPL("\u0394"), FPL("\u0394")}, 0},
-      {{FPL("\u0394"), FPL("\u03B4")}, 0},
-      // Japanese full-width A: direct comparison, and upper case vs. lower case
-      // Note that full-width and standard characters are considered different.
-      {{FPL("\uFF21"), FPL("\uFF21")}, 0},
-      {{FPL("\uFF21"), FPL("\uFF41")}, 0},
-      {{FPL("A"), FPL("\uFF21")}, -1},
-      {{FPL("A"), FPL("\uFF41")}, -1},
-      {{FPL("a"), FPL("\uFF21")}, -1},
-      {{FPL("a"), FPL("\uFF41")}, -1},
+    // Umlauts A, O, U: direct comparison, and upper case vs. lower case
+    {{FPL("\u00E4\u00F6\u00FC"), FPL("\u00E4\u00F6\u00FC")}, 0},
+    {{FPL("\u00C4\u00D6\u00DC"), FPL("\u00E4\u00F6\u00FC")}, 0},
+    // C with circumflex: direct comparison, and upper case vs. lower case
+    {{FPL("\u0109"), FPL("\u0109")}, 0},
+    {{FPL("\u0108"), FPL("\u0109")}, 0},
+    // Cyrillic letter SHA: direct comparison, and upper case vs. lower case
+    {{FPL("\u0428"), FPL("\u0428")}, 0},
+    {{FPL("\u0428"), FPL("\u0448")}, 0},
+    // Greek letter DELTA: direct comparison, and upper case vs. lower case
+    {{FPL("\u0394"), FPL("\u0394")}, 0},
+    {{FPL("\u0394"), FPL("\u03B4")}, 0},
+    // Japanese full-width A: direct comparison, and upper case vs. lower case
+    // Note that full-width and standard characters are considered different.
+    {{FPL("\uFF21"), FPL("\uFF21")}, 0},
+    {{FPL("\uFF21"), FPL("\uFF41")}, 0},
+    {{FPL("A"), FPL("\uFF21")}, -1},
+    {{FPL("A"), FPL("\uFF41")}, -1},
+    {{FPL("a"), FPL("\uFF21")}, -1},
+    {{FPL("a"), FPL("\uFF41")}, -1},
 #endif
 #if BUILDFLAG(IS_APPLE)
-      // Codepoints > 0x1000
-      // Georgian letter DON: direct comparison, and upper case vs. lower case
-      {{FPL("\u10A3"), FPL("\u10A3")}, 0},
-      {{FPL("\u10A3"), FPL("\u10D3")}, 0},
-      // Combining characters vs. pre-composed characters, upper and lower case
-      {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("\u1E31\u1E77\u1E53n")}, 0},
-      {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("kuon")}, 1},
-      {{FPL("kuon"), FPL("k\u0301u\u032Do\u0304\u0301n")}, -1},
-      {{FPL("K\u0301U\u032DO\u0304\u0301N"), FPL("KUON")}, 1},
-      {{FPL("KUON"), FPL("K\u0301U\u032DO\u0304\u0301N")}, -1},
-      {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("KUON")}, 1},
-      {{FPL("K\u0301U\u032DO\u0304\u0301N"), FPL("\u1E31\u1E77\u1E53n")}, 0},
-      {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("\u1E30\u1E76\u1E52n")}, 0},
-      {{FPL("k\u0301u\u032Do\u0304\u0302n"), FPL("\u1E30\u1E76\u1E52n")}, 1},
+    // Codepoints > 0x1000
+    // Georgian letter DON: direct comparison, and upper case vs. lower case
+    {{FPL("\u10A3"), FPL("\u10A3")}, 0},
+    {{FPL("\u10A3"), FPL("\u10D3")}, 0},
+    // Combining characters vs. pre-composed characters, upper and lower case
+    {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("\u1E31\u1E77\u1E53n")}, 0},
+    {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("kuon")}, 1},
+    {{FPL("kuon"), FPL("k\u0301u\u032Do\u0304\u0301n")}, -1},
+    {{FPL("K\u0301U\u032DO\u0304\u0301N"), FPL("KUON")}, 1},
+    {{FPL("KUON"), FPL("K\u0301U\u032DO\u0304\u0301N")}, -1},
+    {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("KUON")}, 1},
+    {{FPL("K\u0301U\u032DO\u0304\u0301N"), FPL("\u1E31\u1E77\u1E53n")}, 0},
+    {{FPL("k\u0301u\u032Do\u0304\u0301n"), FPL("\u1E30\u1E76\u1E52n")}, 0},
+    {{FPL("k\u0301u\u032Do\u0304\u0302n"), FPL("\u1E30\u1E76\u1E52n")}, 1},
 
-      // Codepoints > 0xFFFF
-      // Here, we compare the `Adlam Letter Shu` in its capital and small
-      // version.
-      {{FPL("\U0001E921"), FPL("\U0001E943")}, -1},
-      {{FPL("\U0001E943"), FPL("\U0001E921")}, 1},
-      {{FPL("\U0001E921"), FPL("\U0001E921")}, 0},
-      {{FPL("\U0001E943"), FPL("\U0001E943")}, 0},
+    // Codepoints > 0xFFFF
+    // Here, we compare the `Adlam Letter Shu` in its capital and small version.
+    {{FPL("\U0001E921"), FPL("\U0001E943")}, -1},
+    {{FPL("\U0001E943"), FPL("\U0001E921")}, 1},
+    {{FPL("\U0001E921"), FPL("\U0001E921")}, 0},
+    {{FPL("\U0001E943"), FPL("\U0001E943")}, 0},
 #endif
   };
 

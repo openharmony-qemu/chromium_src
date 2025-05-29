@@ -275,8 +275,7 @@ bool IsInAutofillSuggestionsDisabledExperiment() {
 }
 
 bool IsCreditCardFidoAuthenticationEnabled() {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Better Auth project is fully launched on Windows/Mac for Desktop, and
   // Android for mobile.
   return true;

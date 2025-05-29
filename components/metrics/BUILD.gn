@@ -317,7 +317,7 @@ if (!is_cronet_build || is_ios) {
     }
 
     if (is_ohos) {
-      sources += [ "drive_metrics_provider_ohos.cc" ]
+      sources += [ "//arkweb/chromium_ext/components/metrics/drive_metrics_provider_ohos.cc" ]
     }
 
     if (is_win || is_linux) {

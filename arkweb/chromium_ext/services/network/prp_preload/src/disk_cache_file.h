@@ -28,14 +28,11 @@ class DiskCacheEntry {
     OPEN_ENTRY,
     WRITE_DATA,
     CREATE_ENTRY,
-    REOPEN_ENTRY,
   };
 
   int OpenCallback(int rv);
   int WriteCallback(int rv);
   int IOComplete(int rv);
-  int ReopenCallback(int rv);
-  int OpenEntry();
 
   raw_ptr<DiskCacheFile> cache_;
   OpType op_type_ = OPEN_ENTRY;
@@ -85,7 +82,10 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
                 const std::string& url,
                 const EntryLoadedCallback& entry_loaded_cb);
-  ~DiskCacheFile() = default;
+  ~DiskCacheFile()
+  {
+    LOG(INFO) << "PRPPreload.DiskCacheFile::~DiskCacheFile";
+  }
   DiskCacheFile(const DiskCacheFile&) = delete;
   DiskCacheFile& operator=(const DiskCacheFile&) = delete;
 
@@ -97,14 +97,24 @@ class DiskCacheFile : public base::RefCounted<DiskCacheFile> {
   friend class DiskCacheReadHelper;
 
   disk_cache::Backend* Backend() const { return disk_cache_backend_factory_->Backend(); }
+  void DoStoreInfo(const std::string& entry_content);
+  void DoLoadInfo();
   void EntryReadComplete();
   void EntryWriteComplete(DiskCacheEntry* entry);
+  void SetDelayedStoreTask(base::OnceCallback<void()> delayed_store_task);
+  void SetDelayedLoadTask(base::OnceCallback<void()> delayed_load_task);
+  void BackendComplete();
+  void RunStoreTask(bool clear = false);
+  void RunLoadTask(bool clear = false);
 
   scoped_refptr<DiskCacheBackendFactory> disk_cache_backend_factory_;
   const std::string& url_;
   EntryLoadedCallback entry_loaded_cb_;
   std::unique_ptr<DiskCacheReadHelper> helper_;
   std::unique_ptr<DiskCacheEntry> entry_;
+  base::OnceCallback<void()> delayed_store_task_;
+  base::OnceCallback<void()> delayed_load_task_;
+  base::WeakPtrFactory<DiskCacheFile> weak_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

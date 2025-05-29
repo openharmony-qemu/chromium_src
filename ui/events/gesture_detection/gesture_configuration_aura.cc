@@ -64,7 +64,7 @@ class GestureConfigurationAura : public GestureConfiguration {
     set_swipe_enabled(true);
     set_two_finger_tap_enabled(true);
     set_fling_touchpad_tap_suppression_enabled(true);
-#ifndef ARKWEB_CLIPBOARD
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
     set_fling_touchscreen_tap_suppression_enabled(false);
 #else
     set_fling_touchscreen_tap_suppression_enabled(true);

@@ -5,6 +5,7 @@
 import("//build/config/clang/clang.gni")
 import("//build/config/compiler/compiler.gni")
 import("//build/config/coverage/coverage.gni")
+import("//build/config/ohos/config.gni")
 import("//build/config/rust.gni")
 import("//build/config/sanitizers/sanitizers.gni")
 import("//build/config/sysroot.gni")
@@ -472,6 +473,10 @@ template("single_gcc_toolchain") {
         solink_extra_flags = "--partitioned-library"
       }
       command = "\"$python_path\" \"$solink_wrapper\" --readelf=\"$readelf\" --nm=\"$nm\" $strip_switch$dwp_switch --sofile=\"$unstripped_sofile\" --tocfile=\"$tocfile\"$map_switch --output=\"$sofile\" -- $link_command $solink_extra_flags"
+      if (arkweb_enable_minidebug) {
+        _clang_base_dir = rebase_path(clang_base_path)
+        command = "\"$python_path\" \"$solink_wrapper\" --readelf=\"$readelf\" --nm=\"$nm\" $strip_switch$dwp_switch --sofile=\"$unstripped_sofile\" --tocfile=\"$tocfile\"$map_switch --output=\"$sofile\" --clang-base-dir=\"$_clang_base_dir\" --mini-debug -- $link_command $solink_extra_flags"
+      }
 
       if (target_cpu == "mipsel" && is_component_build && is_android) {
         rspfile_content = "-Wl,--start-group -Wl,--whole-archive {{inputs}} {{solibs}} -Wl,--no-whole-archive {{libs}} -Wl,--end-group"
@@ -636,7 +641,10 @@ template("single_gcc_toolchain") {
       link_wrapper =
           rebase_path("//build/toolchain/gcc_link_wrapper.py", root_build_dir)
       command = "\"$python_path\" \"$link_wrapper\" --output=\"$outfile\"$strip_switch$map_switch$dwp_switch -- $link_command"
-
+      if (arkweb_enable_minidebug) {
+        _clang_base_dir = rebase_path(clang_base_path)
+        command = "\"$python_path\" \"$link_wrapper\" --output=\"$outfile\"$strip_switch$map_switch$dwp_switch --clang-base-dir=\"$_clang_base_dir\" --mini-debug -- $link_command"
+      }
       description = "LINK $outfile"
 
       rspfile_content = "{{inputs}}"

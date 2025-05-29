@@ -30,7 +30,11 @@ class MEDIA_MOJO_EXPORT MojoProvisionFetcher final : public ProvisionFetcher {
   void Retrieve(const GURL& default_url,
                 const std::string& request_data,
                 ResponseCB response_cb) final;
-
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void RetrieveWiseplayLicense(const GURL& default_url,
+                const std::string& request_data,
+                ResponseCB response_cb) final;
+#endif
  private:
   // Callback for mojo::Remote<mojom::ProvisionFetcher>::Retrieve().
   void OnResponse(ResponseCB response_cb,

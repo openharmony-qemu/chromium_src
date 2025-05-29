@@ -11,8 +11,6 @@
 #include "base/memory/weak_ptr.h"
 #include "base/supports_user_data.h"
 #include "content/common/content_export.h"
-// todo: check
-#include "content/public/browser/render_frame_host.h"
 
 namespace content {
 

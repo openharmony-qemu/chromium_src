@@ -57,6 +57,10 @@
 #include "ui/accelerated_widget_mac/ca_transaction_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/ui/compositor/test/in_process_context_factory_ext.h"
+#endif
+
 namespace ui {
 namespace {
 
@@ -154,15 +158,7 @@ class InProcessContextFactory::PerCompositorData
   }
   void SetOutputIsSecure(bool secure) override {}
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetDrawRect(const gfx::Rect& new_rect) override {}
-  void SetDrawMode(int32_t mode) override {}
-  void SetCurrentFrameSinkId(const ::viz::FrameSinkId& frame_sink_id) override {
-  }
-  void SetShouldFrameSubmissionBeforeDraw(
-      bool should,
-      SetShouldFrameSubmissionBeforeDrawCallback callback) override {}
-  void DisableSwapUntilMaximized(
-      DisableSwapUntilMaximizedCallback callback) override {}
+  ARKWEB_UNITTESTS_IN_PRPCESS_CONTEXT_FACTORY()
 #endif
 #if BUILDFLAG(IS_MAC)
   void SetVSyncDisplayID(int64_t display_id) override {}

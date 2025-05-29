@@ -126,11 +126,15 @@ Provider base_provider_android = {
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-Provider base_provider_ohos = {PathProviderOHOS, &base_provider,
+Provider base_provider_ohos = {
+    PathProviderOHOS,
+    &base_provider,
 #ifndef NDEBUG
-                               PATH_OHOS_START, PATH_OHOS_END,
+    PATH_OHOS_START,
+    PATH_OHOS_END,
 #endif
-                               true};
+    true
+};
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)

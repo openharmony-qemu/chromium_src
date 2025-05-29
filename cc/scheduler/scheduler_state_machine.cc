@@ -876,8 +876,7 @@ void SchedulerStateMachine::WillPerformImplSideInvalidation() {
 
 void SchedulerStateMachine::WillPerformImplSideInvalidationInternal() {
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-  TRACE_EVENT0(
-      "cc", "SchedulerStateMachine::WillPerformImplSideInvalidationInternal");
+  TRACE_EVENT0("cc", "SchedulerStateMachine::WillPerformImplSideInvalidationInternal");
 #endif
   DCHECK(needs_impl_side_invalidation_);
   DCHECK(!has_pending_tree_);

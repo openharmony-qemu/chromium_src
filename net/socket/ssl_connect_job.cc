@@ -35,8 +35,8 @@
 #include "third_party/boringssl/src/include/openssl/pool.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+#include "arkweb/chromium_ext/net/socket/ssl_connect_job_for_include.cc"
 #endif
 
 namespace net {
@@ -253,11 +253,18 @@ int SSLConnectJob::DoTransportConnect() {
     DCHECK(endpoint_result_);
     endpoint_result_override.emplace(*endpoint_result_, dns_aliases_);
   }
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  nested_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
+#else
   nested_connect_job_ = std::make_unique<TransportConnectJob>(
+#endif
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetDirectConnectionParams(), this, &net_log(),
       std::move(endpoint_result_override));
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  nested_connect_job_->SetFromPreload(IsFromPreload());
+#endif
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return nested_connect_job_->Connect();
@@ -289,7 +296,7 @@ int SSLConnectJob::DoSOCKSConnect() {
   nested_connect_job_ = std::make_unique<SOCKSConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetSocksProxyConnectionParams(), this, &net_log());
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return nested_connect_job_->Connect();
@@ -314,7 +321,7 @@ int SSLConnectJob::DoTunnelConnect() {
   nested_connect_job_ = std::make_unique<HttpProxyConnectJob>(
       priority(), socket_tag(), common_connect_job_params(),
       params_->GetHttpProxyConnectionParams(), this, &net_log());
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
 #endif
   return nested_connect_job_->Connect();
@@ -497,10 +504,4 @@ void SSLConnectJob::ChangePriorityInternal(RequestPriority priority) {
   }
 }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void SSLConnectJob::SetConnectTimeout(int timeout_override) {
-  timeout_override_for_nested_job_ = timeout_override;
-  timeout_override_ = base::TimeDelta();
-}
-#endif
 }  // namespace net

@@ -2978,8 +2978,7 @@ MenuItemView* MenuController::FindInitialSelectableMenuItem(
 
 void MenuController::OpenSubmenuChangeSelectionIfCan() {
   MenuItemView* item = pending_state_.item;
-  if (!item->HasSubmenu() || !item->GetEnabled() ||
-      !item->GetParentMenuItem()) {
+  if (!item->HasSubmenu() || !item->GetEnabled() || !item->GetParentMenuItem()) {
     MenuItemView* submenu_item =
         item->GetParentMenuItem() ? item->GetParentMenuItem() : item;
     submenu_item->GetDelegate()->OnUnhandledOpenSubmenu(submenu_item,

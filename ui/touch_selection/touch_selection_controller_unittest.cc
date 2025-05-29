@@ -49,6 +49,9 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
   }
   float GetDrawableHorizontalPaddingRatio() const override { return 0; }
 
+  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {
+  }
+
  private:
   raw_ptr<bool> intersects_rect_;
 };

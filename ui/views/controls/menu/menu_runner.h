@@ -151,17 +151,17 @@ class VIEWS_EXPORT MenuRunner {
   // time from when Widget::Show() is called to when the first frame is
   // presented for menu. It is recorded in MenuHost and it happens only when the
   // histogram name is non-empty.
-  void RunMenuAt(
-      Widget* parent,
-      MenuButtonController* button_controller,
-      const gfx::Rect& bounds,
-      MenuAnchorPosition anchor,
-      ui::mojom::MenuSourceType source_type,
-      gfx::NativeView native_view_for_gestures = gfx::NativeView(),
-      gfx::AcceleratedWidget parent_widget = gfx::kNullAcceleratedWidget,
-      std::optional<gfx::RoundedCornersF> corners = std::nullopt,
-      std::optional<std::string> show_menu_host_duration_histogram =
-          std::nullopt);
+  void RunMenuAt(Widget* parent,
+                 MenuButtonController* button_controller,
+                 const gfx::Rect& bounds,
+                 MenuAnchorPosition anchor,
+                 ui::mojom::MenuSourceType source_type,
+                 gfx::NativeView native_view_for_gestures = gfx::NativeView(),
+                 gfx::AcceleratedWidget parent_widget =
+                     gfx::kNullAcceleratedWidget,
+                 std::optional<gfx::RoundedCornersF> corners = std::nullopt,
+                 std::optional<std::string> show_menu_host_duration_histogram =
+                     std::nullopt);
 
   // Returns true if we're in a nested run loop running the menu.
   bool IsRunning() const;

@@ -39,17 +39,6 @@ if (ozone_platform_headless) {
   ozone_platform_deps += [ "platform/headless" ]
 }
 
-if (ozone_platform_ohos) {
-  if (is_ohos) {
-    ozone_platforms += [ "ohos" ]
-    ozone_platform_deps += [ "platform/ohos" ]
-    ozone_platform_ui_test_support_deps += [ "platform/ohos:test_support" ]
-  } else {
-    ozone_platforms += [ "headless" ]
-    ozone_platform_deps += [ "platform/headless" ]
-  }
-}
-
 if (ozone_platform_drm) {
   ozone_platforms += [ "drm" ]
   ozone_platform_deps += [ "platform/drm:gbm" ]

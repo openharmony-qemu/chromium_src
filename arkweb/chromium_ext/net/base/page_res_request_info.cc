@@ -80,4 +80,63 @@ PRRequestFlags PRRequestInfo::preload_flag() const
   return preload_flags_;
 }
 
+void PRRequestInfo::add_preconnect_num(bool add)
+{
+  if (add) {
+    preconnect_num_++;
+  }
+}
+
+void PRRequestInfo::add_reused_preconnect_num(bool add)
+{
+  if (add) {
+    reused_preconnect_num_++;
+  }
+}
+
+void PRRequestInfo::compute_limit_num()
+{
+  if (preconnect_num_ <= 0 || reused_preconnect_num_ <= 0) {
+    limit_num_ = 0;
+    return;
+  }
+  limit_num_ = (reused_preconnect_num_ > MAX_PRECONNECT_COUNT) ? MAX_PRECONNECT_COUNT : reused_preconnect_num_;
+}
+
+void PRRequestInfo::set_is_preconnect(bool is_preconnect)
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  is_preconnect_ = is_preconnect;
+}
+
+bool PRRequestInfo::is_preconnect() const
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  return is_preconnect_;
+}
+
+void PRRequestInfo::set_is_reused_sokcet(bool is_reused_sokcet)
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  is_reused_sokcet_ = is_reused_sokcet;
+}
+
+bool PRRequestInfo::is_reused_sokcet() const
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  return is_reused_sokcet_;
+}
+
+net::HttpRequestHeaders PRRequestInfo::extra_request_headers()
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  return extra_request_headers_;
+}
+
+void PRRequestInfo::set_extra_request_headers(const net::HttpRequestHeaders& extra_request_headers)
+{
+  std::lock_guard<std::mutex> cache_info_guard(cache_info_mutex_);
+  extra_request_headers_ = extra_request_headers;
+}
+
 } // namespace ohos_prp_preload

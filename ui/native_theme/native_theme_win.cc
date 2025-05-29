@@ -679,17 +679,15 @@ bool NativeThemeWin::ShouldUseDarkColors() const {
   if (supports_windows_dark_mode_ && IsForcedDarkMode()) {
     return true;
   }
-  if (InForcedColorsMode()) {
+  if (InForcedColorsMode())
     return false;
-  }
   return NativeTheme::ShouldUseDarkColors();
 }
 
 NativeTheme::PreferredColorScheme
 NativeThemeWin::CalculatePreferredColorScheme() const {
-  if (!InForcedColorsMode() || !supports_windows_dark_mode_) {
+  if (!InForcedColorsMode() || !supports_windows_dark_mode_)
     return NativeTheme::CalculatePreferredColorScheme();
-  }
 
   // According to the spec, the preferred color scheme for web content is 'dark'
   // if 'Canvas' has L<33% and 'light' if L>67%. On Windows, the 'Canvas'

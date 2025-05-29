@@ -5,6 +5,8 @@
 #ifndef BASE_NOT_FATAL_UNTIL_H_
 #define BASE_NOT_FATAL_UNTIL_H_
 
+#include "arkweb/build/features/features.h"
+
 namespace base {
 
 // Add new entries a few milestones into the future whenever necessary.
@@ -15,6 +17,10 @@ namespace base {
 // as from this list. This generates better-optimized CHECKs in official builds.
 enum class NotFatalUntil {
   NoSpecifiedMilestoneInternal = -1,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  M114 = 114,
+  M115 = 115,
+#endif
   M120 = 120,
   M121 = 121,
   M122 = 122,

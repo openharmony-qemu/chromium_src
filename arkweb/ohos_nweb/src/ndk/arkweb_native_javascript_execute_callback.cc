@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "base/logging.h"
+#include "nweb_value_convert.h"
 
 namespace OHOS::NWeb {
 void ArkWebNativeJavaScriptExecuteCallback::OnReceiveValue(
@@ -42,6 +43,12 @@ void ArkWebNativeJavaScriptExecuteCallback::OnReceiveValue(
     LOG(ERROR) << "NativeArkWeb RunJavaScript result is not string";
     callback_(std::vector<uint8_t>());
   }
+}
+
+void ArkWebNativeJavaScriptExecuteCallback::OnReceiveValueV2(
+    std::shared_ptr<NWebHapValue> result) {
+  std::shared_ptr<NWebMessage> message = ConvertNwebHap2NwebMessage(result);
+  OnReceiveValue(message);
 }
 }  // namespace OHOS::NWeb
                           

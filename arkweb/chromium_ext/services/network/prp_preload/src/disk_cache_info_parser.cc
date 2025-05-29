@@ -80,6 +80,9 @@ const std::unordered_map<std::string, ParseFunc>
     { "preload_flag",
       { &DiskCacheInfoParser::SetPreloadFlagsToJson,
         &DiskCacheInfoParser::GetPreloadFlagsFromJson } },
+      { "preload_seq_num",
+          { &DiskCacheInfoParser::SetPreloadSeqNumToJson,
+            &DiskCacheInfoParser::GetPreloadSeqNumFromJson } },
     { "referrer",
       { &DiskCacheInfoParser::SetReferrerToJson,
         &DiskCacheInfoParser::GetReferrerFromJson } },
@@ -121,6 +124,22 @@ const std::unordered_map<std::string, ParseFunc>
         &DiskCacheInfoParser::GetUpgradeIfInsecureFromJson } },
 };
 
+const std::unordered_map<std::string, ParseFunc>
+PRECONNECT_LIMIT_PARSE_FUNC_MAP = {
+    { "allow_credentials",
+      { &DiskCacheInfoParser::SetAllowCredentialsToJson,
+        &DiskCacheInfoParser::GetAllowCredentialsFromJson } },
+    { "limit_num",
+      { &DiskCacheInfoParser::SetLimitNumToJson,
+        &DiskCacheInfoParser::GetLimitNumFromJson } },
+    { "request_info_type",
+      { &DiskCacheInfoParser::SetRequestInfoTypeToJson,
+        &DiskCacheInfoParser::GetRequestInfoTypeFromJson } },
+    { "url",
+      { &DiskCacheInfoParser::SetUrlToJson,
+        &DiskCacheInfoParser::GetUrlFromJson } },
+};
+
 void DiskCacheInfoParser::ParseResReqPreloadInfoForPreconnect(
     const std::shared_ptr<PRRequestInfo>& info,
     base::Value::Dict& dict) {
@@ -152,6 +171,25 @@ bool DiskCacheInfoParser::ParseJsonForPreload(
     const base::Value& json,
     const std::shared_ptr<PRRequestInfo>& info) {
   for (const auto& it : PRELOAD_PARSE_FUNC_MAP) {
+    if (!it.second.get_from_json_func_(json, it.first, info)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void DiskCacheInfoParser::ParseResReqPreloadInfoForPreconnectLimit(
+    const std::shared_ptr<PRRequestInfo>& info,
+    base::Value::Dict& dict) {
+  for (const auto& it : PRECONNECT_LIMIT_PARSE_FUNC_MAP) {
+    it.second.set_to_json_func_(info, it.first, dict);
+  }
+}
+
+bool DiskCacheInfoParser::ParseJsonForPreconnectLimit(
+    const base::Value& json,
+    const std::shared_ptr<PRRequestInfo>& info) {
+  for (const auto& it : PRECONNECT_LIMIT_PARSE_FUNC_MAP) {
     if (!it.second.get_from_json_func_(json, it.first, info)) {
       return false;
     }
@@ -472,7 +510,8 @@ void DiskCacheInfoParser::SetExtraRequestHeadersToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
     base::Value::Dict& dict) {
-  net::HttpRequestHeaders::Iterator it(info->extra_request_headers());
+  net::HttpRequestHeaders extra_request_headers = info->extra_request_headers();
+  net::HttpRequestHeaders::Iterator it(extra_request_headers);
   base::Value::Dict extra_request_headers_dict;
   while (it.GetNext()) {
     extra_request_headers_dict.Set(it.name(), it.value());
@@ -724,6 +763,40 @@ bool DiskCacheInfoParser::GetMethodFromJson(
   return true;
 }
 
+void DiskCacheInfoParser::SetLimitNumToJson(
+    const std::shared_ptr<PRRequestInfo>& info,
+    const std::string& param_name,
+    base::Value::Dict& dict) {
+  dict.Set(param_name, std::to_string(info->limit_num()));
+}
+
+bool DiskCacheInfoParser::GetLimitNumFromJson(
+    const base::Value& json,
+    const std::string& param_name,
+    const std::shared_ptr<PRRequestInfo>& info) {
+  const std::string* limit_num_str = json.GetDict().FindString(param_name);
+  if (!limit_num_str || limit_num_str->empty()) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
+                    "GetLimitNumFromJson limit_num " <<
+                    "is none";
+    return false;
+  }
+
+  char* end = nullptr;
+  errno = 0;  // system global variables
+  int64_t limit_num =
+      std::strtoll(limit_num_str->c_str(), &end, 10);
+  if (errno != 0 || !end || *end) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
+                    "GetLimitNumFromJson limit_num " <<
+                    "is invalid";
+    return false;
+  }
+
+  info->set_limit_num(limit_num);
+  return true;
+}
+
 void DiskCacheInfoParser::SetPreloadFlagsToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
@@ -738,13 +811,33 @@ bool DiskCacheInfoParser::GetPreloadFlagsFromJson(
   const std::optional<int> preload_flag = json.GetDict().FindInt(param_name);
   if (!preload_flag.has_value() ||
       preload_flag.value() < static_cast<int>(PRRequestFlags::PRPP_FLAGS_NONE) ||
-      preload_flag.value() > static_cast<int>(PRRequestFlags::PRPP_FLAGS_UNSUPPORT)) {
+      preload_flag.value() > static_cast<int>(PRRequestFlags::PRPP_FLAGS_MAX_VALUE)) {
     LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetPreloadFlagsFromJson preload_flag " <<
                     "is invalid";
     return false;
   }
   info->set_preload_flag(static_cast<PRRequestFlags>(preload_flag.value()));
+  return true;
+}
+
+void DiskCacheInfoParser::SetPreloadSeqNumToJson(
+    const std::shared_ptr<PRRequestInfo>& info,
+    const std::string& param_name,
+    base::Value::Dict& dict) {
+  dict.Set(param_name, info->preload_seq_num());
+}
+
+bool DiskCacheInfoParser::GetPreloadSeqNumFromJson(
+    const base::Value& json,
+    const std::string& param_name,
+    const std::shared_ptr<PRRequestInfo>& info) {
+  const std::string* preload_seq_num = json.GetDict().FindString(param_name);
+  if (!preload_seq_num) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetETagFromJson preload_seq_num is invalid";
+    return false;
+  }
+  info->set_preload_seq_num(*preload_seq_num);
   return true;
 }
 
@@ -893,7 +986,7 @@ bool DiskCacheInfoParser::GetRequestInfoTypeFromJson(
   const std::optional<int> type = json.GetDict().FindInt(param_name);
   if (!type.has_value() ||
       type.value() < static_cast<int>(PRRequestInfoType::TYPE_DEFAULT) ||
-      type.value() > static_cast<int>(PRRequestInfoType::TYPE_PAGE_PREFLIGHT)) {
+      type.value() > static_cast<int>(PRRequestInfoType::TYPE_PAGE_PRECONNECT_LIMIT)) {
     LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
                     "GetRequestInfoTypeFromJson type is invalid";
     return false;
@@ -1032,7 +1125,8 @@ bool DiskCacheInfoParser::GetSendClientCertsFromJson(
 void DiskCacheInfoParser::SetStorageAccessStatusToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
-    base::Value::Dict& dict) {
+    base::Value::Dict& dict)
+{
   if (info->storage_access_status().has_value()) {
     dict.Set(param_name, static_cast<int>(info->storage_access_status().value()));
   }
@@ -1041,7 +1135,8 @@ void DiskCacheInfoParser::SetStorageAccessStatusToJson(
 bool DiskCacheInfoParser::GetStorageAccessStatusFromJson(
     const base::Value& json,
     const std::string& param_name,
-    const std::shared_ptr<PRRequestInfo>& info) {
+    const std::shared_ptr<PRRequestInfo>& info)
+{
   const std::optional<int> storage_access_status =
       json.GetDict().FindInt(param_name);
   if (!storage_access_status.has_value()) {
@@ -1063,13 +1158,15 @@ bool DiskCacheInfoParser::GetStorageAccessStatusFromJson(
 void DiskCacheInfoParser::SetUpgradeIfInsecureToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
-    base::Value::Dict& dict) {
+    base::Value::Dict& dict)
+{
   dict.Set(param_name, info->upgrade_if_insecure());
 }
 bool DiskCacheInfoParser::GetUpgradeIfInsecureFromJson(
     const base::Value& json,
     const std::string& param_name,
-    const std::shared_ptr<PRRequestInfo>& info) {
+    const std::shared_ptr<PRRequestInfo>& info)
+{
   const std::optional<bool> upgrade_if_insecure =
       json.GetDict().FindBool(param_name);
   if (!upgrade_if_insecure.has_value()) {
@@ -1085,7 +1182,8 @@ bool DiskCacheInfoParser::GetUpgradeIfInsecureFromJson(
 void DiskCacheInfoParser::SetUrlToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
-    base::Value::Dict& dict) {
+    base::Value::Dict& dict)
+{
   if ((info->type() == PRRequestInfoType::TYPE_PAGE_PREFLIGHT) &&
       !info->url().spec().starts_with(PRPP_PREFLIGHT_PREFIX)) {
     dict.Set(param_name,
@@ -1098,7 +1196,8 @@ void DiskCacheInfoParser::SetUrlToJson(
 bool DiskCacheInfoParser::GetUrlFromJson(
     const base::Value& json,
     const std::string& param_name,
-    const std::shared_ptr<PRRequestInfo>& info) {
+    const std::shared_ptr<PRRequestInfo>& info)
+{
   const std::string* url = json.GetDict().FindString(param_name);
   if (!url || url->empty()) {
     LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetUrlFromJson " <<
@@ -1110,4 +1209,61 @@ bool DiskCacheInfoParser::GetUrlFromJson(
   return true;
 }
 
+void DiskCacheInfoParser::SetPageIndexToJson(
+    const std::shared_ptr<PRRequestInfo>& info,
+    const std::string& param_name,
+    base::Value::Dict& dict)
+{
+  dict.Set(param_name, std::to_string(info->page_index()));
+}
+
+bool DiskCacheInfoParser::GetPageIndexFromJson(
+    const base::Value& json,
+    const std::string& param_name,
+    const std::shared_ptr<PRRequestInfo>& info)
+{
+  const std::string* page_index_str = json.GetDict().FindString(param_name);
+  if (!page_index_str || page_index_str->empty()) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
+                    "GetPageIndexFromJson page_index " <<
+                    "is none";
+    return false;
+  }
+
+  char* end = nullptr;
+  errno = 0;  // system global variables
+  int64_t page_index =
+      std::strtoll(page_index_str->c_str(), &end, 10);
+  if (errno != 0 || !end || *end) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::" <<
+                    "GetPageIndexFromJson page_index " <<
+                    "is invalid";
+    return false;
+  }
+
+  info->set_page_index(page_index);
+  return true;
+}
+
+void DiskCacheInfoParser::SetPageOriginToJson(
+    const std::shared_ptr<PRRequestInfo>& info,
+    const std::string& param_name,
+    base::Value::Dict& dict)
+{
+  dict.Set(param_name, info->page_origin());
+}
+
+bool DiskCacheInfoParser::GetPageOriginFromJson(
+    const base::Value& json,
+    const std::string& param_name,
+    const std::shared_ptr<PRRequestInfo>& info)
+{
+  const std::string* page_origin = json.GetDict().FindString(param_name);
+  if (!page_origin) {
+    LOG(DEBUG) << "PRPPreload.DiskCacheInfoParser::GetETagFromJson page_origin is invalid";
+    return false;
+  }
+  info->set_page_origin(*page_origin);
+  return true;
+}
 }  // namespace ohos_prp_preload

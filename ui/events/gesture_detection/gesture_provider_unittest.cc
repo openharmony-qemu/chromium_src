@@ -163,7 +163,11 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
   }
 
   void SetUpWithConfig(const GestureProvider::Config& config) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    gesture_provider_ = std::make_unique<GestureProviderExt>(config, this);
+#else
     gesture_provider_ = std::make_unique<GestureProvider>(config, this);
+#endif
     gesture_provider_->SetMultiTouchZoomSupportEnabled(false);
   }
 
@@ -174,7 +178,7 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void ResetGestureDetection(bool is_lost_focus) {
-    gesture_provider_->ResetDetection(is_lost_focus);
+    gesture_provider_->AsGestureProviderExt()->ResetDetection(is_lost_focus);
     gestures_.clear();
   }
 #endif
@@ -324,7 +328,7 @@ class GestureProviderTest : public testing::Test, public GestureProviderClient {
     GestureProvider::Config config = GetDefaultConfig();
     config.gesture_detector_config.longpress_timeout = draglongpress_timeout;
     SetUpWithConfig(config);
-  }
+   }
 #endif
 
   void SetSingleTapRepeatInterval(int repeat_interval) {
@@ -3616,7 +3620,7 @@ TEST_F(GestureProviderTest, MaxDragDistanceHistogramsWithDrag) {
 }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-// Verify that DRAGLONGPRES is triggered after LONG_PRESS event.
+//Verify that DRAGLONGPRES is triggered after LONG_PRESS event.
 TEST_F(GestureProviderTest, GestureDragLongpressCreateDetection) {
   base::TimeTicks event_time = base::TimeTicks::Now();
 
@@ -3625,21 +3629,19 @@ TEST_F(GestureProviderTest, GestureDragLongpressCreateDetection) {
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
 
   const base::TimeDelta drag_long_press_timeout =
-      GetDragLongpressTimeout() + GetLongPressTimeout() +
-      GetShowPressTimeout() + kOneMicrosecond;
+      GetDragLongpressTimeout() + GetLongPressTimeout() + GetShowPressTimeout() + kOneMicrosecond;
   RunTasksAndWait(drag_long_press_timeout);
 
   // will be receive longpress
-  EXPECT_TRUE(HasReceivedGesture(ET_GESTURE_LONG_PRESS));
-  EXPECT_EQ(ET_GESTURE_DRAG_LONG_PRESS, GetMostRecentGestureEventType());
+  EXPECT_TRUE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_EQ(EventType::kGestureDragLongPress, GetMostRecentGestureEventType());
   EXPECT_EQ(1, GetMostRecentGestureEvent().details.touch_points());
 
   EXPECT_TRUE(CancelActiveTouchSequence());
   EXPECT_FALSE(HasDownEvent());
 }
 
-// Verify that triggered ResetGestureDetection(true) due to loss of foucs will
-// not interrupt generation of drag events;
+// Verify that triggered ResetGestureDetection(true) due to loss of foucs will not interrupt generation of drag events;
 TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
   base::TimeTicks event_time = base::TimeTicks::Now();
 
@@ -3648,22 +3650,21 @@ TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
 
   const base::TimeDelta drag_long_press_timeout =
-      GetDragLongpressTimeout() + GetLongPressTimeout() +
-      GetShowPressTimeout() + kOneMicrosecond;
+      GetDragLongpressTimeout() + GetLongPressTimeout() + GetShowPressTimeout() + kOneMicrosecond;
 
   ResetGestureDetection(true);
   RunTasksAndWait(drag_long_press_timeout);
 
-  EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_LONG_PRESS));
-  EXPECT_EQ(ET_GESTURE_DRAG_LONG_PRESS, GetMostRecentGestureEventType());
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_EQ(EventType::kGestureDragLongPress, GetMostRecentGestureEventType());
 
   // verify ResetGestureDetection(false) can cancel generation of drag events
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
   ResetGestureDetection(false);
   RunTasksAndWait(drag_long_press_timeout);
 
-  EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_LONG_PRESS));
-  EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_DRAG_LONG_PRESS));
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureLongPress));
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
 
   // verify Action::Up also can cancel generation of drag events
   MockMotionEvent up_event =
@@ -3671,15 +3672,15 @@ TEST_F(GestureProviderTest, GesutreDragLongpressCancelAndReset) {
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(up_event));
   RunTasksAndWait(drag_long_press_timeout);
-  EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_DRAG_LONG_PRESS));
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
 
   // verify Action::POINT_DOWN also can cancel generation of drag events
-  MockMotionEvent point_down_event = ObtainMotionEvent(
-      event_time + kOneMicrosecond, MotionEvent::Action::POINTER_DOWN);
+  MockMotionEvent point_down_event =
+      ObtainMotionEvent(event_time + kOneMicrosecond, MotionEvent::Action::POINTER_DOWN);
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(event));
   EXPECT_TRUE(gesture_provider_->OnTouchEvent(point_down_event));
   RunTasksAndWait(drag_long_press_timeout);
-  EXPECT_FALSE(HasReceivedGesture(ET_GESTURE_DRAG_LONG_PRESS));
+  EXPECT_FALSE(HasReceivedGesture(EventType::kGestureDragLongPress));
 }
 #endif
 

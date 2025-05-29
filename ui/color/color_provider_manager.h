@@ -98,8 +98,8 @@ class COMPONENT_EXPORT(COLOR) ColorProviderManager {
   // manager for metrics purposes.
   size_t num_providers_initialized_ = 0;
 
-  base::ObserverList<
-      ColorProviderManagerObserver>::UncheckedAndDanglingUntriaged observers_;
+  base::ObserverList<ColorProviderManagerObserver>::UncheckedAndDanglingUntriaged
+      observers_;
 };
 
 }  // namespace ui

@@ -92,6 +92,7 @@ class CONTENT_EXPORT ClipboardHostImpl
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void OnClipboardDataGuard(bool status,
                             OnClipboardDataGuardCallback callback) override;
+  void UpdateClipboardData(UpdateClipboardDataCallback callback) override;
 #endif
 
  private:

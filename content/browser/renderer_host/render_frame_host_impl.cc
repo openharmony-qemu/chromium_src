@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -329,11 +328,7 @@
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)
-#include "mojo/public/cpp/system/platform_handle.h"
-#endif
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_impl_for_include.cc"
 #endif
 
 namespace features {
@@ -1606,7 +1601,7 @@ class RenderFrameHostImpl::SubresourceLoaderFactoriesConfig {
     SubresourceLoaderFactoriesConfig result;
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
     result.main_url_ = navigation_request.common_params().url;
-    result.addr_web_handle_ = navigation_request.GetAddrWebHandle();
+    result.addr_web_handle_ = navigation_request.nav_request_utils_->GetAddrWebHandle();
 #endif
     result.origin_ = navigation_request.GetOriginToCommit().value();
     result.client_security_state_ =
@@ -2634,7 +2629,6 @@ void RenderFrameHostImpl::WillLeaveBackForwardCacheInternal() {
 
 void RenderFrameHostImpl::StartBackForwardCacheEvictionTimer() {
   DCHECK(IsInBackForwardCache());
-
   base::TimeDelta evict_after =
 #if BUILDFLAG(ARKWEB_BFCACHE)
       GetBackForwardCache().ArkWebGetTimeToLiveInBackForwardCache();
@@ -3231,37 +3225,6 @@ void RenderFrameHostImpl::ExecuteJavaScript(const std::u16string& javascript,
   GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, wants_result,
                                                       std::move(callback));
 }
-
-#if BUILDFLAG(IS_ARKWEB)
-void RenderFrameHostImpl::ExecuteJavaScriptExt(
-    const int fd,
-    const uint64_t scriptLength,
-    JavaScriptResultCallback callback) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  CHECK(CanExecuteJavaScript());
-  AssertFrameWasCommitted();
-
-  const bool wants_result = !callback.is_null();
-  MojoPlatformHandle platform_handle;
-  platform_handle.struct_size = sizeof(platform_handle);
-  platform_handle.type = MOJO_PLATFORM_HANDLE_TYPE_FILE_DESCRIPTOR;
-  platform_handle.value = static_cast<uint64_t>(fd);
-  MojoHandle handle;
-  MojoWrapPlatformHandle(&platform_handle, nullptr, &handle);
-  GetAssociatedLocalFrame()->JavaScriptExecuteRequestExt(
-      mojo::ScopedHandle(mojo::Handle(handle)), scriptLength, wants_result,
-      std::move(callback));
-}
-
-void RenderFrameHostImpl::SendAccessibilityEvent(int64_t accessibilityId,
-                                                 int32_t eventType) {
-  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
-      render_view_host_->GetWidget()->GetView());
-  if (view) {
-    view->SendAccessibilityEvent(accessibilityId, eventType);
-  }
-}
-#endif
 
 void RenderFrameHostImpl::ExecuteJavaScriptInIsolatedWorld(
     const std::u16string& javascript,
@@ -5536,12 +5499,9 @@ void RenderFrameHostImpl::DidChangeBackForwardCacheDisablingFeatures(
   renderer_reported_bfcache_blocking_details_ = std::move(details);
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  if (GetBackForwardCacheDisablingFeatures().Has(
-          blink::scheduler::WebSchedulerTrackedFeature::
-              kEnableCacheNativeEmbed)) {
-    LOG(INFO) << "NativeEmbed BFCache, render frame host received NativeEmbed "
-                 "feature, render frame host global id = "
-              << GetGlobalId();
+  if (GetBackForwardCacheDisablingFeatures().Has(blink::scheduler::WebSchedulerTrackedFeature::kEnableCacheNativeEmbed)) {
+    LOG(INFO) << "NativeEmbed BFCache, render frame host received NativeEmbed feature, render frame host global id = " \
+      << GetGlobalId();
   }
 #endif
 
@@ -6137,16 +6097,17 @@ void RenderFrameHostImpl::ProcessBeforeUnloadCompleted(
   if (!initiator)
     return;
 
+  if (on_process_before_unload_completed_for_testing_) [[unlikely]] {
+    std::move(on_process_before_unload_completed_for_testing_).Run();
+  }
+
   // Continue processing the ACK in the frame that triggered beforeunload in
   // this frame.  This could be either this frame itself or an ancestor frame.
   initiator->ProcessBeforeUnloadCompletedFromFrame(
       proceed, treat_as_final_completion_callback, this,
       /*is_frame_being_destroyed=*/false, renderer_before_unload_start_time,
       renderer_before_unload_end_time, for_legacy);
-
-  if (on_process_before_unload_completed_for_testing_) [[unlikely]] {
-    std::move(on_process_before_unload_completed_for_testing_).Run();
-  }
+  // DO NOT add code after this. `this` can be deleted at this point.
 }
 
 void RenderFrameHostImpl::ProcessBeforeUnloadCompletedFromFrame(
@@ -7786,12 +7747,6 @@ void RenderFrameHostImpl::DidChangeBackgroundColor(
   GetPage().DidChangeBackgroundColor(background_color, color_adjust);
 }
 
-#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
-void RenderFrameHostImpl::NotifyContextMenuWillShow() {
-  delegate_->NotifyContextMenuWillShow();
-}
-#endif
-
 void RenderFrameHostImpl::SetCommitCallbackInterceptorForTesting(
     CommitCallbackInterceptor* interceptor) {
   // This DCHECK's aims to avoid unexpected replacement of an interceptor.
@@ -8233,8 +8188,7 @@ void RenderFrameHostImpl::EvictFromBackForwardCacheWithFlattenedAndTreeReasons(
   DCHECK(IsBackForwardCacheEnabled());
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
-  LOG(INFO) << "RenderFrameHostImpl::" << __func__
-            << " the value of can_stored flattened_reasons is: "
+  LOG(INFO) << "RenderFrameHostImpl::" << __func__ << " the value of can_stored flattened_reasons is: "
             << can_store.flattened_reasons.ToString();
 #endif
 
@@ -8336,7 +8290,7 @@ void RenderFrameHostImpl::EnterFullscreen(
       !HasSeenRecentXrOverlaySetup()) {
 #else
       !HasSeenRecentXrOverlaySetup() && !options->is_custom_media_player) {
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     // Reject requests made without transient user activation or a token.
     // TODO(lanwei): Investigate whether we can terminate the renderer when
     // transient user activation and the delegated token are both inactive.
@@ -8735,28 +8689,6 @@ void RenderFrameHostImpl::ShowPopupMenu(
                       allow_multiple_selection);
 #endif
 }
-
-#if BUILDFLAG(ARKWEB_MENU)
-void RenderFrameHostImpl::MouseSelectMenuShow(bool show) {
-  if (delegate_) {
-    delegate_->MouseSelectMenuShow(show);
-  }
-}
-
-void RenderFrameHostImpl::ChangeVisibilityOfQuickMenu() {
-  if (delegate_) {
-    delegate_->ChangeVisibilityOfQuickMenu();
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-void RenderFrameHostImpl::CloseImageOverlaySelection(
-    CloseImageOverlaySelectionCallback callback) {
-  std::move(callback).Run(delegate_ ? delegate_->CloseImageOverlaySelection()
-                                    : false);
-}
-#endif  // BUILDFLAG(ARKWEB_AI)
 
 void RenderFrameHostImpl::ShowContextMenu(
     mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
@@ -9234,38 +9166,6 @@ base::SafeRef<RenderFrameHostImpl> RenderFrameHostImpl::GetSafeRef() const {
   return weak_ptr_factory_.GetSafeRef();
 }
 
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-void RenderFrameHostImpl::GetCreateNewWindow(
-    const GURL& target_url,
-    WindowOpenDisposition disposition,
-    bool allow_popup,
-    GetCreateNewWindowCallback callback) {
-  bool effective_transient_activation_state =
-      allow_popup || frame_tree_node_->HasTransientUserActivation();
-  GetContentClient()->browser()->CanCreateWindow(
-      this, target_url, disposition, effective_transient_activation_state,
-      std::move(callback));
-}
-#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
-
-#if BUILDFLAG(ARKWEB_PRECOMPILE)
-void RenderFrameHostImpl::GenerateCodeCache(
-    const std::string& url,
-    const std::string& script,
-    const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
-    CodeCacheCallback callback) {
-  auto options = blink::mojom::CacheOptions::New();
-
-  for (auto header : cacheOptions->response_headers_) {
-    options->response_headers.insert(
-        std::make_pair(header.first, header.second));
-  }
-
-  GetAssociatedLocalFrame()->GenerateCodeCache(url, script, std::move(options),
-                                               std::move(callback));
-}
-#endif
-
 void RenderFrameHostImpl::CreateNewWindow(
     mojom::CreateNewWindowParamsPtr params,
     CreateNewWindowCallback callback) {
@@ -9368,14 +9268,14 @@ void RenderFrameHostImpl::CreateNewWindow(
   }
 
   callback = base::BindOnce(
-      [](RenderFrameHostImpl* self, CreateNewWindowCallback callback,
+      [](RenderFrameHostImpl* self,
+         CreateNewWindowCallback callback,
          mojom::CreateNewWindowStatus status,
          mojom::CreateNewWindowReplyPtr reply) {
         GetContentClient()->browser()->CreateWindowResult(
             self, status == mojom::CreateNewWindowStatus::kSuccess);
         std::move(callback).Run(status, std::move(reply));
-      },
-      base::Unretained(this), std::move(callback));
+      }, base::Unretained(this), std::move(callback));
 
   // Otherwise, consume user activation before we proceed. In particular, it is
   // important to do this before we return from the |opener_suppressed| case
@@ -11693,8 +11593,7 @@ void RenderFrameHostImpl::CommitNavigation(
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (frame_tree_node()->IsMainFrame()) {
     LOG(INFO) << "event_message: commit navigation in main frame, routing_id: "
-              << routing_id_ << ", url: ***, "
-              << devtools_navigation_token.ToString();
+              << routing_id_ << ", url: ***, " << devtools_navigation_token.ToString();
   }
 #endif
 
@@ -11931,16 +11830,8 @@ void RenderFrameHostImpl::CommitNavigation(
 #endif
 
 #if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
-    if (effective_scheme == url::kResourcesScheme) {
-      base::TaskPriority file_factory_priority =
-          base::TaskPriority::USER_BLOCKING;
-      non_network_factories.emplace(
-          url::kResourcesScheme,
-          FileURLLoaderFactory::Create(
-              browser_context->GetPath(),
-              browser_context->GetSharedCorsOriginAccessList(),
-              file_factory_priority));
-    }
+    CommitNavigationExt(effective_scheme, non_network_factories,
+                        browser_context);
 #endif
 
     auto* partition = GetStoragePartition();
@@ -17974,52 +17865,6 @@ void RenderFrameHostImpl::GetBoundInterfacesForTesting(
   broker_.GetBinderMapInterfacesForTesting(out);  // IN-TEST
 }
 
-#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
-void RenderFrameHostImpl::GetImageFromCache(const std::string& url,
-                                            ImageCacheCallback callback) {
-  GetAssociatedLocalFrame()->GetImageFromCache(url, std::move(callback));
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void RenderFrameHostImpl::OnClearContextMenu() {
-  if (IsInactiveAndDisallowActivation(
-          DisallowActivationReasonId::kShowContextMenu)) {
-    return;
-  }
-  delegate_->ClearContextMenu();
-}
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-void RenderFrameHostImpl::UpdateAdBlockEnabledToRender(
-    bool site_adblock_enabled) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  FrameTreeNode* tree_node = frame_tree_node();
-  if (!tree_node->IsMainFrame()) {
-    return;
-  }
-  // Update the adblock site switch of local_frame_root and
-  // activation_state.activation_level of subresource_filter_agent
-  // in the rendering process only by the main frame.
-  RenderFrameHostImpl* pending_frame_host =
-      tree_node->render_manager()->speculative_frame_host();
-  if (pending_frame_host && pending_frame_host->frame_) {
-    LOG(INFO) << "[AdBlock] Speculative update adblock site switch:"
-              << site_adblock_enabled;
-    pending_frame_host->frame_->OnUpdateAdBlockEnabledToRender(
-        site_adblock_enabled);
-  }
-
-  RenderFrameHostImpl* current_frame_host = tree_node->current_frame_host();
-  if (current_frame_host && current_frame_host->frame_) {
-    LOG(INFO) << "[AdBlock] Update adblock site switch:"
-              << site_adblock_enabled;
-    current_frame_host->frame_->OnUpdateAdBlockEnabledToRender(
-        site_adblock_enabled);
-  }
-}
-#endif
 std::optional<base::flat_map<blink::mojom::PermissionName,
                              blink::mojom::PermissionStatus>>
 RenderFrameHostImpl::GetCachedPermissionStatuses() {
@@ -18055,18 +17900,5 @@ blink::mojom::PermissionStatus RenderFrameHostImpl::GetCombinedPermissionStatus(
       ->GetPermissionController()
       ->GetCombinedPermissionAndDeviceStatus(permission_type, this);
 }
-
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-void RenderFrameHostImpl::AddNamedObject(const std::string& name,
-                                         int32_t object_id,
-                                         base::Value::List& async_method_list,
-                                         bool need_update) {
-  if (!frame_) {
-    return;
-  }
-  frame_->AddNamedObject(name, object_id, std::move(async_method_list),
-                         need_update);
-}
-#endif
 
 }  // namespace content

@@ -132,9 +132,8 @@ bool LoadDefaultEGLGLES2Bindings(
   if (implementation.gl == gl::kGLImplementationEGLANGLE) {
     base::FilePath module_path;
 #if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
-    if (!base::PathService::Get(base::DIR_ASSETS, &module_path)) {
+    if (!base::PathService::Get(base::DIR_ASSETS, &module_path))
       return false;
-    }
 #endif
 
     glesv2_path = module_path.Append(kAngleGlesSoname);

@@ -213,10 +213,6 @@
 #include "base/debug/asan_service.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/multiprocess/app_spawn_communication.h"
-#endif
-
 #if BUILDFLAG(IS_ARKWEB)
 #include "content/renderer/render_remote_proxy_ohos.h"
 #endif
@@ -584,8 +580,8 @@ class ContentClientInitializer {
                   ContentMainDelegate* delegate) {
     ContentClient* content_client = GetContentClient();
 
-    // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
-    // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
+  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
+  // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
 #if !BUILDFLAG(ARKWEB_DFX_TRACING)
     if (process_type == switches::kUtilityProcess ||
         cmd->HasSwitch(switches::kSingleProcess))
@@ -871,19 +867,10 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
   [[maybe_unused]] base::GlobalDescriptors* g_fds =
       base::GlobalDescriptors::GetInstance();
 
-// On OHOS, the ipc_fd is passed through the AppSpawn.
-#if BUILDFLAG(IS_OHOS)
-  auto ids_fds_map =
-      ohos::adapter::multiprocess::AppSpawnCommunication::GetFdIdsRemap();
-  for (auto& [id, fd] : ids_fds_map) {
-    g_fds->Set(id, fd);
-  }
-#endif
-
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if (!BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS))
+#if (!BUILDFLAG(IS_ANDROID)  && !BUILDFLAG(IS_OHOS))
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,

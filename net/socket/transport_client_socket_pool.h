@@ -269,6 +269,7 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
       const base::flat_set<HostPortPair>& servers) override;
 
  private:
+  friend class TransportClientSocketPoolUtils;
   // Entry for a persistent socket which became idle at time |start_time|.
   struct IdleSocket;
 
@@ -465,6 +466,7 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
     int64_t generation() const { return generation_; }
 
    private:
+    friend class TransportClientSocketPoolUtils;
     // Returns the iterator's unbound request after removing it from
     // the queue. Expects the Group to pass SanityCheck() when called.
     std::unique_ptr<Request> RemoveUnboundRequest(

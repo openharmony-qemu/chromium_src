@@ -25,9 +25,12 @@ class VulkanSurface;
 namespace viz {
 
 class VulkanContextProvider;
+class SkiaOutputDeviceVulkanUtils;
 
 class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
  public:
+  friend class SkiaOutputDeviceVulkanUtils;
+
   SkiaOutputDeviceVulkan(
       base::PassKey<SkiaOutputDeviceVulkan>,
       VulkanContextProvider* context_provider,
@@ -58,10 +61,7 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
   SkSurface* BeginPaint(
       std::vector<GrBackendSemaphore>* end_semaphores) override;
   void EndPaint() override;
-
-#if BUILDFLAG(ARKWEB_VULKAN)
   void DiscardBackbuffer() override;
-#endif
 
  private:
   struct SkSurfaceSizePair {
@@ -103,6 +103,8 @@ class SkiaOutputDeviceVulkan final : public SkiaOutputDevice {
   bool is_new_swap_chain_ = true;
 
   std::vector<gfx::Rect> damage_of_images_;
+
+  std::unique_ptr<SkiaOutputDeviceVulkanUtils> implUtils;
 
   base::WeakPtrFactory<SkiaOutputDeviceVulkan> weak_ptr_factory_{this};
 };

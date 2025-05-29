@@ -15,10 +15,7 @@
 #include "net/dns/dns_config.h"
 #include "net/dns/dns_hosts.h"
 #include "net/dns/public/dns_config_overrides.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace url {
 
@@ -49,7 +46,7 @@ class NET_EXPORT DnsClient {
   // probe runners should not be created.
   virtual bool CanUseSecureDnsTransactions() const = 0;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   virtual bool CanUseSecureDnsFallbackTransactions(
       ResolveContext* context) const = 0;
 #endif

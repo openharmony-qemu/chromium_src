@@ -26,8 +26,8 @@ GestureDetector::Config BuildGestureDetectorConfig(
   config.longpress_timeout =
       base::Milliseconds(gesture_config.long_press_time_in_ms());
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  config.draglongpress_timeout =
-      base::Milliseconds(gesture_config.drag_long_press_time_in_ms());
+  config.draglongpress_timeout = base::Milliseconds(
+      gesture_config.drag_long_press_time_in_ms());
 #endif
   config.shortpress_timeout = gesture_config.short_press_time();
   config.showpress_timeout =

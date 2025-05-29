@@ -11,12 +11,13 @@
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
-#include "third_party/skia/include/core/SkColor.h"
 #include "ui/base/interaction/element_identifier.h"
 #include "ui/base/models/menu_model_delegate.h"
 #include "ui/base/models/menu_separator_types.h"
 #include "ui/color/color_id.h"
 #include "ui/gfx/native_widget_types.h"
+
+#include "third_party/skia/include/core/SkColor.h"
 
 namespace gfx {
 class FontList;
@@ -170,14 +171,11 @@ class COMPONENT_EXPORT(UI_BASE) MenuModel {
   virtual bool GetTextColor(size_t index,
                             bool is_minor,
                             bool is_hovered,
-                            SkColor* override_color) const {
-    return false;
-  }
+                            SkColor* override_color) const { return false; }
   virtual bool GetBackgroundColor(size_t index,
                                   bool is_hovered,
-                                  SkColor* override_color) const {
-    return false;
-  }
+                                  SkColor* override_color) const
+                                  { return false; }
 
   // Called when the menu is about to be shown.
   virtual void MenuWillShow() {}

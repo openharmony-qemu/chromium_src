@@ -87,6 +87,23 @@ class AsyncDestroyVideoDecoder final : public VideoDecoder {
     return wrapped_decoder_->FramesHoldExternalResources();
   }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetVideoSurface(int32_t widget_id) override {
+    DCHECK(wrapped_decoder_);
+    wrapped_decoder_->SetVideoSurface(widget_id);
+  }
+  void StartPlayingFrom(base::TimeDelta start_timestamp) override {
+    DCHECK(wrapped_decoder_);
+    wrapped_decoder_->StartPlayingFrom(start_timestamp);
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override {
+    DCHECK(wrapped_decoder_);
+    wrapped_decoder_->PipEnable(enable);
+  }
+#endif
+
  private:
   std::unique_ptr<T> wrapped_decoder_;
 };

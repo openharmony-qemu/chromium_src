@@ -15,7 +15,11 @@ const char* GetHttpReasonPhrase(HttpStatusCode code) {
     return phrase;
   }
   DUMP_WILL_BE_NOTREACHED() << "unknown HTTP status code " << code;
+#if BUILDFLAG(IS_ARKWEB)
+  return "";
+#else
   return nullptr;
+#endif
 }
 
 const char* TryToGetHttpReasonPhrase(HttpStatusCode code) {
@@ -43,22 +47,5 @@ const std::optional<HttpStatusCode> TryToGetHttpStatusCode(int response_code) {
       return std::nullopt;
   }
 }
-
-#if BUILDFLAG(IS_ARKWEB)
-const char* GetHttpErrorPhrase(HttpStatusCode code) {
-  switch (code) {
-#define HTTP_STATUS_ENUM_VALUE(label, code, reason) \
-  case HTTP_##label:                                \
-    return #label;
-#include "net/http/http_status_code_list.h"
-#undef HTTP_STATUS_ENUM_VALUE
-
-    default:
-      NOTREACHED() << "unknown HTTP status code " << code;
-  }
-
-  return "";
-}
-#endif
 
 }  // namespace net

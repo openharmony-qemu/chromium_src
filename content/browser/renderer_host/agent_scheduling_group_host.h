@@ -56,6 +56,8 @@ class SiteInstanceGroup;
 //
 // An AgentSchedulingGroupHost is stored as (and owned by) UserData on the
 // RenderProcessHost.
+class AgentSchedulingGroupHostUtils;
+
 class CONTENT_EXPORT AgentSchedulingGroupHost
     : public base::SupportsUserData,
       public RenderProcessHostObserver,
@@ -120,6 +122,10 @@ class CONTENT_EXPORT AgentSchedulingGroupHost
   // mojom::AgentSchedulingGroupHost overrides.
   void ReportCreateView(int32_t process_id) override;
 #endif
+
+  friend class AgentSchedulingGroupHostUtils;
+
+  AgentSchedulingGroupHostUtils* implUtils;
 
  private:
   enum class LifecycleState {
@@ -202,3 +208,5 @@ std::ostream& operator<<(std::ostream& os,
 }  // namespace content
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_AGENT_SCHEDULING_GROUP_HOST_H_
+
+#include "arkweb/chromium_ext/content/browser/renderer_host/agent_scheduling_group_host_utils.h"

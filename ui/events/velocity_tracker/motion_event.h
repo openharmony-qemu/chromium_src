@@ -10,9 +10,9 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -91,7 +91,7 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEvent {
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   virtual bool FromOverlay() const { return false; }
-  virtual void SetFromOverlay(bool from_overlay) {}
+  virtual void SetFromOverlay(bool from_overlay){}
 #endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
 
   // Optional historical data, default implementation provides an empty history.

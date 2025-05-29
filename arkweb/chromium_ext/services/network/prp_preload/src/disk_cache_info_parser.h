@@ -22,7 +22,12 @@ class DiskCacheInfoParser {
       const std::shared_ptr<PRRequestInfo>& info,
       base::Value::Dict& dict);
   static bool ParseJsonForPreload(const base::Value& json,
-                                  const std::shared_ptr<PRRequestInfo>& info);
+      const std::shared_ptr<PRRequestInfo>& info);
+  static void ParseResReqPreloadInfoForPreconnectLimit(
+      const std::shared_ptr<PRRequestInfo>& info,
+      base::Value::Dict& dict);
+  static bool ParseJsonForPreconnectLimit(const base::Value& json,
+      const std::shared_ptr<PRRequestInfo>& info);
   static void SetAcceptedStreamTypesToJson(
       const std::shared_ptr<PRRequestInfo>& info,
       const std::string& param_name,
@@ -169,6 +174,12 @@ class DiskCacheInfoParser {
   static bool GetKeepaliveFromJson(const base::Value& json,
                                    const std::string& param_name,
                                    const std::shared_ptr<PRRequestInfo>& info);
+  static void SetLimitNumToJson(const std::shared_ptr<PRRequestInfo>& info,
+                                const std::string& param_name,
+                                base::Value::Dict& dict);
+  static bool GetLimitNumFromJson(const base::Value& json,
+                                  const std::string& param_name,
+                                  const std::shared_ptr<PRRequestInfo>& info);
   static void SetLoadFlagsToJson(const std::shared_ptr<PRRequestInfo>& info,
                                  const std::string& param_name,
                                  base::Value::Dict& dict);
@@ -223,6 +234,13 @@ class DiskCacheInfoParser {
                                     const std::string& param_name,
                                     base::Value::Dict& dict);
   static bool GetPreloadFlagsFromJson(
+      const base::Value& json,
+      const std::string& param_name,
+      const std::shared_ptr<PRRequestInfo>& info);
+  static void SetPreloadSeqNumToJson(const std::shared_ptr<PRRequestInfo>& info,
+      const std::string& param_name,
+      base::Value::Dict& dict);
+  static bool GetPreloadSeqNumFromJson(
       const base::Value& json,
       const std::string& param_name,
       const std::shared_ptr<PRRequestInfo>& info);
@@ -293,7 +311,18 @@ class DiskCacheInfoParser {
   static bool GetUrlFromJson(const base::Value& json,
                              const std::string& param_name,
                              const std::shared_ptr<PRRequestInfo>& info);
-
+  static void SetPageIndexToJson(const std::shared_ptr<PRRequestInfo>& info,
+                                 const std::string& param_name,
+                                 base::Value::Dict& dict);
+  static bool GetPageIndexFromJson(const base::Value& json,
+                                   const std::string& param_name,
+                                   const std::shared_ptr<PRRequestInfo>& info);
+  static void SetPageOriginToJson(const std::shared_ptr<PRRequestInfo>& info,
+                                  const std::string& param_name,
+                                  base::Value::Dict& dict);
+  static bool GetPageOriginFromJson(const base::Value& json,
+                                    const std::string& param_name,
+                                    const std::shared_ptr<PRRequestInfo>& info);
  private:
   DiskCacheInfoParser() = default;
   ~DiskCacheInfoParser() = default;

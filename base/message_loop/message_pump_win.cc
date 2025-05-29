@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/task/current_thread.h"
 #include "base/message_loop/message_pump_win.h"
 
 #include <winbase.h>
@@ -22,7 +23,6 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/strings/string_number_conversions.h"
-#include "base/task/current_thread.h"
 #include "base/task/task_features.h"
 #include "base/trace_event/base_tracing.h"
 #include "base/tracing_buildflags.h"
@@ -574,13 +574,11 @@ bool MessagePumpForUI::ProcessNextWindowsMessage() {
             msg_pump_data->set_sent_messages_in_queue(more_work_is_plausible);
           });
 
-      // We should not process all window messages if we are in the context of
-      // an OS modal loop, i.e. in the context of a windows API call like
-      // MessageBox. This is to ensure that these messages are peeked out by the
-      // OS modal loop.
+      // We should not process all window messages if we are in the context of an
+      // OS modal loop, i.e. in the context of a windows API call like MessageBox.
+      // This is to ensure that these messages are peeked out by the OS modal loop.
       if (CurrentThread::Get()->os_modal_loop()) {
-        // We only peek out WM_PAINT and WM_TIMER here for reasons mentioned
-        // above.
+        // We only peek out WM_PAINT and WM_TIMER here for reasons mentioned above.
         has_msg = PeekMessage(&msg, NULL, WM_PAINT, WM_PAINT, PM_REMOVE) ||
                   PeekMessage(&msg, NULL, WM_TIMER, WM_TIMER, PM_REMOVE);
       } else {

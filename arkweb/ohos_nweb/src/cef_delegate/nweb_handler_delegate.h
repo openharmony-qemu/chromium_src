@@ -26,7 +26,7 @@
 #include <unordered_set>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "capi/nweb_app_client_extension_callback.h"
 #include "capi/nweb_extension_api_callback.h"
 #include "capi/nweb_extension_callback.h"
@@ -54,16 +54,16 @@
 #include "nweb_render_handler.h"
 #include "nweb_value.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "custom_media_player_impl.h"
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
 #include "base/cancelable_callback.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+#include "capi/nweb_icon_size.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
@@ -159,6 +159,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<std::string>& methodName,
       std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       bool isAsync,
+      const std::string& permission);
+  void RegisterNativeAsyncThreadJavaScriptCallBackWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<NativeJSProxyCallbackFuncWithResult>&& callback,
       const std::string& permission);
   void RegisterNativeLoadStartCallback(std::function<void(void)>&& callback);
   void RegisterNativeLoadEndCallback(std::function<void(void)>&& callback);
@@ -262,6 +267,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                     int32_t object_id) override;
   bool HasJavaScriptObjectMethods(int32_t object_id,
                                   const CefString& method_name) override;
+  bool HasNativeAsyncThreadJavaScriptMethods(std::string& object_name,
+                                  const std::string& method_name) override;
   void GetJavaScriptObjectMethods(
       int32_t object_id,
       CefRefPtr<CefValue> returned_method_names) override;
@@ -373,6 +380,14 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   void OnNavigationEntryCommitted(
       CefRefPtr<CefLoadCommittedDetails> details) override;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void OnLoadStarted(CefRefPtr<CefFrame> frame,
+                     const CefString& url) override;
+
+  void OnLoadFinished(CefRefPtr<CefFrame> frame,
+                      const CefString& url) override;
+#endif
   /* CefLoadHandler methods end */
 
   /* CefRequestHandler methods begin */
@@ -509,6 +524,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                          size_t height,
                          cef_color_type_t color_type,
                          cef_alpha_type_t alpha_type) override;
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+  void OnTouchIconUrlWithSizesReceived(const CefString &image_url,
+                                       bool precomposed,
+                                       const std::vector<IconSize> &sizes) override;
+#endif
   void OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
                               const CefString& icon_url,
                               bool precomposed) override;
@@ -567,7 +587,6 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                   bool& suppress_message) override;
 
   bool OnBeforeUnloadDialog(CefRefPtr<CefBrowser> browser,
-                            const CefString& url,
                             const CefString& message_text,
                             bool is_reload,
                             CefRefPtr<CefJSDialogCallback> callback) override;
@@ -814,6 +833,12 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnShowVideoAssistant(const CefString& videoAssistantItems) override;
   void OnReportStatisticLog(const CefString& content) override;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  CefOwnPtr<CefMediaPlayerListenerForVAST> OnFullScreenOverlayEnter(
+      CefOwnPtr<CefMediaPlayerController> media_player_controller,
+      const std::string& extra_info) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetIsRichText(bool is_rich_text) { is_rich_text_ = is_rich_text; }
 #endif
@@ -865,7 +890,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnActivateContent() override;
 #endif
 
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
   bool OnPullToRefreshAction(int action) override;
   void OnPullToRefreshPull(float offset_x, float offset_y) override;
 #endif
@@ -885,9 +910,43 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #endif
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   void EnableVideoAssistant(bool enable);
+
+  void CustomWebMediaPlayer(bool enable);
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  void RegisterScreenCaptureDelegateListener(CefRefPtr<CefScreenCaptureCallback> screen_capture_cb);
+#endif // ARKWEB_EX_SCREEN_CAPTURE
+
   void OnRequestOpenDevTools();
+
+  void Discard();
+
+  void HandleSafeBrowsingDetection(int detectMode,
+                                   int detectSwitch,
+                                   const CefString& url) override;
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  void OnSafeBrowsingDetectionResult(int code,
+                                     int policy,
+                                     const std::string& mappingType,
+                                     const std::string& url);
+#endif
+
+  void SetSafeBrowsingDetectionCallback(
+      CefRefPtr<CefSafeBrowsingDetectionCallback> callback) override;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool OnPip(CefRefPtr<CefBrowser> browser,
+             int status,
+             int delegate_id,
+             int child_id,
+             int frame_routing_id,
+             int width,
+             int height) override;
+  void OnPipEvent(CefRefPtr<CefBrowser> browser,
+                  int event) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};
@@ -959,6 +1018,14 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   ImageAlphaType alpha_type_ = ImageAlphaType::ALPHA_TYPE_UNKNOWN;
 
   uint32_t nweb_id_ = 0;
+
+#if BUILDFLAG(ARKWEB_PIP)
+  int pip_status_ = -1;
+  int pip_delegate_id_ = 0;
+  int pip_child_id_ = 0;
+  int pip_frame_routing_id_ = 0;
+#endif
+
 #if defined(REPORT_SYS_EVENT)
   // For page load statistics
   uint32_t access_sum_count_ = 0;
@@ -1013,6 +1080,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       std::string,
       std::unordered_map<std::string, NativeJSProxyCallbackFuncWithResult>>
       asyncProxyObjWithResultMap_;
+  std::unordered_map<
+      std::string,
+      std::unordered_set<std::string>>
+      asyncThreadProxyObjWithResultMap_;
   std::unordered_map<std::string, std::string> asyncProxyPermissionMap_;
   std::unordered_map<std::string, std::string> syncProxyPermissionMap_;
   using MethodPair = std::pair<std::string, std::unordered_set<std::string>>;
@@ -1031,7 +1102,17 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   std::optional<bool> video_assistant_enabled_;
+  std::optional<bool> custom_web_media_player_enabled_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  CefRefPtr<CefSafeBrowsingDetectionCallback>
+      safe_browsing_detection_callback_ = nullptr;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  CefRefPtr<CefScreenCaptureCallback> screen_capture_cb_ = nullptr;
+#endif // ARKWEB_EX_SCREEN_CAPTURE
 
   base::WeakPtrFactory<NWebHandlerDelegate> weak_factory_{this};
 };

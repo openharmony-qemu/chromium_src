@@ -7,8 +7,14 @@
 
 #include "base/no_destructor.h"
 #include "ui/native_theme/native_theme_base.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils.h"
+#endif
 
 namespace ui {
+#if BUILDFLAG(IS_ARKWEB)
+  class NativeThemeAuraUtils;
+#endif
 
 // Aura implementation of native theme support.
 class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
@@ -16,6 +22,9 @@ class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
   friend class NativeTheme;
   friend class NativeThemeAuraTest;
   friend class base::NoDestructor<NativeThemeAura>;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class NativeThemeAuraUtils;
+#endif
 
   NativeThemeAura(bool use_overlay_scrollbars,
                   bool should_only_use_dark_colors,
@@ -71,10 +80,9 @@ class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
                            const ScrollbarThumbExtraParams& extra_params,
                            ColorScheme color_scheme
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-                           ,
-                           SkColor scrollbar_color
+                           , SkColor scrollbar_color
 #endif
-  ) const override;
+                           ) const override;
   gfx::Insets GetScrollbarSolidColorThumbInsets(Part part) const override;
   SkColor4f GetScrollbarThumbColor(
       const ui::ColorProvider& color_provider,
@@ -106,6 +114,10 @@ class NATIVE_THEME_EXPORT NativeThemeAura : public NativeThemeBase {
   // contrast, preferred color scheme, and preferred contrast.
   std::unique_ptr<NativeTheme::ColorSchemeNativeThemeObserver>
       color_scheme_observer_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  NativeThemeAuraUtils* native_theme_aura_utils_;
+#endif
 };
 
 }  // namespace ui

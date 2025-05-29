@@ -1,0 +1,7 @@
+{
+  "src": [
+    "pages/frontPage",
+    "pages/settings",
+    "pages/settingsPage/userAgent"
+  ]
+}

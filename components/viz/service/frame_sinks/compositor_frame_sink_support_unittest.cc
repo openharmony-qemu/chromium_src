@@ -143,7 +143,7 @@ class MockFrameSinkManagerClient : public mojom::FrameSinkManagerClient {
       std::unique_ptr<CopyOutputResult> copy_output_result) override {}
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   MOCK_METHOD2(RestoreRenderFit, void(uint32_t client_id, uint32_t sink_id));
-#endif  // ARKWEB_UNITTESTS
+#endif // ARKWEB_UNITTESTS
 };
 
 class CompositorFrameSinkSupportTestBase : public testing::Test {

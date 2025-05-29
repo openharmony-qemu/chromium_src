@@ -20,8 +20,8 @@
 #include "partition_alloc/partition_alloc_base/notreached.h"
 #include "partition_alloc/partition_alloc_config.h"
 #include "partition_alloc/tagging.h"
-
-#if defined(LINUX_NAME_REGION)
+#include "arkweb/build/features/features.h"
+#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_UNITTESTS)
 #include "partition_alloc/partition_alloc_base/debug/proc_maps_linux.h"
 #endif
 

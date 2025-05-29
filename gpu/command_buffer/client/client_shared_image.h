@@ -36,6 +36,7 @@ class GLES2Interface;
 
 class ClientSharedImageInterface;
 class GpuChannelSharedImageInterface;
+class GpuChannelSharedImageInterfaceExt;
 class SharedImageTexture;
 class TestSharedImageInterface;
 
@@ -134,7 +135,6 @@ class GPU_EXPORT ClientSharedImage
   std::optional<gfx::BufferUsage> buffer_usage() { return buffer_usage_; }
 
   bool HasHolder() { return sii_holder_ != nullptr; }
-
   // Returns a clone of the GpuMemoryBufferHandle associated with this ClientSI.
   // Valid to call only if this instance was created with a non-null
   // GpuMemoryBuffer.
@@ -283,6 +283,7 @@ class GPU_EXPORT ClientSharedImage
   // `sii_holder` must not be null.
   friend class ClientSharedImageInterface;
   friend class GpuChannelSharedImageInterface;
+  friend class GpuChannelSharedImageInterfaceExt;
   friend class TestSharedImageInterface;
   friend class media::VideoFrame;
   ClientSharedImage(const Mailbox& mailbox,

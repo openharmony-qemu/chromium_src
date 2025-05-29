@@ -138,6 +138,9 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
 
   GestureListenerImpl(const GestureListenerImpl&) = delete;
   GestureListenerImpl& operator=(const GestureListenerImpl&) = delete;
+#if BUILDFLAG(IS_ARKWEB)
+    GestureDetector& GetDetector() { return gesture_detector_; }
+#endif
 
   void OnTouchEvent(const MotionEvent& event) {
     const bool in_scale_gesture = IsScaleGestureDetectionInProgress();
@@ -362,21 +365,18 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     float scale = detector.GetScaleFactor();
     float angle = detector.GetAngleChange();
 #ifdef BUILDFLAG(ARKWEB_PINCH_SMOOTH)
-    LOG(DEBUG) << "GestureProvider::OnScale before filtering: " << scale;
-    if (std::abs(scale - 1) <= kPinchScaleEpsilon) {
-      return true;
-    }
+    LOG(DEBUG) << "GestureProvider::OnScale before filtering: "  << scale;
+    if (std::abs(scale - 1) <= kPinchScaleEpsilon)
+        return true;
 
     if (last_scale_ < 0) {
-      last_scale_ = scale;
+        last_scale_ = scale;
     } else {
-      scale = (last_scale_ + scale) / 2;
-      last_scale_ = scale;
+        scale = (last_scale_ + scale) /2;
+        last_scale_ = scale;
     }
-    LOG(DEBUG) << "GestureProvider::OnScale after filtering " << scale
-               << ", focus x = " << detector.GetFocusX()
-               << ", focus y = " << detector.GetFocusY()
-               << ", pointer cnt = " << e.GetPointerCount();
+    LOG(DEBUG) << "GestureProvider::OnScale after filtering " << scale << ", focus x = " << detector.GetFocusX()
+        << ", focus y = " << detector.GetFocusY() << ", pointer cnt = " << e.GetPointerCount();
 #else
     if (scale == 1)
       return true;
@@ -656,12 +656,6 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
         CreateTouchGestureDetails(EventType::kGestureCreateOverlay);
     Send(CreateGesture(create_overlay_details, e));
   }
-
-  void StopCreateOverlayGesture() {
-    gesture_detector_.StopCreateOverlayGesture();
-  }
-
-  void OnAITextSelected() { gesture_detector_.OnAITextSelected(); }
 #endif
 
   GestureEventDetails CreateTouchGestureDetails(EventType type) const {
@@ -687,15 +681,10 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
     LOG(INFO) << "DragDrop GestureDetector::OnDragLongPress ";
     DCHECK(!IsDoubleTapInProgress());
     SetIgnoreSingleTap(true);
-    GestureEventDetails drag_long_press_details(
-        EventType::kGestureDragLongPress);
+    GestureEventDetails drag_long_press_details(EventType::kGestureDragLongPress);
     drag_long_press_details.set_device_type(
         GestureDeviceType::DEVICE_TOUCHSCREEN);
     Send(CreateGesture(drag_long_press_details, e));
-  }
-
-  void StopDragLongPressGesture() {
-    gesture_detector_.StopDragLongPressGesture();
   }
 #endif
 
@@ -880,7 +869,11 @@ class GestureProvider::GestureListenerImpl : public ScaleGestureListener,
   const raw_ptr<GestureProviderClient> client_;
   const raw_ptr<GestureProvider> gesture_provider_;
 
+#if BUILDFLAG(IS_ARKWEB)
+  GestureDetectorExt gesture_detector_;
+#else
   GestureDetector gesture_detector_;
+#endif
   ScaleGestureDetector scale_gesture_detector_;
   SnapScrollController snap_scroll_controller_;
 
@@ -961,16 +954,9 @@ bool GestureProvider::OnTouchEvent(const MotionEvent& event) {
   // gesture where the UP is not dispatched to content.
   uma_histogram_.RecordTouchEvent(event);
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  if (event.GetAction() == MotionEvent::Action::UP) {
-    gesture_listener_->StopDragLongPressGesture();
-  }
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-  if (event.GetAction() == MotionEvent::Action::UP) {
-    gesture_listener_->StopCreateOverlayGesture();
-  }
+#if BUILDFLAG(IS_ARKWEB)
+  if (event.GetAction() == MotionEvent::Action::UP)
+    AsGestureProviderExt()->StopArkwebGestures();
 #endif
 
   if (!CanHandle(event))
@@ -981,15 +967,6 @@ bool GestureProvider::OnTouchEvent(const MotionEvent& event) {
   OnTouchEventHandlingEnd(event);
   return true;
 }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void GestureProvider::ResetDetection(bool is_lost_focus) {
-  MotionEventGeneric generic_cancel_event(MotionEvent::Action::CANCEL,
-                                          base::TimeTicks::Now(),
-                                          PointerProperties(), is_lost_focus);
-  OnTouchEvent(generic_cancel_event);
-}
-#endif
 
 void GestureProvider::ResetDetection() {
   MotionEventGeneric generic_cancel_event(
@@ -1144,10 +1121,8 @@ void GestureProvider::UpdateDoubleTapDetectionSupport() {
   gesture_listener_->SetDoubleTapEnabled(double_tap_enabled);
 }
 
-#if BUILDFLAG(ARKWEB_AI)
-void GestureProvider::OnAITextSelected() {
-  gesture_listener_->OnAITextSelected();
-}
-#endif
-
 }  //  namespace ui
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_provider_ext.cc"
+#endif

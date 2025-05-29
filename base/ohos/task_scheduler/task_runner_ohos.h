@@ -7,9 +7,9 @@
 
 #include <memory>
 
+#include "base/ohos/task_scheduler/task_traits_ohos.h"
 #include "base/base_export.h"
 #include "base/functional/callback_forward.h"
-#include "base/ohos/task_scheduler/task_traits_ohos.h"
 #include "base/task/single_thread_task_runner.h"
 
 namespace base {
@@ -31,8 +31,7 @@ class BASE_EXPORT TaskRunnerOHOS {
 
   bool BelongsToCurrentThread();
 
-  static std::unique_ptr<TaskRunnerOHOS> Create(
-      int task_traits = ::TaskTraits::UI_DEFAULT);
+  static std::unique_ptr<TaskRunnerOHOS> Create(int task_traits = ::TaskTraits::UI_DEFAULT);
 
   using UiThreadTaskRunnerCallback =
       RepeatingCallback<scoped_refptr<base::SingleThreadTaskRunner>(

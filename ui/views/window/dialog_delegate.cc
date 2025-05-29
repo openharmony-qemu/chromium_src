@@ -85,11 +85,10 @@ DialogDelegate::DialogDelegate() {
 }
 
 // static
-Widget* DialogDelegate::CreateDialogWidget(
-    WidgetDelegate* delegate,
-    gfx::NativeWindow context,
-    gfx::NativeView parent,
-    gfx::AcceleratedWidget parent_widget) {
+Widget* DialogDelegate::CreateDialogWidget(WidgetDelegate* delegate,
+                                           gfx::NativeWindow context,
+                                           gfx::NativeView parent,
+                                           gfx::AcceleratedWidget parent_widget) {
   views::Widget* widget = new DialogWidget;
   views::Widget::InitParams params =
       GetDialogWidgetInitParams(delegate, context, parent, gfx::Rect());
@@ -107,14 +106,11 @@ Widget* DialogDelegate::CreateDialogWidget(
 }
 
 // static
-bool DialogDelegate::CanSupportCustomFrame(
-    gfx::NativeView parent,
-    gfx::AcceleratedWidget parent_widget) {
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)) && \
-    BUILDFLAG(ENABLE_DESKTOP_AURA)
+bool DialogDelegate::CanSupportCustomFrame(gfx::NativeView parent,
+                                           gfx::AcceleratedWidget parent_widget) {
+#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && BUILDFLAG(ENABLE_DESKTOP_AURA)
   // The new style doesn't support unparented dialogs on Linux desktop.
-  return parent != nullptr || parent_widget != gfx::kNullAcceleratedWidget;
-  ;
+  return parent != nullptr || parent_widget != gfx::kNullAcceleratedWidget;;
 #else
   return true;
 #endif
@@ -136,8 +132,7 @@ Widget::InitParams DialogDelegate::GetDialogWidgetInitParams(
   params.bounds = bounds;
 
   if (dialog)
-    dialog->params_.custom_frame &=
-        CanSupportCustomFrame(parent, parent_widget);
+    dialog->params_.custom_frame &= CanSupportCustomFrame(parent, parent_widget);
 
   if (!dialog || dialog->use_custom_frame()) {
     params.opacity = Widget::InitParams::WindowOpacity::kTranslucent;

@@ -130,10 +130,9 @@ class NATIVE_THEME_EXPORT NativeThemeBase : public NativeTheme {
       const ScrollbarThumbExtraParams& extra_params,
       ColorScheme color_scheme
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-      ,
-      SkColor scrollbar_color
-#endif  // ARKWEB_SCROLLBAR
-  ) const;
+      , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+      ) const;
 
   virtual void PaintScrollbarCorner(
       cc::PaintCanvas* canvas,

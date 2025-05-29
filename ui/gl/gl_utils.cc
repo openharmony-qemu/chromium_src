@@ -6,7 +6,6 @@
 
 #include "ui/gl/gl_utils.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/debug/alias.h"
 #include "base/logging.h"
@@ -14,8 +13,9 @@
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_display_manager.h"
 #include "ui/gl/gl_features.h"
-#include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/gl_switches.h"
+#include "ui/gl/gl_surface_egl.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "base/posix/eintr_wrapper.h"

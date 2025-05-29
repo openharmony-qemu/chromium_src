@@ -100,6 +100,7 @@ class MockFrameSinkManagerImpl : public TestFrameSinkManagerImpl {
               Throttle,
               (const std::vector<FrameSinkId>& ids, base::TimeDelta interval),
               (override));
+  void SetEnableHalfFrameRate(bool enabled, const ::viz::FrameSinkId& frame_sink_id) override {}
 };
 
 }  // namespace

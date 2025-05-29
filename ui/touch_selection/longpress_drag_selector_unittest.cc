@@ -43,6 +43,11 @@ class LongPressDragSelectorTest : public testing::Test,
     drag_position_ = drag_position;
   }
 
+  void UpdateSelectionChanged(
+      const TouchSelectionDraggable& draggable) override {
+
+  }
+
   void OnDragUpdate(const TouchSelectionDraggable& handler,
                     const gfx::PointF& drag_position) override {
     drag_position_ = drag_position;

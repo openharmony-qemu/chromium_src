@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
 #include "base/functional/function_ref.h"
@@ -47,6 +46,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
 #include "content/browser/code_cache/oh_code_cache.h"
 #endif
@@ -647,11 +647,10 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
 
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
   using CodeCacheCallback = base::OnceCallback<void(int32_t)>;
-  virtual void GenerateCodeCache(
-      const std::string& url,
-      const std::string& script,
-      const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
-      CodeCacheCallback) = 0;
+  virtual void GenerateCodeCache(const std::string& url,
+                                 const std::string& script,
+                                 const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                                 CodeCacheCallback) = 0;
 #endif
 
   // RenderViewHost for this frame.
@@ -1170,7 +1169,7 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener,
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   virtual void OnClearContextMenu() = 0;
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
  private:
   // This interface should only be implemented inside content.
   friend class RenderFrameHostImpl;

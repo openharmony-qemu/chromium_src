@@ -20,18 +20,8 @@
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "ui/gfx/overlay_transform.h"
 
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
-#include "base/command_line.h"
-#include "base/system/sys_info.h"
-#include "content/public/browser/browser_task_traits.h"
-#include "content/public/browser/browser_thread.h"
-#include "content/public/common/content_switches.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-#include "ohos_nweb/src/sysevent/event_reporter.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_impl_utils.h"
 #endif
 
 namespace viz {
@@ -136,6 +126,9 @@ CompositorFrameSinkImpl::CompositorFrameSinkImpl(
   if (bundle_id.has_value()) {
     support_->SetBundle(*bundle_id);
   }
+#if BUILDFLAG(IS_ARKWEB)
+  compositor_frame_sink_impl_util_ = std::make_unique<CompositorFrameSinkImplUtil>(this);
+#endif
 }
 
 CompositorFrameSinkImpl::~CompositorFrameSinkImpl() = default;
@@ -162,12 +155,7 @@ void CompositorFrameSinkImpl::SubmitCompositorFrame(
     std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  uint32_t count = static_cast<uint32_t>(frame.metadata.dropped_frame_count);
-  uint64_t duration =
-      static_cast<uint64_t>(frame.metadata.dropped_frame_duration);
-  if (!!count && !!duration) {
-    ReportVideoFrameDropStats(count, duration);
-  }
+  compositor_frame_sink_impl_util_->SubmitCompositorFrameUtils(frame.metadata);
 #endif
   // Non-root surface frames should not have display transform hint.
   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
@@ -247,43 +235,11 @@ void CompositorFrameSinkImpl::ReportKeyThreadIds(
     const std::vector<int32_t>& thread_ids,
     int32_t process_id,
     bool is_created) {
-  using namespace OHOS::NWeb;
-  ResSchedStatusAdapter status = is_created
-                                     ? ResSchedStatusAdapter::THREAD_CREATED
-                                     : ResSchedStatusAdapter::THREAD_DESTROYED;
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-      switches::kProcessType);
-  if (type == switches::kGpuProcess) {
-    for (auto thread_id : thread_ids) {
-      NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-          status, process_id, thread_id,
-          ResSchedRoleAdapter::IMPORTANT_DISPLAY);
-    }
-  } else {
-#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-    for (auto thread_id : thread_ids) {
-      content::GetUIThreadTaskRunner({})->PostTask(
-          FROM_HERE,
-          base::BindOnce(
-              base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
-              status, process_id, thread_id,
-              ResSchedRoleAdapter::IMPORTANT_DISPLAY));
-    }
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-  }
-#endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  compositor_frame_sink_impl_util_->ReportKeyThreadIdsUtils(thread_ids,
+      process_id,
+      is_created);
 }
-#endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-int CompositorFrameSinkImpl::GetFrameRate() {
-  if (support_) {
-    return support_->GetFrameRate();
-  }
-  return 0;
-}
-#endif
+#endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 
 void CompositorFrameSinkImpl::OnClientConnectionLost() {
   // The client that owns this CompositorFrameSink is either shutting down or

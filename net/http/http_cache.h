@@ -57,6 +57,7 @@ class HttpResponseInfo;
 class NetLog;
 class NetworkIsolationKey;
 struct HttpRequestInfo;
+class HttpTransactionUtils;
 
 class NET_EXPORT HttpCache : public HttpTransactionFactory {
  public:
@@ -68,7 +69,7 @@ class NET_EXPORT HttpCache : public HttpTransactionFactory {
     // Equivalent to setting LOAD_DISABLE_CACHE on every request.
     DISABLE
   };
-
+  friend class HttpTransactionUtils;
   // A BackendFactory creates a backend object to be used by the HttpCache.
   class NET_EXPORT BackendFactory {
    public:

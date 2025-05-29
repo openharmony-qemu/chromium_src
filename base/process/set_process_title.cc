@@ -43,7 +43,7 @@
 namespace base {
 
 // TODO(jrg): Find out if setproctitle or equivalent is available on Android.
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_SOLARIS) &&   \
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_SOLARIS) && \
     !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_NACL) && \
     !BUILDFLAG(IS_OHOS)
 

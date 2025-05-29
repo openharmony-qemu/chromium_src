@@ -452,14 +452,12 @@ bool SandboxLinux::InitializeSandbox(sandbox::mojom::Sandbox sandbox_type,
   // some cases the caller doesn't want to enable the semantic sandbox layer,
   // and this CHECK should be skipped. In this case, the caller should unset
   // |options.check_for_open_directories|.
-#if !BUILDFLAG(IS_OHOS) || BUILDFLAG(IS_ARKWEB)
   // setuid not use in ohos
   CHECK(!options.check_for_open_directories || !HasOpenDirectories())
       << "InitializeSandbox() called after unexpected directories have been "
       << "opened. This breaks the security of the setuid sandbox.";
 
   InitLibcLocaltimeFunctions();
-#endif
 
 #if !BUILDFLAG(IS_CHROMEOS)
   if (!IsUnsandboxedSandboxType(sandbox_type)) {
@@ -525,13 +523,7 @@ rlim_t GetProcessDataSizeLimit(sandbox::mojom::Sandbox sandbox_type) {
     } else if (physical_memory > 16 * GB) {
       limit = 16 * GB;
     } else {
-#if BUILDFLAG(IS_OHOS)
-      // On OHOS, allocating 8G virtual memory will cause the sandbox
-      // initialization to fail.
-      limit = 16 * GB;
-#else
       limit = 8 * GB;
-#endif
     }
 
     if (sandbox_type == sandbox::mojom::Sandbox::kRenderer &&

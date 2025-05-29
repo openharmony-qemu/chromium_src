@@ -7,6 +7,8 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/memory/ptr_util.h"
@@ -40,10 +42,6 @@
 #include "net/ssl/ssl_config_service.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job_factory.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(ENABLE_REPORTING)
 #include "net/network_error_logging/network_error_logging_service.h"
@@ -288,52 +286,4 @@ void URLRequestContext::set_device_bound_session_store(
   device_bound_session_store_ = std::move(device_bound_session_store);
 }
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
-
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void URLRequestContext::SetConnectTimeout(int seconds) {
-  HttpTransactionFactory* transaction_factory = http_transaction_factory();
-  if (!transaction_factory) {
-    return;
-  }
-  HttpNetworkSession* network_session = transaction_factory->GetSession();
-  if (!network_session) {
-    return;
-  }
-  network_session->SetConnectTimeout(seconds);
-}
-
-void URLRequestContext::BindDnsToNetwork(handles::NetworkHandle network) {
-  HttpTransactionFactory* transaction_factory = http_transaction_factory();
-  if (!transaction_factory) {
-    return;
-  }
-  HttpNetworkSession* network_session = transaction_factory->GetSession();
-  if (!network_session) {
-    return;
-  }
-  network_session->CloseAllConnections(ERR_NETWORK_CHANGED, "bind dns");
-  bound_network_for_dns_ = network;
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void URLRequestContext::SetConnectJobWithSecureDnsOnlyTimeout(int second) {
-  HttpTransactionFactory* transaction_factory = http_transaction_factory();
-  if (!transaction_factory) {
-    return;
-  }
-  HttpNetworkSession* network_session = transaction_factory->GetSession();
-  if (!network_session) {
-    return;
-  }
-  network_session->SetConnectJobWithSecureDnsOnlyTimeout(second);
-}
-
-bool URLRequestContext::CanUseSecureDnsFallback() const {
-  if (!host_resolver()) {
-    return false;
-  }
-  return host_resolver()->CanUseSecureDnsFallback();
-}
-#endif
 }  // namespace net

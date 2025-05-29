@@ -11,12 +11,12 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
 #include "ui/accessibility/ax_export.h"
 #include "ui/accessibility/ax_node_data.h"
 #include "ui/accessibility/ax_node_id_forward.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 
@@ -61,10 +61,10 @@ class AX_EXPORT AXComputedNodeData final {
 
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   bool HasOrCanComputeAttribute(
-      const ax::mojom::StringAttribute attribute) const;
+    const ax::mojom::StringAttribute attribute) const;
 
   const std::string& GetOrComputeAttributeUTF8(
-      const ax::mojom::StringAttribute attribute) const;
+    const ax::mojom::StringAttribute attribute) const;
 #endif
 
   // Given an accessibility attribute, returns the attribute's value. The

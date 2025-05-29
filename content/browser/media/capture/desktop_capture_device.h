@@ -39,8 +39,13 @@ class CONTENT_EXPORT DesktopCaptureDevice : public media::VideoCaptureDevice {
   // Creates capturer for the specified |source| and then creates
   // DesktopCaptureDevice for it. May return NULL in case of a failure (e.g. if
   // requested window was destroyed).
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  static std::unique_ptr<media::VideoCaptureDevice> Create(
+      const DesktopMediaID& source, bool is_picker_show, int nweb_id);
+#else
   static std::unique_ptr<media::VideoCaptureDevice> Create(
       const DesktopMediaID& source);
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
   DesktopCaptureDevice(const DesktopCaptureDevice&) = delete;
   DesktopCaptureDevice& operator=(const DesktopCaptureDevice&) = delete;

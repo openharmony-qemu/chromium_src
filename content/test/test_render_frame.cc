@@ -172,7 +172,7 @@ class MockFrameHost : public mojom::FrameHost {
   }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void OnClearContextMenu() override {}
+    void OnClearContextMenu() override {}
 #endif
 
   void DidCommitSameDocumentNavigation(
@@ -230,8 +230,7 @@ class MockFrameHost : public mojom::FrameHost {
                           bool allow_popup,
                           GetCreateNewWindowCallback callback) override {}
 
-  void CloseImageOverlaySelection(
-      CloseImageOverlaySelectionCallback callback) override {}
+  void CloseImageOverlaySelection() override {}
 #endif
  private:
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;

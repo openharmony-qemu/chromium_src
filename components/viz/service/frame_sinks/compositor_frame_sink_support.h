@@ -10,7 +10,6 @@
 #include <set>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback.h"
@@ -39,9 +38,6 @@
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "services/viz/public/mojom/hit_test/hit_test_region_list.mojom.h"
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-#include "base/containers/queue.h"
-#endif
 
 namespace viz {
 
@@ -51,6 +47,7 @@ class LayerContextImpl;
 class RendererSettings;
 class Surface;
 class SurfaceManager;
+class CompositorFrameSinkSupportUtils;
 
 // Possible outcomes of MaybeSubmitCompositorFrame().
 // These values are persisted to logs. Entries should not be renumbered and
@@ -72,6 +69,8 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
       public SurfaceClient,
       public CapturableFrameSink {
  public:
+  friend class CompositorFrameSinkSupportUtils;
+  std::unique_ptr<CompositorFrameSinkSupportUtils> supportUtils;
   using AggregatedDamageCallback =
       base::RepeatingCallback<void(const LocalSurfaceId& local_surface_id,
                                    const gfx::Size& frame_size_in_pixels,
@@ -280,10 +279,6 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   // Subscribes or unsubscribes `layer_context_` to subsequent BeginFrames.
   void SetLayerContextWantsBeginFrames(bool wants_begin_frames);
 
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  int GetFrameRate();
-#endif
-
  private:
   friend class CompositorFrameSinkSupportTestBase;
   friend class DisplayTest;
@@ -368,10 +363,6 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
 
   void ForAllReservedResourceDelegates(
       base::FunctionRef<void(ReservedResourceDelegate&)> func);
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  int64_t GetCurrentTimeStampMS();
-#endif
 
   const raw_ptr<mojom::CompositorFrameSinkClient> client_;
 
@@ -587,12 +578,6 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
   bool layer_context_wants_begin_frames_ = false;
 
   base::WeakPtrFactory<CompositorFrameSinkSupport> weak_factory_{this};
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  base::queue<int64_t> frames_time_stamps_;
-  const int kMaxFrameCount = 30;
-  int estimated_frame_rate_ = 0;
-#endif
 };
 
 }  // namespace viz

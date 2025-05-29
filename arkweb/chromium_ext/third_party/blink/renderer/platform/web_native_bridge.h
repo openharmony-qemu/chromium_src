@@ -33,6 +33,8 @@ class BLINK_PLATFORM_EXPORT WebNativeBridge {
 
   virtual void OnLayerRectVisibilityChange(bool visibility) = 0;
 
+  virtual void CleanupVisibilityForRemovedLayer(bool visibility) = 0;
+
   virtual int GetDelegateId() { return -1; }
 
   virtual gfx::Size NaturalSize() const = 0;

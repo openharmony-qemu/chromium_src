@@ -139,7 +139,8 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
            bool context_menu,
            bool is_nested_drag,
            gfx::NativeView native_view_for_gestures = gfx::NativeView(),
-           gfx::AcceleratedWidget parent_widget = gfx::kNullAcceleratedWidget);
+           gfx::AcceleratedWidget parent_widget =
+               gfx::kNullAcceleratedWidget);
 
   bool for_drop() const { return for_drop_; }
 

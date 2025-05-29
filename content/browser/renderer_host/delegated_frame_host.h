@@ -57,6 +57,7 @@ class CONTENT_EXPORT DelegatedFrameHostClient {
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   virtual void RestoreRenderFit() {}
 #endif  // ARKWEB_MAXIMIZE_RESIZE
+
 };
 
 // The DelegatedFrameHost is used to host all of the RenderWidgetHostView state
@@ -110,7 +111,7 @@ class CONTENT_EXPORT DelegatedFrameHost
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   void RestoreRenderFit() override;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
   // Public interface exposed to RenderWidgetHostView.
 

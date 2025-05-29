@@ -76,6 +76,11 @@ void SoftwareOutputSurface::SwapBuffers(OutputSurfaceFrame frame) {
         data->set_display_trace_id(swap_trace_id);
       });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.data.swap_trace_id), "step", "BufferSwapPostSubmit");
+#endif
+
   software_device()->OnSwapBuffers(
       base::BindOnce(&SoftwareOutputSurface::SwapBuffersCallback,
                      weak_factory_.GetWeakPtr(), swap_time,

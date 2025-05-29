@@ -1110,9 +1110,10 @@ void MenuItemView::PaintBackground(gfx::Canvas* canvas,
     return;
   }
 
-  MenuDelegate* delegate = GetDelegate();
+  MenuDelegate *delegate = GetDelegate();
   SkColor override_color;
-  if (delegate && delegate->GetBackgroundColor(GetCommand(), paint_as_selected,
+  if (delegate && delegate->GetBackgroundColor(GetCommand(),
+                                               paint_as_selected,
                                                &override_color)) {
     canvas->DrawColor(override_color);
   } else if (paint_as_selected) {
@@ -1186,7 +1187,7 @@ void MenuItemView::PaintMinorIconAndText(gfx::Canvas* canvas, SkColor color) {
 
 SkColor MenuItemView::GetTextColor(bool minor, bool paint_as_selected) const {
   SkColor text_color;
-  const MenuDelegate* delegate = GetDelegate();
+  const MenuDelegate *delegate = GetDelegate();
   if (delegate && delegate->GetTextColor(GetCommand(), minor, paint_as_selected,
                                          &text_color)) {
     return text_color;

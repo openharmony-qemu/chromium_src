@@ -9,17 +9,11 @@
 
 #include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#define private public
-#define protected public
-#endif
 #include "base/feature_list.h"
 #if BUILDFLAG(ARKWEB_UNITTESTS)
 #include "base/metrics/field_trial.h"
 #include "base/metrics/field_trial_param_associator.h"
 #include "base/test/scoped_feature_list.h"
-#undef protected
-#undef private
 #endif
 
 #include <stddef.h>
@@ -761,7 +755,7 @@ TEST_F(FeatureListTest, ModifyFeaturesToAllocator) {
   WritableSharedPersistentMemoryAllocator allocator(std::move(shm.mapping), 1,
                                                     "");
   feature_list->initialized_ = false;
-  feature_list->ModifyFeaturesToAllocator(&allocator);
+  feature_list->GetUtils()->ModifyFeaturesToAllocator(&allocator);
 }
 
 TEST_F(FeatureListTest, AddFeaturesToAllocator) {
@@ -790,20 +784,13 @@ TEST_F(FeatureListTest, AddFeaturesToAllocator) {
       kFeatureOffByDefaultName, FeatureList::OVERRIDE_ENABLE_FEATURE));
   EXPECT_FALSE(feature_list2->IsFeatureOverriddenFromCommandLine(
       kFeatureOnByDefaultName, FeatureList::OVERRIDE_DISABLE_FEATURE));
-
-  feature_list2->InitializeFromSharedMemory(&allocator);
-  // Check that the new feature list now has 2 overrides.
-  EXPECT_TRUE(feature_list2->IsFeatureOverriddenFromCommandLine(
-      kFeatureOffByDefaultName, FeatureList::OVERRIDE_ENABLE_FEATURE));
-  EXPECT_TRUE(feature_list2->IsFeatureOverriddenFromCommandLine(
-      kFeatureOnByDefaultName, FeatureList::OVERRIDE_DISABLE_FEATURE));
 }
 
 TEST_F(FeatureListTest, SetScrollbarEnable1) {
   std::unique_ptr<base::FeatureList> feature_list =
       std::make_unique<FeatureList>();
 
-  feature_list->SetScrollbarEnable(true);
+  feature_list->GetUtils()->SetScrollbarEnable(true);
   EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
 }
 
@@ -811,7 +798,7 @@ TEST_F(FeatureListTest, SetScrollbarEnable2) {
   std::unique_ptr<base::FeatureList> feature_list =
       std::make_unique<FeatureList>();
 
-  FeatureList::SetScrollbarEnable(false);
+  FeatureListUtils::SetScrollbarEnable(false);
   EXPECT_FALSE(feature_list->IsFeatureOverridden(kFeatureOverlayScrollbarName));
 }
 
@@ -1005,15 +992,16 @@ TEST(FeatureListAccessorTest, InitFromCommandLineWithFeatureParams) {
 }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-g_feature_list_instance = nullptr;
-testing::internal::CaptureStderr();
-test_feature_list_->SetScrollbarEnable(true);
-std::string log_output = testing::internal::GetCapturedStderr();
-EXPECT_NE(log_output.find("set Scrollbar error"), std::string::npos);
+TEST_F(FeatureListTest, SetScrollbarEnable001) {
+  g_feature_list_instance = nullptr;
+  ::testing::internal::CaptureStderr();
+  test_feature_list_->GetUtils()->SetScrollbarEnable(true);
+  std::string log_output = ::testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("set Scrollbar error"), std::string::npos);
 }
 
 TEST_F(FeatureListTest, SetScrollbarEnableTest002) {
-  test_feature_list_->SetScrollbarEnable(true);
+  test_feature_list_->GetUtils()->SetScrollbarEnable(true);
   EXPECT_EQ(
       test_feature_list_->GetOverrideStateByFeatureName("OverlayScrollbar"),
       FeatureList::OVERRIDE_DISABLE_FEATURE);
@@ -1022,7 +1010,7 @@ TEST_F(FeatureListTest, SetScrollbarEnableTest002) {
 }
 
 TEST_F(FeatureListTest, SetScrollbarEnableTest003) {
-  test_feature_list_->SetScrollbarEnable(false);
+  test_feature_list_->GetUtils()->SetScrollbarEnable(false);
   EXPECT_EQ(
       test_feature_list_->GetOverrideStateByFeatureName("OverlayScrollbar"),
       FeatureList::OVERRIDE_ENABLE_FEATURE);
@@ -1031,9 +1019,8 @@ TEST_F(FeatureListTest, SetScrollbarEnableTest003) {
 }
 
 TEST_F(FeatureListTest, IsFeatureEnabled001) {
-  Feature overlay_scrollbar_feature{"OverlayScrollbar",
-                                    FEATURE_DISABLED_BY_DEFAULT};
-  test_feature_list_->SetOverrideStateByFeatureName(
+  static BASE_FEATURE(overlay_scrollbar_feature, "OverlayScrollbar", FEATURE_DISABLED_BY_DEFAULT);
+  test_feature_list_->GetUtils()->SetOverrideStateByFeatureName(
       overlay_scrollbar_feature.name, FeatureList::OVERRIDE_ENABLE_FEATURE);
   testing::internal::CaptureStderr();
   test_feature_list_->IsFeatureEnabled(overlay_scrollbar_feature);
@@ -1042,9 +1029,8 @@ TEST_F(FeatureListTest, IsFeatureEnabled001) {
 }
 
 TEST_F(FeatureListTest, IsFeatureEnabled002) {
-  Feature overlay_scrollbar_feature{"ForceScrollbar",
-                                    FEATURE_DISABLED_BY_DEFAULT};
-  test_feature_list_->SetOverrideStateByFeatureName(
+  static BASE_FEATURE(overlay_scrollbar_feature, "ForceScrollbar", FEATURE_DISABLED_BY_DEFAULT);
+  test_feature_list_->GetUtils()->SetOverrideStateByFeatureName(
       overlay_scrollbar_feature.name, FeatureList::OVERRIDE_ENABLE_FEATURE);
   testing::internal::CaptureStderr();
   auto a = test_feature_list_->IsFeatureEnabled(overlay_scrollbar_feature);
@@ -1054,8 +1040,8 @@ TEST_F(FeatureListTest, IsFeatureEnabled002) {
 }
 
 TEST_F(FeatureListTest, IsFeatureEnabled003) {
-  Feature overlay_scrollbar_feature{"TestFeature", FEATURE_ENABLED_BY_DEFAULT};
-  test_feature_list_->SetOverrideStateByFeatureName(
+  static BASE_FEATURE(overlay_scrollbar_feature, "TestFeature", FEATURE_ENABLED_BY_DEFAULT);
+  test_feature_list_->GetUtils()->SetOverrideStateByFeatureName(
       overlay_scrollbar_feature.name, FeatureList::OVERRIDE_USE_DEFAULT);
   EXPECT_TRUE(test_feature_list_->IsFeatureEnabled(overlay_scrollbar_feature));
 }

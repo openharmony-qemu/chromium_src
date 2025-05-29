@@ -1,0 +1,8 @@
+arkweb_chrome_browser_media_ohos_sources = [
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_origin_id_manager.cc",
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_origin_id_manager.h",
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_origin_id_manager_factory.cc",
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_origin_id_manager_factory.h",
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_storage_factory.cc",
+  "//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/media_drm_storage_factory.h",
+]

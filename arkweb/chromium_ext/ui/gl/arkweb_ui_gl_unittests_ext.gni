@@ -1,0 +1,12 @@
+arkweb_unittests_deps = [
+  "//content/public/common",
+]
+
+arkweb_unittests_sources = [
+  "//content/browser/browser_thread_impl.cc",
+  "//content/browser/scheduler/browser_task_executor.cc",
+  "//content/browser/scheduler/browser_io_thread_delegate.cc",
+  "//content/browser/scheduler/browser_task_queues.cc",
+  "//content/browser/scheduler/browser_ui_thread_scheduler.cc",
+  "//content/browser/scheduler/browser_task_priority.cc",
+]

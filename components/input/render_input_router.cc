@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_ext.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/stack_trace.h"
@@ -27,6 +28,7 @@
 #include "third_party/blink/public/common/input/web_input_event.h"
 #include "ui/base/mojom/menu_source_type.mojom.h"
 #include "ui/latency/latency_info.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
 #include "base/ohos/ltpo/include/sliding_observer.h"
@@ -85,7 +87,7 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
                      DispatchEventCallback callback) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
-#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   void TryStartFling() override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
@@ -115,8 +117,8 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
 
 #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   void AttachSoftwareCompositorOhos(
-      mojo::PendingReceiver<blink::mojom::SoftwareCompositorOhos>
-          compositor_request) override {
+    mojo::PendingReceiver<blink::mojom::SoftwareCompositorOhos>
+        compositor_request) override {
     NOTREACHED_IN_MIGRATION() << "Input request on unbound interface";
   }
 #endif
@@ -139,6 +141,10 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     DLOG(WARNING) << "Input request on unbound interface";
   }
 
+  void SetMouseEventResult(bool result, bool stopPropagation) override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
   void SetNativeEmbedMode(bool flag) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
@@ -147,7 +153,7 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void ScrollBy(float delta_x, float delta_y) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 };
 
 base::LazyInstance<UnboundWidgetInputHandler>::Leaky g_unbound_input_handler =
@@ -176,7 +182,11 @@ RenderInputRouter::RenderInputRouter(
 void RenderInputRouter::SetupInputRouter(float device_scale_factor) {
   TRACE_EVENT("input", "RenderInputRouter::SetupInputRouter");
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  input_router_ = std::make_unique<ArkwebInputRouterImplExt>(
+#else
   input_router_ = std::make_unique<InputRouterImpl>(
+#endif
       this, this, fling_scheduler_.get(),
       GetInputRouterConfigForPlatform(task_runner_));
 
@@ -269,8 +279,7 @@ void RenderInputRouter::OnStartStylusWriting() {
 }
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void RenderInputRouter::DynamicFrameLossEvent(const std::string& sceneId,
-                                              bool isStart) {
+void RenderInputRouter::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
   render_input_router_client_->DynamicFrameLossEvent(sceneId, isStart);
 }
 #endif
@@ -444,28 +453,21 @@ void RenderInputRouter::ForwardGestureEventWithLatencyInfo(
       &gesture_with_latency.event.GetModifiableEventLatencyMetadata());
   SendGestureEventWithLatencyInfo(gesture_with_latency);
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-  OHOS_TRACE_EVENT2("input,benchmark,devtools.timeline,latencyInfo",
-                    "LatencyInfo.Flow", "trace_id",
+  OHOS_TRACE_EVENT2("input,benchmark,devtools.timeline,latencyInfo", "LatencyInfo.Flow", "trace_id",
                     std::to_string(latency_info.trace_id()), "step", "START");
 #endif
 }
 
 #if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-void RenderInputRouter::ReportSlidingFrameRate(
-    const blink::WebGestureEvent& gesture_event) {
+void RenderInputRouter::ReportSlidingFrameRate(const blink::WebGestureEvent& gesture_event) {
   int32_t preferred_frame_rate = 0;
   if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollBegin) {
     base::ohos::SlidingObserver::GetInstance().StartSliding();
-  } else if (gesture_event.GetType() ==
-             WebInputEvent::Type::kGestureScrollEnd) {
-    preferred_frame_rate =
-        base::ohos::SlidingObserver::GetInstance().StopSliding();
-  } else if (gesture_event.GetType() ==
-             WebInputEvent::Type::kGestureScrollUpdate) {
-    preferred_frame_rate =
-        base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(
-            gesture_event.data.scroll_update.delta_x,
-            gesture_event.data.scroll_update.delta_y);
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd) {
+    preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().StopSliding();
+  } else if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    preferred_frame_rate = base::ohos::SlidingObserver::GetInstance().OnScrollUpdate(
+      gesture_event.data.scroll_update.delta_x, gesture_event.data.scroll_update.delta_y);
   }
 
   auto* host = content::GpuProcessHost::Get();
@@ -475,8 +477,8 @@ void RenderInputRouter::ReportSlidingFrameRate(
   }
 
   if (host_impl && preferred_frame_rate >= 0) {
-    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd ||
-        gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
+    if (gesture_event.GetType() == WebInputEvent::Type::kGestureScrollEnd
+      || gesture_event.GetType() == WebInputEvent::Type::kGestureScrollUpdate) {
       host_impl->ReportSlidingFrameRate(preferred_frame_rate);
     }
   }

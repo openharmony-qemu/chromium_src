@@ -40,7 +40,7 @@ GpuMemoryBufferHandle::GpuMemoryBufferHandle(
 
 #if BUILDFLAG(ARKWEB_VULKAN)
 GpuMemoryBufferHandle::GpuMemoryBufferHandle(
-    gpu::ScopedNativeBufferHandle handle)
+   gpu::ScopedNativeBufferHandle  handle)
     : type(GpuMemoryBufferType::OHOS_NATIVE_BUFFER),
       ohos_hardware_buffer(std::move(handle)) {}
 #endif

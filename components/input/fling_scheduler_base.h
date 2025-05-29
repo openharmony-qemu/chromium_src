@@ -19,7 +19,9 @@ class FlingSchedulerBase : public FlingControllerSchedulerClient {
   virtual void ProgressFlingOnBeginFrameIfneeded(
       base::TimeTicks current_time) = 0;
 
-  void SetCompositor(ui::Compositor* compositor) { compositor_ = compositor; }
+  void SetCompositor(ui::Compositor* compositor) {
+    compositor_ = compositor;
+  }
 
  protected:
   raw_ptr<ui::Compositor> compositor_ = nullptr;

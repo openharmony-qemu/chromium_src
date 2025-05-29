@@ -121,6 +121,11 @@ def main():
                       metavar='FILE')
   parser.add_argument('command', nargs='+',
                       help='Linking command')
+  parser.add_argument('--mini-debug',
+                      action='store_true',
+                      default=False,
+                      help='Add .gnu_debugdata section for stripped sofile')
+  parser.add_argument('--clang-base-dir', help='')
   args = parser.parse_args()
 
   # Work-around for gold being slow-by-default. http://crbug.com/632230
@@ -203,6 +208,14 @@ def main():
     if dwp_result != 0:
       sys.stderr.write('dwp failed with error code {}\n'.format(dwp_result))
       return dwp_result
+  if args.mini_debug:
+    unstripped_libfile = os.path.abspath(args.sofile)
+    ohos_root_path = os.path.join(os.path.dirname(__file__), '../..')
+    script_path = os.path.join(ohos_root_path, 'arkweb/build/toolchain', 'mini_debug_info.py')
+    result = subprocess.call(
+      wrapper_utils.CommandToRun(
+        ['python3', script_path, '--unstripped-path', unstripped_libfile, '--stripped-path', args.output,
+        '--root-path', ohos_root_path, '--clang-base-dir', args.clang_base_dir]))
 
   return result
 

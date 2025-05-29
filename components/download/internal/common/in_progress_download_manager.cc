@@ -65,7 +65,11 @@ std::unique_ptr<DownloadItemImpl> CreateDownloadItemImpl(
   if (!in_progress_info)
     return nullptr;
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  return std::make_unique<ArkWebDownloadItemImplExt>(
+#else
   return std::make_unique<DownloadItemImpl>(
+#endif
       delegate, entry.download_info->guid, entry.download_info->id,
       in_progress_info->current_path, in_progress_info->target_path,
       in_progress_info->url_chain, in_progress_info->referrer_url,
@@ -537,7 +541,11 @@ void InProgressDownloadManager::StartDownload(
   } else {
     std::string guid = info->guid;
     if (info->is_new_download) {
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+      auto download = std::make_unique<ArkWebDownloadItemImplExt>(
+#else
       auto download = std::make_unique<DownloadItemImpl>(
+#endif
           this, DownloadItem::kInvalidId, *info);
       OnNewDownloadCreated(download.get());
       guid = download->GetGuid();

@@ -60,6 +60,12 @@ class NWebEventHandler {
                               double deltaX,
                               double deltaY,
                               const std::vector<int32_t>& pressedCodes);
+  void WebSendMouseWheelEventV2(double x,
+                                double y,
+                                double deltaX,
+                                double deltaY,
+                                const std::vector<int32_t>& pressedCodes,
+                                int32_t source);
   bool SendKeyboardEvent(
       const std::shared_ptr<OHOS::NWeb::NWebKeyboardEvent>& keyboardEvent);
   void WebSendTouchpadFlingEvent(double x,
@@ -92,7 +98,8 @@ class NWebEventHandler {
                               double y,
                               double deltaX,
                               double deltaY,
-                              int32_t modifiers);
+                              int32_t modifiers,
+                              int32_t source = CEF_EST_TOUCHPAD);
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   CefRefPtr<CefBrowser> browser_ = nullptr;

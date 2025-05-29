@@ -107,10 +107,8 @@ class FakeDisplaySchedulerClient : public DisplaySchedulerClient {
   const BeginFrameAck& last_begin_frame_ack() { return last_begin_frame_ack_; }
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void ReenableSwapCheck(const SurfaceId& surface_id,
-                         int width,
-                         int height) override {}
-#endif  // ARKWEB_UNITTESTS
+  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override {}
+#endif // ARKWEB_UNITTESTS
 
  protected:
   raw_ptr<TestDisplayDamageTracker> damage_tracker_ = nullptr;

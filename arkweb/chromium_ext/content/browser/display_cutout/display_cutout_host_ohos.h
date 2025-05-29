@@ -78,6 +78,7 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
 
   // Weak pointer to the owning |WebContentsImpl| instance.
   raw_ptr<WebContentsImpl> web_contents_impl_;
+  blink::mojom::ViewportFit mainFrameViewportFit_ = blink::mojom::ViewportFit::kAuto;
 };
 
 }  // namespace content

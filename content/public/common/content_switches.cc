@@ -1013,14 +1013,6 @@ const char kIpcDumpDirectory[] = "ipc-dump-directory";
 const char kIpcFuzzerTestcase[] = "ipc-fuzzer-testcase";
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
-const char kOhosDeviceType[] = "ohos-device-type";
-const char kOhosMobileDevice[] = "mobile";
-const char kOhosTabletDevice[] = "tablet";
-const char kOhos2IN1Device[] = "2IN1";
-const char kOhosUnkownDevice[] = "unkown";
-#endif
-
 // Don't dump stuff here, follow the same order as the header.
 
 }  // namespace switches

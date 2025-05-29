@@ -63,9 +63,6 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #endif
 #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
   void SetScreenInfo(const NWebScreenInfo& screen_info);
-  NWebScreenInfo& GetLastScreenInfo();
-  void SetLastScreenInfo(const NWebScreenInfo& screen_info);
-  bool IsNeedCefNotifyScreenInfoChanged();
 #endif  // #if BUILDFLAG(ARKWEB_SCREEN_ROTATION)
   int ContentHeight();
   void SetInputMethodClient(CefRefPtr<NWebInputMethodClient> client);
@@ -103,6 +100,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                               CefRect& rect) override;
   void SetNeedFocusViewport(bool need);
   void OnResizeScrollableViewport(CefRefPtr<CefBrowser> browser) override;
+  void UpdateSecurityLayer(bool isNeedSecurityLayer) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
@@ -193,6 +191,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
       CefRefPtr<CefBrowser> browser,
       const CefEmbedTouchEvent& event,
       CefRefPtr<CefGestureEventCallback> callback) override;
+  void OnNativeEmbedMouseEvent(CefRefPtr<CefBrowser> browser,
+      const CefEmbedMouseEvent& event,
+      CefRefPtr<CefMouseEventCallback> callback) override;
   void OnNativeEmbedLifecycleChange(CefRefPtr<CefBrowser> browser,
                                     const CefNativeEmbedData& info) override;
   void OnNativeEmbedVisibilityChange(const CefString& embed_id,
@@ -205,6 +206,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                          const float y,
                          const float fling_x,
                          const float fling_y) override;
+  bool OnNestedScroll(CefRefPtr<CefBrowser> browser,
+                         float& x,
+                         float& y,
+                         float& fling_x,
+                         float& fling_y,
+                         bool& isAvailable) override;
   std::shared_ptr<NWebNativeEmbedDataInfo> CefEmbedDataToWeb(
       const CefNativeEmbedData& embedData);
   void SetContentSize(int width, int height);
@@ -237,6 +244,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                      const CefPoint& cef_touch_point) override;
   void OnOverlayStateChanged(CefRefPtr<CefBrowser> browser,
                              const CefRect& cef_image_rect) override;
+  bool GetDataDetectorEnable() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
@@ -270,7 +278,24 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   // #endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
   // #if BUILDFLAG(ARKWEB_HTML_SELECT)
   float GetCefDeviceRatio() const { return cef_device_ratio_; }
+
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetScrollOffset(float& x, float& y);
+  bool HasOverscroll();
+#endif
+
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  void OnAccessibilityEvent(int64_t accessibilityId,
+                            int32_t eventType,
+                            const CefString& argument) override;
+#endif
   // #endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  void SetScreenOffset(double x, double y);
+  void GetScreenOffset(CefRefPtr<CefBrowser> browser, double& x, double& y) override;
+#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+
   // Include the default reference counting implementation.
   IMPLEMENT_REFCOUNTING(NWebRenderHandler);
 
@@ -289,6 +314,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   uint32_t visible_height_ = 0;
   bool needFocusViewport_ = false;
   int32_t node_id_ = -1;
+  bool noNeedKeyboardByInput_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  float scroll_offset_x_ = 0.0f;
+  float scroll_offset_y_ = 0.0f;
+  bool has_over_scroll_ = false;
 #endif
   int content_height_ = 0;
   int content_width_ = 0;
@@ -312,6 +343,11 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool isSystemKeyboard_ = true;
   bool gesture_event_result_ = false;
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  double screen_x_ = 0;
+  double screen_y_ = 0;
+#endif
 
   std::function<void(double, double)> on_scroll_cb_ = nullptr;
 };

@@ -51,8 +51,8 @@ class TransferCacheTest : public testing::Test {
         viz::TestGpuServiceHolder::GetInstance()->task_executor(), attribs,
         gpu::SharedMemoryLimits(), nullptr, nullptr);
 
-    EXPECT_NE(result, gpu::ContextResult::kSuccess);
-    EXPECT_FALSE(context_->GetCapabilities().gpu_rasterization);
+    ASSERT_EQ(result, gpu::ContextResult::kSuccess);
+    ASSERT_TRUE(context_->GetCapabilities().gpu_rasterization);
   }
 
   void TearDown() override { context_.reset(); }

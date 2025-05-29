@@ -22,9 +22,14 @@
 #include "ui/events/event_constants.h"
 #include "ui/events/gesture_detection/gesture_listeners.h"
 #include "ui/events/velocity_tracker/motion_event.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_utils.h"
+#endif
 
 namespace ui {
+#if !BUILDFLAG(IS_ARKWEB)
 namespace {
+#endif
 
 // Minimum distance a scroll must have traveled from the last scroll/focal point
 // to trigger an |OnScroll| callback.
@@ -45,7 +50,9 @@ enum TimeoutEvent {
   TIMEOUT_EVENT_COUNT
 };
 
+#if !BUILDFLAG(IS_ARKWEB)
 }  // namespace
+#endif
 
 GestureDetector::Config::Config() = default;
 GestureDetector::Config::Config(const Config& other) = default;
@@ -76,6 +83,7 @@ class GestureDetector::TimeoutGestureHandler {
         &GestureDetector::OnDragLongPressTimeout;
     timeout_delays_[DRAG_LONG_PRESS] =
         config.draglongpress_timeout + config.showpress_timeout;
+    timeout_gesture_handler_utils_ = new TimeoutGestureHandlerUtils(this);
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -111,19 +119,9 @@ class GestureDetector::TimeoutGestureHandler {
   void StopTimeout(TimeoutEvent event) { timeout_timers_[event].Stop(); }
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void Stop(bool is_lost_focus) {
-    for (size_t i = SHOW_PRESS; i < TIMEOUT_EVENT_COUNT; ++i) {
-      // The longpress show contextmeu on UI will trigger focus changed and
-      // resetGestureDetector in GestureListenerManagerImpl.java,
-      // then draglongpress gesture will be stopped.
-      // so, for draglongpress working, it will be continue in this Stop
-      // and ACTION_CANCEL; ACTION_UP will stop draglongpress timer.
-      if (i == DRAG_LONG_PRESS && is_lost_focus) {
-        continue;
-      }
-      timeout_timers_[i].Stop();
-    }
-  }
+  friend class TimeoutGestureHandlerUtils;
+  TimeoutGestureHandlerUtils* timeout_gesture_handler_utils_;
+  TimeoutGestureHandlerUtils* GetUtils() { return timeout_gesture_handler_utils_; }
 #endif
 
   void Stop() {
@@ -376,7 +374,7 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
           // EF_LEFT_MOUSE_BUTTON.
           ActivateShortPressGesture(ev);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-          ActivateLongPressKeepDragTimeout(ev);
+          AsGestureDetectorExt()->ActivateLongPressKeepDragTimeout(ev);
 #else
           ActivateLongPressGesture(ev);
 #endif
@@ -463,7 +461,7 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
 
     case MotionEvent::Action::CANCEL:
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-      Cancel(ev.IsCancelByLostFocus());
+      AsGestureDetectorExt()->Cancel(ev.IsCancelByLostFocus());
 #else
       Cancel();
 #endif
@@ -472,29 +470,6 @@ bool GestureDetector::OnTouchEvent(const MotionEvent& ev,
 
   return handled;
 }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void GestureDetector::Cancel(bool is_lost_focus) {
-  // Stop waiting for a second tap and send a GESTURE_TAP_CANCEL to keep the
-  // gesture stream valid.
-  if (timeout_handler_->HasTimeout(TAP)) {
-    listener_->OnTapCancel(*current_down_event_);
-  }
-  CancelTaps(is_lost_focus);
-  velocity_tracker_.Clear();
-  all_pointers_within_slop_regions_ = false;
-  still_down_ = false;
-}
-
-void GestureDetector::CancelTaps(bool is_lost_focus) {
-  timeout_handler_->Stop(is_lost_focus);
-  is_double_tapping_ = false;
-  always_in_bigger_tap_region_ = false;
-  defer_confirm_single_tap_ = false;
-  is_down_candidate_for_repeated_single_tap_ = false;
-  current_single_tap_repeat_count_ = 0;
-}
-#endif
 
 void GestureDetector::SetDoubleTapListener(
     DoubleTapListener* double_tap_listener) {
@@ -569,7 +544,7 @@ void GestureDetector::OnShortPressTimeout() {
 
 void GestureDetector::OnLongPressTimeout() {
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  ActivateLongPressKeepDragTimeout(*current_down_event_);
+  AsGestureDetectorExt()->ActivateLongPressKeepDragTimeout(*current_down_event_);
 #else
   ActivateLongPressGesture(*current_down_event_);
 #endif
@@ -587,12 +562,6 @@ void GestureDetector::OnCreateOverlayTimeout() {
   LOG(INFO) << "GestureDetector::OnCreateOverlayTimeout";
   listener_->OnCreateOverlay(*current_down_event_);
 }
-
-void GestureDetector::StopCreateOverlayGesture() {
-  timeout_handler_->StopTimeout(CREATE_OVERLAY);
-}
-
-void GestureDetector::OnAITextSelected() {}
 #endif
 
 void GestureDetector::OnTapTimeout() {
@@ -617,14 +586,6 @@ void GestureDetector::ActivateLongPressGesture(const MotionEvent& ev) {
   listener_->OnLongPress(ev);
 }
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void GestureDetector::ActivateLongPressKeepDragTimeout(const MotionEvent& ev) {
-  timeout_handler_->Stop(true);
-  defer_confirm_single_tap_ = false;
-  listener_->OnLongPress(ev);
-}
-#endif
-
 void GestureDetector::Cancel() {
   // Stop waiting for a second tap and send a GESTURE_TAP_CANCEL to keep the
   // gesture stream valid.
@@ -635,12 +596,6 @@ void GestureDetector::Cancel() {
   all_pointers_within_slop_regions_ = false;
   still_down_ = false;
 }
-
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-void GestureDetector::StopDragLongPressGesture() {
-  timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
-}
-#endif
 
 void GestureDetector::CancelTaps() {
   timeout_handler_->Stop();
@@ -762,3 +717,8 @@ const MotionEvent* GestureDetector::GetSourcePointerDownEvent(
 }
 
 }  // namespace ui
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_ext.cc"
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_utils.cc"
+#endif

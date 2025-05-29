@@ -80,7 +80,7 @@ class NET_EXPORT NetworkAnonymizationKey {
   // Compare keys for equality, true if all enabled fields are equal.
   bool operator==(const NetworkAnonymizationKey& other) const {
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-    if (should_check_top_frame_site_) {
+    if (should_check_top_frame_site_ && other.should_check_top_frame_site_) {
       return std::tie(top_frame_site_, is_cross_site_, nonce_) ==
              std::tie(other.top_frame_site_, other.is_cross_site_,
                       other.nonce_);

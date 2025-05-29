@@ -18,10 +18,7 @@
 #include "net/socket/transport_client_socket_pool.h"
 #include "net/socket/transport_connect_job.h"
 #include "net/socket/websocket_transport_client_socket_pool.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -93,10 +90,10 @@ ClientSocketPool* ClientSocketPoolManagerImpl::GetSocketPool(
         pool_type_ == HttpNetworkSession::WEBSOCKET_SOCKET_POOL,
         &common_connect_job_params_, cleanup_on_ip_address_change_);
   }
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   new_pool->utils->SetConnectTimeout(timeout_override_);
 #endif
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   new_pool->utils->SetConnectJobWithSecureDnsOnlyTimeout(
       connect_job_with_secure_dns_timeout_);
 #endif

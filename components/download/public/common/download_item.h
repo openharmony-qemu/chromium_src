@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/ref_counted.h"
 #include "base/observer_list_types.h"
@@ -37,10 +38,6 @@
 #include "services/network/public/mojom/fetch_api.mojom-shared.h"
 #include "ui/base/page_transition_types.h"
 #include "url/origin.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 class GURL;
 

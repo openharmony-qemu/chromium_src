@@ -19,15 +19,12 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "arkweb/build/features/features.h"
+
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "build/build_config.h"
 #include "capi/nweb_storage_extension_callback.h"
 #include "nweb_value_callback.h"
 #include "nweb_web_storage.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace OHOS::NWeb {
 class NWebWebStorageDelegateInterface {

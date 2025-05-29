@@ -17,7 +17,7 @@ namespace net {
 
 namespace {
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 const char* kSceneString[] = {"normal DNS", "ErrorRetry"};
 const char* kDnsTransactionString[] = {"local DNS", "https DNS"};
 
@@ -36,7 +36,7 @@ void IPListToString(const std::vector<IPEndPoint>& endpoints,
 
 }  // namespace
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 class HostResolverManager::WarmUpHttpDnsFallbackImpl
     : public ResolveContext::DohStatusObserver {
  public:
@@ -133,11 +133,11 @@ class HostResolverManager::WarmUpHttpDnsFallbackImpl
 
   base::WeakPtrFactory<WarmUpHttpDnsFallbackImpl> weak_ptr_factory_{this};
 };
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 //-----------------------------------------------------------------------------
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 bool HostResolverManager::CanUseSecureDnsFallback(
     ResolveContext* context) const {
   if (!dns_client_.get()) {

@@ -279,7 +279,7 @@ handle_patch_apply() {
 handle_patch_apply
 need_processed
 #临时遍历引用的头文件，添加#include <vector>
-python3 ${WORK_SPACE}/arkweb/build/include_vector_patch.py ${INTERFACE_DIR}
+python3 ${CHROMIUM_DIR}/include_vector_patch.py ${INTERFACE_DIR}
 if [ "$NEED_PROCESS" -eq 1 ]; then
   handle_copy_commond
   handle_translate_commond nweb

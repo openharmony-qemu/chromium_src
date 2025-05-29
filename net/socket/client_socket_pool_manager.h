@@ -20,10 +20,7 @@
 #include "net/socket/client_socket_pool.h"
 #include "net/ssl/ssl_config.h"
 #include "url/scheme_host_port.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -75,10 +72,10 @@ class NET_EXPORT_PRIVATE ClientSocketPoolManager {
 
   // Creates a Value summary of the state of the socket pools.
   virtual base::Value SocketPoolInfoToValue() const = 0;
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   virtual void SetConnectTimeout(int seconds) = 0;
 #endif
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   virtual void SetConnectJobWithSecureDnsOnlyTimeout(int seconds) = 0;
 #endif
 };
@@ -104,7 +101,7 @@ int InitSocketHandleForHttpRequest(
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only = false
 #endif

@@ -12,6 +12,7 @@
 #include <string_view>
 #include <unordered_set>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/base64.h"
 #include "base/check_op.h"
 #include "base/containers/span.h"
@@ -25,10 +26,6 @@
 #include "build/build_config.h"
 #include "net/base/platform_mime_util.h"
 #include "net/http/http_util.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 using std::string;
 

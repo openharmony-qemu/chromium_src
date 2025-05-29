@@ -16,11 +16,8 @@
 #ifndef SERVICES_NETWORK_URL_LOADER_EXT_H_
 #define SERVICES_NETWORK_URL_LOADER_EXT_H_
 
-#include "net/url_request/url_request.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
+#include "net/url_request/url_request.h"
 
 namespace network {
 

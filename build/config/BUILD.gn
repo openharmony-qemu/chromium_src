@@ -110,7 +110,7 @@ config("feature_flags") {
 
 # Debug/release ----------------------------------------------------------------
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 config("ohos_nweb_ex_def_main") {
   if (defined(ohos_nweb_ex_config_name) && ohos_nweb_ex_config_name != "") {
     defines = ohos_nweb_ex_defines_main

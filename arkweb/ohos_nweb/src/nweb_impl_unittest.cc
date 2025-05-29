@@ -24,15 +24,11 @@
 #include <thread>
 
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "nweb.h"
 #include "capi/nweb_download_delegate_callback.h"
 #define private public
 #include "nweb_impl.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 using namespace testing;
 using namespace OHOS::NWeb;

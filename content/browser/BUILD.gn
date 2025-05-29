@@ -3,7 +3,9 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
+import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 import("//base/allocator/partition_allocator/partition_alloc.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/chromeos/ui_mode.gni")
@@ -32,10 +34,6 @@ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
 if (is_arkweb) {
   import("//arkweb/chromium_ext/chromium_ext.gni")
-}
-
-if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 if (is_mac) {
@@ -2426,7 +2424,7 @@ source_set("browser") {
     sources += arkweb_content_browser_renderer_host_media_sources
   }
 
-  if (defined(report_sys_event) && report_sys_event) {
+  if (report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }
 
@@ -2740,14 +2738,13 @@ source_set("browser") {
     ]
   }
 
+  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (defined(arkweb_video_assistant) && arkweb_video_assistant) {
     sources += [
       "media/video_assistant/video_assistant.cc",
       "media/video_assistant/video_assistant.h",
     ]
-    if (defined(is_arkweb_ext) && is_arkweb_ext) {
-      deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
-    }
+    deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
   }
 
   #endif ARKWEB_VIDEO_ASSISTANT
@@ -3588,7 +3585,7 @@ source_set("browser") {
     sources += arkweb_content_browser_accessibility_sources
   }
 
-  if (defined(arkweb_pull_to_refresh) && arkweb_pull_to_refresh) {
+  if (arkweb_ext_pull_to_refresh) {
     sources += arkweb_content_overscroll_controller_ohos_sources
   }
 

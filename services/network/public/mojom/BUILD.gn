@@ -3,9 +3,7 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
-if (defined(is_arkweb_ext) && is_arkweb_ext) {
-  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
-}
+import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/dcheck_always_on.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
@@ -1531,7 +1529,7 @@ mojom("mojom") {
     "//url/mojom:url_mojom_scheme_host_port",
   ]
 
-  if (defined(arkweb_ex_http_dns_fallback) && arkweb_ex_http_dns_fallback) {
+  if (arkweb_ext_http_dns_fallback) {
     public_deps += [ "//arkweb/chromium_ext/servieces/network/public/mojom" ]
   }
 
@@ -1570,13 +1568,6 @@ mojom("mojom") {
     if (enable_reporting) {
       enabled_features += [ "enable_reporting" ]
     }
-  }
-
-  if (is_arkweb) {
-    enabled_features += [
-      "arkweb_ex_network_connection",
-      "arkweb_ex_http_dns_fallback",
-    ]
   }
 
   if (is_linux) {

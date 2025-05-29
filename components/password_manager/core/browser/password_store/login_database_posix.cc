@@ -4,6 +4,7 @@
 
 #include "components/password_manager/core/browser/password_store/login_database.h"
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
@@ -11,10 +12,6 @@
 #include "components/os_crypt/async/common/encryptor.h"
 #include "components/os_crypt/sync/os_crypt.h"
 #include "components/password_manager/core/browser/password_store/login_database.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace password_manager {
 

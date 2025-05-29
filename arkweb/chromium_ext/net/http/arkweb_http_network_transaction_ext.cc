@@ -93,9 +93,7 @@
 #include "net/reporting/reporting_service.h"
 #endif  // BUILDFLAG(ENABLE_REPORTING)
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -109,7 +107,7 @@ ArkWebHttpNetworkTransactionExt::~ArkWebHttpNetworkTransactionExt() {
 #endif
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 int ArkWebHttpNetworkTransactionExt::RestartWithSecureDnsOnly(
     CompletionOnceCallback callback) {
   DCHECK(!stream_.get());
@@ -179,7 +177,7 @@ int ArkWebHttpNetworkTransactionExt::DoCreateFallbackStreamWithSecureDnsOnlyComp
   stream_request_.reset();
   return result;
 }
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
 void ArkWebHttpNetworkTransactionExt::StartRecording() {

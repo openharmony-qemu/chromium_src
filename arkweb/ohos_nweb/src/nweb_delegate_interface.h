@@ -30,7 +30,7 @@
 #include "nweb_accessibility_node_info.h"
 #endif
 #include "arkweb/build/features/features.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "nweb_download_callback.h"
 #include "nweb_find_callback.h"
 #include "nweb_handler.h"
@@ -38,14 +38,11 @@
 #include "nweb_rom_value.h"
 #include "nweb_web_message.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "nweb_native_media_player.h"
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "cef_delegate/nweb_custom_keyboard_handler_impl.h"
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
@@ -569,7 +566,7 @@ class NWebDelegateInterface
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
 #endif
 
-#if BUILDFLAG(ARKWEB_SECURITY_STATE)
+#if BUILDFLAG(ARKWEB_EXT_SECURITY_STATE)
   virtual int GetSecurityLevel() = 0;
 #endif
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)

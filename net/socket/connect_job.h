@@ -30,10 +30,7 @@
 #include "net/socket/ssl_client_socket.h"
 #include "net/ssl/ssl_config.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -272,7 +269,7 @@ class NET_EXPORT_PRIVATE ConnectJob {
 
   const NetLogWithSource& net_log() const { return net_log_; }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   virtual void SetConnectTimeout(int timeout_override) = 0;
 #endif
 
@@ -336,7 +333,7 @@ class NET_EXPORT_PRIVATE ConnectJob {
   // TODO(mmenke): This should be private.
   LoadTimingInfo::ConnectTiming connect_timing_;
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   base::TimeDelta timeout_override_ = base::TimeDelta();
 #endif
 #if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)

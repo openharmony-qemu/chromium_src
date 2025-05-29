@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
@@ -36,11 +37,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 #include "base/supports_user_data.h"
 #endif
 
@@ -49,7 +46,7 @@ class DownloadFile;
 class DownloadItemImplDelegate;
 class ArkWebDownloadItemImplExt;
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
 bool CallIsCancellation(DownloadInterruptReason reason);
 #endif
 
@@ -915,7 +912,7 @@ class COMPONENTS_DOWNLOAD_EXPORT DownloadItemImpl
   bool is_must_download_ = false;
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
   std::string request_method_;
 #endif
 

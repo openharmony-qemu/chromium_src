@@ -12,7 +12,7 @@
 # limitations under the License.
 
 declare_args() {
-  ohos_package_name = "com.ohos.arkwebcore"
+  ohos_package_name = "com.huawei.hmos.arkwebcore"
 
   arkweb_accessibility = true
   arkweb_ai = true
@@ -60,7 +60,7 @@ declare_args() {
   arkweb_enable_wiseplay = true
   arkweb_encrypt = true
   arkweb_ex_download = true
-  arkweb_ex_network_connection = true
+  arkweb_ex_network_connection = false
   arkweb_favicon = true
   arkweb_fcp = true
   arkweb_fido = true
@@ -218,8 +218,6 @@ declare_args() {
   arkweb_ex_refresh_iframe = true
   arkweb_notification = true
   arkweb_vulkan = true
-  arkweb_pull_to_refresh = true
-  arkweb_ex_http_dns_fallback = true
   arkweb_d_vsync = true
   arkweb_screen_offset = true
   arkweb_canvas_commit = true

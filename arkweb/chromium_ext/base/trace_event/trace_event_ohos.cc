@@ -38,8 +38,6 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
 };
 
 void StartObserveTraceEnable() {
-// todo: check webview
-#if BUILDFLAG(IS_ARKWEB_EXT)
   std::unique_ptr<TraceObserver> traceObserver =
       std::make_unique<TraceObserver>();
   auto& system_properties_adapter = OHOS::NWeb::OhosAdapterHelper::GetInstance()
@@ -52,7 +50,6 @@ void StartObserveTraceEnable() {
     isHiTraceEnable = true;
     isACETraceEnable = true;
   }
-#endif
 }
 
 bool IsBytraceEnable() {

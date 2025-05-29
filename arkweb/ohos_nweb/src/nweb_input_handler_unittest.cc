@@ -23,13 +23,9 @@
 #define private public
 #include "arkweb/build/features/features.h"
 #include "arkweb/ohos_nweb/src/capi/nweb_devtools_message_handler.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "nweb_delegate_interface.h"
 #include "nweb_input_handler.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 using namespace testing;
 namespace OHOS::NWeb {

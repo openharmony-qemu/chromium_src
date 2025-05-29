@@ -19,7 +19,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-#include "build/build_config.h"
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "cef/include/cef_client.h"
 #include "cef/include/cef_display_handler.h"
 #include "cef/include/cef_command_line.h"
@@ -28,10 +28,6 @@
 #include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "gtest/gtest.h"
 #include "nweb.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #define DEFAULT_FONT_SIZE 16
 #define DEFAULT_FIXED_FONT_SIZE 33

@@ -951,7 +951,7 @@ void WebContentsImplExt::RenderViewReady(RenderViewHost* rvh) {
 }
 void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle) {
   WebContentsImpl::DidFinishNavigation(navigation_handle);
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+#if BUILDFLAG(ARKWEB_EXT_PULL_TO_REFRESH)
   if (navigation_handle->IsInPrimaryMainFrame() && view_) {
     view_->DidStopRefresh();
   }

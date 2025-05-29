@@ -16,7 +16,7 @@
 #ifndef NET_DNS_HOST_RESOLVER_MANAGER_FOR_INCLUDE_H
 #define NET_DNS_HOST_RESOLVER_MANAGER_FOR_INCLUDE_H
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 public:
 // Return true if Doh fallback server(s) exist and it/they can resolve
 // successfully

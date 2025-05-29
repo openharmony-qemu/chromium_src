@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
@@ -27,10 +28,6 @@
 #include "components/sync/protocol/data_type_state.pb.h"
 #include "sql/database.h"
 #include "sql/meta_table.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 #if BUILDFLAG(IS_IOS)
 #include "base/gtest_prod_util.h"

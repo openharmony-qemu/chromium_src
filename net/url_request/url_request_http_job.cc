@@ -111,7 +111,7 @@
 #include "net/android/network_library.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "base/command_line.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
@@ -1221,7 +1221,7 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
   }
 }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
@@ -1345,12 +1345,12 @@ void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
   }
   OnStartCompleted(result);
 }
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   switch (state_) {
     case RetryState::INIT:
       MaybeRetryWithSecureDnsOnly(result);

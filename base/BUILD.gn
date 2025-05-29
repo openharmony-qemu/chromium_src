@@ -1055,7 +1055,7 @@ component("base") {
     "//third_party/modp_b64",
   ]
 
-  if (defined(report_sys_event) && report_sys_event) {
+  if (report_sys_event) {
     defines += [ "REPORT_SYS_EVENT" ]
   }
  

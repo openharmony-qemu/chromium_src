@@ -142,7 +142,7 @@
 #endif // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "base/command_line.h"
 #endif
@@ -661,7 +661,7 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
   if (https_dns_fallback_enabled_) {
     WarmUpHttpsDnsFallback(context);
@@ -951,7 +951,7 @@ HostResolverManager::Job* HostResolverManager::AddJobWithoutRequest(
     RequestPriority priority,
     const NetLogWithSource& source_net_log) {
   auto new_job =
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       std::make_unique<ArkWebHostResolverManagerJobExt>(
 #else
       std::make_unique<Job>(
@@ -1302,7 +1302,7 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
     out_tasks->push_back(TaskType::SYSTEM);
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
     out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
   }
@@ -1405,7 +1405,7 @@ void HostResolverManager::CreateTaskSequence(
       break;
   }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
       out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
     out_tasks->pop_back();
@@ -1769,7 +1769,7 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
   }
   invalidation_in_progress_ = false;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableNwebExHttpDnsFallback)) {
     LOG(INFO) << "Host caches has been invalidated";

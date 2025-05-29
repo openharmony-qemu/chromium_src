@@ -38,9 +38,7 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace net {
 
@@ -166,7 +164,7 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
     STATE_NOTIFY_BEFORE_CREATE_STREAM,
     STATE_CREATE_STREAM,
     STATE_CREATE_STREAM_COMPLETE,
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY,
     STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE,
 #endif
@@ -517,7 +515,7 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   bool close_connection_on_destruction_ = false;
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool stream_created_ = false;
 #endif
 

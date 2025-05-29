@@ -806,7 +806,7 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
       request_info_.network_anonymization_key, request_info_.secure_dns_policy,
       request_info_.socket_tag, net_log_, connection_.get(), io_callback_,
       proxy_auth_callback
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       ,
       request_info_.secure_dns_only
 #endif

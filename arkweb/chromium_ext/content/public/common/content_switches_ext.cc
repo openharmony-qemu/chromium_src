@@ -62,7 +62,7 @@ const char kOhosCustomScheme[] = "ohos-custom-scheme";
 const char kOhSchemeHandlerCustomScheme[] = "ohos-scheme-handler-custom-scheme";
 #endif
 
-#if BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 const char kEnableMediaAvsession[] = "enable-nweb-media-avsession";
 const char kEnableNwebEx[] = "enable-nweb-ex";
 const char kEnableNwebExReportCrashpad[] = "enable-nweb-ex-report-crashpad";
@@ -76,8 +76,6 @@ const char kEnableNwebExUa[] = "enable-nweb-ex-ua";
 const char kEnableNwebExNetworkLoad[] = "enable-nweb-ex-network-load";
 const char kEnableNwebExDownload[] = "enable-nweb-ex-download";
 const char kEnableNwebExGetZoomLevel[] = "enable-nweb-ex-get-zoom-level";
-#endif
-#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
 const char kEnableNwebExPullToRefresh[] = "enable-nweb-ex-pull-to-refresh";
 #endif
 

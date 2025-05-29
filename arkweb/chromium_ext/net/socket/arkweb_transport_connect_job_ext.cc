@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/check_op.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -32,13 +33,9 @@
 #include "url/scheme_host_port.h"
 #include "url/url_constants.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 namespace net {
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
 void ArkWebTransportConnectJobExt::SetConnectTimeout(int timeout_override) {
   timeout_override_ = base::Seconds(timeout_override);
 }

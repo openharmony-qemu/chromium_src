@@ -101,7 +101,7 @@ class DnsClientImpl : public DnsClient {
     return config && !config->doh_config.servers().empty();
   }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool CanUseSecureDnsFallbackTransactions(
       ResolveContext* context) const override {
     if (context->IsHttpsDnsFallbackEnabled() && CanUseSecureDnsTransactions()) {

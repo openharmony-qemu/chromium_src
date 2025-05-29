@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -20,10 +21,6 @@
 #include "components/password_manager/core/browser/password_store/smart_bubble_stats_store.h"
 #include "components/prefs/pref_service.h"
 #include "components/sync/model/wipe_model_upon_sync_disabled_behavior.h"
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 
 namespace base {
 class SequencedTaskRunner;

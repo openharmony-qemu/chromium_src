@@ -45,7 +45,7 @@ class NET_EXPORT_PRIVATE ArkWebHostResolverDnsTaskExt final {
   ArkWebHostResolverDnsTaskExt& operator=(const ArkWebHostResolverDnsTaskExt&) = delete;
 
  private:
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   void ArkWebSetNotNeedQueryType(int legacy_results_error, DnsQueryType dns_query_type);
   void ArkWebFailedTransaction(int net_error, std::optional<DnsQueryType> failed_transaction_type);
   bool AnyAOrAAAATransactionRemain();
@@ -53,7 +53,7 @@ class NET_EXPORT_PRIVATE ArkWebHostResolverDnsTaskExt final {
                                    int net_error,
                                    DnsQueryType dns_query_type);
   void SetNotNeedMoreAttemptIPQueryType(DnsQueryType dns_query_type);
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#endif  // BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
 };
 
 }  // namespace net

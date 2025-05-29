@@ -221,6 +221,13 @@ void AudioConverter::SourceCallback(int fifo_frame_delay, AudioBus* dest) {
 
   // Have each mixer render its data into an output buffer then mix the result.
   for (InputCallback* input : transform_inputs_) {
+#ifdef BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    if (!input || !provide_input_dest) {
+      LOG(ERROR) << "OhMeida: audio_converter input is null? " << !input
+        << "provide_input_dest is null? " << !provide_input_dest;
+      continue;
+    }
+#endif
     const float volume = input->ProvideInput(provide_input_dest,
                                              total_frames_delayed, glitch_info);
     // Optimize the most common single input, full volume case.

@@ -456,8 +456,7 @@ void LayerTreeImpl::GenerateCompositorFrame(
     viz::HitTestRegionList& out_hit_test_region_list) {
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-                    std::to_string(args.trace_id), "step",
-                    "GenerateCompositorFrame");
+                    std::to_string(args.trace_id), "step", "GenerateCompositorFrame");
 #endif
   for (auto& resource_request :
        ui_resource_manager_.TakeUIResourcesRequests()) {

@@ -252,9 +252,8 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   bool ret = internal::GetNetworkListUsingGetifaddrs(networks, policy);
   // Use GetInterfaceConnectionType() to sharpen up interface types.
-  for (NetworkInterface& network : *networks) {
+  for (NetworkInterface& network : *networks)
     network.type = internal::GetInterfaceConnectionType(network.name);
-  }
   return ret;
 #else
 

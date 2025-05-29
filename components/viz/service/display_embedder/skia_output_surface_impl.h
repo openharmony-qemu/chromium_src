@@ -215,6 +215,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceImpl : public SkiaOutputSurface {
   void ReadbackForTesting(
       CopyOutputRequest::CopyOutputRequestCallback result_callback) override;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetNativeInnerWeb(bool isInnerWeb) override;
+#endif
+
  private:
   bool Initialize();
   void InitializeOnGpuThread(bool* result);

@@ -88,7 +88,6 @@ gfx::mojom::GpuMemoryBufferPlatformHandlePtr StructTraits<
     }
 #if BUILDFLAG(ARKWEB_VULKAN)
     case gfx::OHOS_NATIVE_BUFFER: {
-      // TODO: Implement this
     }
 #endif
   }

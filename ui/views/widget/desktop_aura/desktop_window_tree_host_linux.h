@@ -125,7 +125,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostLinux
 
   uint32_t modal_dialog_counter_ = 0;
 
-  // Override the screen bounds when the host is a child window.
+   // Override the screen bounds when the host is a child window.
   gfx::Rect screen_bounds_;
 
   // The display and the native X window hosting the root window.

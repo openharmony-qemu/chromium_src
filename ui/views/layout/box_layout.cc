@@ -301,11 +301,7 @@ void BoxLayout::InitializeChildData(BoxLayoutData& data) const {
 
     data.child_data.emplace_back();
     BoxChildData& child_data = data.child_data.back();
-#if defined(__clang__) && (__clang_major__ < 17)
-    data.layout.child_layouts.emplace_back(ChildLayout{child, true});
-#else
     data.layout.child_layouts.emplace_back(child, true);
-#endif
     gfx::Insets* margins = child ? child->GetProperty(kMarginsKey) : nullptr;
     if (margins) {
       child_data.margins = Normalize(orientation_, *margins);

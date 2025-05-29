@@ -70,12 +70,13 @@ class MEDIA_EXPORT OHOSAudioCapturerSource final : public AudioCapturerSource {
   scoped_refptr<base::SingleThreadTaskRunner> capturer_task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
   AudioParameters params_;
-  CaptureCallback* callback_ = nullptr;
+  raw_ptr<CaptureCallback> callback_ = nullptr;
   base::Lock callback_lock_;
   std::shared_ptr<AudioCapturerReadCallback> audioCapturerReadCallback_ =
       nullptr;
+  raw_ptr<FILE> dumpFile_ = nullptr;
+  std::atomic<bool> is_stopped_{false};
   base::WeakPtrFactory<OHOSAudioCapturerSource> weak_factory_{this};
-  FILE* dumpFile_ = nullptr;
 };
 
 }  // namespace media

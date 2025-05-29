@@ -77,6 +77,36 @@ std::unique_ptr<OhosVideoImageBacking> OhosVideoImageBacking::Create(
       std::move(context_state));
 }
 
+// Static.
+absl::optional<VulkanYCbCrInfo> OhosVideoImageBacking::GetYcbcrInfo(
+    NativeImageTextureOwner* texture_owner,
+    viz::VulkanContextProvider* vulkan_context_provider)
+{
+  if (!vulkan_context_provider) {
+    return absl::nullopt;
+  }
+
+  // Get AHardwareBuffer from the latest frame.
+  auto scoped_hardware_buffer = texture_owner->GetNativeBuffer();
+  if (!scoped_hardware_buffer) {
+    return absl::nullopt;
+  }
+
+  DCHECK(scoped_hardware_buffer->buffer());
+  VulkanImplementation* vk_implementation =
+      vulkan_context_provider->GetVulkanImplementation();
+  VkDevice vk_device =
+      vulkan_context_provider->GetDeviceQueue()->GetVulkanDevice();
+
+  VulkanYCbCrInfo ycbcr_info;
+  if (!vk_implementation->GetSamplerYcbcrConversionInfo(
+      vk_device, scoped_hardware_buffer->TakeBuffer(), &ycbcr_info)) {
+    LOG(ERROR) << "Failed to get the ycbcr info.";
+    return absl::nullopt;
+  }
+  return absl::optional<VulkanYCbCrInfo>(ycbcr_info);
+}
+
 std::unique_ptr<AbstractTextureOHOS> OhosVideoImageBacking::GenAbstractTexture(
     const bool passthrough) {
   if (passthrough) {

@@ -73,8 +73,7 @@ class COMPONENT_EXPORT(LINUX_UI) PrintingContextLinuxDelegate {
   virtual printing::PrintDialogLinuxInterface* CreatePrintDialog(
       printing::PrintingContextLinux* context) = 0;
 
-  virtual gfx::Size GetPdfPaperSize(
-      printing::PrintingContextLinux* context) = 0;
+  virtual gfx::Size GetPdfPaperSize(printing::PrintingContextLinux* context) = 0;
 
   static PrintingContextLinuxDelegate* SetInstance(
       PrintingContextLinuxDelegate* delegate);
@@ -87,7 +86,7 @@ class COMPONENT_EXPORT(LINUX_UI) LinuxUi
 #if BUILDFLAG(ENABLE_PRINTING)
     : public PrintingContextLinuxDelegate
 #endif
-{
+ {
  public:
   // Describes the window management actions that could be taken in response to
   // a middle click in the non client area.

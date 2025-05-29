@@ -77,7 +77,7 @@ class MEDIA_EXPORT DemuxerManager {
     virtual void RestartForHls() = 0;
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     virtual void RestartForPrimitive() = 0;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
     virtual bool IsSecurityOriginCryptographic() const = 0;
 
@@ -129,8 +129,7 @@ class MEDIA_EXPORT DemuxerManager {
   void OnPipelineError(PipelineStatus error);
   void SetLoadedUrl(GURL url);
   const GURL& LoadedUrl() const;
-#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   void PopulateHlsHistograms(bool cryptographic_url);
   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
 #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
@@ -153,15 +152,13 @@ class MEDIA_EXPORT DemuxerManager {
       bool should_create_custom_renderer,
       uint32_t initial_preload,
       uint32_t media_source_type,
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
       DemuxerCreatedCB on_demuxer_created,
       base::flat_map<std::string, std::string> headers);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
   void SetAllowMediaPlayerRendererCredentials(bool allow);
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   // Methods that help manage or access |data_source_|
   DataSource* GetDataSourceForTesting() const;
@@ -224,7 +221,7 @@ class MEDIA_EXPORT DemuxerManager {
   void RestartClientForHLS();
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void RestartClientForPrimitive();
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
 
 #if BUILDFLAG(ENABLE_FFMPEG)
@@ -285,13 +282,11 @@ class MEDIA_EXPORT DemuxerManager {
   // RAII member for notifying demuxers of memory pressure.
   std::unique_ptr<base::MemoryPressureListener> memory_pressure_listener_;
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA) || \
-    BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
   // Used to determine whether to allow credentials or not for
   // MediaPlayerRenderer.
   bool allow_media_player_renderer_credentials_ = false;
-#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)||
-        // BUILDFLAG(ARKWEB_MEDIA_HLS)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   HlsFallbackImplementation hls_fallback_ = HlsFallbackImplementation::kNone;
 

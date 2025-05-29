@@ -11,12 +11,6 @@ arkweb_media_audio_ohos_sources = [
     "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_capturer_source.cc",
     "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_capturer_source.h",
 
-    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.cc",
-    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.h",
-
     "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager.cc",
     "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_manager.h",
-
-    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream.cc",
-    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream.h",
 ]

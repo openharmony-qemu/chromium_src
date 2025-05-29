@@ -359,11 +359,11 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
 
   base::OneShotTimer doh_autoupgrade_success_metric_timer_;
 
-  base::WeakPtrFactory<ResolveContext> weak_ptr_factory_{this};
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
   bool is_https_dns_fallback_enabled_{false};
 #endif
+
+  base::WeakPtrFactory<ResolveContext> weak_ptr_factory_{this};
 };
 
 }  // namespace net

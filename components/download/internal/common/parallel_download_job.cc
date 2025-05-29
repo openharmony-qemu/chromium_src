@@ -17,6 +17,15 @@
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "net/url_request/referrer_policy.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace download {
 namespace {
 const int kDownloadJobVerboseLevel = 1;
@@ -280,8 +289,19 @@ void ParallelDownloadJob::CreateRequest(int64_t offset) {
   // TODO(xingliu): We should not support redirect at all for parallel requests.
   // Currently the network service code path still can redirect as long as it's
   // the same origin.
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableNwebExDownload)) {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kFollow);
+  } else {
+      download_params->set_cross_origin_redirects(
+          network::mojom::RedirectMode::kError);
+  }
+#else
   download_params->set_cross_origin_redirects(
       network::mojom::RedirectMode::kError);
+#endif
 
   // Send the request.
   mojo::PendingRemote<device::mojom::WakeLockProvider> wake_lock_provider;

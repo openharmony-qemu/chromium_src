@@ -708,9 +708,8 @@ void RenderText::SetWhitespaceElision(std::optional<bool> whitespace_elision) {
 }
 
 void RenderText::SetDrawStringsFlags(int flags) {
-  if (draw_strings_flags_ == flags) {
+  if (draw_strings_flags_ == flags)
     return;
-  }
   draw_strings_flags_ = flags;
   cached_bounds_and_offset_valid_ = false;
   OnTextAttributeChanged();
@@ -2158,8 +2157,8 @@ void RenderText::OnTextAttributeChanged() {
     // be larger than with the underline hidden.
     int char_pos = -1;
     int char_span = 0;
-    layout_text_ = gfx::LocateAndRemoveAcceleratorChar(layout_text_, &char_pos,
-                                                       &char_span);
+    layout_text_ =
+        gfx::LocateAndRemoveAcceleratorChar(layout_text_, &char_pos, &char_span);
     if (char_pos != -1) {
       gfx::Range range(char_pos, char_pos + char_span);
       styles_[TEXT_STYLE_UNDERLINE].ApplyValue(true, range);

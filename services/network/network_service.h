@@ -62,21 +62,9 @@
 #include "services/network/trust_tokens/trust_token_key_commitments.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_CT_SUPPORTED)
 #include "services/network/public/mojom/ct_log_info.mojom.h"
 #endif  // BUILDFLAG(IS_CT_SUPPORTED)
-
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "arkweb/chromium_ext/servieces/network/public/mojom/network_config_ohos.mojom.h"
-#endif
 
 namespace mojo_base {
 class ProtoWrapper;
@@ -100,6 +88,10 @@ class NetLogProxySink;
 class NetworkContext;
 class NetworkService;
 class SCTAuditingCache;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+class ArkWebNetworkServiceExt;
+#endif
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
     : public mojom::NetworkService {
@@ -116,6 +108,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   NetworkService& operator=(const NetworkService&) = delete;
 
   ~NetworkService() override;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  virtual ArkWebNetworkServiceExt* AsArkWebNetworkServiceExt() {
+    return nullptr;
+  }
+#endif
 
   // Allows late binding if the mojo receiver wasn't specified in the
   // constructor.
@@ -369,17 +368,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 
   static NetworkService* GetNetworkServiceForTesting();
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  void SetConnectTimeout(int seconds) override;
-  void BindDnsToNetwork(int network) override;
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  void SetHttpsDnsFallbackData(
-      mojom::HttpsDnsFallbackConfigPtr config) override;
-#endif
-
  private:
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  friend class ArkWebNetworkServiceExt;
+#endif
   class DelayedDohProbeActivator;
 
   void InitMockNetworkChangeNotifierForTesting();
@@ -397,11 +390,6 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
       mojo::PendingRemote<mojom::SystemDnsResolver> override_remote);
 
   void SetEnvironment(std::vector<mojom::EnvironmentVariablePtr> environment);
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  void SetHttpsDnsHostResolver(bool enabled,
-                               const std::string& server_template);
-#endif
 
   bool initialized_ = false;
 
@@ -525,10 +513,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   // leaking stale listeners between tests.
   std::unique_ptr<net::NetworkChangeNotifier> mock_network_change_notifier_;
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
   int timeout_override_ = 0;
-  net::handles::NetworkHandle network_for_dns_{
-      net::handles::kInvalidNetworkHandle};
+  net::handles::NetworkHandle network_for_dns_{net::handles::kInvalidNetworkHandle};
 #endif
 #if BUILDFLAG(IS_LINUX)
   mojo::Remote<mojom::GssapiLibraryLoadObserver> gssapi_library_load_observer_;
@@ -537,16 +524,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   std::unique_ptr<network::tpcd::metadata::Manager> tpcd_metadata_manager_;
 
   base::WeakPtrFactory<NetworkService> weak_factory_{this};
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  int connect_job_with_secure_dns_only_timeout_{15};
-  bool cfg_https_dns_fallback_enabled_ = false;
-  std::string cfg_http_dns_server_template_;
-  bool real_https_dns_fallback_enabled_ = false;
-  std::string real_http_dns_server_template_;
-#endif
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_SERVICE_H_

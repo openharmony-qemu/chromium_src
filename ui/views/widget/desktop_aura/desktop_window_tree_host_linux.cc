@@ -194,16 +194,14 @@ Widget::MoveLoopResult DesktopWindowTreeHostLinux::RunMoveLoop(
 }
 
 gfx::Rect DesktopWindowTreeHostLinux::GetWindowBoundsInScreen() const {
-  if (!screen_bounds_.IsEmpty()) {
+  if (!screen_bounds_.IsEmpty())
     return screen_bounds_;
-  }
   return DesktopWindowTreeHostPlatform::GetWindowBoundsInScreen();
 }
 
 gfx::Point DesktopWindowTreeHostLinux::GetLocationOnScreenInPixels() const {
-  if (!screen_bounds_.IsEmpty()) {
+  if (!screen_bounds_.IsEmpty())
     return screen_bounds_.origin();
-  }
   return DesktopWindowTreeHostPlatform::GetLocationOnScreenInPixels();
 }
 

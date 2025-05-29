@@ -48,6 +48,7 @@ class LayerImpl;
 class ScrollbarController;
 class ScrollElasticityHelper;
 class Viewport;
+class InputHandlerUtils;
 
 enum class PointerResultType { kUnhandled = 0, kScrollbarScroll };
 
@@ -158,9 +159,8 @@ class CC_EXPORT InputHandlerClient {
   virtual void DeliverInputForBeginFrame(const viz::BeginFrameArgs& args) = 0;
   virtual void DeliverInputForHighLatencyMode() = 0;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  virtual void WillHandleScrollUpdateForInternalBeginFrame(
-      const viz::BeginFrameArgs& args) {}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void WillHandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void DeliverInputForDeadline() = 0;
   virtual void DidFinishImplFrame() = 0;
   virtual bool HasQueuedInput() const = 0;
@@ -217,6 +217,7 @@ struct InputHandlerCommitData {
 // TODO: consider revising these tests to reduce reliance on mocking.
 class CC_EXPORT InputHandler : public InputDelegateForCompositor {
  public:
+  friend class InputHandlerUtils;
   // Creates an instance of the InputHandler and binds it to the layer tree
   // delegate. The delegate owns the InputHandler so their lifetimes
   // are tied together, hence, this returns a WeakPtr.
@@ -572,15 +573,13 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   bool IsHandlingTouchSequence() const override;
   bool IsCurrentScrollMainRepainted() const override;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  void HandleScrollUpdateForInternalBeginFrame(
-      const viz::BeginFrameArgs& args) override;
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool HasQueuedInput() const override;
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  LayerImpl* GetLayerImplIsHitByPoint(const gfx::Point& viewport_point);
-  LayerImpl* GetNativeLayerImpl(const gfx::Point& viewport_point);
-  LayerImpl* GetLayerImplById(int id);
-#endif
+  InputHandlerUtils* handler_utils() {
+    return handler_utils_.get();
+  }
+
  private:
   FRIEND_TEST_ALL_PREFIXES(LayerTreeHostImplTest,
                            AbortAnimatedScrollBeforeStartingAutoscroll);
@@ -908,6 +907,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   // The set of scroll containers for which an impl scroll ended between the
   // last commit and the next one.
   base::flat_set<ElementId> pending_scrollend_containers_;
+
+  std::unique_ptr<InputHandlerUtils> handler_utils_;
 
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.

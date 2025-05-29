@@ -141,11 +141,10 @@ void WakeLock::CreateWakeLock() {
 
   wake_lock_ = std::make_unique<PowerSaveBlocker>(
       type_, reason_, *description_, main_task_runner_, file_task_runner_
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      ,
-      context_id_
-#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  );
+      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      , context_id_
+      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      );
   observer_->OnWakeLockActivated(type_);
 
   if (type_ != mojom::WakeLockType::kPreventDisplaySleep)
@@ -162,6 +161,10 @@ void WakeLock::CreateWakeLock() {
   if (native_view)
     wake_lock_.get()->InitDisplaySleepBlocker(native_view);
 #endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  wake_lock_.get()->InitDisplaySleepBlocker(context_id_);
+#endif
 }
 
 void WakeLock::RemoveWakeLock() {
@@ -177,11 +180,10 @@ void WakeLock::SwapWakeLock() {
   // created.
   auto new_wake_lock = std::make_unique<PowerSaveBlocker>(
       type_, reason_, *description_, main_task_runner_, file_task_runner_
-#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
-      ,
-      context_id_
-#endif  // BUILDFLAG(ARKWEB_SCREEN_LOCK)
-  );
+      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      , context_id_
+      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+      );
   wake_lock_.swap(new_wake_lock);
 }
 

@@ -15,8 +15,8 @@
 
 #include "nweb_download_manager_impl.h"
 
-#include "cef/libcef/browser/net_service/net_helpers.h"
 #include "cef_delegate/nweb_application.h"
+#include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "content/public/browser/network_service_instance.h"
 #include "nweb_hilog.h"
 #include "services/network/network_service.h"

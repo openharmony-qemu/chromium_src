@@ -38,7 +38,7 @@ class DisplayClient {
       mojom::CompositorFrameSinkType* type) = 0;
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

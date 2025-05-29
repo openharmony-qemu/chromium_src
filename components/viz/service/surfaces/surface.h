@@ -437,6 +437,9 @@ class VIZ_SERVICE_EXPORT Surface final {
   base::flat_set<raw_ptr<SurfaceAllocationGroup, CtnExperimental>>
       blocking_allocation_groups_;
 
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  float current_page_scale_factor_ = 0.f;
+#endif
   bool is_fallback_ = false;
 
   bool is_latency_info_taken_ = false;

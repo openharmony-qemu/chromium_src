@@ -32,9 +32,6 @@ void DisplayCutoutHostOhos::BindReceiver(
 void DisplayCutoutHostOhos::NotifyViewportFitChanged(
     blink::mojom::ViewportFit value) {
   content::RenderFrameHost* rfh = receivers_.GetCurrentTargetFrame();
-  if (!rfh->IsInPrimaryMainFrame()) {
-    return;
-  }
   SetCurrentRenderFrameHost(rfh, value);
 }
 
@@ -71,14 +68,36 @@ void DisplayCutoutHostOhos::SetCurrentRenderFrameHost(
     return;
   }
 
-  web_contents_impl_->NotifyViewportFitChanged(value);
-  if (value == blink::mojom::ViewportFit::kCover) {
-    // Update the |current_rfh_| with the new frame.
-    current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
-    // Send the current safe area to the new frame.
-    SendSafeAreaToFrame(rfh, insets_);
+  LOG(INFO) << __func__ << " rfh:" << rfh
+            << " current_rfh_:" << current_rfh_.get()
+            << " value:" << (int)value;
+  if (rfh->IsInPrimaryMainFrame()) {
+    web_contents_impl_->NotifyViewportFitChanged(value);
+    mainFrameViewportFit_ = value;
+    if (value == blink::mojom::ViewportFit::kCover) {
+      // Update the |current_rfh_| with the new frame.
+      current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
+      // Send the current safe area to the new frame.
+      SendSafeAreaToFrame(rfh, insets_);
+    } else {
+      SendSafeAreaToFrame(rfh, gfx::Insets());
+    }
   } else {
-    SendSafeAreaToFrame(rfh, gfx::Insets());
+    switch (mainFrameViewportFit_) {
+        case blink::mojom::ViewportFit::kContain:
+        case blink::mojom::ViewportFit::kAuto: {
+            SendSafeAreaToFrame(rfh, gfx::Insets());
+            break;
+        }
+        case blink::mojom::ViewportFit::kCover:
+        default: {
+            // Update the |current_rfh_| with the new frame.
+            current_rfh_ = static_cast<RenderFrameHostImpl*>(rfh)->GetWeakPtr();
+            // Send the current safe area to the new frame.
+            SendSafeAreaToFrame(rfh, insets_);
+            break;
+        }
+    }
   }
 }
 

@@ -276,6 +276,16 @@ class NET_EXPORT_PRIVATE ConnectJob {
   virtual void SetConnectTimeout(int timeout_override) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  virtual void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
+
  protected:
   const SocketTag& socket_tag() const { return socket_tag_; }
   ClientSocketFactory* client_socket_factory() {
@@ -364,6 +374,10 @@ class NET_EXPORT_PRIVATE ConnectJob {
   // This is called when |this| is deleted.
   base::ScopedClosureRunner done_closure_;
   const NetLogEventType net_log_connect_event_type_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

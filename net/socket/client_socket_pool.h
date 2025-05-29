@@ -40,6 +40,10 @@ struct NetworkTrafficAnnotationTag;
 class ProxyChain;
 struct SSLConfig;
 class StreamSocket;
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+class ArkWebClientSocketPoolExt;
+#endif
 
 // ClientSocketPools are layered. This defines an interface for lower level
 // socket pools to communicate with higher layer pools.
@@ -237,17 +241,36 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       return allowed_bad_certs_;
     }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) {
+    from_preload_ = from_preload;
+  }
+
+  bool IsFromPreload() const {
+    return from_preload_;
+  }
+#endif
+
    private:
     friend class base::RefCounted<SocketParams>;
     ~SocketParams();
 
     std::vector<SSLConfig::CertAndStatus> allowed_bad_certs_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    bool from_preload_ = false;
+#endif
   };
 
   ClientSocketPool(const ClientSocketPool&) = delete;
   ClientSocketPool& operator=(const ClientSocketPool&) = delete;
 
   ~ClientSocketPool() override;
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  std::unique_ptr<ArkWebClientSocketPoolExt> utils;
+#endif
 
   // Requests a connected socket with a specified GroupId.
   //
@@ -394,14 +417,6 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 
   static base::TimeDelta used_idle_socket_timeout();
   static void set_used_idle_socket_timeout(base::TimeDelta timeout);
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  void SetConnectTimeout(int timeout_override);
-  int GetConnectTimeout();
-#endif
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  void SetConnectJobWithSecureDnsOnlyTimeout(int seconds);
-  int GetConnectJobWithSecureDnsOnlyTimeout();
-#endif
 
  protected:
   ClientSocketPool(bool is_for_websockets,
@@ -422,12 +437,6 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
       RequestPriority request_priority,
       SocketTag socket_tag,
       ConnectJob::Delegate* delegate);
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  int timeout_override_{0};
-#endif
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  int connect_job_with_secure_dns_only_timeout_{15};
-#endif
 
  private:
   const bool is_for_websockets_;
@@ -436,5 +445,10 @@ class NET_EXPORT ClientSocketPool : public LowerLayeredPool {
 };
 
 }  // namespace net
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/socket/arkweb_client_socket_pool_ext.h"
+#endif
 
 #endif  // NET_SOCKET_CLIENT_SOCKET_POOL_H_

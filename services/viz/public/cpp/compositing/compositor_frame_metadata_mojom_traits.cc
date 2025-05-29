@@ -4,7 +4,6 @@
 
 #include "services/viz/public/cpp/compositing/compositor_frame_metadata_mojom_traits.h"
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "build/build_config.h"
 #include "services/viz/public/cpp/compositing/begin_frame_args_mojom_traits.h"
@@ -18,6 +17,7 @@
 #include "ui/gfx/mojom/display_color_spaces_mojom_traits.h"
 #include "ui/gfx/mojom/selection_bound_mojom_traits.h"
 #include "ui/latency/mojom/latency_info_mojom_traits.h"
+#include "arkweb/build/features/features.h"
 
 namespace mojo {
 

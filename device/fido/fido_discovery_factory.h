@@ -121,6 +121,10 @@ class COMPONENT_EXPORT(DEVICE_FIDO) FidoDiscoveryFactory {
   MaybeCreateWinWebAuthnApiDiscovery();
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_FIDO)
+  virtual std::unique_ptr<FidoDiscoveryBase> CreateOhosFidoDiscovery();
+#endif  // BUILDFLAG(ARKWEB_FIDO)
+
 #if BUILDFLAG(IS_CHROMEOS)
   // Sets a callback to generate an identifier when making DBUS requests to
   // u2fd.

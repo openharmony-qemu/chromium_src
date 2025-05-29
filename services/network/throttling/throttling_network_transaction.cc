@@ -19,6 +19,10 @@
 #include "services/network/throttling/throttling_network_interceptor.h"
 #include "services/network/throttling/throttling_upload_data_stream.h"
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/services/network/throttling/throttling_network_transaction_for_include.cc"
+#endif
+
 namespace network {
 
 ThrottlingNetworkTransaction::ThrottlingNetworkTransaction(
@@ -146,23 +150,6 @@ int ThrottlingNetworkTransaction::Start(const net::HttpRequestInfo* request,
       net_log);
   return Throttle(true, result);
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-int ThrottlingNetworkTransaction::RestartWithSecureDnsOnly(
-    net::CompletionOnceCallback callback) {
-  if (CheckFailed()) {
-    return net::ERR_INTERNET_DISCONNECTED;
-  }
-  if (!interceptor_) {
-    return network_transaction_->RestartWithSecureDnsOnly(std::move(callback));
-  }
-
-  callback_ = std::move(callback);
-  int result = network_transaction_->RestartWithSecureDnsOnly(base::BindOnce(
-      &ThrottlingNetworkTransaction::IOCallback, base::Unretained(this), true));
-  return Throttle(true, result);
-}
-#endif
 
 int ThrottlingNetworkTransaction::RestartIgnoringLastError(
     net::CompletionOnceCallback callback) {

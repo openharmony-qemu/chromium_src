@@ -1,8 +1,10 @@
 // Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+// found in the LICENSE file
 
 #include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
+
+#include "content/public/common/content_switches.h"
 
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
 #include "content/public/browser/custom_media_player_listener.h"
@@ -30,6 +32,14 @@
 #include "content/browser/ohos/date_time_chooser_ohos.h"
 #endif  // ARKWEB_CSS_INPUT_TIME
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "content/browser/media/video_assistant/video_assistant.h"
+#include "content/public/browser/media_player_controller.h"
+#include "content/public/browser/media_player_listener.h"
+#include "gpu/ipc/common/nweb_native_window_tracker.h"
+#include "arkweb/ohos_adapter_ndk/ohos_adapter_helper_ext.h"
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
 #include "base/trace_event/optional_trace_event.h"
 #include "components/subresource_filter/content/browser/ohos_adblock_config.h"
 #include "content/browser/browser_main_loop.h"
@@ -38,11 +48,29 @@
 #include "content/browser/wake_lock/wake_lock_context_host.h"
 #include "content/browser/web_contents/web_contents_view.h"
 #include "content/public/browser/web_contents_delegate.h"
+#include "content/browser/gpu/gpu_process_host.h"
 
 namespace content {
 
 WebContentsImplExt::WebContentsImplExt(BrowserContext* browser_context)
-    : WebContentsImpl(browser_context) {}
+    : WebContentsImpl(browser_context) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  video_assistant_ = std::make_unique<VideoAssistant>();
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  native_web_contents_observer_ =
+      std::make_unique<NativeWebContentsObserver>(this);
+#endif
+}
+
+WebContentsImplExt::~WebContentsImplExt() {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  DelAllVideoSurfaces();
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  native_embed_rect_info_map_.clear();
+#endif
+}
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
 void WebContentsImplExt::StartCamera(int nWebID) {
@@ -58,7 +86,7 @@ void WebContentsImplExt::StartCamera(int nWebID) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StartCamera(nWebID);
+  videoCaptureManager->AsVideoCaptureManagerExt()->StartCamera(nWebID);
 }
 
 void WebContentsImplExt::StopCamera(int nWebID) {
@@ -74,7 +102,7 @@ void WebContentsImplExt::StopCamera(int nWebID) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->StopCamera(nWebID);
+  videoCaptureManager->AsVideoCaptureManagerExt()->StopCamera(nWebID);
 }
 
 void WebContentsImplExt::CloseCamera(int nWebID) {
@@ -90,7 +118,7 @@ void WebContentsImplExt::CloseCamera(int nWebID) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
   }
-  videoCaptureManager->CloseCamera(nWebID);
+  videoCaptureManager->AsVideoCaptureManagerExt()->CloseCamera(nWebID);
 }
 
 int WebContentsImplExt::GetNWebId() {
@@ -427,18 +455,24 @@ void WebContentsImplExt::ChangeVisibilityOfQuickMenu() {
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
-bool WebContentsImplExt::CloseImageOverlaySelection() {
+void WebContentsImplExt::CloseImageOverlaySelection() {
   if (render_view_host_delegate_view_) {
-    return render_view_host_delegate_view_->CloseImageOverlaySelection();
+    render_view_host_delegate_view_->CloseImageOverlaySelection();
   }
-  return false;
+}
+
+void WebContentsImplExt::OnOverlayZoomChanged() {
+  LOG(DEBUG) << "WebContentsImplExt::OnOverlayZoomChanged";
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->OnOverlayZoomChanged();
+  }
 }
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void WebContentsImplExt::WebExtensionUpdateTabUrl(int32_t tab_id,
                                                   const GURL& url) {
-  OPTIONAL_TRACE_EVENT2("content", "WebContentsImpl::WebExtensionUpdateTabUrl",
+  OPTIONAL_TRACE_EVENT2("content", "WebContentsImplExt::WebExtensionUpdateTabUrl",
                         "tab_id", tab_id, "url", url);
   if (delegate_) {
     delegate_->WebExtensionUpdateTabUrl(tab_id, url);
@@ -489,6 +523,7 @@ void WebContentsImplExt::ClearContextMenu() {
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
 void WebContentsImplExt::EnableSafeBrowsingDetection(bool enable,
                                                      bool strictMode) {
+  is_safe_browsing_config_ = true;
   if (is_safe_browsing_enabled_ != enable) {
     LOG(INFO) << "EnableSafeBrowsingDetection enable " << enable;
     is_safe_browsing_enabled_ = enable;
@@ -497,6 +532,18 @@ void WebContentsImplExt::EnableSafeBrowsingDetection(bool enable,
     LOG(INFO) << "EnableSafeBrowsingDetection strictMode " << strictMode;
     safe_browsing_strict_mode_ = strictMode;
   }
+}
+
+bool WebContentsImplExt::IsSafeBrowsingDetectionConfig() {
+  return is_safe_browsing_config_;
+}
+
+bool WebContentsImplExt::IsSafeBrowsingDetectionStrict() {
+  return safe_browsing_strict_mode_;
+}
+
+bool WebContentsImplExt::IsSafeBrowsingDetectionDisabled() {
+  return !is_safe_browsing_enabled_;
 }
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
@@ -583,4 +630,391 @@ const std::string& WebContentsImplExt::SharedRenderProcessToken() {
 }
 #endif
 
+void WebContentsImplExt::SetDelegate(WebContentsDelegate* delegate) {
+  WebContentsImpl::SetDelegate(delegate);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (delegate_) {
+    video_assistant_ = delegate_->CreateVideoAssistant();
+  }
+  if (!video_assistant_) {
+    video_assistant_ = std::make_unique<VideoAssistant>();
+  }
+#endif  // ARKWEB_VIDEO_ASSISTANT
+}
+
+void WebContentsImplExt::MediaDestroyed(const MediaPlayerId& id) {
+  WebContentsImpl::MediaDestroyed(id);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (video_assistant_) {
+    video_assistant_->OnVideoDestroyed(id);
+  }
+
+  auto iter = surface_widget_map_.find(id);
+  if (iter != surface_widget_map_.end()) {
+    // destroy native window
+    DelVideoSurface(iter->second);
+    surface_widget_map_.erase(iter);
+  }
+#endif  // ARKWEB_VIDEO_ASSISTANT
+}
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void WebContentsImplExt::EnableVideoAssistant(bool enable) {
+  if (video_assistant_->Enabled() == enable) {
+    return;
+  }
+  video_assistant_->EnableVideoAssistant(enable);
+  OnWebPreferencesChanged();
+}
+
+void WebContentsImplExt::ExecuteVideoAssistantFunction(const std::string& cmdId) {
+  video_assistant_->ExecuteVideoAssistantFunction(cmdId);
+}
+
+void WebContentsImplExt::OnShowToast(double duration, const std::string& toast) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to show toast";
+    return;
+  }
+
+  delegate_->OnShowToast(duration, toast);
+}
+
+void WebContentsImplExt::OnReportStatisticLog(const std::string& content) {
+  if (!delegate_) {
+    LOG(ERROR) << "delegate is nullptr when notify to report statistic log";
+    return;
+  }
+
+  delegate_->OnReportStatisticLog(content);
+}
+
+void WebContentsImplExt::CustomWebMediaPlayer(bool enable) {
+  LOG(INFO) << "WebContentsImplExt::CustomWebMediaPlayer enter. enable = " << enable;
+  if (custom_media_player_enabled_ == enable) {
+    return;
+  }
+  custom_media_player_enabled_ = enable;
+  OnWebPreferencesChanged();
+}
+
+void WebContentsImplExt::PopluateVideoAssistantConfig(
+    media::mojom::VideoAssistantConfigPtr& config) {
+  if (delegate_) {
+    delegate_->PopluateVideoAssistantConfig(
+        GetLastCommittedURL().DeprecatedGetOriginAsURL().spec(), config);
+    video_assistant_->UpdateVideoAssistantConfig(config);
+  }
+}
+
+void WebContentsImplExt::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes,
+    const MediaPlayerId& id) {
+  video_assistant_->OnVideoPlaying(std::move(video_attributes), id);
+}
+
+void WebContentsImplExt::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes,
+    const MediaPlayerId& id) {
+  video_assistant_->OnUpdateVideoAttributes(std::move(video_attributes), id);
+}
+
+void WebContentsImplExt::OnVideoDestroyed(const MediaPlayerId& id) {
+  video_assistant_->OnVideoDestroyed(id);
+}
+
+std::unique_ptr<MediaPlayerListener> WebContentsImplExt::OnFullScreenOverlayEnter(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  if (!delegate_) {
+    return nullptr;
+  }
+  return delegate_->OnFullScreenOverlayEnter(
+      std::move(media_info), media_player_id);
+}
+
+void WebContentsImplExt::SetVideoSurface(
+    const MediaPlayerId& id, int32_t surface_widget) {
+  auto [iter, success] = surface_widget_map_.insert({id, surface_widget});
+  if (success) {
+    return;
+  }
+
+  // destroy old native window
+  DelVideoSurface(iter->second);
+  iter->second = surface_widget;
+}
+
+void WebContentsImplExt::DelVideoSurface(int32_t surface_id) {
+  void* native_window =
+    NWebNativeWindowTracker::Get()->GetNativeWindow(surface_id);
+  NWebNativeWindowTracker::Get()->DestroyNativeWindow(surface_id);
+  OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
+    .DestroyNativeWindow(native_window);
+
+  content::GpuProcessHost* host = content::GpuProcessHost::Get();
+  if ((host != nullptr) && (host->gpu_host() != nullptr)) {
+      host->gpu_host()->DestroyNativeWindow(surface_id);
+  }
+}
+
+void WebContentsImplExt::DelAllVideoSurfaces() {
+  for (auto iter = surface_widget_map_.begin(); iter != surface_widget_map_.end();) {
+    DelVideoSurface(iter->second);
+    surface_widget_map_.erase(iter++);
+  }
+}
+
+void WebContentsImplExt::ReportVideoDecoderName(const std::string& decoder_name) {
+  video_assistant_->ReportVideoDecoderName(decoder_name);
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_DATALIST)
+void WebContentsImplExt::ShowAutofillPopup(
+    const gfx::RectF& element_bounds,
+    bool is_rtl,
+    const std::vector<autofill::Suggestion>& suggestions,
+    bool is_password_popup_type) {
+  if (delegate_) {
+    delegate_->OnShowAutofillPopup(element_bounds, is_rtl, suggestions,
+                                   is_password_popup_type);
+  }
+}
+void WebContentsImplExt::HideAutofillPopup() {
+  // notify ui to dismiss hideAutofillPopup
+  if (delegate_) {
+    delegate_->OnHideAutofillPopup();
+  }
+}
+#endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void WebContentsImplExt::OnShareFile(const std::string& filePath,
+                                  const std::string& utdTypeId) {
+  if (delegate_) {
+    delegate_->OnShareFile(filePath, utdTypeId);
+  }
+}
+#endif
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void WebContentsImplExt::CollapseAllFramesSelection() {
+  for (FrameTreeNode* node : primary_frame_tree_.Nodes()) {
+    RenderFrameHostImpl* rfh = node->current_frame_host();
+    if (!rfh) {
+      continue;
+    }
+    if (!rfh->IsRenderFrameLive()) {
+      continue;
+    }
+    RenderWidgetHostImpl* render_widget_host = rfh->GetRenderWidgetHost();
+    if (!render_widget_host) {
+      continue;
+    }
+    auto* input_handler = render_widget_host->GetFrameWidgetInputHandler();
+    if (!input_handler) {
+      continue;
+    }
+    input_handler->CollapseSelection();
+  }
+}
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void WebContentsImplExt::WebExtensionUpdateTab(
+    int32_t tab_id,
+    const NWebExtensionTabUpdateProperties* update_properties) {
+  OPTIONAL_TRACE_EVENT1("content", "WebContentsImplExt::WebExtensionUpdateTab",
+                        "tab_id", tab_id);
+  if (delegate_)
+    delegate_->WebExtensionUpdateTab(tab_id, update_properties);
+}
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+void WebContentsImplExt::SelectRangeV2(const gfx::Point& position,
+                                    bool is_base) {
+  OPTIONAL_TRACE_EVENT0("content", "WebContentsImplExt::SelectRangeV2");
+  auto* input_handler = GetFocusedFrameWidgetInputHandler();
+  if (!input_handler) {
+    return;
+  }
+
+  input_handler->SelectRangeV2(position, is_base);
+}
+#endif
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void WebContentsImplExt::SetCustomUA(std::string custom_user_agent) {
+  custom_user_agent_ = custom_user_agent;
+}
+
+std::string WebContentsImplExt::GetCustomUA() {
+  return custom_user_agent_;
+}
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+void WebContentsImplExt::OneShotMediaPlayerStopped() {
+  observers_.NotifyObservers(&WebContentsObserver::OneShotMediaPlayerStopped);
+}
+#endif
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+void WebContentsImplExt::OnBeforeUnloadFired(bool proceed) {
+  if (delegate_) {
+    delegate_->OnBeforeUnloadFired(proceed);
+  }
+}
+#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+void WebContentsImplExt::StopScreenCapture(int32_t nweb_id,
+                                        const std::string& session_id) {
+  if (!BrowserMainLoop::GetInstance()) {
+    LOG(ERROR) << "BrowserMainLoop null";
+    return;
+  }
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+  media_stream_manager->AsMediaStreamManagerExt()->StopScreenCapture(nweb_id, session_id);
+}
+
+void WebContentsImplExt::SetScreenCapturePickerShow() {
+  if (!BrowserMainLoop::GetInstance()) {
+    LOG(ERROR) << "BrowserMainLoop null";
+    return;
+  }
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+  media_stream_manager->AsMediaStreamManagerExt()->SetScreenCapturePickerShow();
+}
+
+void WebContentsImplExt::DisableSessionReuse() {
+  if (!BrowserMainLoop::GetInstance()) {
+    LOG(ERROR) << "BrowserMainLoop null";
+    return;
+  }
+  auto media_stream_manager =
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+  media_stream_manager->AsMediaStreamManagerExt()->DisableSessionReuse();
+}
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+void WebContentsImplExt::EnterFullscreenMode(
+    RenderFrameHostImpl* requesting_frame,
+    const blink::mojom::FullscreenOptions& options) {
+  WebContentsImpl::EnterFullscreenMode(requesting_frame, options);
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls)) {
+    AsWebContentsImplExt()->controls_state_current_fullscreen_ = cc::BrowserControlsState::kBoth;
+    if (auto* view = GetRenderWidgetHostView()) {
+      int top_controls_offset =
+          static_cast<RenderWidgetHostViewBase*>(view)->GetTopControlsOffset();
+      AsWebContentsImplExt()->controls_state_current_fullscreen_ =
+          top_controls_offset < 0 ? cc::BrowserControlsState::kHidden
+                                  : cc::BrowserControlsState::kShown;
+    }
+    AsWebContentsImplExt()->controls_state_fullscreen_ = AsWebContentsImplExt()->browser_controls_state_;
+    UpdateBrowserControlsState(cc::BrowserControlsState::kHidden,
+                               cc::BrowserControlsState::kHidden, false,
+                               std::nullopt);
+  }
+#endif
+}
+void WebContentsImplExt::ExitFullscreenMode(bool will_cause_resize) {
+  WebContentsImpl::ExitFullscreenMode(will_cause_resize);
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls)) {
+    UpdateBrowserControlsState(AsWebContentsImplExt()->controls_state_fullscreen_,
+                               AsWebContentsImplExt()->controls_state_current_fullscreen_, false,
+                               std::nullopt);
+  }
+#endif
+}
+void WebContentsImplExt::RenderViewReady(RenderViewHost* rvh) {
+  WebContentsImpl::RenderViewReady(rvh);
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls)) {
+    UpdateBrowserControlsState(AsWebContentsImplExt()->browser_controls_state_,
+                               cc::BrowserControlsState::kShown, false,
+                               std::nullopt);
+  }
+#endif
+}
+void WebContentsImplExt::DidFinishNavigation(NavigationHandle* navigation_handle) {
+  WebContentsImpl::DidFinishNavigation(navigation_handle);
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  if (navigation_handle->IsInPrimaryMainFrame() && view_) {
+    view_->DidStopRefresh();
+  }
+#endif
+}
+void WebContentsImplExt::RenderWidgetCreated(
+    RenderWidgetHostImpl* render_widget_host) {
+  WebContentsImpl::RenderWidgetCreated(render_widget_host);
+  observers_.NotifyObservers(&WebContentsObserver::RenderWidgetCreated,
+                             render_widget_host);
+}
+RenderViewHostImpl* WebContentsImplExt::GetRenderViewHost() {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (GetRenderManager() && GetRenderManager()->current_frame_host()) {
+    return GetRenderManager()->current_frame_host()->render_view_host();
+  }
+
+  LOG(WARNING) << "GetRenderViewHost is nullptr";
+  return nullptr;
+#else
+  return WebContentsImpl::GetRenderViewHost();
+#endif
+}
+void WebContentsImplExt::UpdateBrowserControlsState(
+    cc::BrowserControlsState constraints,
+    cc::BrowserControlsState current,
+    bool animate,
+    const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info) {
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  AsWebContentsImplExt()->browser_controls_state_ = constraints;
+#endif
+  WebContentsImpl::UpdateBrowserControlsState(constraints, current, animate, offset_tags_info);
+}
+
+#if BUILDFLAG(ARKWEB_PIP)
+MediaPlayerId WebContentsImpl::GetMediaPlayerId(int delegate_id,
+                                                int child_id,
+                                                int frame_routing_id,
+                                                bool& status) {
+  return media_web_contents_observer_->GetMediaPlayerId(delegate_id,
+                                                        child_id,
+                                                        frame_routing_id,
+                                                        status);
+}
+
+void WebContentsImpl::OnPip(int status,
+                            int delegate_id,
+                            int child_id,
+                            int frame_routing_id,
+                            int width,
+                            int height) {
+
+  OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnPip");
+  if (delegate_)
+    delegate_->OnPip(status, delegate_id, child_id,
+                     frame_routing_id, width, height);
+}
+
+void WebContentsImpl::OnPipEvent(int event) {
+  LOG(INFO) << __func__ << " Pip event:" << event;
+  if (delegate_) {
+    delegate_->OnPipEvent(event);
+  }
+}
+#endif
 }  // namespace content

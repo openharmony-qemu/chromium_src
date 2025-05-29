@@ -25,7 +25,8 @@
 #include <malloc.h>
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 #include <features.h>
 
 #include "base/numerics/safe_conversions.h"
@@ -133,9 +134,6 @@ size_t ProcessMetrics::GetMallocUsage() {
   malloc_statistics_t stats = {0};
   malloc_zone_statistics(nullptr, &stats);
   return stats.size_in_use;
-#elif defined(__MUSL__)
-  // TODO: same as https://crbug.com/735087, no mallinfo for musl
-  return 0;
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   return GetMallocUsageMallinfo();

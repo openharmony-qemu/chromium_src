@@ -108,6 +108,8 @@ class PerformanceManagerTabHelper
       const MediaPlayerInfo& video_type,
       const content::MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) override;
+
+  void OneShotMediaPlayerStopped() override;
 #endif
 
   void BindDocumentCoordinationUnit(

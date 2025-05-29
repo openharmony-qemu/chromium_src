@@ -37,7 +37,6 @@ class NWebDevToolsMessageHandlerImpl
       const CefString& default_file_path,
       const std::vector<CefString>& accept_filters,
       bool capture,
-      const std::vector<CefString>& mime_filters,
       CefRefPtr<CefFileDialogCallback> callback) override;
   void ShowInfoBar(
       const CefString& message,

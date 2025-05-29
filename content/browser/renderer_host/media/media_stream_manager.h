@@ -74,6 +74,7 @@ class MediaStreamUIProxy;
 class PermissionControllerImpl;
 class VideoCaptureManager;
 class VideoCaptureProvider;
+class MediaStreamManagerExt;
 
 enum TransferState { KEPT_ALIVE, GOT_OPEN_DEVICE };
 
@@ -103,6 +104,8 @@ class CONTENT_EXPORT MediaStreamManager
     : public MediaStreamProviderListener,
       public base::CurrentThread::DestructionObserver {
  public:
+  friend class MediaStreamManagerExt;
+
   // Callback to deliver the result of a media access request.
   using MediaAccessRequestCallback = base::OnceCallback<void(
       const blink::mojom::StreamDevicesSet& stream_devices_set,
@@ -153,11 +156,6 @@ class CONTENT_EXPORT MediaStreamManager
   // Callback for testing.
   using GenerateStreamTestCallback =
       base::OnceCallback<bool(const blink::StreamControls&)>;
-
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  using ScreenCaptureCallback = base::RepeatingCallback<
-      void(int32_t nweb_id, const char* session_id, int32_t code)>;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
   // Callback for creating a CapturedSurfaceController. Used to override the
@@ -479,17 +477,9 @@ class CONTENT_EXPORT MediaStreamManager
   std::optional<url::Origin> GetOriginByVideoSessionId(
       const base::UnguessableToken& session_id);
 
-#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-  static void SetScreenCaptureDelegateCallback(ScreenCaptureCallback callback);
-  static void SendScreenCaptureStateToNative(int32_t nweb_id,
-                                             const std::string& session_id,
-                                             int32_t state);
-  static ScreenCaptureCallback screen_capture_callback_;
-  void StopScreenCapture(int32_t nweb_id, const std::string& session_id);
-  void SendScreenCaptureState(const std::string& session_id, int32_t state);
-  void PopSessionIdState(int32_t nweb_id, const std::string& session_id);
-  void OnScreenCaptureOpened(const std::string& session_id) override;
-#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+  virtual MediaStreamManagerExt* AsMediaStreamManagerExt() {
+    return nullptr;
+  }
 
  private:
   friend class MediaStreamManagerTest;
@@ -901,5 +891,6 @@ class CONTENT_EXPORT MediaStreamManager
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_MEDIA_MEDIA_STREAM_MANAGER_H_

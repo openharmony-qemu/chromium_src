@@ -5,7 +5,6 @@
 #ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_TREE_MANAGER_DELEGATE_H_
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_TREE_MANAGER_DELEGATE_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback_forward.h"
 #include "ui/accessibility/ax_action_data.h"
@@ -16,6 +15,7 @@
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)

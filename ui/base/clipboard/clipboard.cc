@@ -464,10 +464,4 @@ void Clipboard::ReadData(const ClipboardFormatType& format,
   ReadData(format, data_dst, &result);
   std::move(callback).Run(std::move(result));
 }
-
-#if BUILDFLAG(ARKWEB_CLIPBOARD)
-bool Clipboard::HasPasteData() const {
-  return false;
-}
-#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 }  // namespace ui

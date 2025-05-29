@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner_helpers.h"
 #include "base/time/time.h"
@@ -20,10 +21,16 @@
 namespace content {
 
 class WebContentsImpl;
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+class HostZoomMapImplUtils;
+#endif
 // HostZoomMap lives on the UI thread.
 class CONTENT_EXPORT HostZoomMapImpl : public HostZoomMap {
  public:
+ #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  friend class HostZoomMapImplUtils;
+  std::unique_ptr<HostZoomMapImplUtils> imp_utils_ = nullptr;
+#endif
   HostZoomMapImpl();
 
   HostZoomMapImpl(const HostZoomMapImpl&) = delete;
@@ -138,5 +145,7 @@ class CONTENT_EXPORT HostZoomMapImpl : public HostZoomMap {
 };
 
 }  // namespace content
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/browser/host_zoom_map_impl_utils.h"
+#endif
 #endif  // CONTENT_BROWSER_HOST_ZOOM_MAP_IMPL_H_

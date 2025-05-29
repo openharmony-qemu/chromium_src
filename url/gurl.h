@@ -265,8 +265,7 @@ class COMPONENT_EXPORT(URL) GURL {
     return SchemeIs(url::kFileSystemScheme);
   }
 
-#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME) || \
-    BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME) || BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
   // Resource URLs for ohos system
   bool SchemeIsOhosResource() const { return SchemeIs(url::kResourcesScheme); }
 

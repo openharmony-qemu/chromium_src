@@ -60,7 +60,8 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
 #endif
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks, int policy);
+bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
+                                   int policy);
 #endif
 
 }  // namespace net::internal

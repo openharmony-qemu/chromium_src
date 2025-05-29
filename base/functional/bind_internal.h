@@ -1506,11 +1506,11 @@ template <int i,
 struct ParamCanBeBound {
  private:
   using UnwrappedParam = BindArgument<i>::template ForwardedAs<
-      Unwrapped>::template ToParamWithType<Param>;
+    Unwrapped>::template ToParamWithType<Param>;
   using ParamStorage = BindArgument<i>::template ToParamWithType<
-      Param>::template StoredAs<Storage>;
+    Param>::template StoredAs<Storage>;
   using BoundStorage =
-      BindArgument<i>::template BoundAs<Arg>::template StoredAs<Storage>;
+    BindArgument<i>::template BoundAs<Arg>::template StoredAs<Storage>;
 
   template <bool v = !UnwrappedParam::kRawPtr ||
                      UnwrappedParam::kRawPtrMayBeDangling>

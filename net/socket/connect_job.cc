@@ -177,6 +177,11 @@ void ConnectJob::SetSocket(std::unique_ptr<StreamSocket> socket,
     }
   }
   socket_ = std::move(socket);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (IsFromPreload() && socket_ != nullptr) {
+    socket_->SetFromPreload(IsFromPreload());
+  }
+#endif
 }
 
 void ConnectJob::NotifyDelegateOfCompletion(int rv) {
@@ -216,8 +221,8 @@ void ConnectJob::LogConnectStart() {
 void ConnectJob::LogConnectCompletion(int net_error) {
   connect_timing_.connect_end = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "connectEnd",
-               connect_timing_.connect_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "connectEnd", connect_timing_.connect_end);
 #endif
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }

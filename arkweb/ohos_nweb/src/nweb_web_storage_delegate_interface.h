@@ -56,6 +56,7 @@ class NWebWebStorageDelegateInterface {
                                   const std::string& username,
                                   int callback_id) = 0;
   virtual void GetSavedPasswordsInfo(int callback_id) = 0;
+  virtual void MigratePasswordsInfo() = 0;
   virtual void ClearPassword() = 0;
   virtual void RemovePassword(const std::string& url,
                               const std::string& username) = 0;

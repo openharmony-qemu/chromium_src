@@ -8,7 +8,6 @@
 
 #include <iterator>
 
-#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/contains.h"
 #include "base/logging.h"
@@ -30,6 +29,7 @@
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/strings/grit/auto_image_annotation_strings.h"
+#include "arkweb/build/features/features.h"
 
 // Fuchsia WebEngine doesn't use these strings, so they are excluded to save
 // space.
@@ -48,7 +48,7 @@ static int browser_accessibility_count = 0;
 constexpr int kDumpBrowserAccessibilityLeakNumObjects = 10000000;
 #endif
 
-#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(IS_ARKWEB)
+#if !BUILDFLAG(HAS_PLATFORM_ACCESSIBILITY_SUPPORT) && !BUILDFLAG(ARKWEB_ACCESSIBILITY)
 // static
 std::unique_ptr<BrowserAccessibility> BrowserAccessibility::Create(
     BrowserAccessibilityManager* manager,
@@ -761,25 +761,10 @@ gfx::Rect BrowserAccessibility::RelativeToAbsoluteBounds(
   const bool clip_bounds = clipping_behavior == AXClippingBehavior::kClipped;
   bool offscreen = false;
   const BrowserAccessibility* node = this;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  bool first_node = true;
-#endif
   while (node) {
     BrowserAccessibilityManager* manager = node->manager();
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-    auto main_bounds = manager->ax_tree()->RelativeToTreeBounds(
-        node->node(), gfx::RectF(), &offscreen, clip_bounds);
-    bounds.set_x(bounds.x() + main_bounds.x());
-    bounds.set_y(bounds.y() + main_bounds.y());
-    if (first_node) {
-      bounds.set_width(main_bounds.width());
-      bounds.set_height(main_bounds.height());
-      first_node = false;
-    }
-#else
     bounds = manager->ax_tree()->RelativeToTreeBounds(node->node(), bounds,
                                                       &offscreen, clip_bounds);
-#endif
 
     // On some platforms we need to unapply root scroll offsets.
     if (!manager->UseRootScrollOffsetsWhenComputingBounds()) {

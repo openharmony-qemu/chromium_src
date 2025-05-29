@@ -125,8 +125,7 @@
     defined(PA_IS_IOS) || defined(PA_IS_LINUX) || defined(PA_IS_CHROMEOS) ||  \
     defined(PA_IS_MAC) || defined(PA_IS_NACL) || defined(PA_IS_NETBSD) ||     \
     defined(PA_IS_OPENBSD) || defined(PA_IS_QNX) || defined(PA_IS_SOLARIS) || \
-    defined(PA_IS_OHOS) || PA_BUILDFLAG(IS_ANDROID) ||                        \
-    PA_BUILDFLAG(IS_CHROMEOS)
+    defined(PA_IS_OHOS) || PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_CHROMEOS)
 #define PA_IS_POSIX
 #endif
 

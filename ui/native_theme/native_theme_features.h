@@ -21,9 +21,6 @@ NATIVE_THEME_EXPORT bool IsOverlayScrollbarOSSettingEnabled();
 
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kFluentScrollbar);
 NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kFluentOverlayScrollbar);
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-NATIVE_THEME_EXPORT BASE_DECLARE_FEATURE(kForceScrollbar);
-#endif
 
 }  // namespace features
 
@@ -31,9 +28,6 @@ namespace ui {
 
 NATIVE_THEME_EXPORT bool IsFluentOverlayScrollbarEnabled();
 NATIVE_THEME_EXPORT bool IsFluentScrollbarEnabled();
-#if BUILDFLAG(ARKWEB_SCROLLBAR)
-NATIVE_THEME_EXPORT bool IsForceScrollbarEnabled();
-#endif
 
 NATIVE_THEME_EXPORT bool IsOverlayScrollbarEnabledByFeatureFlag();
 

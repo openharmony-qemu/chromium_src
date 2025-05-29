@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/barrier_callback.h"
 #include "base/barrier_closure.h"
 #include "base/command_line.h"
@@ -163,6 +162,7 @@
 #include "third_party/blink/public/mojom/private_network_device/private_network_device.mojom.h"
 #include "third_party/blink/public/mojom/quota/quota_types.mojom.h"
 #include "url/scheme_host_port.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/java_interfaces.h"
@@ -2269,9 +2269,10 @@ void StoragePartitionImpl::OnSSLCertificateError(
       context.navigation_or_document(), net_error, ssl_info, fatal
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
       ,
-      origin_url, referrer
+      origin_url,
+      referrer
 #endif
-  );
+      );
 }
 
 void StoragePartitionImpl::OnLoadingStateUpdate(
@@ -3346,8 +3347,8 @@ void StoragePartitionImpl::InitNetworkContext() {
       cert_verifier_creation_params =
           cert_verifier::mojom::CertVerifierCreationParams::New();
   if (!GetContentClient()->browser()->ConfigureNetworkContextParams(
-          browser_context_, is_in_memory(), relative_partition_path_,
-          context_params.get(), cert_verifier_creation_params.get())) {
+      browser_context_, is_in_memory(), relative_partition_path_,
+      context_params.get(), cert_verifier_creation_params.get())) {
     // Don't re-initialize the network context during shutdown.
     return;
   }

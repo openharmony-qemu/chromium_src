@@ -112,8 +112,7 @@ class HeaderRewritingURLLoaderClient : public network::mojom::URLLoaderClient {
   }
 
 #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
-                                      uint64_t buffer_size) override {}
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
 #endif
   void OnReceiveRedirect(
       const net::RedirectInfo& redirect_info,

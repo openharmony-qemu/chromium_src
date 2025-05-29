@@ -9,7 +9,6 @@
 #include <optional>
 #include <string_view>
 
-#include "arkweb/build/features/features.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 #include "url/third_party/mozilla/url_parse.h"
 
@@ -19,10 +18,11 @@ namespace url_pattern_index {
 
 namespace flat {
 struct UrlRule;  // The FlatBuffers version of UrlRule.
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-struct CssRule;
-#endif
 }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class UrlPatternExt;
+#endif
 
 // The structure used to mirror a URL pattern regardless of the representation
 // of the UrlRule that owns it, and to match it against URLs.
@@ -73,10 +73,6 @@ class UrlPattern {
              proto::AnchorType anchor_left,
              proto::AnchorType anchor_right);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  UrlPattern(const flat::UrlRule& rule, MatchCase match_case);
-#endif
-
   // The passed in |rule| must outlive the created instance.
   explicit UrlPattern(const flat::UrlRule& rule);
 
@@ -100,6 +96,10 @@ class UrlPattern {
   // subpattern to a subtring of the spec.
   bool MatchesUrl(const UrlInfo& url) const;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  friend class UrlPatternExt;
+#endif
+
  private:
   // TODO(pkalinnikov): Store flat:: types instead of proto::, in order to avoid
   // conversions in IndexedRuleset.
@@ -112,68 +112,13 @@ class UrlPattern {
   MatchCase match_case_ = MatchCase::kTrue;
 };
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-class CssPattern {
- public:
-  enum class MatchCase {
-    kTrue,
-    kFalse,
-  };
-
-  // A wrapper over a GURL to reduce redundant computation.
-  class UrlInfo {
-   public:
-    // The lurll must outlive this instance.
-    UrlInfo(const GURL& url);
-    ~UrlInfo();
-
-    std::string_view spec() const { return spec_; }
-    std::string_view GetLowerCaseSpec() const;
-
-    url::Component host() const { return host_; }
-
-   private:
-    // The url spec.
-    const std::string_view spec_;
-
-    // String to hold the lazily computed lower cased spec.
-    mutable std::string lower_case_spec_owner_;
-
-    // Reference to the lower case spec. Computed lazily.
-    mutable std::optional<std::string_view> lower_case_spec_cached_;
-
-    // The url host component.
-    const url::Component host_;
-  };
-
-  CssPattern();
-
-  // The passed in rulel must outlive the created instance
-  explicit CssPattern(const flat::CssRule& rule);
-
-  ~CssPattern();
-
-  bool match_case() const { return match_case_ == MatchCase::kTrue; }
-
-  // Returns whether the lurl matches the URL Ipattern.Requires the type of
-  // this pattern to be either SUBSTRING or HILDCARDED.
-  //
-  // Splits the pattern into subpatterns separated by wildcards,and
-  // greedily finds each of them in the spec of the url.Respects anchors at
-  // either end of the pattern,and separator placeholders when comparing a
-  // subpattern to a subtring of the spec.
-  bool MatchesCss(const UrlInfo& url) const;
-
- private:
-  // TODO(pkalinnikov): Store flat:: types instead of proto::, in order to avoid
-  // conversions in IndexedRuleset.
-  MatchCase match_case_ = MatchCase::kTrue;
-};
-#endif
-
 // Allow pretty-printing URLPatterns when they are used in GTest assertions.
 std::ostream& operator<<(std::ostream& out, const UrlPattern& pattern);
 
 }  // namespace url_pattern_index
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/url_pattern_index/url_pattern_ext.h"
+#endif
 
 #endif  // COMPONENTS_URL_PATTERN_INDEX_URL_PATTERN_H_

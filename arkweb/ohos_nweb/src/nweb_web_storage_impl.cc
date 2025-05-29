@@ -122,6 +122,14 @@ void NWebWebStorageImpl::GetSavedPasswords(int callback_id) {
 #endif  // ARKWEB_EXT_PASSWORD
 }
 
+void NWebWebStorageImpl::MigratePasswords() {
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  if (delegate_ != nullptr) {
+    return delegate_->MigratePasswordsInfo();
+  }
+#endif
+}
+
 void NWebWebStorageImpl::ClearPassword() {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (delegate_ != nullptr) {

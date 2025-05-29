@@ -5,11 +5,10 @@
 #include "ui/ozone/public/surface_factory_ozone.h"
 
 #include <stdlib.h>
-
 #include <memory>
 
-#include "base/command_line.h"
 #include "base/logging.h"
+#include "base/command_line.h"
 #include "gpu/vulkan/buildflags.h"
 #include "ui/gfx/native_pixmap.h"
 #include "ui/gl/gl_implementation.h"
@@ -111,10 +110,10 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::Size size,
     gfx::BufferFormat format,
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-    gfx::NativePixmapHandle handle,
-    void* window_buffer) {
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
 #else
-    gfx::NativePixmapHandle handle) {
+      gfx::NativePixmapHandle handle) {
 #endif
   return nullptr;
 }

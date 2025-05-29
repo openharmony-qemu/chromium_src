@@ -7,12 +7,12 @@
 #ifndef UI_GL_GL_UTILS_H_
 #define UI_GL_GL_UTILS_H_
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/memory/raw_ptr.h"
 #include "build/build_config.h"
 #include "ui/gl/gl_export.h"
 #include "ui/gl/gpu_preference.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <dxgi1_6.h>

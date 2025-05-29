@@ -147,16 +147,9 @@ ui::PlatformWindowInitProperties ConvertWidgetInitParamsToInitProperties(
     properties.parent_widget = params.parent->GetHost()->GetAcceleratedWidget();
 
 #if BUILDFLAG(IS_OZONE)
-#if BUILDFLAG(IS_OHOS)
-  if (params.type != Widget::InitParams::TYPE_WINDOW &&
-      ui::OzonePlatform::GetInstance()
-          ->GetPlatformProperties()
-          .set_parent_for_non_top_level_windows) {
-#else
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformProperties()
           .set_parent_for_non_top_level_windows) {
-#endif
     // If context has been set, use that as the parent_widget so that Wayland
     // creates a correct hierarchy of windows.
     if (params.context) {
@@ -276,9 +269,8 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
   if (properties.parent_widget) {
     window_parent_ = DesktopWindowTreeHostPlatform::GetHostForWidget(
         properties.parent_widget);
-    if (window_parent_) {
+    if (window_parent_)
       window_parent_->window_children_.insert(this);
-    }
   }
 
   // Calculate initial bounds.

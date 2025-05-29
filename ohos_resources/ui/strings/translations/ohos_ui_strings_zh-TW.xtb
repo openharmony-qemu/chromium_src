@@ -2,4 +2,7 @@
 <!DOCTYPE translationbundle>
 <translationbundle lang="zh-TW">
 <translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">網址為 <ph name="ERROR_URL"/> 的網頁可能暫時無法連線，或者已永久移動至新網址</translation>
+<translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">倍速</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">已啟用未成年人保護，此網頁已限制存取。</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">設定</translation>
 </translationbundle>

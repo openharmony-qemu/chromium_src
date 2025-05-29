@@ -66,6 +66,8 @@ interface GpuService {
   [EnableIf=is_arkweb, Sync] GetSurfaceId(int32 native_embed_id)
       => (string surfaceId);
 
+  [EnableIf=is_arkweb] Discard(uint32 native_window_id);
+
   [EnableIf=is_arkweb] SetTransformHint(uint32 rotation, uint32 window_id);
 
   [EnableIf=is_arkweb] DestroyNativeWindow(uint32 native_window_id);
@@ -276,4 +278,8 @@ interface GpuService {
   // get gpu total size
   [EnableIf=is_arkweb]
   DumpGpuInfo() => (float totalSize);
+
+  // Set fling state to gpu process
+  [EnableIf=arkweb_d_vsync]
+  SetIsFling(bool is_fling_enabled);
 };

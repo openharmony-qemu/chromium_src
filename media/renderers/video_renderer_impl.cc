@@ -26,6 +26,9 @@
 #include "media/base/pipeline_status.h"
 #include "media/base/renderer_client.h"
 #include "media/base/video_frame.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include.cc"
+#endif
 
 namespace media {
 
@@ -163,6 +166,10 @@ void VideoRendererImpl::Initialize(
     DemuxerStream* stream,
     CdmContext* cdm_context,
     RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    RequestSurfaceCB request_surface_cb,
+    VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
     const TimeSource::WallClockTimeCB& wall_clock_time_cb,
     PipelineStatusCallback init_cb) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
@@ -211,6 +218,10 @@ void VideoRendererImpl::Initialize(
   wall_clock_time_cb_ = wall_clock_time_cb;
   state_ = kInitializing;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  request_surface_cb_ = std::move(request_surface_cb);
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   current_decoder_config_ = demuxer_stream_->video_decoder_config();
   DCHECK(current_decoder_config_.IsValidConfig());
 
@@ -218,6 +229,9 @@ void VideoRendererImpl::Initialize(
       demuxer_stream_,
       base::BindOnce(&VideoRendererImpl::OnVideoDecoderStreamInitialized,
                      weak_factory_.GetWeakPtr()),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      std::move(decoder_changed_cb),
+#endif // ARKWEB_VIDEO_ASSISTANT
       cdm_context,
       base::BindRepeating(&VideoRendererImpl::OnStatisticsUpdate,
                           weak_factory_.GetWeakPtr()),
@@ -294,7 +308,14 @@ base::TimeDelta VideoRendererImpl::GetPreferredRenderInterval() {
   return algorithm_->average_frame_duration();
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void VideoRendererImpl::OnVideoDecoderStreamInitialized(
+    bool success,
+    bool support_video_suface,
+    std::string decoder_name) {
+#else
 void VideoRendererImpl::OnVideoDecoderStreamInitialized(bool success) {
+#endif // ARKWEB_VIDEO_ASSISTANT
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
   base::AutoLock auto_lock(lock_);
   DCHECK_EQ(state_, kInitializing);
@@ -304,6 +325,16 @@ void VideoRendererImpl::OnVideoDecoderStreamInitialized(bool success) {
     FinishInitialization(DECODER_ERROR_NOT_SUPPORTED);
     return;
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (request_surface_cb_) {
+    SurfaceCreatedCB surface_create_CB = base::BindPostTaskToCurrentDefault(
+        base::BindRepeating(&VideoRendererImpl::OnRequestVideoSurfaceDone,
+                            weak_factory_.GetWeakPtr()));
+    std::move(request_surface_cb_)
+        .Run(std::move(surface_create_CB), support_video_suface, decoder_name);
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   // We're all good! Consider ourselves flushed because we have not read any
   // frames yet.
@@ -1089,5 +1120,12 @@ void VideoRendererImpl::PaintFirstFrame_Locked() {
   painted_first_frame_ = true;
   paint_first_frame_cb_.Cancel();
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void VideoRendererImpl::OnRequestVideoSurfaceDone(int surface_id) {
+  LOG(INFO) << "OnRequestVideoSurfaceDone(" << surface_id << ")";
+  video_decoder_stream_->SetVideoSurface(surface_id);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace media

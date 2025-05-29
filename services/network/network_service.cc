@@ -95,10 +95,6 @@
 #include "services/network/tpcd/metadata/manager.h"
 #include "services/network/url_loader.h"
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
 #if BUILDFLAG(IS_ANDROID) && defined(ARCH_CPU_ARMEL)
 #include "third_party/boringssl/src/include/openssl/cpu.h"
 #endif
@@ -120,24 +116,6 @@
 
 #if BUILDFLAG(IS_CT_SUPPORTED)
 #include "services/network/sct_auditing/sct_auditing_cache.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-#include "net/socket/client_socket_pool.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-#include "base/base_switches.h"
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-#include "arkweb/chromium_ext/url/ohos/log_utils.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-#include "cef/libcef/browser/net_service/net_helpers.h"
 #endif
 
 namespace net {
@@ -583,52 +561,37 @@ void NetworkService::SetTestDohConfigForTesting(
 
 std::unique_ptr<NetworkService> NetworkService::Create(
     mojo::PendingReceiver<mojom::NetworkService> receiver) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  return std::make_unique<ArkWebNetworkServiceExt>(nullptr,
+                                                   std::move(receiver));
+#else
   return std::make_unique<NetworkService>(nullptr, std::move(receiver));
+#endif
 }
 
 // static
 std::unique_ptr<NetworkService> NetworkService::CreateForTesting() {
   auto network_service =
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      std::make_unique<ArkWebNetworkServiceExt>(nullptr /* binder_registry */);
+#else
       std::make_unique<NetworkService>(nullptr /* binder_registry */);
+#endif
   network_service->InitMockNetworkChangeNotifierForTesting();  // IN-TEST
   return network_service;
 }
 
 void NetworkService::RegisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(0u, network_contexts_.count(network_context));
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  net::URLRequestContext* url_request_context =
-      network_context->url_request_context();
-  if (url_request_context) {
-    LOG(INFO) << "Register network context and set network timeout "
-              << timeout_override_ << " second(s)";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Register network context and set network
-    //     timeout "
-    //               << timeout_override_ << " second(s)";
-    // #endif
-    url_request_context->SetConnectTimeout(timeout_override_);
-    url_request_context->BindDnsToNetwork(network_for_dns_);
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-    url_request_context->SetConnectJobWithSecureDnsOnlyTimeout(
-        connect_job_with_secure_dns_only_timeout_);
-#endif
-  }
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  AsArkWebNetworkServiceExt()->SetURLRequestContext(network_context);
 #endif
   network_contexts_.insert(network_context);
 
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-  std::string hostName = "";
-  std::vector<std::string> address = {};
-  int32_t ttl = 0;
-  auto host_map = net_service::NetHelpers::GetHostIP();
-  for (auto& it : host_map) {
-    hostName = it.first;
-    address = it.second.address;
-    ttl = it.second.ttl;
-    network_context->SetHostIP(hostName, address, ttl);
-  }
+  AsArkWebNetworkServiceExt()->NetworkContextSetHostIP(network_context);
 #endif
 
   if (quic_disabled_) {
@@ -659,12 +622,7 @@ void NetworkService::DeregisterNetworkContext(NetworkContext* network_context) {
   DCHECK_EQ(1u, network_contexts_.count(network_context));
   network_contexts_.erase(network_context);
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
-  auto host_map = net_service::NetHelpers::GetHostIP();
-  for (auto& it : host_map) {
-    auto hostName = it.first;
-    network_context->ClearHostIP(hostName);
-  }
-  net_service::NetHelpers::ClearHostIP();
+  AsArkWebNetworkServiceExt()->DeregisterNetworkContextExt(network_context);
 #endif
 }
 
@@ -727,7 +685,12 @@ void NetworkService::SetSSLKeyLogFile(base::File file) {
 void NetworkService::CreateNetworkContext(
     mojo::PendingReceiver<mojom::NetworkContext> receiver,
     mojom::NetworkContextParamsPtr params) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  owned_network_contexts_.emplace(std::make_unique<ArkWebNetworkContextExt>(
+#else
   owned_network_contexts_.emplace(std::make_unique<NetworkContext>(
+#endif
       this, std::move(receiver), std::move(params),
       base::BindOnce(&NetworkService::OnNetworkContextConnectionClosed,
                      base::Unretained(this))));
@@ -744,26 +707,9 @@ void NetworkService::ConfigureStubHostResolver(
       insecure_dns_client_enabled, additional_dns_types_enabled);
 
 #if BUILDFLAG(ARKWEB_HTTP_DNS)
-  net::DnsConfigOverrides overrides;
-#if !BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  // Since the system dnsconfig is not obtained and null in OHOS, so override
-  // the full config with default.
-  overrides = net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
-#else
-  // 如果是webview或使能Doh，则不需要获取Dns name servers
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-          ::switches::kEnableNwebExHttpDnsFallback) ||
-      secure_dns_mode != net::SecureDnsMode::kOff) {
-    overrides =
-        net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
-  }
-#endif
-  overrides.secure_dns_mode = secure_dns_mode;
-  overrides.dns_over_https_config = dns_over_https_config;
-
-  // Keep the dns_over_https_upgrade disabled in OHOS since we don't have
-  // available update providers.
-  overrides.allow_dns_over_https_upgrade = false;
+  net::DnsConfigOverrides overrides =
+      AsArkWebNetworkServiceExt()->ConfigureStubHostResolverExt(
+          secure_dns_mode, dns_over_https_config);
 #else
   // Configure DNS over HTTPS.
   DCHECK(dns_config_overrides_set_by_ == FunctionTag::None ||
@@ -1199,163 +1145,5 @@ void NetworkService::SetTpcdMetadataGrants(
     const std::vector<ContentSettingPatternSource>& settings) {
   tpcd_metadata_manager_->SetGrants(settings);
 }
-
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void NetworkService::SetConnectTimeout(int seconds) {
-  LOG(INFO) << "Network service set network timeout " << seconds
-            << " second(s)";
-  timeout_override_ = seconds;
-  for (NetworkContext* network_context : network_contexts_) {
-    net::URLRequestContext* url_request_context =
-        network_context->url_request_context();
-    if (url_request_context) {
-      url_request_context->SetConnectTimeout(seconds);
-    }
-  }
-}
-
-void NetworkService::BindDnsToNetwork(int network) {
-  if (network_for_dns_ == network) {
-    LOG(INFO) << "bind dns to network return for network is same with "
-              << network_for_dns_;
-    // TODO(ARKWEB_LOGGER_REPORT)
-    // #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    //     LOG_FEEDBACK(INFO) << "bind dns to network return for network is same
-    //     with "
-    //                << network_for_dns_;
-    // #endif
-    return;
-  }
-  network_for_dns_ = network;
-  if (host_resolver_manager_) {
-    LOG(INFO) << "bind dns to network " << network << " invalid dns cache.";
-    // TODO(ARKWEB_LOGGER_REPORT)
-    // #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    //     LOG_FEEDBACK(INFO) << "bind dns to network " << network << " invalid
-    //     dns cache.";
-    // #endif
-    host_resolver_manager_->InvalidateCachesForTesting();
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-    bool http_dns_enabled = false;
-    std::string http_dns_servers_template;
-    if (network == -1) {
-      http_dns_enabled = cfg_https_dns_fallback_enabled_;
-      http_dns_servers_template = cfg_http_dns_server_template_;
-    }
-    SetHttpsDnsHostResolver(http_dns_enabled, http_dns_servers_template);
-#endif
-  }
-  for (auto network_context : network_contexts_) {
-    net::URLRequestContext* url_request_context =
-        network_context->url_request_context();
-    if (url_request_context) {
-      url_request_context->BindDnsToNetwork(network_for_dns_);
-    }
-  }
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void NetworkService::SetHttpsDnsFallbackData(
-    mojom::HttpsDnsFallbackConfigPtr config) {
-  bool https_dns_fallback_enabled = false;
-  std::string http_dns_server_template;
-  std::vector<std::string> host_list;
-  std::vector<std::string> ip_list;
-  if (config) {
-#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "DOH-Fallback set https dns fallback config enabled: " << config->enabled
-              << " https_dns_server_template: " 
-              << url::LogUtils::ConvertUrlWithMask(config->https_dns_server_template)
-              << ", SetHttpsDnsFallbackData, enabled " << config->enabled
-              << ", connect_job_with_dns_only_timeout "
-              << config->connect_job_with_dns_only_timeout
-              << ", https_dns_server_template "
-              << url::LogUtils::ConvertUrlWithMask(config->https_dns_server_template) 
-              << ", source_host_list.size " << config->source_host_list.size() 
-              << ", suspect_ip_list.size " << config->suspect_ip_list.size();
-#endif
-    LOG(INFO) << "SetHttpsDnsFallbackData, enabled " << config->enabled
-              << ", connect_job_with_dns_only_timeout "
-              << config->connect_job_with_dns_only_timeout
-              << ", https_dns_server_template "
-              << config->https_dns_server_template << ", source_host_list.size "
-              << config->source_host_list.size() << ", suspect_ip_list.size "
-              << config->suspect_ip_list.size();
-    https_dns_fallback_enabled = config->enabled;
-    http_dns_server_template = config->https_dns_server_template;
-    connect_job_with_secure_dns_only_timeout_ =
-        config->connect_job_with_dns_only_timeout;
-    host_list = std::move(config->source_host_list);
-    ip_list = std::move(config->suspect_ip_list);
-  }
-
-  SetHttpsDnsHostResolver(https_dns_fallback_enabled, http_dns_server_template);
-  cfg_https_dns_fallback_enabled_ = https_dns_fallback_enabled;
-  cfg_http_dns_server_template_ = std::move(http_dns_server_template);
-
-  for (auto network_context : network_contexts_) {
-    net::URLRequestContext* url_request_context =
-        network_context->url_request_context();
-    if (url_request_context) {
-      url_request_context->SetConnectJobWithSecureDnsOnlyTimeout(
-          connect_job_with_secure_dns_only_timeout_);
-    }
-  }
-
-  host_resolver_manager_->SetSuspectIpListAndSourceHostList(ip_list, host_list);
-}
-
-void NetworkService::SetHttpsDnsHostResolver(
-    bool enabled,
-    const std::string& server_template) {
-  LOG(INFO) << "SetHttpsDnsHostResolver, enabled " << enabled
-            << ", real_https_dns_fallback_enabled_ "
-            << real_https_dns_fallback_enabled_ << ", server_template "
-            << server_template << ", real_http_dns_server_template_ "
-            << real_http_dns_server_template_
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-            << ", network_for_dns " << network_for_dns_
-#endif
-            ;
-  if (enabled == real_https_dns_fallback_enabled_ &&
-      server_template == real_http_dns_server_template_) {
-    return;
-  }
-  real_https_dns_fallback_enabled_ = enabled;
-  real_http_dns_server_template_ = server_template;
-
-  bool allow_enable_http_dns_fallback = false;
-  net::DnsOverHttpsConfig doh_fallback_config;
-  if (enabled) {
-    doh_fallback_config =
-        net::DnsOverHttpsConfig::FromStringLax(server_template);
-    if (doh_fallback_config.servers().size() > 0) {
-      allow_enable_http_dns_fallback = true;
-    }
-  }
-
-  host_resolver_manager_->SetHttpsDnsFallbackData(
-      allow_enable_http_dns_fallback, server_template);
-
-  // Enable or disable the insecure part of DnsClient. "DnsClient" is the class
-  // that implements the stub resolver.
-  host_resolver_manager_->SetInsecureDnsClientEnabled(
-      allow_enable_http_dns_fallback, false);
-
-  net::DnsConfigOverrides overrides;
-  // 如果HTTP DNS FALLBACK去使能，则不需要Dns name servers
-  if (!allow_enable_http_dns_fallback) {
-    overrides =
-        net::DnsConfigOverrides::CreateOverridingEverythingWithDefaults();
-  }
-  overrides.secure_dns_mode = net::SecureDnsMode::kOff;
-  overrides.dns_over_https_config = std::move(doh_fallback_config);
-  overrides.allow_dns_over_https_upgrade = false;
-
-  host_resolver_manager_->SetDnsConfigOverrides(overrides);
-}
-#endif
 
 }  // namespace network

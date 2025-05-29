@@ -75,7 +75,7 @@ class MEDIA_EXPORT MediaResource {
       base::TimeDelta buffered_time) {}
   virtual void SetPreloadType(uint32_t preload_type) {}
   virtual void SetMediaSourceType(uint32_t media_source_type) {}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

@@ -16,9 +16,14 @@
 #include "ohos_nweb/src/cef_delegate/nweb_devtools_message_handler_impl.h"
 
 #include "cef/include/base/cef_logging.h"
+#include "ohos_nweb/src/capi/common/common.h"
 #include "ohos_nweb/include/nweb_file_selector_params.h"
 #include "ohos_nweb/src/capi/nweb_devtools_message_handler.h"
 #include "ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h"
+
+extern "C" {
+void* __real_malloc(size_t);
+}       // extern "C"
 
 namespace OHOS::NWeb {
 
@@ -71,7 +76,13 @@ NWebDevToolsMessageHandlerImpl::NWebDevToolsMessageHandlerImpl(
     std::unique_ptr<NWebDevtoolsMessageHandler> handler)
   : handler_(std::move(handler)) {}
 
-NWebDevToolsMessageHandlerImpl::~NWebDevToolsMessageHandlerImpl() = default;
+NO_SANITIZE("cfi")
+NWebDevToolsMessageHandlerImpl::~NWebDevToolsMessageHandlerImpl() {
+  auto* handler = handler_.release();
+  if (handler) {
+    delete handler;
+  }
+}
 
 bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     FileDialogMode mode,
@@ -79,7 +90,6 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     const CefString& default_file_path,
     const std::vector<CefString>& accept_filters,
     bool capture,
-    const std::vector<CefString>& mime_filters,
     CefRefPtr<CefFileDialogCallback> callback) {
   if (!handler_) {
     LOG(INFO) << "ShowFileChooser failed, handler_ is null";
@@ -107,12 +117,20 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
         break;
     }
   }
-  std::shared_ptr<NWebFileSelectorParams> param =
-      std::make_shared<FileSelectorParamsImpl>(
-          file_mode, file_selector_title, accept_filters,
-          default_file_path.ToString(), capture, mime_filters);
+
+#if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
+  FileSelectorParamsImpl* tmp = new FileSelectorParamsImpl(
+    file_mode, file_selector_title, accept_filters, default_file_path.ToString(), capture);
+#else
+  void* addr = __real_malloc(sizeof(FileSelectorParamsImpl));
+  FileSelectorParamsImpl* tmp = new (addr) FileSelectorParamsImpl(
+    file_mode, file_selector_title, accept_filters, default_file_path.ToString(), capture);
+#endif
+  std::shared_ptr<NWebFileSelectorParams> param(tmp);
+
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);
+
   if (!CheckValid(handler_.get(), &handler_->show_file_chooser)) {
     LOG(ERROR) << "ShowFileChooser failed, method is invalid";
     return false;

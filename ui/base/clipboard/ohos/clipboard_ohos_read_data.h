@@ -5,12 +5,13 @@
 #ifndef UI_BASE_CLIPBOARD_CLIPBOARD_OHOS_READ_DATA_H_
 #define UI_BASE_CLIPBOARD_CLIPBOARD_OHOS_READ_DATA_H_
 
-#include <unordered_map>
-
 #include "base/files/file_util.h"
-#include "ohos_adapter_helper.h"
-#include "ohos_nweb/include/nweb_spanstring_convert_html_callback.h"
 #include "ui/base/clipboard/clipboard.h"
+#include "ohos_nweb/include/nweb_spanstring_convert_html_callback.h"
+
+#include "ohos_adapter_helper.h"
+
+#include <unordered_map>
 
 namespace ui {
 using FileUrlMap = std::unordered_map<std::string, base::File>;
@@ -22,14 +23,15 @@ class ClipboardOhosReadData {
     return file_map_;
   }
 
-  OHOS::NWeb::PasteRecordVector& GetPasteRecordVector() {
-    return record_vector_;
-  }
+  OHOS::NWeb::PasteRecordVector& GetPasteRecordVector() { return record_vector_; }
   uint32_t GetTokenId() const { return token_id_; }
   bool IsLocalPaste() const { return is_in_app_; }
   size_t GetRecordVectorSize() const { return record_vector_.size(); }
   std::shared_ptr<std::string> ReadHtml();
   std::shared_ptr<std::string> ReadText() { return text_; }
+  bool HasFileUri() { return !file_uris_.empty(); }
+  std::vector<std::string> ReadFileUris() { return file_uris_; }
+  bool HasCustomData() { return !custom_datas_.empty(); }
   std::vector<std::vector<uint8_t>> ReadCustomDatas() { return custom_datas_; }
   static void SetConvertHtmlCallback(
       std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> callback);
@@ -50,9 +52,9 @@ class ClipboardOhosReadData {
   bool is_in_app_ = false;
   std::shared_ptr<std::string> html_ = nullptr;
   std::shared_ptr<std::string> text_ = nullptr;
+  std::vector<std::string> file_uris_;
   std::vector<std::vector<uint8_t>> custom_datas_;
-  static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback>
-      convert_html_callback_;
+  static std::shared_ptr<OHOS::NWeb::NWebSpanstringConvertHtmlCallback> convert_html_callback_;
 };
 }  // namespace ui
 

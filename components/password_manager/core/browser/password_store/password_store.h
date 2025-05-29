@@ -31,6 +31,10 @@
 #include "components/password_manager/core/browser/password_store/password_store_interface.h"
 #include "components/password_manager/core/browser/password_store/smart_bubble_stats_store.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 class PrefService;
 
 namespace syncer {
@@ -83,6 +87,9 @@ class PasswordStore : public PasswordStoreInterface {
       const PasswordForm& new_form,
       const PasswordForm& old_primary_key,
       base::OnceClosure completion = base::DoNothing()) override;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  void UpdateLoginDisplayName(const PasswordForm& form) override;
+#endif
   void RemoveLogin(const base::Location& location,
                    const PasswordForm& form) override;
   void RemoveLoginsByURLAndTime(

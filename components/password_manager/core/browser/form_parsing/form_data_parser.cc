@@ -998,11 +998,11 @@ std::vector<ProcessedField> ProcessFields(
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   bool is_password_visible = false;
   for (const FormFieldData& field : fields) {
-    // TODO(ARKWEB_EXT_PASSWORD)
-    // if (field.form_control_type() == "password" && field.IsFocusable()) {
-    //   is_password_visible = true;
-    //   break;
-    // }
+    if (field.form_control_type() == autofill::FormControlType::kInputPassword &&
+        field.IsFocusable()) {
+      is_password_visible = true;
+      break;
+    }
   }
 #endif
   for (const FormFieldData& field : fields) {

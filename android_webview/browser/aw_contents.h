@@ -37,10 +37,6 @@ namespace content {
 class WebContents;
 }
 
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-enum class RendererIsUnresponsiveReason;
-#endif
-
 namespace android_webview {
 
 class AwContentsClientBridge;
@@ -309,12 +305,7 @@ class AwContents : public FindHelper::Listener,
 
   void ResumeLoadingCreatedPopupWebContents(JNIEnv* env);
 
-  void RendererUnresponsive(content::RenderProcessHost* render_process_host
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-                            ,
-                            RenderProcessNotRespondingReason reason
-#endif
-  );
+  void RendererUnresponsive(content::RenderProcessHost* render_process_host);
   void RendererResponsive(content::RenderProcessHost* render_process_host);
 
   bool UseLegacyGeolocationPermissionAPI();

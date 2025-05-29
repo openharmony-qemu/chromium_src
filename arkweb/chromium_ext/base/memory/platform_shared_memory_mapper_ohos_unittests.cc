@@ -22,6 +22,10 @@
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace base {
+
+constexpr uint64_t kBuf_Offset = 20;
+constexpr size_t kBuf_Size = 20;
+
 class PlatformSharedMemoryMapperTest : public ::testing::Test {
  public:
   void SetUp() override {}
@@ -32,7 +36,7 @@ class PlatformSharedMemoryMapperTest : public ::testing::Test {
 TEST_F(PlatformSharedMemoryMapperTest, Map_001) {
   subtle::PlatformSharedMemoryHandle myHandle = 0;
   absl::optional<span<uint8_t>> result =
-      platform_shared_memory_mapper.Map(myHandle, true, 20, 20);
+      platform_shared_memory_mapper.Map(myHandle, true, kBuf_Offset, kBuf_Size);
   EXPECT_EQ(result, absl::nullopt);
 }
 

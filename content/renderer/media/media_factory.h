@@ -79,10 +79,15 @@ namespace content {
 class RenderFrameImpl;
 class MediaInterfaceFactory;
 struct RenderFrameMediaPlaybackOptions;
+class ArkwebMediaFactoryExt;
+class ArkwebMediaFactoryUtils;
 
 // Assist to RenderFrameImpl in creating various media clients.
 class MediaFactory {
  public:
+
+  friend class ArkwebMediaFactoryExt;
+  friend class ArkwebMediaFactoryUtils;
   // Helper function returning whether VideoSurfaceLayer should be enabled for
   // MediaStreams.
   static bool VideoSurfaceLayerEnabledForMS();
@@ -93,6 +98,10 @@ class MediaFactory {
   MediaFactory(RenderFrameImpl* render_frame,
                media::RequestRoutingTokenCallback request_routing_token_cb);
   ~MediaFactory();
+
+  virtual content::ArkwebMediaFactoryExt* AsArkwebMediaFactoryExt() {
+    return nullptr;
+  }
 
   // Instruct MediaFactory to establish Mojo channels as needed to perform its
   // factory duties. This should be called by RenderFrameImpl as soon as its own
@@ -120,11 +129,6 @@ class MediaFactory {
       scoped_refptr<base::SingleThreadTaskRunner>
           main_thread_compositor_task_runner,
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner);
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  blink::WebNativeBridge* CreateWebNativeBridge(blink::WebNativeClient* client);
-  media::RendererWebNativeDelegate* GetWebNativeDelegate();
-#endif
 
   // Provides an EncryptedMediaClient to connect blink's EME layer to media's
   // implementation of requestMediaKeySystemAccess. Will always return the same
@@ -197,10 +201,6 @@ class MediaFactory {
   raw_ptr<media::RendererWebMediaPlayerDelegate, DanglingUntriaged>
       media_player_delegate_ = nullptr;
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  media::RendererWebNativeDelegate* web_native_delegate_ = nullptr;
-#endif
-
   // The `KeySystems` to be used by `web_encrypted_media_client_`. This object
   // must outlive `web_encrypted_media_client_` and `cdm_factory_` since they
   // reference it.
@@ -228,8 +228,11 @@ class MediaFactory {
   std::unique_ptr<cast_streaming::ResourceProvider>
       cast_streaming_resource_provider_;
 #endif
+
+  std::unique_ptr<ArkwebMediaFactoryUtils> media_factory_utils_;
 };
 
 }  // namespace content
 
+#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_MEDIA_MEDIA_FACTORY_H_

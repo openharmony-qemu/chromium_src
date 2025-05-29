@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "ui/base/clipboard/clipboard_format_type.h"
+
 #include "base/no_destructor.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "ui/base/clipboard/clipboard_constants.h"
-#include "ui/base/clipboard/clipboard_format_type.h"
 
 namespace ui {
 
@@ -128,8 +129,10 @@ const ClipboardFormatType& ClipboardFormatType::WebKitSmartPasteType() {
 }
 
 // static
-const ClipboardFormatType& ClipboardFormatType::WebCustomDataType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeWebCustomData);
+const ClipboardFormatType& ClipboardFormatType::DataTransferCustomType() {
+  static base::NoDestructor<ClipboardFormatType> type(
+      kMimeTypeDataTransferCustomData);
   return *type;
 }
+
 }  // namespace ui

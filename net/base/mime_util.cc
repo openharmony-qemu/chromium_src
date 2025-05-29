@@ -170,7 +170,7 @@ static const MimeInfo kPrimaryMappings[] = {
     {"image/avif", "avif"},
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #if false
-{"image/heif", "heif,heic,hevc"},
+   {"image/heif", "heif,heic,hevc"},
 #endif
 #endif
     {"image/gif", "gif"},

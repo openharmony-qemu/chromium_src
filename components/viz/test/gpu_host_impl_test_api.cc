@@ -132,7 +132,7 @@ void GpuHostImplTestApi::SetGpuService(
 }
 
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-std::string GpuHostImplTestApi::GetSurfaceId(int32_t native_embed_id) {
+std::string GpuHostImplTestApi::GetSurfaceId(int32_t native_embed_id){
   return gpu_host_->GetSurfaceId(native_embed_id);
 }
 #endif

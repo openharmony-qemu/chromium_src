@@ -7,8 +7,6 @@
 
 #include <utility>
 
-#include "arkweb/build/features/features.h"
-#include "build/build_config.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -18,6 +16,8 @@
 #include "third_party/blink/public/mojom/page/widget.mojom.h"
 #include "third_party/blink/public/mojom/widget/platform_widget.mojom.h"
 #include "ui/base/ime/mojom/text_input_state.mojom.h"
+#include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -80,17 +80,15 @@ class FakeRenderWidgetHost : public blink::mojom::FrameWidgetHost,
       mojo::PendingRemote<cc::mojom::RenderFrameMetadataObserver>
           render_frame_metadata_observer) override;
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void GetWordSelection(const std::string& text,
-                        int8_t offset,
-                        GetWordSelectionCallback callback) override {}
+  void GetWordSelection(const std::string& text, int8_t offset, GetWordSelectionCallback callback) override {}
   void SendCurrentLanguage(const std::string& ans) override {}
-  void CreateOverlay(const ::SkBitmap& image,
-                     const ::gfx::Rect& image_rect,
+  void CreateOverlay(const ::SkBitmap& image, const ::gfx::Rect& image_rect,
                      const ::gfx::Point& touch_point) override {}
+  void OnOverlayStateChanged(const gfx::Rect& image_rect) override {};
   void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
-  void DidNativeEmbedEvent(
-      blink::mojom::NativeEmbedTouchEventPtr event) override {}
-#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
+  void DidNativeEmbedEvent(blink::mojom::NativeEmbedTouchEventPtr event) override {}
+  void DidNativeEmbedMouseEvent(blink::mojom::NativeEmbedMouseEventPtr event) override {}
+#endif // BUILDFLAG(ARKWEB_UNITTESTS)
   // blink::mojom::PopupWidgetHost overrides.
   void RequestClosePopup() override;
   void ShowPopup(const gfx::Rect& initial_rect,

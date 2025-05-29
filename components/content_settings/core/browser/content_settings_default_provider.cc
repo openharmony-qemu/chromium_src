@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <string>
-
 #include "base/auto_reset.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
@@ -37,9 +36,9 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
-#include "base/command_line.h"
-#include "content/public/common/content_switches.h"
+#include "arkweb/chromium_ext/components/content_settings/core/browser/content_settings_default_provider_for_include.cc"
 #endif
+
 
 namespace content_settings {
 
@@ -223,19 +222,14 @@ bool DefaultProvider::SetWebsiteSetting(
   // Instead, they are synced to the main profile's setting.
   if (is_off_the_record_) {
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
-    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-            switches::kEnableNwebExExceptionList)) {
-      if (content_type != ContentSettingsType::COOKIES &&
-          content_type != ContentSettingsType::JAVASCRIPT) {
-        return true;
-      }
-    } else {
+    if (ShouldSkipSettingForContentTypeExt(content_type)) {
       return true;
     }
 #else
     return true;
 #endif
   }
+
 
   {
     base::AutoReset<bool> auto_reset(&updating_preferences_, true);

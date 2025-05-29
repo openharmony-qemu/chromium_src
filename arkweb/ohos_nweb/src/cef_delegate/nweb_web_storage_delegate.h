@@ -53,6 +53,7 @@ class NWebWebStorageDelegate : public NWebWebStorageDelegateInterface {
                           const std::string& username,
                           int callback_id) override;
   void GetSavedPasswordsInfo(int callback_id) override;
+  void MigratePasswordsInfo() override;
   void ClearPassword() override;
   void RemovePassword(const std::string& url,
                       const std::string& username) override;

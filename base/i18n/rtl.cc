@@ -208,8 +208,7 @@ TextDirection GetTextDirectionForLocaleInStartUp(const char* locale_name) {
 
 #if BUILDFLAG(ARKWEB_I18N)
   static constexpr auto kRtlLanguageCodes =
-      base::MakeFixedFlatSet<std::string_view>(
-          {"ar", "fa", "he", "iw", "ug", "ur"});
+      base::MakeFixedFlatSet<std::string_view>({"ar", "fa", "he", "iw",  "ug", "ur"});
 #else
   static constexpr auto kRtlLanguageCodes =
       base::MakeFixedFlatSet<std::string_view>({"ar", "fa", "he", "iw", "ur"});

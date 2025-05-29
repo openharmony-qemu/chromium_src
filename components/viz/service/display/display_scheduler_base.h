@@ -7,7 +7,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/raw_ptr.h"
 #include "base/threading/platform_thread.h"
@@ -15,6 +14,7 @@
 #include "components/viz/service/display/display_damage_tracker.h"
 #include "components/viz/service/performance_hint/hint_session.h"
 #include "components/viz/service/viz_service_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -38,10 +38,8 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerClient {
   virtual bool DrawAndSwap(const DrawAndSwapParams& params) = 0;
   virtual void DidFinishFrame(const BeginFrameAck& ack) = 0;
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  virtual void ReenableSwapCheck(const SurfaceId& surface_id,
-                                 int width,
-                                 int height) = 0;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+  virtual void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) = 0;
+#endif // ARKWEB_MAXIMIZE_RESIZE
 };
 
 class VIZ_SERVICE_EXPORT DisplaySchedulerBase
@@ -71,10 +69,8 @@ class VIZ_SERVICE_EXPORT DisplaySchedulerBase
   virtual void SetShouldFrameSubmissionBeforeDraw(bool should) = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void ReenableSwapCheck(const SurfaceId& surface_id,
-                         int width,
-                         int height) override;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
  protected:
   raw_ptr<DisplaySchedulerClient> client_ = nullptr;

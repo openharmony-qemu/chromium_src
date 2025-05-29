@@ -36,6 +36,7 @@ class BLINK_PLATFORM_EXPORT WebNativeClient {
                                      RectChangeCB rect_changed_cb) = 0;
   virtual void OnLayerRectChange(const gfx::Rect& rect) = 0;
   virtual void OnLayerRectVisibilityChange(bool visibility) = 0;
+  virtual void CleanupVisibilityForRemovedLayer(bool visibility) = 0;
   virtual void OnDestroyNativeSurface() = 0;
 
   // Returns the color space to render media into if.

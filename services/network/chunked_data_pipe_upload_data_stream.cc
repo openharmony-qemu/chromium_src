@@ -51,12 +51,7 @@ ChunkedDataPipeUploadDataStream::ChunkedDataPipeUploadDataStream(
   CHECK(chunked_data_pipe_getter_.is_bound());
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   if (!get_size_when_initialize) {
-    chunked_data_pipe_getter_.set_disconnect_handler(
-        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
-                       base::Unretained(this)));
-    chunked_data_pipe_getter_->GetSize(
-        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
-                       base::Unretained(this)));
+    ArkWebInitInternal();
   }
 #else
   chunked_data_pipe_getter_.set_disconnect_handler(
@@ -78,12 +73,7 @@ int ChunkedDataPipeUploadDataStream::InitInternal(
     const net::NetLogWithSource& net_log) {
 #if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
   if (get_size_when_initialize_) {
-    chunked_data_pipe_getter_.set_disconnect_handler(
-        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnDataPipeGetterClosed,
-                       base::Unretained(this)));
-    chunked_data_pipe_getter_->GetSize(
-        base::BindOnce(&ChunkedDataPipeUploadDataStream::OnSizeReceived,
-                       base::Unretained(this)));
+    ArkWebInitInternal();
   }
 #endif
   // If there was an error either passed to the ReadCallback or as a result of
@@ -329,12 +319,5 @@ int ChunkedDataPipeUploadDataStream::ReadFromCacheIfNeeded(net::IOBuffer* buf,
   bytes_read_ += read_size;
   return read_size;
 }
-
-#if BUILDFLAG(ARKWEB_SCHEME_HANDLER)
-mojo::PendingRemote<mojom::ChunkedDataPipeGetter>
-ChunkedDataPipeUploadDataStream::ReleaseChunkedDataPipeGetter() {
-  return chunked_data_pipe_getter_.Unbind();
-}
-#endif
 
 }  // namespace network

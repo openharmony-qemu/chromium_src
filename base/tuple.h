@@ -26,12 +26,11 @@
 #define BASE_TUPLE_H_
 
 #include <stddef.h>
-
 #include <tuple>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 
@@ -97,26 +96,6 @@ inline void DispatchToMethodImpl(const ObjT& obj,
                  &std::get<OutNs>(*out)...);
 }
 
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-template <typename ObjT,
-          typename Method,
-          typename InTuple,
-          typename OutTuple,
-          typename P,
-          size_t... InNs,
-          size_t... OutNs>
-inline void DispatchToMethodImpl_Param(const ObjT& obj,
-                                       Method method,
-                                       InTuple&& in,
-                                       OutTuple* out,
-                                       P* parameter,
-                                       std::index_sequence<InNs...>,
-                                       std::index_sequence<OutNs...>) {
-  (obj->*method)(parameter, std::get<InNs>(std::forward<InTuple>(in))...,
-                 &std::get<OutNs>(*out)...);
-}
-#endif
-
 template <typename ObjT, typename Method, typename InTuple, typename OutTuple>
 inline void DispatchToMethod(const ObjT& obj,
                              Method method,
@@ -128,25 +107,6 @@ inline void DispatchToMethod(const ObjT& obj,
                        std::make_index_sequence<in_size>(),
                        std::make_index_sequence<out_size>());
 }
-
-#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
-template <typename ObjT,
-          typename Method,
-          typename InTuple,
-          typename P,
-          typename OutTuple>
-inline void DispatchToMethod_Param(const ObjT& obj,
-                                   Method method,
-                                   InTuple&& in,
-                                   P* parameter,
-                                   OutTuple* out) {
-  constexpr size_t in_size = std::tuple_size<std::decay_t<InTuple>>::value;
-  constexpr size_t out_size = std::tuple_size<OutTuple>::value;
-  DispatchToMethodImpl_Param(obj, method, std::forward<InTuple>(in), out,
-                             parameter, std::make_index_sequence<in_size>(),
-                             std::make_index_sequence<out_size>());
-}
-#endif
 
 }  // namespace base
 

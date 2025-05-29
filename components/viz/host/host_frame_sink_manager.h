@@ -39,6 +39,7 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/public/mojom/compositing/frame_sink_bundle.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -47,6 +48,7 @@ class SingleThreadTaskRunner;
 namespace viz {
 
 class SurfaceInfo;
+class HostFrameSinkManagerUtils;
 
 enum class ReportFirstSurfaceActivation { kYes, kNo };
 
@@ -57,6 +59,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
     : public mojom::FrameSinkManagerClient,
       public HitTestDataProvider {
  public:
+  friend class HostFrameSinkManagerUtils;
+
+  std::unique_ptr<HostFrameSinkManagerUtils> managerUtils;
+
   HostFrameSinkManager();
 
   HostFrameSinkManager(const HostFrameSinkManager&) = delete;
@@ -276,19 +282,6 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
     return debug_renderer_settings_;
   }
 
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void SetEnableLowerFrameRate(bool enabled, const FrameSinkId& frame_sink_id);
-  void EvictFrameBackBuffers(const FrameSinkId& frame_sink_id, bool invisible);
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id);
-  void ResetVSyncFrequency(const FrameSinkId& frame_sink_id);
-#endif
-
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  void SendInternalBeginFrame(const FrameSinkId& id);
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
  private:
   friend class HostFrameSinkManagerTest;
   friend class HostFrameSinkManagerTestApi;
@@ -364,6 +357,7 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
       const std::vector<int32_t>& thread_ids,
       VerifyThreadIdsDoNotBelongToHostCallback callback) override;
 #endif
+
   void OnScreenshotCaptured(
       const blink::SameDocNavigationScreenshotDestinationToken&
           destination_token,
@@ -371,7 +365,7 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
 
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
   // Connections to/from FrameSinkManagerImpl.
   mojo::Remote<mojom::FrameSinkManager> frame_sink_manager_remote_;

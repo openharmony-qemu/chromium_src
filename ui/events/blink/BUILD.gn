@@ -22,6 +22,8 @@ source_set("blink") {
     "did_overscroll_params.h",
     "fling_booster.cc",
     "fling_booster.h",
+    "//arkweb/chromium_ext/ui/events/blink/fling_booster_utils.cc",
+    "//arkweb/chromium_ext/ui/events/blink/fling_booster_utils.h",
     "web_input_event.cc",
     "web_input_event.h",
     "web_input_event_traits.cc",

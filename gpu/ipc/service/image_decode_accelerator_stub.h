@@ -22,6 +22,10 @@
 #include "gpu/ipc/service/gpu_ipc_service_export.h"
 #include "gpu/ipc/service/image_decode_accelerator_worker.h"
 #include "ui/gfx/geometry/size.h"
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "third_party/skia/include/core/SkImage.h"
+#include "gpu/command_buffer/service/shared_context_state.h"
+#endif
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -31,6 +35,7 @@ namespace gpu {
 
 class GpuChannel;
 class Scheduler;
+class ImageDecodeAcceleratorStubExt;
 
 // Processes incoming image decode requests from renderers: it schedules the
 // decode with the appropriate hardware decode accelerator and releases sync
@@ -49,6 +54,13 @@ class Scheduler;
 class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
     : public base::RefCountedThreadSafe<ImageDecodeAcceleratorStub> {
  public:
+
+  friend class ImageDecodeAcceleratorStubExt;
+
+  virtual gpu::ImageDecodeAcceleratorStubExt* AsImageDecodeAcceleratorStubExt() {
+    return nullptr;
+  }
+
   // TODO(andrescj): right now, we only accept one worker to be used for JPEG
   // decoding. If we want to use multiple workers, we need to ensure that sync
   // tokens are released in order.
@@ -72,7 +84,7 @@ class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
 
  private:
   friend class base::RefCountedThreadSafe<ImageDecodeAcceleratorStub>;
-  ~ImageDecodeAcceleratorStub();
+  virtual ~ImageDecodeAcceleratorStub();
 
   // Creates the service-side cache entry for a completed decode. If the decode
   // was unsuccessful, no cache entry is created.
@@ -82,7 +94,14 @@ class GPU_IPC_SERVICE_EXPORT ImageDecodeAcceleratorStub
   void FinishCompletedDecode() EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  void ReleasePixmapData(base::WaitableEvent* finish_event);
+  virtual void ReleasePixmapData(base::WaitableEvent* finish_event) {}
+
+  virtual bool ProcessCompletedDecodeExt(mojom::ScheduleImageDecodeParams& params,
+                                         scoped_refptr<SharedContextState> shared_context_state,
+                                         std::vector<sk_sp<SkImage>> plane_sk_images,
+                                         std::optional<base::ScopedClosureRunner>& notify_gl_state_changed,
+                                         std::unique_ptr<ImageDecodeAcceleratorWorker::DecodeResult>& completed_decode)
+                                        EXCLUSIVE_LOCKS_REQUIRED(lock_) {}
 #endif
 
   // The |worker_| calls this when a decode is completed. |result| is enqueued

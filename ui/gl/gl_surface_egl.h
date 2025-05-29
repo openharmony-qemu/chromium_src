@@ -35,11 +35,14 @@
 #include "ui/gl/android/scoped_a_native_window.h"
 #endif
 
+#include "arkweb/chromium_ext/ui/gl/arkweb_gl_surface_egl_utils.h"
+
 namespace gl {
 #if BUILDFLAG(IS_OHOS)
 constexpr uint32_t kMaxSwapIntervalOhos = 16;
 #endif
 class GLSurfacePresentationHelper;
+class ArkwebGlSurfaceEglUtils;
 
 // Interface for EGL surface.
 class GL_EXPORT GLSurfaceEGL : public GLSurface {
@@ -70,6 +73,7 @@ class GL_EXPORT GLSurfaceEGL : public GLSurface {
 class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
                                          public EGLTimestampClient {
  public:
+ friend class ArkwebGlSurfaceEglUtils;
 #if BUILDFLAG(IS_ANDROID)
   NativeViewGLSurfaceEGL(GLDisplayEGL* display,
                          ScopedANativeWindow scoped_window,
@@ -184,8 +188,10 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   bool vsync_enabled_ = true;
   std::unique_ptr<GLSurfacePresentationHelper> presentation_helper_;
 
+  raw_ptr<ArkwebGlSurfaceEglUtils> arkweb_surface_utils_;
+
 #if BUILDFLAG(IS_OHOS)
- protected:
+protected:
   bool enable_replace_swap_buffer_output_ = false;
   bool is_first_swapbuffers_ = true;
 #endif

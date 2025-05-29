@@ -8,6 +8,7 @@
 #endif
 
 #include "url/url_util.h"
+#include "arkweb/build/features/features.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -15,7 +16,6 @@
 #include <atomic>
 #include <ostream>
 
-#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/containers/contains.h"
@@ -151,9 +151,9 @@ struct SchemeRegistry {
 
 #if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
   std::vector<std::string> code_cache_enabled_schemes = {
-      kFileScheme,
+    kFileScheme,
   };
-#endif `
+#endif`
 
   bool allow_non_standard_schemes = false;
 };
@@ -764,7 +764,7 @@ bool IsCodeCacheEnabledScheme(const std::string& scheme) {
 }
 
 const std::vector<std::string>& GetCodeCacheEnabledSchemes() {
-  return GetSchemeRegistry().code_cache_enabled_schemes;
+    return GetSchemeRegistry().code_cache_enabled_schemes;
 }
 #endif
 

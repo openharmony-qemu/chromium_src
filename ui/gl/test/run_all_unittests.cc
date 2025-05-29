@@ -22,10 +22,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-#include "content/browser/scheduler/browser_io_thread_delegate.h"
-#include "content/browser/scheduler/browser_task_executor.h"
-#include "content/browser/scheduler/browser_task_priority.h"
-#include "content/browser/scheduler/browser_ui_thread_scheduler.h"
+#include "arkweb/chromium_ext/ui/gl/test/run_all_unittests_ext.h"
 #endif
 
 namespace {
@@ -39,6 +36,10 @@ class GlTestSuite : public base::TestSuite {
 
  protected:
   void Initialize() override {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+#endif
     base::TestSuite::Initialize();
 
 #if BUILDFLAG(IS_MAC)
@@ -47,8 +48,12 @@ class GlTestSuite : public base::TestSuite {
     mock_cr_app::RegisterMockCrApp();
 #endif
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    task_environment_ = std::make_unique<base::test::TaskEnvironment>();
+#else
     task_environment_ = std::make_unique<base::test::TaskEnvironment>(
         base::test::TaskEnvironment::MainThreadType::UI);
+#endif
 
 #if BUILDFLAG(IS_OZONE)
     // Make Ozone run in single-process mode, where it doesn't expect a GPU
@@ -57,19 +62,8 @@ class GlTestSuite : public base::TestSuite {
     // and GPU components.
     ui::OzonePlatform::InitParams params;
     params.single_process = true;
-#if defined(ARKWEB_UNITTESTS)
-    auto ui_sequence_manager_ =
-        base::sequence_manager::CreateUnboundSequenceManager(
-            base::sequence_manager::SequenceManager::Settings::Builder()
-                .SetPrioritySettings(
-                    content::internal::CreateBrowserTaskPrioritySettings())
-                .Build());
-    auto browser_ui_thread_scheduler =
-        content::BrowserUIThreadScheduler::CreateForTesting(
-            ui_sequence_manager_.get());
-    content::BrowserTaskExecutor::CreateForTesting(
-        std::move(browser_ui_thread_scheduler),
-        std::make_unique<content::BrowserIOThreadDelegate>());
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    ARKWEB_UNITTESTS_CREATE_FOR_TESTING()
 #endif
 
     // This initialization must be done after TaskEnvironment has

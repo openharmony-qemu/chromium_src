@@ -707,29 +707,7 @@ bool ResolveContext::ServerStatsToDohAvailability(
 }
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void ResolveContext::NotifyDohStatsInit() {
-  if (!is_https_dns_fallback_enabled_) {
-    return;
-  }
-
-  if (doh_server_stats_.empty()) {
-    return;
-  }
-
-  for (size_t i = 0; i < doh_server_stats_.size(); i++) {
-    ServerStats* stats = &doh_server_stats_[i];
-    stats->last_failure_count = 0;
-    stats->current_connection_success = true;
-    stats->last_failure = base::TimeTicks();
-    stats->last_success = base::TimeTicks();
-    LOG(INFO) << "Doh server " << i << " stats init successfully.";
-    // TODO(ARKWEB)
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Doh server " << i << " stats init
-    //     successfully.";
-    // #endif
-  }
-}
+#include "arkweb/chromium_ext/net/dns/resolve_context_for_include.cc"
 #endif
 
 }  // namespace net

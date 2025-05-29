@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/bits.h"
 #include "base/check.h"
 #include "base/check_op.h"
@@ -47,6 +46,8 @@
 #include "v8/include/v8-initialization.h"
 #include "v8/include/v8-snapshot.h"
 
+#include "arkweb/build/features/features.h"
+
 #if defined(V8_USE_EXTERNAL_STARTUP_DATA)
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
@@ -60,6 +61,7 @@
 #include "base/files/file_util.h"
 #include "content/public/common/content_switches.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+//#include "ohos_adapter_helper.h"
 
 #endif
 
@@ -699,11 +701,10 @@ int V8Initializer::LoadV8SnapshotFromFileByHap(
       OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
 
   std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
-      resourceInstance->GetRawFileMapper(kSnapshotFileNameHap, true);
+    resourceInstance->GetRawFileMapper(kSnapshotFileNameHap, true);
 
   if (!fileMapper) {
-    LOG(FATAL) << "couldn't mmap snapshot_blob data file "
-               << kSnapshotFileNameHap;
+    LOG(FATAL) << "couldn't mmap snapshot_blob data file " << kSnapshotFileNameHap;
     return 1;
   }
   LOG(INFO) << "snapshot_blob data file length: " << fileMapper->GetDataLen();

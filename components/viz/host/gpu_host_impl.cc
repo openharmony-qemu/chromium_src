@@ -45,6 +45,8 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#include "arkweb/chromium_ext/components/viz/host/gpu_host_impl_utils.cc"
+
 namespace viz {
 namespace {
 
@@ -193,35 +195,6 @@ void GpuHostImpl::OnProcessCrashed() {
     }
   }
 }
-#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void GpuHostImpl::StartMonitor() {
-  gpu_service_remote_->StartMonitor();
-}
-
-void GpuHostImpl::StopMonitor() {
-  gpu_service_remote_->StopMonitor();
-}
-#endif
-
-#if BUILDFLAG(IS_ARKWEB)
-void GpuHostImpl::SetVisible(int32_t nweb_id, bool visible) {
-  gpu_service_remote_->SetVisible(nweb_id, visible);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
-void GpuHostImpl::SetHasTouchPoint(bool has_touch_point) {
-  gpu_service_remote_->SetHasTouchPoint(has_touch_point);
-}
-
-void GpuHostImpl::ReportSlidingFrameRate(int32_t frame_rate) {
-  gpu_service_remote_->ReportSlidingFrameRate(frame_rate);
-}
-
-void GpuHostImpl::SetLTPOStrategy(int32_t strategy) {
-  gpu_service_remote_->SetLTPOStrategy(strategy);
-}
-#endif
 
 void GpuHostImpl::AddConnectionErrorHandler(base::OnceClosure handler) {
   connection_error_handlers_.push_back(std::move(handler));
@@ -307,26 +280,6 @@ void GpuHostImpl::SetChannelClientPid(int client_id,
                                       base::ProcessId client_pid) {
   gpu_service_remote_->SetChannelClientPid(client_id, client_pid);
 }
-
-#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
-std::string GpuHostImpl::GetSurfaceId(int32_t native_embed_id) {
-  LOG(DEBUG) << "get surface id = " << native_embed_id;
-  mojo::SyncCallRestrictions::ScopedAllowSyncCall allow_sync;
-  std::string surface_id = "";
-  gpu_service_remote_->GetSurfaceId(native_embed_id, &surface_id);
-  return surface_id;
-}
-
-void GpuHostImpl::SetTransformHint(uint32_t rotation, uint32_t window_id) {
-  LOG(DEBUG) << "SetTransformHint angle: " << rotation;
-  gpu_service_remote_->SetTransformHint(rotation, window_id);
-}
-
-void GpuHostImpl::DestroyNativeWindow(uint32_t native_window_id) {
-  LOG(DEBUG) << "destroy native window id = " << native_window_id;
-  gpu_service_remote_->DestroyNativeWindow(native_window_id);
-}
-#endif
 
 void GpuHostImpl::SetChannelDiskCacheHandle(
     int client_id,

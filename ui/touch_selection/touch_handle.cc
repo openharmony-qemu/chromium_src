@@ -139,14 +139,8 @@ void TouchHandle::SetFocus(const gfx::PointF& top, const gfx::PointF& bottom) {
   if (focus_top_ == top && focus_bottom_ == bottom)
     return;
 #if BUILDFLAG(ARKWEB_MENU)
-  if (focus_bottom_.y() < focus_top_.y()) {
-    if (focus_top_ == bottom && focus_bottom_ == top)
-      return;
-    focus_top_ = bottom;
-    focus_bottom_ = top;
-    SetUpdateLayoutRequired();
+  if (AsTouchHandleExt()->SetFocus(top, bottom))
     return;
-  }
 #endif
   focus_top_ = top;
   focus_bottom_ = bottom;
@@ -214,7 +208,7 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       if (orientation_ == TouchHandleOrientation::LEFT) {
         touch_drag_offset_ = focus_top_ - touch_down_position_;
       }
-#endif  // BUILDFLAG(ARKWEB_MENU)
+#endif // BUILDFLAG(ARKWEB_MENU)
       BeginDrag();
     } break;
 
@@ -281,12 +275,6 @@ gfx::RectF TouchHandle::GetVisibleBounds() const {
   return drawable_->GetVisibleBounds();
 }
 
-#if BUILDFLAG(ARKWEB_MENU)
-void TouchHandle::SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) {
-  drawable_->SetEdge(top, bottom);
-}
-#endif
-
 void TouchHandle::UpdateHandleLayout() {
   // Suppress repositioning a handle while invisible or fading out to prevent it
   // from "ghosting" outside the visible bounds. The position will be pushed to
@@ -343,16 +331,6 @@ void TouchHandle::UpdateHandleLayout() {
 #endif
   drawable_->SetOrigin(ComputeHandleOrigin());
 }
-
-#if BUILDFLAG(ARKWEB_MENU)
-void TouchHandle::ResetPositionAfterDragEnd() {
-  if (!is_visible_ || !drawable_) {
-    return;
-  }
-
-  drawable_->SetOrigin(ComputeHandleOrigin());
-}
-#endif
 
 void TouchHandle::SetTransparent() {
   SetAlpha(0.f);

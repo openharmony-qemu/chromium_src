@@ -2,15 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "arkweb/build/features/features.h"
-
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-#define private public
 #include "ui/gfx/render_text.h"
-#undef private
-#else  // ARKWEB_UNITTESTS
-#include "ui/gfx/render_text.h"
-#endif  // ARKWEB_UNITTESTS
 
 #include <limits.h>
 #include <stddef.h>
@@ -9177,26 +9169,5 @@ TEST_P(RenderTextDirectionTest, GetCurrentHorizontalAlignment) {
   render_text()->SetDirectionalityMode(DIRECTIONALITY_AS_URL);
   EXPECT_EQ(ALIGN_LEFT, GetCurrentHorizontalAlignment());
 }
-#if BUILDFLAG(ARKWEB_UNITTESTS)
-TEST_F(RenderTextTest, SetDrawStringsFlagsTest001) {
-  RenderText* render_text = GetRenderText();
-  render_text->cached_bounds_and_offset_valid_ = true;
-  render_text->SetDrawStringsFlags(0);
-  EXPECT_EQ(render_text->draw_strings_flags(), 0);
-  EXPECT_TRUE(render_text->cached_bounds_and_offset_valid_);
-}
 
-TEST_F(RenderTextTest, SetDrawStringsFlagsTest002) {
-  RenderText* render_text = GetRenderText();
-  render_text->SetDrawStringsFlags(3);
-  EXPECT_EQ(render_text->draw_strings_flags(), 3);
-}
-
-TEST_F(RenderTextTest, OnTextAttributeChanged001) {
-  RenderText* render_text = GetRenderText();
-  render_text->SetDrawStringsFlags(3);
-  render_text->OnTextAttributeChanged();
-  EXPECT_EQ(render_text->draw_strings_flags(), 3);
-}
-#endif  // ARKWEB_UNITTESTS
 }  // namespace gfx

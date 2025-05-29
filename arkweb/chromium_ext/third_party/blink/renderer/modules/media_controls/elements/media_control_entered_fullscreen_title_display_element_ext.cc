@@ -11,6 +11,7 @@
 #include "third_party/blink/renderer/core/page/page.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/wtf/text/unicode.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
 
 namespace blink {
 
@@ -28,7 +29,7 @@ MediaControlEnteredFullscreenTitleDisplayElement::
 }
 
 void MediaControlEnteredFullscreenTitleDisplayElement::UpdateTitle() {
-  SetTitle(MediaElement().GetTitle());
+  SetTitle(MediaElement().html_media_element_utils_->GetTitle());
 }
 
 void MediaControlEnteredFullscreenTitleDisplayElement::SetTitle(

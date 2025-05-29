@@ -52,10 +52,6 @@ class GestureConfigurationAndroid : public GestureConfiguration {
     }
 #endif
     set_long_press_time_in_ms(ViewConfiguration::GetLongPressTimeoutInMs());
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-    set_drag_long_press_time_in_ms(
-        ViewConfiguration::GetLongPressTimeoutInMs() + 600);
-#endif
     set_max_distance_between_taps_for_double_tap(
         ViewConfiguration::GetDoubleTapSlopInDips());
     set_max_fling_velocity(

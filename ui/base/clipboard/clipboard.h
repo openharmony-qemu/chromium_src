@@ -51,6 +51,9 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
  public:
   using ReadAvailableTypesCallback =
       base::OnceCallback<void(std::vector<std::u16string> result)>;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  using UpdateClipboardDataCallback = base::OnceCallback<void()>;
+#endif
   using ReadTextCallback = base::OnceCallback<void(std::u16string result)>;
   using ReadAsciiTextCallback = base::OnceCallback<void(std::string result)>;
   using ReadHtmlCallback = base::OnceCallback<void(std::u16string markup,
@@ -313,9 +316,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) Clipboard
                          const GURL& main_frame);
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
-  virtual bool HasPasteData() const;
+  virtual bool HasPasteData() const { return false; }
 
   virtual void OnClipboardDataGuard(bool status) {}
+
+  virtual void UpdateClipboardData(UpdateClipboardDataCallback) {}
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
  protected:

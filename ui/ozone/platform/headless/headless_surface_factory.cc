@@ -209,9 +209,8 @@ class GLOzoneEGLHeadless : public GLOzoneEGL {
       const gfx::ColorSpace& color_space,
       GLenum target,
       GLuint texture_id) override {
-    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane,
-                                          plane_size, color_space, target,
-                                          texture_id);
+    return NativePixmapEGLBinding::Create(pixmap, plane_format, plane, plane_size,
+                                          color_space, target, texture_id);
   }
 #endif
 
@@ -296,16 +295,15 @@ scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmap(
 }
 
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-scoped_refptr<gfx::NativePixmap>
-HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
-    gfx::AcceleratedWidget widget,
-    gfx::Size size,
-    gfx::BufferFormat format,
-    gfx::NativePixmapHandle handle,
-    void* window_buffer) {
+scoped_refptr<gfx::NativePixmap> HeadlessSurfaceFactory::CreateNativePixmapFromHandle(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
   scoped_refptr<gfx::NativePixmapDmaBuf> pixmap =
       base::MakeRefCounted<gfx::NativePixmapDmaBuf>(
-          size, format, std::move(handle), window_buffer);
+         size, format, std::move(handle), window_buffer);
 
   return pixmap;
 }

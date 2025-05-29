@@ -74,14 +74,6 @@ if (!is_android) {
         "//ohos/adapter:adapter",
       ]
       sources += arkweb_battery_sources
-    } else if (is_ohos) {
-      deps += [
-        "//ohos/adapter:adapter",
-      ]
-      sources += [
-        "battery_status_manager_ohos.cc",
-        "battery_status_manager_ohos.h",
-      ]
     } else {
       sources += [ "battery_status_manager_default.cc" ]
     }

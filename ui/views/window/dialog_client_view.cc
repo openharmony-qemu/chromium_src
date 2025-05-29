@@ -223,9 +223,9 @@ ProposedLayout DialogClientView::CalculateProposedLayout(
     gfx::Rect contents_bounds(size_bounds.width().value(), container_y);
     contents_bounds.Inset(GetDialogDelegate()->margins());
 #if defined(__clang__) && (__clang_major__ < 17)
-    layouts.child_layouts.emplace_back(
-        ChildLayout{contents_view(), contents_view()->GetVisible(),
-                    contents_bounds, size_bounds});
+    layouts.child_layouts.emplace_back(ChildLayout{contents_view(),
+                                       contents_view()->GetVisible(),
+                                       contents_bounds, size_bounds});
 #else
     layouts.child_layouts.emplace_back(contents_view(),
                                        contents_view()->GetVisible(),

@@ -209,7 +209,7 @@ void LatencyInfo::AddLatencyNumberWithTimestampImpl(
                    (time - first_scroll_start_timestamp).InMillisecondsF());
     } else if (FindLatency(INPUT_EVENT_LATENCY_SCROLL_UPDATE_ORIGINAL_COMPONENT,
                            &original_scroll_start_timestamp)) {
-      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::OriginScrollUpdate",
+      TRACE_EVENT1("input", "OnGpuSwapBuffersCompleted::OriginalScrollUpdate",
                    "time",
                    (time - original_scroll_start_timestamp).InMillisecondsF());
     }

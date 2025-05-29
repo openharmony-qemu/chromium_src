@@ -5,9 +5,24 @@ arkweb_content_browser_mediasession_sources = [
   "//arkweb/chromium_ext/content/browser/media/session/audio_interrupt_adapter_impl.cc",
   "//arkweb/chromium_ext/content/browser/media/session/audio_interrupt_adapter_impl.h",
 
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.h",
+
   "//arkweb/chromium_ext/content/browser/media/session/media_session_ohos.cc",
   "//arkweb/chromium_ext/content/browser/media/session/media_session_ohos.h",
   
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.cc",
   "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_player_renderer.h",
+
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_resource_getter_impl.cc",
+  "//arkweb/chromium_ext/content/browser/media/ohos/ohos_media_resource_getter_impl.h",
+
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_impl_utils.cc",
+  "//arkweb/chromium_ext/content/browser/media/session/media_session_impl_utils.h",
+
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream.cc",
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream.h",
+
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.cc",
+  "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.h",
 ]

@@ -16,6 +16,7 @@
 #include "cef/include/cef_download_item.h"
 #include "ohos_nweb/src/capi/nweb_c_api.h"
 #include "ohos_nweb/src/nweb_hilog.h"
+#include "include/cef_download_item_ext.h"
 
 #ifndef OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
 #define OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
@@ -118,9 +119,8 @@ struct NWebDownloadItem {
     url = strdup(url_.c_str());
     std::string original_url_ = download_item->GetOriginalUrl().ToString();
     original_url = strdup(original_url_.c_str());
-    std::string content_disposition_ = download_item->AsArkDownloadItem()
-                                           ->GetContentDispositionCefValue()
-                                           ->GetStdString();
+    std::string content_disposition_ =
+        download_item->GetContentDisposition().ToString();
     content_disposition = strdup(content_disposition_.c_str());
     std::string mime_type_ = download_item->GetMimeType().ToString();
     mime_type = strdup(mime_type_.c_str());

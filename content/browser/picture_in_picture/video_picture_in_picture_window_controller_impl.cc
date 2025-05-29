@@ -20,6 +20,10 @@
 #include "content/public/browser/web_contents_observer.h"
 #include "content/public/common/content_client.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/picture_in_picture/video_pip_for_include.cc"
+#endif
+
 namespace content {
 
 // static
@@ -106,12 +110,16 @@ void VideoPictureInPictureWindowControllerImpl::FocusInitiator() {
 }
 
 void VideoPictureInPictureWindowControllerImpl::Close(bool should_pause_video) {
+#if BUILDFLAG(ARKWEB_PIP)
+  CloseExt(should_pause_video);
+#else
   if (!window_ || !window_->IsVisible())
     return;
 
   window_->Hide();
   // The call to `Hide()` may cause `window_` to be cleared.
   CloseInternal(should_pause_video);
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::CloseAndFocusInitiator() {
@@ -265,6 +273,12 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
     const gfx::Rect& source_bounds,
     mojo::PendingRemote<blink::mojom::PictureInPictureSession>* session_remote,
     gfx::Size* window_size) {
+#if BUILDFLAG(ARKWEB_PIP)
+    pip_media_player_id_ = player_id;
+    return StartSessionExt(
+      service, player_id, std::move(player_remote), surface_id, natural_size, show_play_pause_button,
+      std::move(observer), source_bounds, session_remote, window_size);
+#else
   auto result = GetWebContentsImpl()->EnterPictureInPicture();
 
   // Picture-in-Picture may not be supported by all embedders, so we should only
@@ -304,6 +318,7 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
   // call back with the bounds once the window provides them.
   *window_size = GetSize();
   return result;
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::OnServiceDeleted(
@@ -490,6 +505,9 @@ void VideoPictureInPictureWindowControllerImpl::MediaStoppedPlaying(
 }
 
 void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyed() {
+#if BUILDFLAG(ARKWEB_PIP)
+  WebContentsDestroyedExt();
+#endif
   if (window_)
     window_->Close();
 }
@@ -497,7 +515,9 @@ void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyed() {
 void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
     bool should_pause_video) {
   DCHECK(active_session_);
-
+#if BUILDFLAG(ARKWEB_PIP)
+  OnLeavingPictureInPictureExt(should_pause_video);
+#else
   if (IsPlayerActive() && should_pause_video) {
     // Pause the current video so there is only one video playing at a time.
     active_session_->GetMediaPlayerRemote()->RequestPause(
@@ -506,6 +526,7 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
 
   active_session_->Shutdown();
   active_session_ = nullptr;
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::CloseInternal(

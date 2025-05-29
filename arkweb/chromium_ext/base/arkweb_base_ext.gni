@@ -9,6 +9,8 @@ arkweb_base_ext_sources += [
   "//arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h",
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.cc",
   "//arkweb/chromium_ext/base/ohos/dynamic_frame_loss_monitor.h",
+  "//arkweb/chromium_ext/base/files/memory_mapped_file_ext.cc",
+  "//arkweb/chromium_ext/base/files/memory_mapped_file_ext.h",
 ]
 
 if (arkweb_file_upload) {
@@ -34,6 +36,11 @@ if (arkweb_vulkan) {
   ]
 }
 
+arkweb_metrics_sources = [
+  "//arkweb/chromium_ext/base/metrics/field_trial_utils.cc",
+  "//arkweb/chromium_ext/base/metrics/field_trial_utils.h",
+]
+
 arkweb_base_ohos_ltpo_sources = [
   "//arkweb/chromium_ext/base/ohos/ltpo/src/dynamic_frame_rate_decision.cc",
   "//arkweb/chromium_ext/base/ohos/ltpo/include/dynamic_frame_rate_decision.h",
@@ -48,4 +55,18 @@ arkweb_base_ohos_ltpo_sources = [
 arkweb_base_ohos_ltpo_unittests_sources = [
   "//arkweb/chromium_ext/base/ohos/ltpo/src/dynamic_frame_rate_decision_unittest.cc",
   "//arkweb/chromium_ext/base/ohos/ltpo/src/sliding_observer_unittest.cc",
+]
+
+arkweb_base_ohos_d_vsync_sources = [
+  "//arkweb/chromium_ext/base/ohos/d_vsync/src/d_vsync_controller.cc",
+  "//arkweb/chromium_ext/base/ohos/d_vsync/include/d_vsync_controller.h",
+]
+
+arkweb_base_i18n_sources = [
+  "//arkweb/chromium_ext/base/i18n/icu_util_ohos.h",
+]
+
+arkweb_base_process_ext_sources = [
+  "//arkweb/chromium_ext/base/process/process_handle_posix_ex.cc",
+  "//arkweb/chromium_ext/base/process/process_handle_posix_ex.h",
 ]

@@ -5,6 +5,7 @@
 #include "components/web_cache/renderer/web_cache_impl.h"
 
 #include "third_party/blink/public/platform/web_cache.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/exported/we_cache_utils.h"
 
 namespace web_cache {
 
@@ -56,8 +57,8 @@ void WebCacheImpl::AddResourceToCache(
     const std::vector<uint8_t>& resource,
     const base::flat_map<std::string, std::string>& response_headers,
     const uint64_t type) {
-  blink::WebCache::AddResourceToCache(url, origin, resource, response_headers,
-                                      type);
+  blink::WebCacheUtils::AddResourceToCache(url, origin, resource, response_headers,
+      type);
 }
 #endif
 }  // namespace web_cache

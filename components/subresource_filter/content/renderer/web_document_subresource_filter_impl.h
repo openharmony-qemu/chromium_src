@@ -126,7 +126,11 @@ class WebDocumentSubresourceFilterImpl final
       url_pattern_index::proto::ElementType element_type);
 
   mojom::ActivationState activation_state_;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DocumentSubresourceFilterExt filter_;
+#else
   DocumentSubresourceFilter filter_;
+#endif
   base::OnceClosure first_disallowed_load_callback_;
   base::WeakPtrFactory<WebDocumentSubresourceFilterImpl> weak_ptr_factory_{
       this};

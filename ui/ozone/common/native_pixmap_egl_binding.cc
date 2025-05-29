@@ -146,10 +146,8 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     GLuint texture_id) {
   DCHECK(!pixmap_);
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-  LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat "
-             << (int)GLInternalFormat(format_) << ", format_ " << (int)format_
-             << ", plane_ " << (int)plane_ << ", WindowBuffer "
-             << pixmap->GetWindowBuffer();
+  LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat " <<  (int)GLInternalFormat(format_)
+    << ", format_ " << (int)format_ <<   ", plane_ " << (int)plane_ << ", WindowBuffer " << pixmap->GetWindowBuffer();
 #endif
   if (FourCC(format_) == DRM_FORMAT_INVALID) {
     LOG(ERROR) << "Unsupported format: " << gfx::BufferFormatToString(format_);

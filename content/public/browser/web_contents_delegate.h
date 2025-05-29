@@ -12,7 +12,6 @@
 #include <string>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
@@ -42,6 +41,7 @@
 #include "ui/base/window_open_disposition.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -53,7 +53,7 @@
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 #include "media/mojo/mojom/media_player.mojom-forward.h"
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 class GURL;
 
@@ -90,10 +90,13 @@ struct Referrer;
 class CustomMediaPlayer;
 class CustomMediaPlayerListener;
 struct MediaInfo;
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class MediaPlayerController;
+class MediaPlayerListener;
 class VideoAssistant;
+struct MediaPlayerId;
 #endif  // ARKWEB_VIDEO_ASSISTANT
 }  // namespace content
 
@@ -325,24 +328,6 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual bool HandleContextMenu(RenderFrameHost& render_frame_host,
                                  const ContextMenuParams& params);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void OnAdsBlocked(
-      const std::string& main_frame_url,
-      const std::map<std::string, int32_t>& subresource_blocked,
-      bool is_site_first_report) {}
-
-  virtual bool TrigAdBlockEnabledForSiteFromUi(
-      const std::string& main_frame_url,
-      int main_frame_tree_node_id) {
-    return false;
-  }
-#endif
-
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  virtual void OnShareFile(const std::string& filePath,
-                           const std::string& utdTypeId) {}
-#endif
-
   // Allows delegates to handle keyboard events before sending to the renderer.
   // See enum for description of return values.
   virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(
@@ -378,10 +363,6 @@ class CONTENT_EXPORT WebContentsDelegate {
   // Allows delegate to override navigation to the history entries.
   // Returns true to allow WebContents to continue with the default processing.
   virtual bool OnGoToEntryOffset(int offset);
-
-#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  virtual void OnActivateContent() {}
-#endif
 
   // Allows delegate to control whether a new WebContents can be created by
   // the WebContents itself.
@@ -715,14 +696,6 @@ class CONTENT_EXPORT WebContentsDelegate {
                          const Referrer& referrer,
                          RenderFrameHost* rfh);
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  virtual void WebExtensionUpdateTab(
-      int32_t tab_id,
-      const NWebExtensionTabUpdateProperties* update_properties);
-  virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) {}
-  virtual int32_t ExtensionGetTabId() const { return -1; }
-#endif
-
   // Called when a suspicious navigation of the main frame has been blocked.
   // Allows the delegate to provide some UI to let the user know about the
   // blocked navigation and give them the option to recover from it.
@@ -915,62 +888,18 @@ class CONTENT_EXPORT WebContentsDelegate {
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual void ClearContextMenu() {}
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void OnNativeEmbedStatusUpdate(
-      const NativeEmbedInfo& native_embed_info,
-      NativeEmbedInfo::TagState state) {}
-  virtual void OnNativeEmbedFirstFramePaint(
-      int32_t native_embed_id,
-      const std::string& embed_id_attribute) {}
-  virtual void OnLayerRectVisibilityChange(const std::string& embed_id,
-                                           bool visibility) {}
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/browser/web_contents_delegate_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) {}
+  virtual void OnPip(int status,
+                     int delegate_id,
+                     int child_id,
+                     int frame_routing_id,
+                     int width,
+                     int height) {}
 #endif
-
-#if BUILDFLAG(ARKWEB_BFCACHE)
-  // Return back_forward_cache time to live.
-  virtual int BackForwardCacheTimeToLive() { return 600; }
-
-  // Return back_forward_cache max cache size.
-  virtual int BackForwardCacheSize() { return -1; }
-#endif
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  virtual std::unique_ptr<CustomMediaPlayer> CreateCustomMediaPlayer(
-      std::unique_ptr<CustomMediaPlayerListener> listener,
-      const MediaInfo& media_info);
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-
-#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
-  virtual void OnBeforeUnloadFired(bool proceed) {}
-#endif  // ARKWEB_DISATCH_BEFORE_UNLOAD
-
-#if BUILDFLAG(ARKWEB_DATALIST)
-  virtual void OnShowAutofillPopup(
-      const gfx::RectF& element_bounds,
-      bool is_rtl,
-      const std::vector<autofill::Suggestion>& suggestions,
-      bool is_password_popup_type) {}
-  virtual void OnHideAutofillPopup() {}
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  virtual std::unique_ptr<VideoAssistant> CreateVideoAssistant();
-  virtual void PopluateVideoAssistantConfig(
-      const std::string& url,
-      media::mojom::VideoAssistantConfigPtr& config);
-  virtual void OnVideoPlaying(
-      media::mojom::VideoAttributesForVASTPtr video_attributes);
-  virtual void OnUpdateVideoAttributes(
-      media::mojom::VideoAttributesForVASTPtr video_attributes);
-
-  virtual void OnShowToast(double duration, const std::string& toast);
-  virtual void OnShowVideoAssistant(const std::string& videoAssistantItems);
-  virtual void OnReportStatisticLog(const std::string& content);
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 
  protected:
   virtual ~WebContentsDelegate();

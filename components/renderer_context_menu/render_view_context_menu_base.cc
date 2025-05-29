@@ -396,9 +396,8 @@ bool RenderViewContextMenuBase::GetAcceleratorForCommandId(
     int id,
     ui::Accelerator* accelerator) const {
   for (auto& observer : observers_) {
-    if (observer.IsCommandIdSupported(id)) {
+    if (observer.IsCommandIdSupported(id))
       return observer.GetAccelerator(id, accelerator);
-    }
   }
 
   return false;

@@ -54,21 +54,13 @@ template("generate_policy_source") {
       chrome_settings_proto_path,
       cloud_policy_proto_path,
     ]
-    if (is_arkweb) {
-      args = [
-        # Input information.
-        "--all-chrome-version",
-        "--policy-templates-file=" + rebase_path(policy_templates_generated_json_path, root_build_dir),
-        "--target-platform=" + target_os,
-      ]
-    } else {
-      args = [
-        # Input information.
-        "--chrome-version-major=" + chrome_version_major,
-        "--policy-templates-file=" + rebase_path(policy_templates_generated_json_path, root_build_dir),
-        "--target-platform=" + target_os,
-      ]
-    }
+    args = [
+      # Input information.
+      "--chrome-version-major=" + chrome_version_major,
+      "--policy-templates-file=" +
+          rebase_path(policy_templates_generated_json_path, root_build_dir),
+      "--target-platform=" + target_os,
+    ]
     if (!chunking) {
       args += [ "--no-chunking" ]
     }

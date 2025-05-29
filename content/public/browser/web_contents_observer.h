@@ -9,7 +9,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list_types.h"
 #include "base/process/kill.h"
@@ -40,6 +39,7 @@
 #include "ui/accessibility/ax_location_and_scroll_updates.h"
 #include "ui/base/page_transition_types.h"
 #include "ui/base/window_open_disposition.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -775,9 +775,9 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   virtual void DidUpdateAudioMutingState(bool muted) {}
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  // Set whether to the HTML play can be used to control media
+  //Set whether to the HTML play can be used to control media
   virtual void SetHtmlPlayEnabled(bool enabled) {}
-#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   // Invoked when the renderer process has toggled the tab into/out of
   // fullscreen mode.
@@ -877,8 +877,12 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
 #if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
-  virtual void MediaPlayerGone(const MediaPlayerInfo& video_type,
-                               const MediaPlayerId& id) {}
+  virtual void MediaPlayerGone(
+      const MediaPlayerInfo& video_type,
+      const MediaPlayerId& id) {}
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OneShotMediaPlayerStopped() {}
 #endif
   virtual void MediaResized(const gfx::Size& size, const MediaPlayerId& id) {}
   // Invoked when media enters or exits fullscreen. We must use a heuristic

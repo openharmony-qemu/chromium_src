@@ -235,8 +235,7 @@ blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     bool moved_beyond_slop_region,
     bool hovering
 #if BUILDFLAG(ARKWEB_FIT_CONTENT)
-    ,
-    int32_t is_fit_content
+    , int32_t is_fit_content
 #endif
 ) {
   static_assert(static_cast<int>(MotionEvent::MAX_TOUCH_POINT_COUNT) ==

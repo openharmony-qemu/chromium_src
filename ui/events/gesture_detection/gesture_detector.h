@@ -7,18 +7,23 @@
 
 #include <memory>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
 #include "ui/events/gesture_detection/gesture_detection_export.h"
 #include "ui/events/velocity_tracker/velocity_tracker_state.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace ui {
 
 class DoubleTapListener;
 class GestureListener;
 class MotionEvent;
+#if BUILDFLAG(IS_ARKWEB)
+class GestureDetectorExt;
+class TimeoutGestureHandlerUtils;
+#endif
 
 // Port of GestureDetector.java from Android
 // * platform/frameworks/base/core/java/android/view/GestureDetector.java
@@ -130,6 +135,12 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   GestureDetector(const GestureDetector&) = delete;
   GestureDetector& operator=(const GestureDetector&) = delete;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class GestureDetectorExt;
+  friend class TimeoutGestureHandlerUtils;
+  virtual GestureDetectorExt* AsGestureDetectorExt() { return nullptr; }
+  virtual
+#endif
   ~GestureDetector();
 
   bool OnTouchEvent(const MotionEvent& ev, bool should_process_double_tap);
@@ -150,18 +161,6 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   }
   void set_showpress_enabled(bool enabled) { showpress_enabled_ = enabled; }
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  void set_draglongpress_enabled(bool enabled) {
-    draglongpress_enabled_ = enabled;
-  }
-  void StopDragLongPressGesture();
-#endif
-
-#if BUILDFLAG(ARKWEB_AI)
-  void StopCreateOverlayGesture();
-  void OnAITextSelected();
-#endif
-
   // Returns the event storing the initial position of the pointer with given
   // pointer ID. This returns nullptr if the source event isn't
   // current_down_event_ or secondary_pointer_down_event_.
@@ -177,9 +176,6 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
   void OnLongPressTimeout();
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   void OnDragLongPressTimeout();
-  void Cancel(bool is_lost_focus);
-  void CancelTaps(bool is_lost_focus);
-  void ActivateLongPressKeepDragTimeout(const MotionEvent& ev);
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   void OnCreateOverlayTimeout();
@@ -264,4 +260,7 @@ class GESTURE_DETECTION_EXPORT GestureDetector {
 
 }  // namespace ui
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/events/gesture_detection/gesture_detector_ext.h"
+#endif
 #endif  // UI_EVENTS_GESTURE_DETECTION_GESTURE_DETECTOR_H_

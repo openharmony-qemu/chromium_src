@@ -22,6 +22,8 @@
 #include "components/url_pattern_index/url_pattern_index.h"
 #include "third_party/flatbuffers/src/include/flatbuffers/flatbuffers.h"
 
+#include "arkweb/chromium_ext/components/url_pattern_index/url_pattern_index_ext.h"
+
 class GURL;
 
 namespace url {
@@ -31,15 +33,16 @@ class Origin;
 namespace url_pattern_index {
 namespace proto {
 class UrlRule;
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-class CssRule;
-#endif
 }
 }
 
 namespace subresource_filter {
 
 class FirstPartyOrigin;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class ArkWebRulesetIndexerExt;
+class ArkWebIndexedRulesetMatcherExt;
+#endif
 
 // Detailed result of IndexedRulesetMatcher::Verify.
 // Note: Logged to UMA, keep in sync with SubresourceFilterVerifyStatus in
@@ -59,6 +62,11 @@ enum class VerifyStatus {
 // FlatBufferBuilder storing the structures.
 class RulesetIndexer {
  public:
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+   friend class ArkWebRulesetIndexerExt;
+   virtual ArkWebRulesetIndexerExt *AsArkWebRulesetIndexerExt() { return nullptr; }
+#endif
+
   // The current binary format version of the indexed ruleset.
   //
   // Increase this value when introducing an incompatible change in
@@ -80,10 +88,6 @@ class RulesetIndexer {
   // Returns whether the |rule| has been serialized and added to the index.
   bool AddUrlRule(const url_pattern_index::proto::UrlRule& rule);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  bool AddCssRule(const url_pattern_index::proto::CssRule& rule);
-#endif
-
   // Finalizes construction of the data structures.
   void Finish();
 
@@ -99,13 +103,14 @@ class RulesetIndexer {
  private:
   flatbuffers::FlatBufferBuilder builder_;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  url_pattern_index::ArkWebUrlPatternIndexBuilderExt blocklist_;
+  url_pattern_index::ArkWebUrlPatternIndexBuilderExt allowlist_;
+  url_pattern_index::ArkWebUrlPatternIndexBuilderExt deactivation_;
+#else
   url_pattern_index::UrlPatternIndexBuilder blocklist_;
   url_pattern_index::UrlPatternIndexBuilder allowlist_;
   url_pattern_index::UrlPatternIndexBuilder deactivation_;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  url_pattern_index::CssPatternIndexBuilder css_blocklist_;
-  url_pattern_index::CssPatternIndexBuilder css_allowlist_;
 #endif
 
   // Maintains a map of domain vectors to their existing offsets, to avoid
@@ -116,6 +121,11 @@ class RulesetIndexer {
 // Matches URLs against the FlatBuffer representation of an indexed ruleset.
 class IndexedRulesetMatcher {
  public:
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+   friend class ArkWebIndexedRulesetMatcherExt;
+   virtual ArkWebIndexedRulesetMatcherExt *AsArkWebIndexedRulesetMatcherExt() { return nullptr; }
+#endif
+
   // Returns whether the |buffer| of the given |size| contains a valid
   // flat::IndexedRuleset FlatBuffer.
   static bool Verify(base::span<const uint8_t> buffer,
@@ -158,33 +168,18 @@ class IndexedRulesetMatcher {
       url_pattern_index::proto::ElementType element_type,
       bool disable_generic_rules) const;
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  std::unique_ptr<const std::vector<const url_pattern_index::flat::CssRule*>>
-  MatchedCssRule(const GURL& url, bool disable_generic_rules) const;
-
-  bool HasGenericHideOption(const GURL& document_url,
-                            const url::Origin& parent_document_origin) const;
-
-  bool HasElemHideOption(const GURL& document_url,
-                         const url::Origin& parent_document_origin) const;
-
-  bool HasDocumentOption(const GURL& document_url,
-                         const url::Origin& parent_document_origin) const;
-#endif
-
  private:
   raw_ptr<const flat::IndexedRuleset> root_;
 
   url_pattern_index::UrlPatternIndexMatcher blocklist_;
   url_pattern_index::UrlPatternIndexMatcher allowlist_;
   url_pattern_index::UrlPatternIndexMatcher deactivation_;
-
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  url_pattern_index::CssPatternIndexMatcher css_blocklist_;
-  url_pattern_index::CssPatternIndexMatcher css_allowlist_;
-#endif
 };
 
 }  // namespace subresource_filter
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/core/common/arkweb_indexed_ruleset_ext.h"
+#endif
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CORE_COMMON_INDEXED_RULESET_H_

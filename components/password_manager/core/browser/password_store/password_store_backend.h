@@ -13,6 +13,11 @@
 #include "components/password_manager/core/browser/password_form_digest.h"
 #include "components/password_manager/core/browser/password_store/password_store_change.h"
 #include "components/password_manager/core/browser/password_store/password_store_consumer.h"
+#include "components/prefs/pref_service.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace base {
 class Location;
@@ -135,6 +140,9 @@ class PasswordStoreBackend {
                              PasswordChangesOrErrorReply callback) = 0;
   virtual void UpdateLoginAsync(const PasswordForm& form,
                                 PasswordChangesOrErrorReply callback) = 0;
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  virtual void UpdateLoginDisplayNameAsync(const PasswordForm& form) = 0;
+#endif
   virtual void RemoveLoginAsync(const base::Location& location,
                                 const PasswordForm& form,
                                 PasswordChangesOrErrorReply callback) = 0;
@@ -175,6 +183,13 @@ class PasswordStoreBackend {
 
   // Get a WeakPtr to the instance.
   virtual base::WeakPtr<PasswordStoreBackend> AsWeakPtr() = 0;
+
+  // Factory function for creating the backend. The Local backend requires the
+  // provided `login_db_path` for storage and Android backend for migration
+  // purposes.
+  static std::unique_ptr<PasswordStoreBackend> Create(
+      const base::FilePath& login_db_path,
+      PrefService* prefs);
 };
 
 }  // namespace password_manager

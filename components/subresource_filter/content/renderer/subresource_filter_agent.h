@@ -26,6 +26,7 @@ namespace subresource_filter {
 
 class UnverifiedRulesetDealer;
 class WebDocumentSubresourceFilterImpl;
+class ArkWebSubresourceFilterAgentExt;
 
 // The renderer-side agent of ContentSubresourceFilterThrottleManager. There is
 // one instance per RenderFrame, responsible for setting up the subresource
@@ -45,6 +46,9 @@ class SubresourceFilterAgent
   SubresourceFilterAgent& operator=(const SubresourceFilterAgent&) = delete;
 
   ~SubresourceFilterAgent() override;
+
+  friend class ArkWebSubresourceFilterAgentExt;
+  virtual ArkWebSubresourceFilterAgentExt *AsArkWebSubresourceFilterAgentExt() { return nullptr; }
 
   // Unit tests don't have a RenderFrame so the construction relies on virtual
   // methods on this class instead to inject test behaviour. That can't happen
@@ -97,11 +101,6 @@ class SubresourceFilterAgent
   virtual const std::optional<blink::FrameAdEvidence>& AdEvidence();
   virtual void SetAdEvidence(const blink::FrameAdEvidence& ad_evidence);
 
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  virtual void SendStatisticsAfterDocumentLoad(
-      const mojom::DocumentLoadStatistics& statistics);
-#endif
-
   // The browser will not inform the renderer of the (sub)frame's ad status and
   // evidence in the case of an initial synchronous commit to about:blank. We
   // thus fill in the frame's ad evidence and, if necessary, tag it as an ad.
@@ -115,11 +114,6 @@ class SubresourceFilterAgent
       const std::optional<blink::FrameAdEvidence>& ad_evidence) override;
 
  private:
-#if BUILDFLAG(ARKWEB_ADBLOCK)
-  void CalcElementHidingTypeOption(content::RenderFrame* render_frame);
-  void DidSubresourceFiltered() override;
-#endif
-
   // Returns the activation state for the `render_frame` to inherit. Root frames
   // inherit from their opener frames, and child frames inherit from their
   // parent frames. Assumes that the parent/opener is in a local frame relative
@@ -166,13 +160,14 @@ class SubresourceFilterAgent
 
   base::WeakPtr<WebDocumentSubresourceFilterImpl>
       filter_for_last_created_document_;
-  base::WeakPtrFactory<SubresourceFilterAgent> weak_ptr_factory_{this};
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   bool did_load_finished_ = false;
 #endif
+  base::WeakPtrFactory<SubresourceFilterAgent> weak_ptr_factory_{this};
 };
 
 }  // namespace subresource_filter
+#include "arkweb/chromium_ext/components/subresource_filter/content/renderer/arkweb_subresource_filter_agent_ext.h"
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CONTENT_RENDERER_SUBRESOURCE_FILTER_AGENT_H_

@@ -286,9 +286,8 @@ bool MenuModelAdapter::GetTextColor(int command_id,
                                     SkColor* override_color) const {
   ui::MenuModel* model = menu_model_;
   size_t index = 0;
-  if (ui::MenuModel::GetModelAndIndexForCommandId(command_id, &model, &index)) {
+  if (ui::MenuModel::GetModelAndIndexForCommandId(command_id, &model, &index))
     return model->GetTextColor(index, is_minor, is_hovered, override_color);
-  }
 
   // Return the default color.
   return menu_model_->GetBackgroundColor(std::numeric_limits<size_t>::max(),
@@ -300,9 +299,8 @@ bool MenuModelAdapter::GetBackgroundColor(int command_id,
                                           SkColor* override_color) const {
   ui::MenuModel* model = menu_model_;
   size_t index = 0;
-  if (ui::MenuModel::GetModelAndIndexForCommandId(command_id, &model, &index)) {
+  if (ui::MenuModel::GetModelAndIndexForCommandId(command_id, &model, &index))
     return model->GetBackgroundColor(index, is_hovered, override_color);
-  }
 
   // Return the default color.
   return menu_model_->GetBackgroundColor(std::numeric_limits<size_t>::max(),

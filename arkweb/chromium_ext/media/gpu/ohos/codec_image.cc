@@ -86,6 +86,8 @@ bool CodecImage::HasTextureOwner() const {
 }
 
 gpu::TextureBase* CodecImage::GetTextureBase() const {
+  if (!texture_owner())
+    return nullptr;
   return texture_owner()->GetTextureBase();
 }
 
@@ -141,6 +143,7 @@ std::unique_ptr<gpu::ScopedNativeBufferFenceSync>
 CodecImage::GetNativeBuffer() {
   AssertAcquiredDrDcLock();
 
+  TRACE_EVENT0("base", "CodecImage::GetNativeBuffer");
   if (!output_buffer_renderer_) {
     return nullptr;
   }
@@ -152,12 +155,25 @@ CodecImage::GetNativeBuffer() {
 
 CodecImageHolder::CodecImageHolder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
-    scoped_refptr<CodecImage> codec_image)
+    scoped_refptr<CodecImage> codec_image,
+    scoped_refptr<gpu::RefCountedLock> drdc_lock)
     : base::RefCountedDeleteOnSequence<CodecImageHolder>(
           std::move(task_runner)),
-      codec_image_(std::move(codec_image)) {}
+    gpu::RefCountedLockHelperDrDc(std::move(drdc_lock)),
+    codec_image_(std::move(codec_image)) {}
 
-CodecImageHolder::~CodecImageHolder() = default;
+CodecImageHolder::~CodecImageHolder()
+{
+  // Note that CodecImageHolder is always destroyed on the thread it was created
+  // on which is gpu main thread. CodecImage destructor also has checks to
+  // ensure that it is destroyed on gpu main thread.
+  // Acquiring DrDc lock here to ensure that the lock is held from all the paths
+  // from where |codec_image_| can be destroyed.
+  {
+    auto scoped_lock = GetScopedDrDcLock();
+    codec_image_.reset();
+  }
+}
 
 }  // namespace media
                      

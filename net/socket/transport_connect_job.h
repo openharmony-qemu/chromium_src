@@ -38,6 +38,7 @@ namespace net {
 class NetLogWithSource;
 class SocketTag;
 class TransportConnectSubJob;
+class ArkWebTransportConnectJobExt;
 
 class NET_EXPORT_PRIVATE TransportSocketParams
     : public base::RefCounted<TransportSocketParams> {
@@ -97,6 +98,8 @@ class NET_EXPORT_PRIVATE TransportSocketParams
   const bool secure_dns_only_;
 #endif
 };
+
+HostPortPair ToLegacyDestinationEndpoint(const TransportSocketParams::Endpoint& endpoint);
 
 // TransportConnectJob handles the host resolution necessary for socket creation
 // and the transport (likely TCP) connect. TransportConnectJob also has fallback
@@ -162,6 +165,8 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   ~TransportConnectJob() override;
 
+  virtual ArkWebTransportConnectJobExt *AsArkWebTransportConnectJobExt() { return nullptr; }
+
   // ConnectJob methods.
   LoadState GetLoadState() const override;
   bool HasEstablishedConnection() const override;
@@ -171,11 +176,17 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
       const override;
 
   static base::TimeDelta ConnectionTimeout();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) override {}
+#endif
+
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  void SetConnectTimeout(int timeout_override) override;
+  void SetConnectTimeout(int timeout_override) override {}
 #endif
  private:
   friend class TransportConnectSubJob;
+  friend class ArkWebTransportConnectJobExt;
 
   enum State {
     STATE_RESOLVE_HOST,
@@ -219,18 +230,6 @@ class NET_EXPORT_PRIVATE TransportConnectJob : public ConnectJob {
 
   // Called from |fallback_timer_|.
   void StartIPv4JobAsync();
-
-#if BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
-  void ClearMultiJobsAndStopTimers();
-  void WillDoMultiConnect();
-  void StartMultiConnectJobs();
-  void WillDoMultiConnectFallback();
-  void StartMultiConnectFallbackJobs();
-  void NeedReportSuccessIp(const IPEndPoint& address, SubJobType type);
-  void ReportSuccessIp(int success_index,
-                       int ip_addresses_num,
-                       SubJobType type);
-#endif  // BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
 
   // Begins the host resolution and the TCP connect.  Returns OK on success
   // and ERR_IO_PENDING if it cannot immediately service the request.

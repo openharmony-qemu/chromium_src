@@ -7,9 +7,6 @@
 #include <memory>
 #include <utility>
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
 #include "base/functional/bind.h"
 #include "net/base/net_errors.h"
 #include "net/log/net_log_source_type.h"
@@ -20,6 +17,7 @@
 #include "net/socket/socks5_client_socket.h"
 #include "net/socket/socks_client_socket.h"
 #include "net/socket/transport_connect_job.h"
+#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
 
 namespace net {
 
@@ -157,7 +155,11 @@ int SOCKSConnectJob::DoTransportConnect() {
   DCHECK(!transport_connect_job_);
 
   next_state_ = STATE_TRANSPORT_CONNECT_COMPLETE;
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  transport_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
+#else
   transport_connect_job_ = std::make_unique<TransportConnectJob>(
+#endif
       priority(), socket_tag(), common_connect_job_params(),
       socks_params_->transport_params(), this, &net_log());
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)

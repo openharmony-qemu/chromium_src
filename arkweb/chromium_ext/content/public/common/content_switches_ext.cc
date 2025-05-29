@@ -5,7 +5,7 @@
 // Based on content_switches.cc originally written by
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file. 
+// found in the LICENSE file.
 
 #include "content_switches_ext.h"
 
@@ -45,7 +45,6 @@ const char kDisableNonAdvancedSecurityMode[] =
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 const char kOhosHapPath[] = "user-hap-path";
-const char kOhosAppApiVersion[] = "user-api-version";
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)

@@ -7,7 +7,6 @@
 #include <optional>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -39,6 +38,7 @@
 #include "services/network/public/mojom/network_change_manager.mojom-forward.h"
 #include "services/network/public/mojom/network_context.mojom.h"
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/content_uri_utils.h"

@@ -7,7 +7,6 @@
 #include <optional>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -53,6 +52,7 @@
 #include "third_party/blink/public/platform/scheduler/web_thread_scheduler.h"
 #include "third_party/webrtc_overrides/init_webrtc.h"  // nogncheck
 #include "ui/base/ui_base_switches.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "components/startup_metric_utils/renderer/startup_metric_utils.h"
@@ -96,10 +96,6 @@
 
 #if BUILDFLAG(ARKWEB_FLING)
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
-#include "ohos_adapter_helper.h"
 #endif
 
 namespace content {
@@ -154,7 +150,7 @@ int RendererMain(MainFunctionParams parameters) {
   // Don't use the TRACE_EVENT0 macro because the tracing infrastructure doesn't
   // expect synchronous events around the main loop of a thread.
 #if BUILDFLAG(ARKWEB_PERFORMANCE_TRACE)
-  StartObserveTraceEnable();
+    StartObserveTraceEnable();
 #endif
   TRACE_EVENT_INSTANT0("startup", "RendererMain", TRACE_EVENT_SCOPE_THREAD);
 
@@ -249,6 +245,9 @@ int RendererMain(MainFunctionParams parameters) {
     bool need_sandbox =
         !command_line.HasSwitch(sandbox::policy::switches::kNoSandbox);
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+    need_sandbox = true;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
     if (!need_sandbox) {
       // The post-sandbox actions still need to happen at some point.
       if (client) {

@@ -13,6 +13,7 @@
 
 #include "base/logging.h"
 #include "base/task/bind_post_task.h"
+#include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"
 #include "gpu/command_buffer/service/gles2_cmd_decoder.h"
@@ -22,13 +23,21 @@
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"
 #include "gpu/command_buffer/service/shared_image/skia_gl_image_representation.h"
+#include "gpu/command_buffer/service/shared_image/skia_vk_ohos_native_buffer_image_representation.h"
+#include "gpu/command_buffer/service/shared_image/skia_vk_hw_video_native_buffer_image_representation.h"
+#include "gpu/command_buffer/service/skia_utils.h"
 #include "gpu/command_buffer/service/stream_texture_shared_image_interface.h"
 #include "gpu/command_buffer/service/texture_manager.h"
+#include "gpu/vulkan/vulkan_image.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
+#include "third_party/skia/include/gpu/vk/VulkanMutableTextureState.h"
+#include "third_party/skia/include/private/chromium/GrPromiseImageTexture.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_fence_handle.h"
 #include "ui/gl/android/egl_fence_utils.h"
 #include "ui/gl/ohos/native_buffer_utils.h"
+#include "ui/gl/scoped_restore_texture.h"
 
 namespace gpu {
 
@@ -77,10 +86,32 @@ void CreateAndBindEglImageFromNativeBuffer(OHOSNativeBuffer buffer,
       TRACE_EVENT0("gpu",
                    "HwVideoNativeBufferImageBacking::"
                    "BeginAccess::glBindTexture");
+      gl::ScopedRestoreTexture scoped_restore(gl::g_current_gl_context,
+                                              GL_TEXTURE_EXTERNAL_OES);
       glBindTexture(GL_TEXTURE_EXTERNAL_OES, service_id);
       glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image.get());
     }
   }
+}
+
+std::unique_ptr<VulkanImage> CreateVkImageFromNativeBufferHandle(
+    gpu::ScopedNativeBufferHandle nb_handle,
+    SharedContextState* context_state,
+    const gfx::Size& size,
+    const viz::SharedImageFormat& format,
+    uint32_t queue_family_index)
+{
+  DCHECK(context_state);
+  DCHECK(context_state->GrContextIsVulkan());
+  TRACE_EVENT0("gpu", "CreateVkImageFromNativeBufferHandle");
+
+  auto* device_queue = context_state->vk_context_provider()->GetDeviceQueue();
+  gfx::GpuMemoryBufferHandle gmb_handle(std::move(nb_handle));
+
+  return VulkanImage::CreateFromGpuMemoryBufferHandle(
+      device_queue, std::move(gmb_handle), size, ToVkFormatSinglePlanar(format),
+      0 /*usage=*/, 0 /*flags=*/, VK_IMAGE_TILING_OPTIMAL /*image_tiling=*/,
+      queue_family_index /*queue_family_index=*/);
 }
 
 bool SyncFenceWait(base::ScopedFD acquire_fence_fd) {
@@ -172,6 +203,15 @@ HwVideoNativeBufferImageBacking::~HwVideoNativeBufferImageBacking() {
     std::move(helper_destruction_cb)
         .Run(std::move(context_lost_helper_), std::move(stream_texture_sii_));
   }
+}
+
+size_t HwVideoNativeBufferImageBacking::GetEstimatedSizeForMemoryDump() const
+{
+  base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+
+  // This backing contributes to gpu memory only if its bound to the texture
+  // and not when the backing is created.
+  return stream_texture_sii_->IsUsingGpuMemory() ? GetEstimatedSize() : 0;
 }
 
 // Representation of HwVideoNativeBufferImageBacking as a GL Texture.
@@ -274,6 +314,117 @@ HwVideoNativeBufferImageBacking::ProduceGLTexture(SharedImageManager* manager,
       manager, this, tracker, std::move(texture), GetDrDcLock());
 }
 
+class HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation
+                : public SkiaVkHWVideoNBImageRepresentation,
+                  public RefCountedLockHelperDrDc {
+ public:
+    SkiaVkNBRepresentation(
+      SharedImageManager* manager,
+      HwVideoNativeBufferImageBacking* backing,
+      scoped_refptr<SharedContextState> context_state,
+      MemoryTypeTracker* tracker,
+      scoped_refptr<RefCountedLock> drdc_lock)
+        : SkiaVkHWVideoNBImageRepresentation(manager,
+                                         backing,
+                                         std::move(context_state),
+                                         tracker),
+          RefCountedLockHelperDrDc(std::move(drdc_lock)) {
+        }
+
+  std::vector<sk_sp<SkSurface>> BeginWriteAccess(
+      int final_msaa_count,
+      const SkSurfaceProps& surface_props,
+      const gfx::Rect& update_rect,
+      std::vector<GrBackendSemaphore>* begin_semaphores,
+      std::vector<GrBackendSemaphore>* end_semaphores,
+      std::unique_ptr<skgpu::MutableTextureState>* end_state) override
+  {
+    // Writes are not intended to used for video backed representations.
+    NOTIMPLEMENTED();
+    return {};
+  }
+
+  void EndWriteAccess() override { NOTIMPLEMENTED(); }
+
+  std::vector<sk_sp<GrPromiseImageTexture>> BeginReadAccess(
+      std::vector<GrBackendSemaphore>* begin_semaphores,
+      std::vector<GrBackendSemaphore>* end_semaphores,
+      std::unique_ptr<skgpu::MutableTextureState>* end_state) override
+  {
+    TRACE_EVENT0("base", "HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation::BeginReadAccess");
+    base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+    DCHECK(!scoped_hardware_buffer_);
+    auto* video_backing = static_cast<HwVideoNativeBufferImageBacking*>(backing());
+    DCHECK(video_backing);
+    auto* stream_texture_sii = video_backing->stream_texture_sii_.get();
+
+    // GetAHardwareBuffer() renders the latest image and gets AHardwareBuffer
+    // from it.
+    scoped_hardware_buffer_ = stream_texture_sii->GetNativeBuffer();
+    if (!scoped_hardware_buffer_) {
+      LOG(ERROR) << "Failed to get the hardware buffer.";
+      return {};
+    }
+    DCHECK(scoped_hardware_buffer_->buffer());
+
+    // Wait on the sync fd attached to the buffer to make sure buffer is
+    // ready before the read. This is done by inserting the sync fd semaphore
+    // into begin_semaphore vector which client will wait on.
+    init_read_fence_ = scoped_hardware_buffer_->TakeFence();
+
+    if (!vulkan_image_) {
+      DCHECK(!promise_texture_);
+
+      vulkan_image_ = CreateVkImageFromNativeBufferHandle(
+          scoped_hardware_buffer_->TakeBuffer(), context_state(), size(),
+          format(), VK_QUEUE_FAMILY_FOREIGN_EXT);
+      if (!vulkan_image_) {
+        return {};
+      }
+
+      promise_texture_ = GrPromiseImageTexture::Make(GrBackendTextures::MakeVk(
+          size().width(), size().height(),
+          CreateGrVkImageInfo(vulkan_image_.get(), format(), color_space())));
+      DCHECK(promise_texture_);
+    }
+    return SkiaVkHWVideoNBImageRepresentation::BeginReadAccess(
+        begin_semaphores, end_semaphores, end_state);
+  }
+
+  void EndReadAccess() override
+  {
+    TRACE_EVENT0("base", "HwVideoNativeBufferImageBacking::SkiaVkNBRepresentation::EndReadAccess");
+    base::AutoLockMaybe auto_lock(GetDrDcLockPtr());
+    DCHECK(scoped_hardware_buffer_);
+
+    SkiaVkHWVideoNBImageRepresentation::EndReadAccess();
+
+    // Pass the end read access sync fd to the scoped hardware buffer. This
+    // will make sure that the AImage associated with the hardware buffer will
+    // be deleted only when the read access is ending.
+    scoped_hardware_buffer_->SetReadFence(hw_ohos_backing()->TakeReadFence());
+    scoped_hardware_buffer_ = nullptr;
+  }
+
+ private:
+  std::unique_ptr<ScopedNativeBufferFenceSync>
+      scoped_hardware_buffer_;
+};
+
+gpu::ScopedNativeBufferHandle HwVideoNativeBufferImageBacking::GetNativeBufferHandle() const
+{
+  TRACE_EVENT0("gpu", __PRETTY_FUNCTION__);
+  // Get the raw native buffer from the stream texture.
+  // Retrieve the unique_ptr holding the native buffer fence sync.
+  auto native_buffer_sync = stream_texture_sii_->GetNativeBuffer();
+
+  // Extract the raw native buffer pointer from the unique_ptr.
+  OHOSNativeBuffer raw_native_buffer = native_buffer_sync->buffer();
+
+  // Adopt the raw pointer into a ScopedNativeBufferHandle.
+  return gpu::ScopedNativeBufferHandle::Create(raw_native_buffer);
+}
+
 std::unique_ptr<SkiaGaneshImageRepresentation>
 HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
     SharedImageManager* manager,
@@ -289,6 +440,14 @@ HwVideoNativeBufferImageBacking::ProduceSkiaGanesh(
   // which should result in no image.
   if (!stream_texture_sii_->HasTextureOwner()) {
     return nullptr;
+  }
+
+  // Skia representation.
+  if (context_state->GrContextIsVulkan()) {
+    TRACE_EVENT0("gpu",
+        "HwVideoNativeBufferImageBacking::ProduceSkiaGanesh::GrContextIsVulkan");
+    return std::make_unique<SkiaVkNBRepresentation>(
+        manager, this, std::move(context_state), tracker, GetDrDcLock());
   }
 
   DCHECK(context_state->GrContextIsGL());

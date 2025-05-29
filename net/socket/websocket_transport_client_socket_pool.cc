@@ -45,7 +45,7 @@ WebSocketTransportClientSocketPool::WebSocketTransportClientSocketPool(
       max_sockets_(max_sockets) {
   DCHECK(common_connect_job_params->websocket_endpoint_lock_manager);
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  timeout_override_ = 0;
+  utils->SetConnectTimeout(0);
 #endif
 }
 
@@ -115,7 +115,7 @@ int WebSocketTransportClientSocketPool::RequestSocket(
       CreateConnectJob(group_id, params, proxy_chain_, proxy_annotation_tag,
                        priority, SocketTag(), connect_job_delegate.get());
 #if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-  connect_job->SetConnectTimeout(timeout_override_);
+  connect_job->SetConnectTimeout(utils->GetConnectTimeout());
 #endif
   int result = connect_job_delegate->Connect(std::move(connect_job));
 

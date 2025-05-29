@@ -19,15 +19,17 @@
 #include <string>
 
 #include "arkweb/build/features/features.h"
+#include "base/memory/raw_ptr.h"
 #include "content/browser/site_instance_impl.h"
 #include "content/public/browser/web_contents.h"
+#include "content/browser/renderer_host/frame_tree_node.h"
 
 namespace content {
 class WebContentsImpl;
 
 class WebContentsImplUtils {
  public:
-  WebContentsImpl* webContentsImpl;
+  raw_ptr<WebContentsImpl> webContentsImpl;
   WebContentsImplUtils(WebContentsImpl* impl);
 
 #if BUILDFLAG(ARKWEB_I18N)
@@ -37,6 +39,14 @@ class WebContentsImplUtils {
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
   void renderProcessShareInit(const WebContents::CreateParams& params,
                               scoped_refptr<SiteInstanceImpl> site_instance);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  void UpdateMainFrameLoadingControlsState(FrameTreeNode* frame_tree_node, bool should_show_loading_ui);
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
+  void UpdateUserAgentOverride(const blink::UserAgentOverride& ua_override);
 #endif
 };
 

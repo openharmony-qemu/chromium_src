@@ -85,6 +85,12 @@ class NWebEngineImpl : public NWebEngine {
                  int32_t aliveTime) override;
 
   void ClearHostIP(const std::string& hostName) override;
+
+  void SetAppCustomUserAgent(const std::string& user_agent) override;
+
+  void SetUserAgentForHosts(const std::string& user_agent,
+                            const std::vector<std::string>& hosts) override;
+
   std::shared_ptr<NWebAdsBlockManager> GetAdsBlockManager() override;
 
 // todo: check webview
@@ -95,6 +101,16 @@ class NWebEngineImpl : public NWebEngine {
   void TrimMemoryByPressureLevel(int32_t memoryLevel) override;
 
   void RemoveAllCache(bool include_disk_files) override;
+
+  void SetProxyOverride(
+      const std::vector<std::string>& proxyUrls,
+      const std::vector<std::string>& proxySchemeFilters,
+      const std::vector<std::string>& bypassRules,
+      const bool& reverseBypass,
+      std::shared_ptr<NWebProxyChangedCallback> callback) override;
+
+  void RemoveProxyOverride(std::shared_ptr<NWebProxyChangedCallback> callback) override;
+  void SetWebDebuggingAccessAndPort(bool isEnableDebug, int32_t port) override;
 
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;

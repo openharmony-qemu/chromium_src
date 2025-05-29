@@ -5,7 +5,7 @@
 // Based on content_switches.h originally written by
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file. 
+// found in the LICENSE file.
 
 #ifndef ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_
 #define ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_
@@ -51,7 +51,6 @@ CONTENT_EXPORT extern const char kOhSchemeHandlerCustomScheme[];
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 CONTENT_EXPORT extern const char kOhosHapPath[];
-CONTENT_EXPORT extern const char kOhosAppApiVersion[];
 #endif
 
 #if BUILDFLAG(ARKWEB_BUGFIX_CRASH)

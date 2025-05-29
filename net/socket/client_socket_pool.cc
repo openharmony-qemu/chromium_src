@@ -163,10 +163,10 @@ std::string ClientSocketPool::GroupId::ToString() const {
                  {" <", network_anonymization_key_.ToDebugString(), ">"})
            : ""
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-       ,
-       secure_dns_only_ ? "sdo/" : ""
+        ,
+        secure_dns_only_ ? "sdo/" : ""
 #endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-      });
+  });
 }
 
 ClientSocketPool::~ClientSocketPool() = default;
@@ -188,7 +188,12 @@ ClientSocketPool::ClientSocketPool(
     std::unique_ptr<ConnectJobFactory> connect_job_factory)
     : is_for_websockets_(is_for_websockets),
       common_connect_job_params_(common_connect_job_params),
-      connect_job_factory_(std::move(connect_job_factory)) {}
+      connect_job_factory_(std::move(connect_job_factory)) {
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  utils = std::make_unique<ArkWebClientSocketPoolExt>(this);
+#endif
+}
 
 void ClientSocketPool::NetLogTcpClientSocketPoolRequestedSocket(
     const NetLogWithSource& net_log,
@@ -261,23 +266,4 @@ std::unique_ptr<ConnectJob> ClientSocketPool::CreateConnectJob(
   );
 }
 
-#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
-void ClientSocketPool::SetConnectTimeout(int timeout_override) {
-  timeout_override_ = timeout_override;
-}
-
-int ClientSocketPool::GetConnectTimeout() {
-  return timeout_override_;
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-void ClientSocketPool::SetConnectJobWithSecureDnsOnlyTimeout(int seconds) {
-  connect_job_with_secure_dns_only_timeout_ = seconds;
-}
-
-int ClientSocketPool::GetConnectJobWithSecureDnsOnlyTimeout() {
-  return connect_job_with_secure_dns_only_timeout_;
-}
-#endif
 }  // namespace net

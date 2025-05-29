@@ -93,10 +93,9 @@ void ContentSettingsRegistry::Init() {
       ContentSettingsInfo::INHERIT_IN_INCOGNITO,
       ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(
-      ContentSettingsType::IMAGES, "images", CONTENT_SETTING_ALLOW,
-      WebsiteSettingsInfo::SYNCABLE,
-      /*allowlisted_primary_schemes=*/
+  Register(ContentSettingsType::IMAGES, "images", CONTENT_SETTING_ALLOW,
+           WebsiteSettingsInfo::SYNCABLE,
+           /*allowlisted_primary_schemes=*/
            {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme,
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         kArkwebExtensionScheme,
@@ -104,14 +103,13 @@ void ContentSettingsRegistry::Init() {
             kChromeUIUntrustedScheme},
            /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
            WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
-      WebsiteSettingsRegistry::DESKTOP,
-      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+           WebsiteSettingsRegistry::DESKTOP,
+           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(
-      ContentSettingsType::JAVASCRIPT, "javascript", CONTENT_SETTING_ALLOW,
-      WebsiteSettingsInfo::SYNCABLE,
-      /*allowlisted_primary_schemes=*/
+  Register(ContentSettingsType::JAVASCRIPT, "javascript", CONTENT_SETTING_ALLOW,
+           WebsiteSettingsInfo::SYNCABLE,
+           /*allowlisted_primary_schemes=*/
            {kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme,
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         kArkwebExtensionScheme,
@@ -125,8 +123,8 @@ void ContentSettingsRegistry::Init() {
                | WebsiteSettingsRegistry::PLATFORM_IOS
 #endif
            ,
-      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
   Register(ContentSettingsType::ALL_SCREEN_CAPTURE,
            "access-to-get-all-screens-media-in-session", CONTENT_SETTING_BLOCK,
@@ -137,21 +135,20 @@ void ContentSettingsRegistry::Init() {
            ContentSettingsInfo::INHERIT_IF_LESS_PERMISSIVE,
            ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
-  Register(
-      ContentSettingsType::POPUPS, "popups", CONTENT_SETTING_BLOCK,
-      WebsiteSettingsInfo::SYNCABLE,
-      /*allowlisted_primary_schemes=*/
+  Register(ContentSettingsType::POPUPS, "popups", CONTENT_SETTING_BLOCK,
+           WebsiteSettingsInfo::SYNCABLE,
+           /*allowlisted_primary_schemes=*/
       {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         kArkwebExtensionScheme,
 #endif
-            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+           kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
       },
-      /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
-      WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
-      WebsiteSettingsRegistry::ALL_PLATFORMS,
-      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
+           /*valid_settings=*/{CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK},
+           WebsiteSettingsInfo::TOP_ORIGIN_ONLY_SCOPE,
+           WebsiteSettingsRegistry::ALL_PLATFORMS,
+           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_AND_INSECURE_ORIGINS);
 
   Register(ContentSettingsType::GEOLOCATION, "geolocation", CONTENT_SETTING_ASK,
            WebsiteSettingsInfo::UNSYNCABLE, /*allowlisted_primary_schemes=*/{},
@@ -202,23 +199,22 @@ void ContentSettingsRegistry::Init() {
       ContentSettingsInfo::INHERIT_IF_LESS_PERMISSIVE,
       ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
 
-  Register(
-      ContentSettingsType::AUTOMATIC_DOWNLOADS, "automatic-downloads",
-      CONTENT_SETTING_ASK, WebsiteSettingsInfo::SYNCABLE,
-      /*allowlisted_primary_schemes=*/
+  Register(ContentSettingsType::AUTOMATIC_DOWNLOADS, "automatic-downloads",
+           CONTENT_SETTING_ASK, WebsiteSettingsInfo::SYNCABLE,
+           /*allowlisted_primary_schemes=*/
       {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
         kArkwebExtensionScheme,
 #endif
-            kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
+           kChromeUIScheme, kChromeDevToolsScheme, kExtensionScheme
       },
-      /*valid_settings=*/
-      {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
-      WebsiteSettingsInfo::REQUESTING_ORIGIN_ONLY_SCOPE,
-      WebsiteSettingsRegistry::DESKTOP |
-          WebsiteSettingsRegistry::PLATFORM_ANDROID,
-      ContentSettingsInfo::INHERIT_IN_INCOGNITO,
-      ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
+           /*valid_settings=*/
+           {CONTENT_SETTING_ALLOW, CONTENT_SETTING_BLOCK, CONTENT_SETTING_ASK},
+           WebsiteSettingsInfo::REQUESTING_ORIGIN_ONLY_SCOPE,
+           WebsiteSettingsRegistry::DESKTOP |
+               WebsiteSettingsRegistry::PLATFORM_ANDROID,
+           ContentSettingsInfo::INHERIT_IN_INCOGNITO,
+           ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
 
   Register(ContentSettingsType::MIDI_SYSEX, "midi-sysex", CONTENT_SETTING_ASK,
            WebsiteSettingsInfo::UNSYNCABLE, /*allowlisted_primary_schemes=*/{},

@@ -33,7 +33,7 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
 
   void PropertiesUpdate(const char* value) override {
     auto status = std::atol(value);
-    isHiTraceEnable = status & HITRACE_TAG_NWEB;
+    isHiTraceEnable = static_cast<uint64_t>(status) & HITRACE_TAG_NWEB;
   }
 };
 

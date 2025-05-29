@@ -32,7 +32,11 @@ mojom::ActivationState ComputeActivationState(
     const MemoryMappedRuleset* ruleset) {
   CHECK(ruleset, base::NotFatalUntil::M129);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebIndexedRulesetMatcherExt matcher(ruleset->data());
+#else
   IndexedRulesetMatcher matcher(ruleset->data());
+#endif
   mojom::ActivationState activation_state = parent_activation_state;
   if (activation_state.filtering_disabled_for_document)
     return activation_state;

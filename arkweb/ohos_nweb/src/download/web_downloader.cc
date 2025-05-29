@@ -508,6 +508,30 @@ void WebScreenCapture_StopScreenCapture(int32_t nweb_id,
 #endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 }
 
+void WebScreenCapture_SetScreenCapturePickerShow(int32_t nweb_id) {
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+
+  nweb->SetScreenCapturePickerShow();
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+}
+
+void WebScreenCapture_DisableSessionReuse(int32_t nweb_id) {
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  OHOS::NWeb::NWebImpl* nweb = OHOS::NWeb::NWebImpl::FromID(nweb_id);
+  if (!nweb) {
+    WVLOG_E("fail to find a nweb with %{public}d ", nweb_id);
+    return;
+  }
+
+  nweb->DisableSessionReuse();
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
+}
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

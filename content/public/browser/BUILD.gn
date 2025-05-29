@@ -526,6 +526,15 @@ source_set("browser_sources") {
   }
   #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
+  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (defined(ohos_video_assistant) && ohos_video_assistant) {
+    sources += [
+      "//arkweb/chromium_ext/content/public/browser/media_player_controller.h",
+      "//arkweb/chromium_ext/content/public/browser/media_player_listener.h",
+    ]
+  }
+  #endif // ARKWEB_VIDEO_ASSISTANT
+
   configs += [
     "//build/config:precompiled_headers",
     "//build/config/compiler:wexit_time_destructors",
@@ -705,6 +714,13 @@ source_set("browser_sources") {
 
   if (arkweb_same_layer) {
     sources += arkweb_content_public_browser_sources
+  }
+
+  if (defined(arkweb_network_base) && arkweb_network_base) {
+    sources += [
+      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.cc",
+      "//cef/ohos_cef_ext/libcef/browser/ark_web_javascript_dialog_manager.h",
+    ]
   }
 
   if (is_linux || is_chromeos) {

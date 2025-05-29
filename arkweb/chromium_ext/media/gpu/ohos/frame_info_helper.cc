@@ -107,6 +107,8 @@ class FrameInfoHelperImpl : public FrameInfoHelper,
           info.emplace();
           info->coded_size = coded_size;
           info->visible_rect = visible_rect;
+          info->ycbcr_info = gpu::OhosVideoImageBacking::GetYcbcrInfo(
+              texture_owner.get(), vulkan_context_provider_);
         }
       }
 
@@ -202,7 +204,12 @@ class FrameInfoHelperImpl : public FrameInfoHelper,
       auto& request = requests_.front();
       if (!request.buffer_renderer) {
         std::move(request.callback).Run(nullptr, FrameInfo());
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      } else if (!request.buffer_renderer->texture_owner() ||
+            request.buffer_renderer->RenderVideoView()) {
+#else
       } else if (!request.buffer_renderer->texture_owner()) {
+#endif // ARKWEB_VIDEO_ASSISTANT
         auto info =
             GetFrameInfoWithVisibleSize(request.buffer_renderer->size());
         std::move(request.callback)

@@ -17,7 +17,7 @@
 #include "ui/events/velocity_tracker/motion_event.h"
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 using base::TimeTicks;
 
@@ -33,7 +33,8 @@ const float kScaleFactor = .5f;
 const float kSlopEpsilon = .05f;
 
 #ifdef BUILDFLAG(ARKWEB_INPUT_EVENTS)
-const float kSlopFactor = 7;
+// set span_slop in pc
+const float kSpanSlop = 42;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 }  // namespace
@@ -76,7 +77,7 @@ ScaleGestureDetector::ScaleGestureDetector(const Config& config,
   span_slop_ = config.span_slop;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   if (base::ohos::IsPcDevice()) {
-    span_slop_ = config.span_slop * kSlopFactor;
+    span_slop_ = kSpanSlop;
   }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   min_span_ = config.min_scaling_span;

@@ -7,4 +7,15 @@ arkweb_blink_renderer_modules_media_controls_sources = [
 
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_scrubbing_panel_element.cc",
     "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_scrubbing_panel_element.h",
+
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_top_row_panel_element.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_top_row_panel_element.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_timeline_row_panel_element.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_timeline_row_panel_element.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_list_element_ext.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_list_element_ext.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils.h",
 ]

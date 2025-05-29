@@ -18,6 +18,9 @@ class PRRequestInfo;
 using ResPreloadedCB = base::OnceCallback<void(PRPPRequestLoader* prpp_loader)>;
 using ResetUrlRequestCallback =
   base::OnceCallback<void(const std::shared_ptr<net::URLRequest>& url_request)>;
+using UpdateResRequestInfoCallback =
+  base::OnceCallback<void(const std::string& key,
+    const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& info)>;
 
 constexpr int32_t PRPP_ERROR = -3000; // considering range of NET_ERROR in "net/base/net_error_list.h"
 class PRPPRequestLoader {
@@ -65,6 +68,9 @@ class PRPPRequestLoader {
 
   // set the ResetUrlRequestCallback. if reinit prpp request, reset it to formal URLLoader
   virtual void SetResetUrlRequestCallback(ResetUrlRequestCallback callback) = 0;
+
+  // set the UpdateResRequestInfoCallback. if reinit prpp request, reset it to formal URLLoader
+  virtual void SetUpdateResRequestInfoCallback(UpdateResRequestInfoCallback callback) = 0;
 
   // read response body to the buffer of formal request
   virtual int Read(net::IOBuffer* buf, int max_bytes) = 0;

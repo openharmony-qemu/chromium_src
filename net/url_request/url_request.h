@@ -909,12 +909,12 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
     preload_info_ = preload_info;
   }
   std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info() const { return preload_info_; }
+
+  bool CanReadFromURLRequestJob() { return job_.get() != nullptr; }
 #endif
 
 #if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
-  void set_code_cache_valid(bool valid) {
-    response_info_.code_cache_valid = valid;
-  }
+  void set_code_cache_valid(bool valid) { response_info_.code_cache_valid = valid; }
   bool is_code_cache_valid() { return response_info_.code_cache_valid; }
 #endif
 

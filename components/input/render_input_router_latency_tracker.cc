@@ -61,7 +61,7 @@ const char* GetTraceNameFromType(blink::WebInputEvent::Type type) {
     CASE_TYPE(GestureLongPress);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
     CASE_TYPE(GestureDragLongPress);
-#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 #if BUILDFLAG(ARKWEB_AI)
     CASE_TYPE(GestureCreateOverlay);
 #endif

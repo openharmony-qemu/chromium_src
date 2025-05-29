@@ -18,11 +18,14 @@
 #include <gmock/gmock.h>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "build/build_config.h"
 #include "cef/include/cef_client.h"
 #include "cef/include/cef_display_handler.h"
+#include "cef/include/cef_command_line.h"
 #include "cef/libcef/browser/browser_contents_delegate.h"
 #include "cef/libcef/browser/browser_info.h"
+#include "cef/include/cef_devtools_message_handler_delegate.h"
 #include "gtest/gtest.h"
 #include "nweb.h"
 
@@ -48,382 +51,177 @@ class MockCefBrowser : public CefBrowser, public CefBrowserHost {
   bool Release() const override { return false; }
   bool HasOneRef() const override { return false; }
   bool HasAtLeastOneRef() const override { return false; }
-  bool IsValid() override { return false; }
-  CefRefPtr<CefBrowserHost> GetHost() override;
-  bool CanGoBack() override { return false; }
+  bool IsIframe() override { return false; }
+
+  bool IsValid() override {return false;}
+  CefRefPtr<ArkWebBrowserExt> AsArkWebBrowser() { return nullptr; }
+  CefRefPtr<CefBrowserHostBase> AsCefBrowserHostBase() {return nullptr;}
+  CefRefPtr<ArkWebBrowserHostExt> GetHost() { return nullptr; }
+  bool CanGoBack() override {return false;}
   void GoBack() override {}
-  bool CanGoForward() override { return false; }
+  bool CanGoForward() override {return false;}
   void GoForward() override {}
-  bool IsLoading() override { return false; }
+  bool IsLoading() override {return false;}
   void Reload() override {}
   void ReloadIgnoreCache() override {}
   void StopLoad() override {}
-  int GetIdentifier() override { return -1; }
-  bool IsSame(CefRefPtr<CefBrowser> that) override { return false; }
-  bool IsPopup() override { return false; }
-  bool HasDocument() override { return false; }
-  CefRefPtr<CefFrame> GetMainFrame() override { return nullptr; }
-  CefRefPtr<CefFrame> GetFocusedFrame() override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrame(int64 identifier) override { return nullptr; }
-  CefRefPtr<CefFrame> GetFrame(const CefString& name) override {
-    return nullptr;
-  }
-  size_t GetFrameCount() override { return 0; }
-  void GetFrameIdentifiers(std::vector<int64>& identifiers) override {}
+  int GetIdentifier() override {return -1;}
+  bool IsSame(CefRefPtr<CefBrowser> that) override {return false;}
+  bool IsPopup() override {return false;}
+  bool HasDocument() override {return false;}
+  CefRefPtr<CefFrame> GetMainFrame() override {return nullptr;}
+  CefRefPtr<CefFrame> GetFocusedFrame() override {return nullptr;}
+  CefRefPtr<CefFrame> GetFrameByIdentifier(const CefString& identifier) override {return nullptr;}
+  CefRefPtr<CefFrame> GetFrameByName(const CefString& name) override {return nullptr;}
+  size_t GetFrameCount() override {return 0;}
+  void GetFrameIdentifiers(std::vector<CefString>& identifiers) override {}
   void GetFrameNames(std::vector<CefString>& names) override {}
-  CefRefPtr<CefBrowserPermissionRequestDelegate> GetPermissionRequestDelegate()
-      override {
-    return nullptr;
-  }
-  CefRefPtr<CefGeolocationAcess> GetGeolocationPermissions() override {
-    return nullptr;
-  }
-#if BUILDFLAG(IS_OHOS)
-  bool CanGoBackOrForward(int num_steps) override { return false; }
-  void GoBackOrForward(int num_steps) override {}
-  void DeleteHistory() override {}
-  void SelectAndCopy() override {}
-  bool ShouldShowFreeCopy() override { return false; }
-  void PasswordSuggestionSelected(int list_index) override {}
-  void UpdateBrowserControlsState(int constraints,
-                                  int current,
-                                  bool animate) override {}
-  void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
-  }
-  void ReloadOriginalUrl() override {}
-  bool CanStoreWebArchive() override { return false; }
-  void SetBrowserUserAgentString(const CefString& user_agent) override {}
-  bool ShouldShowLoadingUI() override { return false; }
-  void SetForceEnableZoom(bool forceEnableZoom) override {}
-  bool GetForceEnableZoom() override { return false; }
-  int GetNWebId() override { return -1; }
-  void SetEnableBlankTargetPopupIntercept(
-      bool enableBlankTargetPopup) override {}
-  bool GetSavePasswordAutomatically() override { return false; }
-  void SetSavePasswordAutomatically(bool enable) override {}
-  void SaveOrUpdatePassword(bool is_update) override {}
-  bool GetSavePassword() override { return false; }
-  void SetSavePassword(bool enable) override {}
-  int GetSecurityLevel() override { return -1; }
-  void EnableSafeBrowsing(bool enable) override {}
-  bool IsSafeBrowsingEnabled() override { return false; }
-  void EnableIntelligentTrackingPrevention(bool enable) override {}
-  bool IsIntelligentTrackingPreventionEnabled() override { return false; }
-  bool IsAdsBlockEnabled() override { return false; }
-  bool IsAdsBlockEnabledForCurPage() override { return false; }
-  void EnableAdsBlock(bool enable) override {}
-  int SetUrlTrustListWithErrMsg(const CefString& urlTrustList,
-                                CefString& detailErrMsg) override {
-    return -1;
-  }
-  void SetBackForwardCacheOptions(int32_t size, int32_t timeToLive) override {}
-#endif  // BUILDFLAG(IS_OHOS)
-
-  ///////////////////////////////////////////////////////////////////////////////
-  //// HOST
-  CefRefPtr<CefBrowser> GetBrowser() override;
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override {return false;}
+  void DispatchBeforeUnload() override {}
+  CefRefPtr<CefBrowser> GetBrowser() override {return nullptr;}
   void CloseBrowser(bool force_close) override {}
-  bool TryCloseBrowser() override { return true; }
+  bool TryCloseBrowser() override {return false;}
+  bool IsReadyToBeClosed() override {return false;}
   void SetFocus(bool focus) override {}
-  CefWindowHandle GetWindowHandle() override { return 0; }
-  CefWindowHandle GetOpenerWindowHandle() override { return 0; }
-  bool HasView() override { return true; }
-  CefRefPtr<CefClient> GetClient() override { return nullptr; }
-  CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
-  double GetZoomLevel() override { return 0.0; }
+  CefWindowHandle GetWindowHandle() override {return 0;}
+  CefWindowHandle GetOpenerWindowHandle() override {return 0;}
+  int GetOpenerIdentifier() override {return -1;}
+  bool HasView() override {return false;}
+  CefRefPtr<CefClient> GetClient() override {return nullptr;}
+  CefRefPtr<CefRequestContext> GetRequestContext() override {return nullptr;}
+  bool CanZoom(cef_zoom_command_t command) override {return false;}
+  void Zoom(cef_zoom_command_t command) override {}
+  double GetDefaultZoomLevel() override {return 0.0;}
+  double GetZoomLevel() override {return 0.0;}
   void SetZoomLevel(double zoomLevel) override {}
   void RunFileDialog(FileDialogMode mode,
-                     const CefString& title,
-                     const CefString& default_file_path,
-                     const std::vector<CefString>& accept_filters,
-                     CefRefPtr<CefRunFileDialogCallback> callback) override {}
+  const CefString& title,
+  const CefString& default_file_path,
+  const std::vector<CefString>& accept_filters,
+  CefRefPtr<CefRunFileDialogCallback> callback) override {}
   void StartDownload(const CefString& url) override {}
   void DownloadImage(const CefString& image_url,
-                     bool is_favicon,
-                     uint32 max_image_size,
-                     bool bypass_cache,
-                     CefRefPtr<CefDownloadImageCallback> callback) override {}
+  bool is_favicon,
+  uint32_t max_image_size,
+  bool bypass_cache,
+  CefRefPtr<CefDownloadImageCallback> callback) override {}
   void Print() override {}
   void PrintToPDF(const CefString& path,
-                  const CefPdfPrintSettings& settings,
-                  CefRefPtr<CefPdfPrintCallback> callback) override {}
+  const CefPdfPrintSettings& settings,
+  CefRefPtr<CefPdfPrintCallback> callback) override {}
   void Find(const CefString& searchText,
-            bool forward,
-            bool matchCase,
-            bool findNext,
-            bool newSession) override {}
+  bool forward,
+  bool matchCase,
+  bool findNext) override {}
   void StopFinding(bool clearSelection) override {}
   void ShowDevTools(const CefWindowInfo& windowInfo,
-                    CefRefPtr<CefClient> client,
-                    const CefBrowserSettings& settings,
-                    const CefPoint& inspect_element_at) override {}
+  CefRefPtr<CefClient> client,
+  const CefBrowserSettings& settings,
+  const CefPoint& inspect_element_at) override {}
+  #if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void ShowDevToolsWith(
+  CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+  CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+  const CefPoint& inspect_element_at) override {}
+  #endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   void CloseDevTools() override {}
-  bool HasDevTools() override { return true; }
-  bool SendDevToolsMessage(const void* message, size_t message_size) override {
-    return true;
-  }
+  bool HasDevTools() override {return false;}
+  bool SendDevToolsMessage(const void* message,
+  size_t message_size) override {return false;}
   int ExecuteDevToolsMethod(int message_id,
-                            const CefString& method,
-                            CefRefPtr<CefDictionaryValue> params) override {
-    return 0;
-  }
+  const CefString& method,
+  CefRefPtr<CefDictionaryValue> params) override {return -1;}
   CefRefPtr<CefRegistration> AddDevToolsMessageObserver(
-      CefRefPtr<CefDevToolsMessageObserver> observer) override {
-    return nullptr;
-  }
-  void GetNavigationEntries(CefRefPtr<CefNavigationEntryVisitor> visitor,
-                            bool current_only) override {}
+  CefRefPtr<CefDevToolsMessageObserver> observer) override {return nullptr;}
+  void GetNavigationEntries(
+  CefRefPtr<CefNavigationEntryVisitor> visitor,
+  bool current_only) override {}
   void ReplaceMisspelling(const CefString& word) override {}
   void AddWordToDictionary(const CefString& word) override {}
-  bool IsWindowRenderingDisabled() override { return true; }
+  bool IsWindowRenderingDisabled() override {return false;}
   void WasResized() override {}
   void WasHidden(bool hidden) override {}
-  void WasOccluded(bool occluded) override {}
-  void OnWindowShow() override {}
-  void OnWindowHide() override {}
-  void OnOnlineRenderToForeground() override {}
-  void SendTouchEventList(
-      const std::vector<CefTouchEvent>& event_list) override {}
   void NotifyScreenInfoChanged() override {}
   void Invalidate(PaintElementType type) override {}
   void SendExternalBeginFrame() override {}
   void SendKeyEvent(const CefKeyEvent& event) override {}
   void SendMouseClickEvent(const CefMouseEvent& event,
-                           MouseButtonType type,
-                           bool mouseUp,
-                           int clickCount) override {}
+  MouseButtonType type,
+  bool mouseUp,
+  int clickCount) override {}
   void SendMouseMoveEvent(const CefMouseEvent& event,
-                          bool mouseLeave) override {}
+  bool mouseLeave) override {}
   void SendMouseWheelEvent(const CefMouseEvent& event,
-                           int deltaX,
-                           int deltaY) override {}
+  int deltaX,
+  int deltaY) override {}
   void SendTouchEvent(const CefTouchEvent& event) override {}
   void SendCaptureLostEvent() override {}
   void NotifyMoveOrResizeStarted() override {}
-  int GetWindowlessFrameRate() override { return 0; }
+  int GetWindowlessFrameRate() override {return -1;}
   void SetWindowlessFrameRate(int frame_rate) override {}
-  void ImeSetComposition(const CefString& text,
-                         const std::vector<CefCompositionUnderline>& underlines,
-                         const CefRange& replacement_range,
-                         const CefRange& selection_range) override {}
+  void ImeSetComposition(
+  const CefString& text,
+  const std::vector<CefCompositionUnderline>& underlines,
+  const CefRange& replacement_range,
+  const CefRange& selection_range) override {}
   void ImeCommitText(const CefString& text,
-                     const CefRange& replacement_range,
-                     int relative_cursor_pos) override {}
+  const CefRange& replacement_range,
+  int relative_cursor_pos) override {}
   void ImeFinishComposingText(bool keep_selection) override {}
   void ImeCancelComposition() override {}
   void DragTargetDragEnter(CefRefPtr<CefDragData> drag_data,
-                           const CefMouseEvent& event,
-                           DragOperationsMask allowed_ops) override {}
+  const CefMouseEvent& event,
+  DragOperationsMask allowed_ops) override {}
   void DragTargetDragOver(const CefMouseEvent& event,
-                          DragOperationsMask allowed_ops) override {}
+  DragOperationsMask allowed_ops) override {}
   void DragTargetDragLeave() override {}
   void DragTargetDrop(const CefMouseEvent& event) override {}
   void DragSourceEndedAt(int x, int y, DragOperationsMask op) override {}
   void DragSourceSystemDragEnded() override {}
-  CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() override {
-    return nullptr;
-  }
+  CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() override {return nullptr;}
   void SetAccessibilityState(cef_state_t accessibility_state) override {}
   void SetAutoResizeEnabled(bool enabled,
-                            const CefSize& min_size,
-                            const CefSize& max_size) override {}
-  CefRefPtr<CefExtension> GetExtension() override { return nullptr; }
-  bool IsBackgroundHost() override { return true; }
+  const CefSize& min_size,
+  const CefSize& max_size) override {}
   void SetAudioMuted(bool mute) override {}
-  bool IsAudioMuted() override { return true; }
-  void GetRootBrowserAccessibilityManager(void** manager) override {}
-  void ExecuteJavaScript(const std::string& code,
-                         CefRefPtr<CefJavaScriptResultCallback> callback,
-                         bool extention) override {}
-  void ExecuteJavaScriptExt(const int fd,
-                            const uint64 scriptLength,
-                            CefRefPtr<CefJavaScriptResultCallback> callback,
-                            bool extention) override {}
-  void SetNativeWindow(cef_native_window_t window) override {}
-  void SetWebDebuggingAccess(bool isEnableDebug) override {}
-  bool GetWebDebuggingAccess() override { return true; }
-  void GetImageForContextNode() override {}
-  void GetImageFromCache(const CefString& url) override {}
-  void ExitFullScreen() override {}
-  void UpdateLocale(const CefString& locale) override {}
-  CefString GetOriginalUrl() override { return ""; }
-  void PutNetworkAvailable(bool available) override {}
-  void RemoveCache(bool include_disk_files) override {}
-  void PostTaskToUIThread(CefRefPtr<CefTask> task) override {}
-  void SetVirtualPixelRatio(float ratio) override {}
-  float GetVirtualPixelRatio() override { return 0.0; }
-  void SetWebPreferences(const CefBrowserSettings& browser_settings) override;
-  void PutUserAgent(const CefString& ua) override {}
-  CefString DefaultUserAgent() override { return ""; }
-  void SetBackgroundColor(int color) override {}
-  void UpdateAdblockEasyListRules(long adBlockEasyListVersion) override {}
-  void RegisterArkJSfunction(const CefString& object_name,
-                             const std::vector<CefString>& method_list,
-                             const std::vector<CefString>& async_method_list,
-                             const int32_t object_id,
-                             const CefString& permission) override {}
-  void UnregisterArkJSfunction(
-      const CefString& object_name,
-      const std::vector<CefString>& method_list) override {}
-  void CallH5Function(int32_t routing_id,
-                      int32_t h5_object_id,
-                      const CefString& h5_method_name,
-                      const std::vector<CefRefPtr<CefValue>>& args) override {}
-  void StoreWebArchive(
-      const CefString& base_name,
-      bool auto_name,
-      CefRefPtr<CefStoreWebArchiveResultCallback> callback) override {}
-  void WasKeyboardResized() override {}
-  void SetEnableLowerFrameRate(bool enabled) override {}
-  CefString Title() override { return ""; }
-  void CreateWebMessagePorts(std::vector<CefString>& ports) override {}
-  void PostWebMessage(CefString& message,
-                      std::vector<CefString>& ports,
-                      CefString& targetUri) override {}
-  void ClosePort(CefString& port_handle) override {}
-  void DestroyAllWebMessagePorts() override {}
-  void PostPortMessage(CefString& port_handle,
-                       CefRefPtr<CefValue> message) override {}
-  void SetPortMessageCallback(
-      CefString& port_handle,
-      CefRefPtr<CefWebMessageReceiver> callback) override {}
-  void GetHitData(int& type, CefString& extra_data) override {}
-  void SetInitialScale(float scale) override {}
-  int PageLoadProgress() override { return 0; }
-  float Scale() override { return 0.0; }
-  void LoadWithDataAndBaseUrl(const CefString& baseUrl,
-                              const CefString& data,
-                              const CefString& mimeType,
-                              const CefString& encoding,
-                              const CefString& historyUrl) override {}
-  void LoadWithData(const CefString& data,
-                    const CefString& mimeType,
-                    const CefString& encoding) override {}
-  void AddVisitedLinks(const std::vector<CefString>& urls) {}
-  void ResumeDownload(const CefString& url,
-                      const CefString& full_path,
-                      int64 received_bytes,
-                      int64 total_bytes,
-                      const CefString& etag,
-                      const CefString& mime_type,
-                      const CefString& last_modified,
-                      const CefString& received_slices_string) override {}
-  void SetAudioResumeInterval(int resumeInterval) override {}
-  void SetAudioExclusive(bool audioExclusive) override {}
-  void CloseMedia() override {}
-  void StopMedia() override {}
-  void ResumeMedia() override {}
-  void PauseMedia() override {}
-  int GetMediaPlaybackState() override { return 0; }
-  void ScrollPageUpDown(bool is_up, bool is_half, float view_height) override {}
-  CefRefPtr<CefBinaryValue> GetWebState() override { return nullptr; }
-  bool RestoreWebState(const CefRefPtr<CefBinaryValue> state) override {
-    return true;
-  }
-  void ScrollTo(float x, float y) override {}
-  void ScrollBy(float delta_x, float delta_y) override {}
-  void SlideScroll(float vx, float vy) override {}
-  void SetFileAccess(bool falg) override {}
-  void SetBlockNetwork(bool falg) override {}
-  void SetCacheMode(int falg) override {}
-  void SetShouldFrameSubmissionBeforeDraw(bool should) override {}
-  void ZoomBy(float delta, float width, float height) override {}
-  void SetWindowId(int window_id, int nweb_id) override {}
-  void SetToken(void* token) override {}
-  void SetVirtualKeyBoardArg(int32_t width,
-                             int32_t height,
-                             double keyboard) override {}
-  bool ShouldVirtualKeyboardOverlay() override { return true; }
-  void JavaScriptOnDocumentStart(
-      const CefString& script,
-      const std::vector<CefString>& script_rules) override {}
-  void RemoveJavaScriptOnDocumentStart() override {}
-  void JavaScriptOnDocumentEnd(
-      const CefString& script,
-      const std::vector<CefString>& script_rules) override {}
-  void RemoveJavaScriptOnDocumentEnd() override {}
-#if BUILDFLAG(ARKWEB_JSPROXY)
-  void JavaScriptOnHeadReady(
-      const CefString& script,
-      const std::vector<CefString>& script_rules) override {}
-#endif
-  void RemoveJavaScriptOnHeadReady() override {}
-  void SetDrawRect(int x, int y, int width, int height) override {}
-  void SetDrawMode(int mode) override {}
-  void CreateWebPrintDocumentAdapter(const CefString& jobName,
-                                     void** webPrintDocumentAdapter) override {}
-  void SetOverscrollMode(int mode) override {}
-  bool Discard() override { return true; }
-  bool Restore() override { return true; }
-  void SetBrowserZoomLevel(double zoomFactor) override {}
-  int GetTopControlsOffset() override { return 0; }
-  int GetShrinkViewportHeight() override { return 0; }
-  void SetPrintBackground(bool enable) override {}
-  bool GetPrintBackground() override { return 0; }
-  void SetScrollable(bool enable, int scrollType) override {}
-  void StartCamera() override {}
-  void StopCamera() override {}
-  void CloseCamera() override {}
-  CefString GetLastJavascriptProxyCallingFrameUrl() override { return ""; }
-  void SetNWebId(int nWebId) override {}
-  bool GetPendingSizeStatus() override { return true; }
-  void PrecompileJavaScript(
-      const std::string& url,
-      const std::string& script,
-      CefRefPtr<CefCacheOptions> cacheOptions,
-      CefRefPtr<CefPrecompileCallback> callback) override {}
-  void SetWakeLockHandler(int32_t windowId,
-                          CefRefPtr<CefSetLockCallback> callback) override {}
-  CefRefPtr<CefDownloadItem> GetDownloadItem(uint32 item_id) override {
-    return nullptr;
-  }
-  void NotifyNeedsReload(bool needs_reload) override {}
-  bool NeedsReload() override { return true; }
-  bool TerminateRenderProcess() override { return true; }
-  void RegisterNativeJSProxy(const CefString& object_name,
-                             const std::vector<CefString>& method_list,
-                             const int32_t object_id,
-                             bool is_async,
-                             const CefString& permission) override {}
-  void SendTouchpadFlingEvent(const CefMouseEvent& event,
-                              double vx,
-                              double vy) override {}
-  void SetFitContentMode(int mode) override {}
-  void UpdateDrawRect() override {}
-  void OnTextSelected(bool flag) override {}
-  float GetPageScaleFactor() override { return 1.0; }
-  bool WebPageSnapshot(const char* id,
-                       int width,
-                       int height,
-                       cef_web_snapshot_callback_t callback) override {
-    return true;
-  }
-  void AdvanceFocusForIME(int focusType) override {}
-  void ScrollToWithAnime(float x, float y, int32_t duration) override {}
-  void ScrollByWithAnime(float delta_x,
-                         float delta_y,
-                         int32_t duration) override {}
-  void GetScrollOffset(float* offset_x, float* offset_y) override {}
-  void GetOverScrollOffset(float* offset_x, float* offset_y) override {}
-  void OnSafeInsetsChange(int left, int top, int right, int bottom) override {}
-  void NotifyForNextTouchEvent() override {}
-  void SetGrantFileAccessDirs(const std::vector<CefString>& dir_list) override {
-  }
-  void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback) override {
-  }
-  void FillAutofillData(CefRefPtr<CefValue> message) override {}
-  void ScrollFocusedEditableNodeIntoView() override {}
-  void ProcessAutofillCancel(const std::string& fillContent) override {}
-  void AutoFillWithIMFEvent(bool is_username,
-                            bool is_other_account,
-                            bool is_new_password,
-                            const std::string& content) override {}
+  bool IsAudioMuted() override {return false;}
+  bool IsFullscreen() override {return false;}
+  void ExitFullscreen(bool will_cause_resize) override {}
+  bool CanExecuteChromeCommand(int command_id) override {return false;}
+  void ExecuteChromeCommand(
+  int command_id,
+  cef_window_open_disposition_t disposition) override {}
+  bool IsRenderProcessUnresponsive() override {return false;}
+  cef_runtime_style_t GetRuntimeStyle() override {return CEF_RUNTIME_STYLE_CHROME;}
+  #if BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
+  void SetPopupWindow(cef_native_window_t window) override {}
+  #endif
+  #if BUILDFLAG(ARKWEB_PDF)
   void CreateToPDF(const CefPdfPrintSettings& settings,
-                   CefRefPtr<CefPdfValueCallback> callback) override {}
+                           CefRefPtr<CefPdfValueCallback> callback) override {}
+  #endif
+  void EnableVideoAssistant(bool enable) override {}
+  void ExecuteVideoAssistantFunction(const CefString& cmdId) override {}
+  #if BUILDFLAG(ARKWEB_EX_REFRESH_IFRAME)
+  void ReloadFocusedFrame() override {}
+  #endif
+  void StopScreenCapture(int32_t nweb_id, const CefString& session_id) override {}
+  void SetScreenCapturePickerShow() override {}
+  void DisableSessionReuse() override {}
+  void RegisterScreenCaptureDelegateListener(CefRefPtr<CefScreenCaptureCallback> listener) override {}
+  void CustomWebMediaPlayer(bool enable) override {}
 
-  void SetPopupWindow(cef_native_window_t window) {}
   void UpdateBrowserSettings(const CefBrowserSettings& browser_settings);
+#if BUILDFLAG(ARKWEB_PIP)
+  void SetPipNativeWindow(int delegate_id,
+                          int child_id,
+                          int frame_routing_id,
+                          cef_native_window_t window) override {}
+  void SendPipEvent(int delegate_id,
+                    int child_id,
+                    int frame_routing_id,
+                    int event) override {}
+#endif
   CefBrowserSettings settings_;
   std::unique_ptr<CefBrowserContentsDelegate> contents_delegate_;
 };
@@ -433,16 +231,6 @@ CefRefPtr<MockCefBrowser> MockCefBrowser::Create() {
   return browser;
 }
 
-CefRefPtr<CefBrowserHost> MockCefBrowser::GetHost() {
-  return this;
-}
-CefRefPtr<CefBrowser> MockCefBrowser::GetBrowser() {
-  return this;
-}
-void MockCefBrowser::SetWebPreferences(
-    const CefBrowserSettings& browser_settings) {
-  UpdateBrowserSettings(browser_settings);
-}
 void MockCefBrowser::UpdateBrowserSettings(
     const CefBrowserSettings& browser_settings) {
   SETTINGS_STRING_SET(browser_settings.standard_font_family,

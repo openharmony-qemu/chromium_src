@@ -16,8 +16,19 @@ MojoRendererWrapper::~MojoRendererWrapper() = default;
 
 void MojoRendererWrapper::Initialize(MediaResource* media_resource,
                                      RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                                     RequestSurfaceCB request_surface_cb,
+                                     VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                                      PipelineStatusCallback init_cb) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  mojo_renderer_->Initialize(media_resource, client,
+      std::move(request_surface_cb),
+      std::move(decoder_changed_cb),
+      std::move(init_cb));
+#else
   mojo_renderer_->Initialize(media_resource, client, std::move(init_cb));
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void MojoRendererWrapper::Flush(base::OnceClosure flush_cb) {
@@ -50,43 +61,6 @@ base::TimeDelta MojoRendererWrapper::GetMediaTime() {
   return mojo_renderer_->GetMediaTime();
 }
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void MojoRendererWrapper::SetMuted(bool muted) {
-  mojo_renderer_->SetMuted(muted);
-}
-void MojoRendererWrapper::SetSurfaceId(int surface_id, const gfx::Rect& rect) {
-  mojo_renderer_->SetSurfaceId(surface_id, rect);
-}
-void MojoRendererWrapper::SetMediaPlayerState(bool is_suspend,
-                                              int suspend_type) {
-  mojo_renderer_->SetMediaPlayerState(is_suspend, suspend_type);
-}
-void MojoRendererWrapper::SetMediaSourceList(
-    const std::vector<MediaSourceInfo>& source_infos) {
-  mojo_renderer_->SetMediaSourceList(source_infos);
-}
-void MojoRendererWrapper::SetMediaControls(
-    bool show_media_controls,
-    const std::vector<std::string>& controls_list) {
-  mojo_renderer_->SetMediaControls(show_media_controls, controls_list);
-}
-void MojoRendererWrapper::SetPoster(const std::string& poster_url) {
-  mojo_renderer_->SetPoster(poster_url);
-}
-void MojoRendererWrapper::SetAttributes(
-    base::flat_map<std::string, std::string> attributes) {
-  mojo_renderer_->SetAttributes(std::move(attributes));
-}
-void MojoRendererWrapper::SetReferrer(const std::string& referrer) {
-  mojo_renderer_->SetReferrer(referrer);
-}
-void MojoRendererWrapper::SetIsAudio(bool is_audio) {
-  mojo_renderer_->SetIsAudio(is_audio);
-}
-void MojoRendererWrapper::SetPlaybackRateWithReason(double playback_rate,
-                                                    ActionReason reason) {
-  mojo_renderer_->SetPlaybackRateWithReason(playback_rate, reason);
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-
 }  // namespace media
+
+#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_wrapper_for_include.cc"

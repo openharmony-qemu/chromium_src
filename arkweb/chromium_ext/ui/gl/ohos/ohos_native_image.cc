@@ -9,10 +9,14 @@
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"
-#include "content/public/common/content_switches.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #include "ui/gl/gl_bindings.h"
+
+namespace {
+constexpr char kProcessType[] = "type";
+constexpr char kGpuProcess[] = "gpu-process";
+}  // namespace
 
 namespace gl {
 
@@ -66,9 +70,9 @@ void OhosNativeImage::GetSurfaceId(uint64_t* surface_id) {
     return;
   }
   native_image_adapter_->GetSurfaceId(surface_id);
-  auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
-      switches::kProcessType);
-  if (type == switches::kGpuProcess) {
+  auto type =
+      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(kProcessType);
+  if (type == kGpuProcess) {
     LOG(INFO) << "dxlog GetSurfaceId : " << *surface_id;
     NWebNativeWindowTracker::GetInstance()->g_browser_client_->PassSurface(
         *surface_id);
@@ -176,4 +180,3 @@ void OhosNativeImage::GetTransformMatrixV1(float mtx[16], size_t mtx_size) {
   native_image_adapter_->GetTransformMatrix(mtx);
 }
 }  // namespace gl
-                  

@@ -9,6 +9,10 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 component("touch_selection") {
   output_name = "ui_touch_selection"
 
@@ -69,6 +73,10 @@ component("touch_selection") {
 
     deps += [ "//ui/menus" ]
   }
+
+  if (is_arkweb) {
+    sources += arkweb_ui_touch_selection_sources
+  }
 }
 
 static_library("test_support") {
@@ -106,6 +114,7 @@ test("ui_touch_selection_unittests") {
     "//ui/events:test_support",
     "//ui/gfx:gfx",
     "//ui/gfx:test_support",
+    "//content/public/common:static_switches"
   ]
 
   data_deps = [ "//third_party/angle:includes" ]

@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -25,11 +25,14 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom-forward.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/privileged/mojom/compositing/renderer_settings.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
 HostFrameSinkManager::HostFrameSinkManager()
-    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {}
+    : debug_renderer_settings_(CreateDefaultDebugRendererSettings()) {
+      managerUtils = std::make_unique<HostFrameSinkManagerUtils>(this);
+}
 
 HostFrameSinkManager::~HostFrameSinkManager() = default;
 
@@ -453,12 +456,6 @@ void HostFrameSinkManager::OnAggregatedHitTestRegionListUpdated(
     observer.OnAggregatedHitTestRegionListUpdated(frame_sink_id, hit_test_data);
 }
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-void HostFrameSinkManager::SendInternalBeginFrame(const FrameSinkId& id) {
-  frame_sink_manager_->SendInternalBeginFrame(id);
-}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
 #if BUILDFLAG(IS_ANDROID)
 void HostFrameSinkManager::VerifyThreadIdsDoNotBelongToHost(
     const std::vector<int32_t>& thread_ids,
@@ -485,17 +482,9 @@ void HostFrameSinkManager::OnScreenshotCaptured(
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
 void HostFrameSinkManager::RestoreRenderFit(uint32_t client_id,
                                             uint32_t sink_id) {
-  FrameSinkId id(client_id, sink_id);
-  auto iter = frame_sink_data_map_.find(id);
-  if (iter == frame_sink_data_map_.end()) {
-    return;
-  }
-  const FrameSinkData& data = iter->second;
-  if (data.client) {
-    data.client->RestoreRenderFit();
-  }
+  managerUtils->UtilsRestoreRenderFit(client_id, sink_id);
 }
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
 #if BUILDFLAG(IS_ANDROID)
 uint32_t HostFrameSinkManager::CacheBackBufferForRootSink(
@@ -540,42 +529,6 @@ void HostFrameSinkManager::UpdateDebugRendererSettings(
   debug_renderer_settings_ = debug_settings;
   frame_sink_manager_->UpdateDebugRendererSettings(debug_settings);
 }
-
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-void HostFrameSinkManager::SetEnableLowerFrameRate(
-    bool enabled,
-    const FrameSinkId& frame_sink_id) {
-  frame_sink_manager_->SetEnableLowerFrameRate(enabled, frame_sink_id);
-}
-
-void HostFrameSinkManager::EvictFrameBackBuffers(
-    const FrameSinkId& frame_sink_id,
-    bool invisible) {
-  frame_sink_manager_->EvictFrameBackBuffers(frame_sink_id, invisible);
-}
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-void HostFrameSinkManager::UpdateVSyncFrequency(
-    const FrameSinkId& frame_sink_id) {
-  auto frame_sink_data_it = frame_sink_data_map_.find(frame_sink_id);
-  if (frame_sink_data_it == frame_sink_data_map_.end()) {
-    return;
-  }
-  auto children = frame_sink_data_it->second.children;
-  auto children_it = children.begin();
-  uint32_t client_id = 0;
-  if (children_it != children.end()) {
-    client_id = children_it->client_id();
-  }
-  frame_sink_manager_->UpdateVSyncFrequency(frame_sink_id, client_id);
-}
-
-void HostFrameSinkManager::ResetVSyncFrequency(
-    const FrameSinkId& frame_sink_id) {
-  frame_sink_manager_->ResetVSyncFrequency(frame_sink_id);
-}
-#endif
 
 mojom::FrameSinksMetricsRecorder&
 HostFrameSinkManager::GetFrameSinksMetricsRecorderForTest() {

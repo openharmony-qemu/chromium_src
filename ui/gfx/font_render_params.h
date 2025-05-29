@@ -125,7 +125,7 @@ COMPONENT_EXPORT(GFX) void ClearFontRenderParamsCacheForTest();
 COMPONENT_EXPORT(GFX) float GetFontRenderParamsDeviceScaleFactor();
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
 // Sets the device scale factor for FontRenderParams to decide
 // if it should enable subpixel positioning.
 COMPONENT_EXPORT(GFX)

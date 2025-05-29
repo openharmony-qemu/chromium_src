@@ -11,7 +11,6 @@
 #include <set>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/heap_array.h"
 #include "base/files/file_path.h"
 #include "base/files/scoped_file.h"
@@ -23,6 +22,7 @@
 #include "base/task/current_thread.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_CRASHPAD)
 #include "components/crash/core/app/breakpad_linux_impl.h"

@@ -23,17 +23,12 @@ PRPPRequestLoaderFactoryImpl::PRPPRequestLoaderFactoryImpl(const std::string& ur
 	: main_url_(url), url_request_context_(url_request_context) {}
 
 void PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart(const std::shared_ptr<PRRequestInfo>& info,
-	bool only_send_reuse_request, const std::set<std::string>& need_record_header_urls)
+	std::set<std::string> need_record_header_urls)
 {
   if (!url_request_context_ || !info) {
 	LOG(WARNING) << "PRPPreload.PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart failed, " <<
 	  "invalid context or info";
 	return;
-  }
-  
-  if (!has_set_only_send_reuse_request_) {
-    has_set_only_send_reuse_request_ = true;
-    only_send_reuse_request_ = only_send_reuse_request;
   }
 
   std::string sub_url = info->url().spec();
@@ -45,13 +40,7 @@ void PRPPRequestLoaderFactoryImpl::CreateReqLoaderAndStart(const std::shared_ptr
 	need_record_header_urls_ = need_record_header_urls;
   }
 
-  if (info->preload_flag() ==
-      (PRRequestFlags)(PRPP_FLAGS_VISIBLE | PRPP_FLAGS_URL_DYNAMIC) &&
-	  only_send_reuse_request_) {
-	(void)dynamic_urls_.emplace(sub_url);
-  }
-
-  if (info->preload_flag() == (PRRequestFlags)(PRPP_FLAGS_VISIBLE | PRPP_FLAGS_HDR_DYNAMIC)) {
+  if (((info->preload_flag() & PRPP_FLAGS_HDR_DYNAMIC) == PRPP_FLAGS_HDR_DYNAMIC)) {
 	auto item = can_reuse_headers_map_.find(info->parent_for_dynamic_header().spec());
 	if (item == can_reuse_headers_map_.end()) {
 	  RecordPendingPRPPLoader(info);
@@ -78,7 +67,6 @@ std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoade
 	const network::URLLoaderContext& context, const network::ResourceRequest& resource_request,
 	std::shared_ptr<PRRequestInfo> req_info_binding)
 {
-  req_info_binding->set_only_send_reuse_request(only_send_reuse_request_);
   RecordNeedRecordHeaderUrls(resource_request);
   if (!net::HttpUtil::IsMethodSafe(resource_request.method)) {
 	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader not support method:" <<
@@ -101,9 +89,6 @@ std::shared_ptr<PRPPRequestLoader> PRPPRequestLoaderFactoryImpl::GetPRPPReqLoade
   if (it == prpp_req_loaders_.end()) {
 	LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::GetPRPPReqLoader not find";
 	(void)requests_already_start_set_.emplace(sub_url);
-	if (dynamic_urls_.find(sub_url) != dynamic_urls_.end() && only_send_reuse_request_) {
-	  req_info_binding->set_preload_flag(PRPP_FLAGS_VISIBLE);
-	}
 	return nullptr;
   }
   std::shared_ptr<PRPPRequestLoader> loader = it->second;
@@ -166,20 +151,20 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
   bool match = true;
   std::set<std::string> dynamic_header_keys;
   for (auto item : resource_request.headers.GetHeaderVector()) {
+	net::HttpRequestHeaders extra_request_headers = req_info->extra_request_headers();
 	net::HttpRequestHeaders::HeaderVector::const_iterator iter =
-	  req_info->extra_request_headers().GetHeaderVector().end();
-	for (auto it = req_info->extra_request_headers().GetHeaderVector().begin();
-	  it != req_info->extra_request_headers().GetHeaderVector().end(); ++it) {
+	  extra_request_headers.GetHeaderVector().end();
+	for (auto it = extra_request_headers.GetHeaderVector().begin();
+	    it != extra_request_headers.GetHeaderVector().end(); ++it) {
 	  if (base::EqualsCaseInsensitiveASCII(item.key, it->key)) {
 		iter = it;
 		break;
 	  }
 	}
-	if (iter == req_info->extra_request_headers().GetHeaderVector().end()) {
+	if (iter == extra_request_headers.GetHeaderVector().end()) {
 	  req_info_binding->or_preload_flag(PRPP_FLAGS_HDR_NOT_MATCH);
 	  LOG(DEBUG) << "PRPPreload.PRPPRequestLoaderFactoryImpl::MatchRequestHeaders header not match, " <<
         "can not reuse " << item.key;
-	  req_info->extra_request_headers().SetHeader(item.key, item.value);
 	  return false;
 	}
 
@@ -188,13 +173,11 @@ bool PRPPRequestLoaderFactoryImpl::MatchRequestHeaders(std::shared_ptr<PRRequest
         "can not reuse " << item.key;
 	  match = false;
 	  (void)dynamic_header_keys.emplace(item.key);
-	  req_info->extra_request_headers().RemoveHeader(item.key);
-      req_info->extra_request_headers().SetHeader(item.key, item.value);
 	}
   }
 
   if (!match) {
-	req_info_binding->set_preload_flag(PRPP_FLAGS_HDR_DYNAMIC);
+	req_info_binding->or_preload_flag(PRPP_FLAGS_HDR_DYNAMIC);
 	req_info_binding->set_dynamic_header_keys(dynamic_header_keys);
   }
   return match;
@@ -248,14 +231,15 @@ void PRPPRequestLoaderFactoryImpl::CreatePendingReqLoaderAndStart(const std::sha
 void PRPPRequestLoaderFactoryImpl::ReplaceHeaders(const net::HttpRequestHeaders& headers,
     const std::shared_ptr<PRRequestInfo>& info)
 {
+  net::HttpRequestHeaders extra_request_headers = info->extra_request_headers();
   for (auto key : info->dynamic_header_keys()) {
-	std::string record_header;
 	std::optional<std::string> record_value = headers.GetHeader(key);
-	info->extra_request_headers().RemoveHeader(key);
+	extra_request_headers.RemoveHeader(key);
 	if (record_value.has_value()) {
-      info->extra_request_headers().SetHeader(key, record_value.value());
+	  extra_request_headers.SetHeader(key, record_value.value());
 	}
   }
+  info->set_extra_request_headers(std::move(extra_request_headers));
 }
 
 void PRPPRequestLoaderFactoryImpl::RecordPendingPRPPLoader(const std::shared_ptr<PRRequestInfo>& info)

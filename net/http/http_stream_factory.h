@@ -167,7 +167,12 @@ class NET_EXPORT HttpStreamFactory {
   // Requests that enough connections for |num_streams| be opened.
   //
   // TODO: Make this take StreamRequestInfo instead.
-  void PreconnectStreams(int num_streams, HttpRequestInfo& info);
+  void PreconnectStreams(int num_streams, HttpRequestInfo& info
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+                         bool from_preload = false
+#endif
+  );
 
   const HostMappingRules* GetHostMappingRules() const;
 

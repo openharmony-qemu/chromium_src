@@ -38,6 +38,8 @@ cc_component("mojo_embedder") {
       "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_registry_ohos.h",
       "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.cc",
       "//arkweb/chromium_ext/cc/mojo_embedder/software_compositor_renderer_ohos.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h",
+      "//arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.cc",
     ]
   }
 

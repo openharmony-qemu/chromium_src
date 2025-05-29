@@ -20,11 +20,12 @@
 #include <stdint.h>
 
 #include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
 #include "base/memory/writable_shared_memory_region.h"
 #include "cc/mojo_embedder/software_compositor_renderer_ohos.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
-#include "third_party/blink/public/mojom/input/software_compositor_ohos.mojom-blink.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/input/software_compositor_ohos.mojom-blink.h"
 
 namespace blink {
 
@@ -59,7 +60,7 @@ class SoftwareCompositorProxyOhos
   std::unique_ptr<SharedMemoryWithSize> software_draw_shm_;  // From browser.
 
   mojo::Receiver<mojom::blink::SoftwareCompositorOhos> receiver_{this};
-  cc::mojo_embedder::SoftwareCompositorRendererOhos* software_render_ = nullptr;
+  raw_ptr<cc::mojo_embedder::SoftwareCompositorRendererOhos> software_render_ = nullptr;
 };
 
 }  // namespace blink

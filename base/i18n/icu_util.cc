@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "arkweb/build/features/features.h"
 #include "base/debug/alias.h"
 #include "base/environment.h"
 #include "base/files/file_path.h"
@@ -31,6 +30,8 @@
 #include "third_party/icu/source/common/unicode/uclean.h"
 #include "third_party/icu/source/common/unicode/udata.h"
 #include "third_party/icu/source/common/unicode/utrace.h"
+
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/apk_assets.h"
@@ -54,17 +55,14 @@
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_CHROMEOS) ||                         \
-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS) && !BUILDFLAG(IS_CASTOS))
+    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS) && !BUILDFLAG(IS_CASTOS))
 #include "third_party/icu/source/i18n/unicode/timezone.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "arkweb/build/features/features.h"
-#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
 #if BUILDFLAG(IS_ARKWEB)
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
-#endif
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/i18n/icu_util_ohos.h"
 #endif
 
 namespace base::i18n {
@@ -191,8 +189,8 @@ void LazyInitIcuDataFile() {
 #if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
   // If the hap package is not decompressed, the directory does not exist.
   if (data_path.empty() || !base::PathExists(data_path)) {
-    LOG(ERROR) << data_path << " not exists.";
-    return;
+      LOG(ERROR) << data_path << " not exists.";
+      return;
   }
 #endif
   File file(data_path, File::FLAG_OPEN | File::FLAG_READ);
@@ -260,39 +258,6 @@ int LoadIcuData(PlatformFile data_fd,
   return 0;
 }
 
-#if BUILDFLAG(IS_ARKWEB) && \
-    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-const char kIcuDataFileNameHap[] = "resources/rawfile/icudtl.dat";
-int LoadIcuDataByHap(PlatformFile data_fd,
-                     const MemoryMappedFile::Region& data_region,
-                     std::unique_ptr<MemoryMappedFile>* out_mapped_data_file,
-                     UErrorCode* out_error_code) {
-  auto resourceInstance =
-      OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
-  std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
-      resourceInstance->GetRawFileMapper(kIcuDataFileNameHap, true);
-  if (!fileMapper) {
-    LOG(ERROR) << "Couldn't mmap icu data file by hap: " << kIcuDataFileNameHap;
-    return 1;
-  }
-  LOG(INFO) << "icu data file length: " << fileMapper->GetDataLen();
-
-  *out_mapped_data_file = std::make_unique<MemoryMappedFile>();
-  (*out_error_code) = U_ZERO_ERROR;
-  InitializeExternalTimeZoneData();
-  (*out_mapped_data_file)->SetOhosFileMapper(fileMapper);
-
-  udata_setCommonData(const_cast<uint8_t*>((*out_mapped_data_file)->data()),
-                      out_error_code);
-  if (U_FAILURE(*out_error_code)) {
-    LOG(ERROR) << "Failed to initialize ICU with data file: "
-               << u_errorName(*out_error_code);
-    return 3;
-  }
-  return 0;
-}
-#endif
-
 bool InitializeICUWithFileDescriptorInternal(
     PlatformFile data_fd,
     const MemoryMappedFile::Region& data_region) {
@@ -304,14 +269,8 @@ bool InitializeICUWithFileDescriptorInternal(
 
   std::unique_ptr<MemoryMappedFile> mapped_file;
   UErrorCode err;
-#if BUILDFLAG(IS_ARKWEB) && \
-    (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
-  if (data_fd == kInvalidPlatformFile) {
-    g_debug_icu_load =
-        LoadIcuDataByHap(data_fd, data_region, &mapped_file, &err);
-  } else {
-    g_debug_icu_load = LoadIcuData(data_fd, data_region, &mapped_file, &err);
-  }
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  LOAD_ICU_DATA(data_fd, data_region, mapped_file, err);
 #else
   g_debug_icu_load = LoadIcuData(data_fd, data_region, &mapped_file, &err);
 #endif
@@ -366,25 +325,12 @@ bool InitializeICUFromDataFile() {
 // On some platforms, the time zone must be explicitly initialized zone rather
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_ARKWEB)
 #if BUILDFLAG(ARKWEB_TIME_ZONE)
-  // On OHOS, we can't use the method of obtaining the timezone as Linux,
-  // because it detects from the system file which render process doesn't have
-  // enough permission. On OHOS, we can get from OH TimeService Subsystem.
-  LOG(DEBUG) << "InitializeIcuTimeZone in OHOS ARKWEB.";
-  auto tzid = OHOS::NWeb::OhosAdapterHelper::GetInstance()
-                  .CreateDateTimeFormatAdapter()
-                  ->GetTimezone();
-  icu::TimeZone::createDefault();
-  std::unique_ptr<icu::TimeZone> timezone(
-      icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(tzid)));
-  icu::TimeZone::adoptDefault(timezone.release());
-#else
-  std::string zone_id = ::ohos::adapter::ohos_i18n::GetTimeZone();
-  if (!zone_id.empty()) {
-    icu::TimeZone::adoptDefault(
-        icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(zone_id)));
-  }
+    // On OHOS, we can't use the method of obtaining the timezone as Linux, because
+    // it detects from the system file which render process doesn't have enough
+    // permission. On OHOS, we can get from OH TimeService Subsystem.
+    CREATE_TIME_ZONE();
 #endif
 #elif BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone

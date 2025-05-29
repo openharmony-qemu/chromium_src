@@ -10,7 +10,7 @@
 #include "url/gurl.h"
 #if BUILDFLAG(ARKWEB_NAVIGATION)
 #include "arkweb/chromium_ext/content/public/browser/ohos_navigation_type.h"
-#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+#endif // BUILDFLAG(ARKWEB_NAVIGATION)
 
 namespace content {
 
@@ -77,10 +77,10 @@ struct CONTENT_EXPORT LoadCommittedDetails {
   // See also https://crbug.com/1277414.
   bool should_stay_as_initial_entry = false;
 
-#if BUILDFLAG(ARKWEB_NAVIGATION)
+  #if BUILDFLAG(ARKWEB_NAVIGATION)
   content::OhosNavigationType type;
   GURL current_commit_entry_url;
-#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+  #endif // BUILDFLAG(ARKWEB_NAVIGATION)
 };
 
 // Provides the details for a NOTIFICATION_NAV_ENTRY_CHANGED notification.

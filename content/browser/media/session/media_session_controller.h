@@ -7,7 +7,6 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
@@ -20,11 +19,13 @@
 #include "media/base/media_content_type.h"
 #include "services/media_session/public/cpp/media_position.h"
 #include "services/media_session/public/mojom/media_session.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
 class MediaSessionImpl;
 class WebContentsImpl;
+class MediaSessionControllerExt;
 
 // Helper class for controlling a single player's MediaSession instance.  Sends
 // browser side MediaSession commands back to a player hosted in the renderer
@@ -36,6 +37,7 @@ class WebContentsImpl;
 class CONTENT_EXPORT MediaSessionController
     : public MediaSessionPlayerObserver {
  public:
+  friend class MediaSessionControllerExt;
   MediaSessionController(const MediaPlayerId& id,
                          WebContentsImpl* web_contents);
 
@@ -60,9 +62,6 @@ class CONTENT_EXPORT MediaSessionController
   // MediaSessionPlayerObserver implementation.
   void OnSuspend(int player_id) override;
   void OnResume(int player_id) override;
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  void OnSetHtmlPlayEnabled(int player_id, bool enabled) override;
-#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void OnSeekForward(int player_id, base::TimeDelta seek_time) override;
   void OnSeekBackward(int player_id, base::TimeDelta seek_time) override;
   void OnSeekTo(int player_id, base::TimeDelta seek_time) override;
@@ -97,11 +96,6 @@ class CONTENT_EXPORT MediaSessionController
   // Called when the WebContents is either muted or unmuted.
   void WebContentsMutedStateChanged(bool muted);
 
-#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
-  // Set whether to the HTML play can be used to control media
-  void SetHtmlPlayEnabled(bool enabled);
-#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
-
   // Called when the media position state of the player has changed.
   void OnMediaPositionStateChanged(
       const media_session::MediaPosition& position);
@@ -123,6 +117,10 @@ class CONTENT_EXPORT MediaSessionController
 
   // Called when video visibility changes for the given media player.
   void OnVideoVisibilityChanged(bool meets_visibility_threshold);
+
+  virtual MediaSessionControllerExt* AsMediaSessionControllerExt() {
+    return nullptr;
+  }
 
  private:
   bool IsMediaSessionNeeded() const;
@@ -164,5 +162,6 @@ class CONTENT_EXPORT MediaSessionController
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.h"
 
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_CONTROLLER_H_

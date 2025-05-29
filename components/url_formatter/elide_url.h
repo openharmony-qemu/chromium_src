@@ -146,24 +146,10 @@ void SplitHost(const GURL& url,
                std::u16string* url_domain,
                std::u16string* url_subdomain);
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-/**
- * Parse the character string entered by the user and return the type of the
- * character string.
- * @param String the input to parse
- * @return  INVALID 0 invalid type
- *          URL     1 URL type
- *          QUERY   2 QUERY type
- *          UNKNOWN 3 UNKNOW type
- */
-enum UrlType { INVALID = 0, URL = 1, QUERY = 2, UNKNOWN = 3 };
-
-UrlType ParseInput(const std::u16string& input,
-                   url::Parsed* parts,
-                   std::u16string* scheme,
-                   GURL* canonicalized_url);
-#endif  // BUILDFLAG(IS_ARKWEB_EXT)
-
 }  // namespace url_formatter
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/chromium_ext/components/url_formatter/arkweb_elide_url_ext.h"
+#endif
 
 #endif  // COMPONENTS_URL_FORMATTER_ELIDE_URL_H_

@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//arkweb/build/features/features.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 static_library("renderer") {
   sources = [
@@ -13,16 +14,6 @@ static_library("renderer") {
     "web_document_subresource_filter_impl.cc",
     "web_document_subresource_filter_impl.h",
   ]
-
-  if (defined(arkweb_adblock) && arkweb_adblock) {
-    sources += [
-      "user_subresource_filter_agent.cc",
-      "user_subresource_filter_agent.h",
-      "user_unverified_ruleset_dealer.cc",
-      "user_unverified_ruleset_dealer.h"
-    ]
-  }
-
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   public_deps = [
     "//base",
@@ -37,13 +28,17 @@ static_library("renderer") {
   deps = [
     "//components/subresource_filter/content/shared/common",
     "//components/subresource_filter/content/shared/renderer",
-    "//components/subresource_filter/core/browser",
     "//content/public/common",
     "//ipc",
     "//third_party/blink/public:blink",
     "//third_party/blink/public:blink_headers",
     "//third_party/blink/public/common",
   ]
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_components_subresource_filter_content_renderer_sources
+    deps += [ "//components/subresource_filter/core/browser" ]
+  }  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 source_set("unit_tests") {

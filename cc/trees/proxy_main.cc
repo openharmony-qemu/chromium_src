@@ -462,7 +462,9 @@ void ProxyMain::BeginMainFrame(
                       perfetto::protos::pbzero::MainFramePipeline::Step::
                           COMMIT_ON_MAIN);
                 });
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT0("cc,raf_investigation", "ProxyMain::BeginMainFrame::commit");
+#endif
     std::optional<DebugScopedSetMainThreadBlocked> main_thread_blocked;
     if (blocking)
       main_thread_blocked.emplace(task_runner_provider_);
@@ -938,18 +940,18 @@ double ProxyMain::GetPercentDroppedFrames() const {
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
 void ProxyMain::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
-  layer_tree_host_->OnLayerRectUpdate(id, rect);
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerRectUpdate(id, rect);
 }
 
 void ProxyMain::OnLayerRectVisibilityChange(int id, bool visibility) {
-  layer_tree_host_->OnLayerRectVisibilityChange(id, visibility);
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerRectVisibilityChange(id, visibility);
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void ProxyMain::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
-  layer_tree_host_->OnLayerBoundsUpdate(id, bounds);
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerBoundsUpdate(id, bounds);
 }
-#endif  // ARKWEB_VIDEO_ASSISTANT
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

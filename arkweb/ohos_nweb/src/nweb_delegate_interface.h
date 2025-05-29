@@ -23,7 +23,7 @@
 #include "capi/nweb_download_delegate_callback.h"
 #include "capi/nweb_extension_callback.h"
 #include "cef_delegate/nweb_inputmethod_client.h"
-#include "display_manager_adapter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
 #include "include/arkweb_client_ext.h"
 #include "nweb.h"
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -35,6 +35,7 @@
 #include "nweb_find_callback.h"
 #include "nweb_handler.h"
 #include "nweb_preference.h"
+#include "nweb_rom_value.h"
 #include "nweb_web_message.h"
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -88,11 +89,6 @@ class NWebDelegateInterface
   virtual void OnDestroy(bool is_close_all) = 0;
   virtual void RegisterDownLoadListener(
       std::shared_ptr<NWebDownloadCallback> downloadListener) = 0;
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  virtual void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
-          accessibilityEventListener) = 0;
-#endif
   virtual void RegisterReleaseSurfaceListener(
       std::shared_ptr<NWebReleaseSurfaceCallback> releaseSurfaceListener) = 0;
   virtual void RegisterNWebHandler(std::shared_ptr<NWebHandler> handler) = 0;
@@ -115,6 +111,7 @@ class NWebDelegateInterface
   virtual void SetAutofillCallback(
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
   virtual void FillAutofillData(std::shared_ptr<NWebMessage> data) = 0;
+  virtual void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) = 0;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetNWebDelegateInterface(
@@ -159,12 +156,17 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   virtual void ShowFreeCopyMenu() = 0;
   virtual bool ShouldShowFreeCopyMenu() = 0;
+  virtual std::string GetSelectedTextFromContextParam() = 0;
 #endif  // ARKWEB_EXT_FREE_COPY
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)
   virtual void SetBrowserZoomLevel(double zoom_factor) = 0;
   virtual double GetBrowserZoomLevel() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_OFFSET)
+  virtual void SetScreenOffset(double x, double y) = 0;
+#endif  // BUILDFLAG(ARKWEB_SCREEN_OFFSET)
 
   /* event interface */
   virtual void Resize(uint32_t width,
@@ -211,8 +213,7 @@ class NWebDelegateInterface
                               int action,
                               int count) = 0;
   virtual void NotifyScreenInfoChanged(RotationType rotation,
-                                       DisplayOrientation orientation,
-                                       bool isWebinitialization = false) = 0;
+                                       DisplayOrientation orientation) = 0;
 
   virtual int Load(const std::string& url) = 0;
   virtual bool IsNavigatebackwardAllowed() const = 0;
@@ -240,9 +241,11 @@ class NWebDelegateInterface
   virtual void OnOccluded() = 0;
   virtual void OnUnoccluded() = 0;
   virtual void SetEnableLowerFrameRate(bool enabled) = 0;
+  virtual void SetEnableHalfFrameRate(bool enabled) = 0;
   virtual std::shared_ptr<NWebPreference> GetPreference() const = 0;
   virtual std::string Title() = 0;
   virtual std::shared_ptr<HitTestResult> GetHitTestResult() const = 0;
+  virtual std::shared_ptr<HitTestResult> GetLastHitTestResult() const = 0;
   virtual int PageLoadProgress() = 0;
   virtual float Scale() = 0;
   virtual int Load(
@@ -276,6 +279,12 @@ class NWebDelegateInterface
           std::vector<size_t>&)>>&& callback,
       bool isAsync,
       const std::string& permission) = 0;
+  virtual void RegisterNativeAsyncThreadJSProxyWithResult(
+      const std::string& objName,
+      const std::vector<std::string>& methodName,
+      std::vector<std::function<std::shared_ptr<OHOS::NWeb::NWebValue>(
+          std::vector<std::vector<uint8_t>>&, std::vector<size_t>&)>>&& callback,
+      const std::string& permission) = 0;
   virtual void UnRegisterNativeArkJSFunction(const char* objName) = 0;
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
@@ -304,6 +313,11 @@ class NWebDelegateInterface
       int32_t h5_object_id,
       const std::string& h5_method_name,
       const std::vector<std::shared_ptr<NWebValue>>& args) const = 0;
+  virtual void CallH5FunctionV2(
+      int32_t routing_id,
+      int32_t h5_object_id,
+      const std::string& h5_method_name,
+      const std::vector<std::shared_ptr<NWebRomValue>>& args) const = 0;
   virtual void RegisterNWebJavaScriptCallBack(
       std::shared_ptr<NWebJavaScriptResultCallBack> callback) = 0;
   virtual bool OnFocus(
@@ -341,6 +355,8 @@ class NWebDelegateInterface
   virtual void ClosePort(const std::string& portHandle) = 0;
   virtual void PostPortMessage(const std::string& portHandle,
                                std::shared_ptr<NWebMessage> data) = 0;
+  virtual void PostPortMessageV2(const std::string& portHandle,
+                               std::shared_ptr<NWebRomValue> data) = 0;
   virtual void SetPortMessageCallback(
       const std::string& portHandle,
       std::shared_ptr<NWebMessageValueCallback> callback) = 0;
@@ -399,6 +415,8 @@ class NWebDelegateInterface
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
   virtual void StopScreenCapture(int32_t nweb_id, const char* session_id) = 0;
+  virtual void SetScreenCapturePickerShow() = 0;
+  virtual void DisableSessionReuse() = 0;
   virtual void RegisterScreenCaptureDelegateListener(
       std::shared_ptr<NWebScreenCaptureDelegateCallback>
           screenCaptureDelegateListener) = 0;
@@ -451,9 +469,12 @@ class NWebDelegateInterface
   virtual void SetDrawMode(int32_t mode) = 0;
   virtual bool GetPendingSizeStatus() = 0;
   virtual void SetFitContentMode(int32_t mode) = 0;
-  virtual std::string GetCurrentLanguage();
+  virtual std::string GetCurrentLanguage() = 0;
 #endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) = 0;
+#endif
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   virtual void SetAudioResumeInterval(int32_t resumeInterval) = 0;
   virtual void SetAudioExclusive(bool audioExclusive) = 0;
@@ -519,6 +540,13 @@ class NWebDelegateInterface
       double deltaX,
       double deltaY,
       const std::vector<int32_t>& pressedCodes) = 0;
+  virtual void WebSendMouseWheelEventV2(
+      double x,
+      double y,
+      double deltaX,
+      double deltaY,
+      const std::vector<int32_t>& pressedCodes,
+      int32_t source) = 0;
   virtual void WebSendTouchpadFlingEvent(
       double x,
       double y,
@@ -553,13 +581,15 @@ class NWebDelegateInterface
 #endif
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   virtual void SetAccessibilityState(cef_state_t accessibilityState) = 0;
-
-  virtual void ExecuteAction(int64_t accessibilityId, uint32_t action) = 0;
-
-  virtual void ExecuteAction(
+  virtual bool ExecuteAction(
       int64_t accessibilityId,
       uint32_t action,
       const std::map<std::string, std::string>& actionArguments) = 0;
+  virtual bool GetAccessibilityNodeRectById(int64_t accessibilityId,
+                                            int32_t* width,
+                                            int32_t* height,
+                                            int32_t* offsetX,
+                                            int32_t* offsetY) = 0;
 
   virtual std::shared_ptr<NWebAccessibilityNodeInfo>
   GetFocusedAccessibilityNodeInfo(int64_t accessibilityId,
@@ -571,6 +601,7 @@ class NWebDelegateInterface
   GetAccessibilityNodeInfoByFocusMove(int64_t accessibilityId,
                                       int32_t direction) = 0;
   virtual void RefreshAccessibilityManagerClickEvent() = 0;
+  virtual void SendAccessibilityHoverEvent(int x, int y, bool isHoverEnter) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_DISCARD)
@@ -615,13 +646,19 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   virtual void EnableVideoAssistant(bool enable) = 0;
   virtual void ExecuteVideoAssistantFunction(const std::string& cmd_id) = 0;
-#endif  // BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void CustomWebMediaPlayer(bool enable) = 0;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void SetIsRichText(bool is_rich_text) = 0;
 #endif
   virtual std::string GetSelectInfo() = 0;
 
+#if BUILDFLAG(ARKWEB_AI_WRITE)
+  virtual int GetSelectStartIndex() = 0;
+  virtual int GetSelectEndIndex() = 0;
+  virtual std::string GetAllTextInfo() = 0;
+#endif // ARKWEB_AI_WRITE
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
   virtual void OnSafeInsetsChange(int left, int top, int right, int bottom) = 0;
 #endif
@@ -630,6 +667,12 @@ class NWebDelegateInterface
   virtual void OnTextSelected() = 0;
   virtual void OnDestroyImageAnalyzerOverlay() = 0;
   virtual void OnFoldStatusChanged(FoldStatus foldstatus) = 0;
+  virtual void RunDataDetectorJS() = 0;
+  virtual void SetDataDetectorEnable(bool enable) = 0;
+  virtual bool GetDataDetectorEnable() = 0;
+  virtual std::string GetDataDetectorSelectText() = 0;
+  virtual void OnDataDetectorSelectText() = 0;
+  virtual void OnDataDetectorCopy(const std::vector<std::string>& recordMix) = 0;
 #endif
 
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
@@ -641,6 +684,10 @@ class NWebDelegateInterface
   virtual void SetPathAllowingUniversalAccess(
       const std::vector<std::string>& pathList) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
+  virtual void DisallowSandboxFileAccessFromFileUrl(bool disallow) = 0;
+#endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   virtual void WebExtensionTabCreated(int tab_id) = 0;
@@ -685,9 +732,6 @@ class NWebDelegateInterface
                                int height,
                                const WebSnapshotCallback callback) = 0;
 #endif  // ARKWEB_SOFTWARE_COMPOSITOR
-#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-  virtual void SendAccessibilityHoverEvent(int x, int y) = 0;
-#endif
   virtual bool IsCustomKeyboard() const = 0;
 
   virtual std::shared_ptr<NWebCustomKeyboardHandlerImpl>
@@ -744,6 +788,31 @@ class NWebDelegateInterface
   virtual void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& ScriptItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
+#endif
+  virtual bool SetFocusByPosition(float x, float y) = 0;
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  virtual void OnSafeBrowsingDetectionResult(int code,
+                                             int policy,
+                                             const std::string& mappingType,
+                                             const std::string& url) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  virtual void SetBorderRadiusFromWeb(double borderRadiusTopLeft,
+                                      double borderRadiusTopRight,
+                                      double borderRadiusBottomLeft,
+                                      double borderRadiusBottomRight) = 0;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void SetPipNativeWindow(int delegate_id,
+                                  int child_id,
+                                  int frame_routing_id,
+                                  void* window) = 0;
+  virtual void SendPipEvent(int delegate_id,
+                            int child_id,
+                            int frame_routing_id,
+                            int event) = 0;
 #endif
 };
 }  // namespace OHOS::NWeb

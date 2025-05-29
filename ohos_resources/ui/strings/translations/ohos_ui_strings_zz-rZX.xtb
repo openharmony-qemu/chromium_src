@@ -2,4 +2,7 @@
 <!DOCTYPE translationbundle>
 <translationbundle lang="zz-rZX">
 <translation id="IDS_OHOS_WEBPAGE_ERR_SEARCH_NOTE">[TS_978709]_The webpage at <ph name="ERROR_URL"/> may be temporarily down, or it may have been permanently moved to another web address.</translation>
+<translation id="IDS_OHOS_MEDIA_VIDEO_PLAYBACK_SPEED_BUTTON">[TNA_1022430]_1.0x</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">[TS_1063286]_Youth mode is on. This site can't be accessed.</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">[TS_1063287]_Settings</translation>
 </translationbundle>

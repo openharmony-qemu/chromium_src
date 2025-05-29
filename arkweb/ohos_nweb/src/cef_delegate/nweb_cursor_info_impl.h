@@ -16,6 +16,7 @@
 #ifndef NWEB_CURSOR_INFO_IMPL_H
 #define NWEB_CURSOR_INFO_IMPL_H
 
+#include "base/memory/raw_ptr.h"
 #include "nweb_handler.h"
 
 namespace OHOS::NWeb {
@@ -43,7 +44,7 @@ class NWebCursorInfoImpl : public NWebCursorInfo {
   int32_t width_ = 0;
   int32_t height_ = 0;
 
-  uint8_t* buff_ = nullptr;
+  raw_ptr<uint8_t> buff_ = nullptr;
 };
 
 }  // namespace OHOS::NWeb

@@ -211,22 +211,13 @@
 #include "ui/compositor/compositor_lock.h"
 #include "url/origin.h"
 #include "url/url_constants.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/window_android.h"
 #include "ui/android/window_android_compositor.h"
 #endif
 
-#if BUILDFLAG(IS_ARKWEB_EXT)
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-#include "content/public/browser/web_contents_delegate.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-#include "mojo/public/cpp/bindings/callback_helpers.h"
-#endif
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_utils.h"
 
 namespace content {
 
@@ -244,10 +235,6 @@ base::TimeDelta g_commit_timeout = kDefaultCommitTimeout;
 #if BUILDFLAG(IS_ANDROID)
 // Timeout for locking the compositor at the beginning of navigation.
 constexpr base::TimeDelta kCompositorLockTimeout = base::Milliseconds(150);
-#endif
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-const std::string ORIGIN = "origin.DEFAULT";
 #endif
 
 // crbug.com/954271: This feature is a part of an ablation study which makes
@@ -1444,7 +1431,6 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*lcpp_hint=*/nullptr, blink::CreateDefaultRendererContentSettings(),
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
-
           /*local_surface_id=*/std::nullopt,
 #if BUILDFLAG(ARKWEB_ADBLOCK)
           false, /* site_adblock_enabled */
@@ -1742,6 +1728,7 @@ NavigationRequest::NavigationRequest(
       embedder_shared_storage_context_(embedder_shared_storage_context),
       has_ad_auction_headers_attribute_(frame_tree_node->ad_auction_headers()),
       request_method_(common_params_->method) {
+      nav_request_utils_ = std::make_unique<NavigationRequestUtils>(this);
   TRACE_EVENT_WITH_FLOW1("navigation", "NavigationRequest::NavigationRequest",
                          TRACE_ID_WITH_SCOPE(kNavigationRequestScope,
                                              TRACE_ID_LOCAL(navigation_id_)),
@@ -2666,9 +2653,13 @@ void NavigationRequest::BeginNavigationImpl() {
   SetState(WILL_START_NAVIGATION);
 #if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   if (frame_tree_node_->IsMainFrame()) {
-    LOG(INFO) << "INFO: start a navigation url: *** is_browser_initiated_: "
+    LOG(INFO) << "event_message: start a navigation url domain: "
+              << (common_params_ ? GetDomainAndRegistry(common_params_->url,
+                  net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES) : "")
+              << " is_browser_initiated_: "
               << commit_params_->is_browser_initiated
-              << " was_redirected_: " << was_redirected_;
+              << " was_redirected_: " << was_redirected_
+              << " " << devtools_navigation_token_;
   }
 #endif
 
@@ -3474,17 +3465,17 @@ void NavigationRequest::OnRequestRedirected(
         commit_params_->navigation_timing->fetch_start;
   }
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "redirectStart",
-               commit_params_->navigation_timing->redirect_start);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectStart", commit_params_->navigation_timing->redirect_start);
 #endif
 
   commit_params_->navigation_timing->redirect_end = base::TimeTicks::Now();
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "redirectEnd",
-               commit_params_->navigation_timing->redirect_end);
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "fetchStart",
-               commit_params_->navigation_timing->fetch_start);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "redirectEnd", commit_params_->navigation_timing->redirect_end);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
 #endif
 
   commit_params_->redirect_response.push_back(response_head_.Clone());
@@ -5210,17 +5201,6 @@ NavigationRequest::ComputeErrorPageProcess() {
   return ErrorPageProcess::kDestinationProcess;
 }
 
-#if BUILDFLAG(ARKWEB_EXT_UA)
-void NavigationRequest::RemoveUserAgentHeaderForDevTools(
-    bool devtools_useragent_override) {
-  if (devtools_useragent_override &&
-      base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kEnableNwebExUa)) {
-    modified_request_headers_.RemoveHeader(net::HttpRequestHeaders::kUserAgent);
-  }
-}
-#endif
-
 void NavigationRequest::OnStartChecksComplete(
     NavigationThrottle::ThrottleCheckResult result) {
   TRACE_EVENT_WITH_FLOW0("navigation",
@@ -5303,8 +5283,8 @@ void NavigationRequest::OnStartChecksComplete(
   // Mark the fetch_start (Navigation Timing API).
   commit_params_->navigation_timing->fetch_start = base::TimeTicks::Now();
 #if BUILDFLAG(ARKWEB_NETWORK_DFX)
-  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "fetchStart",
-               commit_params_->navigation_timing->fetch_start);
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "fetchStart", commit_params_->navigation_timing->fetch_start);
 #endif
 
   // Ensure that normal history navigations can dispatch the Navigation API's
@@ -5331,7 +5311,7 @@ void NavigationRequest::OnStartChecksComplete(
   net::HttpRequestHeaders headers;
   headers.AddHeadersFromString(begin_params_->headers);
 #if BUILDFLAG(ARKWEB_EXT_UA)
-  RemoveUserAgentHeaderForDevTools(devtools_user_agent_override_);
+  nav_request_utils_->RemoveUserAgentHeaderForDevTools(devtools_user_agent_override_);
 #endif
   headers.MergeFrom(TakeModifiedRequestHeaders());
   begin_params_->headers = headers.ToString();
@@ -6429,14 +6409,7 @@ void NavigationRequest::CommitNavigation() {
   }
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
-  LOG(DEBUG) << "[Adblock] CommitNavigation url : ***";
-  // Cache the adblock enabled value for the download case.
-  bool adblock_enabled = frame_tree_node_->is_adblock_enabled();
-  frame_tree_node_->set_adblock_enabled_last_committed(adblock_enabled);
-
-  if (frame_tree_node_->IsMainFrame()) {
-    commit_params->site_adblock_enabled = adblock_enabled;
-  }
+  nav_request_utils_->SetAdblockEnabledStatus(commit_params.get());
 #endif
 
   // TODO(https://crbug.com/40095391): Convert to CHECK if it proves to be
@@ -6465,7 +6438,7 @@ void NavigationRequest::CommitNavigation() {
       devtools_navigation_token_
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 ,
-      addr_web_handle_
+      nav_request_utils_->addr_web_handle_
 #endif
       );
   if (service_worker_handle_ &&
@@ -7449,6 +7422,9 @@ void NavigationRequest::OnWillRedirectRequestProcessed(
       DCHECK(is_safe_to_delete_);
       base::AutoReset<bool> resetter(&is_safe_to_delete_, false);
 #endif
+#if BUILDFLAG(ARKWEB_EXT_UA)
+      base::AutoReset<bool> resetter2(&ua_change_requires_reload_, false);
+#endif
       GetDelegate()->DidRedirectNavigation(this);
     }
   } else {
@@ -8098,9 +8074,8 @@ void NavigationRequest::UpdatePrivateNetworkRequestPolicy() {
     private_network_request_policy_ =
         network::mojom::PrivateNetworkRequestPolicy::kAllow;
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy "
-                 "PrivateNetwork_network_request_policy_ "
-              << static_cast<int>(private_network_request_policy_);
+    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy PrivateNetwork_network_request_policy_ "
+          << static_cast<int>(private_network_request_policy_);
 #endif
     return;
   }
@@ -8123,9 +8098,8 @@ void NavigationRequest::UpdatePrivateNetworkRequestPolicy() {
     private_network_request_policy_ =
         network::mojom::PrivateNetworkRequestPolicy::kAllow;
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy "
-                 "private_network_request_policy_ "
-              << static_cast<int>(private_network_request_policy_);
+    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy private_network_request_policy_ "
+          << static_cast<int>(private_network_request_policy_);
 #endif
     return;
   }
@@ -8139,9 +8113,8 @@ void NavigationRequest::UpdatePrivateNetworkRequestPolicy() {
     private_network_request_policy_ =
         OverrideBlockWithWarn(private_network_request_policy_);
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy "
-                 "private_network_request_policy_ "
-              << static_cast<int>(private_network_request_policy_);
+    LOG(INFO) << "NavigationRequest::UpdatePrivateNetworkRequestPolicy private_network_request_policy_ "
+          << static_cast<int>(private_network_request_policy_);
 #endif
   }
 }
@@ -8381,13 +8354,7 @@ NavigationRequest::GetOriginForURLLoaderFactoryBeforeResponseWithDebugInfo(
   }
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  bool find_custom_scheme = false;
-  std::string scheme = origin_and_debug_info.first.GetURL().scheme();
-  for (size_t index = 0; index < url::GetCustomScheme().size(); index++) {
-    if (scheme == url::GetCustomScheme()[index]) {
-      find_custom_scheme = true;
-    }
-  }
+  bool find_custom_scheme = nav_request_utils_->GetCustomScheme(origin_and_debug_info);
   if (!origin_and_debug_info.first.GetURL().IsStandard() &&
       !find_custom_scheme) {
 #else
@@ -11238,75 +11205,5 @@ void NavigationRequest::SanitizeDocumentIsolationPolicyHeader() {
         "#potentially-trustworthy-origin.");
   }
 }
-
-#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-network::mojom::NetworkContext* NavigationRequest::GetNetworkContext() const
-{
-  if (!common_params_) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no common_params";
-    return nullptr;
-  }
-  if (common_params_->url.spec() == "about:blank") {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, blank page not need";
-    return nullptr;
-  }
-  if (!frame_tree_node_) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no frame_tree_node";
-    return nullptr;
-  }
-  if (!frame_tree_node_->IsMainFrame()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, not main frame";
-    return nullptr;
-  }
-  if (!frame_tree_node_->current_frame_host()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no current_frame_host";
-    return nullptr;
-  }
-  if (!frame_tree_node_->current_frame_host()->GetStoragePartition()) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::GetNetworkContext, no storage_partition";
-    return nullptr;
-  }
- 
-  return frame_tree_node_->current_frame_host()->GetStoragePartition()->GetNetworkContext();
-}
- 
-using StartPageCallback__ = base::OnceCallback<void(const std::string&)>;
-void NavigationRequest::StartPage(uint64_t addr_web_handle)
-{
-  network::mojom::NetworkContext* network_context = GetNetworkContext();
-  if (!network_context) {
-    return;
-  }
- 
-  addr_web_handle_ = addr_web_handle;
-  network_context->StartPage(common_params_->url.spec(), addr_web_handle_,
-    mojo::WrapCallbackWithDefaultInvokeIfNotRun(base::BindOnce(&NavigationRequest::OnGetIsolation,
-    weak_factory_.GetWeakPtr()), ORIGIN));
-}
- 
-void NavigationRequest::OnGetIsolation(const std::string& origin)
-{
-  if (origin.starts_with(ORIGIN)) {
-    LOG(DEBUG) << "PRPPreload.NavigationRequest::OnGetIsolation, canceled";
-    return;
-  }
- 
-  network::mojom::NetworkContext* network_context = GetNetworkContext();
-  if (!network_context) {
-    return;
-  }
- 
-  url::Origin url_origin = url::Origin::Create(GURL(origin));
-  net::IsolationInfo prp_isolation =
-    frame_tree_node_->current_frame_host()->ComputeIsolationInfoForSubresourcesForPendingCommit(
-      url_origin, is_credentialless(), ComputeFencedFrameNonce());
-  network::mojom::URLLoaderFactoryParamsPtr params = network::mojom::URLLoaderFactoryParams::New();
-  if (params) {
-    params->isolation_info = prp_isolation;
-    params->main_url = common_params_->url.spec();
-    network_context->SetURLLoaderFactoryParam(std::move(params));
-  }
-}
-#endif
 
 }  // namespace content

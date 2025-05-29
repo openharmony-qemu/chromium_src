@@ -1652,7 +1652,7 @@ SelectionModel RenderTextHarfBuzz::AdjacentWordSelectionModel(
     if (run == run_list->size())
       break;
     size_t cursor = current.caret_pos();
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN)
     // Windows generally advances to the start of a word in either direction.
     // TODO: Break on the end of a word when the neighboring text is
     // punctuation.

@@ -110,6 +110,9 @@ class PasswordRequirementsService;
 class PasswordReuseManager;
 class PasswordStoreInterface;
 class WebAuthnCredentialsDelegate;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordManagerClientExt;
+#endif
 struct PasswordForm;
 
 enum class ErrorMessageFlowType { kSaveFlow, kFillFlow };
@@ -141,6 +144,9 @@ class PasswordManagerClient {
   PasswordManagerClient& operator=(const PasswordManagerClient&) = delete;
 
   virtual ~PasswordManagerClient() = default;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual PasswordManagerClientExt* AsPasswordManagerClientExt() { return nullptr; }
+#endif
 
   // Is saving new data for password autofill and filling of saved data enabled
   // for the current profile and page? For example, saving is disabled in
@@ -235,20 +241,6 @@ class PasswordManagerClient {
   // filling.
   virtual bool IsReauthBeforeFillingRequired(
       device_reauth::DeviceAuthenticator* authenticator);
-
-#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
-  virtual void FillAccountSuggestion(const GURL& page_url,
-                                     const std::u16string& username,
-                                     const std::u16string& password);
-
-  virtual void OnRequestAutofill(
-      PasswordManagerDriver* driver,
-      const GURL& page_url,
-      autofill::FormRendererId form_id,
-      const autofill::mojom::OhosPasswordFormAutofillState state,
-      const autofill::InputFillRequestData& username_data,
-      const autofill::InputFillRequestData& password_data);
-#endif
 
   // Returns a pointer to a DeviceAuthenticator. Might be null if
   // BiometricAuthentication is not available for a given platform.
@@ -585,4 +577,7 @@ class PasswordManagerClient {
 
 }  // namespace password_manager
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_manager_client_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_CLIENT_H_

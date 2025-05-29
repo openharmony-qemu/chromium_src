@@ -15,6 +15,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_features.h"
+
 #include "base/base_switches.h"
 #include "base/callback_list.h"
 #include "base/command_line.h"
@@ -252,9 +253,9 @@
 #include "mojo/public/cpp/bindings/lib/test_random_mojo_delays.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_WPT)
-#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h"
-#endif  // BUILDFLAG(ARKWEB_WPT)
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/browser_main_loop_ext.cc"
+#endif
 
 // One of the linux specific headers defines this as a macro.
 #ifdef DestroyAll
@@ -419,39 +420,6 @@ class OopDataDecoder : public data_decoder::ServiceProvider {
             .WithDisplayName("Data Decoder Service")
             .Pass());
   }
-};
-
-// InProcessDataDecoder will work on IO thread.
-class InProcessDataDecoder : public data_decoder::ServiceProvider {
- public:
-  InProcessDataDecoder() : task_runner_(GetIOThreadTaskRunner({})) {
-    data_decoder::ServiceProvider::Set(this);
-  }
-
-  InProcessDataDecoder(const InProcessDataDecoder&) = delete;
-  InProcessDataDecoder& operator=(const InProcessDataDecoder&) = delete;
-
-  ~InProcessDataDecoder() { data_decoder::ServiceProvider::Set(nullptr); }
-
-  // ServiceProvider implementation:
-  void BindDataDecoderService(
-      mojo::PendingReceiver<data_decoder::mojom::DataDecoderService> receiver) {
-    if (!task_runner_->RunsTasksInCurrentSequence()) {
-      task_runner_->PostTask(
-          FROM_HERE,
-          base::BindOnce(&InProcessDataDecoder::BindDataDecoderService,
-                         weak_ptr_factory_.GetWeakPtr(), std::move(receiver)));
-      return;
-    }
-
-    receivers_.Add(&service_, std::move(receiver));
-  }
-
- private:
-  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
-  data_decoder::DataDecoderService service_;
-  mojo::ReceiverSet<data_decoder::mojom::DataDecoderService> receivers_;
-  base::WeakPtrFactory<InProcessDataDecoder> weak_ptr_factory_{this};
 };
 
 void BindHidManager(mojo::PendingReceiver<device::mojom::HidManager> receiver) {
@@ -1382,7 +1350,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
 #if !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   always_uses_gpu = ShouldStartGpuProcessOnBrowserStartup();
 #else
-  always_uses_gpu = true;  // TODO: temp enable use gpu for ohos, not from jni
+  always_uses_gpu = true; // TODO: temp enable use gpu for ohos, not from jni
 #endif
   BrowserGpuChannelHostFactory::Initialize(establish_gpu_channel);
 #else
@@ -1457,7 +1425,7 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
                  "BrowserMainLoop::PostCreateThreads:InitMediaStreamManager");
 
     media_stream_manager_ =
-        std::make_unique<MediaStreamManager>(audio_system_.get());
+        std::make_unique<MediaStreamManagerExt>(audio_system_.get());
   }
 
   {
@@ -1524,6 +1492,11 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     FontUniqueNameLookup::GetInstance();
   }
+#endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  media::SetMediaDrmBridgeClient(GetContentClient()->GetMediaDrmBridgeClient());
+  CdmRegistry::GetInstance()->Init();
 #endif
 
 #if BUILDFLAG(ARKWEB_WPT)

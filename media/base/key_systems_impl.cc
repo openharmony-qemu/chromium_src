@@ -25,6 +25,9 @@
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
 
 namespace media {
 
@@ -215,6 +218,12 @@ static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {
   if (key_system == kWidevineKeySystem)
     return true;
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  if (key_system == kWiseplayKeySystem) {
+    return true;
+  }
+#endif
+
   if (key_system == kClearKeyKeySystem) {
     return true;
   }
@@ -395,6 +404,9 @@ void KeySystemsImpl::ProcessSupportedKeySystems(KeySystemInfos key_systems) {
       // If you encounter this path, see the comments for the function above.
       DLOG(ERROR) << "Unsupported name '" << key_system->GetBaseKeySystemName()
                   << "'. See code comments.";
+      LOG(INFO) << "[DRM]" << __func__ << "Unsupported name '"
+                << key_system->GetBaseKeySystemName()
+                << "'. See code comments.";
       continue;
     }
 
@@ -414,6 +426,8 @@ void KeySystemsImpl::ProcessSupportedKeySystems(KeySystemInfos key_systems) {
 
     const auto base_key_system_name = key_system->GetBaseKeySystemName();
     DVLOG(1) << __func__ << ": Adding key system " << base_key_system_name;
+    LOG(INFO) << "[DRM]" << __func__ << ": Adding key system "
+              << base_key_system_name;
     key_system_info_vector_.push_back(std::move(key_system));
   }
 }

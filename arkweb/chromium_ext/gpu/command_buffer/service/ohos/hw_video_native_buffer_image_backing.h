@@ -16,6 +16,7 @@
 #include "gpu/command_buffer/service/ref_counted_lock.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/shared_image/shared_image_backing.h"
+#include "gpu/command_buffer/service/ohos/scoped_native_buffer_fence_sync.h"
 #include "gpu/gpu_gles2_export.h"
 
 namespace gpu {
@@ -40,6 +41,9 @@ class HwVideoNativeBufferImageBacking : public OhosVideoImageBacking,
       delete;
   HwVideoNativeBufferImageBacking& operator=(
       const HwVideoNativeBufferImageBacking&) = delete;
+
+  // SharedImageBacking implementation.
+  size_t GetEstimatedSizeForMemoryDump() const override;
 
  protected:
   std::unique_ptr<GLTextureImageRepresentation> ProduceGLTexture(
@@ -75,7 +79,9 @@ class HwVideoNativeBufferImageBacking : public OhosVideoImageBacking,
   };
 
   class GLTextureVideoImageRepresentation;
+  class SkiaVkNBRepresentation;
 
+  gpu::ScopedNativeBufferHandle GetNativeBufferHandle() const ;
   std::unique_ptr<ContextLostObserverHelper> context_lost_helper_;
   scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii_;
 

@@ -885,8 +885,8 @@ interface FrameHost {
   // #endif
 
   // #if BUILDFLAG(ARKWEB_AI)
-  [EnableIf=arkweb_ai, Sync]
-  CloseImageOverlaySelection() => (bool result);
+  [EnableIf=arkweb_ai]
+  CloseImageOverlaySelection();
   // #endif
 
 };

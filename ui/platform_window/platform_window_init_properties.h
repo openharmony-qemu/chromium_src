@@ -157,7 +157,6 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   size_t compositor_memory_limit_mb = 0;
 #if BUILDFLAG(IS_OHOS)
   std::optional<SkColor> background_color;
-  bool using_system_floating_window = false;
 #endif
 };
 

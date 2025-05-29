@@ -302,6 +302,10 @@ class SkiaOutputSurfaceImplOnGpu
   void ReadbackForTesting(
       CopyOutputRequest::CopyOutputRequestCallback result_callback);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetNativeInnerWeb(bool isInnerWeb);
+#endif
+
  private:
   struct MailboxAccessData {
     MailboxAccessData();

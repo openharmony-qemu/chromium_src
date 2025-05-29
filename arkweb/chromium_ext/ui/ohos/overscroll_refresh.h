@@ -101,9 +101,11 @@ class UI_OHOS_EXPORT OverscrollRefresh {
 
   void DidStopRefresh();
 
+  base::WeakPtr<OverscrollRefresh> GetWeakPtr();
+
   class RefreshListener : public DecelerationAnimatorListener {
    public:
-    RefreshListener(OverscrollRefresh* overscroll_refresh);
+    RefreshListener(base::WeakPtr<ui::OverscrollRefresh> overscroll_refresh);
     RefreshListener(const RefreshListener& other);
     ~RefreshListener() override;
 
@@ -111,7 +113,7 @@ class UI_OHOS_EXPORT OverscrollRefresh {
     void onAnimationRepeat(float delta) override;
 
    private:
-    OverscrollRefresh* overscroll_refresh_;
+    base::WeakPtr<OverscrollRefresh> overscroll_refresh_ = nullptr;
   };
 
  protected:
@@ -147,11 +149,13 @@ class UI_OHOS_EXPORT OverscrollRefresh {
   bool did_stop_refresh_{false};
   gfx::Vector2dF pulltorefresh_scroll_;
   base::RetainingOneShotTimer reset_timer_;
-  std::unique_ptr<DecelerationAnimator> deceleration_animator_;
+  scoped_refptr<DecelerationAnimator> deceleration_animator_;
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;
 
   static const base::TimeDelta kResetDurationMs;
   static const base::TimeDelta kAnimateDurationMs;
+
+  base::WeakPtrFactory<OverscrollRefresh> weak_factory_{this};
 };
 
 }  // namespace ui

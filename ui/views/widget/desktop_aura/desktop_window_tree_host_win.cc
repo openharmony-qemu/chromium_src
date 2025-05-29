@@ -1109,8 +1109,8 @@ void DesktopWindowTreeHostWin::HandleWindowMinimizedOrRestored(bool restored) {
       // to avoid incorrect hidden state after restore. See CEF issue #3638.
       if (aura::NativeWindowOcclusionTracker::
               IsNativeWindowOcclusionTrackingAlwaysEnabled(this)) {
-        aura::NativeWindowOcclusionTracker::EnableNativeWindowOcclusionTracking(
-            this);
+        aura::NativeWindowOcclusionTracker::
+            EnableNativeWindowOcclusionTracking(this);
       }
     }
   } else {
@@ -1134,16 +1134,14 @@ void DesktopWindowTreeHostWin::HandleFrameChanged() {
 
 void DesktopWindowTreeHostWin::HandleNativeFocus(HWND last_focused_window) {
   // See comments in CefBrowserPlatformDelegateNativeWin::SetFocus.
-  if (has_external_parent_ && CanActivate()) {
+  if (has_external_parent_ && CanActivate())
     HandleActivationChanged(true);
-  }
 }
 
 void DesktopWindowTreeHostWin::HandleNativeBlur(HWND focused_window) {
   // See comments in CefBrowserPlatformDelegateNativeWin::SetFocus.
-  if (has_external_parent_ && CanActivate()) {
+  if (has_external_parent_ && CanActivate())
     HandleActivationChanged(false);
-  }
 }
 
 bool DesktopWindowTreeHostWin::HandleMouseEvent(ui::MouseEvent* event) {

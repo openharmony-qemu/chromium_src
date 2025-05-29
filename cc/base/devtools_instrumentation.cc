@@ -3,10 +3,8 @@
 // found in the LICENSE file.
 
 #include "cc/base/devtools_instrumentation.h"
-
-#include <string>
-
 #include "arkweb/build/features/features.h"
+#include <string>
 
 namespace cc {
 namespace devtools_instrumentation {

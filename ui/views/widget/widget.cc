@@ -425,8 +425,8 @@ void Widget::Init(InitParams params) {
   }
 
   params.child |= (params.type == InitParams::TYPE_CONTROL);
-  is_top_level_ =
-      !params.child || params.parent_widget != gfx::kNullAcceleratedWidget;
+  is_top_level_ = !params.child ||
+                  params.parent_widget != gfx::kNullAcceleratedWidget;
   is_headless_ = params.ShouldInitAsHeadless();
   is_autosized_ = params.autosize;
 
@@ -1741,17 +1741,15 @@ void Widget::OnNativeWidgetParentChanged(gfx::NativeView parent) {
 
 gfx::Size Widget::GetMinimumSize() const {
   gfx::Size size;
-  if (widget_delegate_->MaybeGetMinimumSize(&size)) {
+  if (widget_delegate_->MaybeGetMinimumSize(&size))
     return size;
-  }
   return non_client_view_ ? non_client_view_->GetMinimumSize() : gfx::Size();
 }
 
 gfx::Size Widget::GetMaximumSize() const {
   gfx::Size size;
-  if (widget_delegate_->MaybeGetMaximumSize(&size)) {
+  if (widget_delegate_->MaybeGetMaximumSize(&size))
     return size;
-  }
   return non_client_view_ ? non_client_view_->GetMaximumSize() : gfx::Size();
 }
 
@@ -2003,7 +2001,7 @@ bool Widget::SetInitialFocus(ui::mojom::WindowShowState show_state) {
   View* v = widget_delegate_->GetInitiallyFocusedView();
   if (!focus_on_creation_ ||
       show_state == ui::mojom::WindowShowState::kInactive ||
-      show_state == ui::mojom::WindowShowState::kMinimized ||
+      show_state == ui::mojom::WindowShowState::kMinimized  ||
       show_state == ui::mojom::WindowShowState::kHidden) {
     // If not focusing the window now, tell the focus manager which view to
     // focus when the window is restored.

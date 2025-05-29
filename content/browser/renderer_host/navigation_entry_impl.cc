@@ -46,8 +46,8 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-#include <codecvt>
 #include <locale>
+#include <codecvt>
 #endif
 
 using base::UTF16ToUTF8;
@@ -464,6 +464,16 @@ NavigationEntryImpl::~NavigationEntryImpl() {
             .same_document_navigation_entry_screenshot_token()
             .value());
   }
+
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+  static constexpr base::TimeDelta kDelayInterval = base::Seconds(5);
+  auto delayed_image = std::make_shared<gfx::Image>(std::move(favicon_.image));
+  base::SequencedTaskRunner::GetCurrentDefault()->PostDelayedTask(
+    FROM_HERE,
+    base::BindOnce([](std::shared_ptr<gfx::Image>){}, std::move(delayed_image)),
+    kDelayInterval
+  );
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 }
 
 int NavigationEntryImpl::GetUniqueID() {
@@ -658,8 +668,7 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
     if (fileName == "") {
       title = u"";
     } else {
-      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
-          converter;
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
       title = converter.from_bytes(fileName);
     }
   }

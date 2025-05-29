@@ -15,8 +15,14 @@
 #include "base/time/time.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "ui/events/velocity_tracker/motion_event.h"
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/ui/events/velocity_tracker/motion_event_generic_utils.h"
+#endif
 
 namespace ui {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  class MotionEventGenericUtils;
+#endif
 
 struct COMPONENT_EXPORT(VELOCITY_TRACKER) PointerProperties {
   PointerProperties();
@@ -53,18 +59,18 @@ struct COMPONENT_EXPORT(VELOCITY_TRACKER) PointerProperties {
 class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEventGeneric
     : public MotionEvent {
  public:
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  MotionEventGeneric(Action action,
-                     base::TimeTicks event_time,
-                     const PointerProperties& pointer,
-                     bool is_lost_focus);
-#endif
   MotionEventGeneric(Action action,
                      base::TimeTicks event_time,
                      const PointerProperties& pointer);
   MotionEventGeneric(const MotionEventGeneric& other);
 
   ~MotionEventGeneric() override;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class MotionEventGenericUtils;
+  std::shared_ptr<MotionEventGenericUtils> motion_event_generic_utils_ = nullptr;
+  std::shared_ptr<MotionEventGenericUtils> GetUtils() { return motion_event_generic_utils_; }
+#endif
 
   // MotionEvent implementation.
   uint32_t GetUniqueEventId() const override;
@@ -129,11 +135,6 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEventGeneric
   static std::unique_ptr<MotionEventGeneric> CancelEvent(
       const MotionEvent& event);
 
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  bool IsCancelByLostFocus() const override;
-  void SetCancelByLostFocus(bool is_lost_focus) override;
-#endif
-
  protected:
   MotionEventGeneric();
   MotionEventGeneric(const MotionEvent& event, bool with_history);
@@ -152,9 +153,6 @@ class COMPONENT_EXPORT(VELOCITY_TRACKER) MotionEventGeneric
   int flags_;
   absl::InlinedVector<PointerProperties, kTypicalMaxPointerCount> pointers_;
   std::vector<std::unique_ptr<MotionEvent>> historical_events_;
-#if BUILDFLAG(ARKWEB_DRAG_DROP)
-  bool cancel_by_lost_focus_;
-#endif
 };
 
 }  // namespace ui

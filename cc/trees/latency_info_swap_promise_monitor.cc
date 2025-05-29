@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #include "cc/trees/latency_info_swap_promise_monitor.h"
 
 #include <stdint.h>
-
 #include <memory>
 #include <utility>
 
-#include "arkweb/build/features/features.h"
 #include "cc/trees/latency_info_swap_promise.h"
 #include "cc/trees/layer_tree_host_impl.h"
 #include "cc/trees/layer_tree_impl.h"
@@ -28,8 +27,7 @@ bool AddRenderingScheduledComponent(ui::LatencyInfo* latency_info,
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
   OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
                     "trace_id", std::to_string(latency_info->trace_id()),
-                    "step",
-                    "INPUT_EVENT_LATENCY_RENDERING_SCHEDULED_IMPL_COMPONENT");
+                    "step", "INPUT_EVENT_LATENCY_RENDERING_SCHEDULED_IMPL_COMPONENT");
 #endif
   return true;
 }

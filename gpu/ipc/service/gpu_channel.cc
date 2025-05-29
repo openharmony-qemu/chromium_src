@@ -20,7 +20,6 @@
 #include <set>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/atomicops.h"
 #include "base/command_line.h"
 #include "base/containers/circular_deque.h"
@@ -67,6 +66,7 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/gl/gl_utils.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "gpu/ipc/service/stream_texture_android.h"
@@ -81,9 +81,7 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.h"
-#endif
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_ext.h"
 
 namespace gpu {
 
@@ -121,21 +119,6 @@ bool TryRegisterOverlayStateObserver(
       std::move(promotion_hint_observer), std::move(mailbox));
 }
 #endif  // BUILDFLAG(IS_WIN)
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-int32_t TryCreateNativeTexture(
-    base::WeakPtr<GpuChannel> channel,
-    int32_t native_id,
-    gl::ohos::TextureOwnerMode texture_owner_mode,
-    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
-  if (!channel) {
-    return -1;
-  }
-  channel->CreateNativeTexture(native_id, texture_owner_mode,
-                               std::move(receiver));
-  return channel->current_native_embed_id(native_id);
-}
-#endif
 
 bool WillGetGmbConfigFromGpu() {
 #if BUILDFLAG(IS_OZONE)
@@ -334,7 +317,7 @@ GpuChannelMessageFilter::GpuChannelMessageFilter(
       scheduler_(scheduler),
       main_task_runner_(std::move(main_task_runner)),
       image_decode_accelerator_stub_(
-          base::MakeRefCounted<ImageDecodeAcceleratorStub>(
+          base::MakeRefCounted<ImageDecodeAcceleratorStubExt>(
               image_decode_accelerator_worker,
               gpu_channel,
               static_cast<int32_t>(
@@ -767,27 +750,6 @@ void GpuChannelMessageFilter::CopyNativeGmbToSharedMemoryAsync(
 }
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-void GpuChannelMessageFilter::CreateNativeTexture(
-    int32_t native_id,
-    int32_t texture_owner_mode,
-    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver,
-    CreateNativeTextureCallback callback) {
-  base::AutoLock auto_lock(gpu_channel_lock_);
-  if (!gpu_channel_) {
-    receiver_.reset();
-    return;
-  }
-
-  main_task_runner_->PostTaskAndReplyWithResult(
-      FROM_HERE,
-      base::BindOnce(&TryCreateNativeTexture, gpu_channel_->AsWeakPtr(),
-                     native_id, (gl::ohos::TextureOwnerMode)texture_owner_mode,
-                     std::move(receiver)),
-      std::move(callback));
-}
-#endif
-
 void GpuChannelMessageFilter::WaitForTokenInRange(
     int32_t routing_id,
     int32_t start,
@@ -882,14 +844,6 @@ GpuChannel::~GpuChannel() {
   dcomp_textures_.clear();
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  // Release any references to this channel held by StreamTexture.
-  for (auto& native_texture : native_textures_) {
-    native_texture.second->ReleaseChannel();
-  }
-  native_textures_.clear();
-#endif
-
   // Destroy filter first to stop posting tasks to scheduler.
   filter_->Destroy();
 
@@ -911,7 +865,7 @@ std::unique_ptr<GpuChannel> GpuChannel::Create(
     ImageDecodeAcceleratorWorker* image_decode_accelerator_worker,
     const gfx::GpuExtraInfo& gpu_extra_info,
     gpu::GpuMemoryBufferFactory* gpu_memory_buffer_factory) {
-  auto gpu_channel = base::WrapUnique(new GpuChannel(
+  auto gpu_channel = base::WrapUnique(new GpuChannelExt(
       gpu_channel_manager, channel_token, scheduler, sync_point_manager,
       std::move(share_group), std::move(task_runner), std::move(io_task_runner),
       client_id, client_tracing_id, is_gpu_host,
@@ -1024,7 +978,7 @@ void GpuChannel::ExecuteDeferredRequest(
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
     case mojom::DeferredRequestParams::Tag::kDestroyNativeTexture:
-      DestroyNativeTexture(params->get_destroy_native_texture());
+      AsGpuChannelExt()->DestroyNativeTexture(params->get_destroy_native_texture());
       break;
 #endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 
@@ -1384,44 +1338,6 @@ void GpuChannel::RegisterSysmemBufferCollection(
 }
 #endif  // BUILDFLAG(IS_FUCHSIA)
 
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-int32_t GpuChannel::CreateNativeTexture(
-    int32_t native_id,
-    gl::ohos::TextureOwnerMode texture_owner_mode,
-    mojo::PendingAssociatedReceiver<mojom::StreamTexture> receiver) {
-  auto found = native_textures_.find(native_id);
-  if (found != native_textures_.end()) {
-    LOG(ERROR) << "[NativeEmbed] Trying to create a StreamTexture with an "
-                  "existing native_id.";
-    return -1;
-  }
-  scoped_refptr<StreamTexture> native_texture = StreamTexture::Create(
-      this, native_id, texture_owner_mode, std::move(receiver));
-
-  if (!native_texture) {
-    return -1;
-  }
-  native_textures_.emplace(native_id, std::move(native_texture));
-
-  return current_native_embed_id(native_id);
-}
-
-void GpuChannel::DestroyNativeTexture(int32_t native_id) {
-  auto found = native_textures_.find(native_id);
-  if (found == native_textures_.end()) {
-    LOG(ERROR)
-        << "[NativeEmbed] Trying to destroy a non-existent native texture.";
-    return;
-  }
-  found->second->ReleaseChannel();
-  native_textures_.erase(native_id);
-}
-
-int32_t GpuChannel::current_native_embed_id(int32_t native_id) {
-  return native_textures_[native_id]->NativeEmbedID();
-}
-#endif
-
 std::optional<gpu::GpuDiskCacheHandle> GpuChannel::GetCacheHandleForType(
     gpu::GpuDiskCacheType type) {
   auto it = caches_.find(type);
@@ -1475,3 +1391,7 @@ uint64_t GpuChannel::GetMemoryUsage() const {
 }
 
 }  // namespace gpu
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_channel_for_include.cc"
+#endif

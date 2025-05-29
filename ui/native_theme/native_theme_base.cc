@@ -47,8 +47,7 @@ const int kCheckboxAndRadioWidth = 13;
 const int kCheckboxAndRadioHeight = 13;
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-// This matches Windows, same with FluentScrollbarThickness in
-// native_theme_fluent.cc
+// This matches Windows, same with FluentScrollbarThickness in native_theme_fluent.cc
 const int kInnerSpinButtonWidth = 15;
 #endif
 
@@ -303,14 +302,13 @@ void NativeThemeBase::Paint(cc::PaintCanvas* canvas,
       break;
     case kScrollbarHorizontalThumb:
     case kScrollbarVerticalThumb:
-      PaintScrollbarThumb(
-          canvas, color_provider, part, state, rect,
-          absl::get<ScrollbarThumbExtraParams>(extra), color_scheme
+      PaintScrollbarThumb(canvas, color_provider, part, state, rect,
+                          absl::get<ScrollbarThumbExtraParams>(extra),
+                          color_scheme
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-          ,
-          absl::get<ScrollbarThumbExtraParams>(extra).scrollbar_color
-#endif  // ARKWEB_SCROLLBAR
-      );
+                          , absl::get<ScrollbarThumbExtraParams>(extra).scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+);
       break;
     case kScrollbarHorizontalTrack:
     case kScrollbarVerticalTrack:
@@ -560,10 +558,9 @@ void NativeThemeBase::PaintScrollbarThumb(
     const ScrollbarThumbExtraParams& extra_params,
     ColorScheme color_scheme
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-    ,
-    SkColor scrollbar_color
-#endif  // ARKWEB_SCROLLBAR
-) const {
+    , SkColor scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+    ) const {
   const bool hovered = state == kHovered;
   const int midx = rect.x() + rect.width() / 2;
   const int midy = rect.y() + rect.height() / 2;

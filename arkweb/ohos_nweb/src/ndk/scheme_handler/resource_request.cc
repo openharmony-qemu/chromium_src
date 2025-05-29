@@ -153,7 +153,7 @@ ArkWeb_RequestHeaderList_::ArkWeb_RequestHeaderList_(
 void ArkWeb_RequestHeaderList_::GetHeader(int index,
                                           char** key,
                                           char** value) const {
-  if (index >= header_value.size() || index < 0) {
+  if (index >= static_cast<int>(header_value.size()) || index < 0) {
     LOG(ERROR) << "scheme_handler get header index is invalid " << index;
     return;
   }

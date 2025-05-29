@@ -17,7 +17,7 @@ static_library("renderer") {
     "//third_party/widevine/cdm:buildflags",
   ]
 
-  if (enable_library_cdms || is_win || is_android) {
+  if (enable_library_cdms || is_win || is_android || arkweb_enable_cdm) {
     sources += [
       "key_system_support_update.cc",
       "key_system_support_update.h",
@@ -29,6 +29,11 @@ static_library("renderer") {
       "android_key_system_info.cc",
       "android_key_system_info.h",
     ]
+  }
+
+  if (arkweb_enable_wiseplay) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_components_cdm_renderer_soureces
   }
 
   if (enable_widevine) {

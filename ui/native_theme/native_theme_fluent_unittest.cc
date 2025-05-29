@@ -142,12 +142,20 @@ TEST_F(NativeThemeFluentTest, PaintThumbRoundedCorners) {
   ColorProvider color_provider;
   constexpr gfx::Rect kRect(15, 100);
   // `is_web_test` is `false` by default.
-  const NativeTheme::ScrollbarThumbExtraParams extra_params;
+  const NativeTheme::ScrollbarThumbExtraParams extra_params
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  = NativeTheme::ScrollbarThumbExtraParams()
+#endif
+  ;
   theme_.PaintScrollbarThumb(
       &canvas, &color_provider,
       /*part=*/NativeTheme::kScrollbarVerticalThumb,
       /*state=*/NativeTheme::kNormal, kRect, extra_params,
-      /*color_scheme=*/NativeTheme::ColorScheme::kDefault);
+      /*color_scheme=*/NativeTheme::ColorScheme::kDefault
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      ,SK_ColorLTGRAY
+#endif
+      );
   EXPECT_EQ(canvas.TotalOpCount(), 1u);
   EXPECT_EQ(canvas.ReleaseAsRecord().GetFirstOp().GetType(),
             cc::PaintOpType::kDrawRRect);

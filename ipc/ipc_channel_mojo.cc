@@ -10,6 +10,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"

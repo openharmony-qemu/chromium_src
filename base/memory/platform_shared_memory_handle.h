@@ -22,8 +22,7 @@
 
 namespace base::subtle {
 
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
-    !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 // Helper structs to keep two descriptors on POSIX. It's needed to support
 // ConvertToReadOnly().
 struct BASE_EXPORT FDPair {

@@ -263,17 +263,6 @@ class NET_EXPORT HostResolverManager
 
   bool check_ipv6_on_wifi_for_testing() const { return check_ipv6_on_wifi_; }
 
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  // Return true if Doh fallback server(s) exist and it/they can resolve
-  // successfully
-  bool CanUseSecureDnsFallback(ResolveContext* context) const;
-  void SetHttpsDnsFallbackData(bool enabled,
-                               const std::string& server_template);
-  void SetSuspectIpListAndSourceHostList(
-      const std::vector<std::string>& ip_list,
-      const std::vector<std::string>& host_list);
-#endif
-
   handles::NetworkHandle target_network_for_testing() const {
     return target_network_;
   }
@@ -289,6 +278,10 @@ class NET_EXPORT HostResolverManager
                       handles::NetworkHandle target_network,
                       NetLog* net_log);
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.h"
+#endif
+
  protected:
   // Callback from HaveOnlyLoopbackAddresses probe.
   void SetHaveOnlyLoopbackAddresses(bool result);
@@ -298,9 +291,6 @@ class NET_EXPORT HostResolverManager
   friend class HostResolverManagerDnsTest;
   class LoopbackProbeJob;
   class ProbeRequestImpl;
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  class WarmUpHttpDnsFallbackImpl;
-#endif
   using JobMap = std::map<JobKey, std::unique_ptr<Job>>;
 
   // Task types that a Job might run.
@@ -324,15 +314,6 @@ class NET_EXPORT HostResolverManager
     kMaxValue = HOSTS,
 #endif
   };
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  enum class DnsTransactionAddressFailedType{
-      BOTH_OK,
-      IPV4_ADDRESS_FAILED,
-      IPV6_ADDRESS_FAILED,
-      BOTH_FAILED,
-  };
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
   // Returns true if the task is local, synchronous, and instantaneous.
   static bool IsLocalTask(TaskType task);
@@ -563,24 +544,6 @@ class NET_EXPORT HostResolverManager
   // configuration or current connection state).
   std::unique_ptr<DnsProbeRunner> CreateDohProbeRunner(
       ResolveContext* resolve_context);
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  void ReportSecureFallbackDnsResult(
-      const std::optional<HostCache::Entry> insecure_results,
-      const HostCache::Entry& secure_fallback_results,
-      const std::string& host,
-      const int index,
-      const base::TimeDelta& duration);
-  void ReportDnsTransactionResult(int index,
-                                  const std::string& host,
-                                  int result_for_ipv4,
-                                  int result_for_ipv6);
-  void WarmUpHttpsDnsFallback(ResolveContext* context);
-  bool https_dns_fallback_enabled_{false};
-  std::string doh_fallback_server_template_;
-  std::vector<std::unique_ptr<WarmUpHttpDnsFallbackImpl>>
-      warmup_httpdns_fallback_list_;
-#endif
 
   // Used for multicast DNS tasks. Created on first use using
   // GetOrCreateMndsClient().

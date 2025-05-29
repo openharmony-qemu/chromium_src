@@ -5,8 +5,9 @@
 #ifndef UI_EVENTS_GESTURE_DETECTION_GESTURE_LISTENERS_H_
 #define UI_EVENTS_GESTURE_DETECTION_GESTURE_LISTENERS_H_
 
-#include "arkweb/build/features/features.h"
 #include "ui/events/gesture_detection/gesture_detection_export.h"
+
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 

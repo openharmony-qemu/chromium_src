@@ -24,8 +24,7 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionDraggableClient {
   virtual void OnDragEnd(const TouchSelectionDraggable& draggable) = 0;
   virtual bool IsWithinTapSlop(const gfx::Vector2dF& delta) const = 0;
 #if BUILDFLAG(ARKWEB_MENU)
-  virtual void UpdateSelectionChanged(
-      const TouchSelectionDraggable& draggable) = 0;
+  virtual void UpdateSelectionChanged(const TouchSelectionDraggable& draggable) = 0;
 #endif
 };
 

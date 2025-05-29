@@ -22,6 +22,9 @@
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "ui/gfx/geometry/rect.h"
+#endif
 namespace blink {
 class WebGestureEvent;
 }
@@ -76,11 +79,12 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
-  virtual bool CloseImageOverlaySelection() { return false; }
+  virtual void CloseImageOverlaySelection() {}
+  virtual void OnOverlayZoomChanged() {}
 #endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
-  virtual gfx::Rect GetVisibleRectToWeb();
+  virtual gfx::Rect GetVisibleRectToWeb() {return gfx::Rect();}
 #endif
 
   // The user started dragging content of the specified type within the
@@ -192,13 +196,14 @@ class CONTENT_EXPORT RenderViewHostDelegateView {
 #endif
 
 #if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
-  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets);
+  virtual void OnSafeInsetsChange(const gfx::Insets& safe_insets) {}
 #endif
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_AI)
   virtual void CreateOverlay(const gfx::ImageSkia& image,
                              const gfx::Rect& image_rect,
                              const gfx::Point& touch_point) {}
+  virtual void OnOverlayStateChanged(const gfx::Rect& image_rect) {}
 #endif
 
 #if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)

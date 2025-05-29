@@ -35,7 +35,9 @@ bool StreamSocketHandle::GetLoadTimingInfo(
   }
 
   load_timing_info->socket_reused = is_reused;
-
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  load_timing_info->socket_from_preload = socket_->IsFromPreload();
+#endif
   // No times if the socket is reused.
   if (is_reused) {
     return true;

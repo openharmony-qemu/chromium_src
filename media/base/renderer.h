@@ -7,18 +7,13 @@
 
 #include <optional>
 
-#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/time/time.h"
 #include "media/base/buffering_state.h"
 #include "media/base/demuxer_stream.h"
 #include "media/base/media_export.h"
 #include "media/base/pipeline_status.h"
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-#include "arkweb/chromium_ext/media/base/action_reason.h"
-#include "base/containers/flat_map.h"
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#include "arkweb/chromium_ext/media/base/renderer_ext.h"
 
 namespace media {
 
@@ -43,12 +38,12 @@ enum class RendererType {
   kCastStreaming = 9,  // PlaybackCommandForwardingRendererFactory
   kContentEmbedderDefined = 10,  // Defined by the content embedder
   kTest = 11,                    // Renderer implementations used in tests
-#if BUILDFLAG(ARKWEB_MEDIA) || BUILDFLAG(ARKWEB_MEDIA_HLS)
+#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
   kNative = 12,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   kOHOSCustomMediaPlayer,
-#endif               // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  kOHOSMediaPlayer,  // OHOSMediaPlayerRendererFactory
+#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  kOHOSMediaPlayer,      // OHOSMediaPlayerRendererFactory
   kMaxValue = kOHOSMediaPlayer,
 #else
   kMaxValue = kTest,
@@ -59,8 +54,9 @@ enum class RendererType {
 // the actual Renderer class name or a descriptive name.
 std::string MEDIA_EXPORT GetRendererName(RendererType renderer_type);
 
-class MEDIA_EXPORT Renderer {
+class MEDIA_EXPORT Renderer : public RendererExt {
  public:
+  using RendererExt::Initialize;
   Renderer();
 
   Renderer(const Renderer&) = delete;
@@ -76,17 +72,11 @@ class MEDIA_EXPORT Renderer {
   // be run only prior to returning.
   virtual void Initialize(MediaResource* media_resource,
                           RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                          RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) = 0;
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  virtual void Initialize(CreateTextureCB create_texture_cb,
-                          DestroyTextureCB destroy_texture_cb);
-#endif
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  virtual void SetSurfaceId(int surface_id, const gfx::Rect& rect);
-  virtual void SetMediaPlayerState(bool is_suspend, int suspend_type);
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // Associates the |cdm_context| with this Renderer for decryption (and
   // decoding) of media data, then fires |cdm_attached_cb| with whether the
@@ -157,42 +147,9 @@ class MEDIA_EXPORT Renderer {
   // enforce RendererType registration for all Renderer implementations.
   // Note: New implementation should update RendererType.
   virtual RendererType GetRendererType() = 0;
-
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  struct MediaSourceInfo {
-    std::string media_source;
-    std::string media_format;
-  };
-
-  virtual void SetMediaSourceList(
-      const std::vector<MediaSourceInfo>& source_infos) {}
-  virtual void SetMediaControls(bool show_media_controls,
-                                const std::vector<std::string>& controls_list) {
-  }
-  virtual void SetMuted(bool muted) {}
-  virtual void SetPoster(const std::string& poster_url) {}
-  virtual void SetAttributes(
-      base::flat_map<std::string, std::string> attributes) {}
-  virtual void SetReferrer(const std::string& referrer) {}
-  using OnGetRectCallback = base::RepeatingCallback<void(const gfx::Rect&)>;
-  using SurfaceCreatedCallback =
-      base::OnceCallback<void(int, OnGetRectCallback)>;
-  virtual void SetSurfaceCreatedCallback(SurfaceCreatedCallback cb) {}
-  using UpdatePlaybackStatusCallback = base::RepeatingCallback<void(uint32_t)>;
-  virtual void SetUpdatePlaybackStatusCallback(
-      UpdatePlaybackStatusCallback cb) {}
-  using UpdateVolumeCallback = base::RepeatingCallback<void(double)>;
-  virtual void SetUpdateVolumeCallback(UpdateVolumeCallback cb) {}
-  using UpdateMutedCallback = base::RepeatingCallback<void(bool)>;
-  virtual void SetUpdateMutedCallback(UpdateMutedCallback cb) {}
-  using UpdatePlaybackRateCallback = base::RepeatingCallback<void(double)>;
-  virtual void SetUpdatePlaybackRateCallback(UpdatePlaybackRateCallback cb) {}
-
-  virtual void SetIsAudio(bool is_audio) {}
-
-  virtual void SetPlaybackRateWithReason(double playback_rate,
-                                         ActionReason reason) {}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void PipEnable(bool enable) {}
+#endif
 };
 
 }  // namespace media

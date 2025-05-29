@@ -45,6 +45,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   void SetResponseHeadersCallback(net::ResponseHeadersCallback callback) override;
   void SetEarlyResponseHeadersCallback(net::ResponseHeadersCallback callback) override;
   void SetResetUrlRequestCallback(ResetUrlRequestCallback callback) override;
+  void SetUpdateResRequestInfoCallback(UpdateResRequestInfoCallback callback) override;
   int Read(net::IOBuffer* buf, int max_bytes) override;
   std::shared_ptr<net::URLRequest> GetURLRequest() override { return url_request_; }
   std::shared_ptr<PRRequestInfo> GetPRRequestInfo() override { return prpp_req_info_; }
@@ -65,6 +66,7 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   void ReadMore();
   void DidRead(int num_bytes, bool completed_synchronously);
   void DoReplay();
+  void ProcessMessages();
   void UpdateResRequestInfo(const std::string& key, const std::shared_ptr<PRRequestInfo>& info);
   void InitAndStartUrlRequest(const std::shared_ptr<PRRequestInfo>& info,
     const net::IsolationInfo& isolation_info, bool need_reset_url_request = false);
@@ -107,13 +109,13 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   scoped_refptr<net::GrowableIOBuffer> cur_write_block_;
   int cur_read_offset_ { 0 };
   uint32_t total_size_ { 0 };
-  base::WeakPtrFactory<PRPPRequestLoaderImpl> weak_ptr_factory_ { this };
   std::queue<PRPPRecorderMsg> rec_msg_list_;
   net::CompletionOnceCallback completion_once_callback_;
   net::RequestHeadersCallback request_headers_callback_;
   net::ResponseHeadersCallback early_response_headers_callback_;
   net::ResponseHeadersCallback response_headers_callback_;
   ResetUrlRequestCallback reset_url_request_callback_;
+  UpdateResRequestInfoCallback update_res_request_info_callback_;
   scoped_refptr<net::IOBuffer> out_buf_ { nullptr };
   int out_max_bytes_ { 0 };
   bool need_do_replay_self_ { false };
@@ -122,6 +124,8 @@ class PRPPRequestLoaderImpl : public PRPPRequestLoader,
   net::LoadTimingInfo load_timing_info_;
   uint32_t real_load_flags_ { 0 };
   bool need_continue_read_ { false };
+
+  base::WeakPtrFactory<PRPPRequestLoaderImpl> weak_ptr_factory_ { this };
 };
 
 }  // namespace ohos_prp_preload

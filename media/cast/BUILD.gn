@@ -6,6 +6,7 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
 import("//third_party/libaom/options.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
 
 proto_library("logging_proto") {
   sources = [ "logging/proto/raw_events.proto" ]
@@ -226,6 +227,12 @@ test("cast_unittests") {
     "//third_party/openscreen/src/cast/streaming:common",
     "//third_party/openscreen/src/cast/streaming:sender",
   ]
+
+  if (arkweb_unittests) {
+    deps += [
+      "//content/public/common:static_switches"
+    ]
+  }
 
   if (is_android) {
     deps += [

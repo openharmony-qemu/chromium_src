@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/span.h"
 #include "base/memory/raw_ptr.h"
@@ -41,10 +40,7 @@
 #include "cc/trees/swap_promise.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
 #include "ui/gfx/overlay_transform.h"
-
-#if BUILDFLAG(ARKWEB_SYNC_RENDER)
-#define MAX_VIEWPORT_HEIGHT 9000
-#endif
+#include "arkweb/build/features/features.h"
 
 namespace base {
 namespace trace_event {
@@ -77,6 +73,7 @@ class TileManager;
 class UIResourceRequest;
 class VideoFrameControllerClient;
 struct PendingPageScaleAnimation;
+class LayerTreeImplUtils;
 
 using UIResourceRequestQueue = std::vector<UIResourceRequest>;
 using SyncedScale = SyncedProperty<ScaleGroup>;
@@ -114,6 +111,7 @@ class LayerTreeLifecycle {
 
 class CC_EXPORT LayerTreeImpl {
  public:
+  friend class LayerTreeImplUtils;
   // This is the number of times a fixed point has to be hit continuously by a
   // layer to consider it as jittering.
   enum : int { kFixedPointHitsThreshold = 3 };
@@ -191,16 +189,6 @@ class CC_EXPORT LayerTreeImpl {
       gfx::ContentColorUsage content_color_usage) const;
   bool IsReadyToActivate() const;
   void RequestImplSideInvalidationForRerasterTiling();
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
-
-  void OnLayerRectVisibilityChange(int id, bool visibility);
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
-#endif  // ARKWEB_VIDEO_ASSISTANT
 
   // Tree specific methods exposed to layer-impl tree.
   // ---------------------------------------------------------------------------
@@ -655,8 +643,7 @@ class CC_EXPORT LayerTreeImpl {
   LayerImpl* FindLayerThatIsHitByPoint(const gfx::PointF& screen_space_point);
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  LayerImpl* FindLayerThatIsHitByPointNative(
-      const gfx::PointF& screen_space_point);
+  LayerImpl* FindLayerThatIsHitByPointNative(const gfx::PointF& screen_space_point);
 #endif
   LayerImpl* FindLayerThatIsHitByPointInTouchHandlerRegion(
       const gfx::PointF& screen_space_point);
@@ -685,11 +672,6 @@ class CC_EXPORT LayerTreeImpl {
 
   void RegisterSelection(const LayerSelection& selection);
 
-#if BUILDFLAG(ARKWEB_MENU)
-  void RegisterClippedVisualViewportSelectionBounds(
-      const gfx::Rect& clipped_selection_bounds);
-  gfx::Rect GetClippedVisualViewportSelectionBounds() const;
-#endif
   bool HandleVisibilityChanged() const { return handle_visibility_changed_; }
   void ResetHandleVisibilityChanged();
 
@@ -845,6 +827,10 @@ class CC_EXPORT LayerTreeImpl {
   void SetViewTransitionContentRect(const viz::ViewTransitionElementResourceId&,
                                     const gfx::RectF&);
 
+  LayerTreeImplUtils* layer_tree_impl_utils() {
+    return utils_.get();
+  }
+
  protected:
   float ClampPageScaleFactorToLimits(float page_scale_factor) const;
   void PushPageScaleFactorAndLimits(const float* page_scale_factor,
@@ -889,10 +875,6 @@ class CC_EXPORT LayerTreeImpl {
   ViewportPropertyIds viewport_property_ids_;
 
   LayerSelection selection_;
-
-#if BUILDFLAG(ARKWEB_MENU)
-  gfx::Rect clipped_selection_bounds_;
-#endif
 
   scoped_refptr<SyncedScale> page_scale_factor_;
   float min_page_scale_factor_;
@@ -1027,6 +1009,7 @@ class CC_EXPORT LayerTreeImpl {
   // See `CommitState::primary_main_frame_item_sequence_number`.
   int64_t primary_main_frame_item_sequence_number_ =
       RenderFrameMetadata::kInvalidItemSequenceNumber;
+  std::unique_ptr<LayerTreeImplUtils> utils_;
 };
 
 }  // namespace cc

@@ -4,6 +4,9 @@
 
 import("//build/config/cast.gni")
 import("//arkweb/build/features/features.gni")
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 source_set("blink") {
   sources = [
@@ -17,6 +20,7 @@ source_set("blink") {
 
   if (arkweb_fling) {
     defines = [ "USE_NATIVE_FLING_CURVE" ]
+    sources += arkweb_native_scroller_ohos_device_source_util_sources
   }
  
   deps = [

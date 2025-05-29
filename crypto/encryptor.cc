@@ -51,6 +51,7 @@ const EVP_CIPHER* GetCipherForKeyGCM(const SymmetricKey* key) {
 }
 #endif
 
+
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
@@ -281,8 +282,8 @@ std::optional<size_t> Encryptor::CryptCTR(bool do_encrypt,
 
 #if BUILDFLAG(ARKWEB_ENCRYPT)
 std::optional<size_t> Encryptor::EncryptGCM(base::span<const uint8_t> input,
-                                            base::span<uint8_t> output,
-                                            std::string* tag) {
+                                             base::span<uint8_t> output,
+                                             std::string* tag) {
   DCHECK(key_);
   DCHECK(output.data());
 
@@ -351,8 +352,8 @@ std::optional<size_t> Encryptor::EncryptGCM(base::span<const uint8_t> input,
 }
 
 std::optional<size_t> Encryptor::DecryptGCM(const std::string& input,
-                                            base::span<uint8_t> output,
-                                            std::string* tag) {
+                                             base::span<uint8_t> output,
+                                             std::string* tag) {
   DCHECK(key_);
   DCHECK(output.data());
 

@@ -234,9 +234,10 @@ bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
             base::android::SDK_VERSION_NOUGAT);
   DCHECK(getifaddrs);
   DCHECK(freeifaddrs);
-#elif BUILDFLAG(ARKWEB_NETWORK_BASE)
+#elif BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 namespace internal {
-bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks, int policy) {
+bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
+                                   int policy) {
   constexpr bool use_alternative_getifaddrs = false;
 #else
 bool GetNetworkList(NetworkInterfaceList* networks, int policy) {

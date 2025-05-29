@@ -89,15 +89,11 @@
 #endif  // BUILDFLAG(IS_POSIX)
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#include "arkweb/chromium_ext/content/child/child_thread_impl_for_include.cc"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/mach_port_rendezvous.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-#include "content/renderer/anr_dumper.h"
 #endif
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
@@ -480,14 +476,7 @@ class ChildThreadImpl::IOThreadState
   }
 
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  void dumpCurrentJavaScriptStackInMainThread(
-      dumpCurrentJavaScriptStackInMainThreadCallback callback) override {
-    if (!webkit_inited_) {
-      std::move(callback).Run("");
-      return;
-    }
-    AnrDumper::GetInstance()->DumpCurrentJavaScriptStack(std::move(callback));
-  }
+#include "arkweb/chromium_ext/content/child/child_thread_impl_public_for_include.cc"
 #endif
 
   const scoped_refptr<base::SequencedTaskRunner> main_thread_task_runner_;
@@ -502,9 +491,6 @@ class ChildThreadImpl::IOThreadState
   // Binding requests which should be handled by |interface_binders|, but which
   // have been queued because |allow_interface_binders_| is still |false|.
   std::vector<mojo::GenericPendingReceiver> pending_binding_requests_;
-#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
-  bool webkit_inited_ = false;
-#endif
 };
 
 ChildThread* ChildThread::Get() {
@@ -897,19 +883,6 @@ const mojo::Remote<mojom::FontCacheWin>& ChildThreadImpl::GetFontCacheWin() {
 }
 #endif
 
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void ChildThreadImpl::ReportKeyThread(int32_t status,
-                                      int32_t process_id,
-                                      int32_t thread_id,
-                                      int32_t roleAdapter) {
-  using namespace OHOS::NWeb;
-  if (child_process_host_) {
-    child_process_host_->ReportKeyThread(status, process_id, thread_id,
-                                         roleAdapter);
-  }
-}
-#endif
-
 void ChildThreadImpl::RecordAction(const base::UserMetricsAction& action) {
   NOTREACHED();
 }
@@ -985,7 +958,7 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
 void ChildThreadImpl::BindServiceInterface(
     mojo::GenericPendingReceiver receiver) {
   LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
-             << *receiver.interface_name();
+              << *receiver.interface_name();
 }
 
 void ChildThreadImpl::OnBindReceiver(mojo::GenericPendingReceiver receiver) {}
@@ -1033,4 +1006,5 @@ void ChildThreadImpl::SetWebkitInited() {
       base::BindOnce(&IOThreadState::SetWebkitInited, io_thread_state_));
 }
 #endif
+
 }  // namespace content

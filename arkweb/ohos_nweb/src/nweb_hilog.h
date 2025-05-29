@@ -16,8 +16,9 @@
 #ifndef NWEB_HILOG_H
 #define NWEB_HILOG_H
 
-#if defined(ARKWEB_DFX_LOGGING)
-#include "hilog_adapter.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "third_party/ohos_ndk/includes/ohos_adapter/hilog_adapter.h"
 constexpr char logTag[] = "chromium";
 
 #define FILE_NAME (__builtin_strrchr("/" __FILE__, '/') + 1)

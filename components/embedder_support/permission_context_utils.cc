@@ -35,10 +35,6 @@
 #include "device/vr/public/cpp/features.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "components/permissions/contexts/geolocation_permission_context_ohos.h"
-#endif
-
 namespace embedder_support {
 
 PermissionContextDelegates::PermissionContextDelegates() = default;

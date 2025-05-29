@@ -252,11 +252,10 @@ syncer::SyncableService* PrefServiceSyncable::GetSyncableService(
 }
 
 #if BUILDFLAG(ARKWEB_PREFS)
-user_prefs::PrefRegistrySyncable*
-PrefServiceSyncable::GetPrefRegistrySyncable() {
+user_prefs::PrefRegistrySyncable* PrefServiceSyncable::GetPrefRegistrySyncable() {
   return pref_registry_.get();
 }
-#endif  // ARKWEB_PREFS
+#endif // ARKWEB_PREFS
 
 void PrefServiceSyncable::UpdateCommandLinePrefStore(
     PrefStore* cmd_line_store) {

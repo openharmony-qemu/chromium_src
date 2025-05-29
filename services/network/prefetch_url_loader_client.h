@@ -103,8 +103,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) PrefetchURLLoaderClient final
   void ForwardToRealClient(Method method, Args... args);
 
 #if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
-  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
-                                      uint64_t buffer_size) override {}
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
 #endif
 
   const ResourceRequest request_;

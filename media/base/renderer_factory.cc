@@ -24,9 +24,9 @@ std::unique_ptr<Renderer> RendererFactory::CreateCustomRenderer(
     const gfx::ColorSpace& target_color_space,
     int player_id) {
   return CreateRenderer(media_task_runner, worker_task_runner,
-                        audio_renderer_sink, video_renderer_sink,
-                        request_overlay_info_cb, target_color_space);
+            audio_renderer_sink, video_renderer_sink,
+            request_overlay_info_cb, target_color_space);
 }
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
 }  // namespace media

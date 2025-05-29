@@ -139,7 +139,7 @@
 #elif BUILDFLAG(IS_OHOS)
 #else
 #include <ifaddrs.h>
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
@@ -147,26 +147,11 @@
 #include "base/command_line.h"
 #endif
 
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc"
+
 namespace net {
 
 namespace {
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-const char* kSceneString[] = {"normal DNS", "ErrorRetry"};
-const char* kDnsTransactionString[] = {"local DNS", "https DNS"};
-
-void IPListToString(const std::vector<IPEndPoint>& endpoints,
-                    std::string& ipInfo) {
-  ipInfo.append("[");
-  for (size_t index = 0; index < endpoints.size(); index++) {
-    ipInfo.append(endpoints[index].address().ToString());
-    if (index < endpoints.size() - 1) {
-      ipInfo.append(", ");
-    }
-  }
-  ipInfo.append("]");
-}
-#endif
 
 // Limit the size of hostnames that will be resolved to combat issues in
 // some platform's resolvers.
@@ -424,105 +409,6 @@ class HostResolverManager::ProbeRequestImpl
 
   base::WeakPtrFactory<ProbeRequestImpl> weak_ptr_factory_{this};
 };
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-class HostResolverManager::WarmUpHttpDnsFallbackImpl
-    : public ResolveContext::DohStatusObserver {
- public:
-  WarmUpHttpDnsFallbackImpl(const std::string& server_template,
-                            base::WeakPtr<ResolveContext> context,
-                            base::WeakPtr<HostResolverManager> resolver)
-      : doh_fallback_server_template_(server_template),
-        context_(std::move(context)),
-        resolver_(std::move(resolver)) {}
-
-  WarmUpHttpDnsFallbackImpl(const WarmUpHttpDnsFallbackImpl&) = delete;
-  WarmUpHttpDnsFallbackImpl& operator=(const WarmUpHttpDnsFallbackImpl&) =
-      delete;
-
-  ~WarmUpHttpDnsFallbackImpl() override {
-    if (context_) {
-      context_->UnregisterDohStatusObserver(this);
-    }
-  }
-
-  void Start() {
-    DCHECK(resolver_);
-    DCHECK(context_);
-    if (context_) {
-      context_->RegisterDohStatusObserver(this);
-    }
-  }
-
-  // ResolveContext::DohStatusObserver
-  void OnSessionChanged() override { request_.reset(); }
-
-  void OnDohServerUnavailable(bool network_change) override {
-    base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE,
-        base::BindOnce(&WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServer,
-                       weak_ptr_factory_.GetWeakPtr()));
-  }
-
- private:
-  void PreDnsOfDohFallbackServer() {
-    DCHECK(resolver_);
-    DCHECK(context_);
-    if (request_) {
-      return;
-    }
-
-    GURL url(doh_fallback_server_template_);
-    if (!url.is_valid()) {
-      LOG(INFO) << "Pre-dns of doh-fallback server won't start, for the server "
-                   "template is invalid";
-      // #ifdef OHOS_LOGGER_REPORT
-      //       LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server won't
-      //       start, for the server "
-      //                             "template is invalid";
-      // #endif
-      return;
-    }
-    HostPortPair destination = HostPortPair::FromURL(url);
-    HostResolver::ResolveHostParameters resolve_params;
-    resolve_params.secure_dns_policy = SecureDnsPolicy::kBootstrap;
-    request_ = resolver_->CreateRequest(destination, NetworkAnonymizationKey(),
-                                        NetLogWithSource(), resolve_params,
-                                        context_.get());
-    auto result = request_->Start(base::BindOnce(
-        &WarmUpHttpDnsFallbackImpl::PreDnsOfDohFallbackServerComplete,
-        weak_ptr_factory_.GetWeakPtr()));
-    LOG(INFO) << "Pre-dns of doh-fallback server, server template "
-              << url.spec() << ", result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server, server
-    //     template "
-    //                        << url::LogUtils::ConvertUrlWithMask(url.spec())
-    //                        << ", result " << result;
-    // #endif
-    if (result != ERR_IO_PENDING) {
-      request_.reset();
-    }
-  }
-
-  void PreDnsOfDohFallbackServerComplete(int result) {
-    LOG(INFO) << "Pre-dns of doh-fallback server complete, result " << result;
-    // #ifdef OHOS_LOGGER_REPORT
-    //     LOG_FEEDBACK(INFO) << "Pre-dns of doh-fallback server complete,
-    //     result "
-    //                        << result;
-    // #endif
-    request_.reset();
-  }
-
-  std::string doh_fallback_server_template_;
-  base::WeakPtr<ResolveContext> context_;
-  base::WeakPtr<HostResolverManager> resolver_;
-  std::unique_ptr<HostResolver::ResolveHostRequest> request_;
-
-  base::WeakPtrFactory<WarmUpHttpDnsFallbackImpl> weak_ptr_factory_{this};
-};
-#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 //-----------------------------------------------------------------------------
 
@@ -1065,9 +951,14 @@ HostResolverManager::Job* HostResolverManager::AddJobWithoutRequest(
     RequestPriority priority,
     const NetLogWithSource& source_net_log) {
   auto new_job =
-      std::make_unique<Job>(weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
-                            host_cache, std::move(tasks), priority,
-                            source_net_log, tick_clock_, https_svcb_options_);
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+      std::make_unique<ArkWebHostResolverManagerJobExt>(
+#else
+      std::make_unique<Job>(
+#endif
+          weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
+          host_cache, std::move(tasks), priority, source_net_log, tick_clock_,
+          https_svcb_options_);
   auto insert_result = jobs_.emplace(std::move(key), std::move(new_job));
   auto& iterator = insert_result.first;
   bool is_new = insert_result.second;
@@ -1925,94 +1816,5 @@ std::unique_ptr<DnsProbeRunner> HostResolverManager::CreateDohProbeRunner(
   return dns_client_->GetTransactionFactory()->CreateDohProbeRunner(
       resolve_context);
 }
-
-#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-bool HostResolverManager::CanUseSecureDnsFallback(
-    ResolveContext* context) const {
-  if (!dns_client_.get()) {
-    return false;
-  }
-
-  return dns_client_->CanUseSecureDnsFallbackTransactions(context);
-}
-
-void HostResolverManager::WarmUpHttpsDnsFallback(ResolveContext* context) {
-  auto warmup_httpdns_fallback = std::make_unique<WarmUpHttpDnsFallbackImpl>(
-      doh_fallback_server_template_, context->GetWeakPtr(),
-      weak_ptr_factory_.GetWeakPtr());
-  warmup_httpdns_fallback->Start();
-  warmup_httpdns_fallback_list_.push_back(std::move(warmup_httpdns_fallback));
-}
-
-void HostResolverManager::SetHttpsDnsFallbackData(
-    bool enabled,
-    const std::string& server_template) {
-  https_dns_fallback_enabled_ = enabled;
-  doh_fallback_server_template_ = server_template;
-  for (auto& context : registered_contexts_) {
-    context.SetHttpsDnsFallbackEnabled(enabled);
-    warmup_httpdns_fallback_list_.clear();
-    if (enabled) {
-      WarmUpHttpsDnsFallback(&context);
-    }
-  }
-}
-
-void HostResolverManager::SetSuspectIpListAndSourceHostList(
-    const std::vector<std::string>& ip_list,
-    const std::vector<std::string>& host_list) {
-  // Todo(huawei)
-}
-
-void HostResolverManager::ReportSecureFallbackDnsResult(
-    const std::optional<HostCache::Entry> insecure_results,
-    const HostCache::Entry& secure_fallback_results,
-    const std::string& host,
-    const int index,
-    const base::TimeDelta& duration) {
-  std::string insecure_ip_info;
-  if (insecure_results && insecure_results->ip_endpoints().empty()) {
-    IPListToString(insecure_results->ip_endpoints(), insecure_ip_info);
-  } else {
-    insecure_ip_info.append("[]");
-  }
-
-  std::string secure_ip_info;
-  if (secure_fallback_results.error() == OK &&
-      secure_fallback_results.ip_endpoints().empty()) {
-    IPListToString(secure_fallback_results.ip_endpoints(), secure_ip_info);
-  } else {
-    secure_ip_info.append("[]");
-  }
-
-  std::ostringstream ostr;
-  ostr << "scene=" << kSceneString[index]
-       << ", udp_dns_ip_list=" << insecure_ip_info
-       << ", ip_list=" << secure_ip_info
-       << ", result=" << secure_fallback_results.error()
-       << ", duration=" << duration.InMilliseconds();
-
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
-  #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                       << url::LogUtils::ConvertUrlWithMask(host);
-  #endif
-}
-
-void HostResolverManager::ReportDnsTransactionResult(int index,
-                                                     const std::string& host,
-                                                     int result_for_ipv4,
-                                                     int result_for_ipv6) {
-  std::ostringstream ostr;
-  ostr << "dns_type=" << kDnsTransactionString[index]
-       << ", v4result=" << result_for_ipv4 << ", v6result=" << result_for_ipv6;
-
-  LOG(INFO) << "event_message: " << ostr.str() << ", resource: " << host;
-  #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-    LOG_FEEDBACK(INFO) << "event_message: " << ostr.str() << ", resource: "
-                       << url::LogUtils::ConvertUrlWithMask(host);
-  #endif
-}
-#endif
 
 }  // namespace net

@@ -640,7 +640,7 @@ component("views") {
   }
 
   if (is_ohos) {
-    sources += [ "controls/menu/menu_config_ohos.cc" ]
+    sources += [ "//arkweb/chromium_ext/ui/views/controls/menu/menu_config_ohos.cc" ]
   }
 
   if (is_chromeos) {
@@ -902,11 +902,11 @@ component("views") {
         ]
       }
       if (is_ohos) {
-        public += [ "widget/desktop_aura/desktop_window_tree_host_ohos.h" ]
+        public += [ "//arkweb/chromium_ext/ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.h" ]
         sources += [
-          "widget/desktop_aura/desktop_window_tree_host_ohos.cc",
-          "widget/desktop_aura/window_event_filter_ohos.cc",
-          "widget/desktop_aura/window_event_filter_ohos.h",
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.cc",
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/window_event_filter_ohos.cc",
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/window_event_filter_ohos.h",
         ]
         deps += [ "//ui/base:hit_test" ]
       }

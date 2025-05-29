@@ -44,8 +44,8 @@ class CAPTURE_EXPORT VideoCaptureDeviceFactoryOHOS
   bool CheckAndInitCameraManager();
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
   std::shared_ptr<CameraManagerAdapter> camera_manager_adapter_;
-  base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};
   bool is_camera_manager_created_{false};
+  base::WeakPtrFactory<VideoCaptureDeviceFactoryOHOS> weak_factory_{this};
 };
 
 }  // namespace media

@@ -10,7 +10,6 @@
 #include <memory>
 #include <unordered_set>
 
-#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
@@ -59,6 +58,7 @@
 #include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/overlay_transform.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -103,6 +103,7 @@ class Layer;
 class ScopedAnimationDurationScaleMode;
 class ScrollInputHandler;
 class ThroughputTracker;
+class CompositorUtils;
 struct PendingBeginFrameArgs;
 
 constexpr int kCompositorLockTimeoutMs = 67;
@@ -144,7 +145,7 @@ class COMPOSITOR_EXPORT ContextFactory {
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SendInternalBeginFrame(const viz::FrameSinkId& id) {}
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 };
 
 class COMPOSITOR_EXPORT CompositorDelegate {
@@ -152,7 +153,7 @@ class COMPOSITOR_EXPORT CompositorDelegate {
   virtual std::unique_ptr<viz::HostDisplayClient> CreateHostDisplayClient() = 0;
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
   virtual void RestoreRenderFit() = 0;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
  protected:
   virtual ~CompositorDelegate() {}
@@ -182,6 +183,8 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   Compositor& operator=(const Compositor&) = delete;
 
   ~Compositor() override;
+
+  friend class CompositorUtils;
 
   ui::ContextFactory* context_factory() { return context_factory_; }
 
@@ -254,14 +257,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void DisableSwapUntilResize();
   void ReenableSwap();
 #endif
-
-#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-  void SetDrawRect(const gfx::Rect& new_rect);
-  void SetDrawMode(const int32_t& mode);
-  int32_t drawMode_ = 0;
-  void SetShouldFrameSubmissionBeforeDraw(bool should);
-#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-
   // Sets the compositor's device scale factor and size.
   void SetScaleAndSize(float scale,
                        const gfx::Size& size_in_pixel,
@@ -405,10 +400,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
       bool force,
       base::OnceCallback<void(const viz::BeginFrameAck&)> callback);
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-  void SendInternalBeginFrame();
-#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
-
   // Creates a ThroughputTracker for tracking this Compositor.
   ThroughputTracker RequestNewThroughputTracker();
 
@@ -527,10 +518,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   const cc::LayerTreeSettings& GetLayerTreeSettings() const;
 
-#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_PERFORMANCE_JITTER)
-  void SetCurrentFrameSinkId(const viz::FrameSinkId& id);
-#endif
-
   size_t saved_events_metrics_count_for_testing() const {
     return host_->saved_events_metrics_count_for_testing();
   }
@@ -564,20 +551,13 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void OnSetPreferredRefreshRate(float refresh_rate);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
-  void SetEnableLowerFrameRate(bool enabled);
-  void EvictFrameBackBuffers(bool invisible);
-#endif
-
-#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
-  void UpdateVSyncFrequency();
-  void ResetVSyncFrequency();
-#endif
-
 #if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
-  void DisableSwapUntilMaximized();
   void RestoreRenderFit() override;
-#endif  // ARKWEB_MAXIMIZE_RESIZE
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+  CompositorUtils* Utils() {
+    return compositor_utils_.get();
+  }
  private:
   friend class base::RefCounted<Compositor>;
   friend class TotalAnimationThroughputReporter;
@@ -715,6 +695,8 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   base::WeakPtrFactory<Compositor> context_creation_weak_ptr_factory_{this};
   base::WeakPtrFactory<Compositor> weak_ptr_factory_{this};
+
+  std::unique_ptr<CompositorUtils> compositor_utils_;
 };
 
 }  // namespace ui

@@ -143,13 +143,8 @@ gfx::Rect TooltipAura::GetTooltipBounds(const gfx::Size& tooltip_size,
       gfx::Rect(anchor_point, {kCursorOffsetX, kCursorOffsetY});
 
   display::Screen* screen = display::Screen::GetScreen();
-#if BUILDFLAG(IS_OHOS)
-  gfx::Rect display_bounds(
-      screen->GetDisplayNearestPoint(anchor_point).work_area());
-#else
   gfx::Rect display_bounds(
       screen->GetDisplayNearestPoint(anchor_point).bounds());
-#endif
 
   // If tooltip is out of bounds on the x axis, we simply shift it
   // horizontally by the offset variation.

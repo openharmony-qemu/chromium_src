@@ -99,6 +99,7 @@ if (!enable_arkweb) {
 
   arkweb_accessibility = false
   arkweb_ai = false
+  arkweb_ai_write = false
   arkweb_api_init_web_engine = true
   arkweb_api_per = false
   arkweb_adblock = false
@@ -128,7 +129,7 @@ if (!enable_arkweb) {
   arkweb_datalist = false
   arkweb_devtools = true
   arkweb_dfx_dump = false
-  arkweb_dfx_logging = false
+  arkweb_dfx_logging = true
   arkweb_dfx_tracing = false
   arkweb_dispatch_before_unload = true
   arkweb_display_cutout = false
@@ -136,8 +137,10 @@ if (!enable_arkweb) {
   arkweb_drag_drop = false
   arkweb_drdc = true
   arkweb_edm_policy = true
+  arkweb_enable_cdm = false
   arkweb_enable_pointer_hardened = false
   arkweb_enable_random = false
+  arkweb_enable_wiseplay = false
   arkweb_encrypt = false
   arkweb_ex_download = false
   arkweb_ex_network_connection = false
@@ -158,7 +161,7 @@ if (!enable_arkweb) {
   arkweb_ion_buffer = true
   arkweb_itp = false
   arkweb_jsproxy = false
-  arkweb_load_per = false
+  arkweb_load_per = true
   arkweb_media = false
   arkweb_media_avsession = false
   arkweb_media_capabilities_enhance = true
@@ -198,6 +201,7 @@ if (!enable_arkweb) {
   arkweb_prefs = false
   arkweb_print = false
   arkweb_prp_preload = false
+  arkweb_render_remove_binder = true
   arkweb_renderer_anr_dump = false
   arkweb_render_process_mode = true
   arkweb_render_process_share = false
@@ -207,6 +211,8 @@ if (!enable_arkweb) {
   arkweb_screen_lock = false
   arkweb_screen_rotation = false
   arkweb_scrollbar = true
+  arkweb_scrollbar_avoid_area = true
+  arkweb_scrollbar_avoid_corner = true
   arkweb_scroll_performance = false
   arkweb_secure_javascript_proxy = false
   arkweb_security_state = false
@@ -291,6 +297,11 @@ if (!enable_arkweb) {
   arkweb_vulkan = false
   arkweb_pull_to_refresh = false
   arkweb_ex_http_dns_fallback = false
+  arkweb_screen_offset = false
+  arkweb_canvas_commit = false
+  arkweb_pip = true
+  arkweb_immediate_destory = false
+  arkweb_cwnd = false
 }
 
 buildflag_header("features") {
@@ -299,6 +310,7 @@ buildflag_header("features") {
   flags = [
     "ARKWEB_ACCESSIBILITY=$arkweb_accessibility",
     "ARKWEB_AI=$arkweb_ai",
+    "ARKWEB_AI_WRITE=$arkweb_ai_write",
     "ARKWEB_API_INIT_WEB_ENGINE=$arkweb_api_init_web_engine",
     "ARKWEB_API_PER=$arkweb_api_per",
     "ARKWEB_ADBLOCK=$arkweb_adblock",
@@ -336,14 +348,17 @@ buildflag_header("features") {
     "ARKWEB_DRAG_DROP=$arkweb_drag_drop",
     "ARKWEB_DRDC=$arkweb_drdc",
     "ARKWEB_EDM_POLICY=$arkweb_edm_policy",
+    "ARKWEB_ENABLE_CDM=$arkweb_enable_cdm",
     "ARKWEB_ENABLE_POINTER_HARDENED=$arkweb_enable_pointer_hardened",
     "ARKWEB_ENABLE_RANDOM=$arkweb_enable_random",
+    "ARKWEB_ENABLE_WISEPLAY=$arkweb_enable_wiseplay",
     "ARKWEB_ENCRYPT=$arkweb_encrypt",
     "ARKWEB_EX_DOWNLOAD=$arkweb_ex_download",
     "ARKWEB_EX_NETWORK_CONNECTION=$arkweb_ex_network_connection",
     "ARKWEB_FAVICON=$arkweb_favicon",
     "ARKWEB_FCP=$arkweb_fcp",
     "ARKWEB_FILE_UPLOAD=$arkweb_file_upload",
+    "ARKWEB_FIDO=$arkweb_fido",
     "ARKWEB_FOCUS=$arkweb_focus",
     "ARKWEB_FULLSCREEN=$arkweb_fullscreen",
     "ARKWEB_FIND_IN_PAGE=$arkweb_find_in_page",
@@ -397,6 +412,7 @@ buildflag_header("features") {
     "ARKWEB_PREFS=$arkweb_prefs",
     "ARKWEB_PRINT=$arkweb_print",
     "ARKWEB_PRP_PRELOAD=$arkweb_prp_preload",
+    "ARKWEB_RENDER_REMOVE_BINDER=$arkweb_render_remove_binder",
     "ARKWEB_RENDERER_ANR_DUMP=$arkweb_renderer_anr_dump",
     "ARKWEB_RENDER_PROCESS_MODE=$arkweb_render_process_mode",
     "ARKWEB_RENDER_PROCESS_SHARE=$arkweb_render_process_share",
@@ -406,6 +422,8 @@ buildflag_header("features") {
     "ARKWEB_SCREEN_LOCK=$arkweb_screen_lock",
     "ARKWEB_SCREEN_ROTATION=$arkweb_screen_rotation",
     "ARKWEB_SCROLLBAR=$arkweb_scrollbar",
+    "ARKWEB_SCROLLBAR_AVOID_AREA=$arkweb_scrollbar_avoid_area",
+    "ARKWEB_SCROLLBAR_AVOID_CORNER=$arkweb_scrollbar_avoid_corner",
     "ARKWEB_SCROLL_PERFORMANCE=$arkweb_scroll_performance",
     "ARKWEB_SECURE_JAVASCRIPT_PROXY=$arkweb_secure_javascript_proxy",
     "ARKWEB_SECURITY_STATE=$arkweb_security_state",
@@ -493,6 +511,12 @@ buildflag_header("features") {
     "ARKWEB_EX_SCREEN_CAPTURE=$arkweb_ex_screen_capture",
     "ARKWEB_EX_REFRESH_IFRAME=$arkweb_ex_refresh_iframe",
     "ARKWEB_VULKAN=$arkweb_vulkan",
+    "ARKWEB_D_VSYNC=$arkweb_d_vsync",
+    "ARKWEB_SCREEN_OFFSET=$arkweb_screen_offset",
+    "ARKWEB_CANVAS_COMMIT=$arkweb_canvas_commit",
+    "ARKWEB_PIP=$arkweb_pip",
+    "ARKWEB_IMMEDIATE_DESTORY=$arkweb_immediate_destory",
+    "ARKWEB_CWND=$arkweb_cwnd"
     "ARKWEB_PULL_TO_REFRESH=$arkweb_pull_to_refresh",
     "ARKWEB_EX_HTTP_DNS_FALLBACK=$arkweb_ex_http_dns_fallback",
 

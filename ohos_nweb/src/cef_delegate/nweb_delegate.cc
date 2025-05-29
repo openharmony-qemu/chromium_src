@@ -302,6 +302,8 @@ class ScreenCaptureCallbackImpl
       : callback_(callback) {}
   NO_SANITIZE("cfi-icall") void OnStateChange(int32_t nweb_id, const CefString& session_id, int32_t code) override {
     if (callback_ != nullptr) {
+      LOG(INFO) << "ScreenCapture onStateChange nweb_id:" << nweb_id << ", session_id:" << session_id.ToString()
+                << ", stateCode:" << code;
       callback_->OnStateChange(nweb_id, session_id.ToString().c_str(), code);
     }
   }
@@ -3045,21 +3047,25 @@ void NWebDelegate::StopScreenCapture(int32_t nweb_id, const char* session_id) {
     LOG(ERROR) << "StopScreenCapture can not get browser";
     return;
   }
-
+  LOG(INFO) << "StopScreenCapture nweb_id:" << nweb_id;
   GetBrowser()->GetHost()->StopScreenCapture(nweb_id, CefString(session_id));
 }
 
 void NWebDelegate::RegisterScreenCaptureDelegateListener(
     std::shared_ptr<NWebScreenCaptureDelegateCallback> listener) {
-  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "RegisterScreenCaptureDelegateListener can not get browser";
-    return;
-  }
-
   CefRefPtr<ScreenCaptureCallbackImpl> screenCaptureCb =
       new ScreenCaptureCallbackImpl(listener);
-  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(
-      screenCaptureCb);
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    if (handler_delegate_ == nullptr) {
+      LOG(ERROR) << "Fail to register screen capture callback, handler_delegate is nullptr.";
+      return;
+    }
+    handler_delegate_->SetNWebId(nweb_id_);
+    handler_delegate_->RegisterScreenCaptureDelegateListener(screenCaptureCb);
+    LOG(INFO) << "handler_delegate register screen capture callback";
+    return;
+  }
+  GetBrowser()->GetHost()->RegisterScreenCaptureDelegateListener(screenCaptureCb);
 }
 #endif  // defined(OHOS_EX_SCREEN_CAPTURE)
 
